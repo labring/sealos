@@ -1,0 +1,19 @@
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+networking:
+  podSubnet: 10.244.0.0/16
+kubernetesVersion: {{k8s_version}}
+api:
+  advertiseAddress: "{{vip}}"
+token: "b99a00.a144ef80536d4344"
+tokenTTL: "0s"
+apiServerCertSANs:
+- {{vip}}
+{% for host in groups['k8s-master'] %}
+- {{host}}
+- {{hostvars[host].name}}
+{% endfor %}
+- 127.0.0.1
+featureGates:
+  CoreDNS: true
+imageRepository: {{local_images}}

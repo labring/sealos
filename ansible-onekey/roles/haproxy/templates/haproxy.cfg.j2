@@ -1,0 +1,41 @@
+global
+   log /dev/log local0
+   log /dev/log local1 notice
+   chroot      /var/lib/haproxy
+   pidfile     /var/run/haproxy.pid
+   stats timeout 30s
+   daemon
+   stats socket /var/lib/haproxy/stats
+
+defaults
+    mode                    tcp
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option                  http-server-close
+    option                  redispatch
+    retries                 3
+    timeout connect         5s
+    timeout client          30s
+    timeout server          30s
+    timeout check           2s
+    maxconn                 50000
+
+frontend http_stats
+   bind *:58080
+   mode http
+   stats uri /haproxy?stats
+
+frontend haproxy_kube
+    bind *:6443
+    mode tcp
+    option tcplog
+    default_backend masters
+
+backend masters
+    mode tcp
+    option tcplog
+    balance roundrobin
+    {% for host in groups['k8s-master'] %}
+    server  {{hostvars[host].name}}  {{host}}:6443 check port 6443  inter 1500 rise 1 fall 3
+    {% endfor %}

@@ -1,0 +1,26 @@
+[Unit]
+Description=Etcd Server
+After=network.target
+After=network-online.target
+Wants=network-online.target
+Documentation=https://github.com/coreos
+
+[Service]
+Type=notify
+WorkingDirectory=/var/lib/etcd/
+ExecStart=/usr/bin/etcd \
+  --name {{ ansible_hostname }}    \
+  --initial-advertise-peer-urls http://{{ ansible_default_ipv4.address }}:2380 \
+  --listen-peer-urls http://{{ ansible_default_ipv4.address }}:2380 \
+  --listen-client-urls http://{{ ansible_default_ipv4.address }}:2379,http://127.0.0.1:2379 \
+  --advertise-client-urls http://{{ ansible_default_ipv4.address }}:2379 \
+  --initial-cluster-token etcd-cluster-0 \
+  --initial-cluster {{ hostvars[groups['k8s-master'][0]]['name'] }}=http://{{ groups['k8s-master'][0] }}:2380,{{ hostvars[groups['k8s-master'][1]]['name'] }}=http://{{ groups['k8s-master'][1] }}:2380,{{ hostvars[groups['k8s-master'][2]]['name'] }}=http://{{ groups['k8s-master'][2] }}:2380 \
+  --initial-cluster-state new \
+  --data-dir=/var/lib/etcd
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

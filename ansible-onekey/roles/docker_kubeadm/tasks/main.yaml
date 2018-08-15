@@ -1,0 +1,29 @@
+---
+- name: 下载docker-selinux
+  copy: src=/etc/ansible/roles/docker_kubeadm/files/docker-ce-selinux-17.03.2.ce-1.el7.centos.noarch.rpm dest=/root/docker-ce-selinux-17.03.2.ce-1.el7.centos.noarch.rpm
+
+- name: 下载docker
+  copy: src=/etc/ansible/roles/docker_kubeadm/files/docker-ce-17.03.2.ce-1.el7.centos.x86_64.rpm  dest=/root/docker-ce-17.03.2.ce-1.el7.centos.x86_64.rpm
+
+- name: 安装docker17.3
+  shell: yum localinstall -y  docker-ce-selinux-17.03.2.ce-1.el7.centos.noarch.rpm  --nogpgcheck &&   yum localinstall -y docker-ce-17.03.2.ce-1.el7.centos.x86_64.rpm --nogpgcheck
+
+- name: 修改配置文件/usr/lib/systemd/system/docker.service
+  lineinfile: dest=/usr/lib/systemd/system/docker.service  regexp='^ExecStart=' line='ExecStart=/usr/bin/dockerd  -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock  --registry-mirror=https://ms3cfraz.mirror.aliyuncs.com'
+
+- name:  设置docker自启动
+  service: name=docker state=started enabled=yes  daemon_reload=yes
+
+- name: 添加阿里云K8S源
+  copy: src=/etc/ansible/roles/docker_kubeadm/files/kubernetes.repo dest=/etc/yum.repos.d/kubernetes.repo
+
+- name: 安装kubeadm{{k8s_version}}
+  yum: name={{item}}-{{k8s_version}}-0.x86_64 state=present
+  with_items:
+        - kubeadm
+        - kubectl
+        - kubelet
+
+- name: kubectl命令补全
+  shell: yum install -y bash-completion  && kubectl completion bash > /etc/bash_completion.d/kubectl && echo "source <(kubectl completion bash)" >> /root/.bashrc
+

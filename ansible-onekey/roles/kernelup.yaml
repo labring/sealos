@@ -1,0 +1,6 @@
+---
+- hosts: all
+  gather_facts: no
+  roles:
+  - { role: kernelup }
+#升级kernel后重启主机才能生效

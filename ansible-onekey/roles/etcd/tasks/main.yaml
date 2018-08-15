@@ -1,0 +1,14 @@
+---
+- name: 安装 etcd
+  yum: name={{item}} state=present
+  with_items:
+        - etcd
+- name: 创建目录
+  shell: mkdir -p /var/lib/etcd
+
+- name: copy etcd.service 
+  template: src=/etc/ansible/roles/etcd/templates/etcd.service.j2  dest=/etc/systemd/system/etcd.service  mode=777
+
+- name: 设置haproxy自启动
+  service: name=etcd  state=started enabled=yes  daemon_reload=yes
+

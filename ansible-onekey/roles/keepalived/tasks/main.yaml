@@ -1,0 +1,14 @@
+---
+- name: 安装keepalived 
+  yum: name={{item}} state=present
+  with_items:
+        - keepalived
+
+- name: copy keepalived.conf
+  template: src=/etc/ansible/roles/keepalived/templates/keepalived.conf.j2   dest=/etc/keepalived/keepalived.conf
+
+- name: copy check_haproxy.sh
+  copy: src=/etc/ansible/roles/keepalived/files/check_haproxy.sh  dest=/etc/keepalived/check_haproxy.sh mode=777
+
+- name:  设置keepalived自启动
+  service: name=keepalived state=started enabled=yes  daemon_reload=yes

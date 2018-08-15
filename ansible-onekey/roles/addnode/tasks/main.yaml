@@ -1,0 +1,17 @@
+---
+- name: kubeadm  token
+  shell: kubeadm token create --print-join-command
+  register: k8s_token
+  when: ( order is defined ) and ( order == 1 )
+
+- name: 设置变量k8s_token为set_fact
+  set_fact: k8s_token={{ k8s_token.stdout }}
+  when: ( order is defined ) and ( order == 1 )
+
+- name: add node to k8s cluster
+  shell: echo '' |  {{ hostvars[groups['k8s-master'][0]]['k8s_token'] }}
+  when:  order  is undefined
+
+
+
+

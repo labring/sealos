@@ -1,0 +1,11 @@
+---
+- name: 导入公钥
+  shell: rpm --import https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+- name: 安装kernel源
+  shell: rpm -Uvh http://www.elrepo.org/elrepo-release-7.0-3.el7.elrepo.noarch.rpm
+- name: 安装kernel
+  shell: yum --disablerepo=\* --enablerepo=elrepo-kernel install -y kernel-ml.x86_64
+- name: 设置默认启动项
+  shell: grub2-set-default 0 && grub2-mkconfig -o /etc/grub2.cfg
+- name: 重启系统
+  shell: init 6

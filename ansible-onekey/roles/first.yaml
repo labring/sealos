@@ -1,0 +1,15 @@
+---
+- hosts: all
+  gather_facts: no
+  roles:
+  - { role: basic }
+
+- hosts: slb
+  roles:
+  - { role: haproxy }
+  - { role: keepalived }
+
+- hosts: k8s-all
+  roles:
+  - { role: etcd, when: order is defined }
+

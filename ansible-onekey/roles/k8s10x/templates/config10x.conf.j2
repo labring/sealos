@@ -1,0 +1,30 @@
+apiVersion: kubeadm.k8s.io/v1alpha1
+kind: MasterConfiguration
+etcd:
+  endpoints:
+{% for host in groups['k8s-master'] %}
+  - http://{{host}}:2379
+{% endfor %}
+  dataDir: /var/lib/etcd
+
+networking:
+  podSubnet: 10.244.0.0/16
+kubernetesVersion: {{k8s_version}}
+api:
+  advertiseAddress: "{{ vip }}"
+
+apiServerExtraArgs:
+   endpoint-reconciler-type: lease
+token: "b99a00.a144ef80536d4344"
+tokenTTL: "0s"
+nodeName: {{ansible_hostname}}
+apiServerCertSANs:
+- {{vip}}
+{% for host in groups['k8s-all'] %}
+- {{host}}
+- {{hostvars[host].name}}
+{% endfor %}
+- 127.0.0.1
+featureGates:
+  CoreDNS: true
+imageRepository: {{local_images}}

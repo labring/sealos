@@ -1,0 +1,38 @@
+global_defs {
+   router_id k8s
+}
+
+vrrp_script Checkhaproxy {
+    script "/etc/keepalived/check_haproxy.sh"
+    interval 3
+    timeout 9
+    fall 2
+    rise 2
+}
+
+vrrp_instance VI_1 {
+    state {{ type }}
+    interface {{ ansible_default_ipv4.interface }}
+    virtual_router_id  100
+    priority {{priority}}
+    advert_int 1
+    nopreempt
+    mcast_src_ip {{ ansible_default_ipv4.address }}
+    authentication {
+        auth_type PASS
+        auth_pass kuburnetes
+    }
+    unicast_peer {
+    {% for host in groups['slb'] %}
+      {{ host }}   
+    {% endfor %}
+
+    }
+    virtual_ipaddress {
+        {{vip}}
+    }
+    track_script {
+        Checkhaproxy
+    }
+
+}

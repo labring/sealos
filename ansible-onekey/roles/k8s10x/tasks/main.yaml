@@ -1,0 +1,58 @@
+---
+- name: 修改10-kubeadm.conf的cgroupfs
+  replace:
+      dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+      regexp: 'cgroup-driver=systemd'
+      replace: 'cgroup-driver=cgroupfs'
+
+- name: 修改10-kubeadm.conf的cgroupfs
+  lineinfile:
+      dest: /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+      regexp: 'pause-amd64:3.1'
+      backrefs: no
+      insertafter: 'certificates=true'
+      line: 'Environment="KUBELET_EXTRA_ARGS=--v=2 --fail-swap-on=false --pod-infra-container-image={{local_images}}/pause-amd64:3.1'
+
+- name:  设置kubelet自启动
+  service: name=kubelet state=restarted enabled=yes  daemon_reload=yes
+
+- name: 分发配置文件
+  template: src=/etc/ansible/roles/k8s10x/templates/config10x.conf.j2  dest=/root/config10x.conf
+  when:  order  is defined
+
+
+- name: pull  pause-amd64:3.1
+  shell: docker pull {{local_images}}/pause-amd64:3.1 &&  docker tag  {{local_images}}/pause-amd64:3.1   k8s.gcr.io/pause-amd64:3.1
+
+- name: 初始化第一个master节点，如果失败会终止整个k8s集群的初始化
+  shell: kubeadm init --config /root/config10x.conf
+  register: info
+  failed_when: "'troubleshoot' in info.stdout_lines "
+  when: (  order  is defined ) and  ( order == 1 )
+
+- name: 证书打包
+  shell: cd /etc/kubernetes/  && tar cfp pki{{ k8s_version }}.tgz  ./pki/
+  when: (  order  is defined ) and  ( order == 1 )
+
+- name: 证书上传到/etc/ansible/roles/k8s/files/
+  fetch: src=/etc/kubernetes/pki{{ k8s_version }}.tgz  dest=/etc/ansible/roles/k8s10x/files/  flat=yes
+  when: (  order  is defined ) and  ( order == 1 )         
+
+- name: 证书cp
+  copy: src=/etc/ansible/roles/k8s10x/files/pki{{ k8s_version }}.tgz dest=/etc/kubernetes/pki{{ k8s_version }}.tgz
+  when: (  order  is defined ) and  ( order != 1 )
+
+- name: 解压证书
+  shell: cd /etc/kubernetes/  && tar xf pki{{ k8s_version }}.tgz 
+  when: (  order  is defined ) and  ( order != 1 )
+
+- name: kubeadm init
+  shell: kubeadm init --config /root/config10x.conf
+  register: info
+  failed_when: "'troubleshoot' in info.stdout_lines "
+  when: (  order  is defined ) and  ( order != 1 )
+
+- name:  inited
+  shell: mkdir -p $HOME/.kube  && sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config  &&  sudo chown $(id -u):$(id -g) $HOME/.kube/config
+  when:  order  is defined
+

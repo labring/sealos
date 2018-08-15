@@ -1,0 +1,33 @@
+apiVersion: kubeadm.k8s.io/v1alpha2
+kind: MasterConfiguration
+kubernetesVersion: v{{k8s_version}}
+imageRepository: {{local_images}}
+apiServerCertSANs:
+- {{vip}}
+{% for host in groups['k8s-master'] %}
+- {{host}}
+- {{hostvars[host].name}}
+{% endfor %}
+- 127.0.0.1
+
+api:
+    controlPlaneEndpoint: "{{vip}}:6443"
+bootstrapTokens:
+- groups:
+  - system:bootstrappers:kubeadm:default-node-token
+  token: abcdef.0123456789abcdef
+  ttl: 87600h0m0s
+  usages:
+  - signing
+  - authentication
+
+etcd:
+    external:
+        endpoints:
+{% for host in groups['k8s-master'] %}
+        - http://{{host}}:2379
+{% endfor %}
+          
+networking:
+    # This CIDR is a calico default. Substitute or remove for your CNI provider.
+    podSubnet: "10.244.0.0/16"

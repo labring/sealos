@@ -1,0 +1,8 @@
+---
+- name: down flannel.yaml
+  copy: src=/etc/ansible/roles/flannel/files/kube-flannel.yml  dest=/root/kube-flannel.yml
+  when: ( order is defined ) and ( order ==1 )
+
+- name: deploy flannel
+  shell:  kubectl apply -f /root/kube-flannel.yml
+  when: ( order is defined ) and ( order ==1 )

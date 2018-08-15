@@ -1,0 +1,12 @@
+---
+- name: 安装 haproxy
+  yum: name={{item}} state=present
+  with_items:
+        - haproxy
+
+- name: copy haproxy.cfg  
+  template: src=/etc/ansible/roles/haproxy/templates/haproxy.cfg.j2  dest=/etc/haproxy/haproxy.cfg
+
+- name: 设置haproxy自启动
+  service: name=haproxy state=started enabled=yes  daemon_reload=yes
+
