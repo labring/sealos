@@ -1,0 +1,20 @@
+---
+- hosts: all
+  gather_facts: no
+  roles:
+  - { role: basic }
+
+- hosts: slb
+  roles:
+  - { role: haproxy }
+  - { role: keepalived }
+
+- hosts: k8s-all
+  roles:
+  - { role: docker_kubeadm }
+  - { role: etcd, when: order is defined }
+  - { role: k8s10x, when: k8s_version.startswith('1.10.')}
+  - { role: k8s11x, when: k8s_version.startswith('1.11.')}
+  - { role: flannel }
+  - { role: addnode }
+

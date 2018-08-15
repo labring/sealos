@@ -1,0 +1,4 @@
+---
+- hosts: k8s-master
+  roles:
+  - { role: etcd }

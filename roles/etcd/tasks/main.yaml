@@ -1,0 +1,13 @@
+---
+- name: start a temp kubelet to init etcd
+  shell: 
+
+- name: make etcd crts
+  shell: mkdir -p /etc/kubernetes/pki/cfssl
+
+- name: copy etcd.service 
+  template: src=/etc/ansible/roles/etcd/templates/etcd.service.j2  dest=/etc/systemd/system/etcd.service  mode=777
+
+- name: 设置haproxy自启动
+  service: name=etcd  state=started enabled=yes  daemon_reload=yes
+
