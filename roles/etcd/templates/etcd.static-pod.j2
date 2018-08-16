@@ -37,8 +37,8 @@ spec:
         command:
         - /bin/sh
         - -ec
-        - ETCDCTL_API=3 etcdctl --endpoints=https://[{{ ansible_default_ipv4.address }}]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.crt
-          --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt --key=/etc/kubernetes/pki/etcd/healthcheck-client.key
+        - ETCDCTL_API=3 etcdctl --endpoints=https://[{{ ansible_default_ipv4.address }}]:2379 --cacert=/etc/kubernetes/pki/etcd/ca.pem
+          --cert=/etc/kubernetes/pki/etcd/client.pem --key=/etc/kubernetes/pki/etcd/client-key.pem
           get foo
       failureThreshold: 8
       initialDelaySeconds: 45

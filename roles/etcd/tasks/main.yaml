@@ -1,6 +1,6 @@
 ---
 - name: start a temp kubelet to init etcd
-  shell: rm -rf /etc/kubernetes/pki/cfssl
+  shell: rm -rf /etc/kubernetes/pki/cfssl && rm -rf /var/lib/etcd
 
 - name: make etcd dirs
   file:
@@ -35,13 +35,13 @@
   when: ( order is defined ) and ( order == 1 )
 
 - name: fetch crt files
-  fetch: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/{{ item }}'
-  with_items: {{ etcd_crts }}
+  copy: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/{{ item }} mode=0644'
+  with_items: '{{ etcd_crts }}'
   when: ( order is defined ) and ( order == 1 )
 
 - name: copy crt file
   copy: 'src=/tmp/{{ item }} dest=/etc/kubernetes/pki/cfssl/{{ item }}'
-  with_items: {{ etcd_crts }}
+  with_items: '{{ etcd_crts }}'
   when: ( order is defined ) and ( order != 1 )
 
 - name: copy etcd.yaml
