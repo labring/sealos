@@ -1,10 +1,48 @@
 ---
 - name: start a temp kubelet to init etcd
-  shell: echo "pass"
+  shell: rm -rf /etc/kubernetes/pki/cfssl
 
-- name: make etcd crts
-  shell: mkdir -p /etc/kubernetes/pki/cfssl
-  shell: mkdir -p /etc/kubernetes/manifests
+- name: make etcd dirs
+  file:
+       path: '{{ item }}'
+       state: directory
+  with_items:
+     - /etc/kubernetes/manifests
+     - /etc/kubernetes/pki/cfssl
 
-- name: copy etcd.service 
-  template: src=/etc/ansible/roles/etcd/templates/etcd.service.j2  dest=/etc/kubernets/manifests/etcd.yaml mode=777
+- name: make etcd crt json files
+  template: 'src={{ item.src }} dest={{ item.dest }} mode=0644'
+  with_items:
+     - {src: '/etc/ansible/roles/etcd/templates/ca-config.json.j2' , dest: '/etc/kubernetes/pki/cfssl/ca-config.json'}
+     - {src: '/etc/ansible/roles/etcd/templates/ca-csr.json.j2' , dest: '/etc/kubernetes/pki/cfssl/ca-csr.json'}
+     - {src: '/etc/ansible/roles/etcd/templates/client.json.j2' , dest: '/etc/kubernetes/pki/cfssl/client.json'}
+     - {src: '/etc/ansible/roles/etcd/templates/member1.json.j2' , dest: '/etc/kubernetes/pki/cfssl/member1.json'}
+     - {src: '/etc/ansible/roles/etcd/templates/server.json.j2' , dest: '/etc/kubernetes/pki/cfssl/server.json'}
+
+- name: install cfssl
+  copy: 'src=/etc/ansible/roles/etcd/bin/{{ item }} dest=/usr/bin/{{ item }} mode=0777'
+  with_items:
+    - cfssl
+    - cfssljson
+
+- name: make etcd crt
+  shell: 'cd /etc/kubernetes/pki/cfssl && {{ item }}'
+  with_items:
+     - cfssl gencert -initca ca-csr.json | cfssljson -bare ca -
+     - cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=server server.json | cfssljson -bare server
+     - cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=peer member1.json | cfssljson -bare member1
+     - cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json -profile=client client.json | cfssljson -bare client
+  when: ( order is defined ) and ( order == 1 )
+
+- name: fetch crt files
+  fetch: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/{{ item }}'
+  with_items: {{ etcd_crts }}
+  when: ( order is defined ) and ( order == 1 )
+
+- name: copy crt file
+  copy: 'src=/tmp/{{ item }} dest=/etc/kubernetes/pki/cfssl/{{ item }}'
+  with_items: {{ etcd_crts }}
+  when: ( order is defined ) and ( order != 1 )
+
+- name: copy etcd.yaml
+  template: src=/etc/ansible/roles/etcd/templates/etcd.static-pod.j2  dest=/etc/kubernetes/manifests/etcd.yaml mode=0644

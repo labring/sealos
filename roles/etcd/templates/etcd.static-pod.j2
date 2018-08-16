@@ -18,11 +18,12 @@ spec:
     - --client-cert-auth=true
     - --data-dir=/var/lib/etcd
     - --initial-advertise-peer-urls=https://{{ ansible_default_ipv4.address }}:2380
-    - --initial-cluster={% for host in groups['k8s-master'] %}{{ hostvars[host].name }}=http://{{ host }}:2380,{% endfor %}
+    - --initial-cluster={% for host in groups['k8s-master'] %}{{ hostvars[host].name }}=https://{{ host }}:2380,{% endfor %}
+
     - --key-file=/etc/kubernetes/pki/etcd/server-key.pem
-    - --listen-client-urls=https://{{ ansible_default_ipv4.address }}:2379,http://127.0.0.1:2379
+    - --listen-client-urls=https://{{ ansible_default_ipv4.address }}:2379
     - --listen-peer-urls=https://{{ ansible_default_ipv4.address }}:2380
-    - --name={{ ansible_hostname }}
+    - --name={{ hostvars[inventory_hostname].name }}
     - --peer-cert-file=/etc/kubernetes/pki/etcd/member1.pem
     - --peer-client-cert-auth=true
     - --peer-key-file=/etc/kubernetes/pki/etcd/member1-key.pem
