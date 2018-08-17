@@ -1,6 +1,10 @@
 ---
 - name: start a temp kubelet to init etcd
-  shell: rm -rf /etc/kubernetes/pki/cfssl && rm -rf /var/lib/etcd
+  shell: 'rm -rf {{ item }}'
+  with_items:
+      - /etc/kubernetes/pki/cfssl
+      - /var/lib/etcd
+      - /etc/kubernetes/manifests/etcd.yaml
 
 - name: make etcd dirs
   file:

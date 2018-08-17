@@ -17,7 +17,8 @@
 [k8s-master]
 10.1.86.201 name=node01  order=1 
 10.1.86.202 name=node02  order=2
-10.1.86.205 name=node03  order=3
+10.1.86.203 name=node03  order=3
+# 10.1.86.205 name=node04  order=4
 
 [k8s-node]
 10.1.86.204 name=node04 
