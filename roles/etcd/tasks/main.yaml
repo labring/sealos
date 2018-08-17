@@ -35,7 +35,7 @@
   when: ( order is defined ) and ( order == 1 )
 
 - name: fetch crt files
-  copy: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/{{ item }} mode=0644'
+  fetch: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/ mode=0644 flat=yes'
   with_items: '{{ etcd_crts }}'
   when: ( order is defined ) and ( order == 1 )
 
