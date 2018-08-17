@@ -1,0 +1,14 @@
+---
+#- name: kubeadm reset
+#  shell: kubeadm reset -f && rm /var/lib/etcd -rf && rm /var/etcd -rf
+
+- name: generate kubeadm config
+  template: 'src={{ item.src }} dest={{ item.dest }} mode=0644'
+  with_items:
+      - {src: '/etc/ansible/roles/kube-master/templates/kubeadm.yaml.j2' , dest: '/root/kube/conf/kubeadm.yaml'}
+
+- name: kubeadm init
+  shell: cd /root/kube/shell && sh master.sh
+#  when: ( order is defined ) and ( order == 1 )
+
+
