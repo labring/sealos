@@ -1,18 +1,4 @@
 ---
 - hosts: k8s-master
-  vars:
-    etcd_crts: 
-    - ca-key.pem
-    - ca.pem
-    - client-key.pem
-    - client.pem
-    - member1-key.pem
-    - member1.pem
-    - server-key.pem
-    - server.pem
-    - ca.csr
-    - client.csr
-    - member1.csr
-    - server.csr
   roles:
   - { role: etcd }
