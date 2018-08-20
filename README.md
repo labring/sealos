@@ -2,7 +2,7 @@ build a production kubernetes cluster
 
 # run with docker
 ```
-docker run -v /Users/fanux/work/src/github.com/sealyun/sealos:/etc/ansible -v /Users/fanux:/data -it -w /etc/ansible ansible/ansible:centos7 bash
+docker run -v /Users/fanux/work/src/github.com/sealyun/sealos:/etc/ansible -v /Users/fanux:/data -it -w /etc/ansible fanux/ansible:latest bash
 ```
 ssh public key:
 ```
