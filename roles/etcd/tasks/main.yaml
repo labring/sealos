@@ -1,6 +1,13 @@
 ---
+#- name: pull calico image
+#  shell: 'docker pull {{ item }}'
+#  with_items:
+#    - quay.io/calico/node:v3.2.0
+#    - quay.io/calico/cni:v3.2.0
+#    - quay.io/calico/kube-controllers:v3.2.0
+
 - name: clean /etc/kubernetes and etcd data
-  shell: 'rm -rf {{ item }}'
+  shell: 'rm -rf {{ item }} && kubeadm reset -f'
   with_items:
       - /etc/kubernetes/pki/cfssl
       - /var/lib/etcd
@@ -24,8 +31,9 @@
      - {src: '/etc/ansible/roles/etcd/templates/member1.json.j2' , dest: '/etc/kubernetes/pki/cfssl/member1.json'}
      - {src: '/etc/ansible/roles/etcd/templates/server.json.j2' , dest: '/etc/kubernetes/pki/cfssl/server.json'}
      - {src: '/etc/ansible/roles/etcd/templates/kubeletonce.service.j2' , dest: '/usr/lib/systemd/system/kubeletonce.service'}
-  notify:
-     - start kubelet once
+
+- name: start kubelet once
+  service: name=kubeletonce state=started
 
 - name: install cfssl
   copy: 'src=/etc/ansible/roles/etcd/bin/{{ item }} dest=/usr/bin/{{ item }} mode=0777'
@@ -54,3 +62,9 @@
 
 - name: copy etcd.yaml
   template: src=/etc/ansible/roles/etcd/templates/etcd.static-pod.j2  dest=/etc/kubernetes/manifests/etcd.yaml mode=0644
+
+- name: wait for etcd cluster init 
+  shell: sleep 30 
+
+- name: stop kubelet once
+  service: name=kubeletonce state=stopped

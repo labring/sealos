@@ -1,7 +1,6 @@
 ---
 - hosts: k8s-master
   roles:
-  - { role: kube-isolate, when: order is defined }
   - { role: etcd, when: order is defined }
   - { role: kube-master, when: order is defined }
 
