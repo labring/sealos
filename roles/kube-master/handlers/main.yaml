@@ -1,0 +1,2 @@
+- name: stop kubelet
+  service: name=kubelet state=stop

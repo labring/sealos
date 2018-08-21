@@ -4,6 +4,12 @@ build a production kubernetes cluster
 ```
 docker run -v /Users/fanux/work/src/github.com/sealyun/sealos:/etc/ansible -v /Users/fanux:/data -it -w /etc/ansible fanux/ansible:latest bash
 ```
+generate ssh public key:
+```
+mkdir ~/.ssh
+cd ~/.ssh
+ssh-keygen -t rsa
+```
 ssh public key:
 ```
 cat ~/.ssh/id_rsa.pub

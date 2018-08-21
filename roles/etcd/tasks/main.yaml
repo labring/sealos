@@ -1,9 +1,10 @@
 ---
-- name: start a temp kubelet to init etcd
+- name: clean /etc/kubernetes and etcd data
   shell: 'rm -rf {{ item }}'
   with_items:
       - /etc/kubernetes/pki/cfssl
       - /var/lib/etcd
+      - /var/etcd
       - /etc/kubernetes/manifests/etcd.yaml
 
 - name: make etcd dirs
@@ -22,6 +23,9 @@
      - {src: '/etc/ansible/roles/etcd/templates/client.json.j2' , dest: '/etc/kubernetes/pki/cfssl/client.json'}
      - {src: '/etc/ansible/roles/etcd/templates/member1.json.j2' , dest: '/etc/kubernetes/pki/cfssl/member1.json'}
      - {src: '/etc/ansible/roles/etcd/templates/server.json.j2' , dest: '/etc/kubernetes/pki/cfssl/server.json'}
+     - {src: '/etc/ansible/roles/etcd/templates/kubeletonce.service.j2' , dest: '/usr/lib/systemd/system/kubeletonce.service'}
+  notify:
+     - start kubelet once
 
 - name: install cfssl
   copy: 'src=/etc/ansible/roles/etcd/bin/{{ item }} dest=/usr/bin/{{ item }} mode=0777'

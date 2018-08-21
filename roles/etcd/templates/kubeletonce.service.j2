@@ -1,0 +1,18 @@
+[Unit]
+Description=kubelet run once to init static pod before kubeadm init
+Documentation=https://sealyun.com
+After=network.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/kubelet --pod-manifest-path=/etc/kubernetes/manifests
+ExecReload=/bin/kill -s HUP $MAINPID
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+Delegate=yes
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

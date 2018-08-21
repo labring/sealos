@@ -12,18 +12,23 @@ apiServerCertSANs:
 {% endfor %}
 - 127.0.0.1
 
-#etcd:
-#    external:
-#        endpoints:
-#{% for host in groups['k8s-master'] %}
-#        - http://{{host}}:2379
-#{% endfor %}
+ignorePreflightErrors: all
+
+etcd:
+    external:
+        caFile: /etc/kubernetes/pki/cfssl/ca.pem
+        certFile: /etc/kubernetes/pki/cfssl/client.pem
+        keyFile: /etc/kubernetes/pki/cfssl/client-key.pem 
+        endpoints:
+{% for host in groups['k8s-master'] %}
+        - https://{{host}}:2379
+{% endfor %}
 
 kubeProxy:
     config:
        mode: "ipvs"
 
-#apiServerExtraArgs:
-#   etcd-cafile: /etc/kubernetes/pki/cfssl/ca.pem
-#   etcd-certfile: /etc/kubernetes/pki/cfssl/client.pem
-#   etcd-keyfile: /etc/kubernetes/pki/cfssl/client-key.pem 
+apiServerExtraArgs:
+   etcd-cafile: /etc/kubernetes/pki/cfssl/ca.pem
+   etcd-certfile: /etc/kubernetes/pki/cfssl/client.pem
+   etcd-keyfile: /etc/kubernetes/pki/cfssl/client-key.pem 
