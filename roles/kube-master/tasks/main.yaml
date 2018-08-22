@@ -18,6 +18,7 @@
   with_items:
       - {src: '/etc/ansible/roles/kube-master/templates/kubeadm.yaml.j2' , dest: '/root/kube/conf/kubeadm.yaml'}
       - {src: '/etc/ansible/roles/kube-master/templates/calico.yaml.j2' , dest: '/root/kube/conf/net/calico.yaml'}
+      - {src: '/etc/ansible/roles/kube-master/templates/rbac.yaml.j2' , dest: '/root/kube/conf/net/rbac.yaml'}
 
 #- name: kubeadm init
 #  shell: cd /root/kube/shell && sh master.sh
@@ -28,8 +29,9 @@
   with_items:
       - kubeadm init --config ../conf/kubeadm.yaml --ignore-preflight-errors=Port-10250 --ignore-preflight-errors=ExternalEtcdVersion --ignore-preflight-errors=FileAvailable--etc-kubernetes-manifests-etcd.yaml 
       - rm -rf ~/.kube && mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config
-      - kubectl apply -f ../conf/net/calico.yaml
       - kubectl taint nodes --all node-role.kubernetes.io/master-
+      - kubectl apply -f ../conf/net/calico.yaml
+      - kubectl apply -f ../conf/net/rbac.yaml
       - kubectl apply -f ../conf/heapster/
       - kubectl apply -f ../conf/heapster/rbac
       - kubectl apply -f ../conf/dashboard
@@ -43,7 +45,7 @@
   when: ( order is defined ) and ( order == 1 )
 
 - name: send k8s cert to  masters
-  copy: 'src=/tmp/{{ item }} dest=/etc/kubernetes/pki/{{ item }} mode=0777'
+  copy: 'src=/tmp/{{ item }} dest=/etc/kubernetes/pki/{{ item }} mode=0644'
   with_items: '{{ k8s_crts }}'
   when: ( order is defined ) and ( order != 1 )
 
@@ -51,6 +53,7 @@
   shell: 'cd /root/kube/shell && {{ item }}'
   with_items:
       - kubeadm init --config ../conf/kubeadm.yaml --ignore-preflight-errors=Port-10250 --ignore-preflight-errors=ExternalEtcdVersion --ignore-preflight-errors=FileAvailable--etc-kubernetes-manifests-etcd.yaml 
+      - kubectl taint nodes --all node-role.kubernetes.io/master- || true
       - rm -rf ~/.kube && mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config
   when: ( order is defined ) and ( order != 1 )
 

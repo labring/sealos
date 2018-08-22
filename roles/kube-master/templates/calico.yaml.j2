@@ -13,7 +13,7 @@ metadata:
   namespace: kube-system
 data:
   # Configure this with the location of your etcd cluster.
-  etcd_endpoints: "http://10.96.232.136:6666"
+  etcd_endpoints: "{% for host in groups['k8s-master'] %}https://{{host}}:2379,{% endfor %}"
 
   # If you're using TLS enabled etcd uncomment the following.
   # You must also populate the Secret below with these files.
@@ -35,11 +35,11 @@ data:
       "plugins": [
         {
           "type": "calico",
-          "log_level": "info",
+          "log_level": "debug",
           "etcd_endpoints": "__ETCD_ENDPOINTS__",
-          "etcd_key_file": "__ETCD_KEY_FILE__",
-          "etcd_cert_file": "__ETCD_CERT_FILE__",
-          "etcd_ca_cert_file": "__ETCD_CA_CERT_FILE__",
+          "etcd_key_file": "/etc/kubernetes/pki/cfssl/client-key.pem",
+          "etcd_cert_file": "/etc/kubernetes/pki/cfssl/client.pem",
+          "etcd_ca_cert_file": "/etc/kubernetes/pki/cfssl/ca.pem",
           "mtu": __CNI_MTU__,
           "ipam": {
               "type": "calico-ipam"
@@ -58,26 +58,6 @@ data:
         }
       ]
     }
-
----
-
-
-# The following contains k8s Secrets for use with a TLS enabled etcd cluster.
-# For information on populating Secrets, see http://kubernetes.io/docs/user-guide/secrets/
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: calico-etcd-secrets
-  namespace: kube-system
-data:
-  # Populate the following files with etcd TLS configuration if desired, but leave blank if
-  # not using TLS for etcd.
-  # This self-hosted install expects three files with the following names.  The values
-  # should be base64 encoded strings of the entire contents of each file.
-  # etcd-key: null
-  # etcd-cert: null
-  # etcd-ca: null
 
 ---
 
@@ -160,6 +140,11 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+
+            # TODO using config
+            - name: IP_AUTODETECTION_METHOD
+              value: interface=eth.*
+
             # Choose the backend to use.
             - name: CALICO_NETWORKING_BACKEND
               valueFrom:
@@ -185,7 +170,7 @@ spec:
             # chosen from this range. Changing this value after installation will have
             # no effect. This should fall within `--cluster-cidr`.
             - name: CALICO_IPV4POOL_CIDR
-              value: "192.168.0.0/16"
+              value: "100.64.0.0/10"
             # Disable file logging so `kubectl logs` works.
             - name: CALICO_DISABLE_FILE_LOGGING
               value: "true"
@@ -230,7 +215,7 @@ spec:
             - mountPath: /var/lib/calico
               name: var-lib-calico
               readOnly: false
-            - mountPath: /calico-secrets
+            - mountPath: /etc/kubernetes/pki/cfssl
               name: etcd-certs
         # This container installs the Calico CNI binaries
         # and CNI network config file on each node.
@@ -264,7 +249,7 @@ spec:
               name: cni-bin-dir
             - mountPath: /host/etc/cni/net.d
               name: cni-net-dir
-            - mountPath: /calico-secrets
+            - mountPath: /etc/kubernetes/pki/cfssl
               name: etcd-certs
       volumes:
         # Used by calico/node.
@@ -287,9 +272,8 @@ spec:
         # Mount in the etcd TLS secrets with mode 400.
         # See https://kubernetes.io/docs/concepts/configuration/secret/
         - name: etcd-certs
-          secret:
-            secretName: calico-etcd-secrets
-            defaultMode: 0400
+          hostPath:
+            path: /etc/kubernetes/pki/cfssl
 ---
 
 apiVersion: v1
@@ -366,7 +350,7 @@ spec:
               value: policy,profile,workloadendpoint,node
           volumeMounts:
             # Mount in the etcd TLS secrets.
-            - mountPath: /calico-secrets
+            - mountPath: /etc/kubernetes/pki/cfssl
               name: etcd-certs
           readinessProbe:
             exec:
@@ -377,9 +361,8 @@ spec:
         # Mount in the etcd TLS secrets with mode 400.
         # See https://kubernetes.io/docs/concepts/configuration/secret/
         - name: etcd-certs
-          secret:
-            secretName: calico-etcd-secrets
-            defaultMode: 0400
+          hostPath:
+             path: /etc/kubernetes/pki/cfssl
 
 ---
 

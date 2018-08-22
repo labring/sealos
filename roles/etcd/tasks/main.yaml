@@ -1,10 +1,10 @@
 ---
-#- name: pull calico image
-#  shell: 'docker pull {{ item }}'
-#  with_items:
-#    - quay.io/calico/node:v3.2.0
-#    - quay.io/calico/cni:v3.2.0
-#    - quay.io/calico/kube-controllers:v3.2.0
+- name: pull calico image
+  shell: 'docker pull {{ item }}'
+  with_items:
+    - quay.io/calico/node:v3.2.0
+    - quay.io/calico/cni:v3.2.0
+    - quay.io/calico/kube-controllers:v3.2.0
 
 - name: clean /etc/kubernetes and etcd data
   shell: 'rm -rf {{ item }} && kubeadm reset -f'
