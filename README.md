@@ -1,5 +1,10 @@
 build a production kubernetes cluster
 
+# Features
+* support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
+* kubernetes master HA, HAproxy and keepalived
+* calico etcd TLS
+
 # run with docker
 ```
 docker run -v /Users/fanux/work/src/github.com/sealyun/sealos:/etc/ansible -v /Users/fanux:/data -it -w /etc/ansible fanux/ansible:latest bash
