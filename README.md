@@ -1,9 +1,13 @@
 build a production kubernetes cluster
 
 # Features
-* support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
-* kubernetes master HA, HAproxy and keepalived
-* calico etcd TLS
+- [x] support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
+- [x] kubernetes multi master 
+- [x] calico etcd TLS
+- [ ] master haproxy
+- [ ] master keepalived
+- [ ] join node
+- [ ] cluster health check
 
 # run with docker
 ## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.11.1 > 1.10.3)
