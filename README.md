@@ -1,12 +1,13 @@
 build a production kubernetes cluster
 
-# Features
+# Features & TODO list
 - [x] support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
-- [x] kubernetes multi master 
-- [x] calico etcd TLS
+- [x] kubernetes master cluster
+- [x] calico etcd TLS, calico using etcd cluster
+- [x] dashboard, heapster coreDNS addons
 - [ ] master haproxy
 - [ ] master keepalived
-- [ ] join node
+- [ ] join nodes, change kube-proxy configmap, change kubelet config
 - [ ] cluster health check
 
 # run with docker
