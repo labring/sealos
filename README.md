@@ -27,8 +27,13 @@ echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7fTirP9zPcx7wIjhsF+Dyu0A2sV5llC8jsm
 ```
 
 # install all
+Config your own hosts
 ```
 # cd /etc/ansible
+# vim hosts
+```
+
+```
 # ansible-playbook roles/install-all.yaml
 ```
 
