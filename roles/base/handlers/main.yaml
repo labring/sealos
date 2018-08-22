@@ -1,0 +1,5 @@
+- name: stop kubelet once
+  service: name=kubeletonce state=stop
+
+- name: start kubelet once
+  service: name=kubeletonce state=start

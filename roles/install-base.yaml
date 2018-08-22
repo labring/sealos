@@ -3,11 +3,6 @@
   roles:
   - { role: base }
 
-- hosts: k8s-master
-  roles:
-  - { role: etcd, when: order is defined }
-  - { role: kube-master, when: order is defined }
-
 #- hosts: slb
 #  roles:
 #  - { role: haproxy }
