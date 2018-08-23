@@ -1,7 +1,7 @@
 ---
-- hosts: k8s-all
+- hosts: k8s-master
   roles:
-  - { role: base }
+  - { role: haproxy, when: lb is defined}
 
 #- hosts: slb
 #  roles:

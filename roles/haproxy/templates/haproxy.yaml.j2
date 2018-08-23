@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    component: haproxy
+    tier: control-plane
+  name: haproxy
+  namespace: kube-system
+spec:
+  containers:
+  - image: haproxy:1.7
+    imagePullPolicy: IfNotPresent
+    name: haproxy
+    volumeMounts:
+    - mountPath: /usr/local/etc/haproxy
+      name: haproxy-conf
+  hostNetwork: true
+  volumes:
+  - hostPath:
+      path: /etc/haproxy
+      type: DirectoryOrCreate
+    name: haproxy-conf

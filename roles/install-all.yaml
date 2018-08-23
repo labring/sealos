@@ -8,6 +8,10 @@
   - { role: etcd, when: order is defined }
   - { role: kube-master, when: order is defined }
 
+- hosts: k8s-master
+  roles:
+  - { role: haproxy, when: lb is defined}
+
 #- hosts: slb
 #  roles:
 #  - { role: haproxy }
