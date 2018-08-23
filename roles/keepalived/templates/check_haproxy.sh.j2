@@ -1,0 +1,3 @@
+if [ `curl https://{{ ansible_default_ipv4.address }}:6444 --insecure |grep kind |wc -l` -eq 0 ] ; then
+    keepalived -X
+fi

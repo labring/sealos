@@ -1,23 +1,67 @@
-global
-  daemon
-  log 127.0.0.1 local0
-  log 127.0.0.1 local1 notice
-  maxconn 4096
-defaults
-  log               global
-  retries           3
-  maxconn           2000
-  timeout connect   5s
-  timeout client    50s
-  timeout server    50s
-frontend k8s
-  bind *:6444
-  mode tcp
-  default_backend k8s-backend
-backend k8s-backend
-  balance roundrobin
-  mode tcp
-  {% for host in groups['k8s-master'] %}
-  server {{hostvars[host].name}} {{ host }}:6443 check port 6443  inter 1500 rise 1 fall 3
-  {% endfor %}
+#global_defs {
+#   router_id k8s
+#}
+#
+#vrrp_script Checkhaproxy {
+#    script "/etc/keepalived/check_haproxy.sh"
+#    interval 3
+#    timeout 9
+#    fall 2
+#    rise 2
+#}
+#
+#vrrp_instance VI_1 {
+#    state {{ lb }}
+#
+#    interface {{ ansible_default_ipv4.interface }}
+#    virtual_router_id  100
+#    priority {{ priority }}
+#    advert_int 1
+#    nopreempt
+#    mcast_src_ip {{ ansible_default_ipv4.address }}
+#    authentication {
+#        auth_type PASS
+#        auth_pass kuburnetes
+#    }
+#    unicast_peer {
+#    {% for host in groups['k8s-master'] if hostvars[host].lb is defined %}
+#        {{ host }}   
+#    {% endfor %}
+#
+#    }
+#    virtual_ipaddress {
+#        {{vip}}
+#    }
+#    track_script {
+#        Checkhaproxy
+#    }
+#}
 
+global_defs {
+   router_id k8s
+}
+
+vrrp_script Checkhaproxy {
+    script "/etc/keepalived/check_haproxy.sh"
+    interval 3
+    weight 2
+}
+
+vrrp_instance VI_1 {
+    state {{ lb }}
+
+    interface {{ ansible_default_ipv4.interface }}
+    virtual_router_id  100
+    priority {{ priority }}
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass kuburnetes
+    }
+    virtual_ipaddress {
+         {{vip}} 
+    }
+    track_script {
+        Checkhaproxy
+    }
+}

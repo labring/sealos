@@ -12,6 +12,10 @@
   roles:
   - { role: haproxy, when: lb is defined}
 
+- hosts: k8s-master
+  roles:
+  - { role: keepalived, when: lb is defined}
+
 #- hosts: slb
 #  roles:
 #  - { role: haproxy }

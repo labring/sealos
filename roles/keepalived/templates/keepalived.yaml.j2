@@ -11,6 +11,8 @@ spec:
   - image: fanux/keepalived:latest
     imagePullPolicy: IfNotPresent
     name: keepalived
+    securityContext:
+        privileged: true
     volumeMounts:
     - mountPath: /etc/keepalived
       name: haproxy-conf

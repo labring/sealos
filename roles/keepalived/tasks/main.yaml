@@ -1,11 +1,12 @@
 ---
-- name: make haproxy config dir
+- name: make keepalived config dir
   file: 
-      path: /etc/haproxy
+      path: /etc/keepalived
       state: directory
 
-- name: start haproxy as static pod
+- name: start keepalived as static pod
   template: 'src={{ item.src }} dest={{ item.dest }} mode=0644'
   with_items:
-     - {src: '/etc/ansible/roles/haproxy/templates/haproxy.cfg.j2' , dest: '/etc/haproxy/haproxy.cfg'}
-     - {src: '/etc/ansible/roles/haproxy/templates/haproxy.yaml.j2' , dest: '/etc/kubernetes/manifests/haproxy.yaml'}
+     - {src: '/etc/ansible/roles/keepalived/templates/keepalived.conf.j2' , dest: '/etc/keepalived/keepalived.conf'}
+     - {src: '/etc/ansible/roles/keepalived/templates/keepalived.yaml.j2' , dest: '/etc/kubernetes/manifests/keepalived.yaml'}
+     - {src: '/etc/ansible/roles/keepalived/templates/check_haproxy.sh.j2' , dest: '/etc/keepalived/check_haproxy.sh'}
