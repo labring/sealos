@@ -5,7 +5,7 @@ build a production kubernetes cluster
 - [x] kubernetes master cluster
 - [x] calico etcd TLS, calico using etcd cluster
 - [x] dashboard, heapster coreDNS addons
-- [ ] master haproxy
+- [x] master haproxy
 - [ ] master keepalived
 - [ ] join nodes, change kube-proxy configmap, change kubelet config
 - [ ] cluster health check
