@@ -1,16 +1,11 @@
 ---
-#- name: pull calico image
-#  shell: 'docker pull {{ item }}'
-#  with_items:
-#    - quay.io/calico/node:v3.2.0
-#    - quay.io/calico/cni:v3.2.0
-#    - quay.io/calico/kube-controllers:v3.2.0
+- name: make haproxy config dir
+  file: 
+      path: /etc/haproxy
+      state: directory
 
-- name: copy kubernetes.tar.gz
-  copy: 'src=/data/kube1.11.1.tar.gz dest=/root/ mode=0644'
-
-- name: init every node 
-  shell: 'cd /root && {{ item }}'
+- name: start haproxy as static pod
+  template: 'src={{ item.src }} dest={{ item.dest }} mode=0644'
   with_items:
-  - tar zxvf kube1.11.1.tar.gz
-  - cd kube/shell && sh init.sh
+     - {src: '/etc/ansible/roles/haproxy/templates/haproxy.cfg.j2' , dest: '/etc/haproxy/haproxy.cfg'}
+     - {src: '/etc/ansible/roles/haproxy/templates/haproxy.yaml.j2' , dest: '/etc/kubernetes/manifests/haproxy.yaml'}

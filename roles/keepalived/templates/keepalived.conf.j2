@@ -1,0 +1,23 @@
+global
+  daemon
+  log 127.0.0.1 local0
+  log 127.0.0.1 local1 notice
+  maxconn 4096
+defaults
+  log               global
+  retries           3
+  maxconn           2000
+  timeout connect   5s
+  timeout client    50s
+  timeout server    50s
+frontend k8s
+  bind *:6444
+  mode tcp
+  default_backend k8s-backend
+backend k8s-backend
+  balance roundrobin
+  mode tcp
+  {% for host in groups['k8s-master'] %}
+  server {{hostvars[host].name}} {{ host }}:6443 check port 6443  inter 1500 rise 1 fall 3
+  {% endfor %}
+

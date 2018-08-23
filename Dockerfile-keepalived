@@ -1,0 +1,3 @@
+FROM centos:7.4.1708
+RUN yum install -y keepalived
+CMD /usr/sbin/keepalived -P -C -d -D -S 7 -f /etc/keepalived/keepalived.conf --dont-fork --log-console 
