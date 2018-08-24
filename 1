@@ -1,7 +1,0 @@
----
-- name: fetch kubeadm join command
-  shell: kubeadm token create --print-join-command
-  register: join
-
-- name: fetch kubeadm join command
-  debug: msg={{ join.stdout }}
