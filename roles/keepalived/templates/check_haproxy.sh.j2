@@ -1,3 +1,3 @@
 if [ `curl https://{{ ansible_default_ipv4.address }}:6444 --insecure |grep kind |wc -l` -eq 0 ] ; then
-    keepalived -X
+   exit 1 # just exit, MASTER will reduce weight(-25), so vip will move on BACKUP node
 fi

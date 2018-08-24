@@ -1,7 +1,7 @@
 ---
 - hosts: k8s-all
   roles:
-  - { role: base }
+  - { role: kube-node }
 
 #- hosts: slb
 #  roles:

@@ -44,7 +44,7 @@ global_defs {
 vrrp_script Checkhaproxy {
     script "/etc/keepalived/check_haproxy.sh"
     interval 3
-    weight 2
+    weight -25 # priority MASTER(100) - 25 < BACKUP(80)
 }
 
 vrrp_instance VI_1 {

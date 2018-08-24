@@ -16,11 +16,6 @@
   roles:
   - { role: keepalived, when: lb is defined}
 
-#- hosts: slb
-#  roles:
-#  - { role: haproxy }
-#  - { role: keepalived }
-#
-#- hosts: k8s-node
-#  roles:
-#    - [role: node]
+- hosts: k8s-all
+  roles:
+  - { role: kube-node }

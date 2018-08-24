@@ -1,16 +1,39 @@
 ---
-#- name: pull calico image
-#  shell: 'docker pull {{ item }}'
-#  with_items:
-#    - quay.io/calico/node:v3.2.0
-#    - quay.io/calico/cni:v3.2.0
-#    - quay.io/calico/kube-controllers:v3.2.0
-
-- name: copy kubernetes.tar.gz
-  copy: 'src=/data/kube1.11.1.tar.gz dest=/root/ mode=0644'
-
-- name: init every node 
-  shell: 'cd /root && {{ item }}'
+- name: make etcd dirs
+  file:
+       path: '{{ item }}'
+       state: directory
   with_items:
-  - tar zxvf kube1.11.1.tar.gz
-  - cd kube/shell && sh init.sh
+     - /etc/kubernetes/pki/cfssl
+  when: ( role is defined ) and ( role == 'node' )
+
+- name: fetch crt files
+  fetch: 'src=/etc/kubernetes/pki/cfssl/{{ item }} dest=/tmp/ mode=0644 flat=yes'
+  with_items: '{{ etcd_crts }}'
+  when: ( order is defined ) and ( order == 1 )
+
+- name: copy crt file
+  copy: 'src=/tmp/{{ item }} dest=/etc/kubernetes/pki/cfssl/{{ item }}'
+  with_items: '{{ etcd_crts }}'
+  when: ( role is defined ) and ( role == 'node' )
+
+- name: fetch kubeadm join command
+  shell: 'kubeadm token create --print-join-command | sed s/{{ ansible_default_ipv4.address }}:6443/{{ vip }}:6444/g'
+  register: join
+  when: ( order is defined ) and ( order == 1 )
+
+- name: set join command fact
+  set_fact: join={{join.stdout}}
+  when: ( order is defined ) and ( order == 1 )
+
+- name: join node
+  shell: '{{ hostvars[groups["k8s-master"][0]]["join"] }}'
+  when: ( role is defined ) and ( role == 'node' )
+
+- name: config kubelet to using vip
+  shell: kubectl config --kubeconfig /etc/kubernetes/kubelet.conf set-cluster default-cluster --server=https://{{ vip }}:6444
+  when: ( role is defined ) and ( role == 'node' )
+
+- name: restart node kubelet
+  service: name=kubelet state=restarted
+  when: ( role is defined ) and ( role == 'node' )

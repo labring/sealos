@@ -12,13 +12,13 @@
 
 # using static pod to start haproxy, so kubelet must run on those nodes, you can use master node
 [k8s-master]
-10.1.86.203 name=node01 order=1 lb=MASTER lbname=lbmaster priority=100
-10.1.86.202 name=node02 order=2 lb=BACKUP lbname=lbbackup priority=80
+10.1.86.203 name=node01 order=1 role=master lb=MASTER lbname=lbmaster priority=100
+10.1.86.202 name=node02 order=2 role=master lb=BACKUP lbname=lbbackup priority=80
 #10.1.86.203 name=node03  order=3
-10.1.86.205 name=node03  order=3 
+10.1.86.205 name=node03 order=3 role=master 
 
 [k8s-node]
-10.1.86.204 name=node04 
+10.1.86.204 name=node04 role=node
 
 [k8s-all:children]
 k8s-master
