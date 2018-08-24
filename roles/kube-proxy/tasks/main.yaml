@@ -1,0 +1,14 @@
+---
+- name: recreate kube-proxy configmap
+  template: 'src={{ item.src }} dest={{ item.dest }} mode=0644'
+  with_items:
+      - {src: '/etc/ansible/roles/kube-proxy/templates/kube-proxy.yaml.j2' , dest: '/root/kube-proxy.yaml'}
+  when: ( order is defined ) and ( order == 1 )
+
+- name: restart all kube-proxy pod
+  shell: '{{ item }}'
+  with_items:
+  - kubectl apply -f /root/kube-proxy.yaml
+  - kubectl get pod -n kube-system | grep kube-proxy | awk '{print $1}' | xargs kubectl delete pod -n kube-system
+  when: ( order is defined ) and ( order == 1 )
+

@@ -7,7 +7,7 @@ build a production kubernetes cluster
 - [x] dashboard, heapster coreDNS addons
 - [x] master haproxy, using static pod
 - [x] master keepalived
-- [ ] join nodes, change kube-proxy configmap, change kubelet config
+- [x] join nodes, change kube-proxy configmap, change kubelet config
 - [ ] cluster health check
 - [ ] promethus support
 - [ ] EFK support

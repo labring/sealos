@@ -1,0 +1,13 @@
+---
+- hosts: k8s-all
+  roles:
+  - { role: kube-proxy }
+
+#- hosts: slb
+#  roles:
+#  - { role: haproxy }
+#  - { role: keepalived }
+#
+#- hosts: k8s-node
+#  roles:
+#    - [role: node]

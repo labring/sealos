@@ -18,4 +18,8 @@
 
 - hosts: k8s-all
   roles:
+  - { role: kube-proxy }
+
+- hosts: k8s-all
+  roles:
   - { role: kube-node }
