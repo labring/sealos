@@ -1,4 +1,8 @@
 ---
+- name: clean node
+  shell: kubeadm reset -f
+  when: ( role is defined ) and ( role == 'node' )
+
 - name: make etcd dirs
   file:
        path: '{{ item }}'
