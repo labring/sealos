@@ -13,7 +13,7 @@ build a production kubernetes cluster
 - [ ] EFK support
 - [ ] istio support
 
-# run with docker
+# ship on docker
 ## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.11.1 > 1.10.3)
 copy it to `/data` dir , if your version is not v1.11.1, you need change hosts config file,
 this project upgrade calico to 3.2.0, so it will pull new calico image
