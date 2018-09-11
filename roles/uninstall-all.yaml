@@ -1,0 +1,4 @@
+---
+- hosts: k8s-all
+  roles:
+  - { role: uninstall }
