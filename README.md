@@ -48,8 +48,3 @@ Config your own hosts
 ```
 # ansible-playbook roles/install-all.yaml
 ```
-
-# install etcd
-```
-# ansible-playbook roles/install-etcd.yaml
-```
