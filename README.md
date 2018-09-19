@@ -48,3 +48,8 @@ Config your own hosts
 ```
 # ansible-playbook roles/install-all.yaml
 ```
+
+# uninstall all
+```
+# ansible-playbook roles/uninstall-all.yaml
+```
