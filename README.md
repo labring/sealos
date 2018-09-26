@@ -11,7 +11,7 @@ build a production kubernetes cluster
 - [ ] cluster health check
 - [ ] promethus support
 - [ ] EFK support
-- [ ] istio support
+- [x] [istio support](https://sealyun.com/pro/istio/)
 
 # ship on docker
 ## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.11.1 > 1.10.3)
