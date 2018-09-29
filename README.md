@@ -18,7 +18,7 @@ copy it to /data dir , if your version is not v1.11.1, you need change hosts con
 
 docker run --rm -v /data/kube1.11.1.tar.gz:/data/kube1.11.1.tar.gz -it -w /etc/ansible fanux/sealos:latest bash
 generate ssh public key (in docker):   
-
+#rsa
 mkdir ~/.ssh
 cd ~/.ssh
 ssh-keygen -t rsa
