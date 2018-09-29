@@ -17,7 +17,7 @@ you need already has sealyun offline package ( default is v1.11.1 > 1.10.3)
 copy it to /data dir , if your version is not v1.11.1, you need change hosts config file, this project upgrade calico to 3.2.0, so it will pull new calico image
 
 docker run --rm -v /data/kube1.11.1.tar.gz:/data/kube1.11.1.tar.gz -it -w /etc/ansible fanux/sealos:latest bash
-generate ssh public key (in docker):
+generate ssh public key (in docker):   
 
 mkdir ~/.ssh
 cd ~/.ssh
