@@ -1,3 +1,5 @@
+[简体中文](https://github.com/fanux/sealos/blob/v1.12.0/docs/README_zh.md)
+
 build a production kubernetes cluster
 
 # Features & TODO list
