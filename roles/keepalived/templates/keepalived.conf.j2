@@ -1,50 +1,11 @@
-#global_defs {
-#   router_id k8s
-#}
-#
-#vrrp_script Checkhaproxy {
-#    script "/etc/keepalived/check_haproxy.sh"
-#    interval 3
-#    timeout 9
-#    fall 2
-#    rise 2
-#}
-#
-#vrrp_instance VI_1 {
-#    state {{ lb }}
-#
-#    interface {{ ansible_default_ipv4.interface }}
-#    virtual_router_id  100
-#    priority {{ priority }}
-#    advert_int 1
-#    nopreempt
-#    mcast_src_ip {{ ansible_default_ipv4.address }}
-#    authentication {
-#        auth_type PASS
-#        auth_pass kuburnetes
-#    }
-#    unicast_peer {
-#    {% for host in groups['k8s-master'] if hostvars[host].lb is defined %}
-#        {{ host }}   
-#    {% endfor %}
-#
-#    }
-#    virtual_ipaddress {
-#        {{vip}}
-#    }
-#    track_script {
-#        Checkhaproxy
-#    }
-#}
-
 global_defs {
-   router_id k8s
+   router_id kubernetes
 }
 
 vrrp_script Checkhaproxy {
     script "/etc/keepalived/check_haproxy.sh"
     interval 3
-    weight -25 # priority MASTER(100) - 25 < BACKUP(80)
+    weight -25 
 }
 
 vrrp_instance VI_1 {
@@ -54,12 +15,8 @@ vrrp_instance VI_1 {
     virtual_router_id  100
     priority {{ priority }}
     advert_int 1
-    authentication {
-        auth_type PASS
-        auth_pass kuburnetes
-    }
     virtual_ipaddress {
-         {{vip}} 
+         {{ vip }} 
     }
     track_script {
         Checkhaproxy

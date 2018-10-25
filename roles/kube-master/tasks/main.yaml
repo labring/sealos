@@ -27,7 +27,7 @@
 - name: kubeadm init master0
   shell: 'cd /root/kube/shell && {{ item }}'
   with_items:
-      - kubeadm init --config ../conf/kubeadm.yaml --ignore-preflight-errors=Port-10250 --ignore-preflight-errors=ExternalEtcdVersion --ignore-preflight-errors=FileAvailable--etc-kubernetes-manifests-etcd.yaml 
+      - kubeadm init --config ../conf/kubeadm.yaml --ignore-preflight-errors=Port-10252 --ignore-preflight-errors=Port-10251 --ignore-preflight-errors=Port-10250 --ignore-preflight-errors=ExternalEtcdVersion --ignore-preflight-errors=FileAvailable--etc-kubernetes-manifests-etcd.yaml 
       - rm -rf ~/.kube && mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config
       - kubectl taint nodes --all node-role.kubernetes.io/master-
       - kubectl apply -f ../conf/net/calico.yaml
