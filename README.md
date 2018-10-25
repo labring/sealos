@@ -1,3 +1,5 @@
+[简体中文](https://github.com/fanux/sealos/blob/v1.12.0/docs/README_zh.md)
+
 build a production kubernetes cluster
 
 # Features & TODO list
@@ -11,7 +13,7 @@ build a production kubernetes cluster
 - [ ] cluster health check
 - [ ] promethus support
 - [ ] EFK support
-- [ ] istio support
+- [x] [istio support](https://sealyun.com/pro/istio/)
 
 # ship on docker
 ## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.11.1 > 1.10.3)

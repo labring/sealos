@@ -14,3 +14,5 @@
   with_items:
   - tar zxvf kube{{ k8s_version }}.tar.gz
   - cd kube/shell && sh init.sh
+  - yum install ntpdate -y
+  - ntpdate 0.asia.pool.ntp.org
