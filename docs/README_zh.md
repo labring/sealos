@@ -32,7 +32,7 @@
 # 启动ansible容器与免密钥设置
 找台宿主机如你的PC，或者一台服务器，把下载好的离线包拷贝到/data目录，启动sealos容器，把离线包挂载进去：
 ```
-docker run --rm -v /data/kube1.12.0.tar.gz:/data/kube1.12.0.tar.gz -it -w /etc/ansible fanux/sealos:latest bash
+docker run --rm -v /data/kube1.12.0.tar.gz:/data/kube1.12.0.tar.gz -it -w /etc/ansible fanux/sealos:v1.12.0-beta bash
 ```
 
 在容器里面执行：
