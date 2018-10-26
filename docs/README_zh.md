@@ -17,8 +17,6 @@
 # ship on docker
 ## 你必须已经有了[sealyun kubernetes离线安装包](https://sealyun.com/pro/products/) (默认支持kubernetes版本v1.12.x，针对特殊版本的适配会切分支处理)
 
-针对后续高版本会有更多优化
-
 大概原理是为了减少大家搭建ansible和sealos的环境，客户端的东西都放到docker里，把安装包挂载到容器中，然后ansible脚本会把包分发到你在hosts文件中配置的所有服务器上
 
 所以大概分成三步：
