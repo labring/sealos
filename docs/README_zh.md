@@ -76,6 +76,14 @@ k8s-node
 [all:vars]
 vip=10.1.86.209   # 同网段未被占用IP
 k8s_version=1.12.0  # kubernetes版本
+need_ntp=true  #是否安装ntp
+tar_local=/data  #k8s安装目录
+etcd_image=k8s.gcr.io/etcd:3.2.24 #镜像名称
+haproxy_image=haproxy:1.7
+keepalived_image=fanux/keepalived:2.0.8
+calico_node_image=quay.io/calico/node:v3.2.2
+calico_cni_image=quay.io/calico/cni:v3.2.2
+calico_controller_image=quay.io/calico/kube-controllers:v3.2.2
 ip_interface=eth.*
 etcd_crts=["ca-key.pem","ca.pem","client-key.pem","client.pem","member1-key.pem","member1.pem","server-key.pem","server.pem","ca.csr","client.csr","member1.csr","server.csr"]
 k8s_crts=["apiserver.crt","apiserver-kubelet-client.crt","ca.crt", "front-proxy-ca.key","front-proxy-client.key","sa.pub", "apiserver.key","apiserver-kubelet-client.key",  "ca.key",  "front-proxy-ca.crt",  "front-proxy-client.crt" , "sa.key"]
