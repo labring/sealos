@@ -15,6 +15,12 @@ vrrp_instance VI_1 {
     virtual_router_id  100
     priority {{ priority }}
     advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass kuburnetes
+    }
+
     virtual_ipaddress {
          {{ vip }} 
     }
