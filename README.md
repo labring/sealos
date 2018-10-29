@@ -1,4 +1,4 @@
-[简体中文](https://github.com/fanux/sealos/blob/v1.12.0/docs/README_zh.md)
+[简体中文](https://github.com/fanux/sealos/blob/master/docs/README_zh.md)
 
 build a production kubernetes cluster
 
