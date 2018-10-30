@@ -58,4 +58,4 @@ Config your own hosts
 # version support
 | | v1.12|
 |--- | --- |
-|v1.0.0| [x]
+|v1.0.0| ✓
