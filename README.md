@@ -54,3 +54,8 @@ Config your own hosts
 ```
 # ansible-playbook roles/uninstall-all.yaml
 ```
+
+# version support
+| | v1.12|
+|--- | --- |
+|v1.0.0| [x]
