@@ -1,0 +1,21 @@
+---
+ - name: mkdir certs dir
+   shell: '{{ item }}'
+   with_items:
+   - rm -rf /root/certs
+   - mkdir -p /root/certs
+   when: ( order is defined ) and ( order == 1 )
+
+ - name: update dashboard ca
+   shell: 'cd /root/certs && {{ item }}'
+   with_items:
+   - openssl genrsa -des3 -passout pass:x -out dashboard.pass.key 2048
+   - openssl rsa -passin pass:x -in dashboard.pass.key -out dashboard.key
+   - rm -rf  dashboard.pass.key
+   - openssl req -new -key dashboard.key -out dashboard.csr -subj '/' -days 36500
+   - openssl x509 -req -sha256 -days 36500 -in dashboard.csr -signkey dashboard.key -out dashboard.crt
+   - rm -rf dashboard.csr
+   - kubectl delete secret  -n kube-system   kubernetes-dashboard-certs
+   - kubectl create secret generic kubernetes-dashboard-certs --from-file=/root/certs -n kube-system
+   - systemctl restart kubelet.service
+   when: ( order is defined ) and ( order == 1 )
