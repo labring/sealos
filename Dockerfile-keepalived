@@ -1,8 +1,10 @@
 FROM centos:7.4.1708
-RUN yum install -y  wget  && yum install -y gcc-c++ openssl-devel openssl && yum install -y net-tools
-RUN wget -O /usr/local/bin/dumb-init \
-    https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
-    && chmod +x /usr/local/bin/dumb-init
+RUN yum install -y  wget  && yum install -y gcc-c++ openssl-devel openssl && yum install -y net-tools && yum install -y python-setuptools && easy_install supervisor
+# RUN wget -O /usr/local/bin/dumb-init \
+#    https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 \
+#    && chmod +x /usr/local/bin/dumb-init
 RUN wget http://www.keepalived.org/software/keepalived-2.0.8.tar.gz && tar zxvf keepalived-2.0.8.tar.gz && cd keepalived-2.0.8 && ./configure && make && make install  
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["keepalived", "--all", "-d", "-D",  "-f", "/etc/keepalived/keepalived.conf", "--log-console"]
+# ENTRYPOINT ["/usr/local/bin/dumb-init", "--"]
+# CMD ["keepalived", "--all", "-d", "-D",  "-f", "/etc/keepalived/keepalived.conf", "--log-console"]
+COPY super-keep.conf .
+CMD ["supervisord", "-c", "super-keep.conf"]
