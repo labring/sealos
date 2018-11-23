@@ -9,6 +9,7 @@ pipeline:
         dockerfile: Dockerfile
         when:
             event: [push, tag]
+
         environment:
            PASSWD:
                from_secret: docker-hub-pass
