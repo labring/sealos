@@ -1,0 +1,14 @@
+pipeline:
+    publish:
+        image: plugins/docker
+        username: fanux
+        password: ${PASSWD}
+        email: fhtjob@hotmail.com
+        repo: fanux/sealos
+        tags: ${DRONE_TAG=latest}
+        dockerfile: Dockerfile
+        when:
+            event: [push, tag]
+        environment:
+           PASSWD:
+               from_secret: docker-hub-pass
