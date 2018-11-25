@@ -1,0 +1,12 @@
+kind: pipeline
+name: default
+
+steps:
+- name: build
+  image: plugins/docker
+  settings:
+    repo: fanux/sealos
+    tags: ${DRONE_TAG=latest}
+    username: fanux
+    password:
+      from_secret: docker-hub-pass

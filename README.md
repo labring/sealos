@@ -1,4 +1,4 @@
-[简体中文](https://github.com/fanux/sealos/blob/v1.12.0/docs/README_zh.md)
+[简体中文](https://github.com/fanux/sealos/blob/master/docs/README_zh.md)
 
 build a production kubernetes cluster
 
@@ -19,7 +19,7 @@ build a production kubernetes cluster
 ## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.12.x )
 copy it to `/data` dir 
 ```
-docker run --rm -v /data/kube1.11.1.tar.gz:/data/kube1.11.1.tar.gz -it -w /etc/ansible fanux/sealos:v1.12.0-beta.0 bash
+docker run --rm -v /data/kube1.11.1.tar.gz:/data/kube1.11.1.tar.gz -it -w /etc/ansible fanux/sealos:v1.12.0-beta bash
 ```
 
 generate ssh public key (in docker):
@@ -54,3 +54,8 @@ Config your own hosts
 ```
 # ansible-playbook roles/uninstall-all.yaml
 ```
+
+# version support
+| | kubernetes v1.12|
+|--- | --- |
+| sealos v1.0.0| ✓
