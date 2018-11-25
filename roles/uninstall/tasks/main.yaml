@@ -15,4 +15,3 @@
   - rm -rf /etc/keepalived
   - rm -rf /etc/haproxy
   - rm -rf /var/etcd
-  - docker rmi -f $(docker images | grep -v "IMAGE" | awk "{print \$3}")
