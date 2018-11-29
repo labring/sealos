@@ -2,6 +2,7 @@
   shell: 'cd /root && {{ item }}'
   with_items:
   - kubeadm reset -f
+  - ipvsadm -C
   - modprobe -r ipip
   - lsmod
   - rm -rf ~/.kube/
@@ -15,3 +16,5 @@
   - rm -rf /etc/keepalived
   - rm -rf /etc/haproxy
   - rm -rf /var/etcd
+  - rm -rf /root/kube-proxy.yaml
+  - rm -rf /tmp/*
