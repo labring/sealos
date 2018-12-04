@@ -10,9 +10,7 @@ build a production kubernetes cluster
 - [x] master haproxy, using static pod
 - [x] master keepalived
 - [x] join nodes, change kube-proxy configmap, change kubelet config
-- [ ] cluster health check
-- [ ] promethus support
-- [ ] EFK support
+- [x] promethus support, using promethus operator
 - [x] [istio support](https://sealyun.com/pro/istio/)
 
 # ship on docker
