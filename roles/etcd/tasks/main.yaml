@@ -67,7 +67,7 @@
   template: src=/etc/ansible/roles/etcd/templates/etcd.static-pod.j2  dest=/etc/kubernetes/manifests/etcd.yaml mode=0644
 
 - name: wait for etcd cluster init 
-  shell: sleep 30 
+  shell: sleep 150 
 
 - name: stop kubelet once
   service: name=kubeletonce state=stopped
