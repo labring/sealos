@@ -22,7 +22,7 @@
   when: ( role is defined ) and ( role == 'node' )
 
 - name: fetch kubeadm join command
-  shell: 'kubeadm token create --print-join-command | sed s/{{ ansible_default_ipv4.address }}:6443/{{ vip }}:6444/g'
+  shell: 'kubeadm token create --print-join-command |grep join| sed s/{{ ansible_default_ipv4.address }}:6443/{{ vip }}:6444/g'
   register: join
   when: ( order is defined ) and ( order == 1 )
 
