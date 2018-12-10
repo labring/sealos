@@ -54,6 +54,7 @@ Config your own hosts
 ```
 
 # version support
-| | kubernetes v1.12|
-|--- | --- |
-| sealos v1.0.0| ✓
+| | kubernetes v1.12| kubernetes v1.13|
+|--- | --- |--- |
+| sealos v1.0.0| ✓ ||
+| sealos v1.13.0| |✓|
