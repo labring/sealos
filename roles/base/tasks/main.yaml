@@ -12,6 +12,7 @@
 - name: init every node 
   shell: 'cd /root && {{ item }}'
   with_items:
+  - kubeadm reset -f && rm -rf /var/lib/etcd && rm -rf /var/etcd
   - tar zxvf kube{{ k8s_version }}.tar.gz
   - cd kube/shell && sh init.sh
   - yum install ntpdate -y

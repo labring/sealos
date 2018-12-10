@@ -1,19 +1,33 @@
-apiVersion: kubeadm.k8s.io/v1alpha2
-kind: MasterConfiguration
-networking:
-  podSubnet: 100.64.0.0/10
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: ""
+controllerManager: {}
+dns:
+  type: CoreDNS
+imageRepository: k8s.gcr.io
+kind: ClusterConfiguration
 kubernetesVersion: v{{ k8s_version }}
-
-apiServerCertSANs:
-- {{vip}}
+networking:
+  dnsDomain: cluster.local
+  serviceSubnet: 10.96.0.0/12
+  podSubnet: 100.64.0.0/10
+apiServer:
+    certSANs:
+    - {{vip}}
 {% for host in groups['k8s-master'] %}
-- {{host}}
-- {{hostvars[host].name}}
+    - {{host}}
+    - {{hostvars[host].name}}
 {% endfor %}
-- 127.0.0.1
-
-ignorePreflightErrors: all
-
+    - 127.0.0.1
+    extraArgs:
+       etcd-cafile: /etc/kubernetes/pki/cfssl/ca.pem
+       etcd-certfile: /etc/kubernetes/pki/cfssl/client.pem
+       etcd-keyfile: /etc/kubernetes/pki/cfssl/client-key.pem 
 etcd:
     external:
         caFile: /etc/kubernetes/pki/cfssl/ca.pem
@@ -24,11 +38,4 @@ etcd:
         - https://{{host}}:2379
 {% endfor %}
 
-kubeProxy:
-    config:
-       mode: "ipvs"
-
-apiServerExtraArgs:
-   etcd-cafile: /etc/kubernetes/pki/cfssl/ca.pem
-   etcd-certfile: /etc/kubernetes/pki/cfssl/client.pem
-   etcd-keyfile: /etc/kubernetes/pki/cfssl/client-key.pem 
+# ignorePreflightErrors: all
