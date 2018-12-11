@@ -35,6 +35,7 @@
       - kubectl apply -f ../conf/heapster/
       - kubectl apply -f ../conf/heapster/rbac
       - kubectl apply -f ../conf/dashboard
+      - kubectl apply -f ../conf/prometheus
   when: ( order is defined ) and ( order == 1 )
 
 # TODO edit kube-proxy config map
