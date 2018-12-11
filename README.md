@@ -2,7 +2,7 @@
 
 build a production kubernetes cluster
 
-# Features & TODO list
+# Features
 - [x] support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
 - [x] kubernetes master cluster
 - [x] calico etcd TLS, calico using etcd cluster
@@ -14,10 +14,10 @@ build a production kubernetes cluster
 - [x] [istio support](https://sealyun.com/pro/istio/)
 
 # ship on docker
-## you need already has [sealyun offline package](https://sealyun.com/pro/products/) ( default is v1.12.x )
+## you need already has [sealyun offline package](https://sealyun.com/pro/products/) 
 copy it to `/data` dir 
 ```
-docker run --rm -v /data/kube1.11.1.tar.gz:/data/kube1.11.1.tar.gz -it -w /etc/ansible fanux/sealos:v1.12.0-beta bash
+docker run --rm -v /data/kube1.13.0.tar.gz:/data/kube1.13.0.tar.gz -it -w /etc/ansible fanux/sealos:v1.13.0 bash
 ```
 
 generate ssh public key (in docker):
