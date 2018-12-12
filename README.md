@@ -58,3 +58,6 @@ Config your own hosts
 |--- | --- |--- |
 | sealos v1.0.0| ✓ ||
 | sealos v1.13.0| |✓|
+
+# 公众号：
+![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
