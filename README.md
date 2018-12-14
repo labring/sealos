@@ -1,4 +1,4 @@
-[简体中文](https://github.com/fanux/sealos/blob/master/docs/README_zh.md)
+[简体中文](https://sealyun.com/post/sealos/)
 
 build a production kubernetes cluster
 
@@ -25,13 +25,11 @@ generate ssh public key (in docker):
 mkdir ~/.ssh
 cd ~/.ssh
 ssh-keygen -t rsa -b 2048 # please click "Enter" to end
-ssh-copy-id $IP # $IP is the virtual machine or machine ip address. Enter the yes and root passwords as prompted.
+ssh-copy-id $IP # $IP is the virtual machine or machine ip address. 
 ```
 check:
-
 ``` 
 ssh $IP
-
 ```
 
 # install all
