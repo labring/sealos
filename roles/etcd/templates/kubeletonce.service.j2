@@ -6,6 +6,7 @@ After=network.target
 [Service]
 Type=notify
 ExecStart=/usr/bin/kubelet --pod-manifest-path=/etc/kubernetes/manifests
+ExecStart=--cgroup-dirver=systemd
 ExecReload=/bin/kill -s HUP $MAINPID
 LimitNOFILE=infinity
 LimitNPROC=infinity
