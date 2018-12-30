@@ -1,4 +1,5 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
+[![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
 [简体中文](https://sealyun.com/post/sealos/)
 [离线包购买市场](http://store.lameleg.com/)
