@@ -12,13 +12,13 @@
 
 # using static pod to start haproxy, so kubelet must run on those nodes, you can use master node
 [k8s-master]
-10.1.86.204 name=node01 order=1 role=master lb=MASTER lbname=lbmaster priority=100
-10.1.86.205 name=node02 order=2 role=master lb=BACKUP lbname=lbbackup priority=80
+10.1.86.201 name=node01 order=1 role=master lb=MASTER lbname=lbmaster priority=100
+10.1.86.202 name=node02 order=2 role=master lb=BACKUP lbname=lbbackup priority=80
 #10.1.86.203 name=node03  order=3
-10.1.86.206 name=node03 order=3 role=master 
+10.1.86.203 name=node03 order=3 role=master 
 
 [k8s-node]
-10.1.86.207 name=node04 role=node
+10.1.86.205 name=node04 role=node
 
 [k8s-all:children]
 k8s-master
@@ -26,7 +26,7 @@ k8s-node
 
 [all:vars]
 vip=10.1.86.209
-k8s_version=1.13.0
+k8s_version=1.13.2
 ip_interface=eth.*
 etcd_crts=["ca-key.pem","ca.pem","client-key.pem","client.pem","member1-key.pem","member1.pem","server-key.pem","server.pem","ca.csr","client.csr","member1.csr","server.csr"]
 k8s_crts=["apiserver.crt","apiserver-kubelet-client.crt","ca.crt", "front-proxy-ca.key","front-proxy-client.key","sa.pub", "apiserver.key","apiserver-kubelet-client.key",  "ca.key",  "front-proxy-ca.crt",  "front-proxy-client.crt" , "sa.key"]
