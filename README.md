@@ -57,6 +57,12 @@ Config your own hosts
 |--- | --- |--- |
 | sealos v1.0.0| ✓ ||
 | sealos v1.13.0| |✓|
+| sealos v1.13.2| |✓|
+
+# ChangeLog
+> v1.13.2
+
+* update keepalived in docker, throw away supervisor, keepalived in docker become perfect
 
 # 公众号：
 ![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
