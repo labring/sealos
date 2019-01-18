@@ -7,7 +7,7 @@
 #    - quay.io/calico/kube-controllers:v3.2.0
 
 - name: copy kubernetes.tar.gz
-  copy: 'src=/data/kube{{ k8s_version }}.tar.gz dest=/root/ mode=0644'
+  copy: 'src={{ tar_local }}/kube{{ k8s_version }}.tar.gz dest=/root/ mode=0644'
 
 - name: init every node 
   shell: 'cd /root && {{ item }}'

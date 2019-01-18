@@ -25,6 +25,7 @@ k8s-master
 k8s-node
 
 [all:vars]
+tar_local=/data
 vip=10.1.86.209
 k8s_version=1.13.2
 ip_interface=eth.*
