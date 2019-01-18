@@ -75,6 +75,7 @@ k8s-node
 
 [all:vars]
 tar_local=/data  #k8s安装目录
+need_ntp=true  #是否安装ntp
 vip=10.1.86.209   # 同网段未被占用IP
 k8s_version=1.12.0  # kubernetes版本
 ip_interface=eth.*

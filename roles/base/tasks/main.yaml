@@ -15,5 +15,10 @@
   - kubeadm reset -f || true && rm -rf /var/lib/etcd && rm -rf /var/etcd
   - tar zxvf kube{{ k8s_version }}.tar.gz
   - cd kube/shell && sh init.sh
+
+- name: ntp config
+  shell: '{{ item }}'
+  with_items:
   - yum install ntpdate -y
-  - ntpdate 0.asia.pool.ntp.org
+  - ntpdate 0.asia.pool.ntp.org  
+  when:  ( need_ntp == 'true' )
