@@ -8,7 +8,7 @@ metadata:
   namespace: kube-system
 spec:
   containers:
-  - image: fanux/keepalied:alpine-2.0.8
+  - image: {{ keepalived_image }}
     imagePullPolicy: IfNotPresent
     name: keepalived
     securityContext:
