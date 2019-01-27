@@ -9,7 +9,7 @@
 - [x] haproxy节点使用keepalived提供虚拟IP，任意一个节点宕机虚拟IP可实现漂移，不影响node连接master
 - [x] node节点与kube-proxy配置使用虚拟IP
 - [ ] 集群健康检测功能
-- [ ] promethus 监控功能，一键安装，无需配置
+- [x] promethus 监控功能，一键安装，无需配置
 - [ ] EFK 日志收集功能
 - [ ] 分布式HA模式，不用keepalived，减少集群构建出错概率，无VIP切换时间
 - [x] [istio 微服务支持](https://sealyun.com/pro/istio/)
@@ -52,6 +52,7 @@ cd ~/.ssh
 echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7fTirP9zPcx7wIjhsF+Dyu0A2sV5llC8jsmp/xtiyuJirE3mclpNEqgrzHC26f+ckfzwoE0HPU0wDPxbWFl3B0K89EwJSBsVZSZ0VLYnZp0u2JgwCLZzZzKfY0018yoqoL9KHz/68RpqtG2bWVf0/WSj+4hN7xTRpRTtXJHBOQRQBfqVSIcfMBSEnO15buUbDaLol/HvQd0YBrWwafQtMacmBlqDG0Z6/yeY4sTNRVRV2Uu5TeaHfzgYgmY9+NxtvPn8Td6tgZtq7cVU//kSsbzkUzDSD8zsh8kPUm4yljT5tYM1cPFLGM4m/zqAjAZN2YaEdFckJFAQ7TWAK857d root@8682294b9464" >> authorized_keys
 ```
 这样公钥分发工作完成了，所有的机器直接ssh无需输入密码即可登录
+然后登录每台机器, 对hostname进行修改, 要求hostname唯一,不与其他机器重复.
 
 # 修改配置
 Config your own hosts

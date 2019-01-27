@@ -31,11 +31,21 @@ cd ~/.ssh
 ssh-keygen -t rsa -b 2048 # please click "Enter" to end
 ssh-copy-id $IP # $IP is the virtual machine or machine ip address. 
 ```
-check:
+check ssh:
 ``` 
 ssh $IP
 ```
-
+each member have a different name flag specified hostname can be a good choice
+```
+$ hostnamectl set-hostname k8s-master
+$ vi /etc/hosts
+127.0.0.1  k8s-master
+$ reboot
+```
+check hostname:
+```
+hostname
+```
 # install all
 Config your own hosts
 ```
