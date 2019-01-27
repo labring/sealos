@@ -35,17 +35,8 @@ check ssh:
 ``` 
 ssh $IP
 ```
-each member have a different name flag specified hostname can be a good choice
-```
-$ hostnamectl set-hostname k8s-master
-$ vi /etc/hosts
-127.0.0.1  k8s-master
-$ reboot
-```
-check hostname:
-```
-hostname
-```
+Ensure that the hostnames of all hosts are not duplicated. (hostnamectl set-hostname xxx)!
+
 # install all
 Config your own hosts
 ```

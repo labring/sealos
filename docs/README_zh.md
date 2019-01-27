@@ -8,10 +8,7 @@
 - [x] 使用haproxy负载master节点，同样是用static pod，这样可通过统一监控pod状态来监控haproxy是否健康
 - [x] haproxy节点使用keepalived提供虚拟IP，任意一个节点宕机虚拟IP可实现漂移，不影响node连接master
 - [x] node节点与kube-proxy配置使用虚拟IP
-- [ ] 集群健康检测功能
 - [x] promethus 监控功能，一键安装，无需配置
-- [ ] EFK 日志收集功能
-- [ ] 分布式HA模式，不用keepalived，减少集群构建出错概率，无VIP切换时间
 - [x] [istio 微服务支持](https://sealyun.com/pro/istio/)
 
 # ship on docker
