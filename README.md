@@ -64,6 +64,7 @@ Config your own hosts
 > v1.13.2
 
 * update keepalived in docker, throw away supervisor, keepalived in docker become perfect
+* update keepalived to 2.0.12, fix CPU overload bug.
 
 # 公众号：
 ![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
