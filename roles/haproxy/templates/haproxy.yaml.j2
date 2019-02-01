@@ -8,7 +8,7 @@ metadata:
   namespace: kube-system
 spec:
   containers:
-  - image: haproxy:1.7
+  - image: {{ haproxy_image }}
     imagePullPolicy: IfNotPresent
     name: haproxy
     volumeMounts:

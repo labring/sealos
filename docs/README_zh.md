@@ -8,10 +8,7 @@
 - [x] 使用haproxy负载master节点，同样是用static pod，这样可通过统一监控pod状态来监控haproxy是否健康
 - [x] haproxy节点使用keepalived提供虚拟IP，任意一个节点宕机虚拟IP可实现漂移，不影响node连接master
 - [x] node节点与kube-proxy配置使用虚拟IP
-- [ ] 集群健康检测功能
-- [ ] promethus 监控功能，一键安装，无需配置
-- [ ] EFK 日志收集功能
-- [ ] 分布式HA模式，不用keepalived，减少集群构建出错概率，无VIP切换时间
+- [x] promethus 监控功能，一键安装，无需配置
 - [x] [istio 微服务支持](https://sealyun.com/pro/istio/)
 
 # ship on docker
@@ -52,6 +49,7 @@ cd ~/.ssh
 echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7fTirP9zPcx7wIjhsF+Dyu0A2sV5llC8jsmp/xtiyuJirE3mclpNEqgrzHC26f+ckfzwoE0HPU0wDPxbWFl3B0K89EwJSBsVZSZ0VLYnZp0u2JgwCLZzZzKfY0018yoqoL9KHz/68RpqtG2bWVf0/WSj+4hN7xTRpRTtXJHBOQRQBfqVSIcfMBSEnO15buUbDaLol/HvQd0YBrWwafQtMacmBlqDG0Z6/yeY4sTNRVRV2Uu5TeaHfzgYgmY9+NxtvPn8Td6tgZtq7cVU//kSsbzkUzDSD8zsh8kPUm4yljT5tYM1cPFLGM4m/zqAjAZN2YaEdFckJFAQ7TWAK857d root@8682294b9464" >> authorized_keys
 ```
 这样公钥分发工作完成了，所有的机器直接ssh无需输入密码即可登录
+然后登录每台机器, 对hostname进行修改, 要求hostname唯一,不与其他机器重复.
 
 # 修改配置
 Config your own hosts
@@ -74,8 +72,16 @@ k8s-master
 k8s-node
 
 [all:vars]
+tar_local=/data  #k8s安装目录
+need_ntp=true  #是否安装ntp
 vip=10.1.86.209   # 同网段未被占用IP
 k8s_version=1.12.0  # kubernetes版本
+etcd_image=k8s.gcr.io/etcd:3.2.24 #镜像名称
+haproxy_image=haproxy:1.7
+keepalived_image=fanux/keepalied:alpine-2.0.8
+calico_node_image=quay.io/calico/node:v3.2.2
+calico_cni_image=quay.io/calico/cni:v3.2.2
+calico_controller_image=quay.io/calico/kube-controllers:v3.2.2
 ip_interface=eth.*
 etcd_crts=["ca-key.pem","ca.pem","client-key.pem","client.pem","member1-key.pem","member1.pem","server-key.pem","server.pem","ca.csr","client.csr","member1.csr","server.csr"]
 k8s_crts=["apiserver.crt","apiserver-kubelet-client.crt","ca.crt", "front-proxy-ca.key","front-proxy-client.key","sa.pub", "apiserver.key","apiserver-kubelet-client.key",  "ca.key",  "front-proxy-ca.crt",  "front-proxy-client.crt" , "sa.key"]

@@ -31,10 +31,11 @@ cd ~/.ssh
 ssh-keygen -t rsa -b 2048 # please click "Enter" to end
 ssh-copy-id $IP # $IP is the virtual machine or machine ip address. 
 ```
-check:
+check ssh:
 ``` 
 ssh $IP
 ```
+Ensure that the hostnames of all hosts are not duplicated. (hostnamectl set-hostname xxx)!
 
 # install all
 Config your own hosts
@@ -57,6 +58,13 @@ Config your own hosts
 |--- | --- |--- |
 | sealos v1.0.0| ✓ ||
 | sealos v1.13.0| |✓|
+| sealos v1.13.2| |✓|
+
+# ChangeLog
+> v1.13.2
+
+* update keepalived in docker, throw away supervisor, keepalived in docker become perfect
+* update keepalived to 2.0.12, fix CPU overload bug.
 
 # 公众号：
 ![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
