@@ -15,10 +15,10 @@ build a production kubernetes cluster
 # Quick Start
 |ip | role|
 | --- | --- |
-| 10.103.97.100 | master0|
-| 10.103.97.101 | master0|
-| 10.103.97.102 | master0|
-| 10.103.97.1 | virtulIP|
+| 10.103.97.200 | master0|
+| 10.103.97.201 | master0|
+| 10.103.97.202 | master0|
+| 10.103.97.2 | virtulIP|
 | apiserver.cluster.local | apiserver resove name|
 
 
@@ -39,53 +39,53 @@ apiServer:
         - 172.20.241.206
         - 172.20.241.207
         - 172.20.241.208
-        - 10.103.97.1          # virturl ip
+        - 10.103.97.2          # virturl ip
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
         excludeCIDRs: 
-        - "10.103.97.1/32" # if you don't add this kube-proxy will clean your ipvs rule(kube-proxy still remove it)
+        - "10.103.97.2/32" # if you don't add this kube-proxy will clean your ipvs rule(kube-proxy still remove it)
 ```
-## On master0 10.103.97.100
+## On master0 10.103.97.200
 ```
-echo "10.103.97.100 apiserver.cluster.local" >> /etc/hosts
+echo "10.103.97.200 apiserver.cluster.local" >> /etc/hosts
 kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs  
 mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config
 kubectl apply -f https://docs.projectcalico.org/v3.6/getting-started/kubernetes/installation/hosted/kubernetes-datastore/calico-networking/1.7/calico.yaml # install calico
 ```
 
-## On master1 10.103.97.101
+## On master1 10.103.97.201
 ```
-echo "10.103.97.100 apiserver.cluster.local" >> /etc/hosts # resove to master0, change it to master1 when master1 init success
-kubeadm join 10.103.97.100:6443 --token 9vr73a.a8uxyaju799qwdjv \
+echo "10.103.97.200 apiserver.cluster.local" >> /etc/hosts # resove to master0, change it to master1 when master1 init success
+kubeadm join 10.103.97.200:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 \
     --experimental-control-plane \
     --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07 
 
-sed "s/10.103.97.100/10.103.97.101/g" -i /etc/hosts  # if you don't change this, kubelet and kube-proxy will also using master0 apiserver, when master0 down, everything dead!
+sed "s/10.103.97.200/10.103.97.201/g" -i /etc/hosts  # if you don't change this, kubelet and kube-proxy will also using master0 apiserver, when master0 down, everything dead!
 ```
 
-## On master2 10.103.97.102
+## On master2 10.103.97.202
 ```
-echo "10.103.97.100 apiserver.cluster.local" >> /etc/hosts
-kubeadm join 10.103.97.100:6443 --token 9vr73a.a8uxyaju799qwdjv \
+echo "10.103.97.200 apiserver.cluster.local" >> /etc/hosts
+kubeadm join 10.103.97.200:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 \
     --experimental-control-plane \
     --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07  
 
-sed "s/10.103.97.100/10.103.97.101/g" -i /etc/hosts
+sed "s/10.103.97.200/10.103.97.201/g" -i /etc/hosts
 ```
 
 ## On your nodes
 Join your nodes with local LVS LB 
 ```
-echo "10.103.97.1 apiserver.cluster.local" >> /etc/hosts   # using vip
-kubeadm join 10.103.97.1:6443 --token 9vr73a.a8uxyaju799qwdjv \
-    --master 10.103.97.100:6443 \
-    --master 10.103.97.101:6443 \
-    --master 10.103.97.102:6443 \
+echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
+kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
+    --master 10.103.97.200:6443 \
+    --master 10.103.97.201:6443 \
+    --master 10.103.97.202:6443 \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
 ```
 Life is much easier!   
@@ -94,9 +94,9 @@ Life is much easier!
 ```
   +----------+                       +---------------+  virturl server: 127.0.0.1:6443
   | mater0   |<----------------------| ipvs nodes    |    real servers:
-  +----------+                      |+---------------+            10.103.97.100:6443
-                                    |                             10.103.97.101:6443
-  +----------+                      |                             10.103.97.102:6443
+  +----------+                      |+---------------+            10.103.97.200:6443
+                                    |                             10.103.97.201:6443
+  +----------+                      |                             10.103.97.202:6443
   | mater1   |<---------------------+
   +----------+                      |
                                     |
