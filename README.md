@@ -2,6 +2,7 @@
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
 [简体中文,老版本](https://sealyun.com/post/sealos/)
+[简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
 
 [离线包购买市场](http://store.lameleg.com/)
 
