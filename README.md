@@ -22,7 +22,7 @@ build a production kubernetes cluster
 | apiserver.cluster.local | apiserver resove name|
 
 
-## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.30-kubeadm-lvscare)support master HA with local LVS loadbalance.
+## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.30-kubeadm-lvscare), support master HA with local LVS loadbalance.
 
 ## Config kubeadm
 cat kubeadm-config.yaml :
