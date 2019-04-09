@@ -23,7 +23,7 @@ build a production kubernetes cluster
 | apiserver.cluster.local | apiserver resove name|
 
 
-## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.30-kubeadm-lvscare), support master HA with local LVS loadbalance.
+## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.31-kubeadm-lvscare), support master HA with local LVS loadbalance.
 
 ## Config kubeadm
 cat kubeadm-config.yaml :
@@ -87,8 +87,7 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --master 10.103.97.200:6443 \
     --master 10.103.97.201:6443 \
     --master 10.103.97.202:6443 \
-    --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 \
-    --ignore-preflight-errors=DirAvailable--etc-kubernetes-manifests
+    --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 
 ```
 Life is much easier!   
 
