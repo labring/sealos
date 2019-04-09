@@ -12,14 +12,6 @@ Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
 
 build a production kubernetes cluster
 
-# Features
-- [x] support etcd cluster and TLS, using static pod to init etcd cluster, so monitor and management will be easy
-- [x] kubernetes master cluster
-- [x] calico etcd TLS, calico using etcd cluster
-- [x] dashboard, heapster coreDNS addons
-- [x] promethus support, using promethus operator
-- [x] [istio support](https://sealyun.com/pro/istio/)
-
 # Quick Start
 |ip | role|
 | --- | --- |
