@@ -8,7 +8,7 @@
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 # Sealos 2.0
-Support kuberentes 1.14.0+
+Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
 
 build a production kubernetes cluster
 
@@ -30,8 +30,7 @@ build a production kubernetes cluster
 | apiserver.cluster.local | apiserver resove name|
 
 
-# This is a super kubeadm, support master HA with LVS loadbalance!
-## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.30-kubeadm-lvscare)
+## Download super [kubeadm](https://github.com/fanux/kube/releases/tag/v0.0.30-kubeadm-lvscare)support master HA with local LVS loadbalance.
 
 ## Config kubeadm
 cat kubeadm-config.yaml :
@@ -117,6 +116,9 @@ Life is much easier!
 Every node config a ipvs for masters LB.
 
 Then run a lvscare as a staic pod to check realserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
+
+# [LVScare](https://github.com/fanux/LVScare)
+This can care your masters ipvs rules.
 
 # 公众号：
 ![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
