@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/init"
+	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 )
 
@@ -30,10 +30,10 @@ var initCmd = &cobra.Command{
 	Short: "Simplest way to init your kubernets HA cluster",
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install := init.BuildInstaller(init.User, init.Passwd, masters, nodes)
-		install.InstallMaster0()
-		install.JoinMasters()
-		install.JoinNodes()
+		i := install.BuildInstaller(install.User, install.Passwd, masters, nodes)
+		i.InstallMaster0()
+		i.JoinMasters()
+		i.JoinNodes()
 	},
 }
 
@@ -49,8 +49,8 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	initCmd.Flags().StringVar(&init.User, "user", "root", "servers user name for ssh")
-	initCmd.Flags().StringVar(&init.Passwd, "passwd", "passwd", "password for ssh")
+	initCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
+	initCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
 
 	initCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	initCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")

@@ -1,4 +1,4 @@
-package init
+package install
 
 import (
 	"fmt"
@@ -59,7 +59,7 @@ func (s *SealosInstaller) JoinMasters() {
 		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 		Cmd(master, cmdHosts)
 		Cmd(master, cmd)
-		cmdHosts := fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
+		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
 		Cmd(master, cmdHosts)
 	}
 }
@@ -84,8 +84,8 @@ func (s *SealosInstaller) JoinNodes() {
 
 //decode output to join token  hash and key
 func (s *SealosInstaller) decodeOutput(output []byte) {
-	s := string(output)
-	slice := strings.Split(s, "kubeadm join")
+	s0 := string(output)
+	slice := strings.Split(s0, "kubeadm join")
 	slice1 := strings.Split(slice[1], "\n")
 	slice1[0] += "kubeadm join "
 	fmt.Println("	join command is: %s", slice1[0])

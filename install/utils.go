@@ -1,4 +1,4 @@
-package init
+package install
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
 	}
 
-	clientConfig = &ssh.ClientConfig{
+	clientConfig := &ssh.ClientConfig{
 		User:    user,
 		Auth:    auth,
 		Timeout: time.Duration(5) * time.Minute,
@@ -54,11 +54,13 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 	}
 
 	addr := fmt.Sprintf("%s:22", host)
-	if client, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
+	client, err := ssh.Dial("tcp", addr, clientConfig)
+	if err != nil {
 		return nil, err
 	}
 
-	if session, err = client.NewSession(); err != nil {
+	session, err := client.NewSession()
+	if err != nil {
 		return nil, err
 	}
 
