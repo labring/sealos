@@ -1,12 +1,37 @@
 kind: pipeline
 name: default
+workspace:
+    base: /go
+    path: src/github.com/fanux/sealos
+
+# go mod vender
+#environment: 
+#    GO111MODULE: on
 
 steps:
 - name: build
+  image: golang:1.11.3
+  commands:
+      - go build -o sealos
+
+- name: publish-hub
   image: plugins/docker
   settings:
     repo: fanux/sealos
     tags: ${DRONE_TAG=latest}
-    username: fanux
+    username:
+      from_secret: docker-hub-user
+    dockerfile: Dockerfile
     password:
       from_secret: docker-hub-pass
+
+- name: publish
+  image: plugins/github-release
+  settings:
+    api_key: 
+        from_secret: git-release-token
+    files: sealos
+    title: ${DRONE_TAG}
+    note: Note.md
+    when:
+        event: tag
