@@ -34,4 +34,5 @@ steps:
     title: ${DRONE_TAG}
     note: Note.md
     when:
-        event: tag
+        event: 
+        - tag
