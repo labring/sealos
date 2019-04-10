@@ -1,0 +1,141 @@
+{
+	"ImportPath": "github.com/fanux/sealos",
+	"GoVersion": "go1.12",
+	"GodepVersion": "v80",
+	"Deps": [
+		{
+			"ImportPath": "github.com/fsnotify/fsnotify",
+			"Comment": "v1.4.7-11-g1485a34",
+			"Rev": "1485a34d5d5723fea214f5710708e19a831720e4"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/ast",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/parser",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/printer",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/scanner",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/strconv",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/hcl/token",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/parser",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/scanner",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/hashicorp/hcl/json/token",
+			"Comment": "v1.0.0-1-g65a6292",
+			"Rev": "65a6292f0157eff210d03ed1bf6c59b190b8b906"
+		},
+		{
+			"ImportPath": "github.com/inconshreveable/mousetrap",
+			"Comment": "v1.0",
+			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+		},
+		{
+			"ImportPath": "github.com/magiconair/properties",
+			"Comment": "v1.8.0-9-g7757cc9",
+			"Rev": "7757cc9fdb852f7579b24170bcacda2c7471bb6a"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/go-homedir",
+			"Comment": "v1.1.0",
+			"Rev": "af06845cf3004701891bf4fdb884bfe4920b3727"
+		},
+		{
+			"ImportPath": "github.com/mitchellh/mapstructure",
+			"Comment": "v1.1.2",
+			"Rev": "3536a929edddb9a5b34bd6861dc4a9647cb459fe"
+		},
+		{
+			"ImportPath": "github.com/pelletier/go-toml",
+			"Comment": "v1.3.0",
+			"Rev": "63909f0a90ab0f36909e8e044e46ace10cf13ba2"
+		},
+		{
+			"ImportPath": "github.com/spf13/afero",
+			"Comment": "v1.2.2",
+			"Rev": "588a75ec4f32903aa5e39a2619ba6a4631e28424"
+		},
+		{
+			"ImportPath": "github.com/spf13/afero/mem",
+			"Comment": "v1.2.2",
+			"Rev": "588a75ec4f32903aa5e39a2619ba6a4631e28424"
+		},
+		{
+			"ImportPath": "github.com/spf13/cast",
+			"Comment": "v1.3.0",
+			"Rev": "8c9545af88b134710ab1cd196795e7f2388358d7"
+		},
+		{
+			"ImportPath": "github.com/spf13/cobra",
+			"Comment": "v0.0.3-15-g67fc483",
+			"Rev": "67fc4837d267bc9bfd6e47f77783fcc3dffc68de"
+		},
+		{
+			"ImportPath": "github.com/spf13/jwalterweatherman",
+			"Comment": "v1.1.0",
+			"Rev": "94f6ae3ed3bceceafa716478c5fbf8d29ca601a1"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Comment": "v1.0.3-8-g24fa697",
+			"Rev": "24fa6976df40757dce6aea913e7b81ade90530e1"
+		},
+		{
+			"ImportPath": "github.com/spf13/viper",
+			"Comment": "v1.3.2",
+			"Rev": "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "baf5eb976a8cd65845293cd814ea151018552292"
+		},
+		{
+			"ImportPath": "golang.org/x/text/transform",
+			"Comment": "v0.3.0-75-ge3703dc",
+			"Rev": "e3703dcdd614d2d7488fff034c75c551ea25da95"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/norm",
+			"Comment": "v0.3.0-75-ge3703dc",
+			"Rev": "e3703dcdd614d2d7488fff034c75c551ea25da95"
+		},
+		{
+			"ImportPath": "gopkg.in/yaml.v2",
+			"Comment": "v2.2.2",
+			"Rev": "51d6538a90f86fe93ac480b35f37b2be17fef232"
+		}
+	]
+}
