@@ -19,6 +19,7 @@ func Cmd(host string, cmd string) []byte {
 	session, err := Connect(User, Passwd, host)
 	if err != nil {
 		fmt.Println("	Error create ssh session failed", err)
+		panic(1)
 		return []byte{}
 	}
 	defer session.Close()
@@ -29,6 +30,7 @@ func Cmd(host string, cmd string) []byte {
 	fmt.Printf("%s\n\n", b)
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
+		panic(1)
 		return []byte{}
 	}
 	return b

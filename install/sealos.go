@@ -48,13 +48,13 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f net/calico.yaml`
+	cmd = `kubectl apply -f net/calico.yaml || true`
 	output = Cmd(s.Masters[0], cmd)
 }
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
-	time.Sleep(3 * time.Second)
+	time.Sleep(30 * time.Second)
 	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], s.JoinToken, s.TokenCaCertHash, s.CertificateKey)
 
 	for _, master := range s.Masters[1:] {
