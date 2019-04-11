@@ -1,6 +1,0 @@
----
-- hosts: k8s-master
-#vars:
-#      k8s_version: 1.11.1
-  roles:
-  - { role: kube-master}
