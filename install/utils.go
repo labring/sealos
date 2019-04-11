@@ -23,7 +23,7 @@ func Cmd(host string, cmd string) []byte {
 	}
 	defer session.Close()
 
-	b, err := session.Output(cmd)
+	b, err := session.CombinedOutput(cmd)
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
 		return []byte{}
