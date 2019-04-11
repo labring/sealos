@@ -86,7 +86,7 @@ func (s *SealosInstaller) JoinNodes() {
 
 //CleanCluster is
 func (s *SealosInstaller) CleanCluster() {
-	cmd := fmt.Sprintf("kubeadm reset && rm -rf /var/etcd && rm -rf /var/lib/etcd")
+	cmd := fmt.Sprintf("kubeadm reset -f && rm -rf /var/etcd && rm -rf /var/lib/etcd")
 	cmdHost := fmt.Sprintf("sed -i \"/apiserver.cluster.local/d\" /etc/hosts ")
 
 	for _, master := range s.Masters {
@@ -112,7 +112,7 @@ func (s *SealosInstaller) decodeOutput(output []byte) {
 	slice := strings.Split(s0, "kubeadm join")
 	slice1 := strings.Split(slice[1], "\n")
 	slice1[0] += "kubeadm join "
-	fmt.Println("	join command is: %s", slice1[0])
+	fmt.Printf("	join command is: %s\n", slice1[0])
 	s.decodeJoinCmd(slice1[0])
 }
 
@@ -124,8 +124,8 @@ func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 		s.TokenCaCertHash = stringSlice[6]
 		s.CertificateKey = stringSlice[9]
 
-		fmt.Println("sealos config %v", *s)
+		fmt.Printf("sealos config %v\n", *s)
 	} else {
-		fmt.Println("	Error decode join command")
+		fmt.Printf("	Error decode join command\n")
 	}
 }

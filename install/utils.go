@@ -1,6 +1,7 @@
 package install
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -16,6 +17,7 @@ var (
 
 //Cmd is
 func Cmd(host string, cmd string) []byte {
+	var stdOut bytes.Buffer
 	session, err := Connect(User, Passwd, host)
 	if err != nil {
 		fmt.Println("	Error create ssh session failed", err)
@@ -23,17 +25,19 @@ func Cmd(host string, cmd string) []byte {
 	}
 	defer session.Close()
 
-	b, err := session.Output(cmd)
+	session.Stdout = &stdOut
+
+	err = session.Run(cmd)
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
 		return []byte{}
 	}
 
-	fmt.Println("\n\n exec command\n")
+	fmt.Println("\n\n exec command")
 	fmt.Println(host, "    ", cmd)
-	fmt.Printf("%s\n\n", b)
+	fmt.Printf("%s\n\n", stdOut.String())
 
-	return b
+	return stdOut.Bytes()
 }
 
 //Connect is
