@@ -3,7 +3,6 @@ package install
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 //Installer is
@@ -54,7 +53,6 @@ func (s *SealosInstaller) InstallMaster0() {
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
-	time.Sleep(30 * time.Second)
 	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], s.JoinToken, s.TokenCaCertHash, s.CertificateKey)
 
 	for _, master := range s.Masters[1:] {
@@ -104,7 +102,7 @@ func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 		case "--discovery-token-ca-cert-hash":
 			s.TokenCaCertHash = stringSlice[i+1]
 		case "--certificate-key":
-			s.CertificateKey = stringSlice[i+1]
+			s.CertificateKey = stringSlice[i+1][:64]
 		}
 	}
 
