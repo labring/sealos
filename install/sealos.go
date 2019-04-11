@@ -86,7 +86,7 @@ func (s *SealosInstaller) JoinNodes() {
 func (s *SealosInstaller) decodeOutput(output []byte) {
 	s0 := string(output)
 	slice := strings.Split(s0, "kubeadm join")
-	slice1 := strings.Split(slice[1], "\n\n")
+	slice1 := strings.Split(slice[1], "Please note")
 	fmt.Println("	join command is: ", slice1[0])
 	s.decodeJoinCmd(slice1[0])
 }
