@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"strings"
+	"sync"
 )
 
 //Installer is
@@ -67,12 +68,15 @@ func (s *SealosInstaller) JoinMasters() {
 //JoinNodes is
 func (s *SealosInstaller) JoinNodes() {
 	var masters string
+	var wg sync.WaitGroup
 	for _, master := range s.Masters {
 		masters += fmt.Sprintf("--master %s:6443", master)
 	}
 
 	for _, node := range s.Nodes {
+		wg.Add(1)
 		go func(node string) {
+			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo 10.103.97.2 apiserver.cluster.local >> /etc/hosts")
 			Cmd(node, cmdHosts)
 			cmd := fmt.Sprintf("kubeadm join 10.103.97.2:6443 --token %s --discovery-token-ca-cert-hash %s", s.JoinToken, s.TokenCaCertHash)
@@ -80,6 +84,8 @@ func (s *SealosInstaller) JoinNodes() {
 			Cmd(node, cmd)
 		}(node)
 	}
+
+	wg.Wait()
 }
 
 //decode output to join token  hash and key
