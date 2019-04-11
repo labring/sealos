@@ -95,8 +95,8 @@ func (s *SealosInstaller) decodeOutput(output []byte) {
 func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 	stringSlice := strings.Split(cmd, " ")
 
-	for i, s := range stringSlice {
-		switch s {
+	for i, r := range stringSlice {
+		switch r {
 		case "--token":
 			s.JoinToken = stringSlice[i+1]
 		case "--discovery-token-ca-cert-hash":
