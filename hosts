@@ -31,7 +31,10 @@ vip=10.1.86.209
 k8s_version=1.13.2
 etcd_image=k8s.gcr.io/etcd:3.2.24
 haproxy_image=haproxy:1.7
+<<<<<<< HEAD
+=======
 keepalived_image=fanux/keepalied:alpine-2.0.8
+>>>>>>> e5dd8f4fee115625dbb8165b92f41f21deded391
 calico_node_image=quay.io/calico/node:v3.2.2
 calico_cni_image=quay.io/calico/cni:v3.2.2
 calico_controller_image=quay.io/calico/kube-controllers:v3.2.2

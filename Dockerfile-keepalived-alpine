@@ -1,4 +1,4 @@
 FROM centos:7.4.1708
 RUN yum install -y  wget  && yum install -y gcc-c++ openssl-devel openssl && yum install -y net-tools 
-RUN wget http://www.keepalived.org/software/keepalived-2.0.8.tar.gz && tar zxvf keepalived-2.0.8.tar.gz && cd keepalived-2.0.8 && ./configure && make && make install  
+RUN wget http://www.keepalived.org/software/keepalived-2.0.12.tar.gz && tar zxvf keepalived-2.0.12.tar.gz && cd keepalived-2.0.12 && ./configure && make && make install  
 CMD ["keepalived", "-n","--all", "-d", "-D",  "-f", "/etc/keepalived/keepalived.conf", "--log-console"]
