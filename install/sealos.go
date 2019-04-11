@@ -86,19 +86,18 @@ func (s *SealosInstaller) JoinNodes() {
 func (s *SealosInstaller) decodeOutput(output []byte) {
 	s0 := string(output)
 	slice := strings.Split(s0, "kubeadm join")
-	slice1 := strings.Split(slice[1], "\n")
-	slice1[0] += "kubeadm join "
-	fmt.Println("	join command is: %s", slice1[0])
+	slice1 := strings.Split(slice[1], "\n\n")
+	fmt.Println("	join command is: ", slice1[0])
 	s.decodeJoinCmd(slice1[0])
 }
 
-//  kubeadm join 192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
+//  192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
 func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 	stringSlice := strings.Split(cmd, " ")
 	if len(stringSlice) == 10 {
-		s.JoinToken = stringSlice[4]
-		s.TokenCaCertHash = stringSlice[6]
-		s.CertificateKey = stringSlice[9]
+		s.JoinToken = stringSlice[2]
+		s.TokenCaCertHash = stringSlice[4]
+		s.CertificateKey = stringSlice[7]
 
 		fmt.Println("sealos config %v", *s)
 	} else {
