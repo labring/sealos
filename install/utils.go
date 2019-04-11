@@ -24,15 +24,13 @@ func Cmd(host string, cmd string) []byte {
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
+	fmt.Println("\n\n exec command\n")
+	fmt.Println(host, "    ", cmd)
+	fmt.Printf("%s\n\n", b)
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
 		return []byte{}
 	}
-
-	fmt.Println("\n\n exec command\n")
-	fmt.Println(host, "    ", cmd)
-	fmt.Printf("%s\n\n", b)
-
 	return b
 }
 

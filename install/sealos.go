@@ -44,7 +44,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	output := Cmd(s.Masters[0], cmd)
 	s.decodeOutput(output)
 
-	cmd = `mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
+	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
 	cmd = `kubectl apply -f net/calico.yaml`
