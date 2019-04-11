@@ -94,14 +94,17 @@ func (s *SealosInstaller) decodeOutput(output []byte) {
 //  192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
 func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 	stringSlice := strings.Split(cmd, " ")
-	if len(stringSlice) == 8 {
-		s.JoinToken = stringSlice[2]
-		s.TokenCaCertHash = stringSlice[4]
-		s.CertificateKey = stringSlice[7]
 
-		fmt.Println("sealos config %v", *s)
-	} else {
-		fmt.Println("	Error decode join command")
-		panic(1)
+	for i, s := range stringSlice {
+		switch s {
+		case "--token":
+			s.JoinToken = stringSlice[i+1]
+		case "--discovery-token-ca-cert-hash":
+			s.TokenCaCertHash = stringSlice[i+1]
+		case "--certificate-key":
+			s.CertificateKey = stringSlice[i+1]
+		}
 	}
+
+	fmt.Println("	sealos config is: ", *s)
 }
