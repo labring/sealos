@@ -70,7 +70,7 @@ func (s *SealosInstaller) JoinNodes() {
 	var masters string
 	var wg sync.WaitGroup
 	for _, master := range s.Masters {
-		masters += fmt.Sprintf("--master %s:6443", master)
+		masters += fmt.Sprintf(" --master %s:6443", master)
 	}
 
 	for _, node := range s.Nodes {
