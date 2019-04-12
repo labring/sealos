@@ -41,7 +41,7 @@ func TestLoad(t *testing.T) {
 			if err == io.EOF {
 				return
 			} else {
-				t.Error("FAILED")
+				t.Error("FAILED", err)
 			}
 			return
 		}

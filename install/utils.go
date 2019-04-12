@@ -105,12 +105,12 @@ kubernetesVersion: v1.14.0
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
 apiServer:
         certSANs:
- 		- 127.0.0.1
-		- apiserver.cluster.local
-		{{range .Masters -}}
-		- {{.}}
-		{{end -}}
-		- {{.VIP}}
+        - 127.0.0.1
+        - apiserver.cluster.local
+        {{range .Masters -}}
+        - {{.}}
+        {{end -}}
+        - {{.VIP}}
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
