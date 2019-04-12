@@ -1,7 +1,6 @@
 package install
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"time"
@@ -17,7 +16,7 @@ var (
 
 //Cmd is
 func Cmd(host string, cmd string) []byte {
-	fmt.Println("\n\n exec command\n")
+	fmt.Println("\n\n exec command")
 	fmt.Println(host, "    ", cmd)
 	session, err := Connect(User, Passwd, host)
 	if err != nil {
