@@ -97,7 +97,7 @@ func LoadMasterAndVIP() (master []string, vip string) {
 		if kind, ok := data["kind"].(string); ok {
 			if kind == "KubeProxyConfiguration" {
 				vip = data["ipvs"].(map[interface{}]interface{})["excludeCIDRs"].([]interface{})[0].(string)
-				vip = strings.ReplaceAll(vip, "/32", "")
+				vip = strings.Replace(vip, "/32", "", -1)
 			} else {
 				masterObjects := data["apiServer"].(map[interface{}]interface{})["certSANs"].([]interface{})
 				for _, obj := range masterObjects {
