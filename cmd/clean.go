@@ -25,7 +25,7 @@ var cleanCmd = &cobra.Command{
 	Short: "Simplest way to clean your kubernets HA cluster",
 	Long:  `sealos clean --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		i := install.BuildInstaller(install.User, install.Passwd, masters, nodes)
+		i := install.BuildInstaller(masters, nodes)
 		i.CleanCluster()
 	},
 }
