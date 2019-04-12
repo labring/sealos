@@ -11,6 +11,7 @@ type Installer interface {
 	InstallMaster0()
 	JoinMasters()
 	JoinNodes()
+	CleanCluster()
 }
 
 //SealosInstaller is
@@ -85,6 +86,28 @@ func (s *SealosInstaller) JoinNodes() {
 		}(node)
 	}
 
+	wg.Wait()
+}
+
+//CleanCluster is
+func (s *SealosInstaller) CleanCluster() {
+	cmd := fmt.Sprintf("kubeadm reset -f && rm -rf /var/etcd && rm -rf /var/lib/etcd")
+	cmdHost := fmt.Sprintf("sed -i \"/apiserver.cluster.local/d\" /etc/hosts ")
+
+	for _, master := range s.Masters {
+		Cmd(master, cmd)
+		Cmd(master, cmdHost)
+	}
+
+	var wg sync.WaitGroup
+	for _, node := range s.Nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			Cmd(node, cmd)
+			Cmd(node, cmdHost)
+		}(node)
+	}
 	wg.Wait()
 }
 
