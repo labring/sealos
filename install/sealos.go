@@ -1,0 +1,139 @@
+package install
+
+import (
+	"fmt"
+	"strings"
+	"sync"
+)
+
+//Installer is
+type Installer interface {
+	InstallMaster0()
+	JoinMasters()
+	JoinNodes()
+	CleanCluster()
+}
+
+//SealosInstaller is
+type SealosInstaller struct {
+	User   string
+	Passwd string
+
+	Masters []string
+	Nodes   []string
+
+	JoinToken       string
+	TokenCaCertHash string
+	CertificateKey  string
+}
+
+//BuildInstaller is
+func BuildInstaller(user string, passwd string, masters []string, nodes []string) Installer {
+	return &SealosInstaller{
+		User:    user,
+		Passwd:  passwd,
+		Masters: masters,
+		Nodes:   nodes,
+	}
+}
+
+//InstallMaster0 is
+func (s *SealosInstaller) InstallMaster0() {
+	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
+	Cmd(s.Masters[0], cmd)
+
+	cmd = `kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs`
+	output := Cmd(s.Masters[0], cmd)
+	s.decodeOutput(output)
+
+	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
+	output = Cmd(s.Masters[0], cmd)
+
+	cmd = `kubectl apply -f net/calico.yaml || true`
+	output = Cmd(s.Masters[0], cmd)
+}
+
+//JoinMasters is
+func (s *SealosInstaller) JoinMasters() {
+	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], s.JoinToken, s.TokenCaCertHash, s.CertificateKey)
+
+	for _, master := range s.Masters[1:] {
+		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
+		Cmd(master, cmdHosts)
+		Cmd(master, cmd)
+		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
+		Cmd(master, cmdHosts)
+	}
+}
+
+//JoinNodes is
+func (s *SealosInstaller) JoinNodes() {
+	var masters string
+	var wg sync.WaitGroup
+	for _, master := range s.Masters {
+		masters += fmt.Sprintf(" --master %s:6443", master)
+	}
+
+	for _, node := range s.Nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			cmdHosts := fmt.Sprintf("echo 10.103.97.2 apiserver.cluster.local >> /etc/hosts")
+			Cmd(node, cmdHosts)
+			cmd := fmt.Sprintf("kubeadm join 10.103.97.2:6443 --token %s --discovery-token-ca-cert-hash %s", s.JoinToken, s.TokenCaCertHash)
+			cmd += masters
+			Cmd(node, cmd)
+		}(node)
+	}
+
+	wg.Wait()
+}
+
+//CleanCluster is
+func (s *SealosInstaller) CleanCluster() {
+	cmd := fmt.Sprintf("kubeadm reset -f && rm -rf /var/etcd && rm -rf /var/lib/etcd")
+	cmdHost := fmt.Sprintf("sed -i \"/apiserver.cluster.local/d\" /etc/hosts ")
+
+	for _, master := range s.Masters {
+		Cmd(master, cmd)
+		Cmd(master, cmdHost)
+	}
+
+	var wg sync.WaitGroup
+	for _, node := range s.Nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			Cmd(node, cmd)
+			Cmd(node, cmdHost)
+		}(node)
+	}
+	wg.Wait()
+}
+
+//decode output to join token  hash and key
+func (s *SealosInstaller) decodeOutput(output []byte) {
+	s0 := string(output)
+	slice := strings.Split(s0, "kubeadm join")
+	slice1 := strings.Split(slice[1], "Please note")
+	fmt.Println("	join command is: ", slice1[0])
+	s.decodeJoinCmd(slice1[0])
+}
+
+//  192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
+func (s *SealosInstaller) decodeJoinCmd(cmd string) {
+	stringSlice := strings.Split(cmd, " ")
+
+	for i, r := range stringSlice {
+		switch r {
+		case "--token":
+			s.JoinToken = stringSlice[i+1]
+		case "--discovery-token-ca-cert-hash":
+			s.TokenCaCertHash = stringSlice[i+1]
+		case "--certificate-key":
+			s.CertificateKey = stringSlice[i+1][:64]
+		}
+	}
+
+	fmt.Println("	sealos config is: ", *s)
+}
