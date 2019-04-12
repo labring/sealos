@@ -16,9 +16,6 @@ type Installer interface {
 
 //SealosInstaller is
 type SealosInstaller struct {
-	User   string
-	Passwd string
-
 	Masters []string
 	Nodes   []string
 
@@ -28,10 +25,8 @@ type SealosInstaller struct {
 }
 
 //BuildInstaller is
-func BuildInstaller(user string, passwd string, masters []string, nodes []string) Installer {
+func BuildInstaller(masters []string, nodes []string) Installer {
 	return &SealosInstaller{
-		User:    user,
-		Passwd:  passwd,
 		Masters: masters,
 		Nodes:   nodes,
 	}
@@ -42,7 +37,10 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 	Cmd(s.Masters[0], cmd)
 
-	cmd = `kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs`
+	cmd = "echo \"" + string(Template(s.Masters, VIP)) + "\" > ~/kubeadm-config.yaml"
+	Cmd(s.Masters[0], cmd)
+
+	cmd = `kubeadm init --config=~/kubeadm-config.yaml --experimental-upload-certs`
 	output := Cmd(s.Masters[0], cmd)
 	s.decodeOutput(output)
 
@@ -78,9 +76,9 @@ func (s *SealosInstaller) JoinNodes() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			cmdHosts := fmt.Sprintf("echo 10.103.97.2 apiserver.cluster.local >> /etc/hosts")
+			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", VIP)
 			Cmd(node, cmdHosts)
-			cmd := fmt.Sprintf("kubeadm join 10.103.97.2:6443 --token %s --discovery-token-ca-cert-hash %s", s.JoinToken, s.TokenCaCertHash)
+			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, s.JoinToken, s.TokenCaCertHash)
 			cmd += masters
 			Cmd(node, cmd)
 		}(node)

@@ -1,7 +1,9 @@
 package install
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"net"
 	"time"
 
@@ -12,6 +14,7 @@ import (
 var (
 	User   string
 	Passwd string
+	VIP    string
 )
 
 //Cmd is
@@ -75,4 +78,38 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 	}
 
 	return session, nil
+}
+
+//Template is
+func Template(masters []string, vip string) []byte {
+	var templateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: v1.14.0
+controlPlaneEndpoint: "apiserver.cluster.local:6443"
+apiServer:
+        certSANs:
+ 		- 127.0.0.1
+		- apiserver.cluster.local
+		{{range .Masters -}}
+		- {{.}}
+		{{end -}}
+		- {{.VIP}}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+        excludeCIDRs: 
+        - "{{.VIP}}/32"`)
+	tmpl, err := template.New("text").Parse(templateText)
+	if err != nil {
+		fmt.Println("template parse failed:", err)
+		panic(1)
+	}
+	var envMap = make(map[string]interface{})
+	envMap["VIP"] = vip
+	envMap["Masters"] = masters
+	var buffer bytes.Buffer
+	_ = tmpl.Execute(&buffer, envMap)
+	return buffer.Bytes()
 }
