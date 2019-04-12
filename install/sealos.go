@@ -46,10 +46,10 @@ func (s *SealosInstaller) InstallMaster0() {
 	output := Cmd(s.Masters[0], cmd)
 	s.decodeOutput(output)
 
-	cmd = `mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
+	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f net/calico.yaml`
+	cmd = `kubectl apply -f net/calico.yaml || true`
 	output = Cmd(s.Masters[0], cmd)
 }
 
@@ -69,12 +69,15 @@ func (s *SealosInstaller) JoinMasters() {
 //JoinNodes is
 func (s *SealosInstaller) JoinNodes() {
 	var masters string
+	var wg sync.WaitGroup
 	for _, master := range s.Masters {
-		masters += fmt.Sprintf("--master %s:6443", master)
+		masters += fmt.Sprintf(" --master %s:6443", master)
 	}
 
 	for _, node := range s.Nodes {
+		wg.Add(1)
 		go func(node string) {
+			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo 10.103.97.2 apiserver.cluster.local >> /etc/hosts")
 			Cmd(node, cmdHosts)
 			cmd := fmt.Sprintf("kubeadm join 10.103.97.2:6443 --token %s --discovery-token-ca-cert-hash %s", s.JoinToken, s.TokenCaCertHash)
@@ -82,6 +85,8 @@ func (s *SealosInstaller) JoinNodes() {
 			Cmd(node, cmd)
 		}(node)
 	}
+
+	wg.Wait()
 }
 
 //CleanCluster is
@@ -110,22 +115,25 @@ func (s *SealosInstaller) CleanCluster() {
 func (s *SealosInstaller) decodeOutput(output []byte) {
 	s0 := string(output)
 	slice := strings.Split(s0, "kubeadm join")
-	slice1 := strings.Split(slice[1], "\n")
-	slice1[0] += "kubeadm join "
-	fmt.Printf("	join command is: %s\n", slice1[0])
+	slice1 := strings.Split(slice[1], "Please note")
+	fmt.Println("	join command is: ", slice1[0])
 	s.decodeJoinCmd(slice1[0])
 }
 
-//  kubeadm join 192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
+//  192.168.0.200:6443 --token 9vr73a.a8uxyaju799qwdjv --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866 --experimental-control-plane --certificate-key f8902e114ef118304e561c3ecd4d0b543adc226b7a07f675f56564185ffe0c07
 func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 	stringSlice := strings.Split(cmd, " ")
-	if len(stringSlice) == 10 {
-		s.JoinToken = stringSlice[4]
-		s.TokenCaCertHash = stringSlice[6]
-		s.CertificateKey = stringSlice[9]
 
-		fmt.Printf("sealos config %v\n", *s)
-	} else {
-		fmt.Printf("	Error decode join command\n")
+	for i, r := range stringSlice {
+		switch r {
+		case "--token":
+			s.JoinToken = stringSlice[i+1]
+		case "--discovery-token-ca-cert-hash":
+			s.TokenCaCertHash = stringSlice[i+1]
+		case "--certificate-key":
+			s.CertificateKey = stringSlice[i+1][:64]
+		}
 	}
+
+	fmt.Println("	sealos config is: ", *s)
 }

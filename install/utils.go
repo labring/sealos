@@ -17,27 +17,24 @@ var (
 
 //Cmd is
 func Cmd(host string, cmd string) []byte {
-	var stdOut bytes.Buffer
+	fmt.Println("\n\n exec command\n")
+	fmt.Println(host, "    ", cmd)
 	session, err := Connect(User, Passwd, host)
 	if err != nil {
 		fmt.Println("	Error create ssh session failed", err)
+		panic(1)
 		return []byte{}
 	}
 	defer session.Close()
 
-	session.Stdout = &stdOut
-
-	err = session.Run(cmd)
+	b, err := session.CombinedOutput(cmd)
+	fmt.Printf("%s\n\n", b)
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
+		panic(1)
 		return []byte{}
 	}
-
-	fmt.Println("\n\n exec command")
-	fmt.Println(host, "    ", cmd)
-	fmt.Printf("%s\n\n", stdOut.String())
-
-	return stdOut.Bytes()
+	return b
 }
 
 //Connect is
