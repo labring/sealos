@@ -1,11 +1,6 @@
 package install
 
 import (
-	"bytes"
-	"io"
-	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"testing"
 )
 
@@ -31,21 +26,21 @@ func TestTemplate(t *testing.T) {
 
 func TestLoad(t *testing.T) {
 	KubeadmFile = "/home/cuisongliu/aa"
-	//LoadMasterAndVIP()
-	kubeadmData, _ := ioutil.ReadFile(KubeadmFile)
-	reader := bytes.NewReader(kubeadmData)
-	ext := runtime.RawExtension{}
-	d := yaml.NewYAMLOrJSONDecoder(reader, 4096)
-	for {
-		if err := d.Decode(&ext); err != nil {
-			if err == io.EOF {
-				return
-			} else {
-				t.Error("FAILED", err)
-			}
-			return
-		}
-		t.Log(string(ext.Raw))
-	}
+	LoadMasterAndVIP()
+	//kubeadmData, _ := ioutil.ReadFile(KubeadmFile)
+	//reader := bytes.NewReader(kubeadmData)
+	//ext := runtime.RawExtension{}
+	//d := yaml.NewYAMLOrJSONDecoder(reader, 4096)
+	//for {
+	//	if err := d.Decode(&ext); err != nil {
+	//		if err == io.EOF {
+	//			return
+	//		} else {
+	//			t.Error("FAILED", err)
+	//		}
+	//		return
+	//	}
+	//	t.Log(string(ext.Raw))
+	//}
 
 }

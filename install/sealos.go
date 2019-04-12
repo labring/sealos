@@ -36,6 +36,7 @@ func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 
 //KubeadmConfigInstall is
 func (s *SealosInstaller) KubeadmConfigInstall() {
+	LoadMasterAndVIP()
 	cmd := "echo \"" + string(Template(s.Masters, s.VIP)) + "\" > ~/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 }

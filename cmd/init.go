@@ -32,6 +32,7 @@ var initCmd = &cobra.Command{
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
 		i := install.BuildInstaller(masters, nodes, vip)
+		i.KubeadmConfigInstall()
 		i.InstallMaster0()
 		i.JoinMasters()
 		i.JoinNodes()
