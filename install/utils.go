@@ -3,7 +3,9 @@ package install
 import (
 	"bytes"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"html/template"
+	"io/ioutil"
 	"net"
 	"time"
 
@@ -12,9 +14,9 @@ import (
 
 //username
 var (
-	User   string
-	Passwd string
-	VIP    string
+	User        string
+	Passwd      string
+	KubeadmFile string
 )
 
 //Cmd is
@@ -78,6 +80,21 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 	}
 
 	return session, nil
+}
+
+func LoadMasterAndVIP() (master []string, vip string) {
+	var data map[interface{}]interface{}
+	kubeadmData, err := ioutil.ReadFile(KubeadmFile)
+	if err != nil {
+		fmt.Println("file read failed:", err)
+		panic(1)
+	}
+	err = yaml.Unmarshal(kubeadmData, &data)
+	if err != nil {
+		fmt.Println("yaml read failed:", err)
+		panic(1)
+	}
+	return nil, ""
 }
 
 //Template is
