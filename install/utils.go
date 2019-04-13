@@ -12,9 +12,9 @@ import (
 
 //username
 var (
-	User   string
-	Passwd string
-	VIP    string
+	User        string
+	Passwd      string
+	KubeadmFile string
 )
 
 //Cmd is
@@ -87,20 +87,20 @@ kind: ClusterConfiguration
 kubernetesVersion: v1.14.0
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
 apiServer:
-    certSANs:
-    - 127.0.0.1
-    - apiserver.cluster.local
-    {{range .Masters -}}
-    - {{.}}
-    {{end -}}
-    - {{.VIP}}
+        certSANs:
+        - 127.0.0.1
+        - apiserver.cluster.local
+        {{range .Masters -}}
+        - {{.}}
+        {{end -}}
+        - {{.VIP}}
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-    excludeCIDRs: 
-    - "{{.VIP}}/32"`)
+        excludeCIDRs: 
+        - "{{.VIP}}/32"`)
 	tmpl, err := template.New("text").Parse(templateText)
 	if err != nil {
 		fmt.Println("template parse failed:", err)
