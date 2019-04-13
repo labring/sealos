@@ -12,9 +12,9 @@ import (
 
 //username
 var (
-	User   string
-	Passwd string
-	VIP    string
+	User        string
+	Passwd      string
+	KubeadmFile string
 )
 
 //Cmd is
@@ -81,26 +81,28 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 }
 
 //Template is
-func Template(masters []string, vip string) []byte {
+func Template(masters []string, vip string, version string) []byte {
 	var templateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.14.0
+kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
+networking:
+  podSubnet: 100.64.0.0/10
 apiServer:
-    certSANs:
-    - 127.0.0.1
-    - apiserver.cluster.local
-    {{range .Masters -}}
-    - {{.}}
-    {{end -}}
-    - {{.VIP}}
+        certSANs:
+        - 127.0.0.1
+        - apiserver.cluster.local
+        {{range .Masters -}}
+        - {{.}}
+        {{end -}}
+        - {{.VIP}}
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-    excludeCIDRs: 
-    - "{{.VIP}}/32"`)
+        excludeCIDRs: 
+        - "{{.VIP}}/32"`)
 	tmpl, err := template.New("text").Parse(templateText)
 	if err != nil {
 		fmt.Println("template parse failed:", err)
@@ -109,6 +111,7 @@ ipvs:
 	var envMap = make(map[string]interface{})
 	envMap["VIP"] = vip
 	envMap["Masters"] = masters
+	envMap["Version"] = version
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
