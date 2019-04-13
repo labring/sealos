@@ -38,17 +38,17 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 	Cmd(s.Masters[0], cmd)
 
-	cmd = "echo \"" + string(Template(s.Masters, VIP)) + "\" > ~/kubeadm-config.yaml"
+	cmd = "echo \"" + string(Template(s.Masters, VIP)) + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
-	cmd = `kubeadm init --config=~/kubeadm-config.yaml --experimental-upload-certs`
+	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
 	output := Cmd(s.Masters[0], cmd)
 	s.decodeOutput(output)
 
 	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f ~/kube/net/calico.yaml || true`
+	cmd = `kubectl apply -f /root/kube/net/calico.yaml || true`
 	output = Cmd(s.Masters[0], cmd)
 }
 

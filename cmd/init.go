@@ -60,6 +60,6 @@ func init() {
 	initCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	initCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
 
-	initCmd.Flags().StringVar(&pkg, "pkg", "kube1.14.1.tar.gz", "offline package name")
+	initCmd.Flags().StringVar(&pkg, "pkg", "", "kube1.14.1.tar.gz offline package name")
 	initCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url")
 }
