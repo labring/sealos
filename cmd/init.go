@@ -22,6 +22,11 @@ import (
 var (
 	masters []string
 	nodes   []string
+	vip     string
+
+	pkg     string
+	pkgURL  string
+	version string
 )
 
 // initCmd represents the init command
@@ -30,7 +35,9 @@ var initCmd = &cobra.Command{
 	Short: "Simplest way to init your kubernets HA cluster",
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		i := install.BuildInstaller(masters, nodes)
+		i := install.BuildInstaller(masters, nodes, vip, version)
+		i.SendPackage(pkg, pkgURL)
+		i.KubeadmConfigInstall()
 		i.InstallMaster0()
 		i.JoinMasters()
 		i.JoinNodes()
@@ -51,8 +58,13 @@ func init() {
 	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	initCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
-	initCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
+	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml local")
 
+	initCmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
 	initCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	initCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
+
+	initCmd.Flags().StringVar(&pkg, "pkg", "", "kube1.14.1.tar.gz offline package name")
+	initCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url")
+	initCmd.Flags().StringVar(&version, "version", "v1.14.1", "version is kubernetes version")
 }
