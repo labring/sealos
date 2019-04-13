@@ -12,6 +12,7 @@ type Installer interface {
 	JoinMasters()
 	JoinNodes()
 	CleanCluster()
+	SendPackage(pkg string, url string)
 }
 
 //SealosInstaller is
@@ -47,7 +48,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f net/calico.yaml || true`
+	cmd = `kubectl apply -f ~/kube/net/calico.yaml || true`
 	output = Cmd(s.Masters[0], cmd)
 }
 
