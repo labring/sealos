@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"sync"
 )
@@ -36,8 +37,18 @@ func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 
 //KubeadmConfigInstall is
 func (s *SealosInstaller) KubeadmConfigInstall() {
-	s.Masters, s.VIP = LoadMasterAndVIP()
-	cmd := "echo \"" + string(Template(s.Masters, s.VIP)) + "\" > ~/kubeadm-config.yaml"
+	var templateData string
+	if KubeadmFile == "" {
+		templateData = string(Template(s.Masters, s.VIP))
+	} else {
+		fileData, err := ioutil.ReadFile(KubeadmFile)
+		if err != nil {
+			fmt.Println("template file read failed:", err)
+			panic(1)
+		}
+		templateData = string(fileData)
+	}
+	cmd := "echo \"" + templateData + "\" > ~/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 }
 
