@@ -9,6 +9,7 @@
 
 # Sealos 2.0
 [简体中文](README_zh.md)
+
 Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
 
 build a production kubernetes cluster
