@@ -22,13 +22,14 @@ type SealosInstaller struct {
 	Masters         []string
 	Nodes           []string
 	VIP             string
+	Version         string
 	JoinToken       string
 	TokenCaCertHash string
 	CertificateKey  string
 }
 
 //BuildInstaller is
-func BuildInstaller(masters []string, nodes []string, vip string) Installer {
+func BuildInstaller(masters []string, nodes []string, vip string, version string) Installer {
 	return &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
@@ -40,7 +41,7 @@ func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	if KubeadmFile == "" {
-		templateData = string(Template(s.Masters, s.VIP))
+		templateData = string(Template(s.Masters, s.VIP, s.Version))
 	} else {
 		fileData, err := ioutil.ReadFile(KubeadmFile)
 		if err != nil {
@@ -58,7 +59,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 	Cmd(s.Masters[0], cmd)
 
-	cmd = "echo \"" + string(Template(s.Masters, s.VIP)) + "\" > /root/kubeadm-config.yaml"
+	cmd = "echo \"" + string(Template(s.Masters, s.VIP, s.Version)) + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`

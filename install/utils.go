@@ -81,10 +81,10 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 }
 
 //Template is
-func Template(masters []string, vip string) []byte {
+func Template(masters []string, vip string, version string) []byte {
 	var templateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: v1.14.0
+kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
 apiServer:
         certSANs:
@@ -109,6 +109,7 @@ ipvs:
 	var envMap = make(map[string]interface{})
 	envMap["VIP"] = vip
 	envMap["Masters"] = masters
+	envMap["Version"] = version
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
