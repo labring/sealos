@@ -82,45 +82,6 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 
 	return session, nil
 }
-func LoadMasterAndVIP() (master []string, vip string) {
-	var data map[interface{}]interface{}
-	// read file to byte[]
-	kubeadmData, err := ioutil.ReadFile(KubeadmFile)
-	if err != nil {
-		fmt.Println("file read failed:", err)
-		panic(1)
-	}
-	var separator = []byte("---")
-	yamlData := bytes.Split(kubeadmData, separator)
-	for _, yamlSingle := range yamlData {
-		err = yaml.Unmarshal(yamlSingle, &data)
-		if kind, ok := data["kind"].(string); ok {
-			if kind == "KubeProxyConfiguration" {
-				vip = data["ipvs"].(map[interface{}]interface{})["excludeCIDRs"].([]interface{})[0].(string)
-				vip = strings.Replace(vip, "/32", "", -1)
-			} else {
-				masterObjects := data["apiServer"].(map[interface{}]interface{})["certSANs"].([]interface{})
-				for _, obj := range masterObjects {
-					objStr := obj.(string)
-					if objStr == "127.0.0.1" || objStr == "apiserver.cluster.local" {
-						continue
-					}
-					master = append(master, objStr)
-				}
-			}
-		}
-		if err != nil {
-			fmt.Println("yaml read failed:", err)
-			panic(1)
-		}
-	}
-	for i, result := range master {
-		if result == vip {
-			master = append(master[:i], master[i+1:]...)
-		}
-	}
-	return master, vip
-}
 
 //Template is
 func Template(masters []string, vip string) []byte {

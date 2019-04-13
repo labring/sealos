@@ -2,7 +2,6 @@
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
 [简体中文,老版本](https://sealyun.com/post/sealos/)
-[简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
 
 [离线包购买市场](http://store.lameleg.com/)
 
@@ -39,8 +38,11 @@ Every node config a ipvs for masters LB.
 
 Then run a lvscare as a staic pod to check realserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
 
-# [LVScare](https://github.com/fanux/LVScare)
+About [LVScare](https://github.com/fanux/LVScare)
+
 This can care your masters ipvs rules.
+
+About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
 
 # 公众号：
 ![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
