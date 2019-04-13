@@ -23,24 +23,3 @@ func TestTemplate(t *testing.T) {
 	Cmd("127.0.0.1", "echo \""+string(Template(masters, vip))+"\" > ~/aa")
 	t.Log(string(Template(masters, vip)))
 }
-
-func TestLoad(t *testing.T) {
-	KubeadmFile = "/home/cuisongliu/aa"
-	LoadMasterAndVIP()
-	//kubeadmData, _ := ioutil.ReadFile(KubeadmFile)
-	//reader := bytes.NewReader(kubeadmData)
-	//ext := runtime.RawExtension{}
-	//d := yaml.NewYAMLOrJSONDecoder(reader, 4096)
-	//for {
-	//	if err := d.Decode(&ext); err != nil {
-	//		if err == io.EOF {
-	//			return
-	//		} else {
-	//			t.Error("FAILED", err)
-	//		}
-	//		return
-	//	}
-	//	t.Log(string(ext.Raw))
-	//}
-
-}

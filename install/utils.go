@@ -3,11 +3,8 @@ package install
 import (
 	"bytes"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"html/template"
-	"io/ioutil"
 	"net"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
