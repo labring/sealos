@@ -33,6 +33,7 @@ func BuildInstaller(masters []string, nodes []string, vip string, version string
 	return &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
+		Version: version,
 		VIP:     vip,
 	}
 }
