@@ -2,12 +2,14 @@ package install
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"sync"
 )
 
 //Installer is
 type Installer interface {
+	KubeadmConfigInstall()
 	InstallMaster0()
 	JoinMasters()
 	JoinNodes()
@@ -17,28 +19,43 @@ type Installer interface {
 
 //SealosInstaller is
 type SealosInstaller struct {
-	Masters []string
-	Nodes   []string
-
+	Masters         []string
+	Nodes           []string
+	VIP             string
 	JoinToken       string
 	TokenCaCertHash string
 	CertificateKey  string
 }
 
 //BuildInstaller is
-func BuildInstaller(masters []string, nodes []string) Installer {
+func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 	return &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
+		VIP:     vip,
 	}
+}
+
+//KubeadmConfigInstall is
+func (s *SealosInstaller) KubeadmConfigInstall() {
+	var templateData string
+	if KubeadmFile == "" {
+		templateData = string(Template(s.Masters, s.VIP))
+	} else {
+		fileData, err := ioutil.ReadFile(KubeadmFile)
+		if err != nil {
+			fmt.Println("template file read failed:", err)
+			panic(1)
+		}
+		templateData = string(fileData)
+	}
+	cmd := "echo \"" + templateData + "\" > ~/kubeadm-config.yaml"
+	Cmd(s.Masters[0], cmd)
 }
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
-	Cmd(s.Masters[0], cmd)
-
-	cmd = "echo \"" + string(Template(s.Masters, VIP)) + "\" > ~/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=~/kubeadm-config.yaml --experimental-upload-certs`
@@ -77,9 +94,9 @@ func (s *SealosInstaller) JoinNodes() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", VIP)
+			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.VIP)
 			Cmd(node, cmdHosts)
-			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, s.JoinToken, s.TokenCaCertHash)
+			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", s.VIP, s.JoinToken, s.TokenCaCertHash)
 			cmd += masters
 			Cmd(node, cmd)
 		}(node)
