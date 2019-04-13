@@ -58,7 +58,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 	Cmd(s.Masters[0], cmd)
 
-	cmd = "echo \"" + string(Template(s.Masters, VIP)) + "\" > /root/kubeadm-config.yaml"
+	cmd = "echo \"" + string(Template(s.Masters, s.VIP)) + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
