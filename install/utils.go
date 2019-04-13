@@ -86,6 +86,8 @@ func Template(masters []string, vip string, version string) []byte {
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
+networking:
+  podSubnet: 100.64.0.0/10
 apiServer:
         certSANs:
         - 127.0.0.1

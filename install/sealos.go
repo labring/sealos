@@ -70,7 +70,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f /root/kube/net/calico.yaml || true`
+	cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 	output = Cmd(s.Masters[0], cmd)
 }
 
