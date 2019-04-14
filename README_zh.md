@@ -10,7 +10,7 @@ kubernetes 1.14以下版本请移步老掉牙教程[sealos 1.x docs](https://git
 # Sealos 2.0
 支持kubernetes 1.14.0 以上版本，HA不再依赖keeplived与haproxy, 通过ipvs直接代理masters节点
 
-通过lvscare健康检测masters, 是一种非常现金且稳定的HA方式。安装失败率极低。
+通过lvscare健康检测masters, 是一种非常先进且稳定的HA方式。安装失败率极低。
 
 # 快速使用
 ## 准备条件
