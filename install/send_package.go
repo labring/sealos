@@ -12,9 +12,9 @@ func (s *SealosInstaller) SendPackage(pkg string, url string) {
 	if pkg == "" {
 		return
 	}
-	cmd := fmt.Sprintf("tar zxvf %s && cd ~/kube/shell && sh init.sh", pkg)
+	cmd := fmt.Sprintf("cd /root && tar zxvf %s && cd /root/kube/shell && sh init.sh", pkg)
 	if url != "" {
-		cmd = fmt.Sprintf("wget %s && tar zxvf %s && cd ~/kube/shell && sh init.sh", url, pkg)
+		cmd = fmt.Sprintf("cd /root &&  wget %s && tar zxvf %s && cd /root/kube/shell && sh init.sh", url, pkg)
 	}
 	var wm sync.WaitGroup
 	var wn sync.WaitGroup

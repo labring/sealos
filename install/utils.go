@@ -15,6 +15,7 @@ var (
 	User        string
 	Passwd      string
 	KubeadmFile string
+	Version     string
 )
 
 //Cmd is

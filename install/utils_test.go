@@ -20,6 +20,6 @@ func TestTemplate(t *testing.T) {
 	var vip = "10.103.97.1"
 	User = "cuisongliu"
 	Passwd = "admin"
-	Cmd("127.0.0.1", "echo \""+string(Template(masters, vip))+"\" > ~/aa")
-	t.Log(string(Template(masters, vip)))
+	Cmd("127.0.0.1", "echo \""+string(Template(masters, vip, "v1.14.1"))+"\" > ~/aa")
+	t.Log(string(Template(masters, vip, "v1.14.0")))
 }
