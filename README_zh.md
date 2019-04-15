@@ -68,7 +68,7 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
 ## 安装dashboard prometheus等
 离线包里包含了yaml配置和镜像，用户按需安装。
 ```
-cd /root/conf
+cd /root/kube/conf
 kubectl taint nodes --all node-role.kubernetes.io/master-  # 去污点，根据需求看情况，去了后master允许调度
 kubectl apply -f heapster/ # 安装heapster, 不安装dashboard上没监控数据
 kubectl apply -f heapster/rbac 
