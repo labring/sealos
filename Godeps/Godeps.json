@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/fanux/sealos",
-	"GoVersion": "go1.12",
+	"GoVersion": "go1.11",
 	"GodepVersion": "v80",
 	"Deps": [
 		{
