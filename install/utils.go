@@ -55,13 +55,11 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 		fmt.Println("RemoteFilExist:", err)
 		panic(1)
 	}
-	if count == 1 {
-		return true
-	} else if count == 0 {
+	if count == 0 {
 		return false
+	} else {
+		return true
 	}
-	fmt.Println("RemoteFilExist:", remoteFileCommand, ",return data:", count)
-	panic(1)
 }
 
 //Copy is
