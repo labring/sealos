@@ -53,6 +53,29 @@ sealos clean \
     --passwd your-server-password
 ```
 
+## 增加节点
+新增节点可直接使用kubeadm， 到新节点上解压 
+```
+cd kube/shell && init.sh
+echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
+kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
+    --master 10.103.97.100:6443 \
+    --master 10.103.97.101:6443 \
+    --master 10.103.97.102:6443 \
+    --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
+```
+
+## 安装dashboard prometheus等
+离线包里包含了yaml配置和镜像，用户按需安装。
+```
+cd /root/conf
+kubectl taint nodes --all node-role.kubernetes.io/master-  # 去污点，根据需求看情况，去了后master允许调度
+kubectl apply -f heapster/ # 安装heapster, 不安装dashboard上没监控数据
+kubectl apply -f heapster/rbac 
+kubectl apply -f dashboard  # 装dashboard
+kubectl apply -f prometheus # 装监控
+```
+
 # 原理
 ```
   +----------+                       +---------------+  virturl server: 127.0.0.1:6443
