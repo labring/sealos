@@ -6,30 +6,46 @@ import (
 )
 
 //SendPackage is
-func (s *SealosInstaller) SendPackage(pkg string, url string) {
-	//TODO send package file on every nodes
-
+func (s *SealosInstaller) SendPackage(pkg string, url string, localPkg bool) {
 	if pkg == "" {
 		return
 	}
-	cmd := fmt.Sprintf("cd /root && tar zxvf %s && cd /root/kube/shell && sh init.sh", pkg)
-	if url != "" {
-		cmd = fmt.Sprintf("cd /root &&  wget %s && tar zxvf %s && cd /root/kube/shell && sh init.sh", url, pkg)
-	}
+	localCmd := fmt.Sprintf("cd /root && tar zxvf %s && cd /root/kube/shell && sh init.sh", pkg)
+	kubeLocal := fmt.Sprintf("/root/%s", pkg)
+	remoteCmd := fmt.Sprintf("cd /root &&  wget %s && tar zxvf %s && cd /root/kube/shell && sh init.sh", url, pkg)
 	var wm sync.WaitGroup
 	var wn sync.WaitGroup
 	for _, master := range s.Masters {
 		wm.Add(1)
 		go func(master string) {
 			defer wm.Done()
-			Cmd(master, cmd)
+			if localPkg {
+				Copy(master, kubeLocal, kubeLocal)
+				Cmd(master, localCmd)
+			} else {
+				if url != "" {
+					Cmd(master, remoteCmd)
+				} else {
+					Cmd(master, localCmd)
+				}
+			}
+
 		}(master)
 	}
 	for _, node := range s.Nodes {
 		wn.Add(1)
 		go func(node string) {
 			defer wn.Done()
-			Cmd(node, cmd)
+			if localPkg {
+				Copy(node, kubeLocal, kubeLocal)
+				Cmd(node, localCmd)
+			} else {
+				if url != "" {
+					Cmd(node, remoteCmd)
+				} else {
+					Cmd(node, localCmd)
+				}
+			}
 		}(node)
 	}
 
