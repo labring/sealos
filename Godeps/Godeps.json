@@ -64,6 +64,11 @@
 			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
 		},
 		{
+			"ImportPath": "github.com/kr/fs",
+			"Comment": "v0.1.0",
+			"Rev": "1455def202f6e05b95cc7bfc7e8ae67ae5141eba"
+		},
+		{
 			"ImportPath": "github.com/magiconair/properties",
 			"Comment": "v1.8.0-9-g7757cc9",
 			"Rev": "7757cc9fdb852f7579b24170bcacda2c7471bb6a"
@@ -82,6 +87,16 @@
 			"ImportPath": "github.com/pelletier/go-toml",
 			"Comment": "v1.3.0",
 			"Rev": "63909f0a90ab0f36909e8e044e46ace10cf13ba2"
+		},
+		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.1-24-g27936f6",
+			"Rev": "27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7"
+		},
+		{
+			"ImportPath": "github.com/pkg/sftp",
+			"Comment": "v1.10.0-1-g5bcd86d",
+			"Rev": "5bcd86d72480cb6de4bc5804f832e27855ba033f"
 		},
 		{
 			"ImportPath": "github.com/spf13/afero",
