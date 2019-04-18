@@ -2,9 +2,11 @@ package install
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"html/template"
 	"net"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
@@ -32,8 +34,21 @@ func ReturnCmd(host, cmd string) string {
 	b, _ := session.CombinedOutput(cmd)
 	return string(b)
 }
-func WatchFileSize(host, filename string) {
-	t := time.NewTicker(1 * time.Second) //every 10s check heartbeat
+func GetFileSize(url string) int {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{Transport: tr}
+	resp, err := client.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	resp.Body.Close()
+	return int(resp.ContentLength)
+}
+func WatchFileSize(host, filename string, size int) {
+	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
 	for {
 		select {
@@ -42,6 +57,9 @@ func WatchFileSize(host, filename string) {
 			length = strings.Replace(length, "\n", "", -1)
 			length = strings.Replace(length, "\r", "", -1)
 			lengthByte, _ := strconv.Atoi(length)
+			if lengthByte == size {
+				t.Stop()
+			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
 			logger.Alert("transfer total size is:", value, "MB")

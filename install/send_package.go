@@ -35,7 +35,7 @@ func (s *SealosInstaller) SendPackage(url string, localPkg bool) {
 			defer wm.Done()
 			logger.Debug("please wait for tar zxvf exec")
 			if isHttp {
-				go WatchFileSize(master, kubeLocal)
+				go WatchFileSize(master, kubeLocal, GetFileSize(url))
 				Cmd(master, remoteCmd)
 			} else {
 				if localPkg {
@@ -52,7 +52,7 @@ func (s *SealosInstaller) SendPackage(url string, localPkg bool) {
 			defer wn.Done()
 			logger.Debug("please wait for tar zxvf exec")
 			if isHttp {
-				go WatchFileSize(node, kubeLocal)
+				go WatchFileSize(node, kubeLocal, GetFileSize(url))
 				Cmd(node, remoteCmd)
 			} else {
 				if localPkg {

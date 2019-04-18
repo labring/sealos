@@ -59,7 +59,7 @@ func TestSendHttps(t *testing.T) {
 	install := &SealosInstaller{
 		Masters: []string{"172.16.4.2"},
 	}
-	install.SendPackage("xxx", false)
+	install.SendPackage("http://172.16.4.1:8080/kube1.14.1.tar.gz", false)
 }
 
 func TestProcess(t *testing.T) {
