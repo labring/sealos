@@ -16,7 +16,7 @@ type Installer interface {
 	JoinMasters()
 	JoinNodes()
 	CleanCluster()
-	SendPackage(url string, localPkg bool)
+	SendPackage(url string)
 }
 
 //SealosInstaller is

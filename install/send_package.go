@@ -10,7 +10,7 @@ import (
 )
 
 //SendPackage is
-func (s *SealosInstaller) SendPackage(url string, localPkg bool) {
+func (s *SealosInstaller) SendPackage(url string) {
 	pkg := path.Base(url)
 	//only http
 	isHttp := strings.HasPrefix(url, "http")
@@ -38,7 +38,7 @@ func (s *SealosInstaller) SendPackage(url string, localPkg bool) {
 				go WatchFileSize(master, kubeLocal, GetFileSize(url))
 				Cmd(master, remoteCmd)
 			} else {
-				if localPkg {
+				if !RemoteFilExist(master, kubeLocal) {
 					Copy(master, url, kubeLocal)
 				}
 				Cmd(master, localCmd)
@@ -55,7 +55,7 @@ func (s *SealosInstaller) SendPackage(url string, localPkg bool) {
 				go WatchFileSize(node, kubeLocal, GetFileSize(url))
 				Cmd(node, remoteCmd)
 			} else {
-				if localPkg {
+				if !RemoteFilExist(node, kubeLocal) {
 					Copy(node, url, kubeLocal)
 				}
 				Cmd(node, localCmd)
