@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"strings"
 	"sync"
+
+	"github.com/wonderivan/logger"
 )
 
 //Installer is
@@ -14,7 +16,7 @@ type Installer interface {
 	JoinMasters()
 	JoinNodes()
 	CleanCluster()
-	SendPackage(pkg string, url string, localPkg bool)
+	SendPackage(url string, localPkg bool)
 }
 
 //SealosInstaller is
@@ -44,7 +46,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	} else {
 		fileData, err := ioutil.ReadFile(KubeadmFile)
 		if err != nil {
-			fmt.Println("template file read failed:", err)
+			logger.Error("template file read failed:", err)
 			panic(1)
 		}
 		templateData = string(fileData)
@@ -135,7 +137,7 @@ func (s *SealosInstaller) decodeOutput(output []byte) {
 	s0 := string(output)
 	slice := strings.Split(s0, "kubeadm join")
 	slice1 := strings.Split(slice[1], "Please note")
-	fmt.Println("	join command is: ", slice1[0])
+	logger.Info("	join command is: ", slice1[0])
 	s.decodeJoinCmd(slice1[0])
 }
 
@@ -154,5 +156,5 @@ func (s *SealosInstaller) decodeJoinCmd(cmd string) {
 		}
 	}
 
-	fmt.Println("	sealos config is: ", *s)
+	logger.Info("	sealos config is: ", *s)
 }

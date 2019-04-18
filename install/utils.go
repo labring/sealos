@@ -8,9 +8,12 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/gosuri/uiprogress"
 	"github.com/pkg/sftp"
+	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -22,25 +25,50 @@ var (
 	Version     string
 )
 
+const oneMBByte = 1024 * 1024
+
+func ReturnCmd(host, cmd string) string {
+	session, _ := Connect(User, Passwd, host)
+	defer session.Close()
+	b, _ := session.CombinedOutput(cmd)
+	return string(b)
+}
+func WatchFileSize(host, filename string) {
+	t := time.NewTicker(1 * time.Second) //every 10s check heartbeat
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+			length := ReturnCmd(host, "ls -l "+filename+" | awk '{print $5}'")
+			length = strings.Replace(length, "\n", "", -1)
+			length = strings.Replace(length, "\r", "", -1)
+			lengthByte, _ := strconv.Atoi(length)
+			lengthFloat := float64(lengthByte)
+			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
+			logger.Alert("transfer total size is:", value, "MB")
+		}
+	}
+}
+
 //Cmd is
 func Cmd(host string, cmd string) []byte {
-	fmt.Println("\n\n exec command")
-	fmt.Println(host, "    ", cmd)
+	logger.Info(host, "    ", cmd)
 	session, err := Connect(User, Passwd, host)
 	if err != nil {
-		fmt.Println("	Error create ssh session failed", err)
+		logger.Error("	Error create ssh session failed", err)
 		panic(1)
 	}
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
-	fmt.Printf("%s\n\n", b)
+	logger.Debug("command result is:", string(b))
 	if err != nil {
-		fmt.Println("	Error exec command failed", err)
+		logger.Error("	Error exec command failed", err)
 		panic(1)
 	}
 	return b
 }
+
 func RemoteFilExist(host, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
@@ -52,7 +80,7 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 
 	count, err := strconv.Atoi(string(data))
 	if err != nil {
-		fmt.Println("RemoteFilExist:", err)
+		logger.Error("RemoteFilExist:", err)
 		panic(1)
 	}
 	if count == 0 {
@@ -65,36 +93,46 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
 	if RemoteFilExist(host, remoteFilePath) {
-		fmt.Println("host is ", host, ", scpCopy: file is exist")
+		logger.Warn("host is ", host, ", scpCopy: file is exist")
 		return
 	}
 	sftpClient, err := SftpConnect(User, Passwd, host)
 	if err != nil {
-		fmt.Println("scpCopy:", err)
+		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer sftpClient.Close()
 	srcFile, err := os.Open(localFilePath)
 	if err != nil {
-		fmt.Println("scpCopy:", err)
+		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(remoteFilePath)
 	if err != nil {
-		fmt.Println("scpCopy:", err)
+		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer dstFile.Close()
-
-	buf := make([]byte, 1024)
+	buf := make([]byte, 100*oneMBByte) //100mb
+	totalMB := 0
 	for {
 		n, _ := srcFile.Read(buf)
 		if n == 0 {
 			break
 		}
-		_, _ = dstFile.Write(buf[0:n])
+		length, _ := dstFile.Write(buf[0:n])
+		totalMB += length / oneMBByte
+
+		uiprogress.Start()            // start rendering
+		bar := uiprogress.AddBar(100) // Add a new bar
+
+		// optionally, append and prepend completion and elapsed time
+		bar.AppendCompleted()
+		bar.PrependElapsed()
+
+		logger.Alert("transfer total size is:", totalMB, "MB")
 	}
 }
 
@@ -202,7 +240,7 @@ ipvs:
         - "{{.VIP}}/32"`)
 	tmpl, err := template.New("text").Parse(templateText)
 	if err != nil {
-		fmt.Println("template parse failed:", err)
+		logger.Error("template parse failed:", err)
 		panic(1)
 	}
 	var envMap = make(map[string]interface{})
