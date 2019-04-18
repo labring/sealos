@@ -2,10 +2,10 @@ package install
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/wonderivan/logger"
 )
 
 func TestCmd(t *testing.T) {
@@ -63,22 +63,14 @@ func TestSendHttps(t *testing.T) {
 }
 
 func TestProcess(t *testing.T) {
-	for i := 10; i <= 100; i += 10 {
-		str := "[" + bar(i/10, 10) + "] " + strconv.Itoa(i) + "%"
-		fmt.Printf("\r%s", str)
-		time.Sleep(1 * time.Second)
-	}
-	fmt.Println()
-
+	//fmt.Printf("%s \033[K\n", "--") // 输出一行结果
+	//fmt.Printf("\033[%dA\033[K", 1) // 将光标向上移动一行
+	//fmt.Printf("%s \033[K\n", "=-") // 输出第二行结果
+	bar(100, 1, 0)
 }
-func bar(count, size int) string {
-	str := ""
-	for i := 0; i < size; i++ {
-		if i < count {
-			str += "="
-		} else {
-			str += " "
-		}
-	}
-	return str
+func bar(count, current, num int) int {
+	reslt := current / count * 100
+	str := fmt.Sprintf("%d%% []", reslt)
+	logger.Debug(str)
+	return reslt
 }

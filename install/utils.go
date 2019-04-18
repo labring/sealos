@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gosuri/uiprogress"
 	"github.com/pkg/sftp"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh"
@@ -124,14 +123,6 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		}
 		length, _ := dstFile.Write(buf[0:n])
 		totalMB += length / oneMBByte
-
-		uiprogress.Start()            // start rendering
-		bar := uiprogress.AddBar(100) // Add a new bar
-
-		// optionally, append and prepend completion and elapsed time
-		bar.AppendCompleted()
-		bar.PrependElapsed()
-
 		logger.Alert("transfer total size is:", totalMB, "MB")
 	}
 }
