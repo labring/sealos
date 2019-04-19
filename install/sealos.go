@@ -14,7 +14,7 @@ type Installer interface {
 	JoinMasters()
 	JoinNodes()
 	CleanCluster()
-	SendPackage(pkg string, url string)
+	SendPackage(pkg string, url string, localPkg bool)
 }
 
 //SealosInstaller is
@@ -22,18 +22,16 @@ type SealosInstaller struct {
 	Masters         []string
 	Nodes           []string
 	VIP             string
-	Version         string
 	JoinToken       string
 	TokenCaCertHash string
 	CertificateKey  string
 }
 
 //BuildInstaller is
-func BuildInstaller(masters []string, nodes []string, vip string, version string) Installer {
+func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 	return &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
-		Version: version,
 		VIP:     vip,
 	}
 }
@@ -42,7 +40,7 @@ func BuildInstaller(masters []string, nodes []string, vip string, version string
 func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	if KubeadmFile == "" {
-		templateData = string(Template(s.Masters, s.VIP, s.Version))
+		templateData = string(Template(s.Masters, s.VIP, Version))
 	} else {
 		fileData, err := ioutil.ReadFile(KubeadmFile)
 		if err != nil {
@@ -51,7 +49,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		}
 		templateData = string(fileData)
 	}
-	cmd := "echo \"" + templateData + "\" > ~/kubeadm-config.yaml"
+	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 }
 
@@ -60,14 +58,14 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
 	Cmd(s.Masters[0], cmd)
 
-	cmd = "echo \"" + string(Template(s.Masters, s.VIP, s.Version)) + "\" > /root/kubeadm-config.yaml"
+	cmd = "echo \"" + string(Template(s.Masters, s.VIP, Version)) + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
 	output := Cmd(s.Masters[0], cmd)
 	s.decodeOutput(output)
 
-	cmd = `mkdir -p ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/config`
+	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
 	cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`

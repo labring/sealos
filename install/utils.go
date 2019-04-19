@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"html/template"
 	"net"
+	"os"
+	"path"
+	"strconv"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -15,6 +19,7 @@ var (
 	User        string
 	Passwd      string
 	KubeadmFile string
+	Version     string
 )
 
 //Cmd is
@@ -25,7 +30,6 @@ func Cmd(host string, cmd string) []byte {
 	if err != nil {
 		fmt.Println("	Error create ssh session failed", err)
 		panic(1)
-		return []byte{}
 	}
 	defer session.Close()
 
@@ -34,9 +38,64 @@ func Cmd(host string, cmd string) []byte {
 	if err != nil {
 		fmt.Println("	Error exec command failed", err)
 		panic(1)
-		return []byte{}
 	}
 	return b
+}
+func RemoteFilExist(host, remoteFilePath string) bool {
+	// if remote file is
+	// ls -l | grep aa | wc -l
+	remoteFileName := path.Base(remoteFilePath) // aa
+	remoteFileDirName := path.Dir(remoteFilePath)
+	remoteFileCommand := fmt.Sprintf("ls -l %s | grep %s | wc -l", remoteFileDirName, remoteFileName)
+	data := bytes.Replace(Cmd(host, remoteFileCommand), []byte("\r"), []byte(""), -1)
+	data = bytes.Replace(data, []byte("\n"), []byte(""), -1)
+
+	count, err := strconv.Atoi(string(data))
+	if err != nil {
+		fmt.Println("RemoteFilExist:", err)
+		panic(1)
+	}
+	if count == 0 {
+		return false
+	} else {
+		return true
+	}
+}
+
+//Copy is
+func Copy(host, localFilePath, remoteFilePath string) {
+	if RemoteFilExist(host, remoteFilePath) {
+		fmt.Println("host is ", host, ", scpCopy: file is exist")
+		return
+	}
+	sftpClient, err := SftpConnect(User, Passwd, host)
+	if err != nil {
+		fmt.Println("scpCopy:", err)
+		panic(1)
+	}
+	defer sftpClient.Close()
+	srcFile, err := os.Open(localFilePath)
+	if err != nil {
+		fmt.Println("scpCopy:", err)
+		panic(1)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := sftpClient.Create(remoteFilePath)
+	if err != nil {
+		fmt.Println("scpCopy:", err)
+		panic(1)
+	}
+	defer dstFile.Close()
+
+	buf := make([]byte, 1024)
+	for {
+		n, _ := srcFile.Read(buf)
+		if n == 0 {
+			break
+		}
+		_, _ = dstFile.Write(buf[0:n])
+	}
 }
 
 //Connect is
@@ -78,6 +137,44 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 	}
 
 	return session, nil
+}
+
+//SftpConnect  is
+func SftpConnect(user, password, host string) (*sftp.Client, error) {
+	var (
+		auth         []ssh.AuthMethod
+		addr         string
+		clientConfig *ssh.ClientConfig
+		sshClient    *ssh.Client
+		sftpClient   *sftp.Client
+		err          error
+	)
+	// get auth method
+	auth = make([]ssh.AuthMethod, 0)
+	auth = append(auth, ssh.Password(password))
+
+	clientConfig = &ssh.ClientConfig{
+		User:    user,
+		Auth:    auth,
+		Timeout: 30 * time.Second,
+		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		},
+	}
+
+	// connet to ssh
+	addr = fmt.Sprintf("%s:22", host)
+
+	if sshClient, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
+		return nil, err
+	}
+
+	// create sftp client
+	if sftpClient, err = sftp.NewClient(sshClient); err != nil {
+		return nil, err
+	}
+
+	return sftpClient, nil
 }
 
 //Template is
