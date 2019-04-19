@@ -23,7 +23,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
 	}
 	remoteCmd := fmt.Sprintf("cd /root &&  %s %s && tar zxvf %s", wgetCommand, url, pkg)
-	localCmd := fmt.Sprintf("cd /root && tar zxvf %s ", pkg)
+	localCmd := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s ", pkg)
 	kubeCmd := "cd /root/kube/shell && sh init.sh"
 	kubeLocal := fmt.Sprintf("/root/%s", pkg)
 
@@ -34,14 +34,16 @@ func (s *SealosInstaller) SendPackage(url string) {
 		go func(master string) {
 			defer wm.Done()
 			logger.Debug("please wait for tar zxvf exec")
-			if isHttp {
-				go WatchFileSize(master, kubeLocal, GetFileSize(url))
-				Cmd(master, remoteCmd)
+			if RemoteFilExist(master, kubeLocal) {
+				logger.Warn("host is ", master, ", SendPackage: file is exist")
 			} else {
-				if !RemoteFilExist(master, kubeLocal) {
+				if isHttp {
+					go WatchFileSize(master, kubeLocal, GetFileSize(url))
+					Cmd(master, remoteCmd)
+				} else {
 					Copy(master, url, kubeLocal)
+					Cmd(master, localCmd)
 				}
-				Cmd(master, localCmd)
 			}
 			Cmd(master, kubeCmd)
 		}(master)
@@ -51,14 +53,16 @@ func (s *SealosInstaller) SendPackage(url string) {
 		go func(node string) {
 			defer wn.Done()
 			logger.Debug("please wait for tar zxvf exec")
-			if isHttp {
-				go WatchFileSize(node, kubeLocal, GetFileSize(url))
-				Cmd(node, remoteCmd)
+			if RemoteFilExist(node, kubeLocal) {
+				logger.Warn("host is ", node, ", SendPackage: file is exist")
 			} else {
-				if !RemoteFilExist(node, kubeLocal) {
+				if isHttp {
+					go WatchFileSize(node, kubeLocal, GetFileSize(url))
+					Cmd(node, remoteCmd)
+				} else {
 					Copy(node, url, kubeLocal)
+					Cmd(node, localCmd)
 				}
-				Cmd(node, localCmd)
 			}
 			Cmd(node, kubeCmd)
 		}(node)

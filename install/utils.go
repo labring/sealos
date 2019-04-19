@@ -109,10 +109,6 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
-	if RemoteFilExist(host, remoteFilePath) {
-		logger.Warn("host is ", host, ", scpCopy: file is exist")
-		return
-	}
 	sftpClient, err := SftpConnect(User, Passwd, host)
 	if err != nil {
 		logger.Error("scpCopy:", err)
