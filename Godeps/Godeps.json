@@ -134,6 +134,11 @@
 			"Rev": "9e56dacc08fbbf8c9ee2dbc717553c758ce42bc9"
 		},
 		{
+			"ImportPath": "github.com/wonderivan/logger",
+			"Comment": "v1.0.0",
+			"Rev": "11d39e135b9d8f7994e0b70b26df77bf207d75aa"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/curve25519",
 			"Rev": "c2843e01d9a2bc60bb26ad24e09734fdc2d9ec58"
 		},
