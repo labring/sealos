@@ -1,7 +1,7 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
-[简体中文,老版本](https://sealyun.com/post/sealos/)
+[简体中文老版本](https://sealyun.com/post/sealos/)
 
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
