@@ -3,8 +3,6 @@
 
 [简体中文,老版本](https://sealyun.com/post/sealos/)
 
-[离线包购买市场](http://store.lameleg.com/)
-
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 # Sealos 2.0
@@ -17,7 +15,7 @@ build a production kubernetes cluster
 # Quick Start
 ## Pre
 * Install and start docker
-* Download[offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
+* Download [offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
 
 ## Install
 ```
