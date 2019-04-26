@@ -15,7 +15,8 @@ build a production kubernetes cluster
 # Quick Start
 ## Pre
 * Install and start docker
-* Download [offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
+* Download [kubernetes offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
+* Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
 
 ## Install
 ```
