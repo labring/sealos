@@ -56,7 +56,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 			logger.Debug("please wait for tar zxvf exec")
 			if RemoteFilExist(node, kubeLocal) {
 				logger.Warn("host is ", node, ", SendPackage: file is exist")
-				Cmd(master, localCmd)
+				Cmd(node, localCmd)
 			} else {
 				if isHttp {
 					go WatchFileSize(node, kubeLocal, GetFileSize(url))
