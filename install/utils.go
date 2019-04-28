@@ -28,12 +28,20 @@ var (
 
 const oneMBByte = 1024 * 1024
 
+func AddrReformat(host string) (string) {
+	if strings.Index(host, ":") == -1 {
+		host = fmt.Sprintf("%s:22", host)
+	}
+	return host
+}
+
 func ReturnCmd(host, cmd string) string {
 	session, _ := Connect(User, Passwd, host)
 	defer session.Close()
 	b, _ := session.CombinedOutput(cmd)
 	return string(b)
 }
+
 func GetFileSize(url string) int {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -47,6 +55,7 @@ func GetFileSize(url string) int {
 	resp.Body.Close()
 	return int(resp.ContentLength)
 }
+
 func WatchFileSize(host, filename string, size int) {
 	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
@@ -158,7 +167,7 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 		},
 	}
 
-	addr := fmt.Sprintf("%s:22", host)
+	addr := AddrReformat(host)
 	client, err := ssh.Dial("tcp", addr, clientConfig)
 	if err != nil {
 		return nil, err
@@ -206,7 +215,7 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 	}
 
 	// connet to ssh
-	addr = fmt.Sprintf("%s:22", host)
+	addr = AddrReformat(host)
 
 	if sshClient, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
 		return nil, err
