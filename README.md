@@ -14,7 +14,7 @@ Build a production kubernetes HA cluster.
 # Quick Start
 ## PreInstall
 * Install and start docker
-* Download [kubernetes offline package](https://github.com/fanux/sealos/releases) copy it to /root. 
+* Download [kubernetes offline package](https://github.com/sealstore/cloud-kernel/releases/) copy it to /root. 
 * Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
 * Support kuberentes 1.14.0+ 
 
