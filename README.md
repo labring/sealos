@@ -14,7 +14,7 @@ Build a production kubernetes HA cluster.
 # Quick Start
 ## PreInstall
 * Install and start docker
-* Download [kubernetes offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
+* Download [kubernetes offline package](https://github.com/fanux/sealos/releases) copy it to /root. 
 * Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
 * Support kuberentes 1.14.0+ 
 
@@ -22,13 +22,21 @@ Build a production kubernetes HA cluster.
 ```
 sealos init --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \  # masters list
-    --node 192.168.0.5 \    # nodes list
-    --user root \           # host user name
-    --passwd your-server-password \ # host passwd
-    --pkg-url /root/kube1.14.1.tar.gz # you offline package location 
+    --master 192.168.0.4 \              
+    --node 192.168.0.5 \                 
+    --user root \                        
+    --passwd your-server-password \      
+    --pkg-url /root/kube1.14.1.tar.gz     
 ```
 Thats all!
+
+```
+--master   masters list
+--node     nodes list
+--user     host user name
+--passwd   host passwd
+--pkg-url  you offline package location
+```
 
 Other flags:
 ```
@@ -73,3 +81,4 @@ About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/
 
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
+[More offline packages](http://store.lameleg.com)
