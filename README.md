@@ -44,6 +44,42 @@ Other flags:
  --vip string              virtual ip (default "10.103.97.2") 
 ```
 
+Check cluster:
+```
+[root@iZj6cdqfqw4o4o9tc0q44rZ ~]# kubectl get node
+NAME                      STATUS   ROLES    AGE     VERSION
+izj6cdqfqw4o4o9tc0q44rz   Ready    master   2m25s   v1.14.1
+izj6cdqfqw4o4o9tc0q44sz   Ready    master   119s    v1.14.1
+izj6cdqfqw4o4o9tc0q44tz   Ready    master   63s     v1.14.1
+izj6cdqfqw4o4o9tc0q44uz   Ready    <none>   38s     v1.14.1
+[root@iZj6cdqfqw4o4o9tc0q44rZ ~]# kubectl get pod --all-namespaces
+NAMESPACE     NAME                                              READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-5cbcccc885-9n2p8          1/1     Running   0          3m1s
+kube-system   calico-node-656zn                                 1/1     Running   0          93s
+kube-system   calico-node-bv5hn                                 1/1     Running   0          2m54s
+kube-system   calico-node-f2vmd                                 1/1     Running   0          3m1s
+kube-system   calico-node-tbd5l                                 1/1     Running   0          118s
+kube-system   coredns-fb8b8dccf-8bnkv                           1/1     Running   0          3m1s
+kube-system   coredns-fb8b8dccf-spq7r                           1/1     Running   0          3m1s
+kube-system   etcd-izj6cdqfqw4o4o9tc0q44rz                      1/1     Running   0          2m25s
+kube-system   etcd-izj6cdqfqw4o4o9tc0q44sz                      1/1     Running   0          2m53s
+kube-system   etcd-izj6cdqfqw4o4o9tc0q44tz                      1/1     Running   0          118s
+kube-system   kube-apiserver-izj6cdqfqw4o4o9tc0q44rz            1/1     Running   0          2m15s
+kube-system   kube-apiserver-izj6cdqfqw4o4o9tc0q44sz            1/1     Running   0          2m54s
+kube-system   kube-apiserver-izj6cdqfqw4o4o9tc0q44tz            1/1     Running   1          47s
+kube-system   kube-controller-manager-izj6cdqfqw4o4o9tc0q44rz   1/1     Running   1          2m43s
+kube-system   kube-controller-manager-izj6cdqfqw4o4o9tc0q44sz   1/1     Running   0          2m54s
+kube-system   kube-controller-manager-izj6cdqfqw4o4o9tc0q44tz   1/1     Running   0          63s
+kube-system   kube-proxy-b9b9z                                  1/1     Running   0          2m54s
+kube-system   kube-proxy-nf66n                                  1/1     Running   0          3m1s
+kube-system   kube-proxy-q2bqp                                  1/1     Running   0          118s
+kube-system   kube-proxy-s5g2k                                  1/1     Running   0          93s
+kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44rz            1/1     Running   1          2m43s
+kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44sz            1/1     Running   0          2m54s
+kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44tz            1/1     Running   0          61s
+kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running   0          86s
+```
+
 ## Clean
 ```
 sealos clean \
