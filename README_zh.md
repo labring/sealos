@@ -12,6 +12,8 @@ kubernetes 1.14以下版本请移步老掉牙教程[sealos 1.x docs](https://git
 
 通过lvscare健康检测masters, 是一种非常先进且稳定的HA方式。安装失败率极低。
 
+![](./arch.png)
+
 # 快速使用
 ## 准备条件
 * 装好docker并启动docker

@@ -1,9 +1,6 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
-[简体中文老版本](https://sealyun.com/post/sealos/)
-
-[sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 # Sealos 2.0
 [简体中文](README_zh.md)
@@ -11,6 +8,8 @@
 Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
 
 build a production kubernetes cluster
+
+![](./arch.png)
 
 # Quick Start
 ## Pre
@@ -60,20 +59,6 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
 ```
 
 # Architecture
-```
-  +----------+                       +---------------+  virturl server: 127.0.0.1:6443
-  | mater0   |<----------------------| ipvs nodes    |    real servers:
-  +----------+                      |+---------------+            10.103.97.200:6443
-                                    |                             10.103.97.201:6443
-  +----------+                      |                             10.103.97.202:6443
-  | mater1   |<---------------------+
-  +----------+                      |
-                                    |
-  +----------+                      |
-  | mater2   |<---------------------+
-  +----------+
-```
-
 Every node config a ipvs for masters LB.
 
 Then run a lvscare as a staic pod to check realserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
@@ -84,5 +69,7 @@ This can care your masters ipvs rules.
 
 About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
 
-# 公众号：
-![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
+[简体中文老版本](https://sealyun.com/post/sealos/)
+
+[sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
+
