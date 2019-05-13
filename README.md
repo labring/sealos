@@ -118,3 +118,5 @@ About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 [More offline packages](http://store.lameleg.com)
+
+[Fist](https://github.com/fanux/fist) Light weight kubernetes manager, support JWT user token, powerful webterminal, yaml files render and namespaces PSP quota manager etc..
