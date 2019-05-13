@@ -24,9 +24,7 @@ var (
 	nodes   []string
 	vip     string
 
-	localPkg bool
-	pkg      string
-	pkgURL   string
+	pkgURL string
 )
 
 // initCmd represents the init command
@@ -36,7 +34,7 @@ var initCmd = &cobra.Command{
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
 		i := install.BuildInstaller(masters, nodes, vip)
-		i.SendPackage(pkg, pkgURL, localPkg)
+		i.SendPackage(pkgURL)
 		i.KubeadmConfigInstall()
 		i.InstallMaster0()
 		i.JoinMasters()
@@ -56,8 +54,6 @@ func init() {
 	initCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	initCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
 
-	initCmd.Flags().BoolVar(&localPkg, "local-pkg", false, "if true, scp offline package to every nodes.")
-	initCmd.Flags().StringVar(&pkg, "pkg", "", "kube1.14.1.tar.gz offline package name")
-	initCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url")
+	initCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url, or file localtion ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
 }

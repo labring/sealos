@@ -15,11 +15,50 @@ Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
 build a production kubernetes cluster
 
 # Quick Start
+## Pre
+* Install and start docker
+* Download[offline package](http://store.lameleg.com) copy it to /root. PS: if you star sealos, you can download it free.
+
+## Install
 ```
-sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password
+sealos init --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \  # masters list
+    --node 192.168.0.5 \    # nodes list
+    --user root \           # host user name
+    --passwd your-server-password \ # host passwd
+    --pkg-url /root/kube1.14.1.tar.gz # you offline package location 
 ```
 Thats all!
 
+Other flags:
+```
+ --kubeadm-config string   kubeadm-config.yaml local 
+ --vip string              virtual ip (default "10.103.97.2") 
+```
+
+## Clean
+```
+sealos clean \
+    --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \           
+    --node 192.168.0.5 \              
+    --user root \                    
+    --passwd your-server-password
+```
+
+## Add nodes
+Using super kubeadm:
+```
+cd kube/shell && init.sh
+echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
+kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
+    --master 10.103.97.100:6443 \
+    --master 10.103.97.101:6443 \
+    --master 10.103.97.102:6443 \
+    --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
+```
 
 # Architecture
 ```
