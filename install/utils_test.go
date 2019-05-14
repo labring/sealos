@@ -74,3 +74,14 @@ func bar(count, current, num int) int {
 	logger.Debug(str)
 	return reslt
 }
+
+func TestHostAndPortSpilt(t *testing.T) {
+	hosts := []string{"10.0.6.111:2233", "10.0.6.112:223", "10.0.6.113", "10.0.6.114"}
+	got, got1 := HostAndPortSpilt(hosts)
+	t.Log(got)
+	t.Log(got1)
+	t.Log("Next........")
+	got, got1 = HostAndPortSpilt("192.211.3.1:8888")
+	t.Log(got)
+	t.Log(got1)
+}

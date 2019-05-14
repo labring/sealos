@@ -256,3 +256,33 @@ ipvs:
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
 }
+
+func HostAndPortSpilt(hosts interface{}) ([]string, []string) {
+	var rhosts, rports []string
+	switch vhosts := hosts.(type) {
+	case string:
+		h, p := priHostSpilt(vhosts)
+		rhosts = append(rhosts, h)
+		rports = append(rports, p)
+	case []string:
+		for _, v := range vhosts {
+			h, p := priHostSpilt(v)
+			rhosts = append(rhosts, h)
+			rports = append(rports, p)
+		}
+	}
+	return rhosts, rports
+}
+
+func priHostSpilt(vhosts string) (string, string) {
+	spiltArr := strings.Split(vhosts, ":")
+	var rhosts, rports string
+	if len(spiltArr) == 1 {
+		rhosts = vhosts
+		rports = "22"
+	} else {
+		rhosts = spiltArr[0]
+		rports = spiltArr[1]
+	}
+	return rhosts, rports
+}
