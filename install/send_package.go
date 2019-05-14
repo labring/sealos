@@ -37,7 +37,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 			if RemoteFilExist(master, port, kubeLocal) {
 				logger.Warn("host is ", master, ", SendPackage: file is exist")
 			} else {
-				if isHttp {
+				if isHTTP {
 					go WatchFileSize(master, port, kubeLocal, GetFileSize(url))
 					Cmd(master, port, remoteCmd)
 				} else {
@@ -56,7 +56,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 			if RemoteFilExist(node, port, kubeLocal) {
 				logger.Warn("host is ", node, ", SendPackage: file is exist")
 			} else {
-				if isHttp {
+				if isHTTP {
 					go WatchFileSize(node, port, kubeLocal, GetFileSize(url))
 					Cmd(node, port, remoteCmd)
 				} else {
