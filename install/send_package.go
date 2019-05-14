@@ -36,6 +36,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 			logger.Debug("please wait for tar zxvf exec")
 			if RemoteFilExist(master, port, kubeLocal) {
 				logger.Warn("host is ", master, ", SendPackage: file is exist")
+				Cmd(master, localCmd)
 			} else {
 				if isHTTP {
 					go WatchFileSize(master, port, kubeLocal, GetFileSize(url))
@@ -55,6 +56,7 @@ func (s *SealosInstaller) SendPackage(url string) {
 			logger.Debug("please wait for tar zxvf exec")
 			if RemoteFilExist(node, port, kubeLocal) {
 				logger.Warn("host is ", node, ", SendPackage: file is exist")
+				Cmd(node, localCmd)
 			} else {
 				if isHTTP {
 					go WatchFileSize(node, port, kubeLocal, GetFileSize(url))
