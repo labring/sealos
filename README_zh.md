@@ -12,10 +12,12 @@ kubernetes 1.14以下版本请移步老掉牙教程[sealos 1.x docs](https://git
 
 通过lvscare健康检测masters, 是一种非常先进且稳定的HA方式。安装失败率极低。
 
+![](./arch.png)
+
 # 快速使用
 ## 准备条件
 * 装好docker并启动docker
-* 把[离线安装包](http://store.lameleg.com) 下载好拷贝到执行节点的任意目录,不需要解压,sealos会自动检测各个节点是否有安装包,若不存在则会scp到该节点。如果有文件服务器更好，sealos也支持从一个服务器上wget到所有节点上。
+* 把[离线安装包](http://store.lameleg.com) 下载好拷贝到执行节点的任意目录,不需要解压,sealos会自动检测各个节点是否有安装包,若不存在则会scp到该节点。如果有文件服务器更好，sealos也支持从一个服务器上wget到所有节点上。 离线包中sealos暂不支持scp，请到release界面下载最新版sealos
 
 ## 安装
 sealos已经放在离线包中，解压后在kube/bin目录下(可以解压一个，获取sealos bin文件)
