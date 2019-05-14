@@ -13,9 +13,9 @@ import (
 func (s *SealosInstaller) SendPackage(url string) {
 	pkg := path.Base(url)
 	//only http
-	isHttp := strings.HasPrefix(url, "http")
+	isHTTP := strings.HasPrefix(url, "http")
 	wgetCommand := ""
-	if isHttp {
+	if isHTTP {
 		wgetParam := ""
 		if strings.HasPrefix(url, "https") {
 			wgetParam = "--no-check-certificate"
@@ -29,43 +29,43 @@ func (s *SealosInstaller) SendPackage(url string) {
 
 	var wm sync.WaitGroup
 	var wn sync.WaitGroup
-	for _, master := range s.Masters {
+	for i, master := range s.Masters {
 		wm.Add(1)
-		go func(master string) {
+		go func(master, port string) {
 			defer wm.Done()
 			logger.Debug("please wait for tar zxvf exec")
-			if RemoteFilExist(master, kubeLocal) {
+			if RemoteFilExist(master, port, kubeLocal) {
 				logger.Warn("host is ", master, ", SendPackage: file is exist")
 			} else {
 				if isHttp {
-					go WatchFileSize(master, kubeLocal, GetFileSize(url))
-					Cmd(master, remoteCmd)
+					go WatchFileSize(master, port, kubeLocal, GetFileSize(url))
+					Cmd(master, port, remoteCmd)
 				} else {
-					Copy(master, url, kubeLocal)
-					Cmd(master, localCmd)
+					Copy(master, port, url, kubeLocal)
+					Cmd(master, port, localCmd)
 				}
 			}
-			Cmd(master, kubeCmd)
-		}(master)
+			Cmd(master, port, kubeCmd)
+		}(master, s.MastersPorts[i])
 	}
-	for _, node := range s.Nodes {
+	for i, node := range s.Nodes {
 		wn.Add(1)
-		go func(node string) {
+		go func(node, port string) {
 			defer wn.Done()
 			logger.Debug("please wait for tar zxvf exec")
-			if RemoteFilExist(node, kubeLocal) {
+			if RemoteFilExist(node, port, kubeLocal) {
 				logger.Warn("host is ", node, ", SendPackage: file is exist")
 			} else {
 				if isHttp {
-					go WatchFileSize(node, kubeLocal, GetFileSize(url))
-					Cmd(node, remoteCmd)
+					go WatchFileSize(node, port, kubeLocal, GetFileSize(url))
+					Cmd(node, port, remoteCmd)
 				} else {
-					Copy(node, url, kubeLocal)
-					Cmd(node, localCmd)
+					Copy(node, port, url, kubeLocal)
+					Cmd(node, port, localCmd)
 				}
 			}
-			Cmd(node, kubeCmd)
-		}(node)
+			Cmd(node, port, kubeCmd)
+		}(node, s.NodesPorts[i])
 	}
 
 	wm.Wait()

@@ -28,12 +28,15 @@ var (
 
 const oneMBByte = 1024 * 1024
 
-func ReturnCmd(host, cmd string) string {
-	session, _ := Connect(User, Passwd, host)
+//ReturnCmd is
+func ReturnCmd(host, port, cmd string) string {
+	session, _ := Connect(User, Passwd, host, port)
 	defer session.Close()
 	b, _ := session.CombinedOutput(cmd)
 	return string(b)
 }
+
+//GetFileSize is
 func GetFileSize(url string) int {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -47,13 +50,13 @@ func GetFileSize(url string) int {
 	resp.Body.Close()
 	return int(resp.ContentLength)
 }
-func WatchFileSize(host, filename string, size int) {
+func WatchFileSize(host, port, filename string, size int) {
 	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
 	for {
 		select {
 		case <-t.C:
-			length := ReturnCmd(host, "ls -l "+filename+" | awk '{print $5}'")
+			length := ReturnCmd(host, port, "ls -l "+filename+" | awk '{print $5}'")
 			length = strings.Replace(length, "\n", "", -1)
 			length = strings.Replace(length, "\r", "", -1)
 			lengthByte, _ := strconv.Atoi(length)
@@ -68,9 +71,9 @@ func WatchFileSize(host, filename string, size int) {
 }
 
 //Cmd is
-func Cmd(host string, cmd string) []byte {
+func Cmd(host, port string, cmd string) []byte {
 	logger.Info(host, "    ", cmd)
-	session, err := Connect(User, Passwd, host)
+	session, err := Connect(User, Passwd, host, port)
 	if err != nil {
 		logger.Error("	Error create ssh session failed", err)
 		panic(1)
@@ -86,13 +89,13 @@ func Cmd(host string, cmd string) []byte {
 	return b
 }
 
-func RemoteFilExist(host, remoteFilePath string) bool {
+func RemoteFilExist(host, port, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
 	remoteFileName := path.Base(remoteFilePath) // aa
 	remoteFileDirName := path.Dir(remoteFilePath)
 	remoteFileCommand := fmt.Sprintf("ls -l %s | grep %s | wc -l", remoteFileDirName, remoteFileName)
-	data := bytes.Replace(Cmd(host, remoteFileCommand), []byte("\r"), []byte(""), -1)
+	data := bytes.Replace(Cmd(host, port, remoteFileCommand), []byte("\r"), []byte(""), -1)
 	data = bytes.Replace(data, []byte("\n"), []byte(""), -1)
 
 	count, err := strconv.Atoi(string(data))
@@ -108,8 +111,8 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 }
 
 //Copy is
-func Copy(host, localFilePath, remoteFilePath string) {
-	sftpClient, err := SftpConnect(User, Passwd, host)
+func Copy(host, port, localFilePath, remoteFilePath string) {
+	sftpClient, err := SftpConnect(User, Passwd, host, port)
 	if err != nil {
 		logger.Error("scpCopy:", err)
 		panic(1)
@@ -142,7 +145,7 @@ func Copy(host, localFilePath, remoteFilePath string) {
 }
 
 //Connect is
-func Connect(user, passwd, host string) (*ssh.Session, error) {
+func Connect(user, passwd, host, port string) (*ssh.Session, error) {
 	auth := []ssh.AuthMethod{ssh.Password(passwd)}
 	config := ssh.Config{
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
@@ -158,7 +161,7 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 		},
 	}
 
-	addr := fmt.Sprintf("%s:22", host)
+	addr := fmt.Sprintf("%s:%s", host, port)
 	client, err := ssh.Dial("tcp", addr, clientConfig)
 	if err != nil {
 		return nil, err
@@ -183,7 +186,7 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 }
 
 //SftpConnect  is
-func SftpConnect(user, password, host string) (*sftp.Client, error) {
+func SftpConnect(user, password, host, port string) (*sftp.Client, error) {
 	var (
 		auth         []ssh.AuthMethod
 		addr         string
@@ -206,7 +209,7 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 	}
 
 	// connet to ssh
-	addr = fmt.Sprintf("%s:22", host)
+	addr = fmt.Sprintf("%s:%s", host, port)
 
 	if sshClient, err = ssh.Dial("tcp", addr, clientConfig); err != nil {
 		return nil, err

@@ -22,7 +22,9 @@ type Installer interface {
 //SealosInstaller is
 type SealosInstaller struct {
 	Masters         []string
+	MastersPorts    []string
 	Nodes           []string
+	NodesPorts      []string
 	VIP             string
 	JoinToken       string
 	TokenCaCertHash string
@@ -30,11 +32,13 @@ type SealosInstaller struct {
 }
 
 //BuildInstaller is
-func BuildInstaller(masters []string, nodes []string, vip string) Installer {
+func BuildInstaller(masters, masterPorts, nodes, nodesPorts []string, vip string) Installer {
 	return &SealosInstaller{
-		Masters: masters,
-		Nodes:   nodes,
-		VIP:     vip,
+		Masters:      masters,
+		MastersPorts: masterPorts,
+		Nodes:        nodes,
+		NodesPorts:   nodesPorts,
+		VIP:          vip,
 	}
 }
 
@@ -52,38 +56,38 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		templateData = string(fileData)
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
-	Cmd(s.Masters[0], cmd)
+	Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 }
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
-	Cmd(s.Masters[0], cmd)
+	Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 
 	cmd = "echo \"" + string(Template(s.Masters, s.VIP, Version)) + "\" > /root/kubeadm-config.yaml"
-	Cmd(s.Masters[0], cmd)
+	Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
-	output := Cmd(s.Masters[0], cmd)
+	output := Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 	s.decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
-	output = Cmd(s.Masters[0], cmd)
+	output = Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 
 	cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-	output = Cmd(s.Masters[0], cmd)
+	output = Cmd(s.Masters[0], s.MastersPorts[0], cmd)
 }
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
 	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], s.JoinToken, s.TokenCaCertHash, s.CertificateKey)
 
-	for _, master := range s.Masters[1:] {
+	for i, master := range s.Masters[1:] {
 		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
-		Cmd(master, cmdHosts)
-		Cmd(master, cmd)
+		Cmd(master, s.MastersPorts[i], cmdHosts)
+		Cmd(master, s.MastersPorts[i], cmd)
 		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
-		Cmd(master, cmdHosts)
+		Cmd(master, s.MastersPorts[i], cmdHosts)
 	}
 }
 
@@ -95,15 +99,15 @@ func (s *SealosInstaller) JoinNodes() {
 		masters += fmt.Sprintf(" --master %s:6443", master)
 	}
 
-	for _, node := range s.Nodes {
+	for i, node := range s.Nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.VIP)
-			Cmd(node, cmdHosts)
+			Cmd(node, s.NodesPorts[i], cmdHosts)
 			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", s.VIP, s.JoinToken, s.TokenCaCertHash)
 			cmd += masters
-			Cmd(node, cmd)
+			Cmd(node, s.NodesPorts[i], cmd)
 		}(node)
 	}
 
@@ -115,18 +119,18 @@ func (s *SealosInstaller) CleanCluster() {
 	cmd := fmt.Sprintf("kubeadm reset -f && rm -rf /var/etcd && rm -rf /var/lib/etcd")
 	cmdHost := fmt.Sprintf("sed -i \"/apiserver.cluster.local/d\" /etc/hosts ")
 
-	for _, master := range s.Masters {
-		Cmd(master, cmd)
-		Cmd(master, cmdHost)
+	for i, master := range s.Masters {
+		Cmd(master, s.MastersPorts[i], cmd)
+		Cmd(master, s.MastersPorts[i], cmdHost)
 	}
 
 	var wg sync.WaitGroup
-	for _, node := range s.Nodes {
+	for i, node := range s.Nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			Cmd(node, cmd)
-			Cmd(node, cmdHost)
+			Cmd(node, s.NodesPorts[i], cmd)
+			Cmd(node, s.NodesPorts[i], cmdHost)
 		}(node)
 	}
 	wg.Wait()
