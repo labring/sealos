@@ -26,6 +26,7 @@ sealos init --master 192.168.0.2 \
     --node 192.168.0.5 \                 
     --user root \                        
     --passwd your-server-password \      
+    --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz     
 ```
 Thats all!
@@ -36,6 +37,7 @@ Thats all!
 --user     host user name
 --passwd   host passwd
 --pkg-url  you offline package location
+--version  kubernetes version
 ```
 
 Other flags:
