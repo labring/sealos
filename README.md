@@ -19,6 +19,7 @@ Build a production kubernetes HA cluster.
 * Support kuberentes 1.14.0+ 
 
 ## Install
+Multi master HA:
 ```
 sealos init --master 192.168.0.2 \
     --master 192.168.0.3 \
@@ -29,6 +30,17 @@ sealos init --master 192.168.0.2 \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz     
 ```
+
+OR single master:
+```
+sealos init --master 192.168.0.2 \
+    --node 192.168.0.5 \                 
+    --user root \                        
+    --passwd your-server-password \      
+    --version v1.14.1 \
+    --pkg-url /root/kube1.14.1.tar.gz 
+```
+
 Thats all!
 
 ```
