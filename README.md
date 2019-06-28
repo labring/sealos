@@ -19,6 +19,7 @@ Build a production kubernetes HA cluster.
 * Support kuberentes 1.14.0+ 
 
 ## Install
+Multi master HA:
 ```
 sealos init --master 192.168.0.2 \
     --master 192.168.0.3 \
@@ -26,8 +27,20 @@ sealos init --master 192.168.0.2 \
     --node 192.168.0.5 \                 
     --user root \                        
     --passwd your-server-password \      
+    --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz     
 ```
+
+OR single master:
+```
+sealos init --master 192.168.0.2 \
+    --node 192.168.0.5 \                 
+    --user root \                        
+    --passwd your-server-password \      
+    --version v1.14.1 \
+    --pkg-url /root/kube1.14.1.tar.gz 
+```
+
 Thats all!
 
 ```
@@ -36,6 +49,7 @@ Thats all!
 --user     host user name
 --passwd   host passwd
 --pkg-url  you offline package location
+--version  kubernetes version
 ```
 
 Other flags:
@@ -118,3 +132,5 @@ About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/
 [sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 [More offline packages](http://store.lameleg.com)
+
+[Fist](https://github.com/fanux/fist) Light weight kubernetes manager, support JWT user token, powerful webterminal, yaml files render and namespaces PSP quota manager etc..
