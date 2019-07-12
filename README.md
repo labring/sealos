@@ -106,7 +106,12 @@ sealos clean \
 ```
 
 ## Add nodes
-Using super kubeadm:
+Fetch join command:
+```
+kubeadm token create --print-join-command
+```
+
+Using super kubeadm, add `--master` flags in join command:
 ```
 cd kube/shell && init.sh
 echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
