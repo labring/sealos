@@ -16,7 +16,7 @@
 ## 升级控制节点
 ```
 kubeadm upgrade plan
-kubeadm upgrade apply v1.14.2
+kubeadm upgrade apply v1.15.0
 ```
 
 重启kubelet:
