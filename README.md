@@ -122,6 +122,9 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
 ```
 
+## upgrade
+[升级简体中文](docs/upgrade_zh.md)
+
 # More infomations
 
 About [LVScare](https://github.com/fanux/LVScare)
