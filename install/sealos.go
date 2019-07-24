@@ -14,9 +14,11 @@ type Installer interface {
 	KubeadmConfigInstall()
 	InstallMaster0()
 	JoinMasters()
+	GeneratorToken()
 	JoinNodes()
 	CleanCluster()
 	SendPackage(url string)
+	SendPackageForNodeAndMaster(url string, masterAble, nodeAble bool)
 }
 
 //SealosInstaller is
@@ -53,6 +55,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
+}
+
+//GeneratorToken is
+func (s *SealosInstaller) GeneratorToken() {
+	cmd := `kubeadm token create --print-join-command`
+	output := Cmd(s.Masters[0], cmd)
+	s.decodeOutput(output)
 }
 
 //InstallMaster0 is
