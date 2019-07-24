@@ -106,7 +106,12 @@ sealos clean \
 ```
 
 ## Add nodes
-Using super kubeadm:
+Fetch join command:
+```
+kubeadm token create --print-join-command
+```
+
+Using super kubeadm, add `--master` flags in join command:
 ```
 cd kube/shell && init.sh
 echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
@@ -116,6 +121,9 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --master 10.103.97.102:6443 \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
 ```
+
+## upgrade
+[升级简体中文](docs/upgrade_zh.md)
 
 # More infomations
 
