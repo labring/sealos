@@ -112,12 +112,9 @@ func (s *SealosInstaller) JoinNodes() {
 
 //CleanCluster is
 func (s *SealosInstaller) CleanCluster() {
-	cmd := fmt.Sprintf("kubeadm reset -f && rm -rf /var/etcd && rm -rf /var/lib/etcd")
-	cmdHost := fmt.Sprintf("sed -i \"/apiserver.cluster.local/d\" /etc/hosts ")
 
 	for _, master := range s.Masters {
-		Cmd(master, cmd)
-		Cmd(master, cmdHost)
+		s.clean(master)
 	}
 
 	var wg sync.WaitGroup
@@ -125,11 +122,27 @@ func (s *SealosInstaller) CleanCluster() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			Cmd(node, cmd)
-			Cmd(node, cmdHost)
+			s.clean(node)
 		}(node)
 	}
 	wg.Wait()
+}
+
+func (s *SealosInstaller) clean(host string) {
+	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
+	Cmd(host, cmd)
+	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
+	Cmd(host, cmd)
+	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
+	Cmd(host, cmd)
+	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
+	Cmd(host, cmd)
+	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
+	Cmd(host, cmd)
+	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd "
+	Cmd(host, cmd)
+	cmd = "rm -rf /tmp/* && sed -i \"/apiserver.cluster.local/d\" /etc/hosts "
+	Cmd(host, cmd)
 }
 
 //decode output to join token  hash and key
