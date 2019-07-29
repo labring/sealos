@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
-	"html/template"
 	"net"
 	"net/http"
 	"os"
@@ -227,20 +226,4 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 	}
 
 	return sftpClient, nil
-}
-
-//Template is
-func Template(masters []string, vip string, version string) []byte {
-	tmpl, err := template.New("text").Parse(TemplateText)
-	if err != nil {
-		logger.Error("template parse failed:", err)
-		panic(1)
-	}
-	var envMap = make(map[string]interface{})
-	envMap["VIP"] = vip
-	envMap["Masters"] = masters
-	envMap["Version"] = version
-	var buffer bytes.Buffer
-	_ = tmpl.Execute(&buffer, envMap)
-	return buffer.Bytes()
 }

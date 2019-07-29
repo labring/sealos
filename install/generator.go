@@ -1,8 +1,10 @@
 package install
 
 import (
+	"bytes"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
+	"text/template"
 )
 
 const TemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
@@ -45,4 +47,24 @@ func generatorKubeadmConfig() {
 		logger.Info("generator kubeadm-config.yaml success.")
 		logger.Info("\n" + TemplateText)
 	}
+}
+
+//Template is
+func Template(masters []string, vip string, version string) []byte {
+	return TemplateFromTemplateContent(masters, vip, version, TemplateText)
+}
+
+func TemplateFromTemplateContent(masters []string, vip, version, templateContent string) []byte {
+	tmpl, err := template.New("text").Parse(templateContent)
+	if err != nil {
+		logger.Error("template parse failed:", err)
+		panic(1)
+	}
+	var envMap = make(map[string]interface{})
+	envMap["VIP"] = vip
+	envMap["Masters"] = masters
+	envMap["Version"] = version
+	var buffer bytes.Buffer
+	_ = tmpl.Execute(&buffer, envMap)
+	return buffer.Bytes()
 }

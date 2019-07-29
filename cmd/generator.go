@@ -23,7 +23,7 @@ import (
 // generatorCmd represents the generator command
 var generatorCmd = &cobra.Command{
 	Use:   "generator",
-	Short: "generator template file for sealos",
+	Short: "generator template file for sealos,the file is generator current location.",
 	Run: func(cmd *cobra.Command, args []string) {
 		install.Generator()
 	},
@@ -31,7 +31,7 @@ var generatorCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(generatorCmd)
-	initCmd.Flags().StringVarP(&install.GeneratorType, "type", "t", "kubeadm-config", "template type (Optional: kubeadm-config)")
+	generatorCmd.Flags().StringVarP(&install.GeneratorType, "type", "t", "kubeadm-config", "template type (Optional: kubeadm-config)")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
