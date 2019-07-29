@@ -122,6 +122,50 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
     --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
 ```
 
+## Using config file
+For example, we need add a certSANs `sealyun.com`:
+```
+sealos config -t kubeadm >>  kubeadm-config.yaml.tmpl
+```
+See the config template file `cat kubeadm-config.yaml.tmpl`, edit it add `sealyun.com`:
+```
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: {{.Version}}
+controlPlaneEndpoint: "apiserver.cluster.local:6443"
+networking:
+  podSubnet: 100.64.0.0/10
+apiServer:
+        certSANs:
+        - sealyun.com # this is what I added
+        - 127.0.0.1
+        - apiserver.cluster.local
+        {{range .Masters -}}
+        - {{.}}
+        {{end -}}
+        - {{.VIP}}
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+        excludeCIDRs: 
+        - "{{.VIP}}/32"
+```
+
+Then using --kubeadm-config flag:
+```
+sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
+    --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \              
+    --node 192.168.0.5 \                 
+    --user root \                        
+    --passwd your-server-password \      
+    --version v1.14.1 \
+    --pkg-url /root/kube1.14.1.tar.gz 
+```
+
 ## upgrade
 [升级简体中文](docs/upgrade_zh.md)
 

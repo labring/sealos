@@ -51,7 +51,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
-	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml local")
+	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
 
 	initCmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
 	initCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")

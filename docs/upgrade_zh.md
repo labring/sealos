@@ -37,7 +37,7 @@ kubectl drain $NODE --ignore-daemonsets
 ```
 更新kubelet配置：
 ```
-kubeadm upgrade node config --kubelet-version v1.14.x
+kubeadm upgrade node config --kubelet-version v1.15.0
 ```
 然后升级kubelet 一样是替换二进制再重启 kubelet service
 ```
