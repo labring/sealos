@@ -28,7 +28,7 @@ var (
 
 const oneMBByte = 1024 * 1024
 
-func AddrReformat(host string) (string) {
+func AddrReformat(host string) string {
 	if strings.Index(host, ":") == -1 {
 		host = fmt.Sprintf("%s:22", host)
 	}
@@ -231,28 +231,7 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 
 //Template is
 func Template(masters []string, vip string, version string) []byte {
-	var templateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
-kind: ClusterConfiguration
-kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "apiserver.cluster.local:6443"
-networking:
-  podSubnet: 100.64.0.0/10
-apiServer:
-        certSANs:
-        - 127.0.0.1
-        - apiserver.cluster.local
-        {{range .Masters -}}
-        - {{.}}
-        {{end -}}
-        - {{.VIP}}
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: "ipvs"
-ipvs:
-        excludeCIDRs: 
-        - "{{.VIP}}/32"`)
-	tmpl, err := template.New("text").Parse(templateText)
+	tmpl, err := template.New("text").Parse(TemplateText)
 	if err != nil {
 		logger.Error("template parse failed:", err)
 		panic(1)
