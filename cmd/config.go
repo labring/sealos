@@ -20,25 +20,26 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// generatorCmd represents the generator command
-var generatorCmd = &cobra.Command{
-	Use:   "generator",
-	Short: "generator template file for sealos,the file is generator current location.",
+// configCmd represents the config command
+var configCmd = &cobra.Command{
+	Use:   "config",
+	Short: "print config template to console",
 	Run: func(cmd *cobra.Command, args []string) {
-		install.Generator()
+		install.Config()
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(generatorCmd)
-	generatorCmd.Flags().StringVarP(&install.GeneratorType, "type", "t", "kubeadm-config", "template type (Optional: kubeadm-config)")
+	rootCmd.AddCommand(configCmd)
+	configCmd.Flags().StringVarP(&install.ConfigType, "type", "t", "kubeadm", "template type (Optional: kubeadm-config)")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// generatorCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// configCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// generatorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// configCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

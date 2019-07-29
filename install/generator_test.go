@@ -3,7 +3,7 @@ package install
 import "testing"
 
 func Test_generatorKubeadmConfig(t *testing.T) {
-	generatorKubeadmConfig()
+	kubeadmConfig()
 }
 
 func TestTemplate(t *testing.T) {

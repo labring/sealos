@@ -2,8 +2,8 @@ package install
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/wonderivan/logger"
-	"io/ioutil"
 	"text/template"
 )
 
@@ -29,24 +29,19 @@ ipvs:
         excludeCIDRs: 
         - "{{.VIP}}/32"`)
 
-var GeneratorType string
+var ConfigType string
 
-func Generator() {
-	switch GeneratorType {
-	case "kubeadm-config":
-		generatorKubeadmConfig()
+func Config() {
+	switch ConfigType {
+	case "kubeadm":
+		kubeadmConfig()
 	default:
-		generatorKubeadmConfig()
+		kubeadmConfig()
 	}
 }
 
-func generatorKubeadmConfig() {
-	const fileName = "kubeadm-config.yaml"
-	data := []byte(TemplateText)
-	if ioutil.WriteFile(fileName, data, 0755) == nil {
-		logger.Info("generator kubeadm-config.yaml success.")
-		logger.Info("\n" + TemplateText)
-	}
+func kubeadmConfig() {
+	fmt.Print(TemplateText)
 }
 
 //Template is
