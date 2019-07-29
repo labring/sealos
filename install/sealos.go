@@ -51,7 +51,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 			logger.Error("template file read failed:", err)
 			panic(1)
 		}
-		templateData = string(fileData)
+		templateData = string(TemplateFromTemplateContent(s.Masters, s.VIP, Version, string(fileData)))
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
@@ -67,9 +67,6 @@ func (s *SealosInstaller) GeneratorToken() {
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
-	Cmd(s.Masters[0], cmd)
-
-	cmd = "echo \"" + string(Template(s.Masters, s.VIP, Version)) + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
