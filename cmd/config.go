@@ -31,7 +31,7 @@ var configCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(configCmd)
-	configCmd.Flags().StringVarP(&install.ConfigType, "type", "t", "kubeadm", "template type (Optional: kubeadm-config)")
+	configCmd.Flags().StringVarP(&install.ConfigType, "type", "t", "kubeadm", "template type (Optional: kubeadm)")
 
 	// Here you will define your flags and configuration settings.
 
