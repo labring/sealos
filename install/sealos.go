@@ -9,6 +9,11 @@ import (
 	"github.com/wonderivan/logger"
 )
 
+const (
+	initMaster0 = "init-master0"
+	initMasters = "init-masters"
+)
+
 //Installer is
 type Installer interface {
 	KubeadmConfigInstall()
@@ -38,6 +43,29 @@ func BuildInstaller(masters []string, nodes []string, vip string) Installer {
 		Nodes:   nodes,
 		VIP:     vip,
 	}
+}
+
+//getCommand("init-master0")
+//getCommand("masters")
+//getCommand("join")
+//get command by versions
+func (s *SealosInstaller) getCommand(name string) (cmd string) {
+	cmds := make(map[string]string)
+	cmds = map[string]string{
+		initMaster0: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`,
+		initMasters: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], s.JoinToken, s.TokenCaCertHash, s.CertificateKey),
+	}
+
+	if strings.HasPrefix(Version, "v1.15") {
+		cmds[initMaster0] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
+	}
+
+	v, ok := cmds[name]
+	if !ok {
+		logger.Error("fetch command error")
+		panic(1)
+	}
+	return v
 }
 
 //KubeadmConfigInstall is
