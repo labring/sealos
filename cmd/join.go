@@ -24,7 +24,7 @@ import (
 var joinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "Simplest way to join your kubernets HA cluster",
-	Long:  `sealos join --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --vip 192.168.0.1  --user root --passwd your-server-password`,
+	Long:  `sealos join --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --vip 192.168.0.1  --user root --passwd your-server-password --pkg-url /root/kube1.14.1.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(masters) == 1 {
 			vip = masters[0]
