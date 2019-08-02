@@ -33,9 +33,6 @@ var initCmd = &cobra.Command{
 	Short: "Simplest way to init your kubernets HA cluster",
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(masters) == 1 {
-			vip = masters[0]
-		}
 		i := install.BuildInstaller(masters, nodes, vip)
 		i.SendPackage(pkgURL, true, true)
 		i.KubeadmConfigInstall()
