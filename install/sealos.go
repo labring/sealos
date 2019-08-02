@@ -161,6 +161,16 @@ func (s *SealosInstaller) CleanCluster() {
 	wg.Wait()
 }
 
+//SendPackage is
+func (s *SealosInstaller) SendPackage(url string, masterAble, nodeAble bool) {
+	if masterAble {
+		SendPackage(url, s.Masters)
+	}
+	if nodeAble {
+		SendPackage(url, s.Nodes)
+	}
+}
+
 func (s *SealosInstaller) clean(host string) {
 	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
 	Cmd(host, cmd)

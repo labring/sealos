@@ -10,6 +10,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/sftp"
@@ -226,4 +227,43 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 	}
 
 	return sftpClient, nil
+}
+func SendPackage(url string, hosts []string) {
+	pkg := path.Base(url)
+	//only http
+	isHttp := strings.HasPrefix(url, "http")
+	wgetCommand := ""
+	if isHttp {
+		wgetParam := ""
+		if strings.HasPrefix(url, "https") {
+			wgetParam = "--no-check-certificate"
+		}
+		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
+	}
+	remoteCmd := fmt.Sprintf("cd /root &&  %s %s && tar zxvf %s", wgetCommand, url, pkg)
+	localCmd := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s ", pkg)
+	kubeCmd := "cd /root/kube/shell && sh init.sh"
+	kubeLocal := fmt.Sprintf("/root/%s", pkg)
+	var wm sync.WaitGroup
+	for _, host := range hosts {
+		wm.Add(1)
+		go func(master string) {
+			defer wm.Done()
+			logger.Debug("please wait for tar zxvf exec")
+			if RemoteFilExist(host, kubeLocal) {
+				logger.Warn("host is ", host, ", SendPackage: file is exist")
+				Cmd(host, localCmd)
+			} else {
+				if isHttp {
+					go WatchFileSize(host, kubeLocal, GetFileSize(url))
+					Cmd(host, remoteCmd)
+				} else {
+					Copy(host, url, kubeLocal)
+					Cmd(host, localCmd)
+				}
+			}
+			Cmd(host, kubeCmd)
+		}(host)
+	}
+	wm.Wait()
 }
