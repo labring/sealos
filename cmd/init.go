@@ -37,7 +37,7 @@ var initCmd = &cobra.Command{
 			vip = masters[0]
 		}
 		i := install.BuildInstaller(masters, nodes, vip)
-		i.SendPackage(pkgURL)
+		i.SendPackage(pkgURL, true, true)
 		i.KubeadmConfigInstall()
 		i.InstallMaster0()
 		i.JoinMasters()

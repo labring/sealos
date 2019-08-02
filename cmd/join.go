@@ -30,7 +30,7 @@ var joinCmd = &cobra.Command{
 			vip = masters[0]
 		}
 		i := install.BuildInstaller(masters, nodes, vip)
-		i.SendPackageForNodeAndMaster(pkgURL, false, true)
+		i.SendPackage(pkgURL, false, true)
 		i.GeneratorToken()
 		i.JoinNodes()
 	},

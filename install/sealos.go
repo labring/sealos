@@ -22,8 +22,7 @@ type Installer interface {
 	GeneratorToken()
 	JoinNodes()
 	CleanCluster()
-	SendPackage(url string)
-	SendPackageForNodeAndMaster(url string, masterAble, nodeAble bool)
+	SendPackage(url string, masterAble, nodeAble bool)
 }
 
 //SealosInstaller is

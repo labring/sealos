@@ -9,7 +9,7 @@ import (
 )
 
 //SendPackageForNodeAndMaster is
-func (s *SealosInstaller) SendPackageForNodeAndMaster(url string, masterAble, nodeAble bool) {
+func (s *SealosInstaller) SendPackage(url string, masterAble, nodeAble bool) {
 	pkg := path.Base(url)
 	//only http
 	isHttp := strings.HasPrefix(url, "http")
@@ -73,9 +73,4 @@ func (s *SealosInstaller) SendPackageForNodeAndMaster(url string, masterAble, no
 		}
 		wn.Wait()
 	}
-}
-
-//SendPackage is
-func (s *SealosInstaller) SendPackage(url string) {
-	s.SendPackageForNodeAndMaster(url, true, true)
 }
