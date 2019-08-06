@@ -16,7 +16,7 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 		PkgUrl:  pkgUrl,
 		Hosts:   hosts,
 	}
-
+	i.Print()
 	i.SendPackage()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
