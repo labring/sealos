@@ -7,15 +7,26 @@ import (
 )
 
 //BuildInit is
-func BuildInit(masters []string, nodes []string, vip, pkgUrl string) Init {
+func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 	hosts := append(masters, nodes...)
-	return &SealosInstaller{
+	i := &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
 		VIP:     vip,
 		PkgUrl:  pkgUrl,
 		Hosts:   hosts,
 	}
+
+	i.SendPackage()
+	i.Print("SendPackage")
+	i.KubeadmConfigInstall()
+	i.Print("SendPackage", "KubeadmConfigInstall")
+	i.InstallMaster0()
+	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
+	i.JoinMasters()
+	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters")
+	i.JoinNodes()
+	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
 }
 
 //KubeadmConfigInstall is

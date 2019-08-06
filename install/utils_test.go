@@ -40,8 +40,9 @@ func TestSend(t *testing.T) {
 	Passwd = "admin"
 	install := &SealosInstaller{
 		Masters: []string{"172.16.4.2"},
+		PkgUrl:  "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz",
 	}
-	install.SendPackage("/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz")
+	install.SendPackage()
 }
 
 func TestSendHttps(t *testing.T) {
@@ -49,8 +50,9 @@ func TestSendHttps(t *testing.T) {
 	Passwd = "admin"
 	install := &SealosInstaller{
 		Masters: []string{"172.16.4.2"},
+		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
 	}
-	install.SendPackage("http://172.16.4.1:8080/kube1.14.1.tar.gz")
+	install.SendPackage()
 }
 
 func TestProcess(t *testing.T) {
@@ -64,4 +66,14 @@ func bar(count, current, num int) int {
 	str := fmt.Sprintf("%d%% []", reslt)
 	logger.Debug(str)
 	return reslt
+}
+
+func TestPrint(t *testing.T) {
+	User = "root"
+	Passwd = "admin"
+	install := &SealosInstaller{
+		Masters: []string{"172.16.4.2"},
+		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
+	}
+	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
 }

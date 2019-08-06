@@ -6,14 +6,18 @@ import (
 )
 
 //BuildJoin is
-func BuildJoin(masters []string, nodes []string, vip, pkgUrl string) JoinNodeAndMaster {
-	return &SealosInstaller{
+func BuildJoin(masters []string, nodes []string, vip, pkgUrl string) {
+	i := &SealosInstaller{
 		Masters: masters,
 		Nodes:   nodes,
 		VIP:     vip,
 		PkgUrl:  pkgUrl,
 		Hosts:   nodes,
 	}
+
+	i.SendPackage()
+	i.GeneratorToken()
+	i.JoinNodes()
 }
 
 //GeneratorToken is
