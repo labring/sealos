@@ -3,11 +3,12 @@ package install
 import "sync"
 
 //BuildClean is
-func BuildClean(masters []string, nodes []string) CleanCluster {
+func BuildClean(masters []string, nodes []string) {
 	hosts := append(masters, nodes...)
-	return &SealosInstaller{
+	i := &SealosInstaller{
 		Hosts: hosts,
 	}
+	i.Clean()
 }
 
 //CleanCluster is

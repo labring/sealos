@@ -13,7 +13,7 @@ type PreInit interface {
 
 //Print is
 type Print interface {
-	Print()
+	Print(process ...string)
 }
 
 //Clean is
