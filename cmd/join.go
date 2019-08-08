@@ -34,6 +34,8 @@ func init() {
 	rootCmd.AddCommand(joinCmd)
 	joinCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
 	joinCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
+	joinCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
+
 	joinCmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
 	joinCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	joinCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
