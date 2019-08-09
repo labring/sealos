@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/wonderivan/logger"
+	"strings"
 	"text/template"
 )
 
@@ -28,25 +29,49 @@ mode: "ipvs"
 ipvs:
         excludeCIDRs: 
         - "{{.VIP}}/32"`)
+const TemplateNet = string(`---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{IP_ADDR}}
+  bindPort: 6443`)
 
 var ConfigType string
 
 func Config() {
 	switch ConfigType {
 	case "kubeadm":
-		kubeadmConfig()
+		printlnKubeadmConfig()
 	default:
-		kubeadmConfig()
+		printlnKubeadmConfig()
 	}
 }
 
-func kubeadmConfig() {
-	fmt.Print(TemplateText)
+var IpAddr string
+
+func kubeadmConfig() string {
+	var sb strings.Builder
+	sb.Write([]byte(TemplateText))
+	if IpAddr != "" {
+		sb.Write([]byte("\n"))
+		sb.Write([]byte(TemplateNet))
+	}
+	return sb.String()
+}
+
+func printlnKubeadmConfig() string {
+	var sb strings.Builder
+	sb.Write([]byte(TemplateText))
+	if IpAddr != "" {
+		sb.Write([]byte("\n"))
+		sb.Write([]byte(TemplateNet))
+	}
+	fmt.Println(sb.String())
 }
 
 //Template is
 func Template(masters []string, vip string, version string) []byte {
-	return TemplateFromTemplateContent(masters, vip, version, TemplateText)
+	return TemplateFromTemplateContent(masters, vip, version, kubeadmConfig())
 }
 
 func TemplateFromTemplateContent(masters []string, vip, version, templateContent string) []byte {
