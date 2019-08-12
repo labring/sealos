@@ -33,7 +33,7 @@ const TemplateNet = string(`---
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: {{IP_ADDR}}
+  advertiseAddress: apiserver.cluster.local
   bindPort: 6443`)
 
 var ConfigType string
@@ -47,25 +47,19 @@ func Config() {
 	}
 }
 
-var IpAddr string
-
 func kubeadmConfig() string {
 	var sb strings.Builder
 	sb.Write([]byte(TemplateText))
-	if IpAddr != "" {
-		sb.Write([]byte("\n"))
-		sb.Write([]byte(TemplateNet))
-	}
+	sb.Write([]byte("\n"))
+	sb.Write([]byte(TemplateNet))
 	return sb.String()
 }
 
-func printlnKubeadmConfig() string {
+func printlnKubeadmConfig() {
 	var sb strings.Builder
 	sb.Write([]byte(TemplateText))
-	if IpAddr != "" {
-		sb.Write([]byte("\n"))
-		sb.Write([]byte(TemplateNet))
-	}
+	sb.Write([]byte("\n"))
+	sb.Write([]byte(TemplateNet))
 	fmt.Println(sb.String())
 }
 
