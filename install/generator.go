@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/wonderivan/logger"
+	"strings"
 	"text/template"
 )
 
@@ -34,19 +35,25 @@ var ConfigType string
 func Config() {
 	switch ConfigType {
 	case "kubeadm":
-		kubeadmConfig()
+		printlnKubeadmConfig()
 	default:
-		kubeadmConfig()
+		printlnKubeadmConfig()
 	}
 }
 
-func kubeadmConfig() {
-	fmt.Print(TemplateText)
+func kubeadmConfig() string {
+	var sb strings.Builder
+	sb.Write([]byte(TemplateText))
+	return sb.String()
+}
+
+func printlnKubeadmConfig() {
+	fmt.Println(kubeadmConfig())
 }
 
 //Template is
 func Template(masters []string, vip string, version string) []byte {
-	return TemplateFromTemplateContent(masters, vip, version, TemplateText)
+	return TemplateFromTemplateContent(masters, vip, version, kubeadmConfig())
 }
 
 func TemplateFromTemplateContent(masters []string, vip, version, templateContent string) []byte {
