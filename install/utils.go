@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -20,10 +21,11 @@ import (
 
 //username
 var (
-	User        string
-	Passwd      string
-	KubeadmFile string
-	Version     string
+	User           string
+	Passwd         string
+	PrivateKeyFile string
+	KubeadmFile    string
+	Version        string
 )
 
 const oneMBByte = 1024 * 1024
@@ -36,7 +38,7 @@ func AddrReformat(host string) string {
 }
 
 func ReturnCmd(host, cmd string) string {
-	session, _ := Connect(User, Passwd, host)
+	session, _ := Connect(User, Passwd, PrivateKeyFile, host)
 	defer session.Close()
 	b, _ := session.CombinedOutput(cmd)
 	return string(b)
@@ -79,7 +81,7 @@ func WatchFileSize(host, filename string, size int) {
 //Cmd is
 func Cmd(host string, cmd string) []byte {
 	logger.Info(host, "    ", cmd)
-	session, err := Connect(User, Passwd, host)
+	session, err := Connect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("	Error create ssh session failed", err)
 		panic(1)
@@ -118,7 +120,7 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
-	sftpClient, err := SftpConnect(User, Passwd, host)
+	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("scpCopy:", err)
 		panic(1)
@@ -149,10 +151,30 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		logger.Alert("transfer total size is:", totalMB, "MB")
 	}
 }
+func readFile(name string) string {
+	content, err := ioutil.ReadFile(name)
+	if err != nil {
+		logger.Error(err)
+		return ""
+	}
+
+	return string(content)
+}
+func sshAuthMethod(passwd, pkFile string) ssh.AuthMethod {
+	var am ssh.AuthMethod
+	if pkFile != "" {
+		pkData := readFile(pkFile)
+		pk, _ := ssh.ParsePrivateKey([]byte(pkData))
+		am = ssh.PublicKeys(pk)
+	} else {
+		am = ssh.Password(passwd)
+	}
+	return am
+}
 
 //Connect is
-func Connect(user, passwd, host string) (*ssh.Session, error) {
-	auth := []ssh.AuthMethod{ssh.Password(passwd)}
+func Connect(user, passwd, pkFile, host string) (*ssh.Session, error) {
+	auth := []ssh.AuthMethod{sshAuthMethod(passwd, pkFile)}
 	config := ssh.Config{
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
 	}
@@ -192,7 +214,7 @@ func Connect(user, passwd, host string) (*ssh.Session, error) {
 }
 
 //SftpConnect  is
-func SftpConnect(user, password, host string) (*sftp.Client, error) {
+func SftpConnect(user, passwd, pkFile, host string) (*sftp.Client, error) {
 	var (
 		auth         []ssh.AuthMethod
 		addr         string
@@ -203,7 +225,7 @@ func SftpConnect(user, password, host string) (*sftp.Client, error) {
 	)
 	// get auth method
 	auth = make([]ssh.AuthMethod, 0)
-	auth = append(auth, ssh.Password(password))
+	auth = append(auth, sshAuthMethod(passwd, pkFile))
 
 	clientConfig = &ssh.ClientConfig{
 		User:    user,
