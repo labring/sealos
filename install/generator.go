@@ -29,12 +29,6 @@ mode: "ipvs"
 ipvs:
         excludeCIDRs: 
         - "{{.VIP}}/32"`)
-const TemplateNet = string(`---
-apiVersion: kubeadm.k8s.io/v1beta1
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: apiserver.cluster.local
-  bindPort: 6443`)
 
 var ConfigType string
 
@@ -50,16 +44,12 @@ func Config() {
 func kubeadmConfig() string {
 	var sb strings.Builder
 	sb.Write([]byte(TemplateText))
-	sb.Write([]byte("\n"))
-	sb.Write([]byte(TemplateNet))
 	return sb.String()
 }
 
 func printlnKubeadmConfig() {
 	var sb strings.Builder
 	sb.Write([]byte(TemplateText))
-	sb.Write([]byte("\n"))
-	sb.Write([]byte(TemplateNet))
 	fmt.Println(sb.String())
 }
 

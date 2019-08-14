@@ -269,7 +269,7 @@ func SendPackage(url string, hosts []string) {
 	var wm sync.WaitGroup
 	for _, host := range hosts {
 		wm.Add(1)
-		go func(master string) {
+		go func(host string) {
 			defer wm.Done()
 			logger.Debug("please wait for tar zxvf exec")
 			if RemoteFilExist(host, kubeLocal) {
