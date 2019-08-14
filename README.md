@@ -41,6 +41,15 @@ sealos init --master 192.168.0.2 \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
 
+OR using ssh private key:
+```
+sealos init --master 172.16.198.83 \
+    --node 172.16.198.84 \
+    --pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/free/kube1.15.0.tar.gz \
+    --pk /root/kubernetes.pem # this is your ssh private key file \
+    --version v1.15.0
+```
+
 Thats all!
 
 ```
