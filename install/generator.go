@@ -48,9 +48,7 @@ func kubeadmConfig() string {
 }
 
 func printlnKubeadmConfig() {
-	var sb strings.Builder
-	sb.Write([]byte(TemplateText))
-	fmt.Println(sb.String())
+	fmt.Println(kubeadmConfig())
 }
 
 //Template is
