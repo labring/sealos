@@ -121,22 +121,8 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 	}
 }
 
-func PathExists(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true
-	}
-	if os.IsNotExist(err) {
-		return false
-	}
-	return false
-}
-
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
-	if !PathExists(PrivateKeyFile) || Passwd != "" {
-		PrivateKeyFile = ""
-	}
 	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("scpCopy:", err)
@@ -179,12 +165,12 @@ func readFile(name string) string {
 }
 func sshAuthMethod(passwd, pkFile string) ssh.AuthMethod {
 	var am ssh.AuthMethod
-	if pkFile != "" {
+	if passwd!="" {
+		am = ssh.Password(passwd)
+	}else {
 		pkData := readFile(pkFile)
 		pk, _ := ssh.ParsePrivateKey([]byte(pkData))
 		am = ssh.PublicKeys(pk)
-	} else {
-		am = ssh.Password(passwd)
 	}
 	return am
 }
