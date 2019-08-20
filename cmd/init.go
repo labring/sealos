@@ -42,7 +42,7 @@ func init() {
 
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
-	initCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
+	initCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
 	initCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
 	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")

@@ -81,6 +81,9 @@ func WatchFileSize(host, filename string, size int) {
 //Cmd is
 func Cmd(host string, cmd string) []byte {
 	logger.Info(host, "    ", cmd)
+	if !PathExists(PrivateKeyFile) || Passwd != "" {
+		PrivateKeyFile = ""
+	}
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("	Error create ssh session failed", err)
@@ -118,8 +121,22 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 	}
 }
 
+func PathExists(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true
+	}
+	if os.IsNotExist(err) {
+		return false
+	}
+	return false
+}
+
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
+	if !PathExists(PrivateKeyFile) || Passwd != "" {
+		PrivateKeyFile = ""
+	}
 	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("scpCopy:", err)
