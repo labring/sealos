@@ -81,9 +81,6 @@ func WatchFileSize(host, filename string, size int) {
 //Cmd is
 func Cmd(host string, cmd string) []byte {
 	logger.Info(host, "    ", cmd)
-	if !PathExists(PrivateKeyFile) || Passwd != "" {
-		PrivateKeyFile = ""
-	}
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("	Error create ssh session failed", err)
@@ -165,9 +162,9 @@ func readFile(name string) string {
 }
 func sshAuthMethod(passwd, pkFile string) ssh.AuthMethod {
 	var am ssh.AuthMethod
-	if passwd!="" {
+	if passwd != "" {
 		am = ssh.Password(passwd)
-	}else {
+	} else {
 		pkData := readFile(pkFile)
 		pk, _ := ssh.ParsePrivateKey([]byte(pkData))
 		am = ssh.PublicKeys(pk)
