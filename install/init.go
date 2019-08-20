@@ -23,10 +23,14 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 	i.Print("SendPackage", "KubeadmConfigInstall")
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
-	i.JoinMasters()
-	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters")
-	i.JoinNodes()
-	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+	if len(i.Masters) > 1 {
+		i.JoinMasters()
+		i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters")
+	}
+	if len(i.Nodes) > 0 {
+		i.JoinNodes()
+		i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+	}
 }
 
 //KubeadmConfigInstall is
