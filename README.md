@@ -178,6 +178,15 @@ sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
 ## upgrade
 [升级简体中文](docs/upgrade_zh.md)
 
+## build from source
+```
+docker run --rm -v $GOPATH/src/github.com/fanux/sealos:/go/src/github.com/fanux/sealos -w /go/src/github.com/fanux/sealos -it golang:1.12.7  go build
+```
+if you using go mod:
+```
+go build -mod vendor
+```
+
 # More infomations
 
 About [LVScare](https://github.com/fanux/LVScare)
