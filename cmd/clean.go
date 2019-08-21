@@ -43,8 +43,8 @@ func init() {
 	// cleanCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	cleanCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
-	cleanCmd.Flags().StringVar(&install.Passwd, "passwd", "passwd", "password for ssh")
-	cleanCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "", "private key for ssh")
+	cleanCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
+	initCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
 	cleanCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	cleanCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
