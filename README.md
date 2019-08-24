@@ -480,3 +480,5 @@ sealos会会调用二者。 所以大部分兼容不同版本都可以微调脚�
 
 关注我们就是关注技术干货
 ![](https://ftp.bmp.ovh/imgs/2019/08/c98ed0e45ec23d11.png)
+
+![](https://hugo-picture.oss-cn-beijing.aliyuncs.com/images/wechat.gif)
