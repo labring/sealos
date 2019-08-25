@@ -481,4 +481,4 @@ sealos会会调用二者。 所以大部分兼容不同版本都可以微调脚�
 关注我们就是关注技术干货
 ![](https://ftp.bmp.ovh/imgs/2019/08/c98ed0e45ec23d11.png)
 
-![](https://hugo-picture.oss-cn-beijing.aliyuncs.com/blog/2019-06-27-%E9%BB%98%E8%AE%A4%E6%A0%87%E9%A2%98_%E6%96%B9%E5%BD%A2%E4%BA%8C%E7%BB%B4%E7%A0%81_2019.06.26.png)
+![](https://hugo-picture.oss-cn-beijing.aliyuncs.com/images/wechat.gif)
