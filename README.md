@@ -64,6 +64,7 @@ haproxy用static pod跑没有太大问题还算好管理，keepalived现在大�
 * 下载[kubernetes 离线安装包](https://github.com/sealstore/cloud-kernel/releases/). 
 * 下载[最新版本sealos](https://github.com/fanux/sealos/releases).
 * 支持kuberentes 1.14.0+ 
+* 务必同步服务器时间
 
 ## 安装教程
 多master HA:
