@@ -71,10 +71,10 @@ haproxy用static pod跑没有太大问题还算好管理，keepalived现在大�
 ```
 sealos init --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \              
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz     
 ```
@@ -82,9 +82,9 @@ sealos init --master 192.168.0.2 \
 或者单master多node:
 ```
 sealos init --master 192.168.0.2 \
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
@@ -155,9 +155,9 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 sealos clean \
     --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \           
-    --node 192.168.0.5 \              
-    --user root \                    
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
     --passwd your-server-password
 ```
 
@@ -181,14 +181,14 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
 也可以用sealos join命令：
 ```
 sealos join 
-    --master 192.168.0.2 
-    --master 192.168.0.3 
-    --master 192.168.0.4 
-    --vip 10.103.97.2            
-    --node 192.168.0.5                 
-    --user root                         
-    --passwd your-server-password 
-    --pkg-url /root/kube1.15.0.tar.gz
+    --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \
+    --vip 10.103.97.2 \       
+    --node 192.168.0.5 \            
+    --user root \             
+    --passwd your-server-password \
+    --pkg-url /root/kube1.15.0.tar.gz 
 ```
 
 ## 使用自定义kubeadm配置文件
@@ -229,10 +229,10 @@ ipvs:
 sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
     --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \              
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
