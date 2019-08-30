@@ -10,14 +10,12 @@ import (
 
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
-	Passwd = "admin1"
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Printf("捕获到的错误：%s\n", r)
-		}
-	}()
-	Cmd("127.0.0.1", "ls")
+	Passwd = "admin"
+	install := &SealosInstaller{
+		Masters: []string{"127.0.0.3"},
+		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
+	}
+	install.CheckValid()
 }
 func TestCopy(t *testing.T) {
 	User = "cuisongliu"
