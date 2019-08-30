@@ -10,10 +10,14 @@ import (
 
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
-	Passwd = "admin"
+	Passwd = "admin1"
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Printf("捕获到的错误：%s\n", r)
+		}
+	}()
 	Cmd("127.0.0.1", "ls")
-
 }
 func TestCopy(t *testing.T) {
 	User = "cuisongliu"
