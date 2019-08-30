@@ -73,7 +73,7 @@ func WatchFileSize(host, filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("transfer total size is:", value, "MB")
+			logger.Alert("[%s]transfer total size is: %s%s", host, value, "MB")
 		}
 	}
 }
@@ -83,15 +83,15 @@ func Cmd(host string, cmd string) []byte {
 	logger.Info(host, "    ", cmd)
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
-		logger.Error("	Error create ssh session failed", err)
+		logger.Error("[%s]Error create ssh session failed,%s", host, err)
 		panic(1)
 	}
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
-	logger.Debug("command result is:", string(b))
+	logger.Debug("[%s]command result is: %s", host, string(b))
 	if err != nil {
-		logger.Error("	Error exec command failed", err)
+		logger.Error("[%s]Error exec command failed: %s", host, err)
 		panic(1)
 	}
 	return b
@@ -108,7 +108,7 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 
 	count, err := strconv.Atoi(string(data))
 	if err != nil {
-		logger.Error("RemoteFilExist:", err)
+		logger.Error("[%s]RemoteFilExist:%s", host, err)
 		panic(1)
 	}
 	if count == 0 {
@@ -122,20 +122,20 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 func Copy(host, localFilePath, remoteFilePath string) {
 	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
-		logger.Error("scpCopy:", err)
+		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer sftpClient.Close()
 	srcFile, err := os.Open(localFilePath)
 	if err != nil {
-		logger.Error("scpCopy:", err)
+		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(remoteFilePath)
 	if err != nil {
-		logger.Error("scpCopy:", err)
+		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer dstFile.Close()
@@ -148,7 +148,7 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		}
 		length, _ := dstFile.Write(buf[0:n])
 		totalMB += length / oneMBByte
-		logger.Alert("transfer total size is:", totalMB, "MB")
+		logger.Alert("[%s]transfer total size is: %s%s", host, totalMB, "MB")
 	}
 }
 func readFile(name string) string {
@@ -273,7 +273,7 @@ func SendPackage(url string, hosts []string) {
 			defer wm.Done()
 			logger.Debug("please wait for tar zxvf exec")
 			if RemoteFilExist(host, kubeLocal) {
-				logger.Warn("host is ", host, ", SendPackage: file is exist")
+				logger.Warn("[%s]SendPackage: file is exist", host)
 				Cmd(host, localCmd)
 			} else {
 				if isHttp {
