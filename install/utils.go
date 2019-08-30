@@ -154,7 +154,7 @@ func Copy(host, localFilePath, remoteFilePath string) {
 func readFile(name string) string {
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
-		logger.Error(err)
+		logger.Error("[globals] read file err is : %s", err)
 		return ""
 	}
 

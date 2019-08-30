@@ -1,16 +1,13 @@
 package install
 
 import (
-	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/wonderivan/logger"
 )
 
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
-	Passwd = "admin"
+	Passwd = "admin1"
 
 	Cmd("127.0.0.1", "ls")
 
@@ -59,13 +56,7 @@ func TestProcess(t *testing.T) {
 	//fmt.Printf("%s \033[K\n", "--") // 输出一行结果
 	//fmt.Printf("\033[%dA\033[K", 1) // 将光标向上移动一行
 	//fmt.Printf("%s \033[K\n", "=-") // 输出第二行结果
-	bar(100, 1, 0)
-}
-func bar(count, current, num int) int {
-	reslt := current / count * 100
-	str := fmt.Sprintf("%d%% []", reslt)
-	logger.Debug(str)
-	return reslt
+	//bar(100, 1, 0)
 }
 
 func TestPrint(t *testing.T) {
