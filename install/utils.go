@@ -80,7 +80,7 @@ func WatchFileSize(host, filename string, size int) {
 
 //Cmd is
 func Cmd(host string, cmd string) []byte {
-	logger.Info(host, "    ", cmd)
+	logger.Info("[%s]exec cmd is : %s", host, cmd)
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
 	if err != nil {
 		logger.Error("[%s]Error create ssh session failed,%s", host, err)
@@ -271,7 +271,7 @@ func SendPackage(url string, hosts []string) {
 		wm.Add(1)
 		go func(host string) {
 			defer wm.Done()
-			logger.Debug("please wait for tar zxvf exec")
+			logger.Debug("[%s]please wait for tar zxvf exec", host)
 			if RemoteFilExist(host, kubeLocal) {
 				logger.Warn("[%s]SendPackage: file is exist", host)
 				Cmd(host, localCmd)
