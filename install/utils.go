@@ -51,6 +51,11 @@ func GetFileSize(url string) int {
 
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(url)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals] get file size is error： %s", r)
+		}
+	}()
 	if err != nil {
 		panic(err)
 	}
@@ -82,16 +87,24 @@ func WatchFileSize(host, filename string, size int) {
 func Cmd(host string, cmd string) []byte {
 	logger.Info("[%s]exec cmd is : %s", host, cmd)
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]Error create ssh session failed,%s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]Error create ssh session failed,%s", host, err)
 		panic(1)
 	}
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
 	logger.Debug("[%s]command result is: %s", host, string(b))
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]Error exec command failed: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]Error exec command failed: %s", host, err)
 		panic(1)
 	}
 	return b
@@ -107,8 +120,12 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 	data = bytes.Replace(data, []byte("\n"), []byte(""), -1)
 
 	count, err := strconv.Atoi(string(data))
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]RemoteFilExist:%s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]RemoteFilExist:%s", host, err)
 		panic(1)
 	}
 	if count == 0 {
@@ -121,21 +138,33 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
 	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer sftpClient.Close()
 	srcFile, err := os.Open(localFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(remoteFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("[%s]scpCopy: %s", host, err)
 		panic(1)
 	}
 	defer dstFile.Close()

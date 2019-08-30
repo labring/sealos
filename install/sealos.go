@@ -56,10 +56,13 @@ func (s *SealosInstaller) getCommand(name string) (cmd string) {
 	if strings.HasPrefix(Version, "v1.15") {
 		cmds[initMaster0] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
 	}
-
 	v, ok := cmds[name]
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals]fetch command error")
+		}
+	}()
 	if !ok {
-		logger.Error("[globals]fetch command error")
 		panic(1)
 	}
 	return v

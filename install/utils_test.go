@@ -7,9 +7,9 @@ import (
 
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
-	Passwd = "admin1"
+	Passwd = "admin"
 
-	Cmd("127.0.0.1", "ls")
+	Cmd("127.0.0.1", "lffs")
 
 }
 func TestCopy(t *testing.T) {
@@ -67,4 +67,8 @@ func TestPrint(t *testing.T) {
 		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
 	}
 	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+}
+
+func TestGetFileSize(t *testing.T) {
+	GetFileSize("httfp://www.affa.com")
 }
