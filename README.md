@@ -20,7 +20,7 @@ sealos特性与优势：
 
 > 为什么不使用ansile
 
-1.0版本确实是用ansible实现，但是用户还是需要先装ansile，装ansible有需要装python和一些依赖等，为了不让用户那么麻烦把ansible放到了容器里供用户使用。如果不想配置免密钥使用用户名密码时又需要ssh-pass等，总之不能让我满意，不是我想的极简。
+1.0版本确实是用ansible实现，但是用户还是需要先装ansible，装ansible有需要装python和一些依赖等，为了不让用户那么麻烦把ansible放到了容器里供用户使用。如果不想配置免密钥使用用户名密码时又需要ssh-pass等，总之不能让我满意，不是我想的极简。
 
 所以我想就来一个二进制文件工具，没有任何依赖，文件分发与远程命令都通过调用sdk实现所以不依赖其它任何东西，总算让我这个有洁癖的人满意了。
 
@@ -64,16 +64,17 @@ haproxy用static pod跑没有太大问题还算好管理，keepalived现在大�
 * 下载[kubernetes 离线安装包](https://github.com/sealstore/cloud-kernel/releases/). 
 * 下载[最新版本sealos](https://github.com/fanux/sealos/releases).
 * 支持kuberentes 1.14.0+ 
+* 务必同步服务器时间
 
 ## 安装教程
 多master HA:
 ```
 sealos init --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \              
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz     
 ```
@@ -81,9 +82,9 @@ sealos init --master 192.168.0.2 \
 或者单master多node:
 ```
 sealos init --master 192.168.0.2 \
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
@@ -154,9 +155,9 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 sealos clean \
     --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \           
-    --node 192.168.0.5 \              
-    --user root \                    
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
     --passwd your-server-password
 ```
 
@@ -180,14 +181,14 @@ kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
 也可以用sealos join命令：
 ```
 sealos join 
-    --master 192.168.0.2 
-    --master 192.168.0.3 
-    --master 192.168.0.4 
-    --vip 10.103.97.2            
-    --node 192.168.0.5                 
-    --user root                         
-    --passwd your-server-password 
-    --pkg-url /root/kube1.15.0.tar.gz
+    --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \
+    --vip 10.103.97.2 \       
+    --node 192.168.0.5 \            
+    --user root \             
+    --passwd your-server-password \
+    --pkg-url /root/kube1.15.0.tar.gz 
 ```
 
 ## 使用自定义kubeadm配置文件
@@ -228,10 +229,10 @@ ipvs:
 sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
     --master 192.168.0.2 \
     --master 192.168.0.3 \
-    --master 192.168.0.4 \              
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
+    --master 192.168.0.4 \
+    --node 192.168.0.5 \
+    --user root \
+    --passwd your-server-password \
     --version v1.14.1 \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
