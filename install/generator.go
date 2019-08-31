@@ -58,8 +58,12 @@ func Template(masters []string, vip string, version string) []byte {
 
 func TemplateFromTemplateContent(masters []string, vip, version, templateContent string) []byte {
 	tmpl, err := template.New("text").Parse(templateContent)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("template parse failed:", err)
+		}
+	}()
 	if err != nil {
-		logger.Error("template parse failed:", err)
 		panic(1)
 	}
 	var envMap = make(map[string]interface{})

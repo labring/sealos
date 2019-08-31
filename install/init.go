@@ -41,8 +41,12 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		templateData = string(Template(s.Masters, s.VIP, Version))
 	} else {
 		fileData, err := ioutil.ReadFile(KubeadmFile)
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("[globals]template file read failed:", err)
+			}
+		}()
 		if err != nil {
-			logger.Error("template file read failed:", err)
 			panic(1)
 		}
 		templateData = string(TemplateFromTemplateContent(s.Masters, s.VIP, Version, string(fileData)))

@@ -1,11 +1,8 @@
 package install
 
 import (
-	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/wonderivan/logger"
 )
 
 func TestCmd(t *testing.T) {
@@ -61,13 +58,7 @@ func TestProcess(t *testing.T) {
 	//fmt.Printf("%s \033[K\n", "--") // 输出一行结果
 	//fmt.Printf("\033[%dA\033[K", 1) // 将光标向上移动一行
 	//fmt.Printf("%s \033[K\n", "=-") // 输出第二行结果
-	bar(100, 1, 0)
-}
-func bar(count, current, num int) int {
-	reslt := current / count * 100
-	str := fmt.Sprintf("%d%% []", reslt)
-	logger.Debug(str)
-	return reslt
+	//bar(100, 1, 0)
 }
 
 func TestPrint(t *testing.T) {
@@ -78,4 +69,8 @@ func TestPrint(t *testing.T) {
 		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
 	}
 	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+}
+
+func TestGetFileSize(t *testing.T) {
+	GetFileSize("httfp://www.affa.com")
 }

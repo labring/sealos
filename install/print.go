@@ -10,7 +10,7 @@ import (
 func (s *SealosInstaller) Print(process ...string) {
 	if len(process) == 0 {
 		configJson, _ := json.Marshal(s)
-		logger.Info("\nsealos config is: ", string(configJson))
+		logger.Info("\n[globals]sealos config is: ", string(configJson))
 	} else {
 		var sb strings.Builder
 		for _, v := range process {
