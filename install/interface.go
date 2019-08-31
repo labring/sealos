@@ -1,5 +1,9 @@
 package install
 
+type Check interface {
+	CheckValid()
+}
+
 //Send is
 type Send interface {
 	SendPackage()
