@@ -8,6 +8,7 @@ func BuildClean(masters []string, nodes []string) {
 	i := &SealosInstaller{
 		Hosts: hosts,
 	}
+	i.CheckValid()
 	i.Clean()
 }
 

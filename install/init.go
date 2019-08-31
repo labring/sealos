@@ -16,6 +16,7 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 		PkgUrl:  pkgUrl,
 		Hosts:   hosts,
 	}
+	i.CheckValid()
 	i.Print()
 	i.SendPackage()
 	i.Print("SendPackage")

@@ -7,15 +7,18 @@ import (
 )
 
 type CleanCluster interface {
+	Check
 	Clean
 }
 
 type JoinNodeAndMaster interface {
+	Check
 	Send
 	Join
 }
 
 type Init interface {
+	Check
 	Send
 	PreInit
 	Join
