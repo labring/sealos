@@ -51,6 +51,11 @@ func GetFileSize(url string) int {
 
 	client := &http.Client{Transport: tr}
 	resp, err := client.Get(url)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals] get file size is error： %s", r)
+		}
+	}()
 	if err != nil {
 		panic(err)
 	}
@@ -73,25 +78,33 @@ func WatchFileSize(host, filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("transfer total size is:", value, "MB")
+			logger.Alert("[%s]transfer total size is: %s%s", host, value, "MB")
 		}
 	}
 }
 
 //Cmd is
 func Cmd(host string, cmd string) []byte {
-	logger.Info(host, "    ", cmd)
+	logger.Info("[%s]exec cmd is : %s", host, cmd)
 	session, err := Connect(User, Passwd, PrivateKeyFile, host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]Error create ssh session failed,%s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("	Error create ssh session failed", err)
 		panic(1)
 	}
 	defer session.Close()
 
 	b, err := session.CombinedOutput(cmd)
-	logger.Debug("command result is:", string(b))
+	logger.Debug("[%s]command result is: %s", host, string(b))
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]Error exec command failed: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("	Error exec command failed", err)
 		panic(1)
 	}
 	return b
@@ -107,8 +120,12 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 	data = bytes.Replace(data, []byte("\n"), []byte(""), -1)
 
 	count, err := strconv.Atoi(string(data))
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]RemoteFilExist:%s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("RemoteFilExist:", err)
 		panic(1)
 	}
 	if count == 0 {
@@ -121,21 +138,33 @@ func RemoteFilExist(host, remoteFilePath string) bool {
 //Copy is
 func Copy(host, localFilePath, remoteFilePath string) {
 	sftpClient, err := SftpConnect(User, Passwd, PrivateKeyFile, host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer sftpClient.Close()
 	srcFile, err := os.Open(localFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(remoteFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[%s]scpCopy: %s", host, err)
+		}
+	}()
 	if err != nil {
-		logger.Error("scpCopy:", err)
 		panic(1)
 	}
 	defer dstFile.Close()
@@ -148,13 +177,13 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		}
 		length, _ := dstFile.Write(buf[0:n])
 		totalMB += length / oneMBByte
-		logger.Alert("transfer total size is:", totalMB, "MB")
+		logger.Alert("[%s]transfer total size is: %s%s", host, totalMB, "MB")
 	}
 }
 func readFile(name string) string {
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
-		logger.Error(err)
+		logger.Error("[globals] read file err is : %s", err)
 		return ""
 	}
 
@@ -271,9 +300,9 @@ func SendPackage(url string, hosts []string) {
 		wm.Add(1)
 		go func(host string) {
 			defer wm.Done()
-			logger.Debug("please wait for tar zxvf exec")
+			logger.Debug("[%s]please wait for tar zxvf exec", host)
 			if RemoteFilExist(host, kubeLocal) {
-				logger.Warn("host is ", host, ", SendPackage: file is exist")
+				logger.Warn("[%s]SendPackage: file is exist", host)
 				Cmd(host, localCmd)
 			} else {
 				if isHttp {

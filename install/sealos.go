@@ -7,15 +7,18 @@ import (
 )
 
 type CleanCluster interface {
+	Check
 	Clean
 }
 
 type JoinNodeAndMaster interface {
+	Check
 	Send
 	Join
 }
 
 type Init interface {
+	Check
 	Send
 	PreInit
 	Join
@@ -56,10 +59,13 @@ func (s *SealosInstaller) getCommand(name string) (cmd string) {
 	if strings.HasPrefix(Version, "v1.15") {
 		cmds[initMaster0] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
 	}
-
 	v, ok := cmds[name]
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[globals]fetch command error")
+		}
+	}()
 	if !ok {
-		logger.Error("fetch command error")
 		panic(1)
 	}
 	return v
@@ -70,7 +76,7 @@ func decodeOutput(output []byte) {
 	s0 := string(output)
 	slice := strings.Split(s0, "kubeadm join")
 	slice1 := strings.Split(slice[1], "Please note")
-	logger.Info("	join command is: ", slice1[0])
+	logger.Info("[globals]join command is: %s", slice1[0])
 	decodeJoinCmd(slice1[0])
 }
 
