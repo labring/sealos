@@ -211,7 +211,7 @@ func Connect(user, passwd, pkFile, host string) (*ssh.Session, error) {
 	clientConfig := &ssh.ClientConfig{
 		User:    user,
 		Auth:    auth,
-		Timeout: time.Duration(5) * time.Minute,
+		Timeout: time.Duration(1) * time.Minute,
 		Config:  config,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
