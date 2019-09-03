@@ -78,7 +78,7 @@ func WatchFileSize(host, filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("[%s]transfer total size is: %s%s", host, value, "MB")
+			logger.Alert("[%s]transfer total size is: %.2f%s", host, value, "MB")
 		}
 	}
 }
