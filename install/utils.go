@@ -300,7 +300,7 @@ func SendPackage(url string, hosts []string, packName string) {
 	if packName == "kube" {
 		kubeCmd = "cd /root/kube/shell && sh init.sh"
 	} else {
-		kubeCmd = fmt.Sprintf("cd /root/%s && docker load images.tar", packName)
+		kubeCmd = fmt.Sprintf("cd /root/%s && docker load -i images.tar", packName)
 	}
 
 	var wm sync.WaitGroup
