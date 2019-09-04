@@ -26,7 +26,7 @@ var name string
 var loadCmd = &cobra.Command{
 	Use:   "load",
 	Short: "kubernetes cluster load plugin,ex dashboard",
-	Long:  ``,
+	Long:  `sealos load --master 172.16.3.254 --user root --passwd admin --name dashboard --pkg-url /root/dashboard.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
 		install.BuildLoad(masters, nodes, pkgURL, name)
 	},
@@ -39,7 +39,7 @@ func init() {
 	loadCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
 	loadCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
 	loadCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
-	loadCmd.Flags().BoolVar(&install.Kustomize, "kust", true, "kustomize type deploy")
+	loadCmd.Flags().BoolVar(&install.Kustomize, "kust", false, "kustomize type deploy")
 
 	loadCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
 	loadCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
