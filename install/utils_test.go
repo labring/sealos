@@ -41,7 +41,7 @@ func TestSend(t *testing.T) {
 		Masters: []string{"172.16.4.2"},
 		PkgUrl:  "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz",
 	}
-	install.SendPackage()
+	install.SendPackage("kube")
 }
 
 func TestSendHttps(t *testing.T) {
@@ -51,7 +51,7 @@ func TestSendHttps(t *testing.T) {
 		Masters: []string{"172.16.4.2"},
 		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
 	}
-	install.SendPackage()
+	install.SendPackage("kube")
 }
 
 func TestProcess(t *testing.T) {

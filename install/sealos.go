@@ -25,6 +25,11 @@ type Init interface {
 	Print
 }
 
+type Load interface {
+	Check
+	Send
+}
+
 var (
 	JoinToken       string
 	TokenCaCertHash string

@@ -31,3 +31,7 @@ type Join interface {
 	JoinNodes()
 	GeneratorToken()
 }
+
+type Loaded interface {
+	KubeApply(name string)
+}

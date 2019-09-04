@@ -18,7 +18,7 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 	}
 	i.CheckValid()
 	i.Print()
-	i.SendPackage()
+	i.SendPackage("kube")
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")

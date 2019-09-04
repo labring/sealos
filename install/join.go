@@ -15,7 +15,7 @@ func BuildJoin(masters []string, nodes []string, vip, pkgUrl string) {
 		Hosts:   nodes,
 	}
 	i.CheckValid()
-	i.SendPackage()
+	i.SendPackage("kube")
 	i.GeneratorToken()
 	i.JoinNodes()
 }
