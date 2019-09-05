@@ -32,6 +32,6 @@ type Join interface {
 	GeneratorToken()
 }
 
-type Loaded interface {
+type Apply interface {
 	KubeApply(name string)
 }

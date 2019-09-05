@@ -25,9 +25,10 @@ type Init interface {
 	Print
 }
 
-type Load interface {
+type Install interface {
 	Check
 	Send
+	Apply
 }
 
 var (

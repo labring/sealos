@@ -3,7 +3,7 @@ package install
 import "fmt"
 
 //BuildJoin is
-func BuildLoad(masters []string, nodes []string, pkgUrl, name string) {
+func BuildInstall(masters []string, nodes []string, pkgUrl, name string) {
 	hosts := append(masters, nodes...)
 	i := &SealosInstaller{
 		Masters: masters,
