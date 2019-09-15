@@ -53,7 +53,7 @@ func (s *SealosInstaller) getCommand(name string) (cmd string) {
 	cmds := make(map[string]string)
 	cmds = map[string]string{
 		initMaster0: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`,
-		initMasters: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], JoinToken, TokenCaCertHash, CertificateKey),
+		initMasters: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(s.Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
 	}
 
 	if strings.HasPrefix(Version, "v1.15") {
