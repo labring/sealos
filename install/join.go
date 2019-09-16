@@ -29,13 +29,13 @@ func (s *SealosInstaller) GeneratorToken() {
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
-	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], JoinToken, TokenCaCertHash, CertificateKey)
+	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(s.Masters[0]), JoinToken, TokenCaCertHash, CertificateKey)
 
 	for _, master := range s.Masters[1:] {
-		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
+		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", IpFormat(s.Masters[0]))
 		Cmd(master, cmdHosts)
 		Cmd(master, cmd)
-		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
+		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
 		Cmd(master, cmdHosts)
 	}
 }
@@ -45,7 +45,7 @@ func (s *SealosInstaller) JoinNodes() {
 	var masters string
 	var wg sync.WaitGroup
 	for _, master := range s.Masters {
-		masters += fmt.Sprintf(" --master %s:6443", master)
+		masters += fmt.Sprintf(" --master %s:6443", IpFormat(master))
 	}
 
 	for _, node := range s.Nodes {

@@ -31,6 +31,11 @@ var (
 
 const oneMBByte = 1024 * 1024
 
+func IpFormat(host string) string {
+	ipAndPort := strings.Split(host, ":")
+	return ipAndPort[0]
+}
+
 func AddrReformat(host string) string {
 	if strings.Index(host, ":") == -1 {
 		host = fmt.Sprintf("%s:22", host)
