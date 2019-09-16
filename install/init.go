@@ -18,7 +18,7 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 	}
 	i.CheckValid()
 	i.Print()
-	i.SendPackage()
+	i.SendPackage("kube")
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
@@ -36,9 +36,13 @@ func BuildInit(masters []string, nodes []string, vip, pkgUrl string) {
 
 //KubeadmConfigInstall is
 func (s *SealosInstaller) KubeadmConfigInstall() {
+	var masters []string
+	for _, h := range s.Masters {
+		masters = append(masters, IpFormat(h))
+	}
 	var templateData string
 	if KubeadmFile == "" {
-		templateData = string(Template(s.Masters, s.VIP, Version))
+		templateData = string(Template(masters, s.VIP, Version))
 	} else {
 		fileData, err := ioutil.ReadFile(KubeadmFile)
 		defer func() {
@@ -49,7 +53,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		if err != nil {
 			panic(1)
 		}
-		templateData = string(TemplateFromTemplateContent(s.Masters, s.VIP, Version, string(fileData)))
+		templateData = string(TemplateFromTemplateContent(masters, s.VIP, Version, string(fileData)))
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	Cmd(s.Masters[0], cmd)
@@ -57,7 +61,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
-	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
+	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", IpFormat(s.Masters[0]))
 	Cmd(s.Masters[0], cmd)
 
 	cmd = `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`
