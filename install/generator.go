@@ -52,11 +52,11 @@ func printlnKubeadmConfig() {
 }
 
 //Template is
-func Template(masters []string, vip string, version string) []byte {
-	return TemplateFromTemplateContent(masters, vip, version, kubeadmConfig())
+func Template() []byte {
+	return TemplateFromTemplateContent(kubeadmConfig())
 }
 
-func TemplateFromTemplateContent(masters []string, vip, version, templateContent string) []byte {
+func TemplateFromTemplateContent(templateContent string) []byte {
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -66,10 +66,14 @@ func TemplateFromTemplateContent(masters []string, vip, version, templateContent
 	if err != nil {
 		panic(1)
 	}
+	var masters []string
+	for _, h := range Masters {
+		masters = append(masters, IpFormat(h))
+	}
 	var envMap = make(map[string]interface{})
-	envMap["VIP"] = vip
+	envMap["VIP"] = VIP
 	envMap["Masters"] = masters
-	envMap["Version"] = version
+	envMap["Version"] = Version
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

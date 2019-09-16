@@ -19,16 +19,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//username
-var (
-	User           string
-	Passwd         string
-	PrivateKeyFile string
-	KubeadmFile    string
-	Version        string
-	Kustomize      bool
-)
-
 const oneMBByte = 1024 * 1024
 
 func IpFormat(host string) string {
