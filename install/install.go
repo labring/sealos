@@ -3,13 +3,10 @@ package install
 import "fmt"
 
 //BuildJoin is
-func BuildInstall(masters []string, nodes []string, pkgUrl, name string) {
-	hosts := append(masters, nodes...)
+func BuildInstall(name string) {
+	hosts := append(Masters, Nodes...)
 	i := &SealosInstaller{
-		Masters: masters,
-		Nodes:   nodes,
-		PkgUrl:  pkgUrl,
-		Hosts:   hosts,
+		Hosts: hosts,
 	}
 	i.CheckValid()
 	i.SendPackage(name)
@@ -22,5 +19,5 @@ func (s *SealosInstaller) KubeApply(name string) {
 		args = "-k"
 	}
 	kubeCmd := fmt.Sprintf("cd /root/%s/conf && kubectl apply %s .", name, args)
-	Cmd(s.Masters[0], kubeCmd)
+	Cmd(Masters[0], kubeCmd)
 }

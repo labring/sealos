@@ -25,7 +25,7 @@ var cleanCmd = &cobra.Command{
 	Short: "Simplest way to clean your kubernets HA cluster",
 	Long:  `sealos clean --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.BuildClean(masters, nodes)
+		install.BuildClean()
 	},
 }
 
@@ -46,6 +46,6 @@ func init() {
 	cleanCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
 	cleanCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
-	cleanCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
-	cleanCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
+	cleanCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
+	cleanCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
 }

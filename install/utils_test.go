@@ -8,10 +8,9 @@ import (
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"127.0.0.3"},
-		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
-	}
+	Masters = []string{"127.0.0.3"}
+	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
 	install.CheckValid()
 }
 func TestCopy(t *testing.T) {
@@ -37,20 +36,18 @@ func TestPath(t *testing.T) {
 func TestSend(t *testing.T) {
 	User = "root"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"172.16.4.2"},
-		PkgUrl:  "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz",
-	}
+	Masters = []string{"172.16.4.2"}
+	PkgUrl = "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
 	install.SendPackage("kube")
 }
 
 func TestSendHttps(t *testing.T) {
 	User = "root"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"172.16.4.2"},
-		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
-	}
+	Masters = []string{"172.16.4.2"}
+	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
 	install.SendPackage("kube")
 }
 
@@ -64,10 +61,9 @@ func TestProcess(t *testing.T) {
 func TestPrint(t *testing.T) {
 	User = "root"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"172.16.4.2"},
-		PkgUrl:  "http://172.16.4.1:8080/kube1.14.1.tar.gz",
-	}
+	Masters = []string{"172.16.4.2"}
+	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
 	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
 }
 

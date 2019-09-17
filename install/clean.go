@@ -3,8 +3,8 @@ package install
 import "sync"
 
 //BuildClean is
-func BuildClean(masters []string, nodes []string) {
-	hosts := append(masters, nodes...)
+func BuildClean() {
+	hosts := append(Masters, Nodes...)
 	i := &SealosInstaller{
 		Hosts: hosts,
 	}

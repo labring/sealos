@@ -26,7 +26,7 @@ var joinCmd = &cobra.Command{
 	Short: "Simplest way to join your kubernets HA cluster",
 	Long:  `sealos join --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --vip 192.168.0.1  --user root --passwd your-server-password --pkg-url /root/kube1.14.1.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.BuildJoin(masters, nodes, vip, pkgURL)
+		install.BuildJoin()
 	},
 }
 
@@ -36,9 +36,9 @@ func init() {
 	joinCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
 	joinCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
-	joinCmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
-	joinCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
-	joinCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
+	joinCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
+	joinCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
+	joinCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
 
-	joinCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url, or file localtion ex. /root/kube1.14.1.tar.gz")
+	joinCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url, or file localtion ex. /root/kube1.14.1.tar.gz")
 }

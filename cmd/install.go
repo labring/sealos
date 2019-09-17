@@ -25,7 +25,7 @@ var installCmd = &cobra.Command{
 	Short: "kubernetes cluster install plugin,ex dashboard",
 	Long:  `sealos install --master 172.16.3.254 --user root --passwd admin --name dashboard --pkg-url /root/dashboard.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.BuildInstall(masters, nodes, pkgURL, name)
+		install.BuildInstall(name)
 	},
 }
 var name string
@@ -40,9 +40,9 @@ func init() {
 	installCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 	installCmd.Flags().BoolVar(&install.Kustomize, "kust", false, "kustomize type deploy")
 
-	installCmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes masters")
-	installCmd.Flags().StringSliceVar(&nodes, "node", []string{}, "kubernetes nodes")
+	installCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
+	installCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
 	installCmd.Flags().StringVar(&name, "name", "", "kubernetes plugins name")
-	installCmd.Flags().StringVar(&pkgURL, "pkg-url", "", "http://store.lameleg.com/prometheus.tar.gz download offline plugins package url, or file localtion ex. /root/prometheus.tar.gz")
+	installCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/prometheus.tar.gz download offline plugins package url, or file localtion ex. /root/prometheus.tar.gz")
 
 }

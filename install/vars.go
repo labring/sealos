@@ -1,0 +1,14 @@
+package install
+
+var (
+	Masters        []string
+	Nodes          []string
+	VIP            string
+	PkgUrl         string
+	User           string
+	Passwd         string
+	PrivateKeyFile string
+	KubeadmFile    string
+	Version        string
+	Kustomize      bool
+)
