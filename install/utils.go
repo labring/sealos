@@ -24,7 +24,7 @@ const oneMBByte = 1024 * 1024
 // v1.15.6  => 115
 func VersionToInt(version string) int {
 	// v1.15.6  => 1.15.6
-	version = strings.ReplaceAll(version, "v", "")
+	version = strings.Replace(version, "v", "", -1)
 	versionArr := strings.Split(version, ".")
 	if len(versionArr) >= 2 {
 		versionStr := versionArr[0] + versionArr[1]
