@@ -42,11 +42,6 @@ type SealosInstaller struct {
 	Hosts []string
 }
 
-const (
-	initMaster0 = "init-master0"
-	initMasters = "init-masters"
-)
-
 type CommandType string
 
 //command type
