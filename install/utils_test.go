@@ -70,3 +70,7 @@ func TestPrint(t *testing.T) {
 func TestGetFileSize(t *testing.T) {
 	GetFileSize("httfp://www.affa.com")
 }
+
+func TestVersionToInt(t *testing.T) {
+	t.Log(VersionToInt("v1.15.6"))
+}

@@ -21,6 +21,20 @@ import (
 
 const oneMBByte = 1024 * 1024
 
+// v1.15.6  => 115
+func VersionToInt(version string) int {
+	// v1.15.6  => 1.15.6
+	version = strings.ReplaceAll(version, "v", "")
+	versionArr := strings.Split(version, ".")
+	if len(versionArr) >= 2 {
+		versionStr := versionArr[0] + versionArr[1]
+		if i, err := strconv.Atoi(versionStr); err == nil {
+			return i
+		}
+	}
+	return 0
+}
+
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	return ipAndPort[0]
