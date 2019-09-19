@@ -25,8 +25,7 @@ func (s *SealosInstaller) GeneratorToken() {
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
-	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash, CertificateKey)
-
+	cmd := s.Command(Version, JoinMaster)
 	for _, master := range Masters[1:] {
 		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", IpFormat(Masters[0]))
 		Cmd(master, cmdHosts)
@@ -50,7 +49,7 @@ func (s *SealosInstaller) JoinNodes() {
 			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", VIP)
 			Cmd(node, cmdHosts)
-			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, JoinToken, TokenCaCertHash)
+			cmd := s.Command(Version, JoinNode)
 			cmd += masters
 			Cmd(node, cmd)
 		}(node)
