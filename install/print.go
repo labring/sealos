@@ -17,7 +17,10 @@ func (s *SealosInstaller) Print(process ...string) {
 			sb.Write([]byte("==>"))
 			sb.Write([]byte(v))
 		}
-		logger.Warn(sb.String())
+		logger.Debug(sb.String())
 	}
 
+}
+func (s *SealosInstaller) PrintFinish() {
+	logger.Info("sealos install success.")
 }
