@@ -11,4 +11,5 @@ var (
 	KubeadmFile    string
 	Version        string
 	Kustomize      bool
+	ApiServer      string
 )

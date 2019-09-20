@@ -27,7 +27,7 @@ func (s *SealosInstaller) GeneratorToken() {
 func (s *SealosInstaller) JoinMasters() {
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range Masters[1:] {
-		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", IpFormat(Masters[0]))
+		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
 		Cmd(master, cmdHosts)
 		Cmd(master, cmd)
 		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(Masters[0]), IpFormat(master))
@@ -47,7 +47,7 @@ func (s *SealosInstaller) JoinNodes() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", VIP)
+			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
 			Cmd(node, cmdHosts)
 			cmd := s.Command(Version, JoinNode)
 			cmd += masters

@@ -45,7 +45,7 @@ func init() {
 	cleanCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
 	cleanCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
 	cleanCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
-
+	cleanCmd.Flags().StringVar(&install.ApiServer, "apiserver", "apiserver.cluster.local", "apiserver domain name")
 	cleanCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
 	cleanCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
 }
