@@ -42,25 +42,26 @@ type SealosInstaller struct {
 	Hosts []string
 }
 
-const (
-	initMaster0 = "init-master0"
-	initMasters = "init-masters"
-)
+type CommandType string
 
-//getCommand("init-master0")
-//getCommand("masters")
-//getCommand("join")
-//get command by versions
-func (s *SealosInstaller) getCommand(name string) (cmd string) {
-	cmds := make(map[string]string)
-	cmds = map[string]string{
-		initMaster0: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`,
-		initMasters: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
+//command type
+const InitMaster CommandType = "initMaster"
+const JoinMaster CommandType = "joinMaster"
+const JoinNode CommandType = "joinNode"
+
+func (s *SealosInstaller) Command(version string, name CommandType) (cmd string) {
+	cmds := make(map[CommandType]string)
+	cmds = map[CommandType]string{
+		InitMaster: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`,
+		JoinMaster: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
+		JoinNode:   fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, JoinToken, TokenCaCertHash),
+	}
+	//other version
+	//todo
+	if VersionToInt(version) >= 115 {
+		cmds[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
 	}
 
-	if strings.HasPrefix(Version, "v1.15") {
-		cmds[initMaster0] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
-	}
 	v, ok := cmds[name]
 	defer func() {
 		if r := recover(); r != nil {

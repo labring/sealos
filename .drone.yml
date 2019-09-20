@@ -10,7 +10,7 @@ workspace:
 
 steps:
 - name: build
-  image: golang:1.11.3
+  image: golang:1.12
   commands:
       - go build -o sealos
 
