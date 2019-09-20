@@ -59,12 +59,13 @@ func TestProcess(t *testing.T) {
 }
 
 func TestPrint(t *testing.T) {
-	User = "root"
-	Passwd = "admin"
-	Masters = []string{"172.16.4.2"}
-	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	//User = "root"
+	//Passwd = "admin"
+	//Masters = []string{"172.16.4.2"}
+	//PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
 	install := &SealosInstaller{}
 	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+	install.PrintFinish()
 }
 
 func TestGetFileSize(t *testing.T) {
