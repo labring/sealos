@@ -7,7 +7,7 @@ import (
 
 //CheckValid is
 func (s *SealosInstaller) CheckValid() {
-	hosts := append(s.Masters, s.Nodes...)
+	hosts := append(Masters, Nodes...)
 	var session *ssh.Session
 	for _, h := range hosts {
 		session, err := Connect(User, Passwd, PrivateKeyFile, h)

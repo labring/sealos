@@ -19,16 +19,26 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-//username
-var (
-	User           string
-	Passwd         string
-	PrivateKeyFile string
-	KubeadmFile    string
-	Version        string
-)
-
 const oneMBByte = 1024 * 1024
+
+// v1.15.6  => 115
+func VersionToInt(version string) int {
+	// v1.15.6  => 1.15.6
+	version = strings.Replace(version, "v", "", -1)
+	versionArr := strings.Split(version, ".")
+	if len(versionArr) >= 2 {
+		versionStr := versionArr[0] + versionArr[1]
+		if i, err := strconv.Atoi(versionStr); err == nil {
+			return i
+		}
+	}
+	return 0
+}
+
+func IpFormat(host string) string {
+	ipAndPort := strings.Split(host, ":")
+	return ipAndPort[0]
+}
 
 func AddrReformat(host string) string {
 	if strings.Index(host, ":") == -1 {
@@ -279,7 +289,8 @@ func SftpConnect(user, passwd, pkFile, host string) (*sftp.Client, error) {
 
 	return sftpClient, nil
 }
-func SendPackage(url string, hosts []string) {
+
+func SendPackage(url string, hosts []string, packName string) {
 	pkg := path.Base(url)
 	//only http
 	isHttp := strings.HasPrefix(url, "http")
@@ -292,9 +303,15 @@ func SendPackage(url string, hosts []string) {
 		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
 	}
 	remoteCmd := fmt.Sprintf("cd /root &&  %s %s && tar zxvf %s", wgetCommand, url, pkg)
-	localCmd := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s ", pkg)
-	kubeCmd := "cd /root/kube/shell && sh init.sh"
+	localCmd := fmt.Sprintf("cd /root && rm -rf %s && tar zxvf %s ", packName, pkg)
 	kubeLocal := fmt.Sprintf("/root/%s", pkg)
+	var kubeCmd string
+	if packName == "kube" {
+		kubeCmd = "cd /root/kube/shell && sh init.sh"
+	} else {
+		kubeCmd = fmt.Sprintf("cd /root/%s && docker load -i images.tar", packName)
+	}
+
 	var wm sync.WaitGroup
 	for _, host := range hosts {
 		wm.Add(1)

@@ -31,3 +31,7 @@ type Join interface {
 	JoinNodes()
 	GeneratorToken()
 }
+
+type Apply interface {
+	KubeApply(name string)
+}

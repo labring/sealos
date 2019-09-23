@@ -6,16 +6,12 @@ import (
 )
 
 //BuildJoin is
-func BuildJoin(masters []string, nodes []string, vip, pkgUrl string) {
+func BuildJoin() {
 	i := &SealosInstaller{
-		Masters: masters,
-		Nodes:   nodes,
-		VIP:     vip,
-		PkgUrl:  pkgUrl,
-		Hosts:   nodes,
+		Hosts: Nodes,
 	}
 	i.CheckValid()
-	i.SendPackage()
+	i.SendPackage("kube")
 	i.GeneratorToken()
 	i.JoinNodes()
 }
@@ -23,19 +19,18 @@ func BuildJoin(masters []string, nodes []string, vip, pkgUrl string) {
 //GeneratorToken is
 func (s *SealosInstaller) GeneratorToken() {
 	cmd := `kubeadm token create --print-join-command`
-	output := Cmd(s.Masters[0], cmd)
+	output := Cmd(Masters[0], cmd)
 	decodeOutput(output)
 }
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
-	cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", s.Masters[0], JoinToken, TokenCaCertHash, CertificateKey)
-
-	for _, master := range s.Masters[1:] {
-		cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.Masters[0])
+	cmd := s.Command(Version, JoinMaster)
+	for _, master := range Masters[1:] {
+		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
 		Cmd(master, cmdHosts)
 		Cmd(master, cmd)
-		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, s.Masters[0], master)
+		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(Masters[0]), IpFormat(master))
 		Cmd(master, cmdHosts)
 	}
 }
@@ -44,17 +39,17 @@ func (s *SealosInstaller) JoinMasters() {
 func (s *SealosInstaller) JoinNodes() {
 	var masters string
 	var wg sync.WaitGroup
-	for _, master := range s.Masters {
-		masters += fmt.Sprintf(" --master %s:6443", master)
+	for _, master := range Masters {
+		masters += fmt.Sprintf(" --master %s:6443", IpFormat(master))
 	}
 
-	for _, node := range s.Nodes {
+	for _, node := range Nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			cmdHosts := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", s.VIP)
+			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
 			Cmd(node, cmdHosts)
-			cmd := fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", s.VIP, JoinToken, TokenCaCertHash)
+			cmd := s.Command(Version, JoinNode)
 			cmd += masters
 			Cmd(node, cmd)
 		}(node)
