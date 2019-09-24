@@ -22,7 +22,7 @@ func (s *SealosInstaller) Clean() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			clean(host)
+			clean(node)
 		}(host)
 	}
 	wg.Wait()
