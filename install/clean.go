@@ -1,6 +1,9 @@
 package install
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 //BuildClean is
 func BuildClean() {
@@ -38,6 +41,6 @@ func clean(host string) {
 	Cmd(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd "
 	Cmd(host, cmd)
-	cmd = "rm -rf /tmp/* && sed -i \"/apiserver.cluster.local/d\" /etc/hosts "
+	cmd = fmt.Sprintf("rm -rf /tmp/* && sed -i \"/%s/d\" /etc/hosts ", ApiServer)
 	Cmd(host, cmd)
 }
