@@ -11,13 +11,13 @@ import (
 const TemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "apiserver.cluster.local:6443"
+controlPlaneEndpoint: "{{.ApiServer}}:6443"
 networking:
   podSubnet: 100.64.0.0/10
 apiServer:
         certSANs:
         - 127.0.0.1
-        - apiserver.cluster.local
+        - {{.ApiServer}}
         {{range .Masters -}}
         - {{.}}
         {{end -}}
@@ -74,6 +74,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["VIP"] = VIP
 	envMap["Masters"] = masters
 	envMap["Version"] = Version
+	envMap["ApiServer"] = ApiServer
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

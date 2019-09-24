@@ -28,6 +28,7 @@ func BuildInit() {
 		i.JoinNodes()
 		i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
 	}
+	i.PrintFinish()
 }
 
 //KubeadmConfigInstall is
@@ -53,7 +54,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
-	cmd := fmt.Sprintf("echo %s apiserver.cluster.local >> /etc/hosts", IpFormat(Masters[0]))
+	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
 	Cmd(Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
