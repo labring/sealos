@@ -160,6 +160,7 @@ sealos clean \
     --user root \
     --passwd your-server-password
 ```
+## [视频教程](http://mp.weixin.qq.com/mp/video?__biz=Mzg2NzAzODE5Ng==&mid=100000268&sn=e932ef75dfc38414c21b6b365df07c8e&vid=wxv_1003349861900664832&idx=1&vidsn=e934d4cf8bacd1f569514b69c1344cf6&fromid=1&scene=18&xtrack=1#wechat_redirect)
 
 ## 增加节点
 获取 join command, 在master上执行:
