@@ -93,7 +93,7 @@ sealos init --master 192.168.0.2 \
 ```
 sealos init --master 172.16.198.83 \
     --node 172.16.198.84 \
-    --pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/free/kube1.15.0.tar.gz \
+    --pkg-url https://YOUR_HTTP_SERVER/kube1.15.0.tar.gz \
     --pk /root/kubernetes.pem \
     --version v1.15.0
 ```
