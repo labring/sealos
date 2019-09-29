@@ -1,6 +1,16 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
+# support 1.16.0
+```
+wget https://github.com/fanux/sealos/releases/download/v2.0.7/sealos && chmod +x sealos && mv sealos /usr/bin 
+
+sealos init --passwd YOUR_SERVER_PASSWD \
+	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
+	--node 192.168.0.5 \
+	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/cf6bece970f6dab3d8dc8bc5b588cc18-1.16.0/kube1.16.0.tar.gz \
+	--version v1.16.0
+```
 
 ![](./arch.png)
 
@@ -93,8 +103,8 @@ sealos init --master 192.168.0.2 \
 ```
 sealos init --master 172.16.198.83 \
     --node 172.16.198.84 \
-    --pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/free/kube1.15.0.tar.gz \
-    --pk /root/kubernetes.pem # this is your ssh private key file \
+    --pkg-url https://YOUR_HTTP_SERVER/kube1.15.0.tar.gz \
+    --pk /root/kubernetes.pem \
     --version v1.15.0
 ```
 
@@ -160,6 +170,7 @@ sealos clean \
     --user root \
     --passwd your-server-password
 ```
+## [视频教程](http://mp.weixin.qq.com/mp/video?__biz=Mzg2NzAzODE5Ng==&mid=100000268&sn=e932ef75dfc38414c21b6b365df07c8e&vid=wxv_1003349861900664832&idx=1&vidsn=e934d4cf8bacd1f569514b69c1344cf6&fromid=1&scene=18&xtrack=1#wechat_redirect)
 
 ## 增加节点
 获取 join command, 在master上执行:
