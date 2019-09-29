@@ -203,7 +203,7 @@ sealos join
 ```
 
 ## 使用自定义kubeadm配置文件
-比如我们需要在证书里加入 `sealyun.com`:
+比如我们需要在证书里加入 `sealyun.com`,再修改service网段:
 
 先获取配置文件模板：
 ```
@@ -217,6 +217,7 @@ kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "apiserver.cluster.local:6443"
 networking:
   podSubnet: 100.64.0.0/10
+  serviceSubnet: 10.96.0.0/16
 apiServer:
         certSANs:
         - sealyun.com # this is what I added
