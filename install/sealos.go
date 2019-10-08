@@ -2,8 +2,9 @@ package install
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"strings"
+
+	"github.com/wonderivan/logger"
 )
 
 type CleanCluster interface {
@@ -60,6 +61,7 @@ func (s *SealosInstaller) Command(version string, name CommandType) (cmd string)
 	//todo
 	if VersionToInt(version) >= 115 {
 		cmds[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs`
+		cmds[JoinMaster] = fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --control-plane --certificate-key %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash, CertificateKey)
 	}
 
 	v, ok := cmds[name]
