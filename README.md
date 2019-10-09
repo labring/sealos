@@ -9,7 +9,7 @@ wget https://github.com/fanux/sealos/releases/download/v2.0.7/sealos && \
 sealos init --passwd YOUR_SERVER_PASSWD \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/cf6bece970f6dab3d8dc8bc5b588cc18-1.16.0/kube1.16.0.tar.gz \
+	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz \
 	--version v1.16.0
 ```
 
