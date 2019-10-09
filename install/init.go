@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
+	"os"
 )
 
 //BuildInit is
@@ -58,7 +59,12 @@ func (s *SealosInstaller) InstallMaster0() {
 	Cmd(Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
+
 	output := Cmd(Masters[0], cmd)
+	if output == nil {
+		logger.Error("[%s]kubernetes install is error.please clean and uninstall.", Masters[0])
+		os.Exit(1)
+	}
 	decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
