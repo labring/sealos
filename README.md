@@ -18,9 +18,9 @@ sealos init --passwd YOUR_SERVER_PASSWD \
 [English docs](README_en.md)
 
 # 概述与设计原则
-   sealos旨在做一个简单干净轻量级稳定的kubernetes安装工具，能很好的支持高可用安装。 其实把一个东西做的功能强大并不难，但是做到极简且灵活可扩展就比较难。
-<<<<<<< HEAD
-   所以在实现时就必须要遵循这些原则。
+sealos旨在做一个简单干净轻量级稳定的kubernetes安装工具，能很好的支持高可用安装。 其实把一个东西做的功能强大并不难，但是做到极简且灵活可扩展就比较难。
+
+所以在实现时就必须要遵循这些原则。
 
 sealos特性与优势：
 
