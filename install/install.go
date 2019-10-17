@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 )
 
 //Command is
@@ -21,32 +22,32 @@ type PkgConfig struct {
 	Cmds []Command
 }
 
-/*
-func BuildInstall(name string) {
-	hosts := append(Masters, Nodes...)
-	i := &SealosInstaller{
-		Hosts: hosts,
-	}
-	i.CheckValid()
-	i.SendPackage(name)
-	i.KubeApply(name)
-}
+//AppInstall is
+func AppInstall(url string){
+	c := &SealConfig{}
+	c.Load("")
 
-func (s *SealosInstaller) KubeApply(name string) {
-	args := "-f"
-	if Kustomize {
-		args = "-k"
+	pkgConfig,err := LoadConfig(url)
+	if err != nil {
+		logger.Error("load config failed: %s",err)
+		os.Exit(0)
 	}
-	kubeCmd := fmt.Sprintf("cd /root/%s/conf && kubectl apply %s .", name, args)
-	Cmd(Masters[0], kubeCmd)
+	Exec(pkgConfig,c)
 }
- */
 
 // LoadConfig from tar package
 /*
 kube.tar
    config
    images.tar
+
+config content:
+
+LOAD docker load -i images.tar
+START systemctl start docker
+DELETE docker rmi
+STOP systemctl top
+APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
 	file, err := os.Open(packageFile)
@@ -105,3 +106,54 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 	}
 	return list[0], list[1], nil
 }
+
+func Exec(c *PkgConfig, config SealConfig) {
+	for _,c := range c.Cmds {
+		command := NewCommand(c)
+		command.Run(config)
+	}
+}
+
+type Runner interface {
+	Run(config SealConfig)
+}
+
+func NewCommand(c Command) Runner{
+	switch c.Name {
+	case "REMOVE","STOP","START","LOAD":
+		return &RunOnEveryNodes{c}
+	case "DELETE","APPLY":
+		return &RunOnMaster{c}
+	default:
+		logger.Warn("Unknown command:%s,%s",c.Name,c.Cmd)
+	}
+	return nil
+}
+
+type RunOnEveryNodes struct {
+	Cmd Command
+}
+
+func (r *RunOnEveryNodes) Run(config SealConfig) {
+	var wg sync.WaitGroup
+
+	nodes := append(config.Masters,config.Nodes...)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			Cmd(node, r.Cmd.Cmd)
+		}(node)
+	}
+
+	wg.Wait()
+}
+
+type RunOnMaster struct {
+	Cmd Command
+}
+
+func (r *RunOnMaster) Run(config SealConfig) {
+	Cmd(config.Masters[0], r.Cmd.Cmd)
+}
+
