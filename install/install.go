@@ -14,25 +14,42 @@ import (
 //Command is
 type Command struct {
 	Name string // LOAD START APPLY DELETE STOP REMOVE
-	Cmd string  // kubectl apply -k
+	Cmd  string // kubectl apply -k
 	Type string
 }
 
 type PkgConfig struct {
 	Cmds []Command
+	URL  string
+	Name string
+}
+
+func nameFromUrl(url string) string {
+	s := strings.Split(url, "/")
+	if len(s) < 1 {
+		return "app"
+	}
+	tmp := s[len(s)-1]
+	name := strings.SplitN(tmp, ".", 2)
+	if len(name) != 2 {
+		return "app"
+	}
+	return name[0]
 }
 
 //AppInstall is
-func AppInstall(url string){
+func AppInstall(url string) {
 	c := &SealConfig{}
 	c.Load("")
 
-	pkgConfig,err := LoadConfig(url)
+	pkgConfig, err := LoadConfig(url)
+	pkgConfig.URL = url
+	pkgConfig.Name = nameFromUrl(url)
 	if err != nil {
-		logger.Error("load config failed: %s",err)
+		logger.Error("load config failed: %s", err)
 		os.Exit(0)
 	}
-	Exec(pkgConfig,*c)
+	Exec(pkgConfig, *c)
 }
 
 // LoadConfig from tar package
@@ -108,41 +125,51 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 }
 
 func Exec(c *PkgConfig, config SealConfig) {
-	for _,c := range c.Cmds {
-		command := NewCommand(c)
-		command.Run(config)
-	}
+	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds)
+	everyNodesCmd.Run(config, c.URL, c.Name)
+	masterOnlyCmd.Run(config, c.URL, c.Name)
 }
 
 type Runner interface {
-	Run(config SealConfig)
+	Run(config SealConfig, url, pkgName string)
 }
 
-func NewCommand(c Command) Runner{
-	switch c.Name {
-	case "REMOVE","STOP","START","LOAD":
-		return &RunOnEveryNodes{c}
-	case "DELETE","APPLY":
-		return &RunOnMaster{c}
-	default:
-		logger.Warn("Unknown command:%s,%s",c.Name,c.Cmd)
+// return command run on every nodes and run only on master node
+func NewCommands(cmds []Command) (Runner, Runner) {
+	everyNodesCmd := &RunOnEveryNodes{}
+	masterOnlyCmd := &RunOnMaster{}
+	for _, c := range cmds {
+		switch c.Name {
+		case "REMOVE", "STOP", "START", "LOAD":
+			everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
+		case "DELETE", "APPLY":
+			masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
+		default:
+			logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
+		}
 	}
-	return nil
+
+	return everyNodesCmd, masterOnlyCmd
 }
 
 type RunOnEveryNodes struct {
-	Cmd Command
+	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config SealConfig) {
+func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName string) {
 	var wg sync.WaitGroup
+	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
 
-	nodes := append(config.Masters,config.Nodes...)
+	nodes := append(config.Masters, config.Nodes...)
+	SendPackage(url, nodes, pkgName)
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			Cmd(node, r.Cmd.Cmd)
+			Cmd(node, tarCmd)
+			for _, cmd := range r.Cmd {
+				CmdWorkSpace(node, cmd.Cmd, fmt.Sprintf("/root/%s", pkgName))
+			}
 		}(node)
 	}
 
@@ -150,10 +177,17 @@ func (r *RunOnEveryNodes) Run(config SealConfig) {
 }
 
 type RunOnMaster struct {
-	Cmd Command
+	Cmd []Command
 }
 
-func (r *RunOnMaster) Run(config SealConfig) {
-	Cmd(config.Masters[0], r.Cmd.Cmd)
+func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
+	SendPackage(url, []string{config.Masters[0]}, pkgName)
+	for _, cmd := range r.Cmd {
+		CmdWorkSpace(config.Masters[0], cmd.Cmd,fmt.Sprintf("/root/%s", pkgName))
+	}
 }
 
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	Cmd(node, command)
+}
