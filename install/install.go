@@ -32,7 +32,7 @@ func AppInstall(url string){
 		logger.Error("load config failed: %s",err)
 		os.Exit(0)
 	}
-	Exec(pkgConfig,c)
+	Exec(pkgConfig,*c)
 }
 
 // LoadConfig from tar package
