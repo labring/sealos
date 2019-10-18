@@ -45,19 +45,21 @@ func AppInstall(url string) {
 	c.Load("")
 
 	pkgConfig, err := LoadConfig(url)
-	pkgConfig.URL = url
-	pkgConfig.Name = nameFromUrl(url)
 	if err != nil {
 		logger.Error("load config failed: %s", err)
 		os.Exit(0)
 	}
+	pkgConfig.URL = url
+	pkgConfig.Name = nameFromUrl(url)
+
 	Exec(pkgConfig, *c)
 }
 
-func LoadRemoteFile(url string) {
+func LoadRemoteFile(url string) string{
 	isHttp := strings.HasPrefix(url, "http")
 	if !isHttp {
-		return
+		logger.Info("using local package %s", url)
+		return url
 	}
 	wgetParam := ""
 	if strings.HasPrefix(url, "https") {
@@ -71,6 +73,8 @@ func LoadRemoteFile(url string) {
 		logger.Error(err)
 	}
 	logger.Info("%s", out)
+
+	return path.Base(url)
 }
 
 // LoadConfig from tar package
@@ -88,10 +92,9 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
-	LoadRemoteFile(packageFile)
-	packageFile = path.Base(packageFile)
+	filename := LoadRemoteFile(packageFile)
 
-	file, err := os.Open(packageFile)
+	file, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
