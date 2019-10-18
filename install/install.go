@@ -140,9 +140,11 @@ func NewCommands(cmds []Command) (Runner, Runner) {
 	masterOnlyCmd := &RunOnMaster{}
 	for _, c := range cmds {
 		switch c.Name {
-		case "REMOVE", "STOP", "START", "LOAD":
+		//case "REMOVE", "STOP", "START", "LOAD":
+		case "START", "LOAD":
 			everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-		case "DELETE", "APPLY":
+		//case "DELETE", "APPLY":
+		case "APPLY":
 			masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
 		default:
 			logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
@@ -183,7 +185,7 @@ type RunOnMaster struct {
 
 func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 	workspace := fmt.Sprintf("/root/%s", pkgName)
-	SendPackage(url, []string{config.Masters[0]}, pkgName)
+	FetchPackage(url, []string{config.Masters[0]}, workspace)
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
 	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
 	for _, cmd := range r.Cmd {
