@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const defaultConfigPath = "~/.sealos/config.yaml"
+const defaultConfigPath = "/root/.sealos/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
