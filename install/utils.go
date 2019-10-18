@@ -335,3 +335,44 @@ func SendPackage(url string, hosts []string, packName string) {
 	}
 	wm.Wait()
 }
+
+// FetchPackage if url exist wget it, or scp the local package to hosts
+// dst is the remote offline path like /root
+func FetchPackage(url string, hosts []string, dst string) {
+	pkg := path.Base(url)
+	fullDst := fmt.Sprintf("%s/%s", dst, pkg)
+	mkdstdir := fmt.Sprintf("mkdir -p %s || true", dst)
+
+	//only http
+	isHttp := strings.HasPrefix(url, "http")
+	wgetCommand := ""
+	if isHttp {
+		wgetParam := ""
+		if strings.HasPrefix(url, "https") {
+			wgetParam = "--no-check-certificate"
+		}
+		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
+	}
+	remoteCmd := fmt.Sprintf("cd %s &&  %s %s", dst, wgetCommand, url)
+
+	var wm sync.WaitGroup
+	for _, host := range hosts {
+		wm.Add(1)
+		go func(host string) {
+			defer wm.Done()
+			logger.Debug("[%s]please wait for copy offline package", host)
+			Cmd(host, mkdstdir)
+			if RemoteFilExist(host, fullDst) {
+				logger.Warn("[%s]SendPackage: [%s] file is exist", host, fullDst)
+			} else {
+				if isHttp {
+					go WatchFileSize(host, fullDst, GetFileSize(url))
+					Cmd(host, remoteCmd)
+				} else {
+					Copy(host, url, fullDst)
+				}
+			}
+		}(host)
+	}
+	wm.Wait()
+}

@@ -159,16 +159,17 @@ type RunOnEveryNodes struct {
 func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName string) {
 	var wg sync.WaitGroup
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
+	workspace := fmt.Sprintf("/root/%s", pkgName)
 
 	nodes := append(config.Masters, config.Nodes...)
-	SendPackage(url, nodes, pkgName)
+	FetchPackage(url, nodes, workspace)
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
 			Cmd(node, tarCmd)
 			for _, cmd := range r.Cmd {
-				CmdWorkSpace(node, cmd.Cmd, fmt.Sprintf("/root/%s", pkgName))
+				CmdWorkSpace(node, cmd.Cmd, workspace)
 			}
 		}(node)
 	}
@@ -181,9 +182,10 @@ type RunOnMaster struct {
 }
 
 func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
+	workspace := fmt.Sprintf("/root/%s", pkgName)
 	SendPackage(url, []string{config.Masters[0]}, pkgName)
 	for _, cmd := range r.Cmd {
-		CmdWorkSpace(config.Masters[0], cmd.Cmd,fmt.Sprintf("/root/%s", pkgName))
+		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
 	}
 }
 
