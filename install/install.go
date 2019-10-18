@@ -61,6 +61,7 @@ func LoadRemoteFile(url string) string{
 		logger.Info("using local package %s", url)
 		return url
 	}
+	logger.Info("wait for wget app package...")
 	wgetParam := ""
 	if strings.HasPrefix(url, "https") {
 		wgetParam = "--no-check-certificate"
