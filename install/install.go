@@ -167,7 +167,7 @@ func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName string) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			Cmd(node, tarCmd)
+			CmdWorkSpace(node, tarCmd, workspace)
 			for _, cmd := range r.Cmd {
 				CmdWorkSpace(node, cmd.Cmd, workspace)
 			}
@@ -184,6 +184,8 @@ type RunOnMaster struct {
 func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 	workspace := fmt.Sprintf("/root/%s", pkgName)
 	SendPackage(url, []string{config.Masters[0]}, pkgName)
+	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
+	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
 	for _, cmd := range r.Cmd {
 		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
 	}

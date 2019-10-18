@@ -187,7 +187,7 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		}
 		length, _ := dstFile.Write(buf[0:n])
 		totalMB += length / oneMBByte
-		logger.Alert("[%s]transfer total size is: %s%s", host, totalMB, "MB")
+		logger.Alert("[%s]transfer total size is: %d%s", host, totalMB, "MB")
 	}
 }
 func readFile(name string) string {
