@@ -7,6 +7,8 @@ import (
 	"github.com/wonderivan/logger"
 	"io"
 	"os"
+	"os/exec"
+	"path"
 	"strings"
 	"sync"
 )
@@ -52,6 +54,25 @@ func AppInstall(url string) {
 	Exec(pkgConfig, *c)
 }
 
+func LoadRemoteFile(url string) {
+	isHttp := strings.HasPrefix(url, "http")
+	if !isHttp {
+		return
+	}
+	wgetParam := ""
+	if strings.HasPrefix(url, "https") {
+		wgetParam = "--no-check-certificate"
+	}
+	wgetCommand := fmt.Sprintf(" wget %s ", wgetParam)
+	cmd := fmt.Sprintf("%s %s", wgetCommand, url)
+	c := exec.Command("sh", "-c", cmd)
+	out, err := c.CombinedOutput()
+	if err != nil {
+		logger.Error(err)
+	}
+	logger.Info("%s", out)
+}
+
 // LoadConfig from tar package
 /*
 kube.tar
@@ -67,6 +88,9 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
+	LoadRemoteFile(packageFile)
+	packageFile = path.Base(packageFile)
+
 	file, err := os.Open(packageFile)
 	if err != nil {
 		return nil, err
