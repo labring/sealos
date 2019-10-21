@@ -26,7 +26,7 @@ var Version = "latest"
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "show sealos version",
-	Long: `show sealos version`,
+	Long:  `show sealos version`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(Version)
 	},
