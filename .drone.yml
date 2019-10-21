@@ -12,7 +12,7 @@ steps:
 - name: build
   image: golang:1.12
   commands:
-      - go build -o sealos
+      - go build -o sealos -ldflags "-X main.Version=${DRONE_TAG=latest}" cmd/version.go
 
 - name: publish
   image: plugins/github-release
