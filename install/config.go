@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const defaultConfigPath = "/root/.sealos/config.yaml"
+const defaultConfigPath = "/root/.sealos"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
@@ -25,7 +25,7 @@ type SealConfig struct {
 //Dump is
 func (c *SealConfig) Dump(path string) {
 	if path == "" {
-		path = defaultConfigPath
+		path = defaultConfigPath + "/config.yaml"
 	}
 
 	c.Masters = Masters
@@ -41,6 +41,11 @@ func (c *SealConfig) Dump(path string) {
 	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
+	}
+
+	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	if err != nil {
+		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
 
 	ioutil.WriteFile(path, y, 0644)
