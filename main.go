@@ -14,7 +14,9 @@
 
 package main
 
-import "github.com/fanux/sealos/cmd"
+import (
+	"github.com/fanux/sealos/cmd"
+)
 
 func main() {
 	cmd.Execute()
