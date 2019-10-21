@@ -29,8 +29,8 @@ type PkgConfig struct {
 func nameFromUrl(url string) string {
 	tmp := path.Base(url)
 	name := strings.Split(tmp, ".tar")
-	if len(name) != 1 {
-		logger.Error("app package must *.tar, [%s] is invalid", url)
+	if len(name) < 1 {
+		logger.Error("app package must *.tar, [%s] is invalid, %s", url, name)
 		os.Exit(1)
 	}
 	return name[0]
