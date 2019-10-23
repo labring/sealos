@@ -8,6 +8,7 @@ import (
 )
 
 const defaultConfigPath = "/root/.sealos"
+const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
@@ -25,7 +26,7 @@ type SealConfig struct {
 //Dump is
 func (c *SealConfig) Dump(path string) {
 	if path == "" {
-		path = defaultConfigPath + "/config.yaml"
+		path = defaultConfigPath + defaultConfigFile
 	}
 
 	c.Masters = Masters
@@ -54,7 +55,7 @@ func (c *SealConfig) Dump(path string) {
 //Load is
 func (c *SealConfig) Load(path string) {
 	if path == "" {
-		path = defaultConfigPath
+		path = defaultConfigPath + defaultConfigFile
 	}
 
 	y, err := ioutil.ReadFile(path)
