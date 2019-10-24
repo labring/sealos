@@ -1,5 +1,7 @@
 # 新增app（addons）安装功能
 
+[APP列表](https://github.com/sealstore)
+
 # 使用方法
 本地拉取：
 ```
