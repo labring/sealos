@@ -165,10 +165,10 @@ func NewCommands(cmds []Command) (Runner, Runner) {
 	masterOnlyCmd := &RunOnMaster{}
 	for _, c := range cmds {
 		switch c.Name {
-		//case "REMOVE", "STOP", "START", "LOAD":
+		case "REMOVE", "STOP":
 		case "START", "LOAD":
 			everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-		//case "DELETE", "APPLY":
+		case "DELETE":
 		case "APPLY":
 			masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
 		default:
