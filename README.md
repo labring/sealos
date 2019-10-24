@@ -162,6 +162,17 @@ kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44tz            1/1     Running 
 kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running   0          86s
 ```
 
+## 安装APP(addons)
+我们把诸如dashboard,prometheus,ingress等等都称之为APP
+
+所有APP都可使用类似 `sealos install --pkg-url dashboard.tar`的方式安装
+
+为什么不直接kubectl apply? 因为我们把镜像与配置文件和一些脚本都放入tar包中来保障一致性，并可以在没有镜像仓库的情况下帮用户导入镜像
+
+APP名|地址
+---|---
+官方dashboard | https://github.com/sealstore/dashboard
+
 ## 清理
 ```
 sealos clean \
