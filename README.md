@@ -172,6 +172,7 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 APP名|地址
 ---|---
 官方dashboard | https://github.com/sealstore/dashboard
+prometheus | https://github.com/sealstore/prometheus
 
 ## 清理
 ```
