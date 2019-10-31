@@ -169,10 +169,10 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 
 为什么不直接kubectl apply? 因为我们把镜像与配置文件和一些脚本都放入tar包中来保障一致性，并可以在没有镜像仓库的情况下帮用户导入镜像
 
-APP名|地址
----|---
-官方dashboard | https://github.com/sealstore/dashboard
-prometheus | https://github.com/sealstore/prometheus
+APP名|地址|安装示例
+---|--- | ---
+官方dashboard | https://github.com/sealstore/dashboard | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v2.0.0-bata5/dashboard.tar
+prometheus | https://github.com/sealstore/prometheus | sealos install --pkg-url https://github.com/sealstore/prometheus/releases/download/v0.31.1/prometheus.tar
 
 ## 清理
 ```
