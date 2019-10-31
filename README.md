@@ -169,6 +169,8 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 
 为什么不直接kubectl apply? 因为我们把镜像与配置文件和一些脚本都放入tar包中来保障一致性，并可以在没有镜像仓库的情况下帮用户导入镜像
 
+还有就是很多情况下不可避免的要在执行完yaml之后执行一些命令，如安装完dashboard获取token这些
+
 APP名|安装示例
 ---|---
 [dashboard](https://github.com/sealstore/dashboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v2.0.0-bata5/dashboard.tar
