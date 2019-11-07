@@ -177,6 +177,8 @@ APP名|安装示例
 [prometheus](https://github.com/sealstore/prometheus) | sealos install --pkg-url https://github.com/sealstore/prometheus/releases/download/v0.31.1/prometheus.tar
 [ingress](https://github.com/sealstore/ingress) | sealos install --pkg-url https://github.com/sealstore/ingress/releases/download/v0.15.2/contour.tar
 
+[设计原理](https://github.com/fanux/sealos/blob/master/docs/v3.0.md)
+
 ## 清理
 ```
 sealos clean \
