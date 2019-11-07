@@ -21,7 +21,7 @@ import (
 
 const oneMBByte = 1024 * 1024
 
-// v1.15.6  => 115
+//VersionToInt v1.15.6  => 115
 func VersionToInt(version string) int {
 	// v1.15.6  => 1.15.6
 	version = strings.Replace(version, "v", "", -1)
@@ -35,11 +35,13 @@ func VersionToInt(version string) int {
 	return 0
 }
 
+//IpFormat is
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	return ipAndPort[0]
 }
 
+//AddrReformat is
 func AddrReformat(host string) string {
 	if strings.Index(host, ":") == -1 {
 		host = fmt.Sprintf("%s:22", host)
@@ -47,6 +49,7 @@ func AddrReformat(host string) string {
 	return host
 }
 
+//ReturnCmd is
 func ReturnCmd(host, cmd string) string {
 	session, _ := Connect(User, Passwd, PrivateKeyFile, host)
 	defer session.Close()
@@ -54,6 +57,7 @@ func ReturnCmd(host, cmd string) string {
 	return string(b)
 }
 
+//GetFileSize is
 func GetFileSize(url string) int {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -73,6 +77,7 @@ func GetFileSize(url string) int {
 	return int(resp.ContentLength)
 }
 
+//WatchFileSize is
 func WatchFileSize(host, filename string, size int) {
 	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
@@ -120,6 +125,7 @@ func Cmd(host string, cmd string) []byte {
 	return b
 }
 
+//RemoteFilExist is
 func RemoteFilExist(host, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
