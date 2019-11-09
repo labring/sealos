@@ -174,7 +174,8 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 
 APP名|安装示例
 ---|---
-[dashboard](https://github.com/sealstore/dashboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v2.0.0-bata5/dashboard.tar
+[kuboard](https://github.com/sealstore/dashboard/tree/kuboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v1.0-1/kuboard.tar
+[dashboard](https://github.com/sealstore/dashboard/tree/dashboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v2.0.0-bata5/dashboard.tar
 [prometheus](https://github.com/sealstore/prometheus) | sealos install --pkg-url https://github.com/sealstore/prometheus/releases/download/v0.31.1/prometheus.tar
 [ingress](https://github.com/sealstore/ingress) | sealos install --pkg-url https://github.com/sealstore/ingress/releases/download/v0.15.2/contour.tar
 
