@@ -1,14 +1,16 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
 
-# support 1.16.0
+# support 1.16
+试试两条命令安装1.16.0高可用集群吧，其它版本下载对应离线包即可
 ```
-wget https://github.com/fanux/sealos/releases/download/v2.0.7/sealos && chmod +x sealos && mv sealos /usr/bin 
-
+wget https://github.com/fanux/sealos/releases/download/v2.0.7/sealos && \
+    chmod +x sealos && mv sealos /usr/bin 
 sealos init --passwd YOUR_SERVER_PASSWD \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/cf6bece970f6dab3d8dc8bc5b588cc18-1.16.0/kube1.16.0.tar.gz \
+	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz \
 	--version v1.16.0
 ```
 
@@ -17,8 +19,9 @@ sealos init --passwd YOUR_SERVER_PASSWD \
 [English docs](README_en.md)
 
 # 概述与设计原则
-   sealos旨在做一个简单干净轻量级稳定的kubernetes安装工具，能很好的支持高可用安装。 其实把一个东西做的功能强大并不难，但是做到极简且灵活可扩展就比较难。
-   所以在实现时就必须要遵循这些原则。
+sealos旨在做一个简单干净轻量级稳定的kubernetes安装工具，能很好的支持高可用安装。 其实把一个东西做的功能强大并不难，但是做到极简且灵活可扩展就比较难。
+
+所以在实现时就必须要遵循这些原则。
 
 sealos特性与优势：
 
@@ -159,6 +162,24 @@ kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44sz            1/1     Running 
 kube-system   kube-scheduler-izj6cdqfqw4o4o9tc0q44tz            1/1     Running   0          61s
 kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running   0          86s
 ```
+
+## 安装APP(addons)
+我们把诸如dashboard,prometheus,ingress等等都称之为APP
+
+所有APP都可使用类似 `sealos install --pkg-url dashboard.tar`的方式安装
+
+为什么不直接kubectl apply? 因为我们把镜像与配置文件和一些脚本都放入tar包中来保障一致性，并可以在没有镜像仓库的情况下帮用户导入镜像
+
+还有就是很多情况下不可避免的要在执行完yaml之后执行一些命令，如安装完dashboard获取token这些
+
+APP名|安装示例
+---|---
+[kuboard](https://github.com/sealstore/dashboard/tree/kuboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v1.0-1/kuboard.tar
+[dashboard](https://github.com/sealstore/dashboard/tree/dashboard) | sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v2.0.0-bata5/dashboard.tar
+[prometheus](https://github.com/sealstore/prometheus) | sealos install --pkg-url https://github.com/sealstore/prometheus/releases/download/v0.31.1/prometheus.tar
+[ingress](https://github.com/sealstore/ingress) | sealos install --pkg-url https://github.com/sealstore/ingress/releases/download/v0.15.2/contour.tar
+
+[设计原理](https://github.com/fanux/sealos/blob/master/docs/v3.0.md)
 
 ## 清理
 ```

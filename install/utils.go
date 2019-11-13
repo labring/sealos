@@ -21,7 +21,7 @@ import (
 
 const oneMBByte = 1024 * 1024
 
-// v1.15.6  => 115
+//VersionToInt v1.15.6  => 115
 func VersionToInt(version string) int {
 	// v1.15.6  => 1.15.6
 	version = strings.Replace(version, "v", "", -1)
@@ -35,11 +35,13 @@ func VersionToInt(version string) int {
 	return 0
 }
 
+//IpFormat is
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	return ipAndPort[0]
 }
 
+//AddrReformat is
 func AddrReformat(host string) string {
 	if strings.Index(host, ":") == -1 {
 		host = fmt.Sprintf("%s:22", host)
@@ -47,6 +49,7 @@ func AddrReformat(host string) string {
 	return host
 }
 
+//ReturnCmd is
 func ReturnCmd(host, cmd string) string {
 	session, _ := Connect(User, Passwd, PrivateKeyFile, host)
 	defer session.Close()
@@ -54,6 +57,7 @@ func ReturnCmd(host, cmd string) string {
 	return string(b)
 }
 
+//GetFileSize is
 func GetFileSize(url string) int {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -73,6 +77,7 @@ func GetFileSize(url string) int {
 	return int(resp.ContentLength)
 }
 
+//WatchFileSize is
 func WatchFileSize(host, filename string, size int) {
 	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
@@ -120,6 +125,7 @@ func Cmd(host string, cmd string) []byte {
 	return b
 }
 
+//RemoteFilExist is
 func RemoteFilExist(host, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
@@ -187,7 +193,7 @@ func Copy(host, localFilePath, remoteFilePath string) {
 		}
 		length, _ := dstFile.Write(buf[0:n])
 		totalMB += length / oneMBByte
-		logger.Alert("[%s]transfer total size is: %s%s", host, totalMB, "MB")
+		logger.Alert("[%s]transfer total size is: %d%s", host, totalMB, "MB")
 	}
 }
 func readFile(name string) string {
@@ -331,6 +337,47 @@ func SendPackage(url string, hosts []string, packName string) {
 				}
 			}
 			Cmd(host, kubeCmd)
+		}(host)
+	}
+	wm.Wait()
+}
+
+// FetchPackage if url exist wget it, or scp the local package to hosts
+// dst is the remote offline path like /root
+func FetchPackage(url string, hosts []string, dst string) {
+	pkg := path.Base(url)
+	fullDst := fmt.Sprintf("%s/%s", dst, pkg)
+	mkdstdir := fmt.Sprintf("mkdir -p %s || true", dst)
+
+	//only http
+	isHttp := strings.HasPrefix(url, "http")
+	wgetCommand := ""
+	if isHttp {
+		wgetParam := ""
+		if strings.HasPrefix(url, "https") {
+			wgetParam = "--no-check-certificate"
+		}
+		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
+	}
+	remoteCmd := fmt.Sprintf("cd %s &&  %s %s", dst, wgetCommand, url)
+
+	var wm sync.WaitGroup
+	for _, host := range hosts {
+		wm.Add(1)
+		go func(host string) {
+			defer wm.Done()
+			logger.Debug("[%s]please wait for copy offline package", host)
+			Cmd(host, mkdstdir)
+			if RemoteFilExist(host, fullDst) {
+				logger.Warn("[%s]SendPackage: [%s] file is exist", host, fullDst)
+			} else {
+				if isHttp {
+					go WatchFileSize(host, fullDst, GetFileSize(url))
+					Cmd(host, remoteCmd)
+				} else {
+					Copy(host, url, fullDst)
+				}
+			}
 		}(host)
 	}
 	wm.Wait()
