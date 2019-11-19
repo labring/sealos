@@ -41,7 +41,10 @@ cloudshell在用户控制台右上角，一个终端小图标
 > 起一个3master 4node 的1.14.9集群
 
 ```
-sealos cloud --master 3 --node 4 --version v1.14.9 --flavor 2C4G --name mytest --passwd test123 --region cn-hangzhou
+sealos cloud --master 3 --node 4 \
+    --version v1.14.9 --flavor 2C4G \
+    --name mytest --passwd test123 \
+    --region cn-hangzhou
 ```
 
 # 执行原理
