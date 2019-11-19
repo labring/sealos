@@ -60,6 +60,9 @@ sealos cloud --master 3 --node 4 \
 # 关于实例类型
 首个版本支持的是阿里云的竞价实例，竞价实例相比普通实例拥有便宜很多的价格优势，是弹性计算的好选择
 
+# 关于terraform
+做了一个艰难的决定没去用terraform, terraform很优秀，对公有云openstack的编排做的非常好，但是没找到它的SDK这意味着只能通过调用命令行工具去使用terraform,这样就增加了sealos的依赖，这违背了sealos简单的原则，所以采用自己基于阿里云和腾讯云的SDK实现此功能
+
 # 商业支持
 请邮箱联系：fhtjob@hotmail.com
 
