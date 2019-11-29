@@ -5,6 +5,7 @@ import (
 	"github.com/fanux/sealgate/cloud"
 	"github.com/fanux/sealos/version"
 	"github.com/wonderivan/logger"
+	"os"
 )
 
 //VersionURL is base64 encode k8s version and offline package url
@@ -43,6 +44,15 @@ type Cluster struct {
 //Global config
 var C Cluster
 
+// 2019.11.28 今天刚修完陪产假，在新装修的公寓中写代码，刚配的眼镜感觉带着有点不舒服，看屏幕不是很清楚
+/*
+   配眼镜的人也不是很专业，二宝还是个女儿，非常可爱而且非常乖，不像大宝那么吵。 一直很想写日记但是不知道往哪里写合适
+   既然github要把代码存两千年那为啥不写到代码里，如此这便成为我第一篇代码日记。
+
+   碳纤维地暖开了半天还是冰凉的，感觉是被忽悠了。
+
+   一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
+ */
 func CloudInstall(c *Cluster) {
 	URLmap = make(map[string]string)
 	URLmap["v1.16.0"] = DefaultURL
@@ -77,6 +87,8 @@ func CloudInstall(c *Cluster) {
 func getURL(version string) string {
 	url,ok := URLmap[version]
 	if !ok {
+		logger.Error("version offline package not found: %s",version)
+		os.Exit(1)
 		return DefaultURL
 	}
 	return url

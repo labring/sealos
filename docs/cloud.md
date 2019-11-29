@@ -16,6 +16,7 @@ sealos cloud --accessKey xxx --accessSecret xxx
 ---|---|---
 accessKey| LTAIah2bOOcr0uuT | 如阿里云的accessKey,在[用户信息](https://usercenter.console.aliyun.com/#/manage/ak)中可找到
 accessSecret| FN3FcvXUctbudisnHs89bcYlbsZuImh
+provider|ali| 云供应商，支持阿里云等
 master|3|kubernetes master数量
 node|4| kubernetes node数量
 version|v1.16.3| kubernetes版本
@@ -23,7 +24,7 @@ flavor|2C4G| 2核4G的虚拟机，虚拟机实例类型，也可自己设置阿�
 name|mycluster| kubernetes集群名称
 passwd|123456| 虚拟机密码
 region|cn-hangzhou| 虚拟机可用区
-zoneID|cn-hangzhou-a| 虚拟机zone
+zone|cn-hangzhou-a| 虚拟机zone
 y | 无 | 免交互模式，有些默认值参数需要用户确认，以免起错集群
 
 > 使用阿里云cloudshell

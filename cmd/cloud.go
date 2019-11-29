@@ -17,8 +17,13 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/fanux/sealgate/cloud"
+	"github.com/fanux/sealos/install"
+
 	"github.com/spf13/cobra"
 )
+
+var p bool
 
 func prompt() {
 }
@@ -27,14 +32,27 @@ func prompt() {
 var cloudCmd = &cobra.Command{
 	Use:   "cloud",
 	Short: "sealos on cloud",
-	Long: `sealos will create vms vpc switch security group on cloud and install kubernetes on it`,
+	Long:  `sealos will create vms vpc switch security group on cloud and install kubernetes on it`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("cloud called")
+		fmt.Println("install kubernetes on cloud...")
+		install.CloudInstall(&install.C)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(cloudCmd)
+	cloudCmd.Flags().StringVar(&install.C.AccessKey, "accessKey", "", "cloud provider accessKey, like LTAIah2bOOcr0uuT")
+	cloudCmd.Flags().StringVar(&install.C.AccessSecret, "accessSecret", "", "cloud provider accessSecret, like FN3FcvXUctbudisnHs89bcYlbsZuImh")
+	cloudCmd.Flags().StringVar(&install.C.Provider,"provider", cloud.ALI,  "cloud provider accessSecret, like FN3FcvXUctbudisnHs89bcYlbsZuImh")
+	cloudCmd.Flags().IntVar(&install.C.Master, "master", 1, "the number of master vms")
+	cloudCmd.Flags().IntVar(&install.C.Node, "node", 1, "the number of node vms")
+	cloudCmd.Flags().StringVar(&install.C.Version, "version", "v1.16.0", "kubernetes version")
+	cloudCmd.Flags().StringVar(&install.C.Flavor, "flavor", "2C4G", "the type of vms")
+	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun", "the name of your cluster")
+	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "sealyunIsGrate", "the passwd of your vm servers")
+	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hangzhou", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hangzhou-a", "cloud provider region")
+	cloudCmd.Flags().BoolVar(&p, "y", false, "prompt or not")
 
 	// Here you will define your flags and configuration settings.
 
