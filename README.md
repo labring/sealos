@@ -5,7 +5,7 @@
 # support 1.16
 试试两条命令安装1.16.0高可用集群吧，其它版本下载对应离线包即可
 ```
-wget https://github.com/fanux/sealos/releases/download/v2.0.7/sealos && \
+wget https://github.com/fanux/sealos/releases/download/v3.0.1/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 sealos init --passwd YOUR_SERVER_PASSWD \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
