@@ -1,19 +1,17 @@
 package install
 
 import (
-	"fmt"
 	"strings"
 	"testing"
-
-	"github.com/wonderivan/logger"
 )
 
 func TestCmd(t *testing.T) {
 	User = "cuisongliu"
 	Passwd = "admin"
-
-	Cmd("127.0.0.1", "ls")
-
+	Masters = []string{"127.0.0.3"}
+	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
+	install.CheckValid()
 }
 func TestCopy(t *testing.T) {
 	User = "cuisongliu"
@@ -21,15 +19,6 @@ func TestCopy(t *testing.T) {
 
 	Copy("127.0.0.1", "/home/cuisongliu/aa", "/home/cuisongliu/aa")
 
-}
-
-func TestTemplate(t *testing.T) {
-	var masters = []string{"172.20.241.205", "172.20.241.206", "172.20.241.207"}
-	var vip = "10.103.97.1"
-	User = "cuisongliu"
-	Passwd = "admin"
-	Cmd("127.0.0.1", "echo \""+string(Template(masters, vip, "v1.14.1"))+"\" > ~/aa")
-	t.Log(string(Template(masters, vip, "v1.14.0")))
 }
 
 func TestRemoteFilExist(t *testing.T) {
@@ -47,30 +36,42 @@ func TestPath(t *testing.T) {
 func TestSend(t *testing.T) {
 	User = "root"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"172.16.4.2"},
-	}
-	install.SendPackage("/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz")
+	Masters = []string{"172.16.4.2"}
+	PkgUrl = "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
+	install.SendPackage("kube")
 }
 
 func TestSendHttps(t *testing.T) {
 	User = "root"
 	Passwd = "admin"
-	install := &SealosInstaller{
-		Masters: []string{"172.16.4.2"},
-	}
-	install.SendPackage("http://172.16.4.1:8080/kube1.14.1.tar.gz")
+	Masters = []string{"172.16.4.2"}
+	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
+	install.SendPackage("kube")
 }
 
 func TestProcess(t *testing.T) {
 	//fmt.Printf("%s \033[K\n", "--") // 输出一行结果
 	//fmt.Printf("\033[%dA\033[K", 1) // 将光标向上移动一行
 	//fmt.Printf("%s \033[K\n", "=-") // 输出第二行结果
-	bar(100, 1, 0)
+	//bar(100, 1, 0)
 }
-func bar(count, current, num int) int {
-	reslt := current / count * 100
-	str := fmt.Sprintf("%d%% []", reslt)
-	logger.Debug(str)
-	return reslt
+
+func TestPrint(t *testing.T) {
+	//User = "root"
+	//Passwd = "admin"
+	//Masters = []string{"172.16.4.2"}
+	//PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
+	install := &SealosInstaller{}
+	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
+	install.PrintFinish()
+}
+
+func TestGetFileSize(t *testing.T) {
+	GetFileSize("httfp://www.affa.com")
+}
+
+func TestVersionToInt(t *testing.T) {
+	t.Log(VersionToInt("v1.15.6"))
 }

@@ -3,9 +3,8 @@ sudo: false
 language: go
 
 go:
-  - 1.9.x
-  - 1.10.x
-  - 1.11.x
+  - 1.7.3
+  - 1.8.1
   - tip
 
 matrix:
@@ -13,7 +12,7 @@ matrix:
     - go: tip
 
 install:
-  - go get golang.org/x/lint/golint
+  - go get github.com/golang/lint/golint
   - export PATH=$GOPATH/bin:$PATH
   - go install ./...
 

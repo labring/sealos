@@ -1,46 +1,31 @@
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-[![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
+# 新增app（addons）安装功能
 
-[简体中文,老版本](https://sealyun.com/post/sealos/)
-[简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
+[APP列表](https://github.com/sealstore)
 
-[离线包购买市场](http://store.lameleg.com/)
-
-[sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
-
-# Sealos 2.0
-Support kuberentes 1.14.0+ , you needn't keepalived and haproxy anymore!
-
-build a production kubernetes cluster
-
-# Quick Start
+# 使用方法
+本地拉取：
 ```
-sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password
+sealos install --pkg-url dashboard.tar
 ```
-Thats all!
-
-
-# Architecture
+远程拉取：
 ```
-  +----------+                       +---------------+  virturl server: 127.0.0.1:6443
-  | mater0   |<----------------------| ipvs nodes    |    real servers:
-  +----------+                      |+---------------+            10.103.97.200:6443
-                                    |                             10.103.97.201:6443
-  +----------+                      |                             10.103.97.202:6443
-  | mater1   |<---------------------+
-  +----------+                      |
-                                    |
-  +----------+                      |
-  | mater2   |<---------------------+
-  +----------+
+sealos install --pkg-url https://github.com/sealstore/dashboard/releases/download/v1.10.0-alpha.0/dashboard.tar
 ```
 
-Every node config a ipvs for masters LB.
+# dashboard.tar如何构造
+dashboard.tar里包含yaml文件与镜像文件等
 
-Then run a lvscare as a staic pod to check realserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
+```
+[root@iZj6c2ihvsz4y7barissm4Z test]# cat config 
+LOAD docker load -i image.tar
+APPLY kubectl apply -f manifests
+DELETE kubectl delete -f manifests
+REMOVE sleep 10 && docker rmi -f k8s.gcr.io/kubernetes-dashboard-amd64:v1.10.0
+[root@iZj6c2ihvsz4y7barissm4Z test]# ls
+config  image.tar  manifests
+```
+把上述三个文件打包
 
-# [LVScare](https://github.com/fanux/LVScare)
-This can care your masters ipvs rules.
-
-# 公众号：
-![sealyun](https://sealyun.com/kubernetes-qrcode.jpg)
+```
+[root@iZj6c2ihvsz4y7barissm4Z test]#  tar cvf dashboard.tar config image.tar manifests
+```
