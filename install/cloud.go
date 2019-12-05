@@ -61,7 +61,7 @@ func CloudInstall(c *Cluster) {
 	p := cloud.NewProvider(config)
 
 	// create masters vms
-	res, err := p.Create(newRequest(c, "master", true))
+	res, err := p.Create(newRequest(c, "master", true, c.Master))
 	if err != nil {
 		logger.Error("init cluster failed: %s", err)
 		return
@@ -72,7 +72,7 @@ func CloudInstall(c *Cluster) {
 	c.SecuretyGroupID = res.SecuretyGroupID
 
 	// create nodes vms
-	res, err = p.Create(newRequest(c, "node", false))
+	res, err = p.Create(newRequest(c, "node", false, c.Node))
 	if err != nil {
 		logger.Error("init cluster failed: %s", err)
 		return
@@ -95,20 +95,20 @@ func getURL(version string) string {
 }
 
 func newCommand(c *Cluster) string {
-	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos",version.Version)
-	cmd += fmt.Sprintf("&& ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getURL(c.Version), c.Version)
+	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos",version.Version)
+	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getURL(c.Version), c.Version)
 	for _,master := range c.Masters {
-		cmd += fmt.Sprintf("--master %s", master.IP)
+		cmd += fmt.Sprintf(" --master %s", master.IP)
 	}
 	for _,node := range c.Nodes {
-		cmd += fmt.Sprintf("--node %s", node.IP)
+		cmd += fmt.Sprintf(" --node %s", node.IP)
 	}
 	return cmd
 }
 
-func newRequest(c *Cluster, namePrefix string, fip bool) cloud.Request {
+func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request {
 	r := cloud.Request{
-		Num:             c.Flags.Master,
+		Num:             num,
 		Image:           c.Flags.Image,
 		NamePrefix:      namePrefix,
 		FIP:             fip,

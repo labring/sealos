@@ -57,9 +57,10 @@ func init() {
 	cloudCmd.Flags().StringVar(&install.C.Version, "version", "v1.16.0", "kubernetes version")
 	cloudCmd.Flags().StringVar(&install.C.Flavor, "flavor", "2C4G", "the type of vms")
 	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun", "the name of your cluster")
-	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "sealyunIsGrate", "the passwd of your vm servers")
-	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hangzhou", "cloud provider region")
-	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hangzhou-a", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "Fanux#123", "the passwd of your vm servers")
+	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hongkong", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hongkong-b", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Image, "image", "m-j6c7cmqwpqwn8onaey27", "vm os image")
 	cloudCmd.Flags().BoolVar(&p, "y", false, "prompt or not")
 
 	// Here you will define your flags and configuration settings.

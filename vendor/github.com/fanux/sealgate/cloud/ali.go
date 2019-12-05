@@ -2,11 +2,12 @@ package cloud
 
 import (
 	"fmt"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 )
 
 type AliProvider struct {
@@ -28,6 +29,25 @@ func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 		return "", err
 	}
 	fmt.Printf("response is %#v\n", response)
+
+	//TODO set security rules
+	req := ecs.CreateAuthorizeSecurityGroupRequest()
+	req.Scheme = "https"
+
+	req.SecurityGroupId = response.SecurityGroupId
+	req.IpProtocol = "tcp"
+	req.PortRange = "22/22"
+	req.SourceCidrIp = "0.0.0.0/0"
+	req.DestCidrIp = "0.0.0.0/0"
+	req.Policy = "accept"
+
+	res, err := a.client.AuthorizeSecurityGroup(req)
+	if err != nil {
+		fmt.Print(err.Error())
+		return "",err
+	}
+	fmt.Printf("response is %#v\n", res)
+
 	return response.SecurityGroupId, nil
 }
 
@@ -146,11 +166,11 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	name := fmt.Sprintf("%s-[0,%d]", r.NamePrefix, r.Num-1)
 
 	/*
-	f := a.queryFlavor(r.Flavor)
-	if f == "" {
-		return nil, fmt.Errorf("query vm flavor failed")
-	}
-	 */
+		f := a.queryFlavor(r.Flavor)
+		if f == "" {
+			return nil, fmt.Errorf("query vm flavor failed")
+		}
+	*/
 	request.InstanceType = "ecs.c5.xlarge"
 	request.InstanceName = name
 	request.HostName = name
@@ -164,7 +184,7 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	} else {
 		request.KeyPairName = r.KeyPair
 	}
-	request.Amount = requests.NewInteger(3)
+	request.Amount = requests.NewInteger(r.Num)
 	request.SpotStrategy = "SpotAsPriceGo"
 	request.InstanceChargeType = "PostPaid"
 	request.SecurityGroupId = securityGroupID
@@ -251,13 +271,13 @@ func (a *AliProvider) flavor(flavor string) string {
 //1C2G return 1,2
 func getCPUandMemory(flavor string) (int, float64) {
 	b := []byte(flavor)
-	cpu,err := strconv.Atoi(string(b[0]))
+	cpu, err := strconv.Atoi(string(b[0]))
 	if err != nil {
-		return 0,0
+		return 0, 0
 	}
 	mem, err := strconv.Atoi(string(b[2]))
 	if err != nil {
-		return 0,0
+		return 0, 0
 	}
 
 	return cpu, float64(mem)
