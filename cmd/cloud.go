@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fanux/sealgate/cloud"
 	"github.com/fanux/sealos/install"
@@ -35,6 +36,13 @@ var cloudCmd = &cobra.Command{
 	Long:  `sealos will create vms vpc switch security group on cloud and install kubernetes on it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("install kubernetes on cloud...")
+		var key,sec string
+		if key = os.Getenv("ACCESS_KEY_ID"); key != "" {
+			install.C.AccessKey = key
+		}
+		if sec = os.Getenv("ACCESS_KEY_SECRET");sec != "" {
+			install.C.AccessKey = sec
+		}
 		install.CloudInstall(&install.C)
 	},
 }
