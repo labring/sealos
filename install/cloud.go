@@ -12,7 +12,7 @@ import (
 var (
 	VersionURL string
 	URLmap     map[string]string
-	DefaultURL="https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
+	DefaultURL = "https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
 )
 
 //Flags is command line paras
@@ -52,7 +52,7 @@ var C Cluster
    碳纤维地暖开了半天还是冰凉的，感觉是被忽悠了。
 
    一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
- */
+*/
 func CloudInstall(c *Cluster) {
 	URLmap = make(map[string]string)
 	URLmap["v1.16.0"] = DefaultURL
@@ -60,6 +60,37 @@ func CloudInstall(c *Cluster) {
 	config := c.Config
 	p := cloud.NewProvider(config)
 
+	//TODO concurrence create master and nodes vms, should not create two vpcs
+	/*
+		var wg sync.WaitGroup
+		wg.Add(2)
+
+		go func() {
+			// create masters vms
+			res, err := p.Create(newRequest(c, "master", true, c.Master))
+			if err != nil {
+				logger.Error("init cluster failed: %s", err)
+				return
+			}
+			c.Masters = res.VMs
+			c.VPCID = res.VPCID
+			c.SwitchID = res.SwitchID
+			c.SecuretyGroupID = res.SecuretyGroupID
+			wg.Done()
+		}()
+
+		go func() {
+			// create nodes vms
+			res, err := p.Create(newRequest(c, "node", false, c.Node))
+			if err != nil {
+				logger.Error("init cluster failed: %s", err)
+				return
+			}
+			c.Nodes = res.VMs
+			wg.Done()
+		}()
+		wg.Wait()
+	*/
 	// create masters vms
 	res, err := p.Create(newRequest(c, "master", true, c.Master))
 	if err != nil {
@@ -81,13 +112,14 @@ func CloudInstall(c *Cluster) {
 
 	// exec sealos init on master0
 	cmd := newCommand(c)
-	CmdWorkSpace(c.Masters[0].FIP,cmd,"/root/sealos/cloud")
+	Passwd = c.Passwd
+	CmdWorkSpace(c.Masters[0].FIP, cmd, "/root")
 }
 
 func getURL(version string) string {
-	url,ok := URLmap[version]
+	url, ok := URLmap[version]
 	if !ok {
-		logger.Error("version offline package not found: %s",version)
+		logger.Error("version offline package not found: %s", version)
 		os.Exit(1)
 		return DefaultURL
 	}
@@ -95,12 +127,13 @@ func getURL(version string) string {
 }
 
 func newCommand(c *Cluster) string {
-	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos",version.Version)
+	//TODO should download it on master0 and copy to other nodes
+	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos", version.Version)
 	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getURL(c.Version), c.Version)
-	for _,master := range c.Masters {
+	for _, master := range c.Masters {
 		cmd += fmt.Sprintf(" --master %s", master.IP)
 	}
-	for _,node := range c.Nodes {
+	for _, node := range c.Nodes {
 		cmd += fmt.Sprintf(" --node %s", node.IP)
 	}
 	return cmd
