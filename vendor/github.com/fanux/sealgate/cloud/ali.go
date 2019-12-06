@@ -38,7 +38,6 @@ func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 	req.IpProtocol = "tcp"
 	req.PortRange = "22/22"
 	req.SourceCidrIp = "0.0.0.0/0"
-	req.DestCidrIp = "0.0.0.0/0"
 	req.Policy = "accept"
 
 	res, err := a.client.AuthorizeSecurityGroup(req)
