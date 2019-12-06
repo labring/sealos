@@ -110,9 +110,15 @@ func CloudInstall(c *Cluster) {
 	}
 	c.Nodes = res.VMs
 
-	// exec sealos init on master0
-	cmd := newCommand(c)
 	Passwd = c.Passwd
+
+	//TODO wget package on master0 and scp to other nodes
+	logger.Info("wait few minute for download offline package on master0...")
+	cmd := newWgetCommand(c)
+	CmdWorkSpace(c.Masters[0].FIP, cmd, "/root")
+
+	// exec sealos init on master0
+	cmd = newCommand(c)
 	CmdWorkSpace(c.Masters[0].FIP, cmd, "/root")
 }
 
@@ -126,16 +132,25 @@ func getURL(version string) string {
 	return url
 }
 
+func getLocalURL(version string) string {
+	return fmt.Sprintf("/root/kube%s.tar.gz",version[1:])
+}
+
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
 	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos", version.Version)
-	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getURL(c.Version), c.Version)
+	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getLocalURL(c.Version), c.Version)
 	for _, master := range c.Masters {
 		cmd += fmt.Sprintf(" --master %s", master.IP)
 	}
 	for _, node := range c.Nodes {
 		cmd += fmt.Sprintf(" --node %s", node.IP)
 	}
+	return cmd
+}
+
+func newWgetCommand(c *Cluster) string {
+	cmd := fmt.Sprintf("cd /root && wget %s", getURL(c.Version))
 	return cmd
 }
 
