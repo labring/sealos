@@ -21,6 +21,9 @@ type SealConfig struct {
 	VIP             string
 	PkgURL          string
 	Version         string
+	Repo 		string
+	PodCIDR         string
+	SvcCIDR         string
 }
 
 //Dump is
@@ -38,6 +41,9 @@ func (c *SealConfig) Dump(path string) {
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
 	c.Version = Version
+	c.Repo = Repo
+	c.SvcCIDR = SvcCIDR
+	c.PodCIDR = PodCIDR
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -96,6 +102,9 @@ func (c *SealConfig) Load(path string) {
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
 	Version = c.Version
+	Repo = c.Repo
+	PodCIDR = c.PodCIDR
+	PodCIDR = c.SvcCIDR
 }
 
 func Load(path string, content interface{}) error {
@@ -123,6 +132,9 @@ func (c *SealConfig) showDefaultConfig() {
 	c.VIP = "10.103.97.2"
 	c.PkgURL = "/root/kube1.14.2.tar.gz"
 	c.Version = "v1.14.2"
+	c.Repo = "k8s.gcr.io"
+	c.PodCIDR = "100.64.0.0/10"
+	c.SvcCIDR = "10.96.0.0/12"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

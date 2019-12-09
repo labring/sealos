@@ -12,4 +12,7 @@ var (
 	Version        string
 	Kustomize      bool
 	ApiServer      string
+	Repo           string
+	PodCIDR        string
+	SvcCIDR        string
 )
