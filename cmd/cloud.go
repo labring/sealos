@@ -56,7 +56,7 @@ func init() {
 	cloudCmd.Flags().IntVar(&install.C.Node, "node", 1, "the number of node vms")
 	cloudCmd.Flags().StringVar(&install.C.Version, "version", "v1.16.0", "kubernetes version")
 	cloudCmd.Flags().StringVar(&install.C.Flavor, "flavor", "2C4G", "the type of vms")
-	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun", "the name of your cluster")
+	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun" + install.RandString(8), "the name of your cluster")
 	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "Fanux#123", "the passwd of your vm servers")
 	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hongkong", "cloud provider region")
 	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hongkong-b", "cloud provider region")

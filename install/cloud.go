@@ -43,6 +43,7 @@ type Cluster struct {
 
 //Global config
 var C Cluster
+var ClusterDir = "/root/.sealos/clusters/"
 
 // 2019.11.28 今天刚修完陪产假，在新装修的公寓中写代码，刚配的眼镜感觉带着有点不舒服，看屏幕不是很清楚
 /*
@@ -59,6 +60,8 @@ func CloudInstall(c *Cluster) {
 
 	config := c.Config
 	p := cloud.NewProvider(config)
+
+	Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
 
 	//TODO concurrence create master and nodes vms, should not create two vpcs
 	/*
@@ -133,7 +136,7 @@ func getURL(version string) string {
 }
 
 func getLocalURL(version string) string {
-	return fmt.Sprintf("/root/kube%s.tar.gz",version[1:])
+	return fmt.Sprintf("/root/kube%s.tar.gz", version[1:])
 }
 
 func newCommand(c *Cluster) string {

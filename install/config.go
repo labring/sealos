@@ -52,6 +52,23 @@ func (c *SealConfig) Dump(path string) {
 	ioutil.WriteFile(path, y, 0644)
 }
 
+func Dump(path string, content interface{}) error{
+	y, err := yaml.Marshal(content)
+	if err != nil {
+		logger.Error("dump config file failed: %s", err)
+		return err
+	}
+
+	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	if err != nil {
+		logger.Error("create dump dir failed %s",err)
+		return err
+	}
+
+	ioutil.WriteFile(path, y, 0644)
+	return nil
+}
+
 //Load is
 func (c *SealConfig) Load(path string) {
 	if path == "" {
@@ -79,6 +96,21 @@ func (c *SealConfig) Load(path string) {
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
 	Version = c.Version
+}
+
+func Load(path string, content interface{}) error {
+	y, err := ioutil.ReadFile(path)
+	if err != nil {
+		logger.Error("read config file %s failed %s", path, err)
+		c.showDefaultConfig()
+		os.Exit(0)
+	}
+
+	err = yaml.Unmarshal(y, content)
+	if err != nil {
+		logger.Error("unmarsha config file failed: %s", err)
+	}
+	return nil
 }
 
 func (c *SealConfig) showDefaultConfig() {
