@@ -12,8 +12,10 @@ const TemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "{{.ApiServer}}:6443"
+imageRepository: {{.Repo}}
 networking:
-  podSubnet: 100.64.0.0/10
+  podSubnet: {{.PodCIDR}}
+  serviceSubnet: {{.SvcCIDR}}
 apiServer:
         certSANs:
         - 127.0.0.1
@@ -75,6 +77,9 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["Masters"] = masters
 	envMap["Version"] = Version
 	envMap["ApiServer"] = ApiServer
+	envMap["PodCIDR"] = PodCIDR
+	envMap["SvcCIDR"] = SvcCIDR
+	envMap["Repo"] = Repo
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
