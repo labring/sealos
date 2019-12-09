@@ -111,7 +111,6 @@ func Load(path string, content interface{}) error {
 	y, err := ioutil.ReadFile(path)
 	if err != nil {
 		logger.Error("read config file %s failed %s", path, err)
-		c.showDefaultConfig()
 		os.Exit(0)
 	}
 
