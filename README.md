@@ -30,8 +30,8 @@ wget https://github.com/fanux/sealos/releases/download/v3.0.1/sealos && \
 sealos init --passwd 123456 \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz \
-	--version v1.16.0
+	--pkg-url https://sealyun.oss-cn-beijing.aliyuncs.com/413bd3624b2fb9e466601594b4f72072-1.17.0/kube1.17.0.tar.gz \
+	--version v1.17.0
 ```
 > 参数含义
 
