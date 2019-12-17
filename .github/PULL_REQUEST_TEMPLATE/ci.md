@@ -9,7 +9,7 @@ assignees: ''
 
 ```
 <type>(<scop>): <subject>
-
+  
 <body>
 
 <footer>
