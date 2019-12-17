@@ -9,6 +9,21 @@ import (
 //CheckValid is
 func (s *SealosInstaller) CheckValid() {
 	hosts := append(Masters, Nodes...)
+	if len(Masters) == 0{
+		s.Print("Fail")
+		logger.Error("master not allow empty")
+		os.Exit(1)
+	}
+	if len(Nodes) == 0{
+		s.Print("Fail")
+		logger.Error("node not allow empty")
+		os.Exit(1)
+	}
+	if User == ""{
+		s.Print("Fail")
+		logger.Error("user not allow empty")
+		os.Exit(1)
+	}
 	var session *ssh.Session
 	var errors []error
 	for _, h := range hosts {
