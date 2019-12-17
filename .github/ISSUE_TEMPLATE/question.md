@@ -1,7 +1,7 @@
 ---
 name: Question
 about: how to ask an valid question
-title: ''
+title: 'Question: short description'
 labels: ''
 assignees: ''
 
