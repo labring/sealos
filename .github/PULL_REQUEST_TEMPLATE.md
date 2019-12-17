@@ -1,6 +1,6 @@
 ---
-name: CI Pull Request
-about: new commit for pull request, need ci
+name: SKIP CI Pull Request
+about: new commit for pull request, no ci
 title: '[SKIP CI]seaols: short description'
 assignees: ''
 
@@ -9,7 +9,7 @@ assignees: ''
 
 ```
 <type>(<scop>): <subject>
-  
+
 <body>
 
 <footer>
