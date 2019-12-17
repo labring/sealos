@@ -9,10 +9,24 @@ import (
 )
 
 //VersionURL is base64 encode k8s version and offline package url
+// 2019.12.17 三甲医院拔个脚趾甲都不会
+/*
+   安徽合肥安医附院高新分院，脚趾甲踢翻了，下午四点去的门诊，医生让我去住院楼安排手术，住院楼一个办公室六七个医生无一人敢下手，都说
+没做过不会，外面挂了很多锦旗，他们是如何厚着脸皮挂上去的？说是等主任手术完给我做，让我等着，我等了三个小时，担心医生随时会过来我晚饭都不敢
+出去吃，最后实在不行了让医生问了下主任什么时候来，医生问完后让我去门诊，本来走路就疼，脚趾甲翻了那酸爽你懂的，我走过去发现门诊已经下班。。。
+很难想象一个主任医生如此忽悠一个病人，我又回到住院楼，医生说周一让我来，说刚还没说完我就走了，真是在窝火了。主任叫李韵松，真是个没责任的人
+玷污神圣职业。我去投诉部投诉，半天找到，弄了个夜间投诉电话打了三次无人接听，最后换了一个号码，打通了，说去了解下情况，随后回复我，等了一会
+后他只是来了一句医生沟通确实有问题表示抱歉。那么我的损失呢？医生的不负责会收到什么处理呢？只回了医院会有相关规定并对应处理，我并不满意，因为
+处理不处理我都不知道，最后问我我想咋样，让我白天去找沟通办，我说要去卫健委投诉，他说 随你。。  最后安排我去急诊，急症正在抢救一个病危病人
+让我等，果断能理解，然后让护士问了医生急诊能不能拔的了脚趾甲，医生最后回了"拔不了。。"，我真是觉得这些医生三年硕士两年博士念到腿肚子了，这
+种小手术做不了还敢去抢救卢内出血的病人？把生命交给你们也太儿戏了吧。
+   故事结尾，我在家旁边的小诊所里拔了，十分钟搞定了。
+ */
 var (
 	VersionURL string
 	URLmap     map[string]string
-	DefaultURL = "https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
+	DefaultURL = "37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
+	InternalURLPrefix = "https://sealyun.oss-cn-beijing-internal.aliyuncs.com/"
 )
 
 //Flags is command line paras
@@ -56,7 +70,8 @@ var ClusterDir = "/root/.sealos/clusters/"
 */
 func CloudInstall(c *Cluster) {
 	URLmap = make(map[string]string)
-	URLmap["v1.16.0"] = DefaultURL
+	URLmap["v1.16.0"] = InternalURLPrefix + DefaultURL
+	URLmap["v1.17.0"] = InternalURLPrefix + "413bd3624b2fb9e466601594b4f72072-1.17.0/kube1.17.0.tar.gz"
 
 	config := c.Config
 	p := cloud.NewProvider(config)

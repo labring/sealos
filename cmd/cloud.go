@@ -58,8 +58,8 @@ func init() {
 	cloudCmd.Flags().StringVar(&install.C.Flavor, "flavor", "2C4G", "the type of vms")
 	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun" + install.RandString(8), "the name of your cluster")
 	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "Fanux#123", "the passwd of your vm servers")
-	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hongkong", "cloud provider region")
-	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hongkong-b", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-beijing", "cloud provider region")
+	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-beijing-a", "cloud provider region")
 	cloudCmd.Flags().StringVar(&install.C.Image, "image", "centos_7_04_64_20G_alibase_201701015.vhd", "vm os image")
 	cloudCmd.Flags().BoolVar(&p, "y", false, "prompt or not")
 
