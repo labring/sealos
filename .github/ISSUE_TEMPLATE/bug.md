@@ -1,7 +1,7 @@
 ---
 name: Bug report
 about: Create a report to help us improve
-title: ''
+title: 'Bug: short description'
 labels: ''
 assignees: ''
 
@@ -38,4 +38,3 @@ If applicable, add screenshots to help explain your problem.
 - Running model:   eg 3master 3node
 - Additional: istio,dashboard ...
 
- 
