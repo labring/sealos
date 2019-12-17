@@ -21,6 +21,9 @@ type SealConfig struct {
 	VIP             string
 	PkgURL          string
 	Version         string
+	Repo 		string
+	PodCIDR         string
+	SvcCIDR         string
 }
 
 //Dump is
@@ -38,6 +41,9 @@ func (c *SealConfig) Dump(path string) {
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
 	c.Version = Version
+	c.Repo = Repo
+	c.SvcCIDR = SvcCIDR
+	c.PodCIDR = PodCIDR
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -50,6 +56,23 @@ func (c *SealConfig) Dump(path string) {
 	}
 
 	ioutil.WriteFile(path, y, 0644)
+}
+
+func Dump(path string, content interface{}) error{
+	y, err := yaml.Marshal(content)
+	if err != nil {
+		logger.Error("dump config file failed: %s", err)
+		return err
+	}
+
+	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	if err != nil {
+		logger.Error("create dump dir failed %s",err)
+		return err
+	}
+
+	ioutil.WriteFile(path, y, 0644)
+	return nil
 }
 
 //Load is
@@ -79,6 +102,23 @@ func (c *SealConfig) Load(path string) {
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
 	Version = c.Version
+	Repo = c.Repo
+	PodCIDR = c.PodCIDR
+	PodCIDR = c.SvcCIDR
+}
+
+func Load(path string, content interface{}) error {
+	y, err := ioutil.ReadFile(path)
+	if err != nil {
+		logger.Error("read config file %s failed %s", path, err)
+		os.Exit(0)
+	}
+
+	err = yaml.Unmarshal(y, content)
+	if err != nil {
+		logger.Error("unmarsha config file failed: %s", err)
+	}
+	return nil
 }
 
 func (c *SealConfig) showDefaultConfig() {
@@ -91,6 +131,9 @@ func (c *SealConfig) showDefaultConfig() {
 	c.VIP = "10.103.97.2"
 	c.PkgURL = "/root/kube1.14.2.tar.gz"
 	c.Version = "v1.14.2"
+	c.Repo = "k8s.gcr.io"
+	c.PodCIDR = "100.64.0.0/10"
+	c.SvcCIDR = "10.96.0.0/12"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
