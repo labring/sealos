@@ -1,5 +1,5 @@
 ---
-name: 缺陷
+name: 缺陷单
 about: 创建一个缺陷单
 title: '缺陷: 简短说明缺陷内容'
 assignees: ''
