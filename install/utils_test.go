@@ -75,3 +75,72 @@ func TestGetFileSize(t *testing.T) {
 func TestVersionToInt(t *testing.T) {
 	t.Log(VersionToInt("v1.15.6"))
 }
+
+func TestHome(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test get home dir",
+			want: "/Users/fanux",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Home()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Home() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Home() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_homeUnix(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := homeUnix()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("homeUnix() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("homeUnix() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_homeWindows(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := homeWindows()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("homeWindows() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("homeWindows() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

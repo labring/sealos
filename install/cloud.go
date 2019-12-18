@@ -54,9 +54,11 @@ type Cluster struct {
 	SecuretyGroupID string
 }
 
-//Global config
+// Global config
 var C Cluster
-var ClusterDir = "~/.sealos/clusters/"
+var ClusterDir = "/.sealos/clusters/"
+// will change if user is not root
+var UserHome = "/root"
 
 // 2019.11.28 今天刚修完陪产假，在新装修的公寓中写代码，刚配的眼镜感觉带着有点不舒服，看屏幕不是很清楚
 /*
@@ -68,6 +70,12 @@ var ClusterDir = "~/.sealos/clusters/"
    一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
 */
 func CloudInstall(c *Cluster) {
+	h,err := Home()
+	if err != nil {
+		logger.Warn("get user home dir failed, using /root %s", err)
+	} else {
+		UserHome = h
+	}
 	URLmap = make(map[string]string)
 	URLmap["v1.16.0"] = InternalURLPrefix + DefaultURL
 	URLmap["v1.17.0"] = InternalURLPrefix + "413bd3624b2fb9e466601594b4f72072-1.17.0/kube1.17.0.tar.gz"
@@ -75,7 +83,7 @@ func CloudInstall(c *Cluster) {
 	config := c.Config
 	p := cloud.NewProvider(config)
 
-	Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
+	Dump(UserHome + ClusterDir, c.Name, c)
 
 	//TODO concurrence create master and nodes vms, should not create two vpcs
 	/*

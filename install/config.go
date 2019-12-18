@@ -1,14 +1,15 @@
 package install
 
 import (
+	"fmt"
 	"github.com/wonderivan/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 )
 
-const defaultConfigPath = "/root/.sealos"
-const defaultConfigFile = "/config.yaml"
+var defaultConfigPath = "/root/.sealos"
+var defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
@@ -58,20 +59,21 @@ func (c *SealConfig) Dump(path string) {
 	ioutil.WriteFile(path, y, 0644)
 }
 
-func Dump(path string, content interface{}) error{
+func Dump(path string, file string, content interface{}) error{
 	y, err := yaml.Marshal(content)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 		return err
 	}
 
-	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	err = os.MkdirAll(path,os.ModePerm)
+	logger.Info("dump config file to dir %s",path)
 	if err != nil {
 		logger.Error("create dump dir failed %s",err)
 		return err
 	}
 
-	ioutil.WriteFile(path, y, 0644)
+	ioutil.WriteFile(fmt.Sprintf("%s/%s.yaml",path,file), y, 0644)
 	return nil
 }
 
@@ -142,4 +144,13 @@ func (c *SealConfig) showDefaultConfig() {
 
 	logger.Info("\n\n%s\n\n", string(y))
 	logger.Info("Please save above config in ~/.sealos/config.yaml and edit values on your own")
+}
+
+func init() {
+	h,err := Home()
+	if err != nil {
+		logger.Warn("get user home dir failed, using /root %s", err)
+	} else {
+		defaultConfigPath = fmt.Sprintf("%s/.sealos",h)
+	}
 }
