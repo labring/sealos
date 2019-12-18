@@ -1,9 +1,5 @@
 ---
-name: SKIP CI Pull Request
-about: new commit for pull request, no ci
-title: '[SKIP CI]seaols: short description'
-assignees: ''
-
+title: '[SKIP CI]seaols: 简短描述'
 ---
 
 
