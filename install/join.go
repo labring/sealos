@@ -32,6 +32,8 @@ func (s *SealosInstaller) JoinMasters() {
 		Cmd(master, cmd)
 		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(Masters[0]), IpFormat(master))
 		Cmd(master, cmdHosts)
+		copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
+		Cmd(master, copyk8sConf)
 	}
 }
 
