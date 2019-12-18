@@ -2,7 +2,6 @@
 name: 问题
 about: 提出你想要问的问题
 title: '问题: 简短说明你的问题'
-labels: ''
 assignees: ''
 
 ---
