@@ -3,7 +3,6 @@ package install
 import (
 	"fmt"
 	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/version"
 	"github.com/wonderivan/logger"
 	"os"
 )
@@ -57,7 +56,7 @@ type Cluster struct {
 
 //Global config
 var C Cluster
-var ClusterDir = "/root/.sealos/clusters/"
+var ClusterDir = "~/.sealos/clusters/"
 
 // 2019.11.28 今天刚修完陪产假，在新装修的公寓中写代码，刚配的眼镜感觉带着有点不舒服，看屏幕不是很清楚
 /*
@@ -156,8 +155,8 @@ func getLocalURL(version string) string {
 
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
-	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos", version.Version)
-	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getLocalURL(c.Version), c.Version)
+	cmd := fmt.Sprintf("tar zxvf %s && cp ./kube/bin/sealos /usr/bin/", getLocalURL(c.Version))
+	cmd += fmt.Sprintf(" && sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getLocalURL(c.Version), c.Version)
 	for _, master := range c.Masters {
 		cmd += fmt.Sprintf(" --master %s", master.IP)
 	}

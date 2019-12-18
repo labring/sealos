@@ -165,12 +165,6 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	request.Scheme = "https"
 	name := fmt.Sprintf("%s-[0,%d]", r.NamePrefix, r.Num-1)
 
-	f := a.QueryFlavor(r.Flavor)
-	if f == "" {
-		return nil, fmt.Errorf("query vm flavor failed")
-	}
-	request.InstanceType = f
-	request.InstanceName = name
 	request.HostName = name
 	request.InternetChargeType = "PayByTraffic"
 	if len(r.Disks) >= 1 {
@@ -185,6 +179,12 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	request.Amount = requests.NewInteger(r.Num)
 	request.SpotStrategy = "SpotAsPriceGo"
 	request.InstanceChargeType = "PostPaid"
+	f := a.QueryFlavor(r.Flavor, r.ZoneID, request.InstanceChargeType, request.SpotStrategy)
+	if f == "" {
+		return nil, fmt.Errorf("query vm flavor failed")
+	}
+	request.InstanceType = f
+	request.InstanceName = name
 	request.SecurityGroupId = securityGroupID
 	request.VSwitchId = switchID
 	request.ImageId = r.Image
@@ -293,26 +293,60 @@ func getCPUandMemory(flavor string) (int, float64) {
 	return cpu, float64(mem)
 }
 
-func (a *AliProvider) QueryFlavor(flavor string) string {
-	request := ecs.CreateDescribeInstanceTypesRequest()
-	request.Scheme = "https"
+func (a *AliProvider) QueryFlavor(flavor string, zone string, charge string, strategy string) string {
+	/*
+		request := ecs.CreateDescribeInstanceTypesRequest()
+		request.Scheme = "https"
 
+		cpu, mem := getCPUandMemory(flavor)
+		if cpu == 0 || mem == 0 {
+			fmt.Errorf("cpu or mem is 0, can't get flavor")
+			return ""
+		}
+
+		response, err := a.client.DescribeInstanceTypes(request)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+
+		for _, res := range response.InstanceTypes.InstanceType {
+			if res.MemorySize == mem && res.CpuCoreCount == cpu {
+				fmt.Printf("flavor is : %s %d %f %s", res.InstanceTypeId, res.CpuCoreCount, res.MemorySize, flavor)
+				return res.InstanceTypeId
+			}
+		}
+		return ""
+	*/
 	cpu, mem := getCPUandMemory(flavor)
 	if cpu == 0 || mem == 0 {
 		fmt.Errorf("cpu or mem is 0, can't get flavor")
 		return ""
 	}
 
-	response, err := a.client.DescribeInstanceTypes(request)
-	if err != nil {
-		fmt.Print(err.Error())
-	}
+	request := ecs.CreateDescribeAvailableResourceRequest()
+	request.Scheme = "https"
 
-	for _, res := range response.InstanceTypes.InstanceType {
-		if res.MemorySize == mem && res.CpuCoreCount == cpu {
-			fmt.Printf("flavor is : %s %d %f %s", res.InstanceTypeId, res.CpuCoreCount, res.MemorySize, flavor)
-			return res.InstanceTypeId
+	request.DestinationResource = "InstanceType"
+	request.InstanceChargeType = charge
+	request.SpotStrategy = strategy
+	request.ZoneId = zone
+	request.Cores = requests.NewInteger(cpu)
+	request.Memory = requests.NewFloat(mem)
+
+	response, err := a.client.DescribeAvailableResource(request)
+	if err != nil {
+		logger.Error(err.Error())
+	}
+	if len(response.AvailableZones.AvailableZone) < 1 {
+		return ""
+	}
+	for _, f := range response.AvailableZones.AvailableZone[0].AvailableResources.AvailableResource {
+		for _, r := range f.SupportedResources.SupportedResource {
+			if r.StatusCategory == "WithStock" {
+				return r.Value
+			}
 		}
 	}
+
 	return ""
 }
