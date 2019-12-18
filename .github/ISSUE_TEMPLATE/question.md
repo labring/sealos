@@ -1,5 +1,5 @@
 ---
-name: 问题
+name: 问题单
 about: 提出你想要问的问题
 title: '问题: 简短说明你的问题'
 assignees: ''
