@@ -14,11 +14,6 @@ func (s *SealosInstaller) CheckValid() {
 		logger.Error("master not allow empty")
 		os.Exit(1)
 	}
-	if len(Nodes) == 0{
-		s.Print("Fail")
-		logger.Error("node not allow empty")
-		os.Exit(1)
-	}
 	if User == ""{
 		s.Print("Fail")
 		logger.Error("user not allow empty")
