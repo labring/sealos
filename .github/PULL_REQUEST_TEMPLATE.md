@@ -1,5 +1,9 @@
 ---
-title: '[SKIP CI]seaols: 简短描述'
+name: 跳过CI的PR
+about: 没有CI的提交，若需要CI则将标题的[SKIP CI]删掉即可
+title: '[SKIP CI]seaols: 一句话简短描述该PR内容'
+assignees: ''
+
 ---
 
 
