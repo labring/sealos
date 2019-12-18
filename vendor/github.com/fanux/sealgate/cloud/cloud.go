@@ -66,6 +66,7 @@ type Response struct {
 }
 
 type Interface interface {
+	CreateNetwork(request Request) (*Response, error)
 	Create(request Request) (*Response, error)
 	Delete(...string) error
 	QueryFlavor(flavor string,zone string,charge string,strategy string) string

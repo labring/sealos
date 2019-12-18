@@ -16,6 +16,54 @@ type AliProvider struct {
 	client *ecs.Client
 }
 
+func (a *AliProvider) CreateNetwork(r Request) (*Response, error) {
+	var err error
+
+	fmt.Print("create vpc ..")
+	var vpc string
+	if r.VPCID == "" {
+		vpc, err = a.VPC(r)
+		if err != nil || vpc == "" {
+			return nil, fmt.Errorf("create vpc failed : %s", err)
+		}
+		r.VPCID = vpc
+	} else {
+		vpc = r.VPCID
+	}
+
+	fmt.Print("wait for vpc create sucess and create switch ..")
+	time.Sleep(time.Second * 3)
+	var switchID string
+	if r.SwitchID == "" {
+		switchID, err = a.switchID(r, vpc)
+		if err != nil {
+			return nil, fmt.Errorf("create switch failed : %s", err)
+		}
+		r.SwitchID = switchID
+	} else {
+		switchID = r.SwitchID
+	}
+
+	fmt.Print("create secureGroup ..")
+	var securityGroupID string
+	if r.SecuretyGroupID == "" {
+		securityGroupID, err = a.secureGroupID(r, vpc)
+		if err != nil {
+			return nil, fmt.Errorf("create security group failed : %s", err)
+		}
+		r.SecuretyGroupID = securityGroupID
+	} else {
+		securityGroupID = r.SecuretyGroupID
+	}
+
+	res := &Response{}
+	res.VPCID = vpc
+	res.SecuretyGroupID = securityGroupID
+	res.SwitchID = switchID
+
+	return res, nil
+}
+
 func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 	request := ecs.CreateCreateSecurityGroupRequest()
 	request.Scheme = "https"
@@ -29,7 +77,7 @@ func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 		fmt.Print(err.Error())
 		return "", err
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 
 	//TODO set security rules
 	req := ecs.CreateAuthorizeSecurityGroupRequest()
@@ -46,7 +94,7 @@ func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 		fmt.Print(err.Error())
 		return "", err
 	}
-	fmt.Printf("response is %#v\n", res)
+	logger.Info("response is %#v\n", res)
 
 	return response.SecurityGroupId, nil
 }
@@ -71,7 +119,7 @@ func (a *AliProvider) switchID(r Request, vpcName string) (string, error) {
 		fmt.Print(err.Error())
 		return "", err
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 	return response.VSwitchId, nil
 }
 
@@ -88,7 +136,7 @@ func (a *AliProvider) VPC(r Request) (string, error) {
 		fmt.Print(err.Error())
 		return "", err
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 	return response.VpcId, nil
 }
 
@@ -118,46 +166,12 @@ func (a *AliProvider) List(r Request) (*Response, error) {
 		fmt.Print(err.Error())
 		return nil, err
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 	return nil, nil
 }
 
 func (a *AliProvider) Create(r Request) (*Response, error) {
 	var err error
-
-	fmt.Print("create vpc ..")
-	var vpc string
-	if r.VPCID == "" {
-		vpc, err = a.VPC(r)
-		if err != nil || vpc == "" {
-			return nil, fmt.Errorf("create vpc failed : %s", err)
-		}
-	} else {
-		vpc = r.VPCID
-	}
-
-	fmt.Print("wait for vpc create sucess and create switch ..")
-	time.Sleep(time.Second * 3)
-	var switchID string
-	if r.SwitchID == "" {
-		switchID, err = a.switchID(r, vpc)
-		if err != nil {
-			return nil, fmt.Errorf("create switch failed : %s", err)
-		}
-	} else {
-		switchID = r.SwitchID
-	}
-
-	fmt.Print("create secureGroup ..")
-	var securityGroupID string
-	if r.SecuretyGroupID == "" {
-		securityGroupID, err = a.secureGroupID(r, vpc)
-		if err != nil {
-			return nil, fmt.Errorf("create security group failed : %s", err)
-		}
-	} else {
-		securityGroupID = r.SecuretyGroupID
-	}
 
 	fmt.Print("wait for vswitch success and create vm ..")
 	time.Sleep(time.Second * 3)
@@ -185,8 +199,8 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	}
 	request.InstanceType = f
 	request.InstanceName = name
-	request.SecurityGroupId = securityGroupID
-	request.VSwitchId = switchID
+	request.SecurityGroupId = r.SecuretyGroupID
+	request.VSwitchId = r.SwitchID
 	request.ImageId = r.Image
 	if r.FIP == true {
 		request.InternetMaxBandwidthIn = requests.NewInteger(5)
@@ -197,14 +211,14 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create and run instance failed : %s", err)
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 
 	fmt.Println("sleep 60 seconds and wait for instance create success..")
 	time.Sleep(time.Second * 60 * 3)
 	res := &Response{}
-	res.VPCID = vpc
-	res.SecuretyGroupID = securityGroupID
-	res.SwitchID = switchID
+	res.VPCID = r.VPCID
+	res.SecuretyGroupID = r.SwitchID
+	res.SwitchID = r.SwitchID
 	for _, i := range response.InstanceIdSets.InstanceIdSet {
 		vm, err := a.InstanceInfo(i)
 		if err != nil {
@@ -226,7 +240,7 @@ func (a *AliProvider) InstanceInfo(id string) (*VM, error) {
 		fmt.Print(err.Error())
 		return nil, err
 	}
-	fmt.Printf("response is %#v\n", response)
+	logger.Info("response is %#v\n", response)
 	vm := &VM{}
 	vm.ID = id
 	vm.Name = response.InstanceName
@@ -270,23 +284,23 @@ func (a *AliProvider) flavor(flavor string) string {
 func getCPUandMemory(flavor string) (int, float64) {
 	temp := strings.Split(flavor, "C")
 	if len(temp) != 2 {
-		logger.Error("%s illegal, must link 2C4G..", flavor)
+		fmt.Errorf("%s illegal, must link 2C4G..", flavor)
 		return 0, 0
 	}
 	cpu, err := strconv.Atoi(temp[0])
 	if err != nil {
-		logger.Error("flavor cpu core failed %d %s", cpu, err)
+		fmt.Errorf("flavor cpu core failed %d %s", cpu, err)
 		return 0, 0
 	}
 
 	mtemp := strings.Split(temp[1], "G")
 	if len(mtemp) < 1 {
-		logger.Error("memory %s illegal, must link 2C4G..", flavor)
+		fmt.Errorf("memory %s illegal, must link 2C4G..", flavor)
 		return 0, 0
 	}
 	mem, err := strconv.Atoi(mtemp[0])
 	if err != nil {
-		logger.Error("flavor cpu core failed %d %s", mem, err)
+		fmt.Errorf("flavor cpu core failed %d %s", mem, err)
 		return 0, 0
 	}
 
@@ -311,7 +325,7 @@ func (a *AliProvider) QueryFlavor(flavor string, zone string, charge string, str
 
 		for _, res := range response.InstanceTypes.InstanceType {
 			if res.MemorySize == mem && res.CpuCoreCount == cpu {
-				fmt.Printf("flavor is : %s %d %f %s", res.InstanceTypeId, res.CpuCoreCount, res.MemorySize, flavor)
+				logger.Info("flavor is : %s %d %f %s", res.InstanceTypeId, res.CpuCoreCount, res.MemorySize, flavor)
 				return res.InstanceTypeId
 			}
 		}
@@ -335,7 +349,7 @@ func (a *AliProvider) QueryFlavor(flavor string, zone string, charge string, str
 
 	response, err := a.client.DescribeAvailableResource(request)
 	if err != nil {
-		logger.Error(err.Error())
+		fmt.Errorf(err.Error())
 	}
 	if len(response.AvailableZones.AvailableZone) < 1 {
 		return ""

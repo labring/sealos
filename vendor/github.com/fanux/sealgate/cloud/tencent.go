@@ -4,6 +4,10 @@ type TencentProvider struct {
 	Config
 }
 
+func (t *TencentProvider) CreateNetwork(request Request) (*Response, error) {
+	panic("implement me")
+}
+
 func (t *TencentProvider) QueryFlavor(flavor,zone,charge,strategy string) string {
 	panic("implement me")
 }

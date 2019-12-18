@@ -5,6 +5,7 @@ import (
 	"github.com/fanux/sealgate/cloud"
 	"github.com/wonderivan/logger"
 	"os"
+	"sync"
 )
 
 //VersionURL is base64 encode k8s version and offline package url
@@ -20,11 +21,11 @@ import (
 让我等，果断能理解，然后让护士问了医生急诊能不能拔的了脚趾甲，医生最后回了"拔不了。。"，我真是觉得这些医生三年硕士两年博士念到腿肚子了，这
 种小手术做不了还敢去抢救卢内出血的病人？把生命交给你们也太儿戏了吧。
    故事结尾，我在家旁边的小诊所里拔了，十分钟搞定了。
- */
+*/
 var (
-	VersionURL string
-	URLmap     map[string]string
-	DefaultURL = "37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
+	VersionURL        string
+	URLmap            map[string]string
+	DefaultURL        = "37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
 	InternalURLPrefix = "https://sealyun.oss-cn-beijing-internal.aliyuncs.com/"
 )
 
@@ -57,6 +58,7 @@ type Cluster struct {
 // Global config
 var C Cluster
 var ClusterDir = "/.sealos/clusters/"
+
 // will change if user is not root
 var UserHome = "/root"
 
@@ -70,7 +72,7 @@ var UserHome = "/root"
    一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
 */
 func CloudInstall(c *Cluster) {
-	h,err := Home()
+	h, err := Home()
 	if err != nil {
 		logger.Warn("get user home dir failed, using /root %s", err)
 	} else {
@@ -83,59 +85,46 @@ func CloudInstall(c *Cluster) {
 	config := c.Config
 	p := cloud.NewProvider(config)
 
-	Dump(UserHome + ClusterDir, c.Name, c)
+
+	nr := cloud.Request{ZoneID: c.Zone}
+	net, err := p.CreateNetwork(nr)
+	if err != nil {
+		logger.Error("create network failed %s", err)
+	}
 
 	//TODO concurrence create master and nodes vms, should not create two vpcs
-	/*
-		var wg sync.WaitGroup
-		wg.Add(2)
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-		go func() {
-			// create masters vms
-			res, err := p.Create(newRequest(c, "master", true, c.Master))
-			if err != nil {
-				logger.Error("init cluster failed: %s", err)
-				return
-			}
-			c.Masters = res.VMs
-			c.VPCID = res.VPCID
-			c.SwitchID = res.SwitchID
-			c.SecuretyGroupID = res.SecuretyGroupID
-			wg.Done()
-		}()
+	go func() {
+		// create masters vms
+		req := newRequest(c, "master", true, c.Master,net.VPCID,net.SwitchID,net.SecuretyGroupID)
+		res, err := p.Create(req)
+		if err != nil {
+			logger.Error("init cluster failed: %s", err)
+			return
+		}
+		c.Masters = res.VMs
+		c.VPCID = res.VPCID
+		c.SwitchID = res.SwitchID
+		c.SecuretyGroupID = res.SecuretyGroupID
+		wg.Done()
+	}()
 
-		go func() {
-			// create nodes vms
-			res, err := p.Create(newRequest(c, "node", false, c.Node))
-			if err != nil {
-				logger.Error("init cluster failed: %s", err)
-				return
-			}
-			c.Nodes = res.VMs
-			wg.Done()
-		}()
-		wg.Wait()
-	*/
-	// create masters vms
-	res, err := p.Create(newRequest(c, "master", true, c.Master))
-	if err != nil {
-		logger.Error("init cluster failed: %s", err)
-		return
-	}
-	c.Masters = res.VMs
-	c.VPCID = res.VPCID
-	c.SwitchID = res.SwitchID
-	c.SecuretyGroupID = res.SecuretyGroupID
-
-	// create nodes vms
-	res, err = p.Create(newRequest(c, "node", false, c.Node))
-	if err != nil {
-		logger.Error("init cluster failed: %s", err)
-		return
-	}
-	c.Nodes = res.VMs
+	go func() {
+		// create nodes vms
+		res, err := p.Create(newRequest(c, "node", false, c.Node,net.VPCID,net.SwitchID,net.SecuretyGroupID))
+		if err != nil {
+			logger.Error("init cluster failed: %s", err)
+			return
+		}
+		c.Nodes = res.VMs
+		wg.Done()
+	}()
+	wg.Wait()
 
 	Passwd = c.Passwd
+	Dump(UserHome+ClusterDir, c.Name, c)
 
 	//TODO wget package on master0 and scp to other nodes
 	logger.Info("wait few minute for download offline package on master0...")
@@ -179,7 +168,7 @@ func newWgetCommand(c *Cluster) string {
 	return cmd
 }
 
-func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request {
+func newRequest(c *Cluster, namePrefix string, fip bool, num int, vpc,switchID, securetyGroupID string) cloud.Request {
 	r := cloud.Request{
 		Num:             num,
 		Image:           c.Flags.Image,
@@ -188,9 +177,9 @@ func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request 
 		Flavor:          c.Flags.Flavor,
 		Passwd:          c.Flags.Passwd,
 		ZoneID:          c.Flags.Zone,
-		VPCID:           c.VPCID,
-		SwitchID:        c.SwitchID,
-		SecuretyGroupID: c.SecuretyGroupID,
+		VPCID:           vpc,
+		SwitchID:        switchID,
+		SecuretyGroupID: securetyGroupID,
 	}
 	return r
 }
