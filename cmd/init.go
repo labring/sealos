@@ -48,4 +48,7 @@ func init() {
 
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file localtion ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
+	initCmd.Flags().StringVar(&install.ImageRepository,"imagerepo","k8s.gcr.io","set k8s images repo")
+	initCmd.Flags().StringVar(&install.NetType,"nettype","flannel","set network component default flannel,you can set flannel or calico")
+	//initCmd.Flags().StringVar(&install.ImageRepository,"imagerepo","registry.aliyuncs.com/google_containers","set k8s images repo")
 }

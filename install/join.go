@@ -26,7 +26,9 @@ func (s *SealosInstaller) GeneratorToken() {
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters() {
 	cmd := s.Command(Version, JoinMaster)
-	for _, master := range Masters[1:] {
+	for index, master := range Masters[1:] {
+		cmd1 := fmt.Sprintf("hostnamectl set-hostname master%d",index)
+		Cmd(master, cmd1)
 		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
 		Cmd(master, cmdHosts)
 		Cmd(master, cmd)
@@ -38,16 +40,23 @@ func (s *SealosInstaller) JoinMasters() {
 //JoinNodes is
 func (s *SealosInstaller) JoinNodes() {
 	var masters string
+	var cmdHosts string
 	var wg sync.WaitGroup
 	for _, master := range Masters {
 		masters += fmt.Sprintf(" --master %s:6443", IpFormat(master))
 	}
 
-	for _, node := range Nodes {
+	for index, node := range Nodes {
+		cmd1 := fmt.Sprintf("hostnamectl set-hostname node%d",index)
+		Cmd(node, cmd1)
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
+			if len(Masters)>1{
+				cmdHosts = fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
+			}else {
+				cmdHosts = fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
+			}
 			Cmd(node, cmdHosts)
 			cmd := s.Command(Version, JoinNode)
 			cmd += masters

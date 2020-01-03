@@ -51,11 +51,17 @@ const JoinMaster CommandType = "joinMaster"
 const JoinNode CommandType = "joinNode"
 
 func (s *SealosInstaller) Command(version string, name CommandType) (cmd string) {
+	var JoinNodeCmd string
+	if  len(Masters)>1 {
+		JoinNodeCmd = fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, JoinToken, TokenCaCertHash)
+	} else  {
+		JoinNodeCmd = fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash)
+	}
 	cmds := make(map[CommandType]string)
 	cmds = map[CommandType]string{
 		InitMaster: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs`,
 		JoinMaster: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s", IpFormat(Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
-		JoinNode:   fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s", VIP, JoinToken, TokenCaCertHash),
+		JoinNode:   JoinNodeCmd,
 	}
 	//other version
 	//todo

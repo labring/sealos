@@ -58,6 +58,10 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(Masters[0]), ApiServer)
 	Cmd(Masters[0], cmd)
 
+	// set hostname
+	cmd1 := "hostnamectl set-hostname master0"
+	Cmd(Masters[0], cmd1)
+
 	cmd = s.Command(Version, InitMaster)
 
 	output := Cmd(Masters[0], cmd)
@@ -70,6 +74,13 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
 	output = Cmd(Masters[0], cmd)
 
-	cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-	output = Cmd(Masters[0], cmd)
+	if NetType == "calico" {
+		cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
+	} else if ImageRepository == "flannel" {
+		cmd = `kubectl apply -f /root/kube/conf/net/flannel.yaml || true`
+	}else{
+		cmd = `kubectl apply -f /root/kube/conf/net/flannel.yaml || true`
+	}
+
+		output = Cmd(Masters[0], cmd)
 }
