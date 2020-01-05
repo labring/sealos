@@ -7,9 +7,16 @@ import (
 
 //BuildClean is
 func BuildClean() {
-	hosts := append(Masters, Nodes...)
+	//hosts := append(Masters, Nodes...)
+	// 所有master节点
+	masters := append(Masters, ParseIPs(MasterIPs)...)
+	// 所有node节点
+	nodes := append(Nodes, ParseIPs(NodeIPs)...)
+	hosts := append(masters, nodes...)
 	i := &SealosInstaller{
 		Hosts: hosts,
+		Masters: masters,
+		Nodes: nodes,
 	}
 	i.CheckValid()
 	i.Clean()

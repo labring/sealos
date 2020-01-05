@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"github.com/fanux/sealos/version"
-
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +26,7 @@ var versionCmd = &cobra.Command{
 	Short: "show sealos version",
 	Long:  `show sealos version`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(version.Version)
+		fmt.Println(version.VersionStr)
 	},
 }
 
