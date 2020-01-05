@@ -8,8 +8,14 @@ import (
 
 //CheckValid is
 func (s *SealosInstaller) CheckValid() {
-	hosts := append(Masters, Nodes...)
-	if len(Masters) == 0{
+	//hosts := append(Masters, Nodes...)
+	// 所有master节点
+	//masters := append(Masters, ParseIPs(MasterIPs)...)
+	// 所有node节点
+	//nodes := append(Nodes, ParseIPs(NodeIPs)...)
+	//hosts := append(masters, nodes...)
+
+	if len(s.Masters) == 0{
 		s.Print("Fail")
 		logger.Error("master not allow empty")
 		os.Exit(1)
@@ -21,7 +27,7 @@ func (s *SealosInstaller) CheckValid() {
 	}
 	var session *ssh.Session
 	var errors []error
-	for _, h := range hosts {
+	for _, h := range s.Hosts {
 		session, err := Connect(User, Passwd, PrivateKeyFile, h)
 		if err != nil {
 			logger.Error("[%s] ------------ check error", h)

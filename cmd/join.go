@@ -40,6 +40,8 @@ func init() {
 	joinCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
 	joinCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
 	joinCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
+	joinCmd.Flags().StringSliceVar(&install.MasterIPs, "masters", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
+	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "nodes", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 
 	joinCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url, or file localtion ex. /root/kube1.14.1.tar.gz")
 }

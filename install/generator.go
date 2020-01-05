@@ -69,7 +69,8 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 		panic(1)
 	}
 	var masters []string
-	for _, h := range Masters {
+	getmasters := append(Masters, ParseIPs(MasterIPs)...)
+	for _, h := range getmasters {
 		masters = append(masters, IpFormat(h))
 	}
 	var envMap = make(map[string]interface{})
