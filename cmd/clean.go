@@ -48,4 +48,6 @@ func init() {
 	cleanCmd.Flags().StringVar(&install.ApiServer, "apiserver", "apiserver.cluster.local", "apiserver domain name")
 	cleanCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
 	cleanCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
+	cleanCmd.Flags().StringSliceVar(&install.MasterIPs, "masters", []string{}, "kubernetes multi-masters")
+	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "nodes", []string{}, "kubernetes multi-nodes")
 }

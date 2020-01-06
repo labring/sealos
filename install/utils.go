@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"math/rand"
 	"net"
 	"net/http"
@@ -394,4 +395,55 @@ func RandString(len int) string {
 		bytes[i] = byte(b)
 	}
 	return string(bytes)
+}
+
+// Cmp compares two IPs, returning the usual ordering:
+// a < b : -1
+// a == b : 0
+// a > b : 1
+func Cmp(a, b net.IP) int {
+	aa := ipToInt(a)
+	bb := ipToInt(b)
+	return aa.Cmp(bb)
+}
+
+func ipToInt(ip net.IP) *big.Int {
+	if v := ip.To4(); v != nil {
+		return big.NewInt(0).SetBytes(v)
+	}
+	return big.NewInt(0).SetBytes(ip.To16())
+}
+
+func intToIP(i *big.Int) net.IP {
+	return net.IP(i.Bytes())
+}
+
+func stringToIP(i string) net.IP  {
+	return net.ParseIP(i).To4()
+}
+
+// NextIP returns IP incremented by 1
+func NextIP(ip net.IP) net.IP {
+	i := ipToInt(ip)
+	return intToIP(i.Add(i, big.NewInt(1)))
+}
+
+// ParseIPs 解析ip 192.168.0.2-192.168.0.6
+func ParseIPs(ips []string) []string {
+	 var hosts []string
+	 for _, nodes := range ips {
+	 	// nodes 192.168.0.2-192.168.0.6
+	 	if len(nodes) < 15 || !strings.Contains(nodes, "-") {
+			logger.Error("multi-nodes/multi-masters illegal.")
+	 		os.Exit(-1)
+		}
+	 	startip := strings.Split(nodes, "-")[0]
+	 	endip := strings.Split(nodes,"-")[1]
+	 	hosts = append(hosts, startip)
+		for Cmp(stringToIP(startip), stringToIP(endip)) < 0 {
+			startip = NextIP(stringToIP(startip)).String()
+			hosts = append(hosts, startip)
+		}
+	 }
+	 return hosts
 }

@@ -1,5 +1,5 @@
 ---
-name: 缺陷
+name: 缺陷单
 about: 创建一个缺陷单
 title: '缺陷: 简短说明缺陷内容'
 assignees: ''
@@ -14,9 +14,7 @@ eg. sealos init,install ...
 简短描述这个缺陷内容.
 
 **重现步骤（如果有需要可以附加图片）**
-1. 进入 xxx
-2. 点击 xxx
-3. 执行 xxx
+1. 
 ...
 
 

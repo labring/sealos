@@ -32,8 +32,8 @@ func (c *SealConfig) Dump(path string) {
 		path = defaultConfigPath + defaultConfigFile
 	}
 
-	c.Masters = Masters
-	c.Nodes = Nodes
+	c.Masters = append(Masters, ParseIPs(MasterIPs)...)
+	c.Nodes = append(Nodes, ParseIPs(NodeIPs)...)
 	c.User = User
 	c.Passwd = Passwd
 	c.PrivateKey = PrivateKeyFile
