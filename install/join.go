@@ -7,6 +7,7 @@ import (
 
 //BuildJoin is
 func BuildJoin() {
+
 	// 所有master节点
 	masters := append(Masters, ParseIPs(MasterIPs)...)
 	// 所有node节点
@@ -16,6 +17,10 @@ func BuildJoin() {
 		Masters: masters,
 		Nodes: nodes,
 	}
+	//加载配置
+	c := &SealConfig{}
+	c.Load("")
+	i.SetFlagsWithDefaultConfigFile(*c)
 	i.CheckValid()
 	i.SendPackage("kube")
 	i.GeneratorToken()
@@ -64,4 +69,21 @@ func (s *SealosInstaller) JoinNodes() {
 	}
 
 	wg.Wait()
+}
+
+//set flags with values from /root/.sealos/config.yaml
+func (s *SealosInstaller) SetFlagsWithDefaultConfigFile(config SealConfig){
+	//copy CheckValid func here and fill para in it
+	if len(s.Masters) == 0{
+		s.Masters = config.Masters
+	}
+	if User == ""{
+		User = config.User
+	}
+	if Passwd == ""{
+		User = config.Passwd
+	}
+	if PrivateKeyFile == ""{
+		PrivateKeyFile = config.PrivateKey
+	}
 }
