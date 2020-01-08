@@ -18,36 +18,46 @@ networking:
   podSubnet: {{.PodCIDR}}
   serviceSubnet: {{.SvcCIDR}}
 apiServer:
-	extraArgs:
-		feature-gates: TTLAfterFinished=true
-        certSANs:
-        - 127.0.0.1
-        - {{.ApiServer}}
-        {{range .Masters -}}
-        - {{.}}
-        {{end -}}
-	- {{.VIP}}
-	extraVolumes:
-	- hostPath: /etc/localtime
-	mountPath: /etc/localtime
-	name: localtime
+  certSANs:
+  - 127.0.0.1
+  - {{.ApiServer}}
+  {{range .Masters -}}
+  - {{.}}
+  {{end -}}
+  - {{.VIP}}
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - name: localtime
+    hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    readOnly: true
+    pathType: File
 controllerManager:
-	extraVolumes:
-	- hostPath: /etc/localtime
-	mountPath: /etc/localtime
-	name: localtime
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
 scheduler:
-	extraVolumes:
-	- hostPath: /etc/localtime
-	mountPath: /etc/localtime
-	name: localtime
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-        excludeCIDRs: 
-        - "{{.VIP}}/32"`)
+  excludeCIDRs: 
+  - "{{.VIP}}/32"`)
 
 var ConfigType string
 
