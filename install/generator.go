@@ -14,16 +14,33 @@ kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "{{.ApiServer}}:6443"
 imageRepository: {{.Repo}}
 networking:
+  # dnsDomain: cluster.local
   podSubnet: {{.PodCIDR}}
   serviceSubnet: {{.SvcCIDR}}
 apiServer:
+	extraArgs:
+		feature-gates: TTLAfterFinished=true
         certSANs:
         - 127.0.0.1
         - {{.ApiServer}}
         {{range .Masters -}}
         - {{.}}
         {{end -}}
-        - {{.VIP}}
+	- {{.VIP}}
+	extraVolumes:
+	- hostPath: /etc/localtime
+	mountPath: /etc/localtime
+	name: localtime
+controllerManager:
+	extraVolumes:
+	- hostPath: /etc/localtime
+	mountPath: /etc/localtime
+	name: localtime
+scheduler:
+	extraVolumes:
+	- hostPath: /etc/localtime
+	mountPath: /etc/localtime
+	name: localtime
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
