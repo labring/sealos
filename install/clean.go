@@ -46,8 +46,10 @@ func clean(host string) {
 	Cmd(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
 	Cmd(host, cmd)
-	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd "
+	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
 	Cmd(host, cmd)
-	cmd = fmt.Sprintf("rm -rf /tmp/* && sed -i \"/%s/d\" /etc/hosts ", ApiServer)
+	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
+	Cmd(host, cmd)
+	cmd = fmt.Sprint("rm -rf ~/kube")
 	Cmd(host, cmd)
 }

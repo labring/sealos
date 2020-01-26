@@ -40,6 +40,8 @@ func (s *SealosInstaller) JoinMasters() {
 		Cmd(master, cmdHosts)
 		copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
 		Cmd(master, copyk8sConf)
+		cleaninstall := `rm -rf /root/kube`
+		Cmd(master, cleaninstall)
 	}
 }
 
@@ -60,6 +62,8 @@ func (s *SealosInstaller) JoinNodes() {
 			cmd := s.Command(Version, JoinNode)
 			cmd += masters
 			Cmd(node, cmd)
+			cleaninstall := `rm -rf /root/kube`
+			Cmd(node, cleaninstall)
 		}(node)
 	}
 
