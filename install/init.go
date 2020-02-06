@@ -84,6 +84,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 	netyaml := net.NewNetwork(Network, net.MetaData{Interface:Interface,CIDR:PodCIDR}).Manifests("")
-	cmd = fmt.Sprintf(`cat %s | kubectl apply -f -`, netyaml)
+	logger.Info("calico yaml is : \n", netyaml)
+	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
 	output = Cmd(s.Masters[0], cmd)
 }
