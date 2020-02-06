@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
 	"os"
@@ -77,6 +78,12 @@ func (s *SealosInstaller) InstallMaster0() {
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
 	output = Cmd(s.Masters[0], cmd)
 
-	cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
+	if WithoutCNI {
+		logger.Info("--without-cni is true, so we not install calico or flannel, install it by yourself")
+		return
+	}
+	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
+	netyaml := net.NewNetwork(Network, net.MetaData{Interface:Interface,CIDR:PodCIDR}).Manifests("")
+	cmd = fmt.Sprintf(`cat %s | kubectl apply -f -`, netyaml)
 	output = Cmd(s.Masters[0], cmd)
 }
