@@ -20,10 +20,3 @@ eg.  sealos xxx, sealos init
 1.
 2.
 3.
-
-
-**运行环境**
-
-- Docker版本:    19.03+
-- Kubernetes版本 : 1.16+
-- sealos版本: v3.1.0-alpha.2 （计划版本）
