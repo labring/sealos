@@ -23,8 +23,10 @@ import (
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
 	Short: "Simplest way to clean your kubernets HA cluster",
-	Long:  `sealos clean --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
+	Long:  `sealos clean`,
 	Run: func(cmd *cobra.Command, args []string) {
+		c := &install.SealConfig{}
+		c.Load("")
 		install.BuildClean()
 	},
 }
@@ -41,11 +43,4 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// cleanCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
-	cleanCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
-	cleanCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
-	cleanCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
-	cleanCmd.Flags().StringVar(&install.ApiServer, "apiserver", "apiserver.cluster.local", "apiserver domain name")
-	cleanCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
-	cleanCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
 }

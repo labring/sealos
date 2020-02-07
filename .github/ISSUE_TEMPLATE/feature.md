@@ -1,26 +1,22 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: 'Feature: short description'
+name: 需求/任务
+about: 创建一个新的需求/任务
+title: '需求: 简短说明需求内容'
 assignees: ''
 
 ---
 
-我们鼓励使用英文，如果不能直接使用，可以使用翻译软件，您仍旧可以保留中文原文。
-We recommend using English. If you are non-native English speaker, you can use the translation software. 
-
-
-**Which Command or new command**
+**哪个命令或者组件**
 eg.  sealos xxx, sealos init
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+**详细描述你的需求/任务**
+详细描述你的需求和任务要求
+1.
+2.
+3.
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
-
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
+**是否有解决方案，如果有请详述**
+通过xxx方案来解决该任务（设想）
+1.
+2.
+3.

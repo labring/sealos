@@ -14,23 +14,50 @@ kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "{{.ApiServer}}:6443"
 imageRepository: {{.Repo}}
 networking:
+  # dnsDomain: cluster.local
   podSubnet: {{.PodCIDR}}
   serviceSubnet: {{.SvcCIDR}}
 apiServer:
-        certSANs:
-        - 127.0.0.1
-        - {{.ApiServer}}
-        {{range .Masters -}}
-        - {{.}}
-        {{end -}}
-        - {{.VIP}}
+  certSANs:
+  - 127.0.0.1
+  - {{.ApiServer}}
+  {{range .Masters -}}
+  - {{.}}
+  {{end -}}
+  - {{.VIP}}
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - name: localtime
+    hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    readOnly: true
+    pathType: File
+controllerManager:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+scheduler:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-        excludeCIDRs: 
-        - "{{.VIP}}/32"`)
+  excludeCIDRs: 
+  - "{{.VIP}}/32"`)
 
 var ConfigType string
 
@@ -69,7 +96,8 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 		panic(1)
 	}
 	var masters []string
-	for _, h := range Masters {
+	getmasters := append(Masters, ParseIPs(MasterIPs)...)
+	for _, h := range getmasters {
 		masters = append(masters, IpFormat(h))
 	}
 	var envMap = make(map[string]interface{})

@@ -3,6 +3,8 @@ package install
 var (
 	Masters        []string
 	Nodes          []string
+	MasterIPs     []string
+	NodeIPs       []string
 	VIP            string
 	PkgUrl         string
 	User           string
@@ -15,4 +17,10 @@ var (
 	Repo           string
 	PodCIDR        string
 	SvcCIDR        string
+	// network type, calico or flannel etc..
+	Network string
+	// if true don't install cni plugin
+	WithoutCNI bool
+	//network interface name, like "eth.*|en.*"
+	Interface string
 )

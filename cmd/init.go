@@ -45,11 +45,14 @@ func init() {
 	initCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
 	initCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
 	initCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
-
+	initCmd.Flags().StringSliceVar(&install.MasterIPs, "masters", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
+	initCmd.Flags().StringSliceVar(&install.NodeIPs, "nodes", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file localtion ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")
 	initCmd.Flags().StringVar(&install.PodCIDR, "podcidr", "100.64.0.0/10", "Specify range of IP addresses for the pod network")
 	initCmd.Flags().StringVar(&install.SvcCIDR, "svccidr", "10.96.0.0/12", "Use alternative range of IP address for service VIPs")
 
+	initCmd.Flags().BoolVar(&install.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
+	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
 }
