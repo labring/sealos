@@ -1,6 +1,6 @@
 #!/bin/bash
-# sh test.sh 1.15.4 pkgurl v3.1.0-alpha.3
-# test network, podcidr network interface --podcidr 10.63.0.0/10 --svccidr 11.96.0.0/12 --network calico
+# sh test.sh 1.15.4 pkgurl v3.2.0-alpha.0
+# test sealos join command, sealos join --node 192.168.0.2 --nodes 192.168.0.3-192.168.0.5
 
 echo "create 4 vms"
 aliyun ecs RunInstances --Amount 4 \
@@ -30,15 +30,15 @@ master0=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
 master0FIP=$(jq -r ".PublicIpAddress.IpAddress[0]" < info.json)
 
 aliyun ecs DescribeInstanceAttribute --InstanceId $ID1 > info.json
-master1=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
+node0=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
 
 aliyun ecs DescribeInstanceAttribute --InstanceId $ID2 > info.json
-master2=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
+node1=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
 
 aliyun ecs DescribeInstanceAttribute --InstanceId $ID3 > info.json
-node=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
+node2=$(jq -r ".VpcAttributes.PrivateIpAddress.IpAddress[0]" < info.json)
 
-echo "all nodes IP: $master0 $master1 $master2 $node"
+echo "all nodes IP: $master0 $node0 $node1 $node2"
 
 echo "wait for sshd start"
 sleep 100 # wait for sshd
@@ -52,13 +52,29 @@ version=$1
 pkgurl=$2
 
 echo "./sshcmd sealos command"
-remotecmd "sealos init --master $master0 --master $master1 --master $master2 \
-    --node $node --passwd Fanux#123 --version v$version --pkg-url $pkgurl --podcidr 10.63.0.0/10 \
+remotecmd "sealos init --master $master0 --passwd Fanux#123 --version v$version --pkg-url $pkgurl --podcidr 10.63.0.0/10 \
     --svccidr 11.96.0.0/12 --network calico"
+
+remotecmd "cat /root/.sealos/config.yaml"
 
 echo "wait for everything ok"
 sleep 40
-./sshcmd --passwd Fanux#123 --host $master0FIP --cmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
+remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
+
+remotecmd "sealos join --nodes $node0-$node2"
+echo "wait for join nodes"
+sleep 40
+remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
+
+remotecmd "sealos clean --nodes $node0-$node2"
+echo "wait for clean nodes"
+sleep 40
+remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
+
+remotecmd "sealos join --node $node0 --nodes $node1-$node2"
+echo "wait for clean nodes and node"
+sleep 40
+remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
 
 echo "release instance"
 sleep 20
