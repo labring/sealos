@@ -8,9 +8,9 @@ import (
 //BuildJoin is
 func BuildJoin() {
 	// 所有master节点
-	masters := append(Masters, ParseIPs(MasterIPs)...)
+	masters := ParseIPs(MasterIPs)
 	// 所有node节点
-	nodes := append(Nodes, ParseIPs(NodeIPs)...)
+	nodes := ParseIPs(NodeIPs)
 	i := &SealosInstaller{
 		Hosts: nodes,
 		Masters: masters,
