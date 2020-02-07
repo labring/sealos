@@ -1,8 +1,6 @@
 package install
 
 var (
-	Masters        []string
-	Nodes          []string
 	MasterIPs     []string
 	NodeIPs       []string
 	VIP            string
