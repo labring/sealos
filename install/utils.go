@@ -433,9 +433,12 @@ func ParseIPs(ips []string) []string {
 	 var hosts []string
 	 for _, nodes := range ips {
 	 	// nodes 192.168.0.2-192.168.0.6
-	 	if len(nodes) < 15 || !strings.Contains(nodes, "-") {
+	 	if len(nodes) < 15  {
 			logger.Error("multi-nodes/multi-masters illegal.")
 	 		os.Exit(-1)
+		}else if !strings.Contains(nodes, "-"){
+			hosts = append(hosts, nodes)
+			continue
 		}
 	 	startip := strings.Split(nodes, "-")[0]
 	 	endip := strings.Split(nodes,"-")[1]
