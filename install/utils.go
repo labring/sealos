@@ -450,3 +450,12 @@ func ParseIPs(ips []string) []string {
 	 }
 	 return hosts
 }
+
+func StrSliceContains(ss []string, s string) bool {
+	for _, v := range ss {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
