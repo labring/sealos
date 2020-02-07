@@ -32,8 +32,8 @@ func (c *SealConfig) Dump(path string) {
 		path = defaultConfigPath + defaultConfigFile
 	}
 
-	c.Masters = append(Masters, ParseIPs(MasterIPs)...)
-	c.Nodes = append(Nodes, ParseIPs(NodeIPs)...)
+	c.Masters = ParseIPs(MasterIPs)
+	c.Nodes = ParseIPs(NodeIPs)
 	c.User = User
 	c.Passwd = Passwd
 	c.PrivateKey = PrivateKeyFile
@@ -93,8 +93,8 @@ func (c *SealConfig) Load(path string) {
 		logger.Error("unmarsha config file failed: %s", err)
 	}
 
-	Masters = c.Masters
-	Nodes = c.Nodes
+	MasterIPs = c.Masters
+	NodeIPs = c.Nodes
 	User = c.User
 	Passwd = c.Passwd
 	PrivateKeyFile = c.PrivateKey
