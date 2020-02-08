@@ -6,18 +6,19 @@ import (
 )
 
 //BuildClean is
-func BuildClean() {
-	//hosts := append(Masters, Nodes...)
-	// 所有master节点
-	masters := ParseIPs(MasterIPs)
-	// 所有node节点
-	nodes := ParseIPs(NodeIPs)
-	hosts := append(masters, nodes...)
-	i := &SealosInstaller{
-		Hosts: hosts,
-		Masters: masters,
-		Nodes: nodes,
+func BuildClean(beforeNodes []string) {
+	i := &SealosInstaller{}
+	var hosts []string
+	if len(beforeNodes) == 0 {
+		// 所有master节点
+		masters := ParseIPs(MasterIPs)
+		// 所有node节点
+		nodes := ParseIPs(NodeIPs)
+		hosts = append(masters, nodes...)
+	}else {
+		hosts = beforeNodes
 	}
+	i.Hosts = hosts
 	i.CheckValid()
 	i.Clean()
 }
