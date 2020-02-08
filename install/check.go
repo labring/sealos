@@ -14,13 +14,14 @@ func (s *SealosInstaller) CheckValid() {
 	// 所有node节点
 	//nodes := append(Nodes, ParseIPs(NodeIPs)...)
 	//hosts := append(masters, nodes...)
-
-	if len(s.Masters) == 0{
+	var hosts []string
+	hosts = append(s.Masters, s.Nodes...)
+	if len(s.Hosts) == 0 && len(hosts) == 0 {
 		s.Print("Fail")
-		logger.Error("master not allow empty")
+		logger.Error("hosts not allow empty")
 		os.Exit(1)
 	}
-	if User == ""{
+	if User == "" {
 		s.Print("Fail")
 		logger.Error("user not allow empty")
 		os.Exit(1)
