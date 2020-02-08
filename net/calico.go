@@ -1,10 +1,5 @@
 package net
 
-const (
-	defaultInterface = "eth.*|en.*"
-	defaultCIDR = "100.64.0.0/10"
-)
-
 type Calico struct {
 	metadata MetaData
 }
@@ -24,10 +19,10 @@ func (c Calico) Manifests(template string) string {
 }
 
 func (c Calico) Template() string {
-	return MANIFESTS
+	return CalicoManifests
 }
 
-const MANIFESTS = `
+const CalicoManifests = `
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Calico installation.
