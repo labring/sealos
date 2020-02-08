@@ -37,7 +37,7 @@ var cleanCmd = &cobra.Command{
 					resultNodes = append(resultNodes,node)
 				}
 			}
-			c.Nodes = resultNodes
+			install.NodeIPs = resultNodes
 			c.Dump("")
 		}
 	},
