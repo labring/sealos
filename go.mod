@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/fanux/sealgate v0.0.4
+	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1 // indirect
