@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const defaultConfigPath = "/root/.sealos"
+const defaultConfigPath = "/.sealos"
 const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
@@ -29,7 +29,8 @@ type SealConfig struct {
 //Dump is
 func (c *SealConfig) Dump(path string) {
 	if path == "" {
-		path = defaultConfigPath + defaultConfigFile
+		home,_ :=os.UserHomeDir()
+		path = home + defaultConfigPath + defaultConfigFile
 	}
 
 	c.Masters = ParseIPs(MasterIPs)
@@ -78,7 +79,8 @@ func Dump(path string, content interface{}) error{
 //Load is
 func (c *SealConfig) Load(path string) {
 	if path == "" {
-		path = defaultConfigPath + defaultConfigFile
+		home,_ :=os.UserHomeDir()
+		path = home + defaultConfigPath + defaultConfigFile
 	}
 
 	y, err := ioutil.ReadFile(path)
