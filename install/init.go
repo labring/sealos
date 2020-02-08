@@ -30,7 +30,7 @@ func BuildInit() {
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
 	if len(masters) > 1 {
-		i.JoinMasters()
+		i.JoinMasters(i.Masters[1:])
 		i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters")
 	}
 	if len(nodes) > 0 {
