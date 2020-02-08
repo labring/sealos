@@ -28,8 +28,8 @@ type SealConfig struct {
 
 //Dump is
 func (c *SealConfig) Dump(path string) {
+	home,_ :=os.UserHomeDir()
 	if path == "" {
-		home,_ :=os.UserHomeDir()
 		path = home + defaultConfigPath + defaultConfigFile
 	}
 
@@ -51,7 +51,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Error("dump config file failed: %s", err)
 	}
 
-	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
 	if err != nil {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
@@ -65,8 +65,8 @@ func Dump(path string, content interface{}) error{
 		logger.Error("dump config file failed: %s", err)
 		return err
 	}
-
-	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	home,_ :=os.UserHomeDir()
+	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
 	if err != nil {
 		logger.Error("create dump dir failed %s",err)
 		return err
