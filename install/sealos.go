@@ -52,6 +52,7 @@ const InitMaster CommandType = "initMaster"
 const JoinMaster CommandType = "joinMaster"
 const JoinNode CommandType = "joinNode"
 
+
 func (s *SealosInstaller) Command(version string, name CommandType) (cmd string) {
 	cmds := make(map[CommandType]string)
 	cmds = map[CommandType]string{
@@ -101,4 +102,11 @@ func decodeJoinCmd(cmd string) {
 			CertificateKey = stringSlice[i+1][:64]
 		}
 	}
+}
+
+func decodeCertCmd(output []byte)  {
+	s0 := string(output)
+	slice := strings.Split(s0, "Using certificate key:\r\n")
+	slice1 := strings.Split(slice[1], "\r\n")
+	CertificateKey = slice1[0]
 }
