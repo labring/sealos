@@ -6,11 +6,19 @@ import (
 )
 
 //BuildJoin is
-func BuildJoin() {
+func BuildJoin(joinMasters,joinNodes []string) {
+	joinNodesFunc(joinMasters,joinNodes)
+}
+
+func joinMastersFunc(joinMasters []string){
+
+}
+//joinNodesFunc is join nodes func
+func joinNodesFunc(joinMasters,joinNodes []string){
 	// 所有master节点
-	masters := ParseIPs(MasterIPs)
+	masters := append(ParseIPs(MasterIPs),joinMasters...)
 	// 所有node节点
-	nodes := ParseIPs(NodeIPs)
+	nodes := joinNodes
 	i := &SealosInstaller{
 		Hosts: nodes,
 		Masters: masters,
