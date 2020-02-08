@@ -66,16 +66,6 @@ echo "wait for join nodes"
 sleep 40
 remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
 
-remotecmd "sealos clean --nodes $node0-$node2"
-echo "wait for clean nodes"
-sleep 40
-remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
-
-remotecmd "sealos join --node $node0 --nodes $node1-$node2"
-echo "wait for clean nodes and node"
-sleep 40
-remotecmd "kubectl get node && kubectl get pod --all-namespaces -o wide"
-
 echo "release instance"
 sleep 20
 aliyun ecs DeleteInstances --InstanceId.1 $ID0 --RegionId cn-hongkong --Force true
