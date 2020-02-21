@@ -24,19 +24,23 @@ import (
 var joinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "Simplest way to join your kubernets HA cluster",
-	Long:  `sealos join  --node 192.168.0.5`,
+	Long:  `sealos join --node 192.168.0.5`,
 	Run: func(cmd *cobra.Command, args []string) {
-		beforeNodes:=install.Nodes
+		beforeNodes:=install.ParseIPs(install.NodeIPs)
+		beforeMasters:=install.ParseIPs(install.MasterIPs)
+
 		c := &install.SealConfig{}
 		c.Load("")
-		install.BuildJoin()
-		c.Nodes = append(c.Nodes,beforeNodes...)
+		install.BuildJoin(beforeMasters,beforeNodes)
+
+		install.NodeIPs = append(c.Nodes,beforeNodes...)
+		install.MasterIPs = append(c.Masters,beforeMasters...)
 		c.Dump("")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(joinCmd)
-	joinCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
-	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "nodes", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	joinCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-master ex. 192.168.0.5-192.168.0.5")
+	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 }

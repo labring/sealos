@@ -25,9 +25,9 @@ var initCmd = &cobra.Command{
 	Short: "Simplest way to init your kubernets HA cluster",
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.BuildInit()
 		c := &install.SealConfig{}
 		c.Dump("")
+		install.BuildInit()
 	},
 }
 
@@ -43,10 +43,8 @@ func init() {
 
 	initCmd.Flags().StringVar(&install.ApiServer, "apiserver", "apiserver.cluster.local", "apiserver domain name")
 	initCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
-	initCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
-	initCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
-	initCmd.Flags().StringSliceVar(&install.MasterIPs, "masters", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
-	initCmd.Flags().StringSliceVar(&install.NodeIPs, "nodes", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	initCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
+	initCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file localtion ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")

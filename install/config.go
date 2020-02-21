@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-const defaultConfigPath = "/root/.sealos"
+const defaultConfigPath = "/.sealos"
 const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
@@ -28,12 +28,13 @@ type SealConfig struct {
 
 //Dump is
 func (c *SealConfig) Dump(path string) {
+	home,_ :=os.UserHomeDir()
 	if path == "" {
-		path = defaultConfigPath + defaultConfigFile
+		path = home + defaultConfigPath + defaultConfigFile
 	}
 
-	c.Masters = append(Masters, ParseIPs(MasterIPs)...)
-	c.Nodes = append(Nodes, ParseIPs(NodeIPs)...)
+	c.Masters = ParseIPs(MasterIPs)
+	c.Nodes = ParseIPs(NodeIPs)
 	c.User = User
 	c.Passwd = Passwd
 	c.PrivateKey = PrivateKeyFile
@@ -50,7 +51,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Error("dump config file failed: %s", err)
 	}
 
-	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
 	if err != nil {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
@@ -64,8 +65,8 @@ func Dump(path string, content interface{}) error{
 		logger.Error("dump config file failed: %s", err)
 		return err
 	}
-
-	err = os.MkdirAll(defaultConfigPath,os.ModePerm)
+	home,_ :=os.UserHomeDir()
+	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
 	if err != nil {
 		logger.Error("create dump dir failed %s",err)
 		return err
@@ -78,7 +79,8 @@ func Dump(path string, content interface{}) error{
 //Load is
 func (c *SealConfig) Load(path string) {
 	if path == "" {
-		path = defaultConfigPath + defaultConfigFile
+		home,_ :=os.UserHomeDir()
+		path = home + defaultConfigPath + defaultConfigFile
 	}
 
 	y, err := ioutil.ReadFile(path)
@@ -93,8 +95,8 @@ func (c *SealConfig) Load(path string) {
 		logger.Error("unmarsha config file failed: %s", err)
 	}
 
-	Masters = c.Masters
-	Nodes = c.Nodes
+	MasterIPs = c.Masters
+	NodeIPs = c.Nodes
 	User = c.User
 	Passwd = c.Passwd
 	PrivateKeyFile = c.PrivateKey

@@ -8,6 +8,8 @@ import (
 const (
 	CALICO  = "calico"
 	FLANNEL = "flannel"
+	defaultInterface = "eth.*|en.*"
+	defaultCIDR = "100.64.0.0/10"
 )
 
 type MetaData struct {

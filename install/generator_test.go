@@ -11,7 +11,7 @@ func TestTemplate(t *testing.T) {
 	var vip = "10.103.97.1"
 	User = "cuisongliu"
 	Passwd = "admin"
-	Masters = masters
+	MasterIPs = masters
 	VIP = vip
 	Cmd("127.0.0.1", "echo \""+string(Template())+"\" > ~/aa")
 	t.Log(string(Template()))
