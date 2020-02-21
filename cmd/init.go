@@ -50,6 +50,7 @@ func init() {
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")
 	initCmd.Flags().StringVar(&install.PodCIDR, "podcidr", "100.64.0.0/10", "Specify range of IP addresses for the pod network")
 	initCmd.Flags().StringVar(&install.SvcCIDR, "svccidr", "10.96.0.0/12", "Use alternative range of IP address for service VIPs")
+	initCmd.Flags().StringVar(&install.Interface, "interface", "eth.*|en.*|em.*", "name of network interface")
 
 	initCmd.Flags().BoolVar(&install.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
