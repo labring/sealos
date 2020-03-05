@@ -43,4 +43,14 @@ node|k8s node节点IP地址|192.168.0.3
 pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.16.0.tar.gz
 version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 
-[更多详情](https://sealyun.com)
+# 特性
+
+[x] 99年证书
+[x] 不依赖ansible haproxy keepalved, 一个二进制工具，另依赖
+[x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](http://store.lameleg.com)即可,离线包包含所有二进制文件配置文件和镜像
+[x] 高可用通过ipvs实现的localLB，占用资源少，稳定可靠，类似kube-proxy的实现
+[x] 几乎可兼容所有支持systemd的x86_64架构的环境
+[x] 轻松实现集群节点的增加/删除
+[x] 上千用户在线上环境使用sealos，稳定可靠
+[x] 资源包放在阿里云oss上，再也不用担心网速
+[x] dashboard ingress prometheus等APP 同样离线打包，一键安装
