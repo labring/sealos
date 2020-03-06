@@ -9,7 +9,7 @@ var (
 	PkgUrl      string
 	KubeadmFile string
 	Version     string
-	SSHConfig   *sshutil.SSH
+	SSHConfig   sshutil.SSH
 	Kustomize   bool
 	ApiServer   string
 	Repo        string

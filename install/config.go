@@ -1,7 +1,6 @@
 package install
 
 import (
-	"github.com/cuisongliu/sshcmd/pkg/sshutil"
 	"github.com/wonderivan/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -98,9 +97,6 @@ func (c *SealConfig) Load(path string) {
 
 	MasterIPs = c.Masters
 	NodeIPs = c.Nodes
-	if SSHConfig == nil {
-		SSHConfig = &sshutil.SSH{}
-	}
 	SSHConfig.User = c.User
 	SSHConfig.Password = c.Passwd
 	SSHConfig.PkFile = c.PrivateKey

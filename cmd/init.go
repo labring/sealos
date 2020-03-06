@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/cuisongliu/sshcmd/pkg/sshutil"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 )
@@ -28,11 +27,6 @@ var initCmd = &cobra.Command{
 	Short: "Simplest way to init your kubernets HA cluster",
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.SSHConfig = &sshutil.SSH{
-			User:     user,
-			Password: password,
-			PkFile:   pkFile,
-		}
 		c := &install.SealConfig{}
 		c.Dump("")
 		install.BuildInit()
@@ -43,9 +37,9 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
-	initCmd.Flags().StringVar(&user, "user", "root", "servers user name for ssh")
-	initCmd.Flags().StringVar(&password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&pkFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "user", "root", "servers user name for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.Password, "passwd", "", "password for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
 	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
 
