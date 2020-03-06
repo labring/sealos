@@ -19,8 +19,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var user, password, pkFile string
-
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
