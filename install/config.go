@@ -1,6 +1,7 @@
 package install
 
 import (
+	"github.com/cuisongliu/sshcmd/pkg/sshutil"
 	"github.com/wonderivan/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -21,23 +22,23 @@ type SealConfig struct {
 	VIP             string
 	PkgURL          string
 	Version         string
-	Repo 		string
+	Repo            string
 	PodCIDR         string
 	SvcCIDR         string
 }
 
 //Dump is
 func (c *SealConfig) Dump(path string) {
-	home,_ :=os.UserHomeDir()
+	home, _ := os.UserHomeDir()
 	if path == "" {
 		path = home + defaultConfigPath + defaultConfigFile
 	}
 
 	c.Masters = ParseIPs(MasterIPs)
 	c.Nodes = ParseIPs(NodeIPs)
-	c.User = User
-	c.Passwd = Passwd
-	c.PrivateKey = PrivateKeyFile
+	c.User = SSHConfig.User
+	c.Passwd = SSHConfig.Password
+	c.PrivateKey = SSHConfig.PkFile
 	c.ApiServerDomian = ApiServer
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
@@ -51,7 +52,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Error("dump config file failed: %s", err)
 	}
 
-	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
+	err = os.MkdirAll(home+defaultConfigPath, os.ModePerm)
 	if err != nil {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
@@ -59,16 +60,16 @@ func (c *SealConfig) Dump(path string) {
 	ioutil.WriteFile(path, y, 0644)
 }
 
-func Dump(path string, content interface{}) error{
+func Dump(path string, content interface{}) error {
 	y, err := yaml.Marshal(content)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 		return err
 	}
-	home,_ :=os.UserHomeDir()
-	err = os.MkdirAll(home + defaultConfigPath,os.ModePerm)
+	home, _ := os.UserHomeDir()
+	err = os.MkdirAll(home+defaultConfigPath, os.ModePerm)
 	if err != nil {
-		logger.Error("create dump dir failed %s",err)
+		logger.Error("create dump dir failed %s", err)
 		return err
 	}
 
@@ -79,7 +80,7 @@ func Dump(path string, content interface{}) error{
 //Load is
 func (c *SealConfig) Load(path string) {
 	if path == "" {
-		home,_ :=os.UserHomeDir()
+		home, _ := os.UserHomeDir()
 		path = home + defaultConfigPath + defaultConfigFile
 	}
 
@@ -97,9 +98,12 @@ func (c *SealConfig) Load(path string) {
 
 	MasterIPs = c.Masters
 	NodeIPs = c.Nodes
-	User = c.User
-	Passwd = c.Passwd
-	PrivateKeyFile = c.PrivateKey
+	if SSHConfig == nil {
+		SSHConfig = &sshutil.SSH{}
+	}
+	SSHConfig.User = c.User
+	SSHConfig.Password = c.Passwd
+	SSHConfig.PkFile = c.PrivateKey
 	ApiServer = c.ApiServerDomian
 	VIP = c.VIP
 	PkgUrl = c.PkgURL

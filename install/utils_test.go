@@ -5,50 +5,9 @@ import (
 	"testing"
 )
 
-func TestCmd(t *testing.T) {
-	User = "cuisongliu"
-	Passwd = "admin"
-	MasterIPs = []string{"127.0.0.3"}
-	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
-	install := &SealosInstaller{}
-	install.CheckValid()
-}
-func TestCopy(t *testing.T) {
-	User = "cuisongliu"
-	Passwd = "admin"
-
-	Copy("127.0.0.1", "/home/cuisongliu/aa", "/home/cuisongliu/aa")
-
-}
-
-func TestRemoteFilExist(t *testing.T) {
-	User = "cuisongliu"
-	Passwd = "admin"
-
-	RemoteFilExist("127.0.0.1", "/home/cuisongliu/aa")
-}
-
 func TestPath(t *testing.T) {
 	tt := strings.HasPrefix("ffff/kube1.14.1.tar.gz", "https")
 	t.Log(tt)
-}
-
-func TestSend(t *testing.T) {
-	User = "root"
-	Passwd = "admin"
-	MasterIPs = []string{"172.16.4.2"}
-	PkgUrl = "/home/cuisongliu/Documents/kubernetes-doc/kube1.14.1.tar.gz"
-	install := &SealosInstaller{}
-	install.SendPackage("kube")
-}
-
-func TestSendHttps(t *testing.T) {
-	User = "root"
-	Passwd = "admin"
-	MasterIPs = []string{"172.16.4.2"}
-	PkgUrl = "http://172.16.4.1:8080/kube1.14.1.tar.gz"
-	install := &SealosInstaller{}
-	install.SendPackage("kube")
 }
 
 func TestProcess(t *testing.T) {
@@ -66,10 +25,6 @@ func TestPrint(t *testing.T) {
 	install := &SealosInstaller{}
 	install.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0", "JoinMasters", "JoinNodes")
 	install.PrintFinish()
-}
-
-func TestGetFileSize(t *testing.T) {
-	GetFileSize("httfp://www.affa.com")
 }
 
 func TestVersionToInt(t *testing.T) {
