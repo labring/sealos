@@ -51,17 +51,17 @@ func joinNodesFunc(joinMasters, joinNodes []string) {
 //GeneratorToken is
 func (s *SealosInstaller) GeneratorCerts() {
 	cmd := `kubeadm init phase upload-certs --upload-certs`
-	output := Cmd(s.Masters[0], cmd)
+	output := SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeCertCmd(output)
 	cmd = fmt.Sprintf("kubeadm token create --certificate-key %s --print-join-command", CertificateKey)
-	output = Cmd(s.Masters[0], cmd)
+	output = SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(output)
 }
 
 //GeneratorToken is
 func (s *SealosInstaller) GeneratorToken() {
 	cmd := `kubeadm token create --print-join-command`
-	output := Cmd(s.Masters[0], cmd)
+	output := SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(output)
 }
 
@@ -70,14 +70,14 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range masters {
 		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
-		Cmd(master, cmdHosts)
-		Cmd(master, cmd)
+		SSHConfig.Cmd(master, cmdHosts)
+		SSHConfig.Cmd(master, cmd)
 		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
-		Cmd(master, cmdHosts)
+		SSHConfig.Cmd(master, cmdHosts)
 		copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
-		Cmd(master, copyk8sConf)
+		SSHConfig.Cmd(master, copyk8sConf)
 		cleaninstall := `rm -rf /root/kube`
-		Cmd(master, cleaninstall)
+		SSHConfig.Cmd(master, cleaninstall)
 	}
 }
 
@@ -94,12 +94,12 @@ func (s *SealosInstaller) JoinNodes() {
 		go func(node string) {
 			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
-			Cmd(node, cmdHosts)
+			SSHConfig.Cmd(node, cmdHosts)
 			cmd := s.Command(Version, JoinNode)
 			cmd += masters
-			Cmd(node, cmd)
+			SSHConfig.Cmd(node, cmd)
 			cleaninstall := `rm -rf /root/kube`
-			Cmd(node, cleaninstall)
+			SSHConfig.Cmd(node, cleaninstall)
 		}(node)
 	}
 
@@ -114,9 +114,9 @@ func (s *SealosInstaller) lvscare(hosts []string) {
 			defer wg.Done()
 			for _, master := range s.Hosts {
 				cmd := fmt.Sprintf(`sed '/- https/a\    - %s:6443' -i /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml`, master)
-				Cmd(host, cmd)
+				SSHConfig.Cmd(host, cmd)
 				cmd = `sed '/- https/a\    - --rs' -i /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml`
-				Cmd(host, cmd)
+				SSHConfig.Cmd(host, cmd)
 			}
 		}(host)
 	}

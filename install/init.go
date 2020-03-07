@@ -17,9 +17,9 @@ func BuildInit() {
 	nodes := ParseIPs(NodeIPs)
 	hosts := append(masters, nodes...)
 	i := &SealosInstaller{
-		Hosts: hosts,
+		Hosts:   hosts,
 		Masters: masters,
-		Nodes: nodes,
+		Nodes:   nodes,
 	}
 	i.CheckValid()
 	i.Print()
@@ -58,17 +58,17 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		templateData = string(TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
-	Cmd(s.Masters[0], cmd)
+	SSHConfig.Cmd(s.Masters[0], cmd)
 }
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
-	Cmd(s.Masters[0], cmd)
+	SSHConfig.Cmd(s.Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
 
-	output := Cmd(s.Masters[0], cmd)
+	output := SSHConfig.Cmd(s.Masters[0], cmd)
 	if output == nil {
 		logger.Error("[%s]kubernetes install is error.please clean and uninstall.", s.Masters[0])
 		os.Exit(1)
@@ -76,15 +76,15 @@ func (s *SealosInstaller) InstallMaster0() {
 	decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
-	output = Cmd(s.Masters[0], cmd)
+	output = SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if WithoutCNI {
 		logger.Info("--without-cni is true, so we not install calico or flannel, install it by yourself")
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-	netyaml := net.NewNetwork(Network, net.MetaData{Interface:Interface,CIDR:PodCIDR}).Manifests("")
+	netyaml := net.NewNetwork(Network, net.MetaData{Interface: Interface, CIDR: PodCIDR}).Manifests("")
 	logger.Info("calico yaml is : \n", netyaml)
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
-	output = Cmd(s.Masters[0], cmd)
+	output = SSHConfig.Cmd(s.Masters[0], cmd)
 }

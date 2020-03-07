@@ -113,8 +113,6 @@ func CloudInstall(c *Cluster) {
 	}
 	c.Nodes = res.VMs
 
-	Passwd = c.Passwd
-
 	//TODO wget package on master0 and scp to other nodes
 	logger.Info("wait few minute for download offline package on master0...")
 	cmd := newWgetCommand(c)
