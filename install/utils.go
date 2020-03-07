@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"math/rand"
 	"net"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -73,9 +74,22 @@ func SendPackage(url string, hosts []string, packName string) {
 				if isHttp {
 					go SSHConfig.LoggerFileSize(host, kubeLocal, int(filesize.Do(url)))
 					SSHConfig.Cmd(host, remoteCmd)
+					rMD5 := SSHConfig.Md5Sum(host, kubeLocal) //获取已经上传文件的md5
+					uMd5 := UrlGetMd5(url)                    //获取url的md5值
+					logger.Debug("[%s] remote file local %s, md5 is %s", host, kubeLocal, rMD5)
+					logger.Debug("[%s] url is %s, md5 is %s", host, url, uMd5)
+					if strings.TrimSpace(rMD5) == strings.TrimSpace(uMd5) {
+						logger.Info("[%s]file md5 validate success", host)
+					} else {
+						logger.Error("[%s]copy file md5 validate failed", host)
+					}
 				} else {
-					SSHConfig.Copy(host, url, kubeLocal)
-					SSHConfig.Cmd(host, localCmd)
+					if ok := SSHConfig.CopyForMD5(host, url, kubeLocal, ""); ok {
+						SSHConfig.Cmd(host, localCmd)
+						logger.Info("[%s]file md5 validate success", host)
+					} else {
+						logger.Error("[%s]file md5 validate failed", host)
+					}
 				}
 			}
 			SSHConfig.Cmd(host, kubeCmd)
@@ -116,8 +130,21 @@ func FetchPackage(url string, hosts []string, dst string) {
 				if isHttp {
 					go SSHConfig.LoggerFileSize(host, fullDst, int(filesize.Do(url)))
 					SSHConfig.Cmd(host, remoteCmd)
+					rMD5 := SSHConfig.Md5Sum(host, fullDst) //获取已经上传文件的md5
+					uMd5 := UrlGetMd5(url)                  //获取url的md5值
+					logger.Debug("[%s] remote file local %s, md5 is %s", host, fullDst, rMD5)
+					logger.Debug("[%s] url is %s, md5 is %s", host, url, uMd5)
+					if strings.TrimSpace(rMD5) == strings.TrimSpace(uMd5) {
+						logger.Info("[%s]file md5 validate success", host)
+					} else {
+						logger.Error("[%s]copy file md5 validate failed", host)
+					}
 				} else {
-					SSHConfig.Copy(host, url, fullDst)
+					if !SSHConfig.CopyForMD5(host, url, fullDst, "") {
+						logger.Error("[%s]copy file md5 validate failed", host)
+					} else {
+						logger.Info("[%s]file md5 validate success", host)
+					}
 				}
 			}
 		}(host)
@@ -198,4 +225,17 @@ func StrSliceContains(ss []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func UrlGetMd5(downloadUrl string) string {
+	u, err := url.Parse(downloadUrl)
+	if err == nil {
+		p := u.Path
+		if paths := strings.Split(p, "/"); len(paths) > 2 {
+			if paths = strings.Split(paths[1], "-"); len(paths) > 1 {
+				return paths[0]
+			}
+		}
+	}
+	return ""
 }

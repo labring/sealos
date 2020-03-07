@@ -30,3 +30,8 @@ func TestPrint(t *testing.T) {
 func TestVersionToInt(t *testing.T) {
 	t.Log(VersionToInt("v1.15.6"))
 }
+
+func TestUrlGetMd5(t *testing.T) {
+	aa := UrlGetMd5("https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz")
+	t.Log(aa)
+}
