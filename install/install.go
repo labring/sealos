@@ -52,7 +52,7 @@ func AppInstall(url string) {
 	Exec(pkgConfig, *c)
 }
 
-func LoadRemoteFile(url string) string{
+func LoadRemoteFile(url string) string {
 	isHttp := strings.HasPrefix(url, "http")
 	if !isHttp {
 		logger.Info("using local package %s", url)
@@ -220,5 +220,5 @@ func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	Cmd(node, command)
+	SSHConfig.Cmd(node, command)
 }

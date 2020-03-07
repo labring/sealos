@@ -15,7 +15,7 @@ func BuildClean(beforeNodes []string) {
 		// 所有node节点
 		nodes := ParseIPs(NodeIPs)
 		hosts = append(masters, nodes...)
-	}else {
+	} else {
 		hosts = beforeNodes
 	}
 	i.Hosts = hosts
@@ -38,19 +38,19 @@ func (s *SealosInstaller) Clean() {
 
 func clean(host string) {
 	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 	cmd = fmt.Sprint("rm -rf ~/kube")
-	Cmd(host, cmd)
+	SSHConfig.Cmd(host, cmd)
 }

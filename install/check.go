@@ -21,7 +21,7 @@ func (s *SealosInstaller) CheckValid() {
 		logger.Error("hosts not allow empty")
 		os.Exit(1)
 	}
-	if User == "" {
+	if SSHConfig.User == "" {
 		s.Print("Fail")
 		logger.Error("user not allow empty")
 		os.Exit(1)
@@ -29,7 +29,7 @@ func (s *SealosInstaller) CheckValid() {
 	var session *ssh.Session
 	var errors []error
 	for _, h := range s.Hosts {
-		session, err := Connect(User, Passwd, PrivateKeyFile, h)
+		session, err := SSHConfig.Connect(h)
 		if err != nil {
 			logger.Error("[%s] ------------ check error", h)
 			logger.Error("[%s] ------------ error[%s]", h, err)
