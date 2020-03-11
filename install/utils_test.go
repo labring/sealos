@@ -28,7 +28,7 @@ func TestPrint(t *testing.T) {
 }
 
 func TestVersionToInt(t *testing.T) {
-	t.Log(VersionToInt("v1.15.6"))
+	t.Log(ParseIPs([]string{"1.1.1.1-1.1.1.5"}))
 }
 
 func TestUrlGetMd5(t *testing.T) {
