@@ -36,11 +36,11 @@ var cloudCmd = &cobra.Command{
 	Long:  `sealos will create vms vpc switch security group on cloud and install kubernetes on it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("install kubernetes on cloud...")
-		var key,sec string
+		var key, sec string
 		if key = os.Getenv("ACCESS_KEY_ID"); key != "" {
 			install.C.AccessKey = key
 		}
-		if sec = os.Getenv("ACCESS_KEY_SECRET");sec != "" {
+		if sec = os.Getenv("ACCESS_KEY_SECRET"); sec != "" {
 			install.C.AccessKey = sec
 		}
 		install.CloudInstall(&install.C)
@@ -51,12 +51,12 @@ func init() {
 	rootCmd.AddCommand(cloudCmd)
 	cloudCmd.Flags().StringVar(&install.C.AccessKey, "accessKey", "", "cloud provider accessKey, like LTAIah2bOOcr0uuT")
 	cloudCmd.Flags().StringVar(&install.C.AccessSecret, "accessSecret", "", "cloud provider accessSecret, like FN3FcvXUctbudisnHs89bcYlbsZuImh")
-	cloudCmd.Flags().StringVar(&install.C.Provider,"provider", cloud.ALI,  "cloud provider accessSecret, like FN3FcvXUctbudisnHs89bcYlbsZuImh")
+	cloudCmd.Flags().StringVar(&install.C.Provider, "provider", cloud.ALI, "cloud provider type,current support ali")
 	cloudCmd.Flags().IntVar(&install.C.Master, "master", 1, "the number of master vms")
 	cloudCmd.Flags().IntVar(&install.C.Node, "node", 1, "the number of node vms")
 	cloudCmd.Flags().StringVar(&install.C.Version, "version", "v1.16.0", "kubernetes version")
 	cloudCmd.Flags().StringVar(&install.C.Flavor, "flavor", "2C4G", "the type of vms")
-	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun" + install.RandString(8), "the name of your cluster")
+	cloudCmd.Flags().StringVar(&install.C.Name, "name", "sealyun"+install.RandString(8), "the name of your cluster")
 	cloudCmd.Flags().StringVar(&install.C.Passwd, "passwd", "Fanux#123", "the passwd of your vm servers")
 	cloudCmd.Flags().StringVar(&install.C.Region, "region", "cn-hongkong", "cloud provider region")
 	cloudCmd.Flags().StringVar(&install.C.Zone, "zone", "cn-hongkong-b", "cloud provider region")

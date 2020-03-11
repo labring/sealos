@@ -10,6 +10,10 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
+# github.com/cuisongliu/sshcmd v1.4.1
+github.com/cuisongliu/sshcmd/pkg/filesize
+github.com/cuisongliu/sshcmd/pkg/md5sum
+github.com/cuisongliu/sshcmd/pkg/sshutil
 # github.com/fanux/sealgate v0.0.4
 github.com/fanux/sealgate/cloud
 # github.com/fsnotify/fsnotify v1.4.7
@@ -47,7 +51,7 @@ github.com/modern-go/reflect2
 github.com/pelletier/go-toml
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# github.com/pkg/sftp v1.10.0
+# github.com/pkg/sftp v1.10.1
 github.com/pkg/sftp
 # github.com/spf13/afero v1.1.2
 github.com/spf13/afero
@@ -66,7 +70,7 @@ github.com/spf13/viper
 github.com/subosito/gotenv
 # github.com/wonderivan/logger v1.0.0
 github.com/wonderivan/logger
-# golang.org/x/crypto v0.0.0-20190513172903-22d7a77e9e5f
+# golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/ed25519/internal/edwards25519
