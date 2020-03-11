@@ -18,8 +18,8 @@ github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3Ee
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f/go.mod h1:E3G3o1h8I7cfcXa63jLwjI0eiQQMgzzUDFVpN/nH/eA=
 github.com/cpuguy83/go-md2man v1.0.10/go.mod h1:SmD6nW6nTyfqj6ABTjUi3V3JVMnlJmwcJI5acqYI6dE=
-github.com/cuisongliu/sshcmd v1.4.1 h1:wbtT1HnisY6ZszRqlljG/E9bfixxIa86g+Uqo0ejT/A=
-github.com/cuisongliu/sshcmd v1.4.1/go.mod h1:jAEBZhFW5kNey9B+59lR8mfQaCQsyp8b8QaI7RhESxE=
+github.com/cuisongliu/sshcmd v1.4.2 h1:4eJ1OXhMBUU9NPVEvKS5T24v0N+zKkKbtgP66pDVSKk=
+github.com/cuisongliu/sshcmd v1.4.2/go.mod h1:jAEBZhFW5kNey9B+59lR8mfQaCQsyp8b8QaI7RhESxE=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

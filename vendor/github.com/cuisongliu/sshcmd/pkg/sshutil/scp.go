@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"net"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,8 @@ func (ss *SSH) CopyForMD5(host, localFilePath, remoteFilePath, md5 string) bool 
 	ss.Copy(host, localFilePath, remoteFilePath)
 	remoteMD5 := ss.Md5Sum(host, remoteFilePath)
 	logger.Debug("host: %s , remote md5: %s", host, remoteMD5)
+	remoteMD5 = strings.TrimSpace(remoteMD5)
+	md5 = strings.TrimSpace(md5)
 	if remoteMD5 == md5 {
 		logger.Info("md5 validate true")
 		return true
