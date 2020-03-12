@@ -10,5 +10,8 @@ require (
 	github.com/spf13/viper v1.5.0
 	github.com/wonderivan/logger v1.0.0
 	golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.2.8
+	k8s.io/api v0.17.3
+	k8s.io/apimachinery v0.17.3
+	k8s.io/client-go v0.17.3
 )
