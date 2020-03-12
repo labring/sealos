@@ -10,6 +10,7 @@ import (
 )
 const defaultImage = "fanux/lvscare:latest"
 
+// return lvscare static pod yaml
 func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	if image == "" {
 		image = defaultImage
