@@ -240,13 +240,13 @@ func ParseIPs(ips []string) []string {
 	return hosts
 }
 
-func StrSliceContains(ss []string, s string) bool {
+func SliceRemoveStr(ss []string, s string) (result []string) {
 	for _, v := range ss {
-		if v == s {
-			return true
+		if v != s {
+			result = append(result, v)
 		}
 	}
-	return false
+	return
 }
 
 func UrlGetMd5(downloadUrl string) string {

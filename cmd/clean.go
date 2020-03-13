@@ -25,21 +25,12 @@ var cleanCmd = &cobra.Command{
 	Short: "Simplest way to clean your kubernets HA cluster",
 	Long:  `sealos clean`,
 	Run: func(cmd *cobra.Command, args []string) {
-		beforeNodes:=install.ParseIPs(install.NodeIPs)
+		deleteNodes := install.ParseIPs(install.NodeIPs)
+		deleteMasters := install.ParseIPs(install.MasterIPs)
 		c := &install.SealConfig{}
 		c.Load("")
-		install.BuildClean(beforeNodes)
-		if len(beforeNodes) > 0{
-			var resultNodes []string
-			//去掉共同数据添加数据到结果集中去
-			for _,node:=range c.Nodes{
-				if !install.StrSliceContains(beforeNodes,node){
-					resultNodes = append(resultNodes,node)
-				}
-			}
-			install.NodeIPs = resultNodes
-			c.Dump("")
-		}
+		install.BuildClean(deleteNodes, deleteMasters)
+		c.Dump("")
 	},
 }
 
@@ -47,7 +38,8 @@ func init() {
 	rootCmd.AddCommand(cleanCmd)
 
 	// Here you will define your flags and configuration settings.
-	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "clean node ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	cleanCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "clean master ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
