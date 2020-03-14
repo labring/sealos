@@ -89,6 +89,7 @@ func cleanMaster(master string) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
 			SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
 		}(node)
 	}
