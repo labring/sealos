@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
 const defaultImage = "fanux/lvscare:latest"
 
 // return lvscare static pod yaml
@@ -18,29 +19,29 @@ func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	if vip == "" || len(masters) == 0 {
 		return ""
 	}
-	args := []string{"care","--vs",vip+":6443","--health-path", "/healthz","--health-schem","https"}
-	for _,m := range masters {
-		args = append(args,"--rs")
-		args = append(args, m + ":6443")
+	args := []string{"care", "--vs", vip + ":6443", "--health-path", "/healthz", "--health-schem", "https"}
+	for _, m := range masters {
+		args = append(args, "--rs")
+		args = append(args, m+":6443")
 	}
 	flag := true
-	pod := ComponentPod(v1.Container{
-		Name:                     "kube-sealyun-lvscare",
-		Image:                    image,
-		Command:                  []string{"/usr/bin/lvscare"},
-		Args:                     args,
-		ImagePullPolicy:          v1.PullIfNotPresent,
-		SecurityContext:          &v1.SecurityContext{Privileged:&flag},
+	pod := componentPod(v1.Container{
+		Name:            "kube-sealyun-lvscare",
+		Image:           image,
+		Command:         []string{"/usr/bin/lvscare"},
+		Args:            args,
+		ImagePullPolicy: v1.PullIfNotPresent,
+		SecurityContext: &v1.SecurityContext{Privileged: &flag},
 	})
-	yaml,err := PodToYaml(pod)
+	yaml, err := podToYaml(pod)
 	if err != nil {
-		logger.Error("decode lvscare static pod yaml failed %s",err)
+		logger.Error("decode lvscare static pod yaml failed %s", err)
 		return ""
 	}
 	return string(yaml)
 }
 
-func PodToYaml(pod v1.Pod)([]byte,error) {
+func podToYaml(pod v1.Pod) ([]byte, error) {
 	codecs := scheme.Codecs
 	gv := v1.SchemeGroupVersion
 	const mediaType = runtime.ContentTypeYAML
@@ -53,8 +54,8 @@ func PodToYaml(pod v1.Pod)([]byte,error) {
 	return runtime.Encode(encoder, &pod)
 }
 
-// ComponentPod returns a Pod object from the container and volume specifications
-func ComponentPod(container v1.Container) v1.Pod {
+// componentPod returns a Pod object from the container and volume specifications
+func componentPod(container v1.Container) v1.Pod {
 	return v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

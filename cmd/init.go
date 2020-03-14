@@ -35,7 +35,7 @@ func init() {
 	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
-	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "user", "root", "servers user name for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.Password, "passwd", "", "password for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
 
