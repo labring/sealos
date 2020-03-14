@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/ipvs"
 	"sync"
 )
 
@@ -11,7 +12,7 @@ func BuildJoin(joinMasters, joinNodes []string) {
 		joinMastersFunc(joinMasters)
 	}
 	if len(joinNodes) > 0 {
-		joinNodesFunc(joinMasters, joinNodes)
+		joinNodesFunc(joinNodes)
 	}
 }
 
@@ -27,25 +28,27 @@ func joinMastersFunc(joinMasters []string) {
 	i.SendPackage("kube")
 	i.GeneratorCerts()
 	i.JoinMasters(joinMasters)
-	i.lvscare(nodes)
+	//master join to MasterIPs
+	MasterIPs = append(MasterIPs, joinMasters...)
+	i.lvscare()
 
 }
 
 //joinNodesFunc is join nodes func
-func joinNodesFunc(joinMasters, joinNodes []string) {
-	// 所有master节点
-	masters := append(ParseIPs(MasterIPs), joinMasters...)
+func joinNodesFunc(joinNodes []string) {
 	// 所有node节点
 	nodes := joinNodes
 	i := &SealosInstaller{
 		Hosts:   nodes,
-		Masters: masters,
+		Masters: ParseIPs(MasterIPs),
 		Nodes:   nodes,
 	}
 	i.CheckValid()
 	i.SendPackage("kube")
 	i.GeneratorToken()
 	i.JoinNodes()
+	//node join to NodeIPs
+	NodeIPs = append(NodeIPs, joinNodes...)
 }
 
 //GeneratorToken is
@@ -106,19 +109,16 @@ func (s *SealosInstaller) JoinNodes() {
 	wg.Wait()
 }
 
-func (s *SealosInstaller) lvscare(hosts []string) {
+func (s *SealosInstaller) lvscare() {
 	var wg sync.WaitGroup
-	for _, host := range hosts {
+	for _, node := range s.Nodes {
 		wg.Add(1)
-		go func(host string) {
+		go func(node string) {
 			defer wg.Done()
-			for _, master := range s.Hosts {
-				cmd := fmt.Sprintf(`sed '/- https/a\    - %s:6443' -i /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml`, master)
-				SSHConfig.Cmd(host, cmd)
-				cmd = `sed '/- https/a\    - --rs' -i /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml`
-				SSHConfig.Cmd(host, cmd)
-			}
-		}(host)
+			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+			SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
+			SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+		}(node)
 	}
 
 	wg.Wait()
