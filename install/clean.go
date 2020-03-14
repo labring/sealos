@@ -38,24 +38,24 @@ func (s *SealosInstaller) Clean() {
 	var wg sync.WaitGroup
 	//s 是要删除的数据
 	//全局是当前的数据
-	if len(s.Masters) > 0 {
-		//1. 先删除master
-		for _, master := range s.Masters {
-			wg.Add(1)
-			go func(master string) {
-				defer wg.Done()
-				cleanMaster(master)
-			}(master)
-		}
-	}
 	if len(s.Nodes) > 0 {
-		//2. 再删除nodes
+		//1. 再删除nodes
 		for _, node := range s.Nodes {
 			wg.Add(1)
 			go func(node string) {
 				defer wg.Done()
 				cleanNode(node)
 			}(node)
+		}
+	}
+	if len(s.Masters) > 0 {
+		//2. 先删除master
+		for _, master := range s.Masters {
+			wg.Add(1)
+			go func(master string) {
+				defer wg.Done()
+				cleanMaster(master)
+			}(master)
 		}
 	}
 	wg.Wait()
@@ -65,9 +65,8 @@ func cleanNode(node string) {
 	clean(node)
 	logger.Debug("clean node in master")
 	hostname := SSHConfig.CmdToString(node, "cat /etc/hostname")
-	cmd := "kubectl delete node %s || true"
+	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
-		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, node))
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 	}
 	//remove node
@@ -79,9 +78,8 @@ func cleanMaster(master string) {
 	logger.Debug("clean node in master")
 	MasterIPs = SliceRemoveStr(MasterIPs, master)
 	hostname := SSHConfig.CmdToString(master, "cat /etc/hostname")
-	cmd := "kubectl delete node %s || true"
+	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
-		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, master))
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 	}
 	//清空所有的nodes的数据
