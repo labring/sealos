@@ -1,6 +1,7 @@
 package install
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -40,4 +41,38 @@ func TestSliceRemoveStr(t *testing.T) {
 	ss := []string{"aa", "bb", "cc"}
 	aa := SliceRemoveStr(ss, "bb")
 	t.Log(aa)
+}
+
+func TestParseIPs(t *testing.T) {
+	type args struct {
+		ips []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"test multiple ips",
+			args{[]string{"192.168.0.2-192.168.0.6"}},
+			[]string{"192.168.0.2","192.168.0.3","192.168.0.4","192.168.0.5","192.168.0.6"},
+		},
+		{
+			"test multiple ips",
+			args{[]string{"192.168.0.2-192.168.0.3","192.168.0.5-192.168.0.6"}},
+			[]string{"192.168.0.2","192.168.0.3","192.168.0.5","192.168.0.6"},
+		},
+		{
+			"test multiple ips",
+			args{[]string{"192.168.0.2-192.168.0.4","192.168.0.8"}},
+			[]string{"192.168.0.2","192.168.0.3","192.168.0.4","192.168.0.8"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ParseIPs(tt.args.ips); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseIPs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
