@@ -223,10 +223,16 @@ func ParseIPs(ips []string) []string {
 				}
 			}
 		}
-		hosts = append(hosts, startIp)
+		//
+		port := ":22"
+		if strings.Index(endIp, ":") != -1 {
+			port = ":" + strings.Split(endIp, ":")[1] //获取endIp
+			endIp = strings.ReplaceAll(endIp, port, "")
+		}
+		hosts = append(hosts, startIp+port)
 		for Cmp(stringToIP(startIp), stringToIP(endIp)) < 0 {
 			startIp = NextIP(stringToIP(startIp)).String()
-			hosts = append(hosts, startIp)
+			hosts = append(hosts, startIp+port)
 		}
 	}
 	return hosts
