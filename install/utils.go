@@ -223,14 +223,6 @@ func ParseIPs(ips []string) []string {
 				}
 			}
 		}
-		if len(nodes) > 15 {
-			logger.Error("multi-nodes/multi-masters illegal.")
-			os.Exit(-1)
-		} else if !strings.Contains(nodes, "-") {
-			hosts = append(hosts, nodes)
-			continue
-		}
-
 		hosts = append(hosts, startIp)
 		for Cmp(stringToIP(startIp), stringToIP(endIp)) < 0 {
 			startIp = NextIP(stringToIP(startIp)).String()
@@ -240,13 +232,13 @@ func ParseIPs(ips []string) []string {
 	return hosts
 }
 
-func StrSliceContains(ss []string, s string) bool {
+func SliceRemoveStr(ss []string, s string) (result []string) {
 	for _, v := range ss {
-		if v == s {
-			return true
+		if v != s {
+			result = append(result, v)
 		}
 	}
-	return false
+	return
 }
 
 func UrlGetMd5(downloadUrl string) string {
