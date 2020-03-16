@@ -1,6 +1,9 @@
 package install
 
-import "github.com/cuisongliu/sshcmd/pkg/sshutil"
+import (
+	"github.com/cuisongliu/sshcmd/pkg/sshutil"
+	"regexp"
+)
 
 var (
 	MasterIPs   []string
@@ -21,4 +24,8 @@ var (
 	WithoutCNI bool
 	//network interface name, like "eth.*|en.*"
 	Interface string
+
+	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
+
+	CleanForce bool
 )
