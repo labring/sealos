@@ -254,7 +254,7 @@ func Confirm(prompt string) bool {
 		os.Exit(-1)
 	}
 
-	_, err = fmt.Scanf("%s", inputStr)
+	_, err = fmt.Scanf("%s", &inputStr)
 	if err != nil {
 		logger.Error("fmt.Scanf err", err)
 		os.Exit(-1)
