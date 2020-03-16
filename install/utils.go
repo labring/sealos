@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/cuisongliu/sshcmd/pkg/filesize"
+	"github.com/wonderivan/logger"
 	"math/big"
 	"math/rand"
 	"net"
@@ -13,8 +14,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/wonderivan/logger"
 )
 
 const oneMBByte = 1024 * 1024
@@ -237,6 +236,33 @@ func ParseIPs(ips []string) []string {
 	}
 	return hosts
 }
+
+// like y|yes|Y|YES return true
+func GetConfirmResult(str string) bool {
+	return YesRx.MatchString(str)
+}
+
+// send the prompt and get result
+func Confirm(prompt string) bool {
+	var (
+		inputStr string
+		err error
+	)
+	_, err = fmt.Fprint(os.Stdout, prompt)
+	if err != nil {
+		logger.Error("fmt.Fprint err", err)
+		os.Exit(-1)
+	}
+
+	_, err = fmt.Scanf("%s", inputStr)
+	if err != nil {
+		logger.Error("fmt.Scanf err", err)
+		os.Exit(-1)
+	}
+
+	return GetConfirmResult(inputStr)
+}
+
 
 func SliceRemoveStr(ss []string, s string) (result []string) {
 	for _, v := range ss {
