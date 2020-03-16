@@ -45,7 +45,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "clean node ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	cleanCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "clean master ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
-	cleanCmd.PersistentFlags().BoolVarP(&install.CleanForce, "force","f", false, "A help for foo")
+	cleanCmd.PersistentFlags().BoolVarP(&install.CleanForce, "force","f", false, "if this is true, will no prompt")
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// cleanCmd.PersistentFlags().String("foo", "", "A help for foo")
