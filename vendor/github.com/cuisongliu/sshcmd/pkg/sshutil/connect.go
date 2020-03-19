@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"net"
+	"os"
 	"strings"
 	"time"
 )
@@ -59,7 +60,11 @@ func (ss *SSH) sshAuthMethod(passwd, pkFile string) ssh.AuthMethod {
 		am = ssh.Password(passwd)
 	} else {
 		pkData := ss.readFile(pkFile)
-		pk, _ := ssh.ParsePrivateKey([]byte(pkData))
+		pk, err := ssh.ParsePrivateKey([]byte(pkData))
+		if err != nil {
+			logger.Error(err)
+			os.Exit(1)
+		}
 		am = ssh.PublicKeys(pk)
 	}
 	return am
@@ -69,7 +74,7 @@ func (ss *SSH) readFile(name string) string {
 	content, err := ioutil.ReadFile(name)
 	if err != nil {
 		logger.Error("[globals] read file err is : %s", err)
-		return ""
+		os.Exit(1)
 	}
 	return string(content)
 }
