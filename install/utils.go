@@ -286,8 +286,8 @@ func UrlGetMd5(downloadUrl string) string {
 }
 
 //判断当前host的hostname
-func isHostName(host string) string {
-	hostString := SSHConfig.CmdToString(host, "kubectl get nodes | grep -v NAME  | awk '{print $1}'")
+func isHostName(master, host string) string {
+	hostString := SSHConfig.CmdToString(master, "kubectl get nodes | grep -v NAME  | awk '{print $1}'")
 	hostString = strings.ReplaceAll(hostString, "\r\n", ",")
 	hostName := SSHConfig.CmdToString(host, "hostname")
 	hostName = strings.ReplaceAll(hostName, "\r\n", "")
