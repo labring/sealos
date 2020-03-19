@@ -97,9 +97,9 @@ func (s *SealosInstaller) Clean() {
 func cleanNode(node string) {
 	clean(node)
 	logger.Debug("clean node in master")
-	hostname := isHostName(node)
-	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
+		hostname := isHostName(MasterIPs[0], node)
+		cmd := "kubectl delete node %s"
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 	}
 	//remove node
@@ -110,10 +110,9 @@ func cleanMaster(master string) {
 	clean(master)
 	logger.Debug("clean node in master")
 	MasterIPs = SliceRemoveStr(MasterIPs, master)
-	hostname := isHostName(master)
-
-	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
+		hostname := isHostName(MasterIPs[0], master)
+		cmd := "kubectl delete node %s"
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 	}
 	//清空所有的nodes的数据
