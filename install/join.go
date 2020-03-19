@@ -3,6 +3,8 @@ package install
 import (
 	"fmt"
 	"github.com/fanux/sealos/ipvs"
+	"github.com/wonderivan/logger"
+	"strings"
 	"sync"
 )
 
@@ -52,13 +54,17 @@ func joinNodesFunc(joinNodes []string) {
 }
 
 //GeneratorToken is
+//这里主要是为了获取CertificateKey
 func (s *SealosInstaller) GeneratorCerts() {
 	cmd := `kubeadm init phase upload-certs --upload-certs`
-	output := SSHConfig.Cmd(s.Masters[0], cmd)
-	decodeCertCmd(output)
-	cmd = fmt.Sprintf("kubeadm token create --certificate-key %s --print-join-command", CertificateKey)
-	output = SSHConfig.Cmd(s.Masters[0], cmd)
-	decodeOutput(output)
+	output := SSHConfig.CmdToString(s.Masters[0], cmd)
+	logger.Debug("[globals]decodeCertCmd: %s", output)
+	slice := strings.Split(output, "Using certificate key:\r\n")
+	slice1 := strings.Split(slice[1], "\r\n")
+	CertificateKey = slice1[0]
+	cmd = "kubeadm token create --print-join-command"
+	out := SSHConfig.Cmd(s.Masters[0], cmd)
+	decodeOutput(out)
 }
 
 //GeneratorToken is
