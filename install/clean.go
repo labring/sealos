@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/fanux/sealos/ipvs"
 	"github.com/wonderivan/logger"
+	"os"
 	"strings"
 	"sync"
-
 )
 
 //BuildClean is
@@ -16,19 +16,50 @@ func BuildClean(deleteNodes, deleteMasters []string) {
 	nodes := ParseIPs(NodeIPs)
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
+		if !CleanForce { // flase
+			prompt := fmt.Sprintf("clean command will clean masters [%s], continue clean (y/n)?", strings.Join(deleteMasters, ","))
+			result := Confirm(prompt)
+			if !result {
+				logger.Debug("clean masters command is skip")
+				goto node
+			}
+		}
 		//只清除masters
 		i.Masters = deleteMasters
 	}
+
 	//2. 删除nodes
+node:
 	if len(deleteNodes) != 0 {
+		if !CleanForce { // flase
+			prompt := fmt.Sprintf("clean command will clean nodes [%s], continue clean (y/n)?", strings.Join(deleteNodes, ","))
+			result := Confirm(prompt)
+			if !result {
+				logger.Debug("clean nodes command is skip")
+				goto all
+			}
+		}
 		//只清除nodes
 		i.Nodes = deleteNodes
 	}
+	//3. 删除所有节点
+all:
 	if len(deleteNodes) == 0 && len(deleteMasters) == 0 {
+		if !CleanForce { // flase
+			result := Confirm(`clean command will clean all masters and nodes, continue clean (y/n)?`)
+			if !result {
+				logger.Debug("clean all node command is skip")
+				goto end
+			}
+		}
 		// 所有master节点
 		i.Masters = masters
 		// 所有node节点
 		i.Nodes = nodes
+	}
+end:
+	if len(i.Masters) == 0 && len(i.Nodes) == 0 {
+		os.Exit(-1)
 	}
 	i.CheckValid()
 	i.Clean()
@@ -49,6 +80,7 @@ func (s *SealosInstaller) Clean() {
 			}(node)
 		}
 	}
+	wg.Wait()
 	if len(s.Masters) > 0 {
 		//2. 先删除master
 		for _, master := range s.Masters {
@@ -90,6 +122,7 @@ func cleanMaster(master string) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			SSHConfig.Cmd(node, "sleep 6")
 			SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
 			SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
 		}(node)
