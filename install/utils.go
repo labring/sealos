@@ -246,7 +246,7 @@ func GetConfirmResult(str string) bool {
 func Confirm(prompt string) bool {
 	var (
 		inputStr string
-		err error
+		err      error
 	)
 	_, err = fmt.Fprint(os.Stdout, prompt)
 	if err != nil {
@@ -262,7 +262,6 @@ func Confirm(prompt string) bool {
 
 	return GetConfirmResult(inputStr)
 }
-
 
 func SliceRemoveStr(ss []string, s string) (result []string) {
 	for _, v := range ss {
@@ -284,4 +283,28 @@ func UrlGetMd5(downloadUrl string) string {
 		}
 	}
 	return ""
+}
+
+//判断当前host的hostname
+func isHostName(host string) string {
+	hostString := SSHConfig.CmdToString(host, "kubectl get nodes | grep -v NAME  | awk '{print $1}'")
+	hostString = strings.ReplaceAll(hostString, "\r\n", ",")
+	hostName := SSHConfig.CmdToString(host, "hostname")
+	hostName = strings.ReplaceAll(hostName, "\r\n", "")
+	logger.Debug("hosts %v", hostString)
+	hosts := strings.Split(hostString, ",")
+	var name string
+	for _, h := range hosts {
+		if strings.TrimSpace(h) == "" {
+			continue
+		} else {
+			hh := strings.ToLower(h)
+			fromH := strings.ToLower(hostName)
+			if hh == fromH {
+				name = h
+				break
+			}
+		}
+	}
+	return name
 }

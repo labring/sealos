@@ -97,7 +97,7 @@ func (s *SealosInstaller) Clean() {
 func cleanNode(node string) {
 	clean(node)
 	logger.Debug("clean node in master")
-	hostname := SSHConfig.CmdToString(node, "cat /etc/hostname")
+	hostname := isHostName(node)
 	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
@@ -110,7 +110,8 @@ func cleanMaster(master string) {
 	clean(master)
 	logger.Debug("clean node in master")
 	MasterIPs = SliceRemoveStr(MasterIPs, master)
-	hostname := SSHConfig.CmdToString(master, "cat /etc/hostname")
+	hostname := isHostName(master)
+
 	cmd := "kubectl delete node %s"
 	if len(MasterIPs) > 0 {
 		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
