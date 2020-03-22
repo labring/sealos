@@ -4,6 +4,10 @@ type TencentProvider struct {
 	Config
 }
 
+func (t *TencentProvider) QueryFlavor(flavor string) string {
+	panic("implement me")
+}
+
 func (t *TencentProvider) Create(request Request) (*Response, error) {
 	panic("implement me")
 }

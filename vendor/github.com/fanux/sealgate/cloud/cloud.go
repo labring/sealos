@@ -68,6 +68,7 @@ type Response struct {
 type Interface interface {
 	Create(request Request) (*Response, error)
 	Delete(...string) error
+	QueryFlavor(flavor string) string
 }
 
 func NewProvider(config Config) Interface {
