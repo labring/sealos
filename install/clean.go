@@ -116,9 +116,10 @@ func (s *SealosClean) cleanNode(node string) {
 
 func (s *SealosClean) cleanMaster(master string) {
 	clean(master)
-	logger.Debug("clean node in master")
+	//remove master
 	MasterIPs = SliceRemoveStr(MasterIPs, master)
 	if !s.cleanAll {
+		logger.Debug("clean node in master")
 		if len(MasterIPs) > 0 {
 			hostname := isHostName(MasterIPs[0], master)
 			cmd := "kubectl delete node %s"
