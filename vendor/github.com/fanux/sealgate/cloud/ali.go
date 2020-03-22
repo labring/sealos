@@ -2,6 +2,7 @@ package cloud
 
 import (
 	"fmt"
+	"github.com/wonderivan/logger"
 	"strconv"
 	"strings"
 	"time"
@@ -43,7 +44,7 @@ func (a *AliProvider) secureGroupID(r Request, vpcName string) (string, error) {
 	res, err := a.client.AuthorizeSecurityGroup(req)
 	if err != nil {
 		fmt.Print(err.Error())
-		return "",err
+		return "", err
 	}
 	fmt.Printf("response is %#v\n", res)
 
@@ -164,13 +165,11 @@ func (a *AliProvider) Create(r Request) (*Response, error) {
 	request.Scheme = "https"
 	name := fmt.Sprintf("%s-[0,%d]", r.NamePrefix, r.Num-1)
 
-	/*
-		f := a.queryFlavor(r.Flavor)
-		if f == "" {
-			return nil, fmt.Errorf("query vm flavor failed")
-		}
-	*/
-	request.InstanceType = "ecs.c5.xlarge"
+	f := a.QueryFlavor(r.Flavor)
+	if f == "" {
+		return nil, fmt.Errorf("query vm flavor failed")
+	}
+	request.InstanceType = f
 	request.InstanceName = name
 	request.HostName = name
 	request.InternetChargeType = "PayByTraffic"
@@ -269,20 +268,32 @@ func (a *AliProvider) flavor(flavor string) string {
 
 //1C2G return 1,2
 func getCPUandMemory(flavor string) (int, float64) {
-	b := []byte(flavor)
-	cpu, err := strconv.Atoi(string(b[0]))
-	if err != nil {
+	temp := strings.Split(flavor, "C")
+	if len(temp) != 2 {
+		logger.Error("%s illegal, must link 2C4G..", flavor)
 		return 0, 0
 	}
-	mem, err := strconv.Atoi(string(b[2]))
+	cpu, err := strconv.Atoi(temp[0])
 	if err != nil {
+		logger.Error("flavor cpu core failed %d %s", cpu, err)
+		return 0, 0
+	}
+
+	mtemp := strings.Split(temp[1], "G")
+	if len(mtemp) < 1 {
+		logger.Error("memory %s illegal, must link 2C4G..", flavor)
+		return 0, 0
+	}
+	mem, err := strconv.Atoi(mtemp[0])
+	if err != nil {
+		logger.Error("flavor cpu core failed %d %s", mem, err)
 		return 0, 0
 	}
 
 	return cpu, float64(mem)
 }
 
-func (a *AliProvider) queryFlavor(flavor string) string {
+func (a *AliProvider) QueryFlavor(flavor string) string {
 	request := ecs.CreateDescribeInstanceTypesRequest()
 	request.Scheme = "https"
 
@@ -296,11 +307,10 @@ func (a *AliProvider) queryFlavor(flavor string) string {
 	if err != nil {
 		fmt.Print(err.Error())
 	}
-	fmt.Printf("response is %#v\n", response)
 
 	for _, res := range response.InstanceTypes.InstanceType {
 		if res.MemorySize == mem && res.CpuCoreCount == cpu {
-			fmt.Printf("flavor is : %s", res.InstanceTypeId)
+			fmt.Printf("flavor is : %s %d %f %s", res.InstanceTypeId, res.CpuCoreCount, res.MemorySize, flavor)
 			return res.InstanceTypeId
 		}
 	}
