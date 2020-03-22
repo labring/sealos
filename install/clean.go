@@ -143,8 +143,6 @@ func (s *SealosClean) cleanMaster(master string) {
 func clean(host string) {
 	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
 	SSHConfig.Cmd(host, cmd)
-	cmd = "ipvsadm -C && ipvsadm -Ln"
-	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
 	SSHConfig.Cmd(host, cmd)
 	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
