@@ -85,8 +85,8 @@ func (s *SealosClean) Clean() {
 				s.cleanNode(node)
 			}(node)
 		}
+		wg.Wait()
 	}
-	wg.Wait()
 	if len(s.Masters) > 0 {
 		//2. 先删除master
 		for _, master := range s.Masters {
@@ -96,8 +96,9 @@ func (s *SealosClean) Clean() {
 				s.cleanMaster(master)
 			}(master)
 		}
+		wg.Wait()
 	}
-	wg.Wait()
+
 }
 
 func (s *SealosClean) cleanNode(node string) {
