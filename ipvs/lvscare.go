@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	"strings"
 )
 
 const defaultImage = "fanux/lvscare:latest"
@@ -21,6 +22,9 @@ func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	}
 	args := []string{"care", "--vs", vip + ":6443", "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {
+		if strings.Contains(m, ":") {
+			m = strings.Split(m, ":")[0]
+		}
 		args = append(args, "--rs")
 		args = append(args, m+":6443")
 	}

@@ -9,9 +9,14 @@ import (
 	"sync"
 )
 
+type SealosClean struct {
+	SealosInstaller
+	cleanAll bool
+}
+
 //BuildClean is
 func BuildClean(deleteNodes, deleteMasters []string) {
-	i := &SealosInstaller{}
+	i := &SealosClean{cleanAll: false}
 	masters := ParseIPs(MasterIPs)
 	nodes := ParseIPs(NodeIPs)
 	//1. 删除masters
@@ -56,6 +61,7 @@ all:
 		i.Masters = masters
 		// 所有node节点
 		i.Nodes = nodes
+		i.cleanAll = true
 	}
 end:
 	if len(i.Masters) == 0 && len(i.Nodes) == 0 {
@@ -66,7 +72,7 @@ end:
 }
 
 //CleanCluster is
-func (s *SealosInstaller) Clean() {
+func (s *SealosClean) Clean() {
 	var wg sync.WaitGroup
 	//s 是要删除的数据
 	//全局是当前的数据
@@ -76,7 +82,7 @@ func (s *SealosInstaller) Clean() {
 			wg.Add(1)
 			go func(node string) {
 				defer wg.Done()
-				cleanNode(node)
+				s.cleanNode(node)
 			}(node)
 		}
 		wg.Wait()
@@ -87,7 +93,7 @@ func (s *SealosInstaller) Clean() {
 			wg.Add(1)
 			go func(master string) {
 				defer wg.Done()
-				cleanMaster(master)
+				s.cleanMaster(master)
 			}(master)
 		}
 		wg.Wait()
@@ -95,41 +101,44 @@ func (s *SealosInstaller) Clean() {
 
 }
 
-func cleanNode(node string) {
+func (s *SealosClean) cleanNode(node string) {
 	clean(node)
-	logger.Debug("clean node in master")
-	if len(MasterIPs) > 0 {
-		hostname := isHostName(MasterIPs[0], node)
-		cmd := "kubectl delete node %s"
-		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
-	}
 	//remove node
 	NodeIPs = SliceRemoveStr(NodeIPs, node)
+	if !s.cleanAll {
+		logger.Debug("clean node in master")
+		if len(MasterIPs) > 0 {
+			hostname := isHostName(MasterIPs[0], node)
+			cmd := "kubectl delete node %s"
+			SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+		}
+	}
 }
 
-func cleanMaster(master string) {
+func (s *SealosClean) cleanMaster(master string) {
 	clean(master)
-	logger.Debug("clean node in master")
+	//remove master
 	MasterIPs = SliceRemoveStr(MasterIPs, master)
-	if len(MasterIPs) > 0 {
-		hostname := isHostName(MasterIPs[0], master)
-		cmd := "kubectl delete node %s"
-		SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+	if !s.cleanAll {
+		logger.Debug("clean node in master")
+		if len(MasterIPs) > 0 {
+			hostname := isHostName(MasterIPs[0], master)
+			cmd := "kubectl delete node %s"
+			SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+		}
+		//清空所有的nodes的数据
+		yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+		var wg sync.WaitGroup
+		for _, node := range NodeIPs {
+			wg.Add(1)
+			go func(node string) {
+				defer wg.Done()
+				SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
+				SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+			}(node)
+		}
+		wg.Wait()
 	}
-	//清空所有的nodes的数据
-	yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
-	var wg sync.WaitGroup
-	for _, node := range NodeIPs {
-		wg.Add(1)
-		go func(node string) {
-			defer wg.Done()
-			SSHConfig.Cmd(node, "sleep 6")
-			SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-			SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
-		}(node)
-	}
-	wg.Wait()
-
 }
 
 func clean(host string) {
