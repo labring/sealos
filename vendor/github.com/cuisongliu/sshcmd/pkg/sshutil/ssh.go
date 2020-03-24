@@ -38,7 +38,7 @@ func (ss *SSH) CmdToString(host, cmd, spilt string) string {
 	if data != nil {
 		str := string(data)
 		str = strings.ReplaceAll(str, "\r\n", spilt)
-		return string(data)
+		return str
 	}
 	return ""
 }
