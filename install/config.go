@@ -92,7 +92,7 @@ func (c *SealConfig) Load(path string) {
 
 	err = yaml.Unmarshal(y, c)
 	if err != nil {
-		logger.Error("unmarsha config file failed: %s", err)
+		logger.Error("unmarshal config file failed: %s", err)
 	}
 
 	MasterIPs = c.Masters
@@ -118,7 +118,7 @@ func Load(path string, content interface{}) error {
 
 	err = yaml.Unmarshal(y, content)
 	if err != nil {
-		logger.Error("unmarsha config file failed: %s", err)
+		logger.Error("unmarshal config file failed: %s", err)
 	}
 	return nil
 }
@@ -139,7 +139,7 @@ func (c *SealConfig) showDefaultConfig() {
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
-		logger.Error("marsha config file failed: %s", err)
+		logger.Error("marshal config file failed: %s", err)
 	}
 
 	logger.Info("\n\n%s\n\n", string(y))
