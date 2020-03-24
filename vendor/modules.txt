@@ -10,7 +10,7 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
-# github.com/cuisongliu/sshcmd v0.0.0-20200324165749-69d4a2b195b4
+# github.com/cuisongliu/sshcmd v0.0.0-20200324171807-1615e61773b1
 github.com/cuisongliu/sshcmd/pkg/cmd
 github.com/cuisongliu/sshcmd/pkg/filesize
 github.com/cuisongliu/sshcmd/pkg/md5sum
