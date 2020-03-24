@@ -36,7 +36,7 @@ func (s *SealosInstaller) CheckValid() {
 			logger.Error("[%s] ------------ error[%s]", h, err)
 			errors = append(errors, err)
 		} else {
-			hostname := SSHConfig.CmdToString(h, "hostname") //获取主机名
+			hostname := SSHConfig.CmdToString(h, "hostname", "") //获取主机名
 			if _, ok := dict[hostname]; !ok {
 				dict[hostname] = true //不冲突, 主机名加入字典
 			} else {
