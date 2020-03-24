@@ -17,6 +17,8 @@ type MetaData struct {
 	CIDR      string
 	// ipip mode for calico.yml
 	IPIP      bool
+	// MTU size
+	MTU string
 }
 
 

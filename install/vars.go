@@ -26,6 +26,8 @@ var (
 	Interface string
 	// the ipip mode of the calico
 	IPIP bool
+	// mtu size
+	MTU string
 
 	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
 
