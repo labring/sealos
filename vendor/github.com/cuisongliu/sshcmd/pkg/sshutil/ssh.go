@@ -1,8 +1,11 @@
 package sshutil
 
-import "github.com/wonderivan/logger"
+import (
+	"github.com/wonderivan/logger"
+	"strings"
+)
 
-//Cmd is
+//Cmd is in host exec cmd
 func (ss *SSH) Cmd(host string, cmd string) []byte {
 	logger.Info("[%s]exec cmd is : %s", host, cmd)
 	session, err := ss.Connect(host)
@@ -29,10 +32,13 @@ func (ss *SSH) Cmd(host string, cmd string) []byte {
 	return b
 }
 
-func (ss *SSH) CmdToString(host, cmd string) string {
+//CmdToString is in host exec cmd and replace to spilt str
+func (ss *SSH) CmdToString(host, cmd, spilt string) string {
 	data := ss.Cmd(host, cmd)
 	if data != nil {
-		return string(data)
+		str := string(data)
+		str = strings.ReplaceAll(str, "\r\n", spilt)
+		return str
 	}
 	return ""
 }

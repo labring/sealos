@@ -10,11 +10,11 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
-# github.com/cuisongliu/sshcmd v1.4.2
+# github.com/cuisongliu/sshcmd v0.0.0-20200324095132-757019718a50
 github.com/cuisongliu/sshcmd/pkg/filesize
 github.com/cuisongliu/sshcmd/pkg/md5sum
 github.com/cuisongliu/sshcmd/pkg/sshutil
-# github.com/fanux/sealgate v0.0.4
+# github.com/fanux/sealgate v0.0.5
 github.com/fanux/sealgate/cloud
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify

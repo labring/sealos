@@ -17,7 +17,6 @@ package cmd
 import (
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // cleanCmd represents the clean command
@@ -26,10 +25,6 @@ var cleanCmd = &cobra.Command{
 	Short: "Simplest way to clean your kubernets HA cluster",
 	Long:  `sealos clean`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if !install.CleanForce { // flase
-			result := install.Confirm(`clean command will clean all masters and nodes, continue clean (y/n)?`)
-			if !result { os.Exit(0) }
-		}
 		deleteNodes := install.ParseIPs(install.NodeIPs)
 		deleteMasters := install.ParseIPs(install.MasterIPs)
 		c := &install.SealConfig{}

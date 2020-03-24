@@ -25,11 +25,11 @@ spec:
     - --health-schem
     - https
     - --rs
-    - 192.168.0.2:6443
+    - 116.31.96.134:6443
     - --rs
-    - 192.168.0.4:6443
+    - 116.31.96.135:6443
     - --rs
-    - 192.168.0.3:6443
+    - 116.31.96.136:6443
     command:
     - /usr/bin/lvscare
     image: fanux/lvscare:latest
@@ -56,13 +56,13 @@ func TestLvsStaticPodYaml(t *testing.T) {
 		want string
 	}{
 		{
-		"test generate lvscare static pod",
-		args{
-			"10.10.10.10",
-			[]string{"192.168.0.2","192.168.0.4","192.168.0.3"},
-			"",
-		},
-		want[0],
+			"test generate lvscare static pod",
+			args{
+				"10.10.10.10",
+				[]string{"116.31.96.134:3126", "116.31.96.135:3126", "116.31.96.136:3126"},
+				"",
+			},
+			want[0],
 		},
 	}
 	for _, tt := range tests {
