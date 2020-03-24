@@ -34,7 +34,7 @@ func (ss *SSH) CopyForMD5(host, localFilePath, remoteFilePath, md5 string) bool 
 }
 func (ss *SSH) Md5Sum(host, remoteFilePath string) string {
 	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFilePath)
-	remoteMD5 := ss.CmdToString(host, cmd)
+	remoteMD5 := ss.CmdToString(host, cmd, "")
 	return remoteMD5
 }
 

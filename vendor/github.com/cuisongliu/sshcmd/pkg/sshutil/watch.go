@@ -19,7 +19,7 @@ func (ss *SSH) LoggerFileSize(host, filename string, size int) {
 	for {
 		select {
 		case <-t.C:
-			length := ss.CmdToString(host, "ls -l "+filename+" | awk '{print $5}'")
+			length := ss.CmdToString(host, "ls -l "+filename+" | awk '{print $5}'", "")
 			length = strings.Replace(length, "\n", "", -1)
 			length = strings.Replace(length, "\r", "", -1)
 			lengthByte, _ := strconv.Atoi(length)
