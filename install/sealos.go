@@ -104,11 +104,3 @@ func decodeJoinCmd(cmd string) {
 		}
 	}
 }
-
-func decodeCertCmd(output []byte) {
-	s0 := string(output)
-	logger.Debug("[globals]decodeCertCmd: %s", s0)
-	slice := strings.Split(s0, "Using certificate key:\r\n")
-	slice1 := strings.Split(slice[1], "\r\n")
-	CertificateKey = slice1[0]
-}

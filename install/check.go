@@ -1,11 +1,9 @@
 package install
 
 import (
-	"bytes"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh"
 	"os"
-	"strings"
 )
 
 //CheckValid is
@@ -30,7 +28,7 @@ func (s *SealosInstaller) CheckValid() {
 	}
 	var session *ssh.Session
 	var errors []error
-	var hostnames []string
+	dict := make(map[string]bool)
 	for _, h := range s.Hosts {
 		session, err := SSHConfig.Connect(h)
 		if err != nil {
@@ -38,21 +36,16 @@ func (s *SealosInstaller) CheckValid() {
 			logger.Error("[%s] ------------ error[%s]", h, err)
 			errors = append(errors, err)
 		} else {
-			//get hostnames
-			var stdOut, stdErr bytes.Buffer
-			session.Stdout = &stdOut
-			session.Stderr = &stdErr
-			session.Run("hostname")
-			ret := strings.Replace( stdOut.String(), "\n", "", -1 )
-			hostnames=append(hostnames,ret)
-
+			hostname := SSHConfig.CmdToString(h, "hostname", "") //获取主机名
+			if _, ok := dict[hostname]; !ok {
+				dict[hostname] = true //不冲突, 主机名加入字典
+			} else {
+				logger.Error("duplicate hostnames is not allowed")
+				os.Exit(1)
+			}
 			logger.Crit("[%s]  ------------ check ok", h)
 			logger.Crit("[%s]  ------------ session[%p]", h, session)
 		}
-	}
-	if len(hostnames) != len(removeDuplicateElement(hostnames)) {
-		logger.Error("duplicate hostnames is not allowed")
-		os.Exit(1)
 	}
 	defer func() {
 		if session != nil {
@@ -63,16 +56,4 @@ func (s *SealosInstaller) CheckValid() {
 		logger.Error("has some linux server is connection ssh is failed")
 		os.Exit(1)
 	}
-}
-
-func removeDuplicateElement(addrs []string) []string {
-	result := make([]string, 0, len(addrs))
-	temp := map[string]struct{}{}
-	for _, item := range addrs {
-		if _, ok := temp[item]; !ok {
-			temp[item] = struct{}{}
-			result = append(result, item)
-		}
-	}
-	return result
 }
