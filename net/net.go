@@ -15,7 +15,10 @@ const (
 type MetaData struct {
 	Interface string
 	CIDR      string
+	// ipip mode for calico.yml
+	IPIP      bool
 }
+
 
 // Net is CNI interface
 type Net interface {
@@ -24,6 +27,7 @@ type Net interface {
 	// return cni template file
 	Template() string
 }
+
 
 func NewNetwork(t string, metadata MetaData) Net {
 	switch t {

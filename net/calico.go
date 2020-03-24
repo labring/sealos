@@ -630,7 +630,7 @@ spec:
               value: "interface={{ .Interface }}"
             # Enable IPIP
             - name: CALICO_IPV4POOL_IPIP
-              value: "Always"
+              value: "{{if not .IPIP }}Off{{else}}Always{{end}}"
             # Set MTU for tunnel device used if ipip is enabled
             - name: FELIX_IPINIPMTU
               valueFrom:
