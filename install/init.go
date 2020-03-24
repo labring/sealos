@@ -23,7 +23,7 @@ func BuildInit() {
 	}
 	i.CheckValid()
 	i.Print()
-	i.SendPackage("kube")
+	i.SendPackage()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
