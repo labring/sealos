@@ -57,7 +57,7 @@ func joinNodesFunc(joinNodes []string) {
 //这里主要是为了获取CertificateKey
 func (s *SealosInstaller) GeneratorCerts() {
 	cmd := `kubeadm init phase upload-certs --upload-certs`
-	output := SSHConfig.CmdToString(s.Masters[0], cmd)
+	output := SSHConfig.CmdToString(s.Masters[0], cmd, "\r\n")
 	logger.Debug("[globals]decodeCertCmd: %s", output)
 	slice := strings.Split(output, "Using certificate key:\r\n")
 	slice1 := strings.Split(slice[1], "\r\n")

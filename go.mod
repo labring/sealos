@@ -3,7 +3,7 @@ module github.com/fanux/sealos
 go 1.13
 
 require (
-	github.com/cuisongliu/sshcmd v1.4.3
+	github.com/cuisongliu/sshcmd v0.0.0-20200324053034-6eac7d989bb2
 
 	github.com/fanux/sealgate v0.0.5
 	github.com/mitchellh/go-homedir v1.1.0
