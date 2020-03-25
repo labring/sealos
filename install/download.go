@@ -17,6 +17,7 @@ import (
 //hook: cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh
 func SendPackage(location string, hosts []string, dst, hook string) {
 	location, md5 := downloadFile(location)
+	PkgUrl = location
 	pkg := path.Base(location)
 	fullPath := fmt.Sprintf("%s/%s", dst, pkg)
 	mkDstDir := fmt.Sprintf("mkdir -p %s || true", dst)
