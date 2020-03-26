@@ -109,7 +109,7 @@ func (s *SealosInstaller) JoinNodes() {
 			cmd := s.Command(Version, JoinNode)
 			//create lvscare static pod
 			yaml := ipvs.LvsStaticPodYaml(VIP,MasterIPs,"")
-			SSHConfig.Cmd(node,fmt.Sprintf("echo %s > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
+			SSHConfig.Cmd(node,fmt.Sprintf("echo \"%s\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			SSHConfig.Cmd(node, cmd)
 			cleaninstall := `rm -rf /root/kube`
 			SSHConfig.Cmd(node, cleaninstall)
