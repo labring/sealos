@@ -26,8 +26,8 @@ var initCmd = &cobra.Command{
 	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --user root --passwd your-server-password`,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := &install.SealConfig{}
-		c.Dump("")
 		install.BuildInit()
+		c.Dump("")
 	},
 }
 
