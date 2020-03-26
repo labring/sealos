@@ -14,6 +14,19 @@ steps:
   commands:
       - go build -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
 
+- name: publish-oss
+  image: fanux/ossutil
+  environment:
+    OSS_CONFIG:
+      from_secret: oss-config
+  commands:
+    - echo $OSS_CONFIG |base64 --decode >> ~/.ossutilconfig
+    - ossutil64 cp sealos oss://sealyun/${DRONE_TAG=latest}/sealos
+    - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
+  when:
+    event:
+      - tag
+
 - name: publish
   image: plugins/github-release
   settings:
