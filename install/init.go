@@ -58,13 +58,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		templateData = string(TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
-	SSHConfig.Cmd(s.Masters[0], cmd)
+	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 }
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
-	SSHConfig.Cmd(s.Masters[0], cmd)
+	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
 
@@ -85,9 +85,9 @@ func (s *SealosInstaller) InstallMaster0() {
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 	netyaml := net.NewNetwork(Network, net.MetaData{
 		Interface: Interface,
-		CIDR: PodCIDR,
-		IPIP:IPIP,
-		MTU: MTU,
+		CIDR:      PodCIDR,
+		IPIP:      IPIP,
+		MTU:       MTU,
 	}).Manifests("")
 
 	logger.Info("calico yaml is : \n", netyaml)
