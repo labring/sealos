@@ -95,8 +95,9 @@ func (s *SealosInstaller) JoinNodes() {
 	var masters string
 	var wg sync.WaitGroup
 	for _, master := range s.Masters {
-		masters += fmt.Sprintf(" --master %s:6443", IpFormat(master))
+		masters += fmt.Sprintf(" --rs %s:6443", IpFormat(master))
 	}
+	ipvsCmd := fmt.Sprintf("sealos ipvs --vs %s:6443 %s --health-path /healthz --health-schem https --run-once",VIP, masters)
 
 	for _, node := range s.Nodes {
 		wg.Add(1)
@@ -104,8 +105,11 @@ func (s *SealosInstaller) JoinNodes() {
 			defer wg.Done()
 			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
 			SSHConfig.Cmd(node, cmdHosts)
+			SSHConfig.Cmd(node,ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)
-			cmd += masters
+			//create lvscare static pod
+			yaml := ipvs.LvsStaticPodYaml(VIP,MasterIPs,"")
+			SSHConfig.Cmd(node,fmt.Sprintf("echo %s > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			SSHConfig.Cmd(node, cmd)
 			cleaninstall := `rm -rf /root/kube`
 			SSHConfig.Cmd(node, cleaninstall)
