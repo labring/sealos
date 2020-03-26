@@ -19,11 +19,14 @@ func (ss *SSH) Connect(host string) (*ssh.Session, error) {
 	config := ssh.Config{
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
 	}
-
+	DefaultTimeout := time.Duration(1) * time.Minute
+	if ss.Timeout == nil {
+		ss.Timeout = &DefaultTimeout
+	}
 	clientConfig := &ssh.ClientConfig{
 		User:    ss.User,
 		Auth:    auth,
-		Timeout: time.Duration(1) * time.Minute,
+		Timeout: *ss.Timeout,
 		Config:  config,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil

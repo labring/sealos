@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wonderivan/logger"
 	"os/exec"
+	"strings"
 )
 
 func FromLocal(localPath string) string {
@@ -14,5 +15,8 @@ func FromLocal(localPath string) string {
 		logger.Error(err)
 	}
 	md5 := string(out)
+	md5 = strings.ReplaceAll(md5, "\n", "")
+	md5 = strings.ReplaceAll(md5, "\r", "")
+
 	return md5
 }
