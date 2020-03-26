@@ -16,7 +16,7 @@ func Cmd(name string, arg ...string) {
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()
 	if err != nil {
-		logger.Error("os call error.", err)
+		logger.Error("[os]os call error.", err)
 	}
 }
 
@@ -30,7 +30,7 @@ func CmdToString(name string, arg ...string) string {
 	cmd.Stderr = &b
 	err := cmd.Run()
 	if err != nil {
-		logger.Error("os call error.", err)
+		logger.Error("[os]os call error.", err)
 		return ""
 	}
 	return b.String()

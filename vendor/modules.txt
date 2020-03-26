@@ -10,7 +10,7 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses
 github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
-# github.com/cuisongliu/sshcmd v0.0.0-20200324171807-1615e61773b1
+# github.com/cuisongliu/sshcmd v1.5.1
 github.com/cuisongliu/sshcmd/pkg/cmd
 github.com/cuisongliu/sshcmd/pkg/filesize
 github.com/cuisongliu/sshcmd/pkg/md5sum
@@ -111,7 +111,7 @@ golang.org/x/net/http/httpguts
 golang.org/x/net/http2
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
-# golang.org/x/sys v0.0.0-20190826190057-c7b8b68b1456
+# golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae
 golang.org/x/sys/cpu
 golang.org/x/sys/unix
 golang.org/x/sys/windows
