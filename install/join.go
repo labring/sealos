@@ -27,7 +27,7 @@ func joinMastersFunc(joinMasters []string) {
 		Nodes:   nodes,
 	}
 	i.CheckValid()
-	i.SendPackage("kube")
+	i.SendPackage()
 	i.GeneratorCerts()
 	i.JoinMasters(joinMasters)
 	//master join to MasterIPs
@@ -46,7 +46,7 @@ func joinNodesFunc(joinNodes []string) {
 		Nodes:   nodes,
 	}
 	i.CheckValid()
-	i.SendPackage("kube")
+	i.SendPackage()
 	i.GeneratorToken()
 	i.JoinNodes()
 	//node join to NodeIPs

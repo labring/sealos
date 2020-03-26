@@ -2,21 +2,15 @@ package install
 
 import (
 	"fmt"
-	"github.com/cuisongliu/sshcmd/pkg/filesize"
 	"github.com/wonderivan/logger"
 	"math/big"
 	"math/rand"
 	"net"
-	"net/url"
 	"os"
-	"path"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
-
-const oneMBByte = 1024 * 1024
 
 //VersionToInt v1.15.6  => 115
 func VersionToInt(version string) int {
@@ -36,119 +30,6 @@ func VersionToInt(version string) int {
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	return ipAndPort[0]
-}
-
-func SendPackage(url string, hosts []string, packName string) {
-	pkg := path.Base(url)
-	//only http
-	isHttp := strings.HasPrefix(url, "http")
-	wgetCommand := ""
-	if isHttp {
-		wgetParam := ""
-		if strings.HasPrefix(url, "https") {
-			wgetParam = "--no-check-certificate"
-		}
-		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
-	}
-	remoteCmd := fmt.Sprintf("cd /root &&  %s %s && tar zxvf %s", wgetCommand, url, pkg)
-	localCmd := fmt.Sprintf("cd /root && rm -rf %s && tar zxvf %s ", packName, pkg)
-	kubeLocal := fmt.Sprintf("/root/%s", pkg)
-	var kubeCmd string
-	if packName == "kube" {
-		kubeCmd = "cd /root/kube/shell && sh init.sh"
-	} else {
-		kubeCmd = fmt.Sprintf("cd /root/%s && docker load -i images.tar", packName)
-	}
-
-	var wm sync.WaitGroup
-	for _, host := range hosts {
-		wm.Add(1)
-		go func(host string) {
-			defer wm.Done()
-			logger.Debug("[%s]please wait for tar zxvf exec", host)
-			if SSHConfig.IsFilExist(host, kubeLocal) {
-				logger.Warn("[%s]SendPackage: file is exist", host)
-				SSHConfig.Cmd(host, localCmd)
-			} else {
-				if isHttp {
-					go SSHConfig.LoggerFileSize(host, kubeLocal, int(filesize.Do(url)))
-					SSHConfig.Cmd(host, remoteCmd)
-					rMD5 := SSHConfig.Md5Sum(host, kubeLocal) //获取已经上传文件的md5
-					uMd5 := UrlGetMd5(url)                    //获取url的md5值
-					logger.Debug("[%s] remote file local %s, md5 is %s", host, kubeLocal, rMD5)
-					logger.Debug("[%s] url is %s, md5 is %s", host, url, uMd5)
-					if strings.TrimSpace(rMD5) == strings.TrimSpace(uMd5) {
-						logger.Info("[%s]file md5 validate success", host)
-					} else {
-						logger.Error("[%s]copy file md5 validate failed", host)
-					}
-				} else {
-					if ok := SSHConfig.CopyForMD5(host, url, kubeLocal, ""); ok {
-						SSHConfig.Cmd(host, localCmd)
-						logger.Info("[%s]file md5 validate success", host)
-					} else {
-						logger.Error("[%s]file md5 validate failed", host)
-					}
-				}
-			}
-			SSHConfig.Cmd(host, kubeCmd)
-		}(host)
-	}
-	wm.Wait()
-}
-
-// FetchPackage if url exist wget it, or scp the local package to hosts
-// dst is the remote offline path like /root
-func FetchPackage(url string, hosts []string, dst string) {
-	pkg := path.Base(url)
-	fullDst := fmt.Sprintf("%s/%s", dst, pkg)
-	mkdstdir := fmt.Sprintf("mkdir -p %s || true", dst)
-
-	//only http
-	isHttp := strings.HasPrefix(url, "http")
-	wgetCommand := ""
-	if isHttp {
-		wgetParam := ""
-		if strings.HasPrefix(url, "https") {
-			wgetParam = "--no-check-certificate"
-		}
-		wgetCommand = fmt.Sprintf(" wget %s ", wgetParam)
-	}
-	remoteCmd := fmt.Sprintf("cd %s &&  %s %s", dst, wgetCommand, url)
-
-	var wm sync.WaitGroup
-	for _, host := range hosts {
-		wm.Add(1)
-		go func(host string) {
-			defer wm.Done()
-			logger.Debug("[%s]please wait for copy offline package", host)
-			SSHConfig.Cmd(host, mkdstdir)
-			if SSHConfig.IsFilExist(host, fullDst) {
-				logger.Warn("[%s]SendPackage: [%s] file is exist", host, fullDst)
-			} else {
-				if isHttp {
-					go SSHConfig.LoggerFileSize(host, fullDst, int(filesize.Do(url)))
-					SSHConfig.Cmd(host, remoteCmd)
-					rMD5 := SSHConfig.Md5Sum(host, fullDst) //获取已经上传文件的md5
-					uMd5 := UrlGetMd5(url)                  //获取url的md5值
-					logger.Debug("[%s] remote file local %s, md5 is %s", host, fullDst, rMD5)
-					logger.Debug("[%s] url is %s, md5 is %s", host, url, uMd5)
-					if strings.TrimSpace(rMD5) == strings.TrimSpace(uMd5) {
-						logger.Info("[%s]file md5 validate success", host)
-					} else {
-						logger.Error("[%s]copy file md5 validate failed", host)
-					}
-				} else {
-					if !SSHConfig.CopyForMD5(host, url, fullDst, "") {
-						logger.Error("[%s]copy file md5 validate failed", host)
-					} else {
-						logger.Info("[%s]file md5 validate success", host)
-					}
-				}
-			}
-		}(host)
-	}
-	wm.Wait()
 }
 
 // RandString 生成随机字符串
@@ -270,19 +151,6 @@ func SliceRemoveStr(ss []string, s string) (result []string) {
 		}
 	}
 	return
-}
-
-func UrlGetMd5(downloadUrl string) string {
-	u, err := url.Parse(downloadUrl)
-	if err == nil {
-		p := u.Path
-		if paths := strings.Split(p, "/"); len(paths) > 2 {
-			if paths = strings.Split(paths[1], "-"); len(paths) > 1 {
-				return paths[0]
-			}
-		}
-	}
-	return ""
 }
 
 //判断当前host的hostname
