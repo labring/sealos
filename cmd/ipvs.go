@@ -33,7 +33,7 @@ func init() {
 	rootCmd.AddCommand(ipvsCmd)
 
 	// Here you will define your flags and configuration settings.
-	ipvsCmd.Flags().BoolVar(&install.Ipvs.RunOnce, "run-once", true, "is run once mode")
+	ipvsCmd.Flags().BoolVar(&install.Ipvs.RunOnce, "run-once", false, "is run once mode")
 	ipvsCmd.Flags().StringVar(&install.Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
 	ipvsCmd.Flags().StringSliceVar(&install.Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
 
