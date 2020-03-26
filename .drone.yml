@@ -13,7 +13,7 @@ steps:
   image: golang:1.12
   commands:
       - go build -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
-      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
+      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos.tar.gz)" >> Note.md
 
 - name: publish
   image: plugins/github-release
@@ -34,7 +34,8 @@ steps:
       from_secret: oss-config
   commands:
     - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
-    - ossutil64 -c .ossutilconfig cp sealos oss://sealyun/${DRONE_TAG=latest}/sealos
+    - tar zcvf sealos sealos.tar.gz
+    - ossutil64 -c .ossutilconfig cp sealos.tar.gz oss://sealyun/${DRONE_TAG=latest}/sealos.tar.gz
   when:
     event:
       - tag
