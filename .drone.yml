@@ -34,7 +34,7 @@ steps:
       from_secret: oss-config
   commands:
     - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
-    - tar zcvf sealos sealos.tar.gz
+    - tar zcvf sealos.tar.gz sealos
     - ossutil64 -c .ossutilconfig cp sealos.tar.gz oss://sealyun/${DRONE_TAG=latest}/sealos.tar.gz
   when:
     event:
