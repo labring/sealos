@@ -27,7 +27,7 @@ func LoggerFileSize(filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("[%s]transfer total size is: %.2f%s", filename, value, "MB")
+			logger.Alert("[os][%s]transfer total size is: %.2f%s", filename, value, "MB")
 		}
 	}
 }
@@ -44,7 +44,7 @@ func IsFilExist(filepath string) bool {
 	count, err := strconv.Atoi(strings.TrimSpace(data))
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[%s]RemoteFilExist:%s", filepath, err)
+			logger.Error("[os][%s]RemoteFilExist:%s", filepath, err)
 		}
 	}()
 	if err != nil {

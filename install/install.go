@@ -196,5 +196,5 @@ func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	SSHConfig.Cmd(node, command)
+	_ = SSHConfig.CmdAsync(node, command)
 }
