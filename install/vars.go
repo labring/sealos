@@ -2,6 +2,7 @@ package install
 
 import (
 	"github.com/cuisongliu/sshcmd/pkg/sshutil"
+	"github.com/fanux/lvscare/care"
 	"regexp"
 )
 
@@ -13,6 +14,7 @@ var (
 	KubeadmFile string
 	Version     string
 	SSHConfig   sshutil.SSH
+	Ipvs        care.LvsCare
 	Kustomize   bool
 	ApiServer   string
 	Repo        string
@@ -24,6 +26,10 @@ var (
 	WithoutCNI bool
 	//network interface name, like "eth.*|en.*"
 	Interface string
+	// the ipip mode of the calico
+	IPIP bool
+	// mtu size
+	MTU string
 
 	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
 

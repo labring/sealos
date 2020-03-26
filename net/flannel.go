@@ -72,7 +72,7 @@ spec:
     rule: 'RunAsAny'
 ---
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: flannel
 rules:
@@ -101,7 +101,7 @@ rules:
       - patch
 ---
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: flannel
 roleRef:
@@ -194,7 +194,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.11.0-amd64
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-amd64
         command:
         - cp
         args:
@@ -208,7 +208,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.11.0-amd64
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-amd64
         command:
         - /opt/bin/flanneld
         args:
@@ -220,8 +220,8 @@ spec:
             cpu: "100m"
             memory: "50Mi"
           limits:
-            cpu: "100m"
-            memory: "50Mi"
+            cpu: "200m"
+            memory: "100Mi"
         securityContext:
           privileged: false
           capabilities:
@@ -289,7 +289,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.11.0-arm64
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm64
         command:
         - cp
         args:
@@ -303,7 +303,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.11.0-arm64
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm64
         command:
         - /opt/bin/flanneld
         args:
@@ -315,8 +315,8 @@ spec:
             cpu: "100m"
             memory: "50Mi"
           limits:
-            cpu: "100m"
-            memory: "50Mi"
+            cpu: "200m"
+            memory: "100Mi"
         securityContext:
           privileged: false
           capabilities:
@@ -384,7 +384,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.11.0-arm
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm
         command:
         - cp
         args:
@@ -398,7 +398,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.11.0-arm
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm
         command:
         - /opt/bin/flanneld
         args:
@@ -410,8 +410,8 @@ spec:
             cpu: "100m"
             memory: "50Mi"
           limits:
-            cpu: "100m"
-            memory: "50Mi"
+            cpu: "200m"
+            memory: "100Mi"
         securityContext:
           privileged: false
           capabilities:
@@ -479,7 +479,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.11.0-ppc64le
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-ppc64le
         command:
         - cp
         args:
@@ -493,7 +493,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.11.0-ppc64le
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-ppc64le
         command:
         - /opt/bin/flanneld
         args:
@@ -505,8 +505,8 @@ spec:
             cpu: "100m"
             memory: "50Mi"
           limits:
-            cpu: "100m"
-            memory: "50Mi"
+            cpu: "200m"
+            memory: "100Mi"
         securityContext:
           privileged: false
           capabilities:
@@ -574,7 +574,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.11.0-s390x
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-s390x
         command:
         - cp
         args:
@@ -588,7 +588,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.11.0-s390x
+        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-s390x
         command:
         - /opt/bin/flanneld
         args:
@@ -600,8 +600,8 @@ spec:
             cpu: "100m"
             memory: "50Mi"
           limits:
-            cpu: "100m"
-            memory: "50Mi"
+            cpu: "200m"
+            memory: "100Mi"
         securityContext:
           privileged: false
           capabilities:

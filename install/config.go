@@ -56,7 +56,9 @@ func (c *SealConfig) Dump(path string) {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
 
-	ioutil.WriteFile(path, y, 0644)
+	if err = ioutil.WriteFile(path, y, 0644); err != nil{
+		logger.Warn("write to file %s failed: %s", path, err)
+	}
 }
 
 func Dump(path string, content interface{}) error {

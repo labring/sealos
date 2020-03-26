@@ -23,7 +23,7 @@ func BuildInit() {
 	}
 	i.CheckValid()
 	i.Print()
-	i.SendPackage("kube")
+	i.SendPackage()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
@@ -83,7 +83,13 @@ func (s *SealosInstaller) InstallMaster0() {
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-	netyaml := net.NewNetwork(Network, net.MetaData{Interface: Interface, CIDR: PodCIDR}).Manifests("")
+	netyaml := net.NewNetwork(Network, net.MetaData{
+		Interface: Interface,
+		CIDR: PodCIDR,
+		IPIP:IPIP,
+		MTU: MTU,
+	}).Manifests("")
+
 	logger.Info("calico yaml is : \n", netyaml)
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
