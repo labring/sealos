@@ -20,7 +20,9 @@ steps:
     OSS_CONFIG:
       from_secret: oss-config
   commands:
+    - env
     - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
+    - cat .ossutilconfig
     - ossutil64 -c .ossutilconfig cp sealos oss://sealyun/${DRONE_TAG=latest}/sealos
     - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
   when:
