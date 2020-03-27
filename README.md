@@ -4,6 +4,8 @@
 
 ![](./arch.png)
 
+[English Docs](/README_en.md)
+
 # 快速开始
 
 [官方文档](https://sealyun.com/docs)
