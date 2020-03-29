@@ -14,7 +14,7 @@ func TestGenerateAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := GenerateAll(); (err != nil) != tt.wantErr {
+			if err := GenerateAll(&SealosCertMetaData{}); (err != nil) != tt.wantErr {
 				t.Errorf("GenerateAll() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

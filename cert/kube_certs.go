@@ -130,25 +130,32 @@ var certList = []Config{
 	},
 }
 
-func apiServerAltName(){
+// 证书中需要用到的一些信息
+type SealosCertMetaData struct {
+	MasterIP []string
+	VIP []string
+	// TODO other needs metadata
+}
+
+func apiServerAltName(meta *SealosCertMetaData){
 	cfg := certList[APIserverCert]
 	//TODO add altname in cfg
 	_ = cfg
 }
 
-func etcdServer() {
+func etcdServer(meta *SealosCertMetaData) {
 	cfg := certList[EtcdServerCert]
 	//TODO add altname in cfg
 	_ = cfg
 }
 
-func etcdPeer(){
+func etcdPeer(meta *SealosCertMetaData){
 	cfg := certList[EtcdPeerCert]
 	//TODO add altname in cfg
 	_ = cfg
 }
 
-var configFilter = []func()(){apiServerAltName,etcdServer,etcdPeer}
+var configFilter = []func(meta *SealosCertMetaData)(){apiServerAltName,etcdServer,etcdPeer}
 
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
@@ -166,11 +173,11 @@ func GenerateServiceAccountKeyPaire(dir string) error {
 	return WritePublicKey(dir, "sa", pub)
 }
 
-func GenerateAll() error {
+func GenerateAll(meta *SealosCertMetaData) error {
 	GenerateServiceAccountKeyPaire(BasePath)
 
 	for _,f := range configFilter {
-		f()
+		f(meta)
 	}
 
 	CACerts := map[string]*x509.Certificate{}
