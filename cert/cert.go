@@ -195,6 +195,42 @@ func WriteKey(pkiPath, name string, key crypto.Signer) error {
 
 	return nil
 }
+
+// WritePublicKey stores the given public key at the given location
+func WritePublicKey(pkiPath, name string, key crypto.PublicKey) error {
+	if key == nil {
+		return errors.New("public key cannot be nil when writing to file")
+	}
+
+	publicKeyBytes, err := EncodePublicKeyPEM(key)
+	if err != nil {
+		return err
+	}
+	publicKeyPath := pathForPublicKey(pkiPath, name)
+	if err := keyutil.WriteKey(publicKeyPath, publicKeyBytes); err != nil {
+		return fmt.Errorf( "unable to write public key to file %s %s", publicKeyPath, err)
+	}
+
+	return nil
+}
+
+func pathForPublicKey(pkiPath, name string) string {
+	return filepath.Join(pkiPath, fmt.Sprintf("%s.pub", name))
+}
+
+// EncodePublicKeyPEM returns PEM-encoded public data
+func EncodePublicKeyPEM(key crypto.PublicKey) ([]byte, error) {
+	der, err := x509.MarshalPKIXPublicKey(key)
+	if err != nil {
+		return []byte{}, err
+	}
+	block := pem.Block{
+		Type:  PublicKeyBlockType,
+		Bytes: der,
+	}
+	return pem.EncodeToMemory(&block), nil
+}
+
 func pathForCert(pkiPath, name string) string {
 	return filepath.Join(pkiPath, fmt.Sprintf("%s.crt", name))
 }

@@ -109,7 +109,25 @@ var certList = []Config{
 	},
 }
 
+// create sa.key sa.pub for service Account
+func GenerateServiceAccountKeyPaire(dir string) error {
+	key,err := NewPrivateKey(x509.RSA)
+	if err != nil {
+		return err
+	}
+	pub := key.Public()
+
+	err = WriteKey(dir, "sa",key)
+	if err != nil {
+		return err
+	}
+
+	return WritePublicKey(dir,"sa",pub)
+}
+
 func GenerateAll() error {
+	GenerateServiceAccountKeyPaire("pki")
+
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}
 	for _, ca := range caList {
