@@ -13,6 +13,7 @@ steps:
   image: golang:1.12
   commands:
       - go build -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
 
 - name: publish
   image: plugins/github-release
@@ -25,6 +26,19 @@ steps:
   when:
      event:
      - tag
+
+#- name: publish-oss
+#  image: fanux/ossutil
+#  environment:
+#    OSS_CONFIG:
+#      from_secret: oss-config
+#  commands:
+#    - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
+#    - tar zcvf sealos.tar.gz sealos
+#    - ossutil64 -c .ossutilconfig cp sealos.tar.gz oss://sealyun/${DRONE_TAG=latest}/sealos.tar.gz
+#  when:
+#    event:
+#      - tag
 
 # 42 is the build number 
 # drone build promote fanux/sealos 42 test
