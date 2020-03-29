@@ -77,8 +77,7 @@ var certList = []Config{
 				"kubernetes.default.svc",
 			},
 			IPs: []net.IP{
-				[]byte(`127.0.0.1`),
-				[]byte(`::1`),
+				{127,0,0,1},
 			},
 		},
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -174,8 +173,10 @@ func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*Sea
 }
 
 func apiServerAltName(meta *SealosCertMetaData) {
-	certList[APIserverCert].AltNames.DNSNames = meta.APIServer.DNSNames
-	certList[APIserverCert].AltNames.IPs = meta.APIServer.IPs
+	certList[APIserverCert].AltNames.DNSNames = append(certList[APIserverCert].AltNames.DNSNames,
+		meta.APIServer.DNSNames...)
+	certList[APIserverCert].AltNames.IPs = append(certList[APIserverCert].AltNames.IPs,
+		meta.APIServer.IPs...)
 }
 
 func etcdServer(meta *SealosCertMetaData) {

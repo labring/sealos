@@ -1,6 +1,8 @@
 package cert
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGenerateAll(t *testing.T) {
 	tests := []struct {
@@ -12,7 +14,10 @@ func TestGenerateAll(t *testing.T) {
 			false,
 		},
 	}
-	certMeta, _ := NewSealosCertMetaData([]string{"test.com", "127.0.0.2", "kubernetes.default.svc.sealyun"}, "10.64.0.0/10")
+	certMeta, err := NewSealosCertMetaData([]string{"test.com", "192.168.1.2", "kubernetes.default.svc.sealyun"}, "10.64.0.0/10")
+	if err != nil {
+		t.Error(err)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
