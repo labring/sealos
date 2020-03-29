@@ -130,6 +130,26 @@ var certList = []Config{
 	},
 }
 
+func apiServerAltName(){
+	cfg := certList[APIserverCert]
+	//TODO add altname in cfg
+	_ = cfg
+}
+
+func etcdServer() {
+	cfg := certList[EtcdServerCert]
+	//TODO add altname in cfg
+	_ = cfg
+}
+
+func etcdPeer(){
+	cfg := certList[EtcdPeerCert]
+	//TODO add altname in cfg
+	_ = cfg
+}
+
+var configFilter = []func()(){apiServerAltName,etcdServer,etcdPeer}
+
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
 	key, err := NewPrivateKey(x509.RSA)
@@ -148,6 +168,10 @@ func GenerateServiceAccountKeyPaire(dir string) error {
 
 func GenerateAll() error {
 	GenerateServiceAccountKeyPaire(BasePath)
+
+	for _,f := range configFilter {
+		f()
+	}
 
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}
