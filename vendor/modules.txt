@@ -199,6 +199,8 @@ k8s.io/apimachinery/pkg/watch
 k8s.io/apimachinery/third_party/forked/golang/reflect
 # k8s.io/client-go v0.17.3
 k8s.io/client-go/kubernetes/scheme
+k8s.io/client-go/util/cert
+k8s.io/client-go/util/keyutil
 # k8s.io/klog v1.0.0
 k8s.io/klog
 # sigs.k8s.io/yaml v1.1.0

@@ -19,7 +19,7 @@ import (
 
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
-)
+	)
 
 const (
 	// PrivateKeyBlockType is a possible value for pem.Block.Type.

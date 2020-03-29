@@ -9,6 +9,7 @@ import (
 var (
 	MasterIPs   []string
 	NodeIPs     []string
+	ApiServerCertSANs []string
 	VIP         string
 	PkgUrl      string
 	KubeadmFile string

@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"net"
 )
 
 var (
@@ -65,7 +66,21 @@ var certList = []Config{
 		CommonName:   "kube-apiserver",
 		Organization: nil,
 		Year:         100,
-		AltNames:     AltNames{}, // TODO need set altNames
+		AltNames:     AltNames{
+			DNSNames: []string{
+				"apiserver.cluster.local",
+				"localhost",
+				"sealyun.com",
+				"master",
+				"kubernetes",
+				"kubernetes.default",
+				"kubernetes.default.svc",
+			},
+			IPs: []net.IP{
+				[]byte(`127.0.0.1`),
+				[]byte(`::1`),
+			},
+		},
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	},
 	{
@@ -130,17 +145,37 @@ var certList = []Config{
 	},
 }
 
-// 证书中需要用到的一些信息
+// 证书中需要用到的一些信息,传入的参数得提前验证
 type SealosCertMetaData struct {
-	MasterIP []string
-	VIP []string
+	APIServer   AltNames
+	ETCD        AltNames
 	// TODO other needs metadata
 }
 
-func apiServerAltName(meta *SealosCertMetaData){
-	cfg := certList[APIserverCert]
-	//TODO add altname in cfg
-	_ = cfg
+// apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
+func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*SealosCertMetaData, error) {
+	data := &SealosCertMetaData{}
+	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
+	if err != nil {
+		return nil, err
+	}
+	svcFirstIP[len(svcFirstIP)-1]++ //取svc第一个ip
+	data.APIServer.IPs = append(data.APIServer.IPs, svcFirstIP)
+
+	for _, altName := range apiServerIPAndDomains {
+		ip := net.ParseIP(altName)
+		if ip != nil {
+			data.APIServer.IPs = append(data.APIServer.IPs, ip)
+			continue
+		}
+		data.APIServer.DNSNames = append(data.APIServer.DNSNames, altName)
+	}
+	return data, nil
+}
+
+func apiServerAltName(meta *SealosCertMetaData) {
+	certList[APIserverCert].AltNames.DNSNames = meta.APIServer.DNSNames
+	certList[APIserverCert].AltNames.IPs = meta.APIServer.IPs
 }
 
 func etcdServer(meta *SealosCertMetaData) {
@@ -149,13 +184,13 @@ func etcdServer(meta *SealosCertMetaData) {
 	_ = cfg
 }
 
-func etcdPeer(meta *SealosCertMetaData){
+func etcdPeer(meta *SealosCertMetaData) {
 	cfg := certList[EtcdPeerCert]
 	//TODO add altname in cfg
 	_ = cfg
 }
 
-var configFilter = []func(meta *SealosCertMetaData)(){apiServerAltName,etcdServer,etcdPeer}
+var configFilter = []func(meta *SealosCertMetaData){apiServerAltName, etcdServer, etcdPeer}
 
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
@@ -176,7 +211,7 @@ func GenerateServiceAccountKeyPaire(dir string) error {
 func GenerateAll(meta *SealosCertMetaData) error {
 	GenerateServiceAccountKeyPaire(BasePath)
 
-	for _,f := range configFilter {
+	for _, f := range configFilter {
 		f(meta)
 	}
 
