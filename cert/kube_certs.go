@@ -6,9 +6,20 @@ import (
 	"fmt"
 )
 
+var (
+	BasePath     = "pki"
+	EtcdBasePath = "pki/etcd"
+)
+
+const (
+	CA = iota
+	FrontProxyCA
+	EtcdCA
+)
+
 var caList = []Config{
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "ca",
 		CommonName:   "kubernetes",
 		Organization: nil,
@@ -17,7 +28,7 @@ var caList = []Config{
 		Usages:       nil,
 	},
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "front-proxy-ca",
 		CommonName:   "front-proxy-ca",
 		Organization: nil,
@@ -26,7 +37,7 @@ var caList = []Config{
 		Usages:       nil,
 	},
 	{
-		Path:         "pki/etcd",
+		Path:         EtcdBasePath,
 		BaseName:     "ca",
 		CommonName:   "etcd-ca",
 		Organization: nil,
@@ -36,9 +47,19 @@ var caList = []Config{
 	},
 }
 
+const (
+	APIserverCert = iota
+	APIserverKubeletClientCert
+	FrontProxyClientCert
+	APIserverEtcdClientCert
+	EtcdServerCert
+	EtcdPeerCert
+	EtcdHealthcheckClientCert
+)
+
 var certList = []Config{
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "apiserver",
 		CAName:       "kubernetes",
 		CommonName:   "kube-apiserver",
@@ -48,7 +69,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 	},
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "apiserver-kubelet-client",
 		CAName:       "kubernetes",
 		CommonName:   "kube-apiserver-kubelet-client",
@@ -58,7 +79,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	},
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "front-proxy-client",
 		CAName:       "front-proxy-ca",
 		CommonName:   "front-proxy-client",
@@ -68,7 +89,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	},
 	{
-		Path:         "pki",
+		Path:         BasePath,
 		BaseName:     "apiserver-etcd-client",
 		CAName:       "etcd-ca",
 		CommonName:   "kube-apiserver-etcd-client",
@@ -78,7 +99,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	},
 	{
-		Path:         "pki/etcd",
+		Path:         EtcdBasePath,
 		BaseName:     "server",
 		CAName:       "etcd-ca",
 		CommonName:   "etcd", // TODO kubeadm using node name as common name cc.CommonName = mc.NodeRegistration.Name
@@ -88,7 +109,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 	},
 	{
-		Path:         "pki/etcd",
+		Path:         EtcdBasePath,
 		BaseName:     "peer",
 		CAName:       "etcd-ca",
 		CommonName:   "etcd-peer", // TODO
@@ -98,7 +119,7 @@ var certList = []Config{
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 	},
 	{
-		Path:         "pki/etcd",
+		Path:         EtcdBasePath,
 		BaseName:     "healthcheck-client",
 		CAName:       "etcd-ca",
 		CommonName:   "kube-etcd-healthcheck-client",
@@ -111,22 +132,22 @@ var certList = []Config{
 
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
-	key,err := NewPrivateKey(x509.RSA)
+	key, err := NewPrivateKey(x509.RSA)
 	if err != nil {
 		return err
 	}
 	pub := key.Public()
 
-	err = WriteKey(dir, "sa",key)
+	err = WriteKey(dir, "sa", key)
 	if err != nil {
 		return err
 	}
 
-	return WritePublicKey(dir,"sa",pub)
+	return WritePublicKey(dir, "sa", pub)
 }
 
 func GenerateAll() error {
-	GenerateServiceAccountKeyPaire("pki")
+	GenerateServiceAccountKeyPaire(BasePath)
 
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}
@@ -145,20 +166,20 @@ func GenerateAll() error {
 	}
 
 	for _, cert := range certList {
-		caCert,ok := CACerts[cert.CAName]
+		caCert, ok := CACerts[cert.CAName]
 		if !ok {
-			return fmt.Errorf("root ca cert not found %s",cert.CAName)
+			return fmt.Errorf("root ca cert not found %s", cert.CAName)
 		}
-		caKey,ok := CAKeys[cert.CAName]
+		caKey, ok := CAKeys[cert.CAName]
 		if !ok {
-			return fmt.Errorf("root ca key not found %s",cert.CAName)
+			return fmt.Errorf("root ca key not found %s", cert.CAName)
 		}
 
-		Cert,Key,err := NewCaCertAndKeyFromRoot(cert,caCert,caKey)
+		Cert, Key, err := NewCaCertAndKeyFromRoot(cert, caCert, caKey)
 		if err != nil {
 			return err
 		}
-		err = WriteCertAndKey(cert.Path,cert.BaseName,Cert,Key)
+		err = WriteCertAndKey(cert.Path, cert.BaseName, Cert, Key)
 		if err != nil {
 			return err
 		}
