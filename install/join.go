@@ -110,7 +110,7 @@ func (s *SealosInstaller) JoinNodes() {
 			//create lvscare static pod
 			yaml := ipvs.LvsStaticPodYaml(VIP, s.Masters, "")
 			_ = SSHConfig.CmdAsync(node, cmd)
-			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo \"%s\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
+			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 
 			cleaninstall := `rm -rf /root/kube`
 			_ = SSHConfig.CmdAsync(node, cleaninstall)
@@ -128,7 +128,7 @@ func (s *SealosInstaller) lvscare() {
 			defer wg.Done()
 			yaml := ipvs.LvsStaticPodYaml(VIP, s.Masters, "")
 			_ = SSHConfig.CmdAsync(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-			_ = SSHConfig.CmdAsync(node, "mkdir -p /etc/kubernetes/manifests && echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 		}(node)
 	}
 
