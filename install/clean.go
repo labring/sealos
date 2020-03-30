@@ -134,7 +134,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			go func(node string) {
 				defer wg.Done()
 				_ = SSHConfig.CmdAsync(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-				_ = SSHConfig.CmdAsync(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+				_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			}(node)
 		}
 		wg.Wait()
