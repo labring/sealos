@@ -19,8 +19,8 @@ func BuildJoin(joinMasters, joinNodes []string) {
 }
 
 func joinMastersFunc(joinMasters []string) {
-	masters := ParseIPs(MasterIPs)
-	nodes := ParseIPs(NodeIPs)
+	masters := MasterIPs
+	nodes := NodeIPs
 	i := &SealosInstaller{
 		Hosts:   joinMasters,
 		Masters: masters,
@@ -42,7 +42,7 @@ func joinNodesFunc(joinNodes []string) {
 	nodes := joinNodes
 	i := &SealosInstaller{
 		Hosts:   nodes,
-		Masters: ParseIPs(MasterIPs),
+		Masters: MasterIPs,
 		Nodes:   nodes,
 	}
 	i.CheckValid()

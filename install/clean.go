@@ -17,8 +17,8 @@ type SealosClean struct {
 //BuildClean is
 func BuildClean(deleteNodes, deleteMasters []string) {
 	i := &SealosClean{cleanAll: false}
-	masters := ParseIPs(MasterIPs)
-	nodes := ParseIPs(NodeIPs)
+	masters := MasterIPs
+	nodes := NodeIPs
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
 		if !CleanForce { // flase
