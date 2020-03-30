@@ -12,19 +12,19 @@ const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
-	Masters         []string
-	Nodes           []string
+	Masters           []string
+	Nodes             []string
 	ApiServerCertSANs []string
-	User            string
-	Passwd          string
-	PrivateKey      string
-	ApiServerDomian string
-	VIP             string
-	PkgURL          string
-	Version         string
-	Repo            string
-	PodCIDR         string
-	SvcCIDR         string
+	User              string
+	Passwd            string
+	PrivateKey        string
+	ApiServerDomian   string
+	VIP               string
+	PkgURL            string
+	Version           string
+	Repo              string
+	PodCIDR           string
+	SvcCIDR           string
 }
 
 //Dump is
@@ -33,8 +33,9 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = home + defaultConfigPath + defaultConfigFile
 	}
-
-	c.Masters = ParseIPs(MasterIPs)
+	MasterIPs = ParseIPs(MasterIPs)
+	c.Masters = MasterIPs
+	NodeIPs = ParseIPs(NodeIPs)
 	c.Nodes = ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
@@ -58,7 +59,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
 
-	if err = ioutil.WriteFile(path, y, 0644); err != nil{
+	if err = ioutil.WriteFile(path, y, 0644); err != nil {
 		logger.Warn("write to file %s failed: %s", path, err)
 	}
 }

@@ -10,11 +10,12 @@ import (
 
 //BuildInit is
 func BuildInit() {
-	//hosts := append(Masters, Nodes...)
+	MasterIPs = ParseIPs(MasterIPs)
+	NodeIPs = ParseIPs(NodeIPs)
 	// 所有master节点
-	masters := ParseIPs(MasterIPs)
+	masters := MasterIPs
 	// 所有node节点
-	nodes := ParseIPs(NodeIPs)
+	nodes := NodeIPs
 	hosts := append(masters, nodes...)
 	i := &SealosInstaller{
 		Hosts:   hosts,
