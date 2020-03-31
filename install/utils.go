@@ -77,49 +77,7 @@ func NextIP(ip net.IP) net.IP {
 
 // ParseIPs 解析ip 192.168.0.2-192.168.0.6
 func ParseIPs(ips []string) []string {
-	var hosts []string
-	for _, nodes := range ips {
-		var startIp, endIp string
-		if !strings.Contains(nodes, "-") {
-			if strings.Contains(nodes, ":") {
-				hosts = append(hosts, nodes)
-			} else {
-				hosts = append(hosts, nodes+":22")
-			}
-			continue
-		} else {
-			// nodes 192.168.0.2-192.168.0.6
-			// 1.1.1.1 - 155.155.155.155
-			hostSilts := strings.Split(nodes, "-")
-			if len(hostSilts) > 2 {
-				logger.Error("multi-nodes/multi-masters illegal; host spilt than more two .")
-				os.Exit(-1)
-			} else {
-				startIp = strings.Split(nodes, "-")[0]
-				endIp = strings.Split(nodes, "-")[1]
-				if len(startIp) < 7 {
-					logger.Error("multi-nodes/multi-masters illegal;start host length less 7 , like 1.1.1.1 can used, but not %s .", startIp)
-					os.Exit(-1)
-				}
-				if len(endIp) < 7 {
-					logger.Error("multi-nodes/multi-masters illegal;end host length less 7 , like 1.1.1.1 can used, but not s% .", endIp)
-					os.Exit(-1)
-				}
-			}
-		}
-		//
-		port := ":22"
-		if strings.Index(endIp, ":") != -1 {
-			port = ":" + strings.Split(endIp, ":")[1] //获取endIp
-			endIp = strings.Split(endIp, ":")[0]
-		}
-		hosts = append(hosts, startIp+port)
-		for Cmp(stringToIP(startIp), stringToIP(endIp)) < 0 {
-			startIp = NextIP(stringToIP(startIp)).String()
-			hosts = append(hosts, startIp+port)
-		}
-	}
-	return hosts
+	return DecodeIPs(ips)
 }
 
 func DecodeIPs(ips []string) []string {
