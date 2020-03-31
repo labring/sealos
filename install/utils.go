@@ -122,6 +122,31 @@ func ParseIPs(ips []string) []string {
 	return hosts
 }
 
+func DecodeIPs(ips []string) []string {
+	var res []string
+	var port string
+	for _,ip := range ips {
+		port = "22"
+		if ipport := strings.Split(ip,":"); len(ipport) == 2 {
+			ip = ipport[0]
+			port = ipport[1]
+		}
+		if iprange := strings.Split(ip,"-"); len(iprange) == 2 {
+			for Cmp(stringToIP(iprange[0]), stringToIP(iprange[1])) <= 0 {
+				res = append(res, fmt.Sprintf("%s:%s",iprange[0],port))
+				iprange[0]= NextIP(stringToIP(iprange[0])).String()
+			}
+		} else {
+			if stringToIP(ip) == nil {
+				logger.Error("ip [%s] is invalid",ip)
+				os.Exit(1)
+			}
+			res = append(res,fmt.Sprintf("%s:%s",ip,port))
+		}
+	}
+	return res
+}
+
 // like y|yes|Y|YES return true
 func GetConfirmResult(str string) bool {
 	return YesRx.MatchString(str)
