@@ -15,9 +15,28 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 )
+
+var contact = `
+      ___           ___           ___           ___       ___           ___     
+     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \   
+   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \  
+  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \ 
+ /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
+ \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
+  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\  
+   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /  
+    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /   
+     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
+
+                  官方文档：sealyun.com
+                  项目地址：https://github.com/fanux/sealos
+                  QQ群   ：98488045
+`
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -28,6 +47,7 @@ var initCmd = &cobra.Command{
 		c := &install.SealConfig{}
 		install.BuildInit()
 		c.Dump("")
+		fmt.Println(contact)
 	},
 }
 
