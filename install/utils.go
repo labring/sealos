@@ -81,7 +81,11 @@ func ParseIPs(ips []string) []string {
 	for _, nodes := range ips {
 		var startIp, endIp string
 		if !strings.Contains(nodes, "-") {
-			hosts = append(hosts, nodes)
+			if strings.Contains(nodes, ":") {
+				hosts = append(hosts, nodes)
+			} else {
+				hosts = append(hosts, nodes+":22")
+			}
 			continue
 		} else {
 			// nodes 192.168.0.2-192.168.0.6
