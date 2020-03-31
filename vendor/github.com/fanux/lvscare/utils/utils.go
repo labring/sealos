@@ -15,13 +15,13 @@ import (
 func SplitServer(server string) (string, uint16) {
 	s := strings.Split(server, ":")
 	if len(s) != 2 {
-		logger.Error("SplitServer error: len(s) is not two.")
+		logger.Warn("SplitServer error: len(s) is not two.")
 		return "", 0
 	}
 	logger.Debug("SplitServer debug: IP: %s, Port: %s", s[0], s[1])
 	p, err := strconv.Atoi(s[1])
 	if err != nil {
-		logger.Error("SplitServer error: ", err)
+		logger.Warn("SplitServer error: ", err)
 		return "", 0
 	}
 	return s[0], uint16(p)
