@@ -17,7 +17,6 @@ package cmd
 import (
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 )
 
 // cleanCmd represents the clean command
@@ -26,8 +25,6 @@ var cleanCmd = &cobra.Command{
 	Short: "Simplest way to clean your kubernets HA cluster",
 	Long:  `sealos clean`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger.SetLogPathTrim("/Users/cuisongliu/Workspaces/go")
-		logger.Info("aaaa")
 		deleteNodes := install.ParseIPs(install.NodeIPs)
 		deleteMasters := install.ParseIPs(install.MasterIPs)
 		c := &install.SealConfig{}
