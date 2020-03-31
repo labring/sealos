@@ -29,6 +29,10 @@ func VersionToInt(version string) int {
 //IpFormat is
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
+	if len(ipAndPort) != 2 {
+		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22",host)
+		os.Exit(1)
+	}
 	return ipAndPort[0]
 }
 
