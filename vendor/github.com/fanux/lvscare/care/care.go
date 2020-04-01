@@ -12,9 +12,11 @@ func (care *LvsCare) VsAndRsCare() {
 	lvs := service.BuildLvscare()
 	//set inner lvs
 	care.lvs = lvs
-	logger.Debug("VsAndRsCare DeleteVirtualServer")
-	err := lvs.DeleteVirtualServer(care.VirtualServer, false)
-	logger.Warn("VsAndRsCare DeleteVirtualServer:", err)
+	if care.Delete != nil && *care.Delete {
+		logger.Debug("VsAndRsCare DeleteVirtualServer")
+		err := lvs.DeleteVirtualServer(care.VirtualServer, false)
+		logger.Warn("VsAndRsCare DeleteVirtualServer:", err)
+	}
 	if care.RunOnce {
 		care.createVsAndRs()
 		return

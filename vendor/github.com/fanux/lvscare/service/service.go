@@ -52,7 +52,7 @@ func (l *lvscare) CreateVirtualServer(vs string, config bool) error {
 	vServer := utils.BuildVirtualServer(vs)
 	err := l.handle.AddVirtualServer(vServer)
 	if err != nil {
-		logger.Error("CreateVirtualServer error: ", err)
+		logger.Warn("CreateVirtualServer error: ", err)
 		return fmt.Errorf("new virtual server failed: %s", err)
 	}
 	return nil
@@ -66,7 +66,7 @@ func (l *lvscare) DeleteVirtualServer(vs string, config bool) error {
 	virServer := utils.BuildVirtualServer(vs)
 	err := l.handle.DeleteVirtualServer(virServer)
 	if err != nil {
-		logger.Error("DeleteVirtualServer error: ", err)
+		logger.Warn("DeleteVirtualServer error: ", err)
 		return err
 	}
 	if config {
