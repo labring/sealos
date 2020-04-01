@@ -12,19 +12,26 @@ const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
-	Masters           []string
-	Nodes             []string
-	ApiServerCertSANs []string
-	User              string
-	Passwd            string
-	PrivateKey        string
-	ApiServerDomian   string
-	VIP               string
-	PkgURL            string
-	Version           string
-	Repo              string
-	PodCIDR           string
-	SvcCIDR           string
+	Masters []string
+	Nodes   []string
+	//config from kubeadm.cfg
+	DnsDomain         string
+	ApiServerDNSNames []string
+	ApiServerIPs      []string
+
+	//SSHConfig
+	User       string
+	Passwd     string
+	PrivateKey string
+	//ApiServer
+	ApiServerDomian string
+
+	VIP     string
+	PkgURL  string
+	Version string
+	Repo    string
+	PodCIDR string
+	SvcCIDR string
 }
 
 //Dump is
@@ -47,7 +54,10 @@ func (c *SealConfig) Dump(path string) {
 	c.Repo = Repo
 	c.SvcCIDR = SvcCIDR
 	c.PodCIDR = PodCIDR
-	c.ApiServerCertSANs = ApiServerCertSANs
+
+	c.DnsDomain = DnsDomain
+	c.ApiServerDNSNames = ApiServerDNSNames
+	c.ApiServerIPs = ApiServerIPs
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -111,8 +121,11 @@ func (c *SealConfig) Load(path string) {
 	Version = c.Version
 	Repo = c.Repo
 	PodCIDR = c.PodCIDR
-	PodCIDR = c.SvcCIDR
-	ApiServerCertSANs = c.ApiServerCertSANs
+	SvcCIDR = c.SvcCIDR
+
+	DnsDomain = c.DnsDomain
+	ApiServerDNSNames = c.ApiServerDNSNames
+	ApiServerIPs = c.ApiServerIPs
 }
 
 func Load(path string, content interface{}) error {
@@ -142,7 +155,9 @@ func (c *SealConfig) showDefaultConfig() {
 	c.Repo = "k8s.gcr.io"
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
-	c.ApiServerCertSANs = []string{"127.0.0.1", "apiserver.cluster.local", "10.96.0.1"}
+	c.ApiServerDomian = "cluster.local"
+	c.ApiServerIPs = []string{"127.0.0.1"}
+	c.ApiServerDNSNames = []string{"apiserver.cluster.local"}
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
