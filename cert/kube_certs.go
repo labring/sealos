@@ -147,7 +147,6 @@ var certList = []Config{
 // 证书中需要用到的一些信息,传入的参数得提前验证
 type SealosCertMetaData struct {
 	APIServer   AltNames
-	ETCD        AltNames
 	NodeName    string
 	NodeIP	    string
 }
