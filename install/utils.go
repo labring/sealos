@@ -55,6 +55,11 @@ func RandString(len int) string {
 func Cmp(a, b net.IP) int {
 	aa := ipToInt(a)
 	bb := ipToInt(b)
+
+	if aa == nil || bb == nil {
+		logger.Error("ip range %s-%s is invalid",a.String(),b.String())
+		os.Exit(-1)
+	}
 	return aa.Cmp(bb)
 }
 
