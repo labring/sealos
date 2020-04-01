@@ -116,20 +116,20 @@ var certList = []Config{
 		Path:         EtcdBasePath,
 		BaseName:     "server",
 		CAName:       "etcd-ca",
-		CommonName:   "etcd", // TODO kubeadm using node name as common name cc.CommonName = mc.NodeRegistration.Name
+		CommonName:   "etcd", // kubeadm using node name as common name cc.CommonName = mc.NodeRegistration.Name
 		Organization: nil,
 		Year:         100,
-		AltNames:     AltNames{}, // TODO need set altNames
+		AltNames:     AltNames{}, // need set altNames
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 	},
 	{
 		Path:         EtcdBasePath,
 		BaseName:     "peer",
 		CAName:       "etcd-ca",
-		CommonName:   "etcd-peer", // TODO
+		CommonName:   "etcd-peer", // change this in filter
 		Organization: nil,
 		Year:         100,
-		AltNames:     AltNames{}, // TODO
+		AltNames:     AltNames{}, // change this in filter
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 	},
 	{
