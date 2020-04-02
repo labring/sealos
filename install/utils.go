@@ -172,6 +172,11 @@ func isHostName(master, host string) string {
 	return name
 }
 
+func GetRemoteHostName(hostIP string) string {
+	hostName := SSHConfig.CmdToString(hostIP, "hostname", "")
+	return strings.ToLower(hostName)
+}
+
 //获取sealos绝对路径
 func FetchSealosAbsPath() string {
 	ex, _ := os.Executable()
