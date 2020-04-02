@@ -60,6 +60,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	}
 	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
+	//读取模板数据
+	kubeadm := KubeadmDataFromYaml(templateData)
+	if kubeadm != nil {
+		DnsDomain = kubeadm.Networking.DnsDomain
+		ApiServerIPs = kubeadm.ApiServer.CertSANsIPS
+		ApiServerDNSNames = kubeadm.ApiServer.CertSANsDnsNames
+	}
 }
 
 //InstallMaster0 is
