@@ -25,19 +25,20 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可
-wget https://github.com/fanux/sealos/releases/download/v3.1.1/sealos && \
+wget https://github.com/fanux/sealos/releases/download/v3.2.0/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-wget https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz 
+wget https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
 
 # 安装一个三master的kubernetes集群
 sealos init --passwd 123456 \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url /root/kube1.16.0.tar.gz \
-	--version v1.16.0
+	--pkg-url /root/kube1.18.0.tar.gz \
+	--version v1.18.0
 ```
+
 > 参数含义
 
 参数名|含义|示例
