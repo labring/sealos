@@ -11,8 +11,7 @@ var (
 	NodeIPs   []string
 	//config from kubeadm.cfg
 	DnsDomain         string
-	ApiServerDNSNames []string
-	ApiServerIPs      []string
+	ApiServerCertSANs []string
 	//
 	SSHConfig sshutil.SSH
 	ApiServer string
