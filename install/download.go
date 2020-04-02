@@ -3,7 +3,6 @@ package install
 import (
 	"fmt"
 	"github.com/cuisongliu/sshcmd/pkg/cmd"
-	"github.com/cuisongliu/sshcmd/pkg/filesize"
 	"github.com/cuisongliu/sshcmd/pkg/md5sum"
 	"github.com/wonderivan/logger"
 	"net/url"
@@ -15,7 +14,7 @@ import (
 //md5
 //dst: /root
 //hook: cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh
-func SendPackage(location string, hosts []string, dst, hook string) {
+func SendPackage(location string, hosts []string, dst string, before, after *string) {
 	location, md5 := downloadFile(location)
 	PkgUrl = location
 	pkg := path.Base(location)
@@ -28,6 +27,10 @@ func SendPackage(location string, hosts []string, dst, hook string) {
 			defer wm.Done()
 			_ = SSHConfig.CmdAsync(host, mkDstDir)
 			logger.Debug("[%s]please wait for mkDstDir", host)
+			if before != nil {
+				logger.Debug("[%s]please wait for before hook", host)
+				_ = SSHConfig.CmdAsync(host, *before)
+			}
 			if SSHConfig.IsFilExist(host, fullPath) {
 				logger.Warn("[%s]SendPackage: file is exist", host)
 			} else {
@@ -37,9 +40,9 @@ func SendPackage(location string, hosts []string, dst, hook string) {
 					logger.Error("[%s]copy file md5 validate failed", host)
 				}
 			}
-			if hook != "" {
-				logger.Debug("[%s]please wait for hook", host)
-				_ = SSHConfig.CmdAsync(host, hook)
+			if after != nil {
+				logger.Debug("[%s]please wait for after hook", host)
+				_ = SSHConfig.CmdAsync(host, *after)
 			}
 		}(host)
 	}
@@ -50,21 +53,14 @@ func SendPackage(location string, hosts []string, dst, hook string) {
 func downloadFile(location string) (filePATH, md5 string) {
 	if _, isUrl := isUrl(location); isUrl {
 		absPATH := "/tmp/sealos/" + path.Base(location)
-		if cmd.IsFilExist(absPATH) {
-			//logs
-			logger.Warn("[%s] file is exist", absPATH)
-			location = absPATH
-			goto end
+		if !cmd.IsFilExist(absPATH) {
+			//generator download cmd
+			dwnCmd := downloadCmd(location)
+			//os exec download command
+			cmd.Cmd("/bin/sh", "-c", "mkdir -p /tmp/sealos && cd /tmp/sealos && "+dwnCmd)
 		}
-		//generator download cmd
-		dwnCmd := downloadCmd(location)
-		//go func watch filesize
-		go cmd.LoggerFileSize(absPATH, int(filesize.Do(location)))
-		//os exec download command
-		cmd.Cmd("/bin/sh", "-c", "mkdir -p /tmp/sealos && cd /tmp/sealos && "+dwnCmd)
 		location = absPATH
 	}
-end:
 	//file md5
 	md5 = md5sum.FromLocal(location)
 	return location, md5

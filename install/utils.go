@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ func VersionToInt(version string) int {
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	if len(ipAndPort) != 2 {
-		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22",host)
+		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", host)
 		os.Exit(1)
 	}
 	return ipAndPort[0]
@@ -57,7 +58,7 @@ func Cmp(a, b net.IP) int {
 	bb := ipToInt(b)
 
 	if aa == nil || bb == nil {
-		logger.Error("ip range %s-%s is invalid",a.String(),b.String())
+		logger.Error("ip range %s-%s is invalid", a.String(), b.String())
 		os.Exit(-1)
 	}
 	return aa.Cmp(bb)
@@ -92,23 +93,23 @@ func ParseIPs(ips []string) []string {
 func DecodeIPs(ips []string) []string {
 	var res []string
 	var port string
-	for _,ip := range ips {
+	for _, ip := range ips {
 		port = "22"
-		if ipport := strings.Split(ip,":"); len(ipport) == 2 {
+		if ipport := strings.Split(ip, ":"); len(ipport) == 2 {
 			ip = ipport[0]
 			port = ipport[1]
 		}
-		if iprange := strings.Split(ip,"-"); len(iprange) == 2 {
+		if iprange := strings.Split(ip, "-"); len(iprange) == 2 {
 			for Cmp(stringToIP(iprange[0]), stringToIP(iprange[1])) <= 0 {
-				res = append(res, fmt.Sprintf("%s:%s",iprange[0],port))
-				iprange[0]= NextIP(stringToIP(iprange[0])).String()
+				res = append(res, fmt.Sprintf("%s:%s", iprange[0], port))
+				iprange[0] = NextIP(stringToIP(iprange[0])).String()
 			}
 		} else {
 			if stringToIP(ip) == nil {
-				logger.Error("ip [%s] is invalid",ip)
+				logger.Error("ip [%s] is invalid", ip)
 				os.Exit(1)
 			}
-			res = append(res,fmt.Sprintf("%s:%s",ip,port))
+			res = append(res, fmt.Sprintf("%s:%s", ip, port))
 		}
 	}
 	return res
@@ -169,4 +170,11 @@ func isHostName(master, host string) string {
 		}
 	}
 	return name
+}
+
+//获取sealos绝对路径
+func FetchSealosAbsPath() string {
+	ex, _ := os.Executable()
+	exPath := filepath.Dir(ex)
+	return exPath + string(os.PathSeparator) + os.Args[0]
 }
