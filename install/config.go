@@ -14,16 +14,15 @@ const defaultConfigFile = "/config.yaml"
 type SealConfig struct {
 	Masters []string
 	Nodes   []string
-	//config from kubeadm.cfg
+	//config from kubeadm.cfg. ex. cluster.local
 	DnsDomain         string
-	ApiServerDNSNames []string
-	ApiServerIPs      []string
+	ApiServerCertSANs []string
 
 	//SSHConfig
 	User       string
 	Passwd     string
 	PrivateKey string
-	//ApiServer
+	//ApiServer ex. apiserver.cluster.local
 	ApiServerDomian string
 
 	VIP     string
@@ -56,8 +55,7 @@ func (c *SealConfig) Dump(path string) {
 	c.PodCIDR = PodCIDR
 
 	c.DnsDomain = DnsDomain
-	c.ApiServerDNSNames = ApiServerDNSNames
-	c.ApiServerIPs = ApiServerIPs
+	c.ApiServerCertSANs = ApiServerCertSANs
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -124,8 +122,7 @@ func (c *SealConfig) Load(path string) {
 	SvcCIDR = c.SvcCIDR
 
 	DnsDomain = c.DnsDomain
-	ApiServerDNSNames = c.ApiServerDNSNames
-	ApiServerIPs = c.ApiServerIPs
+	ApiServerCertSANs = c.ApiServerCertSANs
 }
 
 func Load(path string, content interface{}) error {
@@ -156,8 +153,7 @@ func (c *SealConfig) showDefaultConfig() {
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
 	c.ApiServerDomian = "cluster.local"
-	c.ApiServerIPs = []string{"127.0.0.1"}
-	c.ApiServerDNSNames = []string{"apiserver.cluster.local"}
+	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
