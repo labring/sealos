@@ -17,8 +17,8 @@ type SealosClean struct {
 //BuildClean is
 func BuildClean(deleteNodes, deleteMasters []string) {
 	i := &SealosClean{cleanAll: false}
-	masters := ParseIPs(MasterIPs)
-	nodes := ParseIPs(NodeIPs)
+	masters := MasterIPs
+	nodes := NodeIPs
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
 		if !CleanForce { // flase
@@ -134,7 +134,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			go func(node string) {
 				defer wg.Done()
 				_ = SSHConfig.CmdAsync(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-				_ = SSHConfig.CmdAsync(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+				_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			}(node)
 		}
 		wg.Wait()

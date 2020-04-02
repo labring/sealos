@@ -19,8 +19,8 @@ func BuildJoin(joinMasters, joinNodes []string) {
 }
 
 func joinMastersFunc(joinMasters []string) {
-	masters := ParseIPs(MasterIPs)
-	nodes := ParseIPs(NodeIPs)
+	masters := MasterIPs
+	nodes := NodeIPs
 	i := &SealosInstaller{
 		Hosts:   joinMasters,
 		Masters: masters,
@@ -42,7 +42,7 @@ func joinNodesFunc(joinNodes []string) {
 	nodes := joinNodes
 	i := &SealosInstaller{
 		Hosts:   nodes,
-		Masters: ParseIPs(MasterIPs),
+		Masters: MasterIPs,
 		Nodes:   nodes,
 	}
 	i.CheckValid()
@@ -109,8 +109,9 @@ func (s *SealosInstaller) JoinNodes() {
 			cmd := s.Command(Version, JoinNode)
 			//create lvscare static pod
 			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
-			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("echo \"%s\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			_ = SSHConfig.CmdAsync(node, cmd)
+			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
+
 			cleaninstall := `rm -rf /root/kube`
 			_ = SSHConfig.CmdAsync(node, cleaninstall)
 		}(node)
@@ -127,7 +128,7 @@ func (s *SealosInstaller) lvscare() {
 			defer wg.Done()
 			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
 			_ = SSHConfig.CmdAsync(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-			_ = SSHConfig.CmdAsync(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+			_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 		}(node)
 	}
 
