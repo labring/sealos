@@ -8,6 +8,11 @@ import (
 //SendPackage is
 func (s *SealosInstaller) SendPackage() {
 	pkg := path.Base(PkgUrl)
-	hook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh", pkg)
-	SendPackage(PkgUrl, s.Hosts, "/root", hook)
+	kubeHook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh", pkg)
+	SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
+	//send sealos
+	sealos := FetchSealosAbsPath()
+	beforeHook := "rm -rf /usr/bin/sealos"
+	afterHook := "chmod a+x /usr/bin/sealos"
+	SendPackage(sealos, s.Hosts, "/usr/bin", &beforeHook, &afterHook)
 }
