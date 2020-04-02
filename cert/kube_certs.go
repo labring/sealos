@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	BasePath     = "pki"
-	EtcdBasePath = "pki/etcd"
+	BasePath     = "/etc/kubernetes/pki"
+	EtcdBasePath = "/etc/kubernetes/pki/etcd"
 )
 
 const (
