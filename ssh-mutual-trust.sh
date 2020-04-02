@@ -1,5 +1,12 @@
 #!/bin/bash
 
+#1、将IP写在一个文件里，比如文件名为hosts_file，一行一个IP地址。
+#2、修改ssh-mutual-trust.sh里面的用户名及密码，默认为root用户及密码123。
+#3、./ssh-mutual-trust.sh hosts_file
+#
+#或者用户密码写在命令行：
+#./ssh-mutual-trust.sh hosts_file root Abc123
+
 # check args count
 if test $# -lt 1; then
   echo -e "\nUsage: $0 < hosts file list > < username > < password >\n"
