@@ -51,7 +51,7 @@ func init() {
 
 	cleanCmd.Flags().StringSliceVar(&config.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
 	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
-	cleanCmd.Flags().StringVar(&config.ServiceCIRD, "serviceCIRD", "", "like 10.103.97.2/24")
+	cleanCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
 	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
 	// Here you will define your flags and configuration settings.
 
