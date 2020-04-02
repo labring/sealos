@@ -18,13 +18,13 @@ import (
 	"github.com/fanux/sealos/cert"
 	"github.com/spf13/cobra"
 	"github.com/wonderivan/logger"
-	"net"
+	"os"
 )
 
 type Flag struct {
-	DNS []string
-	IP []string
+	AltNames []string
 	NodeName string
+	ServiceCIRD string
 	NodeIP string
 }
 
@@ -36,22 +36,10 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long: `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var ips []net.IP
-		for _,ip := range config.IP {
-			netip:=net.ParseIP(ip).To4()
-			if netip == nil {
-				logger.Warn("invalid altname : %s",ip)
-				continue
-			}
-			ips = append(ips, netip)
-		}
-		certConfig := &cert.SealosCertMetaData{
-			APIServer: cert.AltNames{
-				DNSNames: config.DNS,
-				IPs: ips,
-			},
-			NodeName:  config.NodeName,
-			NodeIP:    config.NodeIP,
+		certConfig,err := cert.NewSealosCertMetaData(config.AltNames,config.ServiceCIRD,config.NodeName,config.NodeIP)
+		if err != nil {
+			logger.Error("generator cert config failed %s",err)
+			os.Exit(-1)
 		}
 		cert.GenerateAll(certConfig)
 	},
@@ -61,9 +49,10 @@ func init() {
 	config = &Flag{}
 	rootCmd.AddCommand(certCmd)
 
-	cleanCmd.Flags().StringSliceVar(&config.DNS, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	cleanCmd.Flags().StringSliceVar(&config.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
 	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
-	cleanCmd.Flags().StringVar(&config.NodeIP, "serviceCIRD", "", "like 10.103.97.2/24")
+	cleanCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
+	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

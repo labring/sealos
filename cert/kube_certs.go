@@ -149,7 +149,7 @@ type SealosCertMetaData struct {
 }
 
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
-func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*SealosCertMetaData, error) {
+func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR , nodeName , nodeIP string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
 	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
 	if err != nil {
@@ -166,6 +166,9 @@ func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*Sea
 		}
 		data.APIServer.DNSNames = append(data.APIServer.DNSNames, altName)
 	}
+
+	data.NodeIP = nodeIP
+	data.NodeName = nodeName
 	return data, nil
 }
 
