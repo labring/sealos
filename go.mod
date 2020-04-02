@@ -6,6 +6,7 @@ require (
 	github.com/cuisongliu/sshcmd v1.5.1
 	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
 	github.com/fanux/sealgate v0.0.5
+	github.com/ghodss/yaml v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.6
