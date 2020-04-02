@@ -1,7 +1,7 @@
 package cert
 
 // return sealos cert command
-func CertCMD(altDNS []string, altIPs []string, hostIP string) string{
+func CertCMD(altNames []string, hostIP, serviceCIRD string) string{
 	// TODO
 	return ""
 }

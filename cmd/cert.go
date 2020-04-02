@@ -61,10 +61,9 @@ func init() {
 	config = &Flag{}
 	rootCmd.AddCommand(certCmd)
 
-	cleanCmd.Flags().StringSliceVar(&config.DNS, "alt-dns", []string{}, "like sealyun.com")
-	cleanCmd.Flags().StringSliceVar(&config.IP, "alt-ip", []string{}, "like 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	cleanCmd.Flags().StringSliceVar(&config.DNS, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
+	cleanCmd.Flags().StringVar(&config.NodeIP, "serviceCIRD", "", "like 10.103.97.2/24")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
