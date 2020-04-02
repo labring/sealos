@@ -34,8 +34,9 @@ var contact = `
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
 
                   官方文档：sealyun.com
-                  项目地址：https://github.com/fanux/sealos
+                  项目地址：github.com/fanux/sealos
                   QQ群   ：98488045
+                  常见问题：sealyun.com/faq
 `
 
 // initCmd represents the init command

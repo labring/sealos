@@ -68,10 +68,7 @@ var certList = []Config{
 		Year:         100,
 		AltNames:     AltNames{
 			DNSNames: []string{
-				"apiserver.cluster.local",
 				"localhost",
-				"sealyun.com",
-				"master",
 				"kubernetes",
 				"kubernetes.default",
 				"kubernetes.default.svc",

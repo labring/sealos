@@ -64,8 +64,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	kubeadm := KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
 		DnsDomain = kubeadm.Networking.DnsDomain
-		ApiServerIPs = kubeadm.ApiServer.CertSANsIPS
-		ApiServerDNSNames = kubeadm.ApiServer.CertSANsDnsNames
+		ApiServerCertSANs = kubeadm.ApiServer.CertSANs
 	}
 }
 

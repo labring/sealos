@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/wonderivan/logger"
-	"net"
 	"strings"
 	"text/template"
 )
@@ -131,18 +130,6 @@ func KubeadmDataFromYaml(context string) *KubeadmType {
 						if kubeadm.Networking.DnsDomain == "" {
 							kubeadm.Networking.DnsDomain = "cluster.local"
 						}
-						hosts := kubeadm.ApiServer.CertSANs
-						for _, v := range hosts {
-							if h := strings.TrimSpace(v); h == "" {
-								continue
-							}
-							ip := net.ParseIP(v)
-							if ip != nil {
-								kubeadm.ApiServer.CertSANsIPS = append(kubeadm.ApiServer.CertSANsIPS, v)
-								continue
-							}
-							kubeadm.ApiServer.CertSANsDnsNames = append(kubeadm.ApiServer.CertSANsDnsNames, v)
-						}
 						return kubeadm
 					}
 				}
@@ -156,9 +143,6 @@ type KubeadmType struct {
 	Kind      string `yaml:"kind,omitempty"`
 	ApiServer struct {
 		CertSANs []string `yaml:"certSANs,omitempty"`
-		//存储数据使用
-		CertSANsIPS      []string `yaml:"-"`
-		CertSANsDnsNames []string `yaml:"-"`
 	} `yaml:"apiServer"`
 	Networking struct {
 		DnsDomain string `yaml:"dnsDomain,omitempty"`
