@@ -4,12 +4,15 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"github.com/wonderivan/logger"
 	"net"
+	"os"
+	"path"
 )
 
 var (
-	BasePath     = "pki"
-	EtcdBasePath = "pki/etcd"
+	BasePath     = "/etc/kubernetes/pki"
+	EtcdBasePath = "/etc/kubernetes/pki/etcd"
 )
 
 const (
@@ -198,6 +201,12 @@ var configFilter = []func(meta *SealosCertMetaData){apiServerAltName, etcdAltAnd
 
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
+	_, err := os.Stat(path.Join(dir,"sa.key"))
+	if !os.IsNotExist(err) {
+		logger.Info("sa.key sa.pub already exist")
+		return nil
+	}
+
 	key, err := NewPrivateKey(x509.RSA)
 	if err != nil {
 		return err
