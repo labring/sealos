@@ -14,7 +14,7 @@ Build a production kubernetes HA cluster.
 # Quick Start
 ## PreInstall
 * Install and start docker
-* Download [kubernetes offline package](https://github.com/sealstore/cloud-kernel/releases/) copy it to /root. 
+* Download [kubernetes offline package](http://store.lameleg.com) copy it to /root. 
 * Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
 * Support kuberentes 1.14.0+ 
 
@@ -61,12 +61,6 @@ Thats all!
 --version  kubernetes version
 ```
 
-Other flags:
-```
- --kubeadm-config string   kubeadm-config.yaml local 
- --vip string              virtual ip (default "10.103.97.2") 
-```
-
 Check cluster:
 ```
 [root@iZj6cdqfqw4o4o9tc0q44rZ ~]# kubectl get node
@@ -105,31 +99,20 @@ kube-system   kube-sealyun-lvscare-izj6cdqfqw4o4o9tc0q44uz      1/1     Running 
 
 ## Clean
 ```
-sealos clean \
-    --master 192.168.0.2 \
-    --master 192.168.0.3 \
-    --master 192.168.0.4 \           
-    --node 192.168.0.5 \              
-    --user root \                    
-    --passwd your-server-password
+sealos clean 
+```
+Or clean a master or node
+```shell script
+sealos clean --master 192.168.0.2
+sealos clean --node 192.168.0.3
 ```
 
 ## Add nodes
-Fetch join command:
+```shell script
+sealos join --master 192.168.0.2 # join master
+sealos join --node 192.168.0.3  --node 192.168.0.4 # join master
 ```
-kubeadm token create --print-join-command
-```
-
-Using super kubeadm, add `--master` flags in join command:
-```
-cd kube/shell && init.sh
-echo "10.103.97.2 apiserver.cluster.local" >> /etc/hosts   # using vip
-kubeadm join 10.103.97.2:6443 --token 9vr73a.a8uxyaju799qwdjv \
-    --master 10.103.97.100:6443 \
-    --master 10.103.97.101:6443 \
-    --master 10.103.97.102:6443 \
-    --discovery-token-ca-cert-hash sha256:7c2e69131a36ae2a042a339b33381c6d0d43887e2de83720eff5359e26aec866
-```
+Also can use 192.168.0.3-192.168.0.3 to specify multi IPs
 
 ## Using config file
 For example, we need add a certSANs `sealyun.com`:
@@ -175,32 +158,7 @@ sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
 
-## upgrade
-[升级简体中文](docs/upgrade_zh.md)
-
-## build from source
-```
-docker run --rm -v $GOPATH/src/github.com/fanux/sealos:/go/src/github.com/fanux/sealos -w /go/src/github.com/fanux/sealos -it golang:1.12.7  go build
-```
-if you using go mod:
-```
-go build -mod vendor
-```
-
-# More infomations
-
-About [LVScare](https://github.com/fanux/LVScare)
-
-This can care your masters ipvs rules.
-
-About super kubeadm [简体中文,kubernetes v1.14.0+](https://sealyun.com/post/super-kubeadm/)
-
 [简体中文](README_zh.md)
-
-[简体中文老版本](https://sealyun.com/post/sealos/)
-
-[sealos 1.x docs](https://github.com/fanux/sealos/tree/v1.14.0)
 
 [More offline packages](http://store.lameleg.com)
 
-[Fist](https://github.com/fanux/fist) Light weight kubernetes manager, support JWT user token, powerful webterminal, yaml files render and namespaces PSP quota manager etc..

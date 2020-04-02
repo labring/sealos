@@ -96,7 +96,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 		panic(1)
 	}
 	var masters []string
-	getmasters := ParseIPs(MasterIPs)
+	getmasters := MasterIPs
 	for _, h := range getmasters {
 		masters = append(masters, IpFormat(h))
 	}

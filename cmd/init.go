@@ -15,9 +15,28 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 )
+
+var contact = `
+      ___           ___           ___           ___       ___           ___     
+     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \   
+   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \  
+  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \ 
+ /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
+ \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
+  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\  
+   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /  
+    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /   
+     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
+
+                  官方文档：sealyun.com
+                  项目地址：https://github.com/fanux/sealos
+                  QQ群   ：98488045
+`
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
@@ -28,6 +47,7 @@ var initCmd = &cobra.Command{
 		c := &install.SealConfig{}
 		install.BuildInit()
 		c.Dump("")
+		fmt.Println(contact)
 	},
 }
 
@@ -45,6 +65,9 @@ func init() {
 	initCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
 	initCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
 	initCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+
+	initCmd.Flags().StringSliceVar(&install.ApiServerCertSANs, "api-certsans", []string{}, "the certSANs for apiServier")
+
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file location ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")

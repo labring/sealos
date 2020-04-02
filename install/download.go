@@ -26,7 +26,7 @@ func SendPackage(location string, hosts []string, dst, hook string) {
 		wm.Add(1)
 		go func(host string) {
 			defer wm.Done()
-			SSHConfig.Cmd(host, mkDstDir)
+			_ = SSHConfig.CmdAsync(host, mkDstDir)
 			logger.Debug("[%s]please wait for mkDstDir", host)
 			if SSHConfig.IsFilExist(host, fullPath) {
 				logger.Warn("[%s]SendPackage: file is exist", host)
@@ -39,7 +39,7 @@ func SendPackage(location string, hosts []string, dst, hook string) {
 			}
 			if hook != "" {
 				logger.Debug("[%s]please wait for hook", host)
-				SSHConfig.Cmd(host, hook)
+				_ = SSHConfig.CmdAsync(host, hook)
 			}
 		}(host)
 	}

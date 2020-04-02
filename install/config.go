@@ -12,18 +12,19 @@ const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
-	Masters         []string
-	Nodes           []string
-	User            string
-	Passwd          string
-	PrivateKey      string
-	ApiServerDomian string
-	VIP             string
-	PkgURL          string
-	Version         string
-	Repo            string
-	PodCIDR         string
-	SvcCIDR         string
+	Masters           []string
+	Nodes             []string
+	ApiServerCertSANs []string
+	User              string
+	Passwd            string
+	PrivateKey        string
+	ApiServerDomian   string
+	VIP               string
+	PkgURL            string
+	Version           string
+	Repo              string
+	PodCIDR           string
+	SvcCIDR           string
 }
 
 //Dump is
@@ -32,8 +33,9 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = home + defaultConfigPath + defaultConfigFile
 	}
-
-	c.Masters = ParseIPs(MasterIPs)
+	MasterIPs = ParseIPs(MasterIPs)
+	c.Masters = MasterIPs
+	NodeIPs = ParseIPs(NodeIPs)
 	c.Nodes = ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
@@ -45,6 +47,7 @@ func (c *SealConfig) Dump(path string) {
 	c.Repo = Repo
 	c.SvcCIDR = SvcCIDR
 	c.PodCIDR = PodCIDR
+	c.ApiServerCertSANs = ApiServerCertSANs
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -56,7 +59,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
 
-	if err = ioutil.WriteFile(path, y, 0644); err != nil{
+	if err = ioutil.WriteFile(path, y, 0644); err != nil {
 		logger.Warn("write to file %s failed: %s", path, err)
 	}
 }
@@ -109,6 +112,7 @@ func (c *SealConfig) Load(path string) {
 	Repo = c.Repo
 	PodCIDR = c.PodCIDR
 	PodCIDR = c.SvcCIDR
+	ApiServerCertSANs = c.ApiServerCertSANs
 }
 
 func Load(path string, content interface{}) error {
@@ -138,6 +142,7 @@ func (c *SealConfig) showDefaultConfig() {
 	c.Repo = "k8s.gcr.io"
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
+	c.ApiServerCertSANs = []string{"127.0.0.1", "apiserver.cluster.local", "10.96.0.1"}
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

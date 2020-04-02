@@ -17,8 +17,8 @@ type SealosClean struct {
 //BuildClean is
 func BuildClean(deleteNodes, deleteMasters []string) {
 	i := &SealosClean{cleanAll: false}
-	masters := ParseIPs(MasterIPs)
-	nodes := ParseIPs(NodeIPs)
+	masters := MasterIPs
+	nodes := NodeIPs
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
 		if !CleanForce { // flase
@@ -110,7 +110,7 @@ func (s *SealosClean) cleanNode(node string) {
 		if len(MasterIPs) > 0 {
 			hostname := isHostName(MasterIPs[0], node)
 			cmd := "kubectl delete node %s"
-			SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+			_ = SSHConfig.CmdAsync(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 		}
 	}
 }
@@ -124,7 +124,7 @@ func (s *SealosClean) cleanMaster(master string) {
 		if len(MasterIPs) > 0 {
 			hostname := isHostName(MasterIPs[0], master)
 			cmd := "kubectl delete node %s"
-			SSHConfig.Cmd(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+			_ = SSHConfig.CmdAsync(MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
 		}
 		//清空所有的nodes的数据
 		yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
@@ -133,8 +133,8 @@ func (s *SealosClean) cleanMaster(master string) {
 			wg.Add(1)
 			go func(node string) {
 				defer wg.Done()
-				SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
-				SSHConfig.Cmd(node, "echo \""+yaml+"\" > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml")
+				_ = SSHConfig.CmdAsync(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare*")
+				_ = SSHConfig.CmdAsync(node, fmt.Sprintf("mkdir -p /etc/kubernetes/manifests && echo '%s' > /etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", yaml))
 			}(node)
 		}
 		wg.Wait()
@@ -143,19 +143,19 @@ func (s *SealosClean) cleanMaster(master string) {
 
 func clean(host string) {
 	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = fmt.Sprint("rm -rf ~/kube")
-	SSHConfig.Cmd(host, cmd)
+	_ = SSHConfig.CmdAsync(host, cmd)
 }

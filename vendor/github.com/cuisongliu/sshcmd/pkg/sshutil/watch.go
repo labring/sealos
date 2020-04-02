@@ -1,7 +1,6 @@
 package sshutil
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/wonderivan/logger"
 	"path"
@@ -28,7 +27,7 @@ func (ss *SSH) LoggerFileSize(host, filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("[%s]transfer total size is: %.2f%s", host, value, "MB")
+			logger.Alert("[ssh][%s]transfer total size is: %.2f%s", host, value, "MB")
 		}
 	}
 }
@@ -39,14 +38,15 @@ func (ss *SSH) IsFilExist(host, remoteFilePath string) bool {
 	// ls -l | grep aa | wc -l
 	remoteFileName := path.Base(remoteFilePath) // aa
 	remoteFileDirName := path.Dir(remoteFilePath)
-	remoteFileCommand := fmt.Sprintf("ls -l %s | grep %s | wc -l", remoteFileDirName, remoteFileName)
-	data := bytes.Replace(ss.Cmd(host, remoteFileCommand), []byte("\r"), []byte(""), -1)
-	data = bytes.Replace(data, []byte("\n"), []byte(""), -1)
+	//it's bug: if file is aa.bak, `ls -l | grep aa | wc -l` is 1 ,should use `ll aa 2>/dev/null |wc -l`
+	//remoteFileCommand := fmt.Sprintf("ls -l %s| grep %s | grep -v grep |wc -l", remoteFileDirName, remoteFileName)
+	remoteFileCommand := fmt.Sprintf("ls -l %s/%s 2>/dev/null |wc -l", remoteFileDirName, remoteFileName)
 
-	count, err := strconv.Atoi(string(data))
+	data := ss.CmdToString(host, remoteFileCommand, " ")
+	count, err := strconv.Atoi(strings.TrimSpace(data))
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[%s]RemoteFilExist:%s", host, err)
+			logger.Error("[ssh][%s]RemoteFilExist:%s", host, err)
 		}
 	}()
 	if err != nil {
