@@ -7,20 +7,25 @@ import (
 )
 
 var (
-	MasterIPs   []string
-	NodeIPs     []string
+	MasterIPs []string
+	NodeIPs   []string
+	//config from kubeadm.cfg
+	DnsDomain         string
 	ApiServerCertSANs []string
-	VIP         string
-	PkgUrl      string
-	KubeadmFile string
-	Version     string
-	SSHConfig   sshutil.SSH
+	//
+	SSHConfig sshutil.SSH
+	ApiServer string
+
+	VIP     string
+	PkgUrl  string
+	Version string
+	Repo    string
+	PodCIDR string
+	SvcCIDR string
+
+	//
 	Ipvs        care.LvsCare
-	Kustomize   bool
-	ApiServer   string
-	Repo        string
-	PodCIDR     string
-	SvcCIDR     string
+	KubeadmFile string
 	// network type, calico or flannel etc..
 	Network string
 	// if true don't install cni plugin

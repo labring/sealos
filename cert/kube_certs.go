@@ -4,12 +4,15 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"github.com/wonderivan/logger"
 	"net"
+	"os"
+	"path"
 )
 
 var (
-	BasePath     = "pki"
-	EtcdBasePath = "pki/etcd"
+	BasePath     = "/etc/kubernetes/pki"
+	EtcdBasePath = "/etc/kubernetes/pki/etcd"
 )
 
 const (
@@ -68,10 +71,7 @@ var certList = []Config{
 		Year:         100,
 		AltNames:     AltNames{
 			DNSNames: []string{
-				"apiserver.cluster.local",
 				"localhost",
-				"sealyun.com",
-				"master",
 				"kubernetes",
 				"kubernetes.default",
 				"kubernetes.default.svc",
@@ -152,7 +152,7 @@ type SealosCertMetaData struct {
 }
 
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
-func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*SealosCertMetaData, error) {
+func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR , nodeName , nodeIP string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
 	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
 	if err != nil {
@@ -169,6 +169,9 @@ func NewSealosCertMetaData(apiServerIPAndDomains []string, SvcCIDR string) (*Sea
 		}
 		data.APIServer.DNSNames = append(data.APIServer.DNSNames, altName)
 	}
+
+	data.NodeIP = nodeIP
+	data.NodeName = nodeName
 	return data, nil
 }
 
@@ -198,6 +201,12 @@ var configFilter = []func(meta *SealosCertMetaData){apiServerAltName, etcdAltAnd
 
 // create sa.key sa.pub for service Account
 func GenerateServiceAccountKeyPaire(dir string) error {
+	_, err := os.Stat(path.Join(dir,"sa.key"))
+	if !os.IsNotExist(err) {
+		logger.Info("sa.key sa.pub already exist")
+		return nil
+	}
+
 	key, err := NewPrivateKey(x509.RSA)
 	if err != nil {
 		return err
