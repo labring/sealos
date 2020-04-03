@@ -9,6 +9,8 @@ import (
 
 const defaultConfigPath = "/.sealos"
 const defaultConfigFile = "/config.yaml"
+const defaultCertPath = "/cert"
+const defaultCertEtcdPath = "/cert/etcd"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {

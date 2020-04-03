@@ -17,15 +17,15 @@ package cmd
 import (
 	"github.com/fanux/sealos/cert"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
-	"os"
 )
 
 type Flag struct {
-	AltNames []string
-	NodeName string
-	ServiceCIRD string
-	NodeIP string
+	AltNames     []string
+	NodeName     string
+	ServiceCIRD  string
+	NodeIP       string
+	CertPath     string
+	CertEtcdPath string
 }
 
 var config *Flag
@@ -34,14 +34,9 @@ var config *Flag
 var certCmd = &cobra.Command{
 	Use:   "cert",
 	Short: "generate certs",
-	Long: `you can specify expire time`,
+	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		certConfig,err := cert.NewSealosCertMetaData(config.AltNames,config.ServiceCIRD,config.NodeName,config.NodeIP)
-		if err != nil {
-			logger.Error("generator cert config failed %s",err)
-			os.Exit(-1)
-		}
-		cert.GenerateAll(certConfig)
+		cert.CertGenerator(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIRD)
 	},
 }
 
@@ -53,6 +48,9 @@ func init() {
 	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
 	cleanCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
 	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	cleanCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	cleanCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

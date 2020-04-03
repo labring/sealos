@@ -20,7 +20,7 @@ import (
 
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
-	)
+)
 
 const (
 	// PrivateKeyBlockType is a possible value for pem.Block.Type.
@@ -38,6 +38,7 @@ const (
 // Config contains the basic fields required for creating a certificate
 type Config struct {
 	Path         string // Writeto Dir
+	DefaultPath  string // Kubernetes default Dir
 	BaseName     string // Writeto file name
 	CAName       string // root ca map key
 	CommonName   string
@@ -89,7 +90,7 @@ func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []st
 
 // Create as ca
 func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
-	_, err := os.Stat(pathForKey(cfg.Path,cfg.BaseName))
+	_, err := os.Stat(pathForKey(cfg.Path, cfg.BaseName))
 	if !os.IsNotExist(err) {
 		return LoadCaCertAndKeyFromDisk(cfg)
 	}
@@ -105,18 +106,18 @@ func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	return cert, key, nil
 }
 
-func LoadCaCertAndKeyFromDisk(cfg Config)(*x509.Certificate, crypto.Signer, error){
-	certs,err := certutil.CertsFromFile(pathForCert(cfg.Path,cfg.BaseName))
+func LoadCaCertAndKeyFromDisk(cfg Config) (*x509.Certificate, crypto.Signer, error) {
+	certs, err := certutil.CertsFromFile(pathForCert(cfg.Path, cfg.BaseName))
 	if err != nil {
-		return nil,nil,err
+		return nil, nil, err
 	}
 	caCert := certs[0]
 
-	cakey,err := TryLoadKeyFromDisk(pathForKey(cfg.Path, cfg.BaseName))
+	cakey, err := TryLoadKeyFromDisk(pathForKey(cfg.Path, cfg.BaseName))
 	if err != nil {
-		return nil,nil,err
+		return nil, nil, err
 	}
-	return caCert,cakey,nil
+	return caCert, cakey, nil
 }
 
 // TryLoadKeyFromDisk tries to load the key from the disk and validates that it is valid
@@ -250,7 +251,7 @@ func WritePublicKey(pkiPath, name string, key crypto.PublicKey) error {
 	}
 	publicKeyPath := pathForPublicKey(pkiPath, name)
 	if err := keyutil.WriteKey(publicKeyPath, publicKeyBytes); err != nil {
-		return fmt.Errorf( "unable to write public key to file %s %s", publicKeyPath, err)
+		return fmt.Errorf("unable to write public key to file %s %s", publicKeyPath, err)
 	}
 
 	return nil
