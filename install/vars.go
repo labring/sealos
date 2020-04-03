@@ -15,6 +15,9 @@ var (
 	//
 	SSHConfig sshutil.SSH
 	ApiServer string
+	//cert abs path
+	CertPath     string
+	CertEtcdPath string
 
 	VIP     string
 	PkgUrl  string

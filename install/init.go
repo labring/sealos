@@ -29,6 +29,7 @@ func BuildInit() {
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
+	i.CertGenerator()
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
 	if len(masters) > 1 {
@@ -71,14 +72,12 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 
 func (s *SealosInstaller) CertGenerator() {
 	//cert generator in sealos
-	home, _ := os.UserHomeDir()
-	certPath := home + defaultConfigPath + defaultCertPath
-	certEtcdPath := home + defaultConfigPath + defaultCertEtcdPath
 	hostname := GetRemoteHostName(s.Masters[0])
-	cert.CertGenerator(certPath, certEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
+	cert.CertGenerator(CertPath, CertEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
-
+	s.sendCaCerts([]string{s.Masters[0]})
+	s.sendCerts([]string{s.Masters[0]})
 }
 
 //InstallMaster0 is

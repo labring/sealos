@@ -11,15 +11,15 @@ import (
 )
 
 var (
-	kubeCertPath     = "/etc/kubernetes/pki"
-	kubeCertEtcdPath = "/etc/kubernetes/pki/etcd"
+	KubeDefaultCertPath     = "/etc/kubernetes/pki"
+	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"
 )
 
-func (meta *SealosCertMetaData) CaList() []Config {
+func CaList(CertPath, CertEtcdPath string) []Config {
 	return []Config{
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "ca",
 			CommonName:   "kubernetes",
 			Organization: nil,
@@ -28,8 +28,8 @@ func (meta *SealosCertMetaData) CaList() []Config {
 			Usages:       nil,
 		},
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "front-proxy-ca",
 			CommonName:   "front-proxy-ca",
 			Organization: nil,
@@ -38,8 +38,8 @@ func (meta *SealosCertMetaData) CaList() []Config {
 			Usages:       nil,
 		},
 		{
-			Path:         meta.CertEtcdPath,
-			DefaultPath:  kubeCertEtcdPath,
+			Path:         CertEtcdPath,
+			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "ca",
 			CommonName:   "etcd-ca",
 			Organization: nil,
@@ -50,11 +50,11 @@ func (meta *SealosCertMetaData) CaList() []Config {
 	}
 }
 
-func (meta *SealosCertMetaData) CertList() []Config {
+func CertList(CertPath, CertEtcdPath string) []Config {
 	return []Config{
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver",
 			CAName:       "kubernetes",
 			CommonName:   "kube-apiserver",
@@ -74,8 +74,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver-kubelet-client",
 			CAName:       "kubernetes",
 			CommonName:   "kube-apiserver-kubelet-client",
@@ -85,8 +85,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "front-proxy-client",
 			CAName:       "front-proxy-ca",
 			CommonName:   "front-proxy-client",
@@ -96,8 +96,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         meta.CertPath,
-			DefaultPath:  kubeCertPath,
+			Path:         CertPath,
+			DefaultPath:  KubeDefaultCertPath,
 			BaseName:     "apiserver-etcd-client",
 			CAName:       "etcd-ca",
 			CommonName:   "kube-apiserver-etcd-client",
@@ -107,8 +107,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         meta.CertEtcdPath,
-			DefaultPath:  kubeCertEtcdPath,
+			Path:         CertEtcdPath,
+			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "server",
 			CAName:       "etcd-ca",
 			CommonName:   "etcd", // kubeadm using node name as common name cc.CommonName = mc.NodeRegistration.Name
@@ -118,8 +118,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         meta.CertEtcdPath,
-			DefaultPath:  kubeCertEtcdPath,
+			Path:         CertEtcdPath,
+			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "peer",
 			CAName:       "etcd-ca",
 			CommonName:   "etcd-peer", // change this in filter
@@ -129,8 +129,8 @@ func (meta *SealosCertMetaData) CertList() []Config {
 			Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		},
 		{
-			Path:         meta.CertEtcdPath,
-			DefaultPath:  kubeCertEtcdPath,
+			Path:         CertEtcdPath,
+			DefaultPath:  kubeDefaultCertEtcdPath,
 			BaseName:     "healthcheck-client",
 			CAName:       "etcd-ca",
 			CommonName:   "kube-etcd-healthcheck-client",
@@ -144,11 +144,13 @@ func (meta *SealosCertMetaData) CertList() []Config {
 
 // 证书中需要用到的一些信息,传入的参数得提前验证
 type SealosCertMetaData struct {
-	APIServer    AltNames
-	NodeName     string
-	NodeIP       string
+	APIServer AltNames
+	NodeName  string
+	NodeIP    string
+	//证书生成的位置
 	CertPath     string
 	CertEtcdPath string
+	//调用函数的过滤器
 	configFilter []func()
 }
 
@@ -190,7 +192,7 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 }
 
 func (meta *SealosCertMetaData) apiServerAltName() {
-	certList := meta.CertList()
+	certList := CertList(meta.CertPath, meta.CertEtcdPath)
 	certList[APIserverCert].AltNames.DNSNames = append(certList[APIserverCert].AltNames.DNSNames,
 		meta.APIServer.DNSNames...)
 	certList[APIserverCert].AltNames.IPs = append(certList[APIserverCert].AltNames.IPs,
@@ -198,7 +200,7 @@ func (meta *SealosCertMetaData) apiServerAltName() {
 }
 
 func (meta *SealosCertMetaData) etcdAltAndCommonName() {
-	certs := meta.CertList()
+	certs := CertList(meta.CertPath, meta.CertEtcdPath)
 	altname := AltNames{
 		DNSNames: []string{"localhost", meta.NodeName},
 		IPs: []net.IP{
@@ -237,8 +239,8 @@ func (meta *SealosCertMetaData) generatorServiceAccountKeyPaire() error {
 }
 
 func (meta *SealosCertMetaData) GenerateAll() error {
-	cas := meta.CaList()
-	certs := meta.CertList()
+	cas := CaList(meta.CertPath, meta.CertEtcdPath)
+	certs := CertList(meta.CertPath, meta.CertEtcdPath)
 	meta.generatorServiceAccountKeyPaire()
 
 	for _, f := range meta.configFilter {

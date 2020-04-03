@@ -2,9 +2,9 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/ipvs"
 	"github.com/wonderivan/logger"
-	"os"
 	"strings"
 	"sync"
 )
@@ -78,15 +78,15 @@ func (s *SealosInstaller) GeneratorToken() {
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters(masters []string) {
 	//copy certs
-	//for _, master := range masters {
-	//
-	//	SendPackage(sealos, s.Hosts, "/usr/bin", &beforeHook, &afterHook)
-	//}
-	//SendPackage
-
+	s.sendCaCerts(masters)
 	//join master do sth
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range masters {
+		//TODO 并发执行这里是否有问题？？？
+		hostname := GetRemoteHostName(master)
+		certCMD := cert.CertCMD(ApiServerCertSANs, master, hostname, SvcCIDR)
+		_ = SSHConfig.CmdAsync(master, certCMD)
+
 		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
 		_ = SSHConfig.CmdAsync(master, cmdHosts)
 		_ = SSHConfig.CmdAsync(master, cmd)
@@ -146,30 +146,18 @@ func (s *SealosInstaller) lvscare() {
 
 func (s *SealosInstaller) sendCerts(hosts []string) {
 	//cert generator in sealos
-	//get abs path
-	home, _ := os.UserHomeDir()
-	certPath := home + defaultConfigPath + defaultCertPath
-	certEtcdPath := home + defaultConfigPath + defaultCertEtcdPath
-	print(certEtcdPath, certPath)
-	//
-	//caConfigs := cert.CaList(certPath, certEtcdPath)
-	//SendPackage(certPath + "/sa.key",hosts,certPath,nil,nil)
-	//SendPackage(certPath + "/sa.pub",hosts,certPath,nil,nil)
-	//for _, ca := range caConfigs {
-	//	SendPackage(ca.Path + "/" +ca.BaseName +".key",hosts,ca.Path,nil,nil)
-	//	SendPackage(ca.Path + "/" +ca.BaseName +".crt",hosts,ca.Path,nil,nil)
-	//}
+	caConfigs := cert.CaList(CertPath, CertEtcdPath)
+	SendPackage(CertPath+"/sa.key", hosts, cert.KubeDefaultCertPath, nil, nil)
+	SendPackage(CertPath+"/sa.pub", hosts, cert.KubeDefaultCertPath, nil, nil)
+	for _, ca := range caConfigs {
+		SendPackage(ca.Path+"/"+ca.BaseName+".key", hosts, ca.DefaultPath, nil, nil)
+		SendPackage(ca.Path+"/"+ca.BaseName+".crt", hosts, ca.DefaultPath, nil, nil)
+	}
 }
 func (s *SealosInstaller) sendCaCerts(hosts []string) {
-	//get abs path
-	home, _ := os.UserHomeDir()
-	certPath := home + defaultConfigPath + defaultCertPath
-	certEtcdPath := home + defaultConfigPath + defaultCertEtcdPath
-	print(certEtcdPath, certPath)
-	//
-	//certConfigs:=cert.CertList(certPath, certEtcdPath)
-	//for _, cert := range certConfigs {
-	//	SendPackage(cert.Path + "/" +cert.BaseName +".key",hosts,cert.Path,nil,nil)
-	//	SendPackage(cert.Path + "/" +cert.BaseName +".crt",hosts,cert.Path,nil,nil)
-	//}
+	certConfigs := cert.CertList(CertPath, CertEtcdPath)
+	for _, cert := range certConfigs {
+		SendPackage(cert.Path+"/"+cert.BaseName+".key", hosts, cert.DefaultPath, nil, nil)
+		SendPackage(cert.Path+"/"+cert.BaseName+".crt", hosts, cert.DefaultPath, nil, nil)
+	}
 }

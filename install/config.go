@@ -9,8 +9,6 @@ import (
 
 const defaultConfigPath = "/.sealos"
 const defaultConfigFile = "/config.yaml"
-const defaultCertPath = "/cert"
-const defaultCertEtcdPath = "/cert/etcd"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
@@ -33,6 +31,9 @@ type SealConfig struct {
 	Repo    string
 	PodCIDR string
 	SvcCIDR string
+	//certs location
+	CertPath     string
+	CertEtcdPath string
 }
 
 //Dump is
@@ -58,6 +59,8 @@ func (c *SealConfig) Dump(path string) {
 
 	c.DnsDomain = DnsDomain
 	c.ApiServerCertSANs = ApiServerCertSANs
+	c.CertPath = CertPath
+	c.CertEtcdPath = CertEtcdPath
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -125,6 +128,8 @@ func (c *SealConfig) Load(path string) {
 
 	DnsDomain = c.DnsDomain
 	ApiServerCertSANs = c.ApiServerCertSANs
+	CertPath = c.CertPath
+	CertEtcdPath = c.CertEtcdPath
 }
 
 func Load(path string, content interface{}) error {
@@ -156,6 +161,8 @@ func (c *SealConfig) showDefaultConfig() {
 	c.SvcCIDR = "10.96.0.0/12"
 	c.ApiServerDomian = "cluster.local"
 	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
+	c.CertPath = "/root/.sealos/cert"
+	c.CertEtcdPath = "/root/sealos/cert/etcd"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
