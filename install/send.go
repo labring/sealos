@@ -9,7 +9,8 @@ import (
 func (s *SealosInstaller) SendPackage() {
 	pkg := path.Base(PkgUrl)
 	kubeHook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh", pkg)
-	SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
+	PkgUrl = SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
+
 	//send sealos
 	sealos := FetchSealosAbsPath()
 	beforeHook := "rm -rf /usr/bin/sealos"
