@@ -12,7 +12,6 @@ github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils
 github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
 # github.com/cuisongliu/sshcmd v1.5.1
 github.com/cuisongliu/sshcmd/pkg/cmd
-github.com/cuisongliu/sshcmd/pkg/filesize
 github.com/cuisongliu/sshcmd/pkg/md5sum
 github.com/cuisongliu/sshcmd/pkg/sshutil
 # github.com/docker/libnetwork v0.8.0-dev.2.0.20190925143933-c8a5fca4a652 => github.com/docker/libnetwork v0.8.0-dev.2.0.20190925143933-c8a5fca4a652
