@@ -92,7 +92,7 @@ github.com/subosito/gotenv
 github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-00010101000000-000000000000 => github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936
 github.com/vishvananda/netns
-# github.com/wonderivan/logger v1.0.0
+# github.com/wonderivan/logger v1.0.0 => ./pkg/logger
 github.com/wonderivan/logger
 # golang.org/x/crypto v0.0.0-20190820162420-60c769a6c586
 golang.org/x/crypto/curve25519
