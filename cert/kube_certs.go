@@ -191,6 +191,8 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
 	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
 		meta.APIServer.DNSNames...)
+	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
+		meta.NodeName)
 	(*certList)[APIserverCert].AltNames.IPs = append((*certList)[APIserverCert].AltNames.IPs,
 		meta.APIServer.IPs...)
 
