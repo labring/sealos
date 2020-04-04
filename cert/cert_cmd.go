@@ -15,7 +15,7 @@ func CertCMD(altNames []string, hostIP, hostName, serviceCIRD string) string {
 
 	return cmd
 }
-func CertGenerator(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD string) {
+func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD string) {
 	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP)
 	if err != nil {
 		logger.Error("generator cert config failed %s", err)

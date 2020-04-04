@@ -16,8 +16,8 @@ var (
 	SSHConfig sshutil.SSH
 	ApiServer string
 	//cert abs path
-	CertPath     string
-	CertEtcdPath string
+	CertPath     = "/root/.sealos/pki"
+	CertEtcdPath = "/root/.sealos/pki/etcd"
 
 	VIP     string
 	PkgUrl  string

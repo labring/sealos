@@ -29,7 +29,7 @@ func BuildInit() {
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
-	i.CertGenerator()
+	i.GenerateCert()
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
 	if len(masters) > 1 {
@@ -70,22 +70,18 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	}
 }
 
-func (s *SealosInstaller) CertGenerator() {
+func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := GetRemoteHostName(s.Masters[0])
-	cert.CertGenerator(CertPath, CertEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
+	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
-	s.sendCaCerts([]string{s.Masters[0]})
+	s.sendCaAndKey([]string{s.Masters[0]})
 	s.sendCerts([]string{s.Masters[0]})
 }
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
-	//sealos init cert
-	hostname := GetRemoteHostName(s.Masters[0])
-	certCMD := cert.CertCMD(ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
-	_ = SSHConfig.CmdAsync(s.Masters[0], certCMD)
 	//master0 do sth
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
