@@ -184,6 +184,10 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 		}
 		data.APIServer.DNSNames = append(data.APIServer.DNSNames, altName)
 	}
+	ip := net.ParseIP(nodeIP)
+	if ip != nil {
+		data.APIServer.IPs = append(data.APIServer.IPs, ip)
+	}
 
 	data.NodeIP = nodeIP
 	data.NodeName = nodeName
