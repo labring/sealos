@@ -2,7 +2,7 @@ package sshutil
 
 import (
 	"fmt"
-	"github.com/cuisongliu/sshcmd/pkg/md5sum"
+	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
 	"github.com/pkg/sftp"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh"
