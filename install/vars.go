@@ -1,26 +1,34 @@
 package install
 
 import (
-	"github.com/cuisongliu/sshcmd/pkg/sshutil"
 	"github.com/fanux/lvscare/care"
+	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
 )
 
 var (
-	MasterIPs   []string
-	NodeIPs     []string
+	MasterIPs []string
+	NodeIPs   []string
+	//config from kubeadm.cfg
+	DnsDomain         string
 	ApiServerCertSANs []string
-	VIP         string
-	PkgUrl      string
-	KubeadmFile string
-	Version     string
-	SSHConfig   sshutil.SSH
+	//
+	SSHConfig sshutil.SSH
+	ApiServer string
+	//cert abs path
+	CertPath     = "/root/.sealos/pki"
+	CertEtcdPath = "/root/.sealos/pki/etcd"
+
+	VIP     string
+	PkgUrl  string
+	Version string
+	Repo    string
+	PodCIDR string
+	SvcCIDR string
+
+	//
 	Ipvs        care.LvsCare
-	Kustomize   bool
-	ApiServer   string
-	Repo        string
-	PodCIDR     string
-	SvcCIDR     string
+	KubeadmFile string
 	// network type, calico or flannel etc..
 	Network string
 	// if true don't install cni plugin

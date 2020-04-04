@@ -34,8 +34,9 @@ var contact = `
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
 
                   官方文档：sealyun.com
-                  项目地址：https://github.com/fanux/sealos
+                  项目地址：github.com/fanux/sealos
                   QQ群   ：98488045
+                  常见问题：sealyun.com/faq
 `
 
 // initCmd represents the init command
@@ -66,8 +67,6 @@ func init() {
 	initCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
 	initCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 
-	initCmd.Flags().StringSliceVar(&install.ApiServerCertSANs, "api-certsans", []string{}, "the certSANs for apiServier")
-
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file location ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "v1.14.1", "version is kubernetes version")
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")
@@ -79,4 +78,8 @@ func init() {
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
 	initCmd.Flags().BoolVar(&install.IPIP, "ipip", true, "ipip mode enable, calico..")
 	initCmd.Flags().StringVar(&install.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
+
+	// 不像用户暴露
+	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
+	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
 }

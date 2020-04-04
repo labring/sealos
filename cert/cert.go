@@ -14,12 +14,13 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"os"
 	"path/filepath"
 	"time"
 
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
-	)
+)
 
 const (
 	// PrivateKeyBlockType is a possible value for pem.Block.Type.
@@ -37,6 +38,7 @@ const (
 // Config contains the basic fields required for creating a certificate
 type Config struct {
 	Path         string // Writeto Dir
+	DefaultPath  string // Kubernetes default Dir
 	BaseName     string // Writeto file name
 	CAName       string // root ca map key
 	CommonName   string
@@ -88,6 +90,11 @@ func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []st
 
 // Create as ca
 func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
+	_, err := os.Stat(pathForKey(cfg.Path, cfg.BaseName))
+	if !os.IsNotExist(err) {
+		return LoadCaCertAndKeyFromDisk(cfg)
+	}
+
 	key, err := NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to create private key while generating CA certificate %s", err)
@@ -97,6 +104,42 @@ func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 		return nil, nil, fmt.Errorf("unable to create ca cert %s", err)
 	}
 	return cert, key, nil
+}
+
+func LoadCaCertAndKeyFromDisk(cfg Config) (*x509.Certificate, crypto.Signer, error) {
+	certs, err := certutil.CertsFromFile(pathForCert(cfg.Path, cfg.BaseName))
+	if err != nil {
+		return nil, nil, err
+	}
+	caCert := certs[0]
+
+	cakey, err := TryLoadKeyFromDisk(pathForKey(cfg.Path, cfg.BaseName))
+	if err != nil {
+		return nil, nil, err
+	}
+	return caCert, cakey, nil
+}
+
+// TryLoadKeyFromDisk tries to load the key from the disk and validates that it is valid
+func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
+	// Parse the private key from a file
+	privKey, err := keyutil.PrivateKeyFromFile(pkiPath)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't load the private key file %s", err)
+	}
+
+	// Allow RSA and ECDSA formats only
+	var key crypto.Signer
+	switch k := privKey.(type) {
+	case *rsa.PrivateKey:
+		key = k
+	case *ecdsa.PrivateKey:
+		key = k
+	default:
+		return nil, fmt.Errorf("couldn't convert the private key file %s", err)
+	}
+
+	return key, nil
 }
 
 func NewCaCertAndKeyFromRoot(cfg Config, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, crypto.Signer, error) {
@@ -208,7 +251,7 @@ func WritePublicKey(pkiPath, name string, key crypto.PublicKey) error {
 	}
 	publicKeyPath := pathForPublicKey(pkiPath, name)
 	if err := keyutil.WriteKey(publicKeyPath, publicKeyBytes); err != nil {
-		return fmt.Errorf( "unable to write public key to file %s %s", publicKeyPath, err)
+		return fmt.Errorf("unable to write public key to file %s %s", publicKeyPath, err)
 	}
 
 	return nil

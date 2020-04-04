@@ -17,15 +17,16 @@ package cmd
 import (
 	"github.com/fanux/sealos/cert"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
-	"net"
 )
 
 type Flag struct {
-	DNS []string
-	IP []string
-	NodeName string
-	NodeIP string
+	AltNames     []string
+	NodeName     string
+	ServiceCIRD  string
+	NodeIP       string
+	DNSDomain    string
+	CertPath     string
+	CertEtcdPath string
 }
 
 var config *Flag
@@ -34,26 +35,9 @@ var config *Flag
 var certCmd = &cobra.Command{
 	Use:   "cert",
 	Short: "generate certs",
-	Long: `you can specify expire time`,
+	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var ips []net.IP
-		for _,ip := range config.IP {
-			netip:=net.ParseIP(ip).To4()
-			if netip == nil {
-				logger.Warn("invalid altname : %s",ip)
-				continue
-			}
-			ips = append(ips, netip)
-		}
-		certConfig := &cert.SealosCertMetaData{
-			APIServer: cert.AltNames{
-				DNSNames: config.DNS,
-				IPs: ips,
-			},
-			NodeName:  config.NodeName,
-			NodeIP:    config.NodeIP,
-		}
-		cert.GenerateAll(certConfig)
+		cert.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIRD,config.DNSDomain)
 	},
 }
 
@@ -61,10 +45,14 @@ func init() {
 	config = &Flag{}
 	rootCmd.AddCommand(certCmd)
 
-	cleanCmd.Flags().StringSliceVar(&config.DNS, "alt-dns", []string{}, "like sealyun.com")
-	cleanCmd.Flags().StringSliceVar(&config.IP, "alt-ip", []string{}, "like 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringSliceVar(&config.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	certCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
+	certCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
+	certCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringVar(&config.DNSDomain, "dns-domain", "cluster.local", "cluster dns domian")
+	certCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	certCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

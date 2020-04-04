@@ -2,8 +2,10 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/ipvs"
 	"github.com/wonderivan/logger"
+	"path"
 	"strings"
 	"sync"
 )
@@ -76,18 +78,31 @@ func (s *SealosInstaller) GeneratorToken() {
 
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters(masters []string) {
+	var wg sync.WaitGroup
+	//copy certs
+	s.sendCaAndKey(masters)
+	//join master do sth
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range masters {
-		cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
-		_ = SSHConfig.CmdAsync(master, cmdHosts)
-		_ = SSHConfig.CmdAsync(master, cmd)
-		cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
-		_ = SSHConfig.CmdAsync(master, cmdHosts)
-		copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
-		_ = SSHConfig.CmdAsync(master, copyk8sConf)
-		cleaninstall := `rm -rf /root/kube`
-		_ = SSHConfig.CmdAsync(master, cleaninstall)
+		wg.Add(1)
+		go func(master string) {
+			defer wg.Done()
+			hostname := GetRemoteHostName(master)
+			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
+			_ = SSHConfig.CmdAsync(master, certCMD)
+
+			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
+			_ = SSHConfig.CmdAsync(master, cmdHosts)
+			_ = SSHConfig.CmdAsync(master, cmd)
+			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
+			_ = SSHConfig.CmdAsync(master, cmdHosts)
+			copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
+			_ = SSHConfig.CmdAsync(master, copyk8sConf)
+			cleaninstall := `rm -rf /root/kube`
+			_ = SSHConfig.CmdAsync(master, cleaninstall)
+		}(master)
 	}
+	wg.Wait()
 }
 
 //JoinNodes is
@@ -133,4 +148,22 @@ func (s *SealosInstaller) lvscare() {
 	}
 
 	wg.Wait()
+}
+
+func (s *SealosInstaller) sendCaAndKey(hosts []string) {
+	//cert generator in sealos
+	caConfigs := cert.CaList(CertPath, CertEtcdPath)
+	SendPackage(CertPath+"/sa.key", hosts, cert.KubeDefaultCertPath, nil, nil)
+	SendPackage(CertPath+"/sa.pub", hosts, cert.KubeDefaultCertPath, nil, nil)
+	for _, ca := range caConfigs {
+		SendPackage(path.Join(ca.Path,ca.BaseName+".key"), hosts, ca.DefaultPath, nil, nil)
+		SendPackage(path.Join(ca.Path,ca.BaseName+".crt"), hosts, ca.DefaultPath, nil, nil)
+	}
+}
+func (s *SealosInstaller) sendCerts(hosts []string) {
+	certConfigs := cert.CertList(CertPath, CertEtcdPath)
+	for _, cert := range certConfigs {
+		SendPackage(path.Join(cert.Path,cert.BaseName+".key"), hosts, cert.DefaultPath, nil, nil)
+		SendPackage(path.Join(cert.Path,cert.BaseName+".crt"), hosts, cert.DefaultPath, nil, nil)
+	}
 }
