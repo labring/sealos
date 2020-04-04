@@ -1,7 +1,7 @@
 package install
 
 import (
-	"github.com/cuisongliu/sshcmd/pkg/sshutil"
+	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"reflect"
 	"testing"
 )
@@ -74,6 +74,7 @@ ipvs:
   excludeCIDRs: 
   - 10.103.97.2/32
 `
+
 func TestKubeadmDataFromYaml(t *testing.T) {
 	type args struct {
 		context string
@@ -100,8 +101,8 @@ func TestKubeadmDataFromYaml(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := KubeadmDataFromYaml(tt.args.context)
-			if !reflect.DeepEqual(got.ApiServer.CertSANs , []string{"127.0.0.1","apiserver.cluster.local","172.16.9.202","172.16.9.200", "172.16.9.201","10.103.97.2"}) {
-				t.Errorf("%v",got)
+			if !reflect.DeepEqual(got.ApiServer.CertSANs, []string{"127.0.0.1", "apiserver.cluster.local", "172.16.9.202", "172.16.9.200", "172.16.9.201", "10.103.97.2"}) {
+				t.Errorf("%v", got)
 			}
 		})
 	}

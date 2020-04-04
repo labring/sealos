@@ -2,8 +2,8 @@ package install
 
 import (
 	"fmt"
-	"github.com/cuisongliu/sshcmd/pkg/cmd"
-	"github.com/cuisongliu/sshcmd/pkg/md5sum"
+	"github.com/fanux/sealos/pkg/sshcmd/cmd"
+	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
 	"github.com/wonderivan/logger"
 	"net/url"
 	"path"
