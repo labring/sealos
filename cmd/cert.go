@@ -44,12 +44,12 @@ func init() {
 	config = &Flag{}
 	rootCmd.AddCommand(certCmd)
 
-	cleanCmd.Flags().StringSliceVar(&config.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
-	cleanCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
-	cleanCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
-	cleanCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
-	cleanCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+	certCmd.Flags().StringSliceVar(&config.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	certCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
+	certCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
+	certCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	certCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
 
 	// Here you will define your flags and configuration settings.
 
