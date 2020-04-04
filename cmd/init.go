@@ -78,4 +78,8 @@ func init() {
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
 	initCmd.Flags().BoolVar(&install.IPIP, "ipip", true, "ipip mode enable, calico..")
 	initCmd.Flags().StringVar(&install.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
+
+	initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/cert", "cert file path")
+	initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/sealos/cert/etcd", "etcd cert file path")
+
 }
