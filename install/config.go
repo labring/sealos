@@ -161,8 +161,8 @@ func (c *SealConfig) showDefaultConfig() {
 	c.SvcCIDR = "10.96.0.0/12"
 	c.ApiServerDomian = "cluster.local"
 	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
-	c.CertPath = "/root/.sealos/cert"
-	c.CertEtcdPath = "/root/sealos/cert/etcd"
+	c.CertPath = "/root/.sealos/pki"
+	c.CertEtcdPath = "/root/.sealos/pki/etcd"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

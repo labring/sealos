@@ -194,7 +194,7 @@ func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
 	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
 		meta.APIServer.DNSNames...)
 	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
-		meta.NodeName, fmt.Sprintf("kubernetes.default.svc.",meta.DNSDomain))
+		meta.NodeName, fmt.Sprintf("kubernetes.default.svc.%s",meta.DNSDomain))
 	(*certList)[APIserverCert].AltNames.IPs = append((*certList)[APIserverCert].AltNames.IPs,
 		meta.APIServer.IPs...)
 
