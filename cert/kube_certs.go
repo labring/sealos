@@ -150,8 +150,6 @@ type SealosCertMetaData struct {
 	//证书生成的位置
 	CertPath     string
 	CertEtcdPath string
-	//调用函数的过滤器
-	configFilter []func()
 }
 
 const (
@@ -167,7 +165,6 @@ const (
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
 func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
-	data.configFilter = []func(){data.apiServerAltName, data.etcdAltAndCommonName}
 	data.CertPath = certPATH
 	data.CertEtcdPath = certEtcdPATH
 	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
@@ -191,16 +188,16 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 	return data, nil
 }
 
-func (meta *SealosCertMetaData) apiServerAltName() {
-	certList := CertList(meta.CertPath, meta.CertEtcdPath)
-	certList[APIserverCert].AltNames.DNSNames = append(certList[APIserverCert].AltNames.DNSNames,
+func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
+	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
 		meta.APIServer.DNSNames...)
-	certList[APIserverCert].AltNames.IPs = append(certList[APIserverCert].AltNames.IPs,
+	(*certList)[APIserverCert].AltNames.IPs = append((*certList)[APIserverCert].AltNames.IPs,
 		meta.APIServer.IPs...)
+
+	logger.Info("apiserver altNames : %v", (*certList)[APIserverCert].AltNames)
 }
 
-func (meta *SealosCertMetaData) etcdAltAndCommonName() {
-	certs := CertList(meta.CertPath, meta.CertEtcdPath)
+func (meta *SealosCertMetaData) etcdAltAndCommonName(certList *[]Config) {
 	altname := AltNames{
 		DNSNames: []string{"localhost", meta.NodeName},
 		IPs: []net.IP{
@@ -209,10 +206,12 @@ func (meta *SealosCertMetaData) etcdAltAndCommonName() {
 			net.IPv6loopback,
 		},
 	}
-	certs[EtcdServerCert].CommonName = meta.NodeName
-	certs[EtcdServerCert].AltNames = altname
-	certs[EtcdPeerCert].CommonName = meta.NodeName
-	certs[EtcdPeerCert].AltNames = altname
+	(*certList)[EtcdServerCert].CommonName = meta.NodeName
+	(*certList)[EtcdServerCert].AltNames = altname
+	(*certList)[EtcdPeerCert].CommonName = meta.NodeName
+	(*certList)[EtcdPeerCert].AltNames = altname
+
+	logger.Info("Etcd altnames : %v, commonName : %s", (*certList)[EtcdPeerCert].AltNames, (*certList)[EtcdPeerCert].CommonName)
 }
 
 // create sa.key sa.pub for service Account
@@ -241,11 +240,9 @@ func (meta *SealosCertMetaData) generatorServiceAccountKeyPaire() error {
 func (meta *SealosCertMetaData) GenerateAll() error {
 	cas := CaList(meta.CertPath, meta.CertEtcdPath)
 	certs := CertList(meta.CertPath, meta.CertEtcdPath)
+	meta.apiServerAltName(&certs)
+	meta.etcdAltAndCommonName(&certs)
 	meta.generatorServiceAccountKeyPaire()
-
-	for _, f := range meta.configFilter {
-		f()
-	}
 
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}

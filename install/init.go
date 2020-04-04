@@ -67,13 +67,24 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	if kubeadm != nil {
 		DnsDomain = kubeadm.Networking.DnsDomain
 		ApiServerCertSANs = kubeadm.ApiServer.CertSANs
+	} else {
+		logger.Warn("decode certSANs from config failed, using default SANs")
+		ApiServerCertSANs = getDefaultSANs()
 	}
+}
+
+func getDefaultSANs() []string {
+	var sans=[]string{"127.0.0.1","apiserver.cluster.local",VIP}
+	for _,master := range MasterIPs {
+		sans = append(sans, IpFormat(master))
+	}
+	return sans
 }
 
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := GetRemoteHostName(s.Masters[0])
-	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
+	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
 	s.sendCaAndKey([]string{s.Masters[0]})
