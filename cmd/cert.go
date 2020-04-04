@@ -24,6 +24,7 @@ type Flag struct {
 	NodeName     string
 	ServiceCIRD  string
 	NodeIP       string
+	DNSDomain    string
 	CertPath     string
 	CertEtcdPath string
 }
@@ -48,6 +49,7 @@ func init() {
 	certCmd.Flags().StringVar(&config.NodeName, "node-name", "", "like master0")
 	certCmd.Flags().StringVar(&config.ServiceCIRD, "service-cird", "", "like 10.103.97.2/24")
 	certCmd.Flags().StringVar(&config.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringVar(&config.DNSDomain, "dns-domain", "cluster.local", "cluster dns domian")
 	certCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
 	certCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
 

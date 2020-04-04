@@ -147,6 +147,7 @@ type SealosCertMetaData struct {
 	APIServer AltNames
 	NodeName  string
 	NodeIP    string
+	DNSDomain string
 	//证书生成的位置
 	CertPath     string
 	CertEtcdPath string
@@ -163,10 +164,11 @@ const (
 )
 
 // apiServerIPAndDomains = MasterIP + VIP + CertSANS 暂时只有apiserver, 记得把cluster.local后缀加到apiServerIPAndDOmas里先
-func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP string) (*SealosCertMetaData, error) {
+func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains []string, SvcCIDR, nodeName, nodeIP,DNSDomain string) (*SealosCertMetaData, error) {
 	data := &SealosCertMetaData{}
 	data.CertPath = certPATH
 	data.CertEtcdPath = certEtcdPATH
+	data.DNSDomain = DNSDomain
 	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
 	if err != nil {
 		return nil, err
@@ -192,7 +194,7 @@ func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
 	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
 		meta.APIServer.DNSNames...)
 	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
-		meta.NodeName)
+		meta.NodeName, fmt.Sprintf("kubernetes.default.svc.",meta.DNSDomain))
 	(*certList)[APIserverCert].AltNames.IPs = append((*certList)[APIserverCert].AltNames.IPs,
 		meta.APIServer.IPs...)
 

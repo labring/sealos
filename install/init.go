@@ -84,7 +84,7 @@ func getDefaultSANs() []string {
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := GetRemoteHostName(s.Masters[0])
-	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR)
+	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR, DnsDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
 	s.sendCaAndKey([]string{s.Masters[0]})

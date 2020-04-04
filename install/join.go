@@ -88,7 +88,7 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 		go func(master string) {
 			defer wg.Done()
 			hostname := GetRemoteHostName(master)
-			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR)
+			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
 			_ = SSHConfig.CmdAsync(master, certCMD)
 
 			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
