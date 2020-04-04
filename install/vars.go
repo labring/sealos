@@ -1,8 +1,8 @@
 package install
 
 import (
-	"github.com/cuisongliu/sshcmd/pkg/sshutil"
 	"github.com/fanux/lvscare/care"
+	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
 )
 
