@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
 	"io/ioutil"
@@ -28,6 +29,7 @@ func BuildInit() {
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
+	i.GenerateCert()
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
 	if len(masters) > 1 {
@@ -68,8 +70,19 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	}
 }
 
+func (s *SealosInstaller) GenerateCert() {
+	//cert generator in sealos
+	hostname := GetRemoteHostName(s.Masters[0])
+	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, s.Masters[0], hostname, SvcCIDR)
+	//copy all cert to master0
+	//CertSA(kye,pub) + CertCA(key,crt)
+	s.sendCaAndKey([]string{s.Masters[0]})
+	s.sendCerts([]string{s.Masters[0]})
+}
+
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
+	//master0 do sth
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 

@@ -76,7 +76,7 @@ func downloadCmd(url string) string {
 		if u.Scheme == "https" {
 			param = "--no-check-certificate"
 		}
-		c = fmt.Sprintf(" wget %s %s", param, url)
+		c = fmt.Sprintf(" wget -c %s %s", param, url)
 	}
 	return c
 }
