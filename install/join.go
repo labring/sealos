@@ -126,7 +126,7 @@ func (s *SealosInstaller) JoinNodes() {
 			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
 			_ = SSHConfig.CmdAsync(node, cmd)
 			_ = SSHConfig.Cmd(node, "mkdir -p /etc/kubernetes/manifests")
-			SSHConfig.Copy(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
+			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 
 			cleaninstall := `rm -rf /root/kube`
 			_ = SSHConfig.CmdAsync(node, cleaninstall)
@@ -144,7 +144,7 @@ func (s *SealosInstaller) lvscare() {
 			defer wg.Done()
 			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
 			_ = SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare* || :")
-			SSHConfig.Copy(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
+			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 		}(node)
 	}
 

@@ -25,11 +25,11 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-wget https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-wget https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
 
 # 安装一个三master的kubernetes集群
 sealos init --passwd 123456 \
@@ -85,7 +85,7 @@ sealos clean
 # 特性
 
 - [x] 99年证书
-- [x] 不依赖ansible haproxy keepalved, 一个二进制工具，0依赖
+- [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
 - [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](http://store.lameleg.com)即可,离线包包含所有二进制文件配置文件和镜像
 - [x] 高可用通过ipvs实现的localLB，占用资源少，稳定可靠，类似kube-proxy的实现
 - [x] 几乎可兼容所有支持systemd的x86_64架构的环境
