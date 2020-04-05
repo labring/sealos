@@ -38,8 +38,12 @@ func nameFromUrl(url string) string {
 //AppInstall is
 func AppInstall(url string) {
 	c := &SealConfig{}
-	c.Load("")
-
+	err := c.Load("")
+	if err != nil {
+		logger.Error(err)
+		c.ShowDefaultConfig()
+		os.Exit(0)
+	}
 	pkgConfig, err := LoadConfig(url)
 	if err != nil {
 		logger.Error("load config failed: %s", err)

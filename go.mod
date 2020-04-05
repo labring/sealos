@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
 	github.com/fanux/sealgate v0.0.5
+	github.com/fanux/sealos/pkg/logger v0.0.0-20200405090359-dfdb0373125b
 	github.com/ghodss/yaml v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
