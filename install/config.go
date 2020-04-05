@@ -109,7 +109,7 @@ func (c *SealConfig) Load(path string) (err error) {
 
 	err = yaml.Unmarshal(y, c)
 	if err != nil {
-		return fmt.Errorf("read config file %s failed %w",path,err)
+		return fmt.Errorf("unmarshal config file failed: %w",err)
 	}
 
 	MasterIPs = c.Masters
