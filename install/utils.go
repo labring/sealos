@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,10 @@ func VersionToInt(version string) int {
 //IpFormat is
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
+	if len(ipAndPort) != 2 {
+		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", host)
+		os.Exit(1)
+	}
 	return ipAndPort[0]
 }
 
@@ -51,6 +56,11 @@ func RandString(len int) string {
 func Cmp(a, b net.IP) int {
 	aa := ipToInt(a)
 	bb := ipToInt(b)
+
+	if aa == nil || bb == nil {
+		logger.Error("ip range %s-%s is invalid", a.String(), b.String())
+		os.Exit(-1)
+	}
 	return aa.Cmp(bb)
 }
 
@@ -77,45 +87,32 @@ func NextIP(ip net.IP) net.IP {
 
 // ParseIPs 解析ip 192.168.0.2-192.168.0.6
 func ParseIPs(ips []string) []string {
-	var hosts []string
-	for _, nodes := range ips {
-		var startIp, endIp string
-		if !strings.Contains(nodes, "-") {
-			hosts = append(hosts, nodes)
-			continue
-		} else {
-			// nodes 192.168.0.2-192.168.0.6
-			// 1.1.1.1 - 155.155.155.155
-			hostSilts := strings.Split(nodes, "-")
-			if len(hostSilts) > 2 {
-				logger.Error("multi-nodes/multi-masters illegal; host spilt than more two .")
-				os.Exit(-1)
-			} else {
-				startIp = strings.Split(nodes, "-")[0]
-				endIp = strings.Split(nodes, "-")[1]
-				if len(startIp) < 7 {
-					logger.Error("multi-nodes/multi-masters illegal;start host length less 7 , like 1.1.1.1 can used, but not %s .", startIp)
-					os.Exit(-1)
-				}
-				if len(endIp) < 7 {
-					logger.Error("multi-nodes/multi-masters illegal;end host length less 7 , like 1.1.1.1 can used, but not s% .", endIp)
-					os.Exit(-1)
-				}
+	return DecodeIPs(ips)
+}
+
+func DecodeIPs(ips []string) []string {
+	var res []string
+	var port string
+	for _, ip := range ips {
+		port = "22"
+		if ipport := strings.Split(ip, ":"); len(ipport) == 2 {
+			ip = ipport[0]
+			port = ipport[1]
+		}
+		if iprange := strings.Split(ip, "-"); len(iprange) == 2 {
+			for Cmp(stringToIP(iprange[0]), stringToIP(iprange[1])) <= 0 {
+				res = append(res, fmt.Sprintf("%s:%s", iprange[0], port))
+				iprange[0] = NextIP(stringToIP(iprange[0])).String()
 			}
-		}
-		//
-		port := ":22"
-		if strings.Index(endIp, ":") != -1 {
-			port = ":" + strings.Split(endIp, ":")[1] //获取endIp
-			endIp = strings.Split(endIp, ":")[0]
-		}
-		hosts = append(hosts, startIp+port)
-		for Cmp(stringToIP(startIp), stringToIP(endIp)) < 0 {
-			startIp = NextIP(stringToIP(startIp)).String()
-			hosts = append(hosts, startIp+port)
+		} else {
+			if stringToIP(ip) == nil {
+				logger.Error("ip [%s] is invalid", ip)
+				os.Exit(1)
+			}
+			res = append(res, fmt.Sprintf("%s:%s", ip, port))
 		}
 	}
-	return hosts
+	return res
 }
 
 // like y|yes|Y|YES return true
@@ -173,4 +170,16 @@ func isHostName(master, host string) string {
 		}
 	}
 	return name
+}
+
+func GetRemoteHostName(hostIP string) string {
+	hostName := SSHConfig.CmdToString(hostIP, "hostname", "")
+	return strings.ToLower(hostName)
+}
+
+//获取sealos绝对路径
+func FetchSealosAbsPath() string {
+	ex, _ := os.Executable()
+	exPath := filepath.Dir(ex)
+	return exPath + string(os.PathSeparator) + os.Args[0]
 }

@@ -12,19 +12,28 @@ const defaultConfigFile = "/config.yaml"
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
-	Masters         []string
-	Nodes           []string
+	Masters []string
+	Nodes   []string
+	//config from kubeadm.cfg. ex. cluster.local
+	DnsDomain         string
 	ApiServerCertSANs []string
-	User            string
-	Passwd          string
-	PrivateKey      string
+
+	//SSHConfig
+	User       string
+	Passwd     string
+	PrivateKey string
+	//ApiServer ex. apiserver.cluster.local
 	ApiServerDomian string
-	VIP             string
-	PkgURL          string
-	Version         string
-	Repo            string
-	PodCIDR         string
-	SvcCIDR         string
+
+	VIP     string
+	PkgURL  string
+	Version string
+	Repo    string
+	PodCIDR string
+	SvcCIDR string
+	//certs location
+	CertPath     string
+	CertEtcdPath string
 }
 
 //Dump is
@@ -33,8 +42,9 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = home + defaultConfigPath + defaultConfigFile
 	}
-
-	c.Masters = ParseIPs(MasterIPs)
+	MasterIPs = ParseIPs(MasterIPs)
+	c.Masters = MasterIPs
+	NodeIPs = ParseIPs(NodeIPs)
 	c.Nodes = ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
@@ -46,7 +56,11 @@ func (c *SealConfig) Dump(path string) {
 	c.Repo = Repo
 	c.SvcCIDR = SvcCIDR
 	c.PodCIDR = PodCIDR
+
+	c.DnsDomain = DnsDomain
 	c.ApiServerCertSANs = ApiServerCertSANs
+	c.CertPath = CertPath
+	c.CertEtcdPath = CertEtcdPath
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
@@ -58,7 +72,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
 
-	if err = ioutil.WriteFile(path, y, 0644); err != nil{
+	if err = ioutil.WriteFile(path, y, 0644); err != nil {
 		logger.Warn("write to file %s failed: %s", path, err)
 	}
 }
@@ -110,8 +124,12 @@ func (c *SealConfig) Load(path string) {
 	Version = c.Version
 	Repo = c.Repo
 	PodCIDR = c.PodCIDR
-	PodCIDR = c.SvcCIDR
+	SvcCIDR = c.SvcCIDR
+
+	DnsDomain = c.DnsDomain
 	ApiServerCertSANs = c.ApiServerCertSANs
+	CertPath = c.CertPath
+	CertEtcdPath = c.CertEtcdPath
 }
 
 func Load(path string, content interface{}) error {
@@ -141,7 +159,10 @@ func (c *SealConfig) showDefaultConfig() {
 	c.Repo = "k8s.gcr.io"
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
-	c.ApiServerCertSANs = []string{"127.0.0.1", "apiserver.cluster.local", "10.96.0.1"}
+	c.ApiServerDomian = "cluster.local"
+	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
+	c.CertPath = "/root/.sealos/pki"
+	c.CertEtcdPath = "/root/.sealos/pki/etcd"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

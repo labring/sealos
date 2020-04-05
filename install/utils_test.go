@@ -78,3 +78,47 @@ func TestParseIPs(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodeIPs(t *testing.T) {
+	type args struct {
+		ips []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3"}},
+			[]string{"192.168.0.1:22", "192.168.0.2:22", "192.168.0.3:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1", "192.168.0.3:23"}},
+			[]string{"192.168.0.1:22", "192.168.0.3:23"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3:23", "192.168.0.5"}},
+			[]string{"192.168.0.1:23", "192.168.0.2:23", "192.168.0.3:23", "192.168.0.5:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1:24", "192.168.0.3"}},
+			[]string{"192.168.0.1:24", "192.168.0.3:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3", "192.168.0.4-192.168.0.6:25", "192.168.0.7:25", "192.168.0.8"}},
+			[]string{"192.168.0.1:22", "192.168.0.2:22", "192.168.0.3:22", "192.168.0.4:25", "192.168.0.5:25", "192.168.0.6:25", "192.168.0.7:25", "192.168.0.8:22"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DecodeIPs(tt.args.ips); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DecodeIPs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
