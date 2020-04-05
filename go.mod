@@ -3,7 +3,6 @@ module github.com/fanux/sealos
 go 1.13
 
 require (
-	cloud.google.com/go v0.38.0
 	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
 	github.com/fanux/sealgate v0.0.5
 	github.com/fanux/sealos/pkg/logger v0.0.0-20200405090359-dfdb0373125b
