@@ -23,8 +23,6 @@ github.com/fanux/lvscare/service
 github.com/fanux/lvscare/utils
 # github.com/fanux/sealgate v0.0.5
 github.com/fanux/sealgate/cloud
-# github.com/fanux/sealos/pkg/logger v0.0.0-20200405090359-dfdb0373125b
-github.com/fanux/sealos/pkg/logger
 # github.com/fsnotify/fsnotify v1.4.7
 github.com/fsnotify/fsnotify
 # github.com/ghodss/yaml v1.0.0

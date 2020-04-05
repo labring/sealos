@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/wonderivan/logger"
 	"os"
 
 	"github.com/spf13/cobra"

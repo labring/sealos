@@ -18,8 +18,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
 	"github.com/spf13/cobra"
+	"github.com/wonderivan/logger"
 	"os"
 )
 
@@ -35,7 +35,7 @@ var cleanCmd = &cobra.Command{
 		err := c.Load("")
 		if err != nil {
 			// 判断错误是否为配置文件不存在
-			if errors.Is(err,os.ErrNotExist) {
+			if errors.Is(err, os.ErrNotExist) {
 				_, err = fmt.Fprint(os.Stdout, "Please enter the password to connect to the node:")
 				if err != nil {
 					logger.Error("fmt.Fprint err", err)
@@ -46,7 +46,7 @@ var cleanCmd = &cobra.Command{
 					logger.Error("fmt.Scanf err", err)
 					os.Exit(-1)
 				}
-			}else {
+			} else {
 				logger.Error(err)
 				os.Exit(-1)
 			}
