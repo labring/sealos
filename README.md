@@ -25,11 +25,11 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-wget https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-wget https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
 
 # 安装一个三master的kubernetes集群
 sealos init --passwd 123456 \
