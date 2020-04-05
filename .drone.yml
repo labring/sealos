@@ -15,6 +15,7 @@ steps:
       - go build -mod vendor -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
       - echo "wget https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
       - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
+      - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos)" >> Note.md
 
 - name: publish
   image: plugins/github-release
