@@ -7,7 +7,7 @@ import (
 )
 
 // return sealos cert command
-func CertCMD(altNames []string, hostIP, hostName, serviceCIRD , DNSDomain string) string {
+func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
 	cmd := fmt.Sprintf("sealos cert --node-ip %s --node-name %s --service-cird %s --dns-domain %s", hostIP, hostName, serviceCIRD, DNSDomain)
 	for _, name := range altNames {
 		cmd += fmt.Sprintf(" --alt-names %s", name)
