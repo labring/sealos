@@ -2,7 +2,6 @@ package logger
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"runtime"
 	"sync"
@@ -43,7 +42,7 @@ func (c *consoleLogger) Init(jsonConfig string) error {
 		return nil
 	}
 	if jsonConfig != "{}" {
-		fmt.Fprintf(os.Stdout, "consoleLogger Init:%s\n", jsonConfig)
+		//fmt.Fprintf(os.Stdout, "consoleLogger Init:%s\n", jsonConfig)
 	}
 
 	err := json.Unmarshal([]byte(jsonConfig), c)

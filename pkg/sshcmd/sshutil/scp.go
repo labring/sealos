@@ -42,7 +42,53 @@ func (ss *SSH) Md5Sum(host, remoteFilePath string) string {
 }
 
 //Copy is
-func (ss *SSH) Copy(host, remoteFilePath string, localFilePathOrBytes interface{}) {
+func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
+	sftpClient, err := ss.sftpConnect(host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer sftpClient.Close()
+	srcFile, err := os.Open(localFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := sftpClient.Create(remoteFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer dstFile.Close()
+	buf := make([]byte, 100*oneMBByte) //100mb
+	totalMB := 0
+	for {
+		n, _ := srcFile.Read(buf)
+		if n == 0 {
+			break
+		}
+		length, _ := dstFile.Write(buf[0:n])
+		totalMB += length / oneMBByte
+		logger.Alert("[ssh][%s]transfer total size is: %d%s", host, totalMB, "MB")
+	}
+}
+
+//Copy is
+func (ss *SSH) CopyConfigFile(host, remoteFilePath string, localFilePathOrBytes interface{}) {
 	var (
 		data io.Reader
 	)
