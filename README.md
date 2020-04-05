@@ -24,8 +24,8 @@ node0|192.168.0.5
 > 只需要准备好服务器，在任意一台服务器上执行下面命令即可
 
 ```sh
-# 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可
-wget https://github.com/fanux/sealos/releases/download/v3.2.0/sealos && \
+# 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
+wget https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
