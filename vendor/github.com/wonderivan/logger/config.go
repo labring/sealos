@@ -7,14 +7,14 @@ import (
 
 //二次开发logger
 func Cfg() {
-	config:=logConfig{
+	config := logConfig{
 		TimeFormat: "15:04:05",
 		Console: &consoleLogger{
 			LogLevel: LevelDebug,
 			Colorful: runtime.GOOS != "windows",
 		},
 	}
-	cfg,_:=json.Marshal(config)
+	cfg, _ := json.Marshal(config)
 	SetLogger(string(cfg))
-	SetLogPathTrim("github.com/fanux/sealos/",true)
+	SetLogPath(true)
 }
