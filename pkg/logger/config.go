@@ -16,5 +16,5 @@ func Cfg() {
 	}
 	cfg, _ := json.Marshal(config)
 	SetLogger(string(cfg))
-	SetLogPathTrim("github.com/fanux/sealos/", true)
+	SetLogPath(true)
 }

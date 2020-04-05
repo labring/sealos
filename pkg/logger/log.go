@@ -93,14 +93,13 @@ type nameLogger struct {
 }
 
 type LocalLogger struct {
-	lock        sync.Mutex
-	init        bool
-	outputs     []*nameLogger
-	appName     string
-	callDepth   int
-	timeFormat  string
-	usePath     string
-	usePathBool bool
+	lock       sync.Mutex
+	init       bool
+	outputs    []*nameLogger
+	appName    string
+	callDepth  int
+	timeFormat string
+	usePath    bool
 }
 
 func NewLogger(depth ...int) *LocalLogger {
@@ -193,11 +192,8 @@ func (this *LocalLogger) DelLogger(adapterName string) error {
 }
 
 // 设置日志起始路径
-func (this *LocalLogger) SetLogPath(trimPath string) {
-	this.usePath = trimPath
-}
-func (this *LocalLogger) SetLogPathBool(bPath bool) {
-	this.usePathBool = bPath
+func (this *LocalLogger) SetLogPath(bPath bool) {
+	this.usePath = bPath
 }
 func (this *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int) {
 	for _, l := range this.outputs {
@@ -212,7 +208,7 @@ func (this *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int)
 
 		strLevel := " [" + msg.Level + "] "
 		strPath := "[" + msg.Path + "] "
-		if !this.usePathBool {
+		if !this.usePath {
 			strPath = ""
 		}
 
@@ -235,12 +231,9 @@ func (this *LocalLogger) writeMsg(logLevel int, msg string, v ...interface{}) er
 	}
 	when := time.Now()
 	//
-	if this.usePathBool {
+	if this.usePath {
 		_, file, lineno, ok := runtime.Caller(this.callDepth)
-		var strim string = "src/"
-		if this.usePath != "" {
-			strim = this.usePath
-		}
+		var strim = "/"
 		if ok {
 			codeArr := strings.Split(file, strim)
 			code := codeArr[len(codeArr)-1]
@@ -339,9 +332,8 @@ func Reset() {
 	defaultLogger.Reset()
 }
 
-func SetLogPathTrim(path string, isPath bool) {
-	defaultLogger.SetLogPathBool(isPath)
-	defaultLogger.SetLogPath(path)
+func SetLogPath(show bool) {
+	defaultLogger.SetLogPath(show)
 }
 
 // param 可以是log配置文件名，也可以是log配置内容,默认DEBUG输出到控制台
