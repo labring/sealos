@@ -61,14 +61,14 @@ func CertList(CertPath, CertEtcdPath string) []Config {
 			Organization: nil,
 			Year:         100,
 			AltNames: AltNames{
-				DNSNames: []string{
-					"localhost",
-					"kubernetes",
-					"kubernetes.default",
-					"kubernetes.default.svc",
+				DNSNames: map[string]string{
+					"localhost":              "localhost",
+					"kubernetes":             "kubernetes",
+					"kubernetes.default":     "kubernetes.default",
+					"kubernetes.default.svc": "kubernetes.default.svc",
 				},
-				IPs: []net.IP{
-					{127, 0, 0, 1},
+				IPs: map[string]net.IP{
+					"127.0.0.1": net.IPv4(127, 0, 0, 1),
 				},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
@@ -174,19 +174,19 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 		return nil, err
 	}
 	svcFirstIP[len(svcFirstIP)-1]++ //取svc第一个ip
-	data.APIServer.IPs = append(data.APIServer.IPs, svcFirstIP)
+	data.APIServer.IPs[svcFirstIP.String()] = svcFirstIP
 
 	for _, altName := range apiServerIPAndDomains {
 		ip := net.ParseIP(altName)
 		if ip != nil {
-			data.APIServer.IPs = append(data.APIServer.IPs, ip)
+			data.APIServer.IPs[ip.String()] = ip
 			continue
 		}
-		data.APIServer.DNSNames = append(data.APIServer.DNSNames, altName)
+		data.APIServer.DNSNames[altName] = altName
 	}
 	ip := net.ParseIP(nodeIP)
 	if ip != nil {
-		data.APIServer.IPs = append(data.APIServer.IPs, ip)
+		data.APIServer.IPs[ip.String()] = ip
 	}
 
 	data.NodeIP = nodeIP
@@ -195,23 +195,30 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 }
 
 func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
-	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
-		meta.APIServer.DNSNames...)
-	(*certList)[APIserverCert].AltNames.DNSNames = append((*certList)[APIserverCert].AltNames.DNSNames,
-		meta.NodeName, fmt.Sprintf("kubernetes.default.svc.%s", meta.DNSDomain))
-	(*certList)[APIserverCert].AltNames.IPs = append((*certList)[APIserverCert].AltNames.IPs,
-		meta.APIServer.IPs...)
+	for _, dns := range meta.APIServer.DNSNames {
+		(*certList)[APIserverCert].AltNames.DNSNames[dns] = dns
+	}
 
+	svcDns := fmt.Sprintf("kubernetes.default.svc.%s", meta.DNSDomain)
+	(*certList)[APIserverCert].AltNames.DNSNames[svcDns] = svcDns
+	(*certList)[APIserverCert].AltNames.DNSNames[meta.NodeName] = meta.NodeName
+
+	for _, ip := range meta.APIServer.IPs {
+		(*certList)[APIserverCert].AltNames.IPs[ip.String()] = ip
+	}
 	logger.Info("apiserver altNames : %v", (*certList)[APIserverCert].AltNames)
 }
 
 func (meta *SealosCertMetaData) etcdAltAndCommonName(certList *[]Config) {
 	altname := AltNames{
-		DNSNames: []string{"localhost", meta.NodeName},
-		IPs: []net.IP{
-			{127, 0, 0, 1},
-			net.ParseIP(meta.NodeIP).To4(),
-			net.IPv6loopback,
+		DNSNames: map[string]string{
+			"localhost":   "localhost",
+			meta.NodeName: meta.NodeName,
+		},
+		IPs: map[string]net.IP{
+			net.IPv4(127, 0, 0, 1).String():         net.IPv4(127, 0, 0, 1),
+			net.ParseIP(meta.NodeIP).To4().String(): net.ParseIP(meta.NodeIP).To4(),
+			net.IPv6loopback.String():               net.IPv6loopback,
 		},
 	}
 	(*certList)[EtcdServerCert].CommonName = meta.NodeName
