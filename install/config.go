@@ -1,6 +1,7 @@
 package install
 
 import (
+	"fmt"
 	"github.com/wonderivan/logger"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -95,7 +96,7 @@ func Dump(path string, content interface{}) error {
 }
 
 //Load is
-func (c *SealConfig) Load(path string) {
+func (c *SealConfig) Load(path string) (err error) {
 	if path == "" {
 		home, _ := os.UserHomeDir()
 		path = home + defaultConfigPath + defaultConfigFile
@@ -103,14 +104,12 @@ func (c *SealConfig) Load(path string) {
 
 	y, err := ioutil.ReadFile(path)
 	if err != nil {
-		logger.Error("read config file %s failed %s", path, err)
-		c.showDefaultConfig()
-		os.Exit(0)
+		return fmt.Errorf("read config file %s failed %w",path,err)
 	}
 
 	err = yaml.Unmarshal(y, c)
 	if err != nil {
-		logger.Error("unmarshal config file failed: %s", err)
+		return fmt.Errorf("read config file %s failed %w",path,err)
 	}
 
 	MasterIPs = c.Masters
@@ -130,6 +129,7 @@ func (c *SealConfig) Load(path string) {
 	ApiServerCertSANs = c.ApiServerCertSANs
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
+	return
 }
 
 func Load(path string, content interface{}) error {
@@ -146,7 +146,7 @@ func Load(path string, content interface{}) error {
 	return nil
 }
 
-func (c *SealConfig) showDefaultConfig() {
+func (c *SealConfig) ShowDefaultConfig() {
 	c.Masters = []string{"192.168.0.2", "192.168.0.2", "192.168.0.2"}
 	c.Nodes = []string{"192.168.0.3", "192.168.0.4"}
 	c.User = "root"
