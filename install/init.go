@@ -121,7 +121,6 @@ func (s *SealosInstaller) InstallMaster0() {
 		MTU:       MTU,
 	}).Manifests("")
 
-	logger.Info("calico yaml is : \n", netyaml)
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
 }
