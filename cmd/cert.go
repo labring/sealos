@@ -37,7 +37,7 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cert.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIRD,config.DNSDomain)
+		cert.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIRD, config.DNSDomain)
 	},
 }
 

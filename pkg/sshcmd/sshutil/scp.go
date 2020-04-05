@@ -1,11 +1,13 @@
 package sshutil
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
 	"github.com/pkg/sftp"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -32,6 +34,7 @@ func (ss *SSH) CopyForMD5(host, localFilePath, remoteFilePath, md5 string) bool 
 	logger.Error("[ssh]md5 validate false")
 	return false
 }
+
 func (ss *SSH) Md5Sum(host, remoteFilePath string) string {
 	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFilePath)
 	remoteMD5 := ss.CmdToString(host, cmd, "")
@@ -39,7 +42,10 @@ func (ss *SSH) Md5Sum(host, remoteFilePath string) string {
 }
 
 //Copy is
-func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
+func (ss *SSH) Copy(host, remoteFilePath string, localFilePathOrBytes interface{}) {
+	var (
+		data io.Reader
+	)
 	sftpClient, err := ss.sftpConnect(host)
 	defer func() {
 		if r := recover(); r != nil {
@@ -50,16 +56,25 @@ func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
 		panic(1)
 	}
 	defer sftpClient.Close()
-	srcFile, err := os.Open(localFilePath)
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+
+	switch v := localFilePathOrBytes.(type) {
+	case string:
+		srcFile, err := os.Open(v)
+		defer func() {
+			if r := recover(); r != nil {
+				logger.Error("[ssh][%s]scpCopy: %s", host, err)
+			}
+		}()
+		if err != nil {
+			panic(1)
 		}
-	}()
-	if err != nil {
-		panic(1)
+		defer srcFile.Close()
+		data = srcFile
+	case []byte:
+		data = bytes.NewReader(v)
+	default:
+		panic("must use path or []bytes")
 	}
-	defer srcFile.Close()
 
 	dstFile, err := sftpClient.Create(remoteFilePath)
 	defer func() {
@@ -74,7 +89,7 @@ func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
 	buf := make([]byte, 100*oneMBByte) //100mb
 	totalMB := 0
 	for {
-		n, _ := srcFile.Read(buf)
+		n, _ := data.Read(buf)
 		if n == 0 {
 			break
 		}
