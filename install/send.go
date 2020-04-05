@@ -13,7 +13,7 @@ func (s *SealosInstaller) SendPackage() {
 
 	//send sealos
 	sealos := FetchSealosAbsPath()
-	beforeHook := "rm -rf /usr/bin/sealos"
+	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
 	afterHook := "chmod a+x /usr/bin/sealos"
 	SendPackage(sealos, s.Hosts, "/usr/bin", &beforeHook, &afterHook)
 }
