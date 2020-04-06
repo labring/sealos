@@ -47,7 +47,8 @@ var cleanCmd = &cobra.Command{
 					logger.Error("read password err", err)
 					os.Exit(-1)
 				}
-				c.Passwd = string(passwordTmp)
+				fmt.Println(string(passwordTmp))
+				install.SSHConfig.Password = string(passwordTmp)
 			} else {
 				logger.Error(err)
 				os.Exit(-1)

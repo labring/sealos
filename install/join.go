@@ -76,6 +76,10 @@ func (s *SealosInstaller) GeneratorToken() {
 	decodeOutput(output)
 }
 
+func getApiserverHost(ipAddr string) (host string) {
+	return fmt.Sprintf("%s %s",ipAddr,ApiServer)
+}
+
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters(masters []string) {
 	var wg sync.WaitGroup
@@ -91,10 +95,10 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
 			_ = SSHConfig.CmdAsync(master, certCMD)
 
-			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
+			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(IpFormat(s.Masters[0])))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
 			_ = SSHConfig.CmdAsync(master, cmd)
-			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
+			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(IpFormat(s.Masters[0])), getApiserverHost(IpFormat(master)))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
 			copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
 			_ = SSHConfig.CmdAsync(master, copyk8sConf)
