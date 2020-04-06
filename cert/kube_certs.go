@@ -169,6 +169,8 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 	data.CertPath = certPATH
 	data.CertEtcdPath = certEtcdPATH
 	data.DNSDomain = DNSDomain
+	data.APIServer.IPs = make(map[string]net.IP)
+	data.APIServer.DNSNames = make(map[string]string)
 	svcFirstIP, _, err := net.ParseCIDR(SvcCIDR)
 	if err != nil {
 		return nil, err
