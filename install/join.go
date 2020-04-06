@@ -76,6 +76,7 @@ func (s *SealosInstaller) GeneratorToken() {
 	decodeOutput(output)
 }
 
+// 返回/etc/hosts记录
 func getApiserverHost(ipAddr string) (host string) {
 	return fmt.Sprintf("%s %s",ipAddr,ApiServer)
 }
