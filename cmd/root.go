@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/wonderivan/logger"
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -51,7 +52,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
+	logger.Cfg()
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.

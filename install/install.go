@@ -7,7 +7,6 @@ import (
 	"github.com/wonderivan/logger"
 	"io"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"sync"
@@ -39,8 +38,12 @@ func nameFromUrl(url string) string {
 //AppInstall is
 func AppInstall(url string) {
 	c := &SealConfig{}
-	c.Load("")
-
+	err := c.Load("")
+	if err != nil {
+		logger.Error(err)
+		c.ShowDefaultConfig()
+		os.Exit(0)
+	}
 	pkgConfig, err := LoadConfig(url)
 	if err != nil {
 		logger.Error("load config failed: %s", err)
@@ -50,29 +53,6 @@ func AppInstall(url string) {
 	pkgConfig.Name = nameFromUrl(url)
 
 	Exec(pkgConfig, *c)
-}
-
-func LoadRemoteFile(url string) string {
-	isHttp := strings.HasPrefix(url, "http")
-	if !isHttp {
-		logger.Info("using local package %s", url)
-		return url
-	}
-	logger.Info("wait for wget app package...")
-	wgetParam := ""
-	if strings.HasPrefix(url, "https") {
-		wgetParam = "--no-check-certificate"
-	}
-	wgetCommand := fmt.Sprintf(" wget %s ", wgetParam)
-	cmd := fmt.Sprintf("%s %s", wgetCommand, url)
-	c := exec.Command("sh", "-c", cmd)
-	out, err := c.CombinedOutput()
-	if err != nil {
-		logger.Error(err)
-	}
-	logger.Info("%s", out)
-
-	return path.Base(url)
 }
 
 // LoadConfig from tar package
@@ -90,7 +70,7 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
-	filename := LoadRemoteFile(packageFile)
+	filename, _ := downloadFile(packageFile)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -189,7 +169,7 @@ func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName string) {
 	workspace := fmt.Sprintf("/root/%s", pkgName)
 
 	nodes := append(config.Masters, config.Nodes...)
-	FetchPackage(url, nodes, workspace)
+	SendPackage(url, nodes, workspace, nil, nil)
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
@@ -210,7 +190,7 @@ type RunOnMaster struct {
 
 func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 	workspace := fmt.Sprintf("/root/%s", pkgName)
-	FetchPackage(url, []string{config.Masters[0]}, workspace)
+	SendPackage(url, []string{config.Masters[0]}, workspace, nil, nil)
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
 	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
 	for _, cmd := range r.Cmd {
@@ -220,5 +200,5 @@ func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	SSHConfig.Cmd(node, command)
+	_ = SSHConfig.CmdAsync(node, command)
 }

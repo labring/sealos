@@ -18,6 +18,13 @@ func TestProcess(t *testing.T) {
 	//bar(100, 1, 0)
 }
 
+func TestNotReadyNode(t *testing.T) {
+	SSHConfig.User = "root"
+	SSHConfig.Password = "PaaS@123"
+	ss := isHostName("172.27.139.74", "172.27.139.126")
+	print(ss)
+}
+
 func TestPrint(t *testing.T) {
 	//User = "root"
 	//Passwd = "admin"
@@ -29,12 +36,7 @@ func TestPrint(t *testing.T) {
 }
 
 func TestVersionToInt(t *testing.T) {
-	t.Log(ParseIPs([]string{"1.1.1.1-1.1.1.5"}))
-}
-
-func TestUrlGetMd5(t *testing.T) {
-	aa := UrlGetMd5("https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz")
-	t.Log(aa)
+	t.Log(ParseIPs([]string{"172.26.13.133-172.26.13.136:2222"}))
 }
 
 func TestSliceRemoveStr(t *testing.T) {
@@ -55,23 +57,67 @@ func TestParseIPs(t *testing.T) {
 		{
 			"test multiple ips",
 			args{[]string{"192.168.0.2-192.168.0.6"}},
-			[]string{"192.168.0.2","192.168.0.3","192.168.0.4","192.168.0.5","192.168.0.6"},
+			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.4", "192.168.0.5", "192.168.0.6"},
 		},
 		{
 			"test multiple ips",
-			args{[]string{"192.168.0.2-192.168.0.3","192.168.0.5-192.168.0.6"}},
-			[]string{"192.168.0.2","192.168.0.3","192.168.0.5","192.168.0.6"},
+			args{[]string{"192.168.0.2-192.168.0.3", "192.168.0.5-192.168.0.6"}},
+			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.5", "192.168.0.6"},
 		},
 		{
 			"test multiple ips",
-			args{[]string{"192.168.0.2-192.168.0.4","192.168.0.8"}},
-			[]string{"192.168.0.2","192.168.0.3","192.168.0.4","192.168.0.8"},
+			args{[]string{"192.168.0.2-192.168.0.4", "192.168.0.8"}},
+			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.4", "192.168.0.8"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ParseIPs(tt.args.ips); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ParseIPs() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDecodeIPs(t *testing.T) {
+	type args struct {
+		ips []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3"}},
+			[]string{"192.168.0.1:22", "192.168.0.2:22", "192.168.0.3:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1", "192.168.0.3:23"}},
+			[]string{"192.168.0.1:22", "192.168.0.3:23"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3:23", "192.168.0.5"}},
+			[]string{"192.168.0.1:23", "192.168.0.2:23", "192.168.0.3:23", "192.168.0.5:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1:24", "192.168.0.3"}},
+			[]string{"192.168.0.1:24", "192.168.0.3:22"},
+		},
+		{
+			"test decode ips",
+			args{[]string{"192.168.0.1-192.168.0.3", "192.168.0.4-192.168.0.6:25", "192.168.0.7:25", "192.168.0.8"}},
+			[]string{"192.168.0.1:22", "192.168.0.2:22", "192.168.0.3:22", "192.168.0.4:25", "192.168.0.5:25", "192.168.0.6:25", "192.168.0.7:25", "192.168.0.8:22"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := DecodeIPs(tt.args.ips); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DecodeIPs() = %v, want %v", got, tt.want)
 			}
 		})
 	}

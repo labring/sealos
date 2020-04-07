@@ -3,6 +3,7 @@ package install
 import (
 	"bytes"
 	"fmt"
+	"github.com/ghodss/yaml"
 	"github.com/wonderivan/logger"
 	"strings"
 	"text/template"
@@ -96,7 +97,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 		panic(1)
 	}
 	var masters []string
-	getmasters := ParseIPs(MasterIPs)
+	getmasters := MasterIPs
 	for _, h := range getmasters {
 		masters = append(masters, IpFormat(h))
 	}
@@ -111,4 +112,39 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
+}
+
+//根据yaml转换kubeadm结构
+func KubeadmDataFromYaml(context string) *KubeadmType {
+	yamls := strings.Split(context, "---")
+	if len(yamls) > 0 {
+		for _, y := range yamls {
+			cfg := strings.TrimSpace(y)
+			if cfg == "" {
+				continue
+			} else {
+				kubeadm := &KubeadmType{}
+				if err := yaml.Unmarshal([]byte(cfg), kubeadm); err == nil {
+					//
+					if kubeadm.Kind == "ClusterConfiguration" {
+						if kubeadm.Networking.DnsDomain == "" {
+							kubeadm.Networking.DnsDomain = "cluster.local"
+						}
+						return kubeadm
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+type KubeadmType struct {
+	Kind      string `yaml:"kind,omitempty"`
+	ApiServer struct {
+		CertSANs []string `yaml:"certSANs,omitempty"`
+	} `yaml:"apiServer"`
+	Networking struct {
+		DnsDomain string `yaml:"dnsDomain,omitempty"`
+	} `yaml:"networking"`
 }

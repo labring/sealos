@@ -1,24 +1,46 @@
 package install
 
-import "github.com/cuisongliu/sshcmd/pkg/sshutil"
+import (
+	"github.com/fanux/lvscare/care"
+	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
+	"regexp"
+)
 
 var (
-	MasterIPs   []string
-	NodeIPs     []string
-	VIP         string
-	PkgUrl      string
+	MasterIPs []string
+	NodeIPs   []string
+	//config from kubeadm.cfg
+	DnsDomain         string
+	ApiServerCertSANs []string
+	//
+	SSHConfig sshutil.SSH
+	ApiServer string
+	//cert abs path
+	CertPath     = "/root/.sealos/pki"
+	CertEtcdPath = "/root/.sealos/pki/etcd"
+
+	VIP     string
+	PkgUrl  string
+	Version string
+	Repo    string
+	PodCIDR string
+	SvcCIDR string
+
+	//
+	Ipvs        care.LvsCare
 	KubeadmFile string
-	Version     string
-	SSHConfig   sshutil.SSH
-	Kustomize   bool
-	ApiServer   string
-	Repo        string
-	PodCIDR     string
-	SvcCIDR     string
 	// network type, calico or flannel etc..
 	Network string
 	// if true don't install cni plugin
 	WithoutCNI bool
 	//network interface name, like "eth.*|en.*"
 	Interface string
+	// the ipip mode of the calico
+	IPIP bool
+	// mtu size
+	MTU string
+
+	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
+
+	CleanForce bool
 )
