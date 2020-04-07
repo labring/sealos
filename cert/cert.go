@@ -52,8 +52,8 @@ type Config struct {
 // to the API Server's x509 certificate SubAltNames field. The values will
 // be passed directly to the x509.Certificate object.
 type AltNames struct {
-	DNSNames []string
-	IPs      []net.IP
+	DNSNames map[string]string
+	IPs      map[string]net.IP
 }
 
 // NewPrivateKey creates an RSA private key
@@ -168,13 +168,22 @@ func NewSignedCert(cfg Config, key crypto.Signer, caCert *x509.Certificate, caKe
 		return nil, errors.New("must specify at least one ExtKeyUsage")
 	}
 
+	var dnsNames []string
+	var ips []net.IP
+
+	for _, v := range cfg.AltNames.DNSNames {
+		dnsNames = append(dnsNames, v)
+	}
+	for _, v := range cfg.AltNames.IPs {
+		ips = append(ips, v)
+	}
 	certTmpl := x509.Certificate{
 		Subject: pkix.Name{
 			CommonName:   cfg.CommonName,
 			Organization: cfg.Organization,
 		},
-		DNSNames:     cfg.AltNames.DNSNames,
-		IPAddresses:  cfg.AltNames.IPs,
+		DNSNames:     dnsNames,
+		IPAddresses:  ips,
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
 		NotAfter:     time.Now().Add(duration365d * cfg.Year).UTC(),

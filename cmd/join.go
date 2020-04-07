@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -30,7 +32,12 @@ var joinCmd = &cobra.Command{
 		beforeMasters := install.ParseIPs(install.MasterIPs)
 
 		c := &install.SealConfig{}
-		c.Load("")
+		err := c.Load("")
+		if err != nil {
+			logger.Error(err)
+			c.ShowDefaultConfig()
+			os.Exit(0)
+		}
 		install.BuildJoin(beforeMasters, beforeNodes)
 		c.Dump("")
 	},

@@ -2,8 +2,8 @@ package install
 
 import (
 	"fmt"
-	"github.com/cuisongliu/sshcmd/pkg/cmd"
-	"github.com/cuisongliu/sshcmd/pkg/md5sum"
+	"github.com/fanux/sealos/pkg/sshcmd/cmd"
+	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
 	"github.com/wonderivan/logger"
 	"net/url"
 	"path"
@@ -14,9 +14,8 @@ import (
 //md5
 //dst: /root
 //hook: cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh
-func SendPackage(location string, hosts []string, dst string, before, after *string) {
+func SendPackage(location string, hosts []string, dst string, before, after *string) string {
 	location, md5 := downloadFile(location)
-	PkgUrl = location
 	pkg := path.Base(location)
 	fullPath := fmt.Sprintf("%s/%s", dst, pkg)
 	mkDstDir := fmt.Sprintf("mkdir -p %s || true", dst)
@@ -47,6 +46,7 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 		}(host)
 	}
 	wm.Wait()
+	return location
 }
 
 //
