@@ -1,14 +1,32 @@
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-[![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
+<div align="center">
+  <p>
+    <b>一条命令部署 Kubernetes 高可用集群 👋</b>
+  </p>
+  <p>
+     <i>只能用丝滑一词形容的kubernetes高可用安装（kubernetes install）工具，一条命令，离线安装，包含所有依赖，内核负载不依赖haproxy keepalived,纯golang开发,99年证书,支持v1.16.8 v1.15.11 v1.17.4 v1.18.0!</i>
+  </p>
+  <p>
+
+  [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
+  [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
+  [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
+  [![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
+  [![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
+
+  </p>
+</div>
+
+---
+
+**文档: _[官方文档](https://sealyun.com/docs), [博客](https://fuckcloudnative.io)_**
+
+**加入组织: _[Telegram](https://t.me/gsealyun)_**
 
 ![](./arch.jpg)
 
 [English Docs](/README_en.md)
 
-# 快速开始
-
-[官方文档](https://sealyun.com/docs)
+# 🚀 快速开始
 
 > 环境信息
 
@@ -82,7 +100,7 @@ sealos clean --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
 sealos clean
 ```
 
-# 特性
+# ✅ 特性
 
 - [x] 99年证书
 - [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
