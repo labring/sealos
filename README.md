@@ -43,14 +43,14 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
+$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/d551b0b9e67e0416d0f9dce870a16665-1.18.0/kube1.18.0.tar.gz 
 
 # 安装一个三master的kubernetes集群
-sealos init --passwd 123456 \
+$ sealos init --passwd 123456 \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.18.0.tar.gz \
@@ -70,34 +70,34 @@ version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 > 增加master
 
 ```shell script
-sealos join --master 192.168.0.6 --master 192.168.0.7
-sealos join --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
+🐳 → sealos join --master 192.168.0.6 --master 192.168.0.7
+🐳 → sealos join --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 增加node
 
 ```shell script
-sealos join --node 192.168.0.6 --node 192.168.0.7
-sealos join --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
+🐳 → sealos join --node 192.168.0.6 --node 192.168.0.7
+🐳 → sealos join --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 > 删除指定master节点
 
 ```shell script
-sealos clean --master 192.168.0.6 --master 192.168.0.7
-sealos clean --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
+🐳 → sealos clean --master 192.168.0.6 --master 192.168.0.7
+🐳 → sealos clean --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 删除指定node节点
 
 ```shell script
-sealos clean --node 192.168.0.6 --node 192.168.0.7
-sealos clean --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
+🐳 → sealos clean --node 192.168.0.6 --node 192.168.0.7
+🐳 → sealos clean --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 清理集群
 
 ```shell script
-sealos clean
+🐳 → sealos clean
 ```
 
 # ✅ 特性
