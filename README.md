@@ -2,7 +2,7 @@
 [![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 [![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
 
-![](./arch.png)
+![](./arch.jpeg)
 
 [English Docs](/README_en.md)
 
