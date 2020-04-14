@@ -22,7 +22,7 @@
 
 **加入组织: _[Telegram](https://t.me/gsealyun)_**
 
-![](./arch.jpg)
+![](./arch.png)
 
 [English Docs](/README_en.md)
 
