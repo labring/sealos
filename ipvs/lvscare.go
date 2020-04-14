@@ -60,6 +60,20 @@ func podToYaml(pod v1.Pod) ([]byte, error) {
 
 // componentPod returns a Pod object from the container and volume specifications
 func componentPod(container v1.Container) v1.Pod {
+	hostPathType := v1.HostPathUnset
+	mountName := "lib-modules"
+	volumes := []v1.Volume{
+		{Name: mountName, VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/lib/modules",
+				Type: &hostPathType,
+			},
+		}},
+	}
+	container.VolumeMounts = []v1.VolumeMount{
+		{Name: mountName, ReadOnly: true, MountPath: "/lib/modules"},
+	}
+
 	return v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -76,6 +90,7 @@ func componentPod(container v1.Container) v1.Pod {
 			Containers:        []v1.Container{container},
 			PriorityClassName: "system-cluster-critical",
 			HostNetwork:       true,
+			Volumes:           volumes,
 		},
 	}
 }
