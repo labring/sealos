@@ -35,6 +35,9 @@ type SealConfig struct {
 	//certs location
 	CertPath     string
 	CertEtcdPath string
+	//lvscare images
+	LvscareName string
+	LvscareTag  string
 }
 
 //Dump is
@@ -62,7 +65,9 @@ func (c *SealConfig) Dump(path string) {
 	c.ApiServerCertSANs = ApiServerCertSANs
 	c.CertPath = CertPath
 	c.CertEtcdPath = CertEtcdPath
-
+	//lvscare
+	c.LvscareName = LvscareImage.Image
+	c.LvscareTag = LvscareImage.Tag
 	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
@@ -104,12 +109,12 @@ func (c *SealConfig) Load(path string) (err error) {
 
 	y, err := ioutil.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("read config file %s failed %w",path,err)
+		return fmt.Errorf("read config file %s failed %w", path, err)
 	}
 
 	err = yaml.Unmarshal(y, c)
 	if err != nil {
-		return fmt.Errorf("unmarshal config file failed: %w",err)
+		return fmt.Errorf("unmarshal config file failed: %w", err)
 	}
 
 	MasterIPs = c.Masters
@@ -129,6 +134,9 @@ func (c *SealConfig) Load(path string) (err error) {
 	ApiServerCertSANs = c.ApiServerCertSANs
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
+	//lvscare
+	LvscareImage.Image = c.LvscareName
+	LvscareImage.Tag = c.LvscareTag
 	return
 }
 
