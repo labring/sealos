@@ -10,13 +10,17 @@ import (
 	"strings"
 )
 
-const defaultImage = "fanux/lvscare:latest"
+type LvscareImage struct {
+	Image string
+	Tag   string
+}
+
+func (l *LvscareImage) toImageName() string {
+	return l.Image + ":" + l.Tag
+}
 
 // return lvscare static pod yaml
-func LvsStaticPodYaml(vip string, masters []string, image string) string {
-	if image == "" {
-		image = defaultImage
-	}
+func LvsStaticPodYaml(vip string, masters []string, image LvscareImage) string {
 	if vip == "" || len(masters) == 0 {
 		return ""
 	}
@@ -31,7 +35,7 @@ func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	flag := true
 	pod := componentPod(v1.Container{
 		Name:            "kube-sealyun-lvscare",
-		Image:           image,
+		Image:           image.toImageName(),
 		Command:         []string{"/usr/bin/lvscare"},
 		Args:            args,
 		ImagePullPolicy: v1.PullIfNotPresent,
