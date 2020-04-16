@@ -75,15 +75,23 @@ func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
 	}
 	defer dstFile.Close()
 	buf := make([]byte, 100*oneMBByte) //100mb
-	totalMB := 0
+	total := 0
+	unit := ""
 	for {
 		n, _ := srcFile.Read(buf)
 		if n == 0 {
 			break
 		}
 		length, _ := dstFile.Write(buf[0:n])
-		totalMB += length / oneMBByte
-		logger.Alert("[ssh][%s]transfer total size is: %d%s", host, totalMB, "MB")
+		speed := length / oneMBByte
+		if speed < 1 {
+			total += length / oneKBByte
+			unit = "KB"
+		} else {
+			total += length / oneMBByte
+			unit = "MB"
+		}
+		logger.Alert("[ssh][%s]transfer total size is: %d%s", host, total, unit)
 	}
 }
 
