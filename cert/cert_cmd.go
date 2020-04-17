@@ -19,7 +19,7 @@ func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string)
 	}
 
 	if serviceCIRD != "" {
-		cmd += fmt.Sprintf(" --service-cirdn %s", serviceCIRD)
+		cmd += fmt.Sprintf(" --service-cird %s", serviceCIRD)
 	}
 
 	if DNSDomain != "" {
