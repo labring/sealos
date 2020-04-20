@@ -38,8 +38,17 @@ spec:
     resources: {}
     securityContext:
       privileged: true
+    volumeMounts:
+    - mountPath: /lib/modules
+      name: lib-modules
+      readOnly: true
   hostNetwork: true
   priorityClassName: system-cluster-critical
+  volumes:
+  - hostPath:
+      path: /lib/modules
+      type: ""
+    name: lib-modules
 status: {}
 `,
 }

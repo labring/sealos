@@ -15,8 +15,13 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+	"github.com/wonderivan/logger"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 )
 
 // cleanCmd represents the clean command
@@ -28,7 +33,26 @@ var cleanCmd = &cobra.Command{
 		deleteNodes := install.ParseIPs(install.NodeIPs)
 		deleteMasters := install.ParseIPs(install.MasterIPs)
 		c := &install.SealConfig{}
-		c.Load("")
+		err := c.Load("")
+		if err != nil {
+			// 判断错误是否为配置文件不存在
+			if errors.Is(err, os.ErrNotExist) {
+				_, err = fmt.Fprint(os.Stdout, "Please enter the password to connect to the node:\n")
+				if err != nil {
+					logger.Error("fmt.Fprint err", err)
+					os.Exit(-1)
+				}
+				passwordTmp,err := terminal.ReadPassword(int(os.Stdin.Fd()))
+				if err != nil {
+					logger.Error("read password err", err)
+					os.Exit(-1)
+				}
+				install.SSHConfig.Password = string(passwordTmp)
+			} else {
+				logger.Error(err)
+				os.Exit(-1)
+			}
+		}
 		install.BuildClean(deleteNodes, deleteMasters)
 		c.Dump("")
 	},

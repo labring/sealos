@@ -99,7 +99,7 @@ type LocalLogger struct {
 	appName    string
 	callDepth  int
 	timeFormat string
-	usePath    string
+	usePath    bool
 }
 
 func NewLogger(depth ...int) *LocalLogger {
@@ -192,10 +192,9 @@ func (this *LocalLogger) DelLogger(adapterName string) error {
 }
 
 // 设置日志起始路径
-func (this *LocalLogger) SetLogPathTrim(trimPath string) {
-	this.usePath = trimPath
+func (this *LocalLogger) SetLogPath(bPath bool) {
+	this.usePath = bPath
 }
-
 func (this *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int) {
 	for _, l := range this.outputs {
 		if l.name == AdapterConn {
@@ -207,7 +206,13 @@ func (this *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int)
 			continue
 		}
 
-		msgStr := when.Format(this.timeFormat) + " [" + msg.Level + "] " + "[" + msg.Path + "] " + msg.Content
+		strLevel := " [" + msg.Level + "] "
+		strPath := "[" + msg.Path + "] "
+		if !this.usePath {
+			strPath = ""
+		}
+
+		msgStr := when.Format(this.timeFormat) + strLevel + strPath + msg.Content
 		err := l.LogWrite(when, msgStr, level)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable to WriteMsg to adapter:%v,error:%v\n", l.name, err)
@@ -225,17 +230,18 @@ func (this *LocalLogger) writeMsg(logLevel int, msg string, v ...interface{}) er
 		msg = fmt.Sprintf(msg, v...)
 	}
 	when := time.Now()
-	_, file, lineno, ok := runtime.Caller(this.callDepth)
-	var strim string = "src/"
-	if this.usePath != "" {
-		strim = this.usePath
+	//
+	if this.usePath {
+		_, file, lineno, ok := runtime.Caller(this.callDepth)
+		var strim = "/"
+		if ok {
+			codeArr := strings.Split(file, strim)
+			code := codeArr[len(codeArr)-1]
+			src = strings.Replace(
+				fmt.Sprintf("%s:%d", code, lineno), "%2e", ".", -1)
+		}
 	}
-	if ok {
-
-		src = strings.Replace(
-			fmt.Sprintf("%s:%d", stringTrim(file, strim), lineno), "%2e", ".", -1)
-	}
-
+	//
 	msgSt.Level = levelPrefix[logLevel]
 	msgSt.Path = src
 	msgSt.Content = msg
@@ -326,8 +332,8 @@ func Reset() {
 	defaultLogger.Reset()
 }
 
-func SetLogPathTrim(trimPath string) {
-	defaultLogger.SetLogPathTrim(trimPath)
+func SetLogPath(show bool) {
+	defaultLogger.SetLogPath(show)
 }
 
 // param 可以是log配置文件名，也可以是log配置内容,默认DEBUG输出到控制台

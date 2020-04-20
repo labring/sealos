@@ -6,31 +6,10 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 )
 
+const oneKBByte = 1024
 const oneMBByte = 1024 * 1024
-
-//WatchFileSize is
-func (ss *SSH) LoggerFileSize(host, filename string, size int) {
-	t := time.NewTicker(3 * time.Second) //every 3s check file
-	defer t.Stop()
-	for {
-		select {
-		case <-t.C:
-			length := ss.CmdToString(host, "ls -l "+filename+" | awk '{print $5}'", "")
-			length = strings.Replace(length, "\n", "", -1)
-			length = strings.Replace(length, "\r", "", -1)
-			lengthByte, _ := strconv.Atoi(length)
-			if lengthByte == size {
-				t.Stop()
-			}
-			lengthFloat := float64(lengthByte)
-			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("[ssh][%s]transfer total size is: %.2f%s", host, value, "MB")
-		}
-	}
-}
 
 //RemoteFilExist is
 func (ss *SSH) IsFilExist(host, remoteFilePath string) bool {
@@ -56,5 +35,16 @@ func (ss *SSH) IsFilExist(host, remoteFilePath string) bool {
 		return false
 	} else {
 		return true
+	}
+}
+
+func toSizeFromInt(length int) (float64, string) {
+	isMb := length/oneMBByte > 1
+	value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneMBByte), 64)
+	if isMb {
+		return value, "MB"
+	} else {
+		value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneKBByte), 64)
+		return value, "KB"
 	}
 }

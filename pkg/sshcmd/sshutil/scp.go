@@ -42,7 +42,65 @@ func (ss *SSH) Md5Sum(host, remoteFilePath string) string {
 }
 
 //Copy is
-func (ss *SSH) Copy(host, remoteFilePath string, localFilePathOrBytes interface{}) {
+func (ss *SSH) Copy(host, localFilePath, remoteFilePath string) {
+	sftpClient, err := ss.sftpConnect(host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer sftpClient.Close()
+	srcFile, err := os.Open(localFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := sftpClient.Create(remoteFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer dstFile.Close()
+	buf := make([]byte, 100*oneMBByte) //100mb
+	total := 0
+	unit := ""
+	for {
+		n, _ := srcFile.Read(buf)
+		if n == 0 {
+			break
+		}
+		length, _ := dstFile.Write(buf[0:n])
+		isKb := length/oneMBByte < 1
+		speed := 0
+		if isKb {
+			total += length
+			unit = "KB"
+			speed = length / oneKBByte
+		} else {
+			total += length
+			unit = "MB"
+			speed = length / oneMBByte
+		}
+		totalLength, totalUnit := toSizeFromInt(total)
+		logger.Alert("[ssh][%s]transfer total size is: %.2f%s ;speed is %d%s", host, totalLength, totalUnit, speed, unit)
+	}
+}
+
+//Copy is
+func (ss *SSH) CopyConfigFile(host, remoteFilePath string, localFilePathOrBytes interface{}) {
 	var (
 		data io.Reader
 	)

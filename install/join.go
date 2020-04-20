@@ -76,6 +76,11 @@ func (s *SealosInstaller) GeneratorToken() {
 	decodeOutput(output)
 }
 
+// 返回/etc/hosts记录
+func getApiserverHost(ipAddr string) (host string) {
+	return fmt.Sprintf("%s %s", ipAddr, ApiServer)
+}
+
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters(masters []string) {
 	var wg sync.WaitGroup
@@ -91,10 +96,10 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
 			_ = SSHConfig.CmdAsync(master, certCMD)
 
-			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
+			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(IpFormat(s.Masters[0])))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
 			_ = SSHConfig.CmdAsync(master, cmd)
-			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, IpFormat(s.Masters[0]), IpFormat(master))
+			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(IpFormat(s.Masters[0])), getApiserverHost(IpFormat(master)))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
 			copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
 			_ = SSHConfig.CmdAsync(master, copyk8sConf)
@@ -123,10 +128,10 @@ func (s *SealosInstaller) JoinNodes() {
 			_ = SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)
 			//create lvscare static pod
-			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, LvscareImage)
 			_ = SSHConfig.CmdAsync(node, cmd)
 			_ = SSHConfig.Cmd(node, "mkdir -p /etc/kubernetes/manifests")
-			SSHConfig.Copy(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
+			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 
 			cleaninstall := `rm -rf /root/kube`
 			_ = SSHConfig.CmdAsync(node, cleaninstall)
@@ -142,9 +147,9 @@ func (s *SealosInstaller) lvscare() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, LvscareImage)
 			_ = SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare* || :")
-			SSHConfig.Copy(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
+			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 		}(node)
 	}
 
