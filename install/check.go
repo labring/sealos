@@ -8,7 +8,7 @@ import (
 
 // if can't access to hostName, set /etc/hosts
 func SetHosts(hostip, hostName string) {
-	cmd := fmt.Sprintf("ping -c 3 %s || echo '%s %s' >> /etc/hosts", hostName, IpFormat(hostip), hostName)
+	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, IpFormat(hostip), hostName)
 	SSHConfig.CmdAsync(hostip, cmd)
 }
 
