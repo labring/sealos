@@ -78,7 +78,7 @@ func (s *SealosInstaller) GeneratorToken() {
 
 // 返回/etc/hosts记录
 func getApiserverHost(ipAddr string) (host string) {
-	return fmt.Sprintf("%s %s",ipAddr,ApiServer)
+	return fmt.Sprintf("%s %s", ipAddr, ApiServer)
 }
 
 //JoinMasters is
@@ -128,7 +128,7 @@ func (s *SealosInstaller) JoinNodes() {
 			_ = SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)
 			//create lvscare static pod
-			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, LvscareImage)
 			_ = SSHConfig.CmdAsync(node, cmd)
 			_ = SSHConfig.Cmd(node, "mkdir -p /etc/kubernetes/manifests")
 			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
@@ -147,7 +147,7 @@ func (s *SealosInstaller) lvscare() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, "")
+			yaml := ipvs.LvsStaticPodYaml(VIP, MasterIPs, LvscareImage)
 			_ = SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare* || :")
 			SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 		}(node)

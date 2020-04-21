@@ -4,7 +4,7 @@
 # Introduction
 Build a production kubernetes HA cluster.
 
-![](./arch.png)
+![](./arch.jpg)
 
 * Every node config a ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
 * Then run a [lvscare](https://github.com/fanux/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
