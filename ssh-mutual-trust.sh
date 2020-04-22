@@ -6,6 +6,8 @@
 #
 #或者用户密码写在命令行：
 #./ssh-mutual-trust.sh hosts_file root Abc123
+#
+#执行脚本的机器要安装 expect 软件包
 
 # check args count
 if test $# -lt 1; then
@@ -18,6 +20,8 @@ fi
 #password=${!#}
 
 hosts_file=$1
+username=$2
+password=$3
 
 if test X$2 == X""; then
   username=root
