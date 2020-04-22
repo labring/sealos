@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"path"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wonderivan/logger"
 )
 
 const oneMBByte = 1024 * 1024
@@ -32,8 +33,8 @@ func LoggerFileSize(filename string, size int) {
 	}
 }
 
-//RemoteFilExist is
-func IsFilExist(filepath string) bool {
+//RemoteFileExist is
+func IsFileExist(filepath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
 	fileName := path.Base(filepath) // aa
@@ -44,7 +45,7 @@ func IsFilExist(filepath string) bool {
 	count, err := strconv.Atoi(strings.TrimSpace(data))
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[os][%s]RemoteFilExist:%s", filepath, err)
+			logger.Error("[os][%s]RemoteFileExist:%s", filepath, err)
 		}
 	}()
 	if err != nil {

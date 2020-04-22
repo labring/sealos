@@ -2,11 +2,12 @@ package sshutil
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"path"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wonderivan/logger"
 )
 
 const oneMBByte = 1024 * 1024
@@ -32,8 +33,8 @@ func (ss *SSH) LoggerFileSize(host, filename string, size int) {
 	}
 }
 
-//RemoteFilExist is
-func (ss *SSH) IsFilExist(host, remoteFilePath string) bool {
+//RemoteFileExist is
+func (ss *SSH) IsFileExist(host, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
 	remoteFileName := path.Base(remoteFilePath) // aa
@@ -46,7 +47,7 @@ func (ss *SSH) IsFilExist(host, remoteFilePath string) bool {
 	count, err := strconv.Atoi(strings.TrimSpace(data))
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]RemoteFilExist:%s", host, err)
+			logger.Error("[ssh][%s]RemoteFileExist:%s", host, err)
 		}
 	}()
 	if err != nil {
