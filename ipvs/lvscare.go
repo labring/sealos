@@ -10,13 +10,17 @@ import (
 	"strings"
 )
 
-const defaultImage = "fanux/lvscare:latest"
+type LvscareImage struct {
+	Image string
+	Tag   string
+}
+
+func (l *LvscareImage) toImageName() string {
+	return l.Image + ":" + l.Tag
+}
 
 // return lvscare static pod yaml
-func LvsStaticPodYaml(vip string, masters []string, image string) string {
-	if image == "" {
-		image = defaultImage
-	}
+func LvsStaticPodYaml(vip string, masters []string, image LvscareImage) string {
 	if vip == "" || len(masters) == 0 {
 		return ""
 	}
@@ -31,7 +35,7 @@ func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	flag := true
 	pod := componentPod(v1.Container{
 		Name:            "kube-sealyun-lvscare",
-		Image:           image,
+		Image:           image.toImageName(),
 		Command:         []string{"/usr/bin/lvscare"},
 		Args:            args,
 		ImagePullPolicy: v1.PullIfNotPresent,
@@ -60,6 +64,20 @@ func podToYaml(pod v1.Pod) ([]byte, error) {
 
 // componentPod returns a Pod object from the container and volume specifications
 func componentPod(container v1.Container) v1.Pod {
+	hostPathType := v1.HostPathUnset
+	mountName := "lib-modules"
+	volumes := []v1.Volume{
+		{Name: mountName, VolumeSource: v1.VolumeSource{
+			HostPath: &v1.HostPathVolumeSource{
+				Path: "/lib/modules",
+				Type: &hostPathType,
+			},
+		}},
+	}
+	container.VolumeMounts = []v1.VolumeMount{
+		{Name: mountName, ReadOnly: true, MountPath: "/lib/modules"},
+	}
+
 	return v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",
@@ -76,6 +94,7 @@ func componentPod(container v1.Container) v1.Pod {
 			Containers:        []v1.Container{container},
 			PriorityClassName: "system-cluster-critical",
 			HostNetwork:       true,
+			Volumes:           volumes,
 		},
 	}
 }

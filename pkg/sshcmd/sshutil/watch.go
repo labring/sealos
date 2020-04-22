@@ -10,6 +10,7 @@ import (
 	"github.com/wonderivan/logger"
 )
 
+const oneKBByte = 1024
 const oneMBByte = 1024 * 1024
 
 //WatchFileSize is
@@ -57,5 +58,16 @@ func (ss *SSH) IsFileExist(host, remoteFilePath string) bool {
 		return false
 	} else {
 		return true
+	}
+}
+
+func toSizeFromInt(length int) (float64, string) {
+	isMb := length/oneMBByte > 1
+	value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneMBByte), 64)
+	if isMb {
+		return value, "MB"
+	} else {
+		value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneKBByte), 64)
+		return value, "KB"
 	}
 }

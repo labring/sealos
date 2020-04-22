@@ -2,6 +2,7 @@ package install
 
 import (
 	"github.com/fanux/lvscare/care"
+	"github.com/fanux/sealos/ipvs"
 	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
 )
@@ -27,8 +28,9 @@ var (
 	SvcCIDR string
 
 	//
-	Ipvs        care.LvsCare
-	KubeadmFile string
+	Ipvs         care.LvsCare
+	LvscareImage ipvs.LvscareImage
+	KubeadmFile  string
 	// network type, calico or flannel etc..
 	Network string
 	// if true don't install cni plugin

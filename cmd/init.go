@@ -79,6 +79,9 @@ func init() {
 	initCmd.Flags().BoolVar(&install.IPIP, "ipip", true, "ipip mode enable, calico..")
 	initCmd.Flags().StringVar(&install.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
 
+	initCmd.Flags().StringVar(&install.LvscareImage.Image, "lvscare-image", "fanux/lvscare", "lvscare image name")
+	initCmd.Flags().StringVar(&install.LvscareImage.Tag, "lvscare-tag", "latest", "lvscare image tag name")
+
 	// 不像用户暴露
 	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
 	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
