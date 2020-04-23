@@ -2,12 +2,13 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/sshcmd/cmd"
-	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
-	"github.com/wonderivan/logger"
 	"net/url"
 	"path"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/sshcmd/cmd"
+	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
+	"github.com/wonderivan/logger"
 )
 
 //location : url
@@ -30,7 +31,7 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 				logger.Debug("[%s]please wait for before hook", host)
 				_ = SSHConfig.CmdAsync(host, *before)
 			}
-			if SSHConfig.IsFilExist(host, fullPath) {
+			if SSHConfig.IsFileExist(host, fullPath) {
 				logger.Warn("[%s]SendPackage: file is exist", host)
 			} else {
 				if ok := SSHConfig.CopyForMD5(host, location, fullPath, md5); ok {
@@ -53,7 +54,7 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 func downloadFile(location string) (filePATH, md5 string) {
 	if _, isUrl := isUrl(location); isUrl {
 		absPATH := "/tmp/sealos/" + path.Base(location)
-		if !cmd.IsFilExist(absPATH) {
+		if !cmd.IsFileExist(absPATH) {
 			//generator download cmd
 			dwnCmd := downloadCmd(location)
 			//os exec download command
