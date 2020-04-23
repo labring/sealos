@@ -37,6 +37,7 @@ apiServer:
 controllerManager:
   extraArgs:
     feature-gates: TTLAfterFinished=true
+    experimental-cluster-signing-duration: 87600h
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
