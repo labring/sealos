@@ -42,7 +42,7 @@ var cleanCmd = &cobra.Command{
 					logger.Error("fmt.Fprint err", err)
 					os.Exit(-1)
 				}
-				passwordTmp,err := terminal.ReadPassword(int(os.Stdin.Fd()))
+				passwordTmp, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
 					logger.Error("read password err", err)
 					os.Exit(-1)
