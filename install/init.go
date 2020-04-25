@@ -30,6 +30,10 @@ func BuildInit() {
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
 	i.GenerateCert()
+	//生成kubeconfig的时候kubeadm的kubeconfig阶段会检查硬盘是否kubeconfig，有则跳过
+	//不用kubeadm init加选项跳过[kubeconfig]的阶段
+	i.CreateKubeconfig()
+
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
 	if len(masters) > 1 {
@@ -89,6 +93,25 @@ func (s *SealosInstaller) GenerateCert() {
 	//CertSA(kye,pub) + CertCA(key,crt)
 	s.sendCaAndKey([]string{s.Masters[0]})
 	s.sendCerts([]string{s.Masters[0]})
+}
+
+func (s *SealosInstaller) CreateKubeconfig() {
+	hostname := GetRemoteHostName(s.Masters[0])
+
+	certConfig := cert.Config{
+		Path:     cert.KubeDefaultCertPath,
+		BaseName: "ca",
+	}
+
+	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", ApiServer)
+
+	err := cert.CreateJoinControlPlaneKubeConfigFiles(cert.KubernetesDir,
+		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
+	if err != nil {
+		logger.Error("generator kubeconfig failed %s", err)
+		os.Exit(-1)
+	}
+
 }
 
 //InstallMaster0 is
