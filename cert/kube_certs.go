@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	KubernetesDir           = "/etc/kubernetes"
 	KubeDefaultCertPath     = "/etc/kubernetes/pki"
 	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"
 )
