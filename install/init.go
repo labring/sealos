@@ -2,11 +2,12 @@ package install
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
-	"io/ioutil"
-	"os"
 )
 
 //BuildInit is
@@ -33,6 +34,7 @@ func BuildInit() {
 	//生成kubeconfig的时候kubeadm的kubeconfig阶段会检查硬盘是否kubeconfig，有则跳过
 	//不用kubeadm init加选项跳过[kubeconfig]的阶段
 	i.CreateKubeconfig()
+	i.SendKubeConfigs(masters)
 
 	i.InstallMaster0()
 	i.Print("SendPackage", "KubeadmConfigInstall", "InstallMaster0")
@@ -146,4 +148,13 @@ func (s *SealosInstaller) InstallMaster0() {
 
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
+}
+
+//SendKubeConfigs
+func (s *SealosInstaller) SendKubeConfigs(masters []string) {
+	SendPackage(cert.SealosConfigDir+"/kubelet.conf", []string{masters[0]}, cert.KubernetesDir, nil, nil)
+
+	SendPackage(cert.SealosConfigDir+"/admin.conf", masters, cert.KubernetesDir, nil, nil)
+	SendPackage(cert.SealosConfigDir+"/controller-manager.conf", masters, cert.KubernetesDir, nil, nil)
+	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
 }
