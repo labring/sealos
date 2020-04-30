@@ -2,12 +2,13 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/cert"
-	"github.com/fanux/sealos/ipvs"
-	"github.com/wonderivan/logger"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/cert"
+	"github.com/fanux/sealos/ipvs"
+	"github.com/wonderivan/logger"
 )
 
 //BuildJoin is
@@ -86,6 +87,8 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 	var wg sync.WaitGroup
 	//copy certs
 	s.sendCaAndKey(masters)
+
+	s.SendKubeConfigs(masters, false)
 	//join master do sth
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range masters {

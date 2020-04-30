@@ -4,13 +4,15 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
-	"github.com/wonderivan/logger"
 	"net"
 	"os"
 	"path"
+
+	"github.com/wonderivan/logger"
 )
 
 var (
+	SealosConfigDir         = "/root/.sealos"
 	KubernetesDir           = "/etc/kubernetes"
 	KubeDefaultCertPath     = "/etc/kubernetes/pki"
 	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"

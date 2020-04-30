@@ -2,11 +2,12 @@ package install
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
-	"io/ioutil"
-	"os"
 )
 
 //BuildInit is
@@ -116,6 +117,8 @@ func (s *SealosInstaller) CreateKubeconfig() {
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
+	s.SendKubeConfigs(s.Masters, true)
+
 	//master0 do sth
 	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
@@ -146,4 +149,15 @@ func (s *SealosInstaller) InstallMaster0() {
 
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
+}
+
+//SendKubeConfigs
+func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
+	if isMaster0 {
+		SendPackage(cert.SealosConfigDir+"/kubelet.conf", []string{masters[0]}, cert.KubernetesDir, nil, nil)
+	}
+
+	SendPackage(cert.SealosConfigDir+"/admin.conf", masters, cert.KubernetesDir, nil, nil)
+	SendPackage(cert.SealosConfigDir+"/controller-manager.conf", masters, cert.KubernetesDir, nil, nil)
+	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
 }
