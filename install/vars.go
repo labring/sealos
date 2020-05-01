@@ -45,4 +45,5 @@ var (
 	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
 
 	CleanForce bool
+	CleanAll   bool
 )
