@@ -49,7 +49,7 @@ node:
 	}
 	//3. 删除所有节点
 all:
-	if len(deleteNodes) == 0 && len(deleteMasters) == 0 {
+	if len(deleteNodes) == 0 && len(deleteMasters) == 0 && CleanAll {
 		if !CleanForce { // flase
 			result := Confirm(`clean command will clean all masters and nodes, continue clean (y/n)?`)
 			if !result {
@@ -65,6 +65,7 @@ all:
 	}
 end:
 	if len(i.Masters) == 0 && len(i.Nodes) == 0 {
+		logger.Debug("clean nodes and masters is skip")
 		os.Exit(-1)
 	}
 	i.CheckValid()
