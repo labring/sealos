@@ -5,14 +5,15 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
 	"github.com/pkg/errors"
 	"github.com/wonderivan/logger"
-	"io"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/keyutil"
-	"os"
-	"path/filepath"
 )
 
 // clientCertAuth struct holds info required to build a client certificate to provide authentication info in a kubeconfig object
@@ -169,7 +170,7 @@ func buildKubeConfigFromSpec(spec *kubeConfigSpec, clustername string) (*clientc
 		CommonName:   spec.ClientName,
 		Organization: spec.ClientCertAuth.Organizations,
 		Usages:       []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		Year:         99,
+		Year:         100,
 	}
 
 	clientCert, clientKey, err := NewCaCertAndKeyFromRoot(clientCertConfig, spec.CACert, spec.ClientCertAuth.CAKey)
