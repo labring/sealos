@@ -2,8 +2,8 @@ package install
 
 import (
 	"github.com/fanux/lvscare/care"
-	"github.com/fanux/sealos/ipvs"
-	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
+	"github.com/fanux/sealos/v3/ipvs"
+	"github.com/fanux/sealos/v3/pkg/sshcmd/sshutil"
 	"regexp"
 )
 

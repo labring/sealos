@@ -17,7 +17,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/v3/install"
 	"github.com/spf13/cobra"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh/terminal"

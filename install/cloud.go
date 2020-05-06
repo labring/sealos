@@ -3,7 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/version"
+	"github.com/fanux/sealos/v3/version"
 	"github.com/wonderivan/logger"
 	"os"
 )

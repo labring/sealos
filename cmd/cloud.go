@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/v3/install"
 
 	"github.com/spf13/cobra"
 )

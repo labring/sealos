@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/cert"
+	"github.com/fanux/sealos/v3/cert"
 	"github.com/spf13/cobra"
 )
 

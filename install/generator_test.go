@@ -1,7 +1,7 @@
 package install
 
 import (
-	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
+	"github.com/fanux/sealos/v3/pkg/sshcmd/sshutil"
 	"reflect"
 	"testing"
 )

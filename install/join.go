@@ -6,8 +6,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fanux/sealos/cert"
-	"github.com/fanux/sealos/ipvs"
+	"github.com/fanux/sealos/v3/cert"
+	"github.com/fanux/sealos/v3/ipvs"
 	"github.com/wonderivan/logger"
 )
 

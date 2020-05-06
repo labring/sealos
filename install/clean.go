@@ -2,7 +2,7 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/ipvs"
+	"github.com/fanux/sealos/v3/ipvs"
 	"github.com/wonderivan/logger"
 	"os"
 	"strings"

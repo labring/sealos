@@ -6,8 +6,8 @@ import (
 	"path"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/sshcmd/cmd"
-	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
+	"github.com/fanux/sealos/v3/pkg/sshcmd/cmd"
+	"github.com/fanux/sealos/v3/pkg/sshcmd/md5sum"
 	"github.com/wonderivan/logger"
 )
 

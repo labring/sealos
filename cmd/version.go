@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/version"
+	"github.com/fanux/sealos/v3/version"
 	"github.com/spf13/cobra"
 )
 

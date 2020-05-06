@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fanux/sealos/cert"
-	"github.com/fanux/sealos/net"
+	"github.com/fanux/sealos/v3/cert"
+	"github.com/fanux/sealos/v3/net"
 	"github.com/wonderivan/logger"
 )
 
