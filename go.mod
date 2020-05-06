@@ -3,7 +3,7 @@ module github.com/fanux/sealos/v3
 go 1.13
 
 require (
-	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
+	github.com/fanux/lvscare v1.0.0
 	github.com/fanux/sealgate v0.0.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
