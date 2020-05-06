@@ -42,7 +42,7 @@ var cleanCmd = &cobra.Command{
 					logger.Error("fmt.Fprint err", err)
 					os.Exit(-1)
 				}
-				passwordTmp,err := terminal.ReadPassword(int(os.Stdin.Fd()))
+				passwordTmp, err := terminal.ReadPassword(int(os.Stdin.Fd()))
 				if err != nil {
 					logger.Error("read password err", err)
 					os.Exit(-1)
@@ -65,6 +65,8 @@ func init() {
 	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "clean node ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	cleanCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "clean master ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	cleanCmd.PersistentFlags().BoolVarP(&install.CleanForce, "force", "f", false, "if this is true, will no prompt")
+	cleanCmd.PersistentFlags().BoolVar(&install.CleanAll, "all", false, "if this is true, delete all ")
+
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// cleanCmd.PersistentFlags().String("foo", "", "A help for foo")
