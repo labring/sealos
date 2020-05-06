@@ -2,15 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !ppc64le,!arm64,!s390x arm64,!go1.11 gccgo appengine
+// +build !arm64,!s390x,!ppc64le arm64,!go1.11 gccgo purego
 
 package chacha20
 
-const (
-	bufSize = 64
-	haveAsm = false
-)
+const bufSize = blockSize
 
-func (*Cipher) xorKeyStreamAsm(dst, src []byte) {
-	panic("not implemented")
+func (s *Cipher) xorKeyStreamBlocks(dst, src []byte) {
+	s.xorKeyStreamBlocksGeneric(dst, src)
 }
