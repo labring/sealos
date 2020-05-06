@@ -1,12 +1,14 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"github.com/fanux/lvscare/internal/ipvs"
 	"github.com/fanux/lvscare/utils"
 	"github.com/wonderivan/logger"
 	"net"
 	"strconv"
+	"syscall"
 )
 
 //EndPoint  is
@@ -51,6 +53,10 @@ func (l *lvscare) CreateVirtualServer(vs string, config bool) error {
 	}
 	vServer := utils.BuildVirtualServer(vs)
 	err := l.handle.AddVirtualServer(vServer)
+	if errors.Is(err, syscall.EEXIST) {
+		logger.Debug("CreateRealServer exist: ", err)
+		return nil
+	}
 	if err != nil {
 		logger.Warn("CreateVirtualServer error: ", err)
 		return fmt.Errorf("new virtual server failed: %s", err)
@@ -90,6 +96,10 @@ func (l *lvscare) CreateRealServer(rs string, config bool) error {
 	if l.vs != nil {
 		vServer := utils.BuildVirtualServer(l.vs.String())
 		err := l.handle.AddRealServer(vServer, realServer)
+		if errors.Is(err, syscall.EEXIST) {
+			logger.Debug("CreateRealServer exist: ", err)
+			return nil
+		}
 		if err != nil {
 			logger.Error("CreateRealServer error: ", err)
 			return fmt.Errorf("new real server failed: %s", err)
@@ -116,7 +126,7 @@ func (l *lvscare) IsVirtualServerAvailable(vs string) bool {
 			}
 		}
 	} else {
-		logger.Warn("IsVirtualServerAvailable warn: virtual server is empty.")
+		logger.Debug("IsVirtualServerAvailable warn: virtual server is empty.")
 	}
 	return false
 }

@@ -3,7 +3,7 @@ module github.com/fanux/sealos/v3
 go 1.13
 
 require (
-	github.com/fanux/lvscare v1.0.0
+	github.com/fanux/lvscare v1.0.1
 	github.com/fanux/sealgate v0.0.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/imdario/mergo v0.3.9 // indirect
@@ -22,7 +22,6 @@ require (
 )
 
 replace (
-	github.com/fanux/lvscare => github.com/fanux/lvscare v0.0.0-20200331025051-a9c95851a817
 	github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.0.0
 	github.com/vishvananda/netns => github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936
 	github.com/wonderivan/logger => ./pkg/logger

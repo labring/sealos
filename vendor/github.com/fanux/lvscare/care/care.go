@@ -17,15 +17,14 @@ func (care *LvsCare) VsAndRsCare() {
 		err := lvs.DeleteVirtualServer(care.VirtualServer, false)
 		logger.Warn("VsAndRsCare DeleteVirtualServer:", err)
 	}
+	care.createVsAndRs()
 	if care.RunOnce {
-		care.createVsAndRs()
 		return
 	}
 	t := time.NewTicker(time.Duration(care.Interval) * time.Second)
 	for {
 		select {
 		case <-t.C:
-			care.createVsAndRs()
 			//check real server
 			lvs.CheckRealServers(care.HealthPath, care.HealthSchem)
 		}

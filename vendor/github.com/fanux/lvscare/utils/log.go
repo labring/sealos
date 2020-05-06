@@ -1,8 +1,12 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/wonderivan/logger"
+)
 
 var logConfig = `{
+    "TimeFormat":"15:04:05",
 	"Console": {
 		"level": "%s",
 		"color": true
@@ -19,6 +23,11 @@ var logConfig = `{
 //	"DEBG": LevelDebug,
 //	"TRAC": LevelTrace,
 //}
-func Config(level string) string {
-	return fmt.Sprintf(logConfig, level)
+func Config(level string) {
+	if level == "" {
+		level = "INFO"
+	}
+	cfg := fmt.Sprintf(logConfig, level)
+	logger.SetLogger(string(cfg))
+	logger.SetLogPath(true)
 }
