@@ -106,7 +106,7 @@ func (s *SealosInstaller) CreateKubeconfig() {
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", ApiServer)
 
-	err := cert.CreateJoinControlPlaneKubeConfigFiles(cert.KubernetesDir,
+	err := cert.CreateJoinControlPlaneKubeConfigFiles(cert.SealosConfigDir,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)
