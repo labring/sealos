@@ -27,6 +27,7 @@ func BuildInit() {
 	i.CheckValid()
 	i.Print()
 	i.SendPackage()
+	i.LoadImages()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
