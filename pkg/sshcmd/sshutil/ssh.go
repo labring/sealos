@@ -8,7 +8,7 @@ import (
 
 //Cmd is in host exec cmd
 func (ss *SSH) Cmd(host string, cmd string) []byte {
-	logger.Info("[ssh][%s]exec cmd is : %s", host, cmd)
+	logger.Info("[ssh][%s] %s", host, cmd)
 	session, err := ss.Connect(host)
 	defer func() {
 		if r := recover(); r != nil {
@@ -33,7 +33,7 @@ func (ss *SSH) Cmd(host string, cmd string) []byte {
 }
 
 func (ss *SSH) CmdAsync(host string, cmd string) error {
-	logger.Info("[ssh][%s]exec cmd is : %s", host, cmd)
+	logger.Info("[ssh][%s] %s", host, cmd)
 	session, err := ss.Connect(host)
 	if err != nil {
 		logger.Error("[ssh][%s]Error create ssh session failed,%s", host, err)
@@ -54,14 +54,20 @@ func (ss *SSH) CmdAsync(host string, cmd string) error {
 		for {
 			r := bufio.NewReader(stdout)
 			line, _, err := r.ReadLine()
-			if line == nil || err != nil {
+			if line == nil {
 				done <- true
+				return
+			} else if err != nil {
+				logger.Info("[%s] %s", host, line)
+				logger.Error("[ssh] [%s] %s", host, err)
+				return
 			} else {
-				logger.Info("[ssh][%s]: %s", host, line)
+				logger.Info("[%s] %s", host, line)
 			}
 		}
 	}()
 	<-done
+	//time.Sleep(1*time.Second)
 	return nil
 }
 
