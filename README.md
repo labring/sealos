@@ -20,7 +20,7 @@
 
 **文档: _[官方文档](https://sealyun.com/docs), [博客](https://fuckcloudnative.io)_**
 
-**加入组织: _[Telegram](https://t.me/gsealyun)_**
+**加入组织: _[钉钉群](35371178), [Telegram](https://t.me/gsealyun)_**
 
 ![](./arch.png)
 
