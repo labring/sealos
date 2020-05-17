@@ -151,6 +151,8 @@ func clean(host string) {
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
 	_ = SSHConfig.CmdAsync(host, cmd)
+	cmd = "rm -rf /usr/bin/sealos"
+	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
