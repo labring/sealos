@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/fanux/sealos/ipvs"
+	ssh_cmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
 	"github.com/wonderivan/logger"
 	"os"
 	"strings"
@@ -143,15 +144,15 @@ func (s *SealosClean) cleanMaster(master string) {
 }
 
 func clean(host string) {
-	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
+	cmd := "kubeadm reset -f " + vlogToStr()
+	_ = SSHConfig.CmdAsync(host, cmd)
+	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
-	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = "rm -rf /usr/bin/sealos"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -164,4 +165,7 @@ func clean(host string) {
 	//clean pki certs
 	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
+	home, _ := os.UserHomeDir()
+	cfgPath := home + defaultConfigPath
+	ssh_cmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
 }
