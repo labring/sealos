@@ -82,6 +82,8 @@ func init() {
 	initCmd.Flags().StringVar(&install.LvscareImage.Image, "lvscare-image", "fanux/lvscare", "lvscare image name")
 	initCmd.Flags().StringVar(&install.LvscareImage.Tag, "lvscare-tag", "latest", "lvscare image tag name")
 
+	initCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
+
 	// 不像用户暴露
 	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
 	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")

@@ -5,6 +5,7 @@ import (
 	"github.com/fanux/sealos/ipvs"
 	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
+	"strconv"
 )
 
 var (
@@ -46,4 +47,11 @@ var (
 
 	CleanForce bool
 	CleanAll   bool
+
+	Vlog int
 )
+
+func vlogToStr() string {
+	str := strconv.Itoa(Vlog)
+	return " -v " + str
+}
