@@ -71,6 +71,13 @@ end:
 	}
 	i.CheckValid()
 	i.Clean()
+	if i.cleanAll {
+		logger.Info("if clean all and clean sealos config")
+		home, _ := os.UserHomeDir()
+		cfgPath := home + defaultConfigPath
+		ssh_cmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
+	}
+
 }
 
 //CleanCluster is
@@ -165,7 +172,4 @@ func clean(host string) {
 	//clean pki certs
 	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
-	home, _ := os.UserHomeDir()
-	cfgPath := home + defaultConfigPath
-	ssh_cmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
 }
