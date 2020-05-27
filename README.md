@@ -47,7 +47,7 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/a24e65be1ddfa31f42b2455a81b0a563-1.18.0/kube1.18.0.tar.gz
+$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/7b6af025d4884fdd5cd51a674994359c-1.18.0/kube1.18.0.tar.gz
 
 # 安装一个三master的kubernetes集群
 $ sealos init --passwd 123456 \
