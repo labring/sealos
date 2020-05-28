@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+	"github.com/wonderivan/logger"
+	"os"
 )
 
 var contact = `
@@ -49,6 +51,18 @@ var initCmd = &cobra.Command{
 		install.BuildInit()
 		c.Dump("")
 		fmt.Println(contact)
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(install.MasterIPs) == 0 {
+			logger.Error("this command is init feature,master can't is  empty.please check your command is ok?")
+			cmd.Help()
+			os.Exit(0)
+		}
+		if AppURL == "" {
+			logger.Error("your pkg-url is empty,please check your command is ok?")
+			cmd.Help()
+			os.Exit(0)
+		}
 	},
 }
 
