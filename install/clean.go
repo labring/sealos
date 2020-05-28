@@ -66,7 +66,7 @@ all:
 	}
 end:
 	if len(i.Masters) == 0 && len(i.Nodes) == 0 {
-		logger.Debug("clean nodes and masters is skip")
+		logger.Warn("clean nodes and masters is empty,please check your args and config.yaml.")
 		os.Exit(-1)
 	}
 	i.CheckValid()
