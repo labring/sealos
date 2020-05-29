@@ -58,7 +58,7 @@ var initCmd = &cobra.Command{
 			cmd.Help()
 			os.Exit(0)
 		}
-		if AppURL == "" {
+		if install.PkgUrl == "" {
 			logger.Error("your pkg-url is empty,please check your command is ok?")
 			cmd.Help()
 			os.Exit(0)
