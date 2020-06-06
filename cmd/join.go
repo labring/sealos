@@ -54,4 +54,5 @@ func init() {
 	rootCmd.AddCommand(joinCmd)
 	joinCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-master ex. 192.168.0.5-192.168.0.5")
 	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	joinCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
 }
