@@ -27,6 +27,7 @@ var (
 	Repo    string
 	PodCIDR string
 	SvcCIDR string
+	CertSANs []string
 
 	//
 	Ipvs         care.LvsCare
