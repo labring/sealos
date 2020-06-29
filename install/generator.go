@@ -22,7 +22,6 @@ apiServer:
   certSANs:
   - 127.0.0.1
   - {{.ApiServer}}
-  {{range .CertSANs -}}
   {{range .Masters -}}
   - {{.}}
   {{end -}}
@@ -98,19 +97,14 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	if err != nil {
 		panic(1)
 	}
-	var masters,certsans  []string
+	var masters  []string
 	getmasters := MasterIPs
 	for _, h := range getmasters {
 		masters = append(masters, IpFormat(h))
 	}
-	getcertsans := CertSANs
-	for _, v := range getcertsans {
-		certsans = append(certsans, v)
-	}
 	var envMap = make(map[string]interface{})
 	envMap["VIP"] = VIP
 	envMap["Masters"] = masters
-	envMap["CertSANs"] = certsans
  	envMap["Version"] = Version
 	envMap["ApiServer"] = ApiServer
 	envMap["PodCIDR"] = PodCIDR
