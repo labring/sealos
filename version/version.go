@@ -8,5 +8,7 @@ import (
 var (
 	Version    = "latest"
 	Build      = ""
-	VersionStr = fmt.Sprintf("sealos version %v, build %v %v", Version, Build, runtime.Version())
+	BuildTime = ""
+	// VersionStr = fmt.Sprintf("sealos version %v, build %v %v", Version, Build, runtime.Version())
+	VersionStr = fmt.Sprintf("sealos version %v, build %v %v, Build Time : %v", Version, Build, runtime.Version(), BuildTime)
 )
