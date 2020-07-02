@@ -78,6 +78,7 @@ func init() {
 	initCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
 	initCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
 	initCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	initCmd.Flags().StringSliceVar(&install.CertSANS, "cert-sans", []string{}, "kubernetes apiServerCertSANs ex. 47.0.0.22 sealyun.com ")
 
 	initCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file location ex. /root/kube1.14.1.tar.gz")
 	initCmd.Flags().StringVar(&install.Version, "version", "", "version is kubernetes version")
