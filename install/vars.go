@@ -11,6 +11,7 @@ import (
 var (
 	MasterIPs []string
 	NodeIPs   []string
+	CertSANS  []string
 	//config from kubeadm.cfg
 	DnsDomain         string
 	ApiServerCertSANs []string
