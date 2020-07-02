@@ -13,6 +13,44 @@ import (
 	"time"
 )
 
+const (
+
+	ErrorExitOSCase  = -1   	// 错误直接退出类型
+
+	ErrorMasterEmpty = "your master is empty."						// master节点ip为空
+	ErrorVersionEmpty= "your kubernetes version is empty."			// kubernetes 版本号为空
+	ErrorPkgUrlEmpty = "your package url is empty."					// 离线安装包为空
+	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
+	// ErrorMessageCommon											// 其他错误消息
+)
+
+var message string
+
+// ExitOSCase is
+func ExitInitCase()  bool {
+	// 重大错误直接退出, 不保存配置文件
+	if len(MasterIPs) == 0 {
+		message = ErrorMasterEmpty
+	}
+	if PkgUrl == "" {
+		message += ErrorPkgUrlEmpty
+	}
+	if Version == "" {
+		message += ErrorVersionEmpty
+	}
+	// 用户不写 --passwd, 默认走pk, 秘钥如果没有配置ssh互信, 则验证ssh的时候报错. 应该属于preRun里面
+	// first to auth password, second auth pk.
+	// 如果初始状态都没写, 默认都为空. 报这个错
+	//if SSHConfig.Password == "" && SSHConfig.PkFile == "" {
+	//	message += ErrorMessageSSHConfigEmpty
+	//}
+	if message != "" {
+		logger.Error(message + "please check your command is ok?")
+		return true
+	}
+	return false
+}
+
 //VersionToInt v1.15.6  => 115
 func VersionToInt(version string) int {
 	// v1.15.6  => 1.15.6
