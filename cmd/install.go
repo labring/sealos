@@ -17,7 +17,6 @@ package cmd
 import (
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 	"os"
 )
 
@@ -32,10 +31,9 @@ var installCmd = &cobra.Command{
 		install.AppInstall(AppURL)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if AppURL == "" {
-			logger.Error("your pkg-url is empty,please check your command is ok?")
+		if install.PkgUrlChek(AppURL) {
 			cmd.Help()
-			os.Exit(0)
+			os.Exit(install.ErrorExitOSCase)
 		}
 	},
 }

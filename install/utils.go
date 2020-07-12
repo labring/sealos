@@ -17,15 +17,13 @@ import (
 )
 
 const (
+	ErrorExitOSCase = -1 // 错误直接退出类型
 
-	ErrorExitOSCase  = -1   	// 错误直接退出类型
-
-	ErrorMasterEmpty = "your master is empty."						// master节点ip为空
-	ErrorVersionEmpty= "your kubernetes version is empty."			// kubernetes 版本号为空
-	ErrorPkgUrlEmpty = "your package url is empty."					// 离线安装包为空
-	ErrorFileNotExist = "your package file is not exist."			// 离线安装包为空
-	ErrorPkgUrlNotExist = "Your package url is incorrect."	// 离线安装包为http路径不对
-	ErrorPkgUrlSize = "Download file size is less then 200M "	// 离线安装包为http路径不对
+	ErrorMasterEmpty    = "your master is empty."                 // master节点ip为空
+	ErrorVersionEmpty   = "your kubernetes version is empty."     // kubernetes 版本号为空
+	ErrorFileNotExist   = "your package file is not exist."       // 离线安装包为空
+	ErrorPkgUrlNotExist = "Your package url is incorrect."        // 离线安装包为http路径不对
+	ErrorPkgUrlSize     = "Download file size is less then 200M " // 离线安装包为http路径不对
 	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
 	// ErrorMessageCommon											// 其他错误消息
 
@@ -35,13 +33,10 @@ const (
 var message string
 
 // ExitOSCase is
-func ExitInitCase()  bool {
+func ExitInitCase() bool {
 	// 重大错误直接退出, 不保存配置文件
 	if len(MasterIPs) == 0 {
 		message = ErrorMasterEmpty
-	}
-	if PkgUrl == "" {
-		message += ErrorPkgUrlEmpty
 	}
 	if Version == "" {
 		message += ErrorVersionEmpty
@@ -56,19 +51,24 @@ func ExitInitCase()  bool {
 		logger.Error(message + "please check your command is ok?")
 		return true
 	}
+
+	return PkgUrlChek(PkgUrl)
+}
+
+func PkgUrlChek(pkgUrl string) bool {
 	// 判断PkgUrl, 没有http前缀并且本地文件找不到.
-	if  !strings.HasPrefix(PkgUrl, "http") && !FileExist(PkgUrl) {
+	if !strings.HasPrefix(pkgUrl, "http") && !FileExist(pkgUrl) {
 		message = ErrorFileNotExist
 		logger.Error(message + "please check where your PkgUrl is right?")
 		return true
 	}
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
-	return strings.HasPrefix(PkgUrl, "http") && !downloadFileCheck(PkgUrl)
+	return strings.HasPrefix(pkgUrl, "http") && !downloadFileCheck(pkgUrl)
 }
 
 func downloadFileCheck(pkgUrl string) bool {
 	u, err := url.Parse(pkgUrl)
-	if err !=nil {
+	if err != nil {
 		return false
 	}
 	if u != nil {
@@ -83,10 +83,15 @@ func downloadFileCheck(pkgUrl string) bool {
 			},
 		}
 		resp, err := client.Do(req)
-		if resp.ContentLength < MinDownloadFileSize { //判断大小 这里可以设置成比如 400MB 随便设置一个大小
-			logger.Error("your pkgUrl download file size is : ",resp.ContentLength / 1024 / 1024,"m, please check your PkgUrl is right")
+		if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
+			logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
 			return false
 		}
+
+		//if resp.ContentLength < MinDownloadFileSize { //判断大小 这里可以设置成比如 400MB 随便设置一个大小
+		//	logger.Error("your pkgUrl download file size is : ", resp.ContentLength/1024/1024, "m, please check your PkgUrl is right")
+		//	return false
+		//}
 	}
 	return true
 }
