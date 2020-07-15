@@ -44,7 +44,7 @@ var contact = `
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Simplest way to init your kubernets HA cluster",
-	Long:  `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
+	Long: `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
 	--node 192.168.0.5 --user root --passwd your-server-password \
 	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz`,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -71,6 +71,7 @@ func init() {
 	initCmd.Flags().StringVar(&install.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.Password, "passwd", "", "password for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
 

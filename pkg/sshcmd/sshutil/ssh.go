@@ -78,11 +78,11 @@ func (ss *SSH) CmdAsync(host string, cmd string) error {
 	doneout := make(chan bool, 1)
 	doneerr := make(chan bool, 1)
 	go func() {
-		readPipe(host,stderr,true)
+		readPipe(host, stderr, true)
 		doneerr <- true
 	}()
 	go func() {
-		readPipe(host, stdout,false)
+		readPipe(host, stdout, false)
 		doneout <- true
 	}()
 	<-doneerr

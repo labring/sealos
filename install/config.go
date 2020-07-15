@@ -23,6 +23,7 @@ type SealConfig struct {
 	User       string
 	Passwd     string
 	PrivateKey string
+	PkPassword string
 	//ApiServer ex. apiserver.cluster.local
 	ApiServerDomian string
 
@@ -53,6 +54,7 @@ func (c *SealConfig) Dump(path string) {
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile
+	c.PkPassword = SSHConfig.PkPassword
 	c.ApiServerDomian = ApiServer
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
