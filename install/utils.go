@@ -27,7 +27,7 @@ const (
 	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
 	// ErrorMessageCommon											// 其他错误消息
 
-	MinDownloadFileSize int64 = 400 * 1024 * 1024
+	// MinDownloadFileSize int64 = 400 * 1024 * 1024
 )
 
 var message string
@@ -52,11 +52,24 @@ func ExitInitCase() bool {
 		return true
 	}
 
-	return PkgUrlChek(PkgUrl)
+	return pkgUrlCheck(PkgUrl)
 }
 
-func PkgUrlChek(pkgUrl string) bool {
-	// 判断PkgUrl, 没有http前缀并且本地文件找不到.
+func ExitInstallCase(pkgUrl string) bool {
+	// values.yaml 使用了-f 但是文件不存在.
+	if Values != "" && !FileExist(Values) {
+		logger.Error("your values File is not exist, Please check your Values.yaml is exist")
+		return true
+	}
+	// PackageConfig 使用了-c 但是文件不存在
+	if PackageConfig !="" && !FileExist(PackageConfig) {
+		logger.Error("your install pkg-config File is not exist, Please check your pkg-config is exist")
+		return true
+	}
+	return pkgUrlCheck(pkgUrl)
+}
+
+func pkgUrlCheck(pkgUrl string)  bool {
 	if !strings.HasPrefix(pkgUrl, "http") && !FileExist(pkgUrl) {
 		message = ErrorFileNotExist
 		logger.Error(message + "please check where your PkgUrl is right?")
@@ -65,6 +78,7 @@ func PkgUrlChek(pkgUrl string) bool {
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
 	return strings.HasPrefix(pkgUrl, "http") && !downloadFileCheck(pkgUrl)
 }
+
 
 func downloadFileCheck(pkgUrl string) bool {
 	u, err := url.Parse(pkgUrl)

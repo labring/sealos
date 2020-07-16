@@ -29,6 +29,13 @@ var (
 	PodCIDR string
 	SvcCIDR string
 
+	// workdir for install package home
+	Workdir string
+	// values for  install package values.yaml
+	Values string
+	// packageConfig for install package config
+	PackageConfig string
+
 	//
 	Ipvs         care.LvsCare
 	LvscareImage ipvs.LvscareImage
