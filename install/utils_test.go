@@ -132,9 +132,9 @@ func TestFileExist(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"file exist",args{"/home/louis/.ssh/id_rsa"},true},
-		{"file not exist",args{"/home/louis/.ssh/id_rsa.public"},false},
-		{"PkgFile",args{"/root/kube1.18.0.tar.gz"},false},
+		{"file exist", args{"/home/louis/.ssh/id_rsa"}, true},
+		{"file not exist", args{"/home/louis/.ssh/id_rsa.public"}, false},
+		{"PkgFile", args{"/root/kube1.18.0.tar.gz"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
