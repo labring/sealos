@@ -124,6 +124,7 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.User = c.User
 	SSHConfig.Password = c.Passwd
 	SSHConfig.PkFile = c.PrivateKey
+	SSHConfig.PkPassword = c.PkPassword
 	ApiServer = c.ApiServerDomian
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
