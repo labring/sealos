@@ -20,9 +20,10 @@ type Command struct {
 }
 
 type PkgConfig struct {
-	Cmds []Command
-	URL  string
-	Name string
+	Cmds    []Command
+	URL     string
+	Name    string
+	Workdir string
 }
 
 func nameFromUrl(url string) string {
@@ -44,13 +45,26 @@ func AppInstall(url string) {
 		c.ShowDefaultConfig()
 		os.Exit(0)
 	}
-	pkgConfig, err := LoadConfig(url)
-	if err != nil {
-		logger.Error("load config failed: %s", err)
-		os.Exit(0)
+	var pkgConfig *PkgConfig
+	// 如果指定了config。 则直接从config里面读取配置
+	if PackageConfig == "" {
+		pkgConfig, err = LoadConfig(url)
+		if err != nil {
+			logger.Error("load config failed: %s", err)
+			os.Exit(0)
+		}
+	} else {
+		f, err := os.Open(PackageConfig)
+		if err != nil {
+			logger.Error("load config failed: %s", err)
+			os.Exit(0)
+		}
+		pkgConfig, err = configFromReader(f)
 	}
+
 	pkgConfig.URL = url
 	pkgConfig.Name = nameFromUrl(url)
+	pkgConfig.Workdir = Workdir
 
 	Exec(pkgConfig, *c)
 }
@@ -131,12 +145,12 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 
 func Exec(c *PkgConfig, config SealConfig) {
 	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds)
-	everyNodesCmd.Run(config, c.URL, c.Name)
-	masterOnlyCmd.Run(config, c.URL, c.Name)
+	everyNodesCmd.Run(config, c.URL, c.Name, c.Workdir)
+	masterOnlyCmd.Run(config, c.URL, c.Name, c.Workdir)
 }
 
 type Runner interface {
-	Run(config SealConfig, url, pkgName string)
+	Run(config SealConfig, url, pkgName, workdir string)
 }
 
 // return command run on every nodes and run only on master node
@@ -155,7 +169,6 @@ func NewCommands(cmds []Command) (Runner, Runner) {
 			logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
 		}
 	}
-
 	return everyNodesCmd, masterOnlyCmd
 }
 
@@ -163,12 +176,16 @@ type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName string) {
+func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName, workdir string) {
 	var wg sync.WaitGroup
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
-	workspace := fmt.Sprintf("/root/%s", pkgName)
+	workspace := fmt.Sprintf("%s/%s", workdir, pkgName)
 
 	nodes := append(config.Masters, config.Nodes...)
+	// values.yaml 存在， 则将 values.yaml复制到各个节点。
+	if Values != "" {
+		SendPackage(Values, nodes, workspace, nil, nil)
+	}
 	SendPackage(url, nodes, workspace, nil, nil)
 	for _, node := range nodes {
 		wg.Add(1)
@@ -188,8 +205,8 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
-func (r *RunOnMaster) Run(config SealConfig, url, pkgName string) {
-	workspace := fmt.Sprintf("/root/%s", pkgName)
+func (r *RunOnMaster) Run(config SealConfig, url, pkgName, workdir string) {
+	workspace := fmt.Sprintf("%s/%s", workdir, pkgName)
 	SendPackage(url, []string{config.Masters[0]}, workspace, nil, nil)
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
 	CmdWorkSpace(config.Masters[0], tarCmd, workspace)

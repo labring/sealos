@@ -3,8 +3,9 @@ package sshutil
 import "time"
 
 type SSH struct {
-	User     string
-	Password string
-	PkFile   string
-	Timeout  *time.Duration
+	User       string
+	Password   string
+	PkFile     string
+	PkPassword string
+	Timeout    *time.Duration
 }

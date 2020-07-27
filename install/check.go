@@ -39,7 +39,7 @@ func (s *SealosInstaller) CheckValid() {
 			logger.Error("[%s] ------------ check error", h)
 			os.Exit(1)
 		} else {
-			SetHosts(h,hostname)
+			SetHosts(h, hostname)
 			if _, ok := dict[hostname]; !ok {
 				dict[hostname] = true //不冲突, 主机名加入字典
 			} else {

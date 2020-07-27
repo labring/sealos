@@ -1,17 +1,119 @@
 package install
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/wonderivan/logger"
 	"math/big"
 	"math/rand"
 	"net"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 )
+
+const (
+	ErrorExitOSCase = -1 // 错误直接退出类型
+
+	ErrorMasterEmpty    = "your master is empty."                 // master节点ip为空
+	ErrorVersionEmpty   = "your kubernetes version is empty."     // kubernetes 版本号为空
+	ErrorFileNotExist   = "your package file is not exist."       // 离线安装包为空
+	ErrorPkgUrlNotExist = "Your package url is incorrect."        // 离线安装包为http路径不对
+	ErrorPkgUrlSize     = "Download file size is less then 200M " // 离线安装包为http路径不对
+	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
+	// ErrorMessageCommon											// 其他错误消息
+
+	// MinDownloadFileSize int64 = 400 * 1024 * 1024
+)
+
+var message string
+
+// ExitOSCase is
+func ExitInitCase() bool {
+	// 重大错误直接退出, 不保存配置文件
+	if len(MasterIPs) == 0 {
+		message = ErrorMasterEmpty
+	}
+	if Version == "" {
+		message += ErrorVersionEmpty
+	}
+	// 用户不写 --passwd, 默认走pk, 秘钥如果没有配置ssh互信, 则验证ssh的时候报错. 应该属于preRun里面
+	// first to auth password, second auth pk.
+	// 如果初始状态都没写, 默认都为空. 报这个错
+	//if SSHConfig.Password == "" && SSHConfig.PkFile == "" {
+	//	message += ErrorMessageSSHConfigEmpty
+	//}
+	if message != "" {
+		logger.Error(message + "please check your command is ok?")
+		return true
+	}
+
+	return pkgUrlCheck(PkgUrl)
+}
+
+func ExitInstallCase(pkgUrl string) bool {
+	// values.yaml 使用了-f 但是文件不存在.
+	if Values != "" && !FileExist(Values) {
+		logger.Error("your values File is not exist, Please check your Values.yaml is exist")
+		return true
+	}
+	// PackageConfig 使用了-c 但是文件不存在
+	if PackageConfig !="" && !FileExist(PackageConfig) {
+		logger.Error("your install pkg-config File is not exist, Please check your pkg-config is exist")
+		return true
+	}
+	return pkgUrlCheck(pkgUrl)
+}
+
+func pkgUrlCheck(pkgUrl string)  bool {
+	if !strings.HasPrefix(pkgUrl, "http") && !FileExist(pkgUrl) {
+		message = ErrorFileNotExist
+		logger.Error(message + "please check where your PkgUrl is right?")
+		return true
+	}
+	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
+	return strings.HasPrefix(pkgUrl, "http") && !downloadFileCheck(pkgUrl)
+}
+
+
+func downloadFileCheck(pkgUrl string) bool {
+	u, err := url.Parse(pkgUrl)
+	if err != nil {
+		return false
+	}
+	if u != nil {
+		req, err := http.NewRequest("GET", u.String(), nil)
+		if err != nil {
+			logger.Error(ErrorPkgUrlNotExist, "please check where your PkgUrl is right?")
+			return false
+		}
+		client := &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+		resp, err := client.Do(req)
+		if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
+			logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
+			return false
+		}
+
+		//if resp.ContentLength < MinDownloadFileSize { //判断大小 这里可以设置成比如 400MB 随便设置一个大小
+		//	logger.Error("your pkgUrl download file size is : ", resp.ContentLength/1024/1024, "m, please check your PkgUrl is right")
+		//	return false
+		//}
+	}
+	return true
+}
+
+func FileExist(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil || os.IsExist(err)
+}
 
 //VersionToInt v1.15.6  => 115
 func VersionToInt(version string) int {
