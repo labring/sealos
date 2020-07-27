@@ -12,7 +12,7 @@ steps:
 - name: build
   image: golang:1.13.5
   commands:
-      - go build -mod vendor -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+      - BUILD_TIME=$(date "+%F %T") && go build -mod vendor -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest} -X github.com/fanux/sealos/version.BuildTime=${BUILD_TIME}" main.go
       - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
       - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
       - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos)" >> Note.md
