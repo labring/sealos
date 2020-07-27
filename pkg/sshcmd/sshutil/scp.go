@@ -177,6 +177,9 @@ func (ss *SSH) sftpConnect(host string) (*sftp.Client, error) {
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
+		Config: ssh.Config{
+			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
+		},
 	}
 
 	// connet to ssh
