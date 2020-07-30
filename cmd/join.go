@@ -16,6 +16,8 @@ package cmd
 
 import (
 	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -24,22 +26,33 @@ import (
 var joinCmd = &cobra.Command{
 	Use:   "join",
 	Short: "Simplest way to join your kubernets HA cluster",
-	Long:  `sealos join --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 --node 192.168.0.5 --vip 192.168.0.1  --user root --passwd your-server-password --pkg-url /root/kube1.14.1.tar.gz`,
+	Long:  `sealos join --node 192.168.0.5`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if len(install.MasterIPs) == 0 && len(install.NodeIPs) == 0 {
+			logger.Error("this command is join feature,master and node is empty at the same time.please check your args in command.")
+			cmd.Help()
+			os.Exit(0)
+		}
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		install.BuildJoin()
+		beforeNodes := install.ParseIPs(install.NodeIPs)
+		beforeMasters := install.ParseIPs(install.MasterIPs)
+
+		c := &install.SealConfig{}
+		err := c.Load("")
+		if err != nil {
+			logger.Error(err)
+			c.ShowDefaultConfig()
+			os.Exit(0)
+		}
+		install.BuildJoin(beforeMasters, beforeNodes)
+		c.Dump("")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(joinCmd)
-	joinCmd.Flags().StringVar(&install.User, "user", "root", "servers user name for ssh")
-	joinCmd.Flags().StringVar(&install.Passwd, "passwd", "", "password for ssh")
-	joinCmd.Flags().StringVar(&install.PrivateKeyFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
-
-	joinCmd.Flags().StringVar(&install.ApiServer, "apiserver", "apiserver.cluster.local", "apiserver domain name")
-	joinCmd.Flags().StringVar(&install.VIP, "vip", "10.103.97.2", "virtual ip")
-	joinCmd.Flags().StringSliceVar(&install.Masters, "master", []string{}, "kubernetes masters")
-	joinCmd.Flags().StringSliceVar(&install.Nodes, "node", []string{}, "kubernetes nodes")
-
-	joinCmd.Flags().StringVar(&install.PkgUrl, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline pakage url, or file localtion ex. /root/kube1.14.1.tar.gz")
+	joinCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-master ex. 192.168.0.5-192.168.0.5")
+	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	joinCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
 }
