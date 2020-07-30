@@ -62,14 +62,14 @@ func ExitInstallCase(pkgUrl string) bool {
 		return true
 	}
 	// PackageConfig 使用了-c 但是文件不存在
-	if PackageConfig !="" && !FileExist(PackageConfig) {
+	if PackageConfig != "" && !FileExist(PackageConfig) {
 		logger.Error("your install pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}
 	return pkgUrlCheck(pkgUrl)
 }
 
-func pkgUrlCheck(pkgUrl string)  bool {
+func pkgUrlCheck(pkgUrl string) bool {
 	if !strings.HasPrefix(pkgUrl, "http") && !FileExist(pkgUrl) {
 		message = ErrorFileNotExist
 		logger.Error(message + "please check where your PkgUrl is right?")
@@ -78,7 +78,6 @@ func pkgUrlCheck(pkgUrl string)  bool {
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
 	return strings.HasPrefix(pkgUrl, "http") && !downloadFileCheck(pkgUrl)
 }
-
 
 func downloadFileCheck(pkgUrl string) bool {
 	u, err := url.Parse(pkgUrl)
@@ -97,6 +96,10 @@ func downloadFileCheck(pkgUrl string) bool {
 			},
 		}
 		resp, err := client.Do(req)
+		if err != nil {
+			logger.Error(err)
+			return false
+		}
 		if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
 			logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
 			return false
