@@ -183,7 +183,10 @@ func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName, workdir string) {
 
 	nodes := append(config.Masters, config.Nodes...)
 	// values.yaml 存在， 则将 values.yaml复制到各个节点。
-	if Values != "" {
+	if Values == "-" {
+		// 处理 stdin
+		SendPackage(workdir+"values.yaml", nodes, workspace, nil, nil)
+	} else if Values != "" {
 		SendPackage(Values, nodes, workspace, nil, nil)
 	}
 	SendPackage(url, nodes, workspace, nil, nil)

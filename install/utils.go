@@ -56,9 +56,9 @@ func ExitInitCase() bool {
 }
 
 func ExitInstallCase(pkgUrl string) bool {
-	// values.yaml 使用了-f 但是文件不存在.
-	if Values != "" && !FileExist(Values) {
-		logger.Error("your values File is not exist, Please check your Values.yaml is exist")
+	// values.yaml 使用了-f 但是文件不存在. 并且不使用 stdin
+	if Values != "-" && !FileExist(Values) && Values !="" {
+		logger.Error("your values File is not exist and you have no stdin input, Please check your Values.yaml is exist")
 		return true
 	}
 	// PackageConfig 使用了-c 但是文件不存在
