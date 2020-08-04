@@ -55,6 +55,14 @@ func ExitInitCase() bool {
 	return pkgUrlCheck(PkgUrl)
 }
 
+func ExitDeleteCase(pkgUrl string) bool {
+	if PackageConfig != "" && !FileExist(PackageConfig) {
+		logger.Error("your APP pkg-config File is not exist, Please check your pkg-config is exist")
+		return true
+	}
+	return pkgUrlCheck(pkgUrl)
+}
+
 func ExitInstallCase(pkgUrl string) bool {
 	// values.yaml 使用了-f 但是文件不存在. 并且不使用 stdin
 	if Values != "-" && !FileExist(Values) && Values !="" {
@@ -63,7 +71,7 @@ func ExitInstallCase(pkgUrl string) bool {
 	}
 	// PackageConfig 使用了-c 但是文件不存在
 	if PackageConfig != "" && !FileExist(PackageConfig) {
-		logger.Error("your install pkg-config File is not exist, Please check your pkg-config is exist")
+		logger.Error("your install APP pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}
 	return pkgUrlCheck(pkgUrl)
