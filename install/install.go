@@ -24,6 +24,7 @@ type PkgConfig struct {
 	URL     string
 	Name    string
 	Workdir string
+	Flag    string
 }
 
 func nameFromUrl(url string) string {
@@ -65,7 +66,7 @@ func AppInstall(url string) {
 	pkgConfig.URL = url
 	pkgConfig.Name = nameFromUrl(url)
 	pkgConfig.Workdir = Workdir
-
+	pkgConfig.Flag = "install"
 	Exec(pkgConfig, *c)
 }
 
@@ -143,30 +144,54 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 	return list[0], list[1], nil
 }
 
+// Exec when install first to run ervey node to load images
+// second to run masterOnly to apply manifests.
+// when delete first to run masterOnly to delete manifests
+// second run every node to remove images.
 func Exec(c *PkgConfig, config SealConfig) {
-	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds)
-	everyNodesCmd.Run(config, c.URL, c.Name, c.Workdir)
-	masterOnlyCmd.Run(config, c.URL, c.Name, c.Workdir)
+	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds, c.Flag)
+	if c.Flag == "install" {
+		everyNodesCmd.Run(config, c)
+		masterOnlyCmd.Run(config, c)
+	}
+	if c.Flag == "delete" {
+		masterOnlyCmd.Run(config, c)
+		everyNodesCmd.Run(config, c)
+	}
 }
 
 type Runner interface {
-	Run(config SealConfig, url, pkgName, workdir string)
+	Run(config SealConfig, pkgConfig *PkgConfig)
 }
 
 // return command run on every nodes and run only on master node
-func NewCommands(cmds []Command) (Runner, Runner) {
+func NewCommands(cmds []Command, flag string) (Runner, Runner) {
 	everyNodesCmd := &RunOnEveryNodes{}
 	masterOnlyCmd := &RunOnMaster{}
-	for _, c := range cmds {
-		switch c.Name {
-		case "REMOVE", "STOP":
-		case "START", "LOAD":
-			everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-		case "DELETE":
-		case "APPLY":
-			masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
-		default:
-			logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
+	if flag == "install"  {
+		for _, c := range cmds {
+			switch c.Name {
+			case "REMOVE", "STOP", "DELETE":
+			case "START", "LOAD":
+				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
+			case "APPLY":
+				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
+			default:
+				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
+			}
+		}
+	}
+	if flag == "delete" {
+		for _, c := range cmds {
+			switch c.Name {
+			case "START", "LOAD", "APPLY":
+			case "REMOVE", "STOP":
+				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
+			case "DELETE":
+				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
+			default:
+				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
+			}
 		}
 	}
 	return everyNodesCmd, masterOnlyCmd
@@ -176,27 +201,39 @@ type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config SealConfig, url, pkgName, workdir string) {
+func (r *RunOnEveryNodes) Run(config SealConfig, p *PkgConfig) {
 	var wg sync.WaitGroup
-	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
-	workspace := fmt.Sprintf("%s/%s", workdir, pkgName)
-
+	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 	nodes := append(config.Masters, config.Nodes...)
 	// values.yaml 存在， 则将 values.yaml复制到各个节点。
 	if Values == "-" {
 		// 处理 stdin
-		SendPackage(workdir+"values.yaml", nodes, workspace, nil, nil)
+		SendPackage(p.Workdir+"values.yaml", nodes, workspace, nil, nil)
 	} else if Values != "" {
 		SendPackage(Values, nodes, workspace, nil, nil)
 	}
-	SendPackage(url, nodes, workspace, nil, nil)
+	// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
+	if p.Flag == "install" {
+		SendPackage(p.URL, nodes, workspace, nil, nil)
+	}
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			CmdWorkSpace(node, tarCmd, workspace)
+			// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
+			if p.Flag == "install" {
+				tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
+				fmt.Println(tarCmd)
+				CmdWorkSpace(node, tarCmd, workspace)
+			}
 			for _, cmd := range r.Cmd {
 				CmdWorkSpace(node, cmd.Cmd, workspace)
+			}
+			// 删除 tar压缩包及解压缩目录
+			if p.Flag == "delete" {
+				// rm -rf  $workdir/$pkgName
+				rmTar := fmt.Sprintf("rm -rf %s", workspace)
+				CmdWorkSpace(node, rmTar, Workdir)
 			}
 		}(node)
 	}
@@ -208,11 +245,15 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
-func (r *RunOnMaster) Run(config SealConfig, url, pkgName, workdir string) {
-	workspace := fmt.Sprintf("%s/%s", workdir, pkgName)
-	SendPackage(url, []string{config.Masters[0]}, workspace, nil, nil)
-	tarCmd := fmt.Sprintf("tar xvf %s.tar", pkgName)
-	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
+func (r *RunOnMaster) Run(config SealConfig, p *PkgConfig) {
+	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
+	// delete的时候只需要执行r.cmd里面的DELETE命令即可
+	if p.Flag == "install" {
+		SendPackage(p.URL, []string{config.Masters[0]}, workspace, nil, nil)
+		tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
+		fmt.Println(tarCmd)
+		CmdWorkSpace(config.Masters[0], tarCmd, workspace)
+	}
 	for _, cmd := range r.Cmd {
 		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
 	}
