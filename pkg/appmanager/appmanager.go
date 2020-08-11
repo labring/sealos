@@ -26,6 +26,7 @@ type PkgConfig struct {
 	Name          string
 	Workdir       string
 	ValuesContent string // -f values.yaml or -f - or default values,read values content before run
+	Workspace     string // fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 }
 
 func nameFromUrl(url string) string {
@@ -145,6 +146,20 @@ type RunOnEveryNodes struct {
 
 func (r *RunOnEveryNodes) CleanUp(config install.SealConfig, p *PkgConfig) {
 	//TODO
+	var wg sync.WaitGroup
+
+	nodes := append(config.Masters, config.Nodes...)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			// rm -rf /root/dashboard
+			rmTar := fmt.Sprintf("rm -rf %s", p.Workspace)
+			CmdWorkSpace(node, rmTar, p.Workdir)
+		}(node)
+	}
+
+	wg.Wait()
 }
 
 func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
@@ -154,7 +169,7 @@ func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			send(node, config, p)
+			send(node, p)
 		}(node)
 	}
 
@@ -164,14 +179,13 @@ func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
 func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
 	// TODO send p.ValuesContent to all nodes
 	var wg sync.WaitGroup
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 	nodes := append(config.Masters, config.Nodes...)
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
 			for _, cmd := range r.Cmd {
-				CmdWorkSpace(node, cmd.Cmd, workspace)
+				CmdWorkSpace(node, cmd.Cmd, p.Workspace)
 			}
 		}(node)
 	}
@@ -183,33 +197,48 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
-func send(host string, config install.SealConfig, p *PkgConfig) {
-	//TODO don't send if already exist
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
-	install.SendPackage(p.URL, []string{host}, workspace, nil, nil)
+func send(host string, p *PkgConfig) {
+	remoteFilePath := fmt.Sprintf("%s/%s.tar", p.Workspace, p.Name)
+	if !CmdFileExist(host, remoteFilePath) {
+		logger.Info("%s%s is not exist , send package to nodes", host, remoteFilePath)
+		install.SendPackage(p.URL, []string{host}, p.Workspace, nil, nil)
+	}
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
 	fmt.Println(tarCmd)
-	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
+	CmdWorkSpace(host, tarCmd, p.Workspace)
+
 }
 
 // send package to master
 func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
-	send(config.Masters[0], config, p)
+	send(config.Masters[0], p)
+
+	//  默认为空值, 如果ValuesContent有值, 说明使用了file或者-, 将valuesContent写入 workspace/vaules.yml
+	if p.ValuesContent != "" {
+		_ = ReadStringToFile(p.ValuesContent, "/tmp/values.yaml")
+		install.SendPackage("/tmp/values.yaml", config.Masters[:1], p.Workspace,nil,nil)
+	}
 }
 
 func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) {
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 
+	// kubectl apply -f
 	for _, cmd := range r.Cmd {
-		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
+		CmdWorkSpace(config.Masters[0], cmd.Cmd, p.Workspace)
 	}
 }
 
 func (r *RunOnMaster) CleanUp(config install.SealConfig, p *PkgConfig) {
 	//TODO
+	// delete every node is ok.
+
 }
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
 	_ = install.SSHConfig.CmdAsync(node, command)
+}
+
+func CmdFileExist(node, path string) bool {
+	return install.SSHConfig.IsFileExist(node, path)
 }

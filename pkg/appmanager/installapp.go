@@ -1,8 +1,12 @@
 package appmanager
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/wonderivan/logger"
+	"io/ioutil"
+
 	"os"
 )
 
@@ -14,6 +18,15 @@ type InstallFlags struct {
 	WorkDir string
 }
 
+func GetInstallFlags(appUrl string) *InstallFlags {
+	return &InstallFlags{
+		Config:  install.PackageConfig,
+		PkgURL:  appUrl,
+		WorkDir: install.WorkDir,
+		Values:  install.Values,
+	}
+}
+
 func InstallApp(flag *InstallFlags) error {
 	c := &install.SealConfig{}
 	err := c.Load("")
@@ -23,11 +36,17 @@ func InstallApp(flag *InstallFlags) error {
 		os.Exit(0)
 	}
 
-	pkgConfig, _ := LoadAppConfig(flag.PkgURL, flag.WorkDir)
+	pkgConfig, _ := LoadAppConfig(flag.PkgURL, flag.Config)
 	pkgConfig.URL = flag.PkgURL
 	pkgConfig.Name = nameFromUrl(flag.PkgURL)
-	pkgConfig.Workdir = install.Workdir
-
+	pkgConfig.Workdir = flag.WorkDir
+	pkgConfig.Workspace = fmt.Sprintf("%s/%s", flag.WorkDir, pkgConfig.Name)
+	s, err := getValuesContent(flag.Values)
+	if err != nil {
+		logger.Error("get values err:", err)
+		os.Exit(-1)
+	}
+	pkgConfig.ValuesContent = s
 	everyNodesCmd, masterOnlyCmd := NewInstallCommands(pkgConfig.Cmds)
 	everyNodesCmd.Send(*c, pkgConfig)
 	everyNodesCmd.Run(*c, pkgConfig)
@@ -52,4 +71,41 @@ func NewInstallCommands(cmds []Command) (Runner, Runner) {
 		}
 	}
 	return everyNodesCmd, masterOnlyCmd
+}
+
+// getValuesContent is
+func getValuesContent(s string) (valuesContent string, err error) {
+	if s == "-" {
+		// deal with stdin
+		return ReadFromStdin()
+	} else if s == "" {
+		// use default and do nothing
+		return s, nil
+	} else {
+		// use -f file
+		return ReadFromFile(s)
+	}
+}
+
+// ReadFromStdin is
+func ReadFromStdin() (str string, err error) {
+	var b bytes.Buffer
+	_, err = b.ReadFrom(os.Stdin)
+	if err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}
+
+// ReadFromFile is
+func ReadFromFile(s string) (str string, err error) {
+	y, err := ioutil.ReadFile(s)
+	if err != nil {
+		return "", err
+	}
+	return string(y), nil
+}
+
+func ReadStringToFile(s, path string) error {
+	return ioutil.WriteFile(path, []byte(s), os.ModePerm)
 }
