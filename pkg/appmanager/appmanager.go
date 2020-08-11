@@ -21,10 +21,11 @@ type Command struct {
 }
 
 type PkgConfig struct {
-	Cmds    []Command
-	URL     string
-	Name    string
-	Workdir string
+	Cmds          []Command
+	URL           string
+	Name          string
+	Workdir       string
+	ValuesContent string // -f values.yaml or -f - or default values,read values content before run
 }
 
 func nameFromUrl(url string) string {
@@ -134,45 +135,43 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 
 type Runner interface {
 	Run(config install.SealConfig, pkgConfig *PkgConfig)
+	Send(config install.SealConfig, pkgConfig *PkgConfig)
+	CleanUp(config install.SealConfig, pkgConfig *PkgConfig)
 }
 
 type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) CleanUp(config install.SealConfig, p *PkgConfig) {
+	//TODO
+}
+
+func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
 	var wg sync.WaitGroup
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 	nodes := append(config.Masters, config.Nodes...)
-	// values.yaml 存在， 则将 values.yaml复制到各个节点。
-	if Values == "-" {
-		// 处理 stdin
-		SendPackage(p.Workdir+"values.yaml", nodes, workspace, nil, nil)
-	} else if Values != "" {
-		SendPackage(Values, nodes, workspace, nil, nil)
-	}
-	// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
-	if p.Flag == "install" {
-		SendPackage(p.URL, nodes, workspace, nil, nil)
-	}
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
-			if p.Flag == "install" {
-				tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
-				fmt.Println(tarCmd)
-				CmdWorkSpace(node, tarCmd, workspace)
-			}
+			send(node, config, p)
+		}(node)
+	}
+
+	wg.Wait()
+}
+
+func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
+	// TODO send p.ValuesContent to all nodes
+	var wg sync.WaitGroup
+	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
+	nodes := append(config.Masters, config.Nodes...)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
 			for _, cmd := range r.Cmd {
 				CmdWorkSpace(node, cmd.Cmd, workspace)
-			}
-			// 删除 tar压缩包及解压缩目录
-			if p.Flag == "delete" {
-				// rm -rf  $workdir/$pkgName
-				rmTar := fmt.Sprintf("rm -rf %s", workspace)
-				CmdWorkSpace(node, rmTar, Workdir)
 			}
 		}(node)
 	}
@@ -184,21 +183,33 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
+func send(host string, config install.SealConfig, p *PkgConfig) {
+	//TODO don't send if already exist
+	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
+	install.SendPackage(p.URL, []string{host}, workspace, nil, nil)
+	tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
+	fmt.Println(tarCmd)
+	CmdWorkSpace(config.Masters[0], tarCmd, workspace)
+}
+
+// send package to master
+func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
+	send(config.Masters[0], config, p)
+}
+
 func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) {
 	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
-	// delete的时候只需要执行r.cmd里面的DELETE命令即可
-	if p.Flag == "install" {
-		SendPackage(p.URL, []string{config.Masters[0]}, workspace, nil, nil)
-		tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
-		fmt.Println(tarCmd)
-		CmdWorkSpace(config.Masters[0], tarCmd, workspace)
-	}
+
 	for _, cmd := range r.Cmd {
 		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
 	}
 }
 
+func (r *RunOnMaster) CleanUp(config install.SealConfig, p *PkgConfig) {
+	//TODO
+}
+
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	_ = SSHConfig.CmdAsync(node, command)
+	_ = install.SSHConfig.CmdAsync(node, command)
 }

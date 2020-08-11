@@ -29,7 +29,9 @@ func InstallApp(flag *InstallFlags) error {
 	pkgConfig.Workdir = install.Workdir
 
 	everyNodesCmd, masterOnlyCmd := NewInstallCommands(pkgConfig.Cmds)
+	everyNodesCmd.Send(*c, pkgConfig)
 	everyNodesCmd.Run(*c, pkgConfig)
+	masterOnlyCmd.Send(*c, pkgConfig)
 	masterOnlyCmd.Run(*c, pkgConfig)
 	return nil
 }
