@@ -6,10 +6,8 @@ import (
 	"os"
 )
 
-
-
 // APPDelete is delete APP installed by sealos
-func APPDelete(url string)  {
+func APPDelete(url string) {
 	c := &SealConfig{}
 	err := c.Load("")
 	if err != nil {

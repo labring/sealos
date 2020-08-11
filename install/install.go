@@ -168,7 +168,7 @@ type Runner interface {
 func NewCommands(cmds []Command, flag string) (Runner, Runner) {
 	everyNodesCmd := &RunOnEveryNodes{}
 	masterOnlyCmd := &RunOnMaster{}
-	if flag == "install"  {
+	if flag == "install" {
 		for _, c := range cmds {
 			switch c.Name {
 			case "REMOVE", "STOP", "DELETE":

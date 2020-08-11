@@ -1,16 +1,16 @@
 package appmanager
 
 import (
-"archive/tar"
-"bufio"
-"fmt"
+	"archive/tar"
+	"bufio"
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/wonderivan/logger"
-"io"
-"os"
-"path"
-"strings"
-"sync"
+	"io"
+	"os"
+	"path"
+	"strings"
+	"sync"
 )
 
 //Command is
@@ -25,7 +25,6 @@ type PkgConfig struct {
 	URL     string
 	Name    string
 	Workdir string
-	Flag    string
 }
 
 func nameFromUrl(url string) string {
@@ -38,37 +37,25 @@ func nameFromUrl(url string) string {
 	return name[0]
 }
 
-//AppInstall is
-func AppInstall(url string) {
-	c := &install.SealConfig{}
-	err := c.Load("")
-	if err != nil {
-		logger.Error(err)
-		c.ShowDefaultConfig()
-		os.Exit(0)
-	}
+func LoadAppConfig(url string, flagConfig string) (*PkgConfig, error) {
 	var pkgConfig *PkgConfig
+	var err error
 	// 如果指定了config。 则直接从config里面读取配置
-	if PackageConfig == "" {
+	if flagConfig == "" {
 		pkgConfig, err = LoadConfig(url)
 		if err != nil {
 			logger.Error("load config failed: %s", err)
 			os.Exit(0)
 		}
 	} else {
-		f, err := os.Open(PackageConfig)
+		f, err := os.Open(flagConfig)
 		if err != nil {
 			logger.Error("load config failed: %s", err)
 			os.Exit(0)
 		}
 		pkgConfig, err = configFromReader(f)
 	}
-
-	pkgConfig.URL = url
-	pkgConfig.Name = nameFromUrl(url)
-	pkgConfig.Workdir = Workdir
-	pkgConfig.Flag = "install"
-	Exec(pkgConfig, *c)
+	return pkgConfig, nil
 }
 
 // LoadConfig from tar package
@@ -86,7 +73,7 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
-	filename, _ := downloadFile(packageFile)
+	filename, _ := install.DownloadFile(packageFile)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -145,64 +132,15 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 	return list[0], list[1], nil
 }
 
-// Exec when install first to run ervey node to load images
-// second to run masterOnly to apply manifests.
-// when delete first to run masterOnly to delete manifests
-// second run every node to remove images.
-func Exec(c *PkgConfig, config SealConfig) {
-	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds, c.Flag)
-	if c.Flag == "install" {
-		everyNodesCmd.Run(config, c)
-		masterOnlyCmd.Run(config, c)
-	}
-	if c.Flag == "delete" {
-		masterOnlyCmd.Run(config, c)
-		everyNodesCmd.Run(config, c)
-	}
-}
-
 type Runner interface {
-	Run(config SealConfig, pkgConfig *PkgConfig)
-}
-
-// return command run on every nodes and run only on master node
-func NewCommands(cmds []Command, flag string) (Runner, Runner) {
-	everyNodesCmd := &RunOnEveryNodes{}
-	masterOnlyCmd := &RunOnMaster{}
-	if flag == "install"  {
-		for _, c := range cmds {
-			switch c.Name {
-			case "REMOVE", "STOP", "DELETE":
-			case "START", "LOAD":
-				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-			case "APPLY":
-				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
-			default:
-				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
-			}
-		}
-	}
-	if flag == "delete" {
-		for _, c := range cmds {
-			switch c.Name {
-			case "START", "LOAD", "APPLY":
-			case "REMOVE", "STOP":
-				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-			case "DELETE":
-				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
-			default:
-				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
-			}
-		}
-	}
-	return everyNodesCmd, masterOnlyCmd
+	Run(config install.SealConfig, pkgConfig *PkgConfig)
 }
 
 type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
 	var wg sync.WaitGroup
 	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 	nodes := append(config.Masters, config.Nodes...)
@@ -246,7 +184,7 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
-func (r *RunOnMaster) Run(config SealConfig, p *PkgConfig) {
+func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) {
 	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 	// delete的时候只需要执行r.cmd里面的DELETE命令即可
 	if p.Flag == "install" {
