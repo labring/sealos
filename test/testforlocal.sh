@@ -52,8 +52,8 @@ echo "wait for everything ok"
 sleep 10
 
 ## install kuboard app -f by file  ##
-echo "${SEALOSCMD} install -f $KUBOARDYAML --pkg-url $KUBOARDTAR -w $WORKDIR"
-${SEALOSCMD} install -f $KUBOARDYAML --pkg-url $KUBOARDTAR -w $WORKDIR
+echo "${SEALOSCMD} install -f $KUBOARDYAML --pkg-url $KUBOARDTAR -w $WORKDIR -c $CONFIG"
+${SEALOSCMD} install -f $KUBOARDYAML --pkg-url $KUBOARDTAR -w $WORKDIR -c $CONFIG
 checkValid installAppByStdin
 echo "wait for everything ok"
 sleep 20

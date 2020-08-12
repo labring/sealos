@@ -25,7 +25,7 @@ type PkgConfig struct {
 	URL           string
 	Name          string
 	Workdir       string
-	ValuesContent string // -f values.yaml or -f - or default values,read values content before run
+	ValuesContent []byte // -f values.yaml or -f - or default values,read values content before run
 	Workspace     string // fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 }
 
@@ -211,12 +211,12 @@ func send(host string, p *PkgConfig) {
 
 // send package to master
 func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
-	send(config.Masters[0], p)
+	// del because run every node has done this
+	// send(config.Masters[0], p)
 
-	//  默认为空值, 如果ValuesContent有值, 说明使用了file或者-, 将valuesContent写入 workspace/vaules.yml
-	if p.ValuesContent != "" {
-		_ = ReadStringToFile(p.ValuesContent, "/tmp/values.yaml")
-		install.SendPackage("/tmp/values.yaml", config.Masters[:1], p.Workspace,nil,nil)
+	//  默认为空值, 如果ValuesContent有值, 说明使用了file或者-, 将valuesContent远程写入master[0]:/workspace/vaules.yml
+	if p.ValuesContent != nil {
+		install.SSHConfig.CopyConfigFile(config.Masters[0], p.Workspace+"/vaules.yml", p.ValuesContent)
 	}
 }
 
