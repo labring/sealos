@@ -74,38 +74,25 @@ func NewInstallCommands(cmds []Command) (Runner, Runner) {
 }
 
 // getValuesContent is
-func getValuesContent(s string) (valuesContent string, err error) {
+func getValuesContent(s string) (valuesContent []byte, err error) {
 	if s == "-" {
 		// deal with stdin
 		return ReadFromStdin()
 	} else if s == "" {
 		// use default and do nothing
-		return s, nil
+		return nil, nil
 	} else {
 		// use -f file
-		return ReadFromFile(s)
+		return ioutil.ReadFile(s)
 	}
 }
 
 // ReadFromStdin is
-func ReadFromStdin() (str string, err error) {
+func ReadFromStdin() (bt []byte, err error) {
 	var b bytes.Buffer
 	_, err = b.ReadFrom(os.Stdin)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return b.String(), nil
-}
-
-// ReadFromFile is
-func ReadFromFile(s string) (str string, err error) {
-	y, err := ioutil.ReadFile(s)
-	if err != nil {
-		return "", err
-	}
-	return string(y), nil
-}
-
-func ReadStringToFile(s, path string) error {
-	return ioutil.WriteFile(path, []byte(s), os.ModePerm)
+	return b.Bytes(), nil
 }
