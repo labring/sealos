@@ -47,6 +47,8 @@ github.com/fanux/lvscare v0.0.0-20200331025051-a9c95851a817 h1:SOxgyqUOSOMsOn68Y
 github.com/fanux/lvscare v0.0.0-20200331025051-a9c95851a817/go.mod h1:i5kX9hBsCvtQsD30fbbfxbOlONG+FcKlBUSaQ6DhIII=
 github.com/fanux/sealgate v0.0.5 h1:KCBf+x3TdjCEVVNCjdkeMukDE0kZx9QE39Yy2IazkiM=
 github.com/fanux/sealgate v0.0.5/go.mod h1:y3141RLsCSgid4+H0O+7CoAqIHDGB0r0mcR8TYnqvps=
+github.com/fanux/sealos/pkg/logger v0.0.0-20200810121137-e74bb953d0b9 h1:HiToFk0SSXr6XA9aKmtamgf9LEs36ymTSRAMVp0oScs=
+github.com/fanux/sealos/pkg/logger v0.0.0-20200810121137-e74bb953d0b9/go.mod h1:x9AaKiPmaa1lNJIu5XXJs1En2wZayGN6UA3dgYozYFk=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
