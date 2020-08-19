@@ -29,10 +29,10 @@ var (
 	PodCIDR string
 	SvcCIDR string
 
-	Envs       []string // read env from -e
-	PackageConfig     string   // install/delete package config
-	Values     string   // values for  install package values.yaml
-	WorkDir    string   // workdir for install/delete package home
+	Envs          []string // read env from -e
+	PackageConfig string   // install/delete package config
+	Values        string   // values for  install package values.yaml
+	WorkDir       string   // workdir for install/delete package home
 
 	//
 	Ipvs         care.LvsCare
@@ -55,6 +55,13 @@ var (
 	CleanAll   bool
 
 	Vlog int
+
+	// etcd backup
+	SnapshotName        string
+	EtcdBackDir         string
+	RestorePath			string
+	EtcdSnapshotSave    bool
+	EtcdRestore bool
 )
 
 func vlogToStr() string {

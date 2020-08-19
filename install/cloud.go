@@ -175,3 +175,8 @@ func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
 	_ = SSHConfig.CmdAsync(node, command)
 }
+
+func CmdWork(node, cmd, workdir string) error {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	return SSHConfig.CmdAsync(node, command)
+}
