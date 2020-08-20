@@ -56,22 +56,26 @@ func GetEtcdBackFlags() *EtcdBackFlags {
 // 只需要在master上备份一次即可， 然后复制snapshot到各etcd节点。
 func SnapshotEtcd(e *EtcdBackFlags) {
 	e.CpEtcdToNode()
-	cmdMkdir := fmt.Sprintf("mkdir -p %s || true", e.Dir)
-	CmdWorkSpace(e.Masters[0], cmdMkdir, TMPDIR)
-	host := reFormatHostToIp(e.Masters[0])
-	err := SnapshotEtcdDefaultSave(host, e.Name, e.Dir)
-	if err != nil {
-		logger.Error("etcd back error: ", err)
-		os.Exit(-1)
+
+	var wg sync.WaitGroup
+
+	// run on every master. though there are different.
+	for _, hosts := range e.EtcdHosts {
+		h := reFormatHostToIp(hosts)
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			cmdMkdir := fmt.Sprintf("mkdir -p %s || true", e.Dir)
+			CmdWorkSpace(node, cmdMkdir, TMPDIR)
+			if err := SnapshotEtcdDefaultSave(node, e.Name, e.Dir); err != nil {
+				logger.Error("etcd back up failed on host: [%s]", node)
+			}
+		}(h)
 	}
-	if len(e.Masters) > 1 {
-		path := fmt.Sprintf("%s/%s", e.Dir, e.Name)
-		SendPackage(path, e.Masters[1:], e.Dir, nil, nil)
-	}
+	wg.Wait()
+
+	// backup then health check
 	e.HealthCheck()
-	if err != nil {
-		logger.Info("health check is failed")
-	}
 }
 
 func SnapshotEtcdDefaultSave(host, snapshotName, dir string) error {
