@@ -39,7 +39,6 @@ func GetRestoreFlags() *RestoreFlags {
 
 func RestoreFromLocal(r *RestoreFlags) {
 	if err := r.Prepare(); err != nil {
-		logger.Error(err)
 		os.Exit(-1)
 	}
 
@@ -59,6 +58,8 @@ func RestoreFromLocal(r *RestoreFlags) {
 
 	// 健康检查
 	r.HealthCheck()
+
+	// todo  recovery old kubernetes, when use sealos to restore , the cluster is not health. do nothing?
 }
 
 func (r *RestoreFlags) Prepare() error {
@@ -66,13 +67,16 @@ func (r *RestoreFlags) Prepare() error {
 	// on every etcd nodes , and back all data to /var/lib/etcd.bak
 	for _, host := range r.EtcdHosts {
 		host = reFormatHostToIp(host)
+		// backup dir
 		stopEtcdCmd := `[ -d /etc/kubernetes/manifests.bak ] || mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak`
 		if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
+			logger.Error("backup /etc/kubernetes/manifests on host [%s] err: %s.", host, err)
 			return err
 		}
-	 	// if you already backup the etcd
+		// backup dir if exsit then do nothing
 		backupEtcdCmd := `[ -d /var/lib/etcd.bak ] || mv /var/lib/etcd /var/lib/etcd.bak`
 		if err := CmdWork(host, backupEtcdCmd, TMPDIR); err != nil {
+			logger.Error("backup /var/lib/etcd host [%s] err: %s.", host, err)
 			return err
 		}
 	}
@@ -89,6 +93,12 @@ func (r *RestoreFlags) Restore() error {
 		if err := ectdRestoreDefault(host, hostname, r.SnapshotName, r.Dir, r.RestorePath, initCluster); err != nil {
 			return fmt.Errorf("[etcd] Failed to restore etcd snapshot: %v", err)
 		}
+
+		newRestore := fmt.Sprintf(`mv %s  %s`, r.RestorePath, ETCDDATEDIR)
+		if err := CmdWork(host, newRestore, TMPDIR); err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -137,20 +147,16 @@ func (r *RestoreFlags) AfterRestore() error {
 	// start kube-apiserver kube-controller-manager kube-scheduler etcd
 	for _, host := range r.EtcdHosts {
 		host = reFormatHostToIp(host)
-		newRestore := fmt.Sprintf(`mv %s  /var/lib/etcd`, r.RestorePath)
-		if err := CmdWork(host, newRestore, TMPDIR); err != nil {
-			return err
-		}
 		manifestsCmd := `mv /etc/kubernetes/manifests.bak /etc/kubernetes/manifests`
 		if err := CmdWork(host, manifestsCmd, TMPDIR); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
 
-func (r *RestoreFlags) HealthCheck()  {
+func (r *RestoreFlags) HealthCheck() {
+	c := make(chan bool)
 	for _, host := range r.EtcdHosts {
 		host = reFormatHostToIp(host)
 		for i := 0; i < RETRYTIMES; i++ {
@@ -168,28 +174,26 @@ func HealthCheck(host string) error {
 	endpoints := fmt.Sprintf("%s:2379", host)
 	health := fmt.Sprintf(`%s--endpoints %s  endpoint health --write-out=json`, cmd, endpoints)
 	resp := SSHConfig.CmdToString(host, health, "")
-	logger.Info("read respone of /health is: ", resp)
-	var healthy []respone
+	var healthy []response
 	if err := json.Unmarshal([]byte(resp), &healthy); err != nil {
-		logger.Error(err)
 		return err
 	}
 	if !healthy[0].Health {
-		logger.Error("failed to read response of /health for host [%s]: %v", host, healthy[0].Health)
 		return fmt.Errorf("failed to read response of /health for host [%s]: %v", host, healthy[0].Health)
 	}
 	//logger.Info(healthy)
 	return nil
 }
 
-type respone struct {
+type response struct {
 	Endpoint string `json:"endpoint"`
 	Health   bool   `json:"health"`
 	Took     string `json:"took"`
+	Error    string `json:"error"`
 }
 
 func getHealthEtcd(hc http.Client, host string, url string) (bool, error) {
-	healthy := respone{}
+	healthy := response{}
 	resp, err := hc.Get(url)
 	if err != nil {
 		return healthy.Health, fmt.Errorf("failed to get /health for host [%s]: %v", host, err)

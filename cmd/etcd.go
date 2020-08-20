@@ -23,7 +23,7 @@ import (
 
 var exampleCmd = `
 	
-	# snapshot save the etcd
+	# snapshot save the etcd, the backupPath is on etcd nodes. not on the sealos init machine.
 	sealos etcd --snap-save --name snapshot --backupPath  /opt/sealos/ectd-backup
 
 	# snapshot restore the etcd

@@ -17,7 +17,7 @@ const (
 	ETCDSNAPSHOTDEFAULTNAME = "snapshot"
 	ETCDDEFAULTBACKUPDIR    = "/opt/sealos/ectd-backup"
 	ECTDRESTOREPATH         = "/opt/sealos/ectd-restore"
-	ETCDDATEDIR             = "/var/lib/etcd/"
+	ETCDDATEDIR             = "/var/lib/etcd"
 	TMPDIR                  = "/tmp"
 	RETRYTIMES              = 10
 )

@@ -30,7 +30,7 @@ func Test_reFormatHostToIp(t *testing.T) {
 
 func TestHealthCheck(t *testing.T) {
 	a:= `[{"endpoint":"192.168.160.243:2379","health":true,"took":"8.281132ms"}]`
-	var b []respone
+	var b []response
 	err := json.Unmarshal([]byte(a), &b)
 	if err != nil {
 		logger.Error(err)
