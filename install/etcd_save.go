@@ -52,27 +52,25 @@ func GetEtcdBackFlags() *EtcdBackFlags {
 	return e
 }
 
-
 // 只需要在master上备份一次即可， 然后复制snapshot到各etcd节点。
 func SnapshotEtcd(e *EtcdBackFlags) {
 	e.CpEtcdToNode()
 
-	var wg sync.WaitGroup
-
-	// run on every master. though there are different.
-	for _, hosts := range e.EtcdHosts {
-		h := reFormatHostToIp(hosts)
-		wg.Add(1)
-		go func(node string) {
-			defer wg.Done()
-			cmdMkdir := fmt.Sprintf("mkdir -p %s || true", e.Dir)
-			CmdWorkSpace(node, cmdMkdir, TMPDIR)
-			if err := SnapshotEtcdDefaultSave(node, e.Name, e.Dir); err != nil {
-				logger.Error("etcd back up failed on host: [%s]", node)
-			}
-		}(h)
+	cmdMkdir := fmt.Sprintf("mkdir -p %s || true", e.Dir)
+	CmdWorkSpace(e.EtcdHosts[0], cmdMkdir, TMPDIR)
+	host := reFormatHostToIp(e.EtcdHosts[0])
+	if err := SnapshotEtcdDefaultSave(host, e.Name, e.Dir); err != nil {
+		logger.Error("etcd back up failed on host: [%s]", e.Masters[0])
+		os.Exit(-1)
 	}
-	wg.Wait()
+
+	if len(e.EtcdHosts) > 1 {
+		// 将master上的snapshot拷贝到执行 sealos命令下的主机（docker）。
+		SSHConfig.CopyRemoteFileToLocal(e.Masters[0], TMPDIR+"/"+e.Name, e.Dir+"/"+e.Name)
+
+		// 将 本地的snaphost文件传输到各master
+		SendPackage(TMPDIR+"/"+e.Name, e.EtcdHosts[1:], e.Dir, nil, nil)
+	}
 
 	// backup then health check
 	e.HealthCheck()
@@ -90,7 +88,7 @@ func SnapshotEtcdDefaultSave(host, snapshotName, dir string) error {
 	return nil
 }
 
-func (e *EtcdBackFlags) HealthCheck()  {
+func (e *EtcdBackFlags) HealthCheck() {
 	var wg sync.WaitGroup
 
 	for _, host := range e.EtcdHosts {
@@ -110,7 +108,7 @@ func (e *EtcdBackFlags) HealthCheck()  {
 	wg.Wait()
 }
 
-func (e *EtcdBackFlags) CpEtcdToNode()  {
+func (e *EtcdBackFlags) CpEtcdToNode() {
 	var wg sync.WaitGroup
 
 	for _, host := range e.EtcdHosts {
@@ -123,7 +121,7 @@ func (e *EtcdBackFlags) CpEtcdToNode()  {
 	wg.Wait()
 }
 
-func cpEtcdctl(host string)  {
+func cpEtcdctl(host string) {
 	cmd := fmt.Sprintf(`command -v etcdctl &> /dev/null || docker cp $(docker ps -a | awk '/k8s_etcd/{print $1}'):/usr/local/bin/etcdctl /usr/bin/etcdctl`)
 	_ = CmdWork(host, cmd, TMPDIR)
 }

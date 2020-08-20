@@ -157,6 +157,44 @@ func (ss *SSH) CopyConfigFile(host, remoteFilePath string, localFilePathOrBytes 
 	}
 }
 
+func (ss *SSH) CopyRemoteFileToLocal(host, localFilePath, remoteFilePath string) {
+	sftpClient, err := ss.sftpConnect(host)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer sftpClient.Close()
+	// open remote source file
+	srcFile, err := sftpClient.Open(remoteFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer srcFile.Close()
+
+	// open local Destination file
+	dstFile, err := os.Create(localFilePath)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("[ssh][%s]scpCopy: %s", host, err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	defer dstFile.Close()
+	// copy to local file
+	srcFile.WriteTo(dstFile)
+}
+
 //SftpConnect  is
 func (ss *SSH) sftpConnect(host string) (*sftp.Client, error) {
 	var (
