@@ -178,5 +178,6 @@ func CmdWorkSpace(node, cmd, workdir string) {
 
 func CmdWork(node, cmd, workdir string) error {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	return SSHConfig.CmdAsync(node, command)
+	// not safe when use etcdctl to backup
+	return SSHConfig.CmdAsyncEctd(node, command)
 }

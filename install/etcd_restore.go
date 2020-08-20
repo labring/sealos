@@ -66,12 +66,12 @@ func (r *RestoreFlags) Prepare() error {
 	// on every etcd nodes , and back all data to /var/lib/etcd.bak
 	for _, host := range r.EtcdHosts {
 		host = reFormatHostToIp(host)
-		stopEtcdCmd := `mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak`
+		stopEtcdCmd := `[ -d /etc/kubernetes/manifests.bak ] || mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak`
 		if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
 			return err
 		}
-
-		backupEtcdCmd := `mv /var/lib/etcd /var/lib/etcd.bak`
+	 	// if you already backup the etcd
+		backupEtcdCmd := `[ -d /var/lib/etcd.bak ] || mv /var/lib/etcd /var/lib/etcd.bak`
 		if err := CmdWork(host, backupEtcdCmd, TMPDIR); err != nil {
 			return err
 		}
@@ -160,25 +160,25 @@ func (r *RestoreFlags) HealthCheck()  {
 			logger.Info("wait etcd to health")
 			time.Sleep(3 * time.Second)
 		}
-
 	}
 }
 
 func HealthCheck(host string) error {
 	cmd := getDefaultCmd()
 	endpoints := fmt.Sprintf("%s:2379", host)
-	health := fmt.Sprintf(`%s --endpoints %s  endpoint health --write-out=json`, cmd, endpoints)
+	health := fmt.Sprintf(`%s--endpoints %s  endpoint health --write-out=json`, cmd, endpoints)
 	resp := SSHConfig.CmdToString(host, health, "")
-	logger.Info(resp)
+	logger.Info("read respone of /health is: ", resp)
 	var healthy []respone
 	if err := json.Unmarshal([]byte(resp), &healthy); err != nil {
+		logger.Error(err)
 		return err
 	}
 	if !healthy[0].Health {
 		logger.Error("failed to read response of /health for host [%s]: %v", host, healthy[0].Health)
 		return fmt.Errorf("failed to read response of /health for host [%s]: %v", host, healthy[0].Health)
 	}
-	logger.Info(healthy)
+	//logger.Info(healthy)
 	return nil
 }
 
@@ -235,7 +235,6 @@ func getEtcdTLSConfig(certificate, key []byte) (*tls.Config, error) {
 
 //todo
 // if we fail after cleanup, we can't find the certs to do the download, we need to redeploy them
-// stop etcd on all etcd nodes, we need this because we start the backup server on the same port
 // Cleaning old kubernetes cluster
 // Start restore process on all etcd hosts
 // Initiating Kubernetes cluster
