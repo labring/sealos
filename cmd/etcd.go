@@ -22,12 +22,14 @@ import (
 )
 
 var exampleCmd = `
-	
-	# snapshot save the etcd
-	sealos etcd --snap-save --name snapshot --path  /opt/sealos/ectd-backup
+ 	# snapshot save the etcd, the backupPath is on etcd nodes. not on the sealos init machine.
+	sealos etcd --snap-save --name snapshot --backupPath  /opt/sealos/ectd-backup
 
 	# snapshot restore the etcd
-	sealos etcd --restore --name snapshot --path  /opt/sealos/ectd-backup
+	sealos etcd --snap-restore --name snapshot --backupPath  /opt/sealos/ectd-backup
+
+	# etcd health check
+	sealos etcd --health
 `
 
 // etcdCmd represents the etcd command
@@ -47,6 +49,12 @@ var etcdCmd = &cobra.Command{
 			e := install.GetEtcdBackFlags()
 			e.HealthCheck()
 		}
+		if install.EtcdRestore {
+			e := install.GetRestoreFlags()
+			e.Restore()
+			logger.Info("check your Restore dir: %s", e.RestoreDir)
+			logger.Info("restore kubernetes yourself glad~")
+		}
 
 	},
 }
@@ -55,10 +63,11 @@ func init() {
 	rootCmd.AddCommand(etcdCmd)
 
 	etcdCmd.Flags().BoolVar(&install.EtcdSnapshotSave, "snap-save", false, "snapshot your kubernets etcd ")
-	etcdCmd.Flags().BoolVar(&install.EtcdRestore, "restore", false, "restore your kubernets etcd")
+	etcdCmd.Flags().BoolVar(&install.EtcdRestore, "snap-restore", false, "restore your kubernets etcd")
 	etcdCmd.Flags().BoolVar(&install.EtcdHealthCheck, "health", false, "check your kubernets etcd")
 	etcdCmd.Flags().StringVar(&install.SnapshotName,"name",install.ETCDSNAPSHOTDEFAULTNAME,"Specify snapshot name")
-	etcdCmd.Flags().StringVar(&install.EtcdBackDir,"path",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
+	etcdCmd.Flags().StringVar(&install.EtcdBackDir,"backupPath",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
+	etcdCmd.Flags().StringVar(&install.RestorePath,"restorePath",install.ETCDDEFAULTRESTOREDIR,"Specify snapshot restore dir")
 
 	// Here you will define your flags and configuration settings.
 

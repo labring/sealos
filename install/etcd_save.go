@@ -53,6 +53,14 @@ func GetEtcdBackFlags() *EtcdFlags {
 }
 
 func Save(e *EtcdFlags) {
+	if !FileExist(e.BackDir) {
+		err := os.MkdirAll(e.BackDir, os.ModePerm)
+		if err != nil {
+			logger.Error("mkdir BackDir err: ",err)
+			os.Exit(1)
+		}
+	}
+
 	cfg, err := GetCfg(e.Endpoints)
 	if err != nil {
 		logger.Error("get etcd cfg error: ", err)
@@ -69,6 +77,7 @@ func Save(e *EtcdFlags) {
 
 	if err := sp.Save(ctx, *cfg, e.LongName); err != nil {
 		logger.Error("snapshot save err: ", err)
+		os.Exit(-1)
 	}
 	fmt.Printf("Snapshot saved at %s\n", e.LongName)
 }
@@ -130,7 +139,7 @@ type epHealth struct {
 	Error  string `json:"error"`
 }
 
-func (e *EtcdFlags)HealthCheck() {
+func (e *EtcdFlags) HealthCheck() {
 	cfgs := []*clientv3.Config{}
 	for _, ep := range e.Endpoints {
 		cfg, err := GetCfg([]string{ep})
