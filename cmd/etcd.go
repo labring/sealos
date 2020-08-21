@@ -19,6 +19,8 @@ import (
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 	"github.com/wonderivan/logger"
+	"os"
+	"time"
 )
 
 var exampleCmd = `
@@ -106,8 +108,28 @@ func EtcdSaveCmdFunc(cmd *cobra.Command, args []string)  {
 
 func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string)  {
 	e := install.GetRestoreFlags()
-	e.Restore()
+	e.RestoreAll()
 	logger.Info("Restore Success! Check Your Restore Dir: %s", e.RestoreDir)
+	time.Sleep(time.Second*10)
+	// stop etcd kube-apiserver
+	tmpdir,err := e.StopPod()
+	if err != nil {
+		os.Exit(1)
+	}
+	time.Sleep(time.Second*10)
+	logger.Info("send restore file to etcd master node and start etcd")
+	// send restore file to etcd master node to  start etcd
+	err = e.AfterRestore()
+	if err != nil {
+		logger.Error(err)
+		os.Exit(1)
+	}
+	logger.Info("start kube-apiserver")
+	// start kube-apiserver
+	e.StartPod(tmpdir)
+	time.Sleep(time.Second*60)
+	logger.Info("health check for etcd")
+	e.HealthCheck()
 	logger.Info("restore kubernetes yourself glad~")
 }
 

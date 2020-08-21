@@ -1,13 +1,32 @@
 package install
 
 import (
+	"archive/zip"
 	"fmt"
 	"github.com/wonderivan/logger"
 	"go.etcd.io/etcd/clientv3/snapshot"
 	"go.uber.org/zap"
+	"io"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func RandStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
+}
 
 func GetRestoreFlags() *EtcdFlags {
 	e := &EtcdFlags{}
@@ -30,33 +49,51 @@ func GetRestoreFlags() *EtcdFlags {
 	return e
 }
 
-// we don't restore kubernetes but restore etcd
-func (e *EtcdFlags) Prepare() error {
+// StopPod is stop kubernetes kube-apiserver kube-controller-manager
+// kube-scheduler etcd  by mv dir to other location.
+func (e *EtcdFlags) StopPod() (string, error) {
 	// stop kube-apiserver kube-controller-manager kube-scheduler etcd
-	// on every etcd nodes , and back all data to /var/lib/etcd.bak
+	// on every etcd nodes , and back all data to /var/lib/etcd + 8 rand
+	tmpDir := RandStringRunes(8)
+	var wg sync.WaitGroup
 	for _, host := range e.EtcdHosts {
+		wg.Add(1)
 		host = reFormatHostToIp(host)
-		// backup dir
-		stopEtcdCmd := `[ -d /etc/kubernetes/manifests.bak ] || mv /etc/kubernetes/manifests /etc/kubernetes/manifests.bak`
-		if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
-			logger.Error("backup /etc/kubernetes/manifests on host [%s] err: %s.", host, err)
-			return err
-		}
-		// backup dir if exsit then do nothing
-		backupEtcdCmd := `[ -d /var/lib/etcd.bak ] || mv /var/lib/etcd /var/lib/etcd.bak`
-		if err := CmdWork(host, backupEtcdCmd, TMPDIR); err != nil {
-			logger.Error("backup /var/lib/etcd host [%s] err: %s.", host, err)
-			return err
-		}
+		go func(h string) {
+			defer wg.Done()
+			// backup dir
+			stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests /etc/kubernetes/manifests%s`, tmpDir)
+			if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
+				logger.Error("backup /etc/kubernetes/manifests on host [%s] err: %s.", host, err)
+				os.Exit(1)
+			}
+			// backup dir
+			backupEtcdCmd := fmt.Sprintf(`mv /var/lib/etcd %s`, ETCDDATADIR+tmpDir)
+			if err := CmdWork(host, backupEtcdCmd, TMPDIR); err != nil {
+				logger.Error("backup /var/lib/etcd host [%s] err: %s.", host, err)
+				os.Exit(1)
+			}
+		}(host)
 	}
-	return nil
+	wg.Wait()
+	return tmpDir, nil
 }
 
-func (e *EtcdFlags) Restore() {
+// RestoreAll is restore all ETCD nodes
+func (e *EtcdFlags) RestoreAll() {
+	for _, host := range e.EtcdHosts {
+		hostname := SSHConfig.CmdToString(host, "hostname", "")
+		e.restore(hostname)
+	}
+}
+
+// backup nodes by hostname to local filepath. like `RestoreDir-hostname`
+func (e *EtcdFlags) restore(hostname string) {
 	restorePeerURLs := GetEtcdPeerURLs(e.EtcdHosts)
 	restoreClusterToken := "etcd-cluster"
-	restoreCluster:= GetEtcdInitialCluster(e.EtcdHosts)
-	walDir := filepath.Join(e.RestoreDir, "member", "wal")
+	restoreCluster := GetEtcdInitialCluster(e.EtcdHosts)
+	outputDir := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
+	walDir := filepath.Join(outputDir, "member", "wal")
 
 	lg, err := zap.NewProduction()
 	if err != nil {
@@ -65,11 +102,11 @@ func (e *EtcdFlags) Restore() {
 	}
 	sp := snapshot.NewV3(lg)
 	// get master name.
-	host := SSHConfig.CmdToString(e.EtcdHosts[0], "hostname", "")
+
 	if err := sp.Restore(snapshot.RestoreConfig{
 		SnapshotPath:        e.LongName,
-		Name:                "etcd-"+host,
-		OutputDataDir:       e.RestoreDir,
+		Name:                "etcd-" + hostname,
+		OutputDataDir:       outputDir,
 		OutputWALDir:        walDir,
 		PeerURLs:            restorePeerURLs,
 		InitialCluster:      restoreCluster,
@@ -79,6 +116,45 @@ func (e *EtcdFlags) Restore() {
 		logger.Error("restore etcd error: ", err)
 		os.Exit(-1)
 	}
+}
+
+func (e *EtcdFlags) AfterRestore() error {
+	// first to mv every
+	for _, host := range e.EtcdHosts {
+		hostname := SSHConfig.CmdToString(host, "hostname", "")
+		location := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
+		tmpFlie := fmt.Sprintf("/tmp/%s.zip", filepath.Base(location))
+
+		// 压缩已经已经restore的文件
+		Compress(location, tmpFlie)
+		logger.Info("compress file")
+		// 复制并解压到相应目录
+		// todo
+		AfterHook := fmt.Sprintf(`cd %s && unzip %s.zip && rm -rf %s.zip`, ETCDDATADIR, filepath.Base(location), filepath.Base(location))
+		SendPackage(tmpFlie, []string{host}, ETCDDATADIR, nil, &AfterHook)
+		logger.Info("send etcd.zip to hosts")
+	}
+
+	return nil
+}
+
+// todo
+func (e *EtcdFlags) StartPod(dir string) {
+	var wg sync.WaitGroup
+	for _, host := range e.EtcdHosts {
+		wg.Add(1)
+		host = reFormatHostToIp(host)
+		go func(h string) {
+			defer wg.Done()
+			// start kube-apiserver
+			stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests%s /etc/kubernetes/manifests`, dir)
+			if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
+				logger.Error("restore /etc/kubernetes/manifests on host [%s] err: %s.", host, err)
+				os.Exit(1)
+			}
+		}(host)
+	}
+	wg.Wait()
 }
 
 func GetEtcdInitialCluster(hosts []string) string {
@@ -96,7 +172,7 @@ func GetEtcdInitialCluster(hosts []string) string {
 
 func GetEtcdPeerURLs(hosts []string) []string {
 	var peerUrls []string
- 	for _, host := range hosts {
+	for _, host := range hosts {
 		ip := reFormatHostToIp(host)
 		url := fmt.Sprintf("https://%s:2380", ip)
 		peerUrls = append(peerUrls, url)
@@ -108,4 +184,39 @@ func CmdWork(node, cmd, workdir string) error {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
 	// not safe when use etcdctl to backup
 	return SSHConfig.CmdAsyncEctd(node, command)
+}
+
+// Compress is  compress all file in fileDir , and zip to outputPath
+func Compress(fileDir string, outputPath string) error {
+	outFile, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	w := zip.NewWriter(outFile)
+	defer w.Close()
+
+	return filepath.Walk(fileDir, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(fileDir, path)
+		fmt.Println(rel, path)
+		compress(rel, path, w)
+		return nil
+	})
+
+}
+
+func compress(rel string, path string, zw *zip.Writer) {
+	file, _ := os.Open(path)
+	info, _ := file.Stat()
+	header, _ := zip.FileInfoHeader(info)
+	header.Name = rel
+	writer, _ := zw.CreateHeader(header)
+	io.Copy(writer, file)
+	defer file.Close()
 }
