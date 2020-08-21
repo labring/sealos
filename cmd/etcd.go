@@ -23,52 +23,17 @@ import (
 
 var exampleCmd = `
  	# snapshot save the etcd, the backupPath is on etcd nodes. not on the sealos init machine.
-	sealos etcd --snap-save --name snapshot --backupPath  /opt/sealos/ectd-backup
+	sealos etcd save --name snapshot --backupPath  /opt/sealos/ectd-backup
 
 	# snapshot restore the etcd
-	sealos etcd --snap-restore --name snapshot --backupPath  /opt/sealos/ectd-backup
+	sealos etcd restore --name snapshot --backupPath  /opt/sealos/ectd-backup
 
 	# etcd health check
-	sealos etcd --health
+	sealos etcd health
 `
 
-// etcdCmd represents the etcd command
-var etcdCmd = &cobra.Command{
-	Use:   "etcd",
-	Short: "Simplest way to snapshot/restore your kubernets etcd",
-	Long: `etcd --snap-save --name snapshot`,
-	Example: exampleCmd,
-	Run: func(cmd *cobra.Command, args []string) {
-		if install.EtcdSnapshotSave {
-			e := install.GetEtcdBackFlags()
-			install.Save(e)
-			logger.Info("Finished saving/uploading snapshot [%s] on all etcd hosts", e.Name)
-			e.HealthCheck()
-		}
-		if install.EtcdHealthCheck {
-			e := install.GetEtcdBackFlags()
-			e.HealthCheck()
-		}
-		if install.EtcdRestore {
-			e := install.GetRestoreFlags()
-			e.Restore()
-			logger.Info("check your Restore dir: %s", e.RestoreDir)
-			logger.Info("restore kubernetes yourself glad~")
-		}
-
-	},
-}
-
 func init() {
-	rootCmd.AddCommand(etcdCmd)
-
-	etcdCmd.Flags().BoolVar(&install.EtcdSnapshotSave, "snap-save", false, "snapshot your kubernets etcd ")
-	etcdCmd.Flags().BoolVar(&install.EtcdRestore, "snap-restore", false, "restore your kubernets etcd")
-	etcdCmd.Flags().BoolVar(&install.EtcdHealthCheck, "health", false, "check your kubernets etcd")
-	etcdCmd.Flags().StringVar(&install.SnapshotName,"name",install.ETCDSNAPSHOTDEFAULTNAME,"Specify snapshot name")
-	etcdCmd.Flags().StringVar(&install.EtcdBackDir,"backupPath",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
-	etcdCmd.Flags().StringVar(&install.RestorePath,"restorePath",install.ETCDDEFAULTRESTOREDIR,"Specify snapshot restore dir")
-
+	rootCmd.AddCommand(NewEtcdCommand())
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
@@ -78,4 +43,75 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// etcdCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func NewEtcdCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "etcd <subcommand>",
+		Short: "Simplest way to snapshot/restore your kubernets etcd",
+		Long: `etcd save --name snapshot`,
+		Example: exampleCmd,
+	}
+	cmd.AddCommand(NewEtcdSaveComand())
+	cmd.AddCommand(NewEtcdRestoreComand())
+	cmd.AddCommand(NewEtcdHealthComand())
+	//cmd.Flags().BoolVar(&install.EtcdSnapshotSave, "snap-save", false, "snapshot your kubernets etcd ")
+	//cmd.Flags().BoolVar(&install.EtcdRestore, "snap-restore", false, "restore your kubernets etcd")
+	//cmd.Flags().BoolVar(&install.EtcdHealthCheck, "health", false, "check your kubernets etcd")
+	// can not inherit to subCommand
+	//cmd.Flags().StringVar(&install.SnapshotName,"name",install.ETCDSNAPSHOTDEFAULTNAME,"Specify snapshot name")
+	//cmd.Flags().StringVar(&install.EtcdBackDir,"backupPath",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
+	//cmd.Flags().StringVar(&install.RestorePath,"restorePath",install.ETCDDEFAULTRESTOREDIR,"Specify snapshot restore dir")
+
+
+	return cmd
+}
+func NewEtcdSaveComand() *cobra.Command  {
+	cmd := &cobra.Command{
+		Use: "save",
+		Short: "Stores an etcd node backend snapshot to a given file",
+		Run: EtcdSaveCmdFunc,
+	}
+	cmd.Flags().StringVar(&install.SnapshotName,"name",install.ETCDSNAPSHOTDEFAULTNAME,"Specify snapshot name")
+	cmd.Flags().StringVar(&install.EtcdBackDir,"backupPath",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
+	return cmd
+}
+
+func NewEtcdRestoreComand() *cobra.Command  {
+	cmd := &cobra.Command{
+		Use: "restore",
+		Short: "Restores an etcd member snapshot to an etcd directory",
+		Run: EtcdRestoreCmdFunc,
+	}
+	cmd.Flags().StringVar(&install.SnapshotName,"name",install.ETCDSNAPSHOTDEFAULTNAME,"Specify snapshot name")
+	cmd.Flags().StringVar(&install.EtcdBackDir,"backupPath",install.ETCDDEFAULTBACKUPDIR,"Specify snapshot backup dir")
+	cmd.Flags().StringVar(&install.RestorePath,"restorePath",install.ETCDDEFAULTRESTOREDIR,"Specify snapshot restore dir")
+	return cmd
+}
+
+func NewEtcdHealthComand() *cobra.Command  {
+	return &cobra.Command{
+		Use: "health",
+		Short: "test your etcd status",
+		Run: EtcdHealthCmdFunc,
+	}
+}
+
+func EtcdSaveCmdFunc(cmd *cobra.Command, args []string)  {
+	e := install.GetEtcdBackFlags()
+	install.Save(e)
+	logger.Info("Finished saving/uploading snapshot [%s] on all etcd hosts", e.Name)
+	e.HealthCheck()
+}
+
+func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string)  {
+	e := install.GetRestoreFlags()
+	e.Restore()
+	logger.Info("Restore Success! Check Your Restore Dir: %s", e.RestoreDir)
+	logger.Info("restore kubernetes yourself glad~")
+}
+
+func EtcdHealthCmdFunc(cmd *cobra.Command, args []string)  {
+	e := install.GetEtcdBackFlags()
+	e.HealthCheck()
 }
