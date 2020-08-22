@@ -125,8 +125,8 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 	logger.Info("Start kube-apiserver kube-controller-manager kube-scheduler")
 	// start kube-apiserver
 	e.StartPod(tmpdir)
+	logger.Info("Wait 60s to health check for etcd")
 	time.Sleep(time.Second * 60)
-	logger.Info("health check for etcd")
 	e.HealthCheck()
 	logger.Info("restore kubernetes yourself glad~")
 }

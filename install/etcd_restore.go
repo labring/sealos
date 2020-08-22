@@ -1,12 +1,10 @@
 package install
 
 import (
-	"archive/zip"
 	"fmt"
 	"github.com/wonderivan/logger"
 	"go.etcd.io/etcd/clientv3/snapshot"
 	"go.uber.org/zap"
-	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -83,6 +81,9 @@ func (e *EtcdFlags) StopPod() (string, error) {
 func (e *EtcdFlags) RestoreAll() {
 	for _, host := range e.EtcdHosts {
 		hostname := SSHConfig.CmdToString(host, "hostname", "")
+		// remove first
+		cmd := fmt.Sprintf("rm -rf %s-%s", e.RestoreDir, hostname)
+		CmdWork(host, cmd, TMPDIR)
 		e.restore(hostname)
 	}
 }
@@ -122,19 +123,21 @@ func (e *EtcdFlags) AfterRestore() error {
 	// first to mv every
 	for _, host := range e.EtcdHosts {
 		hostname := SSHConfig.CmdToString(host, "hostname", "")
+		// /opt/sealos/ectd-restore-dev-k8s-master
 		location := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
-		tmpFlie := fmt.Sprintf("/tmp/%s.zip", filepath.Base(location))
-
+		//
+		tmpFile := fmt.Sprintf("/tmp/%s.tar", filepath.Base(location))
+		sdtTmpTar := fmt.Sprintf("/var/lib/%s.tar", filepath.Base(location))
 		// 压缩已经已经restore的文件
-		err := Compress(location, tmpFlie)
+		err := CompressTar(location, tmpFile)
 		if err != nil {
 			return err
 		}
 		logger.Info("compress file")
 		// 复制并解压到相应目录
-		// todo
-		AfterHook := fmt.Sprintf(`cd %s && unzip %s.zip && rm -rf %s.zip`, ETCDDATADIR, filepath.Base(location), filepath.Base(location))
-		SendPackage(tmpFlie, []string{host}, ETCDDATADIR, nil, &AfterHook)
+		// use quiet to tar
+		AfterHook := fmt.Sprintf(`tar xf %s -C /var/lib/  && mv /var/lib/%s  %s && rm -rf %s`, sdtTmpTar, filepath.Base(location), ETCDDATADIR, sdtTmpTar)
+		SendPackage(tmpFile, []string{host}, "/var/lib", nil, &AfterHook)
 		//logger.Info("send etcd.zip to hosts")
 	}
 
@@ -205,39 +208,4 @@ func CmdWork(node, cmd, workdir string) error {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
 	// not safe when use etcdctl to backup
 	return SSHConfig.CmdAsyncEctd(node, command)
-}
-
-// Compress is  compress all file in fileDir , and zip to outputPath
-func Compress(fileDir string, outputPath string) error {
-	outFile, err := os.Create(outputPath)
-	if err != nil {
-		return err
-	}
-	defer outFile.Close()
-	w := zip.NewWriter(outFile)
-	defer w.Close()
-
-	return filepath.Walk(fileDir, func(path string, f os.FileInfo, err error) error {
-		if f == nil {
-			return err
-		}
-		if f.IsDir() {
-			return nil
-		}
-		rel, _ := filepath.Rel(fileDir, path)
-		fmt.Println(rel, path)
-		compress(rel, path, w)
-		return nil
-	})
-
-}
-
-func compress(rel string, path string, zw *zip.Writer) {
-	file, _ := os.Open(path)
-	info, _ := file.Stat()
-	header, _ := zip.FileInfoHeader(info)
-	header.Name = rel
-	writer, _ := zw.CreateHeader(header)
-	io.Copy(writer, file)
-	defer file.Close()
 }
