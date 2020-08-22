@@ -61,13 +61,13 @@ func (e *EtcdFlags) StopPod() (string, error) {
 		host = reFormatHostToIp(host)
 		go func(h string) {
 			defer wg.Done()
-			// backup dir
+			// backup dir to random dir to avoid dir exist err
 			stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests /etc/kubernetes/manifests%s`, tmpDir)
 			if err := CmdWork(host, stopEtcdCmd, TMPDIR); err != nil {
 				logger.Error("backup /etc/kubernetes/manifests on host [%s] err: %s.", host, err)
 				os.Exit(1)
 			}
-			// backup dir
+			// backup dir to random dir to avoid dir exist err
 			backupEtcdCmd := fmt.Sprintf(`mv /var/lib/etcd %s`, ETCDDATADIR+tmpDir)
 			if err := CmdWork(host, backupEtcdCmd, TMPDIR); err != nil {
 				logger.Error("backup /var/lib/etcd host [%s] err: %s.", host, err)
@@ -126,13 +126,16 @@ func (e *EtcdFlags) AfterRestore() error {
 		tmpFlie := fmt.Sprintf("/tmp/%s.zip", filepath.Base(location))
 
 		// 压缩已经已经restore的文件
-		Compress(location, tmpFlie)
+		err := Compress(location, tmpFlie)
+		if err != nil {
+			return err
+		}
 		logger.Info("compress file")
 		// 复制并解压到相应目录
 		// todo
 		AfterHook := fmt.Sprintf(`cd %s && unzip %s.zip && rm -rf %s.zip`, ETCDDATADIR, filepath.Base(location), filepath.Base(location))
 		SendPackage(tmpFlie, []string{host}, ETCDDATADIR, nil, &AfterHook)
-		logger.Info("send etcd.zip to hosts")
+		//logger.Info("send etcd.zip to hosts")
 	}
 
 	return nil
@@ -157,6 +160,24 @@ func (e *EtcdFlags) StartPod(dir string) {
 	wg.Wait()
 }
 
+// RecoveryKuBeCluster is when Restore is crashed . do nothing but to recovery
+func (e *EtcdFlags) RecoveryKuBeCluster(dir string) {
+	// restore old file first
+	for _, host := range e.EtcdHosts {
+		host = reFormatHostToIp(host)
+		// rm old file then start cp bak to etcd dir
+		recoverEtcdCmd := fmt.Sprintf(`rm -rf %s && mv %s %s`, ETCDDATADIR, ETCDDATADIR+dir, ETCDDATADIR)
+		CmdWork(host, recoverEtcdCmd, TMPDIR)
+
+	}
+	// start pod next
+	for _, host := range e.EtcdHosts {
+		host = reFormatHostToIp(host)
+		// start kube-apiserver
+		stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests%s /etc/kubernetes/manifests`, dir)
+		CmdWork(host, stopEtcdCmd, TMPDIR)
+	}
+}
 func GetEtcdInitialCluster(hosts []string) string {
 	initialCluster := ""
 	for i, host := range hosts {
