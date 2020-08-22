@@ -56,7 +56,7 @@ func Save(e *EtcdFlags) {
 	if !FileExist(e.BackDir) {
 		err := os.MkdirAll(e.BackDir, os.ModePerm)
 		if err != nil {
-			logger.Error("mkdir BackDir err: ",err)
+			logger.Error("mkdir BackDir err: ", err)
 			os.Exit(1)
 		}
 	}
@@ -80,6 +80,12 @@ func Save(e *EtcdFlags) {
 		os.Exit(-1)
 	}
 	fmt.Printf("Snapshot saved at %s\n", e.LongName)
+	// 如果在docker上执行。 落盘在docker容器里面。 判断master节点上是否存在。
+	// 如果不存在， 说明在docker容器或者sealos执行的时候， 不在master0上
+	if !SSHConfig.IsFileExist(e.EtcdHosts[0], e.BackDir+"/"+e.Name) {
+		// 复制本机的snapshot 到 各master节点 上。
+		SendPackage(e.BackDir+"/"+e.Name, e.EtcdHosts, e.BackDir, nil, nil)
+	}
 }
 
 func reFormatHostToIp(host string) string {

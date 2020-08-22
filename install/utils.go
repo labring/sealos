@@ -21,7 +21,6 @@ import (
 	"time"
 )
 
-
 var message string
 
 // ExitOSCase is
@@ -296,14 +295,11 @@ func CompressTar(srcDirPath string, destFilePath string) error {
 	}
 	defer fw.Close()
 
-
 	gw := gzip.NewWriter(fw)
 	defer gw.Close()
 
-
 	tw := tar.NewWriter(gw)
 	defer tw.Close()
-
 
 	f, err := os.Open(srcDirPath)
 	if err != nil {
@@ -334,7 +330,6 @@ func compressDir(srcDirPath string, recPath string, tw *tar.Writer) error {
 	}
 	defer dir.Close()
 
-
 	fis, err := dir.Readdir(0)
 	if err != nil {
 		return err
@@ -342,14 +337,12 @@ func compressDir(srcDirPath string, recPath string, tw *tar.Writer) error {
 	for _, fi := range fis {
 		curPath := srcDirPath + "/" + fi.Name()
 
-
 		if fi.IsDir() {
 			err = compressDir(curPath, recPath+"/"+fi.Name(), tw)
 			if err != nil {
 				return err
 			}
 		}
-
 
 		err = compressFile(curPath, recPath+"/"+fi.Name(), tw, fi)
 		if err != nil {
@@ -368,7 +361,6 @@ func compressFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo
 		hdr.Mode = int64(fi.Mode())
 		hdr.ModTime = fi.ModTime()
 
-
 		err := tw.WriteHeader(hdr)
 		if err != nil {
 			return err
@@ -380,19 +372,16 @@ func compressFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo
 		}
 		defer fr.Close()
 
-
 		hdr := new(tar.Header)
 		hdr.Name = recPath
 		hdr.Size = fi.Size()
 		hdr.Mode = int64(fi.Mode())
 		hdr.ModTime = fi.ModTime()
 
-
 		err = tw.WriteHeader(hdr)
 		if err != nil {
 			return err
 		}
-
 
 		_, err = io.Copy(tw, fr)
 		if err != nil {
@@ -401,7 +390,6 @@ func compressFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo
 	}
 	return nil
 }
-
 
 // CompressZip is  compress all file in fileDir , and zip to outputPath like unix  zip ./ -r  a.zip
 func CompressZip(fileDir string, outputPath string) error {
