@@ -52,7 +52,7 @@ func GetEtcdBackFlags() *EtcdFlags {
 	return e
 }
 
-func Save(e *EtcdFlags) {
+func (e *EtcdFlags) Save(inDocker bool) {
 	if !FileExist(e.BackDir) {
 		err := os.MkdirAll(e.BackDir, os.ModePerm)
 		if err != nil {
@@ -60,7 +60,6 @@ func Save(e *EtcdFlags) {
 			os.Exit(1)
 		}
 	}
-
 	cfg, err := GetCfg(e.Endpoints)
 	if err != nil {
 		logger.Error("get etcd cfg error: ", err)
@@ -74,7 +73,12 @@ func Save(e *EtcdFlags) {
 	sp := snapshot.NewV3(lg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
+	// when backup in docker , add unix timestamp to snapshot
+	var u string
+	if inDocker {
+		u = fmt.Sprintf("%v", time.Now().Unix())
+		e.LongName = fmt.Sprintf("%s-%s", e.LongName, u)
+	}
 	if err := sp.Save(ctx, *cfg, e.LongName); err != nil {
 		logger.Error("snapshot save err: ", err)
 		os.Exit(-1)
@@ -82,9 +86,9 @@ func Save(e *EtcdFlags) {
 	fmt.Printf("Snapshot saved at %s\n", e.LongName)
 	// 如果在docker上执行。 落盘在docker容器里面。 判断master节点上是否存在。
 	// 如果不存在， 说明在docker容器或者sealos执行的时候， 不在master0上
-	if !SSHConfig.IsFileExist(e.EtcdHosts[0], e.BackDir+"/"+e.Name) {
+	if inDocker {
 		// 复制本机的snapshot 到 各master节点 上。
-		SendPackage(e.BackDir+"/"+e.Name, e.EtcdHosts, e.BackDir, nil, nil)
+		SendPackage(e.LongName, e.EtcdHosts, e.BackDir, nil, nil)
 	}
 }
 

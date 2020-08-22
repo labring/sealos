@@ -1,6 +1,10 @@
 package install
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
 
 func Test_reFormatHostToIp(t *testing.T) {
 	type args struct {
@@ -21,4 +25,8 @@ func Test_reFormatHostToIp(t *testing.T) {
 			}
 		})
 	}
+
+
+	u := fmt.Sprintf("%v", time.Now().Unix())
+	fmt.Println(u)
 }

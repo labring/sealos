@@ -57,6 +57,7 @@ var (
 	Vlog int
 
 	// etcd backup
+	InDocker         bool
 	SnapshotName     string
 	EtcdBackDir      string
 	RestorePath      string

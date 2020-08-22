@@ -73,6 +73,7 @@ func NewEtcdSaveComand() *cobra.Command {
 		Short: "Stores an etcd node backend snapshot to a given file",
 		Run:   EtcdSaveCmdFunc,
 	}
+	cmd.Flags().BoolVar(&install.InDocker, "docker", false, "snapshot your kubernets etcd in container")
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
 	return cmd
@@ -100,7 +101,7 @@ func NewEtcdHealthComand() *cobra.Command {
 
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
 	e := install.GetEtcdBackFlags()
-	install.Save(e)
+	e.Save(install.InDocker)
 	logger.Info("Finished saving/uploading snapshot [%s] on all etcd hosts", e.Name)
 	e.HealthCheck()
 }
