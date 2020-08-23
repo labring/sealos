@@ -76,6 +76,12 @@ func NewEtcdSaveComand() *cobra.Command {
 	cmd.Flags().BoolVar(&install.InDocker, "docker", false, "snapshot your kubernets etcd in container")
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
+	cmd.Flags().StringVar(&install.BucketName, "bucket","","oss bucketName to save snapshot")
+	cmd.Flags().StringVar(&install.AccessKeyId, "aliId","","aliyun accessKeyId to save snapshot")
+	cmd.Flags().StringVar(&install.AccessKeySecrets, "aliKey","","aliyun accessKeySecrets to save snapshot")
+	cmd.Flags().StringVar(&install.OssEndpoint, "ep","","aliyun endpoints to save snapshot")
+	cmd.Flags().StringVar(&install.ObjectPath, "objectPath","","aliyun oss objectPath to save snapshot, like: /sealos/snapshots/")
+
 	return cmd
 }
 
@@ -102,7 +108,7 @@ func NewEtcdHealthComand() *cobra.Command {
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
 	e := install.GetEtcdBackFlags()
 	e.Save(install.InDocker)
-	logger.Info("Finished saving/uploading snapshot [%s] on all etcd hosts", e.Name)
+	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
 	e.HealthCheck()
 }
 

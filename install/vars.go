@@ -64,6 +64,13 @@ var (
 	EtcdSnapshotSave bool
 	EtcdRestore      bool
 	EtcdHealthCheck  bool
+
+	// oss
+	OssEndpoint         string
+	AccessKeyId      string
+	AccessKeySecrets string
+	BucketName       string
+	ObjectPath       string
 )
 
 func vlogToStr() string {

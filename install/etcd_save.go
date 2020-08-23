@@ -3,6 +3,7 @@ package install
 import (
 	"context"
 	"fmt"
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/wonderivan/logger"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/clientv3/snapshot"
@@ -10,6 +11,7 @@ import (
 	"go.etcd.io/etcd/pkg/transport"
 	"go.uber.org/zap"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -42,6 +44,23 @@ func GetEtcdBackFlags() *EtcdFlags {
 	e.Name = SnapshotName
 	e.LongName = fmt.Sprintf("%s/%s", e.BackDir, e.Name)
 
+	//get oss 。如果AccessKeyId不为空，则读取使命令行，如果为空，load的时候则读取配置文件
+	if AccessKeyId != "" {
+		e.ObjectPath = ObjectPath
+		e.OssEndpoint = OssEndpoint
+		e.AccessKeyId = AccessKeyId
+		e.AccessKeySecrets = AccessKeySecrets
+		e.BucketName = BucketName
+	}
+
+	// when backup in docker , add unix timestamp to snapshot
+	var u string
+	if InDocker {
+		u = fmt.Sprintf("%v", time.Now().Unix())
+		e.Name = fmt.Sprintf("%s-%s", e.Name, u)
+		e.LongName = fmt.Sprintf("%s-%s", e.LongName, u)
+	}
+
 	for _, h := range e.Masters {
 		ip = reFormatHostToIp(h)
 		e.EtcdHosts = append(e.EtcdHosts, ip)
@@ -73,23 +92,36 @@ func (e *EtcdFlags) Save(inDocker bool) {
 	sp := snapshot.NewV3(lg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// when backup in docker , add unix timestamp to snapshot
-	var u string
-	if inDocker {
-		u = fmt.Sprintf("%v", time.Now().Unix())
-		e.LongName = fmt.Sprintf("%s-%s", e.LongName, u)
-	}
+
 	if err := sp.Save(ctx, *cfg, e.LongName); err != nil {
 		logger.Error("snapshot save err: ", err)
 		os.Exit(-1)
 	}
-	fmt.Printf("Snapshot saved at %s\n", e.LongName)
+	logger.Info("Snapshot saved at %s\n", e.LongName)
 	// 如果在docker上执行。 落盘在docker容器里面。 判断master节点上是否存在。
 	// 如果不存在， 说明在docker容器或者sealos执行的时候， 不在master0上
 	if inDocker {
 		// 复制本机的snapshot 到 各master节点 上。
 		SendPackage(e.LongName, e.EtcdHosts, e.BackDir, nil, nil)
 	}
+	// trimPathForOss is  trim this  `/sealos//snapshot-1598146449` to   `sealos/snapshot-1598146449`
+	e.ObjectPath = trimPathForOss(e.ObjectPath+"/"+e.Name)
+	if e.AccessKeyId != "" {
+		err := saveToOss(e.OssEndpoint, e.AccessKeyId, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
+		if err != nil {
+			logger.Error("save to oss err,", err)
+			return
+		}
+		// 如果没有报错， 保存一下最新命令行配置。
+		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket",e.Name, e.BucketName)
+		e.Dump("")
+	}
+}
+
+
+func trimPathForOss(path string) string {
+	s, _ := filepath.Abs(path)
+	return s[1:]
 }
 
 func reFormatHostToIp(host string) string {
@@ -98,6 +130,28 @@ func reFormatHostToIp(host string) string {
 		return s[0]
 	}
 	return host
+}
+
+type AliOss struct {
+	OssEndpoint      string
+	AccessKeyId      string
+	AccessKeySecrets string
+	BucketName       string
+	ObjectPath       string
+}
+
+func saveToOss(aliEndpoint, accessKeyId, accessKeySecrets, bucketName, objectName, localFileName string) error {
+	ossClient, err := oss.New(aliEndpoint, accessKeyId, accessKeySecrets)
+	if err != nil {
+		return err
+	}
+	bucket, err := ossClient.Bucket(bucketName)
+	if err != nil {
+		return err
+	}
+	//
+	return bucket.PutObjectFromFile(objectName, localFileName)
+
 }
 
 func GetCfg(ep []string) (*clientv3.Config, error) {
