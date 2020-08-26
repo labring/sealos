@@ -170,3 +170,8 @@ func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request 
 	}
 	return r
 }
+
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	_ = SSHConfig.CmdAsync(node, command)
+}

@@ -1,33 +1,24 @@
 package install
 
 import (
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
 	"crypto/tls"
 	"fmt"
 	"github.com/wonderivan/logger"
+	"io"
 	"math/big"
 	"math/rand"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-)
-
-const (
-	ErrorExitOSCase = -1 // 错误直接退出类型
-
-	ErrorMasterEmpty    = "your master is empty."                 // master节点ip为空
-	ErrorVersionEmpty   = "your kubernetes version is empty."     // kubernetes 版本号为空
-	ErrorFileNotExist   = "your package file is not exist."       // 离线安装包为空
-	ErrorPkgUrlNotExist = "Your package url is incorrect."        // 离线安装包为http路径不对
-	ErrorPkgUrlSize     = "Download file size is less then 200M " // 离线安装包为http路径不对
-	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
-	// ErrorMessageCommon											// 其他错误消息
-
-	// MinDownloadFileSize int64 = 400 * 1024 * 1024
 )
 
 var message string
@@ -65,7 +56,7 @@ func ExitDeleteCase(pkgUrl string) bool {
 
 func ExitInstallCase(pkgUrl string) bool {
 	// values.yaml 使用了-f 但是文件不存在. 并且不使用 stdin
-	if Values != "-" && !FileExist(Values) && Values !="" {
+	if Values != "-" && !FileExist(Values) && Values != "" {
 		logger.Error("your values File is not exist and you have no stdin input, Please check your Values.yaml is exist")
 		return true
 	}
@@ -295,4 +286,142 @@ func FetchSealosAbsPath() string {
 	ex, _ := os.Executable()
 	exPath := filepath.Dir(ex)
 	return exPath + string(os.PathSeparator) + os.Args[0]
+}
+
+func CompressTar(srcDirPath string, destFilePath string) error {
+	fw, err := os.Create(destFilePath)
+	if err != nil {
+		return err
+	}
+	defer fw.Close()
+
+	gw := gzip.NewWriter(fw)
+	defer gw.Close()
+
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	f, err := os.Open(srcDirPath)
+	if err != nil {
+		return err
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return err
+	}
+	if fi.IsDir() {
+		err = compressDir(srcDirPath, path.Base(srcDirPath), tw)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := compressFile(srcDirPath, fi.Name(), tw, fi)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func compressDir(srcDirPath string, recPath string, tw *tar.Writer) error {
+	dir, err := os.Open(srcDirPath)
+	if err != nil {
+		return err
+	}
+	defer dir.Close()
+
+	fis, err := dir.Readdir(0)
+	if err != nil {
+		return err
+	}
+	for _, fi := range fis {
+		curPath := srcDirPath + "/" + fi.Name()
+
+		if fi.IsDir() {
+			err = compressDir(curPath, recPath+"/"+fi.Name(), tw)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = compressFile(curPath, recPath+"/"+fi.Name(), tw, fi)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func compressFile(srcFile string, recPath string, tw *tar.Writer, fi os.FileInfo) error {
+	if fi.IsDir() {
+		hdr := new(tar.Header)
+		hdr.Name = recPath + "/"
+		hdr.Typeflag = tar.TypeDir
+		hdr.Size = 0
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		err := tw.WriteHeader(hdr)
+		if err != nil {
+			return err
+		}
+	} else {
+		fr, err := os.Open(srcFile)
+		if err != nil {
+			return err
+		}
+		defer fr.Close()
+
+		hdr := new(tar.Header)
+		hdr.Name = recPath
+		hdr.Size = fi.Size()
+		hdr.Mode = int64(fi.Mode())
+		hdr.ModTime = fi.ModTime()
+
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(tw, fr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CompressZip is  compress all file in fileDir , and zip to outputPath like unix  zip ./ -r  a.zip
+func CompressZip(fileDir string, outputPath string) error {
+	outFile, err := os.Create(outputPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+	w := zip.NewWriter(outFile)
+	defer w.Close()
+
+	return filepath.Walk(fileDir, func(path string, f os.FileInfo, err error) error {
+		if f == nil {
+			return err
+		}
+		if f.IsDir() {
+			return nil
+		}
+		rel, _ := filepath.Rel(fileDir, path)
+		fmt.Println(rel, path)
+		compress(rel, path, w)
+		return nil
+	})
+
+}
+
+func compress(rel string, path string, zw *zip.Writer) {
+	file, _ := os.Open(path)
+	info, _ := file.Stat()
+	header, _ := zip.FileInfoHeader(info)
+	header.Name = rel
+	writer, _ := zw.CreateHeader(header)
+	io.Copy(writer, file)
+	defer file.Close()
 }

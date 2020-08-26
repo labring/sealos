@@ -1,16 +1,16 @@
 package appmanager
 
 import (
-"archive/tar"
-"bufio"
-"fmt"
+	"archive/tar"
+	"bufio"
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/wonderivan/logger"
-"io"
-"os"
-"path"
-"strings"
-"sync"
+	"io"
+	"os"
+	"path"
+	"strings"
+	"sync"
 )
 
 //Command is
@@ -21,11 +21,12 @@ type Command struct {
 }
 
 type PkgConfig struct {
-	Cmds    []Command
-	URL     string
-	Name    string
-	Workdir string
-	Flag    string
+	Cmds          []Command
+	URL           string
+	Name          string
+	Workdir       string
+	ValuesContent []byte // -f values.yaml or -f - or default values,read values content before run
+	Workspace     string // fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 }
 
 func nameFromUrl(url string) string {
@@ -38,37 +39,25 @@ func nameFromUrl(url string) string {
 	return name[0]
 }
 
-//AppInstall is
-func AppInstall(url string) {
-	c := &install.SealConfig{}
-	err := c.Load("")
-	if err != nil {
-		logger.Error(err)
-		c.ShowDefaultConfig()
-		os.Exit(0)
-	}
+func LoadAppConfig(url string, flagConfig string) (*PkgConfig, error) {
 	var pkgConfig *PkgConfig
+	var err error
 	// 如果指定了config。 则直接从config里面读取配置
-	if PackageConfig == "" {
+	if flagConfig == "" {
 		pkgConfig, err = LoadConfig(url)
 		if err != nil {
 			logger.Error("load config failed: %s", err)
 			os.Exit(0)
 		}
 	} else {
-		f, err := os.Open(PackageConfig)
+		f, err := os.Open(flagConfig)
 		if err != nil {
 			logger.Error("load config failed: %s", err)
 			os.Exit(0)
 		}
 		pkgConfig, err = configFromReader(f)
 	}
-
-	pkgConfig.URL = url
-	pkgConfig.Name = nameFromUrl(url)
-	pkgConfig.Workdir = Workdir
-	pkgConfig.Flag = "install"
-	Exec(pkgConfig, *c)
+	return pkgConfig, nil
 }
 
 // LoadConfig from tar package
@@ -86,7 +75,7 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
-	filename, _ := downloadFile(packageFile)
+	filename, _ := install.DownloadFile(packageFile)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -145,96 +134,58 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 	return list[0], list[1], nil
 }
 
-// Exec when install first to run ervey node to load images
-// second to run masterOnly to apply manifests.
-// when delete first to run masterOnly to delete manifests
-// second run every node to remove images.
-func Exec(c *PkgConfig, config SealConfig) {
-	everyNodesCmd, masterOnlyCmd := NewCommands(c.Cmds, c.Flag)
-	if c.Flag == "install" {
-		everyNodesCmd.Run(config, c)
-		masterOnlyCmd.Run(config, c)
-	}
-	if c.Flag == "delete" {
-		masterOnlyCmd.Run(config, c)
-		everyNodesCmd.Run(config, c)
-	}
-}
-
 type Runner interface {
-	Run(config SealConfig, pkgConfig *PkgConfig)
-}
-
-// return command run on every nodes and run only on master node
-func NewCommands(cmds []Command, flag string) (Runner, Runner) {
-	everyNodesCmd := &RunOnEveryNodes{}
-	masterOnlyCmd := &RunOnMaster{}
-	if flag == "install"  {
-		for _, c := range cmds {
-			switch c.Name {
-			case "REMOVE", "STOP", "DELETE":
-			case "START", "LOAD":
-				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-			case "APPLY":
-				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
-			default:
-				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
-			}
-		}
-	}
-	if flag == "delete" {
-		for _, c := range cmds {
-			switch c.Name {
-			case "START", "LOAD", "APPLY":
-			case "REMOVE", "STOP":
-				everyNodesCmd.Cmd = append(everyNodesCmd.Cmd, c)
-			case "DELETE":
-				masterOnlyCmd.Cmd = append(masterOnlyCmd.Cmd, c)
-			default:
-				logger.Warn("Unknown command:%s,%s", c.Name, c.Cmd)
-			}
-		}
-	}
-	return everyNodesCmd, masterOnlyCmd
+	Run(config install.SealConfig, pkgConfig *PkgConfig)
+	Send(config install.SealConfig, pkgConfig *PkgConfig)
+	CleanUp(config install.SealConfig, pkgConfig *PkgConfig)
 }
 
 type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) Run(config SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) CleanUp(config install.SealConfig, p *PkgConfig) {
+	//TODO
 	var wg sync.WaitGroup
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
+
 	nodes := append(config.Masters, config.Nodes...)
-	// values.yaml 存在， 则将 values.yaml复制到各个节点。
-	if Values == "-" {
-		// 处理 stdin
-		SendPackage(p.Workdir+"values.yaml", nodes, workspace, nil, nil)
-	} else if Values != "" {
-		SendPackage(Values, nodes, workspace, nil, nil)
-	}
-	// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
-	if p.Flag == "install" {
-		SendPackage(p.URL, nodes, workspace, nil, nil)
-	}
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			// delete的时候只需要执行r.cmd里面的STOP/REMOVE命令即可
-			if p.Flag == "install" {
-				tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
-				fmt.Println(tarCmd)
-				CmdWorkSpace(node, tarCmd, workspace)
-			}
+			// rm -rf /root/dashboard
+			rmTar := fmt.Sprintf("rm -rf %s", p.Workspace)
+			CmdWorkSpace(node, rmTar, p.Workdir)
+		}(node)
+	}
+
+	wg.Wait()
+}
+
+func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
+	var wg sync.WaitGroup
+	nodes := append(config.Masters, config.Nodes...)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			send(node, p)
+		}(node)
+	}
+
+	wg.Wait()
+}
+
+func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
+	// TODO send p.ValuesContent to all nodes
+	var wg sync.WaitGroup
+	nodes := append(config.Masters, config.Nodes...)
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
 			for _, cmd := range r.Cmd {
-				CmdWorkSpace(node, cmd.Cmd, workspace)
-			}
-			// 删除 tar压缩包及解压缩目录
-			if p.Flag == "delete" {
-				// rm -rf  $workdir/$pkgName
-				rmTar := fmt.Sprintf("rm -rf %s", workspace)
-				CmdWorkSpace(node, rmTar, Workdir)
+				CmdWorkSpace(node, cmd.Cmd, p.Workspace)
 			}
 		}(node)
 	}
@@ -246,21 +197,48 @@ type RunOnMaster struct {
 	Cmd []Command
 }
 
-func (r *RunOnMaster) Run(config SealConfig, p *PkgConfig) {
-	workspace := fmt.Sprintf("%s/%s", p.Workdir, p.Name)
-	// delete的时候只需要执行r.cmd里面的DELETE命令即可
-	if p.Flag == "install" {
-		SendPackage(p.URL, []string{config.Masters[0]}, workspace, nil, nil)
-		tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
-		fmt.Println(tarCmd)
-		CmdWorkSpace(config.Masters[0], tarCmd, workspace)
+func send(host string, p *PkgConfig) {
+	remoteFilePath := fmt.Sprintf("%s/%s.tar", p.Workspace, p.Name)
+	if !CmdFileExist(host, remoteFilePath) {
+		logger.Info("%s%s is not exist , send package to nodes", host, remoteFilePath)
+		install.SendPackage(p.URL, []string{host}, p.Workspace, nil, nil)
 	}
+	tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
+	fmt.Println(tarCmd)
+	CmdWorkSpace(host, tarCmd, p.Workspace)
+
+}
+
+// send package to master
+func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
+	// del because run every node has done this
+	// send(config.Masters[0], p)
+
+	//  默认为空值, 如果ValuesContent有值, 说明使用了file或者-, 将valuesContent远程写入master[0]:/workspace/vaules.yml
+	if p.ValuesContent != nil {
+		install.SSHConfig.CopyConfigFile(config.Masters[0], p.Workspace+"/vaules.yml", p.ValuesContent)
+	}
+}
+
+func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) {
+
+	// kubectl apply -f
 	for _, cmd := range r.Cmd {
-		CmdWorkSpace(config.Masters[0], cmd.Cmd, workspace)
+		CmdWorkSpace(config.Masters[0], cmd.Cmd, p.Workspace)
 	}
+}
+
+func (r *RunOnMaster) CleanUp(config install.SealConfig, p *PkgConfig) {
+	//TODO
+	// delete every node is ok.
+
 }
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	_ = SSHConfig.CmdAsync(node, command)
+	_ = install.SSHConfig.CmdAsync(node, command)
+}
+
+func CmdFileExist(node, path string) bool {
+	return install.SSHConfig.IsFileExist(node, path)
 }

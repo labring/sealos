@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/pkg/appmanager"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -33,6 +34,7 @@ var (
 	sealos delete --pkg-url mysql.tar -f
 `
 )
+
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
@@ -41,7 +43,8 @@ var deleteCmd = &cobra.Command{
 `,
 	Example: deleteExamlpe,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.APPDelete(AppURL)
+		cfg := appmanager.GetDeleteFlags(AppURL)
+		appmanager.DeleteApp(cfg)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if install.ExitDeleteCase(AppURL) {
@@ -55,10 +58,9 @@ func init() {
 	rootCmd.AddCommand(deleteCmd)
 
 	deleteCmd.Flags().StringVar(&AppURL, "pkg-url", "", "APP offline pluginsfile localtion ex. /root/prometheus.tar.gz")
-	deleteCmd.Flags().StringVarP(&install.PackageConfig, "pkg-config", "c","", "packageConfig for delete installed package config")
-	deleteCmd.Flags().StringVarP(&install.Workdir, "workdir", "w", "/root/", "workdir for install package home, keep the same with installed")
-	deleteCmd.Flags().BoolVarP(&install.CleanForce, "force", "f", false,"if this is true, will no prompt")
-
+	deleteCmd.Flags().StringVarP(&install.PackageConfig, "pkg-config", "c", "", "packageConfig for delete installed package config")
+	deleteCmd.Flags().StringVarP(&install.WorkDir, "workdir", "w", "/root", "workdir for install package home, keep the same with installed")
+	deleteCmd.Flags().BoolVarP(&install.CleanForce, "force", "f", false, "if this is true, will no prompt")
 
 	// Here you will define your flags and configuration settings.
 
