@@ -50,6 +50,10 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 	return location
 }
 
+func DownloadFile(location string) (filePATH, md5 string) {
+	return downloadFile(location)
+}
+
 //
 func downloadFile(location string) (filePATH, md5 string) {
 	if _, isUrl := isUrl(location); isUrl {
