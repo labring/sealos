@@ -32,6 +32,10 @@ func GetEtcdBackFlags() *EtcdFlags {
 		ip, endpoint string
 	)
 	e := &EtcdFlags{}
+	if !e.CertFileExist() {
+		logger.Error("ETCD CaCert or key file is not exist.")
+		os.Exit(1)
+	}
 	err := e.Load("")
 	if err != nil {
 		logger.Error(err)
@@ -256,4 +260,9 @@ func (e *EtcdFlags) HealthCheck() {
 	if errs {
 		logger.Error("unhealthy cluster")
 	}
+}
+
+// CertFileExist if cert file is exist return true
+func (e *EtcdFlags) CertFileExist() bool {
+	return FileExist(EtcdCacart) && FileExist(EtcdCert) && FileExist(EtcdKey)
 }
