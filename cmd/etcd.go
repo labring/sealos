@@ -51,12 +51,12 @@ func NewEtcdCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "etcd <subcommand>",
 		Short:   "Simplest way to snapshot/restore your kubernets etcd",
-		Long:    `etcd save --name snapshot`,
+		Long:    `sealos etcd save --name snapshot`,
 		Example: exampleCmd,
 	}
-	cmd.AddCommand(NewEtcdSaveComand())
-	cmd.AddCommand(NewEtcdRestoreComand())
-	cmd.AddCommand(NewEtcdHealthComand())
+	cmd.AddCommand(NewEtcdSaveCommand())
+	cmd.AddCommand(NewEtcdRestoreCommand())
+	cmd.AddCommand(NewEtcdHealthCommand())
 	//cmd.Flags().BoolVar(&install.EtcdSnapshotSave, "snap-save", false, "snapshot your kubernets etcd ")
 	//cmd.Flags().BoolVar(&install.EtcdRestore, "snap-restore", false, "restore your kubernets etcd")
 	//cmd.Flags().BoolVar(&install.EtcdHealthCheck, "health", false, "check your kubernets etcd")
@@ -67,7 +67,7 @@ func NewEtcdCommand() *cobra.Command {
 
 	return cmd
 }
-func NewEtcdSaveComand() *cobra.Command {
+func NewEtcdSaveCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "save",
 		Short: "Stores an etcd node backend snapshot to a given file",
@@ -85,7 +85,7 @@ func NewEtcdSaveComand() *cobra.Command {
 	return cmd
 }
 
-func NewEtcdRestoreComand() *cobra.Command {
+func NewEtcdRestoreCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "restore",
 		Short: "Restores an etcd member snapshot to an etcd directory",
@@ -97,7 +97,7 @@ func NewEtcdRestoreComand() *cobra.Command {
 	return cmd
 }
 
-func NewEtcdHealthComand() *cobra.Command {
+func NewEtcdHealthCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "health",
 		Short: "test your etcd status",
