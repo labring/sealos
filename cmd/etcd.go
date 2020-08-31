@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
 	"github.com/wonderivan/logger"
@@ -26,6 +27,10 @@ import (
 var exampleCmd = `
  	# snapshot save the etcd, the backupPath is on etcd nodes. not on the sealos init machine.
 	sealos etcd save --name snapshot --backupPath  /opt/sealos/ectd-backup
+	
+	# save the snapshot to aliyun oss bucket. this recommend to use in cronjob 
+	sealos etcd save --aliId youraliyunkeyid --aliKey youraliyunkeysecrets --ep oss-cn-hangzhou.aliyuncs.com  \
+	--bucket etcdbackup  --objectPath /sealos/ --docker
 
 	# snapshot restore the etcd
 	sealos etcd restore --name snapshot --backupPath  /opt/sealos/ectd-backup
@@ -33,6 +38,8 @@ var exampleCmd = `
 	# etcd health check
 	sealos etcd health
 `
+
+var force bool
 
 func init() {
 	rootCmd.AddCommand(NewEtcdCommand())
@@ -73,7 +80,7 @@ func NewEtcdSaveCommand() *cobra.Command {
 		Short: "Stores an etcd node backend snapshot to a given file",
 		Run:   EtcdSaveCmdFunc,
 	}
-	cmd.Flags().BoolVar(&install.InDocker, "docker", false, "snapshot your kubernets etcd in container")
+	cmd.Flags().BoolVar(&install.InDocker, "docker", false, "snapshot your kubernets etcd in container, will add unix timestamp to snapshot name")
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
 	cmd.Flags().StringVar(&install.BucketName, "bucket","","oss bucketName to save snapshot")
@@ -94,6 +101,7 @@ func NewEtcdRestoreCommand() *cobra.Command {
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
 	cmd.Flags().StringVar(&install.RestorePath, "restorePath", install.ETCDDEFAULTRESTOREDIR, "Specify snapshot restore dir")
+	cmd.Flags().BoolVarP(&force, "force","f", false, "restore need interactive to confirm")
 	return cmd
 }
 
@@ -114,6 +122,15 @@ func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
 
 func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 	e := install.GetRestoreFlags()
+	// restore need interactive to confirm
+	if !force {
+		prompt := fmt.Sprintf("restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
+		result := install.Confirm(prompt)
+		if !result {
+			logger.Info("restore %s file is skip, Exit", e.Name)
+			os.Exit(-1)
+		}
+	}
 	e.RestoreAll()
 	//logger.Info("Restore Success! Check Your Restore Dir: %s", e.RestoreDir)
 	time.Sleep(time.Second * 10)
