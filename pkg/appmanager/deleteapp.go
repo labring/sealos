@@ -39,7 +39,7 @@ func DeleteApp(flag *DeleteFlags) error {
 	pkgConfig.Workspace = fmt.Sprintf("%s/%s", flag.WorkDir, pkgConfig.Name)
 
 	if !flag.CleanForce {
-		prompt := fmt.Sprintf("deletew command will del your installed %s App , continue delete (y/n)?", pkgConfig.Name)
+		prompt := fmt.Sprintf("delete command will del your installed %s App , continue delete (y/n)?", pkgConfig.Name)
 		result := install.Confirm(prompt)
 		if !result {
 			logger.Info("delete  %s App is skip, Exit", pkgConfig.Name)
