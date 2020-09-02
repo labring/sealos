@@ -99,10 +99,12 @@ func downloadFileCheck(pkgUrl string) bool {
 			logger.Error(err)
 			return false
 		}
-		if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
-			logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
-			return false
-		}
+		/*
+			if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
+				logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
+				return false
+			}
+		*/
 
 		//if resp.ContentLength < MinDownloadFileSize { //判断大小 这里可以设置成比如 400MB 随便设置一个大小
 		//	logger.Error("your pkgUrl download file size is : ", resp.ContentLength/1024/1024, "m, please check your PkgUrl is right")
