@@ -94,7 +94,7 @@ func downloadFileCheck(pkgUrl string) bool {
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 			},
 		}
-		resp, err := client.Do(req)
+		_, err = client.Do(req)
 		if err != nil {
 			logger.Error(err)
 			return false
