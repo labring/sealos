@@ -100,3 +100,40 @@ func (ss *SSH) CmdToString(host, cmd, spilt string) string {
 	}
 	return ""
 }
+
+func (ss *SSH) CmdAsyncEctd(host string, cmd string) error {
+	logger.Info("[ssh][%s] %s", host, cmd)
+	session, err := ss.Connect(host)
+	if err != nil {
+		logger.Error("[ssh][%s]Error create ssh session failed,%s", host, err)
+		return err
+	}
+	defer session.Close()
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		logger.Error("[ssh][%s]Unable to request StdoutPipe(): %s", host, err)
+		return err
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		logger.Error("[ssh][%s]Unable to request StderrPipe(): %s", host, err)
+		return err
+	}
+	if err := session.Run(cmd); err != nil {
+		logger.Error("[ssh][%s]Unable to execute command: %s", host, err)
+		return err
+	}
+	doneout := make(chan bool, 1)
+	doneerr := make(chan bool, 1)
+	go func() {
+		readPipe(host, stderr, true)
+		doneerr <- true
+	}()
+	go func() {
+		readPipe(host, stdout, false)
+		doneout <- true
+	}()
+	<-doneerr
+	<-doneout
+	return nil
+}
