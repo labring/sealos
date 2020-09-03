@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/aliyun/aliyun-oss-go-sdk v2.1.4+incompatible
+	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
 	github.com/fanux/sealgate v0.0.5
@@ -11,6 +12,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.8.1
 	github.com/pkg/sftp v1.11.0
+	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
 	github.com/wonderivan/logger v1.0.0
