@@ -8,13 +8,13 @@ import (
 )
 
 type ExecFlag struct {
-	Dst   string
-	Src   string
-	Cmd   string
-	Label string
+	Dst      string
+	Src      string
+	Cmd      string
+	Label    string
+	ExecNode []string
 	// map["hostname"] -> ip
-	Nodes map[string]string
-	ExecNode bool
+	Nodes   map[string]string
 	SealConfig
 }
 
@@ -40,16 +40,19 @@ func GetExecFlag() *ExecFlag {
 	}
 	e.Dst = Dst
 	e.Src = Src
-	logger.Info("get label", Label)
+	// logger.Info("get label", Label)
 	e.Label = Label
 	e.Cmd = ExecCommand
-	// make 创建一个非nil的map， nil map assign 会报错
-	e.Nodes = make(map[string]string, len(ExecNode))
-	if len(ExecNode) == 0 {
-		e.ExecNode = true
+	e.ExecNode = ExecNode
+
+	// if use label， we need to re-init ExecNode which Flag --node is not set，
+	// we must put all nodes to ExecNode. so we can map the ip and hostname.
+	if e.IsUseLabeled() && !e.IsUseNode() {
 		ExecNode = append(ExecNode, MasterIPs...)
 		ExecNode = append(ExecNode, NodeIPs...)
 	}
+	// make to create non-nil map， nil map assign will panic
+	e.Nodes = make(map[string]string, len(ExecNode))
 	for _, node := range ExecNode {
 		hostname := SSHConfig.CmdToString(node, "hostname", "")
 		e.Nodes[hostname] = node
@@ -74,12 +77,13 @@ func (e *ExecFlag) IsUseCopy() bool {
 
 // IsUseNode return true when is use --node
 func (e *ExecFlag) IsUseNode() bool {
-	return len(e.Nodes) != 0
+	return len(e.ExecNode) != 0
 }
 
 // Copy is cp src file to dst file
 func (e *ExecFlag) Copy() {
-	if e.IsUseNode() && !e.ExecNode {
+	// this case when use by label . we need a flag to set the --node is not used, in case of running twice By label
+	if e.IsUseNode() && !e.IsUseLabeled()  {
 		e.copyByNode()
 	}
 	if e.IsUseLabeled() {
@@ -93,7 +97,8 @@ func (e *ExecFlag) Copy() {
 
 // Exec is cp src file to dst file
 func (e *ExecFlag) Exec() {
-	if e.IsUseNode() && !e.ExecNode {
+	// this case when use by label . we need a flag to set the --node is not used, in case of running twice By label
+	if e.IsUseNode() && !e.IsUseLabeled() {
 		e.execByNode()
 	}
 	if e.IsUseLabeled() {
@@ -146,7 +151,7 @@ func (e *ExecFlag) execByLabel() error {
 		return err
 	}
 	for _, hostname := range hosts {
-		logger.Info(hostname)
+		// logger.Info(hostname)
 		if node, ok := e.Nodes[hostname]; ok {
 			CmdWorkSpace(node, e.Cmd, TMPDIR)
 		}
