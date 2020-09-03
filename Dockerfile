@@ -7,7 +7,7 @@ WORKDIR /root
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -o /sealos -mod vendor -ldflags "-X github.com/fanux/sealos/version.Version=latest  -X github.com/fanux/sealos/version.Build= -X 'github.com/fanux/sealos/version.BuildTime='" main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -o /sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=latest  -X github.com/fanux/sealos/version.Build= -X github.com/fanux/sealos/version.BuildTime=" main.go
 
 FROM alpine:3.7
 ENV TZ=Asia/Shangha
