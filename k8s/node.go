@@ -13,7 +13,6 @@ import (
 	"k8s.io/client-go/transport"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 )
 
@@ -26,6 +25,7 @@ const (
 	KubeDefaultConfigPath = "/root/.kube/config"
 )
 
+// NewClient is get clientSet by kubeConfig
 func NewClient(kubeConfigPath string, k8sWrapTransport transport.WrapperFunc) (*kubernetes.Clientset, error) {
 	// use the current admin kubeconfig
 	var config *rest.Config
@@ -50,59 +50,84 @@ func NewClient(kubeConfigPath string, k8sWrapTransport transport.WrapperFunc) (*
 	return K8sClientSet, nil
 }
 
+// GetNodeList is get all nodes
 func GetNodeList(k8sClient *kubernetes.Clientset) (*v1.NodeList, error) {
 	return k8sClient.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 }
 
-func GetNode(k8sClient *kubernetes.Clientset, nodeName string) (*v1.Node, error) {
-	var listErr error
-	for retries := 0; retries < MaxRetries; retries++ {
-		nodes, err := GetNodeList(k8sClient)
-		if err != nil {
-			listErr = err
-			time.Sleep(time.Second * RetryInterval)
-			continue
-		}
-		// reset listErr back to nil
-		listErr = nil
-		for _, node := range nodes.Items {
-			if strings.ToLower(node.Labels[HostnameLabel]) == strings.ToLower(nodeName) {
-				return &node, nil
-			}
-		}
-		time.Sleep(time.Second * RetryInterval)
-	}
-	if listErr != nil {
-		return nil, listErr
-	}
-	return nil, apierrors.NewNotFound(schema.GroupResource{}, nodeName)
+// GetNodeListByLabel is get node list by label
+func GetNodeListByLabel(k8sClient *kubernetes.Clientset, label string) (*v1.NodeList, error) {
+	listOption := &metav1.ListOptions{LabelSelector: label}
+	return k8sClient.CoreV1().Nodes().List(context.TODO(), *listOption)
 }
 
-func GetNodeByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
-	var listErr error
-	var ns []string
-	for retries := 0; retries < MaxRetries; retries++ {
-		nodes, err := GetNodeList(k8sClient)
-		if err != nil {
-			listErr = err
-			time.Sleep(time.Second * RetryInterval)
-			continue
+// GetNodeIpByName is get node internalIp by nodeName
+func GetNodeIpByName(k8sClient *kubernetes.Clientset, nodeName string) (ip string, err error) {
+	node, err := k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	for _, v := range node.Status.Addresses {
+		if v.Type == v1.NodeInternalIP {
+			ip = v.Address
+			return ip, nil
 		}
-		// reset listErr back to nil
-		listErr = nil
-		for _, node := range nodes.Items {
-			for k, v := range node.Labels {
-				if label == fmt.Sprintf("%s=%s", k, v) {
-					ns = append(ns, node.Name)
-				}
+	}
+	return "", apierrors.NewNotFound(schema.GroupResource{}, nodeName)
+}
+
+// GetNodeNameByIp is get node name by node ip
+func GetNodeNameByIp(k8sClient *kubernetes.Clientset, ip string) (name string, err error) {
+	nodes, err := GetNodeList(k8sClient)
+	if err != nil {
+		return "", err
+	}
+	for _, node := range nodes.Items {
+		for _, v := range node.Status.Addresses {
+			if v.Type == v1.NodeInternalIP && ip == v.Address {
+				return node.Name, nil
 			}
 		}
-		if ns != nil {
-			return ns, nil
-		}
-		time.Sleep(time.Second * RetryInterval)
 	}
-	return nil, listErr
+	return "", fmt.Errorf("ip [%s] is not fount in kubernetes nodes", ip)
+}
+
+// GetNodeNameByLabel is get node name by label
+func GetNodeNameByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
+	var ns []string
+	nodes, err := GetNodeListByLabel(k8sClient, label)
+	if err != nil {
+		return nil, err
+	}
+	for _, node := range nodes.Items {
+		ns = append(ns, node.Name)
+	}
+	if len(ns) != 0 {
+		return ns, nil
+	}
+
+	return nil, fmt.Errorf("label %s is not fount in kubernetes nodes", label)
+}
+
+// GetNodeIpByLabel is is get node ip by label
+func GetNodeIpByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
+	var ips []string
+	nodes, err := GetNodeListByLabel(k8sClient, label)
+	if err != nil {
+		return nil, err
+	}
+	for _, node := range nodes.Items {
+		for _, v := range node.Status.Addresses {
+			if v.Type == v1.NodeInternalIP {
+				ips = append(ips, v.Address)
+			}
+		}
+	}
+	if len(ips) != 0 {
+		return ips, nil
+	}
+	return nil, fmt.Errorf("label %s is not fount in kubernetes nodes", label)
 }
 
 func IsNodeReady(node v1.Node) bool {
@@ -113,4 +138,23 @@ func IsNodeReady(node v1.Node) bool {
 		}
 	}
 	return false
+}
+
+// TransToIP is use kubernetes label or hostname/ip to get ip
+func TransToIP(k8sClient *kubernetes.Clientset, label string, hostname []string) ([]string, error) {
+	var ips []string
+	ips, err := GetNodeIpByLabel(k8sClient, label)
+	if err != nil {
+		return nil, err
+	}
+	resHost, resIp := getHostnameAndIp(hostname)
+	ips = append(ips, resIp...)
+	for _, node := range resHost {
+		ip, err := GetNodeIpByName(k8sClient, node)
+		if err == nil {
+			ips = append(ips, ip)
+		}
+	}
+	ips = removeRep(ips)
+	return ips, nil
 }

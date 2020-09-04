@@ -23,11 +23,11 @@ import (
 // execCmd represents the exec command
 var (
 	exampleExecCmd = `
-	# exec cmd by label or nodes.  when --label and --node is Exist, get Intersection of both.
+	# exec cmd by label or nodes.  when --label and --node is Exist, get Union of both.
 	sealos exec --cmd "mkdir /data" --label node-role.kubernetes.io/master= --node 192.168.0.2
-	sealos exec --cmd "mkdir /data" --node 192.168.0.2
+	sealos exec --cmd "mkdir /data" --node 192.168.0.2 --nodes dev-k8s-mater
 	
-	# exec copy src file to dst by label or nodes. when --label and --node is Exist, get Intersection of both.
+	# exec copy src file to dst by label or nodes. when --label and --node is Exist, get Union of both.
 	sealos exec --src /data/foo --dst /root/foo --label node-role.kubernetes.io/master=""
 	sealos exec --src /data/foo --dst /root/foo --node 192.168.0.2
 `
@@ -46,7 +46,7 @@ func init() {
 	execCmd.Flags().StringVar(&install.Dst, "dst", "", "dest file location")
 	execCmd.Flags().StringVar(&install.ExecCommand, "cmd", "", "exec command string")
 	execCmd.Flags().StringVar(&install.Label, "label", "", "kubernetes labels like node-role.kubernetes.io/master=")
-	execCmd.Flags().StringSliceVar(&install.ExecNode, "node", []string{}, "node ip")
+	execCmd.Flags().StringSliceVar(&install.ExecNode, "node", []string{}, "node ip or hostname in kubernetes")
 
 }
 
