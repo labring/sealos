@@ -14,7 +14,7 @@ type ExecFlag struct {
 	Label    string
 	ExecNode []string
 	// map["hostname"] -> ip
-	Nodes   map[string]string
+	Nodes map[string]string
 	SealConfig
 }
 
@@ -72,7 +72,7 @@ func (e *ExecFlag) IsUseCmd() bool {
 
 // IsUseCmd return true when you want to copy file
 func (e *ExecFlag) IsUseCopy() bool {
-	return e.Src != "" && e.Dst != ""
+	return FileExist(e.Src) && e.Dst != ""
 }
 
 // IsUseNode return true when is use --node
@@ -83,7 +83,7 @@ func (e *ExecFlag) IsUseNode() bool {
 // Copy is cp src file to dst file
 func (e *ExecFlag) Copy() {
 	// this case when use by label . we need a flag to set the --node is not used, in case of running twice By label
-	if e.IsUseNode() && !e.IsUseLabeled()  {
+	if e.IsUseNode() && !e.IsUseLabeled() {
 		e.copyByNode()
 	}
 	if e.IsUseLabeled() {
@@ -117,7 +117,12 @@ func (e *ExecFlag) copyByNode() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			SSHConfig.Copy(node, e.Src, e.Dst)
+			// 存在就直接跳过。 不存在才执行
+			if SSHConfig.IsFileExist(node, e.Dst) {
+				logger.Info("[%s] is exist on remote host [%s]. skip...", e.Dst, node)
+				return
+			}
+			SSHConfig.CopyLocalToRemote(node, e.Src, e.Dst)
 		}(n)
 	}
 	wg.Wait()
@@ -168,7 +173,12 @@ func (e *ExecFlag) copyByLabel() error {
 	for _, hostname := range hosts {
 		// 说明这个是需要操作的。
 		if node, ok := e.Nodes[hostname]; ok {
-			SSHConfig.Copy(node, e.Src, e.Dst)
+			// 存在就直接跳过。 不存在才执行
+			if SSHConfig.IsFileExist(node, e.Dst) {
+				logger.Info("[%s] is exist on remote host [%s].skip...", e.Dst, node)
+				continue
+			}
+			SSHConfig.CopyLocalToRemote(node, e.Src, e.Dst)
 		}
 	}
 	return nil
