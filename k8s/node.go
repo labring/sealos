@@ -113,6 +113,9 @@ func GetNodeNameByLabel(k8sClient *kubernetes.Clientset, label string) ([]string
 // GetNodeIpByLabel is is get node ip by label
 func GetNodeIpByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
 	var ips []string
+	if label == "" {
+		return ips, nil
+	}
 	nodes, err := GetNodeListByLabel(k8sClient, label)
 	if err != nil {
 		return nil, err
