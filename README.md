@@ -1,3 +1,7 @@
+ <a href="https://trackgit.com">
+<img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
+</a>
+
 <div align="center">
   <p>
     <b>一条命令部署 Kubernetes 高可用集群 👋</b>
