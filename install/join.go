@@ -101,6 +101,7 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 
 			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(IpFormat(s.Masters[0])))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
+			// cmdMult := fmt.Sprintf("%s --apiserver-advertise-address %s", cmd, IpFormat(master))
 			_ = SSHConfig.CmdAsync(master, cmd)
 			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(IpFormat(s.Masters[0])), getApiserverHost(IpFormat(master)))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)

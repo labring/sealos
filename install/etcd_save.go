@@ -207,6 +207,27 @@ type epHealth struct {
 	Error  string `json:"error"`
 }
 
+func GetHealthFlag() *EtcdFlags {
+	e := &EtcdFlags{}
+	if !e.CertFileExist() {
+		logger.Error("ETCD CaCert or key file is not exist.")
+		os.Exit(1)
+	}
+	err := e.Load("")
+	if err != nil {
+		logger.Error(err)
+		e.ShowDefaultConfig()
+		os.Exit(0)
+	}
+	for _, h := range e.Masters {
+		ip := reFormatHostToIp(h)
+		enpoint := fmt.Sprintf("%s:2379", ip)
+		e.EtcdHosts = append(e.EtcdHosts, ip)
+		e.Endpoints = append(e.Endpoints, enpoint)
+	}
+	return e
+}
+
 func (e *EtcdFlags) HealthCheck() {
 	cfgs := []*clientv3.Config{}
 	for _, ep := range e.Endpoints {
