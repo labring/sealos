@@ -12,6 +12,23 @@ func SetHosts(hostip, hostName string) {
 	SSHConfig.CmdAsync(hostip, cmd)
 }
 
+func (s *SealosInstaller) CheckRoute() {
+	var hosts []string
+	hosts = append(hosts,s.Masters...)
+	for _, host := range hosts {
+		var cmd string
+		if Gateway != "" {
+			cmd = fmt.Sprintf("/usr/sbin/sealos route --host %s --gateway %s", IpFormat(host), Gateway)
+		} else {
+			cmd = fmt.Sprintf("/usr/sbin/sealos route --host %s ", IpFormat(host))
+		}
+
+		SSHConfig.CmdAsync(host, cmd)
+		// # check default route interface
+	}
+
+}
+
 //CheckValid is
 func (s *SealosInstaller) CheckValid() {
 	//hosts := append(Masters, Nodes...)

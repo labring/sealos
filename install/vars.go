@@ -44,6 +44,7 @@ var (
 	WithoutCNI bool
 	//network interface name, like "eth.*|en.*"
 	Interface string
+	Gateway string
 	// the ipip mode of the calico
 	IPIP bool
 	// mtu size

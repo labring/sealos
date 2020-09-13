@@ -17,6 +17,6 @@ func (s *SealosInstaller) SendPackage() {
 	//send sealos
 	sealos := FetchSealosAbsPath()
 	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
-	afterHook := "chmod a+x /usr/bin/sealos"
-	SendPackage(sealos, s.Hosts, "/usr/bin", &beforeHook, &afterHook)
+	afterHook := "chmod a+x /usr/sbin/sealos"
+	SendPackage(sealos, s.Hosts, "/usr/sbin", &beforeHook, &afterHook)
 }
