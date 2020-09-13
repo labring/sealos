@@ -156,6 +156,6 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 func EtcdHealthCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetEtcdBackFlags()
+	e := install.GetHealthFlag()
 	e.HealthCheck()
 }
