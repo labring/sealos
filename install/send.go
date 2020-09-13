@@ -16,6 +16,8 @@ func (s *SealosInstaller) SendPackage() {
 	PkgUrl = SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
 
 
+
+
 	// override sealos to avoid old version problem
 	sealos := FetchSealosAbsPath()
 	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"

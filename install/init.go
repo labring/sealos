@@ -67,7 +67,8 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		}
 		templateData = string(TemplateFromTemplateContent(string(fileData)))
 	}
-	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
+	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
+	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
 	kubeadm := KubeadmDataFromYaml(templateData)
