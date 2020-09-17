@@ -9,7 +9,8 @@ import (
 
 // return sealos cert command
 func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
-	cmd := "sealos cert "
+	// avoid old version
+	cmd := "/usr/sbin/sealos cert "
 	if hostIP != "" {
 		cmd += fmt.Sprintf(" --node-ip %s", hostIP)
 	}

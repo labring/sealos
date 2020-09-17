@@ -26,8 +26,8 @@ func BuildInit() {
 	}
 	i.CheckValid()
 	i.Print()
+	i.SendSealos()
 	i.SendPackage()
-	i.CheckRoute()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
 	i.Print("SendPackage", "KubeadmConfigInstall")
