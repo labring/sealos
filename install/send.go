@@ -14,7 +14,12 @@ func (s *SealosInstaller) SendPackage() {
 	kubeHook = kubeHook + " && " + deletekubectl + " && " + completion
 	PkgUrl = SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
 
-	//send sealos
+
+}
+
+// SendSealos is send the exec sealos to /usr/sbin/sealos
+func (s *SealosInstaller) SendSealos()  {
+	// send sealos first to avoid old version
 	sealos := FetchSealosAbsPath()
 	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
 	afterHook := "chmod a+x /usr/sbin/sealos"

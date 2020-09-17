@@ -4,6 +4,7 @@ import (
 	"github.com/fanux/sealos/k8s"
 	"github.com/wonderivan/logger"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -53,7 +54,25 @@ func GetExecFlag() *ExecFlag {
 		logger.Error("get ips err: ", err)
 		os.Exit(ErrorExitOSCase)
 	}
+	e.transToIps()
 	return e
+}
+
+// transToIps is trans ip to ip:port
+func (e *ExecFlag) transToIps() {
+	var ips []string
+	if !e.IsUseNode() {
+		return
+	}
+	all := append(MasterIPs, NodeIPs...)
+	for _, v := range all {
+		for _, node := range e.ExecNode {
+			if strings.Contains(v, node) {
+				ips = append(ips, v)
+			}
+		}
+	}
+	e.ExecNode = ips
 }
 
 // IsUseLabeled return true when is labeled

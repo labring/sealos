@@ -30,6 +30,7 @@ func joinMastersFunc(joinMasters []string) {
 		Nodes:   nodes,
 	}
 	i.CheckValid()
+	i.SendSealos()
 	i.SendPackage()
 	i.GeneratorCerts()
 	i.JoinMasters(joinMasters)
@@ -49,6 +50,7 @@ func joinNodesFunc(joinNodes []string) {
 		Nodes:   nodes,
 	}
 	i.CheckValid()
+	i.SendSealos()
 	i.SendPackage()
 	i.GeneratorToken()
 	i.JoinNodes()

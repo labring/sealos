@@ -174,4 +174,7 @@ func clean(host string) {
 	//clean pki certs
 	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
+	//clean sealos in /usr/sbin/
+	cmd = fmt.Sprint("rm -rf /usr/sbin/sealos")
+	_ = SSHConfig.CmdAsync(host, cmd)
 }
