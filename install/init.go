@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/k8s"
 	"io/ioutil"
 	"os"
 
@@ -145,6 +146,14 @@ func (s *SealosInstaller) InstallMaster0() {
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
+
+	// can-reach is used by calico multi network
+	if k8s.IsIpv4(Interface) {
+		Interface = "can-reach=" + Interface
+	} else {
+		Interface = "interface=" + Interface
+	}
+
 	netyaml := net.NewNetwork(Network, net.MetaData{
 		Interface: Interface,
 		CIDR:      PodCIDR,
@@ -165,4 +174,17 @@ func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
 	SendPackage(cert.SealosConfigDir+"/admin.conf", masters, cert.KubernetesDir, nil, nil)
 	SendPackage(cert.SealosConfigDir+"/controller-manager.conf", masters, cert.KubernetesDir, nil, nil)
 	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
+
+	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
+	if VersionToIntAll(Version) >= 1191 {
+		for _, v := range s.Masters {
+			ip := IpFormat(v)
+			// use grep -qF if already use sed then skip....
+			cmd := fmt.Sprintf(`grep -qF "apiserver.cluster.local" %s  && \
+sed -i 's/apiserver.cluster.local/%s/' %s && \
+sed -i 's/apiserver.cluster.local/%s/' %s`,KUBESCHEDULERCONFIGFILE, ip, KUBECONTROLLERCONFIGFILE, ip, KUBESCHEDULERCONFIGFILE)
+			SSHConfig.CmdAsync(v, cmd)
+		}
+	}
+
 }

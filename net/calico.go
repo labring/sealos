@@ -9,7 +9,7 @@ func (c Calico) Manifests(template string) string {
 		template = c.Template()
 	}
 	if c.metadata.Interface == "" {
-		c.metadata.Interface = defaultInterface
+		c.metadata.Interface = "interface=" + defaultInterface
 	}
 	if c.metadata.CIDR == "" {
 		c.metadata.CIDR = defaultCIDR
@@ -627,7 +627,7 @@ spec:
             - name: IP
               value: "autodetect"
             - name: IP_AUTODETECTION_METHOD
-              value: "interface={{ .Interface }}"
+              value: "{{ .Interface }}"
             # Enable IPIP
             - name: CALICO_IPV4POOL_IPIP
               value: "{{if not .IPIP }}Off{{else}}Always{{end}}"

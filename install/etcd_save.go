@@ -43,7 +43,6 @@ func GetEtcdBackFlags() *EtcdFlags {
 		os.Exit(0)
 	}
 	// get Etcd host
-	e.EtcdHosts = e.Masters
 	e.BackDir = EtcdBackDir
 	e.Name = SnapshotName
 	e.LongName = fmt.Sprintf("%s/%s", e.BackDir, e.Name)

@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"path"
+	"sync"
 )
 
 //SendPackage is
@@ -15,13 +16,28 @@ func (s *SealosInstaller) SendPackage() {
 	PkgUrl = SendPackage(PkgUrl, s.Hosts, "/root", nil, &kubeHook)
 
 
+	// override sealos to avoid old version problem
+	sealos := FetchSealosAbsPath()
+	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
+	afterHook := "chmod a+x /usr/bin/sealos"
+	var wg sync.WaitGroup
+	for _, node := range s.Hosts {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			SSHConfig.CmdAsync(node,beforeHook)
+			SSHConfig.CopyLocalToRemote(node, sealos, "/usr/bin/sealos")
+			SSHConfig.CmdAsync(node, afterHook)
+		}(node)
+	}
+	wg.Wait()
 }
 
 // SendSealos is send the exec sealos to /usr/sbin/sealos
 func (s *SealosInstaller) SendSealos()  {
 	// send sealos first to avoid old version
 	sealos := FetchSealosAbsPath()
-	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
+	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/sbin/sealos"
 	afterHook := "chmod a+x /usr/sbin/sealos"
 	SendPackage(sealos, s.Hosts, "/usr/sbin", &beforeHook, &afterHook)
 }
