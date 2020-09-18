@@ -133,6 +133,19 @@ func VersionToInt(version string) int {
 	return 0
 }
 
+//VersionToIntAll v1.19.1 ==> 1191
+func VersionToIntAll(version string) int {
+	version = strings.Replace(version,"v","", -1)
+	arr := strings.Split(version,".")
+	if len(arr) >= 3 {
+		str := arr[0] + arr[1] + arr[2]
+		if i, err := strconv.Atoi(str) ;err == nil {
+			return i
+		}
+	}
+	return 0
+}
+
 //IpFormat is
 func IpFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
