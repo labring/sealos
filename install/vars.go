@@ -61,9 +61,6 @@ var (
 	SnapshotName     string
 	EtcdBackDir      string
 	RestorePath      string
-	EtcdSnapshotSave bool
-	EtcdRestore      bool
-	EtcdHealthCheck  bool
 
 	// oss
 	OssEndpoint         string

@@ -15,6 +15,7 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
+	github.com/vishvananda/netlink v1.1.0
 	github.com/wonderivan/logger v1.0.0
 	go.etcd.io/etcd v0.0.0-20200716221620-18dfb9cca345
 	go.uber.org/zap v1.10.0

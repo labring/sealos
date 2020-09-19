@@ -107,3 +107,36 @@ func TestKubeadmDataFromYaml(t *testing.T) {
 		})
 	}
 }
+
+func TestJoinTemplate(t *testing.T) {
+	var masters = []string{"192.168.160.243:22"}
+	var vip = "10.103.97.1"
+	config := sshutil.SSH{
+		User:     "louis",
+		Password: "210010",
+	}
+	MasterIPs = masters
+	JoinToken = "1y6yyl.ramfafiy99vz3tbw"
+	TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
+
+
+	VIP = vip
+	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(masters[0]))+"\" > ~/aa")
+	t.Log(string(JoinTemplate(masters[0])))
+}
+
+var tepJoin = `apiVersion: kubeadm.k8s.io/v1beta2
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken: 
+    apiServerEndpoint: {{.Master0}}:6443
+    token: {{.TokenDiscovery}}
+    caCertHashes: 
+    - {{.TokenDiscoveryCAHash}}
+  timeout: 5m0s
+kind: JoinConfiguration
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.Master}}
+    bindPort: 6443
+`

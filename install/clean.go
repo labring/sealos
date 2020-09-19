@@ -111,6 +111,7 @@ func (s *SealosClean) Clean() {
 }
 
 func (s *SealosClean) cleanNode(node string) {
+	cleanRoute(node)
 	clean(node)
 	//remove node
 	NodeIPs = SliceRemoveStr(NodeIPs, node)
@@ -177,4 +178,15 @@ func clean(host string) {
 	//clean sealos in /usr/sbin/
 	cmd = fmt.Sprint("rm -rf /usr/sbin/sealos")
 	_ = SSHConfig.CmdAsync(host, cmd)
+}
+
+func cleanRoute(node string)  {
+	// clean route
+	cmdRoute := fmt.Sprintf("/usr/sbin/sealos route --host %s", IpFormat(node))
+	status := SSHConfig.CmdToString(node, cmdRoute, "")
+	if status != "ok" {
+		// 以自己的ip作为路由网关
+		addRouteCmd := fmt.Sprintf("/usr/sbin/sealos route del --host %s --gateway %s", VIP, IpFormat(node))
+		SSHConfig.CmdToString(node, addRouteCmd, "")
+	}
 }
