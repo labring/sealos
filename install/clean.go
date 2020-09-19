@@ -154,7 +154,7 @@ func (s *SealosClean) cleanMaster(master string) {
 func clean(host string) {
 	cmd := "kubeadm reset -f " + vlogToStr()
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf("sed -i \"/%s/d\" /root/.bashrc ", "kubectl")
+	cmd = fmt.Sprintf(`sed -i '/kubectl/d;/sealos/d' /root/.bashrc`)
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -175,18 +175,18 @@ func clean(host string) {
 	//clean pki certs
 	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
-	//clean sealos in /usr/sbin/
-	cmd = fmt.Sprint("rm -rf /usr/sbin/sealos")
+	//clean sealos in /usr/bin/ except exec sealos
+	cmd = fmt.Sprint("ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos")
 	_ = SSHConfig.CmdAsync(host, cmd)
 }
 
 func cleanRoute(node string)  {
 	// clean route
-	cmdRoute := fmt.Sprintf("/usr/sbin/sealos route --host %s", IpFormat(node))
+	cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
 	status := SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
-		// 以自己的ip作为路由网关
-		addRouteCmd := fmt.Sprintf("/usr/sbin/sealos route del --host %s --gateway %s", VIP, IpFormat(node))
-		SSHConfig.CmdToString(node, addRouteCmd, "")
+		// 删除为 vip创建的路由。
+		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IpFormat(node))
+		SSHConfig.CmdToString(node, delRouteCmd, "")
 	}
 }

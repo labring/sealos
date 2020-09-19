@@ -152,11 +152,11 @@ func (s *SealosInstaller) JoinNodes() {
 			_ = SSHConfig.CmdAsync(node, cmdHosts)
 
 			// 如果不是默认路由， 则添加 vip 到 master的路由。
-			cmdRoute := fmt.Sprintf("/usr/sbin/sealos route --host %s", IpFormat(node))
+			cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
 			status := SSHConfig.CmdToString(node, cmdRoute, "")
 			if status != "ok" {
 				// 以自己的ip作为路由网关
-				addRouteCmd := fmt.Sprintf("/usr/sbin/sealos route add --host %s --gateway %s", VIP, IpFormat(node))
+				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", VIP, IpFormat(node))
 				SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
 

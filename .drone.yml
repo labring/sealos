@@ -10,9 +10,10 @@ workspace:
 
 steps:
 - name: build
-  image: golang:1.13.5
+  image: golang:1.15.2-alpine
   commands:
-      - go build -o sealos -ldflags "-X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+      - go build -o sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+      - apk add --update upx && upx /go/src/github.com/fanux/sealos/sealos
       - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
       - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
       - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos)" >> Note.md
