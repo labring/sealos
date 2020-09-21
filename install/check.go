@@ -13,21 +13,6 @@ func SetHosts(hostip, hostName string) {
 }
 
 
-func (s *SealosInstaller) CheckRoute() {
-	var hosts []string
-	hosts = append(hosts, s.Masters...)
-	for _, host := range hosts {
-		var cmd string
-		cmd = fmt.Sprintf("/usr/sbin/sealos route --host %s", IpFormat(host))
-		status := SSHConfig.CmdToString(host, cmd, "")
-		if status != "ok" {
-			logger.Error(`check route err, please use --gateway to change your default gateway link your ip to solve. 
-more about multi interface to get from https://github.com/fanux/sealos/docs/route.md`)
-			os.Exit(1)
-		}
-	}
-
-}
 
 
 //CheckValid is

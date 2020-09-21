@@ -121,7 +121,7 @@ func getDefaultRouteIp() (ip string, err error) {
 这里简要描述一下init逻辑： 
 
 1. check ， 检查主机名是否重复
-2. senSealos, 将最新的sealos复制到 /usr/sbin/ 
+2. senSealos, 将最新的sealos复制到 /usr/bin/ 
 3. sendPackage， 将压缩kube1.**.tar.gz包复制到各主机
 4. KubeadmConfigInstall, 生成`kubeadm-comfig`
 5. GenerateCert, 生成`pki`证书
@@ -134,16 +134,15 @@ func getDefaultRouteIp() (ip string, err error) {
     8.2 安装node节点，对当前的网卡进行判断， 如果是单网卡跳过， 如果是多网卡， 且安装的node ip 不是本机的默认路由ip， 
     添加一条路由 例如`ip route add 10.103.97.2 via node ip`
 
-所以， 我们只需要在2.1的时候， 改变主机的默认路由即可， 这里需要增加`sealos init --gateway`参数。
-通过`--gateway` 是否存在来判断需要进行改变默认路由。用户未使用`--gateway`， 则跳过设置路由节点。
+所以， 当存在双网卡的时候，且init指定的node ip 不是默认路由所在的网卡ip， 在node节点。我们只需要在8.2的时候， 添加一条从`vip`到`node ip`的路由即可。
 
 ```go
 // 如果不是默认路由， 则添加 vip 到 master的路由。
-	cmdRoute := fmt.Sprintf("/usr/sbin/sealos route --host %s", IpFormat(node))
+	cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
 	status := SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 以自己的ip作为路由网关
-		addRouteCmd := fmt.Sprintf("/usr/sbin/sealos route add --host %s --gateway %s", VIP, IpFormat(node))
+		addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", VIP, IpFormat(node))
 		SSHConfig.CmdToString(node, addRouteCmd, "")
 	}
 ```
