@@ -177,7 +177,7 @@ func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
 	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
 
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
-	if VersionToIntAll(Version) >= 1191 {
+	if VersionToIntAll(Version) >= 1191 && VersionToIntAll(Version) <= 1192 {
 		for _, v := range s.Masters {
 			ip := IpFormat(v)
 			// use grep -qF if already use sed then skip....
