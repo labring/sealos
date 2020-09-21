@@ -155,7 +155,8 @@ func TestVersionToIntAll(t *testing.T) {
 		want int
 	}{
 		{"test01", args{"v1.19.1"}, 1191},
-		{"test01", args{"v1.15.1"}, 1151},
+		{"test02", args{"v1.15.1"}, 1151},
+		{"test03", args{"v1.15.13"}, 11513},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
