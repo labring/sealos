@@ -211,5 +211,5 @@ func GetEtcdPeerURLs(hosts []string) []string {
 func CmdWork(node, cmd, workdir string) error {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
 	// not safe when use etcdctl to backup
-	return SSHConfig.CmdAsyncEctd(node, command)
+	return SSHConfig.CmdAsync(node, command)
 }

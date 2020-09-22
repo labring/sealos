@@ -1,3 +1,4 @@
+#!/bin/bash
 # build.sh v3.0.2
 COMMIT_SHA1=$(git rev-parse --short HEAD || echo "0.0.0")
 BUILD_TIME=$(date "+%F %T")

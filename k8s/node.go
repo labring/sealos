@@ -11,8 +11,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/transport"
-	"os"
-	"path/filepath"
 	"time"
 )
 
@@ -22,7 +20,7 @@ const (
 	MaxRetries            = 5
 	RetryInterval         = 5
 	WrapTransportTimeout  = 30
-	KubeDefaultConfigPath = "/root/.kube/config"
+	KubeDefaultConfigPath = "/root/.sealos/admin.conf"
 )
 
 // NewClient is get clientSet by kubeConfig
@@ -30,9 +28,9 @@ func NewClient(kubeConfigPath string, k8sWrapTransport transport.WrapperFunc) (*
 	// use the current admin kubeconfig
 	var config *rest.Config
 	var err error
-	if home, _ := os.UserHomeDir(); home != "" && kubeConfigPath != "" {
-		kubeConfigPath = filepath.Join(home, ".kube", "config")
-	}
+	//if home, _ := os.UserHomeDir(); home != "" && kubeConfigPath != "" {
+	//	kubeConfigPath = filepath.Join(home, ".kube", "config")
+	//}
 	if config, err = rest.InClusterConfig(); err != nil {
 		if config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath); err != nil {
 			return nil, err
@@ -133,6 +131,12 @@ func GetNodeIpByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, 
 	return nil, fmt.Errorf("label %s is not fount in kubernetes nodes", label)
 }
 
+// GetNodeByName is get node internalIp by nodeName
+func GetNodeByName(k8sClient *kubernetes.Clientset, nodeName string) (node *v1.Node, err error) {
+	return k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
+}
+
+// IsNodeReady return true when node is ready
 func IsNodeReady(node v1.Node) bool {
 	nodeConditions := node.Status.Conditions
 	for _, condition := range nodeConditions {

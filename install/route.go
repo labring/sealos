@@ -101,13 +101,3 @@ func delRouteGatewayViaHost(host, gateway string) error {
 	}
 	return netlink.RouteDel(&r)
 }
-
-func getDefaultGatewayIp() string {
-	routes, _ := netlink.RouteList(nil, netlink.FAMILY_V4)
-	for _, r := range routes {
-		if r.Dst == nil {
-			return r.Gw.String()
-		}
-	}
-	return ""
-}
