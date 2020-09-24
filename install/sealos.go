@@ -40,9 +40,10 @@ var (
 
 //SealosInstaller is
 type SealosInstaller struct {
-	Hosts   []string
-	Masters []string
-	Nodes   []string
+	Hosts     []string
+	Masters   []string
+	Nodes     []string
+	ImageList []string
 }
 
 type CommandType string
@@ -56,14 +57,14 @@ func (s *SealosInstaller) Command(version string, name CommandType) (cmd string)
 	cmds := make(map[CommandType]string)
 	cmds = map[CommandType]string{
 		InitMaster: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs` + vlogToStr(),
-		JoinMaster: "kubeadm join %s:6443 --config=/root/kubeadm-join-config.yaml "+vlogToStr(),
+		JoinMaster: "kubeadm join %s:6443 --config=/root/kubeadm-join-config.yaml " + vlogToStr(),
 		JoinNode:   fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s"+vlogToStr(), VIP, JoinToken, TokenCaCertHash),
 	}
 	//other version
 	//todo
 	if VersionToInt(version) >= 115 {
 		cmds[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs` + vlogToStr()
-		cmds[JoinMaster] = "kubeadm join --config=/root/kubeadm-join-config.yaml "+vlogToStr()
+		cmds[JoinMaster] = "kubeadm join --config=/root/kubeadm-join-config.yaml " + vlogToStr()
 	}
 
 	v, ok := cmds[name]

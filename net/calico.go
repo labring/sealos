@@ -1,5 +1,14 @@
 package net
 
+import "fmt"
+
+const (
+	CalicoCniImage   = "calico/cni:v3.8.2"
+	CalicoPod2Daemon = "calico/pod2daemon-flexvol:v3.8.2"
+	CalicoNode       = "calico/node:v3.8.2"
+	CalicoKube       = "calico/kube-controllers:v3.8.2"
+)
+
 type Calico struct {
 	metadata MetaData
 }
@@ -22,7 +31,7 @@ func (c Calico) Template() string {
 	return CalicoManifests
 }
 
-const CalicoManifests = `
+var  CalicoManifests = fmt.Sprintf(`
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Calico installation.
@@ -538,7 +547,7 @@ spec:
         # It can be deleted if this is a fresh installation, or if you have already
         # upgraded to use calico-ipam.
         - name: upgrade-ipam
-          image: calico/cni:v3.8.2
+          image: %s
           command: ["/opt/cni/bin/calico-ipam", "-upgrade"]
           env:
             - name: KUBERNETES_NODE_NAME
@@ -558,7 +567,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: calico/cni:v3.8.2
+          image: %s
           command: ["/install-cni.sh"]
           env:
             # Name of the CNI config file to create.
@@ -592,7 +601,7 @@ spec:
         # Adds a Flex Volume Driver that creates a per-pod Unix Domain Socket to allow Dikastes
         # to communicate with Felix over the Policy Sync API.
         - name: flexvol-driver
-          image: calico/pod2daemon-flexvol:v3.8.2
+          image: %s
           volumeMounts:
           - name: flexvol-driver-host
             mountPath: /host/driver
@@ -601,7 +610,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: calico/node:v3.8.2
+          image: %s
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -774,7 +783,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: calico-kube-controllers
-          image: calico/kube-controllers:v3.8.2
+          image: %s
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS
@@ -794,4 +803,4 @@ kind: ServiceAccount
 metadata:
   name: calico-kube-controllers
   namespace: kube-system
-`
+`, CalicoCniImage, CalicoCniImage, CalicoPod2Daemon, CalicoNode, CalicoKube)

@@ -68,6 +68,7 @@ var (
 	AccessKeySecrets string
 	BucketName       string
 	ObjectPath       string
+
 )
 
 func vlogToStr() string {
