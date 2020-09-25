@@ -1,5 +1,5 @@
 COMMIT_SHA1 ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
-BUILD_VERSION ?= $(shell cat version.txt || echo "3.0.2")
+BUILD_VERSION ?= $(shell cat version.txt || echo "local")
 BUILD_TIME ?= $(shell date "+%F %T")
 
 .PHONY: fmt vet lint default
@@ -67,15 +67,25 @@ vet: ## vet
 
 default: fmt lint vet
 
-.PHONY: local
-local: ## 构建二进制
-	docker run --rm -v ${PWD}:/go/src/github.com/fanux/sealos -w /go/src/github.com/fanux/sealos golang:1.12-stretch  go build -ldflags "-X 'github.com/fanux/sealos/version.Version=${BUILD_VERSION}' -X 'github.com/fanux/sealos/version.Build=${COMMIT_SHA1}' -X 'github.com/fanux/sealos/version.BuildTime=${BUILD_TIME}'"
+local: clean ## 构建二进制
+	@echo "build bin ${BUILD_VERSION} ${BUILD_TIME} ${COMMIT_SHA1}"
+	# go get github.com/mitchellh/gox
+	# eg darwin/amd64 linux/amd64 windows/amd64
+	@gox -osarch="linux/amd64" \
+        -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" \
+		-ldflags "-X 'github.com/fanux/sealos/version.Version=${BUILD_VERSION}' \
+				  -X 'github.com/fanux/sealos/version.Build=${COMMIT_SHA1}' \
+				  -X 'github.com/fanux/sealos/version.BuildTime=${BUILD_TIME}'"
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+clean: ## clean
+	rm -rf dist
 
 .EXPORT_ALL_VARIABLES:
 
 GO111MODULE = on
 
 GOPROXY = https://goproxy.cn
+GOSUMDB = sum.golang.google.cn
