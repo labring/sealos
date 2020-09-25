@@ -2,9 +2,10 @@ package sshutil
 
 import (
 	"bufio"
-	"github.com/wonderivan/logger"
 	"io"
 	"strings"
+
+	"github.com/wonderivan/logger"
 )
 
 //Cmd is in host exec cmd
@@ -34,8 +35,8 @@ func (ss *SSH) Cmd(host string, cmd string) []byte {
 }
 
 func readPipe(host string, pipe io.Reader, isErr bool) {
+	r := bufio.NewReader(pipe)
 	for {
-		r := bufio.NewReader(pipe)
 		line, _, err := r.ReadLine()
 		if line == nil {
 			return
@@ -87,7 +88,7 @@ func (ss *SSH) CmdAsync(host string, cmd string) error {
 	}()
 	<-doneerr
 	<-doneout
-	return nil
+	return session.Wait()
 }
 
 //CmdToString is in host exec cmd and replace to spilt str
