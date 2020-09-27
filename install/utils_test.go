@@ -166,3 +166,53 @@ func TestVersionToIntAll(t *testing.T) {
 		})
 	}
 }
+
+func TestGetMajorMinorInt(t *testing.T) {
+	type args struct {
+		version string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantMajor int
+		wantMinor int
+	}{
+		{"test01", args{"v1.18.1"}, 118, 1},
+		{"test02", args{"v1.15.11"}, 115, 11},
+		{"test03", args{"v1.16.14"}, 116, 14},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotMajor, gotMinor := GetMajorMinorInt(tt.args.version)
+			if gotMajor != tt.wantMajor {
+				t.Errorf("GetMajorMinorInt() gotMajor = %v, want %v", gotMajor, tt.wantMajor)
+			}
+			if gotMinor != tt.wantMinor {
+				t.Errorf("GetMajorMinorInt() gotMinor = %v, want %v", gotMinor, tt.wantMinor)
+			}
+		})
+	}
+}
+
+func TestCanUpgradeByNewVersion(t *testing.T) {
+	type args struct {
+		new string
+		old string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"test01", args{"v1.18.5", "v1.16.14"}, true},
+		{"test02", args{"v1.19.3", "v1.18.9"}, false},
+		{"test03", args{"v1.15.11", "v1.18.9"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := CanUpgradeByNewVersion(tt.args.new, tt.args.old); (err != nil) != tt.wantErr {
+				t.Errorf("CanUpgradeByNewVersion() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

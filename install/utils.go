@@ -135,11 +135,11 @@ func VersionToInt(version string) int {
 
 //VersionToIntAll v1.19.1 ==> 1191
 func VersionToIntAll(version string) int {
-	version = strings.Replace(version,"v","", -1)
-	arr := strings.Split(version,".")
+	version = strings.Replace(version, "v", "", -1)
+	arr := strings.Split(version, ".")
 	if len(arr) >= 3 {
 		str := arr[0] + arr[1] + arr[2]
-		if i, err := strconv.Atoi(str) ;err == nil {
+		if i, err := strconv.Atoi(str); err == nil {
 			return i
 		}
 	}
@@ -439,4 +439,43 @@ func compress(rel string, path string, zw *zip.Writer) {
 	writer, _ := zw.CreateHeader(header)
 	io.Copy(writer, file)
 	defer file.Close()
+}
+
+// GetMajorMinorInt
+func GetMajorMinorInt(version string) (major, minor int) {
+	version = strings.Replace(version, "v", "", -1)
+	versionArr := strings.Split(version, ".")
+	if len(versionArr) >= 2 {
+		majorStr := versionArr[0] + versionArr[1]
+		minorStr := versionArr[2]
+		if major, err := strconv.Atoi(majorStr); err == nil {
+			if minor, err := strconv.Atoi(minorStr); err == nil {
+				return major, minor
+			}
+		}
+	}
+	return 0, 0
+}
+
+func CanUpgradeByNewVersion(new, old string) error {
+	newMajor, newMinor := GetMajorMinorInt(new)
+	major, minor := GetMajorMinorInt(old)
+
+	// case one:  new major version <  old major version
+	// 1.18.8     1.19.1
+	if newMajor < major {
+		return fmt.Errorf("kubernetes new version is lower than current version! New version: %s, current version: %s", new, old)
+	}
+	// case two:  new major version = old major version ; new minor version <= old minor version
+	// 1.18.0   1.18.1
+	if newMajor == major && newMinor <= minor {
+		return fmt.Errorf("kubernetes new version is lower/equal than current version! New version: %s, current version: %s", new, old)
+	}
+
+	// case three : new major version > old major version +1;
+	// 1.18.2    1.16.10
+	if newMajor > major+1 {
+		return fmt.Errorf("kubernetes new version is bigger than current version, more than one major version is not allowed! New version: %s, current version: %s", new, old)
+	}
+	return nil
 }
