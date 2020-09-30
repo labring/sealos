@@ -99,8 +99,8 @@ func (s *SealosInstaller) GenerateCert() {
 	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR, DnsDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
-	s.sendCaAndKey(s.Masters)
-	s.sendCerts([]string{s.Masters[0]})
+	//s.sendNewCertAndKey(s.Masters)
+	//s.sendCerts([]string{s.Masters[0]})
 }
 
 func (s *SealosInstaller) CreateKubeconfig() {
@@ -125,7 +125,7 @@ func (s *SealosInstaller) CreateKubeconfig() {
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
 	s.SendKubeConfigs(s.Masters, true)
-
+	s.sendNewCertAndKey(s.Masters)
 	//master0 do sth
 	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer, IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
@@ -183,7 +183,7 @@ func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
 			// use grep -qF if already use sed then skip....
 			cmd := fmt.Sprintf(`grep -qF "apiserver.cluster.local" %s  && \
 sed -i 's/apiserver.cluster.local/%s/' %s && \
-sed -i 's/apiserver.cluster.local/%s/' %s`,KUBESCHEDULERCONFIGFILE, ip, KUBECONTROLLERCONFIGFILE, ip, KUBESCHEDULERCONFIGFILE)
+sed -i 's/apiserver.cluster.local/%s/' %s`, KUBESCHEDULERCONFIGFILE, ip, KUBECONTROLLERCONFIGFILE, ip, KUBESCHEDULERCONFIGFILE)
 			SSHConfig.CmdAsync(v, cmd)
 		}
 	}
