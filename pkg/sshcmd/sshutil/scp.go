@@ -249,7 +249,7 @@ func (ss *SSH) CopyLocalToRemote(host, localPath, remotePath string) {
 	if err != nil {
 		panic(1)
 	}
-	sshSession, err := ss.Connect(host)
+	sshClient, err := ss.connect(host)
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("[ssh][%s]scpConnect err: %s", host, err)
@@ -259,17 +259,17 @@ func (ss *SSH) CopyLocalToRemote(host, localPath, remotePath string) {
 		panic(1)
 	}
 	defer sftpClient.Close()
-	defer sshSession.Close()
+	defer sshClient.Close()
 	s, _ := os.Stat(localPath)
 	if s.IsDir() {
-		ss.copyLocalDirToRemote(sshSession,sftpClient, localPath, remotePath)
+		ss.copyLocalDirToRemote(sshClient,sftpClient, localPath, remotePath)
 	} else {
-		ss.copyLocalFileToRemote(sshSession,sftpClient, localPath, remotePath)
+		ss.copyLocalFileToRemote(sshClient,sftpClient, localPath, remotePath)
 	}
 }
 
 // ssh session is a problem, 复用ssh链接
-func (ss *SSH) copyLocalDirToRemote(sshSession *ssh.Session,sftpClient *sftp.Client, localPath, remotePath string) {
+func (ss *SSH) copyLocalDirToRemote(sshClient *ssh.Client,sftpClient *sftp.Client, localPath, remotePath string) {
 	localFiles, err := ioutil.ReadDir(localPath)
 	defer func() {
 		if r := recover(); r != nil {
@@ -285,15 +285,15 @@ func (ss *SSH) copyLocalDirToRemote(sshSession *ssh.Session,sftpClient *sftp.Cli
 		rfp := path.Join(remotePath, file.Name())
 		if file.IsDir() {
 			sftpClient.Mkdir(rfp)
-			ss.copyLocalDirToRemote(sshSession,sftpClient, lfp, rfp)
+			ss.copyLocalDirToRemote(sshClient,sftpClient, lfp, rfp)
 		} else {
-			ss.copyLocalFileToRemote(sshSession, sftpClient, lfp, rfp)
+			ss.copyLocalFileToRemote(sshClient, sftpClient, lfp, rfp)
 		}
 	}
 }
 
 // solve the session
-func (ss *SSH) copyLocalFileToRemote(sshSession *ssh.Session,sftpClient *sftp.Client, localPath, remotePath string) {
+func (ss *SSH) copyLocalFileToRemote(sshClient *ssh.Client,sftpClient *sftp.Client, localPath, remotePath string) {
 	srcFile, err := os.Open(localPath)
 	defer func() {
 		if r := recover(); r != nil {
@@ -337,20 +337,38 @@ func (ss *SSH) copyLocalFileToRemote(sshSession *ssh.Session,sftpClient *sftp.Cl
 		totalLength, totalUnit := toSizeFromInt(total)
 		logger.Info("[ssh]transfer [%s] total size is: %.2f%s ;speed is %d%s",localPath, totalLength, totalUnit, speed, unit)
 	}
-	if isCopyMd5Success(sshSession, localPath, remotePath) {
+	if isCopyMd5Success(sshClient, localPath, remotePath) {
 		logger.Info("[ssh] copy local file: %s to remote file: %s validate success", localPath, remotePath)
 	} else {
 		logger.Error("[ssh] copy local file: %s to remote file: %s validate failed", localPath, remotePath)
 	}
 }
 
-func isCopyMd5Success(sshSession *ssh.Session, localFile,remoteFile string) bool {
+func isCopyMd5Success(sshClient *ssh.Client, localFile,remoteFile string) bool {
 	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFile)
 	localMd5 := md5sum.FromLocal(localFile)
+	sshSession, err := sshClient.NewSession()
+	if err != nil {
+		return false
+	}
+	modes := ssh.TerminalModes{
+		ssh.ECHO:          0,     // disable echoing
+		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
+		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
+	}
+
+	if err := sshSession.RequestPty("xterm", 80, 40, modes); err != nil {
+		return false
+	}
+
+	if sshSession.Stdout != nil {
+		sshSession.Stdout = nil
+		sshSession.Stderr = nil
+	}
 	b, err := sshSession.CombinedOutput(cmd)
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]Error exec command failed: %s", err)
+			logger.Error("[ssh]Error exec command failed: %s", err)
 		}
 	}()
 	if err != nil {
