@@ -51,7 +51,7 @@ func init() {
 }
 
 func ExecCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetExecFlag()
+	e := install.GetExecFlag(cfgFile)
 	if e.IsUseCopy() {
 		e.Copy()
 	}

@@ -44,7 +44,7 @@ var deleteCmd = &cobra.Command{
 	Example: deleteExamlpe,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := appmanager.GetDeleteFlags(AppURL)
-		appmanager.DeleteApp(cfg)
+		appmanager.DeleteApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if install.ExitDeleteCase(AppURL) {
