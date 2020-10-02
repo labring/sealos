@@ -169,12 +169,12 @@ func (s *SealosInstaller) InstallMaster0() {
 //SendKubeConfigs
 func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
 	if isMaster0 {
-		SendPackage(cert.SealosConfigDir+"/kubelet.conf", []string{masters[0]}, cert.KubernetesDir, nil, nil)
+		s.sendKubeConfigFile([]string{masters[0]}, "kubelet.conf")
 	}
 
-	SendPackage(cert.SealosConfigDir+"/admin.conf", masters, cert.KubernetesDir, nil, nil)
-	SendPackage(cert.SealosConfigDir+"/controller-manager.conf", masters, cert.KubernetesDir, nil, nil)
-	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
+	s.sendKubeConfigFile(masters, "admin.conf")
+	s.sendKubeConfigFile(masters, "controller-manager.conf")
+	s.sendKubeConfigFile(masters, "scheduler.conf")
 
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
 	if VersionToIntAll(Version) >= 1191 && VersionToIntAll(Version) <= 1192 {
@@ -187,5 +187,4 @@ sed -i 's/apiserver.cluster.local/%s/' %s`, KUBESCHEDULERCONFIGFILE, ip, KUBECON
 			SSHConfig.CmdAsync(v, cmd)
 		}
 	}
-
 }

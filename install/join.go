@@ -204,3 +204,17 @@ func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
 	}
 	wg.Wait()
 }
+
+func (s *SealosInstaller) sendKubeConfigFile(hosts []string , kubeFile string)  {
+	absKubeFile := cert.KubernetesDir + "/" + kubeFile
+	sealosKubeFile := cert.SealosConfigDir + "/" + kubeFile
+	var wg sync.WaitGroup
+	for _, node := range hosts {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			SSHConfig.CopyLocalToRemote(node, sealosKubeFile,  absKubeFile)
+		}(node)
+	}
+	wg.Wait()
+}

@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -264,6 +265,9 @@ func (ss *SSH) CopyLocalToRemote(host, localPath, remotePath string) {
 	if s.IsDir() {
 		ss.copyLocalDirToRemote(host, sshClient, sftpClient, localPath, remotePath)
 	} else {
+		baseRemoteFilePath := filepath.Dir(remotePath)
+		mkDstDir := fmt.Sprintf("mkdir -p %s || true", baseRemoteFilePath)
+		ss.CmdAsync(host, mkDstDir)
 		ss.copyLocalFileToRemote(host, sshClient, sftpClient, localPath, remotePath)
 	}
 }
@@ -330,11 +334,11 @@ func (ss *SSH) copyLocalFileToRemote(host string, sshClient *ssh.Client, sftpCli
 			speed = length / oneMBByte
 		}
 		totalLength, totalUnit := toSizeFromInt(total)
-		logger.Info("[ssh][%s]transfer [%s] total size is: %.2f%s ;speed is %d%s", host, localPath, totalLength, totalUnit, speed, unit)
+		logger.Info("[ssh][%s]transfer local [%s] to Dst [%s] total size is: %.2f%s ;speed is %d%s", host, localPath, remotePath, totalLength, totalUnit, speed, unit)
 	}
 	if !ss.isCopyMd5Success(sshClient, localPath, remotePath) {
-	//	logger.Debug("[ssh][%s] copy local file: %s to remote file: %s validate md5sum success", host, localPath, remotePath)
-	//} else {
+		//	logger.Debug("[ssh][%s] copy local file: %s to remote file: %s validate md5sum success", host, localPath, remotePath)
+		//} else {
 		logger.Error("[ssh][%s] copy local file: %s to remote file: %s validate md5sum failed", host, localPath, remotePath)
 	}
 }
