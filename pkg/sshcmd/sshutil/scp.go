@@ -262,14 +262,14 @@ func (ss *SSH) CopyLocalToRemote(host, localPath, remotePath string) {
 	defer sshClient.Close()
 	s, _ := os.Stat(localPath)
 	if s.IsDir() {
-		ss.copyLocalDirToRemote(sshClient, sftpClient, localPath, remotePath)
+		ss.copyLocalDirToRemote(host, sshClient, sftpClient, localPath, remotePath)
 	} else {
-		ss.copyLocalFileToRemote(sshClient, sftpClient, localPath, remotePath)
+		ss.copyLocalFileToRemote(host, sshClient, sftpClient, localPath, remotePath)
 	}
 }
 
 // ssh session is a problem, 复用ssh链接
-func (ss *SSH) copyLocalDirToRemote(sshClient *ssh.Client, sftpClient *sftp.Client, localPath, remotePath string) {
+func (ss *SSH) copyLocalDirToRemote(host string, sshClient *ssh.Client, sftpClient *sftp.Client, localPath, remotePath string) {
 	localFiles, err := ioutil.ReadDir(localPath)
 	defer func() {
 		if r := recover(); r != nil {
@@ -285,15 +285,15 @@ func (ss *SSH) copyLocalDirToRemote(sshClient *ssh.Client, sftpClient *sftp.Clie
 		rfp := path.Join(remotePath, file.Name())
 		if file.IsDir() {
 			sftpClient.Mkdir(rfp)
-			ss.copyLocalDirToRemote(sshClient, sftpClient, lfp, rfp)
+			ss.copyLocalDirToRemote(host, sshClient, sftpClient, lfp, rfp)
 		} else {
-			ss.copyLocalFileToRemote(sshClient, sftpClient, lfp, rfp)
+			ss.copyLocalFileToRemote(host, sshClient, sftpClient, lfp, rfp)
 		}
 	}
 }
 
 // solve the session
-func (ss *SSH) copyLocalFileToRemote(sshClient *ssh.Client, sftpClient *sftp.Client, localPath, remotePath string) {
+func (ss *SSH) copyLocalFileToRemote(host string, sshClient *ssh.Client, sftpClient *sftp.Client, localPath, remotePath string) {
 	srcFile, err := os.Open(localPath)
 	defer func() {
 		if r := recover(); r != nil {
@@ -330,12 +330,12 @@ func (ss *SSH) copyLocalFileToRemote(sshClient *ssh.Client, sftpClient *sftp.Cli
 			speed = length / oneMBByte
 		}
 		totalLength, totalUnit := toSizeFromInt(total)
-		logger.Info("[ssh]transfer [%s] total size is: %.2f%s ;speed is %d%s", localPath, totalLength, totalUnit, speed, unit)
+		logger.Info("[ssh][%s]transfer [%s] total size is: %.2f%s ;speed is %d%s", host, localPath, totalLength, totalUnit, speed, unit)
 	}
-	if ss.isCopyMd5Success(sshClient, localPath, remotePath) {
-		logger.Info("[ssh] copy local file: %s to remote file: %s validate success", localPath, remotePath)
-	} else {
-		logger.Error("[ssh] copy local file: %s to remote file: %s validate failed", localPath, remotePath)
+	if !ss.isCopyMd5Success(sshClient, localPath, remotePath) {
+	//	logger.Debug("[ssh][%s] copy local file: %s to remote file: %s validate md5sum success", host, localPath, remotePath)
+	//} else {
+		logger.Error("[ssh][%s] copy local file: %s to remote file: %s validate md5sum failed", host, localPath, remotePath)
 	}
 }
 

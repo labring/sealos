@@ -195,6 +195,10 @@ func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			// init 指定master , 已经全部send过了.  不需要再次发送.  sealos join --master 则需要send了.
+			if SSHConfig.IsFileExist(node, cert.KubeDefaultCertPath) {
+				return
+			}
 			SSHConfig.CopyLocalToRemote(node, CertPath,  cert.KubeDefaultCertPath)
 		}(node)
 	}
