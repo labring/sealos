@@ -2,7 +2,6 @@ package install
 
 import (
 	"fmt"
-	"path"
 	"strings"
 	"sync"
 
@@ -92,7 +91,7 @@ func sendJoinCPConfig(joinMaster []string) {
 		go func(master string) {
 			defer wg.Done()
 			templateData := string(JoinTemplate(master))
-			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`,templateData)
+			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(master, cmd)
 		}(master)
 	}
@@ -102,11 +101,9 @@ func sendJoinCPConfig(joinMaster []string) {
 //JoinMasters is
 func (s *SealosInstaller) JoinMasters(masters []string) {
 	var wg sync.WaitGroup
-	//copy certs
-	s.sendCaAndKey(masters)
-
-	s.SendKubeConfigs(masters, false)
-
+	//copy certs & kube-config
+	s.SendJoinMasterKubeConfigs(masters)
+	s.sendNewCertAndKey(masters)
 	// send CP nodes configuration
 	sendJoinCPConfig(masters)
 
@@ -191,21 +188,29 @@ func (s *SealosInstaller) lvscare() {
 	wg.Wait()
 }
 
-func (s *SealosInstaller) sendCaAndKey(hosts []string) {
-	//cert generator in sealos
-	caConfigs := cert.CaList(CertPath, CertEtcdPath)
-	SendPackage(CertPath+"/sa.key", hosts, cert.KubeDefaultCertPath, nil, nil)
-	SendPackage(CertPath+"/sa.pub", hosts, cert.KubeDefaultCertPath, nil, nil)
-	for _, ca := range caConfigs {
-		SendPackage(path.Join(ca.Path, ca.BaseName+".key"), hosts, ca.DefaultPath, nil, nil)
-		SendPackage(path.Join(ca.Path, ca.BaseName+".crt"), hosts, ca.DefaultPath, nil, nil)
+
+func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
+	var wg sync.WaitGroup
+	for _, node := range Hosts {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			SSHConfig.CopyLocalToRemote(node, CertPath,  cert.KubeDefaultCertPath)
+		}(node)
 	}
+	wg.Wait()
 }
 
-func (s *SealosInstaller) sendCerts(hosts []string) {
-	certConfigs := cert.CertList(CertPath, CertEtcdPath)
-	for _, cert := range certConfigs {
-		SendPackage(path.Join(cert.Path, cert.BaseName+".key"), hosts, cert.DefaultPath, nil, nil)
-		SendPackage(path.Join(cert.Path, cert.BaseName+".crt"), hosts, cert.DefaultPath, nil, nil)
+func (s *SealosInstaller) sendKubeConfigFile(hosts []string , kubeFile string)  {
+	absKubeFile := cert.KubernetesDir + "/" + kubeFile
+	sealosKubeFile := cert.SealosConfigDir + "/" + kubeFile
+	var wg sync.WaitGroup
+	for _, node := range hosts {
+		wg.Add(1)
+		go func(node string) {
+			defer wg.Done()
+			SSHConfig.CopyLocalToRemote(node, sealosKubeFile,  absKubeFile)
+		}(node)
 	}
+	wg.Wait()
 }
