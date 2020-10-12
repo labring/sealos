@@ -45,7 +45,7 @@ var installCmd = &cobra.Command{
 	Example: installExample,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := appmanager.GetInstallFlags(AppURL)
-		appmanager.InstallApp(cfg)
+		appmanager.InstallApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if install.ExitInstallCase(AppURL) {

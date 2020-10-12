@@ -27,7 +27,7 @@ type EtcdFlags struct {
 	SealConfig
 }
 
-func GetEtcdBackFlags() *EtcdFlags {
+func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	var (
 		ip, endpoint string
 	)
@@ -36,7 +36,7 @@ func GetEtcdBackFlags() *EtcdFlags {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load("")
+	err := e.Load(cfgFile)
 	if err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()
@@ -74,7 +74,7 @@ func GetEtcdBackFlags() *EtcdFlags {
 	return e
 }
 
-func (e *EtcdFlags) Save(inDocker bool) {
+func (e *EtcdFlags) Save(inDocker bool) error {
 	if !FileExist(e.BackDir) {
 		err := os.MkdirAll(e.BackDir, os.ModePerm)
 		if err != nil {
@@ -113,12 +113,13 @@ func (e *EtcdFlags) Save(inDocker bool) {
 		err := saveToOss(e.OssEndpoint, e.AccessKeyId, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
 		if err != nil {
 			logger.Error("save to oss err,", err)
-			return
+			return fmt.Errorf("save to oss err: %q", err)
 		}
 		// 如果没有报错， 保存一下最新命令行配置。
 		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket",e.Name, e.BucketName)
-		e.Dump("")
+
 	}
+	return nil
 }
 
 
@@ -206,13 +207,13 @@ type epHealth struct {
 	Error  string `json:"error"`
 }
 
-func GetHealthFlag() *EtcdFlags {
+func GetHealthFlag(cfgFile string) *EtcdFlags {
 	e := &EtcdFlags{}
 	if !e.CertFileExist() {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load("")
+	err := e.Load(cfgFile)
 	if err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()

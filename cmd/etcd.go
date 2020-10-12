@@ -114,14 +114,17 @@ func NewEtcdHealthCommand() *cobra.Command {
 }
 
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetEtcdBackFlags()
-	e.Save(install.InDocker)
+	e := install.GetEtcdBackFlags(cfgFile)
+	err := e.Save(install.InDocker)
+	if err == nil && e.AccessKeyId != "" {
+		e.Dump(cfgFile)
+	}
 	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
 	e.HealthCheck()
 }
 
 func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetRestoreFlags()
+	e := install.GetRestoreFlags(cfgFile)
 	// restore need interactive to confirm
 	if !force {
 		prompt := fmt.Sprintf("restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
@@ -156,6 +159,6 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 func EtcdHealthCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetHealthFlag()
+	e := install.GetHealthFlag(cfgFile)
 	e.HealthCheck()
 }

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+	"github.com/wonderivan/logger"
 	"os"
 )
 
@@ -76,10 +77,19 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		c := &install.SealConfig{}
 		// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
-		c.Dump("")
+		// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
+		if cfgFile != "" && len(install.MasterIPs) == 0 {
+			err := c.Load(cfgFile)
+			if err != nil {
+				logger.Error("load cfgFile %s err: %q",cfgFile , err)
+				os.Exit(1)
+			}
+		} else {
+			c.Dump(cfgFile)
+		}
 		install.BuildInit()
 		// 安装完成后生成完整版
-		c.Dump("")
+		c.Dump(cfgFile)
 		fmt.Println(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {

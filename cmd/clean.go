@@ -33,7 +33,7 @@ var cleanCmd = &cobra.Command{
 		deleteNodes := install.ParseIPs(install.NodeIPs)
 		deleteMasters := install.ParseIPs(install.MasterIPs)
 		c := &install.SealConfig{}
-		err := c.Load("")
+		err := c.Load(cfgFile)
 		if err != nil {
 			// 判断错误是否为配置文件不存在
 			if errors.Is(err, os.ErrNotExist) {
@@ -54,7 +54,7 @@ var cleanCmd = &cobra.Command{
 			}
 		}
 		install.BuildClean(deleteNodes, deleteMasters)
-		c.Dump("")
+		c.Dump(cfgFile)
 	},
 }
 

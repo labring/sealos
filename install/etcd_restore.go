@@ -26,13 +26,13 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func GetRestoreFlags() *EtcdFlags {
+func GetRestoreFlags(cfgFile string) *EtcdFlags {
 	e := &EtcdFlags{}
 	if !e.CertFileExist() {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load("")
+	err := e.Load(cfgFile)
 	if err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()

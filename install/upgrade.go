@@ -37,7 +37,7 @@ func NewUpgrade(version, pkgUrl string) *SealosUpgrade {
 	return u
 }
 
-func ExitUpgradeCase(version, pkgUrl string) error {
+func ExitUpgradeCase(version, pkgUrl, cfgFile string) error {
 	if pkgUrl == "" || version == "" {
 		return fmt.Errorf("version or pkg-url is required, Exit")
 
@@ -49,7 +49,7 @@ func ExitUpgradeCase(version, pkgUrl string) error {
 		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", k8s.KubeDefaultConfigPath)
 	}
 
-    if 	err :=  upgradeSealos.Load(""); err != nil {
+    if 	err :=  upgradeSealos.Load(cfgFile); err != nil {
 		upgradeSealos.ShowDefaultConfig()
     	return err
 	}
@@ -68,7 +68,6 @@ func (u *SealosUpgrade) SetUP() {
 	// store latest version and pkgUrl
 	Version = u.NewVersion
 	PkgUrl = u.NewPkgUrl
-	u.Dump("")
 }
 
 

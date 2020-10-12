@@ -27,9 +27,9 @@ func GetInstallFlags(appUrl string) *InstallFlags {
 	}
 }
 
-func InstallApp(flag *InstallFlags) error {
+func InstallApp(flag *InstallFlags, cfgFile string) error {
 	c := &install.SealConfig{}
-	err := c.Load("")
+	err := c.Load(cfgFile)
 	if err != nil {
 		logger.Error("%s", err)
 		c.ShowDefaultConfig()

@@ -25,13 +25,13 @@ var (
 	ExecNode    []string
 )
 
-func GetExecFlag() *ExecFlag {
+func GetExecFlag(cfgFile string) *ExecFlag {
 	e := &ExecFlag{}
 	if !FileExist(k8s.KubeDefaultConfigPath) {
 		logger.Error("file %s is not exist", k8s.KubeDefaultConfigPath)
 		os.Exit(ErrorExitOSCase)
 	}
-	err := e.Load("")
+	err := e.Load(cfgFile)
 	if err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()

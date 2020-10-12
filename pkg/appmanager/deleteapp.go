@@ -23,10 +23,10 @@ func GetDeleteFlags(appUrl string) *DeleteFlags {
 	}
 }
 
-func DeleteApp(flag *DeleteFlags) error {
+func DeleteApp(flag *DeleteFlags, cfgFile string) error {
 	//TODO
 	c := &install.SealConfig{}
-	err := c.Load("")
+	err := c.Load(cfgFile)
 	if err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
