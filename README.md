@@ -54,7 +54,7 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
 $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/7b6af025d4884fdd5cd51a674994359c-1.18.0/kube1.18.0.tar.gz
 
 # 安装一个三master的kubernetes集群
-$ sealos init --passwd 123456 \
+$ sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.18.0.tar.gz \
