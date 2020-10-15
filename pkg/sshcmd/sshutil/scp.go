@@ -380,3 +380,8 @@ func (ss *SSH) isCopyMd5Success(sshClient *ssh.Client, localFile, remoteFile str
 	}
 	return localMd5 == remoteMd5
 }
+
+func (ss *SSH) ValidateMd5sumLocalWithRemote(host, localFile, remoteFile string) bool {
+	localMd5 := md5sum.FromLocal(localFile)
+	return localMd5 == ss.Md5Sum(host, remoteFile)
+}
