@@ -106,7 +106,7 @@ version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 
 # ✅ 特性
 
-- [x] 99年证书
+- [x] 99年证书, 支持集群备份，升级
 - [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
 - [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](http://store.lameleg.com)即可,离线包包含所有二进制文件配置文件和镜像
 - [x] 高可用通过ipvs实现的localLB，占用资源少，稳定可靠，类似kube-proxy的实现
