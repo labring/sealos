@@ -101,7 +101,7 @@ version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 > 清理集群
 
 ```shell script
-🐳 → sealos clean
+🐳 → sealos clean --all
 ```
 
 # ✅ 特性
