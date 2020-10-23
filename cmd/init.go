@@ -93,7 +93,8 @@ var initCmd = &cobra.Command{
 		fmt.Println(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if install.ExitInitCase() {
+		// 使用了cfgFile 就不进行preRun了
+		if cfgFile == "" && install.ExitInitCase()  {
 			cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}
@@ -101,6 +102,7 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
+	initCmd.AddCommand(NewInitGenerateCmd())
 	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -137,4 +139,15 @@ func init() {
 	// 不像用户暴露
 	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
 	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
+}
+
+func NewInitGenerateCmd() *cobra.Command  {
+	return &cobra.Command{
+		Use: "gen",
+		Short: "show default sealos init config",
+		Run: func(cmd *cobra.Command, args []string) {
+			c := &install.SealConfig{}
+			c.ShowDefaultConfig()
+		},
+	}
 }
