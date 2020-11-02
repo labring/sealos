@@ -14,6 +14,6 @@ FROM alpine AS UPX
 COPY --from=builder /sealos /sealos
 RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
 	apk add --update upx && upx /sealos
-FROM scratch
+FROM alpine
 COPY --from=UPX /sealos /bin/sealos
 ENTRYPOINT ["/bin/sealos"]
