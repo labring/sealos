@@ -61,7 +61,7 @@ func (e *EtcdFlags) StopPod() (string, error) {
 	for _, host := range e.EtcdHosts {
 		wg.Add(1)
 		host = reFormatHostToIp(host)
-		go func(h string) {
+		go func(host string) {
 			defer wg.Done()
 			// backup dir to random dir to avoid dir exist err
 			stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests /etc/kubernetes/manifests%s`, tmpDir)
@@ -88,13 +88,14 @@ func (e *EtcdFlags) RestoreAll() {
 		// remove first
 		cmd := fmt.Sprintf("rm -rf %s-%s", e.RestoreDir, hostname)
 		CmdWork(host, cmd, TMPDIR)
-		e.restore(hostname)
+		logger.Info("execute %s", cmd)
+		e.restore(hostname, host)
 	}
 }
 
 // backup nodes by hostname to local filepath. like `RestoreDir-hostname`
-func (e *EtcdFlags) restore(hostname string) {
-	restorePeerURLs := GetEtcdPeerURLs(e.EtcdHosts)
+func (e *EtcdFlags) restore(hostname, host string) {
+	restorePeerURLs := GetEtcdPeerURLs(host)
 	restoreClusterToken := "etcd-cluster"
 	restoreCluster := GetEtcdInitialCluster(e.EtcdHosts)
 	outputDir := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
@@ -154,7 +155,7 @@ func (e *EtcdFlags) StartPod(dir string) {
 	for _, host := range e.EtcdHosts {
 		wg.Add(1)
 		host = reFormatHostToIp(host)
-		go func(h string) {
+		go func(host string) {
 			defer wg.Done()
 			// start kube-apiserver
 			stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests%s /etc/kubernetes/manifests`, dir)
@@ -195,16 +196,15 @@ func GetEtcdInitialCluster(hosts []string) string {
 			initialCluster += ","
 		}
 	}
+	fmt.Println(initialCluster)
 	return initialCluster
 }
 
-func GetEtcdPeerURLs(hosts []string) []string {
+func GetEtcdPeerURLs(host string) []string {
 	var peerUrls []string
-	for _, host := range hosts {
-		ip := reFormatHostToIp(host)
-		url := fmt.Sprintf("https://%s:2380", ip)
-		peerUrls = append(peerUrls, url)
-	}
+	ip := reFormatHostToIp(host)
+	url := fmt.Sprintf("https://%s:2380", ip)
+	peerUrls = append(peerUrls, url)
 	return peerUrls
 }
 
