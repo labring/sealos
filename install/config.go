@@ -25,7 +25,7 @@ type SealConfig struct {
 	PrivateKey string
 	PkPassword string
 	//ApiServer ex. apiserver.cluster.local
-	ApiServerDomian string
+	ApiServerDomain string
 
 	VIP     string
 	PkgURL  string
