@@ -56,7 +56,7 @@ func (c *SealConfig) Dump(path string) {
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile
 	c.PkPassword = SSHConfig.PkPassword
-	c.ApiServerDomian = ApiServer
+	c.ApiServerDomain = ApiServer
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
 	c.Version = Version
@@ -132,7 +132,7 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.Password = c.Passwd
 	SSHConfig.PkFile = c.PrivateKey
 	SSHConfig.PkPassword = c.PkPassword
-	ApiServer = c.ApiServerDomian
+	ApiServer = c.ApiServerDomain
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
 	Version = c.Version
@@ -180,7 +180,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.User = "root"
 	c.Passwd = "123456"
 	c.PrivateKey = "/root/.ssh/id_rsa"
-	c.ApiServerDomian = "apiserver.cluster.local"
+	c.ApiServerDomain = "apiserver.cluster.local"
 	c.VIP = "10.103.97.2"
 	c.PkgURL = "/root/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"
