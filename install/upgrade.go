@@ -49,9 +49,9 @@ func ExitUpgradeCase(version, pkgUrl, cfgFile string) error {
 		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", k8s.KubeDefaultConfigPath)
 	}
 
-    if 	err :=  upgradeSealos.Load(cfgFile); err != nil {
+	if err := upgradeSealos.Load(cfgFile); err != nil {
 		upgradeSealos.ShowDefaultConfig()
-    	return err
+		return err
 	}
 	return CanUpgradeByNewVersion(version, Version)
 }
@@ -69,7 +69,6 @@ func (u *SealosUpgrade) SetUP() {
 	Version = u.NewVersion
 	PkgUrl = u.NewPkgUrl
 }
-
 
 // UpgradeMaster0 is upgrade master first.
 func (u *SealosUpgrade) UpgradeMaster0() {
@@ -101,7 +100,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string) {
 			defer wg.Done()
 			// first to drain node
 			logger.Info("first: to drain node %s", node)
-			cmdDrain := fmt.Sprintf(`kubectl drain %s --ignore-daemonsets`, node)
+			cmdDrain := fmt.Sprintf(`kubectl drain %s --ignore-daemonsets --delete-local-data`, node)
 			err := SSHConfig.CmdAsync(u.Masters[0], cmdDrain)
 			if err != nil {
 				logger.Error("kubectl drain %s  err: %v", node, err)
@@ -133,21 +132,23 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string) {
 			if err != nil {
 				logger.Error("systemctl daemon-reload && systemctl restart kubelet err: ", err)
 			}
-			time.Sleep(time.Second * 5)
-			// fourth to uncordon node
-			err = k8s.CordonUnCordon(u.Client, node, false)
-			if err != nil {
-				logger.Error("k8s.CordonUnCordon err: ", err)
-			}
-			logger.Info("fourth: to uncordon node, 10 seconds to wait for %s ready", node)
-			// fifth to judge nodes is ready
+
+			// fourth to judge nodes is ready
 			time.Sleep(time.Second * 10)
 			k8sNode, _ := k8s.GetNodeByName(u.Client, node)
 			if k8s.IsNodeReady(*k8sNode) {
-				logger.Info("fifth:  %s nodes is ready", node)
+				logger.Info("fourth:  %s nodes is ready", node)
+
+				// fifth to uncordon node
+				err = k8s.CordonUnCordon(u.Client, node, false)
+				if err != nil {
+					logger.Error(`k8s.CordonUnCordon err: %s, \n After upgrade,  please run "kubectl uncordon %s" to enable Scheduling`, err, node)
+				}
+				logger.Info("fifth: to uncordon node, 10 seconds to wait for %s uncordon", node)
 			} else {
-				logger.Error("fifth:  %s nodes is not ready", node)
+				logger.Error("fourth:  %s nodes is not ready, please check the nodes logs to find out reason", node)
 			}
+
 		}(hostname)
 
 	}
@@ -184,7 +185,6 @@ func (u *SealosUpgrade) GetIpByHostname(host string) string {
 	}
 	return ""
 }
-
 
 /*
 kubeadm upgrade apply 做了以下工作：
