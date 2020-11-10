@@ -2,6 +2,8 @@
 <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
 </a>
 
+![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting/img/20201110113119.png)
+
 <div align="center">
   <p>
     <b>一条命令部署 Kubernetes 高可用集群 👋</b>
