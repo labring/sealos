@@ -2,7 +2,7 @@
 <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
 </a>
 
-![](https://cdn.jsdelivr.net/gh/yangchuansheng/imghosting/img/20201110113119.png)
+![](https://socialify.git.ci/fanux/sealos/image?description=1&font=Source%20Code%20Pro&forks=1&language=1&pattern=Charlie%20Brown&stargazers=1&theme=Light)
 
 <div align="center">
   <p>
