@@ -37,7 +37,7 @@ steps:
       from_secret: oss-config
   commands:
     - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
-    - ossutil64 -c .ossutilconfig cp sealos oss://sealyun/${DRONE_TAG=latest}/sealos
+    - ossutil64 -c .ossutilconfig cp -f sealos oss://sealyun/${DRONE_TAG=latest}/sealos
   when:
     event:
       - push
