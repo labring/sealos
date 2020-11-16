@@ -12,9 +12,10 @@ steps:
 - name: build
   image: golang:1.15.2-alpine
   commands:
-      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
-      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o sealos-arm64 -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
-      - apk add --update upx && upx /go/src/github.com/fanux/sealos/sealos && upx /go/src/github.com/fanux/sealos/sealos-arm64
+      - apk add --update upx && chmod a+x build.sh
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 && sh build.sh ${DRONE_TAG=latest} && mv sealos sealos-amd64
+      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 && sh build.sh ${DRONE_TAG=latest} && mv sealos sealos-arm64
+      - mv sealos-amd64 sealos
       - echo "### [amd64 下载地址]"
       - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
       - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
