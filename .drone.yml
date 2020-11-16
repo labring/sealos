@@ -46,7 +46,7 @@ steps:
   commands:
     - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
     - ossutil64 -c .ossutilconfig cp -f sealos oss://sealyun/${DRONE_TAG=latest}/sealos
-    - ossutil64 -c .ossutilconfig cp -f sealos oss://sealyun/${DRONE_TAG=latest}/sealos-amd64
+    - ossutil64 -c .ossutilconfig cp -f sealos-arm64 oss://sealyun/${DRONE_TAG=latest}/sealos-arm64
   when:
     event:
       - push
