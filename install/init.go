@@ -173,7 +173,7 @@ func (s *SealosInstaller) SendKubeConfigs(masters []string) {
 	s.sendKubeConfigFile(masters, "controller-manager.conf")
 	s.sendKubeConfigFile(masters, "scheduler.conf")
 
-	if s.to11911192() {
+	if s.to11911192(masters) {
 		logger.Info("set 1191 1192 config")
 	}
 }
@@ -182,15 +182,15 @@ func (s *SealosInstaller) SendJoinMasterKubeConfigs(masters []string) {
 	s.sendKubeConfigFile(masters, "admin.conf")
 	s.sendKubeConfigFile(masters, "controller-manager.conf")
 	s.sendKubeConfigFile(masters, "scheduler.conf")
-	if s.to11911192() {
+	if s.to11911192(masters) {
 		logger.Info("set 1191 1192 config")
 	}
 }
 
-func (s *SealosInstaller) to11911192() (to11911192 bool) {
+func (s *SealosInstaller) to11911192(masters []string) (to11911192 bool) {
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
 	if VersionToIntAll(Version) >= 1191 && VersionToIntAll(Version) <= 1192 {
-		for _, v := range s.Masters {
+		for _, v := range masters {
 			ip := IpFormat(v)
 			// use grep -qF if already use sed then skip....
 			cmd := fmt.Sprintf(`grep -qF "apiserver.cluster.local" %s  && \
