@@ -15,8 +15,8 @@ const (
 
 	// etcd backup
 	ETCDSNAPSHOTDEFAULTNAME = "snapshot"
-	ETCDDEFAULTBACKUPDIR    = "/opt/sealos/ectd-backup"
-	ETCDDEFAULTRESTOREDIR   = "/opt/sealos/ectd-restore"
+	ETCDDEFAULTBACKUPDIR    = "/opt/sealos/etcd-backup"
+	ETCDDEFAULTRESTOREDIR   = "/opt/sealos/etcd-restore"
 	ETCDDATADIR             = "/var/lib/etcd"
 	EtcdCacart              = "/root/.sealos/pki/etcd/ca.crt"
 	EtcdCert                = "/root/.sealos/pki/etcd/healthcheck-client.crt"
