@@ -179,7 +179,7 @@ func GetCfg(ep []string) (*clientv3.Config, error) {
 	return cfg, nil
 }
 
-func GetEctdClient(ep []string) (*clientv3.Client, error) {
+func GetEtcdClient(ep []string) (*clientv3.Client, error) {
 	var cfgtls *transport.TLSInfo
 	tlsinfo := transport.TLSInfo{}
 	tlsinfo.CertFile = EtcdCert

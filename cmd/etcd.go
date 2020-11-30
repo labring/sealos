@@ -26,14 +26,14 @@ import (
 
 var exampleCmd = `
  	# snapshot save the etcd, the backupPath is on etcd nodes. not on the sealos init machine.
-	sealos etcd save --name snapshot --backupPath  /opt/sealos/ectd-backup
+	sealos etcd save --name snapshot --backupPath  /opt/sealos/etcd-backup
 	
 	# save the snapshot to aliyun oss bucket. this recommend to use in cronjob 
 	sealos etcd save --aliId youraliyunkeyid --aliKey youraliyunkeysecrets --ep oss-cn-hangzhou.aliyuncs.com  \
 	--bucket etcdbackup  --objectPath /sealos/ --docker
 
 	# snapshot restore the etcd
-	sealos etcd restore --name snapshot --backupPath  /opt/sealos/ectd-backup
+	sealos etcd restore --name snapshot --backupPath  /opt/sealos/etcd-backup
 
 	# etcd health check
 	sealos etcd health

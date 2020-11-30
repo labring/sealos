@@ -128,7 +128,7 @@ func (e *EtcdFlags) AfterRestore() error {
 	// first to mv every
 	for _, host := range e.EtcdHosts {
 		hostname := SSHConfig.CmdToString(host, "hostname", "")
-		// /opt/sealos/ectd-restore-dev-k8s-master
+		// /opt/sealos/etcd-restore-dev-k8s-master
 		location := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
 		//
 		tmpFile := fmt.Sprintf("/tmp/%s.tar", filepath.Base(location))
