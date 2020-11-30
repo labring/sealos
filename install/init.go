@@ -139,7 +139,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	}
 	decodeOutput(output)
 
-	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
+	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if WithoutCNI {

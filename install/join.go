@@ -123,7 +123,7 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 			_ = SSHConfig.CmdAsync(master, cmd)
 			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(IpFormat(s.Masters[0])), getApiserverHost(IpFormat(master)))
 			_ = SSHConfig.CmdAsync(master, cmdHosts)
-			copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config`
+			copyk8sConf := `mkdir -p /root/.kube && cp -i /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
 			_ = SSHConfig.CmdAsync(master, copyk8sConf)
 			cleaninstall := `rm -rf /root/kube || :`
 			_ = SSHConfig.CmdAsync(master, cleaninstall)
