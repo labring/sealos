@@ -16,10 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 var contact = `
@@ -81,7 +83,7 @@ var initCmd = &cobra.Command{
 		if cfgFile != "" && len(install.MasterIPs) == 0 {
 			err := c.Load(cfgFile)
 			if err != nil {
-				logger.Error("load cfgFile %s err: %q",cfgFile , err)
+				logger.Error("load cfgFile %s err: %q", cfgFile, err)
 				os.Exit(1)
 			}
 		} else {
@@ -94,7 +96,7 @@ var initCmd = &cobra.Command{
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// 使用了cfgFile 就不进行preRun了
-		if cfgFile == "" && install.ExitInitCase()  {
+		if cfgFile == "" && install.ExitInitCase() {
 			cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}
@@ -141,9 +143,9 @@ func init() {
 	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
 }
 
-func NewInitGenerateCmd() *cobra.Command  {
+func NewInitGenerateCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "gen",
+		Use:   "gen",
 		Short: "show default sealos init config",
 		Run: func(cmd *cobra.Command, args []string) {
 			c := &install.SealConfig{}

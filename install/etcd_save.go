@@ -3,18 +3,20 @@ package install
 import (
 	"context"
 	"fmt"
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"github.com/wonderivan/logger"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/snapshot"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/pkg/transport"
-	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/clientv3/snapshot"
+	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
+	"go.etcd.io/etcd/pkg/transport"
+	"go.uber.org/zap"
+
+	"github.com/wonderivan/logger"
 )
 
 type EtcdFlags struct {
@@ -108,7 +110,7 @@ func (e *EtcdFlags) Save(inDocker bool) error {
 		SendPackage(e.LongName, e.EtcdHosts, e.BackDir, nil, nil)
 	}
 	// trimPathForOss is  trim this  `/sealos//snapshot-1598146449` to   `sealos/snapshot-1598146449`
-	e.ObjectPath = trimPathForOss(e.ObjectPath+"/"+e.Name)
+	e.ObjectPath = trimPathForOss(e.ObjectPath + "/" + e.Name)
 	if e.AccessKeyId != "" {
 		err := saveToOss(e.OssEndpoint, e.AccessKeyId, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
 		if err != nil {
@@ -116,12 +118,11 @@ func (e *EtcdFlags) Save(inDocker bool) error {
 			return fmt.Errorf("save to oss err: %q", err)
 		}
 		// 如果没有报错， 保存一下最新命令行配置。
-		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket",e.Name, e.BucketName)
+		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket", e.Name, e.BucketName)
 
 	}
 	return nil
 }
-
 
 func trimPathForOss(path string) string {
 	s, _ := filepath.Abs(path)

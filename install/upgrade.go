@@ -2,12 +2,14 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/k8s"
-	"github.com/wonderivan/logger"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"sync"
 	"time"
+
+	"k8s.io/client-go/kubernetes"
+
+	"github.com/fanux/sealos/k8s"
+	"github.com/wonderivan/logger"
 )
 
 type SealosUpgrade struct {

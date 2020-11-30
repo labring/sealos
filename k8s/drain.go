@@ -3,15 +3,17 @@ package k8s
 import (
 	"context"
 	"fmt"
-	"github.com/wonderivan/logger"
+
 	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+
+	"github.com/wonderivan/logger"
 )
 
 const (
-	EvictionKind = "Eviction"
+	EvictionKind       = "Eviction"
 	PolicyGroupVersion = "policy/v1beta1"
 )
 
@@ -32,19 +34,19 @@ func EvictNodePods(nodeName string, k8sClient *kubernetes.Clientset) error {
 }
 
 func EvictPod(k8sClient *kubernetes.Clientset, pod v1.Pod, policyGroupVersion string) error {
-	deleteOptions:= &metav1.DeleteOptions{}
+	deleteOptions := &metav1.DeleteOptions{}
 	eviction := &policyv1beta1.Eviction{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: policyGroupVersion,
-			Kind: EvictionKind,
+			Kind:       EvictionKind,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pod.Name,
+			Name:      pod.Name,
 			Namespace: pod.Namespace,
 		},
 		DeleteOptions: deleteOptions,
 	}
-	return k8sClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(context.TODO(),eviction)
+	return k8sClient.PolicyV1beta1().Evictions(eviction.Namespace).Evict(context.TODO(), eviction)
 }
 
 func CordonUnCordon(k8sClient *kubernetes.Clientset, nodeName string, cordoned bool) error {

@@ -114,7 +114,7 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 		go func(master string) {
 			defer wg.Done()
 			hostname := GetRemoteHostName(master)
-			certCMD := cert.CertCMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
+			certCMD := cert.CMD(ApiServerCertSANs, IpFormat(master), hostname, SvcCIDR, DnsDomain)
 			_ = SSHConfig.CmdAsync(master, certCMD)
 
 			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(IpFormat(s.Masters[0])))
@@ -188,20 +188,19 @@ func (s *SealosInstaller) lvscare() {
 	wg.Wait()
 }
 
-
 func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
 	var wg sync.WaitGroup
 	for _, node := range Hosts {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			SSHConfig.CopyLocalToRemote(node, CertPath,  cert.KubeDefaultCertPath)
+			SSHConfig.CopyLocalToRemote(node, CertPath, cert.KubeDefaultCertPath)
 		}(node)
 	}
 	wg.Wait()
 }
 
-func (s *SealosInstaller) sendKubeConfigFile(hosts []string , kubeFile string)  {
+func (s *SealosInstaller) sendKubeConfigFile(hosts []string, kubeFile string) {
 	absKubeFile := cert.KubernetesDir + "/" + kubeFile
 	sealosKubeFile := cert.SealosConfigDir + "/" + kubeFile
 	var wg sync.WaitGroup
@@ -209,7 +208,7 @@ func (s *SealosInstaller) sendKubeConfigFile(hosts []string , kubeFile string)  
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			SSHConfig.CopyLocalToRemote(node, sealosKubeFile,  absKubeFile)
+			SSHConfig.CopyLocalToRemote(node, sealosKubeFile, absKubeFile)
 		}(node)
 	}
 	wg.Wait()

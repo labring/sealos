@@ -15,10 +15,12 @@
 package cmd
 
 import (
+	"os"
+
+	"github.com/spf13/cobra"
+
 	"github.com/fanux/sealos/install"
 	"github.com/fanux/sealos/pkg/appmanager"
-	"github.com/spf13/cobra"
-	"os"
 )
 
 var (

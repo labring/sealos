@@ -19,9 +19,9 @@ import (
 	"os"
 
 	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/install"
-
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
 var p bool

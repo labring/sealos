@@ -17,11 +17,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/fanux/sealos/install"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/wonderivan/logger"
 	"golang.org/x/crypto/ssh/terminal"
-	"os"
+
+	"github.com/fanux/sealos/install"
 )
 
 // cleanCmd represents the clean command

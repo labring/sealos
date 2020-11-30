@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
-
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
 // configCmd represents the config command

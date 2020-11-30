@@ -7,8 +7,8 @@ import (
 	"github.com/wonderivan/logger"
 )
 
-// return sealos cert command
-func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
+// CMD return sealos cert command
+func CMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
 	cmd := "sealos cert "
 	if hostIP != "" {
 		cmd += fmt.Sprintf(" --node-ip %s", hostIP)
@@ -35,6 +35,7 @@ func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string)
 	return cmd
 }
 
+// GenerateCert generate all cert.
 func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomian string) {
 	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomian)
 	if err != nil {

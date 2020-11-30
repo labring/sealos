@@ -1,11 +1,13 @@
 package install
 
 import (
-	"github.com/fanux/lvscare/care"
-	"github.com/fanux/sealos/ipvs"
-	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
 	"strconv"
+
+	"github.com/fanux/lvscare/care"
+
+	"github.com/fanux/sealos/ipvs"
+	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 )
 
 var (
@@ -57,13 +59,13 @@ var (
 	Vlog int
 
 	// etcd backup
-	InDocker         bool
-	SnapshotName     string
-	EtcdBackDir      string
-	RestorePath      string
+	InDocker     bool
+	SnapshotName string
+	EtcdBackDir  string
+	RestorePath  string
 
 	// oss
-	OssEndpoint         string
+	OssEndpoint      string
 	AccessKeyId      string
 	AccessKeySecrets string
 	BucketName       string

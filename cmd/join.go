@@ -15,11 +15,12 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 // joinCmd represents the join command

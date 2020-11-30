@@ -17,11 +17,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 	"os"
 	"time"
+
+	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 var exampleCmd = `
@@ -83,11 +85,11 @@ func NewEtcdSaveCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&install.InDocker, "docker", false, "snapshot your kubernets etcd in container, will add unix timestamp to snapshot name")
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
-	cmd.Flags().StringVar(&install.BucketName, "bucket","","oss bucketName to save snapshot")
-	cmd.Flags().StringVar(&install.AccessKeyId, "aliId","","aliyun accessKeyId to save snapshot")
-	cmd.Flags().StringVar(&install.AccessKeySecrets, "aliKey","","aliyun accessKeySecrets to save snapshot")
-	cmd.Flags().StringVar(&install.OssEndpoint, "ep","","aliyun endpoints to save snapshot")
-	cmd.Flags().StringVar(&install.ObjectPath, "objectPath","","aliyun oss objectPath to save snapshot, like: /sealos/snapshots/")
+	cmd.Flags().StringVar(&install.BucketName, "bucket", "", "oss bucketName to save snapshot")
+	cmd.Flags().StringVar(&install.AccessKeyId, "aliId", "", "aliyun accessKeyId to save snapshot")
+	cmd.Flags().StringVar(&install.AccessKeySecrets, "aliKey", "", "aliyun accessKeySecrets to save snapshot")
+	cmd.Flags().StringVar(&install.OssEndpoint, "ep", "", "aliyun endpoints to save snapshot")
+	cmd.Flags().StringVar(&install.ObjectPath, "objectPath", "", "aliyun oss objectPath to save snapshot, like: /sealos/snapshots/")
 
 	return cmd
 }
@@ -101,7 +103,7 @@ func NewEtcdRestoreCommand() *cobra.Command {
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
 	cmd.Flags().StringVar(&install.RestorePath, "restorePath", install.ETCDDEFAULTRESTOREDIR, "Specify snapshot restore dir")
-	cmd.Flags().BoolVarP(&force, "force","f", false, "restore need interactive to confirm")
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "restore need interactive to confirm")
 	return cmd
 }
 
