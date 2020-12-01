@@ -2,8 +2,9 @@ package install
 
 import (
 	"encoding/json"
-	"github.com/wonderivan/logger"
 	"strings"
+
+	"github.com/wonderivan/logger"
 )
 
 //Print is

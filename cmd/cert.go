@@ -15,8 +15,9 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/cert"
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/cert"
 )
 
 type Flag struct {

@@ -2,10 +2,12 @@ package install
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/wonderivan/logger"
 )
 
 const defaultConfigPath = "/.sealos"
@@ -191,7 +193,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.CertPath = "/root/.sealos/pki"
 	c.CertEtcdPath = "/root/.sealos/pki/etcd"
 	c.LvscareName = "fanux/lvscare"
-	c.LvscareTag ="latest"
+	c.LvscareTag = "latest"
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

@@ -88,7 +88,7 @@ func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []st
 	return x509.ParseCertificate(certDERBytes)
 }
 
-// Create as ca
+// NewCaCertAndKey Create as ca.
 func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	_, err := os.Stat(pathForKey(cfg.Path, cfg.BaseName))
 	if !os.IsNotExist(err) {
@@ -106,6 +106,7 @@ func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	return cert, key, nil
 }
 
+// LoadCaCertAndKeyFromDisk load ca cert and key form disk.
 func LoadCaCertAndKeyFromDisk(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	certs, err := certutil.CertsFromFile(pathForCert(cfg.Path, cfg.BaseName))
 	if err != nil {
@@ -142,7 +143,7 @@ func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	return key, nil
 }
 
-//  cmd/kubeadm/app/util/pkiutil/pki_helpers.go NewCertAndKey
+//  NewCaCertAndKeyFromRoot cmd/kubeadm/app/util/pkiutil/pki_helpers.go NewCertAndKey
 func NewCaCertAndKeyFromRoot(cfg Config, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, crypto.Signer, error) {
 	key, err := NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
 	if err != nil {

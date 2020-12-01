@@ -17,10 +17,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/version"
 	"github.com/spf13/cobra"
 	"github.com/wangle201210/githubapi/repos"
 	"github.com/ysicing/ext/utils/exmisc"
+
+	"github.com/fanux/sealos/version"
 )
 
 // versionCmd represents the version command
@@ -30,9 +31,9 @@ var versionCmd = &cobra.Command{
 	Long:  `show sealos version`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println(version.VersionStr)
-		lastversion := GetVersion()
-		if lastversion != nil {
-			fmt.Printf("sealos current latest version is %v\n", exmisc.SGreen(*lastversion))
+		lastVersion := GetVersion()
+		if lastVersion != nil {
+			fmt.Printf("sealos current latest version is %v\n", exmisc.SGreen(*lastVersion))
 		}
 	},
 }
@@ -57,9 +58,9 @@ func GetVersion() *string {
 		Owner: "fanux",
 		Repo:  "sealos",
 	}
-	lasttag, _ := pkg.LastTag()
-	if lasttag.Name != version.Version {
-		return &lasttag.Name
+	lastTag, _ := pkg.LastTag()
+	if lastTag.Name != version.Version {
+		return &lastTag.Name
 	}
 	return nil
 }

@@ -2,14 +2,16 @@ package install
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
-	"go.etcd.io/etcd/clientv3/snapshot"
-	"go.uber.org/zap"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"go.etcd.io/etcd/clientv3/snapshot"
+	"go.uber.org/zap"
+
+	"github.com/wonderivan/logger"
 )
 
 func init() {

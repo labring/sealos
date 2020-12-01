@@ -1,11 +1,12 @@
 package install
 
 import (
-	"github.com/fanux/sealos/k8s"
-	"github.com/wonderivan/logger"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/k8s"
+	"github.com/wonderivan/logger"
 )
 
 type ExecFlag struct {

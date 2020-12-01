@@ -16,23 +16,22 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
-
-
 var (
-	host string
+	host      string
 	gatewayIp string
 )
 
-func NewRouteCmd() *cobra.Command  {
+func NewRouteCmd() *cobra.Command {
 	// routeCmd represents the route command
 	var cmd = &cobra.Command{
 		Use:   "route",
 		Short: "set default route gateway",
-		Run: RouteCmdFunc,
+		Run:   RouteCmdFunc,
 	}
 	// check route for host
 	cmd.Flags().StringVar(&host, "host", "", "route host ip address for iFace")
@@ -45,11 +44,11 @@ func init() {
 	rootCmd.AddCommand(NewRouteCmd())
 }
 
-func NewAddRouteCmd()  *cobra.Command {
+func NewAddRouteCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use: "add",
+		Use:   "add",
 		Short: "set route host via gateway",
-		Run: RouteAddCmdFunc,
+		Run:   RouteAddCmdFunc,
 	}
 	// manually to set host via gateway
 	cmd.Flags().StringVar(&host, "host", "", "route host ,ex ip route add host via gateway")
@@ -57,11 +56,11 @@ func NewAddRouteCmd()  *cobra.Command {
 	return cmd
 }
 
-func NewDelRouteCmd()  *cobra.Command {
+func NewDelRouteCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use: "del",
+		Use:   "del",
 		Short: "del route host via gateway, like ip route del host via gateway",
-		Run: RouteDelCmdFunc,
+		Run:   RouteDelCmdFunc,
 	}
 	// manually to set host via gateway
 	cmd.Flags().StringVar(&host, "host", "", "route host ,ex ip route del host via gateway")
@@ -74,7 +73,7 @@ func RouteCmdFunc(cmd *cobra.Command, args []string) {
 	r.CheckRoute()
 }
 
-func RouteAddCmdFunc(cmd *cobra.Command, args []string)  {
+func RouteAddCmdFunc(cmd *cobra.Command, args []string) {
 	r := install.GetRouteFlag(host, gatewayIp)
 	r.SetRoute()
 }

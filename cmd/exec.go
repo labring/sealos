@@ -16,8 +16,9 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
 // execCmd represents the exec command
@@ -32,12 +33,11 @@ var (
 	sealos exec --src /data/foo --dst /root/foo --node 192.168.0.2
 `
 	execCmd = &cobra.Command{
-	Use:   "exec",
-	Short: "support exec cmd or copy file by Label/nodes ",
-	Example: exampleExecCmd,
-	Run:   ExecCmdFunc,
-}
-
+		Use:     "exec",
+		Short:   "support exec cmd or copy file by Label/nodes ",
+		Example: exampleExecCmd,
+		Run:     ExecCmdFunc,
+	}
 )
 
 func init() {

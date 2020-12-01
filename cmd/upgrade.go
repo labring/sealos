@@ -17,10 +17,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 func init() {
@@ -34,9 +36,9 @@ var (
 
 func NewUpgradeCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "upgrade",
-		Short: "upgrade your kubernetes version by sealos",
-		Run:   UpgradeCmdFunc,
+		Use:    "upgrade",
+		Short:  "upgrade your kubernetes version by sealos",
+		Run:    UpgradeCmdFunc,
 		PreRun: PreRunUpgradeCmdFunc,
 	}
 	cmd.Flags().StringVar(&newVersion, "version", "", "upgrade version for kubernetes version")
@@ -61,7 +63,7 @@ func UpgradeCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 func PreRunUpgradeCmdFunc(cmd *cobra.Command, args []string) {
-	if err := install.ExitUpgradeCase(newVersion, newPkgUrl, cfgFile) ; err != nil {
+	if err := install.ExitUpgradeCase(newVersion, newPkgUrl, cfgFile); err != nil {
 		logger.Error("PreRun error: ", err)
 		os.Exit(1)
 	}

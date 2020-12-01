@@ -2,10 +2,12 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/k8s"
+	"net"
+
 	"github.com/vishvananda/netlink"
 	k8snet "k8s.io/apimachinery/pkg/util/net"
-	"net"
+
+	"github.com/fanux/sealos/k8s"
 )
 
 type RouteFlags struct {
@@ -58,7 +60,6 @@ func (r *RouteFlags) DelRoute() {
 	}
 }
 
-
 // getDefaultRouteIp is get host ip by ChooseHostInterface() .
 func getDefaultRouteIp() (ip string, err error) {
 	netIp, err := k8snet.ChooseHostInterface()
@@ -73,7 +74,6 @@ func isDefaultRouteIp(host string) bool {
 	ip, _ := getDefaultRouteIp()
 	return ip == host
 }
-
 
 // addRouteGatewayViaHost host: 10.103.97.2  gateway 192.168.253.129
 func addRouteGatewayViaHost(host, gateway string, priority int) error {

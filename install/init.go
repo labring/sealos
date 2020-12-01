@@ -2,9 +2,10 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/k8s"
 	"io/ioutil"
 	"os"
+
+	"github.com/fanux/sealos/k8s"
 
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"

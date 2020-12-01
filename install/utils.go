@@ -6,7 +6,6 @@ import (
 	"compress/gzip"
 	"crypto/tls"
 	"fmt"
-	"github.com/wonderivan/logger"
 	"io"
 	"math/big"
 	"math/rand"
@@ -19,6 +18,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wonderivan/logger"
 )
 
 var message string
