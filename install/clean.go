@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"github.com/fanux/sealos/ipvs"
+	ssh_cmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
 	"github.com/wonderivan/logger"
 	"os"
 	"strings"
@@ -49,7 +50,7 @@ node:
 	}
 	//3. 删除所有节点
 all:
-	if len(deleteNodes) == 0 && len(deleteMasters) == 0 {
+	if len(deleteNodes) == 0 && len(deleteMasters) == 0 && CleanAll {
 		if !CleanForce { // flase
 			result := Confirm(`clean command will clean all masters and nodes, continue clean (y/n)?`)
 			if !result {
@@ -65,10 +66,18 @@ all:
 	}
 end:
 	if len(i.Masters) == 0 && len(i.Nodes) == 0 {
+		logger.Warn("clean nodes and masters is empty,please check your args and config.yaml.")
 		os.Exit(-1)
 	}
 	i.CheckValid()
 	i.Clean()
+	if i.cleanAll {
+		logger.Info("if clean all and clean sealos config")
+		home, _ := os.UserHomeDir()
+		cfgPath := home + defaultConfigPath
+		ssh_cmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
+	}
+
 }
 
 //CleanCluster is
@@ -142,7 +151,11 @@ func (s *SealosClean) cleanMaster(master string) {
 }
 
 func clean(host string) {
-	cmd := "kubeadm reset -f && modprobe -r ipip  && lsmod"
+	cmd := "kubeadm reset -f " + vlogToStr()
+	_ = SSHConfig.CmdAsync(host, cmd)
+	cmd = fmt.Sprintf("sed -i \"/%s/d\" /root/.bashrc ", "kubectl")
+	_ = SSHConfig.CmdAsync(host, cmd)
+	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf ~/.kube/ && rm -rf /etc/kubernetes/"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -157,5 +170,8 @@ func clean(host string) {
 	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = fmt.Sprint("rm -rf ~/kube")
+	_ = SSHConfig.CmdAsync(host, cmd)
+	//clean pki certs
+	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
 }

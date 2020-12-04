@@ -2,12 +2,13 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/cert"
-	"github.com/fanux/sealos/ipvs"
-	"github.com/wonderivan/logger"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/cert"
+	"github.com/fanux/sealos/ipvs"
+	"github.com/wonderivan/logger"
 )
 
 //BuildJoin is
@@ -58,20 +59,20 @@ func joinNodesFunc(joinNodes []string) {
 //GeneratorToken is
 //这里主要是为了获取CertificateKey
 func (s *SealosInstaller) GeneratorCerts() {
-	cmd := `kubeadm init phase upload-certs --upload-certs`
+	cmd := `kubeadm init phase upload-certs --upload-certs` + vlogToStr()
 	output := SSHConfig.CmdToString(s.Masters[0], cmd, "\r\n")
 	logger.Debug("[globals]decodeCertCmd: %s", output)
 	slice := strings.Split(output, "Using certificate key:\r\n")
 	slice1 := strings.Split(slice[1], "\r\n")
 	CertificateKey = slice1[0]
-	cmd = "kubeadm token create --print-join-command"
+	cmd = "kubeadm token create --print-join-command" + vlogToStr()
 	out := SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(out)
 }
 
 //GeneratorToken is
 func (s *SealosInstaller) GeneratorToken() {
-	cmd := `kubeadm token create --print-join-command`
+	cmd := `kubeadm token create --print-join-command` + vlogToStr()
 	output := SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(output)
 }
@@ -86,6 +87,8 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 	var wg sync.WaitGroup
 	//copy certs
 	s.sendCaAndKey(masters)
+
+	s.SendKubeConfigs(masters, false)
 	//join master do sth
 	cmd := s.Command(Version, JoinMaster)
 	for _, master := range masters {

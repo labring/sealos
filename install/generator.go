@@ -25,6 +25,9 @@ apiServer:
   {{range .Masters -}}
   - {{.}}
   {{end -}}
+  {{range .CertSANS -}}
+  - {{.}}
+  {{end -}}
   - {{.VIP}}
   extraArgs:
     feature-gates: TTLAfterFinished=true
@@ -37,6 +40,7 @@ apiServer:
 controllerManager:
   extraArgs:
     feature-gates: TTLAfterFinished=true
+    experimental-cluster-signing-duration: 876000h
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
@@ -102,6 +106,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 		masters = append(masters, IpFormat(h))
 	}
 	var envMap = make(map[string]interface{})
+	envMap["CertSANS"] = CertSANS
 	envMap["VIP"] = VIP
 	envMap["Masters"] = masters
 	envMap["Version"] = Version

@@ -5,11 +5,13 @@ import (
 	"github.com/fanux/sealos/ipvs"
 	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 	"regexp"
+	"strconv"
 )
 
 var (
 	MasterIPs []string
 	NodeIPs   []string
+	CertSANS  []string
 	//config from kubeadm.cfg
 	DnsDomain         string
 	ApiServerCertSANs []string
@@ -26,6 +28,13 @@ var (
 	Repo    string
 	PodCIDR string
 	SvcCIDR string
+
+	// workdir for install package home
+	Workdir string
+	// values for  install package values.yaml
+	Values string
+	// packageConfig for install package config
+	PackageConfig string
 
 	//
 	Ipvs         care.LvsCare
@@ -45,4 +54,12 @@ var (
 	YesRx = regexp.MustCompile("^(?i:y(?:es)?)$")
 
 	CleanForce bool
+	CleanAll   bool
+
+	Vlog int
 )
+
+func vlogToStr() string {
+	str := strconv.Itoa(Vlog)
+	return " -v " + str
+}
