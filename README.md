@@ -24,7 +24,7 @@
 
 ---
 
-**文档: _[官方文档](https://sealyun.com/docs), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions), [博客](https://fuckcloudnative.io)_**
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
 
@@ -110,7 +110,7 @@ version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 
 - [x] 99年证书, 支持集群备份，升级
 - [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
-- [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](http://store.lameleg.com)即可,离线包包含所有二进制文件配置文件和镜像
+- [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)即可,离线包包含所有二进制文件配置文件和镜像
 - [x] 高可用通过ipvs实现的localLB，占用资源少，稳定可靠，类似kube-proxy的实现
 - [x] 几乎可兼容所有支持systemd的x86_64架构的环境
 - [x] 轻松实现集群节点的增加/删除
