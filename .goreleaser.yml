@@ -9,7 +9,7 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-      - darwin
+#      - darwin
     goarch:
       - amd64
       - arm64
