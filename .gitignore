@@ -10,3 +10,4 @@ main.exe
 main
 dist
 .vscode
+test/Note.md

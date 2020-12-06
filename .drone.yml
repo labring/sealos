@@ -1,65 +1,65 @@
-kind: pipeline
-name: default
-workspace:
-    base: /go
-    path: src/github.com/fanux/sealos
-
-# go mod vender
-#environment:
-#    GO111MODULE: on
-
-steps:
-- name: build
-  image: golang:1.15.2-alpine
-  commands:
-      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
-      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o sealos-arm64 -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
-      - apk add --update upx && upx /go/src/github.com/fanux/sealos/sealos && upx /go/src/github.com/fanux/sealos/sealos-arm64
-      - echo "### [amd64 下载地址]"
-      - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
-      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
-      - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos)" >> Note.md
-      - echo "### [arm64 下载地址]"
-      - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos-arm64 && chmod +x sealos-arm64 && mv sealos-arm64 /usr/bin " > Note.md
-      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos-arm64)" >> Note.md
-      - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos-arm64)" >> Note.md
-
-- name: publish
-  image: plugins/github-release
-  settings:
-    api_key:
-        from_secret: git-release-token
-    files:
-      - sealos
-      - sealos-arm64
-    title: ${DRONE_TAG}
-    note: Note.md
-  when:
-     event:
-     - tag
-
-- name: publish-oss
-  image: fanux/ossutil
-  environment:
-    OSS_CONFIG:
-      from_secret: oss-config
-  commands:
-    - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
-    - ossutil64 -c .ossutilconfig cp -f sealos oss://sealyun/${DRONE_TAG=latest}/sealos
-    - ossutil64 -c .ossutilconfig cp -f sealos-arm64 oss://sealyun/${DRONE_TAG=latest}/sealos-arm64
-  when:
-    event:
-      - push
-      - tag
-
-# 42 is the build number
-# drone build promote fanux/sealos 42 test
-- name: e2etest
-  image: golang:1.12
-  commands:
-    - echo "this is sealos test"
-  when:
-    event:
-    - promote
-    target:
-    - test
+#kind: pipeline
+#name: default
+#workspace:
+#    base: /go
+#    path: src/github.com/fanux/sealos
+#
+## go mod vender
+##environment:
+##    GO111MODULE: on
+#
+#steps:
+#- name: build
+#  image: golang:1.15.2-alpine
+#  commands:
+#      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+#      - CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o sealos-arm64 -ldflags "-s -w -X github.com/fanux/sealos/version.Version=${DRONE_TAG=latest}" main.go
+#      - apk add --update upx && upx /go/src/github.com/fanux/sealos/sealos && upx /go/src/github.com/fanux/sealos/sealos-arm64
+#      - echo "### [amd64 下载地址]"
+#      - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos && chmod +x sealos && mv sealos /usr/bin " > Note.md
+#      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos)" >> Note.md
+#      - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos)" >> Note.md
+#      - echo "### [arm64 下载地址]"
+#      - echo "wget -c https://github.com/fanux/sealos/releases/download/${DRONE_TAG=latest}/sealos-arm64 && chmod +x sealos-arm64 && mv sealos-arm64 /usr/bin " > Note.md
+#      - echo "[oss 下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/${DRONE_TAG=latest}/sealos-arm64)" >> Note.md
+#      - echo "[latest 版本 oss下载地址](https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos-arm64)" >> Note.md
+#
+#- name: publish
+#  image: plugins/github-release
+#  settings:
+#    api_key:
+#        from_secret: git-release-token
+#    files:
+#      - sealos
+#      - sealos-arm64
+#    title: ${DRONE_TAG}
+#    note: Note.md
+#  when:
+#     event:
+#     - tag
+#
+#- name: publish-oss
+#  image: fanux/ossutil
+#  environment:
+#    OSS_CONFIG:
+#      from_secret: oss-config
+#  commands:
+#    - echo $OSS_CONFIG |base64 --decode >> .ossutilconfig
+#    - ossutil64 -c .ossutilconfig cp -f sealos oss://sealyun/${DRONE_TAG=latest}/sealos
+#    - ossutil64 -c .ossutilconfig cp -f sealos-arm64 oss://sealyun/${DRONE_TAG=latest}/sealos-arm64
+#  when:
+#    event:
+#      - push
+#      - tag
+#
+## 42 is the build number
+## drone build promote fanux/sealos 42 test
+#- name: e2etest
+#  image: golang:1.12
+#  commands:
+#    - echo "this is sealos test"
+#  when:
+#    event:
+#    - promote
+#    target:
+#    - test

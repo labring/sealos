@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    branches-ignore:
+      - '**'
+    tags:
+      - '*'
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Set up Go
+        uses: actions/setup-go@master
+        with:
+          go-version: 1.14.x
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GITHUB_REF#refs/tags/}
+          echo ::set-output name=tag_name::${TAG}
+
+      - name: Note
+        id: Note
+        env:
+          VERSION: ${{ steps.prepare.outputs.tag_name }}
+          BUCKETNAME: ${{ secrets.BUCKETNAME }}
+          OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
+          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+        run: |
+          cd test && sh note.sh
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: release --timeout=1h  --release-notes=test/Note.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          VERSION: ${{ steps.prepare.outputs.tag_name }}
+
+      - name: Build binareies to oss
+        env:
+          BUCKETNAME: ${{ secrets.BUCKETNAME }}
+        run: |
+          echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
+          wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64
+
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
+      - name: login to dockerhub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: build (and publish) main image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
+            --push \
+            -t ${DOCKER_REPO:-fanux/sealos}:${{ steps.prepare.outputs.tag_name }} \
+            -t ${DOCKER_REPO:-fanux/sealos}:latest \
+            -f Dockerfile.hub \
+            .
