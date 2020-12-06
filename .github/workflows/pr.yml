@@ -1,4 +1,4 @@
-name: Go
+name: PullRequest
 
 on:
   pull_request:
