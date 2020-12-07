@@ -216,3 +216,25 @@ func TestCanUpgradeByNewVersion(t *testing.T) {
 		})
 	}
 }
+
+func TestFor120(t *testing.T) {
+	type args struct {
+		version string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{"test01",args{"v1.19.2"}, false},
+		{"test02",args{"v1.18.2"}, false},
+		{"test03",args{"v1.20.2"}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := For120(tt.args.version); got != tt.want {
+				t.Errorf("For120() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

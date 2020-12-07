@@ -9,82 +9,6 @@ import (
 	"text/template"
 )
 
-const TemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: {{.Master0}}
-  bindPort: 6443
----
-apiVersion: kubeadm.k8s.io/v1beta1
-kind: ClusterConfiguration
-kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "{{.ApiServer}}:6443"
-imageRepository: {{.Repo}}
-networking:
-  # dnsDomain: cluster.local
-  podSubnet: {{.PodCIDR}}
-  serviceSubnet: {{.SvcCIDR}}
-apiServer:
-  certSANs:
-  - 127.0.0.1
-  - {{.ApiServer}}
-  {{range .Masters -}}
-  - {{.}}
-  {{end -}}
-  {{range .CertSANS -}}
-  - {{.}}
-  {{end -}}
-  - {{.VIP}}
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - name: localtime
-    hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    readOnly: true
-    pathType: File
-controllerManager:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-    experimental-cluster-signing-duration: 876000h
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
-scheduler:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: "ipvs"
-ipvs:
-  excludeCIDRs: 
-  - "{{.VIP}}/32"`)
-
-const JoinCPTemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta2
-caCertPath: /etc/kubernetes/pki/ca.crt
-discovery:
-  bootstrapToken: 
-    apiServerEndpoint: {{.Master0}}:6443
-    token: {{.TokenDiscovery}}
-    caCertHashes: 
-    - {{.TokenDiscoveryCAHash}}
-  timeout: 5m0s
-kind: JoinConfiguration
-controlPlane:
-  localAPIEndpoint:
-    advertiseAddress: {{.Master}}
-    bindPort: 6443`)
-
 var ConfigType string
 
 func Config() {
@@ -98,19 +22,30 @@ func Config() {
 	}
 }
 
-func joinKubeadmConfig() string  {
+func joinKubeadmConfig() string {
 	var sb strings.Builder
-	sb.Write([]byte(JoinCPTemplateText))
+	// kubernetes gt 1.20, use Containerd instead of docker
+	if For120(Version) {
+		sb.Write([]byte(JoinCPTemplateTextV1beate2Container))
+	} else {
+		sb.Write([]byte(JoinCPTemplateTextV1beta2Docker))
+	}
 	return sb.String()
 }
 
-func printlnJoinKubeadmConfig()  {
+func printlnJoinKubeadmConfig() {
 	fmt.Println(joinKubeadmConfig())
 }
 
 func kubeadmConfig() string {
 	var sb strings.Builder
-	sb.Write([]byte(TemplateText))
+	// kubernetes gt 1.20, use Containerd instead of docker
+	if For120(Version) {
+		sb.Write([]byte(InitTemplateTextV1bate2))
+	} else {
+		sb.Write([]byte(InitTemplateTextV1beta1))
+	}
+
 	return sb.String()
 }
 

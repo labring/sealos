@@ -27,3 +27,159 @@ const (
 	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 )
+
+const InitTemplateTextV1beta1 = string(`apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: {{.Version}}
+controlPlaneEndpoint: "{{.ApiServer}}:6443"
+imageRepository: {{.Repo}}
+networking:
+  # dnsDomain: cluster.local
+  podSubnet: {{.PodCIDR}}
+  serviceSubnet: {{.SvcCIDR}}
+apiServer:
+  certSANs:
+  - 127.0.0.1
+  - {{.ApiServer}}
+  {{range .Masters -}}
+  - {{.}}
+  {{end -}}
+  {{range .CertSANS -}}
+  - {{.}}
+  {{end -}}
+  - {{.VIP}}
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - name: localtime
+    hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    readOnly: true
+    pathType: File
+controllerManager:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+    experimental-cluster-signing-duration: 876000h
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+scheduler:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+  excludeCIDRs:
+  - "{{.VIP}}/32"`)
+
+const JoinCPTemplateTextV1beta2Docker = string(`apiVersion: kubeadm.k8s.io/v1beta2
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{.Master0}}:6443
+    token: {{.TokenDiscovery}}
+    caCertHashes:
+    - {{.TokenDiscoveryCAHash}}
+  timeout: 5m0s
+kind: JoinConfiguration
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.Master}}
+    bindPort: 6443`)
+
+const JoinCPTemplateTextV1beate2Container = string(`apiVersion: kubeadm.k8s.io/v1beta2
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{.Master0}}:6443
+    token: {{.TokenDiscovery}}
+    caCertHashes:
+    - {{.TokenDiscoveryCAHash}}
+  timeout: 5m0s
+kind: JoinConfiguration
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.Master}}
+    bindPort: 6443
+nodeRegistration:
+  criSocket: /run/containerd/containerd.sock`)
+
+const InitTemplateTextV1bate2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+nodeRegistration:
+  criSocket: /run/containerd/containerd.sock
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+kubernetesVersion: {{.Version}}
+controlPlaneEndpoint: "{{.ApiServer}}:6443"
+imageRepository: {{.Repo}}
+networking:
+  # dnsDomain: cluster.local
+  podSubnet: {{.PodCIDR}}
+  serviceSubnet: {{.SvcCIDR}}
+apiServer:
+  certSANs:
+  - 127.0.0.1
+  - {{.ApiServer}}
+  {{range .Masters -}}
+  - {{.}}
+  {{end -}}
+  {{range .CertSANS -}}
+  - {{.}}
+  {{end -}}
+  - {{.VIP}}
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - name: localtime
+    hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    readOnly: true
+    pathType: File
+controllerManager:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+    experimental-cluster-signing-duration: 876000h
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+scheduler:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+---
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+  excludeCIDRs:
+  - "{{.VIP}}/32"`)

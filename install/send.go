@@ -31,6 +31,13 @@ func (u *SealosUpgrade) SendPackage() {
 	all := append(u.Masters, u.Nodes...)
 	pkg := path.Base(u.NewPkgUrl)
 	// rm old sealos in package avoid old version problem. if sealos not exist in package then skip rm
-	kubeHook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)
+	var kubeHook string
+	if For120(Version) {
+		kubeHook = fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (ctr cri load  ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)
+	} else {
+		kubeHook = fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)
+
+	}
+
 	PkgUrl = SendPackage(pkg, all, "/root", nil, &kubeHook)
 }
