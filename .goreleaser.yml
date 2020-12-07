@@ -1,0 +1,48 @@
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod download
+    # you may remove this if you don't need go generate
+    - go generate ./...
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+#      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/fanux/sealos/version.Version={{.Version}} -X github.com/fanux/sealos/version.Build={{.ShortCommit}} -X github.com/fanux/sealos/version.BuildTime={{.Date}}
+#archives:
+#  - replacements:
+#      darwin: Darwin
+#      linux: Linux
+#      amd64: x86_64
+#      arm64: aarch64
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+#dockers:
+#  -
+#    goos: linux
+#    goarch: amd64
+#    binaries:
+#      - sealos
+#
+#    image_templates:
+#      - "fanux/{{.ProjectName}}:latest"
+#      - "fanux/{{.ProjectName}}:{{.Tag}}"
+#
+#    dockerfile: Dockerfile
+#    extra_files:
+#      - test/entrypoint.sh

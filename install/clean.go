@@ -2,12 +2,13 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/ipvs"
-	ssh_cmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
-	"github.com/wonderivan/logger"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/ipvs"
+	sshcmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
+	"github.com/wonderivan/logger"
 )
 
 type SealosClean struct {
@@ -15,14 +16,14 @@ type SealosClean struct {
 	cleanAll bool
 }
 
-//BuildClean is
+// BuildClean clean the build resources.
 func BuildClean(deleteNodes, deleteMasters []string) {
 	i := &SealosClean{cleanAll: false}
 	masters := MasterIPs
 	nodes := NodeIPs
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
-		if !CleanForce { // flase
+		if !CleanForce { // false
 			prompt := fmt.Sprintf("clean command will clean masters [%s], continue clean (y/n)?", strings.Join(deleteMasters, ","))
 			result := Confirm(prompt)
 			if !result {
@@ -75,12 +76,12 @@ end:
 		logger.Info("if clean all and clean sealos config")
 		home, _ := os.UserHomeDir()
 		cfgPath := home + defaultConfigPath
-		ssh_cmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
+		sshcmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
 	}
 
 }
 
-//CleanCluster is
+//Clean clean cluster.
 func (s *SealosClean) Clean() {
 	var wg sync.WaitGroup
 	//s 是要删除的数据
@@ -111,6 +112,7 @@ func (s *SealosClean) Clean() {
 }
 
 func (s *SealosClean) cleanNode(node string) {
+	cleanRoute(node)
 	clean(node)
 	//remove node
 	NodeIPs = SliceRemoveStr(NodeIPs, node)
@@ -153,7 +155,7 @@ func (s *SealosClean) cleanMaster(master string) {
 func clean(host string) {
 	cmd := "kubeadm reset -f " + vlogToStr()
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf("sed -i \"/%s/d\" /root/.bashrc ", "kubectl")
+	cmd = fmt.Sprintf(`sed -i '/kubectl/d;/sealos/d' /root/.bashrc`)
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -174,4 +176,18 @@ func clean(host string) {
 	//clean pki certs
 	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
 	_ = SSHConfig.CmdAsync(host, cmd)
+	//clean sealos in /usr/bin/ except exec sealos
+	cmd = fmt.Sprint("ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos")
+	_ = SSHConfig.CmdAsync(host, cmd)
+}
+
+func cleanRoute(node string) {
+	// clean route
+	cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
+	status := SSHConfig.CmdToString(node, cmdRoute, "")
+	if status != "ok" {
+		// 删除为 vip创建的路由。
+		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IpFormat(node))
+		SSHConfig.CmdToString(node, delRouteCmd, "")
+	}
 }

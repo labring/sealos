@@ -2,16 +2,18 @@ package install
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/fanux/sealgate/cloud"
+
 	"github.com/fanux/sealos/version"
 	"github.com/wonderivan/logger"
-	"os"
 )
 
 //VersionURL is base64 encode k8s version and offline package url
 var (
 	VersionURL string
-	URLmap     map[string]string
+	URLMap     map[string]string
 	DefaultURL = "https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
 )
 
@@ -55,8 +57,8 @@ var ClusterDir = "/root/.sealos/clusters/"
    一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
 */
 func CloudInstall(c *Cluster) {
-	URLmap = make(map[string]string)
-	URLmap["v1.16.0"] = DefaultURL
+	URLMap = make(map[string]string)
+	URLMap["v1.16.0"] = DefaultURL
 
 	config := c.Config
 	p := cloud.NewProvider(config)
@@ -124,7 +126,7 @@ func CloudInstall(c *Cluster) {
 }
 
 func getURL(version string) string {
-	url, ok := URLmap[version]
+	url, ok := URLMap[version]
 	if !ok {
 		logger.Error("version offline package not found: %s", version)
 		os.Exit(1)
@@ -169,4 +171,10 @@ func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request 
 		SecuretyGroupID: c.SecuretyGroupID,
 	}
 	return r
+}
+
+// CmdWorkSpace exec cmd on specified workdir.
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	_ = SSHConfig.CmdAsync(node, command)
 }

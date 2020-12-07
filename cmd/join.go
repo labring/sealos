@@ -15,11 +15,12 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 // joinCmd represents the join command
@@ -39,14 +40,14 @@ var joinCmd = &cobra.Command{
 		beforeMasters := install.ParseIPs(install.MasterIPs)
 
 		c := &install.SealConfig{}
-		err := c.Load("")
+		err := c.Load(cfgFile)
 		if err != nil {
 			logger.Error(err)
 			c.ShowDefaultConfig()
 			os.Exit(0)
 		}
 		install.BuildJoin(beforeMasters, beforeNodes)
-		c.Dump("")
+		c.Dump(cfgFile)
 	},
 }
 

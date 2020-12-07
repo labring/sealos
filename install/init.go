@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/fanux/sealos/k8s"
+
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
@@ -26,6 +28,7 @@ func BuildInit() {
 	}
 	i.CheckValid()
 	i.Print()
+	i.SendSealos()
 	i.SendPackage()
 	i.Print("SendPackage")
 	i.KubeadmConfigInstall()
@@ -65,7 +68,8 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		}
 		templateData = string(TemplateFromTemplateContent(string(fileData)))
 	}
-	cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
+	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
+	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
 	kubeadm := KubeadmDataFromYaml(templateData)
@@ -96,8 +100,8 @@ func (s *SealosInstaller) GenerateCert() {
 	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR, DnsDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
-	s.sendCaAndKey(s.Masters)
-	s.sendCerts([]string{s.Masters[0]})
+	//s.sendNewCertAndKey(s.Masters)
+	//s.sendCerts([]string{s.Masters[0]})
 }
 
 func (s *SealosInstaller) CreateKubeconfig() {
@@ -121,10 +125,10 @@ func (s *SealosInstaller) CreateKubeconfig() {
 
 //InstallMaster0 is
 func (s *SealosInstaller) InstallMaster0() {
-	s.SendKubeConfigs(s.Masters, true)
-
+	s.SendKubeConfigs([]string{s.Masters[0]})
+	s.sendNewCertAndKey([]string{s.Masters[0]})
 	//master0 do sth
-	cmd := fmt.Sprintf("echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer)
+	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer, IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
@@ -136,7 +140,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	}
 	decodeOutput(output)
 
-	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config`
+	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
 	output = SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if WithoutCNI {
@@ -144,6 +148,14 @@ func (s *SealosInstaller) InstallMaster0() {
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
+
+	// can-reach is used by calico multi network
+	if k8s.IsIpv4(Interface) {
+		Interface = "can-reach=" + Interface
+	} else {
+		Interface = "interface=" + Interface
+	}
+
 	netyaml := net.NewNetwork(Network, net.MetaData{
 		Interface: Interface,
 		CIDR:      PodCIDR,
@@ -156,12 +168,40 @@ func (s *SealosInstaller) InstallMaster0() {
 }
 
 //SendKubeConfigs
-func (s *SealosInstaller) SendKubeConfigs(masters []string, isMaster0 bool) {
-	if isMaster0 {
-		SendPackage(cert.SealosConfigDir+"/kubelet.conf", []string{masters[0]}, cert.KubernetesDir, nil, nil)
-	}
+func (s *SealosInstaller) SendKubeConfigs(masters []string) {
+	s.sendKubeConfigFile(masters, "kubelet.conf")
+	s.sendKubeConfigFile(masters, "admin.conf")
+	s.sendKubeConfigFile(masters, "controller-manager.conf")
+	s.sendKubeConfigFile(masters, "scheduler.conf")
 
-	SendPackage(cert.SealosConfigDir+"/admin.conf", masters, cert.KubernetesDir, nil, nil)
-	SendPackage(cert.SealosConfigDir+"/controller-manager.conf", masters, cert.KubernetesDir, nil, nil)
-	SendPackage(cert.SealosConfigDir+"/scheduler.conf", masters, cert.KubernetesDir, nil, nil)
+	if s.to11911192(masters) {
+		logger.Info("set 1191 1192 config")
+	}
+}
+
+func (s *SealosInstaller) SendJoinMasterKubeConfigs(masters []string) {
+	s.sendKubeConfigFile(masters, "admin.conf")
+	s.sendKubeConfigFile(masters, "controller-manager.conf")
+	s.sendKubeConfigFile(masters, "scheduler.conf")
+	if s.to11911192(masters) {
+		logger.Info("set 1191 1192 config")
+	}
+}
+
+func (s *SealosInstaller) to11911192(masters []string) (to11911192 bool) {
+	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
+	if VersionToIntAll(Version) >= 1191 && VersionToIntAll(Version) <= 1192 {
+		for _, v := range masters {
+			ip := IpFormat(v)
+			// use grep -qF if already use sed then skip....
+			cmd := fmt.Sprintf(`grep -qF "apiserver.cluster.local" %s  && \
+sed -i 's/apiserver.cluster.local/%s/' %s && \
+sed -i 's/apiserver.cluster.local/%s/' %s`, KUBESCHEDULERCONFIGFILE, ip, KUBECONTROLLERCONFIGFILE, ip, KUBESCHEDULERCONFIGFILE)
+			SSHConfig.CmdAsync(v, cmd)
+		}
+		to11911192 = true
+	} else {
+		to11911192 = false
+	}
+	return
 }

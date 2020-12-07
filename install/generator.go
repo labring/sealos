@@ -10,6 +10,12 @@ import (
 )
 
 const TemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "{{.ApiServer}}:6443"
@@ -64,15 +70,42 @@ ipvs:
   excludeCIDRs: 
   - "{{.VIP}}/32"`)
 
+const JoinCPTemplateText = string(`apiVersion: kubeadm.k8s.io/v1beta2
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken: 
+    apiServerEndpoint: {{.Master0}}:6443
+    token: {{.TokenDiscovery}}
+    caCertHashes: 
+    - {{.TokenDiscoveryCAHash}}
+  timeout: 5m0s
+kind: JoinConfiguration
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.Master}}
+    bindPort: 6443`)
+
 var ConfigType string
 
 func Config() {
 	switch ConfigType {
 	case "kubeadm":
 		printlnKubeadmConfig()
+	case "join":
+		printlnJoinKubeadmConfig()
 	default:
 		printlnKubeadmConfig()
 	}
+}
+
+func joinKubeadmConfig() string  {
+	var sb strings.Builder
+	sb.Write([]byte(JoinCPTemplateText))
+	return sb.String()
+}
+
+func printlnJoinKubeadmConfig()  {
+	fmt.Println(joinKubeadmConfig())
 }
 
 func kubeadmConfig() string {
@@ -88,6 +121,31 @@ func printlnKubeadmConfig() {
 //Template is
 func Template() []byte {
 	return TemplateFromTemplateContent(kubeadmConfig())
+}
+
+// JoinTemplate is generate JoinCP nodes configuration by master ip.
+func JoinTemplate(ip string) []byte {
+	return JoinTemplateFromTemplateContent(joinKubeadmConfig(), ip)
+}
+
+func JoinTemplateFromTemplateContent(templateContent, ip string) []byte {
+	tmpl, err := template.New("text").Parse(templateContent)
+	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("join template parse failed:", err)
+		}
+	}()
+	if err != nil {
+		panic(1)
+	}
+	var envMap = make(map[string]interface{})
+	envMap["Master0"] = IpFormat(MasterIPs[0])
+	envMap["Master"] = IpFormat(ip)
+	envMap["TokenDiscovery"] = JoinToken
+	envMap["TokenDiscoveryCAHash"] = TokenCaCertHash
+	var buffer bytes.Buffer
+	_ = tmpl.Execute(&buffer, envMap)
+	return buffer.Bytes()
 }
 
 func TemplateFromTemplateContent(templateContent string) []byte {
@@ -114,6 +172,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["PodCIDR"] = PodCIDR
 	envMap["SvcCIDR"] = SvcCIDR
 	envMap["Repo"] = Repo
+	envMap["Master0"] = IpFormat(MasterIPs[0])
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

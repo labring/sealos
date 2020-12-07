@@ -1,3 +1,9 @@
+ <a href="https://trackgit.com">
+<img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
+</a>
+
+![](https://socialify.git.ci/fanux/sealos/image?description=1&font=Source%20Code%20Pro&forks=1&language=1&pattern=Charlie%20Brown&stargazers=1&theme=Light)
+
 <div align="center">
   <p>
     <b>一条命令部署 Kubernetes 高可用集群 👋</b>
@@ -18,7 +24,7 @@
 
 ---
 
-**文档: _[官方文档](https://sealyun.com/docs), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions), [博客](https://fuckcloudnative.io)_**
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
 
@@ -50,7 +56,7 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
 $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/7b6af025d4884fdd5cd51a674994359c-1.18.0/kube1.18.0.tar.gz
 
 # 安装一个三master的kubernetes集群
-$ sealos init --passwd 123456 \
+$ sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.18.0.tar.gz \
@@ -65,7 +71,7 @@ passwd|服务器密码|123456
 master|k8s master节点IP地址| 192.168.0.2
 node|k8s node节点IP地址|192.168.0.3
 pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.16.0.tar.gz
-version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
+version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)对应的版本|v1.16.0
 
 > 增加master
 
@@ -97,14 +103,14 @@ version|[资源包](http://store.lameleg.com)对应的版本|v1.16.0
 > 清理集群
 
 ```shell script
-🐳 → sealos clean
+🐳 → sealos clean --all
 ```
 
 # ✅ 特性
 
-- [x] 99年证书
+- [x] 99年证书, 支持集群备份，升级
 - [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
-- [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](http://store.lameleg.com)即可,离线包包含所有二进制文件配置文件和镜像
+- [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)即可,离线包包含所有二进制文件配置文件和镜像
 - [x] 高可用通过ipvs实现的localLB，占用资源少，稳定可靠，类似kube-proxy的实现
 - [x] 几乎可兼容所有支持systemd的x86_64架构的环境
 - [x] 轻松实现集群节点的增加/删除

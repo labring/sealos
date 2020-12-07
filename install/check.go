@@ -2,14 +2,15 @@ package install
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"os"
+
+	"github.com/wonderivan/logger"
 )
 
-// if can't access to hostName, set /etc/hosts
-func SetHosts(hostip, hostName string) {
-	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, IpFormat(hostip), hostName)
-	SSHConfig.CmdAsync(hostip, cmd)
+// SetHosts set hosts. if can't access to hostName, set /etc/hosts
+func SetHosts(hostIP, hostName string) {
+	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, IpFormat(hostIP), hostName)
+	SSHConfig.CmdAsync(hostIP, cmd)
 }
 
 //CheckValid is

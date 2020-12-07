@@ -16,8 +16,9 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/fanux/sealos/install"
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
 // ipvsCmd represents the ipvs command

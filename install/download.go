@@ -16,7 +16,8 @@ import (
 //dst: /root
 //hook: cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh
 func SendPackage(location string, hosts []string, dst string, before, after *string) string {
-	location, md5 := downloadFile(location)
+	var md5 string
+	location, md5 = downloadFile(location)
 	pkg := path.Base(location)
 	fullPath := fmt.Sprintf("%s/%s", dst, pkg)
 	mkDstDir := fmt.Sprintf("mkdir -p %s || true", dst)
@@ -32,7 +33,18 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 				_ = SSHConfig.CmdAsync(host, *before)
 			}
 			if SSHConfig.IsFileExist(host, fullPath) {
-				logger.Warn("[%s]SendPackage: file is exist", host)
+				if SSHConfig.ValidateMd5sumLocalWithRemote(host, location, fullPath) {
+					logger.Info("[%s]SendPackage:  %s file is exist and ValidateMd5 success", host, fullPath)
+				} else {
+					rm := fmt.Sprintf("rm -f %s", fullPath)
+					_ = SSHConfig.Cmd(host, rm)
+					// del then copy
+					if ok := SSHConfig.CopyForMD5(host, location, fullPath, md5); ok {
+						logger.Info("[%s]copy file md5 validate success", host)
+					} else {
+						logger.Error("[%s]copy file md5 validate failed", host)
+					}
+				}
 			} else {
 				if ok := SSHConfig.CopyForMD5(host, location, fullPath, md5); ok {
 					logger.Info("[%s]copy file md5 validate success", host)
@@ -48,6 +60,10 @@ func SendPackage(location string, hosts []string, dst string, before, after *str
 	}
 	wm.Wait()
 	return location
+}
+
+func DownloadFile(location string) (filePATH, md5 string) {
+	return downloadFile(location)
 }
 
 //

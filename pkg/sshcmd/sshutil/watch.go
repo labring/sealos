@@ -29,7 +29,7 @@ func (ss *SSH) LoggerFileSize(host, filename string, size int) {
 			}
 			lengthFloat := float64(lengthByte)
 			value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", lengthFloat/oneMBByte), 64)
-			logger.Alert("[ssh][%s]transfer total size is: %.2f%s", host, value, "MB")
+			logger.Info("[ssh][%s]transfer total size is: %.2f%s", host, value, "MB")
 		}
 	}
 }
@@ -54,11 +54,7 @@ func (ss *SSH) IsFileExist(host, remoteFilePath string) bool {
 	if err != nil {
 		panic(1)
 	}
-	if count == 0 {
-		return false
-	} else {
-		return true
-	}
+	return count != 0
 }
 
 func toSizeFromInt(length int) (float64, string) {

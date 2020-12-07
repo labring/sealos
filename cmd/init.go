@@ -16,9 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 )
 
 var contact = `
@@ -40,6 +43,31 @@ var contact = `
                   常见问题：sealyun.com/faq
 `
 
+var exampleInit = `
+	# init with password with three master one node
+	sealos init --passwd your-server-password  \
+	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
+	--node 192.168.0.5 --user root \
+	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
+	
+	# init with pk-file , when your server have different password
+	sealos init --pk /root/.ssh/id_rsa \
+	--master 192.168.0.2 --node 192.168.0.5 --user root \
+	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
+
+	# when use multi network. set a can-reach with --interface 
+ 	sealos init --interface 192.168.0.254 \
+	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
+	--node 192.168.0.5 --user root --passwd your-server-password \
+	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
+	
+	# when your interface is not "eth*|en*|em*" like.
+	sealos init --interface your-interface-name \
+	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
+	--node 192.168.0.5 --user root --passwd your-server-password \
+	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
+`
+
 // initCmd represents the init command
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -47,17 +75,28 @@ var initCmd = &cobra.Command{
 	Long: `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
 	--node 192.168.0.5 --user root --passwd your-server-password \
 	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz`,
+	Example: exampleInit,
 	Run: func(cmd *cobra.Command, args []string) {
 		c := &install.SealConfig{}
 		// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
-		c.Dump("")
+		// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
+		if cfgFile != "" && len(install.MasterIPs) == 0 {
+			err := c.Load(cfgFile)
+			if err != nil {
+				logger.Error("load cfgFile %s err: %q", cfgFile, err)
+				os.Exit(1)
+			}
+		} else {
+			c.Dump(cfgFile)
+		}
 		install.BuildInit()
 		// 安装完成后生成完整版
-		c.Dump("")
+		c.Dump(cfgFile)
 		fmt.Println(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if install.ExitInitCase() {
+		// 使用了cfgFile 就不进行preRun了
+		if cfgFile == "" && install.ExitInitCase() {
 			cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}
@@ -65,6 +104,7 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
+	initCmd.AddCommand(NewInitGenerateCmd())
 	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -86,7 +126,7 @@ func init() {
 	initCmd.Flags().StringVar(&install.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")
 	initCmd.Flags().StringVar(&install.PodCIDR, "podcidr", "100.64.0.0/10", "Specify range of IP addresses for the pod network")
 	initCmd.Flags().StringVar(&install.SvcCIDR, "svccidr", "10.96.0.0/12", "Use alternative range of IP address for service VIPs")
-	initCmd.Flags().StringVar(&install.Interface, "interface", "eth.*|en.*|em.*", "name of network interface")
+	initCmd.Flags().StringVar(&install.Interface, "interface", "eth.*|en.*|em.*", "name of network interface, when use calico IP_AUTODETECTION_METHOD, set your ipv4 with can-reach=192.168.0.1")
 
 	initCmd.Flags().BoolVar(&install.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
@@ -101,4 +141,15 @@ func init() {
 	// 不像用户暴露
 	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
 	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
+}
+
+func NewInitGenerateCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "gen",
+		Short: "show default sealos init config",
+		Run: func(cmd *cobra.Command, args []string) {
+			c := &install.SealConfig{}
+			c.ShowDefaultConfig()
+		},
+	}
 }
