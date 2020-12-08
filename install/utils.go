@@ -480,3 +480,16 @@ func CanUpgradeByNewVersion(new, old string) error {
 	}
 	return nil
 }
+
+func For120(version string) bool {
+	newMajor, _ := GetMajorMinorInt(version)
+	// // kubernetes gt 1.20, use Containerd instead of docker
+	if newMajor >= 120 {
+		logger.Info("install version is: %s, Use kubeadm v1beta2 InitConfig,OCI use containerd instead", version)
+		return true
+	} else {
+		//logger.Info("install version is: %s, Use kubeadm v1beta1 InitConfig, docker", version)
+		return false
+	}
+
+}
