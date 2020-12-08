@@ -59,7 +59,7 @@ user: root
 passwd: ""
 privatekey: /root/.ssh/id_rsa
 pkpassword: ""
-apiserverdomian: apiserver.cluster.local
+apiserverdomain: apiserver.cluster.local
 vip: 10.103.97.2
 pkgurl: /root/kube1.18.0.tar.gz
 version: v1.18.0
@@ -263,4 +263,3 @@ restore cmd will stop your kubernetes cluster immediately and restore etcd from 
 17:35:41 [INFO] [etcd_save.go:259] health check for etcd: [{192.168.160.243:2379 true 6.206351ms }]
 17:35:41 [INFO] [etcd.go:151] restore kubernetes yourself glad~
 ```
-
