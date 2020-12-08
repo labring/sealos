@@ -444,6 +444,11 @@ func compress(rel string, path string, zw *zip.Writer) {
 
 // GetMajorMinorInt
 func GetMajorMinorInt(version string) (major, minor int) {
+	// alpha beta rc version
+	if strings.Contains(version, "-") {
+		v := strings.Split(version, "-")[0]
+		version = v
+	}
 	version = strings.Replace(version, "v", "", -1)
 	versionArr := strings.Split(version, ".")
 	if len(versionArr) >= 2 {
