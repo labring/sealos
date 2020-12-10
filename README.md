@@ -108,6 +108,7 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 
 # ✅ 特性
 
+- [x] 支持ARM版本离线包
 - [x] 99年证书, 支持集群备份，升级
 - [x] 不依赖ansible haproxy keepalived, 一个二进制工具，0依赖
 - [x] 离线安装，不同kubernetes版本下载对应不同版本的[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)即可,离线包包含所有二进制文件配置文件和镜像
