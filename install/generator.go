@@ -24,12 +24,7 @@ func Config() {
 
 func joinKubeadmConfig() string {
 	var sb strings.Builder
-	// kubernetes gt 1.20, use Containerd instead of docker
-	if For120(Version) {
-		sb.Write([]byte(JoinCPTemplateTextV1beate2Container))
-	} else {
-		sb.Write([]byte(JoinCPTemplateTextV1beta2Docker))
-	}
+	sb.Write([]byte(JoinCPTemplateTextV1beta2))
 	return sb.String()
 }
 
