@@ -61,7 +61,7 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/562b5c0ae4e48d17c5ab6d4942
 $ sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url /root/kubekube1.20.0.tar.gz \
+	--pkg-url /root/kube1.20.0.tar.gz \
 	--version v1.20.0
 ```
 
