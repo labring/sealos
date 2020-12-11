@@ -9,7 +9,7 @@
     <b>一条命令部署 Kubernetes 高可用集群 👋</b>
   </p>
   <p>
-     <i>只能用丝滑一词形容的kubernetes高可用安装（kubernetes install）工具，一条命令，离线安装，包含所有依赖，内核负载不依赖haproxy keepalived,纯golang开发,99年证书,支持v1.16.8 v1.15.11 v1.17.4 v1.18.0!</i>
+     <i>只能用丝滑一词形容的kubernetes高可用安装（kubernetes install）工具，一条命令，离线安装，包含所有依赖，内核负载不依赖haproxy keepalived,纯golang开发,99年证书,支持v1.20.0 v1.19.5 v1.18.13 v1.17.15!</i>
   </p>
   <p>
 
@@ -45,6 +45,8 @@ node0|192.168.0.5
 
 服务器密码：123456
 
+**kubernetes .0版本不建议上生产环境!!!**
+
 > 只需要准备好服务器，在任意一台服务器上执行下面命令即可
 
 ```sh
@@ -53,14 +55,14 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/7b6af025d4884fdd5cd51a674994359c-1.18.0/kube1.18.0.tar.gz
+$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/562b5c0ae4e48d17c5ab6d49422842c5-v1.20.0/kube1.20.0.tar.gz
 
 # 安装一个三master的kubernetes集群
 $ sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
-	--pkg-url /root/kube1.18.0.tar.gz \
-	--version v1.18.0
+	--pkg-url /root/kubekube1.20.0.tar.gz \
+	--version v1.20.0
 ```
 
 > 参数含义
@@ -70,8 +72,8 @@ $ sealos init --passwd '123456' \
 passwd|服务器密码|123456
 master|k8s master节点IP地址| 192.168.0.2
 node|k8s node节点IP地址|192.168.0.3
-pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.16.0.tar.gz
-version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)对应的版本|v1.16.0
+pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.20.0.tar.gz
+version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)对应的版本|v1.20.0
 
 > 增加master
 
