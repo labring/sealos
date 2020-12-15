@@ -467,6 +467,10 @@ func CanUpgradeByNewVersion(new, old string) error {
 	newMajor, newMinor := GetMajorMinorInt(new)
 	major, minor := GetMajorMinorInt(old)
 
+	// sealos change cri to containerd when version more than 1.20.0
+	if newMajor == 120 && major == 119 {
+		return fmt.Errorf("sealos change cri to containerd when Version greater than 1.20! New version: %s, current version: %s", new, old)
+	}
 	// case one:  new major version <  old major version
 	// 1.18.8     1.19.1
 	if newMajor < major {
