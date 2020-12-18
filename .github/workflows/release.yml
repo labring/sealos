@@ -44,12 +44,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           VERSION: ${{ steps.prepare.outputs.tag_name }}
 
+      - name: Install dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y \
+            upx 
+
       - name: Build binareies to oss
         env:
           BUCKETNAME: ${{ secrets.BUCKETNAME }}
         run: |
           echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
           wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
+          upx dist/sealos_linux_amd64/sealos &&  upx dist/sealos_linux_arm64/sealos  && \
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
