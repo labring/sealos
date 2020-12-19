@@ -6,11 +6,11 @@ import (
 )
 
 //二次开发logger
-func Cfg() {
+func Cfg(level int) {
 	config := logConfig{
 		TimeFormat: "15:04:05",
 		Console: &consoleLogger{
-			LogLevel: LevelDebug,
+			LogLevel: level,
 			Colorful: runtime.GOOS != "windows",
 		},
 	}
