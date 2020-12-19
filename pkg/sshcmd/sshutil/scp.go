@@ -334,7 +334,7 @@ func (ss *SSH) copyLocalFileToRemote(host string, sshClient *ssh.Client, sftpCli
 			speed = length / oneMBByte
 		}
 		totalLength, totalUnit := toSizeFromInt(total)
-		logger.Info("[ssh][%s]transfer local [%s] to Dst [%s] total size is: %.2f%s ;speed is %d%s", host, localPath, remotePath, totalLength, totalUnit, speed, unit)
+		logger.Debug("[ssh][%s]transfer local [%s] to Dst [%s] total size is: %.2f%s ;speed is %d%s", host, localPath, remotePath, totalLength, totalUnit, speed, unit)
 	}
 	if !ss.isCopyMd5Success(sshClient, localPath, remotePath) {
 		//	logger.Debug("[ssh][%s] copy local file: %s to remote file: %s validate md5sum success", host, localPath, remotePath)

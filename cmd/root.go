@@ -26,7 +26,7 @@ import (
 
 var (
 	cfgFile string
-	Debug   bool
+	Info   bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -56,7 +56,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sealos/config.yaml)")
-	rootCmd.PersistentFlags().BoolVar(&Debug, "debug", false, "logger ture for Debug, false for INFO")
+	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger ture for Info, false for Debug")
 
 }
 
@@ -85,9 +85,9 @@ func initConfig() {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
-	if Debug {
-		logger.Cfg(6)
-	} else {
+	if Info {
 		logger.Cfg(5)
+	} else {
+		logger.Cfg(6)
 	}
 }
