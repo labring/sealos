@@ -89,6 +89,23 @@ ipvs:
   excludeCIDRs:
   - "{{.VIP}}/32"`)
 
+const JoinCPTemplateTextV1beate2Container = string(`apiVersion: kubeadm.k8s.io/v1beta2	
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{.Master0}}:6443
+    token: {{.TokenDiscovery}}
+    caCertHashes:
+    - {{.TokenDiscoveryCAHash}}
+  timeout: 5m0s
+kind: JoinConfiguration
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.Master}}
+    bindPort: 6443
+nodeRegistration:
+  criSocket: /run/containerd/containerd.sock`)
+
 const JoinCPTemplateTextV1beta2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
