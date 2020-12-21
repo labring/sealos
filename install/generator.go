@@ -24,7 +24,11 @@ func Config() {
 
 func joinKubeadmConfig() string {
 	var sb strings.Builder
-	sb.Write([]byte(JoinCPTemplateTextV1beta2))
+	if For120(Version) {
+		sb.Write([]byte(JoinCPTemplateTextV1beate2Container))
+	} else {
+		sb.Write([]byte(JoinCPTemplateTextV1beta2))
+	}
 	return sb.String()
 }
 
