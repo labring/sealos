@@ -139,6 +139,7 @@ func (s *SealosInstaller) JoinNodes() {
 	for _, master := range s.Masters {
 		masters += fmt.Sprintf(" --rs %s:6443", IpFormat(master))
 	}
+	ipvsCleanCmd := "sealos ipvs --clean"
 	ipvsCmd := fmt.Sprintf("sealos ipvs --vs %s:6443 %s --health-path /healthz --health-schem https --run-once", VIP, masters)
 
 	for _, node := range s.Nodes {
@@ -156,6 +157,9 @@ func (s *SealosInstaller) JoinNodes() {
 				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", VIP, IpFormat(node))
 				SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
+
+			// clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.
+			_ = SSHConfig.CmdAsync(node, ipvsCleanCmd)
 
 			_ = SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)

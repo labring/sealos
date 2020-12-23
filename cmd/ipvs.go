@@ -26,15 +26,23 @@ var ipvsCmd = &cobra.Command{
 	Use:   "ipvs",
 	Short: "sealos create or care local ipvs lb",
 	Run: func(cmd *cobra.Command, args []string) {
+		if clean {
+			// do clean things
+
+			return
+		}
 		install.Ipvs.VsAndRsCare()
 	},
 }
+
+var clean bool
 
 func init() {
 	rootCmd.AddCommand(ipvsCmd)
 
 	// Here you will define your flags and configuration settings.
 	ipvsCmd.Flags().BoolVar(&install.Ipvs.RunOnce, "run-once", false, "is run once mode")
+	ipvsCmd.Flags().BoolVarP(&clean, "clean","c", false, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
 	ipvsCmd.Flags().StringVar(&install.Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
 	ipvsCmd.Flags().StringSliceVar(&install.Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
 
