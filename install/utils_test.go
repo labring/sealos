@@ -118,7 +118,7 @@ func TestFileExist(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"file exist", args{"/home/louis/.ssh/id_rsa"}, true},
+		{"file exist", args{"utils.go"}, true},
 		{"file not exist", args{"/home/louis/.ssh/id_rsa.public"}, false},
 		{"PkgFile", args{"/root/kube1.18.0.tar.gz"}, false},
 	}
