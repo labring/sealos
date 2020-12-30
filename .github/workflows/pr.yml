@@ -25,3 +25,9 @@ jobs:
         with:
           version: latest
           args: build --snapshot --rm-dist  --timeout=1h
+        
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+
+      - name: Test without docker
+        run: go test -v -timeout 200s ./...
