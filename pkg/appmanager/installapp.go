@@ -36,7 +36,11 @@ func InstallApp(flag *InstallFlags, cfgFile string) error {
 		os.Exit(0)
 	}
 
-	pkgConfig, _ := LoadAppConfig(flag.PkgURL, flag.Config)
+	pkgConfig, err := LoadAppConfig(flag.PkgURL, flag.Config)
+	if err != nil {
+		logger.Error("Load App config from tarball err: ", err)
+		os.Exit(0)
+	}
 	pkgConfig.URL = flag.PkgURL
 	pkgConfig.Name = nameFromUrl(flag.PkgURL)
 	pkgConfig.Workdir = flag.WorkDir
