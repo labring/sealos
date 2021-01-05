@@ -5,8 +5,8 @@ import (
 )
 
 func TestGenerateAll(t *testing.T) {
-	BasePath := "/etc/kubernetes/pki"
-	EtcdBasePath := "/etc/kubernetes/pki/etcd"
+	BasePath := "/tmp/kubernetes/pki"
+	EtcdBasePath := "/tmp/kubernetes/pki/etcd"
 	tests := []struct {
 		name    string
 		wantErr bool

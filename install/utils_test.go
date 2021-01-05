@@ -11,20 +11,6 @@ func TestPath(t *testing.T) {
 	t.Log(tt)
 }
 
-func TestProcess(t *testing.T) {
-	//fmt.Printf("%s \033[K\n", "--") // 输出一行结果
-	//fmt.Printf("\033[%dA\033[K", 1) // 将光标向上移动一行
-	//fmt.Printf("%s \033[K\n", "=-") // 输出第二行结果
-	//bar(100, 1, 0)
-}
-
-func TestNotReadyNode(t *testing.T) {
-	SSHConfig.User = "root"
-	SSHConfig.Password = "PaaS@123"
-	ss := isHostName("172.27.139.74", "172.27.139.126")
-	print(ss)
-}
-
 func TestPrint(t *testing.T) {
 	//User = "root"
 	//Passwd = "admin"
@@ -57,17 +43,17 @@ func TestParseIPs(t *testing.T) {
 		{
 			"test multiple ips",
 			args{[]string{"192.168.0.2-192.168.0.6"}},
-			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.4", "192.168.0.5", "192.168.0.6"},
+			[]string{"192.168.0.2:22", "192.168.0.3:22", "192.168.0.4:22", "192.168.0.5:22", "192.168.0.6:22"},
 		},
 		{
 			"test multiple ips",
 			args{[]string{"192.168.0.2-192.168.0.3", "192.168.0.5-192.168.0.6"}},
-			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.5", "192.168.0.6"},
+			[]string{"192.168.0.2:22", "192.168.0.3:22", "192.168.0.5:22", "192.168.0.6:22"},
 		},
 		{
 			"test multiple ips",
 			args{[]string{"192.168.0.2-192.168.0.4", "192.168.0.8"}},
-			[]string{"192.168.0.2", "192.168.0.3", "192.168.0.4", "192.168.0.8"},
+			[]string{"192.168.0.2:22", "192.168.0.3:22", "192.168.0.4:22", "192.168.0.8:22"},
 		},
 	}
 	for _, tt := range tests {
@@ -132,7 +118,7 @@ func TestFileExist(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"file exist", args{"/home/louis/.ssh/id_rsa"}, true},
+		{"file exist", args{"utils.go"}, true},
 		{"file not exist", args{"/home/louis/.ssh/id_rsa.public"}, false},
 		{"PkgFile", args{"/root/kube1.18.0.tar.gz"}, false},
 	}
@@ -207,6 +193,7 @@ func TestCanUpgradeByNewVersion(t *testing.T) {
 		{"test01", args{"v1.18.5", "v1.16.14"}, true},
 		{"test02", args{"v1.19.3", "v1.18.9"}, false},
 		{"test03", args{"v1.15.11", "v1.18.9"}, true},
+		{"test03", args{"v1.20.1", "v1.19.6"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

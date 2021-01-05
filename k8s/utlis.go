@@ -57,7 +57,6 @@ func remove(a []string, b string) []string {
 		if v == b {
 			a = append(a[:i], a[i+1:]...)
 			return remove(a, b)
-			break
 		}
 	}
 	return a

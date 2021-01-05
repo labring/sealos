@@ -122,27 +122,66 @@ sealos config -t kubeadm >>  kubeadm-config.yaml.tmpl
 See the config template file `cat kubeadm-config.yaml.tmpl`, edit it add `sealyun.com`:
 ```
 apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+---
+apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "apiserver.cluster.local:6443"
+controlPlaneEndpoint: "{{.ApiServer}}:6443"
+imageRepository: {{.Repo}}
 networking:
-  podSubnet: 100.64.0.0/10
+  # dnsDomain: cluster.local
+  podSubnet: {{.PodCIDR}}
+  serviceSubnet: {{.SvcCIDR}}
 apiServer:
-        certSANs:
-        - sealyun.com # this is what I added
-        - 127.0.0.1
-        - apiserver.cluster.local
-        {{range .Masters -}}
-        - {{.}}
-        {{end -}}
-        - {{.VIP}}
+  certSANs:
+  - sealyun.com # add to certSANs
+  - 127.0.0.1
+  - {{.ApiServer}}
+  {{range .Masters -}}
+  - {{.}}
+  {{end -}}
+  {{range .CertSANS -}}
+  - {{.}}
+  {{end -}}
+  - {{.VIP}}
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - name: localtime
+    hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    readOnly: true
+    pathType: File
+controllerManager:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+    experimental-cluster-signing-duration: 876000h
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
+scheduler:
+  extraArgs:
+    feature-gates: TTLAfterFinished=true
+  extraVolumes:
+  - hostPath: /etc/localtime
+    mountPath: /etc/localtime
+    name: localtime
+    readOnly: true
+    pathType: File
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-        excludeCIDRs: 
-        - "{{.VIP}}/32"
+  excludeCIDRs:
+  - "{{.VIP}}/32"
 ```
 
 Then using --kubeadm-config flag:
@@ -160,5 +199,5 @@ sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
 
 [简体中文](README_zh.md)
 
-[More offline packages](http://store.lameleg.com)
+[More offline packages](https://sealyun.com)
 
