@@ -6,6 +6,7 @@ import (
 
 	"github.com/fanux/lvscare/care"
 
+	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/ipvs"
 	"github.com/fanux/sealos/pkg/sshcmd/sshutil"
 )
@@ -21,8 +22,11 @@ var (
 	SSHConfig sshutil.SSH
 	ApiServer string
 	//cert abs path
-	CertPath     = "/root/.sealos/pki"
-	CertEtcdPath = "/root/.sealos/pki/etcd"
+	CertPath     = cert.SealosConfigDir + "/pki"
+	CertEtcdPath = cert.SealosConfigDir + "/pki/etcd"
+	EtcdCacart   = cert.SealosConfigDir + "/pki/etcd/ca.crt"
+	EtcdCert     = cert.SealosConfigDir + "/pki/etcd/healthcheck-client.crt"
+	EtcdKey      = cert.SealosConfigDir + "/pki/etcd/healthcheck-client.key"
 
 	VIP     string
 	PkgUrl  string

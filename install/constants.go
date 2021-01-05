@@ -18,9 +18,6 @@ const (
 	ETCDDEFAULTBACKUPDIR    = "/opt/sealos/etcd-backup"
 	ETCDDEFAULTRESTOREDIR   = "/opt/sealos/etcd-restore"
 	ETCDDATADIR             = "/var/lib/etcd"
-	EtcdCacart              = "/root/.sealos/pki/etcd/ca.crt"
-	EtcdCert                = "/root/.sealos/pki/etcd/healthcheck-client.crt"
-	EtcdKey                 = "/root/.sealos/pki/etcd/healthcheck-client.key"
 	TMPDIR                  = "/tmp"
 
 	// kube file

@@ -109,7 +109,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&install.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", "/root/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", getUserHome() + "/.ssh/id_rsa", "private key for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
@@ -138,8 +138,8 @@ func init() {
 	initCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
 
 	// 不像用户暴露
-	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", "/root/.sealos/pki", "cert file path")
-	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", "/root/.sealos/pki/etcd", "etcd cert file path")
+	// initCmd.Flags().StringVar(&install.CertPath, "cert-path", getUserHome() + "/.sealos/pki", "cert file path")
+	// initCmd.Flags().StringVar(&install.CertEtcdPath, "cert-etcd-path", getUserHome() + "/.sealos/pki/etcd", "etcd cert file path")
 }
 
 func NewInitGenerateCmd() *cobra.Command {

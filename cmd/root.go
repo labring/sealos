@@ -64,14 +64,10 @@ func init() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	// Find home directory.
-	home, err := homedir.Dir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	home := getUserHome()
 	logFile := fmt.Sprintf("%s/.sealos/sealos.log", home)
 	if !install.FileExist(home + "/.sealos") {
-		err = os.MkdirAll(home + "/.sealos",os.ModePerm)
+		err := os.MkdirAll(home + "/.sealos",os.ModePerm)
 		if err != nil {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
@@ -81,4 +77,13 @@ func initConfig() {
 	} else {
 		logger.Cfg(6, logFile)
 	}
+}
+
+func  getUserHome() string {
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return home
 }

@@ -177,21 +177,22 @@ func Load(path string, content interface{}) error {
 }
 
 func (c *SealConfig) ShowDefaultConfig() {
+	home, _ := os.UserHomeDir()
 	c.Masters = []string{"192.168.0.2", "192.168.0.2", "192.168.0.2"}
 	c.Nodes = []string{"192.168.0.3", "192.168.0.4"}
 	c.User = "root"
 	c.Passwd = "123456"
-	c.PrivateKey = "/root/.ssh/id_rsa"
+	c.PrivateKey = home + "/.ssh/id_rsa"
 	c.ApiServerDomain = "apiserver.cluster.local"
 	c.VIP = "10.103.97.2"
-	c.PkgURL = "/root/kube1.17.13.tar.gz"
+	c.PkgURL = home + "/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"
 	c.Repo = "k8s.gcr.io"
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
 	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
-	c.CertPath = "/root/.sealos/pki"
-	c.CertEtcdPath = "/root/.sealos/pki/etcd"
+	c.CertPath = home + "/.sealos/pki"
+	c.CertEtcdPath = home + "/.sealos/pki/etcd"
 	c.LvscareName = "fanux/lvscare"
 	c.LvscareTag = "latest"
 

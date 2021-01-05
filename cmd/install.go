@@ -63,7 +63,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 
 	installCmd.Flags().StringVar(&AppURL, "pkg-url", "", "http://store.lameleg.com/prometheus.tar.gz download offline plugins package url, or file localtion ex. /root/prometheus.tar.gz")
-	installCmd.Flags().StringVarP(&install.WorkDir, "workdir", "w", "/root", "workdir for install package home ex.  sealos install --pkg-url dashboard.tar --workdir /data")
+	installCmd.Flags().StringVarP(&install.WorkDir, "workdir", "w", getUserHome(), "workdir for install package home ex.  sealos install --pkg-url dashboard.tar --workdir /data")
 	installCmd.Flags().StringVarP(&install.PackageConfig, "pkg-config", "c", "", `packageConfig for install package config  ex. sealos install --pkg-url dashboard.tar -c config`)
 	installCmd.Flags().StringVarP(&install.Values, "values", "f", "", "values for  install package values.yaml , you know what you did .ex. sealos install --pkg-url dashboard.tar -f values.yaml")
 }
