@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -92,7 +91,7 @@ var initCmd = &cobra.Command{
 		install.BuildInit()
 		// 安装完成后生成完整版
 		c.Dump(cfgFile)
-		fmt.Println(contact)
+		logger.Info(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// 使用了cfgFile 就不进行preRun了

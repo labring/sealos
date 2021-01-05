@@ -16,17 +16,18 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
 	"os"
+
+	"github.com/fanux/sealos/install"
+	"github.com/wonderivan/logger"
 
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 var (
 	cfgFile string
-	Info   bool
+	Info    bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -62,32 +63,22 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	logFile := fmt.Sprintf("%s/.sealos/sealos.log", home)
+	if !install.FileExist(home + "/.sealos") {
+		err = os.MkdirAll(home + "/.sealos",os.ModePerm)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
-
-		// Search config in home directory with name ".sealos" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".sealos")
 	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-
 	if Info {
-		logger.Cfg(5)
+		logger.Cfg(5, logFile)
 	} else {
-		logger.Cfg(6)
+		logger.Cfg(6, logFile)
 	}
 }
