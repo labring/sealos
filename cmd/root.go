@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/install"
 	"github.com/wonderivan/logger"
 
-	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +64,7 @@ func init() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	// Find home directory.
-	home := getUserHome()
+	home := cert.GetUserHomeDir()
 	logFile := fmt.Sprintf("%s/.sealos/sealos.log", home)
 	if !install.FileExist(home + "/.sealos") {
 		err := os.MkdirAll(home + "/.sealos",os.ModePerm)
@@ -77,13 +77,4 @@ func initConfig() {
 	} else {
 		logger.Cfg(6, logFile)
 	}
-}
-
-func  getUserHome() string {
-	home, err := homedir.Dir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	return home
 }

@@ -11,7 +11,6 @@ require (
 	github.com/fanux/sealgate v0.0.5
 	github.com/ghodss/yaml v1.0.0
 	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.11.0
 	github.com/satori/go.uuid v1.2.0 // indirect
