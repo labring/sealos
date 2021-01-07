@@ -1,9 +1,12 @@
 package install
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/fanux/sealos/k8s"
 
@@ -94,6 +97,30 @@ func getDefaultSANs() []string {
 	return sans
 }
 
+func (s *SealosInstaller) appendApiServer() error {
+	etcHostPath := "/etc/hosts"
+	etcHostMap := fmt.Sprintf("%s %s", IpFormat(s.Masters[0]), ApiServer)
+	file, err := os.OpenFile(etcHostPath, os.O_RDWR|os.O_APPEND, 0666)
+	if err != nil {
+		os.Exit(1)
+	}
+	defer file.Close()
+	reader := bufio.NewReader(file)
+	for {
+		str, err := reader.ReadString('\n')
+		if err == io.EOF {
+			break
+		}
+		if strings.Contains(str, ApiServer) {
+			logger.Info("local %s is already exists %s", etcHostPath, ApiServer)
+			return nil
+		}
+	}
+	write := bufio.NewWriter(file)
+	write.WriteString(etcHostMap)
+	return write.Flush()
+}
+
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := GetRemoteHostName(s.Masters[0])
@@ -127,6 +154,12 @@ func (s *SealosInstaller) CreateKubeconfig() {
 func (s *SealosInstaller) InstallMaster0() {
 	s.SendKubeConfigs([]string{s.Masters[0]})
 	s.sendNewCertAndKey([]string{s.Masters[0]})
+
+	// remote server run sealos init . it can not reach apiserver.cluster.local , should add masterip apiserver.cluster.local to /etc/hosts
+	err := s.appendApiServer()
+	if err != nil {
+		logger.Warn("append  %s %s to /etc/hosts err: %s", IpFormat(s.Masters[0]), ApiServer, err)
+	}
 	//master0 do sth
 	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer, IpFormat(s.Masters[0]), ApiServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
