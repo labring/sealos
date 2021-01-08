@@ -90,7 +90,7 @@ func sendJoinCPConfig(joinMaster []string) {
 		wg.Add(1)
 		go func(master string) {
 			defer wg.Done()
-			templateData := string(JoinTemplate(master))
+			templateData := string(JoinTemplate(IpFormat(master)))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(master, cmd)
 		}(master)
@@ -140,11 +140,15 @@ func (s *SealosInstaller) JoinNodes() {
 		masters += fmt.Sprintf(" --rs %s:6443", IpFormat(master))
 	}
 	ipvsCmd := fmt.Sprintf("sealos ipvs --vs %s:6443 %s --health-path /healthz --health-schem https --run-once", VIP, masters)
-
+	templateData := string(JoinTemplate(""))
 	for _, node := range s.Nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			// send join node config
+			cmdJoinConfig := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
+			_ = SSHConfig.CmdAsync(node, cmdJoinConfig)
+
 			cmdHosts := fmt.Sprintf("echo %s %s >> /etc/hosts", VIP, ApiServer)
 			_ = SSHConfig.CmdAsync(node, cmdHosts)
 
