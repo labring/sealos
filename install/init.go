@@ -135,7 +135,7 @@ func (s *SealosInstaller) InstallMaster0() {
 
 	output := SSHConfig.Cmd(s.Masters[0], cmd)
 	if output == nil {
-		logger.Error("[%s]kubernetes install is error.please clean and uninstall.", s.Masters[0])
+		logger.Error("[%s] install kubernetes failed. please clean and uninstall.", s.Masters[0])
 		os.Exit(1)
 	}
 	decodeOutput(output)
