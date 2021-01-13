@@ -12,11 +12,20 @@ import (
 )
 
 var (
-	SealosConfigDir         = "/root/.sealos"
+	SealosConfigDir         = GetUserHomeDir() + "/.sealos"
 	KubernetesDir           = "/etc/kubernetes"
 	KubeDefaultCertPath     = "/etc/kubernetes/pki"
 	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"
 )
+
+func GetUserHomeDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return home
+}
 
 func CaList(CertPath, CertEtcdPath string) []Config {
 	return []Config{

@@ -55,7 +55,7 @@ func readPipe(host string, pipe io.Reader, isErr bool) {
 }
 
 func (ss *SSH) CmdAsync(host string, cmd string) error {
-	logger.Debug("[ssh][%s] %s", host, cmd)
+	logger.Debug("[%s] %s", host, cmd)
 	session, err := ss.Connect(host)
 	if err != nil {
 		logger.Error("[ssh][%s]Error create ssh session failed,%s", host, err)

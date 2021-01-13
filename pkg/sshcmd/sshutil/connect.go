@@ -83,7 +83,7 @@ func fileExist(path string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-// 使用 pk认证， pk路径为 "/root/.ssh/id_rsa", pk有密码和无密码在这里面验证
+// 使用 pk认证， pk路径为 "$HOME/.ssh/id_rsa", pk有密码和无密码在这里面验证
 func (ss *SSH) sshPrivateKeyMethod(pkFile, pkPassword string) (am ssh.AuthMethod, err error) {
 	pkData := ss.readFile(pkFile)
 	var pk ssh.Signer

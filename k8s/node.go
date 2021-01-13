@@ -3,6 +3,7 @@ package k8s
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -21,8 +22,20 @@ const (
 	MaxRetries            = 5
 	RetryInterval         = 5
 	WrapTransportTimeout  = 30
-	KubeDefaultConfigPath = "/root/.sealos/admin.conf"
 )
+
+var (
+	KubeDefaultConfigPath = getUserHome() + "/.sealos/admin.conf"
+)
+
+func getUserHome() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println("get user home err:", err)
+		os.Exit(-1)
+	}
+	return home
+}
 
 // NewClient is get clientSet by kubeConfig
 func NewClient(kubeConfigPath string, k8sWrapTransport transport.WrapperFunc) (*kubernetes.Clientset, error) {
