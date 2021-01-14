@@ -1,6 +1,7 @@
 package install
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -23,6 +24,8 @@ func TestPrint(t *testing.T) {
 
 func TestVersionToInt(t *testing.T) {
 	t.Log(ParseIPs([]string{"172.26.13.133-172.26.13.136:2222"}))
+	fmt.Println(VersionToInt("v1.15.6"))
+	fmt.Println(VersionToInt("v1.18.6-rc.0"))
 }
 
 func TestSliceRemoveStr(t *testing.T) {

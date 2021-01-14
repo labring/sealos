@@ -25,11 +25,11 @@ jobs:
         version: latest
         args: build --snapshot --rm-dist  --timeout=1h
 
-    - name: Build binareies to oss
-      env:
-        BUCKETNAME: ${{ secrets.BUCKETNAME }}
-      run: |
-        echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
-        wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
-        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
-        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64
+    # - name: Build binareies to oss
+    #   env:
+    #     BUCKETNAME: ${{ secrets.BUCKETNAME }}
+    #   run: |
+    #     echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
+    #     wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
+    #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
+    #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64

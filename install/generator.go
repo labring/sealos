@@ -24,11 +24,7 @@ func Config() {
 
 func joinKubeadmConfig() string {
 	var sb strings.Builder
-	if For120(Version) {
-		sb.Write([]byte(JoinCPTemplateTextV1beate2Container))
-	} else {
-		sb.Write([]byte(JoinCPTemplateTextV1beta2))
-	}
+	sb.Write([]byte(JoinCPTemplateTextV1beta2))
 	return sb.String()
 }
 
@@ -74,9 +70,16 @@ func JoinTemplateFromTemplateContent(templateContent, ip string) []byte {
 	}
 	var envMap = make(map[string]interface{})
 	envMap["Master0"] = IpFormat(MasterIPs[0])
-	envMap["Master"] = IpFormat(ip)
+	envMap["Master"] = ip
 	envMap["TokenDiscovery"] = JoinToken
 	envMap["TokenDiscoveryCAHash"] = TokenCaCertHash
+	envMap["VIP"] = VIP
+	if For120(Version) {
+		CriSocket = DefaultContainerdCRISocket
+	} else {
+		CriSocket = DefaultDockerCRISocket
+	}
+	envMap["CriSocket"] = CriSocket
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

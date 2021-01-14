@@ -23,6 +23,10 @@ const (
 	// kube file
 	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
+
+	// CriSocket
+	DefaultDockerCRISocket     = "/var/run/dockershim.sock"
+	DefaultContainerdCRISocket = "/run/containerd/containerd.sock"
 )
 
 const InitTemplateTextV1beta1 = string(`apiVersion: kubeadm.k8s.io/v1beta1
@@ -86,38 +90,28 @@ ipvs:
   excludeCIDRs:
   - "{{.VIP}}/32"`)
 
-const JoinCPTemplateTextV1beate2Container = string(`apiVersion: kubeadm.k8s.io/v1beta2	
-caCertPath: /etc/kubernetes/pki/ca.crt
-discovery:
-  bootstrapToken:
-    apiServerEndpoint: {{.Master0}}:6443
-    token: {{.TokenDiscovery}}
-    caCertHashes:
-    - {{.TokenDiscoveryCAHash}}
-  timeout: 5m0s
-kind: JoinConfiguration
-controlPlane:
-  localAPIEndpoint:
-    advertiseAddress: {{.Master}}
-    bindPort: 6443
-nodeRegistration:
-  criSocket: /run/containerd/containerd.sock`)
-
 const JoinCPTemplateTextV1beta2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
+    {{- if .Master}}
     apiServerEndpoint: {{.Master0}}:6443
+    {{else}}
+    apiServerEndpoint: {{.VIP}}:6443
+    {{end -}}
     token: {{.TokenDiscovery}}
     caCertHashes:
     - {{.TokenDiscoveryCAHash}}
   timeout: 5m0s
 kind: JoinConfiguration
+{{- if .Master }}
 controlPlane:
   localAPIEndpoint:
     advertiseAddress: {{.Master}}
-    bindPort: 6443`)
-
+    bindPort: 6443
+{{- end}}
+nodeRegistration:
+  criSocket: {{.CriSocket}}`)
 
 const InitTemplateTextV1bate2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
 kind: InitConfiguration

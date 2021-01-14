@@ -28,6 +28,9 @@ var (
 	EtcdCert     = cert.SealosConfigDir + "/pki/etcd/healthcheck-client.crt"
 	EtcdKey      = cert.SealosConfigDir + "/pki/etcd/healthcheck-client.key"
 
+	//criSocket
+	CriSocket string
+
 	VIP     string
 	PkgUrl  string
 	Version string
