@@ -2,8 +2,7 @@ package install
 
 import (
 	"fmt"
-	"os"
-	"sync"
+	"os"	
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -95,15 +94,16 @@ func (u *SealosUpgrade) UpgradeOtherMaster() {
 }
 
 func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
-	var wg sync.WaitGroup
+	wg := NewPool(2)
 	var err error
 	for _, hostname := range hostnames {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			ip := u.GetIpByHostname(node)
 			// drain worker node is too danger for prod use; do not drain nodes if worker nodes~
 			if isMaster {
-				logger.Info("first: to drain master node %s", node)
+				logger.Info("[%s] first: to drain master node %s", ip, node)
 				cmdDrain := fmt.Sprintf(`kubectl drain %s --ignore-daemonsets --delete-local-data`, node)
 				err := SSHConfig.CmdAsync(u.Masters[0], cmdDrain)
 				if err != nil {
@@ -114,8 +114,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 			}
 
 			// second to exec kubeadm upgrade node
-			logger.Info("second: to exec kubeadm upgrade node on %s", node)
-			ip := u.GetIpByHostname(node)
+			logger.Info("[%s] second: to exec kubeadm upgrade node on %s", ip, node)
 			var cmdUpgrade string
 			if ip == u.Masters[0] {
 				cmdUpgrade = fmt.Sprintf("kubeadm upgrade apply --certificate-renewal=false  --yes %s", u.NewVersion)
@@ -134,7 +133,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 			}
 
 			// third to restart kubelet
-			logger.Info("third: to restart kubelet on %s", node)
+			logger.Info("[%s] third: to restart kubelet on %s", ip, node)
 			err = SSHConfig.CmdAsync(ip, "systemctl daemon-reload && systemctl restart kubelet")
 			if err != nil {
 				logger.Error("systemctl daemon-reload && systemctl restart kubelet err: ", err)
@@ -144,14 +143,14 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 			time.Sleep(time.Second * 10)
 			k8sNode, _ := k8s.GetNodeByName(u.Client, node)
 			if k8s.IsNodeReady(*k8sNode) {
-				logger.Info("fourth:  %s nodes is ready", node)
+				logger.Info("[%s] fourth:  %s nodes is ready", ip,node)
 
 				// fifth to uncordon node
 				err = k8s.CordonUnCordon(u.Client, node, false)
 				if err != nil {
 					logger.Error(`k8s.CordonUnCordon err: %s, \n After upgrade,  please run "kubectl uncordon %s" to enable Scheduling`, err, node)
 				}
-				logger.Info("fifth: to uncordon node, 10 seconds to wait for %s uncordon", node)
+				logger.Info("[%s] fifth: to uncordon node, 10 seconds to wait for %s uncordon", ip, node)
 			} else {
 				logger.Error("fourth:  %s nodes is not ready, please check the nodes logs to find out reason", node)
 			}

@@ -3,8 +3,10 @@ package install
 import (
 	"fmt"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPath(t *testing.T) {
@@ -228,4 +230,19 @@ func TestFor120(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_Example(t *testing.T) {
+	pool := NewPool(2)
+	println(runtime.NumGoroutine())
+	for i := 0; i < 10; i++ {
+		pool.Add(1)
+		go func(n int) {
+			time.Sleep(time.Second)
+			println(runtime.NumGoroutine(), n)
+			pool.Done()
+		}(i)
+	}
+	pool.Wait()
+	println(runtime.NumGoroutine())
 }
