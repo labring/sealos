@@ -76,36 +76,41 @@ func (u *SealosUpgrade) SetUP() {
 func (u *SealosUpgrade) UpgradeMaster0() {
 	logger.Info("UpgradeMaster0")
 	hostname := u.GetHostNamesFromIps(u.Masters[:1])
-	u.upgradeNodes(hostname)
+	u.upgradeNodes(hostname, true)
 }
 
 // UpgradeNodes is upgrade nodes.
 func (u *SealosUpgrade) UpgradeNodes() {
 	logger.Info("UpgradeNodes")
 	hostnames := u.GetHostNamesFromIps(u.Nodes)
-	u.upgradeNodes(hostnames)
+	u.upgradeNodes(hostnames, false)
 }
 
 // UpgradeOtherMaster is upgrade other master.
 func (u *SealosUpgrade) UpgradeOtherMaster() {
 	logger.Info("UpgradeOtherMasters")
 	hostnames := u.GetHostNamesFromIps(u.Masters[1:])
-	u.upgradeNodes(hostnames)
+	u.upgradeNodes(hostnames, true)
 
 }
 
-func (u *SealosUpgrade) upgradeNodes(hostnames []string) {
+func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 	var wg sync.WaitGroup
+	var err error
 	for _, hostname := range hostnames {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			// first to drain node
-			logger.Info("first: to drain node %s", node)
-			cmdDrain := fmt.Sprintf(`kubectl drain %s --ignore-daemonsets --delete-local-data`, node)
-			err := SSHConfig.CmdAsync(u.Masters[0], cmdDrain)
-			if err != nil {
-				logger.Error("kubectl drain %s  err: %v", node, err)
+			// drain worker node is too danger for prod use; do not drain nodes if worker nodes~
+			if isMaster {
+				logger.Info("first: to drain master node %s", node)
+				cmdDrain := fmt.Sprintf(`kubectl drain %s --ignore-daemonsets --delete-local-data`, node)
+				err := SSHConfig.CmdAsync(u.Masters[0], cmdDrain)
+				if err != nil {
+					logger.Error("kubectl drain %s  err: %v", node, err)
+				}
+			} else {
+				logger.Info("first: to print upgrade node %s", node)
 			}
 
 			// second to exec kubeadm upgrade node
