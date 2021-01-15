@@ -55,7 +55,7 @@ func CordonUnCordon(k8sClient *kubernetes.Clientset, nodeName string, cordoned b
 		return err
 	}
 	if node.Spec.Unschedulable == cordoned {
-		logger.Alert("Node %s is already cordoned: %v", nodeName, cordoned)
+		logger.Info("Node %s is already Uncordoned, skip...", nodeName)
 		return nil
 	}
 	node.Spec.Unschedulable = cordoned
