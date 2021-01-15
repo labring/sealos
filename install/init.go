@@ -108,12 +108,12 @@ func (s *SealosInstaller) appendApiServer() error {
 	reader := bufio.NewReader(file)
 	for {
 		str, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
 		if strings.Contains(str, ApiServer) {
 			logger.Info("local %s is already exists %s", etcHostPath, ApiServer)
 			return nil
+		}
+		if err == io.EOF {
+			break
 		}
 	}
 	write := bufio.NewWriter(file)
