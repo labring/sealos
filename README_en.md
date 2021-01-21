@@ -11,6 +11,44 @@ Build a production kubernetes HA cluster.
 * If any master is down, lvscare will remove the ipvs realserver, when master recover it will add it back.
 * Sealos will send package and apply install commands, so we needn't ansible.
 
+# Supported Environment
+
+## Linux Distributions 
+
+- Ubuntu 16.04， 18.04， 20.04 ,  x86_64/ arm64
+- Centos/RHEL 7.6+,  x86_64/ arm64
+- 99% systemd manage linux system。 x86_64/ arm64
+
+## kubernetes Versions
+
+- 1.16+
+- 1.17+
+- 1.18+
+- 1.19+
+- 1.20+
+
+Looking for more supported versions，[sealyun.com](https://www.sealyun.com)。
+sealos is currently supported the latest k8s 1.20+
+
+## Requirements and Recommendations
+
+- Minimum resource requirements 
+   - 2 vCpu
+   - 4G RAM
+   - 40G+ Storage
+
+- OS requirements
+   - SSH can access to all nodes.
+   - hostname is uniq ，and satisfied kubernetes requirements。
+   - Time synchronization for all nodes.
+   - network Iface has a stranger name, change it to (eth.*|en.*|em.*)
+   - kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it
+   - kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you
+ - Networking and DNS requirements：
+   - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster。 
+   - if you use aliyun/huawei cloud to deploy kubernetes 。 default pod cidr is confilct with dns cidr， we recommand you install kubernetes init flag to add  `--podcidr`  to aviod this problem。
+   - sealos default to disable firewalld ，It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic。
+
 # Quick Start
 ## PreInstall
 * Install and start docker

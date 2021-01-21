@@ -32,6 +32,43 @@
 
 [English Docs](/README_en.md)
 
+# 支持的环境
+
+## Linux 发行版, CPU架构
+
+- Ubuntu 16.04， 18.04， 20.04 ,  x86_64/ arm64
+- Centos/RHEL 7.6+,  x86_64/ arm64
+- 其他支持 systemd 的系统环境.  x86_64/ arm64
+
+## kubernetes 版本
+
+- 1.16+
+- 1.17+
+- 1.18+
+- 1.19+
+- 1.20+
+
+更多版本支持, 详细查看[sealyun.com](https://www.sealyun.com)
+
+## 要求和建议
+
+- 最低资源要求
+   - 2 vCpu
+   - 4G Ram
+   - 40G+ 存储
+
+- 操作系统要求
+   - ssh 可以访问各安装节点
+   - 各节点主机名不相同，并满足kubernetes的主机名要求。
+   - 各节点时间同步
+   - 网卡名称如果是不常见的，建议修改成规范的网卡名称， 如(eth.*|en.*|em.*)
+   - kubernetes1.20+ 使用containerd作为cri. 不需要用户安装docker/containerd. sealos会安装1.3.9版本containerd。
+   - kubernetes1.19及以下 使用docker作为cri。 也不需要用户安装docker。 sealos会安装1.19.03版本docker
+ - 网络和 DNS 要求：
+   - 确保 /etc/resolv.conf 中的 DNS 地址可用。否则，可能会导致群集中coredns异常。 
+   - 如果使用阿里云/华为云主机部署。 默认的pod网段会和阿里云的dns网段冲突， 建议自定义修改pod网段, 在init的时候指定`--podcidr` 来修改。
+   - sealos 默认会关闭防火墙， 如果需要打开防火墙， 建议手动放行相关的端口。
+
 # 🚀 快速开始
 
 > 环境信息
