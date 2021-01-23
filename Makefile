@@ -73,9 +73,9 @@ local: clean ## 构建二进制
 	# eg darwin/amd64 linux/amd64 windows/amd64
 	@gox -osarch="linux/amd64" \
         -output="dist/{{.Dir}}_{{.OS}}_{{.Arch}}" \
-		-ldflags "-X 'github.com/fanux/sealos/version.Version=${BUILD_VERSION}' \
-				  -X 'github.com/fanux/sealos/version.Build=${COMMIT_SHA1}' \
-				  -X 'github.com/fanux/sealos/version.BuildTime=${BUILD_TIME}'"
+		-ldflags "-X 'github.com/linuxsuren/cobra-extension/version.version=${BUILD_VERSION}' \
+				  -X 'github.com/linuxsuren/cobra-extension/version.commit=${COMMIT_SHA1}' \
+				  -X 'github.com/linuxsuren/cobra-extension/version.date=${BUILD_TIME}'"
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

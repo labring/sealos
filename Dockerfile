@@ -8,7 +8,7 @@ WORKDIR /root
 COPY . .
 RUN go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -o /sealos -ldflags "-s -w -X github.com/fanux/sealos/version.Version=latest  -X github.com/fanux/sealos/version.Build= -X github.com/fanux/sealos/version.BuildTime=" main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -o /sealos -ldflags "-s -w -X github.com/linuxsuren/cobra-extension/version.version=latest  -X github.com/linuxsuren/cobra-extension/version.commit= -X github.com/linuxsuren/cobra-extension/version.date=" main.go
 
 FROM alpine AS UPX
 COPY --from=builder /sealos /sealos

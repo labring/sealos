@@ -3,10 +3,10 @@ package install
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fanux/sealgate/cloud"
-
-	"github.com/fanux/sealos/version"
+	extver "github.com/linuxsuren/cobra-extension/version"
 	"github.com/wonderivan/logger"
 )
 
@@ -141,7 +141,13 @@ func getLocalURL(version string) string {
 
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
-	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos", version.Version)
+	version := extver.GetVersion()
+	if strings.HasPrefix(version, "v") {
+		version = strings.TrimPrefix(version, "v")
+	}
+	releaseURL := fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz",
+		version, version)
+	cmd := fmt.Sprintf("wget %s -O -| tar -xz && chmod +x sealos", releaseURL)
 	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getLocalURL(c.Version), c.Version)
 	for _, master := range c.Masters {
 		cmd += fmt.Sprintf(" --master %s", master.IP)
