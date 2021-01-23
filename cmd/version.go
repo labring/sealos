@@ -15,12 +15,22 @@
 package cmd
 
 import (
+	"fmt"
 	extver "github.com/linuxsuren/cobra-extension/version"
+	"runtime"
+	"strings"
 )
 
 func init() {
 	// it's possible to have multiple choices for users to choose GitHub or aliyun as their download source
 	// see also https://github.com/LinuxSuRen/cobra-extension/issues/6
-	verCmd := extver.NewVersionCmd("fanux", "sealos", "sealos", nil)
+	const name = "sealos"
+	verCmd := extver.NewVersionCmd("fanux", name, name, func(ver string) string {
+		if strings.HasPrefix(ver, "v") {
+			ver = strings.TrimPrefix(ver, "v")
+		}
+		return fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/%s_%s_%s_%s.tar.gz",
+			ver, name, ver, runtime.GOOS, runtime.GOARCH)
+	})
 	rootCmd.AddCommand(verCmd)
 }
