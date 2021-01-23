@@ -14,7 +14,10 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X github.com/fanux/sealos/version.Version={{.Version}} -X github.com/fanux/sealos/version.Build={{.ShortCommit}} -X github.com/fanux/sealos/version.BuildTime={{.Date}}
+      - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
+      - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
+      - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+      - -s -w
 #archives:
 #  - replacements:
 #      darwin: Darwin
