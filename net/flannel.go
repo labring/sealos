@@ -296,7 +296,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: {{ .CniRepo }}/coreos/flannel:v0.11.0-arm64
+        image: {{ .CniRepo }}/flannel:v0.11.0-arm64
         command:
         - cp
         args:

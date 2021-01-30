@@ -130,7 +130,7 @@ func init() {
 
 	initCmd.Flags().BoolVar(&install.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
-	initCmd.Flags().StringVar(&install.CniRepo, "cnirepo", "", "choose a container registry to pull cni images from")
+	initCmd.Flags().StringVar(&install.CniRepo, "cni-repo", "", "choose a container registry to pull cni images from")
 
 	initCmd.Flags().BoolVar(&install.IPIP, "ipip", true, "ipip mode enable, calico..")
 	initCmd.Flags().StringVar(&install.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
