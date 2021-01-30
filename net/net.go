@@ -18,7 +18,8 @@ type MetaData struct {
 	// ipip mode for calico.yml
 	IPIP bool
 	// MTU size
-	MTU string
+	MTU     string
+	CniRepo string
 }
 
 // Net is CNI interface

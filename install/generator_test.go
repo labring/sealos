@@ -115,18 +115,17 @@ func TestJoinTemplate(t *testing.T) {
 	config := sshutil.SSH{
 		User:     "louis",
 		Password: "210010",
-		PkFile: "/home/louis/.ssh/id_rsa",
+		PkFile:   "/home/louis/.ssh/id_rsa",
 	}
 	Version = "v1.20.0"
 	MasterIPs = masters
 	JoinToken = "1y6yyl.ramfafiy99vz3tbw"
 	TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
 
-
 	VIP = vip
 	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(IpFormat(masters[0])))+"\" > ~/aa")
 	t.Log(string(JoinTemplate(IpFormat(masters[0]))))
-	
+
 	Version = "v1.19.0"
 	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(""))+"\" > ~/aa")
 	t.Log(string(JoinTemplate("")))

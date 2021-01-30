@@ -3,8 +3,8 @@ package install
 import (
 	"bytes"
 	"fmt"
-	"github.com/ghodss/yaml"
 	"github.com/wonderivan/logger"
+	"sigs.k8s.io/yaml"
 	"strings"
 	"text/template"
 )

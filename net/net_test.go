@@ -22,3 +22,22 @@ func TestNewNetwork(t *testing.T) {
 	}).Manifests("")
 	fmt.Println(netyaml)
 }
+
+func TestCniRepoNetwork(t *testing.T) {
+	netyaml := NewNetwork("calico", MetaData{
+		Interface: "can-reach=192.168.160.1",
+		CIDR:      "10.1.1.1/24",
+		IPIP:      true,
+		MTU:       "1440",
+		CniRepo:   "registry.cn-beijing.aliyuncs.com/k7scn",
+	}).Manifests("")
+	fmt.Println(netyaml)
+	netyaml = NewNetwork("calico", MetaData{
+		Interface: "can-reach=192.168.160.1",
+		CIDR:      "10.1.1.1/24",
+		IPIP:      true,
+		MTU:       "1440",
+		CniRepo:   "",
+	}).Manifests("")
+	fmt.Println(netyaml)
+}

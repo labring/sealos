@@ -131,7 +131,7 @@ func Test_removeByUse(t *testing.T) {
 func Benchmark_remove(b *testing.B) {
 	b.ResetTimer()
 	origin := []string{"123", "245", "345", "123", "245", "345", "123", "245", "345"}
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		remove(origin, "123")
 	}
 }
@@ -139,7 +139,7 @@ func Benchmark_remove(b *testing.B) {
 func Benchmark_removeByUse(b *testing.B) {
 	b.ResetTimer()
 	origin := []string{"123", "245", "345", "123", "245", "345", "123", "245", "345"}
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		func(a []string, b string) []string {
 			if len(a) == 0 {
 				return a
@@ -158,7 +158,7 @@ func Benchmark_removeByUse(b *testing.B) {
 func Benchmark_removeRep(b *testing.B) {
 	b.ResetTimer()
 	origin := []string{"123", "245", "345", "123", "245", "345", "123", "245", "345"}
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		removeRep(origin)
 	}
 }
@@ -166,7 +166,7 @@ func Benchmark_removeRep(b *testing.B) {
 func BenchmarkIsIpv4(b *testing.B) {
 	b.ResetTimer()
 	origin := "192.168.00.1"
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		IsIpv4(origin)
 	}
 }
@@ -174,7 +174,7 @@ func BenchmarkIsIpv4(b *testing.B) {
 func BenchmarkIsIpv42(b *testing.B) {
 	b.ResetTimer()
 	origin := "192.168.00.1"
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		_, _ = regexp.MatchString("((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}", origin)
 	}
 }
@@ -182,7 +182,7 @@ func BenchmarkIsIpv42(b *testing.B) {
 func BenchmarkIsIpv43(b *testing.B) {
 	b.ResetTimer()
 	origin := "192.168.00.1"
-	for i:=0; i<b.N;i++ {
+	for i := 0; i < b.N; i++ {
 		func(ip string) bool {
 			strs := strings.Split(ip, ".")
 			if len(strs) != 4 {
@@ -204,6 +204,6 @@ func BenchmarkIsIpv43(b *testing.B) {
 				}
 			}
 			return true
-		} (origin)
+		}(origin)
 	}
 }

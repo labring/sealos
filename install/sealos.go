@@ -43,6 +43,7 @@ type SealosInstaller struct {
 	Hosts   []string
 	Masters []string
 	Nodes   []string
+	CniRepo string
 }
 
 type CommandType string
@@ -54,8 +55,8 @@ const JoinNode CommandType = "joinNode"
 
 func (s *SealosInstaller) Command(version string, name CommandType) (cmd string) {
 	cmds := make(map[CommandType]string)
-	// Please convert your v1beta1 configuration files to v1beta2 using the 
-	// "kubeadm config migrate" command of kubeadm v1.15.x, 因此1.14 版本不支持双网卡. 
+	// Please convert your v1beta1 configuration files to v1beta2 using the
+	// "kubeadm config migrate" command of kubeadm v1.15.x, 因此1.14 版本不支持双网卡.
 	cmds = map[CommandType]string{
 		InitMaster: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs` + vlogToStr(),
 		JoinMaster: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s"+vlogToStr(), IpFormat(s.Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
@@ -65,8 +66,8 @@ func (s *SealosInstaller) Command(version string, name CommandType) (cmd string)
 	//todo
 	if VersionToInt(version) >= 115 {
 		cmds[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs` + vlogToStr()
-		cmds[JoinMaster] = "kubeadm join --config=/root/kubeadm-join-config.yaml "+vlogToStr()
-		cmds[JoinNode] =   "kubeadm join --config=/root/kubeadm-join-config.yaml "+vlogToStr()
+		cmds[JoinMaster] = "kubeadm join --config=/root/kubeadm-join-config.yaml " + vlogToStr()
+		cmds[JoinNode] = "kubeadm join --config=/root/kubeadm-join-config.yaml " + vlogToStr()
 	}
 
 	v, ok := cmds[name]

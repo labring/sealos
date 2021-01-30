@@ -160,7 +160,6 @@ func (s *SealosInstaller) JoinNodes() {
 				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", VIP, IpFormat(node))
 				SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
-			
 
 			_ = SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)

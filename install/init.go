@@ -28,6 +28,7 @@ func BuildInit() {
 		Hosts:   hosts,
 		Masters: masters,
 		Nodes:   nodes,
+		CniRepo: CniRepo,
 	}
 	i.CheckValid()
 	i.Print()
@@ -182,7 +183,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 
-	// can-reach is used by calico multi network , flannel has nothing to add. just Use it. 
+	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
 	if k8s.IsIpv4(Interface) && Network == "calico" {
 		Interface = "can-reach=" + Interface
 	} else {
@@ -194,6 +195,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		CIDR:      PodCIDR,
 		IPIP:      IPIP,
 		MTU:       MTU,
+		CniRepo:   CniRepo,
 	}).Manifests("")
 
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)

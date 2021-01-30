@@ -15,6 +15,10 @@ func (c Calico) Manifests(template string) string {
 		c.metadata.CIDR = defaultCIDR
 	}
 
+	if c.metadata.CniRepo == "" {
+		c.metadata.CniRepo = "calico"
+	}
+
 	return render(c.metadata, template)
 }
 
@@ -538,7 +542,7 @@ spec:
         # It can be deleted if this is a fresh installation, or if you have already
         # upgraded to use calico-ipam.
         - name: upgrade-ipam
-          image: calico/cni:v3.8.2
+          image: {{ .CniRepo }}/cni:v3.8.2
           command: ["/opt/cni/bin/calico-ipam", "-upgrade"]
           env:
             - name: KUBERNETES_NODE_NAME
@@ -558,7 +562,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: calico/cni:v3.8.2
+          image: {{ .CniRepo }}/cni:v3.8.2
           command: ["/install-cni.sh"]
           env:
             # Name of the CNI config file to create.
@@ -592,7 +596,7 @@ spec:
         # Adds a Flex Volume Driver that creates a per-pod Unix Domain Socket to allow Dikastes
         # to communicate with Felix over the Policy Sync API.
         - name: flexvol-driver
-          image: calico/pod2daemon-flexvol:v3.8.2
+          image: {{ .CniRepo }}/pod2daemon-flexvol:v3.8.2
           volumeMounts:
           - name: flexvol-driver-host
             mountPath: /host/driver
@@ -601,7 +605,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: calico/node:v3.8.2
+          image: {{ .CniRepo }}/node:v3.8.2
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -774,7 +778,7 @@ spec:
       priorityClassName: system-cluster-critical
       containers:
         - name: calico-kube-controllers
-          image: calico/kube-controllers:v3.8.2
+          image: {{ .CniRepo }}/kube-controllers:v3.8.2
           env:
             # Choose which controllers to run.
             - name: ENABLED_CONTROLLERS

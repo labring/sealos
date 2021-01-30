@@ -110,7 +110,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&install.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", cert.GetUserHomeDir() + "/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&install.SSHConfig.PkFile, "pk", cert.GetUserHomeDir()+"/.ssh/id_rsa", "private key for ssh")
 	initCmd.Flags().StringVar(&install.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&install.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
@@ -130,6 +130,8 @@ func init() {
 
 	initCmd.Flags().BoolVar(&install.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().StringVar(&install.Network, "network", "calico", "cni plugin, calico..")
+	initCmd.Flags().StringVar(&install.CniRepo, "cnirepo", "", "choose a container registry to pull cni images from")
+
 	initCmd.Flags().BoolVar(&install.IPIP, "ipip", true, "ipip mode enable, calico..")
 	initCmd.Flags().StringVar(&install.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
 

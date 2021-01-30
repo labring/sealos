@@ -49,6 +49,7 @@ var (
 	KubeadmFile  string
 	// network type, calico or flannel etc..
 	Network string
+	CniRepo string
 	// if true don't install cni plugin
 	WithoutCNI bool
 	//network interface name, like "eth.*|en.*"

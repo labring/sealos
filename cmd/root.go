@@ -67,7 +67,7 @@ func initConfig() {
 	home := cert.GetUserHomeDir()
 	logFile := fmt.Sprintf("%s/.sealos/sealos.log", home)
 	if !install.FileExist(home + "/.sealos") {
-		err := os.MkdirAll(home + "/.sealos",os.ModePerm)
+		err := os.MkdirAll(home+"/.sealos", os.ModePerm)
 		if err != nil {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
