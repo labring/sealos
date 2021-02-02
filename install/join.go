@@ -24,9 +24,11 @@ func joinMastersFunc(joinMasters []string) {
 	masters := MasterIPs
 	nodes := NodeIPs
 	i := &SealosInstaller{
-		Hosts:   joinMasters,
-		Masters: masters,
-		Nodes:   nodes,
+		Hosts:     joinMasters,
+		Masters:   masters,
+		Nodes:     nodes,
+		Network:   Network,
+		ApiServer: ApiServer,
 	}
 	i.CheckValid()
 	i.SendSealos()
@@ -160,7 +162,6 @@ func (s *SealosInstaller) JoinNodes() {
 				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", VIP, IpFormat(node))
 				SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
-			
 
 			_ = SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
 			cmd := s.Command(Version, JoinNode)

@@ -6,10 +6,13 @@ import (
 )
 
 const (
-	CALICO           = "calico"
-	FLANNEL          = "flannel"
-	defaultInterface = "eth.*|en.*"
-	defaultCIDR      = "100.64.0.0/10"
+	CALICO                = "calico"
+	FLANNEL               = "flannel"
+	CILIUM                = "cilium"
+	defaultInterface      = "eth.*|en.*"
+	defaultCIDR           = "100.64.0.0/10"
+	defaultK8sServiceHost = "127.0.0.1"
+	defaultK8sServicePort = "6443"
 )
 
 type MetaData struct {
@@ -18,7 +21,10 @@ type MetaData struct {
 	// ipip mode for calico.yml
 	IPIP bool
 	// MTU size
-	MTU string
+	MTU            string
+	CniRepo        string
+	K8sServiceHost string
+	K8sServicePort string
 }
 
 // Net is CNI interface
@@ -35,6 +41,8 @@ func NewNetwork(t string, metadata MetaData) Net {
 		return &Calico{metadata: metadata}
 	case FLANNEL:
 		return &Flannel{metadata: metadata}
+	case CILIUM:
+		return &Cilium{metadata: metadata}
 	default:
 		return &Calico{metadata: metadata}
 	}

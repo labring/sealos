@@ -15,6 +15,10 @@ func (f Flannel) Manifests(template string) string {
 		f.metadata.CIDR = defaultCIDR
 	}
 
+	if f.metadata.CniRepo == "" || f.metadata.CniRepo == "k8s.gcr.io" {
+		f.metadata.CniRepo = "quay.io.azk8s.cn/coreos"
+	}
+
 	return render(f.metadata, template)
 }
 
@@ -22,9 +26,9 @@ func (Flannel) Template() string {
 	return FlannelManifests
 }
 
-// kube-flannel.yaml uses ClusterRole & ClusterRoleBinding of rbac.authorization.k8s.io/v1. When you use Kubernetes v1.16, 
-// you should replace rbac.authorization.k8s.io/v1 to rbac.authorization.k8s.io/v1beta1 
-// because rbac.authorization.k8s.io/v1 had become GA from Kubernetes v1.17. 
+// kube-flannel.yaml uses ClusterRole & ClusterRoleBinding of rbac.authorization.k8s.io/v1. When you use Kubernetes v1.16,
+// you should replace rbac.authorization.k8s.io/v1 to rbac.authorization.k8s.io/v1beta1
+// because rbac.authorization.k8s.io/v1 had become GA from Kubernetes v1.17.
 // TODO v1.16- 如果使用flannel 需要使用另外的yaml
 const FlannelManifests = `
 ---
@@ -198,7 +202,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-amd64
+        image: {{ .CniRepo }}/flannel:v0.11.0-amd64
         command:
         - cp
         args:
@@ -212,7 +216,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-amd64
+        image: {{ .CniRepo }}/flannel:v0.11.0-amd64
         command:
         - /opt/bin/flanneld
         args:
@@ -293,7 +297,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm64
+        image: {{ .CniRepo }}/flannel:v0.11.0-arm64
         command:
         - cp
         args:
@@ -307,7 +311,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm64
+        image: {{ .CniRepo }}/flannel:v0.11.0-arm64
         command:
         - /opt/bin/flanneld
         args:
@@ -388,7 +392,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm
+        image: {{ .CniRepo }}/flannel:v0.11.0-arm
         command:
         - cp
         args:
@@ -402,7 +406,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-arm
+        image: {{ .CniRepo }}/flannel:v0.11.0-arm
         command:
         - /opt/bin/flanneld
         args:
@@ -483,7 +487,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-ppc64le
+        image: {{ .CniRepo }}/flannel:v0.11.0-ppc64le
         command:
         - cp
         args:
@@ -497,7 +501,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-ppc64le
+        image: {{ .CniRepo }}/flannel:v0.11.0-ppc64le
         command:
         - /opt/bin/flanneld
         args:
@@ -578,7 +582,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-s390x
+        image: {{ .CniRepo }}/flannel:v0.11.0-s390x
         command:
         - cp
         args:
@@ -592,7 +596,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io.azk8s.cn/coreos/flannel:v0.11.0-s390x
+        image: {{ .CniRepo }}/flannel:v0.11.0-s390x
         command:
         - /opt/bin/flanneld
         args:
@@ -636,7 +640,7 @@ spec:
             name: kube-flannel-cfg
 `
 
-// lastet flannel k8s manifests. For Kubernetes v1.17+ 
+// lastet flannel k8s manifests. For Kubernetes v1.17+
 const newFlannelYaml = `
 ---
 apiVersion: policy/v1beta1
@@ -806,7 +810,7 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.13.1-rc1
+        image: {{ .CniRepo }}/flannel:v0.13.1-rc1
         command:
         - cp
         args:
@@ -820,7 +824,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.13.1-rc1
+        image: {{ .CniRepo }}/flannel:v0.13.1-rc1
         command:
         - /opt/bin/flanneld
         args:

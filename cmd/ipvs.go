@@ -37,7 +37,7 @@ func init() {
 
 	// Here you will define your flags and configuration settings.
 	ipvsCmd.Flags().BoolVar(&install.Ipvs.RunOnce, "run-once", false, "is run once mode")
-	ipvsCmd.Flags().BoolVarP(&install.Ipvs.Clean, "clean","c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
+	ipvsCmd.Flags().BoolVarP(&install.Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
 	ipvsCmd.Flags().StringVar(&install.Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
 	ipvsCmd.Flags().StringSliceVar(&install.Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
 

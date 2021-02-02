@@ -28,13 +28,13 @@ type SealConfig struct {
 	PkPassword string
 	//ApiServer ex. apiserver.cluster.local
 	ApiServerDomain string
-
-	VIP     string
-	PkgURL  string
-	Version string
-	Repo    string
-	PodCIDR string
-	SvcCIDR string
+	Network         string
+	VIP             string
+	PkgURL          string
+	Version         string
+	Repo            string
+	PodCIDR         string
+	SvcCIDR         string
 	//certs location
 	CertPath     string
 	CertEtcdPath string
@@ -59,6 +59,7 @@ func (c *SealConfig) Dump(path string) {
 	c.PrivateKey = SSHConfig.PkFile
 	c.PkPassword = SSHConfig.PkPassword
 	c.ApiServerDomain = ApiServer
+	c.Network = Network
 	c.VIP = VIP
 	c.PkgURL = PkgUrl
 	c.Version = Version
@@ -135,13 +136,13 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.PkFile = c.PrivateKey
 	SSHConfig.PkPassword = c.PkPassword
 	ApiServer = c.ApiServerDomain
+	Network = c.Network
 	VIP = c.VIP
 	PkgUrl = c.PkgURL
 	Version = c.Version
 	Repo = c.Repo
 	PodCIDR = c.PodCIDR
 	SvcCIDR = c.SvcCIDR
-
 	DnsDomain = c.DnsDomain
 	ApiServerCertSANs = c.ApiServerCertSANs
 	CertPath = c.CertPath
@@ -184,6 +185,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.Passwd = "123456"
 	c.PrivateKey = home + "/.ssh/id_rsa"
 	c.ApiServerDomain = "apiserver.cluster.local"
+	c.Network = "calico"
 	c.VIP = "10.103.97.2"
 	c.PkgURL = home + "/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"

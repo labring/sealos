@@ -17,11 +17,11 @@ import (
 )
 
 const (
-	HostnameLabel         = "kubernetes.io/hostname"
-	NodeRoleLabel         = "node-role.kubernetes.io/master"
-	MaxRetries            = 5
-	RetryInterval         = 5
-	WrapTransportTimeout  = 30
+	HostnameLabel        = "kubernetes.io/hostname"
+	NodeRoleLabel        = "node-role.kubernetes.io/master"
+	MaxRetries           = 5
+	RetryInterval        = 5
+	WrapTransportTimeout = 30
 )
 
 var (

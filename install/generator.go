@@ -3,8 +3,8 @@ package install
 import (
 	"bytes"
 	"fmt"
-	"github.com/ghodss/yaml"
 	"github.com/wonderivan/logger"
+	"sigs.k8s.io/yaml"
 	"strings"
 	"text/template"
 )
@@ -110,6 +110,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["SvcCIDR"] = SvcCIDR
 	envMap["Repo"] = Repo
 	envMap["Master0"] = IpFormat(MasterIPs[0])
+	envMap["Network"] = Network
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

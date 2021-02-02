@@ -49,5 +49,15 @@ func (s *SealosInstaller) CheckValid() {
 			}
 			logger.Info("[%s]  ------------ check ok", h)
 		}
+		if s.Network == "cilium" {
+			if err := SSHConfig.CmdAsync(h, "uname -r | grep 5 | awk -F. '{if($2>3)print \"ok\"}' | grep ok && exit 0 || exit 1"); err != nil {
+				logger.Error("[%s] ------------ check kernel version  < 5.3", h)
+				os.Exit(1)
+			}
+			if err := SSHConfig.CmdAsync(h, "mount bpffs -t bpf /sys/fs/bpf && mount | grep /sys/fs/bpf && exit 0 || exit 1"); err != nil {
+				logger.Error("[%s] ------------ mount  bpffs err", h)
+				os.Exit(1)
+			}
+		}
 	}
 }
