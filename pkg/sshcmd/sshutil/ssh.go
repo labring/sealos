@@ -35,21 +35,18 @@ func (ss *SSH) Cmd(host string, cmd string) []byte {
 }
 
 func readPipe(host string, pipe io.Reader, isErr bool) {
-	r := bufio.NewReader(pipe)
+	scanner := bufio.NewScanner(pipe)
 	for {
-		line, _, err := r.ReadLine()
-		if line == nil {
-			return
-		} else if err != nil {
-			logger.Info("[%s] %s", host, line)
-			logger.Error("[ssh] [%s] %s", host, err)
-			return
-		} else {
-			if isErr {
-				logger.Error("[%s] %s", host, line)
-			} else {
-				logger.Info("[%s] %s", host, line)
+		if ok := scanner.Scan(); !ok {
+			if err := scanner.Err(); err != nil {
+				logger.Error("[ssh][%s] %v", host, err)
 			}
+			return
+		}
+		if isErr {
+			logger.Error("[ssh][%s] %s", host, scanner.Text())
+		} else {
+			logger.Info("[ssh][%s] %s", host, scanner.Text())
 		}
 	}
 }
