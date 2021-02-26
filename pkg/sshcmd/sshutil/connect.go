@@ -28,9 +28,7 @@ func (ss *SSH) connect(host string) (*ssh.Client, error) {
 		Auth:    auth,
 		Timeout: *ss.Timeout,
 		Config:  config,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	addr := ss.addrReformat(host)
