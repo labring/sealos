@@ -18,6 +18,7 @@ Build a production kubernetes HA cluster.
 - Ubuntu 16.04， 18.04， 20.04 ,  x86_64/ arm64
 - Centos/RHEL 7.6+,  x86_64/ arm64
 - 99% systemd manage linux system。 x86_64/ arm64
+- Kylin arm64
 
 ## kubernetes Versions
 

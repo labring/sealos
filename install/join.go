@@ -86,13 +86,15 @@ func getApiserverHost(ipAddr string) (host string) {
 }
 
 // sendJoinCPConfig send join CP nodes configuration
-func sendJoinCPConfig(joinMaster []string) {
+func (s *SealosInstaller) sendJoinCPConfig(joinMaster []string) {
 	var wg sync.WaitGroup
 	for _, master := range joinMaster {
 		wg.Add(1)
 		go func(master string) {
 			defer wg.Done()
-			templateData := string(JoinTemplate(IpFormat(master)))
+			var cgroup string
+			cgroup = s.getCgroupDriverFromShell(master)
+			templateData := string(JoinTemplate(IpFormat(master), cgroup))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(master, cmd)
 		}(master)
@@ -107,7 +109,7 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 	s.SendJoinMasterKubeConfigs(masters)
 	s.sendNewCertAndKey(masters)
 	// send CP nodes configuration
-	sendJoinCPConfig(masters)
+	s.sendJoinCPConfig(masters)
 
 	//join master do sth
 	cmd := s.Command(Version, JoinMaster)
@@ -142,12 +144,14 @@ func (s *SealosInstaller) JoinNodes() {
 		masters += fmt.Sprintf(" --rs %s:6443", IpFormat(master))
 	}
 	ipvsCmd := fmt.Sprintf("sealos ipvs --vs %s:6443 %s --health-path /healthz --health-schem https --run-once", VIP, masters)
-	templateData := string(JoinTemplate(""))
 	for _, node := range s.Nodes {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
 			// send join node config
+			var cgroup string
+			cgroup = s.getCgroupDriverFromShell(node)
+			templateData := string(JoinTemplate("", cgroup))
 			cmdJoinConfig := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(node, cmdJoinConfig)
 

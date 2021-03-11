@@ -141,12 +141,12 @@ func TestJoinTemplate(t *testing.T) {
 	TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
 
 	VIP = vip
-	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(IpFormat(masters[0])))+"\" > ~/aa")
-	t.Log(string(JoinTemplate(IpFormat(masters[0]))))
+	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(IpFormat(masters[0]), "systemd"))+"\" > ~/aa")
+	t.Log(string(JoinTemplate(IpFormat(masters[0]), "cgroupfs")))
 
 	Version = "v1.19.0"
-	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(""))+"\" > ~/aa")
-	t.Log(string(JoinTemplate("")))
+	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate("", "systemd"))+"\" > ~/aa")
+	t.Log(string(JoinTemplate("", "cgroupfs")))
 }
 
 var tepJoin = `apiVersion: kubeadm.k8s.io/v1beta2

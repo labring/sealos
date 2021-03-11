@@ -30,6 +30,7 @@ var (
 
 	//criSocket
 	CriSocket string
+	CgroupDriver string
 
 	VIP     string
 	PkgUrl  string

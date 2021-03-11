@@ -54,11 +54,11 @@ func Template() []byte {
 }
 
 // JoinTemplate is generate JoinCP nodes configuration by master ip.
-func JoinTemplate(ip string) []byte {
-	return JoinTemplateFromTemplateContent(joinKubeadmConfig(), ip)
+func JoinTemplate(ip string, cgroup string) []byte {
+	return JoinTemplateFromTemplateContent(joinKubeadmConfig(), ip, cgroup)
 }
 
-func JoinTemplateFromTemplateContent(templateContent, ip string) []byte {
+func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte {
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -80,6 +80,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip string) []byte {
 		CriSocket = DefaultDockerCRISocket
 	}
 	envMap["CriSocket"] = CriSocket
+	envMap["CgroupDriver"] = cgroup
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
@@ -111,6 +112,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["Repo"] = Repo
 	envMap["Master0"] = IpFormat(MasterIPs[0])
 	envMap["Network"] = Network
+	envMap["CgroupDriver"] = CgroupDriver
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
