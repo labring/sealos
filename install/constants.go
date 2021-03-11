@@ -67,6 +67,9 @@ controllerManager:
   extraArgs:
     feature-gates: TTLAfterFinished=true
     experimental-cluster-signing-duration: 876000h
+{{- if eq .Network "cilium" }}
+    allocate-node-cidrs: \"true\"
+{{- end }}
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
@@ -153,6 +156,9 @@ controllerManager:
   extraArgs:
     feature-gates: TTLAfterFinished=true
     experimental-cluster-signing-duration: 876000h
+{{- if eq .Network "cilium" }}
+    allocate-node-cidrs: \"true\"
+{{- end }}
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime

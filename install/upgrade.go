@@ -2,7 +2,7 @@ package install
 
 import (
 	"fmt"
-	"os"	
+	"os"
 	"time"
 
 	"k8s.io/client-go/kubernetes"
@@ -143,7 +143,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 			time.Sleep(time.Second * 10)
 			k8sNode, _ := k8s.GetNodeByName(u.Client, node)
 			if k8s.IsNodeReady(*k8sNode) {
-				logger.Info("[%s] fourth:  %s nodes is ready", ip,node)
+				logger.Info("[%s] fourth:  %s nodes is ready", ip, node)
 
 				// fifth to uncordon node
 				err = k8s.CordonUnCordon(u.Client, node, false)

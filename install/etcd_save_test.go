@@ -15,8 +15,8 @@ func Test_reFormatHostToIp(t *testing.T) {
 		args args
 		want string
 	}{
-		{"test",args{"192.168.0.22:22"},"192.168.0.22"},
-		{"test02",args{"192.168.0.22"},"192.168.0.22"},
+		{"test", args{"192.168.0.22:22"}, "192.168.0.22"},
+		{"test02", args{"192.168.0.22"}, "192.168.0.22"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -25,7 +25,6 @@ func Test_reFormatHostToIp(t *testing.T) {
 			}
 		})
 	}
-
 
 	u := fmt.Sprintf("%v", time.Now().Unix())
 	fmt.Println(u)

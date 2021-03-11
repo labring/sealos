@@ -14,11 +14,10 @@ func TestNewNetwork(t *testing.T) {
 	}).Manifests("")
 	fmt.Println(netyaml)
 
-	netyaml = NewNetwork("calico", MetaData{
-		Interface: "can-reach=192.168.160.1",
-		CIDR:      "10.1.1.1/24",
-		IPIP:      true,
-		MTU:       "1440",
+	netyaml = NewNetwork("cilium", MetaData{
+		CIDR:           "10.1.1.1/24",
+		K8sServiceHost: "127.0.0.1",
+		// K8sServicePort: "6443",
 	}).Manifests("")
 	fmt.Println(netyaml)
 }

@@ -2,19 +2,18 @@ package install
 
 import "sync"
 
-
 type uPool struct {
 	queue chan int
-	wg *sync.WaitGroup 
+	wg    *sync.WaitGroup
 }
 
-func NewPool (size int) *uPool {
+func NewPool(size int) *uPool {
 	if size <= 1 {
 		size = 1
 	}
 	return &uPool{
 		queue: make(chan int, size),
-		wg: &sync.WaitGroup{},
+		wg:    &sync.WaitGroup{},
 	}
 }
 

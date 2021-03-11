@@ -218,10 +218,10 @@ func TestFor120(t *testing.T) {
 		args args
 		want bool
 	}{
-		{"test01",args{"v1.19.2"}, false},
-		{"test02",args{"v1.18.2"}, false},
-		{"test03",args{"v1.20.2"}, true},
-		{"test04",args{"v1.20.0-rc.0"}, true},
+		{"test01", args{"v1.19.2"}, false},
+		{"test02", args{"v1.18.2"}, false},
+		{"test03", args{"v1.20.2"}, true},
+		{"test04", args{"v1.20.0-rc.0"}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

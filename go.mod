@@ -8,7 +8,6 @@ require (
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/fanux/lvscare v0.0.0-00010101000000-000000000000
 	github.com/fanux/sealgate v0.0.5
-	github.com/ghodss/yaml v1.0.0
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/linuxsuren/cobra-extension v0.0.8
 	github.com/pkg/errors v0.9.1
@@ -28,6 +27,7 @@ require (
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
 	k8s.io/client-go v0.18.0
+	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
