@@ -1,5 +1,5 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-[![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
+  [![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
 
 # Introduction
 Build a production kubernetes HA cluster.
