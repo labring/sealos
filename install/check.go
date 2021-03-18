@@ -34,6 +34,7 @@ func (s *SealosInstaller) CheckValid() {
 		os.Exit(1)
 	}
 	dict := make(map[string]bool)
+	var errList []string
 	for _, h := range s.Hosts {
 		hostname := SSHConfig.CmdToString(h, "hostname", "") //获取主机名
 		if hostname == "" {
@@ -59,5 +60,24 @@ func (s *SealosInstaller) CheckValid() {
 				os.Exit(1)
 			}
 		}
+
+		// version >= 1.20 , Add prefight for containerd
+		if For120(Version) {
+			// for containerd. if docker exist ; exit frist.
+			
+			dockerExist := SSHConfig.CmdToString(h, "command -v dockerd &> /dev/null && echo yes || :", "")
+			if dockerExist == "yes" {
+				errList = append(errList, h)
+			}
+		}
+	}
+
+	if len(errList) >= 1 {
+		logger.Error(`docker exist error when kubernetes version >= 1.20.
+sealos install kubernetes version >= 1.20 use containerd cri instead. 
+please uninstall docker on [%s]. For example run on centos7: "yum remove docker-ce containerd-io -y",  
+see details:  https://github.com/fanux/sealos/issues/582
+					`, errList)
+		os.Exit(-1)
 	}
 }
