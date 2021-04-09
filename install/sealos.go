@@ -115,6 +115,7 @@ func decodeJoinCmd(cmd string) {
 		r = strings.ReplaceAll(r, "\t", "")
 		r = strings.ReplaceAll(r, "\n", "")
 		r = strings.ReplaceAll(r, "\\", "")
+		logger.Debug("[####]%d :%s:", i, r)
 		switch r {
 		case "--token":
 			JoinToken = stringSlice[i+1]
@@ -124,4 +125,8 @@ func decodeJoinCmd(cmd string) {
 			CertificateKey = stringSlice[i+1][:64]
 		}
 	}
+	logger.Debug("[####]JoinToken :%s", JoinToken)
+	logger.Debug("[####]TokenCaCertHash :%s", TokenCaCertHash)
+	logger.Debug("[####]CertificateKey :%s", CertificateKey)
+
 }
