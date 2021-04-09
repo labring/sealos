@@ -115,6 +115,7 @@ func decodeJoinCmd(cmd string) {
 		r = strings.ReplaceAll(r, "\t", "")
 		r = strings.ReplaceAll(r, "\n", "")
 		r = strings.ReplaceAll(r, "\\", "")
+		r = strings.TrimSpace(r)
 		logger.Debug("[####]%d :%s:", i, r)
 		switch r {
 		case "--token":
