@@ -112,6 +112,9 @@ func decodeJoinCmd(cmd string) {
 	stringSlice := strings.Split(cmd, " ")
 
 	for i, r := range stringSlice {
+		r = strings.ReplaceAll(r, "\t", "")
+		r = strings.ReplaceAll(r, "\n", "")
+		r = strings.ReplaceAll(r, "\\", "")
 		switch r {
 		case "--token":
 			JoinToken = stringSlice[i+1]
