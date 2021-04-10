@@ -117,12 +117,23 @@ func decodeJoinCmd(cmd string) {
 		r = strings.ReplaceAll(r, "\\", "")
 		r = strings.TrimSpace(r)
 		logger.Debug("[####]%d :%s:", i, r)
-		switch r {
-		case "--token":
+		// switch r {
+		// case "--token":
+		// 	JoinToken = stringSlice[i+1]
+		// case "--discovery-token-ca-cert-hash":
+		// 	TokenCaCertHash = stringSlice[i+1]
+		// case "--certificate-key":
+		// 	CertificateKey = stringSlice[i+1][:64]
+		// }
+		if strings.Contains(r, "--token") {
 			JoinToken = stringSlice[i+1]
-		case "--discovery-token-ca-cert-hash":
+		}
+
+		if strings.Contains(r, "--discovery-token-ca-cert-hash") {
 			TokenCaCertHash = stringSlice[i+1]
-		case "--certificate-key":
+		}
+		
+		if strings.Contains(r, "--certificate-key") {
 			CertificateKey = stringSlice[i+1][:64]
 		}
 	}
