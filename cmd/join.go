@@ -35,20 +35,7 @@ var joinCmd = &cobra.Command{
 			os.Exit(0)
 		}
 	},
-	Run: func(cmd *cobra.Command, args []string) {
-		beforeNodes := install.ParseIPs(install.NodeIPs)
-		beforeMasters := install.ParseIPs(install.MasterIPs)
-
-		c := &install.SealConfig{}
-		err := c.Load(cfgFile)
-		if err != nil {
-			logger.Error(err)
-			c.ShowDefaultConfig()
-			os.Exit(0)
-		}
-		install.BuildJoin(beforeMasters, beforeNodes)
-		c.Dump(cfgFile)
-	},
+	Run: JoinCmdFunc,
 }
 
 func init() {
@@ -56,4 +43,28 @@ func init() {
 	joinCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "kubernetes multi-master ex. 192.168.0.5-192.168.0.5")
 	joinCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
 	joinCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
+}
+
+func JoinCmdFunc (cmd *cobra.Command, args []string) {
+	beforeNodes := install.ParseIPs(install.NodeIPs)
+	beforeMasters := install.ParseIPs(install.MasterIPs)
+
+	c := &install.SealConfig{}
+	err := c.Load(cfgFile)
+	if err != nil {
+		logger.Error(err)
+		c.ShowDefaultConfig()
+		os.Exit(0)
+	}
+
+	cfgNodes := append(c.Masters, c.Nodes...)
+	joinNodes := append(beforeNodes, beforeMasters...) 
+
+	if ok, node := deleteOrJoinNodeIsExistInCfgNodes(joinNodes, cfgNodes); ok {
+		logger.Error(`[%s] has already exist in your cluster. please check.`, node)
+		os.Exit(-1)
+	}
+
+	install.BuildJoin(beforeMasters, beforeNodes)
+	c.Dump(cfgFile)
 }
