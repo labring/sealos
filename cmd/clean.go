@@ -95,12 +95,12 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	// 使用 sealos clean --node   不小心写了 masterip.
-	if ok, node := deleteNodeIsExistInNodes(deleteNodes, c.Masters); ok {
+	if ok, node := deleteOrJoinNodeIsExistInCfgNodes(deleteNodes, c.Masters); ok {
 		logger.Error(`clean master Use "sealos clean --master %s" to clean it, exit...`, node)
 		os.Exit(-1)
 	}
 	// 使用 sealos clean --master 不小心写了 nodeip.
-	if ok, node := deleteNodeIsExistInNodes(deleteMasters, c.Nodes); ok {
+	if ok, node := deleteOrJoinNodeIsExistInCfgNodes(deleteMasters, c.Nodes); ok {
 		logger.Error(`clean nodes Use "sealos clean --node %s" to clean it, exit...`, node)
 		os.Exit(-1)
 	}
@@ -111,11 +111,11 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 // IsExistNodes
-func deleteNodeIsExistInNodes(deleteNodes []string, nodes []string) (bool, string) {
+func deleteOrJoinNodeIsExistInCfgNodes(deleteOrJoinNodes []string, nodes []string) (bool, string) {
 	for _, node := range nodes {
-		for _, deleteNode := range deleteNodes {
-			// 如果ips 相同. 则说明删除错了.
-			if node == deleteNode {
+		for _, deleteOrJoinNode := range deleteOrJoinNodes {
+			// 如果ips 相同. 则说明cfg配置文件已经存在该node.
+			if node == deleteOrJoinNode {
 				return true, node
 			}
 		}
