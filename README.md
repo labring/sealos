@@ -4,9 +4,6 @@
  
  阿里巴巴从去年五月份内部开始在某些场景使用sealos，内部fork的版本trident在sealos基础上作出了非常多的优化使系统更加稳定功能更加强大。
  21年开始重大创新的想法也彻底使sealos脱胎换骨，实现整个集群的 build share run, 我们希望这些能力也能够惠及更多开源社区的开发者们。
- 为了不影响sealos的老用户，我们新开了一个项目： [alibaba/sealer](https://github.com/alibaba/sealer) 
- 
- sealos已经趋于稳定后续以bug修复为主，未来也会遵循sealer集群镜像的标准和API，以及围绕sealer做一些生态互补的工作。
  
  <a href="https://trackgit.com">
 <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
