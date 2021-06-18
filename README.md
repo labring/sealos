@@ -173,3 +173,5 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 支付2波卡币(DOT)到下面账户，联系fanux（wechat:fangnux）开通，即可获得sealyun**所有产品的永久会员**
 ![image](https://user-images.githubusercontent.com/8912557/122524041-45ac2900-d04a-11eb-96ae-33781d493f2d.png)
 
+12RE5Ps9bE8DXsqT6Xc1w4MxGanTkCmkJfxuUDdJpNWL75cX
+
