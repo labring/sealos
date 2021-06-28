@@ -29,7 +29,7 @@ type MetaData struct {
 	CniRepo        string
 	K8sServiceHost string
 	K8sServicePort string
-	K8sVersion	   string
+	Version	   string
 }
 
 // Net is CNI interface

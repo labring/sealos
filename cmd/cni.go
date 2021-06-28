@@ -49,7 +49,7 @@ to quickly create a Cobra application.`,
 			Interface: "interface=eth.*|en.*|em.*",
 			IPIP:      true,
 			MTU:       "1440",
-			K8sVersion: version,
+			Version: version,
 		}).Manifests("")
 		fmt.Println(yaml)
 	},
@@ -59,7 +59,7 @@ func init() {
 	rootCmd.AddCommand(cniCmd)
 
 	cniCmd.Flags().StringVarP(&cniType,"cni-type", "t", "calico", "print cni yaml")
-	cniCmd.Flags().StringVarP(&version,"version", "v", "", "k8s version to adpat the cni version like v1.21.0")
+	cniCmd.Flags().StringVarP(&version,"version", "v", "", "calico version")
 
 	// Here you will define your flags and configuration settings.
 

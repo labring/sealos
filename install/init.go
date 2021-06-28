@@ -2,6 +2,7 @@ package install
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -191,6 +192,22 @@ func (s *SealosInstaller) InstallMaster0() {
 		Interface = "interface=" + Interface
 	}
 
+	
+	var cniVersion string
+	if SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
+		var metajson []byte 
+		var tmpdata metadata 
+		SSHConfig.CopyConfigFile(s.Masters[0], "/root/kube/Metadata", metajson)
+		err := json.Unmarshal(metajson, &tmpdata)
+		if err != nil {
+			logger.Warn("get metadata version err: ", err)
+		} else {
+			cniVersion = tmpdata.CniVersion
+			Network = tmpdata.CniName
+		}
+	}
+	
+
 	netyaml := net.NewNetwork(Network, net.MetaData{
 		Interface:      Interface,
 		CIDR:           PodCIDR,
@@ -198,7 +215,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		MTU:            MTU,
 		CniRepo:        Repo,
 		K8sServiceHost: s.ApiServer,
-		K8sVersion: Version,
+		Version: cniVersion,
 	}).Manifests("")
 
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
