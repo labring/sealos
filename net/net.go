@@ -2,11 +2,7 @@ package net
 
 import (
 	"bytes"
-	"strconv"
-	"strings"
 	"text/template"
-
-	"github.com/wonderivan/logger"
 )
 
 const (
@@ -60,37 +56,3 @@ func render(data MetaData, temp string) string {
 	return b.String()
 }
 
-
-// GetMajorMinorInt
-func GetMajorMinorInt(version string) (major, minor int) {
-	// alpha beta rc version
-	if strings.Contains(version, "-") {
-		v := strings.Split(version, "-")[0]
-		version = v
-	}
-	version = strings.Replace(version, "v", "", -1)
-	versionArr := strings.Split(version, ".")
-	if len(versionArr) >= 2 {
-		majorStr := versionArr[0] + versionArr[1]
-		minorStr := versionArr[2]
-		if major, err := strconv.Atoi(majorStr); err == nil {
-			if minor, err := strconv.Atoi(minorStr); err == nil {
-				return major, minor
-			}
-		}
-	}
-	return 0, 0
-}
-
-func For121(version string) bool {
-	newMajor, _ := GetMajorMinorInt(version)
-	// // kubernetes gt 1.20, use Containerd instead of docker
-	if newMajor >= 121 {
-		logger.Info("install version is: %s, Use calico v3.19.1 instead", version)
-		return true
-	} else {
-		//logger.Info("install version is: %s, Use kubeadm v1beta1 InitConfig, docker", version)
-		return false
-	}
-
-}
