@@ -23,6 +23,9 @@ func (c Calico) Manifests(template string) string {
 }
 
 func (c Calico) Template() string {
+  if For121(c.metadata.K8sVersion) {
+    return CalicoV3191Manifests
+  }
 	return CalicoManifests
 }
 

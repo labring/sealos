@@ -198,6 +198,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		MTU:            MTU,
 		CniRepo:        Repo,
 		K8sServiceHost: s.ApiServer,
+		K8sVersion: Version,
 	}).Manifests("")
 
 	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
