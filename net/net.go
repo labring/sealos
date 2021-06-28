@@ -25,6 +25,7 @@ type MetaData struct {
 	CniRepo        string
 	K8sServiceHost string
 	K8sServicePort string
+	Version	   string
 }
 
 // Net is CNI interface
@@ -54,3 +55,4 @@ func render(data MetaData, temp string) string {
 	t.Execute(&b, &data)
 	return b.String()
 }
+

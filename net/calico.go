@@ -19,11 +19,20 @@ func (c Calico) Manifests(template string) string {
 		c.metadata.CniRepo = "calico"
 	}
 
+  if c.metadata.Version == "" {
+    c.metadata.Version = "v3.8.2"
+  }
+
 	return render(c.metadata, template)
 }
 
 func (c Calico) Template() string {
-	return CalicoManifests
+  if c.metadata.Version == "v3.19.1" {
+    return CalicoV3191Manifests
+  } else if c.metadata.Version == "v3.8.2" {
+    return CalicoManifests
+  }
+  return ""
 }
 
 const CalicoManifests = `

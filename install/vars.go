@@ -83,3 +83,9 @@ func vlogToStr() string {
 	str := strconv.Itoa(Vlog)
 	return " -v " + str
 }
+
+type metadata struct {
+	K8sVersion string `json:"k8sVersion"`
+	CniVersion string `json:"cniVersion"`
+	CniName    string `json:"cniName"`
+}
