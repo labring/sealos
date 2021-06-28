@@ -1,12 +1,15 @@
 package install
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/wonderivan/logger"
 )
 
 func TestPath(t *testing.T) {
@@ -245,4 +248,25 @@ func Test_Example(t *testing.T) {
 	}
 	pool.Wait()
 	println(runtime.NumGoroutine())
+}
+
+func Test_Cmd(t *testing.T) {
+	tmpcmd := "cat /tmp/tmp.json"
+	host := "192.168.218.97"
+	var cniVersion string 
+	var metajson string
+	var tmpdata metadata
+	
+	SSHConfig.User = "louis"
+	SSHConfig.Password = "210010"
+
+	metajson = SSHConfig.CmdToString(host, tmpcmd, "")
+	err := json.Unmarshal([]byte(metajson), &tmpdata)
+	if err != nil {
+		logger.Warn("get metadata version err: ", err)
+	} else {
+		cniVersion = tmpdata.CniVersion
+		Network = tmpdata.CniName
+	}
+	fmt.Println(cniVersion, Network)
 }
