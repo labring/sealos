@@ -54,7 +54,7 @@ var (
 	//network interface name, like "eth.*|en.*"
 	Interface string
 	// the ipip mode of the calico
-	IPIP bool
+	BGP bool
 	// mtu size
 	MTU string
 
