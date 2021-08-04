@@ -300,8 +300,8 @@ func GetRemoteHostName(hostIP string) string {
 //获取sealos绝对路径
 func FetchSealosAbsPath() string {
 	ex, _ := os.Executable()
-	exPath := filepath.Dir(ex)
-	return exPath + string(os.PathSeparator) + os.Args[0]
+	exPath, _ := filepath.Abs(ex)
+	return exPath
 }
 
 func CompressTar(srcDirPath string, destFilePath string) error {
