@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/fanux/sealos/k8s"
@@ -215,9 +216,11 @@ func (s *SealosInstaller) InstallMaster0() {
 		K8sServiceHost: s.ApiServer,
 		Version:        cniVersion,
 	}).Manifests("")
-
-	cmd = fmt.Sprintf(`echo '%s' | kubectl apply -f -`, netyaml)
-	output = SSHConfig.Cmd(s.Masters[0], cmd)
+	home := cert.GetUserHomeDir()
+	configYamlDir := filepath.Join(home, ".sealos", "cni.yaml")
+	ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
+	SSHConfig.Copy(s.Masters[0], configYamlDir, "/tmp/cni.yaml")
+	output = SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }
 
 //SendKubeConfigs
