@@ -3651,7 +3651,7 @@ spec:
             # Auto-detect the BGP IP address.
             - name: IP
               value: "autodetect"
-			- name: IP_AUTODETECTION_METHOD	
+            - name: IP_AUTODETECTION_METHOD	
               value: "{{ .Interface }}"
             # Enable IPIP
             - name: CALICO_IPV4POOL_IPIP
