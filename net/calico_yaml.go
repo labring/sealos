@@ -11,7 +11,7 @@ metadata:
   namespace: kube-system
 data:
   # You must set a non-zero value for Typha replicas below.
-  typha_service_name: "calico-typha"
+  typha_service_name: "none"
   # Configure the backend to use.
   calico_backend: "bird"
 
@@ -3625,12 +3625,6 @@ spec:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
               value: "kubernetes"
-            # Typha support: controlled by the ConfigMap.
-            - name: FELIX_TYPHAK8SSERVICENAME
-              valueFrom:
-                configMapKeyRef:
-                  name: calico-config
-                  key: typha_service_name
             # Wait for the datastore.
             - name: WAIT_FOR_DATASTORE
               value: "true"
