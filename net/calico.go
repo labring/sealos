@@ -27,12 +27,14 @@ func (c Calico) Manifests(template string) string {
 }
 
 func (c Calico) Template() string {
-  if c.metadata.Version == "v3.19.1" {
+  switch c.metadata.Version {
+  case "v3.19.1":
     return CalicoV3191Manifests
-  } else if c.metadata.Version == "v3.8.2" {
+  case"v3.8.2":
+    return CalicoManifests
+  default:
     return CalicoManifests
   }
-  return ""
 }
 
 const CalicoManifests = `

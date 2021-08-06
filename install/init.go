@@ -189,7 +189,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
 	if k8s.IsIpv4(Interface) && Network == "calico" {
 		Interface = "can-reach=" + Interface
-	} else {
+	} else if !k8s.IsIpv4(Interface) && Network == "calico"  {
 		Interface = "interface=" + Interface
 	}
 
@@ -216,6 +216,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		K8sServiceHost: s.ApiServer,
 		Version:        cniVersion,
 	}).Manifests("")
+	logger.Debug("cni yaml : \n", netyaml)
 	home := cert.GetUserHomeDir()
 	configYamlDir := filepath.Join(home, ".sealos", "cni.yaml")
 	ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
