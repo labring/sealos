@@ -55,6 +55,8 @@
 - 1.18+
 - 1.19+
 - 1.20+
+- 1.21+
+- 1.22+
 
 更多版本支持, 详细查看[sealyun.com](https://www.sealyun.com)
 
@@ -102,7 +104,7 @@ $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 # 下载离线资源包
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/2fb10b1396f8c6674355fcc14a8cda7c-v1.20.0/kube1.20.0.tar.gz
+$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
 
 # 安装一个三master的kubernetes集群
 $ sealos init --passwd '123456' \

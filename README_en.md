@@ -26,9 +26,11 @@ Build a production kubernetes HA cluster.
 - 1.18+
 - 1.19+
 - 1.20+
+- 1.21+
+- 1.22+
 
 Looking for more supported versions，[sealyun.com](https://www.sealyun.com)。
-sealos is currently supported the latest k8s 1.20+
+sealos is currently supported the latest k8s 1.22+
 
 ## Requirements and Recommendations
 

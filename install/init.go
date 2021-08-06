@@ -187,9 +187,9 @@ func (s *SealosInstaller) InstallMaster0() {
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 
 	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
-	if k8s.IsIpv4(Interface) && Network == "calico" {
+	if k8s.IsIpv4(Interface) && Network == net.CALICO {
 		Interface = "can-reach=" + Interface
-	} else if !k8s.IsIpv4(Interface) && Network == "calico"  {
+	} else if !k8s.IsIpv4(Interface) && Network == net.CALICO  {
 		Interface = "interface=" + Interface
 	}
 
