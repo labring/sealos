@@ -123,7 +123,7 @@ func getDefaultRouteIp() (ip string, err error) {
 1. check ， 检查主机名是否重复
 2. sendSealos, 将最新的sealos复制到 /usr/bin/ 
 3. sendPackage， 将压缩kube1.**.tar.gz包复制到各主机
-4. KubeadmConfigInstall, 生成`kubeadm-comfig`
+4. KubeadmConfigInstall, 生成`kubeadm-config`
 5. GenerateCert, 生成`pki`证书
 6. CreateKubeconfig, 生成`kube-×.config`文件
 7. InstallMaster0, 安装第一个`master`节点。 
