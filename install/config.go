@@ -7,6 +7,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/fanux/sealos/net"
 	"github.com/wonderivan/logger"
 )
 
@@ -185,7 +186,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.Passwd = "123456"
 	c.PrivateKey = home + "/.ssh/id_rsa"
 	c.ApiServerDomain = "apiserver.cluster.local"
-	c.Network = "calico"
+	c.Network = net.CALICO
 	c.VIP = "10.103.97.2"
 	c.PkgURL = home + "/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"

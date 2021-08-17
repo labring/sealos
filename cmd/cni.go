@@ -37,12 +37,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if cniType != "calico" && cniType != "flannel" && cniType != "cilium" {
+		if cniType != net.CALICO && cniType != net.FLANNEL && cniType != net.CILIUM {
 			logger.Error("unsupport cni: ", cniType)
 			return 
 		}
 		if version == "" {
-			logger.Error("k8s version should not nil ", version)
+			logger.Error("cni version should not nil ", version)
 			return
 		}
 		yaml := net.NewNetwork(cniType, net.MetaData{
@@ -58,7 +58,7 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(cniCmd)
 
-	cniCmd.Flags().StringVarP(&cniType,"cni-type", "t", "calico", "print cni yaml")
+	cniCmd.Flags().StringVarP(&cniType,"cni-type", "t", net.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
 	cniCmd.Flags().StringVarP(&version,"version", "v", "", "calico version")
 
 	// Here you will define your flags and configuration settings.
