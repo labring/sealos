@@ -121,7 +121,7 @@ func getDefaultRouteIp() (ip string, err error) {
 这里简要描述一下init逻辑： 
 
 1. check ， 检查主机名是否重复
-2. senSealos, 将最新的sealos复制到 /usr/bin/ 
+2. sendSealos, 将最新的sealos复制到 /usr/bin/ 
 3. sendPackage， 将压缩kube1.**.tar.gz包复制到各主机
 4. KubeadmConfigInstall, 生成`kubeadm-comfig`
 5. GenerateCert, 生成`pki`证书
