@@ -58,9 +58,24 @@ func BuildInit() {
 	i.PrintFinish()
 }
 
+func (s *SealosInstaller) getCgroupDriverFromShell(h string) string {
+	var output string
+	if For120(Version) {
+		cmd := ContainerdShell
+		output = SSHConfig.CmdToString(h, cmd, " ")
+	} else {
+		cmd := DockerShell
+		output = SSHConfig.CmdToString(h, cmd, " ")
+	}
+	output = strings.TrimSpace(output)
+	logger.Info("cgroup driver is %s", output)
+	return output 
+}
+
 //KubeadmConfigInstall is
 func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
+	CgroupDriver = s.getCgroupDriverFromShell(s.Masters[0])
 	if KubeadmFile == "" {
 		templateData = string(Template())
 	} else {

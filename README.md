@@ -47,6 +47,7 @@
 - Ubuntu 16.04, 18.04, 20.04,  x86_64/ arm64
 - Centos/RHEL 7.6+,  x86_64/ arm64
 - 其他支持 systemd 的系统环境.  x86_64/ arm64
+- Kylin arm64
 
 ## kubernetes 版本
 
