@@ -29,75 +29,28 @@ const (
 	DefaultContainerdCRISocket = "/run/containerd/containerd.sock"
 	DefaultCgroupDriver        = "cgroupfs"
 	DefaultSystemdCgroupDriver = "systemd"
+
+  KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
+  KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
+  KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
+  Bootstraptokenv1 = "bootstraptoken/v1"
 )
 
-const InitTemplateTextV1beta1 = string(`apiVersion: kubeadm.k8s.io/v1beta1
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: {{.Master0}}
-  bindPort: 6443
----
-apiVersion: kubeadm.k8s.io/v1beta1
-kind: ClusterConfiguration
-kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "{{.ApiServer}}:6443"
-imageRepository: {{.Repo}}
-networking:
-  # dnsDomain: cluster.local
-  podSubnet: {{.PodCIDR}}
-  serviceSubnet: {{.SvcCIDR}}
-apiServer:
-  certSANs:
-  - 127.0.0.1
-  - {{.ApiServer}}
-  {{range .Masters -}}
-  - {{.}}
-  {{end -}}
-  {{range .CertSANS -}}
-  - {{.}}
-  {{end -}}
-  - {{.VIP}}
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - name: localtime
-    hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    readOnly: true
-    pathType: File
-controllerManager:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-    experimental-cluster-signing-duration: 876000h
-{{- if eq .Network "cilium" }}
-    allocate-node-cidrs: \"true\"
-{{- end }}
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
-scheduler:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: "ipvs"
-ipvs:
-  excludeCIDRs:
-  - "{{.VIP}}/32"
----
-` + kubeletConfigDefault)
 
-const JoinCPTemplateTextV1beta2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
+const (
+  InitTemplateText = string(InitConfigurationDefault + 
+    ClusterConfigurationDefault +
+    kubeproxyConfigDefault + 
+    kubeletConfigDefault)
+  JoinCPTemplateText = string(bootstrapTokenDefault + 
+      JoinConfigurationDefault +
+      kubeletConfigDefault)
+
+  bootstrapTokenDefault = `{{- if .BootstrapApi -eq "bootstraptoken/v1" }}
+apiVersion: {{.BootstrapApi}}
+  {{- else}}
+apiVersion: {{.KubeadmApi}}
+{{- end}}
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
@@ -110,6 +63,17 @@ discovery:
     caCertHashes:
     - {{.TokenDiscoveryCAHash}}
   timeout: 5m0s
+`
+  InitConfigurationDefault = `apiVersion: {{.KubeadmApi}}
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+nodeRegistration:
+  criSocket: {{.CriSocket}}
+`
+
+  JoinConfigurationDefault = `
 kind: JoinConfiguration
 {{- if .Master }}
 controlPlane:
@@ -119,18 +83,10 @@ controlPlane:
 {{- end}}
 nodeRegistration:
   criSocket: {{.CriSocket}}
----
-` + kubeletConfigDefault)
+` 
 
-const InitTemplateTextV1bate2 = string(`apiVersion: kubeadm.k8s.io/v1beta2
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: {{.Master0}}
-  bindPort: 6443
-nodeRegistration:
-  criSocket: /run/containerd/containerd.sock
----
-apiVersion: kubeadm.k8s.io/v1beta2
+  ClusterConfigurationDefault = `---
+apiVersion: {{.KubeadmApi}}
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
 controlPlaneEndpoint: "{{.ApiServer}}:6443"
@@ -180,6 +136,8 @@ scheduler:
     name: localtime
     readOnly: true
     pathType: File
+`
+  kubeproxyConfigDefault = `
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
@@ -187,20 +145,10 @@ mode: "ipvs"
 ipvs:
   excludeCIDRs:
   - "{{.VIP}}/32"
+`
+  kubeletConfigDefault = `
 ---
-` + kubeletConfigDefault)
-
-const (
-	ContainerdShell = `if grep "SystemdCgroup = true"  /etc/containerd/config.toml &> /dev/null; then  
-driver=systemd
-else
-driver=cgroupfs
-fi
-echo ${driver}`
-	DockerShell = `driver=$(docker info -f "{{.CgroupDriver}}")
-	echo "${driver}"`
-
-  kubeletConfigDefault = `apiVersion: kubelet.config.k8s.io/v1beta1
+apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 authentication:
   anonymous:
@@ -269,4 +217,13 @@ staticPodPath: /etc/kubernetes/manifests
 streamingConnectionIdleTimeout: 4h0m0s
 syncFrequency: 1m0s
 volumeStatsAggPeriod: 1m0s`
+
+  ContainerdShell = `if grep "SystemdCgroup = true"  /etc/containerd/config.toml &> /dev/null; then  
+driver=systemd
+else
+driver=cgroupfs
+fi
+echo ${driver}`
+	DockerShell = `driver=$(docker info -f "{{.CgroupDriver}}")
+	echo "${driver}"`
 )
