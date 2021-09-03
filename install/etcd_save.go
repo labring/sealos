@@ -193,12 +193,11 @@ func GetEtcdClient(ep []string) (*clientv3.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	cli, err := clientv3.New(clientv3.Config{
+	return clientv3.New(clientv3.Config{
 		Endpoints:   ep,
 		DialTimeout: 5 * time.Second,
 		TLS:         clientTLS,
 	})
-	return cli, nil
 }
 
 type epHealth struct {

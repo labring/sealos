@@ -125,7 +125,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 					os.Exit(1)
 				}
 			} else {
-				cmdUpgrade = fmt.Sprintf("kubeadm upgrade node --certificate-renewal=false")
+				cmdUpgrade = "kubeadm upgrade node --certificate-renewal=false"
 				err = SSHConfig.CmdAsync(ip, cmdUpgrade)
 				if err != nil {
 					logger.Error("kubeadm upgrade err: ", err)

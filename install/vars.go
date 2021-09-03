@@ -29,9 +29,9 @@ var (
 	EtcdKey      = cert.SealosConfigDir + "/pki/etcd/healthcheck-client.key"
 
 	//criSocket
-	CriSocket string
+	CriSocket    string
 	CgroupDriver string
-	KubeadmApi string
+	KubeadmApi   string
 	BootstrapApi string
 
 	VIP     string

@@ -12,25 +12,26 @@ import (
 var ConfigType string
 
 func setKubeadmApi(version string) {
-       major ,_ := GetMajorMinorInt(version)
-       switch  {
-               // 
-       case major < 120: 
-               KubeadmApi = KubeadmV1beta1
-               CriSocket = DefaultDockerCRISocket
-       case major < 123 && major >= 120 :
-               KubeadmApi = KubeadmV1beta2
-               CriSocket = DefaultContainerdCRISocket
-       case major >= 123 :
-               KubeadmApi = KubeadmV1beta3
-               CriSocket = DefaultContainerdCRISocket
-       default:
-               KubeadmApi = KubeadmV1beta3
-               CriSocket = DefaultContainerdCRISocket
-			   BootstrapApi = Bootstraptokenv1
-       }
-       logger.Info("KubeadmApi: %s", KubeadmApi)
-       logger.Info("CriSocket: %s", CriSocket)
+	major, _ := GetMajorMinorInt(version)
+	switch {
+	//
+	case major < 120:
+		KubeadmApi = KubeadmV1beta1
+		CriSocket = DefaultDockerCRISocket
+	case major < 123 && major >= 120:
+		KubeadmApi = KubeadmV1beta2
+		CriSocket = DefaultContainerdCRISocket
+	case major >= 123:
+		KubeadmApi = KubeadmV1beta3
+		CriSocket = DefaultContainerdCRISocket
+		BootstrapApi = Bootstraptokenv1
+	default:
+		KubeadmApi = KubeadmV1beta3
+		CriSocket = DefaultContainerdCRISocket
+		BootstrapApi = Bootstraptokenv1
+	}
+	logger.Debug("KubeadmApi: %s", KubeadmApi)
+	logger.Debug("CriSocket: %s", CriSocket)
 }
 
 func Config() {
@@ -100,6 +101,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 }
 
 func TemplateFromTemplateContent(templateContent string) []byte {
+	setKubeadmApi(Version)
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -126,6 +128,8 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["Master0"] = IpFormat(MasterIPs[0])
 	envMap["Network"] = Network
 	envMap["CgroupDriver"] = CgroupDriver
+	envMap["KubeadmApi"] = KubeadmApi
+	envMap["CriSocket"] = CriSocket
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()

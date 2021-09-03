@@ -30,23 +30,22 @@ const (
 	DefaultCgroupDriver        = "cgroupfs"
 	DefaultSystemdCgroupDriver = "systemd"
 
-  KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
-  KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
-  KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
-  Bootstraptokenv1 = "bootstraptoken/v1"
+	KubeadmV1beta1   = "kubeadm.k8s.io/v1beta1"
+	KubeadmV1beta2   = "kubeadm.k8s.io/v1beta2"
+	KubeadmV1beta3   = "kubeadm.k8s.io/v1beta3"
+	Bootstraptokenv1 = "bootstraptoken/v1"
 )
 
-
 const (
-  InitTemplateText = string(InitConfigurationDefault + 
-    ClusterConfigurationDefault +
-    kubeproxyConfigDefault + 
-    kubeletConfigDefault)
-  JoinCPTemplateText = string(bootstrapTokenDefault + 
-      JoinConfigurationDefault +
-      kubeletConfigDefault)
+	InitTemplateText = string(InitConfigurationDefault +
+		ClusterConfigurationDefault +
+		kubeproxyConfigDefault +
+		kubeletConfigDefault)
+	JoinCPTemplateText = string(bootstrapTokenDefault +
+		JoinConfigurationDefault +
+		kubeletConfigDefault)
 
-  bootstrapTokenDefault = `{{- if .BootstrapApi -eq "bootstraptoken/v1" }}
+	bootstrapTokenDefault = `{{- if eq .BootstrapApi "bootstraptoken/v1" }}
 apiVersion: {{.BootstrapApi}}
   {{- else}}
 apiVersion: {{.KubeadmApi}}
@@ -64,7 +63,7 @@ discovery:
     - {{.TokenDiscoveryCAHash}}
   timeout: 5m0s
 `
-  InitConfigurationDefault = `apiVersion: {{.KubeadmApi}}
+	InitConfigurationDefault = `apiVersion: {{.KubeadmApi}}
 kind: InitConfiguration
 localAPIEndpoint:
   advertiseAddress: {{.Master0}}
@@ -73,7 +72,7 @@ nodeRegistration:
   criSocket: {{.CriSocket}}
 `
 
-  JoinConfigurationDefault = `
+	JoinConfigurationDefault = `
 kind: JoinConfiguration
 {{- if .Master }}
 controlPlane:
@@ -83,9 +82,9 @@ controlPlane:
 {{- end}}
 nodeRegistration:
   criSocket: {{.CriSocket}}
-` 
+`
 
-  ClusterConfigurationDefault = `---
+	ClusterConfigurationDefault = `---
 apiVersion: {{.KubeadmApi}}
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
@@ -137,7 +136,7 @@ scheduler:
     readOnly: true
     pathType: File
 `
-  kubeproxyConfigDefault = `
+	kubeproxyConfigDefault = `
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
@@ -146,7 +145,7 @@ ipvs:
   excludeCIDRs:
   - "{{.VIP}}/32"
 `
-  kubeletConfigDefault = `
+	kubeletConfigDefault = `
 ---
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -218,7 +217,7 @@ streamingConnectionIdleTimeout: 4h0m0s
 syncFrequency: 1m0s
 volumeStatsAggPeriod: 1m0s`
 
-  ContainerdShell = `if grep "SystemdCgroup = true"  /etc/containerd/config.toml &> /dev/null; then  
+	ContainerdShell = `if grep "SystemdCgroup = true"  /etc/containerd/config.toml &> /dev/null; then  
 driver=systemd
 else
 driver=cgroupfs

@@ -32,6 +32,7 @@ func TestNetCiliumTemplate(t *testing.T) {
 	ApiServer = "apiserver.cluster.local"
 	Version = "1.20.5"
 	Network = "cilium"
+	CgroupDriver = DefaultCgroupDriver
 	t.Log(string(Template()))
 	Network = "calico"
 	t.Log(string(Template()))
@@ -39,6 +40,7 @@ func TestNetCiliumTemplate(t *testing.T) {
 	Network = "cilium"
 	t.Log(string(Template()))
 	Network = "calico"
+	CgroupDriver = DefaultSystemdCgroupDriver
 	t.Log(string(Template()))
 }
 
@@ -148,19 +150,3 @@ func TestJoinTemplate(t *testing.T) {
 	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate("", "systemd"))+"\" > ~/aa")
 	t.Log(string(JoinTemplate("", "cgroupfs")))
 }
-
-var tepJoin = `apiVersion: kubeadm.k8s.io/v1beta2
-caCertPath: /etc/kubernetes/pki/ca.crt
-discovery:
-  bootstrapToken: 
-    apiServerEndpoint: {{.Master0}}:6443
-    token: {{.TokenDiscovery}}
-    caCertHashes: 
-    - {{.TokenDiscoveryCAHash}}
-  timeout: 5m0s
-kind: JoinConfiguration
-controlPlane:
-  localAPIEndpoint:
-    advertiseAddress: {{.Master}}
-    bindPort: 6443
-`
