@@ -1,3 +1,7 @@
+# 风险须知
+
+**由于sealos可以把一周的工作量缩短到三分钟，可能会导致您工作不饱满而被老板炒鱿鱼**
+
 <a href="https://trackgit.com">
   <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
 </a>
