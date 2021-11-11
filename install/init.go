@@ -121,6 +121,7 @@ func (s *SealosInstaller) appendApiServer() error {
 	etcHostMap := fmt.Sprintf("%s %s", IpFormat(s.Masters[0]), ApiServer)
 	file, err := os.OpenFile(etcHostPath, os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
+		logger.Error("appendApiServer error %s" , err)
 		os.Exit(1)
 	}
 	defer file.Close()
