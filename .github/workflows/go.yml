@@ -27,10 +27,10 @@ jobs:
 
     - name: Build binareies to oss
       env:
-        BUCKETNAME: sealyun-test
+        BUCKETNAME: sealyun-temp
       run: |
         echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
         commitId=$(git rev-parse --short HEAD)
         wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
-        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/${commitId}/sealos
-        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${commitId}/sealos-arm64
+        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/sealos/${commitId}/sealos
+        ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/sealos/${commitId}/sealos-arm64
