@@ -155,7 +155,7 @@ func (s *SealosClean) cleanMaster(master string) {
 func clean(host string) {
 	cmd := "kubeadm reset -f " + vlogToStr()
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf(`sed -i '/kubectl/d;/sealos/d' /root/.bashrc`)
+	cmd = `sed -i '/kubectl/d;/sealos/d' /root/.bashrc`
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -171,13 +171,13 @@ func clean(host string) {
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprint("rm -rf ~/kube")
+	cmd = "rm -rf ~/kube"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	//clean pki certs
-	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
+	cmd = "rm -rf /etc/kubernetes/pki"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	//clean sealos in /usr/bin/ except exec sealos
-	cmd = fmt.Sprint("ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos")
+	cmd = "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
 	_ = SSHConfig.CmdAsync(host, cmd)
 }
 

@@ -92,8 +92,7 @@ func (s *SealosInstaller) sendJoinCPConfig(joinMaster []string) {
 		wg.Add(1)
 		go func(master string) {
 			defer wg.Done()
-			var cgroup string
-			cgroup = s.getCgroupDriverFromShell(master)
+			cgroup := s.getCgroupDriverFromShell(master)
 			templateData := string(JoinTemplate(IpFormat(master), cgroup))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(master, cmd)
@@ -149,8 +148,7 @@ func (s *SealosInstaller) JoinNodes() {
 		go func(node string) {
 			defer wg.Done()
 			// send join node config
-			var cgroup string
-			cgroup = s.getCgroupDriverFromShell(node)
+			cgroup := s.getCgroupDriverFromShell(node)
 			templateData := string(JoinTemplate("", cgroup))
 			cmdJoinConfig := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = SSHConfig.CmdAsync(node, cmdJoinConfig)

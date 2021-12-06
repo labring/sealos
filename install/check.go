@@ -21,8 +21,7 @@ func (s *SealosInstaller) CheckValid() {
 	// 所有node节点
 	//nodes := append(Nodes, ParseIPs(NodeIPs)...)
 	//hosts := append(masters, nodes...)
-	var hosts []string
-	hosts = append(s.Masters, s.Nodes...)
+	var hosts = append(s.Masters, s.Nodes...)
 	if len(s.Hosts) == 0 && len(hosts) == 0 {
 		s.Print("Fail")
 		logger.Error("hosts not allow empty")

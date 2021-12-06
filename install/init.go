@@ -193,7 +193,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
-	output = SSHConfig.Cmd(s.Masters[0], cmd)
+	SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if WithoutCNI {
 		logger.Info("--without-cni is true, so we not install calico or flannel, install it by yourself")
@@ -236,7 +236,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	configYamlDir := filepath.Join(home, ".sealos", "cni.yaml")
 	ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
 	SSHConfig.Copy(s.Masters[0], configYamlDir, "/tmp/cni.yaml")
-	output = SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
+	SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }
 
 //SendKubeConfigs

@@ -11,6 +11,29 @@ import (
 
 var ConfigType string
 
+func setKubeadmApi(version string) {
+	major, _ := GetMajorMinorInt(version)
+	switch {
+	//
+	case major < 120:
+		KubeadmApi = KubeadmV1beta1
+		CriSocket = DefaultDockerCRISocket
+	case major < 123 && major >= 120:
+		KubeadmApi = KubeadmV1beta2
+		CriSocket = DefaultContainerdCRISocket
+	case major >= 123:
+		KubeadmApi = KubeadmV1beta3
+		CriSocket = DefaultContainerdCRISocket
+		BootstrapApi = Bootstraptokenv1
+	default:
+		KubeadmApi = KubeadmV1beta3
+		CriSocket = DefaultContainerdCRISocket
+		BootstrapApi = Bootstraptokenv1
+	}
+	logger.Debug("KubeadmApi: %s", KubeadmApi)
+	logger.Debug("CriSocket: %s", CriSocket)
+}
+
 func Config() {
 	switch ConfigType {
 	case "kubeadm":
@@ -24,7 +47,7 @@ func Config() {
 
 func joinKubeadmConfig() string {
 	var sb strings.Builder
-	sb.Write([]byte(JoinCPTemplateTextV1beta2))
+	sb.Write([]byte(JoinCPTemplateText))
 	return sb.String()
 }
 
@@ -34,13 +57,7 @@ func printlnJoinKubeadmConfig() {
 
 func kubeadmConfig() string {
 	var sb strings.Builder
-	// kubernetes gt 1.20, use Containerd instead of docker
-	if For120(Version) {
-		sb.Write([]byte(InitTemplateTextV1bate2))
-	} else {
-		sb.Write([]byte(InitTemplateTextV1beta1))
-	}
-
+	sb.Write([]byte(InitTemplateText))
 	return sb.String()
 }
 
@@ -59,6 +76,7 @@ func JoinTemplate(ip string, cgroup string) []byte {
 }
 
 func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte {
+	setKubeadmApi(Version)
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -74,11 +92,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 	envMap["TokenDiscovery"] = JoinToken
 	envMap["TokenDiscoveryCAHash"] = TokenCaCertHash
 	envMap["VIP"] = VIP
-	if For120(Version) {
-		CriSocket = DefaultContainerdCRISocket
-	} else {
-		CriSocket = DefaultDockerCRISocket
-	}
+	envMap["KubeadmApi"] = KubeadmApi
 	envMap["CriSocket"] = CriSocket
 	envMap["CgroupDriver"] = cgroup
 	var buffer bytes.Buffer
@@ -87,6 +101,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 }
 
 func TemplateFromTemplateContent(templateContent string) []byte {
+	setKubeadmApi(Version)
 	tmpl, err := template.New("text").Parse(templateContent)
 	defer func() {
 		if r := recover(); r != nil {
@@ -113,6 +128,8 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["Master0"] = IpFormat(MasterIPs[0])
 	envMap["Network"] = Network
 	envMap["CgroupDriver"] = CgroupDriver
+	envMap["KubeadmApi"] = KubeadmApi
+	envMap["CriSocket"] = CriSocket
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
 	return buffer.Bytes()
