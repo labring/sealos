@@ -94,6 +94,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 	envMap["VIP"] = VIP
 	envMap["KubeadmApi"] = KubeadmApi
 	envMap["CriSocket"] = CriSocket
+	envMap["BootstrapApi"] = BootstrapApi
 	envMap["CgroupDriver"] = cgroup
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
