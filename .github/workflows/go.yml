@@ -25,6 +25,18 @@ jobs:
         version: latest
         args: build --snapshot --rm-dist  --timeout=1h
 
+    - name: Save build binaries - amd64
+      uses: actions/upload-artifact@v2
+      with:
+        name: sealos-amd64-binaries
+        path: dist/sealos_linux_amd64/sealos
+
+    - name: Save build binaries - arm64
+      uses: actions/upload-artifact@v2
+      with:
+        name: sealos-arm64-binaries
+        path: dist/sealos_linux_arm64/sealos
+
     # - name: Build binareies to oss
     #   env:
     #     BUCKETNAME: ${{ secrets.BUCKETNAME }}
