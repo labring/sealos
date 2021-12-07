@@ -32,7 +32,7 @@
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
 
-![](./arch.png)
+![](docs/images/arch.png)
 
 [English Docs](/README_en.md)
 

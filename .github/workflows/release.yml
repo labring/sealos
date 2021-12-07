@@ -54,26 +54,3 @@ jobs:
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64
-
-      - name: set up buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          version: latest
-
-      - name: login to dockerhub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-
-      - name: build (and publish) main image
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
-        run: |
-          docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
-            --push \
-            -t ${DOCKER_REPO:-fanux/sealos}:${{ steps.prepare.outputs.tag_name }} \
-            -t ${DOCKER_REPO:-fanux/sealos}:latest \
-            -f Dockerfile.hub \
-            .
