@@ -106,7 +106,7 @@ $ sealos init --master 192.168.253.128 \
 node节点和master节点的api通信， 是sealos/lvscare， 基于内核ipvs， 类似kube-proxy的实现。 
 node 节点如果默认路由是`192.168.160.1`. 则`10.103.97.2:6443 -> 192.168.253.129:6443` 这个就必然不通。
 因此 sealos这里 为用户添加了一条专门的路由 `ip add r 10.103.97.2 via 192.168.253.131`. 通过万兆网卡来进行寻路。解决通信问题
-![](../arch.png)
+![](images/arch.png)
 
 情形三
 

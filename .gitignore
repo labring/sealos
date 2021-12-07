@@ -11,3 +11,4 @@ main
 dist
 .vscode
 test/Note.md
+.ossutil_checkpoint
