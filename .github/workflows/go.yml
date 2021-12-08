@@ -21,8 +21,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
       - name: Run Check License
-        run:
+        run: |
           wget https://github.com/google/addlicense/releases/download/v1.0.0/addlicense_1.0.0_Linux_x86_64.tar.gz
           tar -zxvf addlicense_1.0.0_Linux_x86_64.tar.gz -C $(go env GOPATH)/bin
           chmod a+x $(go env GOPATH)/bin/addlicense

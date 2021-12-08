@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@ package cmd
 
 import (
 	"fmt"
-	extver "github.com/linuxsuren/cobra-extension/version"
 	"runtime"
 	"strings"
+
+	extver "github.com/linuxsuren/cobra-extension/version"
 )
 
 func init() {

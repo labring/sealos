@@ -70,7 +70,7 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 
 1. **FORK** sealos to your repository. To make this work, you just need to click the button Fork in right-left of [fanux/sealos](https://github.com/fanux/sealos) main page. Then you will end up with your repository in `https://github.com/<your-username>/sealos`, in which `your-username` is your GitHub username.
 
-1. **CLONE** your own repository to develop locally. Use `git clone https://github.com/<your-username>/sealos.git` to clone repository to your local machine. Then you can create new branches to finish the change you wish to make.
+1. **CLONE** your own repository to master locally. Use `git clone https://github.com/<your-username>/sealos.git` to clone repository to your local machine. Then you can create new branches to finish the change you wish to make.
 
 1. **Set Remote** upstream to be `https://github.com/fanux/sealos.git` using the following two commands:
 
@@ -120,11 +120,11 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
    git push	// push to your forked repository after rebase done
    ```
 
-1. **File a pull request** to fanux/sealos:develop
+1. **File a pull request** to fanux/sealos:master
 
 ### Branch Definition
 
-Right now we assume every contribution via pull request is for [branch develop](https://github.com/fanux/sealos/tree/develop) in sealos. Before contributing, be aware of branch definition would help a lot.
+Right now we assume every contribution via pull request is for [branch master](https://github.com/fanux/sealos/tree/master) in sealos. Before contributing, be aware of branch definition would help a lot.
 
 As a contributor, keep in mind again that every contribution via pull request is for branch master. While in project sealos, there are several other branches, we generally call them rc branches, release branches and backport branches.
 

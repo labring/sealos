@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package logger
 
 import (
@@ -11,7 +25,7 @@ import (
 
 func TestFilePermit(t *testing.T) {
 	log := NewLogger()
-	log.SetLogger(AdapterFile, `{"filename":"test.log",
+	_ = log.SetLogger(AdapterFile, `{"filename":"test.log",
 	 "rotateperm": "0666",
 	"maxlines":100000,
 	"maxsize":1,
@@ -39,7 +53,7 @@ func TestFilePermit(t *testing.T) {
 
 func TestFileLine(t *testing.T) {
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test2.log"}`)
+	_ = log.SetLogger("file", `{"filename":"test2.log"}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Debug("debug")
@@ -72,7 +86,7 @@ func TestFileLine(t *testing.T) {
 
 func TestFileSize(t *testing.T) {
 	log := NewLogger()
-	log.SetLogger(AdapterFile, `{"filename":"test.log",
+	_ = log.SetLogger(AdapterFile, `{"filename":"test.log",
 	 "rotateperm": "0666",
 	"maxlines":100000,
 	"maxsize":1,
@@ -94,7 +108,7 @@ func TestFileSize(t *testing.T) {
 
 func TestFileByMaxLine(t *testing.T) {
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test3.log","maxlines":4}`)
+	_ = log.SetLogger("file", `{"filename":"test3.log","maxlines":4}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Warn("warning")
@@ -122,10 +136,10 @@ func TestFileByTime(t *testing.T) {
 		LogLevel:   LevelTrace,
 		PermitMask: "0660",
 	}
-	fw.Init(fmt.Sprintf(`{"filename":"%v","maxdays":1}`, fn1))
+	_ = fw.Init(fmt.Sprintf(`{"filename":"%v","maxdays":1}`, fn1))
 	fw.dailyOpenTime = time.Now().Add(-24 * time.Hour)
 	fw.dailyOpenDate = fw.dailyOpenTime.Day()
-	fw.LogWrite(time.Now(), "this is a msg for test", LevelTrace)
+	_ = fw.LogWrite(time.Now(), "this is a msg for test", LevelTrace)
 
 	for _, file := range []string{fn1, fn2} {
 		_, err := os.Stat(file)
@@ -150,7 +164,7 @@ func exists(path string) (bool, error) {
 
 func BenchmarkFile(b *testing.B) {
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		log.Debug("debug")
 	}
@@ -159,7 +173,7 @@ func BenchmarkFile(b *testing.B) {
 
 func BenchmarkFileCallDepth(b *testing.B) {
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		log.Debug("debug")
 	}
@@ -168,7 +182,7 @@ func BenchmarkFileCallDepth(b *testing.B) {
 
 func BenchmarkFileOnGoroutine(b *testing.B) {
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		go log.Debug("debug")
 	}

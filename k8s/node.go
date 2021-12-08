@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package k8s
 
 import (
@@ -73,8 +87,8 @@ func GetNodeListByLabel(k8sClient *kubernetes.Clientset, label string) (*v1.Node
 	return k8sClient.CoreV1().Nodes().List(context.TODO(), *listOption)
 }
 
-// GetNodeIpByName is get node internalIp by nodeName
-func GetNodeIpByName(k8sClient *kubernetes.Clientset, nodeName string) (ip string, err error) {
+// GetNodeIPByName is get node internalIp by nodeName
+func GetNodeIPByName(k8sClient *kubernetes.Clientset, nodeName string) (ip string, err error) {
 	node, err := k8sClient.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
 	if err != nil {
 		return "", err
@@ -89,41 +103,8 @@ func GetNodeIpByName(k8sClient *kubernetes.Clientset, nodeName string) (ip strin
 	return "", apierrors.NewNotFound(schema.GroupResource{}, nodeName)
 }
 
-// GetNodeNameByIp is get node name by node ip
-func GetNodeNameByIp(k8sClient *kubernetes.Clientset, ip string) (name string, err error) {
-	nodes, err := GetNodeList(k8sClient)
-	if err != nil {
-		return "", err
-	}
-	for _, node := range nodes.Items {
-		for _, v := range node.Status.Addresses {
-			if v.Type == v1.NodeInternalIP && ip == v.Address {
-				return node.Name, nil
-			}
-		}
-	}
-	return "", fmt.Errorf("ip [%s] is not fount in kubernetes nodes", ip)
-}
-
-// GetNodeNameByLabel is get node name by label
-func GetNodeNameByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
-	var ns []string
-	nodes, err := GetNodeListByLabel(k8sClient, label)
-	if err != nil {
-		return nil, err
-	}
-	for _, node := range nodes.Items {
-		ns = append(ns, node.Name)
-	}
-	if len(ns) != 0 {
-		return ns, nil
-	}
-
-	return nil, fmt.Errorf("label %s is not fount in kubernetes nodes", label)
-}
-
-// GetNodeIpByLabel is is get node ip by label
-func GetNodeIpByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
+// GetNodeIPByLabel is is get node ip by label
+func GetNodeIPByLabel(k8sClient *kubernetes.Clientset, label string) ([]string, error) {
 	var ips []string
 	if label == "" {
 		return ips, nil
@@ -164,14 +145,14 @@ func IsNodeReady(node v1.Node) bool {
 // TransToIP is use kubernetes label or hostname/ip to get ip
 func TransToIP(k8sClient *kubernetes.Clientset, label string, hostname []string) ([]string, error) {
 	var ips []string
-	ips, err := GetNodeIpByLabel(k8sClient, label)
+	ips, err := GetNodeIPByLabel(k8sClient, label)
 	if err != nil {
 		return nil, err
 	}
-	resHost, resIp := getHostnameAndIp(hostname)
-	ips = append(ips, resIp...)
+	resHost, resIP := getHostnameAndIP(hostname)
+	ips = append(ips, resIP...)
 	for _, node := range resHost {
-		ip, err := GetNodeIpByName(k8sClient, node)
+		ip, err := GetNodeIPByName(k8sClient, node)
 		if err == nil {
 			ips = append(ips, ip)
 		}
