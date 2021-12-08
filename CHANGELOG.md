@@ -16,8 +16,14 @@
 
 # Table of Contents
 
+- [3.3.9-rc.6](#671)
 - [3.3.9-rc.5](#658)
 - [3.3.9-rc.3](#658)
+
+# 3.3.9-rc.6
+
+- fix github action
+- support 1.23+
 
 # 3.3.9-rc.5
 
