@@ -32,7 +32,6 @@ var (
 	CriSocket    string
 	CgroupDriver string
 	KubeadmApi   string
-	BootstrapApi string
 
 	VIP     string
 	PkgUrl  string

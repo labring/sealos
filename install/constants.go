@@ -53,7 +53,6 @@ Add InitConfiguration.patches.directory, JoinConfiguration.patches.directory to 
 Move the BootstrapToken&lowast; API and related utilities out of the "kubeadm" API group to a new group "bootstraptoken". The kubeadm API version v1beta3 no longer contains the BootstrapToken&lowast; structures.
 
 */
-	Bootstraptokenv1 = "bootstraptoken/v1"
 )
 
 const (
@@ -65,11 +64,7 @@ const (
 		JoinConfigurationDefault +
 		kubeletConfigDefault)
 
-	bootstrapTokenDefault = `{{- if eq .BootstrapApi "bootstraptoken/v1" }}
-apiVersion: {{.BootstrapApi}}
-  {{- else}}
-apiVersion: {{.KubeadmApi}}
-{{- end}}
+	bootstrapTokenDefault = `apiVersion: {{.KubeadmApi}}
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
   bootstrapToken:
