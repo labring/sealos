@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -16,7 +30,7 @@ import (
 	"go.etcd.io/etcd/pkg/transport"
 	"go.uber.org/zap"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 type EtcdFlags struct {
@@ -38,8 +52,7 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load(cfgFile)
-	if err != nil {
+	if err := e.Load(cfgFile); err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()
 		os.Exit(0)
@@ -50,10 +63,10 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	e.LongName = fmt.Sprintf("%s/%s", e.BackDir, e.Name)
 
 	//get oss 。如果AccessKeyId不为空，则读取使命令行，如果为空，load的时候则读取配置文件
-	if AccessKeyId != "" {
+	if AccessKeyID != "" {
 		e.ObjectPath = ObjectPath
 		e.OssEndpoint = OssEndpoint
-		e.AccessKeyId = AccessKeyId
+		e.AccessKeyID = AccessKeyID
 		e.AccessKeySecrets = AccessKeySecrets
 		e.BucketName = BucketName
 	}
@@ -67,11 +80,11 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	}
 
 	for _, h := range e.Masters {
-		ip = reFormatHostToIp(h)
+		ip = reFormatHostToIP(h)
 		e.EtcdHosts = append(e.EtcdHosts, ip)
 	}
 	// snapshot must be requested to one selected node, not multiple.
-	endpoint = fmt.Sprintf("%s:2379", reFormatHostToIp(e.Masters[0]))
+	endpoint = fmt.Sprintf("%s:2379", reFormatHostToIP(e.Masters[0]))
 	e.Endpoints = append(e.Endpoints, endpoint)
 	return e
 }
@@ -111,15 +124,14 @@ func (e *EtcdFlags) Save(inDocker bool) error {
 	}
 	// trimPathForOss is  trim this  `/sealos//snapshot-1598146449` to   `sealos/snapshot-1598146449`
 	e.ObjectPath = trimPathForOss(e.ObjectPath + "/" + e.Name)
-	if e.AccessKeyId != "" {
-		err := saveToOss(e.OssEndpoint, e.AccessKeyId, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
+	if e.AccessKeyID != "" {
+		err := saveToOss(e.OssEndpoint, e.AccessKeyID, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
 		if err != nil {
 			logger.Error("save to oss err,", err)
 			return fmt.Errorf("save to oss err: %q", err)
 		}
 		// 如果没有报错， 保存一下最新命令行配置。
 		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket", e.Name, e.BucketName)
-
 	}
 	return nil
 }
@@ -129,7 +141,7 @@ func trimPathForOss(path string) string {
 	return s[1:]
 }
 
-func reFormatHostToIp(host string) string {
+func reFormatHostToIP(host string) string {
 	if strings.Contains(host, ":") {
 		s := strings.Split(host, ":")
 		return s[0]
@@ -139,14 +151,14 @@ func reFormatHostToIp(host string) string {
 
 type AliOss struct {
 	OssEndpoint      string
-	AccessKeyId      string
+	AccessKeyID      string
 	AccessKeySecrets string
 	BucketName       string
 	ObjectPath       string
 }
 
-func saveToOss(aliEndpoint, accessKeyId, accessKeySecrets, bucketName, objectName, localFileName string) error {
-	ossClient, err := oss.New(aliEndpoint, accessKeyId, accessKeySecrets)
+func saveToOss(aliEndpoint, accessKeyID, accessKeySecrets, bucketName, objectName, localFileName string) error {
+	ossClient, err := oss.New(aliEndpoint, accessKeyID, accessKeySecrets)
 	if err != nil {
 		return err
 	}
@@ -156,7 +168,6 @@ func saveToOss(aliEndpoint, accessKeyId, accessKeySecrets, bucketName, objectNam
 	}
 	//
 	return bucket.PutObjectFromFile(objectName, localFileName)
-
 }
 
 func GetCfg(ep []string) (*clientv3.Config, error) {
@@ -213,14 +224,13 @@ func GetHealthFlag(cfgFile string) *EtcdFlags {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load(cfgFile)
-	if err != nil {
+	if err := e.Load(cfgFile); err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()
 		os.Exit(0)
 	}
 	for _, h := range e.Masters {
-		ip := reFormatHostToIp(h)
+		ip := reFormatHostToIP(h)
 		enpoint := fmt.Sprintf("%s:2379", ip)
 		e.EtcdHosts = append(e.EtcdHosts, ip)
 		e.Endpoints = append(e.Endpoints, enpoint)

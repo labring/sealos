@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -48,17 +48,16 @@ var installCmd = &cobra.Command{
 	Example: installExample,
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := appmanager.GetInstallFlags(AppURL)
-		appmanager.InstallApp(cfg, cfgFile)
+		_ = appmanager.InstallApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if install.ExitInstallCase(AppURL) {
-			cmd.Help()
+			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}
 
 	},
 }
-var name string
 
 func init() {
 	rootCmd.AddCommand(installCmd)

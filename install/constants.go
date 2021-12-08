@@ -1,17 +1,26 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 const (
 	ErrorExitOSCase = -1 // 错误直接退出类型
 
-	ErrorMasterEmpty    = "your master is empty."                 // master节点ip为空
-	ErrorVersionEmpty   = "your kubernetes version is empty."     // kubernetes 版本号为空
-	ErrorFileNotExist   = "your package file is not exist."       // 离线安装包为空
-	ErrorPkgUrlNotExist = "Your package url is incorrect."        // 离线安装包为http路径不对
-	ErrorPkgUrlSize     = "Download file size is less then 200M " // 离线安装包为http路径不对
-	//ErrorMessageSSHConfigEmpty = "your ssh password or private-key is empty."		// ssh 密码/秘钥为空
-	// ErrorMessageCommon											// 其他错误消息
-
-	// MinDownloadFileSize int64 = 400 * 1024 * 1024
+	ErrorMasterEmpty    = "your master is empty."             // master节点ip为空
+	ErrorVersionEmpty   = "your kubernetes version is empty." // kubernetes 版本号为空
+	ErrorFileNotExist   = "your package file is not exist."   // 离线安装包为空
+	ErrorPkgURLNotExist = "Your package url is incorrect."    // 离线安装包为http路径不对
 
 	// etcd backup
 	ETCDSNAPSHOTDEFAULTNAME = "snapshot"
@@ -30,29 +39,29 @@ const (
 	DefaultCgroupDriver        = "cgroupfs"
 	DefaultSystemdCgroupDriver = "systemd"
 
-	KubeadmV1beta1   = "kubeadm.k8s.io/v1beta1"
-	KubeadmV1beta2   = "kubeadm.k8s.io/v1beta2"
-	KubeadmV1beta3   = "kubeadm.k8s.io/v1beta3"
-/*
-A list of changes since v1beta1:
+	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
+	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
+	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
+	/*
+	   A list of changes since v1beta1:
 
-`certificateKey" field is added to InitConfiguration and JoinConfiguration.
-"ignorePreflightErrors" field is added to the NodeRegistrationOptions.
-The JSON "omitempty" tag is used in a more places where appropriate.
-The JSON "omitempty" tag of the "taints" field (inside NodeRegistrationOptions) is removed. See the Kubernetes 1.15 changelog for further details.
+	   `certificateKey" field is added to InitConfiguration and JoinConfiguration.
+	   "ignorePreflightErrors" field is added to the NodeRegistrationOptions.
+	   The JSON "omitempty" tag is used in a more places where appropriate.
+	   The JSON "omitempty" tag of the "taints" field (inside NodeRegistrationOptions) is removed. See the Kubernetes 1.15 changelog for further details.
 
 
-A list of changes since v1beta2:
+	   A list of changes since v1beta2:
 
-The deprecated ClusterConfiguration.useHyperKubeImage field has been removed. Kubeadm no longer supports the hyperkube image.
-The ClusterConfiguration.dns.type field has been removed since CoreDNS is the only supported DNS server type by kubeadm.
-Include "datapolicy" tags on the fields that hold secrets. This would result in the field values to be omitted when API structures are printed with klog.
-Add InitConfiguration.skipPhases, JoinConfiguration.skipPhases to allow skipping a list of phases during kubeadm init/join command execution.
-Add InitConfiguration.nodeRegistration.imagePullPolicy" andJoinConfiguration.nodeRegistration.imagePullPolicy` to allow specifying the images pull policy during kubeadm "init" and "join". The value must be one of "Always", "Never" or "IfNotPresent". "IfNotPresent" is the default, which has been the existing behavior prior to this addition.
-Add InitConfiguration.patches.directory, JoinConfiguration.patches.directory to allow the user to configure a directory from which to take patches for components deployed by kubeadm.
-Move the BootstrapToken&lowast; API and related utilities out of the "kubeadm" API group to a new group "bootstraptoken". The kubeadm API version v1beta3 no longer contains the BootstrapToken&lowast; structures.
+	   The deprecated ClusterConfiguration.useHyperKubeImage field has been removed. Kubeadm no longer supports the hyperkube image.
+	   The ClusterConfiguration.dns.type field has been removed since CoreDNS is the only supported DNS server type by kubeadm.
+	   Include "datapolicy" tags on the fields that hold secrets. This would result in the field values to be omitted when API structures are printed with klog.
+	   Add InitConfiguration.skipPhases, JoinConfiguration.skipPhases to allow skipping a list of phases during kubeadm init/join command execution.
+	   Add InitConfiguration.nodeRegistration.imagePullPolicy" andJoinConfiguration.nodeRegistration.imagePullPolicy` to allow specifying the images pull policy during kubeadm "init" and "join". The value must be one of "Always", "Never" or "IfNotPresent". "IfNotPresent" is the default, which has been the existing behavior prior to this addition.
+	   Add InitConfiguration.patches.directory, JoinConfiguration.patches.directory to allow the user to configure a directory from which to take patches for components deployed by kubeadm.
+	   Move the BootstrapToken&lowast; API and related utilities out of the "kubeadm" API group to a new group "bootstraptoken". The kubeadm API version v1beta3 no longer contains the BootstrapToken&lowast; structures.
 
-*/
+	*/
 )
 
 const (

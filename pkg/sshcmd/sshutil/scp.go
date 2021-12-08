@@ -1,12 +1,22 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package sshutil
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
-	"github.com/pkg/sftp"
-	"github.com/wonderivan/logger"
-	"golang.org/x/crypto/ssh"
 	"io"
 	"io/ioutil"
 	"net"
@@ -15,6 +25,11 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/sshcmd/md5sum"
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 //Copy is
@@ -236,7 +251,7 @@ func (ss *SSH) CopyRemoteFileToLocal(host, localFilePath, remoteFilePath string)
 	}
 	defer dstFile.Close()
 	// copy to local file
-	srcFile.WriteTo(dstFile)
+	_, _ = srcFile.WriteTo(dstFile)
 }
 
 // CopyLocalToRemote is copy file or dir to remotePath, add md5 validate
@@ -267,7 +282,7 @@ func (ss *SSH) CopyLocalToRemote(host, localPath, remotePath string) {
 	} else {
 		baseRemoteFilePath := filepath.Dir(remotePath)
 		mkDstDir := fmt.Sprintf("mkdir -p %s || true", baseRemoteFilePath)
-		ss.CmdAsync(host, mkDstDir)
+		_ = ss.CmdAsync(host, mkDstDir)
 		ss.copyLocalFileToRemote(host, sshClient, sftpClient, localPath, remotePath)
 	}
 }
@@ -283,12 +298,12 @@ func (ss *SSH) copyLocalDirToRemote(host string, sshClient *ssh.Client, sftpClie
 	if err != nil {
 		panic(1)
 	}
-	sftpClient.Mkdir(remotePath)
+	_ = sftpClient.Mkdir(remotePath)
 	for _, file := range localFiles {
 		lfp := path.Join(localPath, file.Name())
 		rfp := path.Join(remotePath, file.Name())
 		if file.IsDir() {
-			sftpClient.Mkdir(rfp)
+			_ = sftpClient.Mkdir(rfp)
 			ss.copyLocalDirToRemote(host, sshClient, sftpClient, lfp, rfp)
 		} else {
 			ss.copyLocalFileToRemote(host, sshClient, sftpClient, lfp, rfp)

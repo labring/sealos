@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package logger
 
 import (
@@ -75,7 +89,6 @@ func (f *fileLogger) needCreateFresh(size int, day int) bool {
 	return (f.MaxLines > 0 && f.maxLinesCurLines >= f.MaxLines) ||
 		(f.MaxSize > 0 && f.maxSizeCurSize+size >= f.MaxSize) ||
 		(f.Daily && day != f.dailyOpenDate)
-
 }
 
 // WriteMsg write logger message into file.
@@ -125,7 +138,7 @@ func (f *fileLogger) createLogFile() (*os.File, error) {
 	fd, err := os.OpenFile(f.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.FileMode(perm))
 	if err == nil {
 		// Make sure file perm is user set perm cause of `os.OpenFile` will obey umask
-		os.Chmod(f.Filename, os.FileMode(perm))
+		_ = os.Chmod(f.Filename, os.FileMode(perm))
 	}
 	return fd, err
 }
@@ -215,7 +228,7 @@ func (f *fileLogger) createFreshFile(logTime time.Time) error {
 	}
 
 	if err == nil {
-		return fmt.Errorf("Cannot find free log number to rename %s", f.Filename)
+		return fmt.Errorf("cannot find free log number to rename %s", f.Filename)
 	}
 	f.fileWriter.Close()
 
@@ -238,17 +251,17 @@ RESTART_LOGGER:
 	go f.deleteOldLog()
 
 	if startLoggerErr != nil {
-		return fmt.Errorf("Rotate StartLogger: %s", startLoggerErr)
+		return fmt.Errorf("rotate StartLogger: %s", startLoggerErr)
 	}
 	if err != nil {
-		return fmt.Errorf("Rotate: %s", err)
+		return fmt.Errorf("rotate: %s", err)
 	}
 	return nil
 }
 
 func (f *fileLogger) deleteOldLog() {
 	dir := filepath.Dir(f.Filename)
-	filepath.Walk(dir, func(path string, info os.FileInfo, err error) (returnErr error) {
+	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) (returnErr error) {
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Fprintf(os.Stderr, "Unable to delete old log '%s', error: %v\n", path, r)

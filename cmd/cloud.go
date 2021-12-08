@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,9 +25,6 @@ import (
 )
 
 var p bool
-
-func prompt() {
-}
 
 // cloudCmd represents the cloud command
 var cloudCmd = &cobra.Command{

@@ -66,7 +66,7 @@ filelicense: SHELL:=/bin/bash
 filelicense: ## add license
 	for file in ${Dirs} ; do \
 		if [[  $$file != '_output' && $$file != 'docs' && $$file != 'vendor' && $$file != 'logger' && $$file != 'applications' ]]; then \
-			$(ADDLICENSE_BIN)  -y $(shell date +"%Y") -c "Alibaba Group Holding Ltd." -f hack/template/LICENSE ./$$file ; \
+			$(ADDLICENSE_BIN)  -y $(shell date +"%Y") -c "sealos." -f hack/template/LICENSE ./$$file ; \
 		fi \
     done
 
@@ -74,7 +74,7 @@ install-ossutil: ## check ossutil if not exist install ossutil tools
 ifeq (, $(shell which ossutil))
 	@{ \
 	set -e ;\
-	go install github.com/aliyun/ossutil@latest ;\
+	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(GOBIN) v2.2.0 ;\
 	}
 OSSUTIL_BIN=$(GOBIN)/ossutil
 else

@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package sshutil
 
 import (
@@ -7,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 const oneKBByte = 1024
@@ -18,8 +32,7 @@ func (ss *SSH) LoggerFileSize(host, filename string, size int) {
 	t := time.NewTicker(3 * time.Second) //every 3s check file
 	defer t.Stop()
 	for {
-		select {
-		case <-t.C:
+		if <-t.C; true {
 			length := ss.CmdToString(host, "ls -l "+filename+" | awk '{print $5}'", "")
 			length = strings.Replace(length, "\n", "", -1)
 			length = strings.Replace(length, "\r", "", -1)
@@ -58,12 +71,10 @@ func (ss *SSH) IsFileExist(host, remoteFilePath string) bool {
 }
 
 func toSizeFromInt(length int) (float64, string) {
-	isMb := length/oneMBByte > 1
 	value, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneMBByte), 64)
-	if isMb {
+	if isMb := length/oneMBByte > 1; isMb {
 		return value, "MB"
-	} else {
-		value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneKBByte), 64)
-		return value, "KB"
 	}
+	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", float64(length)/oneKBByte), 64)
+	return value, "KB"
 }

@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -7,8 +21,8 @@ import (
 	"sync"
 
 	"github.com/fanux/sealos/ipvs"
+	"github.com/fanux/sealos/pkg/logger"
 	sshcmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
-	"github.com/wonderivan/logger"
 )
 
 type SealosClean struct {
@@ -78,7 +92,6 @@ end:
 		cfgPath := home + defaultConfigPath
 		sshcmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
 	}
-
 }
 
 //Clean clean cluster.
@@ -108,7 +121,6 @@ func (s *SealosClean) Clean() {
 		}
 		wg.Wait()
 	}
-
 }
 
 func (s *SealosClean) cleanNode(node string) {
@@ -169,7 +181,7 @@ func clean(host string) {
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
+	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", APIServer)
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf ~/kube"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -183,11 +195,11 @@ func clean(host string) {
 
 func cleanRoute(node string) {
 	// clean route
-	cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
+	cmdRoute := fmt.Sprintf("sealos route --host %s", IPFormat(node))
 	status := SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 删除为 vip创建的路由。
-		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IpFormat(node))
+		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IPFormat(node))
 		SSHConfig.CmdToString(node, delRouteCmd, "")
 	}
 }

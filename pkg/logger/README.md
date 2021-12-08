@@ -3,7 +3,7 @@ convenient log package
 
 # 1. 使用说明
 ```go
-    import  "github.com/wonderivan/logger"
+    import  "github.com/fanux/sealos/pkg/logger"
 
     // 配置logger，如果不配置时默认为控制台输出，等级为DEBG
     logger.SetLogger(`{"Console": {"level": "DEBG"}`)
@@ -103,35 +103,35 @@ logger当前支持控制台、文件、网络3种方式适配器输出，可以�
 - 时间格式打印：
 ```
 ========RFC1123Z time format========
-Thu, 02 Aug 2018 18:48:04 +0800 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC1123Z
+Thu, 02 Aug 2018 18:48:04 +0800 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC1123Z
 ========Stamp time format========
-Aug  2 18:48:04 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug Stamp
+Aug  2 18:48:04 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug Stamp
 ========StampMilli time format========
-Aug  2 18:48:04.489 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug StampMilli
+Aug  2 18:48:04.489 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug StampMilli
 ========StampNano time format========
-Aug  2 18:48:04.490002155 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug StampNano
+Aug  2 18:48:04.490002155 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug StampNano
 ========RubyDate time format========
-Thu Aug 02 18:48:04 +0800 2018 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RubyDate
+Thu Aug 02 18:48:04 +0800 2018 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RubyDate
 ========RFC822 time format========
-02 Aug 18 18:48 CST [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC822
+02 Aug 18 18:48 CST [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC822
 ========RFC822Z time format========
-02 Aug 18 18:48 +0800 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC822Z
+02 Aug 18 18:48 +0800 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC822Z
 ========RFC1123 time format========
-Thu, 02 Aug 2018 18:48:04 CST [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC1123
+Thu, 02 Aug 2018 18:48:04 CST [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC1123
 ========RFC3339 time format========
-2018-08-02T18:48:04+08:00 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC3339
+2018-08-02T18:48:04+08:00 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC3339
 ========RFC3339Nano time format========
-2018-08-02T18:48:04.490377325+08:00 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC3339Nano
+2018-08-02T18:48:04.490377325+08:00 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC3339Nano
 ========ANSIC time format========
-Thu Aug  2 18:48:04 2018 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug ANSIC
+Thu Aug  2 18:48:04 2018 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug ANSIC
 ========UnixDate time format========
-Thu Aug  2 18:48:04 CST 2018 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug UnixDate
+Thu Aug  2 18:48:04 CST 2018 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug UnixDate
 ========RFC850 time format========
-Thursday, 02-Aug-18 18:48:04 CST [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug RFC850
+Thursday, 02-Aug-18 18:48:04 CST [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug RFC850
 ========Kitchen time format========
-6:48PM [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug Kitchen
+6:48PM [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug Kitchen
 ========StampMicro time format========
-Aug  2 18:48:04.490662 [DEBG] [github.com/wonderivan/logger/log_test.go:115] Debug StampMicro
+Aug  2 18:48:04.490662 [DEBG] [github.com/fanux/sealos/pkg/logger/log_test.go:115] Debug StampMicro
 ```
 
 # 4. 其他
