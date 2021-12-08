@@ -24,11 +24,9 @@ func setKubeadmApi(version string) {
 	case major >= 123:
 		KubeadmApi = KubeadmV1beta3
 		CriSocket = DefaultContainerdCRISocket
-		BootstrapApi = Bootstraptokenv1
 	default:
 		KubeadmApi = KubeadmV1beta3
 		CriSocket = DefaultContainerdCRISocket
-		BootstrapApi = Bootstraptokenv1
 	}
 	logger.Debug("KubeadmApi: %s", KubeadmApi)
 	logger.Debug("CriSocket: %s", CriSocket)
@@ -94,7 +92,6 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 	envMap["VIP"] = VIP
 	envMap["KubeadmApi"] = KubeadmApi
 	envMap["CriSocket"] = CriSocket
-	envMap["BootstrapApi"] = BootstrapApi
 	envMap["CgroupDriver"] = cgroup
 	var buffer bytes.Buffer
 	_ = tmpl.Execute(&buffer, envMap)
