@@ -1,14 +1,28 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cert
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
-// return sealos cert command
-func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
+// CMD return sealos cert command
+func CMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) string {
 	cmd := "sealos cert "
 	if hostIP != "" {
 		cmd += fmt.Sprintf(" --node-ip %s", hostIP)
@@ -19,7 +33,7 @@ func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string)
 	}
 
 	if serviceCIRD != "" {
-		cmd += fmt.Sprintf(" --service-cird %s", serviceCIRD)
+		cmd += fmt.Sprintf(" --service-cidr %s", serviceCIRD)
 	}
 
 	if DNSDomain != "" {
@@ -35,11 +49,12 @@ func CertCMD(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string)
 	return cmd
 }
 
-func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomian string) {
-	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomian)
+// GenerateCert generate all cert.
+func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) {
+	certConfig, err := NewSealosCertMetaData(certPATH, certEtcdPATH, altNames, serviceCIRD, hostName, hostIP, DNSDomain)
 	if err != nil {
 		logger.Error("generator cert config failed %s", err)
 		os.Exit(-1)
 	}
-	certConfig.GenerateAll()
+	_ = certConfig.GenerateAll()
 }

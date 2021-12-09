@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@ import (
 	"os"
 
 	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/install"
-
 	"github.com/spf13/cobra"
+
+	"github.com/fanux/sealos/install"
 )
 
 var p bool
-
-func prompt() {
-}
 
 // cloudCmd represents the cloud command
 var cloudCmd = &cobra.Command{

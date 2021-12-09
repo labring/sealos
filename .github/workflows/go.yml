@@ -1,0 +1,86 @@
+name: CI
+
+env:
+  # Common versions
+  GO_VERSION: '1.14'
+
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: "*"
+    paths-ignore:
+      - 'docs/**'
+      - 'vendor/**'
+      - '*.md'
+      - '*.yml'
+jobs:
+
+  check-license:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run Check License
+        run: |
+          wget https://github.com/google/addlicense/releases/download/v1.0.0/addlicense_1.0.0_Linux_x86_64.tar.gz
+          tar -zxvf addlicense_1.0.0_Linux_x86_64.tar.gz -C $(go env GOPATH)/bin
+          chmod a+x $(go env GOPATH)/bin/addlicense
+          rm -rf addlicense_1.0.0_Linux_x86_64.tar.gz
+          make filelicense
+          modifyCode=$(git status  -s | grep M | wc -l)
+          git status  -s
+          if [ $modifyCode -eq 0 ] ; then
+             echo "Lic check ok"
+          else
+             echo "Failed git modify files num is $modifyCode. Lic check error,please exec 'make install-addlicense && make filelicense' in your code "
+             exit -1
+          fi
+  golangci-lint:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install go ci lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.39.0
+
+      - name: Run Linter
+        run: make lint
+
+  build-binaries:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v1
+        with:
+          version: latest
+          args: build --snapshot --rm-dist  --timeout=1h
+      - name: Save build binaries linux-amd64
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealos-amd64
+          path: dist/sealos_linux_amd64/sealos
+      - name: Save build binaries linux-arm64
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealos-arm64
+          path: dist/sealos_linux_arm64/sealos

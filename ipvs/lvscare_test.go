@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ipvs
 
 import (
@@ -57,7 +71,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 	type args struct {
 		vip     string
 		masters []string
-		image   string
+		image   LvscareImage
 	}
 	tests := []struct {
 		name string
@@ -68,8 +82,8 @@ func TestLvsStaticPodYaml(t *testing.T) {
 			"test generate lvscare static pod",
 			args{
 				"10.10.10.10",
-				[]string{"116.31.96.134:3126", "116.31.96.135:3126", "116.31.96.136:3126"},
-				"",
+				[]string{"116.31.96.134:6443", "116.31.96.135:6443", "116.31.96.136:6443"},
+				LvscareImage{"fanux/lvscare", "latest"},
 			},
 			want[0],
 		},
