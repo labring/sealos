@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	v1 "github.com/fanux/sealos/pkg/types/v1"
+	install "github.com/fanux/sealos/pkg/utils"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type DeleteFlags struct {
@@ -31,16 +33,16 @@ type DeleteFlags struct {
 
 func GetDeleteFlags(appURL string) *DeleteFlags {
 	return &DeleteFlags{
-		Config:     install.PackageConfig,
-		WorkDir:    install.WorkDir,
+		Config:     v1.PackageConfig,
+		WorkDir:    v1.WorkDir,
 		PkgURL:     appURL,
-		CleanForce: install.CleanForce,
+		CleanForce: v1.CleanForce,
 	}
 }
 
 func DeleteApp(flag *DeleteFlags, cfgFile string) error {
 	//TODO
-	c := &install.SealConfig{}
+	c := &v1.SealConfig{}
 	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
