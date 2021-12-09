@@ -1,17 +1,3 @@
-// Copyright © 2021 sealos.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package logger
 
 import (
@@ -38,7 +24,7 @@ var p = `{
 }`
 
 func TestLogOut(t *testing.T) {
-	_ = SetLogger(p)
+	SetLogger(p)
 	Trace("this is Trace")
 	Debug("this is Debug")
 	Info("this is Info")
@@ -52,8 +38,8 @@ func TestLogOut(t *testing.T) {
 func TestLogConfigReload(t *testing.T) {
 	go func() {
 		for {
-			for level := range LevelMap {
-				_ = SetLogger(fmt.Sprintf(`{
+			for level, _ := range LevelMap {
+				SetLogger(fmt.Sprintf(`{
 					"Console": {
 						"level": "%s",
 						"color": true
@@ -86,9 +72,11 @@ func TestLogConfigReload(t *testing.T) {
 
 		time.Sleep(time.Millisecond)
 	}
+
 }
 
 func TestLogTimeFormat(t *testing.T) {
+
 	var formats = map[string]string{"ANSIC": "Mon Jan _2 15:04:05 2006",
 		"UnixDate":    "Mon Jan _2 15:04:05 MST 2006",
 		"RubyDate":    "Mon Jan 02 15:04:05 -0700 2006",
@@ -106,7 +94,7 @@ func TestLogTimeFormat(t *testing.T) {
 		"StampNano":   "Jan _2 15:04:05.000000000",
 	}
 	for timeType, format := range formats {
-		_ = SetLogger(fmt.Sprintf(`{
+		SetLogger(fmt.Sprintf(`{
 					"TimeFormat":"%s",
 					"Console": {
 						"level": "TRAC",
@@ -132,4 +120,5 @@ func TestLogTimeFormat(t *testing.T) {
 		Alert("Alert", timeType)
 		Emer("Emergency", timeType)
 	}
+
 }

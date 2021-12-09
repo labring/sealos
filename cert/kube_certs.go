@@ -1,17 +1,3 @@
-// Copyright © 2021 sealos.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cert
 
 import (
@@ -22,24 +8,15 @@ import (
 	"os"
 	"path"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/wonderivan/logger"
 )
 
 var (
-	SealosConfigDir         = GetUserHomeDir() + "/.sealos"
+	SealosConfigDir         = "/root/.sealos"
 	KubernetesDir           = "/etc/kubernetes"
 	KubeDefaultCertPath     = "/etc/kubernetes/pki"
 	kubeDefaultCertEtcdPath = "/etc/kubernetes/pki/etcd"
 )
-
-func GetUserHomeDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	return home
-}
 
 func CaList(CertPath, CertEtcdPath string) []Config {
 	return []Config{
@@ -76,7 +53,7 @@ func CaList(CertPath, CertEtcdPath string) []Config {
 	}
 }
 
-func List(CertPath, CertEtcdPath string) []Config {
+func CertList(CertPath, CertEtcdPath string) []Config {
 	return []Config{
 		{
 			Path:         CertPath,
@@ -212,7 +189,8 @@ func NewSealosCertMetaData(certPATH, certEtcdPATH string, apiServerIPAndDomains 
 		}
 		data.APIServer.DNSNames[altName] = altName
 	}
-	if ip := net.ParseIP(nodeIP); ip != nil {
+	ip := net.ParseIP(nodeIP)
+	if ip != nil {
 		data.APIServer.IPs[ip.String()] = ip
 	}
 
@@ -226,8 +204,8 @@ func (meta *SealosCertMetaData) apiServerAltName(certList *[]Config) {
 		(*certList)[APIserverCert].AltNames.DNSNames[dns] = dns
 	}
 
-	svcDNS := fmt.Sprintf("kubernetes.default.svc.%s", meta.DNSDomain)
-	(*certList)[APIserverCert].AltNames.DNSNames[svcDNS] = svcDNS
+	svcDns := fmt.Sprintf("kubernetes.default.svc.%s", meta.DNSDomain)
+	(*certList)[APIserverCert].AltNames.DNSNames[svcDns] = svcDns
 	(*certList)[APIserverCert].AltNames.DNSNames[meta.NodeName] = meta.NodeName
 
 	for _, ip := range meta.APIServer.IPs {
@@ -281,10 +259,10 @@ func (meta *SealosCertMetaData) generatorServiceAccountKeyPaire() error {
 
 func (meta *SealosCertMetaData) GenerateAll() error {
 	cas := CaList(meta.CertPath, meta.CertEtcdPath)
-	certs := List(meta.CertPath, meta.CertEtcdPath)
+	certs := CertList(meta.CertPath, meta.CertEtcdPath)
 	meta.apiServerAltName(&certs)
 	meta.etcdAltAndCommonName(&certs)
-	_ = meta.generatorServiceAccountKeyPaire()
+	meta.generatorServiceAccountKeyPaire()
 
 	CACerts := map[string]*x509.Certificate{}
 	CAKeys := map[string]crypto.Signer{}

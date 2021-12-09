@@ -1,89 +1,81 @@
-Dirs=$(shell ls)
-COMMIT_ID ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
+COMMIT_SHA1 ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
+BUILD_VERSION ?= $(shell cat version.txt || echo "3.0.2")
+BUILD_TIME ?= $(shell date "+%F %T")
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifneq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
+.PHONY: fmt vet lint default
+GO_RELEASE_TAGS := $(shell go list -f ':{{join (context.ReleaseTags) ":"}}:' runtime)
+
+# Only use the `-race` flag on newer versions of Go (version 1.3 and newer)
+ifeq (,$(findstring :go1.3:,$(GO_RELEASE_TAGS)))
+	RACE_FLAG :=
 else
-GOBIN=$(shell go env GOBIN)
+	RACE_FLAG := -race -cpu 1,2,4
 endif
 
-install-golint: ## check license if not exist install addlicense tools
-ifeq (, $(shell which golangci-lint))
-	@{ \
-	set -e ;\
-	o install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0 ;\
-	}
-GOLINT_BIN=$(GOBIN)/golangci-lint
+# Run `go vet` on Go 1.12 and newer. For Go 1.5-1.11, use `go tool vet`
+ifneq (,$(findstring :go1.12:,$(GO_RELEASE_TAGS)))
+	GO_VET := go vet \
+		-atomic \
+		-bool \
+		-copylocks \
+		-nilfunc \
+		-printf \
+		-rangeloops \
+		-unreachable \
+		-unsafeptr \
+		-unusedresult \
+		.
+else ifneq (,$(findstring :go1.5:,$(GO_RELEASE_TAGS)))
+	GO_VET := go tool vet \
+		-atomic \
+		-bool \
+		-copylocks \
+		-nilfunc \
+		-printf \
+		-shadow \
+		-rangeloops \
+		-unreachable \
+		-unsafeptr \
+		-unusedresult \
+		.
 else
-GOLINT_BIN=$(shell which golangci-lint)
+	GO_VET := @echo "go vet skipped -- not supported on this version of Go"
 endif
 
-lint: install-golint ## Run go lint against code.
-	$(GOLINT_BIN) run -v ./...
+fmt: ## fmt
 
-default:  build
+	@echo gofmt -l
+	@OUTPUT=`gofmt -l . 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "gofmt must be run on the following files:"; \
+        echo "$$OUTPUT"; \
+        exit 1; \
+    fi
 
-install-goreleaser: ## check license if not exist install addlicense tools
-ifeq (, $(shell which goreleaser))
-	@{ \
-	set -e ;\
-	go install github.com/goreleaser/goreleaser@latest ;\
-	}
-GORELEASER_BIN=$(GOBIN)/goreleaser
-else
-GORELEASER_BIN=$(shell which goreleaser)
-endif
+lint: ## lint
 
-build: SHELL:=/bin/bash
-build: install-goreleaser clean ## build binaries by default
-	@echo "build sealos bin"
-	$(GORELEASER_BIN) build --snapshot --rm-dist  --timeout=1h
+	@echo golint ./...
+	@OUTPUT=`command -v golint >/dev/null 2>&1 && golint ./... 2>&1`; \
+	if [ "$$OUTPUT" ]; then \
+		echo "golint errors:"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+vet: ## vet
+	$(GO_VET)
+
+default: fmt lint vet
+
+.PHONY: local
+local: ## 构建二进制
+	docker run --rm -v ${PWD}:/go/src/github.com/fanux/sealos -w /go/src/github.com/fanux/sealos golang:1.12-stretch  go build -ldflags "-X 'github.com/fanux/sealos/version.Version=${BUILD_VERSION}' -X 'github.com/fanux/sealos/version.Build=${COMMIT_SHA1}' -X 'github.com/fanux/sealos/version.BuildTime=${BUILD_TIME}'"
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-clean: ## clean
-	rm -rf dist
+.EXPORT_ALL_VARIABLES:
 
-install-addlicense: ## check license if not exist install addlicense tools
-ifeq (, $(shell which addlicense))
-	@{ \
-	set -e ;\
-	LICENSE_TMP_DIR=$$(mktemp -d) ;\
-	cd $$LICENSE_TMP_DIR ;\
-	go mod init tmp ;\
-	go get -v github.com/google/addlicense ;\
-	rm -rf $$LICENSE_TMP_DIR ;\
-	}
-ADDLICENSE_BIN=$(GOBIN)/addlicense
-else
-ADDLICENSE_BIN=$(shell which addlicense)
-endif
+GO111MODULE = on
 
-
-filelicense: SHELL:=/bin/bash
-filelicense: ## add license
-	for file in ${Dirs} ; do \
-		if [[  $$file != '_output' && $$file != 'docs' && $$file != 'vendor' && $$file != 'logger' && $$file != 'applications' ]]; then \
-			$(ADDLICENSE_BIN)  -y $(shell date +"%Y") -c "sealos." -f hack/template/LICENSE ./$$file ; \
-		fi \
-    done
-
-install-ossutil: ## check ossutil if not exist install ossutil tools
-ifeq (, $(shell which ossutil))
-	@{ \
-	set -e ;\
-	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(GOBIN) v2.2.0 ;\
-	}
-OSSUTIL_BIN=$(GOBIN)/ossutil
-else
-OSSUTIL_BIN=$(shell which ossutil)
-endif
-
-push-oss:install-ossutil build
-	$(OSSUTIL_BIN) cp -f dist/sealos_linux_amd64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos
-	$(OSSUTIL_BIN) cp -f dist/sealos_linux_arm64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos-arm64
-
-generator-contributors:
-	git log --format='%aN <%aE>' | sort -uf > CONTRIBUTORS
+GOPROXY = https://goproxy.cn
