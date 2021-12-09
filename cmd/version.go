@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,22 +16,30 @@ package cmd
 
 import (
 	"fmt"
-	"runtime"
-	"strings"
-
-	extver "github.com/linuxsuren/cobra-extension/version"
+	"github.com/fanux/sealos/version"
+	"github.com/spf13/cobra"
 )
 
+// versionCmd represents the version command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "show sealos version",
+	Long:  `show sealos version`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println(version.VersionStr)
+	},
+}
+
 func init() {
-	// it's possible to have multiple choices for users to choose GitHub or aliyun as their download source
-	// see also https://github.com/LinuxSuRen/cobra-extension/issues/6
-	const name = "sealos"
-	verCmd := extver.NewVersionCmd("fanux", name, name, func(ver string) string {
-		if strings.HasPrefix(ver, "v") {
-			ver = strings.TrimPrefix(ver, "v")
-		}
-		return fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/%s_%s_%s_%s.tar.gz",
-			ver, name, ver, runtime.GOOS, runtime.GOARCH)
-	})
-	rootCmd.AddCommand(verCmd)
+	rootCmd.AddCommand(versionCmd)
+
+	// Here you will define your flags and configuration settings.
+
+	// Cobra supports Persistent Flags which will work for this command
+	// and all subcommands, e.g.:
+	// versionCmd.PersistentFlags().String("foo", "", "A help for foo")
+
+	// Cobra supports local flags which will only run when this command
+	// is called directly, e.g.:
+	// versionCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -1,56 +1,15 @@
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-  [![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
+[![Build Status](https://cloud.drone.io/api/badges/fanux/sealos/status.svg)](https://cloud.drone.io/fanux/sealos)
 
 # Introduction
 Build a production kubernetes HA cluster.
 
-![](docs/images/arch.png)
+![](./arch.jpg)
 
 * Every node config a ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
 * Then run a [lvscare](https://github.com/fanux/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
 * If any master is down, lvscare will remove the ipvs realserver, when master recover it will add it back.
 * Sealos will send package and apply install commands, so we needn't ansible.
-
-# Supported Environment
-
-## Linux Distributions 
-
-- Ubuntu 16.04， 18.04， 20.04 ,  x86_64/ arm64
-- Centos/RHEL 7.6+,  x86_64/ arm64
-- 99% systemd manage linux system。 x86_64/ arm64
-- Kylin arm64
-
-## kubernetes Versions
-
-- 1.16+
-- 1.17+
-- 1.18+
-- 1.19+
-- 1.20+
-- 1.21+
-- 1.22+
-
-Looking for more supported versions，[sealyun.com](https://www.sealyun.com)。
-sealos is currently supported the latest k8s 1.22+
-
-## Requirements and Recommendations
-
-- Minimum resource requirements 
-   - 2 vCpu
-   - 4G RAM
-   - 40G+ Storage
-
-- OS requirements
-   - SSH can access to all nodes.
-   - hostname is uniq ，and satisfied kubernetes requirements。
-   - Time synchronization for all nodes.
-   - network Iface has a stranger name, change it to (eth.*|en.*|em.*)
-   - kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it
-   - kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you
- - Networking and DNS requirements：
-   - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster。 
-   - if you use aliyun/huawei cloud to deploy kubernetes 。 default pod cidr is confilct with dns cidr， we recommand you install kubernetes init flag to add  `--podcidr`  to aviod this problem。
-   - sealos default to disable firewalld ，It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic。
 
 # Quick Start
 ## PreInstall
@@ -163,66 +122,27 @@ sealos config -t kubeadm >>  kubeadm-config.yaml.tmpl
 See the config template file `cat kubeadm-config.yaml.tmpl`, edit it add `sealyun.com`:
 ```
 apiVersion: kubeadm.k8s.io/v1beta1
-kind: InitConfiguration
-localAPIEndpoint:
-  advertiseAddress: {{.Master0}}
-  bindPort: 6443
----
-apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: {{.Version}}
-controlPlaneEndpoint: "{{.ApiServer}}:6443"
-imageRepository: {{.Repo}}
+controlPlaneEndpoint: "apiserver.cluster.local:6443"
 networking:
-  # dnsDomain: cluster.local
-  podSubnet: {{.PodCIDR}}
-  serviceSubnet: {{.SvcCIDR}}
+  podSubnet: 100.64.0.0/10
 apiServer:
-  certSANs:
-  - sealyun.com # add to certSANs
-  - 127.0.0.1
-  - {{.ApiServer}}
-  {{range .Masters -}}
-  - {{.}}
-  {{end -}}
-  {{range .CertSANS -}}
-  - {{.}}
-  {{end -}}
-  - {{.VIP}}
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - name: localtime
-    hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    readOnly: true
-    pathType: File
-controllerManager:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-    experimental-cluster-signing-duration: 876000h
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
-scheduler:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
+        certSANs:
+        - sealyun.com # this is what I added
+        - 127.0.0.1
+        - apiserver.cluster.local
+        {{range .Masters -}}
+        - {{.}}
+        {{end -}}
+        - {{.VIP}}
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
-  excludeCIDRs:
-  - "{{.VIP}}/32"
+        excludeCIDRs: 
+        - "{{.VIP}}/32"
 ```
 
 Then using --kubeadm-config flag:
@@ -238,7 +158,7 @@ sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
     --pkg-url /root/kube1.14.1.tar.gz 
 ```
 
-[简体中文](README.md)
+[简体中文](README_zh.md)
 
-[More offline packages](https://sealyun.com)
+[More offline packages](http://store.lameleg.com)
 
