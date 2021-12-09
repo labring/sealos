@@ -1,17 +1,33 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealgate/cloud"
-	"github.com/fanux/sealos/version"
-	"github.com/wonderivan/logger"
 	"os"
+	"strings"
+
+	"github.com/fanux/sealgate/cloud"
+	"github.com/fanux/sealos/pkg/logger"
+	extver "github.com/linuxsuren/cobra-extension/version"
 )
 
 //VersionURL is base64 encode k8s version and offline package url
 var (
 	VersionURL string
-	URLmap     map[string]string
+	URLMap     map[string]string
 	DefaultURL = "https://sealyun.oss-cn-beijing.aliyuncs.com/37374d999dbadb788ef0461844a70151-1.16.0/kube1.16.0.tar.gz"
 )
 
@@ -41,7 +57,6 @@ type Cluster struct {
 	SecuretyGroupID string
 }
 
-//Global config
 var C Cluster
 var ClusterDir = "/root/.sealos/clusters/"
 
@@ -55,13 +70,13 @@ var ClusterDir = "/root/.sealos/clusters/"
    一写代码就精神万分，一搞管理上的杂事就效率很低，所以做技术还是要专注些。
 */
 func CloudInstall(c *Cluster) {
-	URLmap = make(map[string]string)
-	URLmap["v1.16.0"] = DefaultURL
+	URLMap = make(map[string]string)
+	URLMap["v1.16.0"] = DefaultURL
 
 	config := c.Config
 	p := cloud.NewProvider(config)
 
-	Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
+	_ = Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
 
 	//TODO concurrence create master and nodes vms, should not create two vpcs
 	/*
@@ -124,7 +139,7 @@ func CloudInstall(c *Cluster) {
 }
 
 func getURL(version string) string {
-	url, ok := URLmap[version]
+	url, ok := URLMap[version]
 	if !ok {
 		logger.Error("version offline package not found: %s", version)
 		os.Exit(1)
@@ -139,7 +154,13 @@ func getLocalURL(version string) string {
 
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
-	cmd := fmt.Sprintf("wget https://github.com/fanux/sealos/releases/download/%s/sealos && chmod +x sealos", version.Version)
+	version := extver.GetVersion()
+	if strings.HasPrefix(version, "v") {
+		version = strings.TrimPrefix(version, "v")
+	}
+	releaseURL := fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz",
+		version, version)
+	cmd := fmt.Sprintf("wget %s -O -| tar -xz && chmod +x sealos", releaseURL)
 	cmd += fmt.Sprintf(" && ./sealos init --passwd %s --pkg-url %s --version %s", c.Passwd, getLocalURL(c.Version), c.Version)
 	for _, master := range c.Masters {
 		cmd += fmt.Sprintf(" --master %s", master.IP)
@@ -169,4 +190,10 @@ func newRequest(c *Cluster, namePrefix string, fip bool, num int) cloud.Request 
 		SecuretyGroupID: c.SecuretyGroupID,
 	}
 	return r
+}
+
+// CmdWorkSpace exec cmd on specified workdir.
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	_ = SSHConfig.CmdAsync(node, command)
 }

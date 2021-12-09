@@ -1,23 +1,43 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
 	"fmt"
-	"github.com/wonderivan/logger"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+
+	v2 "gopkg.in/yaml.v2"
+
+	"github.com/fanux/sealos/net"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
-const defaultConfigPath = "/.sealos"
-const defaultConfigFile = "/config.yaml"
+const (
+	defaultConfigPath      = "/.sealos"
+	defaultConfigFile      = "/config.yaml"
+	defaultAPIServerDomain = "apiserver.cluster.local"
+)
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
 	Masters []string
 	Nodes   []string
 	//config from kubeadm.cfg. ex. cluster.local
-	DnsDomain         string
-	ApiServerCertSANs []string
+	DNSDomain         string
+	APIServerCertSANs []string
 
 	//SSHConfig
 	User       string
@@ -25,20 +45,21 @@ type SealConfig struct {
 	PrivateKey string
 	PkPassword string
 	//ApiServer ex. apiserver.cluster.local
-	ApiServerDomian string
-
-	VIP     string
-	PkgURL  string
-	Version string
-	Repo    string
-	PodCIDR string
-	SvcCIDR string
+	APIServerDomain string
+	Network         string
+	VIP             string
+	PkgURL          string
+	Version         string
+	Repo            string
+	PodCIDR         string
+	SvcCIDR         string
 	//certs location
 	CertPath     string
 	CertEtcdPath string
 	//lvscare images
 	LvscareName string
 	LvscareTag  string
+	AliOss
 }
 
 //Dump is
@@ -55,22 +76,29 @@ func (c *SealConfig) Dump(path string) {
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile
 	c.PkPassword = SSHConfig.PkPassword
-	c.ApiServerDomian = ApiServer
+	c.APIServerDomain = APIServer
+	c.Network = Network
 	c.VIP = VIP
-	c.PkgURL = PkgUrl
+	c.PkgURL = PkgURL
 	c.Version = Version
 	c.Repo = Repo
 	c.SvcCIDR = SvcCIDR
 	c.PodCIDR = PodCIDR
 
-	c.DnsDomain = DnsDomain
-	c.ApiServerCertSANs = ApiServerCertSANs
+	c.DNSDomain = DNSDomain
+	c.APIServerCertSANs = APIServerCertSANs
 	c.CertPath = CertPath
 	c.CertEtcdPath = CertEtcdPath
 	//lvscare
 	c.LvscareName = LvscareImage.Image
 	c.LvscareTag = LvscareImage.Tag
-	y, err := yaml.Marshal(c)
+	// oss
+	c.AliOss.AccessKeyID = AccessKeyID
+	c.AliOss.AccessKeySecrets = AccessKeySecrets
+	c.AliOss.OssEndpoint = OssEndpoint
+	c.AliOss.BucketName = BucketName
+	c.AliOss.ObjectPath = ObjectPath
+	y, err := v2.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 	}
@@ -86,7 +114,7 @@ func (c *SealConfig) Dump(path string) {
 }
 
 func Dump(path string, content interface{}) error {
-	y, err := yaml.Marshal(content)
+	y, err := v2.Marshal(content)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 		return err
@@ -98,7 +126,7 @@ func Dump(path string, content interface{}) error {
 		return err
 	}
 
-	ioutil.WriteFile(path, y, 0644)
+	_ = ioutil.WriteFile(path, y, 0644)
 	return nil
 }
 
@@ -114,7 +142,7 @@ func (c *SealConfig) Load(path string) (err error) {
 		return fmt.Errorf("read config file %s failed %w", path, err)
 	}
 
-	err = yaml.Unmarshal(y, c)
+	err = v2.Unmarshal(y, c)
 	if err != nil {
 		return fmt.Errorf("unmarshal config file failed: %w", err)
 	}
@@ -125,21 +153,31 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.Password = c.Passwd
 	SSHConfig.PkFile = c.PrivateKey
 	SSHConfig.PkPassword = c.PkPassword
-	ApiServer = c.ApiServerDomian
+	APIServer = c.APIServerDomain
+	Network = c.Network
 	VIP = c.VIP
-	PkgUrl = c.PkgURL
+	PkgURL = c.PkgURL
 	Version = c.Version
 	Repo = c.Repo
 	PodCIDR = c.PodCIDR
 	SvcCIDR = c.SvcCIDR
-
-	DnsDomain = c.DnsDomain
-	ApiServerCertSANs = c.ApiServerCertSANs
+	DNSDomain = c.DNSDomain
+	APIServerCertSANs = c.APIServerCertSANs
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
 	//lvscare
 	LvscareImage.Image = c.LvscareName
 	LvscareImage.Tag = c.LvscareTag
+
+	// 优先使用使用命令行， 再使用配置文件
+	if AccessKeyID == "" || AccessKeySecrets == "" ||
+		OssEndpoint == "" || BucketName == "" || ObjectPath == "" {
+		AccessKeyID = c.AliOss.AccessKeyID
+		AccessKeySecrets = c.AliOss.AccessKeySecrets
+		OssEndpoint = c.AliOss.OssEndpoint
+		BucketName = c.AliOss.BucketName
+		ObjectPath = c.AliOss.ObjectPath
+	}
 	return
 }
 
@@ -150,7 +188,7 @@ func Load(path string, content interface{}) error {
 		os.Exit(0)
 	}
 
-	err = yaml.Unmarshal(y, content)
+	err = v2.Unmarshal(y, content)
 	if err != nil {
 		logger.Error("unmarshal config file failed: %s", err)
 	}
@@ -158,24 +196,27 @@ func Load(path string, content interface{}) error {
 }
 
 func (c *SealConfig) ShowDefaultConfig() {
+	home, _ := os.UserHomeDir()
 	c.Masters = []string{"192.168.0.2", "192.168.0.2", "192.168.0.2"}
 	c.Nodes = []string{"192.168.0.3", "192.168.0.4"}
 	c.User = "root"
-	c.Passwd = "123"
-	c.PrivateKey = "/root/.ssh/id_rsa"
-	c.ApiServerDomian = "apiserver.cluster.local"
+	c.Passwd = "123456"
+	c.PrivateKey = home + "/.ssh/id_rsa"
+	c.APIServerDomain = defaultAPIServerDomain
+	c.Network = net.CALICO
 	c.VIP = "10.103.97.2"
-	c.PkgURL = "/root/kube1.14.2.tar.gz"
-	c.Version = "v1.14.2"
+	c.PkgURL = home + "/kube1.17.13.tar.gz"
+	c.Version = "v1.17.13"
 	c.Repo = "k8s.gcr.io"
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
-	c.ApiServerDomian = "cluster.local"
-	c.ApiServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
-	c.CertPath = "/root/.sealos/pki"
-	c.CertEtcdPath = "/root/.sealos/pki/etcd"
+	c.APIServerCertSANs = []string{"apiserver.cluster.local", "127.0.0.1"}
+	c.CertPath = home + "/.sealos/pki"
+	c.CertEtcdPath = home + "/.sealos/pki/etcd"
+	c.LvscareName = "fanux/lvscare"
+	c.LvscareTag = "latest"
 
-	y, err := yaml.Marshal(c)
+	y, err := v2.Marshal(c)
 	if err != nil {
 		logger.Error("marshal config file failed: %s", err)
 	}

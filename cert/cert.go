@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cert
 
 import (
@@ -88,7 +102,7 @@ func NewSelfSignedCACert(key crypto.Signer, commonName string, organization []st
 	return x509.ParseCertificate(certDERBytes)
 }
 
-// Create as ca
+// NewCaCertAndKey Create as ca.
 func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	_, err := os.Stat(pathForKey(cfg.Path, cfg.BaseName))
 	if !os.IsNotExist(err) {
@@ -106,6 +120,7 @@ func NewCaCertAndKey(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	return cert, key, nil
 }
 
+// LoadCaCertAndKeyFromDisk load ca cert and key form disk.
 func LoadCaCertAndKeyFromDisk(cfg Config) (*x509.Certificate, crypto.Signer, error) {
 	certs, err := certutil.CertsFromFile(pathForCert(cfg.Path, cfg.BaseName))
 	if err != nil {
@@ -142,7 +157,7 @@ func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	return key, nil
 }
 
-//  cmd/kubeadm/app/util/pkiutil/pki_helpers.go NewCertAndKey
+//  NewCaCertAndKeyFromRoot cmd/kubeadm/app/util/pkiutil/pki_helpers.go NewCertAndKey
 func NewCaCertAndKeyFromRoot(cfg Config, caCert *x509.Certificate, caKey crypto.Signer) (*x509.Certificate, crypto.Signer, error) {
 	key, err := NewPrivateKey(x509.UnknownPublicKeyAlgorithm)
 	if err != nil {

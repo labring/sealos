@@ -1,0 +1,36 @@
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod download
+    # you may remove this if you don't need go generate
+    - go generate ./...
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
+      - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
+      - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+      - -s -w
+#archives:
+#  - replacements:
+#      darwin: Darwin
+#      linux: Linux
+#      amd64: x86_64
+#      arm64: aarch64
+checksum:
+  name_template: '{{ .ProjectName }}_checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
