@@ -1,4 +1,4 @@
-# 风险须知
+# ⚠️ 风险须知
 
 **由于sealos可以把一周的工作量缩短到三分钟，可能会导致您工作不饱满而被老板炒鱿鱼**
 
@@ -36,7 +36,7 @@
 
 [English Docs](/README_en.md)
 
-# 支持的环境
+# ✨ 支持的环境
 
 ## Linux 发行版, CPU架构
 
@@ -167,3 +167,7 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 - [x] 上千用户在线上环境使用sealos，稳定可靠
 - [x] 资源包放在阿里云oss上，再也不用担心网速
 - [x] dashboard ingress prometheus等APP 同样离线打包，一键安装
+
+# 📊 Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/10ce83c1d8452210bc4a0b5a5df9d59bbc35d889.svg "Repobeats analytics image")
