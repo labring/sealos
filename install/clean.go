@@ -99,9 +99,12 @@ func (s *SealosClean) Clean() {
 	}
 	if len(s.Masters) > 0 {
 		//2. 先删除master
+		lock := sync.Mutex{}
 		for _, master := range s.Masters {
 			wg.Add(1)
 			go func(master string) {
+				lock.Lock()
+				defer lock.Unlock()
 				defer wg.Done()
 				s.cleanMaster(master)
 			}(master)
