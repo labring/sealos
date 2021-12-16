@@ -1,0 +1,3 @@
+# infra模块
+
+根据Clusterfile里的定义去申请IaaS资源，保障IaaS资源与Clusterfile中的定义保持终态一致

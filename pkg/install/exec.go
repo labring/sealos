@@ -15,6 +15,7 @@
 package install
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -153,4 +154,10 @@ func (e *ExecFlag) execByNodeIP() {
 		}(n)
 	}
 	wg.Wait()
+}
+
+// CmdWorkSpace exec cmd on specified workdir.
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	_ = v1.SSHConfig.CmdAsync(node, command)
 }
