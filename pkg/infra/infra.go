@@ -15,8 +15,10 @@
 package infra
 
 import (
+	"fmt"
+
 	"github.com/fanux/sealos/pkg/infra/aliyun"
-	v2 "github.com/fanux/sealos/pkg/types/v2"
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 type Interface interface {
@@ -25,7 +27,7 @@ type Interface interface {
 	Apply() error
 }
 
-func NewAliProvider(cluster *v2.Infra) (Interface, error) {
+func newAliProvider(infra *v2.Infra) (Interface, error) {
 	config := new(aliyun.Config)
 	err := aliyun.LoadConfig(config)
 	if err != nil {
@@ -33,10 +35,19 @@ func NewAliProvider(cluster *v2.Infra) (Interface, error) {
 	}
 	aliProvider := new(aliyun.AliProvider)
 	aliProvider.Config = *config
-	aliProvider.Cluster = cluster
+	aliProvider.Infra = infra
 	err = aliProvider.NewClient()
 	if err != nil {
 		return nil, err
 	}
 	return aliProvider, nil
+}
+
+func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
+	switch infra.Spec.Provider {
+	case v2.AliyunProvider:
+		return newAliProvider(infra)
+	default:
+		return nil, fmt.Errorf("the provider is invalid, please set the provider correctly")
+	}
 }

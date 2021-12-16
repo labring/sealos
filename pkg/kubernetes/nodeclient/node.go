@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	v12 "github.com/fanux/sealos/pkg/types/v1"
+	v12 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	v1 "k8s.io/api/core/v1"

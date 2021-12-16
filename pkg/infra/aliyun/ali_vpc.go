@@ -49,15 +49,15 @@ func (a *AliProvider) CreateVPC() error {
 	if err != nil {
 		return err
 	}
-	a.Cluster.Annotations[VpcID] = response.VpcId
-	a.Cluster.Annotations[AliRegionID] = a.Config.RegionID
+	a.Infra.Annotations[VpcID] = response.VpcId
+	a.Infra.Annotations[AliRegionID] = a.Config.RegionID
 	return nil
 }
 
 func (a *AliProvider) DeleteVPC() error {
 	request := vpc.CreateDeleteVpcRequest()
 	request.Scheme = Scheme
-	request.VpcId = a.Cluster.Annotations[VpcID]
+	request.VpcId = a.Infra.Annotations[VpcID]
 
 	//response, err := d.Client.DeleteVpc(request)
 	response := vpc.CreateDeleteVpcResponse()
@@ -67,9 +67,9 @@ func (a *AliProvider) DeleteVPC() error {
 func (a *AliProvider) CreateVSwitch() error {
 	request := vpc.CreateCreateVSwitchRequest()
 	request.Scheme = Scheme
-	request.ZoneId = a.Cluster.Annotations[ZoneID]
+	request.ZoneId = a.Infra.Annotations[ZoneID]
 	request.CidrBlock = CidrBlock
-	request.VpcId = a.Cluster.GetAnnotationsByKey(VpcID)
+	request.VpcId = a.Infra.GetAnnotationsByKey(VpcID)
 	request.RegionId = a.Config.RegionID
 	//response, err := d.Client.CreateVSwitch(request)
 	response := vpc.CreateCreateVSwitchResponse()
@@ -77,14 +77,14 @@ func (a *AliProvider) CreateVSwitch() error {
 	if err != nil {
 		return err
 	}
-	a.Cluster.Annotations[VSwitchID] = response.VSwitchId
+	a.Infra.Annotations[VSwitchID] = response.VSwitchId
 	return nil
 }
 
 func (a *AliProvider) DeleteVSwitch() error {
 	request := vpc.CreateDeleteVSwitchRequest()
 	request.Scheme = Scheme
-	request.VSwitchId = a.Cluster.Annotations[VSwitchID]
+	request.VSwitchId = a.Infra.Annotations[VSwitchID]
 
 	response := vpc.CreateDeleteVSwitchResponse()
 	return a.RetryVpcRequest(request, response)
@@ -101,7 +101,7 @@ func (a *AliProvider) GetZoneID() error {
 	if len(response.Zones.Zone) == 0 {
 		return errors.New("not available ZoneID ")
 	}
-	a.Cluster.Annotations[ZoneID] = response.Zones.Zone[0].ZoneId
+	a.Infra.Annotations[ZoneID] = response.Zones.Zone[0].ZoneId
 
 	return nil
 }
@@ -123,10 +123,10 @@ func (a *AliProvider) BindEipForMaster0() error {
 	if err != nil {
 		return err
 	}
-	a.Cluster.Annotations[Eip] = eIP
-	a.Cluster.Annotations[EipID] = eIPID
-	a.Cluster.Annotations[Master0ID] = master0.InstanceID
-	a.Cluster.Annotations[Master0InternalIP] = master0.PrimaryIPAddress
+	a.Infra.Annotations[Eip] = eIP
+	a.Infra.Annotations[EipID] = eIPID
+	a.Infra.Annotations[Master0ID] = master0.InstanceID
+	a.Infra.Annotations[Master0InternalIP] = master0.PrimaryIPAddress
 	return nil
 }
 
@@ -156,7 +156,7 @@ func (a *AliProvider) AssociateEipAddress(instanceID, eipID string) error {
 func (a *AliProvider) UnassociateEipAddress() error {
 	request := vpc.CreateUnassociateEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Cluster.Annotations[EipID]
+	request.AllocationId = a.Infra.Annotations[EipID]
 	request.Force = requests.NewBoolean(true)
 	response := vpc.CreateUnassociateEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
@@ -169,7 +169,7 @@ func (a *AliProvider) ReleaseEipAddress() error {
 	}
 	request := vpc.CreateReleaseEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Cluster.Annotations[EipID]
+	request.AllocationId = a.Infra.Annotations[EipID]
 	response := vpc.CreateReleaseEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
 }

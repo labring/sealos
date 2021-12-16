@@ -84,7 +84,7 @@ spec:
     listKind: BGPConfigurationList
     plural: bgpconfigurations
     singular: bgpconfiguration
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -218,7 +218,7 @@ spec:
     listKind: BGPPeerList
     plural: bgppeers
     singular: bgppeer
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -325,7 +325,7 @@ spec:
     listKind: BlockAffinityList
     plural: blockaffinities
     singular: blockaffinity
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -386,7 +386,7 @@ spec:
     listKind: ClusterInformationList
     plural: clusterinformations
     singular: clusterinformation
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -450,7 +450,7 @@ spec:
     listKind: FelixConfigurationList
     plural: felixconfigurations
     singular: felixconfiguration
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -1013,7 +1013,7 @@ spec:
     listKind: GlobalNetworkPolicyList
     plural: globalnetworkpolicies
     singular: globalnetworkpolicy
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -1784,7 +1784,7 @@ spec:
     listKind: GlobalNetworkSetList
     plural: globalnetworksets
     singular: globalnetworkset
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -1837,7 +1837,7 @@ spec:
     listKind: HostEndpointList
     plural: hostendpoints
     singular: hostendpoint
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -1945,7 +1945,7 @@ spec:
     listKind: IPAMBlockList
     plural: ipamblocks
     singular: ipamblock
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -2026,7 +2026,7 @@ spec:
     listKind: IPAMConfigList
     plural: ipamconfigs
     singular: ipamconfig
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -2082,7 +2082,7 @@ spec:
     listKind: IPAMHandleList
     plural: ipamhandles
     singular: ipamhandle
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -2138,7 +2138,7 @@ spec:
     listKind: IPPoolList
     plural: ippools
     singular: ippool
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -2237,7 +2237,7 @@ spec:
     listKind: KubeControllersConfigurationList
     plural: kubecontrollersconfigurations
     singular: kubecontrollersconfiguration
-  scope: Cluster
+  scope: Infra
   versions:
   - name: v1
     schema:
@@ -3653,7 +3653,7 @@ spec:
                 configMapKeyRef:
                   name: calico-config
                   key: calico_backend
-            # Cluster type to identify the deployment type
+            # Infra type to identify the deployment type
             - name: CLUSTER_TYPE
               value: "k8s,bgp"
             # Auto-detect the BGP IP address.
@@ -3870,7 +3870,7 @@ metadata:
 
 ---
 
-# This manifest creates a Pod Disruption Budget for Controller to allow K8s Cluster Autoscaler to evict
+# This manifest creates a Pod Disruption Budget for Controller to allow K8s Infra Autoscaler to evict
 
 apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
@@ -3941,7 +3941,7 @@ kind: CustomResourceDefinition
 metadata:
    name: felixconfigurations.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -3955,7 +3955,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamblocks.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -3970,7 +3970,7 @@ kind: CustomResourceDefinition
 metadata:
   name: blockaffinities.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -3985,7 +3985,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamhandles.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4000,7 +4000,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ipamconfigs.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4015,7 +4015,7 @@ kind: CustomResourceDefinition
 metadata:
   name: bgppeers.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4030,7 +4030,7 @@ kind: CustomResourceDefinition
 metadata:
   name: bgpconfigurations.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4045,7 +4045,7 @@ kind: CustomResourceDefinition
 metadata:
   name: ippools.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4060,7 +4060,7 @@ kind: CustomResourceDefinition
 metadata:
   name: hostendpoints.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4075,7 +4075,7 @@ kind: CustomResourceDefinition
 metadata:
   name: clusterinformations.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4090,7 +4090,7 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworkpolicies.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4105,7 +4105,7 @@ kind: CustomResourceDefinition
 metadata:
   name: globalnetworksets.crd.projectcalico.org
 spec:
-  scope: Cluster
+  scope: Infra
   group: crd.projectcalico.org
   version: v1
   names:
@@ -4484,7 +4484,7 @@ spec:
                 configMapKeyRef:
                   name: calico-config
                   key: calico_backend
-            # Cluster type to identify the deployment type
+            # Infra type to identify the deployment type
             - name: CLUSTER_TYPE
               value: "k8s,bgp"
             # Auto-detect the BGP IP address.

@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	v2 "github.com/fanux/sealos/pkg/types/v2"
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
@@ -109,9 +109,9 @@ func (a *AliProvider) InputIPlist(instanceRole string) (ipList []string, err err
 	var hosts *v2.Hosts
 	switch instanceRole {
 	case Master:
-		hosts = &a.Cluster.Spec.Masters
+		hosts = &a.Infra.Spec.Masters
 	case Node:
-		hosts = &a.Cluster.Spec.Nodes
+		hosts = &a.Infra.Spec.Nodes
 	}
 	if hosts == nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (a *AliProvider) CreatePassword() {
 	rand.Shuffle(len(buf), func(i, j int) {
 		buf[i], buf[j] = buf[j], buf[i]
 	})
-	a.Cluster.Spec.SSH.Passwd = string(buf)
+	a.Infra.Spec.SSH.Passwd = string(buf)
 }
 
 func (a *AliProvider) GetInstanceStatus(instanceID string) (instanceStatus string, err error) {
@@ -217,7 +217,7 @@ func (a *AliProvider) ChangeInstanceType(instanceID, cpu, memory string) error {
 func (a *AliProvider) GetInstancesInfo(instancesRole, expectCount string) (instances []Instance, err error) {
 	var count int
 	tag := make(map[string]string)
-	tag[Product] = a.Cluster.Name
+	tag[Product] = a.Infra.Name
 	tag[Role] = instancesRole
 	if expectCount == "" {
 		count = -1
@@ -228,8 +228,8 @@ func (a *AliProvider) GetInstancesInfo(instancesRole, expectCount string) (insta
 	request := ecs.CreateDescribeInstancesRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.VSwitchId = a.Cluster.Annotations[VSwitchID]
-	request.SecurityGroupId = a.Cluster.Annotations[SecurityGroupID]
+	request.VSwitchId = a.Infra.Annotations[VSwitchID]
+	request.SecurityGroupId = a.Infra.Annotations[SecurityGroupID]
 	request.Tag = &instancesTags
 	//response, err := d.Client.DescribeInstances(request)
 	response := ecs.CreateDescribeInstancesResponse()
@@ -255,14 +255,14 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 	var instancesIDs string
 	switch instanceRole {
 	case Master:
-		hosts = &a.Cluster.Spec.Masters
-		instancesIDs = a.Cluster.Annotations[AliMasterIDs]
+		hosts = &a.Infra.Spec.Masters
+		instancesIDs = a.Infra.Annotations[AliMasterIDs]
 		if hosts.Count == "" {
 			return errors.New("master count not set")
 		}
 	case Node:
-		hosts = &a.Cluster.Spec.Nodes
-		instancesIDs = a.Cluster.Annotations[AliNodeIDs]
+		hosts = &a.Infra.Spec.Nodes
+		instancesIDs = a.Infra.Annotations[AliNodeIDs]
 		if hosts.Count == "" {
 			return nil
 		}
@@ -296,7 +296,7 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 		var deleteInstancesIDs []string
 		var count int
 		for _, instance := range instances {
-			if instance.InstanceID != a.Cluster.Annotations[Master0ID] {
+			if instance.InstanceID != a.Infra.Annotations[Master0ID] {
 				deleteInstancesIDs = append(deleteInstancesIDs, instance.InstanceID)
 				count++
 			}
@@ -305,12 +305,12 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 			}
 		}
 		if len(deleteInstancesIDs) != 0 {
-			a.Cluster.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(deleteInstancesIDs, ",")
+			a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(deleteInstancesIDs, ",")
 			err = a.DeleteInstances()
 			if err != nil {
 				return err
 			}
-			a.Cluster.Annotations[ShouldBeDeleteInstancesIDs] = ""
+			a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = ""
 		}
 
 		ipList, err := a.InputIPlist(instanceRole)
@@ -343,7 +343,7 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 }
 
 func (a *AliProvider) DeleteInstances() error {
-	instanceIDs := strings.Split(a.Cluster.Annotations[ShouldBeDeleteInstancesIDs], ",")
+	instanceIDs := strings.Split(a.Infra.Annotations[ShouldBeDeleteInstancesIDs], ",")
 	if len(instanceIDs) == 0 {
 		return nil
 	}
@@ -357,7 +357,7 @@ func (a *AliProvider) DeleteInstances() error {
 	if err != nil {
 		return err
 	}
-	a.Cluster.Annotations[ShouldBeDeleteInstancesIDs] = ""
+	a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = ""
 	return nil
 }
 
@@ -380,7 +380,7 @@ func (a *AliProvider) GetAvailableResource(cores int, memory float64) (instanceT
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.ZoneId = a.Cluster.GetAnnotationsByKey(ZoneID)
+	request.ZoneId = a.Infra.GetAnnotationsByKey(ZoneID)
 	request.DestinationResource = DestinationResource
 	request.InstanceChargeType = InstanceChargeType
 	request.Cores = requests.NewInteger(cores)
@@ -410,9 +410,9 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	var hosts *v2.Hosts
 	switch instanceRole {
 	case Master:
-		hosts = &a.Cluster.Spec.Masters
+		hosts = &a.Infra.Spec.Masters
 	case Node:
-		hosts = &a.Cluster.Spec.Nodes
+		hosts = &a.Infra.Spec.Nodes
 	}
 	instances := hosts
 	if instances == nil {
@@ -426,7 +426,7 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 		return err
 	}
 	tag := make(map[string]string)
-	tag[Product] = a.Cluster.Name
+	tag[Product] = a.Infra.Name
 	tag[Role] = instanceRole
 	instancesTag := CreateInstanceTag(tag)
 
@@ -436,9 +436,9 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	request := ecs.CreateRunInstancesRequest()
 	request.Scheme = Scheme
 	request.ImageId = ImageID
-	request.Password = a.Cluster.Spec.SSH.Passwd
-	request.SecurityGroupId = a.Cluster.GetAnnotationsByKey(SecurityGroupID)
-	request.VSwitchId = a.Cluster.GetAnnotationsByKey(VSwitchID)
+	request.Password = a.Infra.Spec.SSH.Passwd
+	request.SecurityGroupId = a.Infra.GetAnnotationsByKey(SecurityGroupID)
+	request.VSwitchId = a.Infra.GetAnnotationsByKey(VSwitchID)
 	request.SystemDiskSize = systemDiskSize
 	request.SystemDiskCategory = DataCategory
 	request.DataDisk = &datadisk
@@ -455,9 +455,9 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	instancesIDs := strings.Join(response.InstanceIdSets.InstanceIdSet, ",")
 	switch instanceRole {
 	case Master:
-		a.Cluster.Annotations[AliMasterIDs] += instancesIDs
+		a.Infra.Annotations[AliMasterIDs] += instancesIDs
 	case Node:
-		a.Cluster.Annotations[AliNodeIDs] += instancesIDs
+		a.Infra.Annotations[AliNodeIDs] += instancesIDs
 	}
 
 	return nil
@@ -485,7 +485,7 @@ func (a *AliProvider) CreateSecurityGroup() error {
 	request := ecs.CreateCreateSecurityGroupRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.VpcId = a.Cluster.GetAnnotationsByKey(VpcID)
+	request.VpcId = a.Infra.GetAnnotationsByKey(VpcID)
 	response := ecs.CreateCreateSecurityGroupResponse()
 	err := a.RetryEcsRequest(request, response)
 	if err != nil {
@@ -498,14 +498,14 @@ func (a *AliProvider) CreateSecurityGroup() error {
 	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, APIServerPortRange) {
 		return fmt.Errorf("authorize securitygroup apiserver port failed")
 	}
-	a.Cluster.Annotations[SecurityGroupID] = response.SecurityGroupId
+	a.Infra.Annotations[SecurityGroupID] = response.SecurityGroupId
 	return nil
 }
 
 func (a *AliProvider) DeleteSecurityGroup() error {
 	request := ecs.CreateDeleteSecurityGroupRequest()
 	request.Scheme = Scheme
-	request.SecurityGroupId = a.Cluster.Annotations[SecurityGroupID]
+	request.SecurityGroupId = a.Infra.Annotations[SecurityGroupID]
 
 	response := ecs.CreateDeleteSecurityGroupResponse()
 	return a.RetryEcsRequest(request, response)
@@ -519,9 +519,9 @@ func CreateInstanceTag(tags map[string]string) (instanceTags []ecs.RunInstancesT
 }
 
 func LoadConfig(config *Config) error {
-	config.AccessKey = os.Getenv(AccessKey)
-	config.AccessSecret = os.Getenv(AccessSecret)
-	config.RegionID = os.Getenv(RegionID)
+	config.AccessKey = os.Getenv(EnvAccessKey)
+	config.AccessSecret = os.Getenv(EnvAccessSecret)
+	config.RegionID = os.Getenv(EnvRegion)
 	if config.RegionID == "" {
 		config.RegionID = DefaultRegionID
 	}

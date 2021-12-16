@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v2
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,15 +35,20 @@ type Hosts struct {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type Provider string
+
+const (
+	AliyunProvider Provider = "AliyunProvider"
+)
+
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of Infra
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Infra. Edit types.go to remove/update
-	Provider string   `json:"provider,omitempty"`
+	Provider Provider `json:"provider,omitempty"`
 	SSH      SSH      `json:"ssh,omitempty"`
-	CertSANS []string `json:"certSANS,omitempty"`
 	Masters  Hosts    `json:"masters,omitempty"`
 	Nodes    Hosts    `json:"nodes,omitempty"`
 }

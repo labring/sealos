@@ -16,9 +16,8 @@ package aliyun
 
 import (
 	"strings"
-	"time"
 
-	v2 "github.com/fanux/sealos/pkg/types/v2"
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
@@ -45,7 +44,7 @@ type AliProvider struct {
 	Config    Config
 	EcsClient ecs.Client
 	VpcClient vpc.Client
-	Cluster   *v2.Infra
+	Infra     *v2.Infra
 }
 
 type Config struct {
@@ -56,72 +55,25 @@ type Config struct {
 
 type Alifunc func() error
 
-const (
-	Scheme                     = "https"
-	IPProtocol                 = "tcp"
-	APIServerPortRange         = "6443/6443"
-	SSHPortRange               = "22/22"
-	SourceCidrIP               = "0.0.0.0/0"
-	CidrBlock                  = "172.16.0.0/24"
-	Policy                     = "accept"
-	DestinationResource        = "InstanceType"
-	InstanceChargeType         = "PostPaid"
-	ImageID                    = "centos_7_9_x64_20G_alibase_20210927.vhd"
-	AccessKey                  = "ACCESSKEYID"
-	AccessSecret               = "ACCESSKEYSECRET"
-	Product                    = "product"
-	Role                       = "role"
-	Master                     = "master"
-	Node                       = "node"
-	Stopped                    = "Stopped"
-	AvailableTypeStatus        = "WithStock"
-	Bandwidth                  = "100"
-	Digits                     = "0123456789"
-	Specials                   = "~=+%^*/()[]{}/!@#$?|"
-	Letter                     = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-	PasswordLength             = 16
-	DataCategory               = "cloud_ssd"
-	AliDomain                  = "sea.aliyun.com/"
-	AliCloud                   = "ALI_CLOUD"
-	EipID                      = AliDomain + "EipID"
-	Master0ID                  = AliDomain + "Master0ID"
-	Master0InternalIP          = AliDomain + "Master0InternalIP"
-	VpcID                      = AliDomain + "VpcID"
-	VSwitchID                  = AliDomain + "VSwitchID"
-	SecurityGroupID            = AliDomain + "SecurityGroupID"
-	Eip                        = AliDomain + "ClusterEIP"
-	ZoneID                     = AliDomain + "ZoneID"
-	RegionID                   = "RegionID"
-	AliRegionID                = AliDomain + RegionID
-	AliMasterIDs               = AliDomain + "MasterIDs"
-	AliNodeIDs                 = AliDomain + "NodeIDs"
-	DefaultRegionID            = "cn-chengdu"
-	AliCloudEssd               = "cloud_essd"
-	TryTimes                   = 10
-	TrySleepTime               = time.Second
-	JustGetInstanceInfo        = ""
-	ShouldBeDeleteInstancesIDs = "ShouldBeDeleteInstancesIDs"
-)
-
 func (a *AliProvider) ReconcileResource(resourceKey string, action Alifunc) error {
-	if a.Cluster.Annotations[resourceKey] == "" {
+	if a.Infra.Annotations[resourceKey] == "" {
 		err := action()
 		if err != nil {
 			return err
 		}
-		logger.Info("create resource success %s: %s", resourceKey, a.Cluster.Annotations[resourceKey])
+		logger.Info("create resource success %s: %s", resourceKey, a.Infra.Annotations[resourceKey])
 		return nil
 	}
 	return nil
 }
 
 func (a *AliProvider) DeleteResource(resourceKey string, action Alifunc) {
-	if a.Cluster.Annotations[resourceKey] != "" {
+	if a.Infra.Annotations[resourceKey] != "" {
 		err := action()
 		if err != nil {
 			logger.Error("delete resource %s failed err: %s", resourceKey, err)
 		} else {
-			logger.Info("delete resource Success %s", a.Cluster.Annotations[resourceKey])
+			logger.Info("delete resource Success %s", a.Infra.Annotations[resourceKey])
 		}
 	}
 }
@@ -174,7 +126,7 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 			}
 		}
 		if len(instanceIDs) != 0 {
-			aliProvider.Cluster.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(instanceIDs, ",")
+			aliProvider.Infra.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(instanceIDs, ",")
 		}
 		aliProvider.DeleteResource(ShouldBeDeleteInstancesIDs, aliProvider.DeleteInstances)
 	},
@@ -217,15 +169,15 @@ func (a *AliProvider) ClearCluster() {
 }
 
 func (a *AliProvider) Reconcile() error {
-	if a.Cluster.Annotations == nil {
-		a.Cluster.Annotations = make(map[string]string)
+	if a.Infra.Annotations == nil {
+		a.Infra.Annotations = make(map[string]string)
 	}
-	if a.Cluster.DeletionTimestamp != nil {
-		logger.Info("DeletionTimestamp not nil Clear Cluster")
+	if a.Infra.DeletionTimestamp != nil {
+		logger.Info("DeletionTimestamp not nil Clear Infra")
 		a.ClearCluster()
 		return nil
 	}
-	if a.Cluster.Spec.SSH.Passwd == "" {
+	if a.Infra.Spec.SSH.Passwd == "" {
 		// Create ssh password
 		a.CreatePassword()
 	}

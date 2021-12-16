@@ -228,7 +228,7 @@ func validateKubeConfig(outDir, filename string, config *clientcmdapi.Config) er
 	}
 	currentCluster := currentCtx.Cluster
 	if currentConfig.Clusters[currentCluster] == nil {
-		return errors.Errorf("failed to find the given CurrentContext Cluster in Clusters of the kubeconfig file %s", kubeConfigFilePath)
+		return errors.Errorf("failed to find the given CurrentContext Infra in Clusters of the kubeconfig file %s", kubeConfigFilePath)
 	}
 
 	// Make sure the compared CAs are whitespace-trimmed. The function clientcmd.LoadFromFile() just decodes
