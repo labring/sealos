@@ -24,8 +24,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	v1 "github.com/fanux/sealos/pkg/types/v1"
+	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/ssh"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //Command is
@@ -90,7 +93,7 @@ STOP systemctl top
 APPLY kubectl apply -f
 */
 func LoadConfig(packageFile string) (*PkgConfig, error) {
-	filename, _ := install.DownloadFile(packageFile)
+	filename, _ := utils.DownloadFile(packageFile)
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -150,16 +153,16 @@ func decodeCmd(text string) (name string, cmd string, err error) {
 }
 
 type Runner interface {
-	Run(config install.SealConfig, pkgConfig *PkgConfig)
-	Send(config install.SealConfig, pkgConfig *PkgConfig)
-	CleanUp(config install.SealConfig, pkgConfig *PkgConfig)
+	Run(config v1.SealConfig, pkgConfig *PkgConfig)
+	Send(config v1.SealConfig, pkgConfig *PkgConfig)
+	CleanUp(config v1.SealConfig, pkgConfig *PkgConfig)
 }
 
 type RunOnEveryNodes struct {
 	Cmd []Command
 }
 
-func (r *RunOnEveryNodes) CleanUp(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) CleanUp(config v1.SealConfig, p *PkgConfig) {
 	//TODO
 	var wg sync.WaitGroup
 
@@ -177,7 +180,7 @@ func (r *RunOnEveryNodes) CleanUp(config install.SealConfig, p *PkgConfig) {
 	wg.Wait()
 }
 
-func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) Send(config v1.SealConfig, p *PkgConfig) {
 	var wg sync.WaitGroup
 	nodes := append(config.Masters, config.Nodes...)
 	for _, node := range nodes {
@@ -191,7 +194,7 @@ func (r *RunOnEveryNodes) Send(config install.SealConfig, p *PkgConfig) {
 	wg.Wait()
 }
 
-func (r *RunOnEveryNodes) Run(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnEveryNodes) Run(config v1.SealConfig, p *PkgConfig) {
 	// TODO send p.ValuesContent to all nodes
 	var wg sync.WaitGroup
 	nodes := append(config.Masters, config.Nodes...)
@@ -216,7 +219,7 @@ func send(host string, p *PkgConfig) {
 	remoteFilePath := fmt.Sprintf("%s/%s.tar", p.Workspace, p.Name)
 	if !CmdFileExist(host, remoteFilePath) {
 		logger.Info("%s%s is not exist , send package to nodes", host, remoteFilePath)
-		install.SendPackage(p.URL, []string{host}, p.Workspace, nil, nil)
+		ssh.CopyFiles(v1.SSHConfig, p.URL, []string{host}, p.Workspace, nil, nil)
 	}
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
 	fmt.Println(tarCmd)
@@ -224,23 +227,23 @@ func send(host string, p *PkgConfig) {
 }
 
 // send package to master
-func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnMaster) Send(config v1.SealConfig, p *PkgConfig) {
 	// del because run every node has done this
 	// send(config.Masters[0], p)
 
 	//  默认为空值, 如果ValuesContent有值, 说明使用了file或者-, 将valuesContent远程写入master[0]:/workspace/vaules.yml
 	if p.ValuesContent != nil {
-		install.SSHConfig.CopyConfigFile(config.Masters[0], p.Workspace+"/vaules.yml", p.ValuesContent)
+		v1.SSHConfig.CopyConfigFile(config.Masters[0], p.Workspace+"/vaules.yml", p.ValuesContent)
 	}
 }
 
-func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) { // kubectl apply -f
+func (r *RunOnMaster) Run(config v1.SealConfig, p *PkgConfig) { // kubectl apply -f
 	for _, cmd := range r.Cmd {
 		CmdWorkSpace(config.Masters[0], cmd.Cmd, p.Workspace)
 	}
 }
 
-func (r *RunOnMaster) CleanUp(config install.SealConfig, p *PkgConfig) {
+func (r *RunOnMaster) CleanUp(config v1.SealConfig, p *PkgConfig) {
 	//TODO
 	// delete every node is ok.
 
@@ -248,9 +251,9 @@ func (r *RunOnMaster) CleanUp(config install.SealConfig, p *PkgConfig) {
 
 func CmdWorkSpace(node, cmd, workdir string) {
 	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
-	_ = install.SSHConfig.CmdAsync(node, command)
+	_ = v1.SSHConfig.CmdAsync(node, command)
 }
 
 func CmdFileExist(node, path string) bool {
-	return install.SSHConfig.IsFileExist(node, path)
+	return v1.SSHConfig.IsFileExist(node, path)
 }
