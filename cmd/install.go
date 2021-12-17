@@ -29,7 +29,7 @@ import (
 
 var (
 	AppURL         string
-	installExample string = `
+	installExample = `
 	# when usr -f flag , you need add  something to  config file. 
 	# Apply the configuration in values.yaml to a kubernetes Infra.
 	sealos install --pkg-url /root/dashboard.tar -f values.yaml

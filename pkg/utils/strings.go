@@ -110,7 +110,7 @@ func ContainList(list []string, toComplete string) (containerList []string) {
 
 // RandString 生成随机字符串
 func RandString(len int) string {
-	var r *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
+	var r = rand.New(rand.NewSource(time.Now().Unix()))
 	bytes := make([]byte, len)
 	for i := 0; i < len; i++ {
 		b := r.Intn(26) + 65

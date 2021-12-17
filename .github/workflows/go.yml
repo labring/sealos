@@ -2,7 +2,7 @@ name: CI
 
 env:
   # Common versions
-  GO_VERSION: '1.14'
+  GO_VERSION: '1.15'
 
 on:
   push:

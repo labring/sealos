@@ -1,6 +1,6 @@
 module github.com/fanux/sealos
 
-go 1.13
+go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
