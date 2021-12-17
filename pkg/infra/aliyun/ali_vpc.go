@@ -17,6 +17,7 @@ package aliyun
 import (
 	"errors"
 
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
@@ -49,15 +50,15 @@ func (a *AliProvider) CreateVPC() error {
 	if err != nil {
 		return err
 	}
-	a.Infra.Annotations[VpcID] = response.VpcId
-	a.Infra.Annotations[AliRegionID] = a.Config.RegionID
+	a.Infra.Status.VpcID = response.VpcId
+	a.Infra.Status.RegionID = a.Config.RegionID
 	return nil
 }
 
 func (a *AliProvider) DeleteVPC() error {
 	request := vpc.CreateDeleteVpcRequest()
 	request.Scheme = Scheme
-	request.VpcId = a.Infra.Annotations[VpcID]
+	request.VpcId = a.Infra.Status.VpcID
 
 	//response, err := d.Client.DeleteVpc(request)
 	response := vpc.CreateDeleteVpcResponse()
@@ -67,9 +68,9 @@ func (a *AliProvider) DeleteVPC() error {
 func (a *AliProvider) CreateVSwitch() error {
 	request := vpc.CreateCreateVSwitchRequest()
 	request.Scheme = Scheme
-	request.ZoneId = a.Infra.Annotations[ZoneID]
+	request.ZoneId = a.Infra.Status.ZoneID
 	request.CidrBlock = CidrBlock
-	request.VpcId = a.Infra.GetAnnotationsByKey(VpcID)
+	request.VpcId = a.Infra.Status.VpcID
 	request.RegionId = a.Config.RegionID
 	//response, err := d.Client.CreateVSwitch(request)
 	response := vpc.CreateCreateVSwitchResponse()
@@ -77,14 +78,14 @@ func (a *AliProvider) CreateVSwitch() error {
 	if err != nil {
 		return err
 	}
-	a.Infra.Annotations[VSwitchID] = response.VSwitchId
+	a.Infra.Status.VSwitchID = response.VSwitchId
 	return nil
 }
 
 func (a *AliProvider) DeleteVSwitch() error {
 	request := vpc.CreateDeleteVSwitchRequest()
 	request.Scheme = Scheme
-	request.VSwitchId = a.Infra.Annotations[VSwitchID]
+	request.VSwitchId = a.Infra.Status.VSwitchID
 
 	response := vpc.CreateDeleteVSwitchResponse()
 	return a.RetryVpcRequest(request, response)
@@ -101,8 +102,20 @@ func (a *AliProvider) GetZoneID() error {
 	if len(response.Zones.Zone) == 0 {
 		return errors.New("not available ZoneID ")
 	}
-	a.Infra.Annotations[ZoneID] = response.Zones.Zone[0].ZoneId
-
+	if a.Infra.Spec.ServerType == v2.ARM64 {
+		switch a.Config.RegionID {
+		case "cn-shanghai":
+			a.Infra.Status.ZoneID = "cn-shanghai-l"
+		case "cn-beijing":
+			a.Infra.Status.ZoneID = "cn-beijing-k"
+		case "cn-hangzhou":
+			a.Infra.Status.ZoneID = "cn-hangzhou-i"
+		default:
+			return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
+		}
+	} else {
+		a.Infra.Status.ZoneID = response.Zones.Zone[0].ZoneId
+	}
 	return nil
 }
 
@@ -123,10 +136,10 @@ func (a *AliProvider) BindEipForMaster0() error {
 	if err != nil {
 		return err
 	}
-	a.Infra.Annotations[Eip] = eIP
-	a.Infra.Annotations[EipID] = eIPID
-	a.Infra.Annotations[Master0ID] = master0.InstanceID
-	a.Infra.Annotations[Master0InternalIP] = master0.PrimaryIPAddress
+	a.Infra.Status.EIP = eIP
+	a.Infra.Status.EIPID = eIPID
+	a.Infra.Status.Master0ID = master0.InstanceID
+	a.Infra.Status.Master0InternalIP = master0.PrimaryIPAddress
 	return nil
 }
 
@@ -134,7 +147,7 @@ func (a *AliProvider) AllocateEipAddress() (eIP, eIPID string, err error) {
 	request := vpc.CreateAllocateEipAddressRequest()
 	request.Scheme = Scheme
 	request.Bandwidth = Bandwidth
-	//response, err := d.Client.AllocateEipAddress(request)
+	request.InternetChargeType = InternetChargeType
 	response := vpc.CreateAllocateEipAddressResponse()
 	err = a.RetryVpcRequest(request, response)
 	if err != nil {
@@ -156,7 +169,7 @@ func (a *AliProvider) AssociateEipAddress(instanceID, eipID string) error {
 func (a *AliProvider) UnassociateEipAddress() error {
 	request := vpc.CreateUnassociateEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Infra.Annotations[EipID]
+	request.AllocationId = a.Infra.Status.EIPID
 	request.Force = requests.NewBoolean(true)
 	response := vpc.CreateUnassociateEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
@@ -169,7 +182,7 @@ func (a *AliProvider) ReleaseEipAddress() error {
 	}
 	request := vpc.CreateReleaseEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Infra.Annotations[EipID]
+	request.AllocationId = a.Infra.Status.EIPID
 	response := vpc.CreateReleaseEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
 }

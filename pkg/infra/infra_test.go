@@ -20,6 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"gopkg.in/yaml.v2"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +53,8 @@ func TestApply(t *testing.T) {
 				SystemDisk: "100",
 				DataDisks:  []string{"100"},
 			},
-			Provider: "ALI_CLOUD",
+			//ServerType: v2.ARM64,
+			Provider: v2.AliyunProvider,
 			SSH: v2.SSH{
 				Passwd: password,
 			},
@@ -102,9 +105,11 @@ func TestApply(t *testing.T) {
 
 	})
 
+	j, _ := yaml.Marshal(&infra)
+	t.Log("output yaml:", string(j))
 	//teardown
 	time.Sleep(60 * time.Second)
 	now := metav1.Now()
 	infra.ObjectMeta.DeletionTimestamp = &now
-	fmt.Printf("%v", aliProvider.Apply())
+	t.Log(fmt.Sprintf("%v", aliProvider.Apply()))
 }

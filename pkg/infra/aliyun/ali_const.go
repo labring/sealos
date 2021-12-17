@@ -16,7 +16,11 @@ limitations under the License.
 
 package aliyun
 
-import "time"
+import (
+	"time"
+
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+)
 
 const (
 	EnvAccessKey    = "ECS_AKID"
@@ -25,16 +29,18 @@ const (
 )
 
 const (
-	Scheme                     = "https"
-	IPProtocol                 = "tcp"
-	APIServerPortRange         = "6443/6443"
-	SSHPortRange               = "22/22"
-	SourceCidrIP               = "0.0.0.0/0"
-	CidrBlock                  = "172.16.0.0/24"
-	Policy                     = "accept"
-	DestinationResource        = "InstanceType"
-	InstanceChargeType         = "PostPaid"
-	ImageID                    = "centos_7_9_x64_20G_alibase_20210927.vhd"
+	Scheme              = "https"
+	IPProtocol          = "tcp"
+	APIServerPortRange  = "6443/6443"
+	SSHPortRange        = "22/22"
+	SourceCidrIP        = "0.0.0.0/0"
+	CidrBlock           = "172.16.0.0/24"
+	Policy              = "accept"
+	DestinationResource = "InstanceType"
+	InstanceChargeType  = "PostPaid"
+	InternetChargeType  = "PayByTraffic"
+	ImageID             = "centos_7_9_x64_20G_alibase_20210927.vhd"
+	//ImageID                    = "anolisos_7_7_arm64_20G_anck_alibase_20211118.vhd"
 	Product                    = "product"
 	Role                       = "role"
 	Master                     = "master"
@@ -48,22 +54,37 @@ const (
 	PasswordLength             = 16
 	DataCategory               = "cloud_ssd"
 	AliDomain                  = "www.sealyun.com/"
-	EipID                      = AliDomain + "EipID"
-	Master0ID                  = AliDomain + "Master0ID"
-	Master0InternalIP          = AliDomain + "Master0InternalIP"
-	VpcID                      = AliDomain + "VpcID"
-	VSwitchID                  = AliDomain + "VSwitchID"
-	SecurityGroupID            = AliDomain + "SecurityGroupID"
-	Eip                        = AliDomain + "ClusterEIP"
-	ZoneID                     = AliDomain + "ZoneID"
-	RegionID                   = "RegionID"
-	AliRegionID                = AliDomain + RegionID
-	AliMasterIDs               = AliDomain + "MasterIDs"
-	AliNodeIDs                 = AliDomain + "NodeIDs"
-	DefaultRegionID            = "cn-chengdu"
+	DefaultRegionID            = "cn-shanghai"
 	AliCloudEssd               = "cloud_essd"
 	TryTimes                   = 10
 	TrySleepTime               = time.Second
 	JustGetInstanceInfo        = ""
 	ShouldBeDeleteInstancesIDs = "ShouldBeDeleteInstancesIDs"
 )
+
+type ResourceName string
+
+const (
+	EipID           ResourceName = AliDomain + "EipID"
+	VpcID           ResourceName = AliDomain + "VpcID"
+	VSwitchID       ResourceName = AliDomain + "VSwitchID"
+	SecurityGroupID ResourceName = AliDomain + "SecurityGroupID"
+	ZoneID          ResourceName = AliDomain + "ZoneID"
+)
+
+func (r ResourceName) Value(status v2.InfraStatus) string {
+	var value string
+	switch r {
+	case EipID:
+		value = status.EIPID
+	case VpcID:
+		value = status.VpcID
+	case VSwitchID:
+		value = status.VSwitchID
+	case SecurityGroupID:
+		value = status.SecurityGroupID
+	case ZoneID:
+		value = status.ZoneID
+	}
+	return value
+}

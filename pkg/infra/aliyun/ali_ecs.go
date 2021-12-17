@@ -228,8 +228,8 @@ func (a *AliProvider) GetInstancesInfo(instancesRole, expectCount string) (insta
 	request := ecs.CreateDescribeInstancesRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.VSwitchId = a.Infra.Annotations[VSwitchID]
-	request.SecurityGroupId = a.Infra.Annotations[SecurityGroupID]
+	request.VSwitchId = a.Infra.Status.VSwitchID
+	request.SecurityGroupId = a.Infra.Status.SecurityGroupID
 	request.Tag = &instancesTags
 	//response, err := d.Client.DescribeInstances(request)
 	response := ecs.CreateDescribeInstancesResponse()
@@ -253,16 +253,17 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 	var hosts *v2.Hosts
 	var instances []Instance
 	var instancesIDs string
+	var IPList []string
 	switch instanceRole {
 	case Master:
 		hosts = &a.Infra.Spec.Masters
-		instancesIDs = a.Infra.Annotations[AliMasterIDs]
+		instancesIDs = a.Infra.Status.MasterIDs
 		if hosts.Count == "" {
 			return errors.New("master count not set")
 		}
 	case Node:
 		hosts = &a.Infra.Spec.Nodes
-		instancesIDs = a.Infra.Annotations[AliNodeIDs]
+		instancesIDs = a.Infra.Status.NodeIDs
 		if hosts.Count == "" {
 			return nil
 		}
@@ -290,13 +291,13 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 		if err != nil {
 			return err
 		}
-		hosts.IPList = utils.AppendIPList(hosts.IPList, ipList)
-		logger.Info("get scale up IP list %v, append iplist %v, host count %s", ipList, hosts.IPList, hosts.Count)
+		IPList = utils.AppendIPList(IPList, ipList)
+		logger.Info("get scale up IP list %v, append iplist %v, host count %s", ipList, IPList, hosts.Count)
 	} else if len(instances) > i {
 		var deleteInstancesIDs []string
 		var count int
 		for _, instance := range instances {
-			if instance.InstanceID != a.Infra.Annotations[Master0ID] {
+			if instance.InstanceID != a.Infra.Status.Master0ID {
 				deleteInstancesIDs = append(deleteInstancesIDs, instance.InstanceID)
 				count++
 			}
@@ -317,7 +318,7 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 		if err != nil {
 			return err
 		}
-		hosts.IPList = utils.ReduceIPList(hosts.IPList, ipList)
+		IPList = utils.ReduceIPList(IPList, ipList)
 	}
 
 	cpu, err := strconv.Atoi(hosts.CPU)
@@ -337,8 +338,12 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 			}
 		}
 	}
-
-	logger.Info("reconcile %s instances success %v ", instanceRole, hosts.IPList)
+	if instanceRole == Master {
+		a.Infra.Status.Masters = IPList
+	} else {
+		a.Infra.Status.Nodes = IPList
+	}
+	logger.Info("reconcile %s instances success %v ", instanceRole, IPList)
 	return nil
 }
 
@@ -380,7 +385,8 @@ func (a *AliProvider) GetAvailableResource(cores int, memory float64) (instanceT
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.ZoneId = a.Infra.GetAnnotationsByKey(ZoneID)
+
+	request.ZoneId = a.Infra.Status.ZoneID
 	request.DestinationResource = DestinationResource
 	request.InstanceChargeType = InstanceChargeType
 	request.Cores = requests.NewInteger(cores)
@@ -437,8 +443,8 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	request.Scheme = Scheme
 	request.ImageId = ImageID
 	request.Password = a.Infra.Spec.SSH.Passwd
-	request.SecurityGroupId = a.Infra.GetAnnotationsByKey(SecurityGroupID)
-	request.VSwitchId = a.Infra.GetAnnotationsByKey(VSwitchID)
+	request.SecurityGroupId = a.Infra.Status.SecurityGroupID
+	request.VSwitchId = a.Infra.Status.VSwitchID
 	request.SystemDiskSize = systemDiskSize
 	request.SystemDiskCategory = DataCategory
 	request.DataDisk = &datadisk
@@ -455,9 +461,9 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	instancesIDs := strings.Join(response.InstanceIdSets.InstanceIdSet, ",")
 	switch instanceRole {
 	case Master:
-		a.Infra.Annotations[AliMasterIDs] += instancesIDs
+		a.Infra.Status.MasterIDs += instancesIDs
 	case Node:
-		a.Infra.Annotations[AliNodeIDs] += instancesIDs
+		a.Infra.Status.NodeIDs += instancesIDs
 	}
 
 	return nil
@@ -485,7 +491,7 @@ func (a *AliProvider) CreateSecurityGroup() error {
 	request := ecs.CreateCreateSecurityGroupRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Config.RegionID
-	request.VpcId = a.Infra.GetAnnotationsByKey(VpcID)
+	request.VpcId = a.Infra.Status.VpcID
 	response := ecs.CreateCreateSecurityGroupResponse()
 	err := a.RetryEcsRequest(request, response)
 	if err != nil {
@@ -498,14 +504,14 @@ func (a *AliProvider) CreateSecurityGroup() error {
 	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, APIServerPortRange) {
 		return fmt.Errorf("authorize securitygroup apiserver port failed")
 	}
-	a.Infra.Annotations[SecurityGroupID] = response.SecurityGroupId
+	a.Infra.Status.SecurityGroupID = response.SecurityGroupId
 	return nil
 }
 
 func (a *AliProvider) DeleteSecurityGroup() error {
 	request := ecs.CreateDeleteSecurityGroupRequest()
 	request.Scheme = Scheme
-	request.SecurityGroupId = a.Infra.Annotations[SecurityGroupID]
+	request.SecurityGroupId = a.Infra.Status.SecurityGroupID
 
 	response := ecs.CreateDeleteSecurityGroupResponse()
 	return a.RetryEcsRequest(request, response)

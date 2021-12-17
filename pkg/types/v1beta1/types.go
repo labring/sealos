@@ -23,13 +23,14 @@ type SSH struct {
 	Passwd string `json:"passwd,omitempty"`
 }
 
+type ServerType string
+
 type Hosts struct {
 	CPU        string   `json:"cpu,omitempty"`
 	Memory     string   `json:"memory,omitempty"`
 	Count      string   `json:"count,omitempty"`
 	SystemDisk string   `json:"systemDisk,omitempty"`
 	DataDisks  []string `json:"dataDisks,omitempty"`
-	IPList     []string `json:"ipList,omitempty"`
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -40,6 +41,10 @@ type Provider string
 const (
 	AliyunProvider Provider = "AliyunProvider"
 )
+const (
+	AMD64 ServerType = "amd64"
+	ARM64 ServerType = "arm64"
+)
 
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
@@ -47,18 +52,33 @@ type InfraSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of Infra. Edit types.go to remove/update
-	Provider Provider `json:"provider,omitempty"`
-	SSH      SSH      `json:"ssh,omitempty"`
-	Masters  Hosts    `json:"masters,omitempty"`
-	Nodes    Hosts    `json:"nodes,omitempty"`
+	Provider   Provider   `json:"provider,omitempty"`
+	ServerType ServerType `json:"serverType,omitempty"`
+
+	SSH     SSH   `json:"ssh,omitempty"`
+	Masters Hosts `json:"masters,omitempty"`
+	Nodes   Hosts `json:"nodes,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
 type InfraStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of Infra
-	// Important: Run "make" to regenerate code after modifying this file
-	// TODO save Infra status info
+	ZoneID   string `json:"zoneId,omitempty"`
+	RegionID string `json:"regionId,omitempty"`
 
+	VpcID           string `json:"vpcID,omitempty"`
+	VSwitchID       string `json:"vSwitchID,omitempty"`
+	SecurityGroupID string `json:"securityGroupID,omitempty"`
+
+	Master0ID         string `json:"master0ID,omitempty"`
+	Master0InternalIP string `json:"master0InternalIP,omitempty"`
+	EIP               string `json:"eip,omitempty"`
+	EIPID             string `json:"eipID,omitempty"`
+
+	MasterIDs string `json:"masterIDs,omitempty"`
+	NodeIDs   string `json:"nodeIDs,omitempty"`
+
+	Masters []string `json:"masters,omitempty"`
+	Nodes   []string `json:"nodes,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -73,39 +93,8 @@ type Infra struct {
 	Status InfraStatus `json:"status,omitempty"`
 }
 
-//func (Infra *Infra) GetEIP() string {
-//	return Infra.Annotations[common.Eip]
-//}
-//
-//func (Infra *Infra) GetMaster0IP() string {
-//	return Infra.Annotations[common.Master0InternalIP]
-//}
-//
-//func (Infra *Infra) GetEipID() string {
-//	return Infra.Annotations[common.EipID]
-//}
-//
-//func (Infra *Infra) GetMaster0ID() string {
-//	return Infra.Annotations[common.Master0ID]
-//}
-//
-//func (Infra *Infra) GetVpcID() string {
-//	return Infra.Annotations[common.VpcID]
-//}
-//
-//func (Infra *Infra) GetVSwitchID() string {
-//	return Infra.Annotations[common.VSwitchID]
-//}
-
 func (in *Infra) GetAnnotationsByKey(key string) string {
 	return in.Annotations[key]
-}
-
-func (in *Infra) SetAnnotations(key, value string) {
-	if in.Annotations == nil {
-		in.Annotations = make(map[string]string)
-	}
-	in.Annotations[key] = value
 }
 
 // +kubebuilder:object:root=true

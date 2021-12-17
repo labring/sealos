@@ -55,26 +55,28 @@ type Config struct {
 
 type Alifunc func() error
 
-func (a *AliProvider) ReconcileResource(resourceKey string, action Alifunc) error {
-	if a.Infra.Annotations[resourceKey] == "" {
-		err := action()
-		if err != nil {
-			return err
-		}
-		logger.Info("create resource success %s: %s", resourceKey, a.Infra.Annotations[resourceKey])
+func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action Alifunc) error {
+	if resourceKey.Value(a.Infra.Status) != "" {
+		logger.Warn("create resource exists %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
 		return nil
 	}
+	if err := action(); err != nil {
+		logger.Error("reconcile resource %s failed err: %s", resourceKey, err)
+		return err
+	}
+	logger.Info("create resource success %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
 	return nil
 }
 
-func (a *AliProvider) DeleteResource(resourceKey string, action Alifunc) {
-	if a.Infra.Annotations[resourceKey] != "" {
-		err := action()
-		if err != nil {
-			logger.Error("delete resource %s failed err: %s", resourceKey, err)
-		} else {
-			logger.Info("delete resource Success %s", a.Infra.Annotations[resourceKey])
-		}
+func (a *AliProvider) DeleteResource(resourceKey ResourceName, action Alifunc) {
+	if resourceKey.Value(a.Infra.Status) == "" {
+		logger.Warn("delete resource not exists %s", resourceKey)
+		return
+	}
+	if err := action(); err != nil {
+		logger.Error("delete resource %s failed err: %s", resourceKey, err)
+	} else {
+		logger.Info("delete resource Success %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
 	}
 }
 
