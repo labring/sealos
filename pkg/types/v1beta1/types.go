@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,21 +18,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type SSH struct {
-	User   string `json:"user,omitempty"`
-	Passwd string `json:"passwd,omitempty"`
-}
-
-type ServerType string
-
-type Hosts struct {
-	CPU        string   `json:"cpu,omitempty"`
-	Memory     string   `json:"memory,omitempty"`
-	Count      string   `json:"count,omitempty"`
-	SystemDisk string   `json:"systemDisk,omitempty"`
-	DataDisks  []string `json:"dataDisks,omitempty"`
-}
-
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -41,48 +26,78 @@ type Provider string
 const (
 	AliyunProvider Provider = "AliyunProvider"
 )
+
+type Platform string
+
 const (
-	AMD64 ServerType = "amd64"
-	ARM64 ServerType = "arm64"
+	AMD64 Platform = "amd64"
+	ARM64 Platform = "arm64"
 )
+
+type Auth struct {
+	User   string `json:"user,omitempty"`
+	Passwd string `json:"passwd,omitempty"`
+}
+
+type Hosts struct {
+	CPU    int     `json:"cpu,omitempty"`
+	Memory float64 `json:"memory,omitempty"`
+	Count  int     `json:"count,omitempty"`
+	Disks  Disks   `json:"disks"`
+}
+type Disks struct {
+	System string   `json:"system,omitempty"`
+	Data   []string `json:"data,omitempty"`
+}
 
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of Infra
 	// Important: Run "make" to regenerate code after modifying this file
-
+	//SpotAsPriceGo
+	IsSeize bool `json:"is_seize"`
 	// Foo is an example field of Infra. Edit types.go to remove/update
-	Provider   Provider   `json:"provider,omitempty"`
-	ServerType ServerType `json:"serverType,omitempty"`
+	Provider Provider `json:"provider,omitempty"`
+	Platform Platform `json:"platform,omitempty"`
 
-	SSH     SSH   `json:"ssh,omitempty"`
-	Masters Hosts `json:"masters,omitempty"`
-	Nodes   Hosts `json:"nodes,omitempty"`
+	Auth    Auth   `json:"auth,omitempty"`
+	Masters Hosts  `json:"masters,omitempty"`
+	Nodes   *Hosts `json:"nodes,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
 type InfraStatus struct {
-	ZoneID   string `json:"zoneId,omitempty"`
-	RegionID string `json:"regionId,omitempty"`
+	ZoneID   string `json:"zone_id,omitempty"`
+	RegionID string `json:"region_id,omitempty"`
 
-	VpcID           string `json:"vpcID,omitempty"`
-	VSwitchID       string `json:"vSwitchID,omitempty"`
-	SecurityGroupID string `json:"securityGroupID,omitempty"`
+	VpcID           string `json:"vpc_id,omitempty"`
+	VSwitchID       string `json:"v_switch_id,omitempty"`
+	SecurityGroupID string `json:"security_group_id,omitempty"`
 
-	Master0ID         string `json:"master0ID,omitempty"`
-	Master0InternalIP string `json:"master0InternalIP,omitempty"`
+	SystemCategory string `json:"system_category,omitempty"`
+	DataCategory   string `json:"data_category,omitempty"`
+
+	InstanceType string `json:"instance_type,omitempty"`
+
+	Master0ID         string `json:"master0_id,omitempty"`
+	Master0InternalIP string `json:"master0_internal_ip,omitempty"`
 	EIP               string `json:"eip,omitempty"`
-	EIPID             string `json:"eipID,omitempty"`
+	EIPID             string `json:"eip_id,omitempty"`
 
-	MasterIDs string `json:"masterIDs,omitempty"`
-	NodeIDs   string `json:"nodeIDs,omitempty"`
+	MasterIDs string `json:"master_ids,omitempty"`
+	NodeIDs   string `json:"node_ids,omitempty"`
 
 	Masters []string `json:"masters,omitempty"`
 	Nodes   []string `json:"nodes,omitempty"`
+
+	SpotStrategy               string `json:"spot_strategy,omitempty"`
+	ImageID                    string `json:"image_id,omitempty"`
+	ShouldBeDeleteInstancesIDs string `json:"should_be_delete_instances_ids,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // Infra is the Schema for the Infras API
 type Infra struct {
@@ -93,11 +108,8 @@ type Infra struct {
 	Status InfraStatus `json:"status,omitempty"`
 }
 
-func (in *Infra) GetAnnotationsByKey(key string) string {
-	return in.Annotations[key]
-}
-
 // +kubebuilder:object:root=true
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // InfraList contains a list of Infra
 type InfraList struct {

@@ -17,11 +17,8 @@ package aliyun
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
@@ -34,7 +31,7 @@ import (
 
 type Instance struct {
 	CPU              int
-	Memory           int
+	Memory           float64
 	InstanceID       string
 	PrimaryIPAddress string
 }
@@ -66,10 +63,11 @@ func (a *AliProvider) RetryEcsInstanceType(request requests.AcsRequest, response
 		}
 		err := a.RetryEcsAction(request, response, 4)
 		if err == nil {
-			logger.Debug("use instance type: %s", instances[i])
+			a.Infra.Status.InstanceType = instances[i]
+			logger.Debug("use SystemInfo type: %s", instances[i])
 			break
 		} else if i == len(instances)-1 {
-			return fmt.Errorf("failed to get ecs instance type, %v", err)
+			return fmt.Errorf("failed to get ecs SystemInfo type, %v", err)
 		}
 	}
 	return nil
@@ -111,7 +109,7 @@ func (a *AliProvider) InputIPlist(instanceRole string) (ipList []string, err err
 	case Master:
 		hosts = &a.Infra.Spec.Masters
 	case Node:
-		hosts = &a.Infra.Spec.Nodes
+		hosts = a.Infra.Spec.Nodes
 	}
 	if hosts == nil {
 		return nil, err
@@ -126,25 +124,6 @@ func (a *AliProvider) InputIPlist(instanceRole string) (ipList []string, err err
 	return ipList, nil
 }
 
-func (a *AliProvider) CreatePassword() {
-	rand.Seed(time.Now().UnixNano())
-	digits := Digits
-	specials := Specials
-	letter := Letter
-	all := digits + specials + letter
-	length := PasswordLength
-	buf := make([]byte, length)
-	buf[0] = digits[rand.Intn(len(digits))]
-	buf[1] = specials[rand.Intn(len(specials))]
-	for i := 2; i < length; i++ {
-		buf[i] = all[rand.Intn(len(all))]
-	}
-	rand.Shuffle(len(buf), func(i, j int) {
-		buf[i], buf[j] = buf[j], buf[i]
-	})
-	a.Infra.Spec.SSH.Passwd = string(buf)
-}
-
 func (a *AliProvider) GetInstanceStatus(instanceID string) (instanceStatus string, err error) {
 	request := ecs.CreateDescribeInstanceStatusRequest()
 	request.Scheme = Scheme
@@ -152,10 +131,10 @@ func (a *AliProvider) GetInstanceStatus(instanceID string) (instanceStatus strin
 	response := ecs.CreateDescribeInstanceStatusResponse()
 	err = a.RetryEcsRequest(request, response)
 	if err != nil {
-		return "", fmt.Errorf("get instance status failed %v , error :%v", instanceID, err)
+		return "", fmt.Errorf("get SystemInfo status failed %v , error :%v", instanceID, err)
 	}
 	if len(response.InstanceStatuses.InstanceStatus) == 0 {
-		return "", fmt.Errorf("instance list is empty")
+		return "", fmt.Errorf("SystemInfo list is empty")
 	}
 	return response.InstanceStatuses.InstanceStatus[0].Status, nil
 }
@@ -178,15 +157,7 @@ func (a *AliProvider) StartInstance(instanceID string) error {
 	return a.RetryEcsRequest(request, response)
 }
 
-func (a *AliProvider) ChangeInstanceType(instanceID, cpu, memory string) error {
-	cpuInt, err := strconv.Atoi(cpu)
-	if err != nil {
-		return err
-	}
-	memoryFloat, err := strconv.ParseFloat(memory, 64)
-	if err != nil {
-		return err
-	}
+func (a *AliProvider) ChangeInstanceType(instanceID string, cpu int, memory float64) error {
 	instanceStatus, err := a.GetInstanceStatus(instanceID)
 	if err != nil {
 		return err
@@ -197,7 +168,7 @@ func (a *AliProvider) ChangeInstanceType(instanceID, cpu, memory string) error {
 			return err
 		}
 	}
-	expectInstanceType, err := a.GetAvailableResource(cpuInt, memoryFloat)
+	expectInstanceType, err := a.GetAvailableResource(cpu, memory)
 	if err != nil {
 		return err
 	}
@@ -214,20 +185,20 @@ func (a *AliProvider) ChangeInstanceType(instanceID, cpu, memory string) error {
 	return a.StartInstance(instanceID)
 }
 
-func (a *AliProvider) GetInstancesInfo(instancesRole, expectCount string) (instances []Instance, err error) {
+func (a *AliProvider) GetInstancesInfo(instancesRole string, expectCount int) (instances []Instance, err error) {
 	var count int
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
 	tag[Role] = instancesRole
-	if expectCount == "" {
+	if expectCount == 0 {
 		count = -1
 	} else {
-		count, _ = strconv.Atoi(expectCount)
+		count = expectCount
 	}
 	instancesTags := CreateDescribeInstancesTag(tag)
 	request := ecs.CreateDescribeInstancesRequest()
 	request.Scheme = Scheme
-	request.RegionId = a.Config.RegionID
+	request.RegionId = a.Infra.Status.RegionID
 	request.VSwitchId = a.Infra.Status.VSwitchID
 	request.SecurityGroupId = a.Infra.Status.SecurityGroupID
 	request.Tag = &instancesTags
@@ -238,13 +209,13 @@ func (a *AliProvider) GetInstancesInfo(instancesRole, expectCount string) (insta
 		return nil, err
 	}
 
-	for _, instance := range response.Instances.Instance {
+	for _, i := range response.Instances.Instance {
 		instances = append(instances,
 			Instance{
-				CPU:              instance.Cpu,
-				Memory:           instance.Memory / 1024,
-				InstanceID:       instance.InstanceId,
-				PrimaryIPAddress: instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress})
+				CPU:              i.Cpu,
+				Memory:           float64(i.Memory / 1024),
+				InstanceID:       i.InstanceId,
+				PrimaryIPAddress: i.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress})
 	}
 	return
 }
@@ -258,31 +229,27 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 	case Master:
 		hosts = &a.Infra.Spec.Masters
 		instancesIDs = a.Infra.Status.MasterIDs
-		if hosts.Count == "" {
+		if hosts.Count == 0 {
 			return errors.New("master count not set")
 		}
 	case Node:
-		hosts = &a.Infra.Spec.Nodes
+		hosts = a.Infra.Spec.Nodes
 		instancesIDs = a.Infra.Status.NodeIDs
-		if hosts.Count == "" {
+		if hosts == nil {
 			return nil
 		}
 	}
 	if hosts == nil {
 		return errors.New("hosts not set")
 	}
-	i, err := strconv.Atoi(hosts.Count)
-	if err != nil {
-		return fmt.Errorf("failed to get hosts count, %v", err)
-	}
+	var err error
 	if instancesIDs != "" {
 		instances, err = a.GetInstancesInfo(instanceRole, JustGetInstanceInfo)
 	}
-
 	if err != nil {
 		return err
 	}
-	if len(instances) < i {
+	if i := hosts.Count; len(instances) < i {
 		err = a.RunInstances(instanceRole, i-len(instances))
 		if err != nil {
 			return err
@@ -293,45 +260,10 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 		}
 		IPList = utils.AppendIPList(IPList, ipList)
 		logger.Info("get scale up IP list %v, append iplist %v, host count %s", ipList, IPList, hosts.Count)
-	} else if len(instances) > i {
-		var deleteInstancesIDs []string
-		var count int
-		for _, instance := range instances {
-			if instance.InstanceID != a.Infra.Status.Master0ID {
-				deleteInstancesIDs = append(deleteInstancesIDs, instance.InstanceID)
-				count++
-			}
-			if count == (len(instances) - i) {
-				break
-			}
-		}
-		if len(deleteInstancesIDs) != 0 {
-			a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(deleteInstancesIDs, ",")
-			err = a.DeleteInstances()
-			if err != nil {
-				return err
-			}
-			a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = ""
-		}
-
-		ipList, err := a.InputIPlist(instanceRole)
-		if err != nil {
-			return err
-		}
-		IPList = utils.ReduceIPList(IPList, ipList)
 	}
 
-	cpu, err := strconv.Atoi(hosts.CPU)
-	if err != nil {
-		return fmt.Errorf("failed to get hosts CPU, %v", err)
-	}
-
-	memory, err := strconv.Atoi(hosts.Memory)
-	if err != nil {
-		return fmt.Errorf("failed to get hosts memory, %v", err)
-	}
 	for _, instance := range instances {
-		if instance.CPU != cpu || instance.Memory != memory {
+		if instance.CPU != hosts.CPU || instance.Memory != hosts.Memory {
 			err = a.ChangeInstanceType(instance.InstanceID, hosts.CPU, hosts.Memory)
 			if err != nil {
 				return err
@@ -348,7 +280,7 @@ func (a *AliProvider) ReconcileInstances(instanceRole string) error {
 }
 
 func (a *AliProvider) DeleteInstances() error {
-	instanceIDs := strings.Split(a.Infra.Annotations[ShouldBeDeleteInstancesIDs], ",")
+	instanceIDs := strings.Split(a.Infra.Status.ShouldBeDeleteInstancesIDs, ",")
 	if len(instanceIDs) == 0 {
 		return nil
 	}
@@ -362,7 +294,7 @@ func (a *AliProvider) DeleteInstances() error {
 	if err != nil {
 		return err
 	}
-	a.Infra.Annotations[ShouldBeDeleteInstancesIDs] = ""
+	a.Infra.Status.ShouldBeDeleteInstancesIDs = ""
 	return nil
 }
 
@@ -373,39 +305,101 @@ func CreateDescribeInstancesTag(tags map[string]string) (instanceTags []ecs.Desc
 	return
 }
 
-func CreateInstanceDataDisk(dataDisks []string) (instanceDisks []ecs.RunInstancesDataDisk) {
+func CreateInstanceDataDisk(dataDisks []string, category string) (instanceDisks []ecs.RunInstancesDataDisk) {
 	for _, v := range dataDisks {
 		instanceDisks = append(instanceDisks,
-			ecs.RunInstancesDataDisk{Size: v, Category: AliCloudEssd})
+			ecs.RunInstancesDataDisk{Size: v, Category: category})
 	}
 	return
 }
 
+type InstanceInfo struct {
+	InstanceType   string
+	ZoneID         string
+	SystemCategory string
+	DataCategory   string
+}
+
+func (a *AliProvider) GetAvailableResourcesForSystem(cores int, memory float64) (instances InstanceInfo, err error) {
+	categories := DiskCategory()
+	for _, i := range categories {
+		for _, j := range categories {
+			ti, zone, err := a.availableResourceForDisk(cores, memory, i, j)
+			if err != nil {
+				logger.Warn("system: %s,disk %s fetch install and zone error: %v", i, j, err)
+				continue
+			}
+
+			return InstanceInfo{
+				InstanceType:   ti[0],
+				ZoneID:         zone[0],
+				SystemCategory: i,
+				DataCategory:   j,
+			}, nil
+		}
+	}
+	return
+}
 func (a *AliProvider) GetAvailableResource(cores int, memory float64) (instanceType []string, err error) {
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.Scheme = Scheme
-	request.RegionId = a.Config.RegionID
-
+	request.RegionId = a.Infra.Status.RegionID
 	request.ZoneId = a.Infra.Status.ZoneID
 	request.DestinationResource = DestinationResource
 	request.InstanceChargeType = InstanceChargeType
 	request.Cores = requests.NewInteger(cores)
 	request.Memory = requests.NewFloat(memory)
 
-	//response, err := d.Client.DescribeAvailableResource(request)
 	response := ecs.CreateDescribeAvailableResourceResponse()
-	err = a.RetryEcsRequest(request, response)
+	err = a.EcsClient.DoAction(request, response)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(response.AvailableZones.AvailableZone) < 1 {
 		return nil, fmt.Errorf("resources not find")
 	}
-	for _, f := range response.AvailableZones.AvailableZone[0].AvailableResources.AvailableResource {
-		for _, r := range f.SupportedResources.SupportedResource {
-			if r.StatusCategory == AvailableTypeStatus {
-				instanceType = append(instanceType, r.Value)
+	for _, i := range response.AvailableZones.AvailableZone {
+		for _, f := range i.AvailableResources.AvailableResource {
+			for _, r := range f.SupportedResources.SupportedResource {
+				if r.StatusCategory == AvailableTypeStatus {
+					instanceType = append(instanceType, r.Value)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (a *AliProvider) availableResourceForDisk(cores int, memory float64, systemCategory, dataCategory string) (instanceType, zoneIDs []string, err error) {
+	request := ecs.CreateDescribeAvailableResourceRequest()
+	request.Scheme = Scheme
+	if a.Infra.Status.ZoneID != "" {
+		request.ZoneId = a.Infra.Status.ZoneID
+	}
+	request.RegionId = a.Infra.Status.RegionID
+	request.DestinationResource = DestinationResource
+	request.InstanceChargeType = InstanceChargeType
+	request.SystemDiskCategory = systemCategory
+	request.DataDiskCategory = dataCategory
+	request.Cores = requests.NewInteger(cores)
+	request.Memory = requests.NewFloat(memory)
+	request.SpotStrategy = a.Infra.Status.SpotStrategy
+
+	response := ecs.CreateDescribeAvailableResourceResponse()
+	err = a.EcsClient.DoAction(request, response)
+	if err != nil {
+		return nil, nil, err
+	}
+	if len(response.AvailableZones.AvailableZone) < 1 {
+		return nil, nil, fmt.Errorf("resources not find")
+	}
+	for _, i := range response.AvailableZones.AvailableZone {
+		for _, f := range i.AvailableResources.AvailableResource {
+			for _, r := range f.SupportedResources.SupportedResource {
+				if r.StatusCategory == AvailableTypeStatus {
+					instanceType = append(instanceType, r.Value)
+					zoneIDs = append(zoneIDs, i.ZoneId)
+				}
 			}
 		}
 	}
@@ -418,39 +412,39 @@ func (a *AliProvider) RunInstances(instanceRole string, count int) error {
 	case Master:
 		hosts = &a.Infra.Spec.Masters
 	case Node:
-		hosts = &a.Infra.Spec.Nodes
+		hosts = a.Infra.Spec.Nodes
 	}
 	instances := hosts
 	if instances == nil {
 		return errors.New("host not set")
 	}
-	instancesCPU, _ := strconv.Atoi(instances.CPU)
-	instancesMemory, _ := strconv.ParseFloat(instances.Memory, 64)
-	systemDiskSize := instances.SystemDisk
-	instanceType, err := a.GetAvailableResource(instancesCPU, instancesMemory)
+	systemDiskSize := instances.Disks.System
+	instanceType, err := a.GetAvailableResource(instances.CPU, instances.Memory)
 	if err != nil {
 		return err
 	}
+	defaultInstanceType := []string{a.Infra.Status.InstanceType}
+	instanceType = append(defaultInstanceType, instanceType...)
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
 	tag[Role] = instanceRole
 	instancesTag := CreateInstanceTag(tag)
 
-	dataDisks := instances.DataDisks
-	datadisk := CreateInstanceDataDisk(dataDisks)
+	dataDisks := instances.Disks.Data
+	datadisk := CreateInstanceDataDisk(dataDisks, a.Infra.Status.DataCategory)
 
 	request := ecs.CreateRunInstancesRequest()
 	request.Scheme = Scheme
-	request.ImageId = ImageID
-	request.Password = a.Infra.Spec.SSH.Passwd
+	request.ImageId = a.Infra.Status.ImageID
+	request.Password = a.Infra.Spec.Auth.Passwd
 	request.SecurityGroupId = a.Infra.Status.SecurityGroupID
 	request.VSwitchId = a.Infra.Status.VSwitchID
 	request.SystemDiskSize = systemDiskSize
-	request.SystemDiskCategory = DataCategory
+	request.SystemDiskCategory = a.Infra.Status.SystemCategory
 	request.DataDisk = &datadisk
+	request.SpotStrategy = a.Infra.Status.SpotStrategy
 	request.Amount = requests.NewInteger(count)
 	request.Tag = &instancesTag
-
 	//response, err := d.Client.RunInstances(request)
 	response := ecs.CreateRunInstancesResponse()
 	err = a.RetryEcsInstanceType(request, response, instanceType)
@@ -490,7 +484,7 @@ func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID, portRange string) 
 func (a *AliProvider) CreateSecurityGroup() error {
 	request := ecs.CreateCreateSecurityGroupRequest()
 	request.Scheme = Scheme
-	request.RegionId = a.Config.RegionID
+	request.RegionId = a.Infra.Status.RegionID
 	request.VpcId = a.Infra.Status.VpcID
 	response := ecs.CreateCreateSecurityGroupResponse()
 	err := a.RetryEcsRequest(request, response)
@@ -527,11 +521,11 @@ func CreateInstanceTag(tags map[string]string) (instanceTags []ecs.RunInstancesT
 func LoadConfig(config *Config) error {
 	config.AccessKey = os.Getenv(EnvAccessKey)
 	config.AccessSecret = os.Getenv(EnvAccessSecret)
-	config.RegionID = os.Getenv(EnvRegion)
-	if config.RegionID == "" {
-		config.RegionID = DefaultRegionID
+	config.regionID = os.Getenv(EnvRegion)
+	if config.regionID == "" {
+		config.regionID = DefaultRegionID
 	}
-	if config.AccessKey == "" || config.AccessSecret == "" || config.RegionID == "" {
+	if config.AccessKey == "" || config.AccessSecret == "" || config.regionID == "" {
 		return fmt.Errorf("please set accessKey and accessKeySecret ENV, example: export ACCESSKEYID=xxx export ACCESSKEYSECRET=xxx , how to get AK SK: https://ram.console.aliyun.com/manage/ak")
 	}
 	return nil

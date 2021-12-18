@@ -73,3 +73,19 @@ push-oss:install-ossutil build
 
 generator-contributors:
 	git log --format='%aN <%aE>' | sort -uf > CONTRIBUTORS
+
+
+HEAD_FILE := hack/template/boilerplate.go.txt
+INPUT_DIR := github.com/fanux/sealos/pkg/types/v1beta1
+deepcopy:
+	deepcopy-gen \
+      --input-dirs="$(INPUT_DIR)" \
+      -O zz_generated.deepcopy   \
+      --go-header-file "$(HEAD_FILE)" \
+      --output-base "${GOPATH}/src"
+defaulter:
+	defaulter-gen \
+      --input-dirs="$(INPUT_DIR)" \
+      -O zz_generated.defaulter \
+      --go-header-file "$(HEAD_FILE)" \
+      --output-base "${GOPATH}/src"

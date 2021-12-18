@@ -17,6 +17,8 @@ package aliyun
 import (
 	"errors"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
 
@@ -43,7 +45,7 @@ func (a *AliProvider) RetryVpcRequest(request requests.AcsRequest, response resp
 func (a *AliProvider) CreateVPC() error {
 	request := vpc.CreateCreateVpcRequest()
 	request.Scheme = Scheme
-	request.RegionId = a.Config.RegionID
+	request.RegionId = a.Infra.Status.RegionID
 	//response, err := d.Client.CreateVpc(request)
 	response := vpc.CreateCreateVpcResponse()
 	err := a.RetryVpcRequest(request, response)
@@ -51,7 +53,6 @@ func (a *AliProvider) CreateVPC() error {
 		return err
 	}
 	a.Infra.Status.VpcID = response.VpcId
-	a.Infra.Status.RegionID = a.Config.RegionID
 	return nil
 }
 
@@ -71,7 +72,7 @@ func (a *AliProvider) CreateVSwitch() error {
 	request.ZoneId = a.Infra.Status.ZoneID
 	request.CidrBlock = CidrBlock
 	request.VpcId = a.Infra.Status.VpcID
-	request.RegionId = a.Config.RegionID
+	request.RegionId = a.Infra.Status.RegionID
 	//response, err := d.Client.CreateVSwitch(request)
 	response := vpc.CreateCreateVSwitchResponse()
 	err := a.RetryVpcRequest(request, response)
@@ -91,19 +92,9 @@ func (a *AliProvider) DeleteVSwitch() error {
 	return a.RetryVpcRequest(request, response)
 }
 
-func (a *AliProvider) GetZoneID() error {
-	request := vpc.CreateDescribeZonesRequest()
-	request.Scheme = Scheme
-	response := vpc.CreateDescribeZonesResponse()
-	err := a.RetryVpcRequest(request, response)
-	if err != nil {
-		return err
-	}
-	if len(response.Zones.Zone) == 0 {
-		return errors.New("not available ZoneID ")
-	}
-	if a.Infra.Spec.ServerType == v2.ARM64 {
-		switch a.Config.RegionID {
+func (a *AliProvider) SystemInfo() error {
+	if a.Infra.Spec.Platform == v2.ARM64 {
+		switch a.Infra.Status.RegionID {
 		case "cn-shanghai":
 			a.Infra.Status.ZoneID = "cn-shanghai-l"
 		case "cn-beijing":
@@ -113,9 +104,23 @@ func (a *AliProvider) GetZoneID() error {
 		default:
 			return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
 		}
+		a.Infra.Status.ImageID = DefaultImageArmID
 	} else {
-		a.Infra.Status.ZoneID = response.Zones.Zone[0].ZoneId
+		a.Infra.Status.ImageID = DefaultImageAmdID
 	}
+	availableInstance, err := a.GetAvailableResourcesForSystem(a.Infra.Spec.Masters.CPU, a.Infra.Spec.Masters.Memory)
+	if err != nil {
+		return err
+	}
+	a.Infra.Status.ZoneID = availableInstance.ZoneID
+	logger.Info("fetch resource success %s: %s", "ZoneID", a.Infra.Status.ZoneID)
+	a.Infra.Status.InstanceType = availableInstance.InstanceType
+	logger.Info("fetch resource success %s: %s", "InstanceType", a.Infra.Status.InstanceType)
+	a.Infra.Status.SystemCategory = availableInstance.SystemCategory
+	logger.Info("fetch resource success %s: %s", "SystemCategory", a.Infra.Status.SystemCategory)
+	a.Infra.Status.DataCategory = availableInstance.DataCategory
+	logger.Info("fetch resource success %s: %s", "DataCategory", a.Infra.Status.DataCategory)
+
 	return nil
 }
 

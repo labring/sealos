@@ -17,6 +17,8 @@ package aliyun
 import (
 	"strings"
 
+	"github.com/fanux/sealos/pkg/types/validation"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
@@ -37,7 +39,7 @@ const (
 	DeleteVSwitch       ActionName = "DeleteVSwitch"
 	DeleteSecurityGroup ActionName = "DeleteSecurityGroup"
 	DeleteVPC           ActionName = "DeleteVPC"
-	GetZoneID           ActionName = "GetZoneID"
+	GetSystemInfo       ActionName = "GetSystemInfo"
 )
 
 type AliProvider struct {
@@ -50,7 +52,7 @@ type AliProvider struct {
 type Config struct {
 	AccessKey    string
 	AccessSecret string
-	RegionID     string
+	regionID     string
 }
 
 type Alifunc func() error
@@ -64,19 +66,22 @@ func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action Alifunc
 		logger.Error("reconcile resource %s failed err: %s", resourceKey, err)
 		return err
 	}
-	logger.Info("create resource success %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
+	if resourceKey.Value(a.Infra.Status) != "" {
+		logger.Info("create resource success %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
+	}
 	return nil
 }
 
 func (a *AliProvider) DeleteResource(resourceKey ResourceName, action Alifunc) {
-	if resourceKey.Value(a.Infra.Status) == "" {
+	val := resourceKey.Value(a.Infra.Status)
+	if val == "" {
 		logger.Warn("delete resource not exists %s", resourceKey)
 		return
 	}
 	if err := action(); err != nil {
 		logger.Error("delete resource %s failed err: %s", resourceKey, err)
 	} else {
-		logger.Info("delete resource Success %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
+		logger.Info("delete resource Success %s: %s", resourceKey, val)
 	}
 }
 
@@ -103,8 +108,8 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 		}
 		return nil
 	},
-	GetZoneID: func(aliProvider *AliProvider) error {
-		return aliProvider.ReconcileResource(ZoneID, aliProvider.GetZoneID)
+	GetSystemInfo: func(aliProvider *AliProvider) error {
+		return aliProvider.ReconcileResource(SystemInfo, aliProvider.SystemInfo)
 	},
 	BindEIP: func(aliProvider *AliProvider) error {
 		return aliProvider.ReconcileResource(EipID, aliProvider.BindEipForMaster0)
@@ -128,7 +133,7 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 			}
 		}
 		if len(instanceIDs) != 0 {
-			aliProvider.Infra.Annotations[ShouldBeDeleteInstancesIDs] = strings.Join(instanceIDs, ",")
+			aliProvider.Infra.Status.ShouldBeDeleteInstancesIDs = strings.Join(instanceIDs, ",")
 		}
 		aliProvider.DeleteResource(ShouldBeDeleteInstancesIDs, aliProvider.DeleteInstances)
 	},
@@ -144,16 +149,17 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
-	ecsClient, err := ecs.NewClientWithAccessKey(a.Config.RegionID, a.Config.AccessKey, a.Config.AccessSecret)
+	ecsClient, err := ecs.NewClientWithAccessKey(a.Config.regionID, a.Config.AccessKey, a.Config.AccessSecret)
 	if err != nil {
 		return err
 	}
-	vpcClient, err := vpc.NewClientWithAccessKey(a.Config.RegionID, a.Config.AccessKey, a.Config.AccessSecret)
+	vpcClient, err := vpc.NewClientWithAccessKey(a.Config.regionID, a.Config.AccessKey, a.Config.AccessSecret)
 	if err != nil {
 		return err
 	}
 	a.EcsClient = *ecsClient
 	a.VpcClient = *vpcClient
+	a.Infra.Status.RegionID = a.Config.regionID
 	return nil
 }
 
@@ -179,13 +185,9 @@ func (a *AliProvider) Reconcile() error {
 		a.ClearCluster()
 		return nil
 	}
-	if a.Infra.Spec.SSH.Passwd == "" {
-		// Create ssh password
-		a.CreatePassword()
-	}
 	todolist := []ActionName{
 		CreateVPC,
-		GetZoneID,
+		GetSystemInfo,
 		CreateVSwitch,
 		CreateSecurityGroup,
 		ReconcileInstance,
@@ -203,5 +205,8 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
+	if err := validation.ValidateInfra(a.Infra); len(err) != 0 {
+		return err.ToAggregate()
+	}
 	return a.Reconcile()
 }

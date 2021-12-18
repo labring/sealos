@@ -39,23 +39,28 @@ func TestApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
+			IsSeize:  true,
+			Platform: v2.ARM64,
 			Masters: v2.Hosts{
-				Count:      "1",
-				CPU:        "2",
-				Memory:     "4",
-				SystemDisk: "100",
-				DataDisks:  []string{"100"},
+				Count:  1,
+				CPU:    2,
+				Memory: 4,
+				Disks: v2.Disks{
+					System: "100",
+					Data:   []string{"100"},
+				},
 			},
-			Nodes: v2.Hosts{
-				Count:      "1",
-				CPU:        "2",
-				Memory:     "4",
-				SystemDisk: "100",
-				DataDisks:  []string{"100"},
+			Nodes: &v2.Hosts{
+				Count:  1,
+				CPU:    2,
+				Memory: 4,
+				Disks: v2.Disks{
+					System: "100",
+					Data:   []string{"100"},
+				},
 			},
-			//ServerType: v2.ARM64,
 			Provider: v2.AliyunProvider,
-			SSH: v2.SSH{
+			Auth: v2.Auth{
 				Passwd: password,
 			},
 		},
@@ -69,34 +74,34 @@ func TestApply(t *testing.T) {
 	}
 
 	t.Run("modify instance type", func(t *testing.T) {
-		infra.Spec.Masters.CPU = "4"
-		infra.Spec.Masters.Memory = "8"
-		infra.Spec.Nodes.CPU = "4"
-		infra.Spec.Nodes.Memory = "8"
+		infra.Spec.Masters.CPU = 4
+		infra.Spec.Masters.Memory = 8
+		infra.Spec.Nodes.CPU = 4
+		infra.Spec.Nodes.Memory = 8
 		fmt.Printf("%v", aliProvider.Apply())
 	})
 
 	t.Run("add instance count", func(t *testing.T) {
-		infra.Spec.Masters.Count = "5"
-		infra.Spec.Nodes.Count = "5"
+		infra.Spec.Masters.Count = 5
+		infra.Spec.Nodes.Count = 5
 		fmt.Printf("%v", aliProvider.Apply())
 		fmt.Printf("%v \n", infra.Spec.Masters)
 		fmt.Printf("%v \n", infra.Spec.Nodes)
 	})
 
 	t.Run("reduce instance count", func(t *testing.T) {
-		infra.Spec.Masters.Count = "1"
-		infra.Spec.Nodes.Count = "1"
+		infra.Spec.Masters.Count = 1
+		infra.Spec.Nodes.Count = 1
 		fmt.Printf("%v", aliProvider.Apply())
 	})
 
 	t.Run("modify instance type & count both", func(t *testing.T) {
-		infra.Spec.Masters.CPU = "8"
-		infra.Spec.Masters.Memory = "16"
-		infra.Spec.Nodes.CPU = "8"
-		infra.Spec.Nodes.Memory = "16"
-		infra.Spec.Masters.Count = "5"
-		infra.Spec.Nodes.Count = "5"
+		infra.Spec.Masters.CPU = 8
+		infra.Spec.Masters.Memory = 16
+		infra.Spec.Nodes.CPU = 8
+		infra.Spec.Nodes.Memory = 16
+		infra.Spec.Masters.Count = 5
+		infra.Spec.Nodes.Count = 5
 		fmt.Printf("%v", aliProvider.Apply())
 	})
 
@@ -108,7 +113,7 @@ func TestApply(t *testing.T) {
 	j, _ := yaml.Marshal(&infra)
 	t.Log("output yaml:", string(j))
 	//teardown
-	time.Sleep(60 * time.Second)
+	time.Sleep(20 * time.Second)
 	now := metav1.Now()
 	infra.ObjectMeta.DeletionTimestamp = &now
 	t.Log(fmt.Sprintf("%v", aliProvider.Apply()))

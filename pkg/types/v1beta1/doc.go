@@ -12,14 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +k8s:deepcopy-gen=package
+// +k8s:protobuf-gen=package
+// +k8s:openapi-gen=false
+// +k8s:defaulter-gen=TypeMeta
+// +groupName=apps.sealyun.com
+
 package v1beta1
-
-import (
-	"k8s.io/apimachinery/pkg/runtime/schema"
-)
-
-// GroupName is the group name use in this package
-const GroupName = "apps.sealyun.com"
-
-// SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
