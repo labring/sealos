@@ -15,21 +15,36 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"runtime"
-	"strings"
 
-	extver "github.com/linuxsuren/cobra-extension/version"
+	"github.com/fanux/sealos/pkg/version"
+	"github.com/spf13/cobra"
 )
 
+var shortPrint bool
+
+var versionCmd = &cobra.Command{
+	Use:     "version",
+	Short:   "version",
+	Args:    cobra.NoArgs,
+	Example: `sealer version`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		marshalled, err := json.Marshal(version.Get())
+		if err != nil {
+			return err
+		}
+		if shortPrint {
+			fmt.Println(version.Get().String())
+		} else {
+			fmt.Println(string(marshalled))
+		}
+		return nil
+
+	},
+}
+
 func init() {
-	// it's possible to have multiple choices for users to choose GitHub or aliyun as their download source
-	// see also https://github.com/LinuxSuRen/cobra-extension/issues/6
-	const name = "sealos"
-	verCmd := extver.NewVersionCmd("fanux", name, name, func(ver string) string {
-		ver = strings.TrimPrefix(ver, "v")
-		return fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/%s_%s_%s_%s.tar.gz",
-			ver, name, ver, runtime.GOOS, runtime.GOARCH)
-	})
-	rootCmd.AddCommand(verCmd)
+	rootCmd.AddCommand(versionCmd)
+	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "If true, print just the cniVersion number.")
 }
