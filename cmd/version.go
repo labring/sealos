@@ -28,7 +28,7 @@ var versionCmd = &cobra.Command{
 	Use:     "version",
 	Short:   "version",
 	Args:    cobra.NoArgs,
-	Example: `sealer version`,
+	Example: `sealos version`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		marshalled, err := json.Marshal(version.Get())
 		if err != nil {
