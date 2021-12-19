@@ -15,11 +15,12 @@
 package install
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"sync"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/kubernetes/nodeclient"
@@ -153,4 +154,10 @@ func (e *ExecFlag) execByNodeIP() {
 		}(n)
 	}
 	wg.Wait()
+}
+
+// CmdWorkSpace exec cmd on specified workdir.
+func CmdWorkSpace(node, cmd, workdir string) {
+	command := fmt.Sprintf("cd %s && %s", workdir, cmd)
+	_ = v1.SSHConfig.CmdAsync(node, command)
 }

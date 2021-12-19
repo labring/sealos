@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	v1 "github.com/fanux/sealos/pkg/types/v1"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"math/rand"
 	"net"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -117,4 +118,14 @@ func RandString(len int) string {
 		bytes[i] = byte(b)
 	}
 	return string(bytes)
+}
+
+func IsEmptyLine(str string) bool {
+	re := regexp.MustCompile(`^\s*$`)
+
+	return re.MatchString(str)
+}
+
+func TrimWS(str string) string {
+	return strings.Trim(str, " \n\t")
 }

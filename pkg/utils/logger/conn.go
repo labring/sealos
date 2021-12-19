@@ -41,7 +41,6 @@ func (c *connLogger) Init(jsonConfig string) error {
 	if len(jsonConfig) == 0 {
 		return nil
 	}
-	fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
 	err := json.Unmarshal([]byte(jsonConfig), c)
 	if err != nil {
 		return err

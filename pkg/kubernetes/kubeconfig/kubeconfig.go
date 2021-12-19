@@ -16,7 +16,7 @@ package kubeconfig
 
 import clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 
-// GetClusterFromKubeConfig returns the default Cluster of the specified KubeConfig
+// GetClusterFromKubeConfig returns the default Infra of the specified KubeConfig
 func GetClusterFromKubeConfig(config *clientcmdapi.Config) *clientcmdapi.Cluster {
 	// If there is an unnamed cluster object, use it
 	if config.Clusters[""] != nil {

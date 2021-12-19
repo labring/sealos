@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
