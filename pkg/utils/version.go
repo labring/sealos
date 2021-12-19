@@ -108,3 +108,33 @@ func VersionToIntAll(version string) int {
 	}
 	return 0
 }
+
+//VersionCompare is version compare
+// if v1 >= v2 return true, else return false
+func VersionCompare(v1, v2 string) bool {
+	v1 = strings.Replace(v1, "v", "", -1)
+	v2 = strings.Replace(v2, "v", "", -1)
+	v1 = strings.Split(v1, "-")[0]
+	v2 = strings.Split(v2, "-")[0]
+	v1List := strings.Split(v1, ".")
+	v2List := strings.Split(v2, ".")
+
+	if len(v1List) != 3 || len(v2List) != 3 {
+		logger.Error("error version format %s %s", v1, v2)
+		return false
+	}
+	if v1List[0] > v2List[0] {
+		return true
+	} else if v1List[0] < v2List[0] {
+		return false
+	}
+	if v1List[1] > v2List[1] {
+		return true
+	} else if v1List[1] < v2List[1] {
+		return false
+	}
+	if v1List[2] > v2List[2] {
+		return true
+	}
+	return true
+}

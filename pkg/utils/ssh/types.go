@@ -14,7 +14,9 @@
 
 package ssh
 
-import "time"
+import (
+	"time"
+)
 
 type SSH struct {
 	User       string

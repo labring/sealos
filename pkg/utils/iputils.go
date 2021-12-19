@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"os"
+	"net/url"
 	"strings"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -87,24 +87,34 @@ func AssemblyIPList(args *string) error {
 	*args = result
 	return nil
 }
-func CheckIP(i string) bool {
-	if !strings.Contains(i, ":") {
-		return net.ParseIP(i) != nil
-	}
-	if _, err := net.ResolveTCPAddr("tcp", i); err != nil {
+func CheckIP(ipStr string) bool {
+	host, _, err := net.SplitHostPort(ipStr)
+	if err != nil {
 		return false
 	}
-	return true
+	ip := net.ParseIP(host)
+	if _, err = net.ResolveTCPAddr("tcp", ipStr); err != nil {
+		return false
+	}
+	return ip != nil
 }
 
 //IPFormat is
-func IPFormat(host string) string {
-	ipAndPort := strings.Split(host, ":")
-	if len(ipAndPort) != 2 {
-		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", host)
-		os.Exit(1)
+func IPFormat(ipStr string) string {
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		host, _, err := net.SplitHostPort(ipStr)
+		if err != nil {
+			logger.Error("invalied host fomat [%s], must like 172.0.0.2:22.error: %s", ipStr, err)
+			return ""
+		}
+		ip = net.ParseIP(host)
 	}
-	return ipAndPort[0]
+	if ip == nil {
+		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", ipStr)
+		return ""
+	}
+	return ip.String()
 }
 
 func HostnameAndIP(node []string) ([]string, []string) {
@@ -165,4 +175,9 @@ func RemoveDeduplicate(a []string) []string {
 		}
 	}
 	return res
+}
+
+func CheckDomain(domain string) bool {
+	_, errURL := url.Parse(domain)
+	return errURL == nil
 }

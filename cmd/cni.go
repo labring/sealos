@@ -24,7 +24,7 @@ import (
 )
 
 var cniType string
-var version string
+var cniVersion string
 
 // cniCmd represents the cni command
 var cniCmd = &cobra.Command{
@@ -35,15 +35,15 @@ var cniCmd = &cobra.Command{
 			logger.Error("unsupport cni: ", cniType)
 			return
 		}
-		if version == "" {
-			logger.Error("cni version should not nil ", version)
+		if cniVersion == "" {
+			logger.Error("cni version should not nil ", cniVersion)
 			return
 		}
 		yaml := cni.NewNetwork(cniType, cni.MetaData{
 			Interface: "interface=eth.*|en.*|em.*",
 			IPIP:      true,
 			MTU:       "1440",
-			Version:   version,
+			Version:   cniVersion,
 		}).Manifests("")
 		fmt.Println(yaml)
 	},
@@ -53,7 +53,7 @@ func init() {
 	rootCmd.AddCommand(cniCmd)
 
 	cniCmd.Flags().StringVarP(&cniType, "cni-type", "t", cni.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
-	cniCmd.Flags().StringVarP(&version, "version", "v", "", "calico version")
+	cniCmd.Flags().StringVarP(&cniVersion, "version", "v", "", "calico version")
 
 	// Here you will define your flags and configuration settings.
 

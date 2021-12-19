@@ -153,7 +153,7 @@ func (r *LocalLogger) SetLogger(adapterName string, configs ...string) error {
 	}
 
 	config := append(configs, "{}")[0]
-	var num int = -1
+	var num = -1
 	var i int
 	var l *nameLogger
 	for i, l = range r.outputs {

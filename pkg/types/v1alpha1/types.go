@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1
+package v1alpha1
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 
+	"sigs.k8s.io/yaml"
+
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/cni"
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	v2 "gopkg.in/yaml.v2"
 )
 
 const (
@@ -44,40 +44,40 @@ type Metadata struct {
 
 // SealConfig for ~/.sealos/config.yaml
 type SealConfig struct {
-	Masters []string
-	Nodes   []string
+	Masters []string `json:"masters"`
+	Nodes   []string `json:"nodes"`
 	//config from kubeadm.cfg. ex. cluster.local
-	DNSDomain         string
-	APIServerCertSANs []string
+	DNSDomain         string   `json:"dnsdomain"`
+	APIServerCertSANs []string `json:"apiservercertsans"`
 
 	//SSHConfig
-	User       string
-	Passwd     string
-	PrivateKey string
-	PkPassword string
+	User       string `json:"user"`
+	Passwd     string `json:"passwd"`
+	PrivateKey string `json:"privatekey"`
+	PkPassword string `json:"pkpassword"`
 	//ApiServer ex. apiserver.cluster.local
-	APIServerDomain string
-	Network         string
-	VIP             string
-	PkgURL          string
-	Version         string
-	Repo            string
-	PodCIDR         string
-	SvcCIDR         string
+	APIServerDomain string `json:"apiserverdomain"`
+	Network         string `json:"network"`
+	VIP             string `json:"vip"`
+	PkgURL          string `json:"pkgurl"`
+	Version         string `json:"version"`
+	Repo            string `json:"repo"`
+	PodCIDR         string `json:"podcidr"`
+	SvcCIDR         string `json:"svccidr"`
 	//certs location
-	CertPath     string
-	CertEtcdPath string
+	CertPath     string `json:"certpath"`
+	CertEtcdPath string `json:"certetcdpath"`
 	//lvscare images
-	LvscareName string
-	LvscareTag  string
-	AliOss
+	LvscareName string `json:"lvscarename"`
+	LvscareTag  string `json:"lvscaretag"`
+	AliOss      `json:"alioss"`
 }
 type AliOss struct {
-	OssEndpoint      string
-	AccessKeyID      string
-	AccessKeySecrets string
-	BucketName       string
-	ObjectPath       string
+	OssEndpoint      string `json:"ossendpoint"`
+	AccessKeyID      string `json:"accesskeyid"`
+	AccessKeySecrets string `json:"accesskeysecrets"`
+	BucketName       string `json:"bucketname"`
+	ObjectPath       string `json:"objectpath"`
 }
 
 //Dump is
@@ -115,7 +115,7 @@ func (c *SealConfig) Dump(path string) {
 	c.AliOss.OssEndpoint = OssEndpoint
 	c.AliOss.BucketName = BucketName
 	c.AliOss.ObjectPath = ObjectPath
-	y, err := v2.Marshal(c)
+	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 	}
@@ -131,7 +131,7 @@ func (c *SealConfig) Dump(path string) {
 }
 
 func Dump(path string, content interface{}) error {
-	y, err := v2.Marshal(content)
+	y, err := yaml.Marshal(content)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
 		return err
@@ -157,7 +157,7 @@ func (c *SealConfig) Load(path string) (err error) {
 		return fmt.Errorf("read config file %s failed %w", path, err)
 	}
 
-	err = v2.Unmarshal(y, c)
+	err = yaml.Unmarshal(y, c)
 	if err != nil {
 		return fmt.Errorf("unmarshal config file failed: %w", err)
 	}
@@ -203,7 +203,7 @@ func Load(path string, content interface{}) error {
 		os.Exit(0)
 	}
 
-	err = v2.Unmarshal(y, content)
+	err = yaml.Unmarshal(y, content)
 	if err != nil {
 		logger.Error("unmarshal config file failed: %s", err)
 	}
@@ -231,7 +231,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.LvscareName = "fanux/lvscare"
 	c.LvscareTag = "latest"
 
-	y, err := v2.Marshal(c)
+	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("marshal config file failed: %s", err)
 	}

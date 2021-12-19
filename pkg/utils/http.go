@@ -32,7 +32,7 @@ func DownloadFile(location string) (filePATH, md5 string) {
 		location = absPATH
 	}
 	//file md5
-	md5 = FromLocal(location)
+	md5 = Md5File(location)
 	return location, md5
 }
 
