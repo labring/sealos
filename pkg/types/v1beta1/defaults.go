@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func Default(infra *Infra) {
+func Default(infra *Infra, fn func(infra *Infra) error) error {
 	if string(infra.Spec.Platform) == "" {
 		infra.Spec.Platform = AMD64
 	}
@@ -40,9 +40,7 @@ func Default(infra *Infra) {
 	if infra.Spec.Auth.Passwd == "" {
 		infra.Spec.Auth.Passwd = createPassword()
 	}
-	if infra.Spec.IsSeize {
-		infra.Status.SpotStrategy = "SpotAsPriceGo"
-	}
+	return fn(infra)
 }
 
 const (

@@ -39,8 +39,8 @@ const (
 	DestinationResource = "InstanceType"
 	InstanceChargeType  = "PostPaid"
 	InternetChargeType  = "PayByTraffic"
-	DefaultImageAmdID   = "centos_7_9_x64_20G_alibase_20210927.vhd"
-	DefaultImageArmID   = "anolisos_7_7_arm64_20G_anck_alibase_20211118.vhd"
+	defaultImageAmdID   = "centos_7_9_x64_20G_alibase_20210927.vhd"
+	defaultImageArmID   = "anolisos_7_7_arm64_20G_anck_alibase_20211118.vhd"
 	Product             = "product"
 	Role                = "role"
 	Master              = "master"
@@ -54,10 +54,6 @@ const (
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0
 )
-
-func DiskCategory() []string {
-	return []string{"cloud_ssd", "cloud_ssd", "cloud_efficiency"}
-}
 
 type ResourceName string
 

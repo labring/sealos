@@ -19,7 +19,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
@@ -93,34 +92,17 @@ func (a *AliProvider) DeleteVSwitch() error {
 }
 
 func (a *AliProvider) SystemInfo() error {
-	if a.Infra.Spec.Platform == v2.ARM64 {
-		switch a.Infra.Status.RegionID {
-		case "cn-shanghai":
-			a.Infra.Status.ZoneID = "cn-shanghai-l"
-		case "cn-beijing":
-			a.Infra.Status.ZoneID = "cn-beijing-k"
-		case "cn-hangzhou":
-			a.Infra.Status.ZoneID = "cn-hangzhou-i"
-		default:
-			return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
-		}
-		a.Infra.Status.ImageID = DefaultImageArmID
-	} else {
-		a.Infra.Status.ImageID = DefaultImageAmdID
-	}
-	availableInstance, err := a.GetAvailableResourcesForSystem(a.Infra.Spec.Masters.CPU, a.Infra.Spec.Masters.Memory)
+	availableInstance, err := a.GetAvailableResourcesForSystem()
 	if err != nil {
 		return err
 	}
+	a.Infra.Spec.Instance.Type = availableInstance.InstanceType
+	a.Infra.Status.MasterInstanceType = availableInstance.InstanceType
+	a.Infra.Status.NodeInstanceType = availableInstance.InstanceType
 	a.Infra.Status.ZoneID = availableInstance.ZoneID
-	logger.Info("fetch resource success %s: %s", "ZoneID", a.Infra.Status.ZoneID)
-	a.Infra.Status.InstanceType = availableInstance.InstanceType
-	logger.Info("fetch resource success %s: %s", "InstanceType", a.Infra.Status.InstanceType)
-	a.Infra.Status.SystemCategory = availableInstance.SystemCategory
-	logger.Info("fetch resource success %s: %s", "SystemCategory", a.Infra.Status.SystemCategory)
-	a.Infra.Status.DataCategory = availableInstance.DataCategory
-	logger.Info("fetch resource success %s: %s", "DataCategory", a.Infra.Status.DataCategory)
 
+	logger.Info("fetch resource success %s: %s", "ZoneID", a.Infra.Status.ZoneID)
+	logger.Info("fetch resource success %s: %s", "InstanceType", a.Infra.Spec.Instance.Type)
 	return nil
 }
 

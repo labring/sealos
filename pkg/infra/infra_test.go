@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 
@@ -39,7 +39,10 @@ func TestApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
-			IsSeize:  true,
+			Instance: v2.Instance{
+				IsSeize: true,
+				Type:    "ecs.c6r.large",
+			},
 			Platform: v2.ARM64,
 			Masters: v2.Hosts{
 				Count:  1,

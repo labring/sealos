@@ -50,12 +50,19 @@ type Disks struct {
 	Data   []string `json:"data,omitempty"`
 }
 
+type Instance struct {
+	SystemCategory string `json:"system_category,omitempty"`
+	DataCategory   string `json:"data_category,omitempty"`
+	Type           string `json:"type,omitempty"`
+	IsSeize        bool   `json:"is_seize,omitempty"`
+	ImageID        string `json:"image_id,omitempty"`
+}
+
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of Infra
 	// Important: Run "make" to regenerate code after modifying this file
-	//SpotAsPriceGo
-	IsSeize bool `json:"is_seize"`
+	Instance Instance `json:"instance"`
 	// Foo is an example field of Infra. Edit types.go to remove/update
 	Provider Provider `json:"provider,omitempty"`
 	Platform Platform `json:"platform,omitempty"`
@@ -74,11 +81,6 @@ type InfraStatus struct {
 	VSwitchID       string `json:"v_switch_id,omitempty"`
 	SecurityGroupID string `json:"security_group_id,omitempty"`
 
-	SystemCategory string `json:"system_category,omitempty"`
-	DataCategory   string `json:"data_category,omitempty"`
-
-	InstanceType string `json:"instance_type,omitempty"`
-
 	Master0ID         string `json:"master0_id,omitempty"`
 	Master0InternalIP string `json:"master0_internal_ip,omitempty"`
 	EIP               string `json:"eip,omitempty"`
@@ -90,8 +92,10 @@ type InfraStatus struct {
 	Masters []string `json:"masters,omitempty"`
 	Nodes   []string `json:"nodes,omitempty"`
 
+	MasterInstanceType string `json:"master_instance_type,omitempty"`
+	NodeInstanceType   string `json:"node_instance_type,omitempty"`
+
 	SpotStrategy               string `json:"spot_strategy,omitempty"`
-	ImageID                    string `json:"image_id,omitempty"`
 	ShouldBeDeleteInstancesIDs string `json:"should_be_delete_instances_ids,omitempty"`
 }
 

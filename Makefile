@@ -83,9 +83,3 @@ deepcopy:
       -O zz_generated.deepcopy   \
       --go-header-file "$(HEAD_FILE)" \
       --output-base "${GOPATH}/src"
-defaulter:
-	defaulter-gen \
-      --input-dirs="$(INPUT_DIR)" \
-      -O zz_generated.defaulter \
-      --go-header-file "$(HEAD_FILE)" \
-      --output-base "${GOPATH}/src"

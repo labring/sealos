@@ -15,6 +15,7 @@
 package aliyun
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/fanux/sealos/pkg/types/validation"
@@ -205,8 +206,43 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
+	if err := v2.Default(a.Infra, defaultInfra); err != nil {
+		return err
+	}
 	if err := validation.ValidateInfra(a.Infra); len(err) != 0 {
 		return err.ToAggregate()
 	}
 	return a.Reconcile()
+}
+
+func defaultInfra(infra *v2.Infra) error {
+	//https://help.aliyun.com/document_detail/63440.htm?spm=a2c4g.11186623.0.0.f5952752gkxpB7#t9856.html
+	if infra.Spec.Instance.IsSeize {
+		infra.Status.SpotStrategy = "SpotAsPriceGo"
+	} else {
+		infra.Status.SpotStrategy = "NoSpot"
+	}
+	if infra.Spec.Platform == v2.ARM64 {
+		switch infra.Status.RegionID {
+		case "cn-shanghai":
+			infra.Status.ZoneID = "cn-shanghai-l"
+		case "cn-beijing":
+			infra.Status.ZoneID = "cn-beijing-k"
+		case "cn-hangzhou":
+			infra.Status.ZoneID = "cn-hangzhou-i"
+		default:
+			return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
+		}
+		infra.Spec.Instance.ImageID = defaultImageArmID
+	} else {
+		infra.Spec.Instance.ImageID = defaultImageAmdID
+	}
+	//"cloud_efficiency", "cloud_essd", "cloud_ssd"
+	if infra.Spec.Instance.SystemCategory == "" {
+		infra.Spec.Instance.SystemCategory = "cloud_efficiency"
+	}
+	if infra.Spec.Instance.DataCategory == "" {
+		infra.Spec.Instance.DataCategory = "cloud_efficiency"
+	}
+	return nil
 }

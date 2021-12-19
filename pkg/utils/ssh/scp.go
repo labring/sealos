@@ -39,7 +39,7 @@ func (ss *SSH) CopyForMD5(host, localFilePath, remoteFilePath, md5 string) bool 
 	//如果有md5则可以验证
 	//如果没有md5则拿到本地数据后验证
 	if md5 == "" {
-		md5 = utils.FromLocal(localFilePath)
+		md5 = utils.Md5File(localFilePath)
 	}
 	logger.Debug("[ssh]source file md5 value is %s", md5)
 	ss.Copy(host, localFilePath, remoteFilePath)
@@ -362,7 +362,7 @@ func (ss *SSH) copyLocalFileToRemote(host string, sshClient *ssh.Client, sftpCli
 
 func (ss *SSH) isCopyMd5Success(sshClient *ssh.Client, localFile, remoteFile string) bool {
 	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFile)
-	localMd5 := utils.FromLocal(localFile)
+	localMd5 := utils.Md5File(localFile)
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return false
@@ -399,7 +399,7 @@ func (ss *SSH) isCopyMd5Success(sshClient *ssh.Client, localFile, remoteFile str
 }
 
 func (ss *SSH) ValidateMd5sumLocalWithRemote(host, localFile, remoteFile string) bool {
-	localMd5 := utils.FromLocal(localFile)
+	localMd5 := utils.Md5File(localFile)
 	return localMd5 == ss.Md5Sum(host, remoteFile)
 }
 

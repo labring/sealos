@@ -17,13 +17,11 @@ package utils
 import (
 	"fmt"
 	"os"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const md5sumCmd = "md5sum %s | cut -d\" \" -f1"
 
-func FromLocal(localPath string) string {
+func Md5File(localPath string) string {
 	cmd := fmt.Sprintf(md5sumCmd, localPath)
 	return BashEval(cmd)
 }
@@ -37,13 +35,11 @@ func UserHomeDir() string {
 	return home
 }
 
-func FileExist(filename string) bool {
-	_, err := os.Stat(filename)
-	if !os.IsNotExist(err) {
-		if err == nil {
-			return true
-		}
-		logger.Warn(err)
+func FileExist(path string) bool {
+	_, err := os.Stat(path)
+	if err == nil || os.IsExist(err) {
+		return true
 	}
+
 	return false
 }

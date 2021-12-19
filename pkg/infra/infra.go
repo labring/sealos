@@ -36,7 +36,6 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 	aliProvider := new(aliyun.AliProvider)
 	aliProvider.Config = *config
 	aliProvider.Infra = infra
-	v2.Default(infra)
 	err = aliProvider.NewClient()
 	if err != nil {
 		return nil, err
