@@ -51,11 +51,11 @@ type Disks struct {
 }
 
 type Instance struct {
-	SystemCategory string `json:"system_category,omitempty"`
-	DataCategory   string `json:"data_category,omitempty"`
+	SystemCategory string `json:"systemCategory,omitempty"`
+	DataCategory   string `json:"dataCategory,omitempty"`
 	Type           string `json:"type,omitempty"`
-	IsSeize        bool   `json:"is_seize,omitempty"`
-	ImageID        string `json:"image_id,omitempty"`
+	IsSeize        bool   `json:"isSeize,omitempty"`
+	ImageID        string `json:"imageID,omitempty"`
 }
 
 // InfraSpec defines the desired state of Infra
@@ -74,29 +74,29 @@ type InfraSpec struct {
 
 // InfraStatus defines the observed state of Infra
 type InfraStatus struct {
-	ZoneID   string `json:"zone_id,omitempty"`
-	RegionID string `json:"region_id,omitempty"`
+	ZoneID   string `json:"zoneID,omitempty"`
+	RegionID string `json:"regionID,omitempty"`
 
-	VpcID           string `json:"vpc_id,omitempty"`
-	VSwitchID       string `json:"v_switch_id,omitempty"`
-	SecurityGroupID string `json:"security_group_id,omitempty"`
+	VpcID           string `json:"vpcID,omitempty"`
+	VSwitchID       string `json:"vSwitchID,omitempty"`
+	SecurityGroupID string `json:"securityGroupID,omitempty"`
 
-	Master0ID         string `json:"master0_id,omitempty"`
-	Master0InternalIP string `json:"master0_internal_ip,omitempty"`
+	Master0ID         string `json:"master0ID,omitempty"`
+	Master0InternalIP string `json:"master0InternalIP,omitempty"`
 	EIP               string `json:"eip,omitempty"`
-	EIPID             string `json:"eip_id,omitempty"`
+	EIPID             string `json:"eipID,omitempty"`
 
-	MasterIDs string `json:"master_ids,omitempty"`
-	NodeIDs   string `json:"node_ids,omitempty"`
+	MasterIDs string `json:"masterIDs,omitempty"`
+	NodeIDs   string `json:"nodeIDs,omitempty"`
 
 	Masters []string `json:"masters,omitempty"`
 	Nodes   []string `json:"nodes,omitempty"`
 
-	MasterInstanceType string `json:"master_instance_type,omitempty"`
-	NodeInstanceType   string `json:"node_instance_type,omitempty"`
+	MasterInstanceType string `json:"masterInstanceType,omitempty"`
+	NodeInstanceType   string `json:"nodeInstanceType,omitempty"`
 
-	SpotStrategy               string `json:"spot_strategy,omitempty"`
-	ShouldBeDeleteInstancesIDs string `json:"should_be_delete_instances_ids,omitempty"`
+	SpotStrategy               string `json:"spotStrategy,omitempty"`
+	ShouldBeDeleteInstancesIDs string `json:"shouldBeDeleteInstancesIDs,omitempty"`
 }
 
 // +kubebuilder:object:root=true
