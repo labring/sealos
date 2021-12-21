@@ -15,8 +15,9 @@
 package aliyun
 
 import (
-	"errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/fanux/sealos/pkg/types/validation"
 
@@ -40,20 +41,13 @@ const (
 	DeleteVSwitch       ActionName = "DeleteVSwitch"
 	DeleteSecurityGroup ActionName = "DeleteSecurityGroup"
 	DeleteVPC           ActionName = "DeleteVPC"
-	GetSystemInfo       ActionName = "GetSystemInfo"
+	GetZoneID           ActionName = "GetZoneID"
 )
 
 type AliProvider struct {
-	Config    Config
 	EcsClient ecs.Client
 	VpcClient vpc.Client
 	Infra     *v2.Infra
-}
-
-type Config struct {
-	AccessKey    string
-	AccessSecret string
-	regionID     string
 }
 
 type Alifunc func() error
@@ -98,19 +92,22 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 		return aliProvider.ReconcileResource(SecurityGroupID, aliProvider.CreateSecurityGroup)
 	},
 	ReconcileInstance: func(aliProvider *AliProvider) error {
-		err := aliProvider.ReconcileInstances(Master)
-		if err != nil {
-			return err
+		var errorMsg []string
+		for i, h := range aliProvider.Infra.Spec.Hosts {
+			host := &h
+			status := &aliProvider.Infra.Status.Hosts[i]
+			err := aliProvider.ReconcileInstances(host, status)
+			if err != nil {
+				errorMsg = append(errorMsg, err.Error())
+			}
 		}
-
-		err = aliProvider.ReconcileInstances(Node)
-		if err != nil {
-			return err
+		if len(errorMsg) == 0 {
+			return nil
 		}
-		return nil
+		return errors.New(strings.Join(errorMsg, " && "))
 	},
-	GetSystemInfo: func(aliProvider *AliProvider) error {
-		return aliProvider.ReconcileResource(SystemInfo, aliProvider.SystemInfo)
+	GetZoneID: func(aliProvider *AliProvider) error {
+		return aliProvider.ReconcileResource(ZoneID, aliProvider.GetZoneID)
 	},
 	BindEIP: func(aliProvider *AliProvider) error {
 		return aliProvider.ReconcileResource(EipID, aliProvider.BindEipForMaster0)
@@ -123,18 +120,18 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 	},
 	ClearInstances: func(aliProvider *AliProvider) {
 		var instanceIDs []string
-		roles := []string{Master, Node}
-		for _, role := range roles {
-			instances, err := aliProvider.GetInstancesInfo(role, JustGetInstanceInfo)
+		for _, h := range aliProvider.Infra.Status.Hosts {
+			instances, err := aliProvider.GetInstancesInfo(h.Roles, JustGetInstanceInfo)
 			if err != nil {
-				logger.Error("get %s instanceinfo failed %v", role, err)
+				logger.Error("get %s instanceinfo failed %v", strings.Join(h.Roles, ","), err)
 			}
 			for _, instance := range instances {
 				instanceIDs = append(instanceIDs, instance.InstanceID)
 			}
 		}
+
 		if len(instanceIDs) != 0 {
-			aliProvider.Infra.Status.ShouldBeDeleteInstancesIDs = strings.Join(instanceIDs, ",")
+			ShouldBeDeleteInstancesIDs.SetValue(aliProvider.Infra.Status, strings.Join(instanceIDs, ","))
 		}
 		aliProvider.DeleteResource(ShouldBeDeleteInstancesIDs, aliProvider.DeleteInstances)
 	},
@@ -150,17 +147,17 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
-	ecsClient, err := ecs.NewClientWithAccessKey(a.Config.regionID, a.Config.AccessKey, a.Config.AccessSecret)
+	a.Infra.Status.Cluster.RegionID = a.Infra.Spec.Cluster.RegionID()
+	ecsClient, err := ecs.NewClientWithAccessKey(a.Infra.Status.Cluster.RegionID, a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret)
 	if err != nil {
 		return err
 	}
-	vpcClient, err := vpc.NewClientWithAccessKey(a.Config.regionID, a.Config.AccessKey, a.Config.AccessSecret)
+	vpcClient, err := vpc.NewClientWithAccessKey(a.Infra.Status.Cluster.RegionID, a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret)
 	if err != nil {
 		return err
 	}
 	a.EcsClient = *ecsClient
 	a.VpcClient = *vpcClient
-	a.Infra.Status.RegionID = a.Config.regionID
 	return nil
 }
 
@@ -178,9 +175,6 @@ func (a *AliProvider) ClearCluster() {
 }
 
 func (a *AliProvider) Reconcile() error {
-	if a.Infra.Annotations == nil {
-		a.Infra.Annotations = make(map[string]string)
-	}
 	if a.Infra.DeletionTimestamp != nil {
 		logger.Info("DeletionTimestamp not nil Clear Infra")
 		a.ClearCluster()
@@ -188,7 +182,7 @@ func (a *AliProvider) Reconcile() error {
 	}
 	todolist := []ActionName{
 		CreateVPC,
-		GetSystemInfo,
+		GetZoneID,
 		CreateVSwitch,
 		CreateSecurityGroup,
 		ReconcileInstance,
@@ -198,6 +192,7 @@ func (a *AliProvider) Reconcile() error {
 	for _, actionname := range todolist {
 		err := RecocileFuncMap[actionname](a)
 		if err != nil {
+			logger.Error("actionname: %s,err: %v", actionname, err)
 			return err
 		}
 	}
@@ -217,32 +212,25 @@ func (a *AliProvider) Apply() error {
 
 func defaultInfra(infra *v2.Infra) error {
 	//https://help.aliyun.com/document_detail/63440.htm?spm=a2c4g.11186623.0.0.f5952752gkxpB7#t9856.html
-	if infra.Spec.Instance.IsSeize {
-		infra.Status.SpotStrategy = "SpotAsPriceGo"
+	if infra.Spec.Cluster.IsSeize {
+		infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
 	} else {
-		infra.Status.SpotStrategy = "NoSpot"
+		infra.Status.Cluster.SpotStrategy = "NoSpot"
 	}
-	if infra.Spec.Platform == v2.ARM64 {
-		switch infra.Status.RegionID {
-		case "cn-shanghai":
-			infra.Status.ZoneID = "cn-shanghai-l"
-		case "cn-beijing":
-			infra.Status.ZoneID = "cn-beijing-k"
-		case "cn-hangzhou":
-			infra.Status.ZoneID = "cn-hangzhou-i"
-		default:
-			return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
-		}
-		infra.Spec.Instance.ImageID = defaultImageArmID
-	} else {
-		infra.Spec.Instance.ImageID = defaultImageAmdID
-	}
-	//"cloud_efficiency", "cloud_essd", "cloud_ssd"
-	if infra.Spec.Instance.SystemCategory == "" {
-		infra.Spec.Instance.SystemCategory = "cloud_efficiency"
-	}
-	if infra.Spec.Instance.DataCategory == "" {
-		infra.Spec.Instance.DataCategory = "cloud_efficiency"
-	}
+	//if infra.Spec.Platform == v2.ARM64 {
+	//	switch infra.Status.RegionID {
+	//	case "cn-shanghai":
+	//		infra.Status.ZoneID = "cn-shanghai-l"
+	//	case "cn-beijing":
+	//		infra.Status.ZoneID = "cn-beijing-k"
+	//	case "cn-hangzhou":
+	//		infra.Status.ZoneID = "cn-hangzhou-i"
+	//	default:
+	//		return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
+	//	}
+	//	infra.Spec.Instance.ImageID = defaultImageArmID
+	//} else {
+	//	infra.Spec.Instance.ImageID = defaultImageAmdID
+	//}
 	return nil
 }

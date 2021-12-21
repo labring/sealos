@@ -17,48 +17,42 @@ package aliyun
 import (
 	"errors"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
-
-	"github.com/fanux/sealos/pkg/utils"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type VpcManager struct {
-	Config Config
 	Client *vpc.Client
 }
 
-func (a *AliProvider) RetryVpcRequest(request requests.AcsRequest, response responses.AcsResponse) error {
-	return utils.Retry(TryTimes, TrySleepTime, func() error {
-		err := a.VpcClient.DoAction(request, response)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
 func (a *AliProvider) CreateVPC() error {
+	if vpcID := VpcID.ClusterValue(a.Infra.Spec); vpcID != "" {
+		VpcID.SetValue(a.Infra.Status, vpcID)
+		return nil
+	}
 	request := vpc.CreateCreateVpcRequest()
 	request.Scheme = Scheme
-	request.RegionId = a.Infra.Status.RegionID
+	request.RegionId = a.Infra.Status.Cluster.RegionID
 	//response, err := d.Client.CreateVpc(request)
 	response := vpc.CreateCreateVpcResponse()
 	err := a.RetryVpcRequest(request, response)
 	if err != nil {
 		return err
 	}
-	a.Infra.Status.VpcID = response.VpcId
+	VpcID.SetValue(a.Infra.Status, response.VpcId)
 	return nil
 }
 
 func (a *AliProvider) DeleteVPC() error {
+	if VpcID.ClusterValue(a.Infra.Spec) != "" && VpcID.Value(a.Infra.Status) != "" {
+		return nil
+	}
 	request := vpc.CreateDeleteVpcRequest()
 	request.Scheme = Scheme
-	request.VpcId = a.Infra.Status.VpcID
+	request.VpcId = VpcID.Value(a.Infra.Status)
 
 	//response, err := d.Client.DeleteVpc(request)
 	response := vpc.CreateDeleteVpcResponse()
@@ -66,48 +60,70 @@ func (a *AliProvider) DeleteVPC() error {
 }
 
 func (a *AliProvider) CreateVSwitch() error {
+	if vSwitchID := VSwitchID.ClusterValue(a.Infra.Spec); vSwitchID != "" {
+		VSwitchID.SetValue(a.Infra.Status, vSwitchID)
+		return nil
+	}
 	request := vpc.CreateCreateVSwitchRequest()
 	request.Scheme = Scheme
-	request.ZoneId = a.Infra.Status.ZoneID
+	request.ZoneId = a.Infra.Status.Cluster.ZoneID
 	request.CidrBlock = CidrBlock
-	request.VpcId = a.Infra.Status.VpcID
-	request.RegionId = a.Infra.Status.RegionID
+	request.VpcId = VpcID.Value(a.Infra.Status)
+	request.RegionId = a.Infra.Status.Cluster.RegionID
 	//response, err := d.Client.CreateVSwitch(request)
 	response := vpc.CreateCreateVSwitchResponse()
 	err := a.RetryVpcRequest(request, response)
 	if err != nil {
 		return err
 	}
-	a.Infra.Status.VSwitchID = response.VSwitchId
+	VSwitchID.SetValue(a.Infra.Status, response.VSwitchId)
+
 	return nil
 }
 
 func (a *AliProvider) DeleteVSwitch() error {
+	if VSwitchID.ClusterValue(a.Infra.Spec) != "" && VSwitchID.Value(a.Infra.Status) != "" {
+		return nil
+	}
 	request := vpc.CreateDeleteVSwitchRequest()
 	request.Scheme = Scheme
-	request.VSwitchId = a.Infra.Status.VSwitchID
+	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 
 	response := vpc.CreateDeleteVSwitchResponse()
 	return a.RetryVpcRequest(request, response)
 }
 
-func (a *AliProvider) SystemInfo() error {
-	availableInstance, err := a.GetAvailableResourcesForSystem()
+func (a *AliProvider) GetZoneID() error {
+	defer func() {
+		logger.Info("create resource success %s: %s", "GetZoneID", a.Infra.Status.Cluster.ZoneID)
+	}()
+	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
+		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[utils.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
+		return nil
+	}
+	request := vpc.CreateDescribeZonesRequest()
+	request.Scheme = Scheme
+	response := vpc.CreateDescribeZonesResponse()
+	err := a.RetryVpcRequest(request, response)
 	if err != nil {
 		return err
 	}
-	a.Infra.Spec.Instance.Type = availableInstance.InstanceType
-	a.Infra.Status.MasterInstanceType = availableInstance.InstanceType
-	a.Infra.Status.NodeInstanceType = availableInstance.InstanceType
-	a.Infra.Status.ZoneID = availableInstance.ZoneID
-
-	logger.Info("fetch resource success %s: %s", "ZoneID", a.Infra.Status.ZoneID)
-	logger.Info("fetch resource success %s: %s", "InstanceType", a.Infra.Spec.Instance.Type)
+	if len(response.Zones.Zone) == 0 {
+		return errors.New("not available ZoneID ")
+	}
+	a.Infra.Status.Cluster.ZoneID = response.Zones.Zone[0].ZoneId
 	return nil
 }
 
 func (a *AliProvider) BindEipForMaster0() error {
-	instances, err := a.GetInstancesInfo(Master, JustGetInstanceInfo)
+	var host *v1beta1.HostStatus
+	for _, h := range a.Infra.Status.Hosts {
+		if v1beta1.In(v1beta1.Master, h.Roles) {
+			host = &h
+			break
+		}
+	}
+	instances, err := a.GetInstancesInfo(host.Roles, JustGetInstanceInfo)
 	if err != nil {
 		return err
 	}
@@ -123,10 +139,10 @@ func (a *AliProvider) BindEipForMaster0() error {
 	if err != nil {
 		return err
 	}
-	a.Infra.Status.EIP = eIP
-	a.Infra.Status.EIPID = eIPID
-	a.Infra.Status.Master0ID = master0.InstanceID
-	a.Infra.Status.Master0InternalIP = master0.PrimaryIPAddress
+	a.Infra.Status.Cluster.EIP = eIP
+	EipID.SetValue(a.Infra.Status, eIPID)
+	a.Infra.Status.Cluster.Master0ID = master0.InstanceID
+	a.Infra.Status.Cluster.Master0InternalIP = master0.PrimaryIPAddress
 	return nil
 }
 
@@ -156,7 +172,7 @@ func (a *AliProvider) AssociateEipAddress(instanceID, eipID string) error {
 func (a *AliProvider) UnassociateEipAddress() error {
 	request := vpc.CreateUnassociateEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Infra.Status.EIPID
+	request.AllocationId = EipID.Value(a.Infra.Status)
 	request.Force = requests.NewBoolean(true)
 	response := vpc.CreateUnassociateEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
@@ -169,7 +185,7 @@ func (a *AliProvider) ReleaseEipAddress() error {
 	}
 	request := vpc.CreateReleaseEipAddressRequest()
 	request.Scheme = Scheme
-	request.AllocationId = a.Infra.Status.EIPID
+	request.AllocationId = EipID.Value(a.Infra.Status)
 	response := vpc.CreateReleaseEipAddressResponse()
 	return a.RetryVpcRequest(request, response)
 }
