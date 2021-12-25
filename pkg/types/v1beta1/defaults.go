@@ -22,25 +22,58 @@ import (
 )
 
 func Default(infra *Infra, fn func(infra *Infra) error) error {
-	if string(infra.Spec.Platform) == "" {
-		infra.Spec.Platform = AMD64
-	}
-	if infra.Spec.Auth.User == "" {
-		infra.Spec.Auth.User = "root"
-	}
-	if infra.Spec.Masters.CPU <= 0 {
-		infra.Spec.Masters.CPU = 2
-	}
-	if infra.Spec.Masters.Memory <= 0 {
-		infra.Spec.Masters.Memory = 4
-	}
-	if len(infra.Spec.Masters.Disks.System) == 0 {
-		infra.Spec.Masters.Disks.System = "40"
-	}
-	if infra.Spec.Auth.Passwd == "" {
-		infra.Spec.Auth.Passwd = createPassword()
-	}
+	defaultCluster(infra)
+	defaultHosts(infra)
+	defaultToStatus(infra)
 	return fn(infra)
+}
+
+func defaultCluster(infra *Infra) {
+	infra.Spec.Cluster.AccessChannels.SSH.Port = 22
+	if infra.Spec.Cluster.AccessChannels.SSH.Passwd == "" {
+		infra.Spec.Cluster.AccessChannels.SSH.Passwd = createPassword()
+	}
+	if infra.Spec.Cluster.Annotations == nil {
+		infra.Spec.Cluster.Annotations = make(map[string]string)
+	}
+}
+
+func defaultHosts(infra *Infra) {
+	for i, h := range infra.Spec.Hosts {
+		if string(h.Arch) == "" {
+			infra.Spec.Hosts[i].Arch = AMD64
+		}
+		if h.Memory <= 0 {
+			infra.Spec.Hosts[i].Memory = 4
+		}
+		if h.CPU <= 0 {
+			infra.Spec.Hosts[i].CPU = 2
+		}
+		if len(h.Disks) == 0 {
+			disks := make([]Disk, 0)
+			disks = append(disks, Disk{
+				Capacity: 50,
+			})
+			infra.Spec.Hosts[i].Disks = disks
+		}
+	}
+}
+
+func defaultToStatus(infra *Infra) {
+	if infra.Status.Cluster.Annotations == nil {
+		infra.Status.Cluster.Annotations = make(map[string]string)
+	}
+	status := infra.Status.Hosts
+	if status == nil {
+		status = make([]HostStatus, 0)
+	}
+	for _, h := range infra.Spec.Hosts {
+		index := infra.Status.FindHostsByRoles(h.Roles)
+		if index == -1 {
+			status = append(status, HostStatus{Roles: h.Roles, Arch: h.Arch})
+		}
+	}
+	infra.Status.Hosts = status
 }
 
 const (
@@ -48,7 +81,11 @@ const (
 	specials       = "~=+%^*/()[]{}/!@#$?|"
 	letter         = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	passwordLength = 16
+	Master         = "master"
+	Node           = "node"
 )
+
+type HostRole string
 
 func createPassword() string {
 	rand.Seed(time.Now().UnixNano())
@@ -64,4 +101,21 @@ func createPassword() string {
 		buf[i], buf[j] = buf[j], buf[i]
 	})
 	return string(buf)
+}
+
+func IsMaster(roles []string) bool {
+	return In(Master, roles)
+}
+
+func IsNode(roles []string) bool {
+	return In(Node, roles)
+}
+
+func In(key string, slice []string) bool {
+	for _, s := range slice {
+		if key == s {
+			return true
+		}
+	}
+	return false
 }

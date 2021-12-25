@@ -16,6 +16,7 @@ package infra
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/fanux/sealos/pkg/infra/aliyun"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -27,23 +28,31 @@ type Interface interface {
 	Apply() error
 }
 
-func newAliProvider(infra *v2.Infra) (Interface, error) {
-	config := new(aliyun.Config)
-	err := aliyun.LoadConfig(config)
-	if err != nil {
-		return nil, err
+const (
+	EnvAccessKey    = "ECS_AKID"
+	EnvAccessSecret = "ECS_AKSK"
+)
+
+func loadConfig(infra *v2.Infra) {
+	if ak := os.Getenv(EnvAccessKey); ak != "" {
+		infra.Spec.Credential.AccessKey = ak
 	}
+	if sk := os.Getenv(EnvAccessSecret); sk != "" {
+		infra.Spec.Credential.AccessSecret = sk
+	}
+}
+
+func newAliProvider(infra *v2.Infra) (Interface, error) {
 	aliProvider := new(aliyun.AliProvider)
-	aliProvider.Config = *config
 	aliProvider.Infra = infra
-	err = aliProvider.NewClient()
-	if err != nil {
+	if err := aliProvider.NewClient(); err != nil {
 		return nil, err
 	}
 	return aliProvider, nil
 }
 
 func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
+	loadConfig(infra)
 	switch infra.Spec.Provider {
 	case v2.AliyunProvider:
 		return newAliProvider(infra)

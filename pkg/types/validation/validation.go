@@ -15,32 +15,59 @@
 package validation
 
 import (
+	"strings"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 // ValidateInfraName validates that the given name can be used as a infra name.
 var ValidateInfraName = apimachineryvalidation.NameIsDNSSubdomain
 
-func validateHosts(hosts *v1beta1.Hosts, fldPath *field.Path) field.ErrorList {
+func validateHost(host *v1beta1.Host, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
-	if hosts.Count == 0 {
-		allErrors = append(allErrors, field.Invalid(fldPath.Key("count"), hosts.Count,
-			"hosts count not set"))
+	if host.Count == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("count"), host.Count,
+			"host count not set"))
 	}
-	if hosts.CPU == 0 {
-		allErrors = append(allErrors, field.Invalid(fldPath.Key("cpu"), hosts.Count,
-			"hosts cpu not set"))
+	if host.CPU == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("cpu"), host.CPU,
+			"host cpu not set"))
 	}
-	if hosts.Memory == 0 {
-		allErrors = append(allErrors, field.Invalid(fldPath.Key("memory"), hosts.Count,
-			"hosts memory not set"))
+	if host.Memory == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("memory"), host.Memory,
+			"host memory not set"))
 	}
-	if len(hosts.Disks.System) == 0 {
-		allErrors = append(allErrors, field.Invalid(fldPath.Child("disks").Key("system"), hosts.Count,
-			"hosts system disk not set"))
+	if len(host.Disks) == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("disks"), host.Disks,
+			"host disk not set"))
+	} else {
+		for _, d := range host.Disks {
+			if d.Capacity <= 0 {
+				allErrors = append(allErrors, field.Invalid(fldPath.Child("disks").Key("capacity"), d.Capacity,
+					"host disk capacity not set"))
+			}
+		}
+	}
+	switch host.Arch {
+	case v1beta1.ARM64:
+	case v1beta1.AMD64:
+	default:
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("arch"), host.Arch,
+			"arch not support"))
+	}
+	return allErrors
+}
+
+func validateCluster(cluster *v1beta1.Cluster, fldPath *field.Path) field.ErrorList {
+	allErrors := field.ErrorList{}
+
+	if len(cluster.RegionID()) == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("regionIDs"), cluster.RegionIDs,
+			"regionIDs not empty"))
 	}
 	return allErrors
 }
@@ -53,18 +80,27 @@ func ValidateInfra(infra *v1beta1.Infra) field.ErrorList {
 func validateInfraSpec(spec *v1beta1.InfraSpec, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
-	allErrors = append(allErrors, validateHosts(&spec.Masters, fldPath.Child("masters"))...)
-
-	if spec.Nodes != nil {
-		allErrors = append(allErrors, validateHosts(spec.Nodes, fldPath.Child("nodes"))...)
+	allErrors = append(allErrors, validateCluster(&spec.Cluster, fldPath.Child("cluster"))...)
+	var roles []string
+	roleSet := sets.NewString()
+	if spec.Hosts != nil {
+		for i, h := range spec.Hosts {
+			allErrors = append(allErrors, validateHost(&h, fldPath.Child("hosts").Index(i))...)
+			roles = append(roles, string(h.ToRole()))
+			if !roleSet.Has(strings.Join(h.Roles, ",")) {
+				roleSet.Insert(strings.Join(h.Roles, ","))
+			} else {
+				allErrors = append(allErrors, field.Invalid(fldPath.Child("hosts").Index(i), h,
+					"hosts has repeat"))
+			}
+		}
+	} else {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("hosts"), spec.Hosts,
+			"hosts not empty"))
 	}
-
-	switch spec.Platform {
-	case v1beta1.ARM64:
-	case v1beta1.AMD64:
-	default:
-		allErrors = append(allErrors, field.Invalid(fldPath.Key("platform"), spec.Platform,
-			"spec platform not support"))
+	if !v1beta1.In(v1beta1.Master, roles) {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("hosts"), spec.Hosts,
+			"hosts must has role is master"))
 	}
 
 	return allErrors
@@ -75,20 +111,8 @@ func ValidateInfraUpdate(infra, oldInfra *v1beta1.Infra) field.ErrorList {
 	if newInfraClone.Spec.Provider != oldInfra.Spec.Provider {
 		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Key("provider"), "fields can't modify are forbidden"))
 	}
-	if newInfraClone.Spec.Platform != oldInfra.Spec.Platform {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Key("platform"), "fields can't modify are forbidden"))
+	if !apiequality.Semantic.DeepEqual(newInfraClone.Spec.Credential, oldInfra.Spec.Credential) {
+		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Key("credential"), "fields can't modify are forbidden"))
 	}
-	if !apiequality.Semantic.DeepEqual(newInfraClone.Spec.Auth, oldInfra.Spec.Auth) {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Key("auth"), "fields can't modify are forbidden"))
-	}
-	if !apiequality.Semantic.DeepEqual(newInfraClone.Spec.Masters.Disks, oldInfra.Spec.Masters.Disks) {
-		allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("masters").Key("disks"), "fields can't modify are forbidden"))
-	}
-	if newInfraClone.Spec.Nodes != nil && oldInfra.Spec.Nodes != nil {
-		if !apiequality.Semantic.DeepEqual(newInfraClone.Spec.Nodes.Disks, oldInfra.Spec.Nodes.Disks) {
-			allErrs = append(allErrs, field.Forbidden(field.NewPath("spec").Child("nodes").Key("disks"), "fields can't modify are forbidden"))
-		}
-	}
-
 	return allErrs
 }
