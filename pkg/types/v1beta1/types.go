@@ -123,13 +123,15 @@ type ClusterStatus struct {
 	Master0InternalIP string            `json:"master0InternalIP,omitempty"`
 }
 type HostStatus struct {
-	Ready        bool     `json:"ready"`
-	Roles        []string `json:"roles"`
-	IDs          string   `json:"IDs,omitempty"`
-	IPs          []string `json:"IPs,omitempty"`
-	InstanceType string   `json:"instanceType,omitempty"`
-	Arch         Arch     `json:"arch,omitempty"`
-	ImageID      string   `json:"imageID,omitempty"`
+	Ready          bool     `json:"ready"`
+	Roles          []string `json:"roles"`
+	IDs            string   `json:"IDs,omitempty"`
+	IPs            []string `json:"IPs,omitempty"`
+	InstanceType   string   `json:"instanceType,omitempty"`
+	SystemCategory string   `json:"systemCategory"`
+	DataCategory   string   `json:"dataCategory,omitempty"`
+	Arch           Arch     `json:"arch,omitempty"`
+	ImageID        string   `json:"imageID,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
