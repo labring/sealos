@@ -63,10 +63,15 @@ func defaultToStatus(infra *Infra) {
 	if infra.Status.Cluster.Annotations == nil {
 		infra.Status.Cluster.Annotations = make(map[string]string)
 	}
-
-	status := make([]HostStatus, len(infra.Spec.Hosts))
-	for i := range infra.Spec.Hosts {
-		status[i] = HostStatus{Roles: infra.Spec.Hosts[i].Roles}
+	status := infra.Status.Hosts
+	if status == nil {
+		status = make([]HostStatus, 0)
+	}
+	for _, h := range infra.Spec.Hosts {
+		index := infra.Status.FindHostsByRoles(h.Roles)
+		if index == -1 {
+			status = append(status, HostStatus{Roles: h.Roles, Arch: h.Arch})
+		}
 	}
 	infra.Status.Hosts = status
 }

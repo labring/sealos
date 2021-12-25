@@ -15,7 +15,10 @@
 package aliyun
 
 import (
+	"fmt"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/pkg/errors"
 
@@ -54,7 +57,7 @@ type Alifunc func() error
 
 func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action Alifunc) error {
 	if resourceKey.Value(a.Infra.Status) != "" {
-		logger.Warn("create resource exists %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
+		logger.Debug("using resource status value %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
 		return nil
 	}
 	if err := action(); err != nil {
@@ -93,14 +96,43 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 	},
 	ReconcileInstance: func(aliProvider *AliProvider) error {
 		var errorMsg []string
-		for i, h := range aliProvider.Infra.Spec.Hosts {
+		current := sets.NewString()
+		spec := sets.NewString()
+		for _, h := range aliProvider.Infra.Status.Hosts {
+			current.Insert(strings.Join(h.Roles, ","))
+		}
+		for _, h := range aliProvider.Infra.Spec.Hosts {
+			spec.Insert(strings.Join(h.Roles, ","))
 			host := &h
-			status := &aliProvider.Infra.Status.Hosts[i]
+			statusIndex := aliProvider.Infra.Status.FindHostsByRoles(h.Roles)
+			if statusIndex < 0 {
+				errorMsg = append(errorMsg, fmt.Sprintf("infra status not fount in role tag: %v", h.Roles))
+				continue
+			}
+			status := &aliProvider.Infra.Status.Hosts[statusIndex]
 			err := aliProvider.ReconcileInstances(host, status)
 			if err != nil {
 				errorMsg = append(errorMsg, err.Error())
+				status.Ready = false
+			} else {
+				status.Ready = true
 			}
 		}
+		deleteData := current.Difference(spec)
+		var instanceIDs []string
+		finalStatus := aliProvider.Infra.Status.Hosts
+		for _, roles := range deleteData.List() {
+			statusIndex := aliProvider.Infra.Status.FindHostsByRolesString(roles)
+			ids := aliProvider.Infra.Status.Hosts[statusIndex].IDs
+			instanceIDs = append(instanceIDs, ids)
+			finalStatus = append(finalStatus[:statusIndex], finalStatus[statusIndex+1:]...)
+		}
+		if len(instanceIDs) != 0 {
+			ShouldBeDeleteInstancesIDs.SetValue(aliProvider.Infra.Status, strings.Join(instanceIDs, ","))
+			aliProvider.DeleteResource(ShouldBeDeleteInstancesIDs, aliProvider.DeleteInstances)
+			aliProvider.Infra.Status.Hosts = finalStatus
+		}
+
 		if len(errorMsg) == 0 {
 			return nil
 		}
@@ -121,9 +153,9 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 	ClearInstances: func(aliProvider *AliProvider) {
 		var instanceIDs []string
 		for _, h := range aliProvider.Infra.Status.Hosts {
-			instances, err := aliProvider.GetInstancesInfo(h.Roles, JustGetInstanceInfo)
+			instances, err := aliProvider.GetInstancesInfo(h.ToHost(), JustGetInstanceInfo)
 			if err != nil {
-				logger.Error("get %s instanceinfo failed %v", strings.Join(h.Roles, ","), err)
+				logger.Error("get %s instanceInfo failed %v", strings.Join(h.Roles, ","), err)
 			}
 			for _, instance := range instances {
 				instanceIDs = append(instanceIDs, instance.InstanceID)
@@ -192,8 +224,8 @@ func (a *AliProvider) Reconcile() error {
 	for _, actionname := range todolist {
 		err := RecocileFuncMap[actionname](a)
 		if err != nil {
-			logger.Error("actionname: %s,err: %v", actionname, err)
-			return err
+			logger.Warn("actionName: %s,err: %v ,skip it", actionname, err)
+			//return err
 		}
 	}
 
@@ -217,20 +249,5 @@ func defaultInfra(infra *v2.Infra) error {
 	} else {
 		infra.Status.Cluster.SpotStrategy = "NoSpot"
 	}
-	//if infra.Spec.Platform == v2.ARM64 {
-	//	switch infra.Status.RegionID {
-	//	case "cn-shanghai":
-	//		infra.Status.ZoneID = "cn-shanghai-l"
-	//	case "cn-beijing":
-	//		infra.Status.ZoneID = "cn-beijing-k"
-	//	case "cn-hangzhou":
-	//		infra.Status.ZoneID = "cn-hangzhou-i"
-	//	default:
-	//		return errors.New("not available ZoneID for arm, support RegionID[cn-shanghai,cn-beijing,cn-hangzhou]")
-	//	}
-	//	infra.Spec.Instance.ImageID = defaultImageArmID
-	//} else {
-	//	infra.Spec.Instance.ImageID = defaultImageAmdID
-	//}
 	return nil
 }

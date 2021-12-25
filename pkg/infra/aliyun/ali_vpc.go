@@ -16,6 +16,9 @@ package aliyun
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
@@ -31,6 +34,7 @@ type VpcManager struct {
 func (a *AliProvider) CreateVPC() error {
 	if vpcID := VpcID.ClusterValue(a.Infra.Spec); vpcID != "" {
 		VpcID.SetValue(a.Infra.Status, vpcID)
+		logger.Debug("VpcID using default value")
 		return nil
 	}
 	request := vpc.CreateCreateVpcRequest()
@@ -61,6 +65,7 @@ func (a *AliProvider) DeleteVPC() error {
 
 func (a *AliProvider) CreateVSwitch() error {
 	if vSwitchID := VSwitchID.ClusterValue(a.Infra.Spec); vSwitchID != "" {
+		logger.Debug("VSwitchID using default value")
 		VSwitchID.SetValue(a.Infra.Status, vSwitchID)
 		return nil
 	}
@@ -93,10 +98,53 @@ func (a *AliProvider) DeleteVSwitch() error {
 	return a.RetryVpcRequest(request, response)
 }
 
+func (a *AliProvider) CreateSecurityGroup() error {
+	if securityGroupID := SecurityGroupID.ClusterValue(a.Infra.Spec); securityGroupID != "" {
+		logger.Debug("securityGroupID using default value")
+		SecurityGroupID.SetValue(a.Infra.Status, securityGroupID)
+		return nil
+	}
+	request := ecs.CreateCreateSecurityGroupRequest()
+	request.Scheme = Scheme
+	request.RegionId = a.Infra.Status.Cluster.RegionID
+	request.VpcId = VpcID.Value(a.Infra.Status)
+	response := ecs.CreateCreateSecurityGroupResponse()
+	err := a.RetryEcsRequest(request, response)
+	if err != nil {
+		return err
+	}
+
+	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, SSHPortRange) {
+		return fmt.Errorf("authorize securitygroup ssh port failed")
+	}
+	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, APIServerPortRange) {
+		return fmt.Errorf("authorize securitygroup apiserver port failed")
+	}
+	SecurityGroupID.SetValue(a.Infra.Status, response.SecurityGroupId)
+	return nil
+}
+
+func (a *AliProvider) DeleteSecurityGroup() error {
+	if SecurityGroupID.ClusterValue(a.Infra.Spec) != "" && SecurityGroupID.Value(a.Infra.Status) != "" {
+		return nil
+	}
+	request := ecs.CreateDeleteSecurityGroupRequest()
+	request.Scheme = Scheme
+	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
+
+	response := ecs.CreateDeleteSecurityGroupResponse()
+	return a.RetryEcsRequest(request, response)
+}
+
 func (a *AliProvider) GetZoneID() error {
+	if a.Infra.Status.Cluster.ZoneID != "" {
+		logger.Debug("zoneID using status value")
+		return nil
+	}
 	defer func() {
 		logger.Info("create resource success %s: %s", "GetZoneID", a.Infra.Status.Cluster.ZoneID)
 	}()
+
 	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
 		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[utils.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
 		return nil
@@ -116,14 +164,17 @@ func (a *AliProvider) GetZoneID() error {
 }
 
 func (a *AliProvider) BindEipForMaster0() error {
-	var host *v1beta1.HostStatus
-	for _, h := range a.Infra.Status.Hosts {
-		if v1beta1.In(v1beta1.Master, h.Roles) {
-			host = &h
+	var host *v1beta1.Host
+	for i, h := range a.Infra.Status.Hosts {
+		if v1beta1.In(v1beta1.Master, h.Roles) && h.Ready {
+			host = &a.Infra.Spec.Hosts[i]
 			break
 		}
 	}
-	instances, err := a.GetInstancesInfo(host.Roles, JustGetInstanceInfo)
+	if host == nil {
+		return fmt.Errorf("bind eip for master error: ready master host not fount")
+	}
+	instances, err := a.GetInstancesInfo(host, JustGetInstanceInfo)
 	if err != nil {
 		return err
 	}
@@ -131,11 +182,11 @@ func (a *AliProvider) BindEipForMaster0() error {
 		return errors.New("can not find master0 ")
 	}
 	master0 := instances[0]
-	eIP, eIPID, err := a.AllocateEipAddress()
+	eIP, eIPID, err := a.allocateEipAddress()
 	if err != nil {
 		return err
 	}
-	err = a.AssociateEipAddress(master0.InstanceID, eIPID)
+	err = a.associateEipAddress(master0.InstanceID, eIPID)
 	if err != nil {
 		return err
 	}
@@ -146,7 +197,7 @@ func (a *AliProvider) BindEipForMaster0() error {
 	return nil
 }
 
-func (a *AliProvider) AllocateEipAddress() (eIP, eIPID string, err error) {
+func (a *AliProvider) allocateEipAddress() (eIP, eIPID string, err error) {
 	request := vpc.CreateAllocateEipAddressRequest()
 	request.Scheme = Scheme
 	request.Bandwidth = Bandwidth
@@ -159,7 +210,7 @@ func (a *AliProvider) AllocateEipAddress() (eIP, eIPID string, err error) {
 	return response.EipAddress, response.AllocationId, nil
 }
 
-func (a *AliProvider) AssociateEipAddress(instanceID, eipID string) error {
+func (a *AliProvider) associateEipAddress(instanceID, eipID string) error {
 	request := vpc.CreateAssociateEipAddressRequest()
 	request.Scheme = Scheme
 	request.InstanceId = instanceID
@@ -169,7 +220,7 @@ func (a *AliProvider) AssociateEipAddress(instanceID, eipID string) error {
 	return a.RetryVpcRequest(request, response)
 }
 
-func (a *AliProvider) UnassociateEipAddress() error {
+func (a *AliProvider) unAssociateEipAddress() error {
 	request := vpc.CreateUnassociateEipAddressRequest()
 	request.Scheme = Scheme
 	request.AllocationId = EipID.Value(a.Infra.Status)
@@ -179,7 +230,7 @@ func (a *AliProvider) UnassociateEipAddress() error {
 }
 
 func (a *AliProvider) ReleaseEipAddress() error {
-	err := a.UnassociateEipAddress()
+	err := a.unAssociateEipAddress()
 	if err != nil {
 		return err
 	}

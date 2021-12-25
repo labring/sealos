@@ -48,7 +48,6 @@ func (a *AliProvider) ListImage(host *v1beta1.Host) (string, error) {
 	var images []string
 
 	for _, image := range response.Images.Image {
-		//anolisos_7_9_arm64_20G_rhck_alibase_20211210.vhd
 		flag := true
 		imagesName := strings.ToLower(image.Platform)
 		imagesName = strings.ReplaceAll(imagesName, " ", "_")
@@ -86,11 +85,60 @@ func (a *AliProvider) ListImage(host *v1beta1.Host) (string, error) {
 	return images[utils.Rand(len(images))], nil
 }
 
+func (a *AliProvider) GetDiskCategories(host *v1beta1.Host) (system []string, data []string) {
+	categories := []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
+	if host.Disks[0].Category != "" {
+		system = []string{host.Disks[0].Category}
+	} else {
+		logger.Warn("host tags is %v,system category not set", host.Roles)
+		system = categories
+	}
+	if len(host.Disks) > 1 {
+		if host.Disks[1].Category != "" {
+			data = []string{host.Disks[1].Category}
+		} else {
+			logger.Warn("host tags is %v,data category not set", host.Roles)
+			data = categories
+		}
+	}
+	return
+}
+
 func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, error) {
 	if host.EcsType != "" {
 		return []string{host.EcsType}, nil
 	}
-	systemInstanceTypes, err := a.GetAvailableResource(host)
+	var systemInstanceTypes []string
+	var err error
+	systemDisk, dataDisk := a.GetDiskCategories(host)
+
+	for _, sys := range systemDisk {
+		if len(dataDisk) > 0 {
+			for _, data := range dataDisk {
+				logger.Debug("host tags is %v,search systemDiskCategory=%s,dataDiskCategory=%s", host.Roles, sys, data)
+				systemInstanceTypes, err = a.GetAvailableResource(host, sys, data)
+				if err == nil {
+					for i := 0; i < len(host.Disks); i++ {
+						host.Disks[i].Category = data
+					}
+					host.Disks[0].Category = sys
+					break
+				}
+			}
+		} else {
+			logger.Debug("host tags is %v,search systemDiskCategory=%s", host.Roles, sys)
+			systemInstanceTypes, err = a.GetAvailableResource(host, sys, "")
+			if err == nil {
+				host.Disks[0].Category = sys
+				break
+			}
+		}
+	}
+
+	if len(systemInstanceTypes) < 1 {
+		return nil, fmt.Errorf("host tags is %v,systemInstanceType not find", host.Roles)
+	}
+
 	var instanceTypes []string
 	if err != nil {
 		return nil, err
@@ -124,7 +172,7 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 	return instanceTypes, nil
 }
 
-func (a *AliProvider) GetAvailableResource(host *v1beta1.Host) (instanceType []string, err error) {
+func (a *AliProvider) GetAvailableResource(host *v1beta1.Host, systemCategory, dataCategory string) (instanceType []string, err error) {
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Infra.Status.Cluster.RegionID
@@ -132,9 +180,10 @@ func (a *AliProvider) GetAvailableResource(host *v1beta1.Host) (instanceType []s
 	request.DestinationResource = DestinationResource
 	request.InstanceChargeType = InstanceChargeType
 	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
+	request.SystemDiskCategory = systemCategory
+	request.DataDiskCategory = dataCategory
 	request.Cores = requests.NewInteger(host.CPU)
 	request.Memory = requests.NewFloat(float64(host.Memory))
-
 	response := ecs.CreateDescribeAvailableResourceResponse()
 	err = a.EcsClient.DoAction(request, response)
 	if err != nil {

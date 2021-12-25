@@ -35,6 +35,7 @@ const (
 	InternetChargeType  = "PayByTraffic"
 	Product             = "product"
 	Role                = "role"
+	Arch                = "arch"
 	Stopped             = "Stopped"
 	AvailableTypeStatus = "WithStock"
 	Bandwidth           = "100"

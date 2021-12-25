@@ -75,7 +75,7 @@ type OS struct {
 type Disk struct {
 	Capacity int `json:"capacity"`
 	//MountPoint string `json:"mountPoint,omitempty"`
-
+	Category string `json:"category"`
 }
 
 type Credential struct {
@@ -123,10 +123,12 @@ type ClusterStatus struct {
 	Master0InternalIP string            `json:"master0InternalIP,omitempty"`
 }
 type HostStatus struct {
+	Ready        bool     `json:"ready"`
 	Roles        []string `json:"roles"`
 	IDs          string   `json:"IDs,omitempty"`
 	IPs          []string `json:"IPs,omitempty"`
 	InstanceType string   `json:"instanceType,omitempty"`
+	Arch         Arch     `json:"arch,omitempty"`
 	ImageID      string   `json:"imageID,omitempty"`
 }
 
@@ -136,9 +138,25 @@ type InfraStatus struct {
 	Hosts   []HostStatus  `json:"hosts"`
 }
 
+func (hs HostStatus) ToHost() *Host {
+	return &Host{
+		Roles: hs.Roles,
+		Arch:  hs.Arch,
+	}
+}
+
 func (s InfraStatus) FindHostsByRoles(roles []string) int {
 	for i, h := range s.Hosts {
 		if strings.Join(h.Roles, ",") == strings.Join(roles, ",") {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s InfraStatus) FindHostsByRolesString(roles string) int {
+	for i, h := range s.Hosts {
+		if strings.Join(h.Roles, ",") == roles {
 			return i
 		}
 	}

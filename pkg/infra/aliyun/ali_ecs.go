@@ -42,7 +42,7 @@ func (a *AliProvider) InputIPlist(host *v1beta1.Host) (ipList []string, err erro
 	if host == nil {
 		return nil, err
 	}
-	instances, err := a.GetInstancesInfo(host.Roles, host.Count)
+	instances, err := a.GetInstancesInfo(host, host.Count)
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +111,12 @@ func (a *AliProvider) ChangeInstanceType(instanceID string, host *v1beta1.Host) 
 	return a.StartInstance(instanceID)
 }
 
-func (a *AliProvider) GetInstancesInfo(roles []string, expectCount int) (instances []Instance, err error) {
+func (a *AliProvider) GetInstancesInfo(host *v1beta1.Host, expectCount int) (instances []Instance, err error) {
 	var count int
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
-	tag[Role] = strings.Join(roles, ",")
+	tag[Role] = strings.Join(host.Roles, ",")
+	tag[Arch] = string(host.Arch)
 	if expectCount == 0 {
 		count = -1
 	} else {
@@ -165,7 +166,7 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 	}
 	var err error
 	if instancesIDs != "" {
-		instances, err = a.GetInstancesInfo(host.Roles, JustGetInstanceInfo)
+		instances, err = a.GetInstancesInfo(host, JustGetInstanceInfo)
 	}
 	if err != nil {
 		return err
@@ -211,6 +212,13 @@ func (a *AliProvider) DeleteInstances() error {
 		return err
 	}
 	ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, "")
+	if v1beta1.In(a.Infra.Status.Cluster.Master0ID, instanceIDs) {
+		logger.Debug("delete instance success,need delete about instance info[master0id,master0InternalIP,eip,eipID]")
+		a.Infra.Status.Cluster.Master0ID = ""
+		a.Infra.Status.Cluster.Master0InternalIP = ""
+		a.Infra.Status.Cluster.EIP = ""
+		delete(a.Infra.Status.Cluster.Annotations, string(EipID))
+	}
 	return nil
 }
 
@@ -245,6 +253,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 		return err
 	}
 	a.Infra.Status.Hosts[j].ImageID = imageID
+	a.Infra.Status.Hosts[j].Arch = host.Arch
 	instanceType, err = a.GetAvailableInstanceType(host)
 	if err != nil {
 		return err
@@ -252,7 +261,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
 	tag[Role] = strings.Join(host.Roles, ",")
-
+	tag[Arch] = string(host.Arch)
 	instancesTag := CreateInstanceTag(tag)
 
 	dataDisks := host.Disks[1:]
@@ -298,44 +307,6 @@ func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID, portRange string) 
 	}
 	return response.BaseResponse.IsSuccess()
 }
-
-func (a *AliProvider) CreateSecurityGroup() error {
-	if securityGroupID := SecurityGroupID.ClusterValue(a.Infra.Spec); securityGroupID != "" {
-		SecurityGroupID.SetValue(a.Infra.Status, securityGroupID)
-		return nil
-	}
-	request := ecs.CreateCreateSecurityGroupRequest()
-	request.Scheme = Scheme
-	request.RegionId = a.Infra.Status.Cluster.RegionID
-	request.VpcId = VpcID.Value(a.Infra.Status)
-	response := ecs.CreateCreateSecurityGroupResponse()
-	err := a.RetryEcsRequest(request, response)
-	if err != nil {
-		return err
-	}
-
-	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, SSHPortRange) {
-		return fmt.Errorf("authorize securitygroup ssh port failed")
-	}
-	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, APIServerPortRange) {
-		return fmt.Errorf("authorize securitygroup apiserver port failed")
-	}
-	SecurityGroupID.SetValue(a.Infra.Status, response.SecurityGroupId)
-	return nil
-}
-
-func (a *AliProvider) DeleteSecurityGroup() error {
-	if SecurityGroupID.ClusterValue(a.Infra.Spec) != "" && SecurityGroupID.Value(a.Infra.Status) != "" {
-		return nil
-	}
-	request := ecs.CreateDeleteSecurityGroupRequest()
-	request.Scheme = Scheme
-	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
-
-	response := ecs.CreateDeleteSecurityGroupResponse()
-	return a.RetryEcsRequest(request, response)
-}
-
 func CreateInstanceTag(tags map[string]string) (instanceTags []ecs.RunInstancesTag) {
 	for k, v := range tags {
 		instanceTags = append(instanceTags, ecs.RunInstancesTag{Key: k, Value: v})

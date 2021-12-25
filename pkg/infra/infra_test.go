@@ -91,14 +91,52 @@ func TestApply(t *testing.T) {
 	} else {
 		fmt.Printf("%v", aliProvider.Apply())
 	}
-
 	// todo
 	t.Run("modify instance system disk", func(t *testing.T) {
-
+		j, _ := yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
+		infra.Spec.Hosts = []v2.Host{
+			{
+				Roles:  []string{"master", "ssd"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "centos",
+				},
+			},
+			{
+				Roles:  []string{"master", "ssdxxx"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "ubuntu",
+				},
+			},
+		}
+		t.Log(fmt.Sprintf("add server:%v", aliProvider.Apply()))
+		j, _ = yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
+		time.Sleep(10 * time.Second)
+		infra.Spec.Hosts = []v2.Host{
+			{
+				Roles:  []string{"master", "ssd"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "centos",
+				},
+			},
+		}
+		t.Log(fmt.Sprintf("delete:%v", aliProvider.Apply()))
+		j, _ = yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
 	})
-
-	j, _ := yaml.Marshal(&infra)
-	t.Log("output yaml:", string(j))
 	//teardown
 	time.Sleep(20 * time.Second)
 	now := metav1.Now()
