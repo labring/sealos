@@ -229,10 +229,10 @@ func CreateDescribeInstancesTag(tags map[string]string) (instanceTags []ecs.Desc
 	return
 }
 
-func CreateInstanceDataDisk(dataDisks []v1beta1.Disk) (instanceDisks []ecs.RunInstancesDataDisk) {
+func CreateInstanceDataDisk(dataDisks []v1beta1.Disk, category string) (instanceDisks []ecs.RunInstancesDataDisk) {
 	for _, v := range dataDisks {
 		instanceDisks = append(instanceDisks,
-			ecs.RunInstancesDataDisk{Size: strconv.Itoa(v.Capacity)})
+			ecs.RunInstancesDataDisk{Size: strconv.Itoa(v.Capacity), Category: category})
 	}
 	return
 }
@@ -265,7 +265,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	instancesTag := CreateInstanceTag(tag)
 
 	dataDisks := host.Disks[1:]
-	datadisk := CreateInstanceDataDisk(dataDisks)
+	datadisk := CreateInstanceDataDisk(dataDisks, a.Infra.Status.Hosts[j].DataCategory)
 
 	request := ecs.CreateRunInstancesRequest()
 	request.Scheme = Scheme
@@ -275,6 +275,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)
+	request.SystemDiskCategory = a.Infra.Status.Hosts[j].SystemCategory
 	request.DataDisk = &datadisk
 	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
 	request.Amount = requests.NewInteger(count)

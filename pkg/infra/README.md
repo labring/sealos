@@ -61,4 +61,6 @@ status:
       instanceType: xxxx
       arch: arm64
       imageID: xxxxx
+      systemCategory: xxxx
+      dataCategory: xxxx
 ```
