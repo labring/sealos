@@ -109,6 +109,10 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 		return []string{host.EcsType}, nil
 	}
 	var systemInstanceTypes []string
+	j := a.Infra.Status.FindHostsByRoles(host.Roles)
+	if j == -1 {
+		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
+	}
 	var err error
 	systemDisk, dataDisk := a.GetDiskCategories(host)
 
@@ -122,6 +126,8 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 						host.Disks[i].Category = data
 					}
 					host.Disks[0].Category = sys
+					a.Infra.Status.Hosts[j].DataCategory = data
+					a.Infra.Status.Hosts[j].SystemCategory = sys
 					break
 				}
 			}
@@ -130,6 +136,7 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 			systemInstanceTypes, err = a.GetAvailableResource(host, sys, "")
 			if err == nil {
 				host.Disks[0].Category = sys
+				a.Infra.Status.Hosts[j].SystemCategory = sys
 				break
 			}
 		}
@@ -142,10 +149,6 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 	var instanceTypes []string
 	if err != nil {
 		return nil, err
-	}
-	j := a.Infra.Status.FindHostsByRoles(host.Roles)
-	if j == -1 {
-		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
 	}
 
 	request := ecs.CreateDescribeImageSupportInstanceTypesRequest()
