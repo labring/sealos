@@ -1,0 +1,24 @@
+name: Invite user to join our group
+on:
+  issue_comment:
+    types:
+      - created
+jobs:
+  issue_comment:
+    name: Invite user to join our group
+    if: ${{ github.event.comment.body == '/invite' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+
+      - name: Invite user to join our group
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            It's my pleasure to invite you to join us :
+            qq group : 98488045
+            sealos dingtalk group : 35371178
+            home Website: https://www.sealyun.com
+            developer please add my dingtalk or wechat : cuisongliu
