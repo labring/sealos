@@ -15,7 +15,11 @@
 package v1beta1
 
 import (
+	"encoding/json"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -27,76 +31,136 @@ const (
 	AliyunProvider Provider = "AliyunProvider"
 )
 
-type Platform string
+type Arch string
 
 const (
-	AMD64 Platform = "amd64"
-	ARM64 Platform = "arm64"
+	AMD64 Arch = "amd64"
+	ARM64 Arch = "arm64"
 )
 
-type Auth struct {
-	User   string `json:"user,omitempty"`
+type SSH struct {
 	Passwd string `json:"passwd,omitempty"`
+	Port   int32  `json:"port"`
 }
 
-type Hosts struct {
-	CPU    int     `json:"cpu,omitempty"`
-	Memory float64 `json:"memory,omitempty"`
-	Count  int     `json:"count,omitempty"`
-	Disks  Disks   `json:"disks"`
-}
-type Disks struct {
-	System string   `json:"system,omitempty"`
-	Data   []string `json:"data,omitempty"`
+type Host struct {
+	Roles   []string `json:"roles,omitempty"`
+	CPU     int      `json:"cpu,omitempty"`
+	Memory  int      `json:"memory,omitempty"`
+	Count   int      `json:"count"`
+	Disks   []Disk   `json:"disks"`
+	Arch    Arch     `json:"arch,omitempty"`
+	EcsType string   `json:"ecsType,omitempty"`
+	OS      OS       `json:"os,omitempty"`
 }
 
-type Instance struct {
-	SystemCategory string `json:"systemCategory,omitempty"`
-	DataCategory   string `json:"dataCategory,omitempty"`
-	Type           string `json:"type,omitempty"`
-	IsSeize        bool   `json:"isSeize,omitempty"`
-	ImageID        string `json:"imageID,omitempty"`
+func (h Host) ToRole() HostRole {
+	if IsMaster(h.Roles) {
+		return Master
+	}
+	return Node
+}
+
+func (h Host) String() string {
+	data, _ := json.Marshal(&h)
+	return string(data)
+}
+
+type OS struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	ID      string `json:"id,omitempty"`
+}
+
+type Disk struct {
+	Capacity int `json:"capacity"`
+	//MountPoint string `json:"mountPoint,omitempty"`
+	Category string `json:"category"`
+}
+
+type Credential struct {
+	AccessKey    string `json:"accessKey"`
+	AccessSecret string `json:"accessSecret"`
+}
+
+type AccessChannels struct {
+	SSH SSH `json:"ssh,omitempty"`
+}
+
+type Cluster struct {
+	RegionIDs      []string          `json:"regionIDs,omitempty"`
+	ZoneIDs        []string          `json:"zoneIDs,omitempty"`
+	Annotations    map[string]string `json:"annotations,omitempty"`
+	AccessChannels AccessChannels    `json:"accessChannels"`
+	IsSeize        bool              `json:"isSeize,omitempty"`
+}
+
+func (c Cluster) RegionID() string {
+	set := sets.NewString(c.RegionIDs...)
+	if set.Len() > 0 {
+		return set.List()[0]
+	}
+	return ""
 }
 
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of Infra
-	// Important: Run "make" to regenerate code after modifying this file
-	Instance Instance `json:"instance"`
 	// Foo is an example field of Infra. Edit types.go to remove/update
-	Provider Provider `json:"provider,omitempty"`
-	Platform Platform `json:"platform,omitempty"`
+	Provider   Provider   `json:"provider,omitempty"`
+	Credential Credential `json:"credential,omitempty"`
 
-	Auth    Auth   `json:"auth,omitempty"`
-	Masters Hosts  `json:"masters,omitempty"`
-	Nodes   *Hosts `json:"nodes,omitempty"`
+	Cluster Cluster `json:"cluster,omitempty"`
+	Hosts   []Host  `json:"hosts,omitempty"`
+}
+
+type ClusterStatus struct {
+	RegionID          string            `json:"regionID,omitempty"`
+	ZoneID            string            `json:"zoneID,omitempty"`
+	SpotStrategy      string            `json:"spotStrategy,omitempty"`
+	Annotations       map[string]string `json:"annotations,omitempty"`
+	EIP               string            `json:"eip,omitempty"`
+	Master0ID         string            `json:"master0ID,omitempty"`
+	Master0InternalIP string            `json:"master0InternalIP,omitempty"`
+}
+type HostStatus struct {
+	Ready        bool     `json:"ready"`
+	Roles        []string `json:"roles"`
+	IDs          string   `json:"IDs,omitempty"`
+	IPs          []string `json:"IPs,omitempty"`
+	InstanceType string   `json:"instanceType,omitempty"`
+	Arch         Arch     `json:"arch,omitempty"`
+	ImageID      string   `json:"imageID,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
 type InfraStatus struct {
-	ZoneID   string `json:"zoneID,omitempty"`
-	RegionID string `json:"regionID,omitempty"`
+	Cluster ClusterStatus `json:"cluster"`
+	Hosts   []HostStatus  `json:"hosts"`
+}
 
-	VpcID           string `json:"vpcID,omitempty"`
-	VSwitchID       string `json:"vSwitchID,omitempty"`
-	SecurityGroupID string `json:"securityGroupID,omitempty"`
+func (hs HostStatus) ToHost() *Host {
+	return &Host{
+		Roles: hs.Roles,
+		Arch:  hs.Arch,
+	}
+}
 
-	Master0ID         string `json:"master0ID,omitempty"`
-	Master0InternalIP string `json:"master0InternalIP,omitempty"`
-	EIP               string `json:"eip,omitempty"`
-	EIPID             string `json:"eipID,omitempty"`
+func (s InfraStatus) FindHostsByRoles(roles []string) int {
+	for i, h := range s.Hosts {
+		if strings.Join(h.Roles, ",") == strings.Join(roles, ",") {
+			return i
+		}
+	}
+	return -1
+}
 
-	MasterIDs string `json:"masterIDs,omitempty"`
-	NodeIDs   string `json:"nodeIDs,omitempty"`
-
-	Masters []string `json:"masters,omitempty"`
-	Nodes   []string `json:"nodes,omitempty"`
-
-	MasterInstanceType string `json:"masterInstanceType,omitempty"`
-	NodeInstanceType   string `json:"nodeInstanceType,omitempty"`
-
-	SpotStrategy               string `json:"spotStrategy,omitempty"`
-	ShouldBeDeleteInstancesIDs string `json:"shouldBeDeleteInstancesIDs,omitempty"`
+func (s InfraStatus) FindHostsByRolesString(roles string) int {
+	for i, h := range s.Hosts {
+		if strings.Join(h.Roles, ",") == roles {
+			return i
+		}
+	}
+	return -1
 }
 
 // +kubebuilder:object:root=true

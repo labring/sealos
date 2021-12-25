@@ -16,7 +16,6 @@ package infra
 
 import (
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -29,7 +28,6 @@ import (
 
 func TestApply(t *testing.T) {
 	//setup infra
-	password := os.Getenv("SealosPassword")
 	infra := v2.Infra{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Infra",
@@ -39,33 +37,51 @@ func TestApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
-			Instance: v2.Instance{
-				IsSeize: true,
-				Type:    "ecs.c6r.large",
-			},
-			Platform: v2.ARM64,
-			Masters: v2.Hosts{
-				Count:  1,
-				CPU:    2,
-				Memory: 4,
-				Disks: v2.Disks{
-					System: "100",
-					Data:   []string{"100"},
+			Cluster: v2.Cluster{
+				RegionIDs: []string{"cn-shanghai"},
+				ZoneIDs:   []string{"cn-shanghai-l"},
+				AccessChannels: v2.AccessChannels{
+					SSH: v2.SSH{
+						Passwd: "Fanux#123",
+						Port:   22,
+					},
 				},
+				IsSeize: true,
 			},
-			Nodes: &v2.Hosts{
-				Count:  1,
-				CPU:    2,
-				Memory: 4,
-				Disks: v2.Disks{
-					System: "100",
-					Data:   []string{"100"},
+			Hosts: []v2.Host{
+				//{
+				//	Roles:  []string{"master", "ssd"},
+				//	CPU:    2,
+				//	Memory: 4,
+				//	Count:  1,
+				//	Disks:  []v2.Disk{},
+				//	OS: v2.OS{
+				//		Name: "centos",
+				//	},
+				//},
+				//{
+				//	Roles:  []string{"node", "ssd"},
+				//	CPU:    2,
+				//	Memory: 4,
+				//	Count:  1,
+				//	Disks:  []v2.Disk{},
+				//	Arch:   v2.ARM64,
+				//	OS: v2.OS{
+				//		Name: "centos",
+				//	},
+				//},
+				{
+					Roles:  []string{"master", "ssdxxx"},
+					CPU:    2,
+					Memory: 4,
+					Count:  1,
+					Disks:  []v2.Disk{},
+					OS: v2.OS{
+						Name: "ubuntu",
+					},
 				},
 			},
 			Provider: v2.AliyunProvider,
-			Auth: v2.Auth{
-				Passwd: password,
-			},
 		},
 	}
 
@@ -75,46 +91,52 @@ func TestApply(t *testing.T) {
 	} else {
 		fmt.Printf("%v", aliProvider.Apply())
 	}
-
-	t.Run("modify instance type", func(t *testing.T) {
-		infra.Spec.Masters.CPU = 4
-		infra.Spec.Masters.Memory = 8
-		infra.Spec.Nodes.CPU = 4
-		infra.Spec.Nodes.Memory = 8
-		fmt.Printf("%v", aliProvider.Apply())
-	})
-
-	t.Run("add instance count", func(t *testing.T) {
-		infra.Spec.Masters.Count = 5
-		infra.Spec.Nodes.Count = 5
-		fmt.Printf("%v", aliProvider.Apply())
-		fmt.Printf("%v \n", infra.Spec.Masters)
-		fmt.Printf("%v \n", infra.Spec.Nodes)
-	})
-
-	t.Run("reduce instance count", func(t *testing.T) {
-		infra.Spec.Masters.Count = 1
-		infra.Spec.Nodes.Count = 1
-		fmt.Printf("%v", aliProvider.Apply())
-	})
-
-	t.Run("modify instance type & count both", func(t *testing.T) {
-		infra.Spec.Masters.CPU = 8
-		infra.Spec.Masters.Memory = 16
-		infra.Spec.Nodes.CPU = 8
-		infra.Spec.Nodes.Memory = 16
-		infra.Spec.Masters.Count = 5
-		infra.Spec.Nodes.Count = 5
-		fmt.Printf("%v", aliProvider.Apply())
-	})
-
 	// todo
 	t.Run("modify instance system disk", func(t *testing.T) {
-
+		j, _ := yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
+		infra.Spec.Hosts = []v2.Host{
+			{
+				Roles:  []string{"master", "ssd"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "centos",
+				},
+			},
+			{
+				Roles:  []string{"master", "ssdxxx"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "ubuntu",
+				},
+			},
+		}
+		t.Log(fmt.Sprintf("add server:%v", aliProvider.Apply()))
+		j, _ = yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
+		time.Sleep(10 * time.Second)
+		infra.Spec.Hosts = []v2.Host{
+			{
+				Roles:  []string{"master", "ssd"},
+				CPU:    2,
+				Memory: 4,
+				Count:  1,
+				Disks:  []v2.Disk{},
+				OS: v2.OS{
+					Name: "centos",
+				},
+			},
+		}
+		t.Log(fmt.Sprintf("delete:%v", aliProvider.Apply()))
+		j, _ = yaml.Marshal(&infra)
+		t.Log("output yaml:", string(j))
 	})
-
-	j, _ := yaml.Marshal(&infra)
-	t.Log("output yaml:", string(j))
 	//teardown
 	time.Sleep(20 * time.Second)
 	now := metav1.Now()

@@ -23,12 +23,6 @@ import (
 )
 
 const (
-	EnvAccessKey    = "ECS_AKID"
-	EnvAccessSecret = "ECS_AKSK"
-	EnvRegion       = "ECS_REGION"
-)
-
-const (
 	Scheme              = "https"
 	IPProtocol          = "tcp"
 	APIServerPortRange  = "6443/6443"
@@ -39,17 +33,13 @@ const (
 	DestinationResource = "InstanceType"
 	InstanceChargeType  = "PostPaid"
 	InternetChargeType  = "PayByTraffic"
-	defaultImageAmdID   = "centos_7_9_x64_20G_alibase_20210927.vhd"
-	defaultImageArmID   = "anolisos_7_7_arm64_20G_anck_alibase_20211118.vhd"
 	Product             = "product"
 	Role                = "role"
-	Master              = "master"
-	Node                = "node"
+	Arch                = "arch"
 	Stopped             = "Stopped"
 	AvailableTypeStatus = "WithStock"
 	Bandwidth           = "100"
 	AliDomain           = "www.sealyun.com/"
-	DefaultRegionID     = "cn-shanghai"
 	TryTimes            = 10
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0
@@ -62,24 +52,34 @@ const (
 	VpcID                      ResourceName = AliDomain + "VpcID"
 	VSwitchID                  ResourceName = AliDomain + "VSwitchID"
 	SecurityGroupID            ResourceName = AliDomain + "SecurityGroupID"
-	SystemInfo                 ResourceName = AliDomain + "SystemInfo"
+	ZoneID                     ResourceName = AliDomain + "ZoneID"
 	ShouldBeDeleteInstancesIDs ResourceName = "ShouldBeDeleteInstancesIDs"
 )
 
+func (r ResourceName) ClusterValue(infra v2.InfraSpec) string {
+	return infra.Cluster.Annotations[string(r)]
+}
+
+func (r ResourceName) ClusterSetValue(infra v2.InfraSpec, val string) {
+	infra.Cluster.Annotations[string(r)] = val
+}
+
 func (r ResourceName) Value(status v2.InfraStatus) string {
-	var value string
-	switch r {
-	case EipID:
-		value = status.EIPID
-	case VpcID:
-		value = status.VpcID
-	case VSwitchID:
-		value = status.VSwitchID
-	case SecurityGroupID:
-		value = status.SecurityGroupID
-	case ShouldBeDeleteInstancesIDs:
-		value = status.ShouldBeDeleteInstancesIDs
-	default:
+	return status.Cluster.Annotations[string(r)]
+}
+
+func (r ResourceName) SetValue(status v2.InfraStatus, val string) {
+	status.Cluster.Annotations[string(r)] = val
+}
+
+type ImageArch string
+
+func ConvertImageArch(arch v2.Arch) ImageArch {
+	switch arch {
+	case v2.ARM64:
+		return "arm64"
+	case v2.AMD64:
+		return "x86_64"
 	}
-	return value
+	return ""
 }

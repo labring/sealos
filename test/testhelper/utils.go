@@ -70,12 +70,12 @@ type SSHClient struct {
 
 func NewSSHClientByInfra(infra *v1beta1.Infra) *SSHClient {
 	config := &ssh.SSH{
-		User:     infra.Spec.Auth.User,
-		Password: infra.Spec.Auth.Passwd,
+		User:     "root",
+		Password: infra.Spec.Cluster.AccessChannels.SSH.Passwd,
 		Timeout:  nil,
 	}
 	return &SSHClient{
-		RemoteHostIP: infra.Status.EIP,
+		RemoteHostIP: infra.Status.Cluster.EIP,
 		SSH:          config,
 	}
 }
