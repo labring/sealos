@@ -24,21 +24,9 @@ import (
 
 const (
 	Scheme              = "https"
-	IPProtocol          = "tcp"
-	APIServerPortRange  = "6443/6443"
-	SSHPortRange        = "22/22"
-	SourceCidrIP        = "0.0.0.0/0"
-	CidrBlock           = "172.16.0.0/24"
-	Policy              = "accept"
-	DestinationResource = "InstanceType"
-	InstanceChargeType  = "PostPaid"
-	InternetChargeType  = "PayByTraffic"
 	Product             = "product"
 	Role                = "role"
 	Arch                = "arch"
-	Stopped             = "Stopped"
-	AvailableTypeStatus = "WithStock"
-	Bandwidth           = "100"
 	AliDomain           = "www.sealyun.com/"
 	TryTimes            = 10
 	TrySleepTime        = time.Second

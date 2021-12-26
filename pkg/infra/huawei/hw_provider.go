@@ -2,21 +2,15 @@ package huawei
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
-	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
-	"strings"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	"github.com/pkg/errors"
-
-	"github.com/fanux/sealos/pkg/types/validation"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
+	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
 
-	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v3"
+	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 )
 
 type ActionName string
@@ -76,91 +70,91 @@ var RecocileFuncMap = map[ActionName]func(provider *HwProvider) error{
 		return hwProvider.ReconcileResource(VpcID, hwProvider.CreateVPC)
 	},
 
-	CreateVSwitch: func(hwProvider *HwProvider) error {
-		return hwProvider.ReconcileResource(VSwitchID, hwProvider.CreateVSwitch)
-	},
-	CreateSecurityGroup: func(hwProvider *HwProvider) error {
-		return hwProvider.ReconcileResource(SecurityGroupID, hwProvider.CreateSecurityGroup)
-	},
-	ReconcileInstance: func(hwProvider *HwProvider) error {
-		var errorMsg []string
-		current := sets.NewString()
-		spec := sets.NewString()
-		for _, h := range hwProvider.Infra.Status.Hosts {
-			current.Insert(strings.Join(h.Roles, ","))
-		}
-		for _, h := range hwProvider.Infra.Spec.Hosts {
-			spec.Insert(strings.Join(h.Roles, ","))
-			host := &h
-			statusIndex := hwProvider.Infra.Status.FindHostsByRoles(h.Roles)
-			if statusIndex < 0 {
-				errorMsg = append(errorMsg, fmt.Sprintf("infra status not fount in role tag: %v", h.Roles))
-				continue
-			}
-			status := &hwProvider.Infra.Status.Hosts[statusIndex]
-			err := hwProvider.ReconcileInstances(host, status)
-			if err != nil {
-				errorMsg = append(errorMsg, err.Error())
-				status.Ready = false
-			} else {
-				status.Ready = true
-			}
-		}
-		deleteData := current.Difference(spec)
-		var instanceIDs []string
-		finalStatus := hwProvider.Infra.Status.Hosts
-		for _, roles := range deleteData.List() {
-			statusIndex := hwProvider.Infra.Status.FindHostsByRolesString(roles)
-			ids := hwProvider.Infra.Status.Hosts[statusIndex].IDs
-			instanceIDs = append(instanceIDs, ids)
-			finalStatus = append(finalStatus[:statusIndex], finalStatus[statusIndex+1:]...)
-		}
-		if len(instanceIDs) != 0 {
-			ShouldBeDeleteInstancesIDs.SetValue(hwProvider.Infra.Status, strings.Join(instanceIDs, ","))
-			hwProvider.DeleteResource(ShouldBeDeleteInstancesIDs, hwProvider.DeleteInstances)
-			hwProvider.Infra.Status.Hosts = finalStatus
-		}
-
-		if len(errorMsg) == 0 {
-			return nil
-		}
-		return errors.New(strings.Join(errorMsg, " && "))
-	},
+	//CreateVSwitch: func(hwProvider *HwProvider) error {
+	//	return hwProvider.ReconcileResource(VSwitchID, hwProvider.CreateVSwitch)
+	//},
+	//CreateSecurityGroup: func(hwProvider *HwProvider) error {
+	//	return hwProvider.ReconcileResource(SecurityGroupID, hwProvider.CreateSecurityGroup)
+	//},
+	//ReconcileInstance: func(hwProvider *HwProvider) error {
+	//	var errorMsg []string
+	//	current := sets.NewString()
+	//	spec := sets.NewString()
+	//	for _, h := range hwProvider.Infra.Status.Hosts {
+	//		current.Insert(strings.Join(h.Roles, ","))
+	//	}
+	//	for _, h := range hwProvider.Infra.Spec.Hosts {
+	//		spec.Insert(strings.Join(h.Roles, ","))
+	//		host := &h
+	//		statusIndex := hwProvider.Infra.Status.FindHostsByRoles(h.Roles)
+	//		if statusIndex < 0 {
+	//			errorMsg = append(errorMsg, fmt.Sprintf("infra status not fount in role tag: %v", h.Roles))
+	//			continue
+	//		}
+	//		status := &hwProvider.Infra.Status.Hosts[statusIndex]
+	//		err := hwProvider.ReconcileInstances(host, status)
+	//		if err != nil {
+	//			errorMsg = append(errorMsg, err.Error())
+	//			status.Ready = false
+	//		} else {
+	//			status.Ready = true
+	//		}
+	//	}
+	//	deleteData := current.Difference(spec)
+	//	var instanceIDs []string
+	//	finalStatus := hwProvider.Infra.Status.Hosts
+	//	for _, roles := range deleteData.List() {
+	//		statusIndex := hwProvider.Infra.Status.FindHostsByRolesString(roles)
+	//		ids := hwProvider.Infra.Status.Hosts[statusIndex].IDs
+	//		instanceIDs = append(instanceIDs, ids)
+	//		finalStatus = append(finalStatus[:statusIndex], finalStatus[statusIndex+1:]...)
+	//	}
+	//	if len(instanceIDs) != 0 {
+	//		ShouldBeDeleteInstancesIDs.SetValue(hwProvider.Infra.Status, strings.Join(instanceIDs, ","))
+	//		hwProvider.DeleteResource(ShouldBeDeleteInstancesIDs, hwProvider.DeleteInstances)
+	//		hwProvider.Infra.Status.Hosts = finalStatus
+	//	}
+	//
+	//	if len(errorMsg) == 0 {
+	//		return nil
+	//	}
+	//	return errors.New(strings.Join(errorMsg, " && "))
+	//},
 	GetZoneID: func(hwProvider *HwProvider) error {
-		return hwProvider.ReconcileResource(ZoneID, hwProvider.GetZoneID)
+		return hwProvider.ReconcileResource(ZoneID, hwProvider.GetAvailableZoneID)
 	},
-	BindEIP: func(hwProvider *HwProvider) error {
-		return hwProvider.ReconcileResource(EipID, hwProvider.BindEipForMaster0)
-	},
+	//BindEIP: func(hwProvider *HwProvider) error {
+	//	return hwProvider.ReconcileResource(EipID, hwProvider.BindEipForMaster0)
+	//},
 }
 
 var DeleteFuncMap = map[ActionName]func(provider *HwProvider){
-	ReleaseEIP: func(hwProvider *HwProvider) {
-		hwProvider.DeleteResource(EipID, hwProvider.ReleaseEipAddress)
-	},
-	ClearInstances: func(hwProvider *HwProvider) {
-		var instanceIDs []string
-		for _, h := range hwProvider.Infra.Status.Hosts {
-			instances, err := hwProvider.GetInstancesInfo(h.ToHost(), JustGetInstanceInfo)
-			if err != nil {
-				logger.Error("get %s instanceInfo failed %v", strings.Join(h.Roles, ","), err)
-			}
-			for _, instance := range instances {
-				instanceIDs = append(instanceIDs, instance.InstanceID)
-			}
-		}
-
-		if len(instanceIDs) != 0 {
-			ShouldBeDeleteInstancesIDs.SetValue(hwProvider.Infra.Status, strings.Join(instanceIDs, ","))
-		}
-		hwProvider.DeleteResource(ShouldBeDeleteInstancesIDs, hwProvider.DeleteInstances)
-	},
-	DeleteVSwitch: func(hwProvider *HwProvider) {
-		hwProvider.DeleteResource(VSwitchID, hwProvider.DeleteVSwitch)
-	},
-	DeleteSecurityGroup: func(hwProvider *HwProvider) {
-		hwProvider.DeleteResource(SecurityGroupID, hwProvider.DeleteSecurityGroup)
-	},
+	//ReleaseEIP: func(hwProvider *HwProvider) {
+	//	hwProvider.DeleteResource(EipID, hwProvider.ReleaseEipAddress)
+	//},
+	//ClearInstances: func(hwProvider *HwProvider) {
+	//	var instanceIDs []string
+	//	for _, h := range hwProvider.Infra.Status.Hosts {
+	//		instances, err := hwProvider.GetInstancesInfo(h.ToHost(), JustGetInstanceInfo)
+	//		if err != nil {
+	//			logger.Error("get %s instanceInfo failed %v", strings.Join(h.Roles, ","), err)
+	//		}
+	//		for _, instance := range instances {
+	//			instanceIDs = append(instanceIDs, instance.InstanceID)
+	//		}
+	//	}
+	//
+	//	if len(instanceIDs) != 0 {
+	//		ShouldBeDeleteInstancesIDs.SetValue(hwProvider.Infra.Status, strings.Join(instanceIDs, ","))
+	//	}
+	//	hwProvider.DeleteResource(ShouldBeDeleteInstancesIDs, hwProvider.DeleteInstances)
+	//},
+	//DeleteVSwitch: func(hwProvider *HwProvider) {
+	//	hwProvider.DeleteResource(VSwitchID, hwProvider.DeleteVSwitch)
+	//},
+	//DeleteSecurityGroup: func(hwProvider *HwProvider) {
+	//	hwProvider.DeleteResource(SecurityGroupID, hwProvider.DeleteSecurityGroup)
+	//},
 	DeleteVPC: func(hwProvider *HwProvider) {
 		hwProvider.DeleteResource(VpcID, hwProvider.DeleteVPC)
 	},
@@ -168,13 +162,15 @@ var DeleteFuncMap = map[ActionName]func(provider *HwProvider){
 
 func (a *HwProvider) basicAuth() basic.Credentials {
 	//https://developer.huaweicloud.com/endpoint?ECS
+	core.NewHcHttpClientBuilder()
 	return basic.NewCredentialsBuilder().
 		WithAk(a.Infra.Spec.Credential.AccessKey).
 		WithSk(a.Infra.Spec.Credential.AccessSecret).
+		WithProjectId(a.Infra.Spec.Credential.ProjectID).
 		Build()
 }
 
-func (a *HwProvider) NewClient() error {
+func (a *HwProvider) NewClient() (err error) {
 	regionID := a.Infra.Spec.Cluster.RegionIDs[utils.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
 	a.Infra.Status.Cluster.RegionID = regionID
 	logger.Info("using regionID is %s", regionID)
@@ -182,6 +178,12 @@ func (a *HwProvider) NewClient() error {
 	vpcEndpoint := fmt.Sprintf("https://vpc.%s.myhuaweicloud.com", regionID)
 	logger.Info("using ecs endpoint is %s", ecsEndpoint)
 	logger.Info("using vpc endpoint is %s", vpcEndpoint)
+	//var err error
+	defer func() {
+		if info := recover(); info != nil {
+			err = fmt.Errorf("%v", info)
+		}
+	}()
 	ecsClient := ecs.NewEcsClient(
 		ecs.EcsClientBuilder().
 			WithEndpoint(ecsEndpoint).
@@ -194,15 +196,15 @@ func (a *HwProvider) NewClient() error {
 			Build())
 	a.EcsClient = *ecsClient
 	a.VpcClient = *vpcClient
-	return nil
+	return
 }
 
 func (a *HwProvider) ClearCluster() {
 	todolist := []ActionName{
-		ReleaseEIP,
-		ClearInstances,
-		DeleteVSwitch,
-		DeleteSecurityGroup,
+		//ReleaseEIP,
+		//ClearInstances,
+		//DeleteVSwitch,
+		//DeleteSecurityGroup,
 		DeleteVPC,
 	}
 	for _, name := range todolist {
@@ -217,12 +219,12 @@ func (a *HwProvider) Reconcile() error {
 		return nil
 	}
 	todolist := []ActionName{
-		CreateVPC,
 		GetZoneID,
-		CreateVSwitch,
-		CreateSecurityGroup,
-		ReconcileInstance,
-		BindEIP,
+		CreateVPC,
+		//CreateVSwitch,
+		//CreateSecurityGroup,
+		//ReconcileInstance,
+		//BindEIP,
 	}
 
 	for _, actionName := range todolist {
@@ -236,20 +238,14 @@ func (a *HwProvider) Reconcile() error {
 }
 
 func (a *HwProvider) Apply() error {
-	if err := v2.Default(a.Infra, defaultInfra); err != nil {
-		return err
-	}
-	if err := validation.ValidateInfra(a.Infra); len(err) != 0 {
-		return err.ToAggregate()
-	}
 	return a.Reconcile()
 }
 
-func defaultInfra(infra *v2.Infra) error {
-	if infra.Spec.Cluster.IsSeize {
-		infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
-	} else {
-		infra.Status.Cluster.SpotStrategy = "NoSpot"
-	}
+func DefaultInfra(infra *v2.Infra) error {
+	//if infra.Spec.Cluster.IsSeize {
+	//	infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
+	//} else {
+	//	infra.Status.Cluster.SpotStrategy = "NoSpot"
+	//}
 	return nil
 }

@@ -35,9 +35,6 @@ type Instance struct {
 	PrimaryIPAddress string
 }
 
-type EcsManager struct {
-}
-
 func (a *AliProvider) InputIPlist(host *v1beta1.Host) (ipList []string, err error) {
 	if host == nil {
 		return nil, err
@@ -89,7 +86,7 @@ func (a *AliProvider) ChangeInstanceType(instanceID string, host *v1beta1.Host) 
 	if err != nil {
 		return err
 	}
-	if instanceStatus != Stopped {
+	if instanceStatus != "Stopped" {
 		err = a.PowerOffInstance(instanceID)
 		if err != nil {
 			return err
@@ -314,14 +311,14 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	return nil
 }
 
-func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID, portRange string) bool {
+func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort v1beta1.ExportPort) bool {
 	request := ecs.CreateAuthorizeSecurityGroupRequest()
 	request.Scheme = Scheme
 	request.SecurityGroupId = securityGroupID
-	request.IpProtocol = IPProtocol
-	request.PortRange = portRange
-	request.SourceCidrIp = SourceCidrIP
-	request.Policy = Policy
+	request.IpProtocol = string(exportPort.Protocol)
+	request.PortRange = exportPort.PortRange
+	request.SourceCidrIp = exportPort.CidrIP
+	request.Policy = "accept"
 
 	response := ecs.CreateAuthorizeSecurityGroupResponse()
 	err := a.RetryEcsRequest(request, response)

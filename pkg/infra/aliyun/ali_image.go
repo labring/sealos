@@ -180,8 +180,8 @@ func (a *AliProvider) GetAvailableResource(host *v1beta1.Host, systemCategory, d
 	request.Scheme = Scheme
 	request.RegionId = a.Infra.Status.Cluster.RegionID
 	request.ZoneId = a.Infra.Status.Cluster.ZoneID
-	request.DestinationResource = DestinationResource
-	request.InstanceChargeType = InstanceChargeType
+	request.DestinationResource = "InstanceType"
+	request.InstanceChargeType = "PostPaid"
 	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
 	request.SystemDiskCategory = systemCategory
 	request.DataDiskCategory = dataCategory
@@ -198,7 +198,7 @@ func (a *AliProvider) GetAvailableResource(host *v1beta1.Host, systemCategory, d
 	for _, i := range response.AvailableZones.AvailableZone {
 		for _, f := range i.AvailableResources.AvailableResource {
 			for _, r := range f.SupportedResources.SupportedResource {
-				if r.StatusCategory == AvailableTypeStatus {
+				if r.StatusCategory == "WithStock" {
 					instanceType = append(instanceType, r.Value)
 				}
 			}

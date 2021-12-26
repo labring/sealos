@@ -129,3 +129,12 @@ func IsEmptyLine(str string) bool {
 func TrimWS(str string) string {
 	return strings.Trim(str, " \n\t")
 }
+
+func RemoveSliceEmpty(list []string) (fList []string) {
+	for i := range list {
+		if strings.TrimSpace(list[i]) != "" {
+			fList = append(fList, list[i])
+		}
+	}
+	return
+}

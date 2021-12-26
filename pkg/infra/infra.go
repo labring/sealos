@@ -16,8 +16,10 @@ package infra
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/infra/huawei"
 	"os"
+
+	"github.com/fanux/sealos/pkg/infra/huawei"
+	"github.com/fanux/sealos/pkg/types/validation"
 
 	"github.com/fanux/sealos/pkg/infra/aliyun"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -46,6 +48,12 @@ func loadConfig(infra *v2.Infra) {
 func newAliProvider(infra *v2.Infra) (Interface, error) {
 	aliProvider := new(aliyun.AliProvider)
 	aliProvider.Infra = infra
+	if err := v2.Default(aliProvider.Infra, aliyun.DefaultInfra); err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateInfra(aliProvider.Infra); len(err) != 0 {
+		return nil, err.ToAggregate()
+	}
 	if err := aliProvider.NewClient(); err != nil {
 		return nil, err
 	}
@@ -55,6 +63,12 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 func newHwProvider(infra *v2.Infra) (Interface, error) {
 	hwProvider := new(huawei.HwProvider)
 	hwProvider.Infra = infra
+	if err := v2.Default(hwProvider.Infra, huawei.DefaultInfra); err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateInfra(hwProvider.Infra); len(err) != 0 {
+		return nil, err.ToAggregate()
+	}
 	if err := hwProvider.NewClient(); err != nil {
 		return nil, err
 	}
