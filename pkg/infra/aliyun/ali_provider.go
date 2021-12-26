@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/pkg/errors"
@@ -44,7 +46,7 @@ const (
 	DeleteVSwitch       ActionName = "DeleteVSwitch"
 	DeleteSecurityGroup ActionName = "DeleteSecurityGroup"
 	DeleteVPC           ActionName = "DeleteVPC"
-	GetZoneID           ActionName = "GetZoneID"
+	GetZoneID           ActionName = "GetAvailableZoneID"
 )
 
 type AliProvider struct {
@@ -53,9 +55,9 @@ type AliProvider struct {
 	Infra     *v2.Infra
 }
 
-type Alifunc func() error
+type AliFunc func() error
 
-func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action Alifunc) error {
+func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action AliFunc) error {
 	if resourceKey.Value(a.Infra.Status) != "" {
 		logger.Debug("using resource status value %s: %s", resourceKey, resourceKey.Value(a.Infra.Status))
 		return nil
@@ -70,7 +72,7 @@ func (a *AliProvider) ReconcileResource(resourceKey ResourceName, action Alifunc
 	return nil
 }
 
-func (a *AliProvider) DeleteResource(resourceKey ResourceName, action Alifunc) {
+func (a *AliProvider) DeleteResource(resourceKey ResourceName, action AliFunc) {
 	val := resourceKey.Value(a.Infra.Status)
 	if val == "" {
 		logger.Warn("delete resource not exists %s", resourceKey)
@@ -139,7 +141,7 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 		return errors.New(strings.Join(errorMsg, " && "))
 	},
 	GetZoneID: func(aliProvider *AliProvider) error {
-		return aliProvider.ReconcileResource(ZoneID, aliProvider.GetZoneID)
+		return aliProvider.ReconcileResource(ZoneID, aliProvider.GetAvailableZoneID)
 	},
 	BindEIP: func(aliProvider *AliProvider) error {
 		return aliProvider.ReconcileResource(EipID, aliProvider.BindEipForMaster0)
@@ -179,7 +181,9 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
-	a.Infra.Status.Cluster.RegionID = a.Infra.Spec.Cluster.RegionID()
+	regionID := a.Infra.Spec.Cluster.RegionIDs[utils.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
+	a.Infra.Status.Cluster.RegionID = regionID
+	logger.Info("using regionID is %s", regionID)
 	ecsClient, err := ecs.NewClientWithAccessKey(a.Infra.Status.Cluster.RegionID, a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret)
 	if err != nil {
 		return err
@@ -213,8 +217,8 @@ func (a *AliProvider) Reconcile() error {
 		return nil
 	}
 	todolist := []ActionName{
-		CreateVPC,
 		GetZoneID,
+		CreateVPC,
 		CreateVSwitch,
 		CreateSecurityGroup,
 		ReconcileInstance,

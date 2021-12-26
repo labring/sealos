@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -93,14 +92,6 @@ type Cluster struct {
 	Annotations    map[string]string `json:"annotations,omitempty"`
 	AccessChannels AccessChannels    `json:"accessChannels"`
 	IsSeize        bool              `json:"isSeize,omitempty"`
-}
-
-func (c Cluster) RegionID() string {
-	set := sets.NewString(c.RegionIDs...)
-	if set.Len() > 0 {
-		return set.List()[0]
-	}
-	return ""
 }
 
 // InfraSpec defines the desired state of Infra
