@@ -28,6 +28,7 @@ type Provider string
 
 const (
 	AliyunProvider Provider = "AliyunProvider"
+	HuaweiProvider Provider = "HuaweiProvider"
 )
 
 type Arch string

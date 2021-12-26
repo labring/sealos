@@ -16,6 +16,7 @@ package infra
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/infra/huawei"
 	"os"
 
 	"github.com/fanux/sealos/pkg/infra/aliyun"
@@ -51,11 +52,22 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 	return aliProvider, nil
 }
 
+func newHwProvider(infra *v2.Infra) (Interface, error) {
+	hwProvider := new(huawei.HwProvider)
+	hwProvider.Infra = infra
+	if err := hwProvider.NewClient(); err != nil {
+		return nil, err
+	}
+	return hwProvider, nil
+}
+
 func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
 	loadConfig(infra)
 	switch infra.Spec.Provider {
 	case v2.AliyunProvider:
 		return newAliProvider(infra)
+	case v2.HuaweiProvider:
+		return newHwProvider(infra)
 	default:
 		return nil, fmt.Errorf("the provider is invalid, please set the provider correctly")
 	}
