@@ -26,7 +26,7 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-func (a *AliProvider) ListImage(host *v1beta1.Host) (string, error) {
+func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
 	if host.OS.ID != "" {
 		logger.Info("host tags is %v,using imageID is %s", host.Roles, host.OS.ID)
 		return host.OS.ID, nil
@@ -85,7 +85,7 @@ func (a *AliProvider) ListImage(host *v1beta1.Host) (string, error) {
 	return images[utils.Rand(len(images))], nil
 }
 
-func (a *AliProvider) GetDiskCategories(host *v1beta1.Host) (system []string, data []string) {
+func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []string, data []string) {
 	categories := []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
 	if host.Disks[0].Category != "" {
 		system = []string{host.Disks[0].Category}
@@ -114,7 +114,7 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
 	}
 	var err error
-	systemDisk, dataDisk := a.GetDiskCategories(host)
+	systemDisk, dataDisk := a.GetDefaultDiskCategories(host)
 
 	for _, sys := range systemDisk {
 		if len(dataDisk) > 0 {

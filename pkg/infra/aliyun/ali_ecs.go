@@ -59,10 +59,10 @@ func (a *AliProvider) GetInstanceStatus(instanceID string) (instanceStatus strin
 	response := ecs.CreateDescribeInstanceStatusResponse()
 	err = a.RetryEcsRequest(request, response)
 	if err != nil {
-		return "", fmt.Errorf("get GetZoneID status failed %v , error :%v", instanceID, err)
+		return "", fmt.Errorf("get GetAvailableZoneID status failed %v , error :%v", instanceID, err)
 	}
 	if len(response.InstanceStatuses.InstanceStatus) == 0 {
-		return "", fmt.Errorf("GetZoneID list is empty")
+		return "", fmt.Errorf("GetAvailableZoneID list is empty")
 	}
 	return response.InstanceStatuses.InstanceStatus[0].Status, nil
 }
@@ -148,9 +148,6 @@ func (a *AliProvider) GetInstancesInfo(host *v1beta1.Host, expectCount int) (ins
 
 func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.HostStatus) error {
 	var instances []Instance
-	var instancesIDs string
-	var IPList []string
-	instancesIDs = status.IDs
 	switch host.ToRole() {
 	case v1beta1.Master:
 		if host.Count == 0 {
@@ -165,7 +162,7 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 		return errors.New("hosts not set")
 	}
 	var err error
-	if instancesIDs != "" {
+	if status.IDs != "" {
 		instances, err = a.GetInstancesInfo(host, JustGetInstanceInfo)
 	}
 	if err != nil {
@@ -180,10 +177,37 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 		if err != nil {
 			return err
 		}
-		IPList = utils.AppendIPList(IPList, ipList)
-		logger.Info("get scale up IP list %v, append iplist %v, host count %d", ipList, IPList, host.Count)
+		status.IPs = utils.AppendIPList(status.IPs, ipList)
+		logger.Info("get scale up IP list %v, append iplist %v, host count %d", ipList, status.IPs, host.Count)
+	} else if len(instances) > i {
+		var deleteInstancesIDs []string
+		var count int
+		for _, instance := range instances {
+			if instance.InstanceID != a.Infra.Status.Cluster.Master0ID {
+				deleteInstancesIDs = append(deleteInstancesIDs, instance.InstanceID)
+				count++
+			}
+			if count == (len(instances) - i) {
+				break
+			}
+		}
+		if len(deleteInstancesIDs) != 0 {
+			ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, strings.Join(deleteInstancesIDs, ","))
+			err = a.DeleteInstances()
+			if err != nil {
+				return err
+			}
+			ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, "")
+		}
+		ipList, err := a.InputIPlist(host)
+		if err != nil {
+			return err
+		}
+		status.IPs = utils.ReduceIPList(status.IPs, ipList)
+		logger.Info("get scale up IP list %v, reduce iplist %v, host count %d", ipList, status.IPs, host.Count)
+	} else {
+		logger.Info("get up IP list %v,  host count %d", status.IPs, host.Count)
 	}
-
 	for _, instance := range instances {
 		if instance.CPU != host.CPU || instance.Memory != host.Memory {
 			err = a.ChangeInstanceType(instance.InstanceID, host)
@@ -192,8 +216,7 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 			}
 		}
 	}
-	status.IPs = IPList
-	logger.Info("reconcile %s instances success %v ", host.String(), IPList)
+	logger.Info("reconcile %s instances success %v ", host.String(), status.IPs)
 	return nil
 }
 
@@ -249,7 +272,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	var instanceType []string
 	var err error
 	var imageID string
-	if imageID, err = a.ListImage(host); err != nil {
+	if imageID, err = a.GetAvailableImageID(host); err != nil {
 		return err
 	}
 	a.Infra.Status.Hosts[j].ImageID = imageID

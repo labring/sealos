@@ -65,7 +65,7 @@ func validateHost(host *v1beta1.Host, fldPath *field.Path) field.ErrorList {
 func validateCluster(cluster *v1beta1.Cluster, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
-	if len(cluster.RegionID()) == 0 {
+	if len(cluster.RegionIDs) == 0 {
 		allErrors = append(allErrors, field.Invalid(fldPath.Key("regionIDs"), cluster.RegionIDs,
 			"regionIDs not empty"))
 	}

@@ -27,10 +27,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-type VpcManager struct {
-	Client *vpc.Client
-}
-
 func (a *AliProvider) CreateVPC() error {
 	if vpcID := VpcID.ClusterValue(a.Infra.Spec); vpcID != "" {
 		VpcID.SetValue(a.Infra.Status, vpcID)
@@ -136,13 +132,13 @@ func (a *AliProvider) DeleteSecurityGroup() error {
 	return a.RetryEcsRequest(request, response)
 }
 
-func (a *AliProvider) GetZoneID() error {
+func (a *AliProvider) GetAvailableZoneID() error {
 	if a.Infra.Status.Cluster.ZoneID != "" {
 		logger.Debug("zoneID using status value")
 		return nil
 	}
 	defer func() {
-		logger.Info("create resource success %s: %s", "GetZoneID", a.Infra.Status.Cluster.ZoneID)
+		logger.Info("get available resource success %s: %s", "GetAvailableZoneID", a.Infra.Status.Cluster.ZoneID)
 	}()
 
 	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
@@ -159,15 +155,16 @@ func (a *AliProvider) GetZoneID() error {
 	if len(response.Zones.Zone) == 0 {
 		return errors.New("not available ZoneID ")
 	}
-	a.Infra.Status.Cluster.ZoneID = response.Zones.Zone[0].ZoneId
+	zoneID := response.Zones.Zone[utils.Rand(len(response.Zones.Zone))].ZoneId
+	a.Infra.Status.Cluster.ZoneID = zoneID
 	return nil
 }
 
 func (a *AliProvider) BindEipForMaster0() error {
 	var host *v1beta1.Host
-	for i, h := range a.Infra.Status.Hosts {
+	for _, h := range a.Infra.Status.Hosts {
 		if v1beta1.In(v1beta1.Master, h.Roles) && h.Ready {
-			host = &a.Infra.Spec.Hosts[i]
+			host = h.ToHost()
 			break
 		}
 	}
