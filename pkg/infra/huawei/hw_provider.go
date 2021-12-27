@@ -3,6 +3,8 @@ package huawei
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -248,4 +250,16 @@ func DefaultInfra(infra *v2.Infra) error {
 	//	infra.Status.Cluster.SpotStrategy = "NoSpot"
 	//}
 	return nil
+}
+
+func DefaultValidate(infra *v2.Infra) field.ErrorList {
+	allErrors := field.ErrorList{}
+	//if provide == v1beta1.HuaweiProvider {
+	//	if len(credential.ProjectID) == 0 {
+	//		logger.Warn("in huawei cloud , you need fetch projectID in you iam, please visit https://support.huaweicloud.com/apm_faq/apm_03_0001.html")
+	//		allErrors = append(allErrors, field.Invalid(fldPath.Key("projectID"), credential.ProjectID,
+	//			"projectID not empty"))
+	//	}
+	//}
+	return allErrors
 }

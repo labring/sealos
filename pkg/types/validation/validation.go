@@ -17,8 +17,6 @@ package validation
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
@@ -74,7 +72,7 @@ func validateCluster(cluster *v1beta1.Cluster, fldPath *field.Path) field.ErrorL
 	return allErrors
 }
 
-func validateCredential(credential *v1beta1.Credential, provide v1beta1.Provider, fldPath *field.Path) field.ErrorList {
+func validateCredential(credential *v1beta1.Credential, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
 	if len(credential.AccessKey) == 0 {
@@ -85,24 +83,18 @@ func validateCredential(credential *v1beta1.Credential, provide v1beta1.Provider
 		allErrors = append(allErrors, field.Invalid(fldPath.Key("accessSecret"), credential.AccessSecret,
 			"accessSecret not empty"))
 	}
-	if provide == v1beta1.HuaweiProvider {
-		if len(credential.ProjectID) == 0 {
-			logger.Warn("in huawei cloud , you need fetch projectID in you iam, please visit https://support.huaweicloud.com/apm_faq/apm_03_0001.html")
-			allErrors = append(allErrors, field.Invalid(fldPath.Key("projectID"), credential.ProjectID,
-				"projectID not empty"))
-		}
-	}
 	return allErrors
 }
 
-func ValidateInfra(infra *v1beta1.Infra) field.ErrorList {
+func ValidateInfra(infra *v1beta1.Infra, fun func(infra *v1beta1.Infra) field.ErrorList) field.ErrorList {
 	allErrors := apimachineryvalidation.ValidateObjectMeta(&infra.ObjectMeta, false, ValidateInfraName, field.NewPath("metadata"))
 	allErrors = append(allErrors, validateInfraSpec(&infra.Spec, field.NewPath("spec"))...)
+	allErrors = append(allErrors, fun(infra)...)
 	return allErrors
 }
 func validateInfraSpec(spec *v1beta1.InfraSpec, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
-	allErrors = append(allErrors, validateCredential(&spec.Credential, spec.Provider, fldPath.Child("credential"))...)
+	allErrors = append(allErrors, validateCredential(&spec.Credential, fldPath.Child("credential"))...)
 	allErrors = append(allErrors, validateCluster(&spec.Cluster, fldPath.Child("cluster"))...)
 	var roles []string
 	roleSet := sets.NewString()

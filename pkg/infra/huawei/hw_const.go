@@ -29,6 +29,8 @@ const (
 	JustGetInstanceInfo = 0
 )
 
+const HuaweiProvider v2.Provider = "HuaweiProvider"
+
 type ResourceName string
 
 const (

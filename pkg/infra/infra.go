@@ -51,7 +51,7 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 	if err := v2.Default(aliProvider.Infra, aliyun.DefaultInfra); err != nil {
 		return nil, err
 	}
-	if err := validation.ValidateInfra(aliProvider.Infra); len(err) != 0 {
+	if err := validation.ValidateInfra(aliProvider.Infra, aliyun.DefaultValidate); len(err) != 0 {
 		return nil, err.ToAggregate()
 	}
 	if err := aliProvider.NewClient(); err != nil {
@@ -66,7 +66,7 @@ func newHwProvider(infra *v2.Infra) (Interface, error) {
 	if err := v2.Default(hwProvider.Infra, huawei.DefaultInfra); err != nil {
 		return nil, err
 	}
-	if err := validation.ValidateInfra(hwProvider.Infra); len(err) != 0 {
+	if err := validation.ValidateInfra(hwProvider.Infra, huawei.DefaultValidate); len(err) != 0 {
 		return nil, err.ToAggregate()
 	}
 	if err := hwProvider.NewClient(); err != nil {
@@ -78,9 +78,9 @@ func newHwProvider(infra *v2.Infra) (Interface, error) {
 func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
 	loadConfig(infra)
 	switch infra.Spec.Provider {
-	case v2.AliyunProvider:
+	case aliyun.AliyunProvider:
 		return newAliProvider(infra)
-	case v2.HuaweiProvider:
+	case huawei.HuaweiProvider:
 		return newHwProvider(infra)
 	default:
 		return nil, fmt.Errorf("the provider is invalid, please set the provider correctly")

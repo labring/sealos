@@ -19,6 +19,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/fanux/sealos/pkg/infra/aliyun"
+	"github.com/fanux/sealos/pkg/infra/huawei"
+
 	"sigs.k8s.io/yaml"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -62,7 +65,7 @@ func TestAliApply(t *testing.T) {
 					},
 				},
 			},
-			Provider: v2.AliyunProvider,
+			Provider: aliyun.AliyunProvider,
 		},
 	}
 
@@ -160,7 +163,7 @@ func TestHuaweiApply(t *testing.T) {
 					},
 				},
 			},
-			Provider: v2.HuaweiProvider,
+			Provider: huawei.HuaweiProvider,
 		},
 	}
 
