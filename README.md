@@ -30,7 +30,7 @@
 
 **文档: _[官方文档](https://www.sealyun.com/instructions), [博客](https://fuckcloudnative.io)_**
 
-**加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
+**加入组织: _钉钉群(35371178), [Telegram](https://t.me/cloudnativer)_**
 
 ![](docs/images/arch.png)
 
@@ -79,6 +79,9 @@
  - 内核要求:
    - cni组件选择cilium时要求内核版本不低于5.4
 
+## 提示
+- 如果使用腾讯云主机部署，默认禁用了calico的IPIP规则，需要改用VXLAN规则才能正常使用。
+    
 # 🚀 快速开始
 
 > 环境信息

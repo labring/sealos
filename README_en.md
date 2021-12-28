@@ -52,6 +52,10 @@ sealos is currently supported the latest k8s 1.22+
    - if you use aliyun/huawei cloud to deploy kubernetes 。 default pod cidr is confilct with dns cidr， we recommand you install kubernetes init flag to add  `--podcidr`  to aviod this problem。
    - sealos default to disable firewalld ，It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic。
 
+# Tips
+- If you use Tencent Cloud Hosting to deploy, calico's IPIP rules are disabled by default, and you need to change to VXLAN rules to use it properly.
+
+
 # Quick Start
 ## PreInstall
 * Install and start docker
@@ -241,4 +245,5 @@ sealos init --kubeadm-config kubeadm-config.yaml.tmpl \
 [简体中文](README.md)
 
 [More offline packages](https://sealyun.com)
+[Telegram](https://t.me/cloudnativer)
 
