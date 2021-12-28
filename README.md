@@ -43,7 +43,7 @@
 - Debian 9+,  x86_64/ arm64
 - Ubuntu 16.04, 18.04, 20.04,  x86_64/ arm64
 - Centos/RHEL 7.6+,  x86_64/ arm64
-- 其他支持 systemd 的系统环境.  x86_64/ arm64
+- 其他支持 systemd 的系统环境,  x86_64/ arm64
 - Kylin arm64
 
 ## kubernetes 版本
@@ -73,7 +73,7 @@
    - kubernetes1.20+ 使用containerd作为cri. 不需要用户安装docker/containerd. sealos会安装1.3.9版本containerd。
    - kubernetes1.19及以下 使用docker作为cri。 也不需要用户安装docker。 sealos会安装1.19.03版本docker
  - 网络和 DNS 要求：
-   - 确保 /etc/resolv.conf 中的 DNS 地址可用。否则，可能会导致群集中coredns异常。 
+   - 确保 /etc/resolv.conf 中的 DNS 地址可用。否则，可能会导致群集中coredns异常。
    - 如果使用阿里云/华为云主机部署。 默认的pod网段会和阿里云的dns网段冲突， 建议自定义修改pod网段, 在init的时候指定`--podcidr` 来修改。
    - sealos 默认会关闭防火墙， 如果需要打开防火墙， 建议手动放行相关的端口。
  - 内核要求:
@@ -85,10 +85,10 @@
 
 主机名|IP地址
 ---|---
-master0|192.168.0.2 
-master1|192.168.0.3 
-master2|192.168.0.4 
-node0|192.168.0.5 
+master0|192.168.0.2
+master1|192.168.0.3
+master2|192.168.0.4
+node0|192.168.0.5
 
 服务器密码：123456
 
@@ -99,7 +99,7 @@ node0|192.168.0.5
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
 $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
-    chmod +x sealos && mv sealos /usr/bin 
+    chmod +x sealos && mv sealos /usr/bin
 
 # 下载离线资源包
 $ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
