@@ -38,6 +38,6 @@ echo "- \`${DOCKER_REPO:-fanux/sealos}:latest\`" >> Note.md
 
 echo "
 ### CHANGELOG
-[https://github.com/fanux/sealos/blob/develop/CHANGELOG.md#${VERSION}](https://github.com/fanux/sealos/blob/develop/CHANGELOG.md#${VERSION})
+[https://github.com/fanux/sealos/blob/master/CHANGELOG.md#${VERSION}](https://github.com/fanux/sealos/blob/master/CHANGELOG.md#${VERSION})
 " >> Note.md
 cat Note.md

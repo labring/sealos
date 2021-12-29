@@ -17,14 +17,12 @@ package cmd
 import (
 	"os"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
-	install "github.com/fanux/sealos/pkg/install"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/spf13/cobra"
 
+	"github.com/fanux/sealos/cert"
+	"github.com/fanux/sealos/install"
 	"github.com/fanux/sealos/pkg/appmanager"
 )
 
@@ -32,10 +30,10 @@ var (
 	AppURL         string
 	installExample = `
 	# when usr -f flag , you need add  something to  config file. 
-	# Apply the configuration in values.yaml to a kubernetes Infra.
+	# Apply the configuration in values.yaml to a kubernetes Cluster.
 	sealos install --pkg-url /root/dashboard.tar -f values.yaml
 
-	# Apply the yaml passed into stdin to a kubenertes Infra.
+	# Apply the yaml passed into stdin to a kubenertes Cluster.
  	cat values.yaml | sealos install --pkg-url /root/dashboard.tar -f -
 	
 	# Set the WorkDir for your Package
@@ -68,7 +66,7 @@ func init() {
 	rootCmd.AddCommand(installCmd)
 
 	installCmd.Flags().StringVar(&AppURL, "pkg-url", "", "http://store.lameleg.com/prometheus.tar.gz download offline plugins package url, or file localtion ex. /root/prometheus.tar.gz")
-	installCmd.Flags().StringVarP(&v1.WorkDir, "workdir", "w", utils.UserHomeDir(), "workdir for install package home ex.  sealos install --pkg-url dashboard.tar --workdir /data")
-	installCmd.Flags().StringVarP(&v1.PackageConfig, "pkg-config", "c", "", `packageConfig for install package config  ex. sealos install --pkg-url dashboard.tar -c config`)
-	installCmd.Flags().StringVarP(&v1.Values, "values", "f", "", "values for  install package values.yaml , you know what you did .ex. sealos install --pkg-url dashboard.tar -f values.yaml")
+	installCmd.Flags().StringVarP(&install.WorkDir, "workdir", "w", cert.GetUserHomeDir(), "workdir for install package home ex.  sealos install --pkg-url dashboard.tar --workdir /data")
+	installCmd.Flags().StringVarP(&install.PackageConfig, "pkg-config", "c", "", `packageConfig for install package config  ex. sealos install --pkg-url dashboard.tar -c config`)
+	installCmd.Flags().StringVarP(&install.Values, "values", "f", "", "values for  install package values.yaml , you know what you did .ex. sealos install --pkg-url dashboard.tar -f values.yaml")
 }
