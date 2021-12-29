@@ -1,26 +1,25 @@
-/*
-Copyright © 2021 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
 	"fmt"
 
 	"github.com/fanux/sealos/net"
+	"github.com/fanux/sealos/pkg/logger"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 )
 
 var cniType string
@@ -39,7 +38,7 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		if cniType != net.CALICO && cniType != net.FLANNEL && cniType != net.CILIUM {
 			logger.Error("unsupport cni: ", cniType)
-			return 
+			return
 		}
 		if version == "" {
 			logger.Error("cni version should not nil ", version)
@@ -49,7 +48,7 @@ to quickly create a Cobra application.`,
 			Interface: "interface=eth.*|en.*|em.*",
 			IPIP:      true,
 			MTU:       "1440",
-			Version: version,
+			Version:   version,
 		}).Manifests("")
 		fmt.Println(yaml)
 	},
@@ -58,8 +57,8 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(cniCmd)
 
-	cniCmd.Flags().StringVarP(&cniType,"cni-type", "t", net.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
-	cniCmd.Flags().StringVarP(&version,"version", "v", "", "calico version")
+	cniCmd.Flags().StringVarP(&cniType, "cni-type", "t", net.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
+	cniCmd.Flags().StringVarP(&version, "version", "v", "", "calico version")
 
 	// Here you will define your flags and configuration settings.
 

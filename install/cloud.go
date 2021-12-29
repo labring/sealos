@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -6,8 +20,8 @@ import (
 	"strings"
 
 	"github.com/fanux/sealgate/cloud"
+	"github.com/fanux/sealos/pkg/logger"
 	extver "github.com/linuxsuren/cobra-extension/version"
-	"github.com/wonderivan/logger"
 )
 
 //VersionURL is base64 encode k8s version and offline package url
@@ -43,7 +57,6 @@ type Cluster struct {
 	SecuretyGroupID string
 }
 
-//Global config
 var C Cluster
 var ClusterDir = "/root/.sealos/clusters/"
 
@@ -63,7 +76,7 @@ func CloudInstall(c *Cluster) {
 	config := c.Config
 	p := cloud.NewProvider(config)
 
-	Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
+	_ = Dump(fmt.Sprintf("%s%s.yaml", ClusterDir, c.Name), c)
 
 	//TODO concurrence create master and nodes vms, should not create two vpcs
 	/*
@@ -142,9 +155,7 @@ func getLocalURL(version string) string {
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
 	version := extver.GetVersion()
-	if strings.HasPrefix(version, "v") {
-		version = strings.TrimPrefix(version, "v")
-	}
+	version = strings.TrimPrefix(version, "v")
 	releaseURL := fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz",
 		version, version)
 	cmd := fmt.Sprintf("wget %s -O -| tar -xz && chmod +x sealos", releaseURL)

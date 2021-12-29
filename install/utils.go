@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -19,7 +33,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 var message string
@@ -44,18 +58,18 @@ func ExitInitCase() bool {
 		return true
 	}
 
-	return pkgUrlCheck(PkgUrl)
+	return pkgURLCheck(PkgURL)
 }
 
-func ExitDeleteCase(pkgUrl string) bool {
+func ExitDeleteCase(pkgURL string) bool {
 	if PackageConfig != "" && !FileExist(PackageConfig) {
 		logger.Error("your APP pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}
-	return pkgUrlCheck(pkgUrl)
+	return pkgURLCheck(pkgURL)
 }
 
-func ExitInstallCase(pkgUrl string) bool {
+func ExitInstallCase(pkgURL string) bool {
 	// values.yaml 使用了-f 但是文件不存在. 并且不使用 stdin
 	if Values != "-" && !FileExist(Values) && Values != "" {
 		logger.Error("your values File is not exist and you have no stdin input, Please check your Values.yaml is exist")
@@ -66,28 +80,28 @@ func ExitInstallCase(pkgUrl string) bool {
 		logger.Error("your install APP pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}
-	return pkgUrlCheck(pkgUrl)
+	return pkgURLCheck(pkgURL)
 }
 
-func pkgUrlCheck(pkgUrl string) bool {
-	if !strings.HasPrefix(pkgUrl, "http") && !FileExist(pkgUrl) {
+func pkgURLCheck(pkgURL string) bool {
+	if !strings.HasPrefix(pkgURL, "http") && !FileExist(pkgURL) {
 		message = ErrorFileNotExist
 		logger.Error(message + "please check where your PkgUrl is right?")
 		return true
 	}
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
-	return strings.HasPrefix(pkgUrl, "http") && !downloadFileCheck(pkgUrl)
+	return strings.HasPrefix(pkgURL, "http") && !downloadFileCheck(pkgURL)
 }
 
-func downloadFileCheck(pkgUrl string) bool {
-	u, err := url.Parse(pkgUrl)
+func downloadFileCheck(pkgURL string) bool {
+	u, err := url.Parse(pkgURL)
 	if err != nil {
 		return false
 	}
 	if u != nil {
 		req, err := http.NewRequest("GET", u.String(), nil)
 		if err != nil {
-			logger.Error(ErrorPkgUrlNotExist, "please check where your PkgUrl is right?")
+			logger.Error(ErrorPkgURLNotExist, "please check where your PkgUrl is right?")
 			return false
 		}
 		client := &http.Client{
@@ -147,8 +161,8 @@ func VersionToIntAll(version string) int {
 	return 0
 }
 
-//IpFormat is
-func IpFormat(host string) string {
+//IPFormat is
+func IPFormat(host string) string {
 	ipAndPort := strings.Split(host, ":")
 	if len(ipAndPort) != 2 {
 		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", host)
@@ -159,7 +173,7 @@ func IpFormat(host string) string {
 
 // RandString 生成随机字符串
 func RandString(len int) string {
-	var r *rand.Rand = rand.New(rand.NewSource(time.Now().Unix()))
+	var r = rand.New(rand.NewSource(time.Now().Unix()))
 	bytes := make([]byte, len)
 	for i := 0; i < len; i++ {
 		b := r.Intn(26) + 65
@@ -428,7 +442,6 @@ func CompressZip(fileDir string, outputPath string) error {
 		compress(rel, path, w)
 		return nil
 	})
-
 }
 
 func compress(rel string, path string, zw *zip.Writer) {
@@ -437,7 +450,7 @@ func compress(rel string, path string, zw *zip.Writer) {
 	header, _ := zip.FileInfoHeader(info)
 	header.Name = rel
 	writer, _ := zw.CreateHeader(header)
-	io.Copy(writer, file)
+	_, _ = io.Copy(writer, file)
 	defer file.Close()
 }
 
@@ -495,9 +508,6 @@ func For120(version string) bool {
 	if newMajor >= 120 {
 		logger.Info("install version is: %s, Use kubeadm v1beta2 InitConfig,OCI use containerd instead", version)
 		return true
-	} else {
-		//logger.Info("install version is: %s, Use kubeadm v1beta1 InitConfig, docker", version)
-		return false
 	}
-
+	return false
 }

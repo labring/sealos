@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -58,7 +58,6 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sealos/config.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger ture for Info, false for Debug")
-
 }
 
 // initConfig reads in config file and ENV variables if set.

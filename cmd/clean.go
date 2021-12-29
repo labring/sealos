@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ import (
 	"os"
 
 	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/pkg/logger"
 	"github.com/spf13/cobra"
-	"github.com/wonderivan/logger"
 )
 
 var exampleCleanCmd = `
@@ -71,27 +71,9 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	deleteNodes := install.ParseIPs(install.NodeIPs)
 	deleteMasters := install.ParseIPs(install.MasterIPs)
 	c := &install.SealConfig{}
-	err := c.Load(cfgFile)
-	if err != nil {
-		// comment: if cfgFile is not exist; do not use sealos clean something.
-		// its danger for sealos do clean nodes without `~/.sealos/config.yaml`
-		//// 判断错误是否为配置文件不存在
-		//if errors.Is(err, os.ErrNotExist) {
-		//	_, err = fmt.Fprint(os.Stdout, "Please enter the password to connect to the node:\n")
-		//	if err != nil {
-		//		logger.Error("fmt.Fprint err", err)
-		//		os.Exit(-1)
-		//	}
-		//	passwordTmp, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-		//	if err != nil {
-		//		logger.Error("read password err", err)
-		//		os.Exit(-1)
-		//	}
-		//	install.SSHConfig.Password = string(passwordTmp)
-		//} else {
+	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)
 		os.Exit(-1)
-		//}
 	}
 
 	// 使用 sealos clean --node   不小心写了 masterip.
@@ -107,7 +89,6 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 
 	install.BuildClean(deleteNodes, deleteMasters)
 	c.Dump(cfgFile)
-
 }
 
 // IsExistNodes

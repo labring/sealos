@@ -9,8 +9,6 @@ run:
   #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
   skip-dirs-use-default: true
 
-  modules-download-mode: vendor
-
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
@@ -18,7 +16,7 @@ linters:
   enable:
     - gofmt
     - goimports
-    - golint
+    - revive
     - stylecheck
     - goconst
     - gosimple
@@ -39,11 +37,14 @@ linters:
     - ifshort
     - unconvert
 
-issues:
-  exclude-rules:
-    - linters:
-        - golint
-      text: "AccessKeyId"
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    ignore: fmt:.*,io/ioutil:^Read.*
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
 
 # golangci.com configuration
 # https://github.com/golangci/golangci/wiki/Configuration

@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package cert
 
 import (
@@ -5,7 +19,6 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -14,7 +27,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/keyutil"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 // clientCertAuth struct holds info required to build a client certificate to provide authentication info in a kubeconfig object
@@ -64,9 +77,7 @@ func CreateKubeConfigFile(kubeConfigFileName string, outDir string, cfg Config, 
 
 // createKubeConfigFiles creates all the requested kubeconfig files.
 // If kubeconfig files already exists, they are used only if evaluated equal; otherwise an error is returned.
-func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, kubeConfigFileNames ...string) error {
-
-	// gets the KubeConfigSpecs, actualized for the current InitConfiguration
+func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndpoint, clusterName string, kubeConfigFileNames ...string) error { // gets the KubeConfigSpecs, actualized for the current InitConfiguration
 	specs, err := getKubeConfigSpecs(cfg, nodeName, controlPlaneEndpoint)
 	if err != nil {
 		return err
@@ -97,7 +108,6 @@ func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndp
 // getKubeConfigSpecs returns all KubeConfigSpecs actualized to the context of the current InitConfiguration
 // NB. this methods holds the information about how kubeadm creates kubeconfig files.
 func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[string]*kubeConfigSpec, error) {
-
 	caCert, caKey, err := LoadCaCertAndKeyFromDisk(cfg)
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't create a kubeconfig; the CA files couldn't be loaded")
@@ -153,7 +163,6 @@ func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[
 
 // buildKubeConfigFromSpec creates a kubeconfig object for the given kubeConfigSpec
 func buildKubeConfigFromSpec(spec *kubeConfigSpec, clustername string) (*clientcmdapi.Config, error) {
-
 	// If this kubeconfig should use token
 	if spec.TokenAuth != nil {
 		// create a kubeconfig with a token
@@ -265,107 +274,6 @@ func createKubeConfigFileIfNotExists(outDir, filename string, config *clientcmda
 	// kubeadm thinks those files are equal and doesn't bother writing a new file
 	fmt.Printf("[kubeconfig] Using existing kubeconfig file: %q\n", kubeConfigFilePath)
 
-	return nil
-}
-
-// WriteKubeConfigWithClientCert writes a kubeconfig file - with a client certificate as authentication info  - to the given writer.
-func WriteKubeConfigWithClientCert(out io.Writer, cfg Config, clientName, controlPlaneEndpoint, clusterName string, organizations []string) error {
-
-	// creates the KubeConfigSpecs, actualized for the current InitConfiguration
-	caCert, caKey, err := LoadCaCertAndKeyFromDisk(cfg)
-	if err != nil {
-		return errors.Wrap(err, "couldn't create a kubeconfig; the CA files couldn't be loaded")
-	}
-
-	if len(controlPlaneEndpoint) == 0 {
-		return errors.New("controlPlaneEndpoint  can not be empty")
-	}
-
-	spec := &kubeConfigSpec{
-		ClientName: clientName,
-		APIServer:  controlPlaneEndpoint,
-		CACert:     caCert,
-		ClientCertAuth: &clientCertAuth{
-			CAKey:         caKey,
-			Organizations: organizations,
-		},
-	}
-
-	return writeKubeConfigFromSpec(out, spec, clusterName)
-}
-
-// WriteKubeConfigWithToken writes a kubeconfig file - with a token as client authentication info - to the given writer.
-func WriteKubeConfigWithToken(out io.Writer, cfg Config, clientName, controlPlaneEndpoint, clusterName, token string) error {
-
-	// creates the KubeConfigSpecs, actualized for the current InitConfiguration
-	caCert, _, err := LoadCaCertAndKeyFromDisk(cfg)
-	if err != nil {
-		return errors.Wrap(err, "couldn't create a kubeconfig; the CA files couldn't be loaded")
-	}
-
-	if len(controlPlaneEndpoint) == 0 {
-		return errors.New("controlPlaneEndpoint  can not be empty")
-	}
-
-	spec := &kubeConfigSpec{
-		ClientName: clientName,
-		APIServer:  controlPlaneEndpoint,
-		CACert:     caCert,
-		TokenAuth: &tokenAuth{
-			Token: token,
-		},
-	}
-
-	return writeKubeConfigFromSpec(out, spec, clusterName)
-}
-
-// writeKubeConfigFromSpec creates a kubeconfig object from a kubeConfigSpec and writes it to the given writer.
-func writeKubeConfigFromSpec(out io.Writer, spec *kubeConfigSpec, clustername string) error {
-
-	// builds the KubeConfig object
-	config, err := buildKubeConfigFromSpec(spec, clustername)
-	if err != nil {
-		return err
-	}
-
-	// writes the kubeconfig to disk if it not exists
-	configBytes, err := clientcmd.Write(*config)
-	if err != nil {
-		return errors.Wrap(err, "failure while serializing admin kubeconfig")
-	}
-
-	fmt.Fprintln(out, string(configBytes))
-	return nil
-}
-
-// ValidateKubeconfigsForExternalCA check if the kubeconfig file exist and has the expected CA and server URL using kubeadmapi.InitConfiguration.
-func ValidateKubeconfigsForExternalCA(outDir string, cfg Config, controlPlaneEndpoint string) error {
-	kubeConfigFileNames := []string{
-		"admin.conf",
-		"kubelet.conf",
-		"controller-manager.conf",
-		"scheduler.conf",
-	}
-
-	// Creates a kubeconfig file with the target CA and server URL
-	// to be used as a input for validating user provided kubeconfig files
-	caCert, _, err := LoadCaCertAndKeyFromDisk(cfg)
-	if err != nil {
-		return err
-	}
-
-	if len(controlPlaneEndpoint) == 0 {
-		return errors.New("controlPlaneEndpoint  can not be empty")
-	}
-
-	validationConfig := CreateBasic(controlPlaneEndpoint, "dummy", "dummy", EncodeCertPEM(caCert))
-
-	// validate user provided kubeconfig files
-	for _, kubeConfigFileName := range kubeConfigFileNames {
-		if err = validateKubeConfig(outDir, kubeConfigFileName, validationConfig); err != nil {
-			return errors.Wrapf(err, "the %s file does not exists or it is not valid", kubeConfigFileName)
-		}
-	}
 	return nil
 }
 

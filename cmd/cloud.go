@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"github.com/fanux/sealgate/cloud"
 	"github.com/spf13/cobra"
 
@@ -26,15 +28,13 @@ import (
 
 var p bool
 
-func prompt() {
-}
-
 // cloudCmd represents the cloud command
 var cloudCmd = &cobra.Command{
 	Use:   "cloud",
 	Short: "sealos on cloud",
 	Long:  `sealos will create vms vpc switch security group on cloud and install kubernetes on it`,
 	Run: func(cmd *cobra.Command, args []string) {
+		logger.Fatal("the cloud feature not support")
 		fmt.Println("install kubernetes on cloud...")
 		var key, sec string
 		if key = os.Getenv("ACCESS_KEY_ID"); key != "" {

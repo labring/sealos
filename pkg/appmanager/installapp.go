@@ -1,11 +1,26 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package appmanager
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
 	"io/ioutil"
+
+	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"os"
 )
@@ -18,10 +33,10 @@ type InstallFlags struct {
 	WorkDir string
 }
 
-func GetInstallFlags(appUrl string) *InstallFlags {
+func GetInstallFlags(appURL string) *InstallFlags {
 	return &InstallFlags{
 		Config:  install.PackageConfig,
-		PkgURL:  appUrl,
+		PkgURL:  appURL,
 		WorkDir: install.WorkDir,
 		Values:  install.Values,
 	}
@@ -29,8 +44,7 @@ func GetInstallFlags(appUrl string) *InstallFlags {
 
 func InstallApp(flag *InstallFlags, cfgFile string) error {
 	c := &install.SealConfig{}
-	err := c.Load(cfgFile)
-	if err != nil {
+	if err := c.Load(cfgFile); err != nil {
 		logger.Error("%s", err)
 		c.ShowDefaultConfig()
 		os.Exit(0)
@@ -42,7 +56,7 @@ func InstallApp(flag *InstallFlags, cfgFile string) error {
 		os.Exit(0)
 	}
 	pkgConfig.URL = flag.PkgURL
-	pkgConfig.Name = nameFromUrl(flag.PkgURL)
+	pkgConfig.Name = nameFromURL(flag.PkgURL)
 	pkgConfig.Workdir = flag.WorkDir
 	pkgConfig.Workspace = fmt.Sprintf("%s/%s", flag.WorkDir, pkgConfig.Name)
 	s, err := getValuesContent(flag.Values)

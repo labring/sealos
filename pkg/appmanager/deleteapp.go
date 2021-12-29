@@ -1,10 +1,25 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package appmanager
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
 	"os"
+
+	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 type DeleteFlags struct {
@@ -14,11 +29,11 @@ type DeleteFlags struct {
 	CleanForce bool
 }
 
-func GetDeleteFlags(appUrl string) *DeleteFlags {
+func GetDeleteFlags(appURL string) *DeleteFlags {
 	return &DeleteFlags{
 		Config:     install.PackageConfig,
 		WorkDir:    install.WorkDir,
-		PkgURL:     appUrl,
+		PkgURL:     appURL,
 		CleanForce: install.CleanForce,
 	}
 }
@@ -26,15 +41,14 @@ func GetDeleteFlags(appUrl string) *DeleteFlags {
 func DeleteApp(flag *DeleteFlags, cfgFile string) error {
 	//TODO
 	c := &install.SealConfig{}
-	err := c.Load(cfgFile)
-	if err != nil {
+	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
 		os.Exit(0)
 	}
 	pkgConfig, _ := LoadAppConfig(flag.PkgURL, flag.Config)
 	pkgConfig.URL = flag.PkgURL
-	pkgConfig.Name = nameFromUrl(flag.PkgURL)
+	pkgConfig.Name = nameFromURL(flag.PkgURL)
 	pkgConfig.Workdir = flag.WorkDir
 	pkgConfig.Workspace = fmt.Sprintf("%s/%s", flag.WorkDir, pkgConfig.Name)
 

@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -6,7 +20,7 @@ import (
 	"sync"
 
 	"github.com/fanux/sealos/k8s"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 type ExecFlag struct {
@@ -98,16 +112,16 @@ func (e *ExecFlag) IsUseNode() bool {
 
 // Copy is cp src file to dst file
 func (e *ExecFlag) Copy() {
-	e.copyByNodeIp()
+	e.copyByNodeIP()
 }
 
 // Exec is cp src file to dst file
 func (e *ExecFlag) Exec() {
-	e.execByNodeIp()
+	e.execByNodeIP()
 }
 
 // copyByNodeIp is cp src file to dst file
-func (e *ExecFlag) copyByNodeIp() {
+func (e *ExecFlag) copyByNodeIP() {
 	var wg sync.WaitGroup
 	for _, n := range e.ExecNode {
 		wg.Add(1)
@@ -125,7 +139,7 @@ func (e *ExecFlag) copyByNodeIp() {
 }
 
 // execByNodeIp is exec cmd in Node
-func (e *ExecFlag) execByNodeIp() {
+func (e *ExecFlag) execByNodeIP() {
 	var wg sync.WaitGroup
 	for _, n := range e.ExecNode {
 		wg.Add(1)

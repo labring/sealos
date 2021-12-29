@@ -105,7 +105,7 @@ func (e *ExecFlag) IsUseCmd() bool {
 
 ### 远程命令和复制实现
 
-实现`scp`复制, 则是通过复制单个文件, 然后递归复制即可. 查看具体的[源码](https://github.com/fanux/sealos/blob/develop/pkg/sshcmd/sshutil/scp.go)
+实现`scp`复制, 则是通过复制单个文件, 然后递归复制即可. 查看具体的[源码](https://github.com/fanux/sealos/blob/master/pkg/sshcmd/sshutil/scp.go)
 如果`--dst`在目标机器存在, 则不执行copy动作, 直接就跳过了. 
 
 // todo

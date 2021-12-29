@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -8,13 +22,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/fanux/sealos/k8s"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 type SealosUpgrade struct {
 	SealConfig
 	NewVersion   string
-	NewPkgUrl    string
+	NewPkgURL    string
 	IPtoHostName map[string]string
 	Client       *kubernetes.Clientset
 }
@@ -23,10 +37,10 @@ var (
 	upgradeSealos = &SealosUpgrade{}
 )
 
-func NewUpgrade(version, pkgUrl string) *SealosUpgrade {
+func NewUpgrade(version, pkgURL string) *SealosUpgrade {
 	u := upgradeSealos
 	u.NewVersion = version
-	u.NewPkgUrl = pkgUrl
+	u.NewPkgURL = pkgURL
 	// add ip -> hostname
 	u.SetIPtoHostName()
 	var err error
@@ -38,13 +52,12 @@ func NewUpgrade(version, pkgUrl string) *SealosUpgrade {
 	return u
 }
 
-func ExitUpgradeCase(version, pkgUrl, cfgFile string) error {
-	if pkgUrl == "" || version == "" {
+func ExitUpgradeCase(version, pkgURL, cfgFile string) error {
+	if pkgURL == "" || version == "" {
 		return fmt.Errorf("version or pkg-url is required, Exit")
-
 	}
-	if pkgUrlCheck(pkgUrl) {
-		return fmt.Errorf("pkgurl %s check err, Exit", pkgUrl)
+	if pkgURLCheck(pkgURL) {
+		return fmt.Errorf("pkgurl %s check err, Exit", pkgURL)
 	}
 	if !FileExist(k8s.KubeDefaultConfigPath) {
 		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", k8s.KubeDefaultConfigPath)
@@ -68,7 +81,7 @@ func (u *SealosUpgrade) SetUP() {
 	}
 	// store latest version and pkgUrl
 	Version = u.NewVersion
-	PkgUrl = u.NewPkgUrl
+	PkgURL = u.NewPkgURL
 }
 
 // UpgradeMaster0 is upgrade master first.
@@ -90,7 +103,6 @@ func (u *SealosUpgrade) UpgradeOtherMaster() {
 	logger.Info("UpgradeOtherMasters")
 	hostnames := u.GetHostNamesFromIps(u.Masters[1:])
 	u.upgradeNodes(hostnames, true)
-
 }
 
 func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
@@ -100,7 +112,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
-			ip := u.GetIpByHostname(node)
+			ip := u.GetIPByHostname(node)
 			// drain worker node is too danger for prod use; do not drain nodes if worker nodes~
 			if isMaster {
 				logger.Info("[%s] first: to drain master node %s", ip, node)
@@ -154,9 +166,7 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 			} else {
 				logger.Error("fourth:  %s nodes is not ready, please check the nodes logs to find out reason", node)
 			}
-
 		}(hostname)
-
 	}
 	wg.Wait()
 }
@@ -183,7 +193,7 @@ func (u *SealosUpgrade) GetHostNamesFromIps(ips []string) []string {
 	return hostnames
 }
 
-func (u *SealosUpgrade) GetIpByHostname(host string) string {
+func (u *SealosUpgrade) GetIPByHostname(host string) string {
 	for nip, hostname := range u.IPtoHostName {
 		if host == hostname {
 			return nip
