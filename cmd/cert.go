@@ -15,9 +15,8 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/pkg/install"
 	"github.com/spf13/cobra"
-
-	"github.com/fanux/sealos/cert"
 )
 
 type Flag struct {
@@ -38,7 +37,7 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		cert.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIDR, config.DNSDomain)
+		install.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIDR, config.DNSDomain)
 	},
 }
 

@@ -8,32 +8,36 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-install-golint: ## check license if not exist install addlicense tools
-ifeq (, $(shell which golangci-lint))
-	@{ \
-	set -e ;\
-	o install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0 ;\
-	}
-GOLINT_BIN=$(GOBIN)/golangci-lint
-else
-GOLINT_BIN=$(shell which golangci-lint)
-endif
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
+
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
+
+GOLINT_BIN = $(shell pwd)/bin/golangci-lint
+install-golint: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(GOLINT_BIN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0)
 
 lint: install-golint ## Run go lint against code.
 	$(GOLINT_BIN) run -v ./...
 
 default:  build
 
-install-goreleaser: ## check license if not exist install addlicense tools
-ifeq (, $(shell which goreleaser))
-	@{ \
-	set -e ;\
-	go install github.com/goreleaser/goreleaser@latest ;\
-	}
-GORELEASER_BIN=$(GOBIN)/goreleaser
-else
-GORELEASER_BIN=$(shell which goreleaser)
-endif
+
+GORELEASER_BIN = $(shell pwd)/bin/goreleaser
+install-goreleaser: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@latest)
+
 
 build: SHELL:=/bin/bash
 build: install-goreleaser clean ## build binaries by default
@@ -46,40 +50,22 @@ help: ## this help
 clean: ## clean
 	rm -rf dist
 
-install-addlicense: ## check license if not exist install addlicense tools
-ifeq (, $(shell which addlicense))
-	@{ \
-	set -e ;\
-	LICENSE_TMP_DIR=$$(mktemp -d) ;\
-	cd $$LICENSE_TMP_DIR ;\
-	go mod init tmp ;\
-	go get -v github.com/google/addlicense ;\
-	rm -rf $$LICENSE_TMP_DIR ;\
-	}
-ADDLICENSE_BIN=$(GOBIN)/addlicense
-else
-ADDLICENSE_BIN=$(shell which addlicense)
-endif
+ADDLICENSE_BIN = $(shell pwd)/bin/addlicense
+install-addlicense: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(ADDLICENSE_BIN),github.com/google/addlicense@latest)
 
-
-filelicense: SHELL:=/bin/bash
-filelicense: ## add license
+filelicense:
+filelicense: install-addlicense
 	for file in ${Dirs} ; do \
 		if [[  $$file != '_output' && $$file != 'docs' && $$file != 'vendor' && $$file != 'logger' && $$file != 'applications' ]]; then \
 			$(ADDLICENSE_BIN)  -y $(shell date +"%Y") -c "sealos." -f hack/template/LICENSE ./$$file ; \
 		fi \
     done
 
-install-ossutil: ## check ossutil if not exist install ossutil tools
-ifeq (, $(shell which ossutil))
-	@{ \
-	set -e ;\
-	curl -sfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh -s -- -b $(GOBIN) v2.2.0 ;\
-	}
-OSSUTIL_BIN=$(GOBIN)/ossutil
-else
-OSSUTIL_BIN=$(shell which ossutil)
-endif
+OSSUTIL_BIN = $(shell pwd)/bin/ossutil
+install-ossutil: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(OSSUTIL_BIN),github.com/aliyun/ossutil@latest)
+
 
 push-oss:install-ossutil build
 	$(OSSUTIL_BIN) cp -f dist/sealos_linux_amd64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos
@@ -87,3 +73,17 @@ push-oss:install-ossutil build
 
 generator-contributors:
 	git log --format='%aN <%aE>' | sort -uf > CONTRIBUTORS
+
+
+DEEPCOPY_BIN = $(shell pwd)/bin/deepcopy-gen
+install-deepcopy: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(DEEPCOPY_BIN),k8s.io/code-generator/cmd/deepcopy-gen@latest)
+
+HEAD_FILE := hack/template/boilerplate.go.txt
+INPUT_DIR := github.com/fanux/sealos/pkg/types/v1beta1
+deepcopy:install-deepcopy
+	$(DEEPCOPY_BIN) \
+      --input-dirs="$(INPUT_DIR)" \
+      -O zz_generated.deepcopy   \
+      --go-header-file "$(HEAD_FILE)" \
+      --output-base "${GOPATH}/src"
