@@ -155,9 +155,7 @@ func getLocalURL(version string) string {
 func newCommand(c *Cluster) string {
 	//TODO should download it on master0 and copy to other nodes
 	version := extver.GetVersion()
-	if strings.HasPrefix(version, "v") {
-		version = strings.TrimPrefix(version, "v")
-	}
+	version = strings.TrimPrefix(version, "v")
 	releaseURL := fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz",
 		version, version)
 	cmd := fmt.Sprintf("wget %s -O -| tar -xz && chmod +x sealos", releaseURL)

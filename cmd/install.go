@@ -17,6 +17,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"github.com/spf13/cobra"
 
 	"github.com/fanux/sealos/cert"
@@ -26,7 +28,7 @@ import (
 
 var (
 	AppURL         string
-	installExample string = `
+	installExample = `
 	# when usr -f flag , you need add  something to  config file. 
 	# Apply the configuration in values.yaml to a kubernetes Cluster.
 	sealos install --pkg-url /root/dashboard.tar -f values.yaml
@@ -51,6 +53,7 @@ var installCmd = &cobra.Command{
 		_ = appmanager.InstallApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
+		logger.Fatal("the install app feature not support")
 		if install.ExitInstallCase(AppURL) {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)

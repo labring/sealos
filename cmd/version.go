@@ -27,9 +27,7 @@ func init() {
 	// see also https://github.com/LinuxSuRen/cobra-extension/issues/6
 	const name = "sealos"
 	verCmd := extver.NewVersionCmd("fanux", name, name, func(ver string) string {
-		if strings.HasPrefix(ver, "v") {
-			ver = strings.TrimPrefix(ver, "v")
-		}
+		ver = strings.TrimPrefix(ver, "v")
 		return fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/%s_%s_%s_%s.tar.gz",
 			ver, name, ver, runtime.GOOS, runtime.GOARCH)
 	})
