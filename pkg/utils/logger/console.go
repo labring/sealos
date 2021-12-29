@@ -16,7 +16,6 @@ package logger
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"runtime"
 	"sync"
