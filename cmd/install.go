@@ -54,6 +54,7 @@ var installCmd = &cobra.Command{
 		_ = appmanager.InstallApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
+		logger.Fatal("the install app feature not support")
 		if install.ExitInstallCase(AppURL) {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)

@@ -51,6 +51,7 @@ var deleteCmd = &cobra.Command{
 		_ = appmanager.DeleteApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
+		logger.Fatal("the delete app feature not support")
 		if install.ExitDeleteCase(AppURL) {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
