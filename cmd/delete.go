@@ -17,11 +17,14 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	v1 "github.com/fanux/sealos/pkg/types/v1"
+
+	install "github.com/fanux/sealos/pkg/install"
 
 	"github.com/spf13/cobra"
 
-	"github.com/fanux/sealos/install"
 	"github.com/fanux/sealos/pkg/appmanager"
 )
 
@@ -62,9 +65,9 @@ func init() {
 	rootCmd.AddCommand(deleteCmd)
 
 	deleteCmd.Flags().StringVar(&AppURL, "pkg-url", "", "APP offline pluginsfile localtion ex. /root/prometheus.tar.gz")
-	deleteCmd.Flags().StringVarP(&install.PackageConfig, "pkg-config", "c", "", "packageConfig for delete installed package config")
-	deleteCmd.Flags().StringVarP(&install.WorkDir, "workdir", "w", "/root", "workdir for install package home, keep the same with installed")
-	deleteCmd.Flags().BoolVarP(&install.CleanForce, "force", "f", false, "if this is true, will no prompt")
+	deleteCmd.Flags().StringVarP(&v1.PackageConfig, "pkg-config", "c", "", "packageConfig for delete installed package config")
+	deleteCmd.Flags().StringVarP(&v1.WorkDir, "workdir", "w", "/root", "workdir for install package home, keep the same with installed")
+	deleteCmd.Flags().BoolVarP(&v1.CleanForce, "force", "f", false, "if this is true, will no prompt")
 
 	// Here you will define your flags and configuration settings.
 

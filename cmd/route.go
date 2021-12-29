@@ -15,9 +15,8 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/pkg/install"
 	"github.com/spf13/cobra"
-
-	"github.com/fanux/sealos/install"
 )
 
 var (
