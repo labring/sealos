@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/cert"
-	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
+	"github.com/fanux/sealos/pkg/utils"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -33,13 +34,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "sealos",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "simplest way install kubernetes tools.",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -63,10 +58,10 @@ func init() {
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	// Find home directory.
-	home := cert.GetUserHomeDir()
-	logFile := fmt.Sprintf("%s/.sealos/sealos.log", home)
-	if !install.FileExist(home + "/.sealos") {
-		err := os.MkdirAll(home+"/.sealos", os.ModePerm)
+	configPath := v1.DefaultConfigPath
+	logFile := fmt.Sprintf("%s/sealos.log", configPath)
+	if !utils.FileExist(configPath) {
+		err := os.MkdirAll(configPath, os.ModePerm)
 		if err != nil {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
