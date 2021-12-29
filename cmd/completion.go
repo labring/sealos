@@ -6,9 +6,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/cobra"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/spf13/cobra"
 )
 
 const defaultCopyRight = `
