@@ -75,10 +75,14 @@ generator-contributors:
 	git log --format='%aN <%aE>' | sort -uf > CONTRIBUTORS
 
 
+DEEPCOPY_BIN = $(shell pwd)/bin/deepcopy-gen
+install-deepcopy: ## check license if not exist install go-lint tools
+	$(call go-get-tool,$(DEEPCOPY_BIN),k8s.io/code-generator/cmd/deepcopy-gen@latest)
+
 HEAD_FILE := hack/template/boilerplate.go.txt
 INPUT_DIR := github.com/fanux/sealos/pkg/types/v1beta1
-deepcopy:
-	deepcopy-gen \
+deepcopy:install-deepcopy
+	$(DEEPCOPY_BIN) \
       --input-dirs="$(INPUT_DIR)" \
       -O zz_generated.deepcopy   \
       --go-header-file "$(HEAD_FILE)" \

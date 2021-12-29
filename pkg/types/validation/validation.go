@@ -72,14 +72,29 @@ func validateCluster(cluster *v1beta1.Cluster, fldPath *field.Path) field.ErrorL
 	return allErrors
 }
 
-func ValidateInfra(infra *v1beta1.Infra) field.ErrorList {
+func validateCredential(credential *v1beta1.Credential, fldPath *field.Path) field.ErrorList {
+	allErrors := field.ErrorList{}
+
+	if len(credential.AccessKey) == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("accessKey"), credential.AccessKey,
+			"accessKey not empty"))
+	}
+	if len(credential.AccessSecret) == 0 {
+		allErrors = append(allErrors, field.Invalid(fldPath.Key("accessSecret"), credential.AccessSecret,
+			"accessSecret not empty"))
+	}
+	return allErrors
+}
+
+func ValidateInfra(infra *v1beta1.Infra, fun func(infra *v1beta1.Infra) field.ErrorList) field.ErrorList {
 	allErrors := apimachineryvalidation.ValidateObjectMeta(&infra.ObjectMeta, false, ValidateInfraName, field.NewPath("metadata"))
 	allErrors = append(allErrors, validateInfraSpec(&infra.Spec, field.NewPath("spec"))...)
+	allErrors = append(allErrors, fun(infra)...)
 	return allErrors
 }
 func validateInfraSpec(spec *v1beta1.InfraSpec, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
-
+	allErrors = append(allErrors, validateCredential(&spec.Credential, fldPath.Child("credential"))...)
 	allErrors = append(allErrors, validateCluster(&spec.Cluster, fldPath.Child("cluster"))...)
 	var roles []string
 	roleSet := sets.NewString()

@@ -68,10 +68,9 @@ func (a *AliProvider) CreateVSwitch() error {
 	request := vpc.CreateCreateVSwitchRequest()
 	request.Scheme = Scheme
 	request.ZoneId = a.Infra.Status.Cluster.ZoneID
-	request.CidrBlock = CidrBlock
+	request.CidrBlock = a.Infra.Spec.Cluster.Metadata.Network.PrivateCidrIP
 	request.VpcId = VpcID.Value(a.Infra.Status)
 	request.RegionId = a.Infra.Status.Cluster.RegionID
-	//response, err := d.Client.CreateVSwitch(request)
 	response := vpc.CreateCreateVSwitchResponse()
 	err := a.RetryVpcRequest(request, response)
 	if err != nil {
@@ -110,11 +109,10 @@ func (a *AliProvider) CreateSecurityGroup() error {
 		return err
 	}
 
-	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, SSHPortRange) {
-		return fmt.Errorf("authorize securitygroup ssh port failed")
-	}
-	if !a.AuthorizeSecurityGroup(response.SecurityGroupId, APIServerPortRange) {
-		return fmt.Errorf("authorize securitygroup apiserver port failed")
+	for _, port := range a.Infra.Spec.Cluster.Metadata.Network.ExportPorts {
+		if !a.AuthorizeSecurityGroup(response.SecurityGroupId, port) {
+			return fmt.Errorf("authorize securitygroup port: %v failed", port)
+		}
 	}
 	SecurityGroupID.SetValue(a.Infra.Status, response.SecurityGroupId)
 	return nil
@@ -197,8 +195,8 @@ func (a *AliProvider) BindEipForMaster0() error {
 func (a *AliProvider) allocateEipAddress() (eIP, eIPID string, err error) {
 	request := vpc.CreateAllocateEipAddressRequest()
 	request.Scheme = Scheme
-	request.Bandwidth = Bandwidth
-	request.InternetChargeType = InternetChargeType
+	request.Bandwidth = a.Infra.Spec.Cluster.Metadata.Network.Bandwidth
+	request.InternetChargeType = "PayByTraffic"
 	response := vpc.CreateAllocateEipAddressResponse()
 	err = a.RetryVpcRequest(request, response)
 	if err != nil {

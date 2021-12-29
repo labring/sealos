@@ -8,6 +8,7 @@ require (
 	github.com/baiyubin/aliyun-sts-go-sdk v0.0.0-20180326062324-cfa1a18b161f // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/google/uuid v1.1.2 // indirect
+	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.11.0
 	github.com/onsi/gomega v1.7.0
@@ -24,7 +25,7 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/ini.v1 v1.61.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
 	k8s.io/client-go v0.18.0

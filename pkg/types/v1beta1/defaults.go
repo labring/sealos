@@ -19,6 +19,28 @@ package v1beta1
 import (
 	"math/rand"
 	"time"
+
+	"github.com/fanux/sealos/pkg/utils"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	SourceCidrIP  = "0.0.0.0/0"
+	SSHPort       = "22/22"
+	APIServerPort = "6443/6443"
+)
+
+var (
+	sshExportPort = ExportPort{
+		Protocol:  ProtocolTCP,
+		CidrIP:    SourceCidrIP,
+		PortRange: SSHPort,
+	}
+	apiserverExportPort = ExportPort{
+		Protocol:  ProtocolTCP,
+		CidrIP:    SourceCidrIP,
+		PortRange: APIServerPort,
+	}
 )
 
 func Default(infra *Infra, fn func(infra *Infra) error) error {
@@ -35,6 +57,36 @@ func defaultCluster(infra *Infra) {
 	}
 	if infra.Spec.Cluster.Annotations == nil {
 		infra.Spec.Cluster.Annotations = make(map[string]string)
+	}
+
+	if infra.Spec.Cluster.RegionIDs != nil {
+		infra.Spec.Cluster.RegionIDs = utils.RemoveSliceEmpty(infra.Spec.Cluster.RegionIDs)
+	}
+	if infra.Spec.Cluster.ZoneIDs != nil {
+		infra.Spec.Cluster.ZoneIDs = utils.RemoveSliceEmpty(infra.Spec.Cluster.ZoneIDs)
+	}
+	if infra.Spec.Cluster.Metadata.Network.Bandwidth == "" {
+		infra.Spec.Cluster.Metadata.Network.Bandwidth = "100"
+	}
+	if len(infra.Spec.Cluster.Metadata.Network.ExportPorts) == 0 {
+		infra.Spec.Cluster.Metadata.Network.ExportPorts = []ExportPort{
+			sshExportPort,
+			apiserverExportPort,
+		}
+	} else {
+		ports := sets.NewString()
+		for _, port := range infra.Spec.Cluster.Metadata.Network.ExportPorts {
+			ports.Insert(port.PortRange)
+		}
+		if !ports.Has(SSHPort) {
+			infra.Spec.Cluster.Metadata.Network.ExportPorts = append(infra.Spec.Cluster.Metadata.Network.ExportPorts, sshExportPort)
+		}
+		if !ports.Has(APIServerPort) {
+			infra.Spec.Cluster.Metadata.Network.ExportPorts = append(infra.Spec.Cluster.Metadata.Network.ExportPorts, apiserverExportPort)
+		}
+	}
+	if infra.Spec.Cluster.Metadata.Network.PrivateCidrIP == "" {
+		infra.Spec.Cluster.Metadata.Network.PrivateCidrIP = "172.16.0.0/24"
 	}
 }
 

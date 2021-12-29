@@ -19,31 +19,21 @@ package aliyun
 import (
 	"time"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 const (
 	Scheme              = "https"
-	IPProtocol          = "tcp"
-	APIServerPortRange  = "6443/6443"
-	SSHPortRange        = "22/22"
-	SourceCidrIP        = "0.0.0.0/0"
-	CidrBlock           = "172.16.0.0/24"
-	Policy              = "accept"
-	DestinationResource = "InstanceType"
-	InstanceChargeType  = "PostPaid"
-	InternetChargeType  = "PayByTraffic"
 	Product             = "product"
 	Role                = "role"
 	Arch                = "arch"
-	Stopped             = "Stopped"
-	AvailableTypeStatus = "WithStock"
-	Bandwidth           = "100"
 	AliDomain           = "www.sealyun.com/"
 	TryTimes            = 10
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0
 )
+
+const AliyunProvider v1beta1.Provider = "AliyunProvider"
 
 type ResourceName string
 
@@ -56,29 +46,29 @@ const (
 	ShouldBeDeleteInstancesIDs ResourceName = "ShouldBeDeleteInstancesIDs"
 )
 
-func (r ResourceName) ClusterValue(infra v2.InfraSpec) string {
+func (r ResourceName) ClusterValue(infra v1beta1.InfraSpec) string {
 	return infra.Cluster.Annotations[string(r)]
 }
 
-func (r ResourceName) ClusterSetValue(infra v2.InfraSpec, val string) {
+func (r ResourceName) ClusterSetValue(infra v1beta1.InfraSpec, val string) {
 	infra.Cluster.Annotations[string(r)] = val
 }
 
-func (r ResourceName) Value(status v2.InfraStatus) string {
+func (r ResourceName) Value(status v1beta1.InfraStatus) string {
 	return status.Cluster.Annotations[string(r)]
 }
 
-func (r ResourceName) SetValue(status v2.InfraStatus, val string) {
+func (r ResourceName) SetValue(status v1beta1.InfraStatus, val string) {
 	status.Cluster.Annotations[string(r)] = val
 }
 
 type ImageArch string
 
-func ConvertImageArch(arch v2.Arch) ImageArch {
+func ConvertImageArch(arch v1beta1.Arch) ImageArch {
 	switch arch {
-	case v2.ARM64:
+	case v1beta1.ARM64:
 		return "arm64"
-	case v2.AMD64:
+	case v1beta1.AMD64:
 		return "x86_64"
 	}
 	return ""

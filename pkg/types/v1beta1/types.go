@@ -26,10 +26,6 @@ import (
 
 type Provider string
 
-const (
-	AliyunProvider Provider = "AliyunProvider"
-)
-
 type Arch string
 
 const (
@@ -80,10 +76,36 @@ type Disk struct {
 type Credential struct {
 	AccessKey    string `json:"accessKey"`
 	AccessSecret string `json:"accessSecret"`
+	ProjectID    string `json:"ProjectID,omitempty"`
 }
 
 type AccessChannels struct {
 	SSH SSH `json:"ssh,omitempty"`
+}
+
+type ClusterMeta struct {
+	IsSeize bool `json:"isSeize,omitempty"`
+
+	Network ClusterNetworkMeta `json:"network"`
+}
+
+type ClusterNetworkMeta struct {
+	Bandwidth     string       `json:"bandwidth"`
+	ExportPorts   []ExportPort `json:"exportPorts,omitempty"`
+	PrivateCidrIP string       `json:"privateCidrIP,omitempty"`
+}
+
+type Protocol string
+
+const (
+	ProtocolTCP Protocol = "tcp"
+	ProtocolUDP Protocol = "udp"
+)
+
+type ExportPort struct {
+	Protocol  Protocol `json:"protocol"`
+	CidrIP    string   `json:"cidrIP"`
+	PortRange string   `json:"portRange"`
 }
 
 type Cluster struct {
@@ -91,7 +113,7 @@ type Cluster struct {
 	ZoneIDs        []string          `json:"zoneIDs,omitempty"`
 	Annotations    map[string]string `json:"annotations,omitempty"`
 	AccessChannels AccessChannels    `json:"accessChannels"`
-	IsSeize        bool              `json:"isSeize,omitempty"`
+	Metadata       ClusterMeta       `json:"metadata,omitempty"`
 }
 
 // InfraSpec defines the desired state of Infra

@@ -18,15 +18,15 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"github.com/fanux/sealos/pkg/utils"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/pkg/errors"
 
-	"github.com/fanux/sealos/pkg/types/validation"
-
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
@@ -52,7 +52,7 @@ const (
 type AliProvider struct {
 	EcsClient ecs.Client
 	VpcClient vpc.Client
-	Infra     *v2.Infra
+	Infra     *v1beta1.Infra
 }
 
 type AliFunc func() error
@@ -237,21 +237,20 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
-	if err := v2.Default(a.Infra, defaultInfra); err != nil {
-		return err
-	}
-	if err := validation.ValidateInfra(a.Infra); len(err) != 0 {
-		return err.ToAggregate()
-	}
 	return a.Reconcile()
 }
 
-func defaultInfra(infra *v2.Infra) error {
+func DefaultInfra(infra *v1beta1.Infra) error {
 	//https://help.aliyun.com/document_detail/63440.htm?spm=a2c4g.11186623.0.0.f5952752gkxpB7#t9856.html
-	if infra.Spec.Cluster.IsSeize {
+	if infra.Spec.Cluster.Metadata.IsSeize {
 		infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
 	} else {
 		infra.Status.Cluster.SpotStrategy = "NoSpot"
 	}
 	return nil
+}
+
+func DefaultValidate(infra *v1beta1.Infra) field.ErrorList {
+	allErrors := field.ErrorList{}
+	return allErrors
 }
