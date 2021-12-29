@@ -17,6 +17,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 
 	install "github.com/fanux/sealos/pkg/install"
