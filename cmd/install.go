@@ -17,11 +17,10 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/install"
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	install "github.com/fanux/sealos/pkg/install"
 
 	"github.com/spf13/cobra"
 
@@ -32,10 +31,10 @@ var (
 	AppURL         string
 	installExample = `
 	# when usr -f flag , you need add  something to  config file. 
-	# Apply the configuration in values.yaml to a kubernetes Infra.
+	# Apply the configuration in values.yaml to a kubernetes Cluster.
 	sealos install --pkg-url /root/dashboard.tar -f values.yaml
 
-	# Apply the yaml passed into stdin to a kubenertes Infra.
+	# Apply the yaml passed into stdin to a kubenertes Cluster.
  	cat values.yaml | sealos install --pkg-url /root/dashboard.tar -f -
 	
 	# Set the WorkDir for your Package
