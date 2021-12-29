@@ -13,3 +13,4 @@ dist
 test/Note.md
 .ossutil_checkpoint
 bin
+.run

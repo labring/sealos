@@ -19,6 +19,7 @@ import (
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	install "github.com/fanux/sealos/pkg/install"
 
@@ -54,6 +55,7 @@ var installCmd = &cobra.Command{
 		_ = appmanager.InstallApp(cfg, cfgFile)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
+		logger.Fatal("the install app feature not support")
 		if install.ExitInstallCase(AppURL) {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
