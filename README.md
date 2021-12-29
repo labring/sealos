@@ -30,7 +30,7 @@
 
 **文档: _[官方文档](https://www.sealyun.com/instructions), [英文文档](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
-**加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
+**加入组织: _钉钉群(35371178), [Telegram](https://t.me/cloudnativer)_**
 
 ![](docs/images/arch.png)
 
@@ -76,6 +76,9 @@
    - sealos 默认会关闭防火墙， 如果需要打开防火墙， 建议手动放行相关的端口。
  - 内核要求:
    - cni组件选择cilium时要求内核版本不低于5.4
+
+## 提示
+- 如果使用腾讯云主机部署，默认禁用了calico的IPIP规则，需要改用VXLAN规则才能正常使用。
 
 # 🚀 快速开始
 

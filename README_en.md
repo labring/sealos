@@ -45,15 +45,37 @@ sealos is currently supported the latest k8s 1.22+
    - SSH can access to all nodes.
    - hostname is unique, and satisfied kubernetes requirements.
    - Time synchronization for all nodes.
-   - if network card has a stranger name, change it to (eth.*|en.*|em.*).
-   - kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it.
-   - kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you.
-- Networking and DNS requirements：
-  - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster.
-  - if you use aliyun/huawei cloud to deploy kubernetes. default pod cidr is conflict with dns cidr, we recommend you install kubernetes init flag to add  `--podcidr`  to avoid this problem.
-  - sealos default to disable firewalld, It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic.
-- Kernel requirements:
-  - When cni components choose cilium, the kernel version must not be lower than 5.4
+   - network Iface has a stranger name, change it to (eth.*|en.*|em.*)
+   - kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it
+   - kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you
+ - Networking and DNS requirements：
+   - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster。 
+   - if you use aliyun/huawei cloud to deploy kubernetes 。 default pod cidr is confilct with dns cidr， we recommand you install kubernetes init flag to add  `--podcidr`  to aviod this problem。
+   - sealos default to disable firewalld ，It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic。
+
+# Tips
+- If you use Tencent Cloud Hosting to deploy, calico's IPIP rules are disabled by default, and you need to change to VXLAN rules to use it properly.
+
+
+# Quick Start
+## PreInstall
+* Install and start docker
+* Download [kubernetes offline package](http://store.lameleg.com) copy it to /root. 
+* Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
+* Support kuberentes 1.14.0+ 
+
+## Install
+Multi master HA:
+```
+sealos init --master 192.168.0.2 \
+    --master 192.168.0.3 \
+    --master 192.168.0.4 \              
+    --node 192.168.0.5 \                 
+    --user root \                        
+    --passwd your-server-password \      
+    --version v1.14.1 \
+    --pkg-url /root/kube1.14.1.tar.gz     
+```
 
 # 🚀 Quick Start
 
@@ -154,4 +176,5 @@ $ sealos init --passwd '123456' \
 [简体中文](README.md)
 
 [More offline packages](https://sealyun.com)
+[Telegram](https://t.me/cloudnativer)
 
