@@ -16,7 +16,6 @@ package logger
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"runtime"
 	"sync"
@@ -59,7 +58,7 @@ func (c *consoleLogger) Init(jsonConfig string) error {
 	if len(jsonConfig) == 0 {
 		return nil
 	}
-	fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
+	//fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
 	err := json.Unmarshal([]byte(jsonConfig), c)
 	if runtime.GOOS == "windows" {
 		c.Colorful = false
