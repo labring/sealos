@@ -28,13 +28,11 @@
 
 ---
 
-**文档: _[官方文档](https://www.sealyun.com/instructions), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions), [英文文档](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
 
 ![](docs/images/arch.png)
-
-[English Docs](/README_en.md)
 
 # ✨ 支持的环境
 
