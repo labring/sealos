@@ -14,9 +14,9 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -X github.com/linuxsuren/cobra-extension/version.version={{.Version}}
-      - -X github.com/linuxsuren/cobra-extension/version.commit={{.ShortCommit}}
-      - -X github.com/linuxsuren/cobra-extension/version.date={{.Date}}
+      - -X github.com/fanux/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/fanux/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/fanux/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
 #archives:
 #  - replacements:

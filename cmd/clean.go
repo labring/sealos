@@ -17,8 +17,12 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
+	"github.com/fanux/sealos/pkg/utils"
+
+	"github.com/fanux/sealos/pkg/install"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/spf13/cobra"
 )
 
@@ -52,11 +56,11 @@ func init() {
 	rootCmd.AddCommand(cleanCmd)
 
 	// Here you will define your flags and configuration settings.
-	cleanCmd.Flags().StringSliceVar(&install.NodeIPs, "node", []string{}, "clean node ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
-	cleanCmd.Flags().StringSliceVar(&install.MasterIPs, "master", []string{}, "clean master ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
-	cleanCmd.PersistentFlags().BoolVarP(&install.CleanForce, "force", "f", false, "if this is true, will no prompt")
-	cleanCmd.PersistentFlags().BoolVar(&install.CleanAll, "all", false, "if this is true, delete all ")
-	cleanCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
+	cleanCmd.Flags().StringSliceVar(&v1.NodeIPs, "node", []string{}, "clean node ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	cleanCmd.Flags().StringSliceVar(&v1.MasterIPs, "master", []string{}, "clean master ips.kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
+	cleanCmd.PersistentFlags().BoolVarP(&v1.CleanForce, "force", "f", false, "if this is true, will no prompt")
+	cleanCmd.PersistentFlags().BoolVar(&v1.CleanAll, "all", false, "if this is true, delete all ")
+	cleanCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
@@ -68,9 +72,9 @@ func init() {
 }
 
 func CleanCmdFunc(cmd *cobra.Command, args []string) {
-	deleteNodes := install.ParseIPs(install.NodeIPs)
-	deleteMasters := install.ParseIPs(install.MasterIPs)
-	c := &install.SealConfig{}
+	deleteNodes := utils.ParseIPs(v1.NodeIPs)
+	deleteMasters := utils.ParseIPs(v1.MasterIPs)
+	c := &v1.SealConfig{}
 	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)
 		os.Exit(-1)

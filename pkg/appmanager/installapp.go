@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/fanux/sealos/install"
-	"github.com/fanux/sealos/pkg/logger"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"os"
 )
@@ -35,15 +36,15 @@ type InstallFlags struct {
 
 func GetInstallFlags(appURL string) *InstallFlags {
 	return &InstallFlags{
-		Config:  install.PackageConfig,
+		Config:  v1.PackageConfig,
 		PkgURL:  appURL,
-		WorkDir: install.WorkDir,
-		Values:  install.Values,
+		WorkDir: v1.WorkDir,
+		Values:  v1.Values,
 	}
 }
 
 func InstallApp(flag *InstallFlags, cfgFile string) error {
-	c := &install.SealConfig{}
+	c := &v1.SealConfig{}
 	if err := c.Load(cfgFile); err != nil {
 		logger.Error("%s", err)
 		c.ShowDefaultConfig()
