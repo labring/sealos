@@ -29,6 +29,7 @@ import (
 var (
 	cfgFile string
 	Info    bool
+	feature bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -52,6 +53,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sealos/config.yaml)")
+	rootCmd.PersistentFlags().BoolVar(&feature, "feature", false, "need use new feature. ex app feature")
 	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger ture for Info, false for Debug")
 }
 
