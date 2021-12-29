@@ -75,5 +75,5 @@ jobs:
             --push \
             -t ${DOCKER_REPO:-fanux/sealos}:${{ steps.prepare.outputs.tag_name }} \
             -t ${DOCKER_REPO:-fanux/sealos}:latest \
-            -f hack/dockerfile/Dockerfile.hub \
+            -f hack/dockerfile/Dockerfile \
             .
