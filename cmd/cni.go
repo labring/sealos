@@ -17,38 +17,33 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/net"
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/cni"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/spf13/cobra"
 )
 
 var cniType string
-var version string
+var cniVersion string
 
 // cniCmd represents the cni command
 var cniCmd = &cobra.Command{
 	Use:   "cni",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "sealos print cni config",
 	Run: func(cmd *cobra.Command, args []string) {
-		if cniType != net.CALICO && cniType != net.FLANNEL && cniType != net.CILIUM {
+		if cniType != cni.CALICO && cniType != cni.FLANNEL && cniType != cni.CILIUM {
 			logger.Error("unsupport cni: ", cniType)
 			return
 		}
-		if version == "" {
-			logger.Error("cni version should not nil ", version)
+		if cniVersion == "" {
+			logger.Error("cni version should not nil ", cniVersion)
 			return
 		}
-		yaml := net.NewNetwork(cniType, net.MetaData{
+		yaml := cni.NewNetwork(cniType, cni.MetaData{
 			Interface: "interface=eth.*|en.*|em.*",
 			IPIP:      true,
 			MTU:       "1440",
-			Version:   version,
+			Version:   cniVersion,
 		}).Manifests("")
 		fmt.Println(yaml)
 	},
@@ -57,8 +52,8 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(cniCmd)
 
-	cniCmd.Flags().StringVarP(&cniType, "cni-type", "t", net.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
-	cniCmd.Flags().StringVarP(&version, "version", "v", "", "calico version")
+	cniCmd.Flags().StringVarP(&cniType, "cni-type", "t", cni.CALICO, "print cni yaml, cni tpye just like, calico.flannel.cilium")
+	cniCmd.Flags().StringVarP(&cniVersion, "version", "v", "", "calico version")
 
 	// Here you will define your flags and configuration settings.
 
