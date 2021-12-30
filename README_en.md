@@ -7,6 +7,7 @@
 ---
 Documentation: https://www.sealyun.com/instructions, Blog: https://fuckcloudnative.io
 Organization: _DingTalk(35371178), [Telegram](https://t.me/cloudnativer)
+
 ---
 # Introduction
 Build a kubernetes HA cluster for a production environment.
