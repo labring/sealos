@@ -33,13 +33,13 @@ jobs:
           OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
           DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
         run: |
-          cd test && sh note.sh
+          cd hack/release && sh note.sh
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v1
         with:
           version: latest
-          args: release --timeout=1h  --release-notes=test/Note.md
+          args: release --timeout=1h  --release-notes=hack/release/Note.md
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           VERSION: ${{ steps.prepare.outputs.tag_name }}

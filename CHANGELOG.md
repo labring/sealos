@@ -1,9 +1,13 @@
 # ChangeLog
 
+## [3.3.9-rc.9](#v3.3.9-rc.9)
+
+- [#790](https://github.com/fanux/sealos/pull/790) refactor(dev): delete bug printf #790
+
 ## [3.3.9-rc.8](#v3.3.9-rc.8)
 
 - delete cloud,install,delete feature
-- [#778](https://github.com/fanux/sealos/pull/778)
+- [#778](https://github.com/fanux/sealos/pull/778) open hosts error log
 
 ## [3.3.9-rc.6](#v3.3.9-rc.6)
 
