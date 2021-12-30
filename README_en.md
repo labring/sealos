@@ -63,6 +63,7 @@ sealos is currently supported the latest k8s 1.22+
   - Sealos disables the firewall by default ，If you need to open the firewall, it is recommended to release the relevant ports manually.
 - Kernel requirements:
   - The cni component requires a kernel version of not less than 5.4 when selecting cilium
+  
 # Tips
 - If you use Tencent Cloud Hosting to deploy, calico's IPIP rules are disabled by default, and you need to change to VXLAN rules to use it properly.
 
