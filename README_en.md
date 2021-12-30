@@ -1,12 +1,20 @@
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-  [![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
 
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
+[![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
+[![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
+[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
+---
+Documentation: https://www.sealyun.com/instructions, Blog: https://fuckcloudnative.io
+Organization: _DingTalk(35371178), [Telegram](https://t.me/cloudnativer)
+---
 # Introduction
-Build a production kubernetes HA cluster.
+Build a kubernetes HA cluster for a production environment.
+[简体中文](README.md)
 
 ![](docs/images/arch.png)
 
-* Every node config a ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
+* Each node will be configured with an ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
 * Then run a [lvscare](https://github.com/fanux/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
 * If any master is down, lvscare will remove the ipvs realserver, when master recover it will add it back.
 * Sealos will send package and apply install commands, so we needn't ansible.
@@ -43,16 +51,17 @@ sealos is currently supported the latest k8s 1.22+
 
 - OS requirements
    - SSH can access to all nodes.
-   - hostname is unique, and satisfied kubernetes requirements.
+   - These nodes have unique host names that meet the hostname requirements for kubernetes.
    - Time synchronization for all nodes.
-   - network Iface has a stranger name, change it to (eth.*|en.*|em.*)
-   - kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it
-   - kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you
- - Networking and DNS requirements：
-   - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster。 
-   - if you use aliyun/huawei cloud to deploy kubernetes 。 default pod cidr is confilct with dns cidr， we recommand you install kubernetes init flag to add  `--podcidr`  to aviod this problem。
-   - sealos default to disable firewalld ，It's recommended that you turn off the firewall. if you want to use firewalld , remember to allow kubernetes port traffic。
-
+   - Network Iface name is unique, it is recommended to change it to a standard NIC name, such as (eth.|en.|em.*).
+   - Kubernetes1.20+, use containerd for default cri. user should not to install containerd or docker-ce. sealos will do it
+   - Kubernetes1.19-, use docker for default cri. user should not to install docker-ce. sealos will do it for you
+- Networking and DNS requirements：
+  - Make sure the DNS address in /etc/resolv.conf is available. Otherwise, it may cause some issues of DNS in cluster。 
+  - If you use Ali cloud or Huawei cloud host to deploy.  The default pod segment will conflict with AliCloud's dns segment, it is recommended to customize the pod segment by specifying --podcidr during init.
+  - Sealos disables the firewall by default ，If you need to open the firewall, it is recommended to release the relevant ports manually.
+- Kernel requirements:
+  - The cni component requires a kernel version of not less than 5.4 when selecting cilium
 # Tips
 - If you use Tencent Cloud Hosting to deploy, calico's IPIP rules are disabled by default, and you need to change to VXLAN rules to use it properly.
 
@@ -159,21 +168,18 @@ $ sealos init --passwd '123456' \
 
 - [x] Support ARM version offline package, v1.20 version offline package supports containerd integration, completely abandon docker
 - [x] 99 years certificate, support cluster backup and upgrade
-- [x] Does not rely on ansible haproxy keepalived, a binary tool, 0 dependencies
+- [x] No dependency on ansible haproxy keepalived, a binary tool, 0 dependency
 - [x] Offline installation, different versions of kubernetes download corresponding to different versions [Resource pack](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes), Offline package contains all binary files configuration files and images
 - [x] High-availability local LIB implemented through ipvs, which takes up less resources, is stable and reliable, and is similar to the implementation of kube-proxy
 - [x] Almost compatible with all environments that support systemd x86_64 architecture
 - [x] Easily add and delete cluster nodes
 - [x] Thousands of users use sealos in the online environment, which is stable and reliable
 - [x] The resource pack is placed on Alibaba Cloud OSS, so you don’t have to worry about network speed anymore
-- [x] dashboard ingress prometheus apps offline packaging, a key installation
 
 # 📊 Stats
 
 ![Alt](https://repobeats.axiom.co/api/embed/10ce83c1d8452210bc4a0b5a5df9d59bbc35d889.svg "Repobeats analytics image")
 
-
-[简体中文](README.md)
 
 [More offline packages](https://sealyun.com)
 [Telegram](https://t.me/cloudnativer)
