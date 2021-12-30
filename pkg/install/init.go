@@ -217,28 +217,27 @@ func (s *SealosInstaller) InstallMaster0() {
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-
-	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
-	if utils.IsIpv4(v1.Interface) && v1.Network == cni.CALICO {
-		v1.Interface = "can-reach=" + v1.Interface
-	} else if !utils.IsIpv4(v1.Interface) && v1.Network == cni.CALICO { //nolint:gofmt
-		v1.Interface = "interface=" + v1.Interface
-	}
-
 	var cniVersion string
-	if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
-		var metajson string
-		var tmpdata v1.Metadata
-		metajson = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
-		err := json.Unmarshal([]byte(metajson), &tmpdata)
-		if err != nil {
-			logger.Warn("get metadata version err: ", err)
-		} else {
-			cniVersion = tmpdata.CniVersion
-			v1.Network = tmpdata.CniName
+	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
+	if v1.Network == cni.CALICO {
+		if utils.IsIpv4(v1.Interface) {
+			v1.Interface = "can-reach=" + v1.Interface
+		} else if !utils.IsIpv4(v1.Interface) { //nolint:gofmt
+			v1.Interface = "interface=" + v1.Interface
+		}
+		if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
+			var metajson string
+			var tmpdata v1.Metadata
+			metajson = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
+			err := json.Unmarshal([]byte(metajson), &tmpdata)
+			if err != nil {
+				logger.Warn("get metadata version err: ", err)
+			} else {
+				cniVersion = tmpdata.CniVersion
+				v1.Network = tmpdata.CniName
+			}
 		}
 	}
-
 	netyaml := cni.NewNetwork(v1.Network, cni.MetaData{
 		Interface:      v1.Interface,
 		CIDR:           v1.PodCIDR,
