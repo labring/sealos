@@ -28,7 +28,7 @@
 
 ---
 
-**文档: _[官方文档](https://www.sealyun.com/instructions), [英文文档](/README_en.md), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions), [English docs](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/cloudnativer)_**
 
@@ -53,6 +53,7 @@
 - 1.20+
 - 1.21+
 - 1.22+
+- 1.23+
 
 更多版本支持, 详细查看[sealyun.com](https://www.sealyun.com)
 
@@ -99,14 +100,14 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin
 
 # 下载离线资源包
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
 
 # 安装一个三master的kubernetes集群
-$ sealos init --passwd '123456' \
+sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.22.0.tar.gz \
@@ -167,7 +168,6 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 - [x] 轻松实现集群节点的增加/删除
 - [x] 上千用户在线上环境使用sealos，稳定可靠
 - [x] 资源包放在阿里云oss上，再也不用担心网速
-- [x] dashboard ingress prometheus等APP 同样离线打包，一键安装
 
 # 📊 Stats
 
