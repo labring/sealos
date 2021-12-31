@@ -18,11 +18,10 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"os"
 	"strings"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type HostFile struct {

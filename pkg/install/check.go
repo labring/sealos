@@ -16,13 +16,13 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 // SetHosts set hosts. if can't access to hostName, set /etc/hosts

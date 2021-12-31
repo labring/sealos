@@ -19,12 +19,12 @@ package aliyun
 import (
 	"errors"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func (a *AliProvider) RetryVpcRequest(request requests.AcsRequest, response responses.AcsResponse) error {

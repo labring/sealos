@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"io/ioutil"
 	"os"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const (

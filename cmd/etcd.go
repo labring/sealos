@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils"
 
 	install "github.com/fanux/sealos/pkg/install"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 

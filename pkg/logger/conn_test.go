@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package install
+package logger
 
 import (
-	"encoding/json"
-	"github.com/fanux/sealos/pkg/logger"
-	"strings"
+	"testing"
 )
 
-//Print is
-func (s *SealosInstaller) Print(process ...string) {
-	if len(process) == 0 {
-		configJSON, _ := json.Marshal(s)
-		logger.Info("\n[globals]sealos config is: ", string(configJSON))
-	} else {
-		var sb strings.Builder
-		for _, v := range process {
-			sb.Write([]byte("==>"))
-			sb.Write([]byte(v))
-		}
-		logger.Debug(sb.String())
-	}
-}
-func (s *SealosInstaller) PrintFinish() {
-	logger.Info("sealos install success.")
+func TestConn(t *testing.T) {
+	log := NewLogger()
+	log.SetLogger("conn", `{"net":"tcp","addr":"10.1.55.10:1024"}`)
+	log.Info("this is informational to net")
 }

@@ -19,10 +19,9 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"path/filepath"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"

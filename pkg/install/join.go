@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"strings"
 	"sync"
 
@@ -26,7 +27,6 @@ import (
 	cert "github.com/fanux/sealos/pkg/kubernetes/cert"
 
 	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //BuildJoin is

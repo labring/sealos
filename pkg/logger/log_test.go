@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ var p = `{
 }`
 
 func TestLogOut(t *testing.T) {
-	_ = SetLogger(p)
+	SetLogger(p)
 	Trace("this is Trace")
 	Debug("this is Debug")
 	Info("this is Info")
@@ -53,7 +53,7 @@ func TestLogConfigReload(t *testing.T) {
 	go func() {
 		for {
 			for level := range LevelMap {
-				_ = SetLogger(fmt.Sprintf(`{
+				SetLogger(fmt.Sprintf(`{
 					"Console": {
 						"level": "%s",
 						"color": true
@@ -106,7 +106,7 @@ func TestLogTimeFormat(t *testing.T) {
 		"StampNano":   "Jan _2 15:04:05.000000000",
 	}
 	for timeType, format := range formats {
-		_ = SetLogger(fmt.Sprintf(`{
+		SetLogger(fmt.Sprintf(`{
 					"TimeFormat":"%s",
 					"Console": {
 						"level": "TRAC",

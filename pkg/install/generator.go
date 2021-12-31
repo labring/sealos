@@ -17,13 +17,12 @@ package install
 import (
 	"bytes"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"strings"
 	"text/template"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"sigs.k8s.io/yaml"
 )

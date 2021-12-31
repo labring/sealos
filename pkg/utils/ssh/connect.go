@@ -16,12 +16,11 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"golang.org/x/crypto/ssh"
 )

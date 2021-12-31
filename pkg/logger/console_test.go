@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,17 +32,17 @@ func testConsoleCalls(bl *LocalLogger) {
 
 func TestConsole(t *testing.T) {
 	log1 := NewLogger()
-	_ = log1.SetLogger("console", "")
+	log1.SetLogger("console", "")
 	testConsoleCalls(log1)
 
 	log2 := NewLogger()
-	_ = log2.SetLogger("console", `{"level":"EROR"}`)
+	log2.SetLogger("console", `{"level":"ERROR"}`)
 	testConsoleCalls(log2)
 }
 
 // Test console without color
 func TestNoColorConsole(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger("console", `{"color":false}`)
+	log.SetLogger("console", `{"color":false}`)
 	testConsoleCalls(log)
 }

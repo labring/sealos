@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"strings"
 	"sync"
@@ -25,7 +26,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type SealosClean struct {

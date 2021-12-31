@@ -16,10 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 

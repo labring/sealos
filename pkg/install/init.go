@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"io/ioutil"
 	"os"
@@ -31,7 +32,6 @@ import (
 	cert "github.com/fanux/sealos/pkg/kubernetes/cert"
 
 	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //BuildInit is

@@ -17,6 +17,7 @@ package install
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,8 +27,6 @@ import (
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"go.etcd.io/etcd/clientv3"

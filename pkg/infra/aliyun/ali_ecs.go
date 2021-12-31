@@ -17,15 +17,14 @@ package aliyun
 import (
 	"errors"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils"
 )
 
 type Instance struct {

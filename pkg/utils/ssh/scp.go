@@ -17,6 +17,7 @@ package ssh
 import (
 	"bytes"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"io/ioutil"
 	"net"
@@ -29,7 +30,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )

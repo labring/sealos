@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"time"
 
@@ -23,8 +24,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils"
 
 	nodeclient2 "github.com/fanux/sealos/pkg/kubernetes/nodeclient"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"k8s.io/client-go/kubernetes"
 )

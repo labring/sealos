@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"strings"
 	"sync"
@@ -24,8 +25,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/kubernetes/nodeclient"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type ExecFlag struct {

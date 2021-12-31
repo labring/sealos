@@ -16,12 +16,11 @@ package ssh
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"path"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const oneKBByte = 1024

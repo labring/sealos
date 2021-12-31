@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/pkg/logger"
 	"os"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -22,8 +23,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/cni"
 	install "github.com/fanux/sealos/pkg/install"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 

@@ -16,6 +16,7 @@ package aliyun
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"strings"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {

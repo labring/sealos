@@ -17,6 +17,7 @@ package aliyun
 import (
 	"errors"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func (a *AliProvider) CreateVPC() error {

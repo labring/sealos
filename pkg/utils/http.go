@@ -27,7 +27,7 @@ func DownloadFile(location string) (filePATH, md5 string) {
 			//generator download cmd
 			dwnCmd := downloadCmd(location)
 			//os exec download command
-			_, _ = Exec("/bin/sh", "-c", "mkdir -p /tmp/sealos && cd /tmp/sealos && "+dwnCmd)
+			_, _ = RunSimpleCmd("mkdir -p /tmp/sealos && cd /tmp/sealos && " + dwnCmd)
 		}
 		location = absPATH
 	}

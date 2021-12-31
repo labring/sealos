@@ -18,10 +18,9 @@ package utils
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"strconv"
 	"strings"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 // GetMajorMinorInt

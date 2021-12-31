@@ -18,11 +18,10 @@ import (
 	"crypto"
 	"crypto/x509"
 	"fmt"
+	"github.com/fanux/sealos/pkg/logger"
 	"net"
 	"os"
 	"path"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 var (
