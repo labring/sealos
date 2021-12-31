@@ -1,5 +1,9 @@
 # ChangeLog
 
+## [3.3.9-rc.10](#v3.3.9-rc.10)
+
+- [#807](https://github.com/fanux/sealos/pull/807) fixed cni but always is calico (#807)
+
 ## [3.3.9-rc.9](#v3.3.9-rc.9)
 
 - [#790](https://github.com/fanux/sealos/pull/790) refactor(dev): delete bug printf #790
