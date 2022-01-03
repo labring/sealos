@@ -53,7 +53,7 @@ passwd|服务器密码|centos
 master|k8s master节点IP地址| 192.168.253.128 
 node|k8s node节点IP地址|192.168.253.131
 pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.19.2.tar.gz 
-version|[资源包](http://store.lameleg.com)对应的版本|v1.19.2
+version|[资源包](https://www.sealyun.com/goodsList) 对应的版本|v1.19.2
 interface|calico使用的网卡名称或者路由|ens32
 
 **注意事项**： 
