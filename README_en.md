@@ -5,16 +5,14 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
 [![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
 ---
-Documentation: https://www.sealyun.com/instructions, Blog: https://fuckcloudnative.io
-Organization: _DingTalk(35371178), [Telegram](https://t.me/cloudnativer)
+**Document: _[Official document](https://www.sealyun.com/instructions), [中文文档](/README.md), [Blog](https://fuckcloudnative.io)_**
 
+**Organization: _DingTalk(35371178), [Telegram](https://t.me/cloudnativer)_**
 ---
 # Introduction
 Build a kubernetes HA cluster for a production environment.
-[简体中文](README.md)
 
 ![](docs/images/arch.png)
-
 * Each node will be configured with an ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
 * Then run a [lvscare](https://github.com/fanux/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
 * If any master is down, lvscare will remove the ipvs realserver, when master recover it will add it back.
@@ -39,9 +37,9 @@ Build a kubernetes HA cluster for a production environment.
 - 1.20+
 - 1.21+
 - 1.22+
+- 1.23+
 
 Looking for more supported versions, [sealyun.com](https://www.sealyun.com).
-sealos is currently supported the latest k8s 1.22+
 
 ## Requirements and Recommendations
 
@@ -68,26 +66,6 @@ sealos is currently supported the latest k8s 1.22+
 - If you use Tencent Cloud Hosting to deploy, calico's IPIP rules are disabled by default, and you need to change to VXLAN rules to use it properly.
 
 
-# Quick Start
-## PreInstall
-* Install and start docker
-* Download [kubernetes offline package](http://store.lameleg.com) copy it to /root. 
-* Download [latest sealos](https://github.com/fanux/sealos/releases) on release page.
-* Support kuberentes 1.14.0+ 
-
-## Install
-Multi master HA:
-```
-sealos init --master 192.168.0.2 \
-    --master 192.168.0.3 \
-    --master 192.168.0.4 \              
-    --node 192.168.0.5 \                 
-    --user root \                        
-    --passwd your-server-password \      
-    --version v1.14.1 \
-    --pkg-url /root/kube1.14.1.tar.gz     
-```
-
 # 🚀 Quick Start
 
 > Environmental information
@@ -105,16 +83,16 @@ Server password：123456
 
 > Just prepare the server and execute the following command on any server
 
-```sh
+```bash
 # download and install sealos, sealos is a binary tool of golang, just download and copy directly to the bin directory, the release page can also be downloaded
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin
 
 # download offline resource pack
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
 
 # Install a three-master kubernetes cluster
-$ sealos init --passwd '123456' \
+sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.22.0.tar.gz \
@@ -129,40 +107,40 @@ $ sealos init --passwd '123456' \
 | master    | k8s master IP Address                                                                                        | 192.168.0.2             |
 | node      | k8s node IP Address                                                                                          | 192.168.0.3             |
 | pkg-url   | offline resource package address, support downloading to local or a remote address                           | /root/kube1.22.0.tar.gz |
-| version   | [Resource pack](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes) Corresponding version | v1.22.0                 |
+| version   | [Resource pack](https://www.sealyun.com/goodsList) Corresponding version | v1.22.0                 |
 
 
 > add master
 
-```shell script
+```bash
 🐳 → sealos join --master 192.168.0.6 --master 192.168.0.7
 🐳 → sealos join --master 192.168.0.6-192.168.0.9  # or multiple consecutive IPs
 ```
 
 > add node
 
-```shell script
+```bash
 🐳 → sealos join --node 192.168.0.6 --node 192.168.0.7
 🐳 → sealos join --node 192.168.0.6-192.168.0.9  # or multiple consecutive IPs
 ```
 
 > delete the specified master
 
-```shell script
+```bash
 🐳 → sealos clean --master 192.168.0.6 --master 192.168.0.7
 🐳 → sealos clean --master 192.168.0.6-192.168.0.9  # or multiple consecutive IPs
 ```
 
 > Delete the specified node
 
-```shell script
+```bash
 🐳 → sealos clean --node 192.168.0.6 --node 192.168.0.7
 🐳 → sealos clean --node 192.168.0.6-192.168.0.9  # or multiple consecutive IPs
 ```
 
 > clean up the cluster
 
-```shell script
+```bash
 🐳 → sealos clean --all
 ```
 
@@ -181,8 +159,3 @@ $ sealos init --passwd '123456' \
 # 📊 Stats
 
 ![Alt](https://repobeats.axiom.co/api/embed/10ce83c1d8452210bc4a0b5a5df9d59bbc35d889.svg "Repobeats analytics image")
-
-
-[More offline packages](https://sealyun.com)
-[Telegram](https://t.me/cloudnativer)
-
