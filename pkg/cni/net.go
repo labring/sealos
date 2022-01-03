@@ -20,14 +20,9 @@ import (
 )
 
 const (
-	CALICO                = "calico"
-	FLANNEL               = "flannel"
-	CILIUM                = "cilium"
-	defaultInterface      = "eth.*|en.*"
-	defaultCIDR           = "100.64.0.0/10"
-	defaultK8sServiceHost = "127.0.0.1"
-	defaultK8sServicePort = "6443"
-	defaultCNIRepo        = "k8s.gcr.io"
+	defaultInterface = "eth.*|en.*"
+	defaultCIDR      = "100.64.0.0/10"
+	defaultCNIRepo   = "k8s.gcr.io"
 )
 
 type MetaData struct {
@@ -36,32 +31,19 @@ type MetaData struct {
 	// ipip mode for calico.yml
 	IPIP bool
 	// MTU size
-	MTU            string
-	CniRepo        string
-	K8sServiceHost string
-	K8sServicePort string
-	Version        string
+	MTU     string
+	CniRepo string
+	Version string
 }
 
 // Net is CNI interface
 type Net interface {
-	// if template is "" using default template
 	Manifests(template string) string
-	// return cni template file
 	Template() string
 }
 
-func NewNetwork(t string, metadata MetaData) Net {
-	switch t {
-	case CALICO:
-		return &Calico{metadata: metadata}
-	case FLANNEL:
-		return &Flannel{metadata: metadata}
-	case CILIUM:
-		return &Cilium{metadata: metadata}
-	default:
-		return &Calico{metadata: metadata}
-	}
+func NewCalico(metadata MetaData) Net {
+	return &Calico{metadata: metadata}
 }
 
 func render(data MetaData, temp string) string {

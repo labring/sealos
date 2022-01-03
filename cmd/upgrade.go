@@ -49,9 +49,13 @@ func NewUpgradeCmd() *cobra.Command {
 
 func UpgradeCmdFunc(cmd *cobra.Command, args []string) {
 	if !force {
-		prompt := fmt.Sprintf("upgrade cmd will upgrade your kubernetes cluster immediately \n" +
+		prompt := fmt.Sprintf("Are you exec upgrade cmd will upgrade your kubernetes cluster immediately \n" +
 			"Are you sure you want to proceed with the upgrade?  (y/n)?")
-		result := utils.Confirm(prompt)
+		cancel := fmt.Sprintf("You have canceled to exec upgrade cmd !")
+		result, err := utils.Confirm(prompt, cancel)
+		if err != nil {
+			logger.Fatal(err)
+		}
 		if !result {
 			logger.Info("upgrade is skip, Exit")
 			os.Exit(-1)

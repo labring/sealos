@@ -67,9 +67,5 @@ func initConfig() {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
 	}
-	if Info {
-		logger.Cfg(5, logFile)
-	} else {
-		logger.Cfg(6, logFile)
-	}
+	logger.Cfg(!Info, logFile)
 }

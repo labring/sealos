@@ -42,25 +42,6 @@ func TestTemplate(t *testing.T) {
 	t.Log(string(Template()))
 }
 
-func TestNetCiliumTemplate(t *testing.T) {
-	var masters = []string{"172.20.241.205:22", "172.20.241.206:22", "172.20.241.207:22"}
-	var vip = "10.103.97.1"
-	v1.MasterIPs = masters
-	v1.VIP = vip
-	v1.APIServer = "apiserver.cluster.local"
-	v1.Version = "1.20.5"
-	v1.Network = "cilium"
-	v1.CgroupDriver = DefaultCgroupDriver
-	t.Log(string(Template()))
-	v1.Network = "calico"
-	t.Log(string(Template()))
-	v1.Version = "1.18.5"
-	v1.Network = "cilium"
-	t.Log(string(Template()))
-	v1.Network = "calico"
-	v1.CgroupDriver = DefaultSystemdCgroupDriver
-	t.Log(string(Template()))
-}
 
 var testYaml = `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration

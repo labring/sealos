@@ -21,8 +21,6 @@ import (
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/cni"
 )
 
 type CleanCluster interface {
@@ -61,7 +59,6 @@ type SealosInstaller struct {
 	Hosts     []string
 	Masters   []string
 	Nodes     []string
-	Network   string
 	APIServer string
 }
 
@@ -93,13 +90,13 @@ func (s *SealosInstaller) Command(version string, name CommandType) (cmd string)
 	// kubectl -n kube-system delete ds kube-proxy
 	// # Run on each node:
 	// iptables-restore <(iptables-save | grep -v KUBE)
-	if s.Network == cni.CILIUM {
-		if utils.VersionToInt(version) >= 116 {
-			commands[InitMaster] = `kubeadm init --skip-phases=addon/kube-proxy --config=/root/kubeadm-config.yaml --upload-certs` + v1.VLogString()
-		} else {
-			commands[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs` + v1.VLogString()
-		}
-	}
+	//if s.Network == cni.CILIUM {
+	//	if utils.VersionToInt(version) >= 116 {
+	//		commands[InitMaster] = `kubeadm init --skip-phases=addon/kube-proxy --config=/root/kubeadm-config.yaml --upload-certs` + v1.VLogString()
+	//	} else {
+	//		commands[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs` + v1.VLogString()
+	//	}
+	//}
 
 	v, ok := commands[name]
 	defer func() {

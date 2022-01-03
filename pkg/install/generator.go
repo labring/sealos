@@ -142,7 +142,6 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["SvcCIDR"] = v1.SvcCIDR
 	envMap["Repo"] = v1.Repo
 	envMap["Master0"] = utils.IPFormat(v1.MasterIPs[0])
-	envMap["Network"] = v1.Network
 	envMap["CgroupDriver"] = v1.CgroupDriver
 	envMap["KubeadmApi"] = v1.KubeadmAPI
 	envMap["CriSocket"] = v1.CriSocket

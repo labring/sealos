@@ -46,7 +46,6 @@ func joinMastersFunc(joinMasters []string) {
 		Hosts:     joinMasters,
 		Masters:   masters,
 		Nodes:     nodes,
-		Network:   v1.Network,
 		APIServer: v1.APIServer,
 	}
 	i.CheckValid()

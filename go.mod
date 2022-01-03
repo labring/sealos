@@ -18,6 +18,7 @@ require (
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sealyun/lvscare v1.1.2-alpha.2
 	github.com/spf13/cobra v1.1.1
+	github.com/spf13/viper v1.7.0
 	github.com/vishvananda/netlink v1.1.0
 	go.etcd.io/etcd v0.0.0-20200716221620-18dfb9cca345
 	go.uber.org/multierr v1.6.0 // indirect

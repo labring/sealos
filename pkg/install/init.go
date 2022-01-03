@@ -47,7 +47,6 @@ func BuildInit() {
 		Hosts:     hosts,
 		Masters:   masters,
 		Nodes:     nodes,
-		Network:   v1.Network,
 		APIServer: v1.APIServer,
 	}
 	i.CheckValid()
@@ -219,38 +218,34 @@ func (s *SealosInstaller) InstallMaster0() {
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 	var cniVersion string
 	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
-	if v1.Network == cni.CALICO {
-		if utils.IsIpv4(v1.Interface) {
-			v1.Interface = "can-reach=" + v1.Interface
-		} else if !utils.IsIpv4(v1.Interface) { //nolint:gofmt
-			v1.Interface = "interface=" + v1.Interface
-		}
-		if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
-			var metajson string
-			var tmpdata v1.Metadata
-			metajson = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
-			err := json.Unmarshal([]byte(metajson), &tmpdata)
-			if err != nil {
-				logger.Warn("get metadata version err: ", err)
-			} else {
-				cniVersion = tmpdata.CniVersion
-				v1.Network = tmpdata.CniName
-			}
+	if utils.IsIpv4(v1.Interface) {
+		v1.Interface = "can-reach=" + v1.Interface
+	} else if !utils.IsIpv4(v1.Interface) { //nolint:gofmt
+		v1.Interface = "interface=" + v1.Interface
+	}
+	if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
+		var metajson string
+		var tmpdata v1.Metadata
+		metajson = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
+		err := json.Unmarshal([]byte(metajson), &tmpdata)
+		if err != nil {
+			logger.Warn("get metadata version err: ", err)
+		} else {
+			cniVersion = tmpdata.CniVersion
 		}
 	}
-	netyaml := cni.NewNetwork(v1.Network, cni.MetaData{
-		Interface:      v1.Interface,
-		CIDR:           v1.PodCIDR,
-		IPIP:           !v1.BGP,
-		MTU:            v1.MTU,
-		CniRepo:        v1.Repo,
-		K8sServiceHost: s.APIServer,
-		Version:        cniVersion,
+	netyaml := cni.NewCalico(cni.MetaData{
+		Interface: v1.Interface,
+		CIDR:      v1.PodCIDR,
+		IPIP:      !v1.BGP,
+		MTU:       v1.MTU,
+		CniRepo:   v1.Repo,
+		Version:   cniVersion,
 	}).Manifests("")
-	logger.Debug("cni yaml : \n", netyaml)
-	configYamlDir := filepath.Join(v1.DefaultConfigPath, "cni.yaml")
-	_ = ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
-	v1.SSHConfig.Copy(s.Masters[0], configYamlDir, "/tmp/cni.yaml")
+	configYamlPath := filepath.Join(v1.DefaultConfigPath, "cni.yaml")
+	logger.Debug("cni yaml path is : ", configYamlPath)
+	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
+	v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")
 	v1.SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }
 

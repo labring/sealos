@@ -24,12 +24,11 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/spf13/viper"
 )
 
 // 默认日志输出
 var defaultLogger *LocalLogger
+var debugMode bool
 
 // 日志等级，从0-7，日优先级由高到低
 const (
@@ -150,28 +149,13 @@ func init() {
 	defaultLogger = NewLogger(3)
 }
 
-func Cfg(debugMod bool) {
+func Cfg(debugMod bool, logDir string) {
+	debugMode = debugMod
 	logLev := 5
 	if debugMod {
 		logLev = 6
+		SetLogPath(true)
 	}
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-		var logCfg *logConfig
-		viper.SetConfigType("json")
-		err := viper.Unmarshal(&logCfg)
-		if err == nil {
-			logCfg.Console.LogLevel = logLevel(logLev)
-			cfg, err := json.Marshal(&logCfg)
-			if err == nil {
-				SetLogger(string(cfg))
-				SetLogPath(true)
-				return
-			}
-		}
-	}
-
 	SetLogger(fmt.Sprintf(`{
 					"TimeFormat": "2006-01-02 15:04:05",
 					"Console": {
@@ -190,7 +174,7 @@ func Cfg(debugMod bool) {
 						"permit": "0660",
 						"LogLevel":0
 				}}`,
-		logLev, "common.DefaultLogDir", time.Now().Format("2006-01-02"),
+		logLev, logDir, time.Now().Format("2006-01-02"),
 	))
 
 	SetLogPath(true)
@@ -355,7 +339,7 @@ func (localLog *LocalLogger) Info(format string, v ...interface{}) {
 
 // Debug Log DEBUG level message.
 func (localLog *LocalLogger) Debug(format string, v ...interface{}) {
-	if loggerConfig.DebugMode {
+	if debugMode {
 		localLog.writeMsg(LevelDebug, format, v...)
 	}
 }
@@ -394,7 +378,7 @@ func Reset() {
 }
 
 func IsDebugModel() bool {
-	return loggerConfig.DebugMode
+	return debugMode
 }
 
 func SetLogPath(show bool) {
