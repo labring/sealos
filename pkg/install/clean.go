@@ -20,12 +20,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type SealosClean struct {
@@ -41,8 +42,12 @@ func BuildClean(deleteNodes, deleteMasters []string) {
 	//1. 删除masters
 	if len(deleteMasters) != 0 {
 		if !v1.CleanForce { // false
-			prompt := fmt.Sprintf("clean command will clean masters [%s], continue clean (y/n)?", strings.Join(deleteMasters, ","))
-			result := utils.Confirm(prompt)
+			prompt := fmt.Sprintf("Are you sure to clean the masters [%s] ?", strings.Join(deleteMasters, ","))
+			cancel := fmt.Sprintf("You have canceled to clean the masters [%s] !", strings.Join(deleteMasters, ","))
+			result, err := utils.Confirm(prompt, cancel)
+			if err != nil {
+				logger.Fatal(err)
+			}
 			if !result {
 				logger.Debug("clean masters command is skip")
 				goto node
@@ -56,8 +61,12 @@ func BuildClean(deleteNodes, deleteMasters []string) {
 node:
 	if len(deleteNodes) != 0 {
 		if !v1.CleanForce { // flase
-			prompt := fmt.Sprintf("clean command will clean nodes [%s], continue clean (y/n)?", strings.Join(deleteNodes, ","))
-			result := utils.Confirm(prompt)
+			prompt := fmt.Sprintf("Are you sure to clean the nodes [%s] ?", strings.Join(deleteNodes, ","))
+			cancel := fmt.Sprintf("You have canceled to clean the nodes [%s] !", strings.Join(deleteNodes, ","))
+			result, err := utils.Confirm(prompt, cancel)
+			if err != nil {
+				logger.Fatal(err)
+			}
 			if !result {
 				logger.Debug("clean nodes command is skip")
 				goto all
@@ -70,7 +79,12 @@ node:
 all:
 	if len(deleteNodes) == 0 && len(deleteMasters) == 0 && v1.CleanAll {
 		if !v1.CleanForce { // flase
-			result := utils.Confirm(`clean command will clean all masters and nodes, continue clean (y/n)?`)
+			prompt := "Are you sure to clean all masters and nodes ?"
+			cancel := "You have canceled to clean all masters and nodes !"
+			result, err := utils.Confirm(prompt, cancel)
+			if err != nil {
+				logger.Fatal(err)
+			}
 			if !result {
 				logger.Debug("clean all node command is skip")
 				goto end
@@ -92,7 +106,7 @@ end:
 	if i.cleanAll {
 		logger.Info("if clean all and clean sealos config")
 		cfgPath := v1.DefaultConfigPath
-		_, _ = utils.Exec("/bin/sh", "-c", "rm -rf "+cfgPath)
+		_, _ = utils.RunSimpleCmd("rm -rf " + cfgPath)
 	}
 }
 

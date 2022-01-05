@@ -20,12 +20,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/kubernetes/nodeclient"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type ExecFlag struct {

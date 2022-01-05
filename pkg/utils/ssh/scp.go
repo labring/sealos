@@ -27,9 +27,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"github.com/fanux/sealos/pkg/utils"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )

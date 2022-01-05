@@ -25,12 +25,12 @@ import (
 	"path"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"github.com/fanux/sealos/pkg/kubernetes/apiclient"
 	cryptoutil "github.com/fanux/sealos/pkg/kubernetes/crypto"
 
 	"github.com/fanux/sealos/pkg/kubernetes/apis/kubeadm"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/pkg/errors"
 
 	v1 "k8s.io/api/core/v1"

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 const oneKBByte = 1024

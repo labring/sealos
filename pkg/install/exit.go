@@ -15,9 +15,9 @@
 package install
 
 import (
+	"github.com/fanux/sealos/pkg/logger"
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 var message string

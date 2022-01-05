@@ -108,7 +108,7 @@ func MarshalYamlToFile(file string, obj interface{}) error {
 // GetFileDataLocally get file data for cloud apply
 func GetFileDataLocally(filePath string) string {
 	cmd := fmt.Sprintf("sudo -E cat %s", filePath)
-	result, _, err := utils.BashWithStdout(cmd)
+	result, err := utils.RunBashCmd(cmd)
 	CheckErr(err)
 	return result
 }
@@ -116,7 +116,7 @@ func GetFileDataLocally(filePath string) string {
 // DeleteFileLocally delete file for cloud apply
 func DeleteFileLocally(filePath string) {
 	cmd := fmt.Sprintf("sudo -E rm -rf %s", filePath)
-	_, err := utils.Bash(cmd)
+	_, err := utils.RunBashCmd(cmd)
 	CheckErr(err)
 }
 

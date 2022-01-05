@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 // SetHosts set hosts. if can't access to hostName, set /etc/hosts
@@ -67,16 +66,16 @@ func (s *SealosInstaller) CheckValid() {
 			}
 			logger.Info("[%s]  ------------ check ok", h)
 		}
-		if s.Network == cni.CILIUM {
-			if err := v1.SSHConfig.CmdAsync(h, "uname -r | grep 5 | awk -F. '{if($2>3)print \"ok\"}' | grep ok && exit 0 || exit 1"); err != nil {
-				logger.Error("[%s] ------------ check kernel version  < 5.3", h)
-				os.Exit(1)
-			}
-			if err := v1.SSHConfig.CmdAsync(h, "mount bpffs -t bpf /sys/fs/bpf && mount | grep /sys/fs/bpf && exit 0 || exit 1"); err != nil {
-				logger.Error("[%s] ------------ mount  bpffs err", h)
-				os.Exit(1)
-			}
-		}
+		//if s.Network == cni.CILIUM {
+		//	if err := v1.SSHConfig.CmdAsync(h, "uname -r | grep 5 | awk -F. '{if($2>3)print \"ok\"}' | grep ok && exit 0 || exit 1"); err != nil {
+		//		logger.Error("[%s] ------------ check kernel version  < 5.3", h)
+		//		os.Exit(1)
+		//	}
+		//	if err := v1.SSHConfig.CmdAsync(h, "mount bpffs -t bpf /sys/fs/bpf && mount | grep /sys/fs/bpf && exit 0 || exit 1"); err != nil {
+		//		logger.Error("[%s] ------------ mount  bpffs err", h)
+		//		os.Exit(1)
+		//	}
+		//}
 
 		// version >= 1.20 , Add prefight for containerd
 		if utils.For120(v1.Version) {

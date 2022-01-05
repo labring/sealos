@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -68,9 +68,5 @@ func initConfig() {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
 	}
-	if Info {
-		logger.Cfg(5, logFile)
-	} else {
-		logger.Cfg(6, logFile)
-	}
+	logger.Cfg(!Info, logFile)
 }

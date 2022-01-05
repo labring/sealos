@@ -17,7 +17,7 @@ package ipvs
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"

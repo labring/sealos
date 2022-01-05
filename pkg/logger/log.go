@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -27,20 +28,22 @@ import (
 
 // 默认日志输出
 var defaultLogger *LocalLogger
+var debugMode bool
 
 // 日志等级，从0-7，日优先级由高到低
 const (
-	LevelEmergency     = iota // 系统级紧急，比如磁盘出错，内存异常，网络不可用等
-	LevelAlert                // 系统级警告，比如数据库访问异常，配置文件出错等
-	LevelCritical             // 系统级危险，比如权限出错，访问异常等
-	LevelError                // 用户级错误
-	LevelWarning              // 用户级警告
-	LevelInformational        // 用户级信息
-	LevelDebug                // 用户级调试
-	LevelTrace                // 用户级基本输出
+	LevelEmergency     logLevel = iota // 系统级紧急，比如磁盘出错，内存异常，网络不可用等
+	LevelAlert                         // 系统级警告，比如数据库访问异常，配置文件出错等
+	LevelCritical                      // 系统级危险，比如权限出错，访问异常等
+	LevelError                         // 用户级错误
+	LevelWarning                       // 用户级警告
+	LevelInformational                 // 用户级信息
+	LevelDebug                         // 用户级调试
+	LevelTrace                         // 用户级基本输出
 )
 
-var LevelMap = map[string]int{
+// LevelMap 日志等级和描述映射关系
+var LevelMap = map[string]logLevel{
 	"EMER": LevelEmergency,
 	"ALRT": LevelAlert,
 	"CRIT": LevelCritical,
@@ -49,7 +52,7 @@ var LevelMap = map[string]int{
 	"INFO": LevelInformational,
 	"DEBG": LevelDebug,
 	"TRAC": LevelTrace,
-} // 日志等级和描述映射关系
+}
 
 // 注册实现的适配器， 当前支持控制台，文件和网络输出
 var adapters = make(map[string]Logger)
@@ -73,10 +76,12 @@ const (
 	AdapterConn          = "conn"                // 网络输出配置项
 )
 
+type logLevel int
+
 // log provider interface
 type Logger interface {
 	Init(config string) error
-	LogWrite(when time.Time, msg interface{}, level int) error
+	LogWrite(when time.Time, msg interface{}, level logLevel) error
 	Destroy()
 }
 
@@ -126,7 +131,8 @@ func NewLogger(depth ...int) *LocalLogger {
 	}
 	l.appName = "[" + appSn + "]"
 	l.callDepth = dep
-	_ = l.SetLogger(AdapterConsole)
+	l.usePath = true
+	//l.SetLogger(AdapterConsole)
 	l.timeFormat = logTimeDefaultFormat
 	return l
 }
@@ -143,24 +149,55 @@ func init() {
 	defaultLogger = NewLogger(3)
 }
 
-func (r *LocalLogger) SetLogger(adapterName string, configs ...string) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
+func Cfg(debugMod bool, logDir string) {
+	debugMode = debugMod
+	logLev := 5
+	if debugMod {
+		logLev = 6
+		SetLogPath(true)
+	}
+	SetLogger(fmt.Sprintf(`{
+					"TimeFormat": "2006-01-02 15:04:05",
+					"Console": {
+						"level": "",
+						"color": true,
+						"LogLevel": %d
+					},
+					"File": {
+						"filename": "%s/%s.log",
+						"level": "TRAC",
+						"daily": true,
+						"maxlines": 1000000,
+						"maxsize": 1,
+						"maxdays": -1,
+						"append": true,
+						"permit": "0660",
+						"LogLevel":0
+				}}`,
+		logLev, logDir, time.Now().Format("2006-01-02"),
+	))
 
-	if !r.init {
-		r.outputs = []*nameLogger{}
-		r.init = true
+	SetLogPath(true)
+}
+
+func (localLog *LocalLogger) SetLogger(adapterName string, configs ...string) {
+	localLog.lock.Lock()
+	defer localLog.lock.Unlock()
+
+	if !localLog.init {
+		localLog.outputs = []*nameLogger{}
+		localLog.init = true
 	}
 
 	config := append(configs, "{}")[0]
 	var num = -1
 	var i int
 	var l *nameLogger
-	for i, l = range r.outputs {
+	for i, l = range localLog.outputs {
 		if l.name == adapterName {
 			if l.config == config {
 				//配置没有变动，不重新设置
-				return fmt.Errorf("you have set same config for r adaptername %s", adapterName)
+				fmt.Printf("you have set same config for locallog adaptername %s", adapterName)
 			}
 			l.Logger.Destroy()
 			num = i
@@ -169,46 +206,44 @@ func (r *LocalLogger) SetLogger(adapterName string, configs ...string) error {
 	}
 	logger, ok := adapters[adapterName]
 	if !ok {
-		return fmt.Errorf("unknown adaptername %s (forgotten Register?)", adapterName)
+		fmt.Printf("unknown adaptername %s (forgotten Register?)", adapterName)
 	}
 
 	if err := logger.Init(config); err != nil {
-		_, _ = fmt.Fprintf(os.Stderr, "logger Init <%s> err:%v, %s output ignore!\n",
+		fmt.Fprintf(os.Stderr, "logger Init <%s> err:%v, %s output ignore!\n",
 			adapterName, err, adapterName)
-		return err
 	}
 	if num >= 0 {
-		r.outputs[i] = &nameLogger{name: adapterName, Logger: logger, config: config}
-		return nil
+		localLog.outputs[i] = &nameLogger{name: adapterName, Logger: logger, config: config}
 	}
-	r.outputs = append(r.outputs, &nameLogger{name: adapterName, Logger: logger, config: config})
-	return nil
+	localLog.outputs = append(localLog.outputs, &nameLogger{name: adapterName, Logger: logger, config: config})
 }
 
-func (r *LocalLogger) DelLogger(adapterName string) error {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-	outputs := []*nameLogger{}
-	for _, lg := range r.outputs {
+func (localLog *LocalLogger) DelLogger(adapterName string) error {
+	localLog.lock.Lock()
+	defer localLog.lock.Unlock()
+	var outputs []*nameLogger
+	for _, lg := range localLog.outputs {
 		if lg.name == adapterName {
 			lg.Destroy()
 		} else {
 			outputs = append(outputs, lg)
 		}
 	}
-	if len(outputs) == len(r.outputs) {
+	if len(outputs) == len(localLog.outputs) {
 		return fmt.Errorf("logs: unknown adaptername %s (forgotten Register?)", adapterName)
 	}
-	r.outputs = outputs
+	localLog.outputs = outputs
 	return nil
 }
 
 // 设置日志起始路径
-func (r *LocalLogger) SetLogPath(bPath bool) {
-	r.usePath = bPath
+func (localLog *LocalLogger) SetLogPath(bPath bool) {
+	localLog.usePath = bPath
 }
-func (r *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int) {
-	for _, l := range r.outputs {
+
+func (localLog *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level logLevel) {
+	for _, l := range localLog.outputs {
 		if l.name == AdapterConn {
 			//网络日志，使用json格式发送,此处使用结构体，用于类似ElasticSearch功能检索
 			err := l.LogWrite(when, msg, level)
@@ -220,11 +255,11 @@ func (r *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int) {
 
 		strLevel := " [" + msg.Level + "] "
 		strPath := "[" + msg.Path + "] "
-		if !r.usePath {
+		if !localLog.usePath {
 			strPath = ""
 		}
 
-		msgStr := when.Format(r.timeFormat) + strLevel + strPath + msg.Content
+		msgStr := when.Format(localLog.timeFormat) + strLevel + strPath + msg.Content
 		err := l.LogWrite(when, msgStr, level)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "unable to WriteMsg to adapter:%v,error:%v\n", l.name, err)
@@ -232,9 +267,9 @@ func (r *LocalLogger) writeToLoggers(when time.Time, msg *loginfo, level int) {
 	}
 }
 
-func (r *LocalLogger) writeMsg(logLevel int, msg string, v ...interface{}) {
-	if !r.init {
-		_ = r.SetLogger(AdapterConsole)
+func (localLog *LocalLogger) writeMsg(level logLevel, msg string, v ...interface{}) {
+	if !localLog.init {
+		localLog.SetLogger(AdapterConsole)
 	}
 	msgSt := new(loginfo)
 	src := ""
@@ -243,8 +278,8 @@ func (r *LocalLogger) writeMsg(logLevel int, msg string, v ...interface{}) {
 	}
 	when := time.Now()
 	//
-	if r.usePath {
-		_, file, lineno, ok := runtime.Caller(r.callDepth)
+	if localLog.usePath {
+		_, file, lineno, ok := runtime.Caller(localLog.callDepth)
 		var strim = "/"
 		if ok {
 			codeArr := strings.Split(file, strim)
@@ -254,80 +289,82 @@ func (r *LocalLogger) writeMsg(logLevel int, msg string, v ...interface{}) {
 		}
 	}
 	//
-	msgSt.Level = levelPrefix[logLevel]
+	msgSt.Level = levelPrefix[level]
 	msgSt.Path = src
 	msgSt.Content = msg
-	msgSt.Name = r.appName
-	msgSt.Time = when.Format(r.timeFormat)
-	r.writeToLoggers(when, msgSt, logLevel)
+	msgSt.Name = localLog.appName
+	msgSt.Time = when.Format(localLog.timeFormat)
+	localLog.writeToLoggers(when, msgSt, level)
 }
 
-func (r *LocalLogger) Fatal(format string, args ...interface{}) {
-	r.Emer("###Exec Panic:"+format, args...)
+func (localLog *LocalLogger) Fatal(format string, args ...interface{}) {
+	localLog.Emer("###Exec Panic:"+format, args...)
 	os.Exit(1)
 }
 
-func (r *LocalLogger) Panic(format string, args ...interface{}) {
-	r.Emer("###Exec Panic:"+format, args...)
+func (localLog *LocalLogger) Panic(format string, args ...interface{}) {
+	localLog.Emer("###Exec Panic:"+format, args...)
 	panic(fmt.Sprintf(format, args...))
 }
 
 // Emer Log EMERGENCY level message.
-func (r *LocalLogger) Emer(format string, v ...interface{}) {
-	r.writeMsg(LevelEmergency, format, v...)
+func (localLog *LocalLogger) Emer(format string, v ...interface{}) {
+	localLog.writeMsg(LevelEmergency, format, v...)
 }
 
 // Alert Log ALERT level message.
-func (r *LocalLogger) Alert(format string, v ...interface{}) {
-	r.writeMsg(LevelAlert, format, v...)
+func (localLog *LocalLogger) Alert(format string, v ...interface{}) {
+	localLog.writeMsg(LevelAlert, format, v...)
 }
 
 // Crit Log CRITICAL level message.
-func (r *LocalLogger) Crit(format string, v ...interface{}) {
-	r.writeMsg(LevelCritical, format, v...)
+func (localLog *LocalLogger) Crit(format string, v ...interface{}) {
+	localLog.writeMsg(LevelCritical, format, v...)
 }
 
 // Error Log ERROR level message.
-func (r *LocalLogger) Error(format string, v ...interface{}) {
-	r.writeMsg(LevelError, format, v...)
+func (localLog *LocalLogger) Error(format string, v ...interface{}) {
+	localLog.writeMsg(LevelError, format, v...)
 }
 
 // Warn Log WARNING level message.
-func (r *LocalLogger) Warn(format string, v ...interface{}) {
-	r.writeMsg(LevelWarning, format, v...)
+func (localLog *LocalLogger) Warn(format string, v ...interface{}) {
+	localLog.writeMsg(LevelWarning, format, v...)
 }
 
 // Info Log INFO level message.
-func (r *LocalLogger) Info(format string, v ...interface{}) {
-	r.writeMsg(LevelInformational, format, v...)
+func (localLog *LocalLogger) Info(format string, v ...interface{}) {
+	localLog.writeMsg(LevelInformational, format, v...)
 }
 
 // Debug Log DEBUG level message.
-func (r *LocalLogger) Debug(format string, v ...interface{}) {
-	r.writeMsg(LevelDebug, format, v...)
+func (localLog *LocalLogger) Debug(format string, v ...interface{}) {
+	if debugMode {
+		localLog.writeMsg(LevelDebug, format, v...)
+	}
 }
 
 // Trace Log TRAC level message.
-func (r *LocalLogger) Trace(format string, v ...interface{}) {
-	r.writeMsg(LevelTrace, format, v...)
+func (localLog *LocalLogger) Trace(format string, v ...interface{}) {
+	localLog.writeMsg(LevelTrace, format, v...)
 }
 
-func (r *LocalLogger) Close() {
-	for _, l := range r.outputs {
+func (localLog *LocalLogger) Close() {
+	for _, l := range localLog.outputs {
 		l.Destroy()
 	}
-	r.outputs = nil
+	localLog.outputs = nil
 }
 
-func (r *LocalLogger) Reset() {
-	for _, l := range r.outputs {
+func (localLog *LocalLogger) Reset() {
+	for _, l := range localLog.outputs {
 		l.Destroy()
 	}
-	r.outputs = nil
+	localLog.outputs = nil
 }
 
-func (r *LocalLogger) SetCallDepth(depth int) {
-	r.callDepth = depth
+func (localLog *LocalLogger) SetCallDepth(depth int) {
+	localLog.callDepth = depth
 }
 
 // GetlocalLogger returns the defaultLogger
@@ -340,16 +377,19 @@ func Reset() {
 	defaultLogger.Reset()
 }
 
+func IsDebugModel() bool {
+	return debugMode
+}
+
 func SetLogPath(show bool) {
 	defaultLogger.SetLogPath(show)
 }
 
 // param 可以是log配置文件名，也可以是log配置内容,默认DEBUG输出到控制台
-func SetLogger(param ...string) error {
+func SetLogger(param ...string) {
 	if len(param) == 0 {
 		//默认只输出到控制台
-		_ = defaultLogger.SetLogger(AdapterConsole)
-		return nil
+		defaultLogger.SetLogger(AdapterConsole)
 	}
 
 	c := param[0]
@@ -357,24 +397,21 @@ func SetLogger(param ...string) error {
 	err := json.Unmarshal([]byte(c), conf)
 	if err != nil { //不是json，就认为是配置文件，如果都不是，打印日志，然后退出
 		// Open the configuration file
-		fd, err := os.Open(c)
+		fd, err := os.Open(filepath.Clean(c))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not open %s for configure: %s\n", c, err)
 			os.Exit(1)
-			return err
 		}
 
 		contents, err := ioutil.ReadAll(fd)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not read %s: %s\n", c, err)
 			os.Exit(1)
-			return err
 		}
 		err = json.Unmarshal(contents, conf)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not Unmarshal %s: %s\n", contents, err)
 			os.Exit(1)
-			return err
 		}
 	}
 	if conf.TimeFormat != "" {
@@ -382,17 +419,16 @@ func SetLogger(param ...string) error {
 	}
 	if conf.Console != nil {
 		console, _ := json.Marshal(conf.Console)
-		_ = defaultLogger.SetLogger(AdapterConsole, string(console))
+		defaultLogger.SetLogger(AdapterConsole, string(console))
 	}
 	if conf.File != nil {
 		file, _ := json.Marshal(conf.File)
-		_ = defaultLogger.SetLogger(AdapterFile, string(file))
+		defaultLogger.SetLogger(AdapterFile, string(file))
 	}
 	if conf.Conn != nil {
 		conn, _ := json.Marshal(conf.Conn)
-		_ = defaultLogger.SetLogger(AdapterConn, string(conn))
+		defaultLogger.SetLogger(AdapterConn, string(conn))
 	}
-	return nil
 }
 
 // Painc logs a message at emergency level and panic.
@@ -435,7 +471,7 @@ func Info(f interface{}, v ...interface{}) {
 	defaultLogger.Info(formatLog(f, v...))
 }
 
-// Notice logs a message at debug level.
+// Debug logs a message at debug level.
 func Debug(f interface{}, v ...interface{}) {
 	defaultLogger.Debug(formatLog(f, v...))
 }
@@ -446,9 +482,10 @@ func Trace(f interface{}, v ...interface{}) {
 }
 
 func formatLog(f interface{}, v ...interface{}) string {
-	var out string
-	switch msg := f.(type) {
+	var msg string
+	switch f := f.(type) {
 	case string:
+		msg = f
 		if len(v) == 0 {
 			return msg
 		}
@@ -458,13 +495,20 @@ func formatLog(f interface{}, v ...interface{}) string {
 			//do not contain format char
 			msg += strings.Repeat(" %v", len(v))
 		}
-		out = msg
 	default:
-		out = fmt.Sprint(f)
+		msg = fmt.Sprint(f)
 		if len(v) == 0 {
-			return out
+			return msg
 		}
-		out += strings.Repeat(" %v", len(v))
+		msg += strings.Repeat(" %v", len(v))
 	}
-	return fmt.Sprintf(out, v...)
+	return fmt.Sprintf(msg, v...)
 }
+
+/*func stringTrim(s string, cut string) string {
+	ss := strings.SplitN(s, cut, 2)
+	if len(ss) == 1 {
+		return ss[0]
+	}
+	return ss[1]
+}*/

@@ -17,12 +17,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 
 	"github.com/fanux/sealos/pkg/install"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 

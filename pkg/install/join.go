@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
@@ -26,7 +28,6 @@ import (
 	cert "github.com/fanux/sealos/pkg/kubernetes/cert"
 
 	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //BuildJoin is
@@ -46,7 +47,6 @@ func joinMastersFunc(joinMasters []string) {
 		Hosts:     joinMasters,
 		Masters:   masters,
 		Nodes:     nodes,
-		Network:   v1.Network,
 		APIServer: v1.APIServer,
 	}
 	i.CheckValid()

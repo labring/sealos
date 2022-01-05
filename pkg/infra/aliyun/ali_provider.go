@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/fanux/sealos/pkg/utils"
@@ -26,11 +28,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 type ActionName string

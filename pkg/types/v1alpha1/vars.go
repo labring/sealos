@@ -57,8 +57,6 @@ var (
 	LvscareImage ipvs.LvscareImage
 	KubeadmFile  string
 
-	Network string // network type, calico or flannel etc..
-
 	WithoutCNI bool // if true don't install cni plugin
 
 	Interface string //network interface name, like "eth.*|en.*"

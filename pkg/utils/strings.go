@@ -127,7 +127,11 @@ func IsEmptyLine(str string) bool {
 }
 
 func TrimWS(str string) string {
-	return strings.Trim(str, " \n\t")
+	return strings.Trim(str, "\n\t")
+}
+
+func TrimSpaceWS(str string) string {
+	return strings.TrimRight(str, " \n\t")
 }
 
 func RemoveSliceEmpty(list []string) (fList []string) {

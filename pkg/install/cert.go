@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/kubernetes/cert"
+	"github.com/fanux/sealos/pkg/logger"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/kubernetes/cert"
 )
 
 // CMD return sealos cert command

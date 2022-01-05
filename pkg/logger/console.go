@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,19 +45,18 @@ var colors = []brush{
 }
 
 type consoleLogger struct {
-	sync.Mutex
-	Level    string `json:"level"`
-	Colorful bool   `json:"color"`
-	LogLevel int
+	stdOutMux sync.Mutex
+	stdErrMux sync.Mutex
+	Level     string `json:"level"`
+	Colorful  bool   `json:"color"`
+	LogLevel  logLevel
 }
 
 func (c *consoleLogger) Init(jsonConfig string) error {
 	if len(jsonConfig) == 0 {
 		return nil
 	}
-	if len(jsonConfig) == 0 {
-		return nil
-	}
+
 	err := json.Unmarshal([]byte(jsonConfig), c)
 	if runtime.GOOS == "windows" {
 		c.Colorful = false
@@ -71,7 +70,7 @@ func (c *consoleLogger) Init(jsonConfig string) error {
 	return err
 }
 
-func (c *consoleLogger) LogWrite(when time.Time, msgText interface{}, level int) error {
+func (c *consoleLogger) LogWrite(when time.Time, msgText interface{}, level logLevel) error {
 	if level > c.LogLevel {
 		return nil
 	}
@@ -82,7 +81,13 @@ func (c *consoleLogger) LogWrite(when time.Time, msgText interface{}, level int)
 	if c.Colorful {
 		msg = colors[level](msg)
 	}
-	c.printlnConsole(when, msg)
+	switch level {
+	case LevelEmergency, LevelAlert, LevelCritical, LevelError:
+		c.printlnToStdErr(msg)
+	default:
+		c.printlnToStdOut(msg)
+	}
+
 	return nil
 }
 
@@ -90,11 +95,16 @@ func (c *consoleLogger) Destroy() {
 
 }
 
-//nolint:unparam
-func (c *consoleLogger) printlnConsole(when time.Time, msg string) {
-	c.Lock()
-	defer c.Unlock()
-	os.Stdout.Write(append([]byte(msg), '\n'))
+func (c *consoleLogger) printlnToStdOut(msg string) {
+	c.stdOutMux.Lock()
+	defer c.stdOutMux.Unlock()
+	_, _ = os.Stdout.Write(append([]byte(msg), '\n'))
+}
+
+func (c *consoleLogger) printlnToStdErr(msg string) {
+	c.stdErrMux.Lock()
+	defer c.stdErrMux.Unlock()
+	_, _ = os.Stderr.Write(append([]byte(msg), '\n'))
 }
 
 func init() {

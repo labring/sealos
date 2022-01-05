@@ -32,12 +32,6 @@ const (
 	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 
-	// CriSocket
-	DefaultDockerCRISocket     = "/var/run/dockershim.sock"
-	DefaultContainerdCRISocket = "/run/containerd/containerd.sock"
-	DefaultCgroupDriver        = "cgroupfs"
-	DefaultSystemdCgroupDriver = "systemd"
-
 	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"

@@ -19,12 +19,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/fanux/sealos/pkg/logger"
+
 	"sigs.k8s.io/yaml"
 
 	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const (
@@ -57,7 +56,6 @@ type SealConfig struct {
 	PkPassword string `json:"pkpassword"`
 	//ApiServer ex. apiserver.cluster.local
 	APIServerDomain string `json:"apiserverdomain"`
-	Network         string `json:"network"`
 	VIP             string `json:"vip"`
 	PkgURL          string `json:"pkgurl"`
 	Version         string `json:"version"`
@@ -94,7 +92,6 @@ func (c *SealConfig) Dump(path string) {
 	c.PrivateKey = SSHConfig.PkFile
 	c.PkPassword = SSHConfig.PkPassword
 	c.APIServerDomain = APIServer
-	c.Network = Network
 	c.VIP = VIP
 	c.PkgURL = PkgURL
 	c.Version = Version
@@ -169,7 +166,6 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.PkFile = c.PrivateKey
 	SSHConfig.PkPassword = c.PkPassword
 	APIServer = c.APIServerDomain
-	Network = c.Network
 	VIP = c.VIP
 	PkgURL = c.PkgURL
 	Version = c.Version
@@ -218,7 +214,6 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.Passwd = "123456"
 	c.PrivateKey = home + "/.ssh/id_rsa"
 	c.APIServerDomain = DefaultAPIServerDomain
-	c.Network = cni.CALICO
 	c.VIP = "10.103.97.2"
 	c.PkgURL = home + "/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"

@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 func IPToInt(v string) *big.Int {

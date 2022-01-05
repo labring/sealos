@@ -14,32 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package types
 
-import (
-	"fmt"
-	"regexp"
-
-	"github.com/fanux/sealos/pkg/logger"
+const (
+	DefaultLogDir = ""
 )
-
-//Confirm is send the prompt and get result
-func Confirm(prompt, cancel string) (bool, error) {
-	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
-	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
-	var input string
-	for {
-		fmt.Printf("%s Yes [y/yes], No [n/no] : ", prompt)
-		_, err := fmt.Scanln(&input)
-		if err != nil {
-			return false, err
-		}
-		if yesRx.MatchString(input) {
-			return true, nil
-		}
-		if noRx.MatchString(input) {
-			logger.Info(cancel)
-			return false, nil
-		}
-	}
-}
