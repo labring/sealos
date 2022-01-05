@@ -3,9 +3,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"os"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/spf13/cobra"
 )

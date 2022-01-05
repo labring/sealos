@@ -18,8 +18,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"regexp"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //Confirm is send the prompt and get result

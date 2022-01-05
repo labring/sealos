@@ -17,8 +17,9 @@ limitations under the License.
 package ssh
 
 import (
-	"github.com/fanux/sealos/pkg/logger"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //HostName 判断当前host的hostname

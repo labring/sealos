@@ -14,22 +14,20 @@ require (
 	github.com/onsi/gomega v1.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.11.0
-	github.com/prometheus/common v0.13.0 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/sealyun/lvscare v1.1.2-alpha.2
-	github.com/spf13/cobra v1.1.1
-	github.com/spf13/viper v1.7.0
+	github.com/spf13/cobra v1.1.2
 	github.com/vishvananda/netlink v1.1.0
 	go.etcd.io/etcd v0.0.0-20200716221620-18dfb9cca345
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	google.golang.org/protobuf v1.25.0 // indirect
+	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	gopkg.in/ini.v1 v1.61.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
 	k8s.io/client-go v0.18.0
 	k8s.io/cluster-bootstrap v0.18.0
+	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
 	sigs.k8s.io/yaml v1.2.0
 )

@@ -16,8 +16,9 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"os"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/fanux/sealos/pkg/kubernetes/cert"
 )

@@ -16,8 +16,9 @@ package install
 
 import (
 	"encoding/json"
-	"github.com/fanux/sealos/pkg/logger"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //Print is

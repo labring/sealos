@@ -16,10 +16,11 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
@@ -78,8 +79,8 @@ node:
 all:
 	if len(deleteNodes) == 0 && len(deleteMasters) == 0 && v1.CleanAll {
 		if !v1.CleanForce { // flase
-			prompt := fmt.Sprintf("Are you sure to clean all masters and nodes ?")
-			cancel := fmt.Sprintf("You have canceled to clean all masters and nodes !")
+			prompt := "Are you sure to clean all masters and nodes ?"
+			cancel := "You have canceled to clean all masters and nodes !"
 			result, err := utils.Confirm(prompt, cancel)
 			if err != nil {
 				logger.Fatal(err)

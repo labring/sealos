@@ -16,9 +16,10 @@ package ssh
 
 import (
 	"bufio"
-	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //Cmd is in host exec cmd

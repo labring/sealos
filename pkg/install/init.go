@@ -18,12 +18,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"

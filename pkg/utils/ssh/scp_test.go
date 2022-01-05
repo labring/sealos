@@ -15,8 +15,9 @@
 package ssh
 
 import (
-	"github.com/fanux/sealos/pkg/logger"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 func TestSSHCopyLocalToRemote(t *testing.T) {

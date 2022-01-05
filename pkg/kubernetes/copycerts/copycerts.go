@@ -20,11 +20,12 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io/ioutil"
 	"os"
 	"path"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/fanux/sealos/pkg/kubernetes/apiclient"
 	cryptoutil "github.com/fanux/sealos/pkg/kubernetes/crypto"

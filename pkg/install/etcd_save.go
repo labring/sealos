@@ -17,12 +17,13 @@ package install
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"

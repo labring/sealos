@@ -18,10 +18,11 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 type HostFile struct {
@@ -109,11 +110,11 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 			continue
 		}
 		tmpHostnameArr := strings.Fields(str)
-		curDomain := TrimWS(tmpHostnameArr[1])
+		curDomain := TrimSpaceWS(tmpHostnameArr[1])
 		if !CheckDomain(curDomain) {
 			return hostnameMap, errors.New(" file contain error domain" + curDomain)
 		}
-		curIP := TrimWS(tmpHostnameArr[0])
+		curIP := TrimSpaceWS(tmpHostnameArr[0])
 		checkIP := CheckIP(curIP)
 		if !checkIP {
 			return hostnameMap, nil

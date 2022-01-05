@@ -17,9 +17,11 @@ package install
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"strings"
 	"text/template"
+
+	runtime "github.com/fanux/sealos/pkg/cri/runtime"
+	"github.com/fanux/sealos/pkg/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
@@ -35,16 +37,16 @@ func setKubeadmAPI(version string) {
 	//
 	case major < 120:
 		v1.KubeadmAPI = KubeadmV1beta1
-		v1.CriSocket = DefaultDockerCRISocket
+		v1.CriSocket = runtime.DefaultDockerCRISocket
 	case major < 123 && major >= 120:
 		v1.KubeadmAPI = KubeadmV1beta2
-		v1.CriSocket = DefaultContainerdCRISocket
+		v1.CriSocket = runtime.DefaultContainerdCRISocket
 	case major >= 123:
 		v1.KubeadmAPI = KubeadmV1beta3
-		v1.CriSocket = DefaultContainerdCRISocket
+		v1.CriSocket = runtime.DefaultContainerdCRISocket
 	default:
 		v1.KubeadmAPI = KubeadmV1beta3
-		v1.CriSocket = DefaultContainerdCRISocket
+		v1.CriSocket = runtime.DefaultContainerdCRISocket
 	}
 	logger.Debug("KubeadmApi: %s", v1.KubeadmAPI)
 	logger.Debug("CriSocket: %s", v1.CriSocket)

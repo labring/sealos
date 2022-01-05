@@ -17,7 +17,6 @@ package utils
 import (
 	"os"
 	"os/exec"
-	"strings"
 )
 
 func Cmd(name string, args ...string) error {
@@ -45,10 +44,10 @@ func RunBashCmd(cmd string) (string, error) {
 
 func BashEval(cmd string) string {
 	out, _ := RunBashCmd(cmd)
-	return strings.TrimRight(out, "\r\n")
+	return TrimWS(out)
 }
 
 func Eval(cmd string) string {
 	out, _ := RunSimpleCmd(cmd)
-	return strings.TrimRight(out, "\r\n")
+	return TrimWS(out)
 }

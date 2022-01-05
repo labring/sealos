@@ -16,9 +16,10 @@ package v1alpha1
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io/ioutil"
 	"os"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"sigs.k8s.io/yaml"
 

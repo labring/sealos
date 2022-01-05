@@ -16,8 +16,9 @@ package aliyun
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/fanux/sealos/pkg/utils"

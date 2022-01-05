@@ -18,9 +18,10 @@ package utils
 
 import (
 	"crypto/tls"
-	"github.com/fanux/sealos/pkg/logger"
 	"net/http"
 	"net/url"
+
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 func URICheck(pkgURL string) bool {

@@ -42,7 +42,6 @@ func TestTemplate(t *testing.T) {
 	t.Log(string(Template()))
 }
 
-
 var testYaml = `apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: v1.18.0

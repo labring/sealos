@@ -17,7 +17,6 @@ package ssh
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/logger"
 	"io"
 	"io/ioutil"
 	"net"
@@ -27,6 +26,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/fanux/sealos/pkg/utils"
 
