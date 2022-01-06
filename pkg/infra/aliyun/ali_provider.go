@@ -15,8 +15,9 @@
 package aliyun
 
 import (
-	"github.com/fanux/sealos/pkg/types/validation"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/types/validation"
 
 	"github.com/fanux/sealos/pkg/logger"
 
