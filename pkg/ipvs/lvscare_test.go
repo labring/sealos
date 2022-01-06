@@ -71,7 +71,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 	type args struct {
 		vip     string
 		masters []string
-		image   LvscareImage
+		image   string
 	}
 	tests := []struct {
 		name string
@@ -83,7 +83,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 			args{
 				"10.10.10.10",
 				[]string{"116.31.96.134:6443", "116.31.96.135:6443", "116.31.96.136:6443"},
-				LvscareImage{"fanux/lvscare", "latest"},
+				"fanux/lvscare:latest",
 			},
 			want[0],
 		},

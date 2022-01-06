@@ -19,6 +19,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/runtime"
+
 	"github.com/fanux/sealos/pkg/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -85,7 +87,7 @@ func (s *SealosInstaller) GeneratorCerts() {
 	logger.Debug("[globals]decodeCertCmd: %s", output)
 	slice := strings.Split(output, "Using certificate key:\r\n")
 	slice1 := strings.Split(slice[1], "\r\n")
-	CertificateKey = slice1[0]
+	v1.CertificateKey = slice1[0]
 	cmd = "kubeadm token create --print-join-command" + v1.VLogString()
 	out := v1.SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(out)
@@ -111,7 +113,7 @@ func (s *SealosInstaller) sendJoinCPConfig(joinMaster []string) {
 		go func(master string) {
 			defer wg.Done()
 			cgroup := s.getCgroupDriverFromShell(master)
-			templateData := string(JoinTemplate(utils.IPFormat(master), cgroup))
+			templateData := string(runtime.JoinTemplate(utils.IPFormat(master), cgroup))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = v1.SSHConfig.CmdAsync(master, cmd)
 		}(master)
@@ -167,7 +169,7 @@ func (s *SealosInstaller) JoinNodes() {
 			defer wg.Done()
 			// send join node config
 			cgroup := s.getCgroupDriverFromShell(node)
-			templateData := string(JoinTemplate("", cgroup))
+			templateData := string(runtime.JoinTemplate("", cgroup))
 			cmdJoinConfig := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = v1.SSHConfig.CmdAsync(node, cmdJoinConfig)
 

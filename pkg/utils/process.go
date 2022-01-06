@@ -17,12 +17,13 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/fanux/sealos/pkg/logger"
-	"github.com/schollz/progressbar/v3"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/fanux/sealos/pkg/logger"
+	"github.com/schollz/progressbar/v3"
 )
 
 func Process(srcFile, destFile string) {
@@ -75,5 +76,5 @@ func Process(srcFile, destFile string) {
 			BarStart:      "[",
 			BarEnd:        "]",
 		}))
-	io.Copy(io.MultiWriter(f, bar), source)
+	_, _ = io.Copy(io.MultiWriter(f, bar), source)
 }
