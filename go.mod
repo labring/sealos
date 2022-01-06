@@ -15,14 +15,14 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.11.0
 	github.com/satori/go.uuid v1.2.0 // indirect
+	github.com/schollz/progressbar/v3 v3.8.5
 	github.com/sealyun/lvscare v1.1.2-alpha.2
 	github.com/spf13/cobra v1.1.2
 	github.com/vishvananda/netlink v1.1.0
 	go.etcd.io/etcd v0.0.0-20200716221620-18dfb9cca345
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.16.0
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
+	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
 	gopkg.in/ini.v1 v1.61.0 // indirect
 	k8s.io/api v0.18.0
 	k8s.io/apimachinery v0.18.0
