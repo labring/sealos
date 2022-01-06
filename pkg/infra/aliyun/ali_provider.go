@@ -15,8 +15,9 @@
 package aliyun
 
 import (
-	"fmt"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/types/validation"
 
 	"github.com/fanux/sealos/pkg/logger"
 
@@ -108,8 +109,8 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 			host := &h
 			statusIndex := aliProvider.Infra.Status.FindHostsByRoles(h.Roles)
 			if statusIndex < 0 {
-				errorMsg = append(errorMsg, fmt.Sprintf("infra status not fount in role tag: %v", h.Roles))
-				continue
+				aliProvider.Infra.Status.Hosts = append(aliProvider.Infra.Status.Hosts, v1beta1.HostStatus{Roles: h.Roles})
+				statusIndex = len(aliProvider.Infra.Status.Hosts) - 1
 			}
 			status := &aliProvider.Infra.Status.Hosts[statusIndex]
 			err := aliProvider.ReconcileInstances(host, status)
@@ -237,6 +238,12 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
+	if err := v1beta1.Default(a.Infra, DefaultInfra); err != nil {
+		return err
+	}
+	if err := validation.ValidateInfra(a.Infra, DefaultValidate); len(err) != 0 {
+		return err.ToAggregate()
+	}
 	return a.Reconcile()
 }
 

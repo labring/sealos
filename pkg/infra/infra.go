@@ -48,12 +48,6 @@ func loadConfig(infra *v2.Infra) {
 func newAliProvider(infra *v2.Infra) (Interface, error) {
 	aliProvider := new(aliyun.AliProvider)
 	aliProvider.Infra = infra
-	if err := v2.Default(aliProvider.Infra, aliyun.DefaultInfra); err != nil {
-		return nil, err
-	}
-	if err := validation.ValidateInfra(aliProvider.Infra, aliyun.DefaultValidate); len(err) != 0 {
-		return nil, err.ToAggregate()
-	}
 	if err := aliProvider.NewClient(); err != nil {
 		return nil, err
 	}

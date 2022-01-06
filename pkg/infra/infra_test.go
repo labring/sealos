@@ -61,8 +61,9 @@ func TestAliApply(t *testing.T) {
 					Count:  1,
 					Disks:  []v2.Disk{},
 					OS: v2.OS{
-						Name: "ubuntu",
+						ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 					},
+					EcsType: "ecs.c7a.large",
 				},
 			},
 			Provider: aliyun.AliyunProvider,
@@ -87,8 +88,9 @@ func TestAliApply(t *testing.T) {
 				Count:  1,
 				Disks:  []v2.Disk{},
 				OS: v2.OS{
-					Name: "centos",
+					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
+				EcsType: "ecs.c7a.large",
 			},
 			{
 				Roles:  []string{"master", "ssdxxx"},
@@ -97,8 +99,9 @@ func TestAliApply(t *testing.T) {
 				Count:  1,
 				Disks:  []v2.Disk{},
 				OS: v2.OS{
-					Name: "ubuntu",
+					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
+				EcsType: "ecs.c7a.large",
 			},
 		}
 		t.Log(fmt.Sprintf("add server:%v", aliProvider.Apply()))
@@ -113,8 +116,9 @@ func TestAliApply(t *testing.T) {
 				Count:  1,
 				Disks:  []v2.Disk{},
 				OS: v2.OS{
-					Name: "centos",
+					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
+				EcsType: "ecs.s6-c1m2.large",
 			},
 		}
 		t.Log(fmt.Sprintf("delete:%v", aliProvider.Apply()))
