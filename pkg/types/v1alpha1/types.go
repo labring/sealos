@@ -19,6 +19,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/fanux/sealos/pkg/types/contants"
+
 	"github.com/fanux/sealos/pkg/logger"
 
 	"sigs.k8s.io/yaml"
@@ -67,7 +69,6 @@ type SealConfig struct {
 	CertEtcdPath string `json:"certetcdpath"`
 	//lvscare images
 	LvscareName string `json:"lvscarename"`
-	LvscareTag  string `json:"lvscaretag"`
 	AliOss      `json:"alioss"`
 }
 type AliOss struct {
@@ -104,8 +105,7 @@ func (c *SealConfig) Dump(path string) {
 	c.CertPath = CertPath
 	c.CertEtcdPath = CertEtcdPath
 	//lvscare
-	c.LvscareName = LvscareImage.Image
-	c.LvscareTag = LvscareImage.Tag
+	c.LvscareName = LvscareImage
 	// oss
 	c.AliOss.AccessKeyID = AccessKeyID
 	c.AliOss.AccessKeySecrets = AccessKeySecrets
@@ -177,8 +177,7 @@ func (c *SealConfig) Load(path string) (err error) {
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
 	//lvscare
-	LvscareImage.Image = c.LvscareName
-	LvscareImage.Tag = c.LvscareTag
+	LvscareImage = c.LvscareName
 
 	// 优先使用使用命令行， 再使用配置文件
 	if AccessKeyID == "" || AccessKeySecrets == "" ||
@@ -223,8 +222,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.APIServerCertSANs = []string{DefaultAPIServerDomain, "127.0.0.1"}
 	c.CertPath = DefaultConfigPath + "/pki"
 	c.CertEtcdPath = DefaultConfigPath + "/pki/etcd"
-	c.LvscareName = "fanux/lvscare"
-	c.LvscareTag = "latest"
+	c.LvscareName = contants.DefaultLvsCareImage
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

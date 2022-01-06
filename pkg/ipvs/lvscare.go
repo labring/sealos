@@ -17,6 +17,8 @@ package ipvs
 import (
 	"strings"
 
+	"github.com/fanux/sealos/pkg/types/contants"
+
 	"github.com/fanux/sealos/pkg/logger"
 
 	"github.com/pkg/errors"
@@ -26,19 +28,17 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
-type LvscareImage struct {
-	Image string
-	Tag   string
-}
+const (
+	LvsCareStaticPodName = "kube-sealyun-lvscare"
+	LvsCareCommand       = "/usr/bin/lvscare"
+)
 
-func (l *LvscareImage) toImageName() string {
-	return l.Image + ":" + l.Tag
-}
-
-// return lvscare static pod yaml
-func LvsStaticPodYaml(vip string, masters []string, image LvscareImage) string {
+func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	if vip == "" || len(masters) == 0 {
 		return ""
+	}
+	if image == "" {
+		image = contants.DefaultLvsCareImage
 	}
 	args := []string{"care", "--vs", vip + ":6443", "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {
@@ -50,16 +50,16 @@ func LvsStaticPodYaml(vip string, masters []string, image LvscareImage) string {
 	}
 	flag := true
 	pod := componentPod(v1.Container{
-		Name:            "kube-sealyun-lvscare",
-		Image:           image.toImageName(),
-		Command:         []string{"/usr/bin/lvscare"},
+		Name:            LvsCareStaticPodName,
+		Image:           image,
+		Command:         []string{LvsCareCommand},
 		Args:            args,
 		ImagePullPolicy: v1.PullIfNotPresent,
 		SecurityContext: &v1.SecurityContext{Privileged: &flag},
 	})
 	yaml, err := podToYaml(pod)
 	if err != nil {
-		logger.Error("decode lvscare static pod yaml failed %s", err)
+		logger.Error("decode lvs care static pod yaml failed %s", err)
 		return ""
 	}
 	return string(yaml)
@@ -102,15 +102,11 @@ func componentPod(container v1.Container) v1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      container.Name,
 			Namespace: metav1.NamespaceSystem,
-			// The component and tier labels are useful for quickly identifying the control plane Pods when doing a .List()
-			// against Pods in the kube-system namespace. Can for example be used together with the WaitForPodsWithLabel function
-			Labels: map[string]string{"component": container.Name, "tier": "control-plane"},
 		},
 		Spec: v1.PodSpec{
-			Containers:        []v1.Container{container},
-			PriorityClassName: "system-cluster-critical",
-			HostNetwork:       true,
-			Volumes:           volumes,
+			Containers:  []v1.Container{container},
+			HostNetwork: true,
+			Volumes:     volumes,
 		},
 	}
 }

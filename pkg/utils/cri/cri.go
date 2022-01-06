@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package cri
 
 import (
 	"path/filepath"
@@ -49,8 +49,8 @@ type ContainerRuntime interface {
 	CGroupDriver() (string, error)
 }
 
-// CRIRuntime is a struct that interfaces with the CRI
-type CRIRuntime struct {
+// ContainerdRuntime is a struct that interfaces with the CRI
+type ContainerdRuntime struct {
 	exec      utilsexec.Interface
 	criSocket string
 }
@@ -73,7 +73,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string) (Containe
 		if filepath.IsAbs(criSocket) && goruntime.GOOS != "windows" {
 			criSocket = "unix://" + criSocket
 		}
-		runtime = &CRIRuntime{execer, criSocket}
+		runtime = &ContainerdRuntime{execer, criSocket}
 	} else {
 		toolName = "docker"
 		runtime = &DockerRuntime{execer}
@@ -87,7 +87,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string) (Containe
 }
 
 // IsDocker returns true if the runtime is docker
-func (runtime *CRIRuntime) IsDocker() bool {
+func (runtime *ContainerdRuntime) IsDocker() bool {
 	return false
 }
 
@@ -97,7 +97,7 @@ func (runtime *DockerRuntime) IsDocker() bool {
 }
 
 // IsRunning checks if runtime is running
-func (runtime *CRIRuntime) IsRunning() error {
+func (runtime *ContainerdRuntime) IsRunning() error {
 	if out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "info").CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
 	}
@@ -124,7 +124,7 @@ func (runtime *DockerRuntime) CGroupDriver() (string, error) {
 	return string(out), nil
 }
 
-func (runtime *CRIRuntime) CGroupDriver() (string, error) {
+func (runtime *ContainerdRuntime) CGroupDriver() (string, error) {
 	if err := runtime.IsRunning(); err != nil {
 		return "", err
 	}
@@ -140,7 +140,7 @@ func (runtime *CRIRuntime) CGroupDriver() (string, error) {
 }
 
 // ListKubeContainers lists running k8s CRI pods
-func (runtime *CRIRuntime) ListKubeContainers() ([]string, error) {
+func (runtime *ContainerdRuntime) ListKubeContainers() ([]string, error) {
 	out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "pods", "-q").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrapf(err, "output: %s, error", string(out))
@@ -157,7 +157,7 @@ func (runtime *DockerRuntime) ListKubeContainers() ([]string, error) {
 }
 
 // RemoveContainers removes running k8s pods
-func (runtime *CRIRuntime) RemoveContainers(containers []string) error {
+func (runtime *ContainerdRuntime) RemoveContainers(containers []string) error {
 	errs := []error{}
 	for _, container := range containers {
 		out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "stopp", container).CombinedOutput()
@@ -193,7 +193,7 @@ func (runtime *DockerRuntime) RemoveContainers(containers []string) error {
 }
 
 // PullImage pulls the image
-func (runtime *CRIRuntime) PullImage(image string) error {
+func (runtime *ContainerdRuntime) PullImage(image string) error {
 	var err error
 	var out []byte
 	for i := 0; i < PullImageRetry; i++ {
@@ -219,7 +219,7 @@ func (runtime *DockerRuntime) PullImage(image string) error {
 }
 
 // ImageExists checks to see if the image exists on the system
-func (runtime *CRIRuntime) ImageExists(image string) (bool, error) {
+func (runtime *ContainerdRuntime) ImageExists(image string) (bool, error) {
 	err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "inspecti", image).Run()
 	return err == nil, nil
 }

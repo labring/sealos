@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package install
+package runtime
 
 import (
 	"reflect"
@@ -137,8 +137,8 @@ func TestJoinTemplate(t *testing.T) {
 	}
 	v1.Version = "v1.20.0"
 	v1.MasterIPs = masters
-	JoinToken = "1y6yyl.ramfafiy99vz3tbw"
-	TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
+	v1.JoinToken = "1y6yyl.ramfafiy99vz3tbw"
+	v1.TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
 
 	v1.VIP = vip
 	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(utils.IPFormat(masters[0]), "systemd"))+"\" > ~/aa")

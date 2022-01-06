@@ -14,10 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package contants
 
-import "testing"
-
-func TestProcess(t *testing.T) {
-	Process("https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz","/Users/cuisongliu/Downloads/aa.tar.gz")
-}
+const (
+	DefaultLvsCareImage = "sealyun.hub:5000/fanux/lvscare:latest"
+)

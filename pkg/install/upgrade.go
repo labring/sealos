@@ -110,7 +110,7 @@ func (u *SealosUpgrade) UpgradeOtherMaster() {
 }
 
 func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
-	wg := NewPool(2)
+	wg := utils.NewPool(2)
 	var err error
 	for _, hostname := range hostnames {
 		wg.Add(1)
