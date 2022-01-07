@@ -87,7 +87,6 @@ func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
 }
 
 func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []string, data []string) {
-	categories := []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
 	if host.Disks[0].Category != "" {
 		system = []string{host.Disks[0].Category}
 	} else {
@@ -106,14 +105,17 @@ func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []str
 }
 
 func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, error) {
-	if host.EcsType != "" {
-		return []string{host.EcsType}, nil
-	}
-	var systemInstanceTypes []string
 	j := a.Infra.Status.FindHostsByRoles(host.Roles)
 	if j == -1 {
 		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
 	}
+	if host.EcsType != "" {
+		a.Infra.Status.Hosts[j].DataCategory = categories[2]
+		a.Infra.Status.Hosts[j].SystemCategory = categories[2]
+		return []string{host.EcsType}, nil
+	}
+	var systemInstanceTypes []string
+
 	var err error
 	systemDisk, dataDisk := a.GetDefaultDiskCategories(host)
 
