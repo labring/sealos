@@ -33,6 +33,8 @@ const (
 	JustGetInstanceInfo = 0
 )
 
+var categories = []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
+
 const AliyunProvider v1beta1.Provider = "AliyunProvider"
 
 type ResourceName string
