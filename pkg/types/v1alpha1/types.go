@@ -19,11 +19,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/fanux/sealos/pkg/types/contants"
 
 	"sigs.k8s.io/yaml"
-
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 const (
@@ -32,7 +35,7 @@ const (
 )
 
 var (
-	DefaultConfigPath = utils.UserHomeDir() + "/.sealos"
+	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
 )
 
 type Metadata struct {
@@ -67,7 +70,6 @@ type SealConfig struct {
 	CertEtcdPath string `json:"certetcdpath"`
 	//lvscare images
 	LvscareName string `json:"lvscarename"`
-	LvscareTag  string `json:"lvscaretag"`
 	AliOss      `json:"alioss"`
 }
 type AliOss struct {
@@ -83,10 +85,10 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = DefaultConfigPath + DefaultConfigFile
 	}
-	MasterIPs = utils.ParseIPs(MasterIPs)
+	MasterIPs = iputils.ParseIPs(MasterIPs)
 	c.Masters = MasterIPs
-	NodeIPs = utils.ParseIPs(NodeIPs)
-	c.Nodes = utils.ParseIPs(NodeIPs)
+	NodeIPs = iputils.ParseIPs(NodeIPs)
+	c.Nodes = iputils.ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile
@@ -104,8 +106,7 @@ func (c *SealConfig) Dump(path string) {
 	c.CertPath = CertPath
 	c.CertEtcdPath = CertEtcdPath
 	//lvscare
-	c.LvscareName = LvscareImage.Image
-	c.LvscareTag = LvscareImage.Tag
+	c.LvscareName = LvscareImage
 	// oss
 	c.AliOss.AccessKeyID = AccessKeyID
 	c.AliOss.AccessKeySecrets = AccessKeySecrets
@@ -177,8 +178,7 @@ func (c *SealConfig) Load(path string) (err error) {
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
 	//lvscare
-	LvscareImage.Image = c.LvscareName
-	LvscareImage.Tag = c.LvscareTag
+	LvscareImage = c.LvscareName
 
 	// 优先使用使用命令行， 再使用配置文件
 	if AccessKeyID == "" || AccessKeySecrets == "" ||
@@ -223,8 +223,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.APIServerCertSANs = []string{DefaultAPIServerDomain, "127.0.0.1"}
 	c.CertPath = DefaultConfigPath + "/pki"
 	c.CertEtcdPath = DefaultConfigPath + "/pki/etcd"
-	c.LvscareName = "fanux/lvscare"
-	c.LvscareTag = "latest"
+	c.LvscareName = contants.DefaultLvsCareImage
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

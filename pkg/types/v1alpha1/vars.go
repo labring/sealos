@@ -17,7 +17,6 @@ package v1alpha1
 import (
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/ipvs"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"github.com/sealyun/lvscare/care"
@@ -53,9 +52,12 @@ var (
 	Values        string   // values for  install package values.yaml
 	WorkDir       string   // workdir for install/delete package home
 
-	Ipvs         care.LvsCare
-	LvscareImage ipvs.LvscareImage
-	KubeadmFile  string
+	Ipvs            care.LvsCare
+	LvscareImage    string
+	JoinToken       string
+	TokenCaCertHash string
+	CertificateKey  string
+	KubeadmFile     string
 
 	WithoutCNI bool // if true don't install cni plugin
 

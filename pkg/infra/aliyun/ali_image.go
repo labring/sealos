@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/rand"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/fanux/sealos/pkg/utils"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
@@ -83,7 +83,7 @@ func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
 		return "", fmt.Errorf("search ImageID list is empty")
 	}
 	logger.Info("host tags is %v,using first imageID is %s", host.Roles, images[0])
-	return images[utils.Rand(len(images))], nil
+	return images[rand.Rand(len(images))], nil
 }
 
 func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []string, data []string) {

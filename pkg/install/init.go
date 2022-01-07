@@ -24,21 +24,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
+	"github.com/fanux/sealos/pkg/config"
+	cert2 "github.com/fanux/sealos/pkg/utils/kubernetes/cert"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/fanux/sealos/pkg/utils/cni"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-
-	cert "github.com/fanux/sealos/pkg/kubernetes/cert"
-
-	"github.com/fanux/sealos/pkg/cni"
 )
 
 //BuildInit is
 func BuildInit() {
-	v1.MasterIPs = utils.ParseIPs(v1.MasterIPs)
-	v1.NodeIPs = utils.ParseIPs(v1.NodeIPs)
+	v1.MasterIPs = iputils.ParseIPs(v1.MasterIPs)
+	v1.NodeIPs = iputils.ParseIPs(v1.NodeIPs)
 	// 所有master节点
 	masters := v1.MasterIPs
 	// 所有node节点
@@ -77,7 +80,7 @@ func BuildInit() {
 
 func (s *SealosInstaller) getCgroupDriverFromShell(h string) string {
 	var output string
-	if utils.For120(v1.Version) {
+	if versionutil.For120(v1.Version) {
 		cmd := ContainerdShell
 		output = v1.SSHConfig.CmdToString(h, cmd, " ")
 	} else {
@@ -94,7 +97,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	v1.CgroupDriver = s.getCgroupDriverFromShell(s.Masters[0])
 	if v1.KubeadmFile == "" {
-		templateData = string(Template())
+		templateData = string(config.Template())
 	} else {
 		fileData, err := ioutil.ReadFile(v1.KubeadmFile)
 		defer func() {
@@ -105,13 +108,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		if err != nil {
 			panic(1)
 		}
-		templateData = string(TemplateFromTemplateContent(string(fileData)))
+		templateData = string(config.TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
 	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = v1.SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
-	kubeadm := KubeadmDataFromYaml(templateData)
+	kubeadm := config.KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
 		v1.DNSDomain = kubeadm.Networking.DNSDomain
 		v1.APIServerCertSANs = kubeadm.APIServer.CertSANs
@@ -128,14 +131,14 @@ func getDefaultSANs() []string {
 		sans = append(sans, v1.CertSANS...)
 	}
 	for _, master := range v1.MasterIPs {
-		sans = append(sans, utils.IPFormat(master))
+		sans = append(sans, iputils.IPFormat(master))
 	}
 	return sans
 }
 
 func (s *SealosInstaller) appendAPIServer() error {
 	etcHostPath := "/etc/hosts"
-	etcHostMap := fmt.Sprintf("%s %s", utils.IPFormat(s.Masters[0]), v1.APIServer)
+	etcHostMap := fmt.Sprintf("%s %s", iputils.IPFormat(s.Masters[0]), v1.APIServer)
 	file, err := os.OpenFile(etcHostPath, os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
 		logger.Error("open %s file error %s", etcHostPath, err)
@@ -161,7 +164,7 @@ func (s *SealosInstaller) appendAPIServer() error {
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
-	GenerateCert(v1.CertPath, v1.CertEtcdPath, v1.APIServerCertSANs, utils.IPFormat(s.Masters[0]), hostname, v1.SvcCIDR, v1.DNSDomain)
+	GenerateCert(v1.CertPath, v1.CertEtcdPath, v1.APIServerCertSANs, iputils.IPFormat(s.Masters[0]), hostname, v1.SvcCIDR, v1.DNSDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
 	//s.sendNewCertAndKey(s.Masters)
@@ -171,14 +174,14 @@ func (s *SealosInstaller) GenerateCert() {
 func (s *SealosInstaller) CreateKubeconfig() {
 	hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
 
-	certConfig := cert.Config{
+	certConfig := cert2.Config{
 		Path:     v1.CertPath,
 		BaseName: "ca",
 	}
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", v1.APIServer)
 
-	err := cert.CreateJoinControlPlaneKubeConfigFiles(v1.DefaultConfigPath,
+	err := cert2.CreateJoinControlPlaneKubeConfigFiles(v1.DefaultConfigPath,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)
@@ -194,10 +197,10 @@ func (s *SealosInstaller) InstallMaster0() {
 	// remote server run sealos init . it can not reach apiserver.cluster.local , should add masterip apiserver.cluster.local to /etc/hosts
 	err := s.appendAPIServer()
 	if err != nil {
-		logger.Warn("append  %s %s to /etc/hosts err: %s", utils.IPFormat(s.Masters[0]), v1.APIServer, err)
+		logger.Warn("append  %s %s to /etc/hosts err: %s", iputils.IPFormat(s.Masters[0]), v1.APIServer, err)
 	}
 	//master0 do sth
-	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", utils.IPFormat(s.Masters[0]), v1.APIServer, utils.IPFormat(s.Masters[0]), v1.APIServer)
+	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", iputils.IPFormat(s.Masters[0]), v1.APIServer, iputils.IPFormat(s.Masters[0]), v1.APIServer)
 	_ = v1.SSHConfig.CmdAsync(s.Masters[0], cmd)
 
 	cmd = s.Command(v1.Version, InitMaster)
@@ -219,9 +222,9 @@ func (s *SealosInstaller) InstallMaster0() {
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
 	var cniVersion string
 	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
-	if utils.IsIpv4(v1.Interface) {
+	if iputils.IsIpv4(v1.Interface) {
 		v1.Interface = "can-reach=" + v1.Interface
-	} else if !utils.IsIpv4(v1.Interface) { //nolint:gofmt
+	} else if !iputils.IsIpv4(v1.Interface) { //nolint:gofmt
 		v1.Interface = "interface=" + v1.Interface
 	}
 	if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
@@ -273,9 +276,9 @@ func (s *SealosInstaller) SendJoinMasterKubeConfigs(masters []string) {
 
 func (s *SealosInstaller) to11911192(masters []string) (to11911192 bool) {
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
-	if utils.VersionToIntAll(v1.Version) >= 1191 && utils.VersionToIntAll(v1.Version) <= 1192 {
+	if versionutil.ToIntAll(v1.Version) >= 1191 && versionutil.ToIntAll(v1.Version) <= 1192 {
 		for _, v := range masters {
-			ip := utils.IPFormat(v)
+			ip := iputils.IPFormat(v)
 			// use grep -qF if already use sed then skip....
 			cmd := fmt.Sprintf(`grep -qF "%s" %s  && \
 sed -i 's/%s/%s/' %s && \
