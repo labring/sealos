@@ -182,6 +182,16 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
+	if len(a.Infra.Spec.Cluster.RegionIDs) == 0 {
+		return errors.New("your infra module not set region id")
+	}
+	if len(a.Infra.Spec.Credential.AccessKey) == 0 {
+		return errors.New("your infra module not set AccessKey")
+	}
+	if len(a.Infra.Spec.Credential.AccessSecret) == 0 {
+		return errors.New("your infra module not set AccessSecret")
+	}
+
 	regionID := a.Infra.Spec.Cluster.RegionIDs[utils.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
 	a.Infra.Status.Cluster.RegionID = regionID
 	logger.Info("using regionID is %s", regionID)
