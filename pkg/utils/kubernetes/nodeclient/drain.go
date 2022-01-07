@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"

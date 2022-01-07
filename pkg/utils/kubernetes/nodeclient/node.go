@@ -150,6 +150,6 @@ func TransToIP(k8sClient *kubernetes.Clientset, label string, hostname []string)
 			ips = append(ips, ip)
 		}
 	}
-	ips = utils.RemoveDeduplicate(ips)
+	ips = utils.RemoveDuplicate(ips)
 	return ips, nil
 }

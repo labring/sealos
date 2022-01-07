@@ -17,9 +17,9 @@ package aliyun
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/types/validation"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/types/validation"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 

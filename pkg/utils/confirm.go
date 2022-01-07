@@ -19,8 +19,6 @@ package utils
 import (
 	"fmt"
 	"regexp"
-
-	"github.com/fanux/sealos/pkg/logger"
 )
 
 //Confirm is send the prompt and get result
@@ -38,7 +36,7 @@ func Confirm(prompt, cancel string) (bool, error) {
 			return true, nil
 		}
 		if noRx.MatchString(input) {
-			logger.Info(cancel)
+			fmt.Print(cancel)
 			return false, nil
 		}
 	}

@@ -18,4 +18,5 @@ package contants
 
 const (
 	DefaultLvsCareImage = "sealyun.hub:5000/fanux/lvscare:latest"
+	DefaultTmpDir       = "/var/lib/sealos/tmp"
 )

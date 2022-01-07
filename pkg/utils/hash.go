@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package install
+package utils
 
 import (
-	"encoding/json"
-	"strings"
+	"crypto/md5" // #nosec
+	"encoding/hex"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-//Print is
-func (s *SealosInstaller) Print(process ...string) {
-	if len(process) == 0 {
-		configJSON, _ := json.Marshal(s)
-		logger.Info("\n[globals]sealos config is: ", string(configJSON))
-	} else {
-		var sb strings.Builder
-		for _, v := range process {
-			sb.Write([]byte("==>"))
-			sb.Write([]byte(v))
-		}
-		logger.Debug(sb.String())
-	}
+func MD5(body []byte) string {
+	bytes := md5.Sum(body) // #nosec
+	return hex.EncodeToString(bytes[:])
 }
-func (s *SealosInstaller) PrintFinish() {
-	logger.Info("sealos install success.")
+
+//FileMD5 count file md5
+func FileMD5(path string) string {
+	file, err := os.Open(filepath.Clean(path))
+	if err != nil {
+		logger.Error("get file md5 failed %v", err)
+		return ""
+	}
+
+	m := md5.New() // #nosec
+	if _, err := io.Copy(m, file); err != nil {
+		logger.Error("get file md5 failed %v", err)
+		return ""
+	}
+
+	fileMd5 := fmt.Sprintf("%x", m.Sum(nil))
+	return fileMd5
 }

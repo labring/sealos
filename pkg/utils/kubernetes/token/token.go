@@ -19,9 +19,9 @@ package token
 import (
 	"context"
 
-	apiclient2 "github.com/fanux/sealos/pkg/kubernetes/apiclient"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/apiclient"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/apis/kubeadm"
 
-	"github.com/fanux/sealos/pkg/kubernetes/apis/kubeadm"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -43,8 +43,8 @@ func UpdateOrCreateTokens(client clientset.Interface, failIfExists bool, token k
 
 	updatedOrNewSecret := token.ToSecret()
 	// Try to create or update the token with an exponential backoff
-	err = apiclient2.TryRunCommand(func() error {
-		if err := apiclient2.CreateOrUpdateSecret(client, updatedOrNewSecret); err != nil {
+	err = apiclient.TryRunCommand(func() error {
+		if err := apiclient.CreateOrUpdateSecret(client, updatedOrNewSecret); err != nil {
 			return errors.Wrapf(err, "failed to create or update bootstrap token with name %s", secretName)
 		}
 		return nil

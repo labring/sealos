@@ -15,9 +15,9 @@
 package install
 
 import (
-	"github.com/fanux/sealos/pkg/logger"
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 var message string
@@ -51,7 +51,7 @@ func ExitInitCase() bool {
 }
 
 func ExitDeleteCase(pkgURL string) bool {
-	if v1.PackageConfig != "" && !utils.FileExist(v1.PackageConfig) {
+	if v1.PackageConfig != "" && !utils.IsExist(v1.PackageConfig) {
 		logger.Error("your APP pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}
@@ -64,12 +64,12 @@ func ExitDeleteCase(pkgURL string) bool {
 
 func ExitInstallCase(pkgURL string) bool {
 	// values.yaml 使用了-f 但是文件不存在. 并且不使用 stdin
-	if v1.Values != "-" && !utils.FileExist(v1.Values) && v1.Values != "" {
+	if v1.Values != "-" && !utils.IsExist(v1.Values) && v1.Values != "" {
 		logger.Error("your values File is not exist and you have no stdin input, Please check your Values.yaml is exist")
 		return true
 	}
 	// PackageConfig 使用了-c 但是文件不存在
-	if v1.PackageConfig != "" && !utils.FileExist(v1.PackageConfig) {
+	if v1.PackageConfig != "" && !utils.IsExist(v1.PackageConfig) {
 		logger.Error("your install APP pkg-config File is not exist, Please check your pkg-config is exist")
 		return true
 	}

@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
@@ -94,7 +94,7 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 }
 
 func (e *EtcdFlags) Save(inDocker bool) error {
-	if !utils.FileExist(e.BackDir) {
+	if !utils.IsExist(e.BackDir) {
 		err := os.MkdirAll(e.BackDir, os.ModePerm)
 		if err != nil {
 			logger.Error("mkdir BackDir err: ", err)
@@ -291,5 +291,5 @@ func (e *EtcdFlags) HealthCheck() {
 
 // CertFileExist if cert file is exist return true
 func (e *EtcdFlags) CertFileExist() bool {
-	return utils.FileExist(v1.EtcdCacart) && utils.FileExist(v1.EtcdCert) && utils.FileExist(v1.EtcdKey)
+	return utils.IsExist(v1.EtcdCacart) && utils.IsExist(v1.EtcdCert) && utils.IsExist(v1.EtcdKey)
 }

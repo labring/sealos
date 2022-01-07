@@ -18,36 +18,10 @@ package utils
 
 import (
 	"fmt"
-	"math/big"
 	"net"
 	"net/url"
 	"strings"
-
-	"github.com/fanux/sealos/pkg/logger"
 )
-
-func IPToInt(v string) *big.Int {
-	ip := net.ParseIP(v).To4()
-	if val := ip.To4(); val != nil {
-		return big.NewInt(0).SetBytes(val)
-	}
-	return big.NewInt(0).SetBytes(ip.To16())
-}
-
-func CompareIP(v1, v2 string) (int, error) {
-	i := IPToInt(v1)
-	j := IPToInt(v2)
-
-	if i == nil || j == nil {
-		return 2, fmt.Errorf("ip is invalid，check you command agrs")
-	}
-	return i.Cmp(j), nil
-}
-
-func NextIP(ip string) net.IP {
-	i := IPToInt(ip)
-	return i.Add(i, big.NewInt(1)).Bytes()
-}
 
 // ParseIPs 解析ip 192.168.0.2-192.168.0.6
 func ParseIPs(ipList []string) (res []string) {
@@ -64,54 +38,19 @@ func ParseIPs(ipList []string) (res []string) {
 	return
 }
 
-func AssemblyIPList(args *string) error {
-	var result string
-	var ips = strings.Split(*args, "-")
-	if *args == "" || !strings.Contains(*args, "-") {
-		return nil
-	}
-	if len(ips) != 2 {
-		return fmt.Errorf("ip is invalid，ip range format is xxx.xxx.xxx.1-xxx.xxx.xxx.2")
-	}
-	if !CheckIP(ips[0]) || !CheckIP(ips[1]) {
-		return fmt.Errorf("ip is invalid，check you command agrs")
-	}
-	for res, _ := CompareIP(ips[0], ips[1]); res <= 0; {
-		result = ips[0] + "," + result
-		ips[0] = NextIP(ips[0]).String()
-		res, _ = CompareIP(ips[0], ips[1])
-	}
-	if result == "" {
-		return fmt.Errorf("ip is invalid，check you command agrs")
-	}
-	*args = result
-	return nil
-}
-func CheckIP(ipStr string) bool {
-	host, _, err := net.SplitHostPort(ipStr)
-	if err != nil {
-		return false
-	}
-	ip := net.ParseIP(host)
-	if _, err = net.ResolveTCPAddr("tcp", ipStr); err != nil {
-		return false
-	}
-	return ip != nil
-}
-
 //IPFormat is
 func IPFormat(ipStr string) string {
 	ip := net.ParseIP(ipStr)
 	if ip == nil {
 		host, _, err := net.SplitHostPort(ipStr)
 		if err != nil {
-			logger.Error("invalied host fomat [%s], must like 172.0.0.2:22.error: %s", ipStr, err)
+			//logger.Error("invalied host fomat [%s], must like 172.0.0.2:22.error: %s", ipStr, err)
 			return ""
 		}
 		ip = net.ParseIP(host)
 	}
 	if ip == nil {
-		logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", ipStr)
+		//logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", ipStr)
 		return ""
 	}
 	return ip.String()
@@ -159,22 +98,6 @@ func IsIpv4(ip string) bool {
 		}
 	}
 	return true
-}
-
-// RemoveDeduplicate is Deduplication []string
-func RemoveDeduplicate(a []string) []string {
-	if len(a) == 0 {
-		return a
-	}
-	res := make([]string, 0, len(a))
-	tmp := map[string]struct{}{}
-	for _, v := range a {
-		if _, ok := tmp[v]; !ok {
-			tmp[v] = struct{}{}
-			res = append(res, v)
-		}
-	}
-	return res
 }
 
 func CheckDomain(domain string) bool {

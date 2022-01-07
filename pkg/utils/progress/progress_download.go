@@ -14,33 +14,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package progress
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils"
+
 	"github.com/schollz/progressbar/v3"
 )
 
-func Process(srcFile, destFile string) {
+func Download(srcFile, destFile string) error {
 	sourceName, destName := srcFile, destFile
 	var source io.Reader
 	var sourceSize int64
-	if _, ok := IsURL(srcFile); ok {
+	if _, ok := utils.IsURL(srcFile); ok {
 		// open as url
 		resp, err := http.Get(sourceName)
 		if err != nil {
-			logger.Error("can't get %s: %v", sourceName, err)
-			return
+			return fmt.Errorf("can't get %s: %v", sourceName, err)
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			logger.Warn("server return non-200 status: %v", resp.Status)
-			return
+			return fmt.Errorf("server return non-200 status: %v", resp.Status)
 		}
 		i, _ := strconv.Atoi(resp.Header.Get("Content-Length"))
 		sourceSize = int64(i)
@@ -49,15 +49,13 @@ func Process(srcFile, destFile string) {
 		// open as file
 		s, err := os.Open(sourceName)
 		if err != nil {
-			logger.Error("can't open %s: %v", sourceName, err)
-			return
+			return fmt.Errorf("can't open %s: %v", sourceName, err)
 		}
 		defer s.Close()
 		// get source size
 		sourceStat, err := s.Stat()
 		if err != nil {
-			logger.Error("Can't stat %s: %v", sourceName, err)
-			return
+			return fmt.Errorf("can't stat %s: %v", sourceName, err)
 		}
 		sourceSize = sourceStat.Size()
 		source = s
@@ -68,6 +66,7 @@ func Process(srcFile, destFile string) {
 		progressbar.OptionEnableColorCodes(true),
 		progressbar.OptionShowBytes(true),
 		progressbar.OptionSetWidth(15),
+		progressbar.OptionShowCount(),
 		progressbar.OptionSetDescription("[cyan][1/1][reset] Waiting downloading file..."),
 		progressbar.OptionSetTheme(progressbar.Theme{
 			Saucer:        "[green]=[reset]",
@@ -77,4 +76,5 @@ func Process(srcFile, destFile string) {
 			BarEnd:        "]",
 		}))
 	_, _ = io.Copy(io.MultiWriter(f, bar), source)
+	return nil
 }

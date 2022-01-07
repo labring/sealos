@@ -142,3 +142,15 @@ func RemoveSliceEmpty(list []string) (fList []string) {
 	}
 	return
 }
+
+func RemoveDuplicate(list []string) []string {
+	var result []string
+	flagMap := map[string]struct{}{}
+	for _, v := range list {
+		if _, ok := flagMap[v]; !ok {
+			flagMap[v] = struct{}{}
+			result = append(result, v)
+		}
+	}
+	return result
+}

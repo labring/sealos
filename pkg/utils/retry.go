@@ -31,3 +31,7 @@ func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error 
 	}
 	return fmt.Errorf("retry action timeout: %v", err)
 }
+
+func WrapExecResult(host, command string, output []byte, err error) error {
+	return fmt.Errorf("failed to execute command(%s) on host(%s): output(%s), error(%v)", command, host, output, err)
+}

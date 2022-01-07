@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	config2 "github.com/fanux/sealos/pkg/runtime"
+	config2 "github.com/fanux/sealos/pkg/config"
 	"github.com/spf13/cobra"
 )
 

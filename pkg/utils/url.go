@@ -20,12 +20,10 @@ import (
 	"crypto/tls"
 	"net/http"
 	"net/url"
-
-	"github.com/fanux/sealos/pkg/logger"
 )
 
 func URICheck(pkgURL string) bool {
-	if _, ok := IsURL(pkgURL); !ok && !FileExist(pkgURL) {
+	if _, ok := IsURL(pkgURL); !ok && !IsExist(pkgURL) {
 		return false
 	}
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.
@@ -38,7 +36,7 @@ func URLCheck(pkgURL string) bool {
 	if u, ok := IsURL(pkgURL); ok {
 		req, err := http.NewRequest("GET", u.String(), nil)
 		if err != nil {
-			logger.Error("Your package url is incorrect.", "please check where your PkgUrl is right?") // 离线安装包为http路径不对
+			//logger.Error("Your package url is incorrect.", "please check where your PkgUrl is right?") // 离线安装包为http路径不对
 			return false
 		}
 		client := &http.Client{
@@ -48,20 +46,9 @@ func URLCheck(pkgURL string) bool {
 		}
 		_, err = client.Do(req)
 		if err != nil {
-			logger.Error(err)
+			//logger.Error(err)
 			return false
 		}
-		/*
-			if tp := resp.Header.Get("Content-Type"); tp != "application/x-gzip" {
-				logger.Error("your pkg url is  a ", tp, "file, please check your PkgUrl is right?")
-				return false
-			}
-		*/
-
-		//if resp.ContentLength < MinDownloadFileSize { //判断大小 这里可以设置成比如 400MB 随便设置一个大小
-		//	logger.Error("your pkgUrl download file size is : ", resp.ContentLength/1024/1024, "m, please check your PkgUrl is right")
-		//	return false
-		//}
 	}
 	return true
 }

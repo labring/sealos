@@ -17,9 +17,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/types/contants"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"

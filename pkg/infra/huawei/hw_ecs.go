@@ -17,7 +17,7 @@ package huawei
 import (
 	"errors"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/utils"
 	v2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"

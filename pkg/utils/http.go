@@ -23,7 +23,7 @@ import (
 func DownloadFile(location string) (filePATH, md5 string) {
 	if _, isURL := IsURL(location); isURL {
 		absPATH := "/tmp/sealos/" + path.Base(location)
-		if !FileExist(absPATH) {
+		if !IsExist(absPATH) {
 			//generator download cmd
 			dwnCmd := downloadCmd(location)
 			//os exec download command
@@ -32,7 +32,7 @@ func DownloadFile(location string) (filePATH, md5 string) {
 		location = absPATH
 	}
 	//file md5
-	md5 = Md5File(location)
+	md5 = FileMD5(location)
 	return location, md5
 }
 

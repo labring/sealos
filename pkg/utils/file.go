@@ -19,13 +19,6 @@ import (
 	"os"
 )
 
-const md5sumCmd = "md5sum %s | cut -d\" \" -f1"
-
-func Md5File(localPath string) string {
-	cmd := fmt.Sprintf(md5sumCmd, localPath)
-	return BashEval(cmd)
-}
-
 func UserHomeDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -33,13 +26,4 @@ func UserHomeDir() string {
 		os.Exit(1)
 	}
 	return home
-}
-
-func FileExist(path string) bool {
-	_, err := os.Stat(path)
-	if err == nil || os.IsExist(err) {
-		return true
-	}
-
-	return false
 }

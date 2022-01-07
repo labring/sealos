@@ -17,9 +17,9 @@ limitations under the License.
 package join
 
 import (
-	"github.com/fanux/sealos/pkg/kubernetes/apis/kubeadm"
-	"github.com/fanux/sealos/pkg/kubernetes/copycerts"
-	"github.com/fanux/sealos/pkg/kubernetes/token"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/apis/kubeadm"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/copycerts"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/token"
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

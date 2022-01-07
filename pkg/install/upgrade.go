@@ -19,12 +19,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/nodeclient"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
-
-	nodeclient2 "github.com/fanux/sealos/pkg/kubernetes/nodeclient"
 
 	"k8s.io/client-go/kubernetes"
 )
@@ -48,7 +47,7 @@ func NewUpgrade(version, pkgURL string) *SealosUpgrade {
 	// add ip -> hostname
 	u.SetIPtoHostName()
 	var err error
-	u.Client, err = nodeclient2.NewClient(nodeclient2.KubeDefaultConfigPath, nil)
+	u.Client, err = nodeclient.NewClient(nodeclient.KubeDefaultConfigPath, nil)
 	if err != nil {
 		logger.Error("get k8s.NewClient err: ", err)
 		os.Exit(1)
@@ -63,8 +62,8 @@ func ExitUpgradeCase(version, pkgURL, cfgFile string) error {
 	if utils.URLCheck(pkgURL) {
 		return fmt.Errorf("pkgurl %s check err, Exit", pkgURL)
 	}
-	if !utils.FileExist(nodeclient2.KubeDefaultConfigPath) {
-		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", nodeclient2.KubeDefaultConfigPath)
+	if !utils.IsExist(nodeclient.KubeDefaultConfigPath) {
+		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", nodeclient.KubeDefaultConfigPath)
 	}
 
 	if err := upgradeSealos.Load(cfgFile); err != nil {
@@ -157,12 +156,12 @@ func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
 
 			// fourth to judge nodes is ready
 			time.Sleep(time.Second * 10)
-			k8sNode, _ := nodeclient2.GetNodeByName(u.Client, node)
-			if nodeclient2.IsNodeReady(*k8sNode) {
+			k8sNode, _ := nodeclient.GetNodeByName(u.Client, node)
+			if nodeclient.IsNodeReady(*k8sNode) {
 				logger.Info("[%s] fourth:  %s nodes is ready", ip, node)
 
 				// fifth to uncordon node
-				err = nodeclient2.CordonUnCordon(u.Client, node, false)
+				err = nodeclient.CordonUnCordon(u.Client, node, false)
 				if err != nil {
 					logger.Error(`k8s.CordonUnCordon err: %s, \n After upgrade,  please run "kubectl uncordon %s" to enable Scheduling`, err, node)
 				}

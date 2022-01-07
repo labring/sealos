@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )

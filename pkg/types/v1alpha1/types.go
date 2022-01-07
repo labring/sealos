@@ -19,9 +19,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/types/contants"
 
 	"sigs.k8s.io/yaml"
 

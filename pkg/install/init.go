@@ -24,16 +24,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/runtime"
-	"github.com/fanux/sealos/pkg/utils/cni"
+	"github.com/fanux/sealos/pkg/config"
+	cert2 "github.com/fanux/sealos/pkg/utils/kubernetes/cert"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/cni"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-
-	cert "github.com/fanux/sealos/pkg/kubernetes/cert"
 )
 
 //BuildInit is
@@ -95,7 +94,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	v1.CgroupDriver = s.getCgroupDriverFromShell(s.Masters[0])
 	if v1.KubeadmFile == "" {
-		templateData = string(runtime.Template())
+		templateData = string(config.Template())
 	} else {
 		fileData, err := ioutil.ReadFile(v1.KubeadmFile)
 		defer func() {
@@ -106,13 +105,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		if err != nil {
 			panic(1)
 		}
-		templateData = string(runtime.TemplateFromTemplateContent(string(fileData)))
+		templateData = string(config.TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
 	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = v1.SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
-	kubeadm := runtime.KubeadmDataFromYaml(templateData)
+	kubeadm := config.KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
 		v1.DNSDomain = kubeadm.Networking.DNSDomain
 		v1.APIServerCertSANs = kubeadm.APIServer.CertSANs
@@ -172,14 +171,14 @@ func (s *SealosInstaller) GenerateCert() {
 func (s *SealosInstaller) CreateKubeconfig() {
 	hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
 
-	certConfig := cert.Config{
+	certConfig := cert2.Config{
 		Path:     v1.CertPath,
 		BaseName: "ca",
 	}
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", v1.APIServer)
 
-	err := cert.CreateJoinControlPlaneKubeConfigFiles(v1.DefaultConfigPath,
+	err := cert2.CreateJoinControlPlaneKubeConfigFiles(v1.DefaultConfigPath,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)

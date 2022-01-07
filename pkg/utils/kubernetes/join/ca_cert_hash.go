@@ -17,8 +17,8 @@ package join
 import (
 	"crypto/x509"
 
-	"github.com/fanux/sealos/pkg/kubernetes/kubeconfig"
-	"github.com/fanux/sealos/pkg/kubernetes/pubkeypin"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/kubeconfig"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/pubkeypin"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"

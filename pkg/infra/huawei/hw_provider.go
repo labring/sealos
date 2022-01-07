@@ -17,7 +17,7 @@ package huawei
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 

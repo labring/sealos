@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package hosts
 
 import (
 	"bufio"
@@ -22,7 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type HostFile struct {
@@ -80,7 +81,7 @@ func appendToFile(filePath string, hostname *Hostname) {
 }
 
 func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
-	if !FileExist(path) {
+	if !utils.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return nil, errors.New("path %s is not exists")
 	}
@@ -100,7 +101,7 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 		if rErr == io.EOF {
 			break
 		}
-		if len(str) == 0 || str == "\r\n" || IsEmptyLine(str) {
+		if len(str) == 0 || str == "\r\n" || utils.IsEmptyLine(str) {
 			continue
 		}
 
@@ -110,12 +111,12 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 			continue
 		}
 		tmpHostnameArr := strings.Fields(str)
-		curDomain := TrimSpaceWS(tmpHostnameArr[1])
-		if !CheckDomain(curDomain) {
+		curDomain := utils.TrimSpaceWS(tmpHostnameArr[1])
+		if !utils.CheckDomain(curDomain) {
 			return hostnameMap, errors.New(" file contain error domain" + curDomain)
 		}
-		curIP := TrimSpaceWS(tmpHostnameArr[0])
-		checkIP := CheckIP(curIP)
+		curIP := utils.TrimSpaceWS(tmpHostnameArr[0])
+		checkIP := utils.CheckIP(curIP)
 		if !checkIP {
 			return hostnameMap, nil
 		}
@@ -138,7 +139,7 @@ func (h *HostFile) AppendHost(domain string, ip string) {
 }
 
 func (h *HostFile) writeToFile(hostnameMap map[string]*Hostname, path string) {
-	if !FileExist(path) {
+	if !utils.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return
 	}

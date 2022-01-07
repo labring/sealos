@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package config
 
 import (
 	"bytes"
@@ -20,9 +20,9 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/fanux/sealos/pkg/utils/cri"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/cri"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils"
