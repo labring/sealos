@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	v12 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/strings"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
+	v12 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -142,7 +144,7 @@ func TransToIP(k8sClient *kubernetes.Clientset, label string, hostname []string)
 	if err != nil {
 		return nil, err
 	}
-	resHost, resIP := utils.HostnameAndIP(hostname)
+	resHost, resIP := iputils.HostnameAndIP(hostname)
 	ips = append(ips, resIP...)
 	for _, node := range resHost {
 		ip, err := GetNodeIPByName(k8sClient, node)
@@ -150,6 +152,6 @@ func TransToIP(k8sClient *kubernetes.Clientset, label string, hostname []string)
 			ips = append(ips, ip)
 		}
 	}
-	ips = utils.RemoveDuplicate(ips)
+	ips = strings.RemoveDuplicate(ips)
 	return ips, nil
 }

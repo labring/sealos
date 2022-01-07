@@ -20,11 +20,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/utils/file"
+
 	"github.com/fanux/sealos/pkg/utils/kubernetes/nodeclient"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 type ExecFlag struct {
@@ -46,7 +47,7 @@ var (
 
 func GetExecFlag(cfgFile string) *ExecFlag {
 	e := &ExecFlag{}
-	if !utils.IsExist(nodeclient.KubeDefaultConfigPath) {
+	if !file.IsExist(nodeclient.KubeDefaultConfigPath) {
 		logger.Error("file %s is not exist", nodeclient.KubeDefaultConfigPath)
 		os.Exit(ErrorExitOSCase)
 	}
@@ -106,7 +107,7 @@ func (e *ExecFlag) IsUseCmd() bool {
 
 // IsUseCopy return true when you want to copy file
 func (e *ExecFlag) IsUseCopy() bool {
-	return utils.IsExist(e.Src) && e.Dst != ""
+	return file.IsExist(e.Src) && e.Dst != ""
 }
 
 // IsUseNode return true when is use --node

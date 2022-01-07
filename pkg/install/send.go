@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
@@ -37,7 +39,7 @@ func (s *SealosInstaller) SendPackage() {
 // SendSealos is send the exec sealos to /usr/bin/sealos
 func (s *SealosInstaller) SendSealos() {
 	// send sealos first to avoid old version
-	sealos := utils.FetchSealosAbsPath()
+	sealos := exec.FetchSealosAbsPath()
 	beforeHook := "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
 	afterHook := "chmod a+x /usr/bin/sealos"
 	ssh.CopyFiles(v1.SSHConfig, sealos, s.Hosts, "/usr/bin", &beforeHook, &afterHook)
@@ -49,7 +51,7 @@ func (u *SealosUpgrade) SendPackage() {
 	pkg := path.Base(u.NewPkgURL)
 	// rm old sealos in package avoid old version problem. if sealos not exist in package then skip rm
 	var kubeHook string
-	if utils.For120(v1.Version) {
+	if versionutil.For120(v1.Version) {
 		// TODO update need load modprobe -- br_netfilter modprobe -- bridge.
 		// https://github.com/fanux/cloud-kernel/issues/23
 		kubeHook = fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (ctr -n=k8s.io image import ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)

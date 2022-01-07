@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package retry
 
 import (
 	"fmt"
-	"os"
+	"time"
 )
 
-func UserHomeDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error {
+	var err error
+	for i := 0; i < tryTimes; i++ {
+		err = action()
+		if err == nil {
+			return nil
+		}
+
+		time.Sleep(trySleepTime * time.Duration(2*i+1))
 	}
-	return home
+	return fmt.Errorf("retry action timeout: %v", err)
 }

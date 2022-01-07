@@ -19,13 +19,14 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/types/contants"
 
 	"sigs.k8s.io/yaml"
-
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 const (
@@ -34,7 +35,7 @@ const (
 )
 
 var (
-	DefaultConfigPath = utils.UserHomeDir() + "/.sealos"
+	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
 )
 
 type Metadata struct {
@@ -84,10 +85,10 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = DefaultConfigPath + DefaultConfigFile
 	}
-	MasterIPs = utils.ParseIPs(MasterIPs)
+	MasterIPs = iputils.ParseIPs(MasterIPs)
 	c.Masters = MasterIPs
-	NodeIPs = utils.ParseIPs(NodeIPs)
-	c.Nodes = utils.ParseIPs(NodeIPs)
+	NodeIPs = iputils.ParseIPs(NodeIPs)
+	c.Nodes = iputils.ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile

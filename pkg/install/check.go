@@ -18,15 +18,18 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 // SetHosts set hosts. if can't access to hostName, set /etc/hosts
 func SetHosts(hostIP, hostName string) {
-	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, utils.IPFormat(hostIP), hostName)
+	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, iputils.IPFormat(hostIP), hostName)
 	_ = v1.SSHConfig.CmdAsync(hostIP, cmd)
 }
 
@@ -78,7 +81,7 @@ func (s *SealosInstaller) CheckValid() {
 		//}
 
 		// version >= 1.20 , Add prefight for containerd
-		if utils.For120(v1.Version) {
+		if versionutil.For120(v1.Version) {
 			// for containerd. if docker exist ; exit frist.
 
 			dockerExist := v1.SSHConfig.CmdToString(h, "command -v dockerd &> /dev/null && echo yes || :", "")

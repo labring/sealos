@@ -12,22 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package hash
 
 import (
+	"crypto/md5" // #nosec
+	"encoding/hex"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-func ExecutableFilePath(name string) string {
-	ex, _ := os.Executable()
-	exPath := filepath.Dir(ex)
-	return filepath.Join(exPath, name)
+func MD5(body []byte) string {
+	bytes := md5.Sum(body) // #nosec
+	return hex.EncodeToString(bytes[:])
 }
 
-//FetchSealosAbsPath 获取sealos绝对路径
-func FetchSealosAbsPath() string {
-	ex, _ := os.Executable()
-	exPath, _ := filepath.Abs(ex)
-	return exPath
+//FileMD5 count file md5
+func FileMD5(path string) string {
+	file, err := os.Open(filepath.Clean(path))
+	if err != nil {
+		logger.Error("get file md5 failed %v", err)
+		return ""
+	}
+
+	m := md5.New() // #nosec
+	if _, err := io.Copy(m, file); err != nil {
+		logger.Error("get file md5 failed %v", err)
+		return ""
+	}
+
+	fileMd5 := fmt.Sprintf("%x", m.Sum(nil))
+	return fileMd5
 }

@@ -18,6 +18,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/rand"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
@@ -25,7 +27,6 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 func (a *AliProvider) CreateVPC() error {
@@ -141,7 +142,7 @@ func (a *AliProvider) GetAvailableZoneID() error {
 	}()
 
 	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
-		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[utils.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
+		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[rand.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
 		return nil
 	}
 	request := vpc.CreateDescribeZonesRequest()
@@ -154,7 +155,7 @@ func (a *AliProvider) GetAvailableZoneID() error {
 	if len(response.Zones.Zone) == 0 {
 		return errors.New("not available ZoneID ")
 	}
-	zoneID := response.Zones.Zone[utils.Rand(len(response.Zones.Zone))].ZoneId
+	zoneID := response.Zones.Zone[rand.Rand(len(response.Zones.Zone))].ZoneId
 	a.Infra.Status.Cluster.ZoneID = zoneID
 	return nil
 }

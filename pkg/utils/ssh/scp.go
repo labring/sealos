@@ -27,9 +27,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/utils/hash"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/http"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -40,7 +42,7 @@ func (ss *SSH) CopyForMD5(host, localFilePath, remoteFilePath, md5 string) bool 
 	//如果有md5则可以验证
 	//如果没有md5则拿到本地数据后验证
 	if md5 == "" {
-		md5 = utils.FileMD5(localFilePath)
+		md5 = hash.FileMD5(localFilePath)
 	}
 	logger.Debug("[ssh]source file md5 value is %s", md5)
 	ss.Copy(host, localFilePath, remoteFilePath)
@@ -363,7 +365,7 @@ func (ss *SSH) copyLocalFileToRemote(host string, sshClient *ssh.Client, sftpCli
 
 func (ss *SSH) isCopyMd5Success(sshClient *ssh.Client, localFile, remoteFile string) bool {
 	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFile)
-	localMd5 := utils.FileMD5(localFile)
+	localMd5 := hash.FileMD5(localFile)
 	sshSession, err := sshClient.NewSession()
 	if err != nil {
 		return false
@@ -400,7 +402,7 @@ func (ss *SSH) isCopyMd5Success(sshClient *ssh.Client, localFile, remoteFile str
 }
 
 func (ss *SSH) ValidateMd5sumLocalWithRemote(host, localFile, remoteFile string) bool {
-	localMd5 := utils.FileMD5(localFile)
+	localMd5 := hash.FileMD5(localFile)
 	return localMd5 == ss.Md5Sum(host, remoteFile)
 }
 
@@ -410,7 +412,7 @@ func (ss *SSH) ValidateMd5sumLocalWithRemote(host, localFile, remoteFile string)
 //hook: cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && sh init.sh
 func CopyFiles(sshConfig SSH, location string, hosts []string, dst string, before, after *string) string {
 	var md5 string
-	location, md5 = utils.DownloadFile(location)
+	location, md5 = http.DownloadFile(location)
 	pkg := path.Base(location)
 	fullPath := fmt.Sprintf("%s/%s", dst, pkg)
 	mkDstDir := fmt.Sprintf("mkdir -p %s || true", dst)

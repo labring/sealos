@@ -22,7 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
@@ -81,7 +85,7 @@ func appendToFile(filePath string, hostname *Hostname) {
 }
 
 func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
-	if !utils.IsExist(path) {
+	if !file.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return nil, errors.New("path %s is not exists")
 	}
@@ -101,7 +105,7 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 		if rErr == io.EOF {
 			break
 		}
-		if len(str) == 0 || str == "\r\n" || utils.IsEmptyLine(str) {
+		if len(str) == 0 || str == "\r\n" || strings2.IsEmptyLine(str) {
 			continue
 		}
 
@@ -111,12 +115,12 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 			continue
 		}
 		tmpHostnameArr := strings.Fields(str)
-		curDomain := utils.TrimSpaceWS(tmpHostnameArr[1])
-		if !utils.CheckDomain(curDomain) {
+		curDomain := strings2.TrimSpaceWS(tmpHostnameArr[1])
+		if !iputils.CheckDomain(curDomain) {
 			return hostnameMap, errors.New(" file contain error domain" + curDomain)
 		}
-		curIP := utils.TrimSpaceWS(tmpHostnameArr[0])
-		checkIP := utils.CheckIP(curIP)
+		curIP := strings2.TrimSpaceWS(tmpHostnameArr[0])
+		checkIP := iputils.CheckIP(curIP)
 		if !checkIP {
 			return hostnameMap, nil
 		}
@@ -139,7 +143,7 @@ func (h *HostFile) AppendHost(domain string, ip string) {
 }
 
 func (h *HostFile) writeToFile(hostnameMap map[string]*Hostname, path string) {
-	if !utils.IsExist(path) {
+	if !file.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return
 	}

@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/utils"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 )
 
 var DebugMode bool
@@ -79,7 +79,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 
 			err = session.Wait()
 			if err != nil {
-				return utils.WrapExecResult(host, cmd, []byte(strings.Join(combineSlice, "\n")), err)
+				return strings2.WrapExecResult(host, cmd, []byte(strings.Join(combineSlice, "\n")), err)
 			}
 
 			return nil

@@ -12,40 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package file
 
-import "sync"
+import (
+	"fmt"
+	"os"
+)
 
-type Pool struct {
-	queue chan int
-	wg    *sync.WaitGroup
-}
-
-func NewPool(size int) *Pool {
-	if size <= 1 {
-		size = 1
+func UserHomeDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	return &Pool{
-		queue: make(chan int, size),
-		wg:    &sync.WaitGroup{},
-	}
-}
-
-func (p *Pool) Add(delta int) {
-	for i := 0; i < delta; i++ {
-		p.queue <- 1
-	}
-	for i := 0; i > delta; i-- {
-		<-p.queue
-	}
-	p.wg.Add(delta)
-}
-
-func (p *Pool) Done() {
-	<-p.queue
-	p.wg.Done()
-}
-
-func (p *Pool) Wait() {
-	p.wg.Wait()
+	return home
 }

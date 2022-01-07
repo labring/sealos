@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package exec
 
 import (
-	"fmt"
-	"time"
+	"os"
+	"path/filepath"
 )
 
-func Retry(tryTimes int, trySleepTime time.Duration, action func() error) error {
-	var err error
-	for i := 0; i < tryTimes; i++ {
-		err = action()
-		if err == nil {
-			return nil
-		}
-
-		time.Sleep(trySleepTime * time.Duration(2*i+1))
-	}
-	return fmt.Errorf("retry action timeout: %v", err)
+func ExecutableFilePath(name string) string {
+	ex, _ := os.Executable()
+	exPath := filepath.Dir(ex)
+	return filepath.Join(exPath, name)
 }
 
-func WrapExecResult(host, command string, output []byte, err error) error {
-	return fmt.Errorf("failed to execute command(%s) on host(%s): output(%s), error(%v)", command, host, output, err)
+//FetchSealosAbsPath 获取sealos绝对路径
+func FetchSealosAbsPath() string {
+	ex, _ := os.Executable()
+	exPath, _ := filepath.Abs(ex)
+	return exPath
 }

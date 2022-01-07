@@ -19,12 +19,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/config"
 	"github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"github.com/fanux/sealos/pkg/ipvs"
@@ -111,7 +112,7 @@ func (s *SealosInstaller) sendJoinCPConfig(joinMaster []string) {
 		go func(master string) {
 			defer wg.Done()
 			cgroup := s.getCgroupDriverFromShell(master)
-			templateData := string(config.JoinTemplate(utils.IPFormat(master), cgroup))
+			templateData := string(config.JoinTemplate(iputils.IPFormat(master), cgroup))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = v1.SSHConfig.CmdAsync(master, cmd)
 		}(master)
@@ -135,14 +136,14 @@ func (s *SealosInstaller) JoinMasters(masters []string) {
 		go func(master string) {
 			defer wg.Done()
 			hostname := ssh.RemoteHostName(v1.SSHConfig, master)
-			certCMD := CMD(v1.APIServerCertSANs, utils.IPFormat(master), hostname, v1.SvcCIDR, v1.DNSDomain)
+			certCMD := CMD(v1.APIServerCertSANs, iputils.IPFormat(master), hostname, v1.SvcCIDR, v1.DNSDomain)
 			_ = v1.SSHConfig.CmdAsync(master, certCMD)
 
-			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(utils.IPFormat(s.Masters[0])))
+			cmdHosts := fmt.Sprintf("echo %s >> /etc/hosts", getApiserverHost(iputils.IPFormat(s.Masters[0])))
 			_ = v1.SSHConfig.CmdAsync(master, cmdHosts)
 			// cmdMult := fmt.Sprintf("%s --apiserver-advertise-address %s", cmd, IpFormat(master))
 			_ = v1.SSHConfig.CmdAsync(master, cmd)
-			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(utils.IPFormat(s.Masters[0])), getApiserverHost(utils.IPFormat(master)))
+			cmdHosts = fmt.Sprintf(`sed "s/%s/%s/g" -i /etc/hosts`, getApiserverHost(iputils.IPFormat(s.Masters[0])), getApiserverHost(iputils.IPFormat(master)))
 			_ = v1.SSHConfig.CmdAsync(master, cmdHosts)
 			copyk8sConf := `rm -rf .kube/config && mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
 			_ = v1.SSHConfig.CmdAsync(master, copyk8sConf)
@@ -158,7 +159,7 @@ func (s *SealosInstaller) JoinNodes() {
 	var masters string
 	var wg sync.WaitGroup
 	for _, master := range s.Masters {
-		masters += fmt.Sprintf(" --rs %s:6443", utils.IPFormat(master))
+		masters += fmt.Sprintf(" --rs %s:6443", iputils.IPFormat(master))
 	}
 	ipvsCmd := fmt.Sprintf("sealos ipvs --vs %s:6443 %s --health-path /healthz --health-schem https --run-once", v1.VIP, masters)
 	for _, node := range s.Nodes {
@@ -175,11 +176,11 @@ func (s *SealosInstaller) JoinNodes() {
 			_ = v1.SSHConfig.CmdAsync(node, cmdHosts)
 
 			// 如果不是默认路由， 则添加 vip 到 master的路由。
-			cmdRoute := fmt.Sprintf("sealos route --host %s", utils.IPFormat(node))
+			cmdRoute := fmt.Sprintf("sealos route --host %s", iputils.IPFormat(node))
 			status := v1.SSHConfig.CmdToString(node, cmdRoute, "")
 			if status != "ok" {
 				// 以自己的ip作为路由网关
-				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", v1.VIP, utils.IPFormat(node))
+				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))
 				v1.SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
 

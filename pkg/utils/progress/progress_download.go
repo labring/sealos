@@ -23,7 +23,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/utils"
+	http2 "github.com/fanux/sealos/pkg/utils/http"
 
 	"github.com/schollz/progressbar/v3"
 )
@@ -32,7 +32,7 @@ func Download(srcFile, destFile string) error {
 	sourceName, destName := srcFile, destFile
 	var source io.Reader
 	var sourceSize int64
-	if _, ok := utils.IsURL(srcFile); ok {
+	if _, ok := http2.IsURL(srcFile); ok {
 		// open as url
 		resp, err := http.Get(sourceName)
 		if err != nil {

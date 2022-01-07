@@ -19,12 +19,16 @@ import (
 	"os"
 	"time"
 
+	"github.com/fanux/sealos/pkg/utils/sync"
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/http"
+
 	"github.com/fanux/sealos/pkg/utils/kubernetes/nodeclient"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -59,10 +63,10 @@ func ExitUpgradeCase(version, pkgURL, cfgFile string) error {
 	if pkgURL == "" || version == "" {
 		return fmt.Errorf("version or pkg-url is required, Exit")
 	}
-	if utils.URLCheck(pkgURL) {
+	if http.URLCheck(pkgURL) {
 		return fmt.Errorf("pkgurl %s check err, Exit", pkgURL)
 	}
-	if !utils.IsExist(nodeclient.KubeDefaultConfigPath) {
+	if !file.IsExist(nodeclient.KubeDefaultConfigPath) {
 		return fmt.Errorf("KubeDefaultConfigPath %s is not exist, Exit", nodeclient.KubeDefaultConfigPath)
 	}
 
@@ -70,7 +74,7 @@ func ExitUpgradeCase(version, pkgURL, cfgFile string) error {
 		upgradeSealos.ShowDefaultConfig()
 		return err
 	}
-	return utils.CanUpgradeByNewVersion(version, v1.Version)
+	return versionutil.CanUpgradeByNewVersion(version, v1.Version)
 }
 
 func (u *SealosUpgrade) SetUP() {
@@ -109,7 +113,7 @@ func (u *SealosUpgrade) UpgradeOtherMaster() {
 }
 
 func (u *SealosUpgrade) upgradeNodes(hostnames []string, isMaster bool) {
-	wg := utils.NewPool(2)
+	wg := sync.NewPool(2)
 	var err error
 	for _, hostname := range hostnames {
 		wg.Add(1)

@@ -18,9 +18,9 @@ import (
 	"reflect"
 	"testing"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/iputils"
 
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
@@ -141,8 +141,8 @@ func TestJoinTemplate(t *testing.T) {
 	v1.TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
 
 	v1.VIP = vip
-	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(utils.IPFormat(masters[0]), "systemd"))+"\" > ~/aa")
-	t.Log(string(JoinTemplate(utils.IPFormat(masters[0]), "cgroupfs")))
+	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(iputils.IPFormat(masters[0]), "systemd"))+"\" > ~/aa")
+	t.Log(string(JoinTemplate(iputils.IPFormat(masters[0]), "cgroupfs")))
 
 	v1.Version = "v1.19.0"
 	config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate("", "systemd"))+"\" > ~/aa")

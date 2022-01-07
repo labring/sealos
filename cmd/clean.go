@@ -17,12 +17,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-
 	"github.com/fanux/sealos/pkg/install"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -72,8 +72,8 @@ func init() {
 }
 
 func CleanCmdFunc(cmd *cobra.Command, args []string) {
-	deleteNodes := utils.ParseIPs(v1.NodeIPs)
-	deleteMasters := utils.ParseIPs(v1.MasterIPs)
+	deleteNodes := iputils.ParseIPs(v1.NodeIPs)
+	deleteMasters := iputils.ParseIPs(v1.MasterIPs)
 	c := &v1.SealConfig{}
 	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)

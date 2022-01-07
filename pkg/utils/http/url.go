@@ -14,16 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package http
 
 import (
 	"crypto/tls"
 	"net/http"
 	"net/url"
+
+	"github.com/fanux/sealos/pkg/utils/file"
 )
 
 func URICheck(pkgURL string) bool {
-	if _, ok := IsURL(pkgURL); !ok && !IsExist(pkgURL) {
+	if _, ok := IsURL(pkgURL); !ok && !file.IsExist(pkgURL) {
 		return false
 	}
 	// 判断PkgUrl, 有http前缀时, 下载的文件如果小于400M ,则报错.

@@ -23,7 +23,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/hash"
+
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/progress"
 	"github.com/schollz/progressbar/v3"
@@ -70,10 +74,10 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 
 // CopyRemoteFileToLocal is scp remote file to local
 func (s *SSH) Fetch(host, localFilePath, remoteFilePath string) error {
-	if utils.IsLocalIP(host, s.LocalAddress) {
+	if iputils.IsLocalIP(host, s.LocalAddress) {
 		if remoteFilePath != localFilePath {
 			logger.Debug("local copy files src %s to dst %s", remoteFilePath, localFilePath)
-			return utils.RecursionCopy(remoteFilePath, localFilePath)
+			return file.RecursionCopy(remoteFilePath, localFilePath)
 		}
 		return nil
 	}
@@ -92,7 +96,7 @@ func (s *SSH) Fetch(host, localFilePath, remoteFilePath string) error {
 	}
 	defer srcFile.Close()
 
-	err = utils.MkFileFullPathDir(localFilePath)
+	err = file.MkFileFullPathDir(localFilePath)
 	if err != nil {
 		return err
 	}
@@ -109,9 +113,9 @@ func (s *SSH) Fetch(host, localFilePath, remoteFilePath string) error {
 
 // CopyLocalToRemote is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if utils.IsLocalIP(host, s.LocalAddress) {
+	if iputils.IsLocalIP(host, s.LocalAddress) {
 		logger.Debug("local copy files src %s to dst %s", localPath, remotePath)
-		return utils.RecursionCopy(localPath, remotePath)
+		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
 	sshClient, sftpClient, err := s.sftpConnect(host)
@@ -137,7 +141,7 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 	}
 	number := 1
 	if f.IsDir() {
-		number = utils.CountDirFiles(localPath)
+		number = file.CountDirFiles(localPath)
 	}
 	// no file in dir, do need to send
 	if number == 0 {
@@ -200,7 +204,7 @@ func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localP
 	var (
 		srcMd5, dstMd5 string
 	)
-	srcMd5 = utils.FileMD5(localPath)
+	srcMd5 = hash.FileMD5(localPath)
 	if s.IsFileExist(host, remotePath) {
 		dstMd5 = s.RemoteMd5Sum(host, remotePath)
 		if srcMd5 == dstMd5 {

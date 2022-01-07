@@ -20,10 +20,15 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/utils/confirm"
+	"github.com/fanux/sealos/pkg/utils/exec"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"github.com/fanux/sealos/pkg/ipvs"
@@ -44,7 +49,7 @@ func BuildClean(deleteNodes, deleteMasters []string) {
 		if !v1.CleanForce { // false
 			prompt := fmt.Sprintf("Are you sure to clean the masters [%s] ?", strings.Join(deleteMasters, ","))
 			cancel := fmt.Sprintf("You have canceled to clean the masters [%s] !", strings.Join(deleteMasters, ","))
-			result, err := utils.Confirm(prompt, cancel)
+			result, err := confirm.Confirm(prompt, cancel)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -63,7 +68,7 @@ node:
 		if !v1.CleanForce { // flase
 			prompt := fmt.Sprintf("Are you sure to clean the nodes [%s] ?", strings.Join(deleteNodes, ","))
 			cancel := fmt.Sprintf("You have canceled to clean the nodes [%s] !", strings.Join(deleteNodes, ","))
-			result, err := utils.Confirm(prompt, cancel)
+			result, err := confirm.Confirm(prompt, cancel)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -81,7 +86,7 @@ all:
 		if !v1.CleanForce { // flase
 			prompt := "Are you sure to clean all masters and nodes ?"
 			cancel := "You have canceled to clean all masters and nodes !"
-			result, err := utils.Confirm(prompt, cancel)
+			result, err := confirm.Confirm(prompt, cancel)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -106,7 +111,7 @@ end:
 	if i.cleanAll {
 		logger.Info("if clean all and clean sealos config")
 		cfgPath := v1.DefaultConfigPath
-		_, _ = utils.RunSimpleCmd("rm -rf " + cfgPath)
+		_, _ = exec.RunSimpleCmd("rm -rf " + cfgPath)
 	}
 }
 
@@ -146,7 +151,7 @@ func (s *SealosClean) cleanNode(node string) {
 	cleanRoute(node)
 	clean(node)
 	//remove node
-	v1.NodeIPs = utils.IPListRemove(v1.NodeIPs, node)
+	v1.NodeIPs = strings2.IPListRemove(v1.NodeIPs, node)
 	if !s.cleanAll {
 		logger.Debug("clean node in master")
 		if len(v1.MasterIPs) > 0 {
@@ -160,7 +165,7 @@ func (s *SealosClean) cleanNode(node string) {
 func (s *SealosClean) cleanMaster(master string) {
 	clean(master)
 	//remove master
-	v1.MasterIPs = utils.IPListRemove(v1.MasterIPs, master)
+	v1.MasterIPs = strings2.IPListRemove(v1.MasterIPs, master)
 	if !s.cleanAll {
 		logger.Debug("clean node in master")
 		if len(v1.MasterIPs) > 0 {
@@ -214,11 +219,11 @@ func clean(host string) {
 
 func cleanRoute(node string) {
 	// clean route
-	cmdRoute := fmt.Sprintf("sealos route --host %s", utils.IPFormat(node))
+	cmdRoute := fmt.Sprintf("sealos route --host %s", iputils.IPFormat(node))
 	status := v1.SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 删除为 vip创建的路由。
-		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", v1.VIP, utils.IPFormat(node))
+		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))
 		v1.SSHConfig.CmdToString(node, delRouteCmd, "")
 	}
 }

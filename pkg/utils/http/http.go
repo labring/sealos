@@ -12,27 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package http
 
 import (
 	"fmt"
 	"path"
+
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/fanux/sealos/pkg/utils/hash"
+
+	"github.com/fanux/sealos/pkg/utils/file"
 )
 
 //DownloadFile is
 func DownloadFile(location string) (filePATH, md5 string) {
 	if _, isURL := IsURL(location); isURL {
 		absPATH := "/tmp/sealos/" + path.Base(location)
-		if !IsExist(absPATH) {
+		if !file.IsExist(absPATH) {
 			//generator download cmd
 			dwnCmd := downloadCmd(location)
 			//os exec download command
-			_, _ = RunSimpleCmd("mkdir -p /tmp/sealos && cd /tmp/sealos && " + dwnCmd)
+			_, _ = exec.RunSimpleCmd("mkdir -p /tmp/sealos && cd /tmp/sealos && " + dwnCmd)
 		}
 		location = absPATH
 	}
 	//file md5
-	md5 = FileMD5(location)
+	md5 = hash.FileMD5(location)
 	return location, md5
 }
 

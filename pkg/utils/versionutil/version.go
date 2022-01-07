@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package versionutil
 
 import (
 	"fmt"
@@ -82,8 +82,8 @@ func For120(version string) bool {
 	return false
 }
 
-//VersionToInt v1.15.6  => 115
-func VersionToInt(version string) int {
+//ToInt v1.15.6  => 115
+func ToInt(version string) int {
 	// v1.15.6  => 1.15.6
 	version = strings.Replace(version, "v", "", -1)
 	versionArr := strings.Split(version, ".")
@@ -96,8 +96,8 @@ func VersionToInt(version string) int {
 	return 0
 }
 
-//VersionToIntAll v1.19.1 ==> 1191
-func VersionToIntAll(version string) int {
+//ToIntAll v1.19.1 ==> 1191
+func ToIntAll(version string) int {
 	version = strings.Replace(version, "v", "", -1)
 	arr := strings.Split(version, ".")
 	if len(arr) >= 3 {
@@ -109,9 +109,9 @@ func VersionToIntAll(version string) int {
 	return 0
 }
 
-//VersionCompare is version compare
+//Compare is version compare
 // if v1 >= v2 return true, else return false
-func VersionCompare(v1, v2 string) bool {
+func Compare(v1, v2 string) bool {
 	v1 = strings.Replace(v1, "v", "", -1)
 	v2 = strings.Replace(v2, "v", "", -1)
 	v1 = strings.Split(v1, "-")[0]

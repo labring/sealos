@@ -21,7 +21,7 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 
 	"github.com/pkg/errors"
 
@@ -133,7 +133,7 @@ func (runtime *ContainerdRuntime) CGroupDriver() (string, error) {
 	if out, err = runtime.exec.Command("crictl", "-r", runtime.criSocket, "info", "-o", "go-template", "--template", "{{.config.systemdCgroup}}").CombinedOutput(); err != nil {
 		return "", errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
 	}
-	if utils.TrimWS(string(out)) == "false" {
+	if strings2.TrimWS(string(out)) == "false" {
 		return DefaultCgroupDriver, nil
 	}
 	return DefaultSystemdCgroupDriver, nil

@@ -20,13 +20,15 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/utils/cri"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -214,7 +216,7 @@ volumeStatsAggPeriod: 1m0s`
 )
 
 func setKubeadmAPI(version string) {
-	major, _ := utils.GetMajorMinorInt(version)
+	major, _ := versionutil.GetMajorMinorInt(version)
 	switch {
 	//
 	case major < 120:
@@ -287,7 +289,7 @@ func JoinTemplateFromTemplateContent(templateContent, ip, cgroup string) []byte 
 		panic(1)
 	}
 	var envMap = make(map[string]interface{})
-	envMap["Master0"] = utils.IPFormat(v1.MasterIPs[0])
+	envMap["Master0"] = iputils.IPFormat(v1.MasterIPs[0])
 	envMap["Master"] = ip
 	envMap["TokenDiscovery"] = v1.JoinToken
 	envMap["TokenDiscoveryCAHash"] = v1.TokenCaCertHash
@@ -314,7 +316,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	var masters []string
 	getmasters := v1.MasterIPs
 	for _, h := range getmasters {
-		masters = append(masters, utils.IPFormat(h))
+		masters = append(masters, iputils.IPFormat(h))
 	}
 	var envMap = make(map[string]interface{})
 	envMap["CertSANS"] = v1.CertSANS
@@ -325,7 +327,7 @@ func TemplateFromTemplateContent(templateContent string) []byte {
 	envMap["PodCIDR"] = v1.PodCIDR
 	envMap["SvcCIDR"] = v1.SvcCIDR
 	envMap["Repo"] = v1.Repo
-	envMap["Master0"] = utils.IPFormat(v1.MasterIPs[0])
+	envMap["Master0"] = iputils.IPFormat(v1.MasterIPs[0])
 	envMap["CgroupDriver"] = v1.CgroupDriver
 	envMap["KubeadmApi"] = v1.KubeadmAPI
 	envMap["CriSocket"] = v1.CriSocket

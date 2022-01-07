@@ -25,7 +25,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"golang.org/x/crypto/ssh"
@@ -52,7 +53,7 @@ func (s *SSH) connect(host string) (*ssh.Client, error) {
 			return nil
 		},
 	}
-	ip, port := utils.GetSSHHostIPAndPort(host)
+	ip, port := iputils.GetSSHHostIPAndPort(host)
 	addr := s.addrReformat(ip, port)
 	return ssh.Dial("tcp", addr, clientConfig)
 }

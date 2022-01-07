@@ -14,10 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package strings
 
 import (
 	"bytes"
+	"fmt"
 	"math/rand"
 	"net"
 	"regexp"
@@ -153,4 +154,8 @@ func RemoveDuplicate(list []string) []string {
 		}
 	}
 	return result
+}
+
+func WrapExecResult(host, command string, output []byte, err error) error {
+	return fmt.Errorf("failed to execute command(%s) on host(%s): output(%s), error(%v)", command, host, output, err)
 }

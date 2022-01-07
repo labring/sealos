@@ -19,12 +19,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/fanux/sealos/pkg/utils/confirm"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-
 	install "github.com/fanux/sealos/pkg/install"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -133,7 +133,7 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 	if !force {
 		prompt := fmt.Sprintf("Are you sure to exec restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
 		cancel := "You have canceled to exec restore cmd!"
-		result, err := utils.Confirm(prompt, cancel)
+		result, err := confirm.Confirm(prompt, cancel)
 		if err != nil {
 			logger.Fatal(err)
 		}

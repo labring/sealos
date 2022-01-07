@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package exec
 
 import (
 	"os"
 	"os/exec"
+
+	"github.com/fanux/sealos/pkg/utils/strings"
 )
 
 func Cmd(name string, args ...string) error {
@@ -27,7 +29,7 @@ func Cmd(name string, args ...string) error {
 	return cmd.Run()
 }
 
-func CmdOutput(name string, args ...string) ([]byte, error) {
+func Output(name string, args ...string) ([]byte, error) {
 	cmd := exec.Command(name, args[:]...) // #nosec
 	return cmd.CombinedOutput()
 }
@@ -44,10 +46,10 @@ func RunBashCmd(cmd string) (string, error) {
 
 func BashEval(cmd string) string {
 	out, _ := RunBashCmd(cmd)
-	return TrimWS(out)
+	return strings.TrimWS(out)
 }
 
 func Eval(cmd string) string {
 	out, _ := RunSimpleCmd(cmd)
-	return TrimWS(out)
+	return strings.TrimWS(out)
 }
