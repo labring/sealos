@@ -29,7 +29,7 @@ import (
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
-	"go.etcd.io/etcd/clientv3/snapshot"
+	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 )
 

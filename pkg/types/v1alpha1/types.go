@@ -70,14 +70,6 @@ type SealConfig struct {
 	CertEtcdPath string `json:"certetcdpath"`
 	//lvscare images
 	LvscareName string `json:"lvscarename"`
-	AliOss      `json:"alioss"`
-}
-type AliOss struct {
-	OssEndpoint      string `json:"ossendpoint"`
-	AccessKeyID      string `json:"accesskeyid"`
-	AccessKeySecrets string `json:"accesskeysecrets"`
-	BucketName       string `json:"bucketname"`
-	ObjectPath       string `json:"objectpath"`
 }
 
 //Dump is
@@ -107,12 +99,6 @@ func (c *SealConfig) Dump(path string) {
 	c.CertEtcdPath = CertEtcdPath
 	//lvscare
 	c.LvscareName = LvscareImage
-	// oss
-	c.AliOss.AccessKeyID = AccessKeyID
-	c.AliOss.AccessKeySecrets = AccessKeySecrets
-	c.AliOss.OssEndpoint = OssEndpoint
-	c.AliOss.BucketName = BucketName
-	c.AliOss.ObjectPath = ObjectPath
 	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
@@ -179,16 +165,6 @@ func (c *SealConfig) Load(path string) (err error) {
 	CertEtcdPath = c.CertEtcdPath
 	//lvscare
 	LvscareImage = c.LvscareName
-
-	// 优先使用使用命令行， 再使用配置文件
-	if AccessKeyID == "" || AccessKeySecrets == "" ||
-		OssEndpoint == "" || BucketName == "" || ObjectPath == "" {
-		AccessKeyID = c.AliOss.AccessKeyID
-		AccessKeySecrets = c.AliOss.AccessKeySecrets
-		OssEndpoint = c.AliOss.OssEndpoint
-		BucketName = c.AliOss.BucketName
-		ObjectPath = c.AliOss.ObjectPath
-	}
 	return
 }
 

@@ -72,16 +72,10 @@ var (
 
 	Vlog int
 
-	InDocker     bool
+	IsK8sMaster  bool
 	SnapshotName string
 	EtcdBackDir  string
 	RestorePath  string
-
-	OssEndpoint      string
-	AccessKeyID      string
-	AccessKeySecrets string
-	BucketName       string
-	ObjectPath       string
 )
 
 func VLogString() string {
