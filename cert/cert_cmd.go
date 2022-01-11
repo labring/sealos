@@ -56,5 +56,8 @@ func GenerateCert(certPATH, certEtcdPATH string, altNames []string, hostIP, host
 		logger.Error("generator cert config failed %s", err)
 		os.Exit(-1)
 	}
-	_ = certConfig.GenerateAll()
+	err = certConfig.GenerateAll()
+	if err != nil {
+		logger.Error("GenerateAll err %s", err)
+	}
 }
