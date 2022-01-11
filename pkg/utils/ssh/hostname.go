@@ -19,7 +19,7 @@ package ssh
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //HostName 判断当前host的hostname

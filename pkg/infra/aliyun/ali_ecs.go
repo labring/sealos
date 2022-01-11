@@ -20,12 +20,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 type Instance struct {
@@ -174,7 +175,7 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 		if err != nil {
 			return err
 		}
-		status.IPs = utils.AppendIPList(status.IPs, ipList)
+		status.IPs = strings2.AppendIPList(status.IPs, ipList)
 		logger.Info("get scale up IP list %v, append iplist %v, host count %d", ipList, status.IPs, host.Count)
 	} else if len(instances) > i {
 		var deleteInstancesIDs []string
@@ -200,7 +201,7 @@ func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.Hos
 		if err != nil {
 			return err
 		}
-		status.IPs = utils.ReduceIPList(status.IPs, ipList)
+		status.IPs = strings2.ReduceIPList(status.IPs, ipList)
 		logger.Info("get scale up IP list %v, reduce iplist %v, host count %d", ipList, status.IPs, host.Count)
 	} else {
 		logger.Info("get up IP list %v,  host count %d", status.IPs, host.Count)

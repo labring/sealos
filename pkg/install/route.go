@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/iputils"
 
 	"github.com/vishvananda/netlink"
 	k8snet "k8s.io/apimachinery/pkg/util/net"
@@ -37,11 +37,11 @@ func GetRouteFlag(host, gateway string) *RouteFlags {
 }
 
 func (r *RouteFlags) useHostCheckRoute() bool {
-	return utils.IsIpv4(r.Host) && r.Gateway == ""
+	return iputils.IsIpv4(r.Host) && r.Gateway == ""
 }
 
 func (r *RouteFlags) useGatewayManageRoute() bool {
-	return utils.IsIpv4(r.Gateway) && utils.IsIpv4(r.Host)
+	return iputils.IsIpv4(r.Gateway) && iputils.IsIpv4(r.Host)
 }
 
 func (r *RouteFlags) CheckRoute() {

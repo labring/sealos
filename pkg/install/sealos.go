@@ -18,10 +18,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/versionutil"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 type CleanCluster interface {
@@ -49,12 +52,6 @@ type Install interface {
 	Apply
 }
 
-var (
-	JoinToken       string
-	TokenCaCertHash string
-	CertificateKey  string
-)
-
 //SealosInstaller is
 type SealosInstaller struct {
 	Hosts     []string
@@ -75,12 +72,12 @@ func (s *SealosInstaller) Command(version string, name CommandType) (cmd string)
 	// "kubeadm config migrate" command of kubeadm v1.15.x, 因此1.14 版本不支持双网卡.
 	commands := map[CommandType]string{
 		InitMaster: `kubeadm init --config=/root/kubeadm-config.yaml --experimental-upload-certs` + v1.VLogString(),
-		JoinMaster: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s"+v1.VLogString(), utils.IPFormat(s.Masters[0]), JoinToken, TokenCaCertHash, CertificateKey),
-		JoinNode:   fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s"+v1.VLogString(), v1.VIP, JoinToken, TokenCaCertHash),
+		JoinMaster: fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s --experimental-control-plane --certificate-key %s"+v1.VLogString(), iputils.IPFormat(s.Masters[0]), v1.JoinToken, v1.TokenCaCertHash, v1.CertificateKey),
+		JoinNode:   fmt.Sprintf("kubeadm join %s:6443 --token %s --discovery-token-ca-cert-hash %s"+v1.VLogString(), v1.VIP, v1.JoinToken, v1.TokenCaCertHash),
 	}
 	//other version >= 1.15.x
 	//todo
-	if utils.VersionToInt(version) >= 115 {
+	if versionutil.ToInt(version) >= 115 {
 		commands[InitMaster] = `kubeadm init --config=/root/kubeadm-config.yaml --upload-certs` + v1.VLogString()
 		commands[JoinMaster] = "kubeadm join --config=/root/kubeadm-join-config.yaml " + v1.VLogString()
 		commands[JoinNode] = "kubeadm join --config=/root/kubeadm-join-config.yaml " + v1.VLogString()
@@ -141,18 +138,18 @@ func decodeJoinCmd(cmd string) {
 		// 	CertificateKey = stringSlice[i+1][:64]
 		// }
 		if strings.Contains(r, "--token") {
-			JoinToken = stringSlice[i+1]
+			v1.JoinToken = stringSlice[i+1]
 		}
 
 		if strings.Contains(r, "--discovery-token-ca-cert-hash") {
-			TokenCaCertHash = stringSlice[i+1]
+			v1.TokenCaCertHash = stringSlice[i+1]
 		}
 
 		if strings.Contains(r, "--certificate-key") {
-			CertificateKey = stringSlice[i+1][:64]
+			v1.CertificateKey = stringSlice[i+1][:64]
 		}
 	}
-	logger.Debug("[####]JoinToken :%s", JoinToken)
-	logger.Debug("[####]TokenCaCertHash :%s", TokenCaCertHash)
-	logger.Debug("[####]CertificateKey :%s", CertificateKey)
+	logger.Debug("[####]JoinToken :%s", v1.JoinToken)
+	logger.Debug("[####]TokenCaCertHash :%s", v1.TokenCaCertHash)
+	logger.Debug("[####]CertificateKey :%s", v1.CertificateKey)
 }

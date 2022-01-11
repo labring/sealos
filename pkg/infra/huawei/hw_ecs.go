@@ -17,9 +17,10 @@ package huawei
 import (
 	"errors"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/rand"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	v2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"
 )
@@ -42,7 +43,7 @@ func (a *HwProvider) GetAvailableZoneID() error {
 	}()
 
 	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
-		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[utils.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
+		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[rand.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
 		return nil
 	}
 	resp, err := a.RetryEcsRequest(&model.NovaListAvailabilityZonesRequest{}, v2.GenReqDefForNovaListAvailabilityZones())
@@ -54,7 +55,7 @@ func (a *HwProvider) GetAvailableZoneID() error {
 			return errors.New("not available ZoneID ")
 		}
 		if zones.AvailabilityZoneInfo != nil {
-			zoneID := (*zones.AvailabilityZoneInfo)[utils.Rand(len(*zones.AvailabilityZoneInfo))].ZoneName
+			zoneID := (*zones.AvailabilityZoneInfo)[rand.Rand(len(*zones.AvailabilityZoneInfo))].ZoneName
 			a.Infra.Status.Cluster.ZoneID = zoneID
 		}
 	}

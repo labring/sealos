@@ -19,7 +19,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //Cmd is in host exec cmd
