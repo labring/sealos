@@ -20,7 +20,8 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/strings"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -60,10 +61,10 @@ func defaultCluster(infra *Infra) {
 	}
 
 	if infra.Spec.Cluster.RegionIDs != nil {
-		infra.Spec.Cluster.RegionIDs = utils.RemoveSliceEmpty(infra.Spec.Cluster.RegionIDs)
+		infra.Spec.Cluster.RegionIDs = strings.RemoveSliceEmpty(infra.Spec.Cluster.RegionIDs)
 	}
 	if infra.Spec.Cluster.ZoneIDs != nil {
-		infra.Spec.Cluster.ZoneIDs = utils.RemoveSliceEmpty(infra.Spec.Cluster.ZoneIDs)
+		infra.Spec.Cluster.ZoneIDs = strings.RemoveSliceEmpty(infra.Spec.Cluster.ZoneIDs)
 	}
 	if infra.Spec.Cluster.Metadata.Network.Bandwidth == "" {
 		infra.Spec.Cluster.Metadata.Network.Bandwidth = "100"

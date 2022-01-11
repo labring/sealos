@@ -19,12 +19,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/confirm"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	install "github.com/fanux/sealos/pkg/install"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -84,15 +84,9 @@ func NewEtcdSaveCommand() *cobra.Command {
 		Short: "Stores an etcd node backend snapshot to a given file",
 		Run:   EtcdSaveCmdFunc,
 	}
-	cmd.Flags().BoolVar(&v1.InDocker, "docker", false, "snapshot your kubernets etcd in container, will add unix timestamp to snapshot name")
+	cmd.Flags().BoolVar(&v1.IsK8sMaster, "k8s-etcd", false, "snapshot your kubernets etcd in container, will add unix timestamp to snapshot name")
 	cmd.Flags().StringVar(&v1.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&v1.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
-	cmd.Flags().StringVar(&v1.BucketName, "bucket", "", "oss bucketName to save snapshot")
-	cmd.Flags().StringVar(&v1.AccessKeyID, "aliId", "", "aliyun accessKeyId to save snapshot")
-	cmd.Flags().StringVar(&v1.AccessKeySecrets, "aliKey", "", "aliyun accessKeySecrets to save snapshot")
-	cmd.Flags().StringVar(&v1.OssEndpoint, "ep", "", "aliyun endpoints to save snapshot")
-	cmd.Flags().StringVar(&v1.ObjectPath, "objectPath", "", "aliyun oss objectPath to save snapshot, like: /sealos/snapshots/")
-
 	return cmd
 }
 
@@ -119,8 +113,7 @@ func NewEtcdHealthCommand() *cobra.Command {
 
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
 	e := install.GetEtcdBackFlags(cfgFile)
-	err := e.Save(v1.InDocker)
-	if err == nil && e.AccessKeyID != "" {
+	if err := e.Save(v1.IsK8sMaster); err == nil {
 		e.Dump(cfgFile)
 	}
 	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
@@ -133,7 +126,7 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 	if !force {
 		prompt := fmt.Sprintf("Are you sure to exec restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
 		cancel := "You have canceled to exec restore cmd!"
-		result, err := utils.Confirm(prompt, cancel)
+		result, err := confirm.Confirm(prompt, cancel)
 		if err != nil {
 			logger.Fatal(err)
 		}

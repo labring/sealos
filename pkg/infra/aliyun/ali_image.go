@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/logger"
+	"github.com/fanux/sealos/pkg/utils/rand"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
-	"github.com/fanux/sealos/pkg/utils"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
@@ -83,11 +83,10 @@ func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
 		return "", fmt.Errorf("search ImageID list is empty")
 	}
 	logger.Info("host tags is %v,using first imageID is %s", host.Roles, images[0])
-	return images[utils.Rand(len(images))], nil
+	return images[rand.Rand(len(images))], nil
 }
 
 func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []string, data []string) {
-	categories := []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
 	if host.Disks[0].Category != "" {
 		system = []string{host.Disks[0].Category}
 	} else {
@@ -106,14 +105,17 @@ func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []str
 }
 
 func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, error) {
-	if host.EcsType != "" {
-		return []string{host.EcsType}, nil
-	}
-	var systemInstanceTypes []string
 	j := a.Infra.Status.FindHostsByRoles(host.Roles)
 	if j == -1 {
 		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
 	}
+	if host.EcsType != "" {
+		a.Infra.Status.Hosts[j].DataCategory = categories[2]
+		a.Infra.Status.Hosts[j].SystemCategory = categories[2]
+		return []string{host.EcsType}, nil
+	}
+	var systemInstanceTypes []string
+
 	var err error
 	systemDisk, dataDisk := a.GetDefaultDiskCategories(host)
 
