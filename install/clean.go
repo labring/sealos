@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -7,8 +21,8 @@ import (
 	"sync"
 
 	"github.com/fanux/sealos/ipvs"
+	"github.com/fanux/sealos/pkg/logger"
 	sshcmd "github.com/fanux/sealos/pkg/sshcmd/cmd"
-	"github.com/wonderivan/logger"
 )
 
 type SealosClean struct {
@@ -78,7 +92,6 @@ end:
 		cfgPath := home + defaultConfigPath
 		sshcmd.Cmd("/bin/sh", "-c", "rm -rf "+cfgPath)
 	}
-
 }
 
 //Clean clean cluster.
@@ -99,16 +112,18 @@ func (s *SealosClean) Clean() {
 	}
 	if len(s.Masters) > 0 {
 		//2. 先删除master
+		lock := sync.Mutex{}
 		for _, master := range s.Masters {
 			wg.Add(1)
 			go func(master string) {
+				lock.Lock()
+				defer lock.Unlock()
 				defer wg.Done()
 				s.cleanMaster(master)
 			}(master)
 		}
 		wg.Wait()
 	}
-
 }
 
 func (s *SealosClean) cleanNode(node string) {
@@ -155,7 +170,7 @@ func (s *SealosClean) cleanMaster(master string) {
 func clean(host string) {
 	cmd := "kubeadm reset -f " + vlogToStr()
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf(`sed -i '/kubectl/d;/sealos/d' /root/.bashrc`)
+	cmd = `sed -i '/kubectl/d;/sealos/d' /root/.bashrc`
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "modprobe -r ipip  && lsmod"
 	_ = SSHConfig.CmdAsync(host, cmd)
@@ -169,25 +184,25 @@ func clean(host string) {
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /var/lib/etcd && rm -rf /var/etcd"
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", ApiServer)
+	cmd = fmt.Sprintf("sed -i \"/%s/d\" /etc/hosts ", APIServer)
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = fmt.Sprint("rm -rf ~/kube")
+	cmd = "rm -rf ~/kube"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	//clean pki certs
-	cmd = fmt.Sprint("rm -rf /etc/kubernetes/pki")
+	cmd = "rm -rf /etc/kubernetes/pki"
 	_ = SSHConfig.CmdAsync(host, cmd)
 	//clean sealos in /usr/bin/ except exec sealos
-	cmd = fmt.Sprint("ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos")
+	cmd = "ps -ef |grep -v 'grep'|grep sealos >/dev/null || rm -rf /usr/bin/sealos"
 	_ = SSHConfig.CmdAsync(host, cmd)
 }
 
 func cleanRoute(node string) {
 	// clean route
-	cmdRoute := fmt.Sprintf("sealos route --host %s", IpFormat(node))
+	cmdRoute := fmt.Sprintf("sealos route --host %s", IPFormat(node))
 	status := SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 删除为 vip创建的路由。
-		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IpFormat(node))
+		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", VIP, IPFormat(node))
 		SSHConfig.CmdToString(node, delRouteCmd, "")
 	}
 }

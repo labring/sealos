@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package logger
 
 import (
@@ -27,7 +41,7 @@ func (c *connLogger) Init(jsonConfig string) error {
 	if len(jsonConfig) == 0 {
 		return nil
 	}
-	fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
+	//fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
 	err := json.Unmarshal([]byte(jsonConfig), c)
 	if err != nil {
 		return err
@@ -68,7 +82,7 @@ func (c *connLogger) LogWrite(when time.Time, msgText interface{}, level int) (e
 
 	//网络异常时，消息发出
 	if !c.illNetFlag {
-		err = c.println(when, msg)
+		err = c.println(msg)
 		//网络异常，通知处理网络的go程自动重连
 		if err != nil {
 			c.illNetFlag = true
@@ -99,7 +113,7 @@ func (c *connLogger) connect() error {
 		}
 
 		if tcpConn, ok := conn.(*net.TCPConn); ok {
-			tcpConn.SetKeepAlive(true)
+			_ = tcpConn.SetKeepAlive(true)
 		}
 		c.innerWriter = conn
 		return nil
@@ -123,7 +137,7 @@ func (c *connLogger) needToConnectOnMsg() bool {
 	return c.ReconnectOnMsg
 }
 
-func (c *connLogger) println(when time.Time, msg *loginfo) error {
+func (c *connLogger) println(msg *loginfo) error {
 	c.Lock()
 	defer c.Unlock()
 	ss, err := json.Marshal(msg)

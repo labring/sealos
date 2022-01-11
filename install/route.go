@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -20,7 +34,6 @@ func GetRouteFlag(host, gateway string) *RouteFlags {
 		Host:    host,
 		Gateway: gateway,
 	}
-
 }
 
 func (r *RouteFlags) useHostCheckRoute() bool {
@@ -33,12 +46,11 @@ func (r *RouteFlags) useGatewayManageRoute() bool {
 
 func (r *RouteFlags) CheckRoute() {
 	if r.useHostCheckRoute() {
-		if isDefaultRouteIp(r.Host) {
+		if isDefaultRouteIP(r.Host) {
 			fmt.Println("ok")
 			return
-		} else {
-			fmt.Println("failed")
 		}
+		fmt.Println("failed")
 	}
 }
 
@@ -61,17 +73,17 @@ func (r *RouteFlags) DelRoute() {
 }
 
 // getDefaultRouteIp is get host ip by ChooseHostInterface() .
-func getDefaultRouteIp() (ip string, err error) {
-	netIp, err := k8snet.ChooseHostInterface()
+func getDefaultRouteIP() (ip string, err error) {
+	netIP, err := k8snet.ChooseHostInterface()
 	if err != nil {
 		return "", err
 	}
-	return netIp.String(), nil
+	return netIP.String(), nil
 }
 
 // isDefaultRouteIp return true if host equal default route ip host.
-func isDefaultRouteIp(host string) bool {
-	ip, _ := getDefaultRouteIp()
+func isDefaultRouteIP(host string) bool {
+	ip, _ := getDefaultRouteIP()
 	return ip == host
 }
 

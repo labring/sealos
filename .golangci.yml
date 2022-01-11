@@ -1,0 +1,53 @@
+run:
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 5m
+
+  # include test files or not, default is true
+  tests: true
+
+  # default is true. Enables skipping of directories:
+  #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
+  skip-dirs-use-default: true
+
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - gofmt
+    - goimports
+    - revive
+    - stylecheck
+    - goconst
+    - gosimple
+    - misspell
+    - whitespace
+    - ineffassign
+    - vet
+    - typecheck
+    - deadcode
+    - errcheck
+    - govet
+    - staticcheck
+    - structcheck
+    - unused
+    - varcheck
+    - nilerr
+    - unparam
+    - ifshort
+    - unconvert
+
+linters-settings:
+  errcheck:
+    check-type-assertions: false
+    ignore: fmt:.*,io/ioutil:^Read.*
+    exclude-functions:
+      - io/ioutil.ReadFile
+      - io.Copy(*bytes.Buffer)
+      - io.Copy(os.Stdout)
+
+# golangci.com configuration
+# https://github.com/golangci/golangci/wiki/Configuration
+service:
+  # use the fixed version to not introduce new linters unexpectedly
+  golangci-lint-version: 1.39.0

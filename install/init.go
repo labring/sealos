@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -14,7 +28,7 @@ import (
 
 	"github.com/fanux/sealos/cert"
 	"github.com/fanux/sealos/net"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //BuildInit is
@@ -31,7 +45,7 @@ func BuildInit() {
 		Masters:   masters,
 		Nodes:     nodes,
 		Network:   Network,
-		ApiServer: ApiServer,
+		APIServer: APIServer,
 	}
 	i.CheckValid()
 	i.Print()
@@ -69,7 +83,7 @@ func (s *SealosInstaller) getCgroupDriverFromShell(h string) string {
 	}
 	output = strings.TrimSpace(output)
 	logger.Info("cgroup driver is %s", output)
-	return output 
+	return output
 }
 
 //KubeadmConfigInstall is
@@ -96,11 +110,11 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	//读取模板数据
 	kubeadm := KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
-		DnsDomain = kubeadm.Networking.DnsDomain
-		ApiServerCertSANs = kubeadm.ApiServer.CertSANs
+		DNSDomain = kubeadm.Networking.DNSDomain
+		APIServerCertSANs = kubeadm.APIServer.CertSANs
 	} else {
 		logger.Warn("decode certSANs from config failed, using default SANs")
-		ApiServerCertSANs = getDefaultSANs()
+		APIServerCertSANs = getDefaultSANs()
 	}
 }
 
@@ -111,25 +125,25 @@ func getDefaultSANs() []string {
 		sans = append(sans, CertSANS...)
 	}
 	for _, master := range MasterIPs {
-		sans = append(sans, IpFormat(master))
+		sans = append(sans, IPFormat(master))
 	}
 	return sans
 }
 
-func (s *SealosInstaller) appendApiServer() error {
+func (s *SealosInstaller) appendAPIServer() error {
 	etcHostPath := "/etc/hosts"
-	etcHostMap := fmt.Sprintf("%s %s", IpFormat(s.Masters[0]), ApiServer)
+	etcHostMap := fmt.Sprintf("%s %s", IPFormat(s.Masters[0]), APIServer)
 	file, err := os.OpenFile(etcHostPath, os.O_RDWR|os.O_APPEND, 0666)
 	if err != nil {
-		logger.Error("appendApiServer error %s" , err)
+		logger.Error("open %s file error %s", etcHostPath, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 	reader := bufio.NewReader(file)
 	for {
 		str, err := reader.ReadString('\n')
-		if strings.Contains(str, ApiServer) {
-			logger.Info("local %s is already exists %s", etcHostPath, ApiServer)
+		if strings.Contains(str, APIServer) {
+			logger.Info("local %s is already exists %s", etcHostPath, APIServer)
 			return nil
 		}
 		if err == io.EOF {
@@ -137,14 +151,14 @@ func (s *SealosInstaller) appendApiServer() error {
 		}
 	}
 	write := bufio.NewWriter(file)
-	write.WriteString(etcHostMap)
+	_, _ = write.WriteString(etcHostMap)
 	return write.Flush()
 }
 
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
 	hostname := GetRemoteHostName(s.Masters[0])
-	cert.GenerateCert(CertPath, CertEtcdPath, ApiServerCertSANs, IpFormat(s.Masters[0]), hostname, SvcCIDR, DnsDomain)
+	cert.GenerateCert(CertPath, CertEtcdPath, APIServerCertSANs, IPFormat(s.Masters[0]), hostname, SvcCIDR, DNSDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
 	//s.sendNewCertAndKey(s.Masters)
@@ -159,7 +173,7 @@ func (s *SealosInstaller) CreateKubeconfig() {
 		BaseName: "ca",
 	}
 
-	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", ApiServer)
+	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", APIServer)
 
 	err := cert.CreateJoinControlPlaneKubeConfigFiles(cert.SealosConfigDir,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
@@ -167,7 +181,6 @@ func (s *SealosInstaller) CreateKubeconfig() {
 		logger.Error("generator kubeconfig failed %s", err)
 		os.Exit(-1)
 	}
-
 }
 
 //InstallMaster0 is
@@ -176,12 +189,12 @@ func (s *SealosInstaller) InstallMaster0() {
 	s.sendNewCertAndKey([]string{s.Masters[0]})
 
 	// remote server run sealos init . it can not reach apiserver.cluster.local , should add masterip apiserver.cluster.local to /etc/hosts
-	err := s.appendApiServer()
+	err := s.appendAPIServer()
 	if err != nil {
-		logger.Warn("append  %s %s to /etc/hosts err: %s", IpFormat(s.Masters[0]), ApiServer, err)
+		logger.Warn("append  %s %s to /etc/hosts err: %s", IPFormat(s.Masters[0]), APIServer, err)
 	}
 	//master0 do sth
-	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", IpFormat(s.Masters[0]), ApiServer, IpFormat(s.Masters[0]), ApiServer)
+	cmd := fmt.Sprintf("grep -qF '%s %s' /etc/hosts || echo %s %s >> /etc/hosts", IPFormat(s.Masters[0]), APIServer, IPFormat(s.Masters[0]), APIServer)
 	_ = SSHConfig.CmdAsync(s.Masters[0], cmd)
 
 	cmd = s.Command(Version, InitMaster)
@@ -194,32 +207,32 @@ func (s *SealosInstaller) InstallMaster0() {
 	decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
-	output = SSHConfig.Cmd(s.Masters[0], cmd)
+	SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if WithoutCNI {
 		logger.Info("--without-cni is true, so we not install calico or flannel, install it by yourself")
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-
-	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
-	if k8s.IsIpv4(Interface) && Network == net.CALICO {
-		Interface = "can-reach=" + Interface
-	} else if !k8s.IsIpv4(Interface) && Network == net.CALICO  {
-		Interface = "interface=" + Interface
-	}
-
 	var cniVersion string
-	if SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
-		var metajson string
-		var tmpdata metadata
-		metajson = SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
-		err := json.Unmarshal([]byte(metajson), &tmpdata)
-		if err != nil {
-			logger.Warn("get metadata version err: ", err)
-		} else {
-			cniVersion = tmpdata.CniVersion
-			Network = tmpdata.CniName
+	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
+	if Network == net.CALICO {
+		if k8s.IsIpv4(Interface) {
+			Interface = "can-reach=" + Interface
+		} else if !k8s.IsIpv4(Interface) { //nolint:gofmt
+			Interface = "interface=" + Interface
+		}
+		if SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
+			var metajson string
+			var tmpdata metadata
+			metajson = SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
+			err := json.Unmarshal([]byte(metajson), &tmpdata)
+			if err != nil {
+				logger.Warn("get metadata version err: ", err)
+			} else {
+				cniVersion = tmpdata.CniVersion
+				Network = tmpdata.CniName
+			}
 		}
 	}
 
@@ -229,15 +242,15 @@ func (s *SealosInstaller) InstallMaster0() {
 		IPIP:           !BGP,
 		MTU:            MTU,
 		CniRepo:        Repo,
-		K8sServiceHost: s.ApiServer,
+		K8sServiceHost: s.APIServer,
 		Version:        cniVersion,
 	}).Manifests("")
 	logger.Debug("cni yaml : \n", netyaml)
 	home := cert.GetUserHomeDir()
 	configYamlDir := filepath.Join(home, ".sealos", "cni.yaml")
-	ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
+	_ = ioutil.WriteFile(configYamlDir, []byte(netyaml), 0755)
 	SSHConfig.Copy(s.Masters[0], configYamlDir, "/tmp/cni.yaml")
-	output = SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
+	SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }
 
 //SendKubeConfigs
@@ -265,12 +278,12 @@ func (s *SealosInstaller) to11911192(masters []string) (to11911192 bool) {
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
 	if VersionToIntAll(Version) >= 1191 && VersionToIntAll(Version) <= 1192 {
 		for _, v := range masters {
-			ip := IpFormat(v)
+			ip := IPFormat(v)
 			// use grep -qF if already use sed then skip....
 			cmd := fmt.Sprintf(`grep -qF "apiserver.cluster.local" %s  && \
 sed -i 's/apiserver.cluster.local/%s/' %s && \
 sed -i 's/apiserver.cluster.local/%s/' %s`, KUBESCHEDULERCONFIGFILE, ip, KUBECONTROLLERCONFIGFILE, ip, KUBESCHEDULERCONFIGFILE)
-			SSHConfig.CmdAsync(v, cmd)
+			_ = SSHConfig.CmdAsync(v, cmd)
 		}
 		to11911192 = true
 	} else {

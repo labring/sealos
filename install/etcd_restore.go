@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -11,7 +25,7 @@ import (
 	"go.etcd.io/etcd/clientv3/snapshot"
 	"go.uber.org/zap"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 func init() {
@@ -34,8 +48,7 @@ func GetRestoreFlags(cfgFile string) *EtcdFlags {
 		logger.Error("ETCD CaCert or key file is not exist.")
 		os.Exit(1)
 	}
-	err := e.Load(cfgFile)
-	if err != nil {
+	if err := e.Load(cfgFile); err != nil {
 		logger.Error(err)
 		e.ShowDefaultConfig()
 		os.Exit(0)
@@ -45,7 +58,7 @@ func GetRestoreFlags(cfgFile string) *EtcdFlags {
 	e.RestoreDir = RestorePath
 	e.LongName = fmt.Sprintf("%s/%s", e.BackDir, e.Name)
 	for _, h := range e.Masters {
-		ip := reFormatHostToIp(h)
+		ip := reFormatHostToIP(h)
 		enpoint := fmt.Sprintf("%s:2379", ip)
 		e.EtcdHosts = append(e.EtcdHosts, ip)
 		e.Endpoints = append(e.Endpoints, enpoint)
@@ -62,7 +75,7 @@ func (e *EtcdFlags) StopPod() (string, error) {
 	var wg sync.WaitGroup
 	for _, host := range e.EtcdHosts {
 		wg.Add(1)
-		host = reFormatHostToIp(host)
+		host = reFormatHostToIP(host)
 		go func(host string) {
 			defer wg.Done()
 			// backup dir to random dir to avoid dir exist err
@@ -89,7 +102,7 @@ func (e *EtcdFlags) RestoreAll() {
 		hostname := SSHConfig.CmdToString(host, "hostname", "")
 		// remove first
 		cmd := fmt.Sprintf("rm -rf %s-%s", e.RestoreDir, hostname)
-		CmdWork(host, cmd, TMPDIR)
+		_ = CmdWork(host, cmd, TMPDIR)
 		logger.Info("execute %s", cmd)
 		e.restore(hostname, host)
 	}
@@ -156,7 +169,7 @@ func (e *EtcdFlags) StartPod(dir string) {
 	var wg sync.WaitGroup
 	for _, host := range e.EtcdHosts {
 		wg.Add(1)
-		host = reFormatHostToIp(host)
+		host = reFormatHostToIP(host)
 		go func(host string) {
 			defer wg.Done()
 			// start kube-apiserver
@@ -174,25 +187,24 @@ func (e *EtcdFlags) StartPod(dir string) {
 func (e *EtcdFlags) RecoveryKuBeCluster(dir string) {
 	// restore old file first
 	for _, host := range e.EtcdHosts {
-		host = reFormatHostToIp(host)
+		host = reFormatHostToIP(host)
 		// rm old file then start cp bak to etcd dir
 		recoverEtcdCmd := fmt.Sprintf(`rm -rf %s && mv %s %s`, ETCDDATADIR, ETCDDATADIR+dir, ETCDDATADIR)
-		CmdWork(host, recoverEtcdCmd, TMPDIR)
-
+		_ = CmdWork(host, recoverEtcdCmd, TMPDIR)
 	}
 	// start pod next
 	for _, host := range e.EtcdHosts {
-		host = reFormatHostToIp(host)
+		host = reFormatHostToIP(host)
 		// start kube-apiserver
 		stopEtcdCmd := fmt.Sprintf(`mv /etc/kubernetes/manifests%s /etc/kubernetes/manifests`, dir)
-		CmdWork(host, stopEtcdCmd, TMPDIR)
+		_ = CmdWork(host, stopEtcdCmd, TMPDIR)
 	}
 }
 func GetEtcdInitialCluster(hosts []string) string {
 	initialCluster := ""
 	for i, host := range hosts {
 		hostname := SSHConfig.CmdToString(host, "hostname", "")
-		ip := reFormatHostToIp(host)
+		ip := reFormatHostToIP(host)
 		initialCluster += fmt.Sprintf("etcd-%s=https://%s:2380", hostname, ip)
 		if i < (len(hosts) - 1) {
 			initialCluster += ","
@@ -204,7 +216,7 @@ func GetEtcdInitialCluster(hosts []string) string {
 
 func GetEtcdPeerURLs(host string) []string {
 	var peerUrls []string
-	ip := reFormatHostToIp(host)
+	ip := reFormatHostToIP(host)
 	url := fmt.Sprintf("https://%s:2380", ip)
 	peerUrls = append(peerUrls, url)
 	return peerUrls

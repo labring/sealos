@@ -1,16 +1,31 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package appmanager
 
 import (
 	"archive/tar"
 	"bufio"
 	"fmt"
-	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
 	"io"
 	"os"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/install"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 //Command is
@@ -29,7 +44,7 @@ type PkgConfig struct {
 	Workspace     string // fmt.Sprintf("%s/%s", p.Workdir, p.Name)
 }
 
-func nameFromUrl(url string) string {
+func nameFromURL(url string) string {
 	tmp := path.Base(url)
 	name := strings.Split(tmp, ".tar")
 	if len(name) < 1 {
@@ -55,7 +70,7 @@ func LoadAppConfig(url string, flagConfig string) (*PkgConfig, error) {
 			logger.Error("load config failed: %s", err)
 			os.Exit(0)
 		}
-		pkgConfig, err = configFromReader(f)
+		pkgConfig, _ = configFromReader(f)
 	}
 	return pkgConfig, nil
 }
@@ -206,7 +221,6 @@ func send(host string, p *PkgConfig) {
 	tarCmd := fmt.Sprintf("tar xvf %s.tar", p.Name)
 	fmt.Println(tarCmd)
 	CmdWorkSpace(host, tarCmd, p.Workspace)
-
 }
 
 // send package to master
@@ -220,9 +234,7 @@ func (r *RunOnMaster) Send(config install.SealConfig, p *PkgConfig) {
 	}
 }
 
-func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) {
-
-	// kubectl apply -f
+func (r *RunOnMaster) Run(config install.SealConfig, p *PkgConfig) { // kubectl apply -f
 	for _, cmd := range r.Cmd {
 		CmdWorkSpace(config.Masters[0], cmd.Cmd, p.Workspace)
 	}

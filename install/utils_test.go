@@ -1,3 +1,17 @@
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package install
 
 import (
@@ -9,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 func TestPath(t *testing.T) {
@@ -253,10 +267,10 @@ func Test_Example(t *testing.T) {
 func Test_Cmd(t *testing.T) {
 	tmpcmd := "cat /tmp/tmp.json"
 	host := "192.168.218.97"
-	var cniVersion string 
+	var cniVersion string
 	var metajson string
 	var tmpdata metadata
-	
+
 	SSHConfig.User = "louis"
 	SSHConfig.Password = "210010"
 

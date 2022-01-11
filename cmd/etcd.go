@@ -1,18 +1,17 @@
-/*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
@@ -23,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 var exampleCmd = `
@@ -86,7 +85,7 @@ func NewEtcdSaveCommand() *cobra.Command {
 	cmd.Flags().StringVar(&install.SnapshotName, "name", install.ETCDSNAPSHOTDEFAULTNAME, "Specify snapshot name")
 	cmd.Flags().StringVar(&install.EtcdBackDir, "backupPath", install.ETCDDEFAULTBACKUPDIR, "Specify snapshot backup dir")
 	cmd.Flags().StringVar(&install.BucketName, "bucket", "", "oss bucketName to save snapshot")
-	cmd.Flags().StringVar(&install.AccessKeyId, "aliId", "", "aliyun accessKeyId to save snapshot")
+	cmd.Flags().StringVar(&install.AccessKeyID, "aliId", "", "aliyun accessKeyId to save snapshot")
 	cmd.Flags().StringVar(&install.AccessKeySecrets, "aliKey", "", "aliyun accessKeySecrets to save snapshot")
 	cmd.Flags().StringVar(&install.OssEndpoint, "ep", "", "aliyun endpoints to save snapshot")
 	cmd.Flags().StringVar(&install.ObjectPath, "objectPath", "", "aliyun oss objectPath to save snapshot, like: /sealos/snapshots/")
@@ -118,7 +117,7 @@ func NewEtcdHealthCommand() *cobra.Command {
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
 	e := install.GetEtcdBackFlags(cfgFile)
 	err := e.Save(install.InDocker)
-	if err == nil && e.AccessKeyId != "" {
+	if err == nil && e.AccessKeyID != "" {
 		e.Dump(cfgFile)
 	}
 	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
@@ -144,8 +143,7 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 	time.Sleep(time.Second * 10)
 	logger.Info("send restore file to etcd master node and start etcd")
 	// send restore file to etcd master node to  start etcd
-	err := e.AfterRestore()
-	if err != nil {
+	if err := e.AfterRestore(); err != nil {
 		logger.Error(err)
 		logger.Info("Start RecoveryKuBeCluster")
 		e.RecoveryKuBeCluster(tmpdir)

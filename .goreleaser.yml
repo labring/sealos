@@ -9,7 +9,7 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-#      - darwin
+      - darwin
     goarch:
       - amd64
       - arm64
@@ -34,18 +34,3 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-
-#dockers:
-#  -
-#    goos: linux
-#    goarch: amd64
-#    binaries:
-#      - sealos
-#
-#    image_templates:
-#      - "fanux/{{.ProjectName}}:latest"
-#      - "fanux/{{.ProjectName}}:{{.Tag}}"
-#
-#    dockerfile: Dockerfile
-#    extra_files:
-#      - test/entrypoint.sh

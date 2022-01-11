@@ -1,18 +1,3 @@
-/*
-Copyright © 2020 NAME HERE <EMAIL ADDRESS>
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
 package cmd
 
 import (
@@ -23,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 const defaultCopyRight = `
@@ -132,7 +117,7 @@ func runCompletionBash(out io.Writer, copyRight string, sealos *cobra.Command) e
 func runCompletionZsh(out io.Writer, copyRight string, sealos *cobra.Command) error {
 	zshHead := "#compdef sealos\n"
 
-	out.Write([]byte(zshHead))
+	_, _ = out.Write([]byte(zshHead))
 
 	if len(copyRight) == 0 {
 		copyRight = defaultCopyRight
@@ -229,17 +214,17 @@ __sealos_convert_bash_to_zsh() {
 	-e "s/\\\$(type${RWORD}/\$(__sealos_type/g" \
 	<<'BASH_COMPLETION_EOF'
 `
-	out.Write([]byte(zshInitialization))
+	_, _ = out.Write([]byte(zshInitialization))
 
 	buf := new(bytes.Buffer)
-	sealos.GenBashCompletion(buf)
-	out.Write(buf.Bytes())
+	_ = sealos.GenBashCompletion(buf)
+	_, _ = out.Write(buf.Bytes())
 
 	zshTail := `
 BASH_COMPLETION_EOF
 }
 __sealos_bash_source <(__sealos_convert_bash_to_zsh)
 `
-	out.Write([]byte(zshTail))
+	_, _ = out.Write([]byte(zshTail))
 	return nil
 }

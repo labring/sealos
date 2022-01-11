@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fanux/sealos/install"
-	"github.com/wonderivan/logger"
+	"github.com/fanux/sealos/pkg/logger"
 )
 
 // joinCmd represents the join command
@@ -31,7 +31,7 @@ var joinCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		if len(install.MasterIPs) == 0 && len(install.NodeIPs) == 0 {
 			logger.Error("this command is join feature,master and node is empty at the same time.please check your args in command.")
-			cmd.Help()
+			_ = cmd.Help()
 			os.Exit(0)
 		}
 	},
@@ -45,20 +45,19 @@ func init() {
 	joinCmd.Flags().IntVar(&install.Vlog, "vlog", 0, "kubeadm log level")
 }
 
-func JoinCmdFunc (cmd *cobra.Command, args []string) {
+func JoinCmdFunc(cmd *cobra.Command, args []string) {
 	beforeNodes := install.ParseIPs(install.NodeIPs)
 	beforeMasters := install.ParseIPs(install.MasterIPs)
 
 	c := &install.SealConfig{}
-	err := c.Load(cfgFile)
-	if err != nil {
+	if err := c.Load(cfgFile); err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
 		os.Exit(0)
 	}
 
 	cfgNodes := append(c.Masters, c.Nodes...)
-	joinNodes := append(beforeNodes, beforeMasters...) 
+	joinNodes := append(beforeNodes, beforeMasters...)
 
 	if ok, node := deleteOrJoinNodeIsExistInCfgNodes(joinNodes, cfgNodes); ok {
 		logger.Error(`[%s] has already exist in your cluster. please check.`, node)

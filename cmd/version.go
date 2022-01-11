@@ -1,4 +1,4 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,10 @@ package cmd
 
 import (
 	"fmt"
-	extver "github.com/linuxsuren/cobra-extension/version"
 	"runtime"
 	"strings"
+
+	extver "github.com/linuxsuren/cobra-extension/version"
 )
 
 func init() {
@@ -26,9 +27,7 @@ func init() {
 	// see also https://github.com/LinuxSuRen/cobra-extension/issues/6
 	const name = "sealos"
 	verCmd := extver.NewVersionCmd("fanux", name, name, func(ver string) string {
-		if strings.HasPrefix(ver, "v") {
-			ver = strings.TrimPrefix(ver, "v")
-		}
+		ver = strings.TrimPrefix(ver, "v")
 		return fmt.Sprintf("https://github.com/fanux/sealos/releases/download/v%s/%s_%s_%s_%s.tar.gz",
 			ver, name, ver, runtime.GOOS, runtime.GOARCH)
 	})
