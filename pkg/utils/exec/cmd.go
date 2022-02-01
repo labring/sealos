@@ -33,8 +33,6 @@ func Cmd(name string, args ...string) error {
 	return cmd.Run()
 }
 func CmdForPipe(exe string, args ...string) error {
-	cmdDbg := []string{exe}
-	cmdDbg = append(cmdDbg, args...)
 	cmd := exec.Command(exe, args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {
