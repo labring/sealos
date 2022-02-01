@@ -103,20 +103,32 @@ apiServer:
   {{end -}}
   - {{.VIP}}
   extraArgs:
-    feature-gates: TTLAfterFinished=true
+    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+	audit-policy-file: "/etc/kubernetes/audit-policy.yml"
+    audit-log-path: "/var/log/kubernetes/audit.log"
+    audit-log-format: json
+    audit-log-maxbackup: '10'
+    audit-log-maxsize: '100'
+    audit-log-maxage: '7'
+    enable-aggregator-routing: 'true'
   extraVolumes:
-  - name: localtime
-    hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    readOnly: true
-    pathType: File
+    - name: "audit"
+      hostPath: "/etc/kubernetes"
+      mountPath: "/etc/kubernetes"
+      pathType: DirectoryOrCreate
+    - name: "audit-log"
+      hostPath: "/var/log/kubernetes"
+      mountPath: "/var/log/kubernetes"
+      pathType: DirectoryOrCreate
+    - name: localtime
+      hostPath: /etc/localtime
+      mountPath: /etc/localtime
+      readOnly: true
+      pathType: File
 controllerManager:
   extraArgs:
-    feature-gates: TTLAfterFinished=true
+    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
     experimental-cluster-signing-duration: 876000h
-{{- if eq .Network "cilium" }}
-    allocate-node-cidrs: \"true\"
-{{- end }}
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
@@ -125,13 +137,17 @@ controllerManager:
     pathType: File
 scheduler:
   extraArgs:
-    feature-gates: TTLAfterFinished=true
+    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
   extraVolumes:
   - hostPath: /etc/localtime
     mountPath: /etc/localtime
     name: localtime
     readOnly: true
     pathType: File
+etcd:
+  local:
+    extraArgs:
+      listen-metrics-urls: http://0.0.0.0:2381
 `
 	kubeproxyConfigDefault = `
 ---

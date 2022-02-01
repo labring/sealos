@@ -15,10 +15,14 @@
 package exec
 
 import (
+	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/fanux/sealos/pkg/utils/logger"
+	strutil "github.com/fanux/sealos/pkg/utils/strings"
 )
 
 func Cmd(name string, args ...string) error {
@@ -27,6 +31,44 @@ func Cmd(name string, args ...string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
 	return cmd.Run()
+}
+func CmdForPipe(exe string, args ...string) error {
+	cmdDbg := []string{exe}
+	cmdDbg = append(cmdDbg, args...)
+	cmd := exec.Command(exe, args...)
+	outReader, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("error creating StdoutPipe for cmd: #%v", err)
+	}
+
+	errReader, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("error creating StderrPipe for cmd: #%v", err)
+	}
+
+	outScanner := bufio.NewScanner(outReader)
+	go func() {
+		for outScanner.Scan() {
+			logger.Info(outScanner.Text())
+		}
+	}()
+
+	errScanner := bufio.NewScanner(errReader)
+	go func() {
+		for errScanner.Scan() {
+			logger.Info(errScanner.Text())
+		}
+	}()
+
+	if err = cmd.Start(); err != nil {
+		return fmt.Errorf("error starting cmd: #%v", err)
+	}
+
+	if err = cmd.Wait(); err != nil {
+		return fmt.Errorf("error waiting for cmd: #%v", err)
+	}
+
+	return nil
 }
 
 func Output(name string, args ...string) ([]byte, error) {
@@ -46,10 +88,26 @@ func RunBashCmd(cmd string) (string, error) {
 
 func BashEval(cmd string) string {
 	out, _ := RunBashCmd(cmd)
-	return strings.TrimWS(out)
+	return strutil.TrimWS(out)
 }
 
 func Eval(cmd string) string {
 	out, _ := RunSimpleCmd(cmd)
-	return strings.TrimWS(out)
+	return strutil.TrimWS(out)
+}
+
+func CheckCmdIsExist(cmd string) (string, bool) {
+	cmd = fmt.Sprintf("type %s", cmd)
+	out, err := RunSimpleCmd(cmd)
+	if err != nil {
+		return "", false
+	}
+
+	outSlice := strings.Split(out, "is")
+	last := outSlice[len(outSlice)-1]
+
+	if last != "" && !strings.Contains(last, "not found") {
+		return strings.TrimSpace(last), true
+	}
+	return "", false
 }
