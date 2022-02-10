@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,102 +15,142 @@
 package ssh
 
 import (
-	"bufio"
-	"io"
-	"strings"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"fmt"
+	"net"
+	"sync"
+	"time"
 )
 
-//Cmd is in host exec cmd
-func (ss *SSH) Cmd(host string, cmd string) []byte {
-	logger.Info("[ssh][%s] %s", host, cmd)
-	session, err := ss.Connect(host)
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]Error create ssh session failed,%s", host, err)
-		}
-	}()
-	if err != nil {
-		panic(1)
-	}
-	defer session.Close()
-	b, err := session.CombinedOutput(cmd)
-	logger.Debug("[ssh][%s]command result is: %s", host, string(b))
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]Error exec command failed: %s", host, err)
-		}
-	}()
-	if err != nil {
-		panic(1)
-	}
-	return b
+type Interface interface {
+	// Copy is copy local files to remote host
+	// scp -r /tmp root@192.168.0.2:/root/tmp => Copy("192.168.0.2","tmp","/root/tmp")
+	// need check md5sum
+	Copy(host, srcFilePath, dstFilePath string) error
+	// Fetch is copy remote host files to localhost
+	Fetch(host, srcFilePath, dstFilePath string) error
+	// CmdAsync is exec command on remote host, and asynchronous return logs
+	CmdAsync(host string, cmd ...string) error
+	// Cmd is exec command on remote host, and return combined standard output and standard error
+	Cmd(host, cmd string) ([]byte, error)
+	// IsFileExist is check remote file exist or not
+	IsFileExist(host, remoteFilePath string) bool
+	//RemoteDirExist is remote file existence returns true, nil
+	RemoteDirExist(host, remoteDirpath string) (bool, error)
+	//CmdToString is exec command on remote host, and return spilt standard output and standard error
+	CmdToString(host, cmd, spilt string) (string, error)
+	Ping(host string) error
 }
 
-func readPipe(host string, pipe io.Reader, isErr bool) {
-	r := bufio.NewReader(pipe)
-	for {
-		line, _, err := r.ReadLine()
-		if line == nil {
-			return
-		} else if err != nil {
-			logger.Info("[%s] %s", host, line)
-			logger.Error("[ssh] [%s] %s", host, err)
-			return
-		} else {
-			if isErr {
-				logger.Error("[%s] %s", host, line)
-			} else {
-				logger.Info("[%s] %s", host, line)
+type SSH struct {
+	User         string
+	Password     string
+	PkFile       string
+	PkPassword   string
+	Timeout      *time.Duration
+	LocalAddress *[]net.Addr
+}
+
+//func NewSSHByCluster(cluster *v1.Cluster) Interface {
+//	if cluster.Spec.SSH.User == "" {
+//		cluster.Spec.SSH.User = common.ROOT
+//	}
+//	address, err := utils.IsLocalHostAddrs()
+//	if err != nil {
+//		logger.Warn("failed to get local address, %v", err)
+//	}
+//	return &SSH{
+//		User:         cluster.Spec.SSH.User,
+//		Password:     cluster.Spec.SSH.Passwd,
+//		PkFile:       cluster.Spec.SSH.Pk,
+//		PkPassword:   cluster.Spec.SSH.PkPasswd,
+//		LocalAddress: address,
+//	}
+//}
+//
+//func NewSSHClient(ssh *v1.SSH) Interface {
+//	if ssh.User == "" {
+//		ssh.User = common.ROOT
+//	}
+//	address, err := utils.IsLocalHostAddrs()
+//	if err != nil {
+//		logger.Warn("failed to get local address, %v", err)
+//	}
+//	return &SSH{
+//		User:         ssh.User,
+//		Password:     ssh.Passwd,
+//		PkFile:       ssh.Pk,
+//		PkPassword:   ssh.PkPasswd,
+//		LocalAddress: address,
+//	}
+//}
+//
+//func GetHostSSHClient(hostIP string, cluster *v2.Cluster) (Interface, error) {
+//	for _, host := range cluster.Spec.Hosts {
+//		for _, ip := range host.IPS {
+//			if hostIP == ip {
+//				if err := mergo.Merge(&host.SSH, &cluster.Spec.SSH); err != nil {
+//					return nil, err
+//				}
+//
+//				return NewSSHClient(&host.SSH), nil
+//			}
+//		}
+//	}
+//	return nil, fmt.Errorf("get host ssh client failed, host ip %s not in hosts ip list", hostIP)
+//}
+//
+
+type Client struct {
+	SSH  Interface
+	Host string
+}
+//
+//func NewSSHClientWithCluster(cluster *v1.Cluster) (*Client, error) {
+//	var (
+//		ipList []string
+//		host   string
+//	)
+//	sshClient := NewSSHByCluster(cluster)
+//	if cluster.Spec.Provider == common.AliCloud {
+//		host = cluster.GetAnnotationsByKey(common.Eip)
+//		if host == "" {
+//			return nil, fmt.Errorf("get cluster EIP failed")
+//		}
+//		ipList = append(ipList, host)
+//	} else {
+//		host = cluster.Spec.Masters.IPList[0]
+//		ipList = append(ipList, append(cluster.Spec.Masters.IPList, cluster.Spec.Nodes.IPList...)...)
+//	}
+//	err := WaitSSHReady(sshClient, 6, ipList...)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if sshClient == nil {
+//		return nil, fmt.Errorf("cloud build init ssh client failed")
+//	}
+//	return &Client{
+//		SSH:  sshClient,
+//		Host: host,
+//	}, nil
+//}
+
+func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
+	var err error
+	var wg sync.WaitGroup
+	for _, h := range hosts {
+		wg.Add(1)
+		go func(host string) {
+			defer wg.Done()
+			for i := 0; i < tryTimes; i++ {
+				err = ssh.Ping(host)
+				if err == nil {
+					return
+				}
+				time.Sleep(time.Duration(i) * time.Second)
 			}
-		}
+			err = fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
+		}(h)
 	}
-}
-
-func (ss *SSH) CmdAsync(host string, cmd string) error {
-	logger.Debug("[%s] %s", host, cmd)
-	session, err := ss.Connect(host)
-	if err != nil {
-		logger.Error("[ssh][%s]Error create ssh session failed,%s", host, err)
-		return err
-	}
-	defer session.Close()
-	stdout, err := session.StdoutPipe()
-	if err != nil {
-		logger.Error("[ssh][%s]Unable to request StdoutPipe(): %s", host, err)
-		return err
-	}
-	stderr, err := session.StderrPipe()
-	if err != nil {
-		logger.Error("[ssh][%s]Unable to request StderrPipe(): %s", host, err)
-		return err
-	}
-	if err := session.Start(cmd); err != nil {
-		logger.Error("[ssh][%s]Unable to execute command: %s", host, err)
-		return err
-	}
-	doneout := make(chan bool, 1)
-	doneerr := make(chan bool, 1)
-	go func() {
-		readPipe(host, stderr, true)
-		doneerr <- true
-	}()
-	go func() {
-		readPipe(host, stdout, false)
-		doneout <- true
-	}()
-	<-doneerr
-	<-doneout
-	return session.Wait()
-}
-
-//CmdToString is in host exec cmd and replace to spilt str
-func (ss *SSH) CmdToString(host, cmd, spilt string) string {
-	if data := ss.Cmd(host, cmd); data != nil {
-		str := string(data)
-		str = strings.ReplaceAll(str, "\r\n", spilt)
-		return str
-	}
-	return ""
+	wg.Wait()
+	return err
 }

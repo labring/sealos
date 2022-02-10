@@ -189,8 +189,24 @@ func TestSSH_CmdAsync(t *testing.T) {
 			},
 			wantErr: true, //Process exited with status 1
 		},
+		{
+			name: "exist 1",
+			args: args{
+				ssh: SSH{
+					"root",
+					"",
+					"/Users/cuisongliu/.ssh/id_rsa",
+					"",
+					nil,
+					&[]net.Addr{},
+				},
+				host: "192.168.64.15",
+				cmd:  "cd kube/scripts && bash check-node.sh",
+			},
+			wantErr: true, //Process exited with status 1
+		},
 	}
-
+	DebugMode = true
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.args.ssh.CmdAsync(tt.args.host, tt.args.cmd); (err != nil) != tt.wantErr {

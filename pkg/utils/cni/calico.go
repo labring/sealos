@@ -28,9 +28,7 @@ func (c Calico) Manifests(template string) string {
 	if c.metadata.CIDR == "" {
 		c.metadata.CIDR = defaultCIDR
 	}
-	if c.metadata.CniRepo == "" || c.metadata.CniRepo == defaultCNIRepo {
-		c.metadata.CniRepo = "calico"
-	}
+	c.metadata.CniRepo = "calico"
 	if c.metadata.Version == "" {
 		c.metadata.Version = "v3.8.2"
 	}
