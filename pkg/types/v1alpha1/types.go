@@ -19,12 +19,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"sigs.k8s.io/yaml"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/utils"
-
-	"github.com/fanux/sealos/pkg/cni"
 	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/fanux/sealos/pkg/types/contants"
+
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -33,7 +35,7 @@ const (
 )
 
 var (
-	DefaultConfigPath = utils.UserHomeDir() + "/.sealos"
+	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
 )
 
 type Metadata struct {
@@ -57,7 +59,6 @@ type SealConfig struct {
 	PkPassword string `json:"pkpassword"`
 	//ApiServer ex. apiserver.cluster.local
 	APIServerDomain string `json:"apiserverdomain"`
-	Network         string `json:"network"`
 	VIP             string `json:"vip"`
 	PkgURL          string `json:"pkgurl"`
 	Version         string `json:"version"`
@@ -69,15 +70,6 @@ type SealConfig struct {
 	CertEtcdPath string `json:"certetcdpath"`
 	//lvscare images
 	LvscareName string `json:"lvscarename"`
-	LvscareTag  string `json:"lvscaretag"`
-	AliOss      `json:"alioss"`
-}
-type AliOss struct {
-	OssEndpoint      string `json:"ossendpoint"`
-	AccessKeyID      string `json:"accesskeyid"`
-	AccessKeySecrets string `json:"accesskeysecrets"`
-	BucketName       string `json:"bucketname"`
-	ObjectPath       string `json:"objectpath"`
 }
 
 //Dump is
@@ -85,16 +77,15 @@ func (c *SealConfig) Dump(path string) {
 	if path == "" {
 		path = DefaultConfigPath + DefaultConfigFile
 	}
-	MasterIPs = utils.ParseIPs(MasterIPs)
+	MasterIPs = iputils.ParseIPs(MasterIPs)
 	c.Masters = MasterIPs
-	NodeIPs = utils.ParseIPs(NodeIPs)
-	c.Nodes = utils.ParseIPs(NodeIPs)
+	NodeIPs = iputils.ParseIPs(NodeIPs)
+	c.Nodes = iputils.ParseIPs(NodeIPs)
 	c.User = SSHConfig.User
 	c.Passwd = SSHConfig.Password
 	c.PrivateKey = SSHConfig.PkFile
 	c.PkPassword = SSHConfig.PkPassword
 	c.APIServerDomain = APIServer
-	c.Network = Network
 	c.VIP = VIP
 	c.PkgURL = PkgURL
 	c.Version = Version
@@ -107,14 +98,7 @@ func (c *SealConfig) Dump(path string) {
 	c.CertPath = CertPath
 	c.CertEtcdPath = CertEtcdPath
 	//lvscare
-	c.LvscareName = LvscareImage.Image
-	c.LvscareTag = LvscareImage.Tag
-	// oss
-	c.AliOss.AccessKeyID = AccessKeyID
-	c.AliOss.AccessKeySecrets = AccessKeySecrets
-	c.AliOss.OssEndpoint = OssEndpoint
-	c.AliOss.BucketName = BucketName
-	c.AliOss.ObjectPath = ObjectPath
+	c.LvscareName = LvscareImage
 	y, err := yaml.Marshal(c)
 	if err != nil {
 		logger.Error("dump config file failed: %s", err)
@@ -169,7 +153,6 @@ func (c *SealConfig) Load(path string) (err error) {
 	SSHConfig.PkFile = c.PrivateKey
 	SSHConfig.PkPassword = c.PkPassword
 	APIServer = c.APIServerDomain
-	Network = c.Network
 	VIP = c.VIP
 	PkgURL = c.PkgURL
 	Version = c.Version
@@ -181,18 +164,7 @@ func (c *SealConfig) Load(path string) (err error) {
 	CertPath = c.CertPath
 	CertEtcdPath = c.CertEtcdPath
 	//lvscare
-	LvscareImage.Image = c.LvscareName
-	LvscareImage.Tag = c.LvscareTag
-
-	// 优先使用使用命令行， 再使用配置文件
-	if AccessKeyID == "" || AccessKeySecrets == "" ||
-		OssEndpoint == "" || BucketName == "" || ObjectPath == "" {
-		AccessKeyID = c.AliOss.AccessKeyID
-		AccessKeySecrets = c.AliOss.AccessKeySecrets
-		OssEndpoint = c.AliOss.OssEndpoint
-		BucketName = c.AliOss.BucketName
-		ObjectPath = c.AliOss.ObjectPath
-	}
+	LvscareImage = c.LvscareName
 	return
 }
 
@@ -218,7 +190,6 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.Passwd = "123456"
 	c.PrivateKey = home + "/.ssh/id_rsa"
 	c.APIServerDomain = DefaultAPIServerDomain
-	c.Network = cni.CALICO
 	c.VIP = "10.103.97.2"
 	c.PkgURL = home + "/kube1.17.13.tar.gz"
 	c.Version = "v1.17.13"
@@ -228,8 +199,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.APIServerCertSANs = []string{DefaultAPIServerDomain, "127.0.0.1"}
 	c.CertPath = DefaultConfigPath + "/pki"
 	c.CertEtcdPath = DefaultConfigPath + "/pki/etcd"
-	c.LvscareName = "fanux/lvscare"
-	c.LvscareTag = "latest"
+	c.LvscareName = contants.DefaultLvsCareImage
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

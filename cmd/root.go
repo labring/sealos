@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"os"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -62,15 +62,11 @@ func initConfig() {
 	// Find home directory.
 	configPath := v1.DefaultConfigPath
 	logFile := fmt.Sprintf("%s/sealos.log", configPath)
-	if !utils.FileExist(configPath) {
+	if !file.IsExist(configPath) {
 		err := os.MkdirAll(configPath, os.ModePerm)
 		if err != nil {
 			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 		}
 	}
-	if Info {
-		logger.Cfg(5, logFile)
-	} else {
-		logger.Cfg(6, logFile)
-	}
+	logger.Cfg(!Info, logFile)
 }

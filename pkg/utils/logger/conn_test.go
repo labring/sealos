@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,6 @@ import (
 
 func TestConn(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger("conn", `{"net":"tcp","addr":"10.1.55.10:1024"}`)
+	log.SetLogger("conn", `{"net":"tcp","addr":"10.1.55.10:1024"}`)
 	log.Info("this is informational to net")
 }

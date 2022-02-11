@@ -15,22 +15,23 @@
 package aliyun
 
 import (
-	"fmt"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/validation/field"
+	"github.com/fanux/sealos/pkg/utils/rand"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/fanux/sealos/pkg/types/validation"
+
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/pkg/errors"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/logger"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 type ActionName string
@@ -108,8 +109,8 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 			host := &h
 			statusIndex := aliProvider.Infra.Status.FindHostsByRoles(h.Roles)
 			if statusIndex < 0 {
-				errorMsg = append(errorMsg, fmt.Sprintf("infra status not fount in role tag: %v", h.Roles))
-				continue
+				aliProvider.Infra.Status.Hosts = append(aliProvider.Infra.Status.Hosts, v1beta1.HostStatus{Roles: h.Roles})
+				statusIndex = len(aliProvider.Infra.Status.Hosts) - 1
 			}
 			status := &aliProvider.Infra.Status.Hosts[statusIndex]
 			err := aliProvider.ReconcileInstances(host, status)
@@ -181,7 +182,17 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
-	regionID := a.Infra.Spec.Cluster.RegionIDs[utils.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
+	if len(a.Infra.Spec.Cluster.RegionIDs) == 0 {
+		return errors.New("your infra module not set region id")
+	}
+	if len(a.Infra.Spec.Credential.AccessKey) == 0 {
+		return errors.New("your infra module not set AccessKey")
+	}
+	if len(a.Infra.Spec.Credential.AccessSecret) == 0 {
+		return errors.New("your infra module not set AccessSecret")
+	}
+
+	regionID := a.Infra.Spec.Cluster.RegionIDs[rand.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
 	a.Infra.Status.Cluster.RegionID = regionID
 	logger.Info("using regionID is %s", regionID)
 	ecsClient, err := ecs.NewClientWithAccessKey(a.Infra.Status.Cluster.RegionID, a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret)
@@ -237,6 +248,12 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
+	if err := v1beta1.Default(a.Infra, DefaultInfra); err != nil {
+		return err
+	}
+	if err := validation.ValidateInfra(a.Infra, DefaultValidate); len(err) != 0 {
+		return err.ToAggregate()
+	}
 	return a.Reconcile()
 }
 

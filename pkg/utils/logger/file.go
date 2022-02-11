@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ type fileLogger struct {
 	Level      string `json:"level"`
 	PermitMask string `json:"permit"`
 
-	LogLevel             int
+	LogLevel             logLevel
 	maxSizeCurSize       int
 	maxLinesCurLines     int
 	dailyOpenDate        int
@@ -70,7 +70,7 @@ func (f *fileLogger) Init(jsonConfig string) error {
 		return err
 	}
 	if len(f.Filename) == 0 {
-		return errors.New("jsonconfig must have filename")
+		return errors.New("jsonConfig must have filename")
 	}
 	f.suffix = filepath.Ext(f.Filename)
 	f.fileNameOnly = strings.TrimSuffix(f.Filename, f.suffix)
@@ -92,7 +92,7 @@ func (f *fileLogger) needCreateFresh(size int, day int) bool {
 }
 
 // WriteMsg write logger message into file.
-func (f *fileLogger) LogWrite(when time.Time, msgText interface{}, level int) error {
+func (f *fileLogger) LogWrite(when time.Time, msgText interface{}, level logLevel) error {
 	msg, ok := msgText.(string)
 	if !ok {
 		return nil
@@ -138,7 +138,10 @@ func (f *fileLogger) createLogFile() (*os.File, error) {
 	fd, err := os.OpenFile(f.Filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, os.FileMode(perm))
 	if err == nil {
 		// Make sure file perm is user set perm cause of `os.OpenFile` will obey umask
-		_ = os.Chmod(f.Filename, os.FileMode(perm))
+		err = os.Chmod(f.Filename, os.FileMode(perm))
+		if err != nil {
+			return nil, err
+		}
 	}
 	return fd, err
 }
@@ -149,7 +152,10 @@ func (f *fileLogger) newFile() error {
 		return err
 	}
 	if f.fileWriter != nil {
-		f.fileWriter.Close()
+		err := f.fileWriter.Close()
+		if err != nil {
+			return err
+		}
 	}
 	f.fileWriter = file
 
@@ -209,10 +215,20 @@ func (f *fileLogger) createFreshFile(logTime time.Time) error {
 		return err
 	}
 
+	RestartLogger := func(fl *fileLogger) error {
+		startLoggerErr := fl.newFile()
+		go fl.deleteOldLog()
+
+		if startLoggerErr != nil {
+			return fmt.Errorf("rotate StartLogger: %s", startLoggerErr)
+		}
+		return nil
+	}
+
 	_, err = os.Lstat(f.Filename)
 	if err != nil {
 		// 初始日志文件不存在，无需创建新文件
-		goto RESTART_LOGGER
+		return RestartLogger(f)
 	}
 	// 日期变了， 说明跨天，重命名时需要保存为昨天的日期
 	if f.dailyOpenDate != logTime.Day() {
@@ -230,7 +246,10 @@ func (f *fileLogger) createFreshFile(logTime time.Time) error {
 	if err == nil {
 		return fmt.Errorf("cannot find free log number to rename %s", f.Filename)
 	}
-	f.fileWriter.Close()
+	err = f.fileWriter.Close()
+	if err != nil {
+		return err
+	}
 
 	// 当创建新文件标记为true时
 	// 当日志文件超过最大限制行
@@ -239,29 +258,20 @@ func (f *fileLogger) createFreshFile(logTime time.Time) error {
 	// 将旧文件重命名，然后创建新文件
 	err = os.Rename(f.Filename, fName)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "os.Rename %s to %s err:%s\n", f.Filename, fName, err.Error())
-		goto RESTART_LOGGER
+		_, _ = fmt.Fprintf(os.Stderr, "os.Rename %s to %s err:%s\n", f.Filename, fName, err.Error())
+		return RestartLogger(f)
 	}
 
 	err = os.Chmod(fName, os.FileMode(rotatePerm))
-
-RESTART_LOGGER:
-
-	startLoggerErr := f.newFile()
-	go f.deleteOldLog()
-
-	if startLoggerErr != nil {
-		return fmt.Errorf("rotate StartLogger: %s", startLoggerErr)
-	}
 	if err != nil {
 		return fmt.Errorf("rotate: %s", err)
 	}
-	return nil
+	return RestartLogger(f)
 }
 
 func (f *fileLogger) deleteOldLog() {
 	dir := filepath.Dir(f.Filename)
-	_ = filepath.Walk(dir, func(path string, info os.FileInfo, err error) (returnErr error) {
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) (returnErr error) {
 		defer func() {
 			if r := recover(); r != nil {
 				fmt.Fprintf(os.Stderr, "Unable to delete old log '%s', error: %v\n", path, r)
@@ -275,15 +285,21 @@ func (f *fileLogger) deleteOldLog() {
 		if f.MaxDays != -1 && !info.IsDir() && info.ModTime().Add(24*time.Hour*time.Duration(f.MaxDays)).Before(time.Now()) {
 			if strings.HasPrefix(filepath.Base(path), filepath.Base(f.fileNameOnly)) &&
 				strings.HasSuffix(filepath.Base(path), f.suffix) {
-				os.Remove(path)
+				err := os.Remove(path)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		return
 	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to delete old log error: %v\n", err)
+	}
 }
 
 func (f *fileLogger) Destroy() {
-	f.fileWriter.Close()
+	f.fileWriter.Close() // #nosec
 }
 
 func init() {

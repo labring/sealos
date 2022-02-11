@@ -15,18 +15,18 @@
 package huawei
 
 import (
+	"github.com/fanux/sealos/pkg/utils/retry"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"github.com/fanux/sealos/pkg/utils"
 )
 
 func (a *HwProvider) RetryVpcRequest(request interface{}, def *def.HttpRequestDef) (interface{}, error) {
 	var respInterface interface{}
 	var err error
-	allErr := utils.Retry(TryTimes, TrySleepTime, func() error {
+	allErr := retry.Retry(TryTimes, TrySleepTime, func() error {
 		respInterface, err = a.VpcClient.HcClient.Sync(request, def)
 		if err != nil {
 			return err
@@ -43,7 +43,7 @@ func (a *HwProvider) RetryEcsRequest(request interface{}, def *def.HttpRequestDe
 func (a *HwProvider) RetryEcsAction(request interface{}, def *def.HttpRequestDef, tryTimes int) (interface{}, error) {
 	var respInterface interface{}
 	var err error
-	allErr := utils.Retry(tryTimes, TrySleepTime, func() error {
+	allErr := retry.Retry(tryTimes, TrySleepTime, func() error {
 		respInterface, err = a.EcsClient.HcClient.Sync(request, def)
 		if err != nil {
 			return err
@@ -81,7 +81,7 @@ func (a *HwProvider) RetryEcsInstanceType(request requests.AcsRequest, response 
 }
 
 func (a *HwProvider) TryGetInstance(request *ecs.DescribeInstancesRequest, response *ecs.DescribeInstancesResponse, expectCount int) error {
-	return utils.Retry(TryTimes, TrySleepTime, func() error {
+	return retry.Retry(TryTimes, TrySleepTime, func() error {
 		//err := a.EcsClient.DoAction(request, response)
 		//var ipList []string
 		//if err != nil {

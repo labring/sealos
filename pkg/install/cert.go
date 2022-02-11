@@ -18,8 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/kubernetes/cert"
-
+	"github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 

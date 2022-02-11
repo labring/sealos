@@ -22,13 +22,14 @@ import (
 	"sync"
 	"time"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/ssh"
+	"github.com/fanux/sealos/pkg/utils/archive"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"go.etcd.io/etcd/clientv3/snapshot"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
+	"github.com/fanux/sealos/pkg/utils/ssh"
+
+	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
 )
 
@@ -153,7 +154,7 @@ func (e *EtcdFlags) AfterRestore() error {
 		tmpFile := fmt.Sprintf("/tmp/%s.tar", filepath.Base(location))
 		sdtTmpTar := fmt.Sprintf("/var/lib/%s.tar", filepath.Base(location))
 		// 压缩已经已经restore的文件
-		err := utils.CompressTar(location, tmpFile)
+		err := archive.CompressTar(location, tmpFile)
 		if err != nil {
 			return err
 		}

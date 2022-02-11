@@ -17,13 +17,14 @@ package cmd
 import (
 	"os"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/file"
 
-	"github.com/fanux/sealos/pkg/cni"
-	install "github.com/fanux/sealos/pkg/install"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
+	"github.com/fanux/sealos/pkg/types/contants"
+
+	install "github.com/fanux/sealos/pkg/install"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -113,7 +114,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&v1.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", utils.UserHomeDir()+"/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", file.UserHomeDir()+"/.ssh/id_rsa", "private key for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&v1.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
@@ -132,11 +133,9 @@ func init() {
 	initCmd.Flags().StringVar(&v1.Interface, "interface", "eth.*|en.*|em.*", "name of network interface, when use calico IP_AUTODETECTION_METHOD, set your ipv4 with can-reach=192.168.0.1")
 
 	initCmd.Flags().BoolVar(&v1.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
-	initCmd.Flags().StringVar(&v1.Network, "network", cni.CALICO, "cni plugin, calico..")
 	initCmd.Flags().BoolVar(&v1.BGP, "bgp", false, "bgp mode enable, calico..")
 	initCmd.Flags().StringVar(&v1.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
-	initCmd.Flags().StringVar(&v1.LvscareImage.Image, "lvscare-image", "fanux/lvscare", "lvscare image name")
-	initCmd.Flags().StringVar(&v1.LvscareImage.Tag, "lvscare-tag", "latest", "lvscare image tag name")
+	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
 
 	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
 }

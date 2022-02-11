@@ -16,24 +16,25 @@ package install
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/ssh"
+	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/aliyun/aliyun-oss-go-sdk/oss"
-	"go.etcd.io/etcd/clientv3"
-	"go.etcd.io/etcd/clientv3/snapshot"
-	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
-	"go.etcd.io/etcd/pkg/transport"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
+	"github.com/fanux/sealos/pkg/utils/ssh"
+
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/client/v3/snapshot"
 	"go.uber.org/zap"
 )
 
@@ -46,6 +47,8 @@ type EtcdFlags struct {
 	RestoreDir string
 	v1.SealConfig
 }
+
+var ErrPermissionDenied = errors.New("auth: permission denied")
 
 func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	var (
@@ -66,18 +69,9 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	e.Name = v1.SnapshotName
 	e.LongName = fmt.Sprintf("%s/%s", e.BackDir, e.Name)
 
-	//get oss 。如果AccessKeyId不为空，则读取使命令行，如果为空，load的时候则读取配置文件
-	if v1.AccessKeyID != "" {
-		e.ObjectPath = v1.ObjectPath
-		e.OssEndpoint = v1.OssEndpoint
-		e.AccessKeyID = v1.AccessKeyID
-		e.AccessKeySecrets = v1.AccessKeySecrets
-		e.BucketName = v1.BucketName
-	}
-
 	// when backup in docker , add unix timestamp to snapshot
 	var u string
-	if v1.InDocker {
+	if v1.IsK8sMaster {
 		u = fmt.Sprintf("%v", time.Now().Unix())
 		e.Name = fmt.Sprintf("%s-%s", e.Name, u)
 		e.LongName = fmt.Sprintf("%s-%s", e.LongName, u)
@@ -93,8 +87,8 @@ func GetEtcdBackFlags(cfgFile string) *EtcdFlags {
 	return e
 }
 
-func (e *EtcdFlags) Save(inDocker bool) error {
-	if !utils.FileExist(e.BackDir) {
+func (e *EtcdFlags) Save(isK8sMaster bool) error {
+	if !file.IsExist(e.BackDir) {
 		err := os.MkdirAll(e.BackDir, os.ModePerm)
 		if err != nil {
 			logger.Error("mkdir BackDir err: ", err)
@@ -111,38 +105,22 @@ func (e *EtcdFlags) Save(inDocker bool) error {
 		logger.Error("get lg error: ", err)
 		os.Exit(-1)
 	}
-	sp := snapshot.NewV3(lg)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	if err := sp.Save(ctx, *cfg, e.LongName); err != nil {
+	if err := snapshot.Save(ctx, lg, cfg, e.LongName); err != nil {
 		logger.Error("snapshot save err: ", err)
 		os.Exit(-1)
 	}
 	logger.Info("Snapshot saved at %s\n", e.LongName)
 	// 如果在docker上执行。 落盘在docker容器里面。 判断master节点上是否存在。
 	// 如果不存在， 说明在docker容器或者sealos执行的时候， 不在master0上
-	if inDocker {
+	if isK8sMaster {
 		// 复制本机的snapshot 到 各master节点 上。
 		ssh.CopyFiles(v1.SSHConfig, e.LongName, e.EtcdHosts, e.BackDir, nil, nil)
 	}
-	// trimPathForOss is  trim this  `/sealos//snapshot-1598146449` to   `sealos/snapshot-1598146449`
-	e.ObjectPath = trimPathForOss(e.ObjectPath + "/" + e.Name)
-	if e.AccessKeyID != "" {
-		err := saveToOss(e.OssEndpoint, e.AccessKeyID, e.AccessKeySecrets, e.BucketName, e.ObjectPath, e.LongName)
-		if err != nil {
-			logger.Error("save to oss err,", err)
-			return fmt.Errorf("save to oss err: %q", err)
-		}
-		// 如果没有报错， 保存一下最新命令行配置。
-		logger.Info("Finished saving/uploading snapshot [%s] on aliyun oss [%s] bucket", e.Name, e.BucketName)
-	}
+	logger.Info("Finished saving snapshot [%s]", e.Name)
 	return nil
-}
-
-func trimPathForOss(path string) string {
-	s, _ := filepath.Abs(path)
-	return s[1:]
 }
 
 func reFormatHostToIP(host string) string {
@@ -153,58 +131,40 @@ func reFormatHostToIP(host string) string {
 	return host
 }
 
-func saveToOss(aliEndpoint, accessKeyID, accessKeySecrets, bucketName, objectName, localFileName string) error {
-	ossClient, err := oss.New(aliEndpoint, accessKeyID, accessKeySecrets)
+func GetCfg(ep []string) (clientv3.Config, error) {
+	cert, err := tls.LoadX509KeyPair(v1.EtcdCert, v1.EtcdKey)
 	if err != nil {
-		return err
+		return clientv3.Config{}, fmt.Errorf("cacert or key file is not exist, err:%v", err)
 	}
-	bucket, err := ossClient.Bucket(bucketName)
-	if err != nil {
-		return err
-	}
-	//
-	return bucket.PutObjectFromFile(objectName, localFileName)
-}
 
-func GetCfg(ep []string) (*clientv3.Config, error) {
-	var cfgtls *transport.TLSInfo
-	tlsinfo := transport.TLSInfo{}
-	tlsinfo.CertFile = v1.EtcdCert
-	tlsinfo.KeyFile = v1.EtcdKey
-	tlsinfo.TrustedCAFile = v1.EtcdCacart
-	tlsinfo.InsecureSkipVerify = true
-	tlsinfo.Logger, _ = zap.NewProduction()
-	cfgtls = &tlsinfo
-	clientTLS, err := cfgtls.ClientConfig()
+	caData, err := ioutil.ReadFile(v1.EtcdCacart)
 	if err != nil {
-		return nil, err
+		return clientv3.Config{}, fmt.Errorf("ca certificate reading failed, err:%v", err)
 	}
-	cfg := &clientv3.Config{
+
+	pool := x509.NewCertPool()
+	pool.AppendCertsFromPEM(caData)
+
+	_tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      pool,
+	}
+
+	cfg := clientv3.Config{
 		Endpoints:   ep,
 		DialTimeout: 5 * time.Second,
-		TLS:         clientTLS,
+		TLS:         _tlsConfig,
 	}
+	cli, err := clientv3.New(cfg)
+	if err != nil {
+		return clientv3.Config{}, fmt.Errorf("connect to etcd failed, err:%v", err)
+	}
+
+	logger.Info("connect to etcd success")
+
+	defer cli.Close()
+
 	return cfg, nil
-}
-
-func GetEtcdClient(ep []string) (*clientv3.Client, error) {
-	var cfgtls *transport.TLSInfo
-	tlsinfo := transport.TLSInfo{}
-	tlsinfo.CertFile = v1.EtcdCert
-	tlsinfo.KeyFile = v1.EtcdKey
-	tlsinfo.TrustedCAFile = v1.EtcdCacart
-	tlsinfo.InsecureSkipVerify = true
-	tlsinfo.Logger, _ = zap.NewProduction()
-	cfgtls = &tlsinfo
-	clientTLS, err := cfgtls.ClientConfig()
-	if err != nil {
-		return nil, err
-	}
-	return clientv3.New(clientv3.Config{
-		Endpoints:   ep,
-		DialTimeout: 5 * time.Second,
-		TLS:         clientTLS,
-	})
 }
 
 type epHealth struct {
@@ -235,7 +195,7 @@ func GetHealthFlag(cfgFile string) *EtcdFlags {
 }
 
 func (e *EtcdFlags) HealthCheck() {
-	cfgs := []*clientv3.Config{}
+	cfgs := []clientv3.Config{}
 	for _, ep := range e.Endpoints {
 		cfg, err := GetCfg([]string{ep})
 		if err != nil {
@@ -247,10 +207,10 @@ func (e *EtcdFlags) HealthCheck() {
 	hch := make(chan epHealth, len(cfgs))
 	for _, cfg := range cfgs {
 		wg.Add(1)
-		go func(cfg *clientv3.Config) {
+		go func(cfg clientv3.Config) {
 			defer wg.Done()
 			ep := cfg.Endpoints[0]
-			cli, err := clientv3.New(*cfg)
+			cli, err := clientv3.New(cfg)
 			if err != nil {
 				hch <- epHealth{Ep: ep, Health: false, Error: err.Error()}
 				return
@@ -263,7 +223,7 @@ func (e *EtcdFlags) HealthCheck() {
 			cancel()
 			eh := epHealth{Ep: ep, Health: false, Took: time.Since(st).String()}
 			// permission denied is OK since proposal goes through consensus to get it
-			if err == nil || err == rpctypes.ErrPermissionDenied {
+			if err == nil || err == ErrPermissionDenied {
 				eh.Health = true
 			} else {
 				eh.Error = err.Error()
@@ -291,5 +251,5 @@ func (e *EtcdFlags) HealthCheck() {
 
 // CertFileExist if cert file is exist return true
 func (e *EtcdFlags) CertFileExist() bool {
-	return utils.FileExist(v1.EtcdCacart) && utils.FileExist(v1.EtcdCert) && utils.FileExist(v1.EtcdKey)
+	return file.IsExist(v1.EtcdCacart) && file.IsExist(v1.EtcdCert) && file.IsExist(v1.EtcdKey)
 }

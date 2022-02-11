@@ -17,12 +17,12 @@ package cmd
 import (
 	"os"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	install "github.com/fanux/sealos/pkg/install"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
+	install "github.com/fanux/sealos/pkg/install"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -49,8 +49,8 @@ func init() {
 }
 
 func JoinCmdFunc(cmd *cobra.Command, args []string) {
-	beforeNodes := utils.ParseIPs(v1.NodeIPs)
-	beforeMasters := utils.ParseIPs(v1.MasterIPs)
+	beforeNodes := iputils.ParseIPs(v1.NodeIPs)
+	beforeMasters := iputils.ParseIPs(v1.MasterIPs)
 
 	c := &v1.SealConfig{}
 	if err := c.Load(cfgFile); err != nil {

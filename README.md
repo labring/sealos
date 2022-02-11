@@ -28,9 +28,9 @@
 
 ---
 
-**文档: _[官方文档](https://www.sealyun.com/instructions), [英文文档](/README_en.md), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions), [English docs](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
-**加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
+**加入组织: _钉钉群(35371178), [Telegram](https://t.me/cloudnativer)_**
 
 ![](docs/images/arch.png)
 
@@ -53,6 +53,7 @@
 - 1.20+
 - 1.21+
 - 1.22+
+- 1.23+
 
 更多版本支持, 详细查看[sealyun.com](https://www.sealyun.com)
 
@@ -77,6 +78,9 @@
  - 内核要求:
    - cni组件选择cilium时要求内核版本不低于5.4
 
+## 提示
+- 如果使用腾讯云主机部署，默认禁用了calico的IPIP规则，需要改用VXLAN规则才能正常使用。
+
 # 🚀 快速开始
 
 > 环境信息
@@ -94,16 +98,16 @@ node0|192.168.0.5
 
 > 只需要准备好服务器，在任意一台服务器上执行下面命令即可
 
-```sh
+```bash
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin
 
 # 下载离线资源包
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
+wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/05a3db657821277f5f3b92d834bbaf98-v1.22.0/kube1.22.0.tar.gz
 
 # 安装一个三master的kubernetes集群
-$ sealos init --passwd '123456' \
+sealos init --passwd '123456' \
 	--master 192.168.0.2  --master 192.168.0.3  --master 192.168.0.4  \
 	--node 192.168.0.5 \
 	--pkg-url /root/kube1.22.0.tar.gz \
@@ -118,38 +122,38 @@ passwd|服务器密码|123456
 master|k8s master节点IP地址| 192.168.0.2
 node|k8s node节点IP地址|192.168.0.3
 pkg-url|离线资源包地址，支持下载到本地，或者一个远程地址|/root/kube1.22.0.tar.gz
-version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=kubernetes)对应的版本|v1.22.0
+version|[资源包](https://www.sealyun.com/goodsList) 对应的版本|v1.22.0
 
 > 增加master
 
-```shell script
+```bash
 🐳 → sealos join --master 192.168.0.6 --master 192.168.0.7
 🐳 → sealos join --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 增加node
 
-```shell script
+```bash
 🐳 → sealos join --node 192.168.0.6 --node 192.168.0.7
 🐳 → sealos join --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 > 删除指定master节点
 
-```shell script
+```bash
 🐳 → sealos clean --master 192.168.0.6 --master 192.168.0.7
 🐳 → sealos clean --master 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 删除指定node节点
 
-```shell script
+```bash
 🐳 → sealos clean --node 192.168.0.6 --node 192.168.0.7
 🐳 → sealos clean --node 192.168.0.6-192.168.0.9  # 或者多个连续IP
 ```
 
 > 清理集群
 
-```shell script
+```bash
 🐳 → sealos clean --all
 ```
 
@@ -164,7 +168,6 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 - [x] 轻松实现集群节点的增加/删除
 - [x] 上千用户在线上环境使用sealos，稳定可靠
 - [x] 资源包放在阿里云oss上，再也不用担心网速
-- [x] dashboard ingress prometheus等APP 同样离线打包，一键安装
 
 # 📊 Stats
 

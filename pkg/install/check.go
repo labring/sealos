@@ -18,16 +18,18 @@ import (
 	"fmt"
 	"os"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/versionutil"
 
-	"github.com/fanux/sealos/pkg/cni"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
+
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 )
 
 // SetHosts set hosts. if can't access to hostName, set /etc/hosts
 func SetHosts(hostIP, hostName string) {
-	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, utils.IPFormat(hostIP), hostName)
+	cmd := fmt.Sprintf("cat /etc/hosts |grep %s || echo '%s %s' >> /etc/hosts", hostName, iputils.IPFormat(hostIP), hostName)
 	_ = v1.SSHConfig.CmdAsync(hostIP, cmd)
 }
 
@@ -67,19 +69,19 @@ func (s *SealosInstaller) CheckValid() {
 			}
 			logger.Info("[%s]  ------------ check ok", h)
 		}
-		if s.Network == cni.CILIUM {
-			if err := v1.SSHConfig.CmdAsync(h, "uname -r | grep 5 | awk -F. '{if($2>3)print \"ok\"}' | grep ok && exit 0 || exit 1"); err != nil {
-				logger.Error("[%s] ------------ check kernel version  < 5.3", h)
-				os.Exit(1)
-			}
-			if err := v1.SSHConfig.CmdAsync(h, "mount bpffs -t bpf /sys/fs/bpf && mount | grep /sys/fs/bpf && exit 0 || exit 1"); err != nil {
-				logger.Error("[%s] ------------ mount  bpffs err", h)
-				os.Exit(1)
-			}
-		}
+		//if s.Network == cni.CILIUM {
+		//	if err := v1.SSHConfig.CmdAsync(h, "uname -r | grep 5 | awk -F. '{if($2>3)print \"ok\"}' | grep ok && exit 0 || exit 1"); err != nil {
+		//		logger.Error("[%s] ------------ check kernel version  < 5.3", h)
+		//		os.Exit(1)
+		//	}
+		//	if err := v1.SSHConfig.CmdAsync(h, "mount bpffs -t bpf /sys/fs/bpf && mount | grep /sys/fs/bpf && exit 0 || exit 1"); err != nil {
+		//		logger.Error("[%s] ------------ mount  bpffs err", h)
+		//		os.Exit(1)
+		//	}
+		//}
 
 		// version >= 1.20 , Add prefight for containerd
-		if utils.For120(v1.Version) {
+		if versionutil.For120(v1.Version) {
 			// for containerd. if docker exist ; exit frist.
 
 			dockerExist := v1.SSHConfig.CmdToString(h, "command -v dockerd &> /dev/null && echo yes || :", "")

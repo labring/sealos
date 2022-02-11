@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ type connLogger struct {
 	Net            string `json:"net"`
 	Addr           string `json:"addr"`
 	Level          string `json:"level"`
-	LogLevel       int
+	LogLevel       logLevel
 	illNetFlag     bool //网络异常标记
 }
 
@@ -41,6 +41,7 @@ func (c *connLogger) Init(jsonConfig string) error {
 	if len(jsonConfig) == 0 {
 		return nil
 	}
+	fmt.Printf("consoleWriter Init:%s\n", jsonConfig)
 	err := json.Unmarshal([]byte(jsonConfig), c)
 	if err != nil {
 		return err
@@ -49,13 +50,16 @@ func (c *connLogger) Init(jsonConfig string) error {
 		c.LogLevel = l
 	}
 	if c.innerWriter != nil {
-		c.innerWriter.Close()
+		err := c.innerWriter.Close()
+		if err != nil {
+			return err
+		}
 		c.innerWriter = nil
 	}
 	return nil
 }
 
-func (c *connLogger) LogWrite(when time.Time, msgText interface{}, level int) (err error) {
+func (c *connLogger) LogWrite(when time.Time, msgText interface{}, level logLevel) (err error) {
 	if level > c.LogLevel {
 		return nil
 	}
@@ -93,13 +97,19 @@ func (c *connLogger) LogWrite(when time.Time, msgText interface{}, level int) (e
 
 func (c *connLogger) Destroy() {
 	if c.innerWriter != nil {
-		c.innerWriter.Close()
+		err := c.innerWriter.Close()
+		if err != nil {
+			return
+		}
 	}
 }
 
 func (c *connLogger) connect() error {
 	if c.innerWriter != nil {
-		c.innerWriter.Close()
+		err := c.innerWriter.Close()
+		if err != nil {
+			return err
+		}
 		c.innerWriter = nil
 	}
 	addrs := strings.Split(c.Addr, ";")
@@ -112,7 +122,11 @@ func (c *connLogger) connect() error {
 		}
 
 		if tcpConn, ok := conn.(*net.TCPConn); ok {
-			_ = tcpConn.SetKeepAlive(true)
+			err = tcpConn.SetKeepAlive(true)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to set tcp keep alive :%v\n", err)
+				continue
+			}
 		}
 		c.innerWriter = conn
 		return nil

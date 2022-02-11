@@ -15,14 +15,13 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils"
+	"github.com/fanux/sealos/pkg/utils/confirm"
 
-	install "github.com/fanux/sealos/pkg/install"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
+	install "github.com/fanux/sealos/pkg/install"
 	"github.com/spf13/cobra"
 )
 
@@ -50,9 +49,13 @@ func NewUpgradeCmd() *cobra.Command {
 
 func UpgradeCmdFunc(cmd *cobra.Command, args []string) {
 	if !force {
-		prompt := fmt.Sprintf("upgrade cmd will upgrade your kubernetes cluster immediately \n" +
-			"Are you sure you want to proceed with the upgrade?  (y/n)?")
-		result := utils.Confirm(prompt)
+		prompt := "Are you exec upgrade cmd will upgrade your kubernetes cluster immediately \n" +
+			"Are you sure you want to proceed with the upgrade?  (y/n)?"
+		cancel := "You have canceled to exec upgrade cmd !"
+		result, err := confirm.Confirm(prompt, cancel)
+		if err != nil {
+			logger.Fatal(err)
+		}
 		if !result {
 			logger.Info("upgrade is skip, Exit")
 			os.Exit(-1)

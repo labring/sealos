@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 github.com/wonderivan/logger
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 
 func TestFilePermit(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger(AdapterFile, `{"filename":"test.log",
+	log.SetLogger(AdapterFile, `{"filename":"test.log",
 	 "rotateperm": "0666",
 	"maxlines":100000,
 	"maxsize":1,
@@ -53,7 +53,7 @@ func TestFilePermit(t *testing.T) {
 
 func TestFileLine(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger("file", `{"filename":"test2.log"}`)
+	log.SetLogger("file", `{"filename":"test2.log"}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Debug("debug")
@@ -78,15 +78,15 @@ func TestFileLine(t *testing.T) {
 		}
 	}
 	var expected = LevelTrace + 1
-	if lineNum != expected {
-		t.Fatal(lineNum, "not "+strconv.Itoa(expected)+" lines")
+	if lineNum != int(expected) {
+		t.Fatal(lineNum, "not "+strconv.Itoa(int(expected))+" lines")
 	}
 	os.Remove("test2.log")
 }
 
 func TestFileSize(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger(AdapterFile, `{"filename":"test.log",
+	log.SetLogger(AdapterFile, `{"filename":"test.log",
 	 "rotateperm": "0666",
 	"maxlines":100000,
 	"maxsize":1,
@@ -108,7 +108,7 @@ func TestFileSize(t *testing.T) {
 
 func TestFileByMaxLine(t *testing.T) {
 	log := NewLogger()
-	_ = log.SetLogger("file", `{"filename":"test3.log","maxlines":4}`)
+	log.SetLogger("file", `{"filename":"test3.log","maxlines":4}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Warn("warning")
@@ -136,11 +136,16 @@ func TestFileByTime(t *testing.T) {
 		LogLevel:   LevelTrace,
 		PermitMask: "0660",
 	}
-	_ = fw.Init(fmt.Sprintf(`{"filename":"%v","maxdays":1}`, fn1))
+	err := fw.Init(fmt.Sprintf(`{"filename":"%v","maxdays":1}`, fn1))
+	if err != nil {
+		fmt.Println("failed to init file logger")
+	}
 	fw.dailyOpenTime = time.Now().Add(-24 * time.Hour)
 	fw.dailyOpenDate = fw.dailyOpenTime.Day()
-	_ = fw.LogWrite(time.Now(), "this is a msg for test", LevelTrace)
-
+	err = fw.LogWrite(time.Now(), "this is a msg for test", LevelTrace)
+	if err != nil {
+		fmt.Println("failed to write msg to file logger")
+	}
 	for _, file := range []string{fn1, fn2} {
 		_, err := os.Stat(file)
 		if err != nil {
@@ -164,7 +169,7 @@ func exists(path string) (bool, error) {
 
 func BenchmarkFile(b *testing.B) {
 	log := NewLogger()
-	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		log.Debug("debug")
 	}
@@ -173,7 +178,7 @@ func BenchmarkFile(b *testing.B) {
 
 func BenchmarkFileCallDepth(b *testing.B) {
 	log := NewLogger()
-	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		log.Debug("debug")
 	}
@@ -182,7 +187,7 @@ func BenchmarkFileCallDepth(b *testing.B) {
 
 func BenchmarkFileOnGoroutine(b *testing.B) {
 	log := NewLogger()
-	_ = log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"test4.log"}`)
 	for i := 0; i < b.N; i++ {
 		go log.Debug("debug")
 	}

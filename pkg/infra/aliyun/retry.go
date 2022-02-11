@@ -20,15 +20,18 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/retry"
+	"github.com/fanux/sealos/pkg/utils/strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"github.com/fanux/sealos/pkg/utils"
-	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func (a *AliProvider) RetryVpcRequest(request requests.AcsRequest, response responses.AcsResponse) error {
-	return utils.Retry(TryTimes, TrySleepTime, func() error {
+	return retry.Retry(TryTimes, TrySleepTime, func() error {
 		err := a.VpcClient.DoAction(request, response)
 		if err != nil {
 			return err
@@ -42,7 +45,7 @@ func (a *AliProvider) RetryEcsRequest(request requests.AcsRequest, response resp
 }
 
 func (a *AliProvider) RetryEcsAction(request requests.AcsRequest, response responses.AcsResponse, tryTimes int) error {
-	return utils.Retry(tryTimes, TrySleepTime, func() error {
+	return retry.Retry(tryTimes, TrySleepTime, func() error {
 		err := a.EcsClient.DoAction(request, response)
 		if err != nil {
 			return err
@@ -79,7 +82,7 @@ func (a *AliProvider) RetryEcsInstanceType(request requests.AcsRequest, response
 }
 
 func (a *AliProvider) TryGetInstance(request *ecs.DescribeInstancesRequest, response *ecs.DescribeInstancesResponse, expectCount int) error {
-	return utils.Retry(TryTimes, TrySleepTime, func() error {
+	return retry.Retry(TryTimes, TrySleepTime, func() error {
 		err := a.EcsClient.DoAction(request, response)
 		var ipList []string
 		if err != nil {
@@ -97,7 +100,7 @@ func (a *AliProvider) TryGetInstance(request *ecs.DescribeInstancesRequest, resp
 			if instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress == "" {
 				return errors.New("PrimaryIpAddress cannt nob be nil")
 			}
-			if len(ipList) != 0 && !utils.NotIn(instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress, ipList) {
+			if len(ipList) != 0 && !strings.NotIn(instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress, ipList) {
 				return errors.New("PrimaryIpAddress cannt nob be same")
 			}
 
