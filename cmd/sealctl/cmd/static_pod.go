@@ -26,7 +26,7 @@ import (
 	"path"
 )
 
-
+var staticPodPath string
 
 func NewStaticPodCmd() *cobra.Command {
 	var cmd = &cobra.Command{
@@ -38,6 +38,7 @@ func NewStaticPodCmd() *cobra.Command {
 	}
 	// check route for host
 	cmd.AddCommand(NewLvscareCmd())
+	cmd.PersistentFlags().StringVar(&staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
 	return cmd
 }
 
@@ -45,7 +46,6 @@ func NewLvscareCmd() *cobra.Command {
 	var vip, image, name string
 	var masters []string
 	var printBool bool
-	var staticPodPath string
 	var cmd = &cobra.Command{
 		Use:   "lvscare",
 		Short: "generator lvscare static pod file",
@@ -80,7 +80,6 @@ func NewLvscareCmd() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", contants.LvsCareStaticPodName, "generator lvscare static pod name")
 	cmd.Flags().StringVar(&image, "image", contants.DefaultLvsCareImage, "generator lvscare static pod image")
 	cmd.Flags().StringSliceVar(&masters, "masters", nil, "generator masters addrs")
-	cmd.Flags().StringVar(&staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
 	cmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
 	return cmd
 }

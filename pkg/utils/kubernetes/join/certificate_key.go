@@ -13,3 +13,21 @@
 // limitations under the License.
 
 package join
+
+import (
+	"encoding/hex"
+	cryptoutil "github.com/fanux/sealos/pkg/utils/kubernetes/crypto"
+)
+
+const (
+	CertificateKeySize = 32
+)
+
+//CreateCertificateKey returns a cryptographically secure random key
+func CreateCertificateKey() (string, error) {
+	randBytes, err := cryptoutil.CreateRandBytes(CertificateKeySize)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(randBytes), nil
+}
