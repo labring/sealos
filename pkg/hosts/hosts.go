@@ -19,57 +19,35 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"strings"
 
+	"github.com/emirpasic/gods/maps/linkedhashmap"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 
 	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type HostFile struct {
-	Path  string
-	Hosts map[string]*Hostname
+	Path string
 }
 
-type Hostname struct {
+type hostname struct {
 	Comment string
 	Domain  string
 	IP      string
 }
 
-func NewHostname(comment string, domain string, ip string) *Hostname {
-	return &Hostname{comment, domain, ip}
-}
-func (h *HostFile) Add(host *Hostname) {
-	if h.Hosts == nil {
-		h.Hosts = make(map[string]*Hostname)
-	}
-	h.Hosts[host.Domain] = host
+func newHostname(comment string, domain string, ip string) *hostname {
+	return &hostname{comment, domain, ip}
 }
 
-func (h *HostFile) Delete(host string) {
-	delete(h.Hosts, host)
-}
-
-func getHostPath() string {
-	path := os.Getenv("GOHOST_FILE")
-	if path == "" {
-		path = "/etc/hosts"
-	}
-	return path
-}
-
-func (h *Hostname) toString() string {
-	if len(h.Comment) > 0 {
-		h.Comment += "\n"
-	}
+func (h *hostname) toString() string {
 	return h.Comment + h.IP + " " + h.Domain + "\n"
 }
-func appendToFile(filePath string, hostname *Hostname) {
+func appendToFile(filePath string, hostname *hostname) {
 	fp, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		logger.Warn("failed opening file %s : %s\n", filePath, err)
@@ -84,7 +62,7 @@ func appendToFile(filePath string, hostname *Hostname) {
 	}
 }
 
-func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
+func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 	if !file.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return nil, errors.New("path %s is not exists")
@@ -98,7 +76,7 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 	defer fp.Close()
 
 	br := bufio.NewReader(fp)
-	hostnameMap := make(map[string]*Hostname)
+	lm := linkedhashmap.New()
 	curComment := ""
 	for {
 		str, rErr := br.ReadString('\n')
@@ -115,22 +93,22 @@ func (h *HostFile) ParseHostFile(path string) (map[string]*Hostname, error) {
 			continue
 		}
 		tmpHostnameArr := strings.Fields(str)
-		curDomain := strings2.TrimSpaceWS(tmpHostnameArr[1])
-		if !iputils.CheckDomain(curDomain) {
-			return hostnameMap, errors.New(" file contain error domain" + curDomain)
-		}
+		curDomain := strings.Join(tmpHostnameArr[1:]," ")
+		//if !iputils.CheckDomain(curDomain) {
+		//	return lm, errors.New(" file contain error domain" + curDomain)
+		//}
 		curIP := strings2.TrimSpaceWS(tmpHostnameArr[0])
-		checkIP := iputils.CheckIP(curIP)
-		if !checkIP {
-			return hostnameMap, nil
-		}
-		tmpHostname := NewHostname(curComment, curDomain, curIP)
-		hostnameMap[tmpHostname.Domain] = tmpHostname
 
+		checkIP := net.ParseIP(curIP)
+		if checkIP == nil {
+			continue
+		}
+		tmpHostname := newHostname(curComment, curDomain, curIP)
+		lm.Put(tmpHostname.Domain, tmpHostname)
 		curComment = ""
 	}
 
-	return hostnameMap, nil
+	return lm, nil
 }
 
 func (h *HostFile) AppendHost(domain string, ip string) {
@@ -138,11 +116,11 @@ func (h *HostFile) AppendHost(domain string, ip string) {
 		return
 	}
 
-	hostname := NewHostname("", domain, ip)
-	appendToFile(getHostPath(), hostname)
+	hostname := newHostname("", domain, ip)
+	appendToFile(h.Path, hostname)
 }
 
-func (h *HostFile) writeToFile(hostnameMap map[string]*Hostname, path string) {
+func (h *HostFile) writeToFile(hostnameMap *linkedhashmap.Map, path string) {
 	if !file.IsExist(path) {
 		logger.Warn("path %s is not exists", path)
 		return
@@ -155,13 +133,16 @@ func (h *HostFile) writeToFile(hostnameMap map[string]*Hostname, path string) {
 	}
 	defer fp.Close()
 
-	for _, mapVal := range hostnameMap {
-		_, writeErr := fp.WriteString(mapVal.toString())
-		if writeErr != nil {
-			logger.Warn(writeErr)
-			return
+	hostnameMap.Each(func(key interface{}, value interface{}) {
+		if v, ok := value.(*hostname); ok {
+			_, writeErr := fp.WriteString(fmt.Sprintf("%s", v.toString()))
+			if writeErr != nil {
+				logger.Warn(writeErr)
+				return
+			}
 		}
-	}
+
+	})
 }
 
 func (h *HostFile) DeleteDomain(domain string) {
@@ -169,32 +150,33 @@ func (h *HostFile) DeleteDomain(domain string) {
 		return
 	}
 
-	currHostsMap, parseErr := h.ParseHostFile(getHostPath())
+	currHostsMap, parseErr := h.ParseHostFile(h.Path)
 	if parseErr != nil {
 		logger.Warn("parse file failed" + parseErr.Error())
 		return
 	}
-
-	if len(currHostsMap) == 0 || currHostsMap[domain] == nil {
+	_, found := currHostsMap.Get(domain)
+	if currHostsMap == nil || !found {
 		logger.Warn("domain %s not exist\n", domain)
 		return
 	}
-
-	delete(currHostsMap, domain)
-	h.writeToFile(currHostsMap, getHostPath())
+	currHostsMap.Remove(domain)
+	h.writeToFile(currHostsMap, h.Path)
 }
 
 func (h *HostFile) ListCurrentHosts() {
-	currHostsMap, parseErr := h.ParseHostFile(getHostPath())
+	currHostsMap, parseErr := h.ParseHostFile(h.Path)
 	if parseErr != nil {
 		logger.Warn("parse file failed" + parseErr.Error())
 		return
 	}
-	if len(currHostsMap) == 0 {
+	if currHostsMap == nil {
 		return
 	}
+	currHostsMap.Each(func(key interface{}, value interface{}) {
+		if v, ok := value.(*hostname); ok {
+			fmt.Print(fmt.Sprintf("%s", v.toString()))
+		}
 
-	for _, mapVal := range currHostsMap {
-		fmt.Println(mapVal.toString())
-	}
+	})
 }

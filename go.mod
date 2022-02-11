@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
+	github.com/emirpasic/gods v1.12.0
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.11.0
