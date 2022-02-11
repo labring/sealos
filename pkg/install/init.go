@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/fanux/sealos/pkg/types/contants"
 	"io"
 	"io/ioutil"
 	"os"
@@ -35,7 +36,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/cni"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
 //BuildInit is
@@ -82,10 +82,10 @@ func (s *SealosInstaller) getCgroupDriverFromShell(h string) string {
 	var output string
 	if versionutil.For120(v1.Version) {
 		cmd := ContainerdShell
-		output = v1.SSHConfig.CmdToString(h, cmd, " ")
+		output,_ = v1.SSHConfig.CmdToString(h, cmd, " ")
 	} else {
 		cmd := DockerShell
-		output = v1.SSHConfig.CmdToString(h, cmd, " ")
+		output,_ = v1.SSHConfig.CmdToString(h, cmd, " ")
 	}
 	output = strings.TrimSpace(output)
 	logger.Info("cgroup driver is %s", output)
@@ -163,8 +163,8 @@ func (s *SealosInstaller) appendAPIServer() error {
 
 func (s *SealosInstaller) GenerateCert() {
 	//cert generator in sealos
-	hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
-	GenerateCert(v1.CertPath, v1.CertEtcdPath, v1.APIServerCertSANs, iputils.IPFormat(s.Masters[0]), hostname, v1.SvcCIDR, v1.DNSDomain)
+	//hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
+	GenerateCert(v1.CertPath, v1.CertEtcdPath, v1.APIServerCertSANs, iputils.IPFormat(s.Masters[0]), "hostname", v1.SvcCIDR, v1.DNSDomain)
 	//copy all cert to master0
 	//CertSA(kye,pub) + CertCA(key,crt)
 	//s.sendNewCertAndKey(s.Masters)
@@ -172,7 +172,7 @@ func (s *SealosInstaller) GenerateCert() {
 }
 
 func (s *SealosInstaller) CreateKubeconfig() {
-	hostname := ssh.RemoteHostName(v1.SSHConfig, s.Masters[0])
+	hostname,_ := v1.SSHConfig.CmdToString( s.Masters[0],"","")
 
 	certConfig := cert2.Config{
 		Path:     v1.CertPath,
@@ -181,7 +181,7 @@ func (s *SealosInstaller) CreateKubeconfig() {
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", v1.APIServer)
 
-	err := cert2.CreateJoinControlPlaneKubeConfigFiles(v1.DefaultConfigPath,
+	err := cert2.CreateJoinControlPlaneKubeConfigFiles(contants.DefaultConfigPath,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)
@@ -205,7 +205,7 @@ func (s *SealosInstaller) InstallMaster0() {
 
 	cmd = s.Command(v1.Version, InitMaster)
 
-	output := v1.SSHConfig.Cmd(s.Masters[0], cmd)
+	output,_ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
 	if output == nil {
 		logger.Error("[%s] install kubernetes failed. please clean and uninstall.", s.Masters[0])
 		os.Exit(1)
@@ -230,7 +230,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
 		var metajson string
 		var tmpdata v1.Metadata
-		metajson = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
+		metajson,_ = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
 		err := json.Unmarshal([]byte(metajson), &tmpdata)
 		if err != nil {
 			logger.Warn("get metadata version err: ", err)
@@ -246,7 +246,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		CniRepo:   v1.Repo,
 		Version:   cniVersion,
 	}).Manifests("")
-	configYamlPath := filepath.Join(v1.DefaultConfigPath, "cni.yaml")
+	configYamlPath := filepath.Join(contants.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
 	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
 	v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")

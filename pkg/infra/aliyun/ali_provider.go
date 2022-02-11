@@ -248,7 +248,7 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
-	if err := v1beta1.Default(a.Infra, DefaultInfra); err != nil {
+	if err := v1beta1.DefaultCluster(a.Infra, DefaultInfra); err != nil {
 		return err
 	}
 	if err := validation.ValidateInfra(a.Infra, DefaultValidate); len(err) != 0 {

@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/types/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
@@ -109,7 +108,7 @@ func MkDirs(dirs ...string) error {
 }
 
 func MkTmpdir() (string, error) {
-	tempDir, err := ioutil.TempDir(contants.DefaultTmpDir, ".DTmp-")
+	tempDir, err := ioutil.TempDir(DefaultTmpDir, ".DTmp-")
 	if err != nil {
 		return "", err
 	}

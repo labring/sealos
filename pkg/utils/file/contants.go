@@ -1,5 +1,5 @@
 /*
-Copyright 2021 cuisongliu@qq.com.
+Copyright 2022 cuisongliu@qq.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,20 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package file
 
-func DefaultCluster(infra *Infra, fn func(infra *Infra) error) error {
-	defaultCluster(infra)
-	defaultHosts(infra)
-	defaultToStatus(infra)
-	return fn(infra)
-}
-
-func In(key string, slice []string) bool {
-	for _, s := range slice {
-		if key == s {
-			return true
-		}
-	}
-	return false
-}
+const DefaultTmpDir = "/var/lib/sealyun/tmp"

@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/types/contants"
 	"os"
 	"strings"
 	"sync"
@@ -28,10 +29,8 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
-
 	"github.com/fanux/sealos/pkg/ipvs"
+	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 )
 
 type SealosClean struct {
@@ -110,7 +109,7 @@ end:
 	i.Clean()
 	if i.cleanAll {
 		logger.Info("if clean all and clean sealos config")
-		cfgPath := v1.DefaultConfigPath
+		cfgPath := contants.DefaultConfigPath
 		_, _ = exec.RunSimpleCmd("rm -rf " + cfgPath)
 	}
 }
@@ -155,9 +154,10 @@ func (s *SealosClean) cleanNode(node string) {
 	if !s.cleanAll {
 		logger.Debug("clean node in master")
 		if len(v1.MasterIPs) > 0 {
-			hostname := ssh.HostName(v1.SSHConfig, v1.MasterIPs[0], node)
+			//TODO 判断master上是否已经存在这个host
+			//hostname := ssh.HostName(v1.SSHConfig, v1.MasterIPs[0], node)
 			cmd := "kubectl delete node %s"
-			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 	}
 }
@@ -169,9 +169,9 @@ func (s *SealosClean) cleanMaster(master string) {
 	if !s.cleanAll {
 		logger.Debug("clean node in master")
 		if len(v1.MasterIPs) > 0 {
-			hostname := ssh.HostName(v1.SSHConfig, v1.MasterIPs[0], master)
+			//hostname := ssh.HostName(v1.SSHConfig, v1.MasterIPs[0], master)
 			cmd := "kubectl delete node %s"
-			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace(hostname)))
+			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 		//清空所有的nodes的数据
 		yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage)
@@ -220,7 +220,7 @@ func clean(host string) {
 func cleanRoute(node string) {
 	// clean route
 	cmdRoute := fmt.Sprintf("sealos route --host %s", iputils.IPFormat(node))
-	status := v1.SSHConfig.CmdToString(node, cmdRoute, "")
+	status,_ := v1.SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 删除为 vip创建的路由。
 		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))

@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
@@ -75,7 +76,7 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	deleteNodes := iputils.ParseIPs(v1.NodeIPs)
 	deleteMasters := iputils.ParseIPs(v1.MasterIPs)
 	c := &v1.SealConfig{}
-	if err := c.Load(cfgFile); err != nil {
+	if err := c.Load(boot.ConfigFilePath); err != nil {
 		logger.Error(err)
 		os.Exit(-1)
 	}
@@ -92,7 +93,7 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	install.BuildClean(deleteNodes, deleteMasters)
-	c.Dump(cfgFile)
+	c.Dump(boot.ConfigFilePath)
 }
 
 // IsExistNodes

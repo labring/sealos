@@ -31,8 +31,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
-
 	clientv3 "go.etcd.io/etcd/client/v3"
 	"go.etcd.io/etcd/client/v3/snapshot"
 	"go.uber.org/zap"
@@ -117,7 +115,10 @@ func (e *EtcdFlags) Save(isK8sMaster bool) error {
 	// 如果不存在， 说明在docker容器或者sealos执行的时候， 不在master0上
 	if isK8sMaster {
 		// 复制本机的snapshot 到 各master节点 上。
-		ssh.CopyFiles(v1.SSHConfig, e.LongName, e.EtcdHosts, e.BackDir, nil, nil)
+		for _, p := range e.EtcdHosts {
+			v1.SSHConfig.Copy(p, e.LongName, e.BackDir)
+		}
+
 	}
 	logger.Info("Finished saving snapshot [%s]", e.Name)
 	return nil

@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
 	"time"
 
@@ -112,16 +113,16 @@ func NewEtcdHealthCommand() *cobra.Command {
 }
 
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetEtcdBackFlags(cfgFile)
+	e := install.GetEtcdBackFlags(boot.ConfigFilePath)
 	if err := e.Save(v1.IsK8sMaster); err == nil {
-		e.Dump(cfgFile)
+		e.Dump(boot.ConfigFilePath)
 	}
 	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
 	e.HealthCheck()
 }
 
 func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetRestoreFlags(cfgFile)
+	e := install.GetRestoreFlags(boot.ConfigFilePath)
 	// restore need interactive to confirm
 	if !force {
 		prompt := fmt.Sprintf("Are you sure to exec restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
@@ -159,6 +160,6 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 func EtcdHealthCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetHealthFlag(cfgFile)
+	e := install.GetHealthFlag(boot.ConfigFilePath)
 	e.HealthCheck()
 }

@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
@@ -53,7 +54,7 @@ func JoinCmdFunc(cmd *cobra.Command, args []string) {
 	beforeMasters := iputils.ParseIPs(v1.MasterIPs)
 
 	c := &v1.SealConfig{}
-	if err := c.Load(cfgFile); err != nil {
+	if err := c.Load(boot.ConfigFilePath); err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
 		os.Exit(0)
@@ -68,5 +69,5 @@ func JoinCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	install.BuildJoin(beforeMasters, beforeNodes)
-	c.Dump(cfgFile)
+	c.Dump(boot.ConfigFilePath)
 }

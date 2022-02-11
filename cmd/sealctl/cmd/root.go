@@ -16,26 +16,16 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/file"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
-
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
-)
-
-var (
-	cfgFile string
-	Info    bool
-	feature bool
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "sealos",
-	Short: "simplest way install kubernetes tools.",
+	Use:   "sealctl",
+	Short: "tools for sealos.",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -51,22 +41,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sealos/config.yaml)")
-	rootCmd.PersistentFlags().BoolVar(&feature, "feature", false, "need use new feature. ex app feature")
-	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger ture for Info, false for Debug")
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	// Find home directory.
-	configPath := v1.DefaultConfigPath
-	logFile := fmt.Sprintf("%s/sealos.log", configPath)
-	if !file.IsExist(configPath) {
-		err := os.MkdirAll(configPath, os.ModePerm)
-		if err != nil {
-			fmt.Println("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
-		}
-	}
-	logger.Cfg(!Info, logFile)
+	cobra.OnInitialize(boot.OnBootOnDie)
+	rootCmd.PersistentFlags().StringVar(&boot.ConfigDir, "config", "", "config dir (default is $HOME/.sealos)")
+	rootCmd.PersistentFlags().BoolVar(&boot.Debug, "debug", false, "enable debug logger")
 }

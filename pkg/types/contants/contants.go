@@ -16,7 +16,13 @@ limitations under the License.
 
 package contants
 
+import "github.com/fanux/sealos/pkg/utils/file"
+
 const (
-	DefaultLvsCareImage = "sealyun.hub:5000/fanux/lvscare:latest"
-	DefaultTmpDir       = "/var/lib/sealos/tmp"
+	DefaultLvsCareImage = "sealyun.hub:5000/sealyun/lvscare:latest"
+	DefaultConfigFile   = "/config.yaml"
+)
+
+var (
+	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
 )

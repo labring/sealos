@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
 
 	"github.com/fanux/sealos/pkg/utils/confirm"
@@ -63,11 +64,11 @@ func UpgradeCmdFunc(cmd *cobra.Command, args []string) {
 	}
 	u := install.NewUpgrade(newVersion, newPkgURL)
 	u.SetUP()
-	u.Dump(cfgFile)
+	u.Dump(boot.ConfigFilePath)
 }
 
 func PreRunUpgradeCmdFunc(cmd *cobra.Command, args []string) {
-	if err := install.ExitUpgradeCase(newVersion, newPkgURL, cfgFile); err != nil {
+	if err := install.ExitUpgradeCase(newVersion, newPkgURL, boot.ConfigFilePath); err != nil {
 		logger.Error("PreRun error: ", err)
 		os.Exit(1)
 	}
