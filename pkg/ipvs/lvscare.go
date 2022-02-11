@@ -29,11 +29,10 @@ import (
 )
 
 const (
-	LvsCareStaticPodName = "kube-sealyun-lvscare"
 	LvsCareCommand       = "/usr/bin/lvscare"
 )
 
-func LvsStaticPodYaml(vip string, masters []string, image string) string {
+func LvsStaticPodYaml(vip string, masters []string, image,name string) string {
 	if vip == "" || len(masters) == 0 {
 		return ""
 	}
@@ -50,7 +49,7 @@ func LvsStaticPodYaml(vip string, masters []string, image string) string {
 	}
 	flag := true
 	pod := componentPod(v1.Container{
-		Name:            LvsCareStaticPodName,
+		Name:            name,
 		Image:           image,
 		Command:         []string{LvsCareCommand},
 		Args:            args,

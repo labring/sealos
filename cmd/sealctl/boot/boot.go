@@ -30,10 +30,7 @@ func initConfig() {
 	logger.Cfg(Debug, ConfigDir, "sealctl")
 }
 
-func initRootDirectory() error {
-	var rootDirs = []string{
-		ConfigDir,
-	}
+func InitRootDirectory(rootDirs []string) error {
 	for _, dir := range rootDirs {
 		err := os.MkdirAll(dir, 0755)
 		if err != nil {
@@ -44,8 +41,10 @@ func initRootDirectory() error {
 }
 
 func OnBootOnDie() {
-	if err := initRootDirectory(); err != nil {
-		panic(1)
+
+	if err := InitRootDirectory([]string{ConfigDir}); err != nil {
+		logger.Error("onBoot is error: %v", err)
+		os.Exit(1)
 	}
 	initConfig()
 }

@@ -15,8 +15,10 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/install"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/cert"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 type Flag struct {
@@ -37,7 +39,11 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		install.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIDR, config.DNSDomain)
+		err := cert.GenerateCert(config.CertPath, config.CertEtcdPath, config.AltNames, config.NodeIP, config.NodeName, config.ServiceCIDR, config.DNSDomain)
+		if err != nil {
+			logger.Error(err)
+			os.Exit(-1)
+		}
 	},
 }
 
@@ -52,14 +58,4 @@ func init() {
 	certCmd.Flags().StringVar(&config.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
 	certCmd.Flags().StringVar(&config.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
 	certCmd.Flags().StringVar(&config.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// certCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// certCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

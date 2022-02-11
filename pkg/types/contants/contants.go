@@ -19,8 +19,9 @@ package contants
 import "github.com/fanux/sealos/pkg/utils/file"
 
 const (
-	DefaultLvsCareImage = "sealyun.hub:5000/sealyun/lvscare:latest"
-	DefaultConfigFile   = "/config.yaml"
+	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
+	DefaultConfigFile    = "/config.yaml"
+	LvsCareStaticPodName = "kube-sealyun-lvscare"
 )
 
 var (

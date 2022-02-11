@@ -174,7 +174,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 		//清空所有的nodes的数据
-		yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage)
+		yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
 		var wg sync.WaitGroup
 		for _, node := range v1.NodeIPs {
 			wg.Add(1)
@@ -220,7 +220,7 @@ func clean(host string) {
 func cleanRoute(node string) {
 	// clean route
 	cmdRoute := fmt.Sprintf("sealos route --host %s", iputils.IPFormat(node))
-	status,_ := v1.SSHConfig.CmdToString(node, cmdRoute, "")
+	status, _ := v1.SSHConfig.CmdToString(node, cmdRoute, "")
 	if status != "ok" {
 		// 删除为 vip创建的路由。
 		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))
