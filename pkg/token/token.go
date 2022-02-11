@@ -17,7 +17,6 @@ limitations under the License.
 package token
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	v1 "github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
@@ -25,8 +24,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/kubernetes/join"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	"github.com/pkg/errors"
-	"html/template"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"time"
 )
@@ -41,7 +38,7 @@ type Token struct {
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Master(apiserver string) *Token {
+func Master() *Token {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		key, _ := join.CreateCertificateKey()
@@ -61,12 +58,6 @@ func Master(apiserver string) *Token {
 				return token
 			}
 			token.DiscoveryTokenCaCertHash = hashs
-			cmd, err := printJoinCommand(apiserver, token.JoinToken, token.CertificateKey, hashs, true)
-			if err != nil {
-				token.Message = err.Error()
-				return token
-			}
-			token.Command = cmd
 			return token
 		}
 		token.Message = fmt.Sprintf("token list found more than one")
@@ -80,7 +71,7 @@ func Master(apiserver string) *Token {
 //kubeadm init phase upload-certs --upload-certs --certificate-key %s
 //kubeadm token create --print-join-command --certificate-key %s
 
-func Node(apiserver string) *Token {
+func Node() *Token {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		tokens := ListToken()
@@ -91,12 +82,7 @@ func Node(apiserver string) *Token {
 				token.Message = err.Error()
 				return token
 			}
-			cmd, err := printJoinCommand(apiserver, token.JoinToken, "", hashs, false)
-			if err != nil {
-				token.Message = err.Error()
-				return token
-			}
-			return &Token{JoinToken: tokens[0].Token.String(), Command: cmd}
+			return &Token{JoinToken: tokens[0].Token.String(), DiscoveryTokenCaCertHash: hashs}
 		}
 		token.Message = fmt.Sprintf("token not found")
 	}
@@ -142,25 +128,4 @@ func (c BootstrapTokens) ToStrings() sets.String {
 		s.Insert(token.Token.String())
 	}
 	return s
-}
-
-var joinCommandTemplate = template.Must(template.New("join").Parse(`` +
-	`kubeadm join {{.ControlPlaneHostPort}} --token {{.Token}}{{range $h := .CAPubKeyPins}} --discovery-token-ca-cert-hash {{$h}} {{end}}{{if .ControlPlane}}--control-plane {{if .CertificateKey}}--certificate-key {{.CertificateKey}}{{end}}{{end}}`,
-))
-
-func printJoinCommand(apiserver, token, certificateKey string, publicKeyPins []string, controlPlane bool) (string, error) {
-	ctx := map[string]interface{}{
-		"Token":                token,
-		"CAPubKeyPins":         publicKeyPins,
-		"ControlPlaneHostPort": apiserver,
-		"CertificateKey":       certificateKey,
-		"ControlPlane":         controlPlane,
-	}
-
-	var out bytes.Buffer
-	err := joinCommandTemplate.Execute(&out, ctx)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to render join command template")
-	}
-	return out.String(), nil
 }

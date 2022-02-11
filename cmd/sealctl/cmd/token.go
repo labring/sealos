@@ -22,23 +22,21 @@ import (
 
 func NewTokenCmd() *cobra.Command {
 	var master bool
-	var apiserver string
 	var cmd = &cobra.Command{
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
 			var t *token.Token
 			if master {
-				t = token.Master(apiserver)
+				t = token.Master()
 			} else {
-				t = token.Node(apiserver)
+				t = token.Node()
 			}
 			data, _ := json.Marshal(t)
 			println(string(data))
 		},
 	}
 	cmd.Flags().BoolVar(&master, "master", false, "generator token type")
-	cmd.Flags().StringVar(&apiserver, "apiserver", "apiserver.cluster.local:6443", "generator apiserver addr")
 
 	return cmd
 }
