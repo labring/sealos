@@ -54,7 +54,10 @@ jobs:
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
           ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64
-
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64/sealctl oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealctl
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealctl-arm64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64/sealctl oss://${BUCKETNAME:-sealyun}/latest/sealctl
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun}/latest/sealctl-arm64
       - name: set up buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v1

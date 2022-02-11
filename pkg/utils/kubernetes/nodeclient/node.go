@@ -17,13 +17,13 @@ package nodeclient
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/types/contants"
 	"time"
 
 	"github.com/fanux/sealos/pkg/utils/strings"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	v12 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,7 +43,7 @@ const (
 )
 
 var (
-	KubeDefaultConfigPath = v12.DefaultConfigPath + "/admin.conf"
+	KubeDefaultConfigPath = contants.DefaultConfigPath + "/admin.conf"
 )
 
 // NewClient is get clientSet by kubeConfig

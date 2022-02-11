@@ -27,7 +27,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
 
 	"go.etcd.io/etcd/etcdutl/v3/snapshot"
 	"go.uber.org/zap"
@@ -104,7 +103,7 @@ func (e *EtcdFlags) StopPod() (string, error) {
 // RestoreAll is restore all ETCD nodes
 func (e *EtcdFlags) RestoreAll() {
 	for _, host := range e.EtcdHosts {
-		hostname := v1.SSHConfig.CmdToString(host, "hostname", "")
+		hostname, _ := v1.SSHConfig.CmdToString(host, "hostname", "")
 		// remove first
 		cmd := fmt.Sprintf("rm -rf %s-%s", e.RestoreDir, hostname)
 		_ = CmdWork(host, cmd, TMPDIR)
@@ -147,7 +146,7 @@ func (e *EtcdFlags) restore(hostname, host string) {
 func (e *EtcdFlags) AfterRestore() error {
 	// first to mv every
 	for _, host := range e.EtcdHosts {
-		hostname := v1.SSHConfig.CmdToString(host, "hostname", "")
+		hostname, _ := v1.SSHConfig.CmdToString(host, "hostname", "")
 		// /opt/sealos/etcd-restore-dev-k8s-master
 		location := fmt.Sprintf("%s-%s", e.RestoreDir, hostname)
 		//
@@ -162,7 +161,8 @@ func (e *EtcdFlags) AfterRestore() error {
 		// 复制并解压到相应目录
 		// use quiet to tar
 		AfterHook := fmt.Sprintf(`tar xf %s -C /var/lib/  && mv /var/lib/%s  %s && rm -rf %s`, sdtTmpTar, filepath.Base(location), ETCDDATADIR, sdtTmpTar)
-		ssh.CopyFiles(v1.SSHConfig, tmpFile, []string{host}, "/var/lib", nil, &AfterHook)
+		v1.SSHConfig.Copy(host, tmpFile, "/var/lib")
+		v1.SSHConfig.Cmd(host, AfterHook)
 		//logger.Info("send etcd.zip to hosts")
 	}
 
@@ -208,7 +208,7 @@ func (e *EtcdFlags) RecoveryKuBeCluster(dir string) {
 func GetEtcdInitialCluster(hosts []string) string {
 	initialCluster := ""
 	for i, host := range hosts {
-		hostname := v1.SSHConfig.CmdToString(host, "hostname", "")
+		hostname,_ := v1.SSHConfig.CmdToString(host, "hostname", "")
 		ip := reFormatHostToIP(host)
 		initialCluster += fmt.Sprintf("etcd-%s=https://%s:2380", hostname, ip)
 		if i < (len(hosts) - 1) {

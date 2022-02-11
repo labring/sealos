@@ -7,6 +7,9 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    main: ./cmd/sealos
+    id: sealos
+    binary: sealos
     goos:
       - linux
       - darwin
@@ -18,6 +21,23 @@ builds:
       - -X github.com/fanux/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/fanux/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/sealctl
+    id: sealctl
+    binary: sealctl
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -X github.com/fanux/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/fanux/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/fanux/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
 #archives:
 #  - replacements:
 #      darwin: Darwin

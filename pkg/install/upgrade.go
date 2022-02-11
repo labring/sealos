@@ -182,8 +182,9 @@ func (u *SealosUpgrade) SetIPtoHostName() {
 	all := append(u.Masters, u.Nodes...)
 	u.IPtoHostName = make(map[string]string, len(all))
 	for _, node := range all {
-		hostname := v1.SSHConfig.CmdToString(node, "hostname", "")
-		u.IPtoHostName[node] = hostname
+		//TODO
+		//hostname := v1.SSHConfig.CmdToString(node, "hostname", "")
+		u.IPtoHostName[node] = "hostname"
 	}
 }
 

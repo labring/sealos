@@ -1,5 +1,5 @@
 /*
-Copyright 2021 cuisongliu@qq.com.
+Copyright 2022 cuisongliu@qq.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,41 +17,111 @@ limitations under the License.
 package token
 
 import (
-	"context"
-
-	"github.com/fanux/sealos/pkg/utils/kubernetes/apiclient"
-	"github.com/fanux/sealos/pkg/utils/kubernetes/apis/kubeadm"
-
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientset "k8s.io/client-go/kubernetes"
-	bootstraputil "k8s.io/cluster-bootstrap/token/util"
+	"encoding/json"
+	"fmt"
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/token/bootstraptoken/v1"
+	"github.com/fanux/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"time"
 )
 
-// CreateNewTokens tries to create a token and fails if one with the same ID already exists
-func CreateNewTokens(client clientset.Interface, token kubeadm.BootstrapToken) error {
-	return UpdateOrCreateTokens(client, true, token)
+type Token struct {
+	JoinToken                string   `json:"token,omitempty"`
+	DiscoveryTokenCaCertHash []string `json:"discovery-token-ca-cert-hash,omitempty"`
+	CertificateKey           string   `json:"certificate-key,omitempty"`
+	Command                  string   `json:"command,omitempty"`
+	Message                  string   `json:"message,omitempty"`
 }
 
-// UpdateOrCreateTokens attempts to update a token with the given ID, or create if it does not already exist.
-func UpdateOrCreateTokens(client clientset.Interface, failIfExists bool, token kubeadm.BootstrapToken) error {
-	secretName := bootstraputil.BootstrapTokenSecretName(token.Token.ID)
-	secret, err := client.CoreV1().Secrets(metav1.NamespaceSystem).Get(context.TODO(), secretName, metav1.GetOptions{})
-	if secret != nil && err == nil && failIfExists {
-		return errors.Errorf("a token with id %q already exists", token.Token.ID)
-	}
+const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-	updatedOrNewSecret := token.ToSecret()
-	// Try to create or update the token with an exponential backoff
-	err = apiclient.TryRunCommand(func() error {
-		if err := apiclient.CreateOrUpdateSecret(client, updatedOrNewSecret); err != nil {
-			return errors.Wrapf(err, "failed to create or update bootstrap token with name %s", secretName)
+func Master() *Token {
+	token := &Token{}
+	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
+		key, _ := CreateCertificateKey()
+		token.CertificateKey = key
+		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
+		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
+		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s"
+		tokens := ListToken()
+		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
+		afterTokens := ListToken()
+		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
+		if diff.Len() == 1 {
+			token.JoinToken = diff.List()[0]
+			hashs, err := discoveryTokenCaCertHash()
+			if err != nil {
+				token.Message = err.Error()
+				return token
+			}
+			token.DiscoveryTokenCaCertHash = hashs
+			return token
 		}
-		return nil
-	}, 5)
-
-	if err != nil {
-		return err
+		token.Message = fmt.Sprintf("token list found more than one")
+	} else {
+		token.Message = fmt.Sprintf("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
 	}
-	return nil
+
+	return token
+}
+
+func Node() *Token {
+	token := &Token{}
+	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
+		tokens := ListToken()
+		if len(tokens) > 0 {
+			token.JoinToken = tokens[0].Token.String()
+			hashs, err := discoveryTokenCaCertHash()
+			if err != nil {
+				token.Message = err.Error()
+				return token
+			}
+			return &Token{JoinToken: tokens[0].Token.String(), DiscoveryTokenCaCertHash: hashs}
+		}
+		token.Message = fmt.Sprintf("token not found")
+	}
+	token.Message = fmt.Sprintf("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
+	return token
+}
+
+func ListToken() BootstrapTokens {
+	const tokenListShell = "kubeadm token list -o yaml"
+	data, _ := exec.RunBashCmd(tokenListShell)
+	return processTokenList(data)
+}
+
+func processTokenList(data string) BootstrapTokens {
+	var slice []v1.BootstrapToken
+	if data != "" {
+		jsons := yaml.ToJSON([]byte(data))
+		for _, j := range jsons {
+			var to v1.BootstrapToken
+			_ = json.Unmarshal([]byte(j), &to)
+			slice = append(slice, to)
+		}
+	}
+	var result []v1.BootstrapToken
+	for _, token := range slice {
+		if token.Expires != nil {
+			t := time.Now().Unix()
+			ex := token.Expires.Time.Unix()
+			if ex < t {
+				continue
+			}
+		}
+		result = append(result, token)
+	}
+	return result
+}
+
+type BootstrapTokens []v1.BootstrapToken
+
+func (c BootstrapTokens) ToStrings() sets.String {
+	s := sets.NewString()
+	for _, token := range c {
+		s.Insert(token.Token.String())
+	}
+	return s
 }
