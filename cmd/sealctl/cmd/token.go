@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/token"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/token"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 )

@@ -174,7 +174,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 		//清空所有的nodes的数据
-		yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
+		yaml,_ := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
 		var wg sync.WaitGroup
 		for _, node := range v1.NodeIPs {
 			wg.Add(1)

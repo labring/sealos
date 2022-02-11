@@ -19,10 +19,9 @@ package token
 import (
 	"encoding/json"
 	"fmt"
-	v1 "github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/kubernetes/join"
+	"github.com/fanux/sealos/pkg/utils/kubernetes/token/bootstraptoken/v1"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"time"
@@ -41,7 +40,7 @@ const defaultAdminConf = "/etc/kubernetes/admin.conf"
 func Master() *Token {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
-		key, _ := join.CreateCertificateKey()
+		key, _ := CreateCertificateKey()
 		token.CertificateKey = key
 		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
 		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
@@ -67,9 +66,6 @@ func Master() *Token {
 
 	return token
 }
-
-//kubeadm init phase upload-certs --upload-certs --certificate-key %s
-//kubeadm token create --print-join-command --certificate-key %s
 
 func Node() *Token {
 	token := &Token{}

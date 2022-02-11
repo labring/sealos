@@ -57,17 +57,21 @@ func NewLvscareCmd() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			fileName := fmt.Sprintf("%s.yaml", name)
-			yaml := ipvs.LvsStaticPodYaml(vip, masters, image, name)
+			yaml, err := ipvs.LvsStaticPodYaml(vip, masters, image, name)
+			if err != nil {
+				logger.Error(err)
+				os.Exit(1)
+			}
 			if printBool {
 				println(yaml)
 				return
 			}
 			logger.Debug("lvscare static pod yaml is %s", yaml)
-			if err := boot.InitRootDirectory([]string{staticPodPath}); err != nil {
+			if err = boot.InitRootDirectory([]string{staticPodPath}); err != nil {
 				logger.Error("init dir is error: %v", err)
 				os.Exit(1)
 			}
-			err := ioutil.WriteFile(path.Join(staticPodPath, fileName), []byte(yaml), 0755)
+			err = ioutil.WriteFile(path.Join(staticPodPath, fileName), []byte(yaml), 0755)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)

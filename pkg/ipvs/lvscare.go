@@ -15,9 +15,8 @@
 package ipvs
 
 import (
+	"fmt"
 	"strings"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/types/contants"
 
@@ -29,12 +28,12 @@ import (
 )
 
 const (
-	LvsCareCommand       = "/usr/bin/lvscare"
+	LvsCareCommand = "/usr/bin/lvscare"
 )
 
-func LvsStaticPodYaml(vip string, masters []string, image,name string) string {
+func LvsStaticPodYaml(vip string, masters []string, image, name string) (string, error) {
 	if vip == "" || len(masters) == 0 {
-		return ""
+		return "", fmt.Errorf("vip and mster not allow empty")
 	}
 	if image == "" {
 		image = contants.DefaultLvsCareImage
@@ -58,10 +57,9 @@ func LvsStaticPodYaml(vip string, masters []string, image,name string) string {
 	})
 	yaml, err := podToYaml(pod)
 	if err != nil {
-		logger.Error("decode lvs care static pod yaml failed %s", err)
-		return ""
+		return "", err
 	}
-	return string(yaml)
+	return string(yaml), nil
 }
 
 func podToYaml(pod v1.Pod) ([]byte, error) {

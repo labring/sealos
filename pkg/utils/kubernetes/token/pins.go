@@ -17,12 +17,15 @@ limitations under the License.
 package token
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
-	"github.com/fanux/sealos/pkg/utils/kubernetes/kubeconfig"
-	"github.com/fanux/sealos/pkg/utils/kubernetes/pubkeypin"
+	"encoding/hex"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
+	"strings"
 )
 
 func discoveryTokenCaCertHash() ([]string, error) {
@@ -31,7 +34,7 @@ func discoveryTokenCaCertHash() ([]string, error) {
 		return nil, err
 	}
 	// load the default cluster config
-	clusterConfig := kubeconfig.GetClusterFromKubeConfig(tlsBootstrapCfg)
+	clusterConfig := GetClusterFromKubeConfig(tlsBootstrapCfg)
 	if clusterConfig == nil {
 		return nil, errors.New("failed to get default cluster config")
 	}
@@ -55,7 +58,54 @@ func discoveryTokenCaCertHash() ([]string, error) {
 	// hash all the CA certs and include their public key pins as trusted values
 	publicKeyPins := make([]string, 0, len(caCerts))
 	for _, caCert := range caCerts {
-		publicKeyPins = append(publicKeyPins, pubkeypin.Hash(caCert))
+		publicKeyPins = append(publicKeyPins, Hash(caCert))
 	}
 	return publicKeyPins, nil
+}
+
+// CreateRandBytes returns a cryptographically secure slice of random bytes with a given size
+func CreateRandBytes(size uint32) ([]byte, error) {
+	bytes := make([]byte, size)
+	if _, err := rand.Read(bytes); err != nil {
+		return nil, err
+	}
+	return bytes, nil
+}
+
+const (
+	CertificateKeySize = 32
+)
+
+//CreateCertificateKey returns a cryptographically secure random key
+func CreateCertificateKey() (string, error) {
+	randBytes, err := CreateRandBytes(CertificateKeySize)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(randBytes), nil
+}
+
+// GetClusterFromKubeConfig returns the default Infra of the specified KubeConfig
+func GetClusterFromKubeConfig(config *clientcmdapi.Config) *clientcmdapi.Cluster {
+	// If there is an unnamed cluster object, use it
+	if config.Clusters[""] != nil {
+		return config.Clusters[""]
+	}
+	if config.Contexts[config.CurrentContext] != nil {
+		return config.Clusters[config.Contexts[config.CurrentContext].Cluster]
+	}
+	return nil
+}
+
+const (
+	// formatSHA256 is the prefix for pins that are full-length SHA-256 hashes encoded in base 16 (hex)
+	formatSHA256 = "sha256"
+)
+
+// Hash calculates the SHA-256 hash of the Subject Public Key Information (SPKI)
+// object in an x509 certificate (in DER encoding). It returns the full hash as a
+// hex encoded string (suitable for passing to Set.Allow).
+func Hash(certificate *x509.Certificate) string {
+	spkiHash := sha256.Sum256(certificate.RawSubjectPublicKeyInfo)
+	return formatSHA256 + ":" + strings.ToLower(hex.EncodeToString(spkiHash[:]))
 }

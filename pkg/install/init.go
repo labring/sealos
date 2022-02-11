@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/fanux/sealos/pkg/cni"
 	"github.com/fanux/sealos/pkg/types/contants"
 	"io"
 	"io/ioutil"
@@ -32,8 +33,6 @@ import (
 	"github.com/fanux/sealos/pkg/config"
 	cert2 "github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	"github.com/fanux/sealos/pkg/utils/cni"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 )
