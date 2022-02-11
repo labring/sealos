@@ -15,78 +15,81 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/fanux/sealos/cmd/sealctl/boot"
-	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/passwd"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
-	"path"
 )
 
-
-
-func NewStaticPodCmd() *cobra.Command {
+func NewPasswordCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "static-pod",
-		Short: "generator static pod",
+		Use:   "password",
+		Short: "generator password",
 		//Run: func(cmd *cobra.Command, args []string) {
 		//
 		//},
 	}
 	// check route for host
-	cmd.AddCommand(NewLvscareCmd())
+	cmd.AddCommand(NewRegistryCmd())
+	cmd.AddCommand(NewContainerdCmd())
 	return cmd
 }
 
-func NewLvscareCmd() *cobra.Command {
-	var vip, image, name string
-	var masters []string
+func NewRegistryCmd() *cobra.Command {
+	var pwdPath, username, password string
 	var printBool bool
-	var staticPodPath string
 	var cmd = &cobra.Command{
-		Use:   "lvscare",
-		Short: "generator lvscare static pod file",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if len(masters) == 0 {
-				return fmt.Errorf("master not allow empty")
-			}
-			return nil
-		},
+		Use:   "registry",
+		Short: "generator registry password and file",
 		Run: func(cmd *cobra.Command, args []string) {
-			fileName := fmt.Sprintf("%s.yaml", name)
-			yaml := ipvs.LvsStaticPodYaml(vip, masters, image, name)
+			pwd := passwd.Htpasswd(username, password)
 			if printBool {
-				println(yaml)
+				println(pwd)
 				return
 			}
-			logger.Debug("lvscare static pod yaml is %s", yaml)
-			if err := boot.InitRootDirectory([]string{staticPodPath}); err != nil {
+			logger.Debug("password registry is %s", pwd)
+			if err := boot.InitRootDirectory([]string{pwdPath}); err != nil {
 				logger.Error("init dir is error: %v", err)
 				os.Exit(1)
 			}
-			err := ioutil.WriteFile(path.Join(staticPodPath, fileName), []byte(yaml), 0755)
+			err := ioutil.WriteFile(pwdPath, []byte(pwd), 0755)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)
 			}
-			logger.Info("generator lvscare static pod is success")
+			logger.Info("generator registry password  is success")
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "default vip IP")
-	cmd.Flags().StringVar(&name, "name", contants.LvsCareStaticPodName, "generator lvscare static pod name")
-	cmd.Flags().StringVar(&image, "image", contants.DefaultLvsCareImage, "generator lvscare static pod image")
-	cmd.Flags().StringSliceVar(&masters, "masters", nil, "generator masters addrs")
-	cmd.Flags().StringVar(&staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
-	cmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
+	cmd.Flags().StringVar(&pwdPath, "path", "/etc/registry/registry_htpasswd", "default password file")
+	cmd.Flags().StringVar(&username, "username", "admin", "username")
+	cmd.Flags().StringVar(&password, "password", "admin", "password")
+
+	cmd.Flags().BoolVar(&printBool, "print", false, "is print")
+
+	return cmd
+}
+func NewContainerdCmd() *cobra.Command {
+	var username, password string
+	var cmd = &cobra.Command{
+		Use:   "containerd",
+		Short: "generator containerd password",
+		Run: func(cmd *cobra.Command, args []string) {
+			pwd := passwd.LoginAuth(username, password)
+			println(pwd)
+		},
+	}
+	// manually to set host via gateway
+	cmd.Flags().StringVar(&username, "username", "admin", "username")
+	cmd.Flags().StringVar(&password, "password", "admin", "password")
+
 	return cmd
 }
 
 func init() {
-	rootCmd.AddCommand(NewStaticPodCmd())
+	rootCmd.AddCommand(NewPasswordCmd())
 
 	// Here you will define your flags and configuration settings.
 
