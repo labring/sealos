@@ -16,8 +16,10 @@ package cmd
 
 import (
 	"github.com/fanux/sealos/pkg/utils/kubernetes/token"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
+	"os"
 )
 
 func NewTokenCmd() *cobra.Command {
@@ -27,10 +29,15 @@ func NewTokenCmd() *cobra.Command {
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
 			var t *token.Token
+			var err error
 			if master {
-				t = token.Master()
+				t, err = token.Master()
 			} else {
-				t = token.Node()
+				t, err = token.Node()
+			}
+			if err != nil {
+				logger.Error("exec token error: " + err.Error())
+				os.Exit(1)
 			}
 			data, _ := json.Marshal(t)
 			println(string(data))

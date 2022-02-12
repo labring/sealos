@@ -17,11 +17,12 @@ limitations under the License.
 package cri
 
 import (
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/pelletier/go-toml"
+	"io/ioutil"
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
-
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 
 	"github.com/pkg/errors"
 
@@ -45,7 +46,7 @@ type ContainerRuntime interface {
 	ListKubeContainers() ([]string, error)
 	RemoveContainers(containers []string) error
 	PullImage(image string) error
-	ImageExists(image string) (bool, error)
+	ImageExists(image string) bool
 	CGroupDriver() (string, error)
 }
 
@@ -53,6 +54,7 @@ type ContainerRuntime interface {
 type ContainerdRuntime struct {
 	exec      utilsexec.Interface
 	criSocket string
+	config    string
 }
 
 // DockerRuntime is a struct that interfaces with the Docker daemon
@@ -61,7 +63,7 @@ type DockerRuntime struct {
 }
 
 // NewContainerRuntime sets up and returns a ContainerRuntime struct
-func NewContainerRuntime(execer utilsexec.Interface, criSocket string) (ContainerRuntime, error) {
+func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config string) (ContainerRuntime, error) {
 	var toolName string
 	var runtime ContainerRuntime
 
@@ -73,7 +75,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string) (Containe
 		if filepath.IsAbs(criSocket) && goruntime.GOOS != "windows" {
 			criSocket = "unix://" + criSocket
 		}
-		runtime = &ContainerdRuntime{execer, criSocket}
+		runtime = &ContainerdRuntime{execer, criSocket, config}
 	} else {
 		toolName = "docker"
 		runtime = &DockerRuntime{execer}
@@ -128,15 +130,59 @@ func (runtime *ContainerdRuntime) CGroupDriver() (string, error) {
 	if err := runtime.IsRunning(); err != nil {
 		return "", err
 	}
-	var err error
-	var out []byte
-	if out, err = runtime.exec.Command("crictl", "-r", runtime.criSocket, "info", "-o", "go-template", "--template", "{{.config.systemdCgroup}}").CombinedOutput(); err != nil {
-		return "", errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
+	runtime.configFile()
+	return runtime.processConfigFile()
+}
+
+func (runtime *ContainerdRuntime) configFile() {
+	const defaultConfig = "/etc/containerd/config.toml"
+	if !file.IsExist(runtime.config) {
+		runtime.config = defaultConfig
 	}
-	if strings2.TrimWS(string(out)) == "false" {
-		return DefaultCgroupDriver, nil
+}
+
+func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
+	// Config is a wrapper of server config for printing out.
+	type Config struct {
+		Version int    `toml:"version"`
+		Root    string `toml:"root"`
+		Plugins struct {
+			IoContainerdGrpcV1Cri struct {
+				SandboxImage            string `toml:"sandbox_image"`
+				MaxContainerLogLineSize int    `toml:"max_container_log_line_size"`
+				MaxConcurrentDownloads  int    `toml:"max_concurrent_downloads"`
+				Containerd              struct {
+					Snapshotter        string `toml:"snapshotter"`
+					DefaultRuntimeName string `toml:"default_runtime_name"`
+					Runtimes           struct {
+						Runc struct {
+							RuntimeType   string `toml:"runtime_type"`
+							RuntimeEngine string `toml:"runtime_engine"`
+							RuntimeRoot   string `toml:"runtime_root"`
+							Options       struct {
+								SystemdCgroup bool `toml:"SystemdCgroup"`
+							} `toml:"options"`
+						} `toml:"runc"`
+					} `toml:"runtimes"`
+				} `toml:"containerd"`
+			} `toml:"io.containerd.grpc.v1.cri"`
+		} `toml:"plugins"`
 	}
-	return DefaultSystemdCgroupDriver, nil
+	config := &Config{}
+	if file.IsExist(runtime.config) {
+		data, err := ioutil.ReadFile(runtime.config)
+		if err != nil {
+			return "", err
+		}
+		err = toml.Unmarshal(data, config)
+		if err != nil {
+			return "", err
+		}
+		if config.Plugins.IoContainerdGrpcV1Cri.Containerd.Runtimes.Runc.Options.SystemdCgroup {
+			return DefaultSystemdCgroupDriver, nil
+		}
+	}
+	return DefaultCgroupDriver, nil
 }
 
 // ListKubeContainers lists running k8s CRI pods
@@ -219,15 +265,15 @@ func (runtime *DockerRuntime) PullImage(image string) error {
 }
 
 // ImageExists checks to see if the image exists on the system
-func (runtime *ContainerdRuntime) ImageExists(image string) (bool, error) {
+func (runtime *ContainerdRuntime) ImageExists(image string) bool {
 	err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "inspecti", image).Run()
-	return err == nil, nil
+	return err == nil
 }
 
 // ImageExists checks to see if the image exists on the system
-func (runtime *DockerRuntime) ImageExists(image string) (bool, error) {
+func (runtime *DockerRuntime) ImageExists(image string) bool {
 	err := runtime.exec.Command("docker", "inspect", image).Run()
-	return err == nil, nil
+	return err == nil
 }
 
 // detectCRISocketImpl is separated out only for test purposes, DON'T call it directly, use DetectCRISocket instead

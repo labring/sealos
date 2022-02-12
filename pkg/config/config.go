@@ -17,6 +17,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"github.com/fanux/sealos/pkg/cri"
 	"strings"
 	"text/template"
 
@@ -25,8 +26,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	"github.com/fanux/sealos/pkg/utils/cri"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"sigs.k8s.io/yaml"
