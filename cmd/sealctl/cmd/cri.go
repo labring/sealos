@@ -107,7 +107,7 @@ func NewListKubeContainersCmd() *cobra.Command {
 				println(fmt.Sprintf("%s", strings.Join(containers, ",")))
 				return
 			}
-			logger.Info("container runtime cgroup-driver is %+v", containers)
+			logger.Info("container runtime containers is %+v", containers)
 		},
 	}
 	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
