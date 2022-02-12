@@ -22,8 +22,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var shortPrint bool
-
 var versionCmd = &cobra.Command{
 	Use:     "version",
 	Short:   "version",
@@ -34,7 +32,7 @@ var versionCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if shortPrint {
+		if flag.Version.shortPrint {
 			fmt.Println(version.Get().String())
 		} else {
 			fmt.Println(string(marshalled))
@@ -46,5 +44,5 @@ var versionCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
+	versionCmd.Flags().BoolVar(&flag.Version.shortPrint, "short", false, "if true, print just the version number.")
 }

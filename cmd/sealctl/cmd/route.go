@@ -15,14 +15,10 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/install"
+	"github.com/fanux/sealos/pkg/route"
 	"github.com/spf13/cobra"
 )
 
-var (
-	host      string
-	gatewayIP string
-)
 
 func NewRouteCmd() *cobra.Command {
 	// routeCmd represents the route command
@@ -32,7 +28,7 @@ func NewRouteCmd() *cobra.Command {
 		Run:   RouteCmdFunc,
 	}
 	// check route for host
-	cmd.Flags().StringVar(&host, "host", "", "route host ip address for iFace")
+	cmd.Flags().StringVar(&flag.Route.host, "host", "", "route host ip address for iFace")
 	cmd.AddCommand(NewDelRouteCmd())
 	cmd.AddCommand(NewAddRouteCmd())
 	return cmd
@@ -49,8 +45,8 @@ func NewAddRouteCmd() *cobra.Command {
 		Run:   RouteAddCmdFunc,
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&host, "host", "", "route host ,ex ip route add host via gateway")
-	cmd.Flags().StringVar(&gatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
+	cmd.Flags().StringVar(&flag.Route.host, "host", "", "route host ,ex ip route add host via gateway")
+	cmd.Flags().StringVar(&flag.Route.gatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
 	return cmd
 }
 
@@ -61,22 +57,22 @@ func NewDelRouteCmd() *cobra.Command {
 		Run:   RouteDelCmdFunc,
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&host, "host", "", "route host ,ex ip route del host via gateway")
-	cmd.Flags().StringVar(&gatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
+	cmd.Flags().StringVar(&flag.Route.host, "host", "", "route host ,ex ip route del host via gateway")
+	cmd.Flags().StringVar(&flag.Route.gatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
 	return cmd
 }
 
 func RouteCmdFunc(cmd *cobra.Command, args []string) {
-	r := install.GetRouteFlag(host, gatewayIP)
+	r := route.GetRouteFlag(flag.Route.host, flag.Route.gatewayIP)
 	r.CheckRoute()
 }
 
 func RouteAddCmdFunc(cmd *cobra.Command, args []string) {
-	r := install.GetRouteFlag(host, gatewayIP)
+	r := route.GetRouteFlag(flag.Route.host, flag.Route.gatewayIP)
 	r.SetRoute()
 }
 
 func RouteDelCmdFunc(cmd *cobra.Command, args []string) {
-	r := install.GetRouteFlag(host, gatewayIP)
+	r := route.GetRouteFlag(flag.Route.host, flag.Route.gatewayIP)
 	r.DelRoute()
 }

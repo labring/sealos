@@ -22,8 +22,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var hostsPath string
-
 func NewHostsCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "hosts",
@@ -36,7 +34,7 @@ func NewHostsCmd() *cobra.Command {
 	cmd.AddCommand(NewHostsListCmd())
 	cmd.AddCommand(NewHostsAddCmd())
 	cmd.AddCommand(NewHostsDeleteCmd())
-	cmd.PersistentFlags().StringVar(&hostsPath, "path", "/etc/hosts", "default hosts path")
+	cmd.PersistentFlags().StringVar(&flag.Hosts.HostsPath, "path", "/etc/hosts", "default hosts path")
 	return cmd
 }
 
@@ -45,7 +43,7 @@ func NewHostsListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "hosts manager list",
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: hostsPath}
+			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
 			hf.ListCurrentHosts()
 		},
 	}
@@ -67,7 +65,7 @@ func NewHostsAddCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: hostsPath}
+			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
 			hf.AppendHost(domain, ip)
 		},
 	}
@@ -88,7 +86,7 @@ func NewHostsDeleteCmd() *cobra.Command {
 			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: hostsPath}
+			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
 			hf.DeleteDomain(domain)
 		},
 	}
