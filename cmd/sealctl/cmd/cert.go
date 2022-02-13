@@ -29,6 +29,7 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
+		PrintFlags(cmd.Flags())
 		err := cert.GenerateCert(flag.Cert.CertPath, flag.Cert.CertEtcdPath, flag.Cert.AltNames, flag.Cert.NodeIP, flag.Cert.NodeName, flag.Cert.ServiceCIDR, flag.Cert.DNSDomain)
 		if err != nil {
 			logger.Error(err)

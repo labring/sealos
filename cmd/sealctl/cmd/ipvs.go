@@ -23,6 +23,7 @@ var ipvsCmd = &cobra.Command{
 	Use:   "ipvs",
 	Short: "sealos create or care local ipvs lb",
 	Run: func(cmd *cobra.Command, args []string) {
+		PrintFlags(cmd.Flags())
 		flag.Ipvs.VsAndRsCare()
 	},
 }

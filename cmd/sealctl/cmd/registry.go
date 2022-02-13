@@ -155,3 +155,7 @@ func validateRegistryImagePull() map[string]types.AuthConfig {
 	}
 	return data
 }
+
+func init() {
+	rootCmd.AddCommand(NewRegistryImageCmd())
+}
