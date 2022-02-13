@@ -19,12 +19,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"io"
 	"io/ioutil"
 	"os"
 	"path"
 	"time"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
 	"github.com/distribution/distribution/v3/registry/storage/driver/base"

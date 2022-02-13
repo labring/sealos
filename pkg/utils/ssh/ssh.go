@@ -104,6 +104,7 @@ type Client struct {
 	SSH  Interface
 	Host string
 }
+
 //
 //func NewSSHClientWithCluster(cluster *v1.Cluster) (*Client, error) {
 //	var (

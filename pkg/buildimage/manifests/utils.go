@@ -16,8 +16,9 @@ package manifests
 
 import (
 	"bufio"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 // DecodeImages decode image from yaml content

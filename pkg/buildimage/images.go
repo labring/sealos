@@ -15,13 +15,14 @@
 package buildimage
 
 import (
+	"io/fs"
+	"path/filepath"
+	"strings"
+
 	"github.com/fanux/sealos/pkg/buildimage/manifests"
 	"github.com/fanux/sealos/pkg/utils/file"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	"io/fs"
-	"path/filepath"
-	"strings"
 )
 
 func ParseYamlImages(srcPath string) ([]string, error) {
@@ -39,7 +40,7 @@ func ParseYamlImages(srcPath string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if f.IsDir() || !yaml.YamlMatcher(f.Name()) {
+		if f.IsDir() || !yaml.Matcher(f.Name()) {
 			return nil
 		}
 		ima, err := imageSearcher.ListImages(path)

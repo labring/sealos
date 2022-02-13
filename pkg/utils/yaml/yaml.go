@@ -19,10 +19,11 @@ package yaml
 import (
 	"bytes"
 	"io"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	"path/filepath"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func ToJSON(bs []byte) (jsons []string) {
@@ -41,7 +42,7 @@ func ToJSON(bs []byte) (jsons []string) {
 	return
 }
 
-func YamlMatcher(path string) bool {
+func Matcher(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	return ext == ".yaml" || ext == ".yml"
 }

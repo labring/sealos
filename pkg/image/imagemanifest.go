@@ -25,12 +25,12 @@ import (
 //this package unmarshal manifests from json into a ManifestList struct
 //then choose corresponding manifest by platform
 type ManifestList struct {
-	List      []ImageMainfest `json:"manifests"`
-	MediaType string          `json:"mediaType"`
-	Schema    int             `json:"schemaVersion"`
+	List      []Manifest `json:"manifests"`
+	MediaType string     `json:"mediaType"`
+	Schema    int        `json:"schemaVersion"`
 }
 
-type ImageMainfest struct {
+type Manifest struct {
 	Digest    string `json:"digest"`
 	MediaType string `json:"mediaType"`
 	Platform  v1.Platform

@@ -15,13 +15,12 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
-	"os"
 )
-
-
 
 // certCmd represents the cert command
 var certCmd = &cobra.Command{

@@ -16,6 +16,7 @@ package image
 
 import (
 	"context"
+
 	"github.com/docker/docker/api/types"
 
 	"github.com/docker/docker/pkg/progress"
@@ -23,7 +24,7 @@ import (
 )
 
 //SaveImage can save a list of images of the specified platform
-type ImageSave interface {
+type Save interface {
 	// SaveImages is not concurrently safe
 	SaveImages(images []string, dir string, platform v1.Platform) error
 }
@@ -35,12 +36,12 @@ type DefaultImageSaver struct {
 	auths          map[string]types.AuthConfig
 }
 
-func NewImageSaver(ctx context.Context, auths map[string]types.AuthConfig) ImageSave {
+func NewImageSaver(ctx context.Context, auths map[string]types.AuthConfig) Save {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if auths == nil {
-		auths = make(map[string]types.AuthConfig, 0)
+		auths = make(map[string]types.AuthConfig)
 	}
 	return &DefaultImageSaver{
 		ctx:            ctx,

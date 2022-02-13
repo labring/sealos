@@ -18,8 +18,9 @@ package boot
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"os"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 var Debug bool

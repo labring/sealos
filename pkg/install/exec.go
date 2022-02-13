@@ -137,7 +137,7 @@ func (e *ExecFlag) copyByNodeIP() {
 				logger.Info("[%s] is exist on remote host [%s]. skip...", e.Dst, node)
 				return
 			}
-			v1.SSHConfig.Copy(node, e.Src, e.Dst)
+			_ = v1.SSHConfig.Copy(node, e.Src, e.Dst)
 		}(n)
 	}
 	wg.Wait()

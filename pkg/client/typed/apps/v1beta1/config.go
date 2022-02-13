@@ -18,12 +18,12 @@ package v1beta1
 
 import (
 	"context"
+
 	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ ConfigInterface = &configs{}
-
 
 // ConfigInterface has methods to work with Config resources.
 type ConfigInterface interface {

@@ -16,9 +16,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/fanux/sealos/pkg/types/contants"
-	"os"
 
 	"github.com/spf13/cobra"
 )

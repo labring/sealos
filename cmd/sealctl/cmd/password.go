@@ -15,12 +15,13 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"os"
+
 	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/fanux/sealos/pkg/passwd"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
 )
 
 func NewPasswordCmd() *cobra.Command {

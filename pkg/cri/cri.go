@@ -17,12 +17,13 @@ limitations under the License.
 package cri
 
 import (
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/pelletier/go-toml"
 	"io/ioutil"
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/pelletier/go-toml"
 
 	"github.com/pkg/errors"
 

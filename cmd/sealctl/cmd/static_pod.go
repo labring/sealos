@@ -16,16 +16,16 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path"
+
 	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/fanux/sealos/pkg/ipvs"
 	"github.com/fanux/sealos/pkg/types/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"os"
-	"path"
 )
-
 
 func NewStaticPodCmd() *cobra.Command {
 	var cmd = &cobra.Command{

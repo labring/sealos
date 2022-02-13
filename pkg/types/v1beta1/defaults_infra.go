@@ -17,10 +17,11 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/fanux/sealos/pkg/utils/strings"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"math/rand"
 	"time"
+
+	"github.com/fanux/sealos/pkg/utils/strings"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (

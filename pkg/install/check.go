@@ -55,7 +55,7 @@ func (s *SealosInstaller) CheckValid() {
 	dict := make(map[string]bool)
 	var errList []string
 	for _, h := range s.Hosts {
-		hostname,_ := v1.SSHConfig.CmdToString(h, "hostname", "") //获取主机名
+		hostname, _ := v1.SSHConfig.CmdToString(h, "hostname", "") //获取主机名
 		if hostname == "" {
 			logger.Error("[%s] ------------ check error", h)
 			os.Exit(1)
@@ -84,7 +84,7 @@ func (s *SealosInstaller) CheckValid() {
 		if versionutil.For120(v1.Version) {
 			// for containerd. if docker exist ; exit frist.
 
-			dockerExist,_ := v1.SSHConfig.CmdToString(h, "command -v dockerd &> /dev/null && echo yes || :", "")
+			dockerExist, _ := v1.SSHConfig.CmdToString(h, "command -v dockerd &> /dev/null && echo yes || :", "")
 			if dockerExist == "yes" {
 				errList = append(errList, h)
 			}

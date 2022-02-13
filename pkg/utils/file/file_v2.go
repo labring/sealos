@@ -119,7 +119,6 @@ func MkTmpFile(path string) (*os.File, error) {
 	return ioutil.TempFile(path, ".FTmp-")
 }
 
-
 func WriteFile(fileName string, content []byte) error {
 	dir := filepath.Dir(fileName)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {

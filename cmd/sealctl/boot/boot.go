@@ -18,8 +18,9 @@ package boot
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"os"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 var Debug bool
@@ -41,7 +42,6 @@ func InitRootDirectory(rootDirs []string) error {
 }
 
 func OnBootOnDie() {
-
 	if err := InitRootDirectory([]string{ConfigDir}); err != nil {
 		logger.Error("onBoot is error: %v", err)
 		os.Exit(1)

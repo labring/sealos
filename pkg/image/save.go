@@ -17,11 +17,12 @@ package image
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"

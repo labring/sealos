@@ -23,7 +23,7 @@ import (
 
 func TestSaveImages(t *testing.T) {
 	tests := []string{"fanux/lvscare"}
-	is := NewImageSaver(context.Background(),nil)
+	is := NewImageSaver(context.Background(), nil)
 	err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "arm64"})
 	if err != nil {
 		t.Error(err)

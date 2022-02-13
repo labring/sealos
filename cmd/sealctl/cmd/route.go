@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 func NewRouteCmd() *cobra.Command {
 	// routeCmd represents the route command
 	var cmd = &cobra.Command{

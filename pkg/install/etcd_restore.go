@@ -161,8 +161,8 @@ func (e *EtcdFlags) AfterRestore() error {
 		// 复制并解压到相应目录
 		// use quiet to tar
 		AfterHook := fmt.Sprintf(`tar xf %s -C /var/lib/  && mv /var/lib/%s  %s && rm -rf %s`, sdtTmpTar, filepath.Base(location), ETCDDATADIR, sdtTmpTar)
-		v1.SSHConfig.Copy(host, tmpFile, "/var/lib")
-		v1.SSHConfig.Cmd(host, AfterHook)
+		_ = v1.SSHConfig.Copy(host, tmpFile, "/var/lib")
+		_, _ = v1.SSHConfig.Cmd(host, AfterHook)
 		//logger.Info("send etcd.zip to hosts")
 	}
 
@@ -208,7 +208,7 @@ func (e *EtcdFlags) RecoveryKuBeCluster(dir string) {
 func GetEtcdInitialCluster(hosts []string) string {
 	initialCluster := ""
 	for i, host := range hosts {
-		hostname,_ := v1.SSHConfig.CmdToString(host, "hostname", "")
+		hostname, _ := v1.SSHConfig.CmdToString(host, "hostname", "")
 		ip := reFormatHostToIP(host)
 		initialCluster += fmt.Sprintf("etcd-%s=https://%s:2380", hostname, ip)
 		if i < (len(hosts) - 1) {

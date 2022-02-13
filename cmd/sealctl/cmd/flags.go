@@ -36,13 +36,13 @@ type Flag struct {
 		host      string
 		gatewayIP string
 	}
-	StaticPod struct{
+	StaticPod struct {
 		staticPodPath string
 	}
-	Version struct{
+	Version struct {
 		shortPrint bool
 	}
-	CRI struct{
+	CRI struct {
 		socketPath string
 		configPath string
 	}

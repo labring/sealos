@@ -149,7 +149,7 @@ func init() {
 	defaultLogger = NewLogger(3)
 }
 
-func Cfg(debugMod bool, logDir,name string) {
+func Cfg(debugMod bool, logDir, name string) {
 	debugMode = debugMod
 	logLev := 5
 	if debugMod {
@@ -174,7 +174,7 @@ func Cfg(debugMod bool, logDir,name string) {
 						"permit": "0660",
 						"LogLevel":0
 				}}`,
-		logLev, logDir,name, time.Now().Format("2006-01-02"),
+		logLev, logDir, name, time.Now().Format("2006-01-02"),
 	))
 
 	SetLogPath(true)
