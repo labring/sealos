@@ -58,6 +58,7 @@ func NewRegistryImagePullCmd() *cobra.Command {
 	cmd.PersistentFlags().StringSliceVar(&flag.RegistryImage.Pull.auths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io,auth=YWRtaW46YWRtaW4=\".")
 	cmd.AddCommand(NewRegistryImagePullRawCmd())
 	cmd.AddCommand(NewRegistryImagePullYamlCmd())
+	cmd.AddCommand(NewRegistryImagePullDefaultCmd())
 	return cmd
 }
 
@@ -124,6 +125,30 @@ func NewRegistryImagePullYamlCmd() *cobra.Command {
 	}
 
 	cmd.PersistentFlags().StringVarP(&yamlPath, "yaml-path", "p", "", "yaml data dir path")
+	return cmd
+}
+
+func NewRegistryImagePullDefaultCmd() *cobra.Command {
+	var images []string
+	var auth map[string]types.AuthConfig
+	var cmd = &cobra.Command{
+		Use:   "default",
+		Short: "registry images manager pull to local dir by default type",
+		Run: func(cmd *cobra.Command, args []string) {
+			PrintFlags(cmd.Flags())
+			is := image.NewImageSaver(context.Background(), auth)
+			err := is.SaveImages(images, flag.RegistryImage.Pull.registryDir, v1.Platform{OS: "linux", Architecture: flag.RegistryImage.Pull.arch})
+			if err != nil {
+				logger.Error("pull registry images is error: %s", err.Error())
+				os.Exit(1)
+			}
+		},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			auth = validateRegistryImagePull()
+		},
+	}
+
+	cmd.PersistentFlags().StringSliceVar(&images, "images", []string{}, "images list")
 	return cmd
 }
 
