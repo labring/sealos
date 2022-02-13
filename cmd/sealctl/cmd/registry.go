@@ -17,11 +17,12 @@ limitations under the License.
 package cmd
 
 import (
+	"os"
+
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/maps"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func NewRegistryImageCmd() *cobra.Command {

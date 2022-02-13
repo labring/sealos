@@ -20,8 +20,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
 	"time"
+
+	v1 "github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/fanux/sealos/pkg/utils/file"
