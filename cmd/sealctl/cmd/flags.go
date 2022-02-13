@@ -16,40 +16,68 @@ limitations under the License.
 
 package cmd
 
-import "github.com/sealyun/lvscare/care"
+import (
+	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/sealyun/lvscare/care"
+	"github.com/spf13/pflag"
+)
 
-type Flag struct {
-	Cert struct {
-		AltNames     []string
-		NodeName     string
-		ServiceCIDR  string
-		NodeIP       string
-		DNSDomain    string
-		CertPath     string
-		CertEtcdPath string
-	}
-	Hosts struct {
-		HostsPath string
-	}
-	Ipvs  care.LvsCare
-	Route struct {
-		host      string
-		gatewayIP string
-	}
-	StaticPod struct {
-		staticPodPath string
-	}
-	Version struct {
-		shortPrint bool
-	}
-	CRI struct {
-		socketPath string
-		configPath string
-	}
-	Images struct {
-		RegistryPath   string
-		AuthConfigFile string
+type CertFlag struct {
+	AltNames     []string
+	NodeName     string
+	ServiceCIDR  string
+	NodeIP       string
+	DNSDomain    string
+	CertPath     string
+	CertEtcdPath string
+}
+
+type HostsFlag struct {
+	HostsPath string
+}
+
+type RouteFlag struct {
+	host      string
+	gatewayIP string
+}
+
+type StaticPodFlag struct {
+	staticPodPath string
+}
+
+type VersionFlag struct {
+	shortPrint bool
+}
+
+type CRIFlag struct {
+	socketPath string
+	configPath string
+}
+
+type RegistryImageFlag struct {
+	Pull struct {
+		registryDir string
+		auths       []string
+		arch        string
 	}
 }
 
+type Flag struct {
+	Cert          CertFlag
+	Hosts         HostsFlag
+	Ipvs          care.LvsCare
+	Route         RouteFlag
+	StaticPod     StaticPodFlag
+	Version       VersionFlag
+	CRI           CRIFlag
+	RegistryImage RegistryImageFlag
+}
+
 var flag Flag
+
+// PrintFlags logs the flags in the flagset
+func PrintFlags(flags *pflag.FlagSet) {
+	flags.VisitAll(func(flag *pflag.Flag) {
+		logger.Info("FLAG: --%s=%q", flag.Name, flag.Value)
+	})
+}
