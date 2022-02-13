@@ -17,9 +17,10 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cri"
 	"strings"
 	"text/template"
+
+	"github.com/fanux/sealos/pkg/cri"
 
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 

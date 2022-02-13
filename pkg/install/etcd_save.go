@@ -116,9 +116,8 @@ func (e *EtcdFlags) Save(isK8sMaster bool) error {
 	if isK8sMaster {
 		// 复制本机的snapshot 到 各master节点 上。
 		for _, p := range e.EtcdHosts {
-			v1.SSHConfig.Copy(p, e.LongName, e.BackDir)
+			_ = v1.SSHConfig.Copy(p, e.LongName, e.BackDir)
 		}
-
 	}
 	logger.Info("Finished saving snapshot [%s]", e.Name)
 	return nil

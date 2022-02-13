@@ -102,7 +102,7 @@ func BootstrapTokenToSecret(bt *BootstrapToken) *v1.Secret {
 			Name:      bootstraputil.BootstrapTokenSecretName(bt.Token.ID),
 			Namespace: metav1.NamespaceSystem,
 		},
-		Type: v1.SecretType(bootstrapapi.SecretTypeBootstrapToken),
+		Type: bootstrapapi.SecretTypeBootstrapToken,
 		Data: encodeTokenSecretData(bt, time.Now()),
 	}
 }
@@ -127,7 +127,6 @@ func encodeTokenSecretData(token *BootstrapToken, now time.Time) map[string][]by
 		// TODO: This maybe should be a helper function in bootstraputil?
 		expirationString := token.Expires.Time.UTC().Format(time.RFC3339)
 		data[bootstrapapi.BootstrapTokenExpirationKey] = []byte(expirationString)
-
 	} else if token.TTL != nil && token.TTL.Duration > 0 {
 		// Only if .Expires is unset, TTL might have an effect
 		// Get the current time, add the specified duration, and format it accordingly

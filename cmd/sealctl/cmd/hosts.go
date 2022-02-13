@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/hosts"
 	"github.com/spf13/cobra"
 )

@@ -93,7 +93,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 			continue
 		}
 		tmpHostnameArr := strings.Fields(str)
-		curDomain := strings.Join(tmpHostnameArr[1:]," ")
+		curDomain := strings.Join(tmpHostnameArr[1:], " ")
 		//if !iputils.CheckDomain(curDomain) {
 		//	return lm, errors.New(" file contain error domain" + curDomain)
 		//}
@@ -135,13 +135,12 @@ func (h *HostFile) writeToFile(hostnameMap *linkedhashmap.Map, path string) {
 
 	hostnameMap.Each(func(key interface{}, value interface{}) {
 		if v, ok := value.(*hostname); ok {
-			_, writeErr := fp.WriteString(fmt.Sprintf("%s", v.toString()))
+			_, writeErr := fp.WriteString(v.toString())
 			if writeErr != nil {
 				logger.Warn(writeErr)
 				return
 			}
 		}
-
 	})
 }
 
@@ -175,8 +174,7 @@ func (h *HostFile) ListCurrentHosts() {
 	}
 	currHostsMap.Each(func(key interface{}, value interface{}) {
 		if v, ok := value.(*hostname); ok {
-			fmt.Print(fmt.Sprintf("%s", v.toString()))
+			fmt.Print(v.toString())
 		}
-
 	})
 }

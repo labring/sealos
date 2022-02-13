@@ -15,11 +15,12 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/fanux/sealos/pkg/utils/kubernetes/token"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
-	"os"
 )
 
 func NewTokenCmd() *cobra.Command {

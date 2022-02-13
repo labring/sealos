@@ -16,10 +16,11 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/types/contants"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/types/contants"
 
 	"github.com/fanux/sealos/pkg/utils/confirm"
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -174,7 +175,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 		//清空所有的nodes的数据
-		yaml,_ := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
+		yaml, _ := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
 		var wg sync.WaitGroup
 		for _, node := range v1.NodeIPs {
 			wg.Add(1)
@@ -224,6 +225,6 @@ func cleanRoute(node string) {
 	if status != "ok" {
 		// 删除为 vip创建的路由。
 		delRouteCmd := fmt.Sprintf("sealos route del --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))
-		v1.SSHConfig.CmdToString(node, delRouteCmd, "")
+		_, _ = v1.SSHConfig.CmdToString(node, delRouteCmd, "")
 	}
 }

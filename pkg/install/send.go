@@ -34,6 +34,7 @@ func (s *SealosInstaller) SendPackage() {
 	completion := "echo 'command -v kubectl &>/dev/null && source <(kubectl completion bash)' >> /root/.bashrc && echo '[ -x /usr/bin/sealos ] && source <(sealos completion bash)' >> /root/.bashrc && source /root/.bashrc"
 	kubeHook = kubeHook + " && " + deletekubectl + " && " + completion
 	//v1.PkgURL = ssh.CopyFiles(v1.SSHConfig, v1.PkgURL, s.Hosts, "/root", nil, &kubeHook)
+	print(kubeHook)
 }
 
 // SendSealos is send the exec sealos to /usr/bin/sealos
@@ -56,6 +57,7 @@ func (u *SealosUpgrade) SendPackage() {
 		// https://github.com/fanux/cloud-kernel/issues/23
 		//kubeHook = fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (ctr -n=k8s.io image import ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)
 	} else {
+		print("//TODO")
 		//kubeHook = fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ ", pkg)
 	}
 	//v1.PkgURL = ssh.CopyFiles(v1.SSHConfig, pkg, all, "/root", nil, &kubeHook)

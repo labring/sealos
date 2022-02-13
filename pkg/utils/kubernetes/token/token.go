@@ -20,12 +20,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/kubernetes/token/bootstraptoken/v1"
+	v1 "github.com/fanux/sealos/pkg/utils/kubernetes/token/bootstraptoken/v1"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"time"
 )
 
 type Token struct {

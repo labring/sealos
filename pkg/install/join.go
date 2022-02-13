@@ -78,20 +78,20 @@ func joinNodesFunc(joinNodes []string) {
 //这里主要是为了获取CertificateKey
 func (s *SealosInstaller) GeneratorCerts() {
 	cmd := `kubeadm init phase upload-certs --upload-certs` + v1.VLogString()
-	output,_ := v1.SSHConfig.CmdToString(s.Masters[0], cmd, "\r\n")
+	output, _ := v1.SSHConfig.CmdToString(s.Masters[0], cmd, "\r\n")
 	logger.Debug("[globals]decodeCertCmd: %s", output)
 	slice := strings.Split(output, "Using certificate key:\r\n")
 	slice1 := strings.Split(slice[1], "\r\n")
 	v1.CertificateKey = slice1[0]
 	cmd = "kubeadm token create --print-join-command" + v1.VLogString()
-	out,_ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
+	out, _ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(out)
 }
 
 //GeneratorToken is
 func (s *SealosInstaller) GeneratorToken() {
 	cmd := `kubeadm token create --print-join-command` + v1.VLogString()
-	output,_ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
+	output, _ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
 	decodeOutput(output)
 }
 
@@ -174,11 +174,11 @@ func (s *SealosInstaller) JoinNodes() {
 
 			// 如果不是默认路由， 则添加 vip 到 master的路由。
 			cmdRoute := fmt.Sprintf("sealos route --host %s", iputils.IPFormat(node))
-			status,_ := v1.SSHConfig.CmdToString(node, cmdRoute, "")
+			status, _ := v1.SSHConfig.CmdToString(node, cmdRoute, "")
 			if status != "ok" {
 				// 以自己的ip作为路由网关
 				addRouteCmd := fmt.Sprintf("sealos route add --host %s --gateway %s", v1.VIP, iputils.IPFormat(node))
-				v1.SSHConfig.CmdToString(node, addRouteCmd, "")
+				_, _ = v1.SSHConfig.CmdToString(node, addRouteCmd, "")
 			}
 
 			_ = v1.SSHConfig.CmdAsync(node, ipvsCmd) // create ipvs rules before we join node
@@ -187,7 +187,7 @@ func (s *SealosInstaller) JoinNodes() {
 			//TODO
 			//yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage)
 			_ = v1.SSHConfig.CmdAsync(node, cmd)
-			_,_ = v1.SSHConfig.Cmd(node, "mkdir -p /etc/kubernetes/manifests")
+			_, _ = v1.SSHConfig.Cmd(node, "mkdir -p /etc/kubernetes/manifests")
 			//v1.SSHConfig.CopyConfigFile(node, "/etc/kubernetes/manifests/kube-sealyun-lvscare.yaml", []byte(yaml))
 
 			cleaninstall := `rm -rf /root/kube`
@@ -204,6 +204,7 @@ func (s *SealosInstaller) lvscare() {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			print(node)
 			//TODO
 			//yaml := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage)
 			//_ = v1.SSHConfig.Cmd(node, "rm -rf  /etc/kubernetes/manifests/kube-sealyun-lvscare* || :")
@@ -220,6 +221,7 @@ func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			print(node)
 			//TODO
 			//v1.SSHConfig.CopyLocalToRemote(node, v1.CertPath, cert.KubeDefaultCertPath)
 		}(node)
@@ -230,11 +232,13 @@ func (s *SealosInstaller) sendNewCertAndKey(Hosts []string) {
 func (s *SealosInstaller) sendKubeConfigFile(hosts []string, kubeFile string) {
 	//absKubeFile := cert.KubernetesDir + "/" + kubeFile
 	//sealosKubeFile := v1.DefaultConfigPath + "/" + kubeFile
+	print(kubeFile)
 	var wg sync.WaitGroup
 	for _, node := range hosts {
 		wg.Add(1)
 		go func(node string) {
 			defer wg.Done()
+			print(node)
 			//TODO
 			//v1.SSHConfig.CopyLocalToRemote(node, sealosKubeFile, absKubeFile)
 		}(node)

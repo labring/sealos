@@ -24,27 +24,27 @@ import (
 	k8snet "k8s.io/apimachinery/pkg/util/net"
 )
 
-type RouteFlags struct {
+type Flags struct {
 	Host    string
 	Gateway string
 }
 
-func GetRouteFlag(host, gateway string) *RouteFlags {
-	return &RouteFlags{
+func GetRouteFlag(host, gateway string) *Flags {
+	return &Flags{
 		Host:    host,
 		Gateway: gateway,
 	}
 }
 
-func (r *RouteFlags) useHostCheckRoute() bool {
+func (r *Flags) useHostCheckRoute() bool {
 	return iputils.IsIpv4(r.Host) && r.Gateway == ""
 }
 
-func (r *RouteFlags) useGatewayManageRoute() bool {
+func (r *Flags) useGatewayManageRoute() bool {
 	return iputils.IsIpv4(r.Gateway) && iputils.IsIpv4(r.Host)
 }
 
-func (r *RouteFlags) CheckRoute() {
+func (r *Flags) CheckRoute() {
 	if r.useHostCheckRoute() {
 		if isDefaultRouteIP(r.Host) {
 			fmt.Println("ok")
@@ -54,7 +54,7 @@ func (r *RouteFlags) CheckRoute() {
 	}
 }
 
-func (r *RouteFlags) SetRoute() {
+func (r *Flags) SetRoute() {
 	if r.useGatewayManageRoute() {
 		err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
 		if err != nil {
@@ -63,7 +63,7 @@ func (r *RouteFlags) SetRoute() {
 	}
 }
 
-func (r *RouteFlags) DelRoute() {
+func (r *Flags) DelRoute() {
 	if r.useGatewayManageRoute() {
 		err := delRouteGatewayViaHost(r.Host, r.Gateway)
 		if err != nil {

@@ -17,14 +17,14 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
+	"os"
+	"strconv"
+	"strings"
+
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	utilsexec "k8s.io/utils/exec"
-	"os"
-	"strconv"
-	"strings"
 )
 
 func NewCRICmd() *cobra.Command {
@@ -104,7 +104,7 @@ func NewListKubeContainersCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if shortPrint {
-				println(fmt.Sprintf("%s", strings.Join(containers, ",")))
+				println(strings.Join(containers, ","))
 				return
 			}
 			logger.Info("container runtime containers is %+v", containers)
@@ -218,8 +218,6 @@ func NewCGroupDriverCmd() *cobra.Command {
 	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
 	return cmd
 }
-
-
 
 func criCheck() {
 	var err error

@@ -15,8 +15,9 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
+
+	"github.com/fanux/sealos/cmd/sealos/boot"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 

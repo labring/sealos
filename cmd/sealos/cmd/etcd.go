@@ -16,9 +16,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/cmd/sealos/boot"
 	"os"
 	"time"
+
+	"github.com/fanux/sealos/cmd/sealos/boot"
 
 	"github.com/fanux/sealos/pkg/utils/confirm"
 

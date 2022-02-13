@@ -15,8 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 // hostnameCmd represents the cert command

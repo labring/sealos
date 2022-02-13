@@ -33,7 +33,6 @@ linters:
     - unused
     - varcheck
     - nilerr
-    - unparam
     - ifshort
     - unconvert
 

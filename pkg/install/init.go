@@ -18,13 +18,14 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/types/contants"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/cni"
+	"github.com/fanux/sealos/pkg/types/contants"
 
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 
@@ -81,10 +82,10 @@ func (s *SealosInstaller) getCgroupDriverFromShell(h string) string {
 	var output string
 	if versionutil.For120(v1.Version) {
 		cmd := ContainerdShell
-		output,_ = v1.SSHConfig.CmdToString(h, cmd, " ")
+		output, _ = v1.SSHConfig.CmdToString(h, cmd, " ")
 	} else {
 		cmd := DockerShell
-		output,_ = v1.SSHConfig.CmdToString(h, cmd, " ")
+		output, _ = v1.SSHConfig.CmdToString(h, cmd, " ")
 	}
 	output = strings.TrimSpace(output)
 	logger.Info("cgroup driver is %s", output)
@@ -171,7 +172,7 @@ func (s *SealosInstaller) GenerateCert() {
 }
 
 func (s *SealosInstaller) CreateKubeconfig() {
-	hostname,_ := v1.SSHConfig.CmdToString( s.Masters[0],"","")
+	hostname, _ := v1.SSHConfig.CmdToString(s.Masters[0], "", "")
 
 	certConfig := cert2.Config{
 		Path:     v1.CertPath,
@@ -204,7 +205,7 @@ func (s *SealosInstaller) InstallMaster0() {
 
 	cmd = s.Command(v1.Version, InitMaster)
 
-	output,_ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
+	output, _ := v1.SSHConfig.Cmd(s.Masters[0], cmd)
 	if output == nil {
 		logger.Error("[%s] install kubernetes failed. please clean and uninstall.", s.Masters[0])
 		os.Exit(1)
@@ -212,7 +213,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	decodeOutput(output)
 
 	cmd = `mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config && chmod 600 /root/.kube/config`
-	v1.SSHConfig.Cmd(s.Masters[0], cmd)
+	_, _ = v1.SSHConfig.Cmd(s.Masters[0], cmd)
 
 	if v1.WithoutCNI {
 		logger.Info("--without-cni is true, so we not install calico or flannel, install it by yourself")
@@ -229,7 +230,7 @@ func (s *SealosInstaller) InstallMaster0() {
 	if v1.SSHConfig.IsFileExist(s.Masters[0], "/root/kube/Metadata") {
 		var metajson string
 		var tmpdata v1.Metadata
-		metajson,_ = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
+		metajson, _ = v1.SSHConfig.CmdToString(s.Masters[0], "cat /root/kube/Metadata", "")
 		err := json.Unmarshal([]byte(metajson), &tmpdata)
 		if err != nil {
 			logger.Warn("get metadata version err: ", err)
@@ -248,8 +249,8 @@ func (s *SealosInstaller) InstallMaster0() {
 	configYamlPath := filepath.Join(contants.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
 	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
-	v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")
-	v1.SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
+	_ = v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")
+	_, _ = v1.SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }
 
 //SendKubeConfigs

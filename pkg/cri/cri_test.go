@@ -21,11 +21,10 @@ import (
 	"testing"
 )
 
-
 func TestNewContainerRuntime(t *testing.T) {
 	//cr:=&ContainerdRuntime{config: "/Users/cuisongliu/Workspaces/go/src/github.com/sealyun/cloud-kernel/runtime/containerd/etc/config.toml"}
 	//driver,_:=cr.processConfigFile()
 	//t.Log(driver)
-	cc:=[]string{"aa","bb","cc"}
-	println(fmt.Sprintf("%+v",cc))
+	cc := []string{"aa", "bb", "cc"}
+	println(fmt.Sprintf("%+v", cc))
 }

@@ -21,11 +21,12 @@ import (
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/hex"
+	"strings"
+
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
-	"strings"
 )
 
 func discoveryTokenCaCertHash() ([]string, error) {
