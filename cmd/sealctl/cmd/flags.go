@@ -78,6 +78,6 @@ var flag Flag
 // PrintFlags logs the flags in the flagset
 func PrintFlags(flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
-		logger.Info("FLAG: --%s=%q", flag.Name, flag.Value)
+		logger.Debug("FLAG: --%s=%q", flag.Name, flag.Value)
 	})
 }
