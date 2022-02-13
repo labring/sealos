@@ -18,12 +18,13 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cert"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/cert"
 
 	"github.com/fanux/sealos/pkg/cni"
 	"github.com/fanux/sealos/pkg/types/contants"

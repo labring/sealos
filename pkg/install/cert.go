@@ -16,8 +16,9 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/cert"
 	"os"
+
+	"github.com/fanux/sealos/pkg/cert"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 )

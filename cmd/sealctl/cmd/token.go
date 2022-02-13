@@ -15,8 +15,9 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/token"
 	"os"
+
+	"github.com/fanux/sealos/pkg/token"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
