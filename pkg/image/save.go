@@ -138,7 +138,6 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 }
 
 func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
-
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
