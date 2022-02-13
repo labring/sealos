@@ -20,11 +20,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
 	"time"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/fanux/sealos/pkg/utils/file"
-	v1 "github.com/fanux/sealos/pkg/utils/kubernetes/token/bootstraptoken/v1"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

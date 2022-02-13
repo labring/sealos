@@ -57,9 +57,9 @@ type Config struct {
 	CAName       string // root ca map key
 	CommonName   string
 	Organization []string
-	Year         time.Duration
-	AltNames     AltNames
-	Usages       []x509.ExtKeyUsage
+	Year     time.Duration
+	AltNames AltNames
+	Usages   []x509.ExtKeyUsage
 }
 
 // AltNames contains the domain names and IP addresses that will be added

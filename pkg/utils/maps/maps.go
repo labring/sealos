@@ -14,30 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package passwd
+package maps
 
 import (
-	"encoding/base64"
-
-	"golang.org/x/crypto/bcrypt"
+	"fmt"
+	"strings"
 )
 
-func Htpasswd(username, password string) string {
-	pwdHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return ""
+func MapToString(data map[string]string) string {
+	result := make([]string, 0)
+	for k, v := range data {
+		result = append(result, fmt.Sprintf("%s=%s", k, v))
 	}
-	return username + ":" + string(pwdHash)
+
+	return strings.Join(result, ",")
 }
 
-func LoginAuth(username, password string) string {
-	return base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
-}
-
-func LoginAuthDecode(auth string) (string, error) {
-	data, err := base64.StdEncoding.DecodeString(auth)
-	if data != nil {
-		return string(data), nil
+func StringToMap(data string) map[string]string {
+	m := make(map[string]string)
+	list := strings.Split(data, ",")
+	for _, l := range list {
+		if l != "" {
+			kv := strings.Split(l, "=")
+			if len(kv) == 2 {
+				m[kv[0]] = kv[1]
+			}
+		}
 	}
-	return "", err
+	return m
 }

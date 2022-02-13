@@ -46,6 +46,10 @@ type Flag struct {
 		socketPath string
 		configPath string
 	}
+	Images struct {
+		RegistryPath   string
+		AuthConfigFile string
+	}
 }
 
 var flag Flag
