@@ -17,6 +17,7 @@ package image
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/passwd"
 	"io"
 	"io/ioutil"
 	"os"
@@ -111,21 +112,34 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 	return nil
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
+func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	// set the URL of registry
 	proxyURL := ""
-	if auth.ServerAddress == HTTPS+defaultDomain || auth.ServerAddress == "" {
+	if auth.ServerAddress == defaultDomain || auth.ServerAddress == "" {
 		proxyURL = defaultProxyURL
 	}
 	if proxyURL != "" {
 		auth.ServerAddress = proxyURL
 	}
+	if auth.Auth != "" && auth.Username == "" && auth.Password == "" {
+		uPassword, _ := passwd.LoginAuthDecode(auth.Auth)
+		if data := strings.Split(uPassword, ":"); len(data) > 1 {
+			auth.Username = data[0]
+			auth.Password = data[1]
+		}
+	}
+
+	return configuration.Proxy{
+		RemoteURL: proxyURL,
+		Username:  auth.Username,
+		Password:  auth.Password,
+	}
+}
+
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
+
 	config := configuration.Configuration{
-		Proxy: configuration.Proxy{
-			RemoteURL: proxyURL,
-			Username:  auth.Username,
-			Password:  auth.Password,
-		},
+		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
 			driverName: configuration.Parameters{configRootDir: rootdir},
 		},

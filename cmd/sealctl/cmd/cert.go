@@ -15,9 +15,9 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/pkg/cert"
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )

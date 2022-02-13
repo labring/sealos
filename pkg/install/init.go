@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/fanux/sealos/pkg/cert"
 	"io"
 	"io/ioutil"
 	"os"
@@ -32,7 +33,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
 	"github.com/fanux/sealos/pkg/config"
-	cert2 "github.com/fanux/sealos/pkg/utils/kubernetes/cert"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -174,14 +174,14 @@ func (s *SealosInstaller) GenerateCert() {
 func (s *SealosInstaller) CreateKubeconfig() {
 	hostname, _ := v1.SSHConfig.CmdToString(s.Masters[0], "", "")
 
-	certConfig := cert2.Config{
+	certConfig := cert.Config{
 		Path:     v1.CertPath,
 		BaseName: "ca",
 	}
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", v1.APIServer)
 
-	err := cert2.CreateJoinControlPlaneKubeConfigFiles(contants.DefaultConfigPath,
+	err := cert.CreateJoinControlPlaneKubeConfigFiles(contants.DefaultConfigPath,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)

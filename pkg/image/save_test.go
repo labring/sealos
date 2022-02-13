@@ -16,6 +16,9 @@ package image
 
 import (
 	"context"
+	"github.com/distribution/distribution/v3/configuration"
+	"github.com/docker/docker/api/types"
+	"reflect"
 	"testing"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -114,6 +117,80 @@ func Test_parseNormalizedNamed(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if named, err := parseNormalizedNamed(tt.imageName); err != nil || named.Domain() != tt.wantDomain || named.Repo() != tt.wantRepo || named.tag != tt.wantTag {
 				t.Errorf("parse image %s error", tt.name)
+			}
+		})
+	}
+}
+
+func Test_authConfigToProxy(t *testing.T) {
+	type args struct {
+		auth types.AuthConfig
+	}
+	tests := []struct {
+		name string
+		args args
+		want configuration.Proxy
+	}{
+		{
+			name: "nil",
+			args: args{auth: types.AuthConfig{
+				Username:      "",
+				Password:      "",
+				Auth:          "",
+				ServerAddress: "",
+			}},
+			want: configuration.Proxy{
+				RemoteURL: defaultProxyURL,
+				Username:  "",
+				Password:  "",
+			},
+		},
+		{
+			name: "docker.io",
+			args: args{auth: types.AuthConfig{
+				Username:      "",
+				Password:      "",
+				Auth:          "",
+				ServerAddress: "docker.io",
+			}},
+			want: configuration.Proxy{
+				RemoteURL: defaultProxyURL,
+				Username:  "",
+				Password:  "",
+			},
+		},
+		{
+			name: "auth",
+			args: args{auth: types.AuthConfig{
+				Username:      "",
+				Password:      "",
+				Auth:          "YWRtaW46YWRtaW4=",
+				ServerAddress: "docker.io",
+			}},
+			want: configuration.Proxy{
+				RemoteURL: defaultProxyURL,
+				Username:  "admin",
+				Password:  "admin",
+			},
+		},
+		{
+			name: "auth-password",
+			args: args{auth: types.AuthConfig{
+				Username:      "admin",
+				Password:      "",
+				ServerAddress: "docker.io",
+			}},
+			want: configuration.Proxy{
+				RemoteURL: defaultProxyURL,
+				Username:  "admin",
+				Password:  "",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := authConfigToProxy(tt.args.auth); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("authConfigToProxy() = %v, want %v", got, tt.want)
 			}
 		})
 	}
