@@ -17,6 +17,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/spf13/cobra"
 )
 
@@ -24,13 +26,13 @@ import (
 var hostnameCmd = &cobra.Command{
 	Use:   "hostname",
 	Short: "get os.hostname",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		hostname, err := os.Hostname()
 		if err != nil {
-			return err
+			logger.Error(err)
+			os.Exit(1)
 		}
 		print(hostname)
-		return nil
 	},
 }
 

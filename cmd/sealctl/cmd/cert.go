@@ -33,7 +33,7 @@ var certCmd = &cobra.Command{
 		err := cert.GenerateCert(flag.Cert.CertPath, flag.Cert.CertEtcdPath, flag.Cert.AltNames, flag.Cert.NodeIP, flag.Cert.NodeName, flag.Cert.ServiceCIDR, flag.Cert.DNSDomain)
 		if err != nil {
 			logger.Error(err)
-			os.Exit(-1)
+			os.Exit(1)
 		}
 	},
 }

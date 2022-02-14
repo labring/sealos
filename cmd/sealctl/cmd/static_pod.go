@@ -48,11 +48,11 @@ func NewLvscareCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "lvscare",
 		Short: "generator lvscare static pod file",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if len(masters) == 0 {
-				return fmt.Errorf("master not allow empty")
+				logger.Error("master not allow empty")
+				os.Exit(1)
 			}
-			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			fileName := fmt.Sprintf("%s.yaml", name)

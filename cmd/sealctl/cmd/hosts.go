@@ -17,7 +17,9 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
+	"os"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/hosts"
 	"github.com/spf13/cobra"
@@ -56,14 +58,15 @@ func NewHostsAddCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "add",
 		Short: "hosts manager add",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if ip == "" {
-				return fmt.Errorf("ip not empty")
+				logger.Error("ip not empty")
+				os.Exit(1)
 			}
 			if domain == "" {
-				return fmt.Errorf("domain not empty")
+				logger.Error("domain not empty")
+				os.Exit(1)
 			}
-			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
@@ -80,11 +83,11 @@ func NewHostsDeleteCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "delete",
 		Short: "hosts manager delete",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if domain == "" {
-				return fmt.Errorf("domain not empty")
+				logger.Error("domain not empty")
+				os.Exit(1)
 			}
-			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
