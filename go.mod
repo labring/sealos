@@ -11,7 +11,6 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emirpasic/gods v1.12.0
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
-	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
@@ -38,5 +37,7 @@ require (
 	k8s.io/client-go v0.18.0
 	k8s.io/cluster-bootstrap v0.18.0
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
+	sigs.k8s.io/kustomize/api v0.11.2
+	sigs.k8s.io/kustomize/kyaml v0.13.3
 	sigs.k8s.io/yaml v1.2.0
 )

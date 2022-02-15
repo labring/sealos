@@ -63,6 +63,7 @@ func NewIsDockerCmd() *cobra.Command {
 	}
 	return cmd
 }
+
 func NewIsRunningCmd() *cobra.Command {
 	var shortPrint bool
 	var cmd = &cobra.Command{
