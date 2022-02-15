@@ -19,7 +19,7 @@ package kubeadm
 import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const clusterConfigDefault = `
-apiVersion: kubeadm.k8s.io/{{.KubeadmApiVersion}}
+apiVersion: kubeadm.k8s.io/{{.KubeadmAPIVersion}}
 kind: ClusterConfiguration
 kubernetesVersion: {{.KubeVersion}}
 controlPlaneEndpoint: "{{.APIServerDomain}}:6443"
@@ -82,7 +82,7 @@ scheduler:
 
 func NewCluster(kubeAPI, master0, criSocket string) Kubeadm {
 	return &cluster{
-		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
 		KubeVersion:       kubeAPI,
 		APIServerDomain:   "",
 		PodCIDR:           "",
@@ -94,7 +94,7 @@ func NewCluster(kubeAPI, master0, criSocket string) Kubeadm {
 }
 
 type cluster struct {
-	KubeadmApiVersion string
+	KubeadmAPIVersion string
 	KubeVersion       string
 	APIServerDomain   string
 	PodCIDR           string
@@ -109,13 +109,12 @@ func (c *cluster) DefaultConfig() (string, error) {
 }
 
 func (c *cluster) Kustomization(patch string) (string, error) {
-
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
-		Version: c.KubeadmApiVersion,
+		Version: c.KubeadmAPIVersion,
 		Kind:    "ClusterConfiguration",
 	}
-	kf, err := kFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, patch != "")
 	if err != nil {
 		return "", err
 	}

@@ -50,9 +50,9 @@ func templateFromContent(templateContent string, param interface{}) (string, err
 	return "", err
 }
 
-func kustomization(kFile, kubeadm, patch string, plugin bool) (string, error) {
+func kustomization(KFile, kubeadm, patch string, plugin bool) (string, error) {
 	th := kustomize.New(filesys.MakeFsInMemory())
-	err := th.WriteKustomization(".", kFile)
+	err := th.WriteKustomization(".", KFile)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +79,7 @@ func kustomization(kFile, kubeadm, patch string, plugin bool) (string, error) {
 	return convertClean(string(yaml)), nil
 }
 
-func kFile(gvk v1.GroupVersionKind, patch bool) (string, error) {
+func getterKFile(gvk v1.GroupVersionKind, patch bool) (string, error) {
 	if !patch {
 		kf := `resources:
 - kubeadm.yaml`

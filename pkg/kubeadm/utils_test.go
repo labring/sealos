@@ -39,7 +39,7 @@ metadata:
 }
 
 func Test_kFile(t *testing.T) {
-	d, _ := kFile(v1.GroupVersionKind{
+	d, _ := getterKFile(v1.GroupVersionKind{
 		Group:   "xx",
 		Version: "yy",
 		Kind:    "zz",
@@ -49,7 +49,7 @@ func Test_kFile(t *testing.T) {
 
 func Test_kustomize(t *testing.T) {
 	k := NewKubeproxy("10.0.0.2")
-	patch:=`
+	patch := `
 - op: add
   path: /ipvs/ffff
   value: beagle

@@ -19,18 +19,18 @@ package kustomize
 import (
 	"testing"
 
-	"sigs.k8s.io/kustomize/api/filesys"
+	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
 func TestPatchConfig_Run(t *testing.T) {
 	th := New(filesys.MakeFsInMemory())
-	err := th.WriteKustomization(".", `
+	_ = th.WriteKustomization(".", `
 resources:
 - kubeadm.yaml
 patchesStrategicMerge:
 - patch1.yaml
 `)
-	err = th.WriteFile("kubeadm.yaml", `
+	_ = th.WriteFile("kubeadm.yaml", `
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 metadata:
@@ -77,7 +77,7 @@ scheduler:
     readOnly: true
     pathType: File
 `)
-	err = th.WriteFile("patch1.yaml", `
+	_ = th.WriteFile("patch1.yaml", `
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
 kubernetesVersion: v1.18.1

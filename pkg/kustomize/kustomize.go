@@ -28,7 +28,6 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
-
 type PatchConfig struct {
 	fSys filesys.FileSystem
 }

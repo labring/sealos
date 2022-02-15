@@ -24,14 +24,13 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func ToJSON(bs []byte) (jsons []string) {
 	reader := bytes.NewReader(bs)
 	ext := runtime.RawExtension{}
-	d := yaml.NewYAMLOrJSONDecoder(reader, 4096)
+	d := utilyaml.NewYAMLOrJSONDecoder(reader, 4096)
 	for {
 		if err := d.Decode(&ext); err != nil {
 			if err == io.EOF {

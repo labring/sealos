@@ -44,7 +44,7 @@ func (c *kubeproxy) Kustomization(patch string) (string, error) {
 		Version: "v1alpha1",
 		Kind:    "KubeProxyConfiguration",
 	}
-	kf, err := kFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, patch != "")
 	if err != nil {
 		return "", err
 	}

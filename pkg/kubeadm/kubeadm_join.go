@@ -22,7 +22,7 @@ import (
 )
 
 const joinConfigDefault = `
-apiVersion: kubeadm.k8s.io/{{.KubeadmApiVersion}}
+apiVersion: kubeadm.k8s.io/{{.KubeadmAPIVersion}}
 kind: JoinConfiguration
 caCertPath: /etc/kubernetes/pki/ca.crt
 discovery:
@@ -50,7 +50,7 @@ nodeRegistration:
 
 func NewJoinNode(kubeAPI, criSocket, vip string, token token.Token) Kubeadm {
 	return &join{
-		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
 		VIP:               vip,
 		CriSocket:         criSocket,
 		Token:             token,
@@ -58,7 +58,7 @@ func NewJoinNode(kubeAPI, criSocket, vip string, token token.Token) Kubeadm {
 }
 func NewJoinMaster(kubeAPI, criSocket, master0, masterIP string, token token.Token) Kubeadm {
 	return &join{
-		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
 		CriSocket:         criSocket,
 		Token:             token,
 		Master0:           master0,
@@ -67,7 +67,7 @@ func NewJoinMaster(kubeAPI, criSocket, master0, masterIP string, token token.Tok
 }
 
 type join struct {
-	KubeadmApiVersion string
+	KubeadmAPIVersion string
 	Master0           string
 	MasterIP          string
 	CriSocket         string
@@ -80,13 +80,12 @@ func (c *join) DefaultConfig() (string, error) {
 }
 
 func (c *join) Kustomization(patch string) (string, error) {
-
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
-		Version: c.KubeadmApiVersion,
+		Version: c.KubeadmAPIVersion,
 		Kind:    "JoinConfiguration",
 	}
-	kf, err := kFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, patch != "")
 	if err != nil {
 		return "", err
 	}

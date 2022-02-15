@@ -19,7 +19,7 @@ package kubeadm
 import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 const initConfigDefault = `
-apiVersion: kubeadm.k8s.io/{{.KubeadmApiVersion}}
+apiVersion: kubeadm.k8s.io/{{.KubeadmAPIVersion}}
 kind: InitConfiguration
 localAPIEndpoint:
   advertiseAddress: {{.Master0}}
@@ -29,14 +29,14 @@ nodeRegistration:
 
 func NewInit(kubeAPI, master0, criSocket string) Kubeadm {
 	return &initConfig{
-		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
 		Master0:           master0,
 		CriSocket:         criSocket,
 	}
 }
 
 type initConfig struct {
-	KubeadmApiVersion string
+	KubeadmAPIVersion string
 	Master0           string
 	CriSocket         string
 }
@@ -46,13 +46,12 @@ func (c *initConfig) DefaultConfig() (string, error) {
 }
 
 func (c *initConfig) Kustomization(patch string) (string, error) {
-
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
-		Version: c.KubeadmApiVersion,
+		Version: c.KubeadmAPIVersion,
 		Kind:    "InitConfiguration",
 	}
-	kf, err := kFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, patch != "")
 	if err != nil {
 		return "", err
 	}

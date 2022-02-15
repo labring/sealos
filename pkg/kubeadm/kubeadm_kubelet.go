@@ -107,7 +107,7 @@ func (c *kubelet) Kustomization(patch string) (string, error) {
 		Kind:    "KubeletConfiguration",
 	}
 
-	kf, err := kFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, patch != "")
 	if err != nil {
 		return "", err
 	}
