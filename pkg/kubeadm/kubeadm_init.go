@@ -15,3 +15,50 @@ limitations under the License.
 */
 
 package kubeadm
+
+import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+const initConfigDefault = `
+apiVersion: kubeadm.k8s.io/{{.KubeadmApiVersion}}
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{.Master0}}
+  bindPort: 6443
+nodeRegistration:
+  criSocket: {{.CriSocket}}`
+
+func NewInit(kubeAPI, master0, criSocket string) Kubeadm {
+	return &initConfig{
+		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		Master0:           master0,
+		CriSocket:         criSocket,
+	}
+}
+
+type initConfig struct {
+	KubeadmApiVersion string
+	Master0           string
+	CriSocket         string
+}
+
+func (c *initConfig) DefaultConfig() (string, error) {
+	return templateFromContent(initConfigDefault, c)
+}
+
+func (c *initConfig) Kustomization(patch string) (string, error) {
+
+	gvk := v1.GroupVersionKind{
+		Group:   "kubeadm.k8s.io",
+		Version: c.KubeadmApiVersion,
+		Kind:    "InitConfiguration",
+	}
+	kf, err := kFile(gvk, patch != "")
+	if err != nil {
+		return "", err
+	}
+	config, err := c.DefaultConfig()
+	if err != nil {
+		return "", err
+	}
+	return kustomization(kf, config, patch, false)
+}

@@ -18,7 +18,6 @@ package token
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -31,23 +30,23 @@ import (
 )
 
 type Token struct {
-	JoinToken                string   `json:"token,omitempty"`
-	DiscoveryTokenCaCertHash []string `json:"discovery-token-ca-cert-hash,omitempty"`
-	CertificateKey           string   `json:"certificate-key,omitempty"`
+	JoinToken                string   `json:"joinToken,omitempty"`
+	DiscoveryTokenCaCertHash []string `json:"discoveryTokenCaCertHash,omitempty"`
+	CertificateKey           string   `json:"certificateKey,omitempty"`
 	Command                  string   `json:"command,omitempty"`
 }
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Master() (*Token, error) {
+func Default() (*Token, error) {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		key, _ := CreateCertificateKey()
 		token.CertificateKey = key
 		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
 		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
-		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s"
 		tokens := ListToken()
+		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s"
 		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
 		afterTokens := ListToken()
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
@@ -64,23 +63,6 @@ func Master() (*Token, error) {
 	}
 
 	return nil, fmt.Errorf("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
-}
-
-func Node() (*Token, error) {
-	token := &Token{}
-	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
-		tokens := ListToken()
-		if len(tokens) > 0 {
-			token.JoinToken = tokens[0].Token.String()
-			hashs, err := discoveryTokenCaCertHash()
-			if err != nil {
-				return nil, err
-			}
-			return &Token{JoinToken: tokens[0].Token.String(), DiscoveryTokenCaCertHash: hashs}, nil
-		}
-		return nil, errors.New("token not found")
-	}
-	return nil, errors.New("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
 }
 
 func ListToken() BootstrapTokens {

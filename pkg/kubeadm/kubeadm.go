@@ -16,7 +16,34 @@ limitations under the License.
 
 package kubeadm
 
+import "github.com/fanux/sealos/pkg/utils/versionutil"
+
 type Kubeadm interface {
 	DefaultConfig() (string, error)
 	Kustomization(patch string) (string, error)
+}
+
+const (
+	V1200 = "v1.20.0"
+	V1230 = "v1.23.0"
+
+	KubeadmV1beta1 = "v1beta1"
+	KubeadmV1beta2 = "v1beta2"
+	KubeadmV1beta3 = "v1beta3"
+)
+
+func getterKubeadmAPIVersion(kubeVersion string) string {
+	var apiVersion string
+	switch {
+	//kubernetes gt 1.20, lt 1.23
+	case versionutil.Compare(kubeVersion, V1200) && !versionutil.Compare(kubeVersion, V1230):
+		apiVersion = KubeadmV1beta2
+	// kubernetes gt 1.23,
+	case versionutil.Compare(kubeVersion, V1230):
+		apiVersion = KubeadmV1beta3
+	// kubernetes lt 1.20
+	default:
+		apiVersion = KubeadmV1beta1
+	}
+	return apiVersion
 }

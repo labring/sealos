@@ -15,3 +15,84 @@ limitations under the License.
 */
 
 package kubeadm
+
+import (
+	"github.com/fanux/sealos/pkg/token"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const joinConfigDefault = `
+apiVersion: kubeadm.k8s.io/{{.KubeadmApiVersion}}
+kind: JoinConfiguration
+caCertPath: /etc/kubernetes/pki/ca.crt
+discovery:
+  bootstrapToken:
+    {{- if .MasterIP}}
+    apiServerEndpoint: {{.Master0}}:6443
+    {{else}}
+    apiServerEndpoint: {{.VIP}}:6443
+    {{end -}}
+    token: {{.JoinToken}}
+	certificateKey: {{.CertificateKey}}
+    caCertHashes:
+    {{range .discoveryTokenCaCertHash -}}
+    - {{.}}
+    {{end -}}
+  timeout: 5m0s
+{{- if .MasterIP }}
+controlPlane:
+  localAPIEndpoint:
+    advertiseAddress: {{.MasterIP}}
+    bindPort: 6443
+{{- end}}
+nodeRegistration:
+  criSocket: {{.CriSocket}}`
+
+func NewJoinNode(kubeAPI, criSocket, vip string, token token.Token) Kubeadm {
+	return &join{
+		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		VIP:               vip,
+		CriSocket:         criSocket,
+		Token:             token,
+	}
+}
+func NewJoinMaster(kubeAPI, criSocket, master0, masterIP string, token token.Token) Kubeadm {
+	return &join{
+		KubeadmApiVersion: getterKubeadmAPIVersion(kubeAPI),
+		CriSocket:         criSocket,
+		Token:             token,
+		Master0:           master0,
+		MasterIP:          masterIP,
+	}
+}
+
+type join struct {
+	KubeadmApiVersion string
+	Master0           string
+	MasterIP          string
+	CriSocket         string
+	VIP               string
+	token.Token
+}
+
+func (c *join) DefaultConfig() (string, error) {
+	return templateFromContent(joinConfigDefault, c)
+}
+
+func (c *join) Kustomization(patch string) (string, error) {
+
+	gvk := v1.GroupVersionKind{
+		Group:   "kubeadm.k8s.io",
+		Version: c.KubeadmApiVersion,
+		Kind:    "JoinConfiguration",
+	}
+	kf, err := kFile(gvk, patch != "")
+	if err != nil {
+		return "", err
+	}
+	config, err := c.DefaultConfig()
+	if err != nil {
+		return "", err
+	}
+	return kustomization(kf, config, patch, false)
+}

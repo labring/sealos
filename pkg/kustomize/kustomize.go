@@ -28,9 +28,6 @@ import (
 	"sigs.k8s.io/kustomize/kyaml/filesys"
 )
 
-func Init() {
-	filesys.MakeFsInMemory()
-}
 
 type PatchConfig struct {
 	fSys filesys.FileSystem
