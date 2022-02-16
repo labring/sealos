@@ -26,13 +26,13 @@ import (
 var Debug bool
 var ConfigDir string
 var ConfigFile string
-
+var ShowPatch bool
 var ConfigFilePath string
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	ConfigFilePath = ConfigDir + ConfigFile
-	logger.Cfg(Debug, ConfigDir, "sealos")
+	logger.Cfg(Debug, ConfigDir, "sealos", ShowPatch)
 }
 
 func initRootDirectory() error {

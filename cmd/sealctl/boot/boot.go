@@ -25,10 +25,11 @@ import (
 
 var Debug bool
 var ConfigDir string
+var ShowPatch bool
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	logger.Cfg(Debug, ConfigDir, "sealctl")
+	logger.Cfg(Debug, ConfigDir, "sealctl", ShowPatch)
 }
 
 func InitRootDirectory(rootDirs []string) error {

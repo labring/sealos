@@ -149,7 +149,7 @@ func init() {
 	defaultLogger = NewLogger(3)
 }
 
-func Cfg(debugMod bool, logDir, name string) {
+func Cfg(debugMod bool, logDir, name string, showPath bool) {
 	debugMode = debugMod
 	logLev := 5
 	if debugMod {
@@ -177,7 +177,7 @@ func Cfg(debugMod bool, logDir, name string) {
 		logLev, logDir, name, time.Now().Format("2006-01-02"),
 	))
 
-	SetLogPath(true)
+	SetLogPath(showPath)
 }
 
 func (localLog *LocalLogger) SetLogger(adapterName string, configs ...string) {
