@@ -152,5 +152,5 @@ func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri, patch string, t token.Tok
 }
 
 func hasPatch(patch []kustomize.Patch) bool {
-	return patch != nil && len(patch) != 0
+	return len(patch) != 0
 }
