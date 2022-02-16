@@ -16,7 +16,10 @@ limitations under the License.
 
 package kubeadm
 
-import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"github.com/fanux/sealos/pkg/kustomize"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 const kubeletConfigDefault = `
 apiVersion: kubelet.config.k8s.io/v1beta1
@@ -96,18 +99,22 @@ func NewKubelet() Kubeadm {
 type kubelet struct {
 }
 
+func (c *kubelet) DefaultTemplate() string {
+	return joinConfigDefault
+}
+
 func (c *kubelet) DefaultConfig() (string, error) {
 	return templateFromContent(kubeletConfigDefault, c)
 }
 
-func (c *kubelet) Kustomization(patch string) (string, error) {
+func (c *kubelet) Kustomization(patch []kustomize.Patch) (string, error) {
 	gvk := v1.GroupVersionKind{
 		Group:   "kubelet.config.k8s.io",
 		Version: "v1beta1",
 		Kind:    "KubeletConfiguration",
 	}
 
-	kf, err := getterKFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, hasPatch(patch))
 	if err != nil {
 		return "", err
 	}

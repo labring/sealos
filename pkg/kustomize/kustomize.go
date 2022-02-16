@@ -20,6 +20,9 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"k8s.io/apimachinery/pkg/util/json"
+	"sigs.k8s.io/yaml"
+
 	"sigs.k8s.io/kustomize/api/konfig"
 	"sigs.k8s.io/kustomize/api/konfig/builtinpluginconsts"
 	"sigs.k8s.io/kustomize/api/krusty"
@@ -41,6 +44,7 @@ type Interface interface {
 	WriteKustomization(path string, content string) error
 	WriteComponent(path string, content string) error
 	WriteFile(path string, content string) error
+	WriteFileByInterface(path, filetype string, content interface{}) error
 	//WriteLegacyConfigs base/config/defaults.yaml
 	WriteLegacyConfigs(fName string) error
 	Run(path string, o krusty.Options) (resmap.ResMap, error)
@@ -79,7 +83,24 @@ kind: Component
 	}
 	return fmt.Errorf("unexpected error while writing Component to %s: %v", path, err)
 }
-
+func (th *PatchConfig) WriteFileByInterface(path, filetype string, content interface{}) error {
+	var err error
+	var data []byte
+	switch filetype {
+	case "json":
+		data, err = json.Marshal(&content)
+	case "yaml":
+		data, err = yaml.Marshal(&content)
+	}
+	if err != nil {
+		return fmt.Errorf("unexpected error while writing file to %s: %v", path, err)
+	}
+	err = th.fSys.WriteFile(path, data)
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("unexpected error while writing file to %s: %v", path, err)
+}
 func (th *PatchConfig) WriteFile(path string, content string) error {
 	err := th.fSys.WriteFile(path, []byte(content))
 	if err == nil {

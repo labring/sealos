@@ -50,7 +50,7 @@ func templateFromContent(templateContent string, param interface{}) (string, err
 	return "", err
 }
 
-func kustomization(KFile, kubeadm, patch string, plugin bool) (string, error) {
+func kustomization(KFile, kubeadm string, patchs []kustomize.Patch, plugin bool) (string, error) {
 	th := kustomize.New(filesys.MakeFsInMemory())
 	err := th.WriteKustomization(".", KFile)
 	if err != nil {
@@ -60,7 +60,7 @@ func kustomization(KFile, kubeadm, patch string, plugin bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	err = th.WriteFile("patch.yaml", patch)
+	err = th.WriteFileByInterface("patch.yaml", "yaml", patchs)
 	if err != nil {
 		return "", err
 	}

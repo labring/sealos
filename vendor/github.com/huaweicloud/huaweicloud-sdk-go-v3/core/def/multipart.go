@@ -21,12 +21,13 @@ package def
 
 import (
 	"fmt"
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/converter"
 	"io"
 	"mime/multipart"
 	"net/textproto"
 	"os"
 	"strings"
+
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/converter"
 )
 
 var quoteEscape = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")

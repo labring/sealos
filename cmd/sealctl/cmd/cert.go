@@ -17,6 +17,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/cmd/sealctl/boot"
+
 	"github.com/fanux/sealos/pkg/cert"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -29,8 +31,8 @@ var certCmd = &cobra.Command{
 	Short: "generate certs",
 	Long:  `you can specify expire time`,
 	Run: func(cmd *cobra.Command, args []string) {
-		PrintFlags(cmd.Flags())
-		err := cert.GenerateCert(flag.Cert.CertPath, flag.Cert.CertEtcdPath, flag.Cert.AltNames, flag.Cert.NodeIP, flag.Cert.NodeName, flag.Cert.ServiceCIDR, flag.Cert.DNSDomain)
+		boot.PrintFlags(cmd.Flags())
+		err := cert.GenerateCert(boot.CmdFlag.Cert.CertPath, boot.CmdFlag.Cert.CertEtcdPath, boot.CmdFlag.Cert.AltNames, boot.CmdFlag.Cert.NodeIP, boot.CmdFlag.Cert.NodeName, boot.CmdFlag.Cert.ServiceCIDR, boot.CmdFlag.Cert.DNSDomain)
 		if err != nil {
 			logger.Error(err)
 			os.Exit(1)
@@ -41,11 +43,11 @@ var certCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(certCmd)
 
-	certCmd.Flags().StringSliceVar(&flag.Cert.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
-	certCmd.Flags().StringVar(&flag.Cert.NodeName, "node-name", "", "like master0")
-	certCmd.Flags().StringVar(&flag.Cert.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
-	certCmd.Flags().StringVar(&flag.Cert.NodeIP, "node-ip", "", "like 10.103.97.2")
-	certCmd.Flags().StringVar(&flag.Cert.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
-	certCmd.Flags().StringVar(&flag.Cert.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
-	certCmd.Flags().StringVar(&flag.Cert.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+	certCmd.Flags().StringSliceVar(&boot.CmdFlag.Cert.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.NodeName, "node-name", "", "like master0")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	certCmd.Flags().StringVar(&boot.CmdFlag.Cert.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
 }

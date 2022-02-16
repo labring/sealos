@@ -17,34 +17,33 @@ limitations under the License.
 package boot
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/spf13/pflag"
 )
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	CmdFlag.Root.ConfigFilePath = CmdFlag.Root.ConfigDir + CmdFlag.Root.ConfigFile
-	logger.Cfg(CmdFlag.Root.Debug, CmdFlag.Root.ConfigDir, "sealos", CmdFlag.Root.ShowPatch)
+type RootFlag struct {
+	Debug          bool
+	ConfigDir      string
+	ConfigFile     string
+	ShowPatch      bool
+	ConfigFilePath string
 }
 
-func initRootDirectory() error {
-	var rootDirs = []string{
-		CmdFlag.Root.ConfigDir,
-	}
-	for _, dir := range rootDirs {
-		err := os.MkdirAll(dir, 0755)
-		if err != nil {
-			return fmt.Errorf("failed to mkdir %s, err: %s", dir, err)
-		}
-	}
-	return nil
+type ConfigFlag struct {
+	KubeVersion string
+	PatchPath   string
 }
 
-func OnBootOnDie() {
-	if err := initRootDirectory(); err != nil {
-		panic(1)
-	}
-	initConfig()
+type Flag struct {
+	Root   RootFlag
+	Config ConfigFlag
+}
+
+var CmdFlag Flag
+
+// PrintFlags logs the flags in the flagset
+func PrintFlags(flags *pflag.FlagSet) {
+	flags.VisitAll(func(flag *pflag.Flag) {
+		logger.Debug("FLAG: --%s=%q", flag.Name, flag.Value)
+	})
 }

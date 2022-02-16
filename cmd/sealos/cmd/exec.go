@@ -49,7 +49,7 @@ func init() {
 }
 
 func ExecCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetExecFlag(boot.ConfigFilePath)
+	e := install.GetExecFlag(boot.CmdFlag.Root.ConfigFilePath)
 	if e.IsUseCopy() {
 		e.Copy()
 	}

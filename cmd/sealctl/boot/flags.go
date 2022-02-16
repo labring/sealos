@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package boot
 
 import (
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -37,29 +37,35 @@ type HostsFlag struct {
 }
 
 type RouteFlag struct {
-	host      string
-	gatewayIP string
+	Host      string
+	GatewayIP string
 }
 
 type StaticPodFlag struct {
-	staticPodPath string
+	StaticPodPath string
 }
 
 type VersionFlag struct {
-	shortPrint bool
+	ShortPrint bool
 }
 
 type CRIFlag struct {
-	socketPath string
-	configPath string
+	SocketPath string
+	ConfigPath string
 }
 
 type RegistryImageFlag struct {
 	Pull struct {
-		registryDir string
-		auths       []string
-		arch        string
+		RegistryDir string
+		Auths       []string
+		Arch        string
 	}
+}
+
+type RootFlag struct {
+	Debug     bool
+	ConfigDir string
+	ShowPatch bool
 }
 
 type Flag struct {
@@ -71,9 +77,10 @@ type Flag struct {
 	Version       VersionFlag
 	CRI           CRIFlag
 	RegistryImage RegistryImageFlag
+	Root          RootFlag
 }
 
-var flag Flag
+var CmdFlag Flag
 
 // PrintFlags logs the flags in the flagset
 func PrintFlags(flags *pflag.FlagSet) {

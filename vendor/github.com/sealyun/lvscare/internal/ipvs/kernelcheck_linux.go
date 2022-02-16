@@ -20,9 +20,10 @@ package ipvs
 
 import (
 	"fmt"
-	"github.com/sealyun/lvscare/internal/glog"
 	"regexp"
 	"strings"
+
+	"github.com/sealyun/lvscare/internal/glog"
 
 	utilsexec "github.com/sealyun/lvscare/internal/exec"
 	"github.com/sealyun/lvscare/internal/sets"

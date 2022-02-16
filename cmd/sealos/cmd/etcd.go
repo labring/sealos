@@ -114,16 +114,16 @@ func NewEtcdHealthCommand() *cobra.Command {
 }
 
 func EtcdSaveCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetEtcdBackFlags(boot.ConfigFilePath)
+	e := install.GetEtcdBackFlags(boot.CmdFlag.Root.ConfigFilePath)
 	if err := e.Save(v1.IsK8sMaster); err == nil {
-		e.Dump(boot.ConfigFilePath)
+		e.Dump(boot.CmdFlag.Root.ConfigFilePath)
 	}
 	logger.Info("Finished saving/uploading snapshot [%s]", e.Name)
 	e.HealthCheck()
 }
 
 func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetRestoreFlags(boot.ConfigFilePath)
+	e := install.GetRestoreFlags(boot.CmdFlag.Root.ConfigFilePath)
 	// restore need interactive to confirm
 	if !force {
 		prompt := fmt.Sprintf("Are you sure to exec restore cmd will stop your kubernetes cluster immediately and restore etcd from your backup %s file  (y/n)?", e.Name)
@@ -161,6 +161,6 @@ func EtcdRestoreCmdFunc(cmd *cobra.Command, args []string) {
 }
 
 func EtcdHealthCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetHealthFlag(boot.ConfigFilePath)
+	e := install.GetHealthFlag(boot.CmdFlag.Root.ConfigFilePath)
 	e.HealthCheck()
 }

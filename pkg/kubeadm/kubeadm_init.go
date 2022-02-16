@@ -16,7 +16,10 @@ limitations under the License.
 
 package kubeadm
 
-import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"github.com/fanux/sealos/pkg/kustomize"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 const initConfigDefault = `
 apiVersion: kubeadm.k8s.io/{{.KubeadmAPIVersion}}
@@ -29,7 +32,7 @@ nodeRegistration:
 
 func NewInit(kubeAPI, master0, criSocket string) Kubeadm {
 	return &initConfig{
-		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: GetterKubeadmAPIVersion(kubeAPI),
 		Master0:           master0,
 		CriSocket:         criSocket,
 	}
@@ -41,17 +44,21 @@ type initConfig struct {
 	CriSocket         string
 }
 
+func (c *initConfig) DefaultTemplate() string {
+	return initConfigDefault
+}
+
 func (c *initConfig) DefaultConfig() (string, error) {
 	return templateFromContent(initConfigDefault, c)
 }
 
-func (c *initConfig) Kustomization(patch string) (string, error) {
+func (c *initConfig) Kustomization(patch []kustomize.Patch) (string, error) {
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
 		Version: c.KubeadmAPIVersion,
 		Kind:    "InitConfiguration",
 	}
-	kf, err := getterKFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, hasPatch(patch))
 	if err != nil {
 		return "", err
 	}

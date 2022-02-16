@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fanux/sealos/cmd/sealctl/boot"
+
 	"github.com/docker/docker/api/types"
 	"github.com/fanux/sealos/pkg/buildimage"
 	"github.com/fanux/sealos/pkg/image"
@@ -53,9 +55,9 @@ func NewRegistryImagePullCmd() *cobra.Command {
 		//
 		//},
 	}
-	cmd.PersistentFlags().StringVar(&flag.RegistryImage.Pull.arch, "arch", "amd64", "pull images arch")
-	cmd.PersistentFlags().StringVar(&flag.RegistryImage.Pull.registryDir, "data-dir", "/var/lib/registry", "registry data dir path")
-	cmd.PersistentFlags().StringSliceVar(&flag.RegistryImage.Pull.auths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io,auth=YWRtaW46YWRtaW4=\".")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.RegistryImage.Pull.Arch, "arch", "amd64", "pull images arch")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.RegistryImage.Pull.RegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
+	cmd.PersistentFlags().StringSliceVar(&boot.CmdFlag.RegistryImage.Pull.Auths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io,auth=YWRtaW46YWRtaW4=\".")
 	cmd.AddCommand(NewRegistryImagePullRawCmd())
 	cmd.AddCommand(NewRegistryImagePullYamlCmd())
 	cmd.AddCommand(NewRegistryImagePullDefaultCmd())
@@ -69,14 +71,14 @@ func NewRegistryImagePullRawCmd() *cobra.Command {
 		Use:   "raw",
 		Short: "registry images manager pull to local dir by raw type",
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintFlags(cmd.Flags())
+			boot.PrintFlags(cmd.Flags())
 			images, err := file.ReadLines(imageFile)
 			if err != nil {
 				logger.Error("ImageFile convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
 			is := image.NewImageSaver(context.Background(), auth)
-			err = is.SaveImages(images, flag.RegistryImage.Pull.registryDir, v1.Platform{OS: "linux", Architecture: flag.RegistryImage.Pull.arch})
+			err = is.SaveImages(images, boot.CmdFlag.RegistryImage.Pull.RegistryDir, v1.Platform{OS: "linux", Architecture: boot.CmdFlag.RegistryImage.Pull.Arch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)
@@ -102,14 +104,14 @@ func NewRegistryImagePullYamlCmd() *cobra.Command {
 		Use:   "yaml",
 		Short: "registry images manager pull to local dir by yaml type",
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintFlags(cmd.Flags())
+			boot.PrintFlags(cmd.Flags())
 			images, err := buildimage.ParseYamlImages(yamlPath)
 			if err != nil {
 				logger.Error("yaml path convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
 			is := image.NewImageSaver(context.Background(), auth)
-			err = is.SaveImages(images, flag.RegistryImage.Pull.registryDir, v1.Platform{OS: "linux", Architecture: flag.RegistryImage.Pull.arch})
+			err = is.SaveImages(images, boot.CmdFlag.RegistryImage.Pull.RegistryDir, v1.Platform{OS: "linux", Architecture: boot.CmdFlag.RegistryImage.Pull.Arch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)
@@ -135,9 +137,9 @@ func NewRegistryImagePullDefaultCmd() *cobra.Command {
 		Use:   "default",
 		Short: "registry images manager pull to local dir by default type",
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintFlags(cmd.Flags())
+			boot.PrintFlags(cmd.Flags())
 			is := image.NewImageSaver(context.Background(), auth)
-			err := is.SaveImages(images, flag.RegistryImage.Pull.registryDir, v1.Platform{OS: "linux", Architecture: flag.RegistryImage.Pull.arch})
+			err := is.SaveImages(images, boot.CmdFlag.RegistryImage.Pull.RegistryDir, v1.Platform{OS: "linux", Architecture: boot.CmdFlag.RegistryImage.Pull.Arch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)
@@ -153,12 +155,12 @@ func NewRegistryImagePullDefaultCmd() *cobra.Command {
 }
 
 func validateRegistryImagePull() map[string]types.AuthConfig {
-	if !file.IsExist(flag.RegistryImage.Pull.registryDir) {
+	if !file.IsExist(boot.CmdFlag.RegistryImage.Pull.RegistryDir) {
 		logger.Error("registry data dir is not exist")
 		os.Exit(1)
 	}
 	data := make(map[string]types.AuthConfig)
-	for _, a := range flag.RegistryImage.Pull.auths {
+	for _, a := range boot.CmdFlag.RegistryImage.Pull.Auths {
 		auth := maps.StringToMap(a)
 		var ok bool
 		if _, ok = auth["address"]; !ok {

@@ -16,7 +16,10 @@ limitations under the License.
 
 package kubeadm
 
-import v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"github.com/fanux/sealos/pkg/kustomize"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 const clusterConfigDefault = `
 apiVersion: kubeadm.k8s.io/{{.KubeadmAPIVersion}}
@@ -80,16 +83,16 @@ scheduler:
     readOnly: true
     pathType: File`
 
-func NewCluster(kubeAPI, master0, criSocket string) Kubeadm {
+func NewCluster(kubeAPI, apiserverDomain, podCIDR, svcCIDR, vip string, masters, certSANs []string) Kubeadm {
 	return &cluster{
-		KubeadmAPIVersion: getterKubeadmAPIVersion(kubeAPI),
+		KubeadmAPIVersion: GetterKubeadmAPIVersion(kubeAPI),
 		KubeVersion:       kubeAPI,
-		APIServerDomain:   "",
-		PodCIDR:           "",
-		SvcCIDR:           "",
-		VIP:               "",
-		MasterIPs:         nil,
-		CertSANs:          nil,
+		APIServerDomain:   apiserverDomain,
+		PodCIDR:           podCIDR,
+		SvcCIDR:           svcCIDR,
+		VIP:               vip,
+		MasterIPs:         masters,
+		CertSANs:          certSANs,
 	}
 }
 
@@ -104,17 +107,20 @@ type cluster struct {
 	CertSANs          []string
 }
 
+func (c *cluster) DefaultTemplate() string {
+	return clusterConfigDefault
+}
 func (c *cluster) DefaultConfig() (string, error) {
 	return templateFromContent(clusterConfigDefault, c)
 }
 
-func (c *cluster) Kustomization(patch string) (string, error) {
+func (c *cluster) Kustomization(patch []kustomize.Patch) (string, error) {
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
 		Version: c.KubeadmAPIVersion,
 		Kind:    "ClusterConfiguration",
 	}
-	kf, err := getterKFile(gvk, patch != "")
+	kf, err := getterKFile(gvk, hasPatch(patch))
 	if err != nil {
 		return "", err
 	}

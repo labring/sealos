@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fanux/sealos/cmd/sealctl/boot"
+
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
@@ -42,8 +44,8 @@ func NewCRICmd() *cobra.Command {
 	cmd.AddCommand(NewPullImageCmd())
 	cmd.AddCommand(NewImageExistsCmd())
 	cmd.AddCommand(NewCGroupDriverCmd())
-	cmd.PersistentFlags().StringVar(&flag.CRI.socketPath, "socket-path", "", "cri socket path")
-	cmd.PersistentFlags().StringVar(&flag.CRI.configPath, "config", "", "cri config file")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.CRI.SocketPath, "socket-path", "", "cri socket path")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.CRI.ConfigPath, "config", "", "cri config file")
 
 	return cmd
 }
@@ -222,8 +224,8 @@ func NewCGroupDriverCmd() *cobra.Command {
 
 func criCheck() {
 	var err error
-	if flag.CRI.socketPath == "" {
-		flag.CRI.socketPath, err = cri.DetectCRISocket()
+	if boot.CmdFlag.CRI.SocketPath == "" {
+		boot.CmdFlag.CRI.SocketPath, err = cri.DetectCRISocket()
 	}
 	if err != nil {
 		logger.Error(err)
@@ -231,7 +233,7 @@ func criCheck() {
 	}
 }
 func criRuntime() cri.ContainerRuntime {
-	rt, err := cri.NewContainerRuntime(utilsexec.New(), flag.CRI.socketPath, flag.CRI.configPath)
+	rt, err := cri.NewContainerRuntime(utilsexec.New(), boot.CmdFlag.CRI.SocketPath, boot.CmdFlag.CRI.ConfigPath)
 	if err != nil {
 		logger.Error(err)
 		os.Exit(1)

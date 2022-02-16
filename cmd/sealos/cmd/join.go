@@ -55,7 +55,7 @@ func JoinCmdFunc(cmd *cobra.Command, args []string) {
 	beforeMasters := iputils.ParseIPs(v1.MasterIPs)
 
 	c := &v1.SealConfig{}
-	if err := c.Load(boot.ConfigFilePath); err != nil {
+	if err := c.Load(boot.CmdFlag.Root.ConfigFilePath); err != nil {
 		logger.Error(err)
 		c.ShowDefaultConfig()
 		os.Exit(0)
@@ -70,5 +70,5 @@ func JoinCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	install.BuildJoin(beforeMasters, beforeNodes)
-	c.Dump(boot.ConfigFilePath)
+	c.Dump(boot.CmdFlag.Root.ConfigFilePath)
 }

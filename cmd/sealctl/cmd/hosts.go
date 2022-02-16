@@ -19,6 +19,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/cmd/sealctl/boot"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/hosts"
@@ -37,7 +39,7 @@ func NewHostsCmd() *cobra.Command {
 	cmd.AddCommand(NewHostsListCmd())
 	cmd.AddCommand(NewHostsAddCmd())
 	cmd.AddCommand(NewHostsDeleteCmd())
-	cmd.PersistentFlags().StringVar(&flag.Hosts.HostsPath, "path", "/etc/hosts", "default hosts path")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.Hosts.HostsPath, "path", "/etc/hosts", "default hosts path")
 	return cmd
 }
 
@@ -46,7 +48,7 @@ func NewHostsListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "hosts manager list",
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
+			hf := &hosts.HostFile{Path: boot.CmdFlag.Hosts.HostsPath}
 			hf.ListCurrentHosts()
 		},
 	}
@@ -69,7 +71,7 @@ func NewHostsAddCmd() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
+			hf := &hosts.HostFile{Path: boot.CmdFlag.Hosts.HostsPath}
 			hf.AppendHost(domain, ip)
 		},
 	}
@@ -90,7 +92,7 @@ func NewHostsDeleteCmd() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			hf := &hosts.HostFile{Path: flag.Hosts.HostsPath}
+			hf := &hosts.HostFile{Path: boot.CmdFlag.Hosts.HostsPath}
 			hf.DeleteDomain(domain)
 		},
 	}

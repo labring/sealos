@@ -60,4 +60,11 @@ func Test_kustomize(t *testing.T) {
 		return
 	}
 	t.Log(config)
+	patch = `[{"op":"add","path":"/ipvs/ffff","value":"beagle"}]`
+	config, err = k.Kustomization(patch)
+	if err != nil {
+		t.Error(err.Error())
+		return
+	}
+	t.Log(config)
 }
