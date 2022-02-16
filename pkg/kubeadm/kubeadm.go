@@ -78,7 +78,7 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 	return apiVersion
 }
 
-func GetterInitKubeadmConfig(k8sVersion, master0, clusterDomain, podCIDR, svcCIDR, vip, cri, patch string, masters, sans []string) (string, error) {
+func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch string, masters, sans []string) (string, error) {
 	var config InitConfigPatch
 	err := yaml.Unmarshal([]byte(patch), &config)
 	if err != nil {
@@ -89,7 +89,7 @@ func GetterInitKubeadmConfig(k8sVersion, master0, clusterDomain, podCIDR, svcCID
 	if err != nil {
 		return "", err
 	}
-	c := NewCluster(k8sVersion, clusterDomain, podCIDR, svcCIDR, vip, masters, sans)
+	c := NewCluster(k8sVersion, apiserverDomain, podCIDR, svcCIDR, vip, masters, sans)
 	cc, err := c.Kustomization(config.ClusterConfig)
 	if err != nil {
 		return "", err

@@ -17,6 +17,7 @@ limitations under the License.
 package kubeadm
 
 import (
+	"github.com/fanux/sealos/pkg/kustomize"
 	"testing"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -49,19 +50,27 @@ func Test_kFile(t *testing.T) {
 
 func Test_kustomize(t *testing.T) {
 	k := NewKubeproxy("10.0.0.2")
-	patch := `
-- op: add
-  path: /ipvs/ffff
-  value: beagle
-`
-	config, err := k.Kustomization(patch)
+	config, err := k.Kustomization([]kustomize.Patch{
+		{
+			Op:    "add",
+			Path:  "/ipvs/ffff",
+			From:  "",
+			Value: "beagle",
+		},
+	})
 	if err != nil {
 		t.Error(err.Error())
 		return
 	}
 	t.Log(config)
-	patch = `[{"op":"add","path":"/ipvs/ffff","value":"beagle"}]`
-	config, err = k.Kustomization(patch)
+	config, err = k.Kustomization([]kustomize.Patch{
+		{
+			Op:    "add",
+			Path:  "/ipvs/ffff",
+			From:  "",
+			Value: "beagle",
+		},
+	})
 	if err != nil {
 		t.Error(err.Error())
 		return
