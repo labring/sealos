@@ -22,9 +22,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.0
 	github.com/schollz/progressbar/v3 v3.8.5
-	github.com/sealyun/cloud-kernel v0.0.15
 	github.com/sealyun/lvscare v1.1.3-beta.2
 	github.com/spf13/cobra v1.2.1
+	github.com/spf13/pflag v1.0.5
 	github.com/vishvananda/netlink v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.etcd.io/etcd/etcdutl/v3 v3.5.1
@@ -37,5 +37,7 @@ require (
 	k8s.io/client-go v0.18.0
 	k8s.io/cluster-bootstrap v0.18.0
 	k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
+	sigs.k8s.io/kustomize/api v0.11.2
+	sigs.k8s.io/kustomize/kyaml v0.13.3
 	sigs.k8s.io/yaml v1.2.0
 )

@@ -16,6 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/spf13/cobra"
@@ -27,7 +30,7 @@ func NewKubeCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "kube",
 		Short: "kube resource list json",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		Run: func(cmd *cobra.Command, args []string) {
 			template := "kubectl get %s %s %s %s %s -o json"
 			ns := ""
 			c := ""
@@ -52,10 +55,10 @@ func NewKubeCmd() *cobra.Command {
 			}
 			data, err := exec.RunBashCmd(fmt.Sprintf(template, sources, ns, c, fs, ls))
 			if err != nil {
-				return err
+				logger.Error(err)
+				os.Exit(1)
 			}
 			println(data)
-			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&allNamespace, "--all-namespaces", false, " If present, list the requested object(s) across all namespaces. Namespace in current\ncontext is ignored even if specified with --namespace.")

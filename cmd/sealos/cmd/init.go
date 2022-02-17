@@ -86,23 +86,23 @@ var initCmd = &cobra.Command{
 		c := &v1.SealConfig{}
 		// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
 		// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
-		if boot.ConfigFilePath != "" && len(v1.MasterIPs) == 0 {
-			err := c.Load(boot.ConfigFilePath)
+		if boot.CmdFlag.Root.ConfigFilePath != "" && len(v1.MasterIPs) == 0 {
+			err := c.Load(boot.CmdFlag.Root.ConfigFilePath)
 			if err != nil {
-				logger.Error("load boot.ConfigFilePath %s err: %q", boot.ConfigFilePath, err)
+				logger.Error("load boot.ConfigFilePath %s err: %q", boot.CmdFlag.Root.ConfigFilePath, err)
 				os.Exit(1)
 			}
 		} else {
-			c.Dump(boot.ConfigFilePath)
+			c.Dump(boot.CmdFlag.Root.ConfigFilePath)
 		}
 		install.BuildInit()
 		// 安装完成后生成完整版
-		c.Dump(boot.ConfigFilePath)
+		c.Dump(boot.CmdFlag.Root.ConfigFilePath)
 		logger.Info(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// 使用了boot.ConfigFilePath 就不进行preRun了
-		if boot.ConfigFilePath == "" && install.ExitInitCase() {
+		if boot.CmdFlag.Root.ConfigFilePath == "" && install.ExitInitCase() {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}

@@ -23,13 +23,9 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-var Debug bool
-var ConfigDir string
-var ShowPatch bool
-
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	logger.Cfg(Debug, ConfigDir, "sealctl", ShowPatch)
+	logger.Cfg(CmdFlag.Root.Debug, CmdFlag.Root.ConfigDir, "sealctl", CmdFlag.Root.ShowPatch)
 }
 
 func InitRootDirectory(rootDirs []string) error {
@@ -43,7 +39,7 @@ func InitRootDirectory(rootDirs []string) error {
 }
 
 func OnBootOnDie() {
-	if err := InitRootDirectory([]string{ConfigDir}); err != nil {
+	if err := InitRootDirectory([]string{CmdFlag.Root.ConfigDir}); err != nil {
 		logger.Error("onBoot is error: %v", err)
 		os.Exit(1)
 	}

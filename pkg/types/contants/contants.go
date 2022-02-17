@@ -19,11 +19,21 @@ package contants
 import "github.com/fanux/sealos/pkg/utils/file"
 
 const (
-	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
-	DefaultConfigFile    = "/config.yaml"
-	LvsCareStaticPodName = "kube-sealyun-lvscare"
+	DefaultLvsCareImage     = "sealyun.hub:5000/sealyun/lvscare:latest"
+	DefaultConfigFile       = "/config.yaml"
+	LvsCareStaticPodName    = "kube-sealyun-lvscare"
+	DefaultVIP              = "10.103.97.2"
+	DefaultAPIServerDomain  = "apiserver.cluster.local"
+	DefaultPodCIDR          = "100.64.0.0/10"
+	DefaultSvcCIDR          = "10.96.0.0/12"
+	DefaultNetworkInterface = "eth.*|en.*|em.*"
+	DefaultUserRoot         = "root"
+	DefaultCNIMTU           = "1440"
+	DefaultCNIIPIPTrue      = "Always"
+	DefaultCNIIPIPFalse     = "Off"
 )
 
 var (
 	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
+	DefaultPKFile     = file.UserHomeDir() + "/.ssh/id_rsa"
 )

@@ -37,7 +37,7 @@ func NewStaticPodCmd() *cobra.Command {
 	}
 	// check route for host
 	cmd.AddCommand(NewLvscareCmd())
-	cmd.PersistentFlags().StringVar(&flag.StaticPod.staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
+	cmd.PersistentFlags().StringVar(&boot.CmdFlag.StaticPod.StaticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
 	return cmd
 }
 
@@ -48,11 +48,11 @@ func NewLvscareCmd() *cobra.Command {
 	var cmd = &cobra.Command{
 		Use:   "lvscare",
 		Short: "generator lvscare static pod file",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			if len(masters) == 0 {
-				return fmt.Errorf("master not allow empty")
+				logger.Error("master not allow empty")
+				os.Exit(1)
 			}
-			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			fileName := fmt.Sprintf("%s.yaml", name)
@@ -66,11 +66,11 @@ func NewLvscareCmd() *cobra.Command {
 				return
 			}
 			logger.Debug("lvscare static pod yaml is %s", yaml)
-			if err = boot.InitRootDirectory([]string{flag.StaticPod.staticPodPath}); err != nil {
+			if err = boot.InitRootDirectory([]string{boot.CmdFlag.StaticPod.StaticPodPath}); err != nil {
 				logger.Error("init dir is error: %v", err)
 				os.Exit(1)
 			}
-			err = ioutil.WriteFile(path.Join(flag.StaticPod.staticPodPath, fileName), []byte(yaml), 0755)
+			err = ioutil.WriteFile(path.Join(boot.CmdFlag.StaticPod.StaticPodPath, fileName), []byte(yaml), 0755)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)

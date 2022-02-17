@@ -75,26 +75,10 @@ type ConfigFiles struct {
 	KubeadmJoinPath string `json:"join"`
 }
 
-type ConfigJoinNode struct {
-	Token   string       `json:"token"`
-	Expires *metav1.Time `json:"expires,omitempty"`
-}
-
-type ConfigJoinMaster struct {
-	DiscoveryTokenCaCertHash string `json:"discovery-token-ca-cert-hash"`
-	CertificateKey           string `json:"certificate-key"`
-}
-
-type ConfigToken struct {
-	JoinNode   ConfigJoinNode   `json:"join_node"`
-	JoinMaster ConfigJoinMaster `json:"join_master"`
-}
-
 type ConfigData struct {
 	CRI     ConfigCRI     `json:"cri"`
 	Network ConfigNetwork `json:"network"`
 	Files   ConfigFiles   `json:"files"`
-	Token   ConfigToken   `json:"token"`
 }
 
 // +kubebuilder:object:root=true

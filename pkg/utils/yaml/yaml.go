@@ -17,19 +17,20 @@ limitations under the License.
 package yaml
 
 import (
+	"bufio"
 	"bytes"
 	"io"
 	"path/filepath"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func ToJSON(bs []byte) (jsons []string) {
 	reader := bytes.NewReader(bs)
 	ext := runtime.RawExtension{}
-	d := yaml.NewYAMLOrJSONDecoder(reader, 4096)
+	d := utilyaml.NewYAMLOrJSONDecoder(reader, 4096)
 	for {
 		if err := d.Decode(&ext); err != nil {
 			if err == io.EOF {
@@ -38,6 +39,26 @@ func ToJSON(bs []byte) (jsons []string) {
 			break
 		}
 		jsons = append(jsons, string(ext.Raw))
+	}
+	return
+}
+
+func ToYalms(bs string) (yamls []string) {
+	buf := bytes.NewBuffer([]byte(bs))
+	reader := utilyaml.NewYAMLReader(bufio.NewReader(buf))
+	for {
+		patch, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			break
+		}
+		patch = bytes.TrimSpace(patch)
+		if len(patch) == 0 {
+			continue
+		}
+		yamls = append(yamls, string(patch))
 	}
 	return
 }

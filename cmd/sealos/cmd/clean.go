@@ -77,7 +77,7 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	deleteNodes := iputils.ParseIPs(v1.NodeIPs)
 	deleteMasters := iputils.ParseIPs(v1.MasterIPs)
 	c := &v1.SealConfig{}
-	if err := c.Load(boot.ConfigFilePath); err != nil {
+	if err := c.Load(boot.CmdFlag.Root.ConfigFilePath); err != nil {
 		logger.Error(err)
 		os.Exit(-1)
 	}
@@ -94,7 +94,7 @@ func CleanCmdFunc(cmd *cobra.Command, args []string) {
 	}
 
 	install.BuildClean(deleteNodes, deleteMasters)
-	c.Dump(boot.ConfigFilePath)
+	c.Dump(boot.CmdFlag.Root.ConfigFilePath)
 }
 
 // IsExistNodes

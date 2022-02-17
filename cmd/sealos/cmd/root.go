@@ -44,9 +44,9 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(boot.OnBootOnDie)
-	rootCmd.PersistentFlags().StringVar(&boot.ConfigDir, "config-dir", contants.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
-	rootCmd.PersistentFlags().StringVar(&boot.ConfigFile, "config-file", contants.DefaultConfigFile, "config file (default is /config.yaml )")
+	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config-dir", contants.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
+	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigFile, "config-file", contants.DefaultConfigFile, "config file (default is /config.yaml )")
 
-	rootCmd.PersistentFlags().BoolVar(&boot.Debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&boot.ShowPatch, "path", false, "enable show code path")
+	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
+	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
 }

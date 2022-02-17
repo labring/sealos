@@ -31,6 +31,13 @@ func Htpasswd(username, password string) string {
 }
 
 func LoginAuth(username, password string) string {
-	const encodeStd = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-	return base64.NewEncoding(encodeStd).EncodeToString([]byte(username + ":" + password))
+	return base64.StdEncoding.EncodeToString([]byte(username + ":" + password))
+}
+
+func LoginAuthDecode(auth string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(auth)
+	if data != nil {
+		return string(data), nil
+	}
+	return "", err
 }

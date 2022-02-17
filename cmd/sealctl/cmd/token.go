@@ -17,25 +17,19 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/kubernetes/token"
+	"github.com/fanux/sealos/pkg/token"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
 func NewTokenCmd() *cobra.Command {
-	var master bool
 	var cmd = &cobra.Command{
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
-			var t *token.Token
-			var err error
-			if master {
-				t, err = token.Master()
-			} else {
-				t, err = token.Node()
-			}
+			t, err := token.Default()
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)
@@ -44,7 +38,6 @@ func NewTokenCmd() *cobra.Command {
 			println(string(data))
 		},
 	}
-	cmd.Flags().BoolVar(&master, "master", false, "generator token type")
 
 	return cmd
 }

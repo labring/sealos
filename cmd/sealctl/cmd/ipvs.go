@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +24,8 @@ var ipvsCmd = &cobra.Command{
 	Use:   "ipvs",
 	Short: "sealos create or care local ipvs lb",
 	Run: func(cmd *cobra.Command, args []string) {
-		flag.Ipvs.VsAndRsCare()
+		boot.PrintFlags(cmd.Flags())
+		boot.CmdFlag.Ipvs.VsAndRsCare()
 	},
 }
 
@@ -31,14 +33,14 @@ func init() {
 	rootCmd.AddCommand(ipvsCmd)
 
 	// Here you will define your flags and configuration settings.
-	ipvsCmd.Flags().BoolVar(&flag.Ipvs.RunOnce, "run-once", false, "is run once mode")
-	ipvsCmd.Flags().BoolVarP(&flag.Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
-	ipvsCmd.Flags().StringVar(&flag.Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
-	ipvsCmd.Flags().StringSliceVar(&flag.Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
+	ipvsCmd.Flags().BoolVar(&boot.CmdFlag.Ipvs.RunOnce, "run-once", false, "is run once mode")
+	ipvsCmd.Flags().BoolVarP(&boot.CmdFlag.Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
+	ipvsCmd.Flags().StringVar(&boot.CmdFlag.Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
+	ipvsCmd.Flags().StringSliceVar(&boot.CmdFlag.Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
 
-	ipvsCmd.Flags().StringVar(&flag.Ipvs.HealthPath, "health-path", "/healthz", "health check path")
-	ipvsCmd.Flags().StringVar(&flag.Ipvs.HealthSchem, "health-schem", "https", "health check schem")
-	ipvsCmd.Flags().Int32Var(&flag.Ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
+	ipvsCmd.Flags().StringVar(&boot.CmdFlag.Ipvs.HealthPath, "health-path", "/healthz", "health check path")
+	ipvsCmd.Flags().StringVar(&boot.CmdFlag.Ipvs.HealthSchem, "health-schem", "https", "health check schem")
+	ipvsCmd.Flags().Int32Var(&boot.CmdFlag.Ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// ipvsCmd.PersistentFlags().String("foo", "", "A help for foo")

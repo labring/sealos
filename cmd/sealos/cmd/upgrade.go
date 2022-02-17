@@ -65,11 +65,11 @@ func UpgradeCmdFunc(cmd *cobra.Command, args []string) {
 	}
 	u := install.NewUpgrade(newVersion, newPkgURL)
 	u.SetUP()
-	u.Dump(boot.ConfigFilePath)
+	u.Dump(boot.CmdFlag.Root.ConfigFilePath)
 }
 
 func PreRunUpgradeCmdFunc(cmd *cobra.Command, args []string) {
-	if err := install.ExitUpgradeCase(newVersion, newPkgURL, boot.ConfigFilePath); err != nil {
+	if err := install.ExitUpgradeCase(newVersion, newPkgURL, boot.CmdFlag.Root.ConfigFilePath); err != nil {
 		logger.Error("PreRun error: ", err)
 		os.Exit(1)
 	}

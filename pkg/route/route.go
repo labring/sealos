@@ -15,8 +15,13 @@
 package route
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"os"
+	"syscall"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
@@ -24,67 +29,63 @@ import (
 	k8snet "k8s.io/apimachinery/pkg/util/net"
 )
 
-type Flags struct {
+var ErrNotIPV4 = errors.New("IP addresses are not IPV4 rules")
+
+type Route struct {
 	Host    string
 	Gateway string
 }
 
-func GetRouteFlag(host, gateway string) *Flags {
-	return &Flags{
+func NewRoute(host, gateway string) *Route {
+	return &Route{
 		Host:    host,
 		Gateway: gateway,
 	}
 }
 
-func (r *Flags) useHostCheckRoute() bool {
-	return iputils.IsIpv4(r.Host) && r.Gateway == ""
-}
-
-func (r *Flags) useGatewayManageRoute() bool {
-	return iputils.IsIpv4(r.Gateway) && iputils.IsIpv4(r.Host)
-}
-
-func (r *Flags) CheckRoute() {
-	if r.useHostCheckRoute() {
-		if isDefaultRouteIP(r.Host) {
-			fmt.Println("ok")
-			return
-		}
-		fmt.Println("failed")
+func CheckIsDefaultRoute(host string) error {
+	ok, err := isDefaultRouteIP(host)
+	if err == nil && ok {
+		_, err = os.Stdout.WriteString("ok")
 	}
-}
-
-func (r *Flags) SetRoute() {
-	if r.useGatewayManageRoute() {
-		err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
-		if err != nil {
-			fmt.Println("addRouteGatewayViaHost err: ", err)
-		}
+	if err == nil && !ok {
+		_, err = os.Stderr.WriteString("failed")
 	}
+	return err
 }
 
-func (r *Flags) DelRoute() {
-	if r.useGatewayManageRoute() {
-		err := delRouteGatewayViaHost(r.Host, r.Gateway)
-		if err != nil {
-			fmt.Println("delRouteGatewayViaHost err: ", err)
-		}
+func (r *Route) SetRoute() error {
+	if !iputils.IsIpv4(r.Gateway) || !iputils.IsIpv4(r.Host) {
+		return ErrNotIPV4
 	}
+	err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
+	if err != nil && !errors.Is(err, os.ErrExist) /* return if route already exist */ {
+		return fmt.Errorf("failed to add %s route gateway via host err: %v", r.Host, err)
+	}
+	logger.Info(fmt.Sprintf("success to set route.(host:%s, gateway:%s)", r.Host, r.Gateway))
+	return nil
 }
 
-// getDefaultRouteIp is get host ip by ChooseHostInterface() .
-func getDefaultRouteIP() (ip string, err error) {
+func (r *Route) DelRoute() error {
+	if !iputils.IsIpv4(r.Gateway) || !iputils.IsIpv4(r.Host) {
+		return ErrNotIPV4
+	}
+
+	err := delRouteGatewayViaHost(r.Host, r.Gateway)
+	if err != nil && !errors.Is(err, syscall.ESRCH) /* return if route does not exist */ {
+		return fmt.Errorf("failed to delete %s route gateway via host err: %v", r.Host, err)
+	}
+	logger.Info(fmt.Sprintf("success to del route.(host:%s, gateway:%s)", r.Host, r.Gateway))
+	return nil
+}
+
+// isDefaultRouteIP return true if host equal default route ip host.
+func isDefaultRouteIP(host string) (bool, error) {
 	netIP, err := k8snet.ChooseHostInterface()
 	if err != nil {
-		return "", err
+		return false, fmt.Errorf("failed to get default route ip, err: %v", err)
 	}
-	return netIP.String(), nil
-}
-
-// isDefaultRouteIp return true if host equal default route ip host.
-func isDefaultRouteIP(host string) bool {
-	ip, _ := getDefaultRouteIP()
-	return ip == host
+	return netIP.String() == host, nil
 }
 
 // addRouteGatewayViaHost host: 10.103.97.2  gateway 192.168.253.129

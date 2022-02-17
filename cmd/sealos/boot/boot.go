@@ -23,21 +23,15 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-var Debug bool
-var ConfigDir string
-var ConfigFile string
-var ShowPatch bool
-var ConfigFilePath string
-
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	ConfigFilePath = ConfigDir + ConfigFile
-	logger.Cfg(Debug, ConfigDir, "sealos", ShowPatch)
+	CmdFlag.Root.ConfigFilePath = CmdFlag.Root.ConfigDir + CmdFlag.Root.ConfigFile
+	logger.Cfg(CmdFlag.Root.Debug, CmdFlag.Root.ConfigDir, "sealos", CmdFlag.Root.ShowPatch)
 }
 
 func initRootDirectory() error {
 	var rootDirs = []string{
-		ConfigDir,
+		CmdFlag.Root.ConfigDir,
 	}
 	for _, dir := range rootDirs {
 		err := os.MkdirAll(dir, 0755)
