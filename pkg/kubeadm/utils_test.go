@@ -17,8 +17,9 @@ limitations under the License.
 package kubeadm
 
 import (
-	"github.com/fanux/sealos/pkg/kustomize"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/kustomize"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

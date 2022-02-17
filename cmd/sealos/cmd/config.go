@@ -141,7 +141,7 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
 	cmd.Flags().StringVar(&apiserverDomain, "apiserver-domain", contants.DefaultAPIServerDomain, "apiserver domain name")
-	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
+	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
 	cmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
 	cmd.Flags().StringSliceVar(&sans, "cert-sans", []string{}, "kubernetes apiServerCertSANs ex. 47.0.0.22 sealyun.com ")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
@@ -197,7 +197,7 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
-	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
+	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
 	cmd.Flags().StringVar(&t.JoinToken, "token", "", "default join token")
@@ -239,7 +239,7 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
 	cmd.Flags().StringVar(&masterIP, "master-ip", "", "kubernetes join masterIP value")
 
-	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "virtual ip")
+	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
 	cmd.Flags().StringVar(&t.JoinToken, "token", "", "default join token")
