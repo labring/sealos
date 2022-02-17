@@ -17,8 +17,9 @@ limitations under the License.
 package cni
 
 import (
-	"github.com/fanux/sealos/pkg/types/contants"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/types/contants"
 )
 
 type CNI struct {

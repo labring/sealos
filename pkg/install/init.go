@@ -235,8 +235,6 @@ func (s *SealosInstaller) InstallMaster0() {
 		err := json.Unmarshal([]byte(metajson), &tmpdata)
 		if err != nil {
 			logger.Warn("get metadata version err: ", err)
-		} else {
-			//cniVersion = tmpdata.CniVersion
 		}
 	}
 	//"{{if not .IPIP }}Off{{else}}Always{{end}}"
@@ -250,7 +248,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		IPIP:      ipip,
 		MTU:       v1.MTU,
 	}
-	netyaml:=cn.Manifests("")
+	netyaml := cn.Manifests("")
 	configYamlPath := filepath.Join(contants.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
 	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
