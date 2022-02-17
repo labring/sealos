@@ -16,5 +16,27 @@ limitations under the License.
 
 package cni
 
+import (
+	"strings"
+
+	"github.com/fanux/sealos/pkg/types/contants"
+)
+
+type CNI struct {
+	Interface string
+	CIDR      string
+	IPIP      string
+	MTU       string
+}
+
 type Interface interface {
+	Manifests(template string) string
+}
+
+func (c *CNI) Manifests(template string) string {
+	template = strings.ReplaceAll(template, contants.DefaultVarCNIInterface, c.Interface)
+	template = strings.ReplaceAll(template, contants.DefaultVarCNICIDR, c.CIDR)
+	template = strings.ReplaceAll(template, contants.DefaultVarCNIIPIP, c.IPIP)
+	template = strings.ReplaceAll(template, contants.DefaultVarCNIMTU, c.MTU)
+	return template
 }

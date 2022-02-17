@@ -221,7 +221,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		return
 	}
 	//cmd = `kubectl apply -f /root/kube/conf/net/calico.yaml || true`
-	var cniVersion string
+	//var cniVersion string
 	// can-reach is used by calico multi network , flannel has nothing to add. just Use it.
 	if iputils.IsIpv4(v1.Interface) {
 		v1.Interface = "can-reach=" + v1.Interface
@@ -235,18 +235,20 @@ func (s *SealosInstaller) InstallMaster0() {
 		err := json.Unmarshal([]byte(metajson), &tmpdata)
 		if err != nil {
 			logger.Warn("get metadata version err: ", err)
-		} else {
-			cniVersion = tmpdata.CniVersion
 		}
 	}
-	netyaml := cni.NewCalico(cni.MetaData{
+	//"{{if not .IPIP }}Off{{else}}Always{{end}}"
+	ipip := contants.DefaultCNIIPIPTrue
+	if v1.BGP {
+		ipip = contants.DefaultCNIIPIPFalse
+	}
+	cn := &cni.CNI{
 		Interface: v1.Interface,
 		CIDR:      v1.PodCIDR,
-		IPIP:      !v1.BGP,
+		IPIP:      ipip,
 		MTU:       v1.MTU,
-		CniRepo:   v1.Repo,
-		Version:   cniVersion,
-	}).Manifests("")
+	}
+	netyaml := cn.Manifests("")
 	configYamlPath := filepath.Join(contants.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
 	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
