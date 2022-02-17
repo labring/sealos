@@ -23,7 +23,7 @@ import (
 func (s *SealosInstaller) SendPackage() {
 	pkg := path.Base(PkgURL)
 	// rm old sealos in package avoid old version problem. if sealos not exist in package then skip rm
-	kubeHook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && bash init.sh", pkg)
+	kubeHook := fmt.Sprintf("cd /root && rm -rf kube && tar zxvf %s  && cd /root/kube/shell && rm -f ../bin/sealos && bash init.sh && rm -rf /opt/cni/bin/* ", pkg)
 	deletekubectl := `sed -i '/kubectl/d;/sealos/d' /root/.bashrc `
 	completion := "echo 'command -v kubectl &>/dev/null && source <(kubectl completion bash)' >> /root/.bashrc && echo '[ -x /usr/bin/sealos ] && source <(sealos completion bash)' >> /root/.bashrc && source /root/.bashrc"
 	kubeHook = kubeHook + " && " + deletekubectl + " && " + completion
