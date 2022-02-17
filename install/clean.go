@@ -178,7 +178,7 @@ func clean(host string) {
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/systemd/system/kubelet.service.d && rm -rf /etc/systemd/system/kubelet.service"
 	_ = SSHConfig.CmdAsync(host, cmd)
-	cmd = "rm -rf /usr/bin/kube* && rm -rf /usr/bin/crictl"
+	cmd = "rm -rf /usr/bin/kube* "
 	_ = SSHConfig.CmdAsync(host, cmd)
 	cmd = "rm -rf /etc/cni && rm -rf /opt/cni"
 	_ = SSHConfig.CmdAsync(host, cmd)
