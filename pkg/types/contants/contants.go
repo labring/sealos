@@ -37,3 +37,15 @@ var (
 	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
 	DefaultPKFile     = file.UserHomeDir() + "/.ssh/id_rsa"
 )
+
+var (
+	DefaultVarCRIData           = "CRIData"
+	DefaultVarCRIRegistryDomain = "RegistryDomain"
+	DefaultVarCRIRegistryPort   = "RegistryPort"
+	DefaultVarCRIRegistryData   = "RegistryData"
+	DefaultVarCRIRegistryConfig = "RegistryConfig"
+	DefaultVarCNIInterface      = "__INTERFACE__"
+	DefaultVarCNIIPIP           = "__IPIP__"
+	DefaultVarCNICIDR           = "__CIDR__"
+	DefaultVarCNIMTU            = "__MTU__"
+)
