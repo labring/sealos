@@ -18,7 +18,6 @@ package client
 
 import (
 	"github.com/fanux/sealos/pkg/client/typed/apps/v1beta1"
-	"k8s.io/client-go/rest"
 )
 
 var _ Interface = &Clientset{}
@@ -41,10 +40,10 @@ func (c *Clientset) AppsV1beta1() v1beta1.AppsV1Beta1Interface {
 // NewForConfig creates a new Clientset for the given config.
 // If config's RateLimiter is not set and QPS and Burst are acceptable,
 // NewForConfig will generate a rate-limiter in configShallowCopy.
-func NewForConfig(c *rest.Config) (*Clientset, error) {
+func NewForConfig(config string) (*Clientset, error) {
 	var cs Clientset
 	var err error
-	cs.appsv1beta1, err = v1beta1.NewForConfig()
+	cs.appsv1beta1, err = v1beta1.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +52,8 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 
 // NewForConfigOrDie creates a new Clientset for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *Clientset {
+func NewForConfigOrDie(config string) *Clientset {
 	var cs Clientset
-	cs.appsv1beta1 = v1beta1.NewForConfigOrDie()
+	cs.appsv1beta1 = v1beta1.NewForConfigOrDie(config)
 	return &cs
 }

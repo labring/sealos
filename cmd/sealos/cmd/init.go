@@ -17,13 +17,13 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/cmd/sealos/boot"
 
 	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	"github.com/fanux/sealos/pkg/types/contants"
 
 	install "github.com/fanux/sealos/pkg/install"
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -137,7 +137,7 @@ func init() {
 	initCmd.Flags().BoolVar(&v1.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().BoolVar(&v1.BGP, "bgp", false, "bgp mode enable, calico..")
 	initCmd.Flags().StringVar(&v1.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
-	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
+	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", v1beta1.DefaultLvsCareImage, "lvscare image name")
 
 	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
 }

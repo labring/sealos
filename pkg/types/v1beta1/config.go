@@ -20,30 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ConfigCNI struct {
-	Type    string            `json:"type"`
-	Version string            `json:"version"`
-	Data    map[string]string `json:"data"`
-}
-
-type ConfigMetadata struct {
-	Version string `json:"version"`
-	Arch    string `json:"arch"`
-}
-
-type ConfigTemplate struct {
-	Init          string
-	InitRegistry  string
-	CleanRegistry string
-}
-
-type ConfigSystem struct {
-	CNI          ConfigCNI      `json:"cni"`
-	LvscareImage string         `json:"lvscareimage"`
-	Metadata     ConfigMetadata `json:"metadata"`
-	Template     ConfigTemplate `json:"template"`
-}
-
 //
 type ConfigRegistry struct {
 	Domain    string  `json:"domain"`
@@ -105,10 +81,42 @@ type ConfigHost struct {
 	Roles []string `json:"roles,omitempty"`
 }
 
+type Metadata struct {
+	LvsCareImage string          `json:"lvsCareImage,omitempty"`
+	Template     *ConfigTemplate `json:"template,omitempty"`
+	CNI          *ConfigCNI      `json:"cni,omitempty"`
+}
+
+type ConfigCNI struct {
+	Type    string `json:"type"`
+	Version string `json:"version"`
+}
+
+type ConfigTemplate struct {
+	Init          string
+	InitRegistry  string
+	CleanRegistry string
+}
+
+type PackageType string
+
+const (
+	Kubernetes  PackageType = "kubernetes"
+	Application PackageType = "application"
+)
+
+type Package struct {
+	Type     PackageType
+	Arch     Arch
+	Version  string
+	Path     string
+	Metadata *Metadata `json:"metadata,omitempty"`
+}
+
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
-	SSH    ConfigSSH    `json:"ssh"`
-	Hosts  []ConfigHost `json:"hosts,omitempty"`
-	System ConfigSystem `json:"system"`
-	Data   ConfigData   `json:"data"`
+	SSH         ConfigSSH    `json:"ssh"`
+	Hosts       []ConfigHost `json:"hosts,omitempty"`
+	Data        ConfigData   `json:"data"`
+	PackageTars []Package    `json:"packageTars"`
 }

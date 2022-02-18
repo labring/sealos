@@ -19,7 +19,7 @@ package cni
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 type CNI struct {
@@ -34,9 +34,9 @@ type Interface interface {
 }
 
 func (c *CNI) Manifests(template string) string {
-	template = strings.ReplaceAll(template, contants.DefaultVarCNIInterface, c.Interface)
-	template = strings.ReplaceAll(template, contants.DefaultVarCNICIDR, c.CIDR)
-	template = strings.ReplaceAll(template, contants.DefaultVarCNIIPIP, c.IPIP)
-	template = strings.ReplaceAll(template, contants.DefaultVarCNIMTU, c.MTU)
+	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIInterface, c.Interface)
+	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNICIDR, c.CIDR)
+	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIIPIP, c.IPIP)
+	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIMTU, c.MTU)
 	return template
 }

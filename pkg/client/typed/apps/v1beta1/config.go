@@ -19,18 +19,19 @@ package v1beta1
 import (
 	"context"
 
+	"github.com/fanux/sealos/pkg/kustomize"
 	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ ConfigInterface = &configs{}
 
 // ConfigInterface has methods to work with Config resources.
 type ConfigInterface interface {
-	Create(ctx context.Context, deployment *v1.Config, opts metav1.CreateOptions) (*v1.Config, error)
-	Update(ctx context.Context, deployment *v1.Config, opts metav1.UpdateOptions) (*v1.Config, error)
-	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
-	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.Config, error)
+	Create(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error)
+	Update(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error)
+	Patch(ctx context.Context, name string, data []kustomize.Patch, dryRun bool) (result *v1.Config, err error)
+	Delete(ctx context.Context, name string, dryRun bool) error
+	Get(ctx context.Context, name string, dryRun bool) (*v1.Config, error)
 }
 
 type ConfigsGetter interface {
@@ -38,21 +39,26 @@ type ConfigsGetter interface {
 }
 
 type configs struct {
+	config string
 }
 
 func newConfigs(c *AppsV1Beta1Client) *configs {
-	return &configs{}
+	return &configs{config: c.config}
 }
 
-func (*configs) Create(ctx context.Context, config *v1.Config, opts metav1.CreateOptions) (*v1.Config, error) {
+func (*configs) Create(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error) {
 	return nil, nil
 }
-func (*configs) Update(ctx context.Context, config *v1.Config, opts metav1.UpdateOptions) (*v1.Config, error) {
+func (*configs) Update(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error) {
 	return nil, nil
 }
-func (*configs) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
+func (*configs) Delete(ctx context.Context, name string, dryRun bool) error {
 	return nil
 }
-func (*configs) Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.Config, error) {
+func (*configs) Get(ctx context.Context, name string, dryRun bool) (*v1.Config, error) {
+	return nil, nil
+}
+
+func (*configs) Patch(ctx context.Context, name string, data []kustomize.Patch, dryRun bool) (result *v1.Config, err error) {
 	return nil, nil
 }

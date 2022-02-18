@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package contants
+package v1beta1
 
 import "github.com/fanux/sealos/pkg/utils/file"
 

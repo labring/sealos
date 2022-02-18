@@ -21,13 +21,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/cmd/sealos/boot"
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/token"
-	"github.com/fanux/sealos/pkg/types/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
@@ -97,9 +98,9 @@ func NewKubeadmConfigInitTemplatesCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			i := kubeadm.NewInit(boot.CmdFlag.Config.KubeVersion, "1.2.3.4", cri.DefaultContainerdCRISocket)
 			ic := i.DefaultTemplate()
-			c := kubeadm.NewCluster(boot.CmdFlag.Config.KubeVersion, contants.DefaultAPIServerDomain, contants.DefaultPodCIDR, contants.DefaultSvcCIDR, contants.DefaultVIP, []string{"1.2.3.4"}, []string{})
+			c := kubeadm.NewCluster(boot.CmdFlag.Config.KubeVersion, v1beta1.DefaultAPIServerDomain, v1beta1.DefaultPodCIDR, v1beta1.DefaultSvcCIDR, v1beta1.DefaultVIP, []string{"1.2.3.4"}, []string{})
 			cc := c.DefaultTemplate()
-			kp := kubeadm.NewKubeproxy(contants.DefaultVIP)
+			kp := kubeadm.NewKubeproxy(v1beta1.DefaultVIP)
 			kpc := kp.DefaultTemplate()
 			kl := kubeadm.NewKubelet()
 			klc := kl.DefaultTemplate()
@@ -140,13 +141,13 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
-	cmd.Flags().StringVar(&apiserverDomain, "apiserver-domain", contants.DefaultAPIServerDomain, "apiserver domain name")
-	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
+	cmd.Flags().StringVar(&apiserverDomain, "apiserver-domain", v1beta1.DefaultAPIServerDomain, "apiserver domain name")
+	cmd.Flags().StringVar(&vip, "vip", v1beta1.DefaultVIP, "virtual ip")
 	cmd.Flags().StringSliceVar(&masters, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
 	cmd.Flags().StringSliceVar(&sans, "cert-sans", []string{}, "kubernetes apiServerCertSANs ex. 47.0.0.22 sealyun.com ")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
-	cmd.Flags().StringVar(&podCIDR, "pod-cidr", contants.DefaultPodCIDR, "Specify range of IP addresses for the pod network")
-	cmd.Flags().StringVar(&svcCIDR, "svc-cidr", contants.DefaultSvcCIDR, "Use alternative range of IP address for service VIPs")
+	cmd.Flags().StringVar(&podCIDR, "pod-cidr", v1beta1.DefaultPodCIDR, "Specify range of IP addresses for the pod network")
+	cmd.Flags().StringVar(&svcCIDR, "svc-cidr", v1beta1.DefaultSvcCIDR, "Use alternative range of IP address for service VIPs")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
 
 	return cmd
@@ -157,7 +158,7 @@ func NewKubeadmConfigJoinTemplatesCmd() *cobra.Command {
 		Use:   "print-templates",
 		Short: "config manager kubeadm join print-templates",
 		Run: func(cmd *cobra.Command, args []string) {
-			nj := kubeadm.NewJoinNode(boot.CmdFlag.Config.KubeVersion, cri.DefaultContainerdCRISocket, contants.DefaultVIP, token.Token{})
+			nj := kubeadm.NewJoinNode(boot.CmdFlag.Config.KubeVersion, cri.DefaultContainerdCRISocket, v1beta1.DefaultVIP, token.Token{})
 			njc := nj.DefaultTemplate()
 			kl := kubeadm.NewKubelet()
 			klc := kl.DefaultTemplate()
@@ -197,7 +198,7 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
-	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
+	cmd.Flags().StringVar(&vip, "vip", v1beta1.DefaultVIP, "virtual ip")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
 	cmd.Flags().StringVar(&t.JoinToken, "token", "", "default join token")
@@ -239,7 +240,7 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
 	cmd.Flags().StringVar(&masterIP, "master-ip", "", "kubernetes join masterIP value")
 
-	cmd.Flags().StringVar(&vip, "vip", contants.DefaultVIP, "virtual ip")
+	cmd.Flags().StringVar(&vip, "vip", v1beta1.DefaultVIP, "virtual ip")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
 	cmd.Flags().StringVar(&t.JoinToken, "token", "", "default join token")

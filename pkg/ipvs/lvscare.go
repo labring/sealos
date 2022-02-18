@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -36,7 +36,7 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 		return "", fmt.Errorf("vip and mster not allow empty")
 	}
 	if image == "" {
-		image = contants.DefaultLvsCareImage
+		image = v1beta1.DefaultLvsCareImage
 	}
 	args := []string{"care", "--vs", vip + ":6443", "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {

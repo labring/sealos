@@ -20,9 +20,10 @@ import (
 	"os"
 	"path"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/fanux/sealos/pkg/ipvs"
-	"github.com/fanux/sealos/pkg/types/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
@@ -80,8 +81,8 @@ func NewLvscareCmd() *cobra.Command {
 	}
 	// manually to set host via gateway
 	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2", "default vip IP")
-	cmd.Flags().StringVar(&name, "name", contants.LvsCareStaticPodName, "generator lvscare static pod name")
-	cmd.Flags().StringVar(&image, "image", contants.DefaultLvsCareImage, "generator lvscare static pod image")
+	cmd.Flags().StringVar(&name, "name", v1beta1.LvsCareStaticPodName, "generator lvscare static pod name")
+	cmd.Flags().StringVar(&image, "image", v1beta1.DefaultLvsCareImage, "generator lvscare static pod image")
 	cmd.Flags().StringSliceVar(&masters, "masters", nil, "generator masters addrs")
 	cmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
 	return cmd

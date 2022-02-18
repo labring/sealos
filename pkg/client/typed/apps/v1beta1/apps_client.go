@@ -24,6 +24,7 @@ type AppsV1Beta1Interface interface {
 
 // AppsV1Beta1Client is used to interact with features provided by the apps.sealyun.com group.
 type AppsV1Beta1Client struct {
+	config string
 }
 
 func (c *AppsV1Beta1Client) Configs() ConfigInterface {
@@ -31,14 +32,14 @@ func (c *AppsV1Beta1Client) Configs() ConfigInterface {
 }
 
 // NewForConfig creates a new AppsV1Beta1Client for the given config.
-func NewForConfig() (*AppsV1Beta1Client, error) {
-	return &AppsV1Beta1Client{}, nil
+func NewForConfig(config string) (*AppsV1Beta1Client, error) {
+	return &AppsV1Beta1Client{config: config}, nil
 }
 
 // NewForConfigOrDie creates a new AppsV1Beta1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie() *AppsV1Beta1Client {
-	client, err := NewForConfig()
+func NewForConfigOrDie(config string) *AppsV1Beta1Client {
+	client, err := NewForConfig(config)
 	if err != nil {
 		panic(err)
 	}

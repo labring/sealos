@@ -19,11 +19,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
-
-	"github.com/fanux/sealos/pkg/types/contants"
 
 	"sigs.k8s.io/yaml"
 )
@@ -69,7 +69,7 @@ type SealConfig struct {
 //Dump is
 func (c *SealConfig) Dump(path string) {
 	if path == "" {
-		path = contants.DefaultConfigPath + contants.DefaultConfigFile
+		path = v1beta1.DefaultConfigPath + v1beta1.DefaultConfigFile
 	}
 	MasterIPs = iputils.ParseIPs(MasterIPs)
 	c.Masters = MasterIPs
@@ -98,7 +98,7 @@ func (c *SealConfig) Dump(path string) {
 		logger.Error("dump config file failed: %s", err)
 	}
 
-	err = os.MkdirAll(contants.DefaultConfigPath, os.ModePerm)
+	err = os.MkdirAll(v1beta1.DefaultConfigPath, os.ModePerm)
 	if err != nil {
 		logger.Warn("create default sealos config dir failed, please create it by your self mkdir -p /root/.sealos && touch /root/.sealos/config.yaml")
 	}
@@ -114,7 +114,7 @@ func Dump(path string, content interface{}) error {
 		logger.Error("dump config file failed: %s", err)
 		return err
 	}
-	err = os.MkdirAll(contants.DefaultConfigPath, os.ModePerm)
+	err = os.MkdirAll(v1beta1.DefaultConfigPath, os.ModePerm)
 	if err != nil {
 		logger.Error("create dump dir failed %s", err)
 		return err
@@ -127,7 +127,7 @@ func Dump(path string, content interface{}) error {
 //Load is
 func (c *SealConfig) Load(path string) (err error) {
 	if path == "" {
-		path = contants.DefaultConfigPath + contants.DefaultConfigFile
+		path = v1beta1.DefaultConfigPath + v1beta1.DefaultConfigFile
 	}
 
 	y, err := ioutil.ReadFile(path)
@@ -191,9 +191,9 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.PodCIDR = "100.64.0.0/10"
 	c.SvcCIDR = "10.96.0.0/12"
 	c.APIServerCertSANs = []string{DefaultAPIServerDomain, "127.0.0.1"}
-	c.CertPath = contants.DefaultConfigPath + "/pki"
-	c.CertEtcdPath = contants.DefaultConfigPath + "/pki/etcd"
-	c.LvscareName = contants.DefaultLvsCareImage
+	c.CertPath = v1beta1.DefaultConfigPath + "/pki"
+	c.CertEtcdPath = v1beta1.DefaultConfigPath + "/pki/etcd"
+	c.LvscareName = v1beta1.DefaultLvsCareImage
 
 	y, err := yaml.Marshal(c)
 	if err != nil {
