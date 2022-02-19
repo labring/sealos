@@ -33,10 +33,10 @@ const (
 type OpType string
 
 type Patch struct {
-	Op    OpType               `json:"op"`
-	Path  string               `json:"path"`
-	From  string               `json:"from,omitempty"`
-	Value runtime.RawExtension `json:"value,omitempty"`
+	Op    OpType          `json:"op"`
+	Path  string          `json:"path"`
+	From  string          `json:"from,omitempty"`
+	Value runtime.Unknown `json:"value,omitempty"`
 }
 
 // KubeadmConfigSpec defines the desired state of Config

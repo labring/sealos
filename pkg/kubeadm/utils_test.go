@@ -19,6 +19,8 @@ package kubeadm
 import (
 	"testing"
 
+	"k8s.io/apimachinery/pkg/runtime"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +58,7 @@ func Test_kustomize(t *testing.T) {
 			Op:    "add",
 			Path:  "/ipvs/ffff",
 			From:  "",
-			Value: "beagle",
+			Value: runtime.Unknown{Raw: []byte("\"beagle\"")},
 		},
 	})
 	if err != nil {
@@ -69,7 +71,7 @@ func Test_kustomize(t *testing.T) {
 			Op:    "add",
 			Path:  "/ipvs/ffff",
 			From:  "",
-			Value: "beagle",
+			Value: runtime.Unknown{Raw: []byte("\"beagle\"")},
 		},
 	})
 	if err != nil {

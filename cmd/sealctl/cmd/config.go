@@ -121,7 +121,7 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath!=""{
+			if patchPath != "" {
 				if file.IsExist(patchPath) {
 					data, err := ioutil.ReadFile(patchPath)
 					if err != nil {
@@ -131,7 +131,6 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 					patch = string(data)
 				}
 			}
-
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			data, err := kubeadm.GetterInitKubeadmConfig(kubeVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri.DefaultContainerdCRISocket, patch, masters, sans)
@@ -182,7 +181,7 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath!="" {
+			if patchPath != "" {
 				if file.IsExist(patchPath) {
 					data, err := ioutil.ReadFile(patchPath)
 					if err != nil {
@@ -223,7 +222,7 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath!="" {
+			if patchPath != "" {
 				if file.IsExist(patchPath) {
 					data, err := ioutil.ReadFile(patchPath)
 					if err != nil {
@@ -265,35 +264,18 @@ func NewPatchConfigCmd() *cobra.Command {
 		//
 		//},
 	}
-	cmd.AddCommand(NewPatchConfigInitDefaultsCmd())
-	cmd.AddCommand(NewPatchConfigJoinDefaultsCmd())
+	cmd.AddCommand(NewPatchConfigDefaultsCmd())
 	return cmd
 }
 
-func NewPatchConfigInitDefaultsCmd() *cobra.Command {
+func NewPatchConfigDefaultsCmd() *cobra.Command {
 	var cmd = &cobra.Command{
-		Use:   "init-defaults",
+		Use:   "patch-defaults",
 		Short: "Print default init patch configuration, that can be used for 'sealos init', Format documented at https://datatracker.ietf.org/doc/html/rfc6902",
 		Run: func(cmd *cobra.Command, args []string) {
-			data, err := yaml.Marshal(kubeadm.DefaultInitPatch())
+			data, err := yaml.Marshal(kubeadm.DefaultPatchDefault())
 			if err != nil {
 				logger.Error("print patch init-defaults error: %s", err.Error())
-				os.Exit(1)
-			}
-			println(string(data))
-		},
-	}
-	return cmd
-}
-
-func NewPatchConfigJoinDefaultsCmd() *cobra.Command {
-	var cmd = &cobra.Command{
-		Use:   "join-defaults",
-		Short: "Print default join patch configuration, that can be used for 'sealos join', Format documented at https://datatracker.ietf.org/doc/html/rfc6902",
-		Run: func(cmd *cobra.Command, args []string) {
-			data, err := yaml.Marshal(kubeadm.DefaultJoinPatch())
-			if err != nil {
-				logger.Error("print patch join-defaults error: %s", err.Error())
 				os.Exit(1)
 			}
 			println(string(data))
