@@ -17,23 +17,23 @@ limitations under the License.
 package kubeadm
 
 import (
-	"github.com/fanux/sealos/pkg/kustomize"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 type InitConfigPatch struct {
-	InitConfig      []kustomize.Patch
-	ClusterConfig   []kustomize.Patch
-	KubeproxyConfig []kustomize.Patch
-	KubeletConfig   []kustomize.Patch
+	InitConfig      []v1beta1.Patch
+	ClusterConfig   []v1beta1.Patch
+	KubeproxyConfig []v1beta1.Patch
+	KubeletConfig   []v1beta1.Patch
 }
 
 type JoinConfigPatch struct {
-	JoinConfig    []kustomize.Patch
-	KubeletConfig []kustomize.Patch
+	JoinConfig    []v1beta1.Patch
+	KubeletConfig []v1beta1.Patch
 }
 
 // https://datatracker.ietf.org/doc/html/rfc6902#section-3
-var defaultPatchExample = []kustomize.Patch{
+var defaultPatchExample = []v1beta1.Patch{
 	{
 		Op:    "add",
 		Path:  "/a/b/c",
@@ -65,7 +65,7 @@ var defaultPatchExample = []kustomize.Patch{
 	},
 }
 
-var defaultPatchEmptyExample []kustomize.Patch
+var defaultPatchEmptyExample []v1beta1.Patch
 
 func DefaultInitPatch() InitConfigPatch {
 	return InitConfigPatch{

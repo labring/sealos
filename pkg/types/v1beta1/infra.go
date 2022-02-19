@@ -83,13 +83,13 @@ type AccessChannels struct {
 	SSH SSH `json:"ssh,omitempty"`
 }
 
-type ClusterMeta struct {
+type Instance struct {
 	IsSeize bool `json:"isSeize,omitempty"`
 
-	Network ClusterNetworkMeta `json:"network"`
+	Network NetworkMeta `json:"network"`
 }
 
-type ClusterNetworkMeta struct {
+type NetworkMeta struct {
 	Bandwidth     string       `json:"bandwidth"`
 	ExportPorts   []ExportPort `json:"exportPorts,omitempty"`
 	PrivateCidrIP string       `json:"privateCidrIP,omitempty"`
@@ -108,12 +108,12 @@ type ExportPort struct {
 	PortRange string   `json:"portRange"`
 }
 
-type Cluster struct {
+type Metadata struct {
 	RegionIDs      []string          `json:"regionIDs,omitempty"`
 	ZoneIDs        []string          `json:"zoneIDs,omitempty"`
 	Annotations    map[string]string `json:"annotations,omitempty"`
 	AccessChannels AccessChannels    `json:"accessChannels"`
-	Metadata       ClusterMeta       `json:"metadata,omitempty"`
+	Instance       Instance          `json:"instance,omitempty"`
 }
 
 // InfraSpec defines the desired state of Infra
@@ -122,8 +122,8 @@ type InfraSpec struct {
 	Provider   Provider   `json:"provider,omitempty"`
 	Credential Credential `json:"credential,omitempty"`
 
-	Cluster Cluster `json:"cluster,omitempty"`
-	Hosts   []Host  `json:"hosts,omitempty"`
+	Metadata Metadata `json:"metadata,omitempty"`
+	Hosts    []Host   `json:"hosts,omitempty"`
 }
 
 type ClusterStatus struct {

@@ -292,7 +292,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	request.Scheme = Scheme
 	request.ImageId = imageID
 
-	request.Password = a.Infra.Spec.Cluster.AccessChannels.SSH.Passwd
+	request.Password = a.Infra.Spec.Metadata.AccessChannels.SSH.Passwd
 	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)

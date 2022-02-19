@@ -19,7 +19,7 @@ package kubeadm
 import (
 	"testing"
 
-	"github.com/fanux/sealos/pkg/kustomize"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -51,7 +51,7 @@ func Test_kFile(t *testing.T) {
 
 func Test_kustomize(t *testing.T) {
 	k := NewKubeproxy("10.0.0.2")
-	config, err := k.Kustomization([]kustomize.Patch{
+	config, err := k.Kustomization([]v1beta1.Patch{
 		{
 			Op:    "add",
 			Path:  "/ipvs/ffff",
@@ -64,7 +64,7 @@ func Test_kustomize(t *testing.T) {
 		return
 	}
 	t.Log(config)
-	config, err = k.Kustomization([]kustomize.Patch{
+	config, err = k.Kustomization([]v1beta1.Patch{
 		{
 			Op:    "add",
 			Path:  "/ipvs/ffff",

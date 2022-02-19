@@ -20,7 +20,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/kustomize"
+	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 	"sigs.k8s.io/yaml"
@@ -28,7 +29,7 @@ import (
 
 type Kubeadm interface {
 	DefaultConfig() (string, error)
-	Kustomization(patchs []kustomize.Patch) (string, error)
+	Kustomization(patchs []v1.Patch) (string, error)
 	DefaultTemplate() string
 }
 
@@ -151,6 +152,6 @@ func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri, patch string, t token.Tok
 	return data, nil
 }
 
-func hasPatch(patch []kustomize.Patch) bool {
+func hasPatch(patch []v1.Patch) bool {
 	return len(patch) != 0
 }

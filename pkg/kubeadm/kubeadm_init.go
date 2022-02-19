@@ -17,7 +17,7 @@ limitations under the License.
 package kubeadm
 
 import (
-	"github.com/fanux/sealos/pkg/kustomize"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,7 +52,7 @@ func (c *initConfig) DefaultConfig() (string, error) {
 	return templateFromContent(initConfigDefault, c)
 }
 
-func (c *initConfig) Kustomization(patch []kustomize.Patch) (string, error) {
+func (c *initConfig) Kustomization(patch []v1beta1.Patch) (string, error) {
 	gvk := v1.GroupVersionKind{
 		Group:   "kubeadm.k8s.io",
 		Version: c.KubeadmAPIVersion,

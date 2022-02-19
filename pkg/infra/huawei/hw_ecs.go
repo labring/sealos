@@ -42,8 +42,8 @@ func (a *HwProvider) GetAvailableZoneID() error {
 		logger.Info("create resource success %s: %s", "GetAvailableZoneID", a.Infra.Status.Cluster.ZoneID)
 	}()
 
-	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
-		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[rand.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
+	if len(a.Infra.Spec.Metadata.ZoneIDs) != 0 {
+		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Metadata.ZoneIDs[rand.Rand(len(a.Infra.Spec.Metadata.ZoneIDs))]
 		return nil
 	}
 	resp, err := a.RetryEcsRequest(&model.NovaListAvailabilityZonesRequest{}, v2.GenReqDefForNovaListAvailabilityZones())
@@ -149,7 +149,7 @@ func (a *HwProvider) GetAvailableZoneID() error {
 //	instancesTags := CreateDescribeInstancesTag(tag)
 //	request := ecs.CreateDescribeInstancesRequest()
 //	request.Scheme = Scheme
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
+//	request.RegionId = a.Infra.Status.Metadata.RegionID
 //	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 //	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 //	request.Tag = &instancesTags
@@ -236,12 +236,12 @@ func (a *HwProvider) GetAvailableZoneID() error {
 //		return err
 //	}
 //	ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, "")
-//	if v1beta1.In(a.Infra.Status.Cluster.Master0ID, instanceIDs) {
+//	if v1beta1.In(a.Infra.Status.Metadata.Master0ID, instanceIDs) {
 //		logger.Debug("delete instance success,need delete about instance info[master0id,master0InternalIP,eip,eipID]")
-//		a.Infra.Status.Cluster.Master0ID = ""
-//		a.Infra.Status.Cluster.Master0InternalIP = ""
-//		a.Infra.Status.Cluster.EIP = ""
-//		delete(a.Infra.Status.Cluster.Annotations, string(EipID))
+//		a.Infra.Status.Metadata.Master0ID = ""
+//		a.Infra.Status.Metadata.Master0InternalIP = ""
+//		a.Infra.Status.Metadata.EIP = ""
+//		delete(a.Infra.Status.Metadata.Annotations, string(EipID))
 //	}
 //	return nil
 //}
@@ -295,13 +295,13 @@ func (a *HwProvider) GetAvailableZoneID() error {
 //	request.Scheme = Scheme
 //	request.ImageId = imageID
 //
-//	request.Password = a.Infra.Spec.Cluster.AccessChannels.SSH.Passwd
+//	request.Password = a.Infra.Spec.Metadata.AccessChannels.SSH.Passwd
 //	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 //	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 //	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)
 //	request.SystemDiskCategory = a.Infra.Status.Hosts[j].SystemCategory
 //	request.DataDisk = &datadisk
-//	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
+//	request.SpotStrategy = a.Infra.Status.Metadata.SpotStrategy
 //	request.Amount = requests.NewInteger(count)
 //	request.Tag = &instancesTag
 //	response := ecs.CreateRunInstancesResponse()

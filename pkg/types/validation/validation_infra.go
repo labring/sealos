@@ -62,7 +62,7 @@ func validateHost(host *v1beta1.Host, fldPath *field.Path) field.ErrorList {
 	return allErrors
 }
 
-func validateCluster(cluster *v1beta1.Cluster, fldPath *field.Path) field.ErrorList {
+func validateCluster(cluster *v1beta1.Metadata, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
 	if len(cluster.RegionIDs) == 0 {
@@ -95,7 +95,7 @@ func ValidateInfra(infra *v1beta1.Infra, fun func(infra *v1beta1.Infra) field.Er
 func validateInfraSpec(spec *v1beta1.InfraSpec, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 	allErrors = append(allErrors, validateCredential(&spec.Credential, fldPath.Child("credential"))...)
-	allErrors = append(allErrors, validateCluster(&spec.Cluster, fldPath.Child("cluster"))...)
+	allErrors = append(allErrors, validateCluster(&spec.Metadata, fldPath.Child("cluster"))...)
 	var roles []string
 	roleSet := sets.NewString()
 	if spec.Hosts != nil {

@@ -15,3 +15,12 @@ limitations under the License.
 */
 
 package v1beta1
+
+func defaultSSH(config *Cluster) {
+	if config.Spec.SSH.Port == 0 {
+		config.Spec.SSH.Port = 22
+	}
+	if len(config.Spec.SSH.User) == 0 {
+		config.Spec.SSH.User = DefaultUserRoot
+	}
+}

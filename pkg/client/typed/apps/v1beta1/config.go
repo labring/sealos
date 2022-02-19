@@ -19,7 +19,6 @@ package v1beta1
 import (
 	"context"
 
-	"github.com/fanux/sealos/pkg/kustomize"
 	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
@@ -29,7 +28,7 @@ var _ ConfigInterface = &configs{}
 type ConfigInterface interface {
 	Create(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error)
 	Update(ctx context.Context, config *v1.Config, dryRun bool) (*v1.Config, error)
-	Patch(ctx context.Context, name string, data []kustomize.Patch, dryRun bool) (result *v1.Config, err error)
+	Patch(ctx context.Context, name string, data []v1.Patch, dryRun bool) (result *v1.Config, err error)
 	Delete(ctx context.Context, name string, dryRun bool) error
 	Get(ctx context.Context, name string, dryRun bool) (*v1.Config, error)
 }
@@ -59,6 +58,6 @@ func (*configs) Get(ctx context.Context, name string, dryRun bool) (*v1.Config, 
 	return nil, nil
 }
 
-func (*configs) Patch(ctx context.Context, name string, data []kustomize.Patch, dryRun bool) (result *v1.Config, err error) {
+func (*configs) Patch(ctx context.Context, name string, data []v1.Patch, dryRun bool) (result *v1.Config, err error) {
 	return nil, nil
 }

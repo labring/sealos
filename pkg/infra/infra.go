@@ -57,7 +57,7 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 func newHwProvider(infra *v2.Infra) (Interface, error) {
 	hwProvider := new(huawei.HwProvider)
 	hwProvider.Infra = infra
-	if err := v2.DefaultCluster(hwProvider.Infra, huawei.DefaultInfra); err != nil {
+	if err := v2.DefaultInfra(hwProvider.Infra, huawei.DefaultInfra); err != nil {
 		return nil, err
 	}
 	if err := validation.ValidateInfra(hwProvider.Infra, huawei.DefaultValidate); len(err) != 0 {

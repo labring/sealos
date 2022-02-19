@@ -39,13 +39,18 @@ var (
 )
 
 var (
-	DefaultVarCRIData           = "CRIData"
-	DefaultVarCRIRegistryDomain = "RegistryDomain"
-	DefaultVarCRIRegistryPort   = "RegistryPort"
-	DefaultVarCRIRegistryData   = "RegistryData"
-	DefaultVarCRIRegistryConfig = "RegistryConfig"
-	DefaultVarCNIInterface      = "__INTERFACE__"
-	DefaultVarCNIIPIP           = "__IPIP__"
-	DefaultVarCNICIDR           = "__CIDR__"
-	DefaultVarCNIMTU            = "__MTU__"
+	DefaultVarCRIData             = "CRIData"        //cri-data
+	DefaultVarCRIRegistryDomain   = "RegistryDomain" //registry-domain
+	DefaultVarCRIRegistryPort     = "RegistryPort"   //registry-port
+	DefaultVarCRIRegistryData     = "RegistryData"   //registry-data
+	DefaultVarCRIRegistryConfig   = "RegistryConfig" //registry-config
+	DefaultVarCRIRegistryAuth     = "RegistryAuth"
+	DefaultVarCRIRegistryUsername = "RegistryUsername" //registry-username
+	DefaultVarCRIRegistryPassword = "RegistryPassword" //registry-password
+	DefaultVarLvsCareImage        = "LvsCareImage"     //lvscare-image
+
+	DefaultVarCNIInterface = "Interface" //cni-interface
+	DefaultVarCNIIPIP      = "IPIP"      //cni-ipip
+	DefaultVarCNICIDR      = "CIDR"      //cni-cidr
+	DefaultVarCNIMTU       = "MTU"       //cni-mtu
 )

@@ -50,7 +50,7 @@ type SSH struct {
 	LocalAddress *[]net.Addr
 }
 
-//func NewSSHByCluster(cluster *v1.Cluster) Interface {
+//func NewSSHByCluster(cluster *v1.Metadata) Interface {
 //	if cluster.Spec.SSH.User == "" {
 //		cluster.Spec.SSH.User = common.ROOT
 //	}
@@ -84,7 +84,7 @@ type SSH struct {
 //	}
 //}
 //
-//func GetHostSSHClient(hostIP string, cluster *v2.Cluster) (Interface, error) {
+//func GetHostSSHClient(hostIP string, cluster *v2.Metadata) (Interface, error) {
 //	for _, host := range cluster.Spec.Hosts {
 //		for _, ip := range host.IPS {
 //			if hostIP == ip {
@@ -106,7 +106,7 @@ type Client struct {
 }
 
 //
-//func NewSSHClientWithCluster(cluster *v1.Cluster) (*Client, error) {
+//func NewSSHClientWithCluster(cluster *v1.Metadata) (*Client, error) {
 //	var (
 //		ipList []string
 //		host   string

@@ -21,6 +21,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/kustomize"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/kyaml/filesys"
@@ -50,7 +52,7 @@ func templateFromContent(templateContent string, param interface{}) (string, err
 	return "", err
 }
 
-func kustomization(KFile, kubeadm string, patchs []kustomize.Patch, plugin bool) (string, error) {
+func kustomization(KFile, kubeadm string, patchs []v1beta1.Patch, plugin bool) (string, error) {
 	th := kustomize.New(filesys.MakeFsInMemory())
 	err := th.WriteKustomization(".", KFile)
 	if err != nil {

@@ -49,11 +49,11 @@ const (
 )
 
 func (r ResourceName) ClusterValue(infra v1beta1.InfraSpec) string {
-	return infra.Cluster.Annotations[string(r)]
+	return infra.Metadata.Annotations[string(r)]
 }
 
 func (r ResourceName) ClusterSetValue(infra v1beta1.InfraSpec, val string) {
-	infra.Cluster.Annotations[string(r)] = val
+	infra.Metadata.Annotations[string(r)] = val
 }
 
 func (r ResourceName) Value(status v1beta1.InfraStatus) string {
