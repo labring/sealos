@@ -121,14 +121,17 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if file.IsExist(patchPath) {
-				data, err := ioutil.ReadFile(patchPath)
-				if err != nil {
-					logger.Error(err.Error())
-					os.Exit(1)
+			if patchPath!=""{
+				if file.IsExist(patchPath) {
+					data, err := ioutil.ReadFile(patchPath)
+					if err != nil {
+						logger.Error(err.Error())
+						os.Exit(1)
+					}
+					patch = string(data)
 				}
-				patch = string(data)
 			}
+
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			data, err := kubeadm.GetterInitKubeadmConfig(kubeVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri.DefaultContainerdCRISocket, patch, masters, sans)
@@ -179,13 +182,15 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if file.IsExist(patchPath) {
-				data, err := ioutil.ReadFile(patchPath)
-				if err != nil {
-					logger.Error(err.Error())
-					os.Exit(1)
+			if patchPath!="" {
+				if file.IsExist(patchPath) {
+					data, err := ioutil.ReadFile(patchPath)
+					if err != nil {
+						logger.Error(err.Error())
+						os.Exit(1)
+					}
+					patch = string(data)
 				}
-				patch = string(data)
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
@@ -218,13 +223,15 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if file.IsExist(patchPath) {
-				data, err := ioutil.ReadFile(patchPath)
-				if err != nil {
-					logger.Error(err.Error())
-					os.Exit(1)
+			if patchPath!="" {
+				if file.IsExist(patchPath) {
+					data, err := ioutil.ReadFile(patchPath)
+					if err != nil {
+						logger.Error(err.Error())
+						os.Exit(1)
+					}
+					patch = string(data)
 				}
-				patch = string(data)
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {

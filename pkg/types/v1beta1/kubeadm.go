@@ -18,16 +18,7 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-type KubeadmConfigType string
-
-const (
-	InitConfig      KubeadmConfigType = "InitConfig"
-	ClusterConfig   KubeadmConfigType = "ClusterConfig"
-	KubeProxyConfig KubeadmConfigType = "KubeProxyConfig"
-	KubeletConfig   KubeadmConfigType = "KubeletConfig"
-	JoinConfig      KubeadmConfigType = "JoinConfig"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -42,16 +33,19 @@ const (
 type OpType string
 
 type Patch struct {
-	Op    OpType      `json:"op"`
-	Path  string      `json:"path"`
-	From  string      `json:"from,omitempty"`
-	Value interface{} `json:"value,omitempty"`
+	Op    OpType               `json:"op"`
+	Path  string               `json:"path"`
+	From  string               `json:"from,omitempty"`
+	Value runtime.RawExtension `json:"value,omitempty"`
 }
 
 // KubeadmConfigSpec defines the desired state of Config
 type KubeadmConfigSpec struct {
-	Type KubeadmConfigType `json:"type"`
-	Data []Patch           `json:"data"`
+	InitConfig      []Patch `json:"initConfig,omitempty"`
+	ClusterConfig   []Patch `json:"clusterConfig,omitempty"`
+	KubeProxyConfig []Patch `json:"kubeProxyConfig,omitempty"`
+	KubeletConfig   []Patch `json:"kubeletConfig,omitempty"`
+	JoinConfig      []Patch `json:"joinConfig,omitempty"`
 }
 
 // +kubebuilder:object:root=true
