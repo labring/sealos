@@ -24,10 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"reflect"
-	"strings"
-
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/converter"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
@@ -36,6 +32,9 @@ import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/response"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/sdkerr"
 	jsoniter "github.com/json-iterator/go"
+	"io/ioutil"
+	"reflect"
+	"strings"
 )
 
 type HcHttpClient struct {

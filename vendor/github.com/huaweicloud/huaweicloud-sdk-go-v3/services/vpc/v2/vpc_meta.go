@@ -3,9 +3,8 @@ package v2
 import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
 
-	"net/http"
-
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2/model"
+	"net/http"
 )
 
 func GenReqDefForAcceptVpcPeering() *def.HttpRequestDef {

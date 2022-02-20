@@ -50,6 +50,9 @@ type ScaleStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.2
+// +k8s:prerelease-lifecycle-gen:removed=1.16
 
 // represents a scaling request for a resource.
 type Scale struct {
@@ -71,6 +74,10 @@ type Scale struct {
 // +genclient:method=GetScale,verb=get,subresource=scale,result=Scale
 // +genclient:method=UpdateScale,verb=update,subresource=scale,input=Scale,result=Scale
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,Deployment
 
 // DEPRECATED - This group version of Deployment is deprecated by apps/v1beta2/Deployment. See the release notes for
 // more information.
@@ -119,7 +126,7 @@ type DeploymentSpec struct {
 	// The number of old ReplicaSets to retain to allow rollback.
 	// This is a pointer to distinguish between explicit zero and not specified.
 	// This is set to the max value of int32 (i.e. 2147483647) by default, which
-	// means "retaining all old RelicaSets".
+	// means "retaining all old ReplicaSets".
 	// +optional
 	RevisionHistoryLimit *int32 `json:"revisionHistoryLimit,omitempty" protobuf:"varint,6,opt,name=revisionHistoryLimit"`
 
@@ -144,6 +151,9 @@ type DeploymentSpec struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.2
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
 
 // DEPRECATED.
 // DeploymentRollback stores the information required to rollback a deployment.
@@ -301,6 +311,10 @@ type DeploymentCondition struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,DeploymentList
 
 // DeploymentList is a list of Deployments.
 type DeploymentList struct {
@@ -343,19 +357,41 @@ type RollingUpdateDaemonSet struct {
 	// The maximum number of DaemonSet pods that can be unavailable during the
 	// update. Value can be an absolute number (ex: 5) or a percentage of total
 	// number of DaemonSet pods at the start of the update (ex: 10%). Absolute
-	// number is calculated from percentage by rounding up.
-	// This cannot be 0.
+	// number is calculated from percentage by rounding down to a minimum of one.
+	// This cannot be 0 if MaxSurge is 0
 	// Default value is 1.
 	// Example: when this is set to 30%, at most 30% of the total number of nodes
 	// that should be running the daemon pod (i.e. status.desiredNumberScheduled)
-	// can have their pods stopped for an update at any given
-	// time. The update starts by stopping at most 30% of those DaemonSet pods
-	// and then brings up new DaemonSet pods in their place. Once the new pods
-	// are available, it then proceeds onto other DaemonSet pods, thus ensuring
-	// that at least 70% of original number of DaemonSet pods are available at
-	// all times during the update.
+	// can have their pods stopped for an update at any given time. The update
+	// starts by stopping at most 30% of those DaemonSet pods and then brings
+	// up new DaemonSet pods in their place. Once the new pods are available,
+	// it then proceeds onto other DaemonSet pods, thus ensuring that at least
+	// 70% of original number of DaemonSet pods are available at all times during
+	// the update.
 	// +optional
 	MaxUnavailable *intstr.IntOrString `json:"maxUnavailable,omitempty" protobuf:"bytes,1,opt,name=maxUnavailable"`
+
+	// The maximum number of nodes with an existing available DaemonSet pod that
+	// can have an updated DaemonSet pod during during an update.
+	// Value can be an absolute number (ex: 5) or a percentage of desired pods (ex: 10%).
+	// This can not be 0 if MaxUnavailable is 0.
+	// Absolute number is calculated from percentage by rounding up to a minimum of 1.
+	// Default value is 0.
+	// Example: when this is set to 30%, at most 30% of the total number of nodes
+	// that should be running the daemon pod (i.e. status.desiredNumberScheduled)
+	// can have their a new pod created before the old pod is marked as deleted.
+	// The update starts by launching new pods on 30% of nodes. Once an updated
+	// pod is available (Ready for at least minReadySeconds) the old DaemonSet pod
+	// on that node is marked deleted. If the old pod becomes unavailable for any
+	// reason (Ready transitions to false, is evicted, or is drained) an updated
+	// pod is immediatedly created on that node without considering surge limits.
+	// Allowing surge implies the possibility that the resources consumed by the
+	// daemonset on any given node can double if the readiness check fails, and
+	// so resource intensive daemonsets should take into account that they may
+	// cause evictions during disruption.
+	// This is an alpha field and requires enabling DaemonSetUpdateSurge feature gate.
+	// +optional
+	MaxSurge *intstr.IntOrString `json:"maxSurge,omitempty" protobuf:"bytes,2,opt,name=maxSurge"`
 }
 
 // DaemonSetSpec is the specification of a daemon set.
@@ -475,6 +511,10 @@ type DaemonSetCondition struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,DaemonSet
 
 // DEPRECATED - This group version of DaemonSet is deprecated by apps/v1beta2/DaemonSet. See the release notes for
 // more information.
@@ -514,6 +554,10 @@ const (
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,DaemonSetList
 
 // DaemonSetList is a collection of daemon sets.
 type DaemonSetList struct {
@@ -529,6 +573,10 @@ type DaemonSetList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.14
+// +k8s:prerelease-lifecycle-gen:removed=1.22
+// +k8s:prerelease-lifecycle-gen:replacement=networking.k8s.io,v1,Ingress
 
 // Ingress is a collection of rules that allow inbound connections to reach the
 // endpoints defined by a backend. An Ingress can be configured to give services
@@ -554,6 +602,10 @@ type Ingress struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.1
+// +k8s:prerelease-lifecycle-gen:deprecated=1.14
+// +k8s:prerelease-lifecycle-gen:removed=1.22
+// +k8s:prerelease-lifecycle-gen:replacement=networking.k8s.io,v1,IngressList
 
 // IngressList is a collection of Ingress.
 type IngressList struct {
@@ -776,6 +828,10 @@ type IngressBackend struct {
 // +genclient:method=GetScale,verb=get,subresource=scale,result=Scale
 // +genclient:method=UpdateScale,verb=update,subresource=scale,input=Scale,result=Scale
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.2
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,ReplicaSet
 
 // DEPRECATED - This group version of ReplicaSet is deprecated by apps/v1beta2/ReplicaSet. See the release notes for
 // more information.
@@ -804,6 +860,10 @@ type ReplicaSet struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.2
+// +k8s:prerelease-lifecycle-gen:deprecated=1.8
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=apps,v1,ReplicaSetList
 
 // ReplicaSetList is a collection of ReplicaSets.
 type ReplicaSetList struct {
@@ -906,6 +966,10 @@ type ReplicaSetCondition struct {
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.2
+// +k8s:prerelease-lifecycle-gen:deprecated=1.11
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=policy,v1beta1,PodSecurityPolicy
 
 // PodSecurityPolicy governs the ability to make requests that affect the Security Context
 // that will be applied to a pod and container.
@@ -943,7 +1007,7 @@ type PodSecurityPolicySpec struct {
 	// You must not list a capability in both allowedCapabilities and requiredDropCapabilities.
 	// +optional
 	AllowedCapabilities []v1.Capability `json:"allowedCapabilities,omitempty" protobuf:"bytes,4,rep,name=allowedCapabilities,casttype=k8s.io/api/core/v1.Capability"`
-	// volumes is a white list of allowed volume plugins. Empty indicates that
+	// volumes is an allowlist of volume plugins. Empty indicates that
 	// no volumes may be used. To allow all volumes you may use '*'.
 	// +optional
 	Volumes []FSType `json:"volumes,omitempty" protobuf:"bytes,5,rep,name=volumes,casttype=FSType"`
@@ -987,23 +1051,23 @@ type PodSecurityPolicySpec struct {
 	// privilege escalation. If unspecified, defaults to true.
 	// +optional
 	AllowPrivilegeEscalation *bool `json:"allowPrivilegeEscalation,omitempty" protobuf:"varint,16,opt,name=allowPrivilegeEscalation"`
-	// allowedHostPaths is a white list of allowed host paths. Empty indicates
+	// allowedHostPaths is an allowlist of host paths. Empty indicates
 	// that all host paths may be used.
 	// +optional
 	AllowedHostPaths []AllowedHostPath `json:"allowedHostPaths,omitempty" protobuf:"bytes,17,rep,name=allowedHostPaths"`
-	// allowedFlexVolumes is a whitelist of allowed Flexvolumes.  Empty or nil indicates that all
+	// allowedFlexVolumes is an allowlist of Flexvolumes.  Empty or nil indicates that all
 	// Flexvolumes may be used.  This parameter is effective only when the usage of the Flexvolumes
 	// is allowed in the "volumes" field.
 	// +optional
 	AllowedFlexVolumes []AllowedFlexVolume `json:"allowedFlexVolumes,omitempty" protobuf:"bytes,18,rep,name=allowedFlexVolumes"`
-	// AllowedCSIDrivers is a whitelist of inline CSI drivers that must be explicitly set to be embedded within a pod spec.
+	// AllowedCSIDrivers is an allowlist of inline CSI drivers that must be explicitly set to be embedded within a pod spec.
 	// An empty value indicates that any CSI driver can be used for inline ephemeral volumes.
 	// +optional
 	AllowedCSIDrivers []AllowedCSIDriver `json:"allowedCSIDrivers,omitempty" protobuf:"bytes,23,rep,name=allowedCSIDrivers"`
 	// allowedUnsafeSysctls is a list of explicitly allowed unsafe sysctls, defaults to none.
 	// Each entry is either a plain sysctl name or ends in "*" in which case it is considered
 	// as a prefix of allowed sysctls. Single * means all unsafe sysctls are allowed.
-	// Kubelet has to whitelist all allowed unsafe sysctls explicitly to avoid rejection.
+	// Kubelet has to allowlist all unsafe sysctls explicitly to avoid rejection.
 	//
 	// Examples:
 	// e.g. "foo/*" allows "foo/bar", "foo/baz", etc.
@@ -1019,7 +1083,7 @@ type PodSecurityPolicySpec struct {
 	// e.g. "foo.*" forbids "foo.bar", "foo.baz", etc.
 	// +optional
 	ForbiddenSysctls []string `json:"forbiddenSysctls,omitempty" protobuf:"bytes,20,rep,name=forbiddenSysctls"`
-	// AllowedProcMountTypes is a whitelist of allowed ProcMountTypes.
+	// AllowedProcMountTypes is an allowlist of allowed ProcMountTypes.
 	// Empty or nil indicates that only the DefaultProcMountType may be used.
 	// This requires the ProcMountType feature flag to be enabled.
 	// +optional
@@ -1247,7 +1311,7 @@ const (
 // RuntimeClassStrategyOptions define the strategy that will dictate the allowable RuntimeClasses
 // for a pod.
 type RuntimeClassStrategyOptions struct {
-	// allowedRuntimeClassNames is a whitelist of RuntimeClass names that may be specified on a pod.
+	// allowedRuntimeClassNames is an allowlist of RuntimeClass names that may be specified on a pod.
 	// A value of "*" means that any RuntimeClass name is allowed, and must be the only item in the
 	// list. An empty list requires the RuntimeClassName field to be unset.
 	AllowedRuntimeClassNames []string `json:"allowedRuntimeClassNames" protobuf:"bytes,1,rep,name=allowedRuntimeClassNames"`
@@ -1264,6 +1328,10 @@ type RuntimeClassStrategyOptions struct {
 const AllowAllRuntimeClassNames = "*"
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.2
+// +k8s:prerelease-lifecycle-gen:deprecated=1.11
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=policy,v1beta1,PodSecurityPolicyList
 
 // PodSecurityPolicyList is a list of PodSecurityPolicy objects.
 // Deprecated: use PodSecurityPolicyList from policy API Group instead.
@@ -1280,6 +1348,10 @@ type PodSecurityPolicyList struct {
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.3
+// +k8s:prerelease-lifecycle-gen:deprecated=1.9
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=networking.k8s.io,v1,NetworkPolicy
 
 // DEPRECATED 1.9 - This group version of NetworkPolicy is deprecated by networking/v1/NetworkPolicy.
 // NetworkPolicy describes what network traffic is allowed for a set of Pods
@@ -1337,7 +1409,7 @@ type NetworkPolicySpec struct {
 	Egress []NetworkPolicyEgressRule `json:"egress,omitempty" protobuf:"bytes,3,rep,name=egress"`
 
 	// List of rule types that the NetworkPolicy relates to.
-	// Valid options are "Ingress", "Egress", or "Ingress,Egress".
+	// Valid options are ["Ingress"], ["Egress"], or ["Ingress", "Egress"].
 	// If this field is not specified, it will default based on the existence of Ingress or Egress rules;
 	// policies that contain an Egress section are assumed to affect Egress, and all policies
 	// (whether or not they contain an Ingress section) are assumed to affect Ingress.
@@ -1399,13 +1471,21 @@ type NetworkPolicyPort struct {
 	// +optional
 	Protocol *v1.Protocol `json:"protocol,omitempty" protobuf:"bytes,1,opt,name=protocol,casttype=k8s.io/api/core/v1.Protocol"`
 
-	// If specified, the port on the given protocol.  This can
-	// either be a numerical or named port on a pod.  If this field is not provided,
-	// this matches all port names and numbers.
-	// If present, only traffic on the specified protocol AND port
-	// will be matched.
+	// The port on the given protocol. This can either be a numerical or named
+	// port on a pod. If this field is not provided, this matches all port names and
+	// numbers.
+	// If present, only traffic on the specified protocol AND port will be matched.
 	// +optional
 	Port *intstr.IntOrString `json:"port,omitempty" protobuf:"bytes,2,opt,name=port"`
+
+	// If set, indicates that the range of ports from port to endPort, inclusive,
+	// should be allowed by the policy. This field cannot be defined if the port field
+	// is not defined or if the port field is defined as a named (string) port.
+	// The endPort must be equal or greater than port.
+	// This feature is in Alpha state and should be enabled using the Feature Gate
+	// "NetworkPolicyEndPort".
+	// +optional
+	EndPort *int32 `json:"endPort,omitempty" protobuf:"bytes,3,opt,name=endPort"`
 }
 
 // DEPRECATED 1.9 - This group version of IPBlock is deprecated by networking/v1/IPBlock.
@@ -1450,6 +1530,10 @@ type NetworkPolicyPeer struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:prerelease-lifecycle-gen:introduced=1.3
+// +k8s:prerelease-lifecycle-gen:deprecated=1.9
+// +k8s:prerelease-lifecycle-gen:removed=1.16
+// +k8s:prerelease-lifecycle-gen:replacement=networking.k8s.io,v1,NetworkPolicyList
 
 // DEPRECATED 1.9 - This group version of NetworkPolicyList is deprecated by networking/v1/NetworkPolicyList.
 // Network Policy List is a list of NetworkPolicy objects.

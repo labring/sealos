@@ -20,11 +20,10 @@
 package env
 
 import (
-	"os"
-
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/global"
+	"os"
 )
 
 const (

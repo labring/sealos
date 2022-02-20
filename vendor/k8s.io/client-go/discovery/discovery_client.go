@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/proto"
-	openapi_v2 "github.com/googleapis/gnostic/OpenAPIv2"
+	openapi_v2 "github.com/googleapis/gnostic/openapiv2"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -501,7 +501,7 @@ func NewDiscoveryClientForConfigOrDie(c *restclient.Config) *DiscoveryClient {
 
 }
 
-// NewDiscoveryClient returns  a new DiscoveryClient for the given RESTClient.
+// NewDiscoveryClient returns a new DiscoveryClient for the given RESTClient.
 func NewDiscoveryClient(c restclient.Interface) *DiscoveryClient {
 	return &DiscoveryClient{restClient: c, LegacyPrefix: "/api"}
 }

@@ -18,12 +18,11 @@ package ipvs
 
 import (
 	"fmt"
+	"github.com/sealyun/lvscare/internal/exec"
+	"github.com/sealyun/lvscare/internal/version"
 	"net"
 	"strconv"
 	"strings"
-
-	"github.com/sealyun/lvscare/internal/exec"
-	"github.com/sealyun/lvscare/internal/version"
 )
 
 // Interface is an injectable interface for running ipvs commands.  Implementations must be goroutine-safe.

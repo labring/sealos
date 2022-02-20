@@ -21,14 +21,13 @@ package basic
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/cache"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/iam"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/signer"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/impl"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/request"
+	"strings"
 )
 
 const (
