@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package client
+package sealos
 
 import (
-	"github.com/fanux/sealos/pkg/client/typed/apps/v1beta1"
+	"github.com/fanux/sealos/pkg/client-go/sealos/typed/apps/v1beta1"
 )
 
 var _ Interface = &Clientset{}

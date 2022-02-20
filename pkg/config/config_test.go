@@ -15,136 +15,87 @@
 package config
 
 import (
-	"reflect"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"io/ioutil"
 	"testing"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
-func Test_generatorKubeadmConfig(t *testing.T) {
-	kubeadmConfig()
-}
-
-func TestTemplate(t *testing.T) {
-	var masters = []string{"172.20.241.205:22", "172.20.241.206:22", "172.20.241.207:22"}
-	var vip = "10.103.97.1"
-	config := ssh.SSH{
-		User:     "cuisongliu",
-		Password: "admin",
+func TestDumper_Dump(t *testing.T) {
+	type fields struct {
+		configs     []v1beta1.Config
+		clusterName string
 	}
-	v1.MasterIPs = masters
-	v1.VIP = vip
-	v1.APIServer = "apiserver.cluster.local"
-	_, _ = config.Cmd("127.0.0.1", "echo \""+string(Template())+"\" > ~/aa")
-	t.Log(string(Template()))
-}
-
-var testYaml = `apiVersion: kubeadm.k8s.io/v1beta1
-kind: ClusterConfiguration
-kubernetesVersion: v1.18.0
-controlPlaneEndpoint: apiserver.cluster.local:6443
-imageRepository: k8s.gcr.io
-networking:
-  # dnsDomain: cluster.local
-  podSubnet: 100.64.0.0/10
-  serviceSubnet: 10.96.0.0/12
-apiServer:
-  certSANs:
-  - 127.0.0.1
-  - apiserver.cluster.local
-  - 172.16.9.202
-  - 172.16.9.200
-  - 172.16.9.201
-  - 10.103.97.2
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - name: localtime
-    hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    readOnly: true
-    pathType: File
-controllerManager:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
-scheduler:
-  extraArgs:
-    feature-gates: TTLAfterFinished=true
-  extraVolumes:
-  - hostPath: /etc/localtime
-    mountPath: /etc/localtime
-    name: localtime
-    readOnly: true
-    pathType: File
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: ipvs
-ipvs:
-  excludeCIDRs: 
-  - 10.103.97.2/32
-`
-
-func TestKubeadmDataFromYaml(t *testing.T) {
 	type args struct {
-		context string
+		clusterfile string
 	}
 	tests := []struct {
-		name string
-		args args
-		want *KubeadmType
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
 	}{
 		{
-			"test decode yaml altnames",
-			args{testYaml},
-			&KubeadmType{
-				Kind: "ClusterConfiguration",
-				APIServer: struct {
-					CertSANs []string `yaml:"certSANs,omitempty"`
-				}{},
-				Networking: struct {
-					DNSDomain string `yaml:"dnsDomain,omitempty"`
-				}{},
+			"test dump clusterfile configs",
+			fields{
+				configs:     nil,
+				clusterName: "my-cluster",
 			},
+			args{clusterfile: "test_clusterfile.yaml"},
+			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := KubeadmDataFromYaml(tt.args.context)
-			if !reflect.DeepEqual(got.APIServer.CertSANs, []string{"127.0.0.1", "apiserver.cluster.local", "172.16.9.202", "172.16.9.200", "172.16.9.201", "10.103.97.2"}) {
-				t.Errorf("%v", got)
+			c := &Dumper{
+				Configs:     tt.fields.configs,
+				ClusterName: tt.fields.clusterName,
+			}
+			if err := c.Dump(tt.args.clusterfile); (err != nil) != tt.wantErr {
+				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestJoinTemplate(t *testing.T) {
-	var masters = []string{"192.168.160.243:22"}
-	var vip = "10.103.97.1"
-	config := ssh.SSH{
-		User:     "louis",
-		Password: "210010",
-		PkFile:   "/home/louis/.ssh/id_rsa",
+func Test_getMergeConfig(t *testing.T) {
+	type args struct {
+		path string
+		data []byte
 	}
-	v1.Version = "v1.20.0"
-	v1.MasterIPs = masters
-	v1.JoinToken = "1y6yyl.ramfafiy99vz3tbw"
-	v1.TokenCaCertHash = "sha256:a68c79c87368ff794ae50c5fd6a8ce13fdb2778764f1080614ddfeaa0e2b9d14"
-
-	v1.VIP = vip
-	_, _ = config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate(iputils.IPFormat(masters[0]), "systemd"))+"\" > ~/aa")
-	t.Log(string(JoinTemplate(iputils.IPFormat(masters[0]), "cgroupfs")))
-
-	v1.Version = "v1.19.0"
-	_, _ = config.Cmd("127.0.0.1", "echo \""+string(JoinTemplate("", "systemd"))+"\" > ~/aa")
-	t.Log(string(JoinTemplate("", "cgroupfs")))
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+		{
+			name: "test",
+			args: args{
+				data: []byte("spec:\n  image: kubernetes:v1.19.8"),
+				path: "test_clusterfile.yaml",
+			},
+		}, {
+			name: "test",
+			args: args{
+				data: []byte("spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss"),
+				path: "tigera-operator.yaml",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getMergeConfigData(tt.args.path, tt.args.data)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			err = ioutil.WriteFile("test_"+tt.args.path, got, 0644)
+			if err != nil {
+				t.Error(err)
+			}
+		})
+	}
 }

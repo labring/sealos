@@ -19,6 +19,7 @@ package apiclient
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"io"
 	"net/http"
 	"time"
@@ -50,8 +51,6 @@ type Waiter interface {
 	WaitForStaticPodControlPlaneHashes(nodeName string) (map[string]string, error)
 	// WaitForHealthyKubelet blocks until the kubelet /healthz endpoint returns 'ok'
 	WaitForHealthyKubelet(initialTimeout time.Duration, healthzEndpoint string) error
-	// WaitForKubeletAndFunc is a wrapper for WaitForHealthyKubelet that also blocks for a function
-	WaitForKubeletAndFunc(f func() error) error
 	// SetTimeout adjusts the timeout to the specified duration
 	SetTimeout(timeout time.Duration)
 }
@@ -82,7 +81,7 @@ func (w *KubeWaiter) WaitForAPI() error {
 			return false, nil
 		}
 
-		fmt.Printf("[apiclient] All control plane components are healthy after %f seconds\n", time.Since(start).Seconds())
+		logger.Debug("[apiclient] All control plane components are healthy after %f seconds\n", time.Since(start).Seconds())
 		return true, nil
 	})
 }
@@ -123,7 +122,7 @@ func (w *KubeWaiter) WaitForPodToDisappear(podName string) error {
 	return wait.PollImmediate(APICallRetryInterval, w.timeout, func() (bool, error) {
 		_, err := w.client.CoreV1().Pods(metav1.NamespaceSystem).Get(context.TODO(), podName, metav1.GetOptions{})
 		if apierrors.IsNotFound(err) {
-			fmt.Printf("[apiclient] The old Pod %q is now removed (which is desired)\n", podName)
+			logger.Warn("[apiclient] The old Pod %q is now removed (which is desired)\n", podName)
 			return true, nil
 		}
 		return false, nil
@@ -133,44 +132,23 @@ func (w *KubeWaiter) WaitForPodToDisappear(podName string) error {
 // WaitForHealthyKubelet blocks until the kubelet /healthz endpoint returns 'ok'
 func (w *KubeWaiter) WaitForHealthyKubelet(initialTimeout time.Duration, healthzEndpoint string) error {
 	time.Sleep(initialTimeout)
-	fmt.Printf("[kubelet-check] Initial timeout of %v passed.\n", initialTimeout)
+	logger.Debug("[kubelet-check] Initial timeout of %v passed.\n", initialTimeout)
 	return TryRunCommand(func() error {
 		client := &http.Client{Transport: netutil.SetOldTransportDefaults(&http.Transport{})}
 		resp, err := client.Get(healthzEndpoint)
 		if err != nil {
-			fmt.Println("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			fmt.Printf("[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n", healthzEndpoint, err)
+			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
+			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n", healthzEndpoint, err)
 			return err
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK {
-			fmt.Println("[kubelet-check] It seems like the kubelet isn't running or healthy.")
-			fmt.Printf("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
+			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
+			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
 			return errors.New("the kubelet healthz endpoint is unhealthy")
 		}
 		return nil
 	}, 5) // a failureThreshold of five means waiting for a total of 155 seconds
-}
-
-// WaitForKubeletAndFunc waits primarily for the function f to execute, even though it might take some time. If that takes a long time, and the kubelet
-// /healthz continuously are unhealthy, kubeadm will error out after a period of exponential backoff
-func (w *KubeWaiter) WaitForKubeletAndFunc(f func() error) error {
-	errorChan := make(chan error, 1)
-
-	go func(errC chan error, waiter Waiter) {
-		if err := waiter.WaitForHealthyKubelet(40*time.Second, fmt.Sprintf("http://localhost:%d/healthz", KubeletHealthzPort)); err != nil {
-			errC <- err
-		}
-	}(errorChan, w)
-	//nolint:unparam
-	go func(errC chan error, waiter Waiter) {
-		// This main goroutine sends whatever the f function returns (error or not) to the channel
-		// This in order to continue on success (nil error), or just fail if the function returns an error
-		errC <- f()
-	}(errorChan, w)
-
-	// This call is blocking until one of the goroutines sends to errorChan
-	return <-errorChan
 }
 
 // SetTimeout adjusts the timeout to the specified duration
@@ -241,7 +219,7 @@ func getStaticPodSingleHash(client clientset.Interface, nodeName string, compone
 	}
 
 	staticPodHash := staticPod.Annotations["kubernetes.io/config.hash"]
-	fmt.Printf("Static pod: %s hash: %s\n", staticPodName, staticPodHash)
+	logger.Debug("Static pod: %s hash: %s\n", staticPodName, staticPodHash)
 	return staticPodHash, nil
 }
 

@@ -17,7 +17,7 @@ limitations under the License.
 package iputils
 
 import (
-	"fmt"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"net"
 	"net/url"
 	"strings"
@@ -28,7 +28,7 @@ func ParseIPs(ipList []string) (res []string) {
 	for _, i := range ipList {
 		if strings.Contains(i, "-") {
 			if err := AssemblyIPList(&i); err != nil {
-				fmt.Printf("failed to get Addrs, %s", err.Error())
+				logger.Warn("failed to get Addrs, %s", err.Error())
 				continue
 			}
 			res = append(res, strings.Split(i, ",")...)

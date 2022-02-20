@@ -62,7 +62,6 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type StrategyType string
@@ -74,9 +73,9 @@ const (
 
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
-	Strategy StrategyType          `json:"strategy,omitempty"`
-	Data     *runtime.RawExtension `json:"data,omitempty"`
-	Path     string                `json:"path,omitempty"`
+	Strategy StrategyType `json:"strategy,omitempty"`
+	Data     string       `json:"data,omitempty"`
+	Path     string       `json:"path,omitempty"`
 }
 
 // ConfigStatus defines the observed state of Config

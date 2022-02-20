@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 )
 
-var DebugMode bool
 
 func (s *SSH) Ping(host string) error {
 	client, _, err := s.Connect(host)
@@ -69,10 +68,10 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			doneout := make(chan error, 1)
 			doneerr := make(chan error, 1)
 			go func() {
-				doneerr <- readPipe(stderr, &combineSlice, &combineLock)
+				doneerr <- readPipe(stderr, &combineSlice, &combineLock,s.isStdout)
 			}()
 			go func() {
-				doneout <- readPipe(stdout, &combineSlice, &combineLock)
+				doneout <- readPipe(stdout, &combineSlice, &combineLock,s.isStdout)
 			}()
 			<-doneerr
 			<-doneout
@@ -106,7 +105,7 @@ func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
 	return b, nil
 }
 
-func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex) error {
+func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex,isStdout bool) error {
 	r := bufio.NewReader(pipe)
 	for {
 		line, _, err := r.ReadLine()
@@ -116,7 +115,7 @@ func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex) e
 
 		combineLock.Lock()
 		*combineSlice = append(*combineSlice, string(line))
-		if DebugMode {
+		if isStdout {
 			fmt.Println(string(line))
 		}
 		combineLock.Unlock()

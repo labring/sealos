@@ -19,6 +19,7 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
+	"sigs.k8s.io/yaml"
 	"strings"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
@@ -31,7 +32,6 @@ import (
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
 )
 
 func init() {

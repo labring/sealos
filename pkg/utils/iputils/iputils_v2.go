@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package iputils
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"math/big"
 	"net"
 	"strings"
@@ -51,7 +52,7 @@ func GetHostIPSlice(hosts []string) (res []string) {
 func IsLocalHostAddrs() (*[]net.Addr, error) {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
-		fmt.Println("net.Interfaces failed, err:", err.Error())
+		logger.Warn("net.Interfaces failed, err:", err.Error())
 		return nil, err
 	}
 	var allAddrs []net.Addr
@@ -61,7 +62,7 @@ func IsLocalHostAddrs() (*[]net.Addr, error) {
 		}
 		addrs, err := netInterfaces[i].Addrs()
 		if err != nil {
-			fmt.Printf("failed to get Addrs, %s", err.Error())
+			logger.Warn("failed to get Addrs, %s", err.Error())
 		}
 		for j := 0; j < len(addrs); j++ {
 			allAddrs = append(allAddrs, addrs[j])
@@ -118,7 +119,7 @@ func DisassembleIPList(arg string) (res []string) {
 	for _, i := range ipList {
 		if strings.Contains(i, "-") {
 			if err := AssemblyIPList(&i); err != nil {
-				fmt.Printf("failed to get Addrs, %s", err.Error())
+				logger.Warn("failed to get Addrs, %s", err.Error())
 				continue
 			}
 			res = append(res, strings.Split(i, ",")...)
