@@ -15,11 +15,10 @@
 package config
 
 import (
-	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"io/ioutil"
 	"testing"
 
-
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 func TestDumper_Dump(t *testing.T) {

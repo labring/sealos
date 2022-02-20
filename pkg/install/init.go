@@ -33,7 +33,7 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/config_bak"
+	"github.com/fanux/sealos/pkg/cfgbak"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -98,7 +98,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	v1.CgroupDriver = s.getCgroupDriverFromShell(s.Masters[0])
 	if v1.KubeadmFile == "" {
-		templateData = string(config_bak.Template())
+		templateData = string(cfgbak.Template())
 	} else {
 		fileData, err := ioutil.ReadFile(v1.KubeadmFile)
 		defer func() {
@@ -109,13 +109,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		if err != nil {
 			panic(1)
 		}
-		templateData = string(config_bak.TemplateFromTemplateContent(string(fileData)))
+		templateData = string(cfgbak.TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
 	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = v1.SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
-	kubeadm := config_bak.KubeadmDataFromYaml(templateData)
+	kubeadm := cfgbak.KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
 		v1.DNSDomain = kubeadm.Networking.DNSDomain
 		v1.APIServerCertSANs = kubeadm.APIServer.CertSANs

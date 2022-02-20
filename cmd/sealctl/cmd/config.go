@@ -19,8 +19,9 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
-	"sigs.k8s.io/yaml"
 	"strings"
+
+	"sigs.k8s.io/yaml"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 

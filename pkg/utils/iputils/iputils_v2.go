@@ -16,10 +16,11 @@ package iputils
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"math/big"
 	"net"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 //use only one

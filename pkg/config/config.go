@@ -17,13 +17,14 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/common"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
-	"io/ioutil"
-	"path/filepath"
 	"sigs.k8s.io/yaml"
 )
 

@@ -16,13 +16,13 @@ package env
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	strlib "github.com/fanux/sealos/pkg/utils/strings"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	strlib "github.com/fanux/sealos/pkg/utils/strings"
 )
 
 const templateSuffix = ".tmpl"
@@ -90,7 +90,7 @@ func (p *processor) RenderAll(host, dir string) error {
 
 func mergeList(dst, src []string) []string {
 	for _, s := range src {
-		if  strlib.InList(s, dst) {
+		if strlib.InList(s, dst) {
 			continue
 		}
 		dst = append(dst, s)

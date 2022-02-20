@@ -21,13 +21,14 @@ package core
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/env"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/config"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/impl"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/region"
-	"reflect"
-	"strings"
 )
 
 type HcHttpClientBuilder struct {

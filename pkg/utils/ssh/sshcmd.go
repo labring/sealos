@@ -24,7 +24,6 @@ import (
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 )
 
-
 func (s *SSH) Ping(host string) error {
 	client, _, err := s.Connect(host)
 	if err != nil {
@@ -68,10 +67,10 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			doneout := make(chan error, 1)
 			doneerr := make(chan error, 1)
 			go func() {
-				doneerr <- readPipe(stderr, &combineSlice, &combineLock,s.isStdout)
+				doneerr <- readPipe(stderr, &combineSlice, &combineLock, s.isStdout)
 			}()
 			go func() {
-				doneout <- readPipe(stdout, &combineSlice, &combineLock,s.isStdout)
+				doneout <- readPipe(stdout, &combineSlice, &combineLock, s.isStdout)
 			}()
 			<-doneerr
 			<-doneout
@@ -105,7 +104,7 @@ func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
 	return b, nil
 }
 
-func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex,isStdout bool) error {
+func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
 	r := bufio.NewReader(pipe)
 	for {
 		line, _, err := r.ReadLine()

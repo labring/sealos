@@ -19,14 +19,15 @@ package decode
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"os"
+	"path"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/common"
 	"github.com/fanux/sealos/pkg/utils/logger"
-	"io"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"os"
-	"path"
 )
 
 func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
@@ -46,7 +47,6 @@ func Configs(filepath string) (configs []v1beta1.Config, err error) {
 	configs = decodeConfigs.([]v1beta1.Config)
 	return
 }
-
 
 func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 	file, err := os.Open(path.Clean(filepath))

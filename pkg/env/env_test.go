@@ -15,10 +15,10 @@
 package env
 
 import (
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"reflect"
 	"testing"
 
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
 func Test_convertEnv(t *testing.T) {
@@ -48,7 +48,7 @@ func Test_convertEnv(t *testing.T) {
 func getTestCluster() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
-			Env:   []string{"IP=127.0.0.1", "key=value"},
+			Env: []string{"IP=127.0.0.1", "key=value"},
 			Hosts: []v2.ClusterHost{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},

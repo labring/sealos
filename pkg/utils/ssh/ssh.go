@@ -16,12 +16,13 @@ package ssh
 
 import (
 	"fmt"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"net"
 	"sync"
 	"time"
+
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type Interface interface {

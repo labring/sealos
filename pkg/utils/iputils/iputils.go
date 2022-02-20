@@ -17,10 +17,11 @@ limitations under the License.
 package iputils
 
 import (
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"net"
 	"net/url"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 // ParseIPs 解析ip 192.168.0.2-192.168.0.6
