@@ -4,12 +4,14 @@ go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
+	github.com/cavaliergopher/grab/v3 v3.0.1
 	github.com/distribution/distribution/v3 v3.0.0-20211125133600-cc4627fc6e5f
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.3-0.20211208011758-87521affb077+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/emirpasic/gods v1.12.0
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
@@ -25,6 +27,7 @@ require (
 	github.com/sealyun/lvscare v1.1.3-beta.2
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
+	github.com/tonistiigi/fsutil v0.0.0-20220115021204-b19f7f9cb274
 	github.com/vishvananda/netlink v1.1.0
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.etcd.io/etcd/etcdutl/v3 v3.5.1

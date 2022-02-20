@@ -214,7 +214,7 @@ func newValue(c *warnings.Collector, sect string, vCfg reflect.Value,
 }
 
 func set(c *warnings.Collector, cfg interface{}, sect, sub, name string,
-	 value string, blankValue bool, subsectPass bool) error {
+	value string, blankValue bool, subsectPass bool) error {
 	//
 	vPCfg := reflect.ValueOf(cfg)
 	if vPCfg.Kind() != reflect.Ptr || vPCfg.Elem().Kind() != reflect.Struct {

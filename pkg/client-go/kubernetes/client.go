@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@ package kubernetes
 
 import (
 	"context"
-	"path/filepath"
 
-	"github.com/fanux/sealos/pkg/utils/common"
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -26,7 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/util/homedir"
 )
 
 type Client struct {
@@ -44,11 +42,7 @@ type NamespaceSvc struct {
 }
 
 func Newk8sClient() (*Client, error) {
-	kubeconfig := filepath.Join(common.DefaultKubeConfigDir(), "config")
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = filepath.Join(home, ".kube", "config")
-	}
-
+	kubeconfig := contants.DefaultKubeConfigFile()
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {

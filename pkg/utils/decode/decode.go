@@ -24,14 +24,14 @@ import (
 	"path"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/common"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
-	decodeClusters, err := decodeCRD(filepath, common.Cluster)
+	decodeClusters, err := decodeCRD(filepath, contants.Cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode cluster from %s, %v", filepath, err)
 	}
@@ -40,7 +40,7 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 }
 
 func Configs(filepath string) (configs []v1beta1.Config, err error) {
-	decodeConfigs, err := decodeCRD(filepath, common.Config)
+	decodeConfigs, err := decodeCRD(filepath, contants.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode config from %s, %v", filepath, err)
 	}
@@ -81,23 +81,23 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		}
 		// ext.Raw
 		switch kind {
-		case common.Cluster:
+		case contants.Cluster:
 			cluster := v1beta1.Cluster{}
 			err := yaml.Unmarshal(ext.Raw, &cluster)
 			if err != nil {
 				return nil, fmt.Errorf("decode cluster failed %v", err)
 			}
-			if cluster.Kind == common.Cluster {
+			if cluster.Kind == contants.Cluster {
 				clusters = append(clusters, cluster)
 			}
 			i = clusters
-		case common.Config:
+		case contants.Config:
 			config := v1beta1.Config{}
 			err := yaml.Unmarshal(ext.Raw, &config)
 			if err != nil {
 				return nil, fmt.Errorf("decode config failed %v", err)
 			}
-			if config.Kind == common.Config {
+			if config.Kind == contants.Config {
 				configs = append(configs, config)
 			}
 			i = configs

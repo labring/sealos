@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/common"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -89,7 +89,7 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 	for _, config := range c.Configs {
 		configData := []byte(config.Spec.Data)
-		configPath := filepath.Join(common.DefaultMountCloudImageDir(c.ClusterName), config.Spec.Path)
+		configPath := filepath.Join(contants.DefaultTheClusterRootfsDir(c.ClusterName), config.Spec.Path)
 		//only the YAML format is supported
 		if config.Spec.Strategy == Merge {
 			configData, err = getMergeConfigData(configPath, configData)

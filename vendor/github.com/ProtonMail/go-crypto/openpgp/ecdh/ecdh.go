@@ -130,7 +130,7 @@ func buildKey(pub *PublicKey, zb []byte, curveOID, fingerprint []byte, stripLead
 	if _, err := param.Write(fingerprint[:20]); err != nil {
 		return nil, err
 	}
-	if param.Len() - len(curveOID) != 45 {
+	if param.Len()-len(curveOID) != 45 {
 		return nil, errors.New("ecdh: malformed KDF Param")
 	}
 
@@ -144,15 +144,17 @@ func buildKey(pub *PublicKey, zb []byte, curveOID, fingerprint []byte, stripLead
 	j := zbLen - 1
 	if stripLeading {
 		// Work around old go crypto bug where the leading zeros are missing.
-		for ; i < zbLen && zb[i] == 0; i++ {}
+		for ; i < zbLen && zb[i] == 0; i++ {
+		}
 	}
 	if stripTrailing {
 		// Work around old OpenPGP.js bug where insignificant trailing zeros in
 		// this little-endian number are missing.
 		// (See https://github.com/openpgpjs/openpgpjs/pull/853.)
-		for ; j >= 0 && zb[j] == 0; j-- {}
+		for ; j >= 0 && zb[j] == 0; j-- {
+		}
 	}
-	if _, err := h.Write(zb[i:j+1]); err != nil {
+	if _, err := h.Write(zb[i : j+1]); err != nil {
 		return nil, err
 	}
 	if _, err := h.Write(param.Bytes()); err != nil {

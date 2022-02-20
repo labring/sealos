@@ -935,7 +935,7 @@ func (sig *Signature) AddMetadataToHashSuffix() {
 	n := sig.HashSuffix[len(sig.HashSuffix)-8:]
 	l := uint64(
 		uint64(n[0])<<56 | uint64(n[1])<<48 | uint64(n[2])<<40 | uint64(n[3])<<32 |
-		uint64(n[4])<<24 | uint64(n[5])<<16 | uint64(n[6])<<8  | uint64(n[7]))
+			uint64(n[4])<<24 | uint64(n[5])<<16 | uint64(n[6])<<8 | uint64(n[7]))
 
 	suffix := bytes.NewBuffer(nil)
 	suffix.Write(sig.HashSuffix[:l])
