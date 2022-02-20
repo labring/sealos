@@ -20,7 +20,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/kustomize"
+	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 	"sigs.k8s.io/yaml"
@@ -28,7 +29,7 @@ import (
 
 type Kubeadm interface {
 	DefaultConfig() (string, error)
-	Kustomization(patchs []kustomize.Patch) (string, error)
+	Kustomization(patchs []v1.Patch) (string, error)
 	DefaultTemplate() string
 }
 
@@ -79,28 +80,28 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 }
 
 func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch string, masters, sans []string) (string, error) {
-	var config InitConfigPatch
+	var config v1.KubeadmConfig
 	err := yaml.Unmarshal([]byte(patch), &config)
 	if err != nil {
 		return "", err
 	}
 	i := NewInit(k8sVersion, master0, cri)
-	ic, err := i.Kustomization(config.InitConfig)
+	ic, err := i.Kustomization(config.Spec.InitConfig)
 	if err != nil {
 		return "", err
 	}
 	c := NewCluster(k8sVersion, apiserverDomain, podCIDR, svcCIDR, vip, masters, sans)
-	cc, err := c.Kustomization(config.ClusterConfig)
+	cc, err := c.Kustomization(config.Spec.ClusterConfig)
 	if err != nil {
 		return "", err
 	}
 	kp := NewKubeproxy(vip)
-	kpc, err := kp.Kustomization(config.KubeproxyConfig)
+	kpc, err := kp.Kustomization(config.Spec.KubeProxyConfig)
 	if err != nil {
 		return "", err
 	}
 	kl := NewKubelet()
-	klc, err := kl.Kustomization(config.KubeletConfig)
+	klc, err := kl.Kustomization(config.Spec.KubeletConfig)
 	if err != nil {
 		return "", err
 	}
@@ -110,18 +111,18 @@ func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcC
 }
 
 func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri, patch string, t token.Token) (string, error) {
-	var config JoinConfigPatch
+	var config v1.KubeadmConfig
 	err := yaml.Unmarshal([]byte(patch), &config)
 	if err != nil {
 		return "", err
 	}
 	i := NewJoinMaster(k8sVersion, cri, master0, masterIP, t)
-	ic, err := i.Kustomization(config.JoinConfig)
+	ic, err := i.Kustomization(config.Spec.JoinConfig)
 	if err != nil {
 		return "", err
 	}
 	kl := NewKubelet()
-	klc, err := kl.Kustomization(config.KubeletConfig)
+	klc, err := kl.Kustomization(config.Spec.KubeletConfig)
 	if err != nil {
 		return "", err
 	}
@@ -131,18 +132,18 @@ func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri, patch str
 }
 
 func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri, patch string, t token.Token) (string, error) {
-	var config JoinConfigPatch
+	var config v1.KubeadmConfig
 	err := yaml.Unmarshal([]byte(patch), &config)
 	if err != nil {
 		return "", err
 	}
 	i := NewJoinNode(k8sVersion, cri, vip, t)
-	ic, err := i.Kustomization(config.JoinConfig)
+	ic, err := i.Kustomization(config.Spec.JoinConfig)
 	if err != nil {
 		return "", err
 	}
 	kl := NewKubelet()
-	klc, err := kl.Kustomization(config.KubeletConfig)
+	klc, err := kl.Kustomization(config.Spec.KubeletConfig)
 	if err != nil {
 		return "", err
 	}
@@ -151,6 +152,6 @@ func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri, patch string, t token.Tok
 	return data, nil
 }
 
-func hasPatch(patch []kustomize.Patch) bool {
+func hasPatch(patch []v1.Patch) bool {
 	return len(patch) != 0
 }

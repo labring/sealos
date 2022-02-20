@@ -189,7 +189,7 @@ func (a *HwProvider) basicAuth() basic.Credentials {
 }
 
 func (a *HwProvider) NewClient() (err error) {
-	regionID := a.Infra.Spec.Cluster.RegionIDs[rand.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
+	regionID := a.Infra.Spec.Metadata.RegionIDs[rand.Rand(len(a.Infra.Spec.Metadata.RegionIDs))]
 	a.Infra.Status.Cluster.RegionID = regionID
 	logger.Info("using regionID is %s", regionID)
 	ecsEndpoint := fmt.Sprintf("https://ecs.%s.myhuaweicloud.com", regionID)
@@ -260,10 +260,10 @@ func (a *HwProvider) Apply() error {
 }
 
 func DefaultInfra(infra *v2.Infra) error {
-	//if infra.Spec.Cluster.IsSeize {
-	//	infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
+	//if infra.Spec.Metadata.IsSeize {
+	//	infra.Status.Metadata.SpotStrategy = "SpotAsPriceGo"
 	//} else {
-	//	infra.Status.Cluster.SpotStrategy = "NoSpot"
+	//	infra.Status.Metadata.SpotStrategy = "NoSpot"
 	//}
 	return nil
 }

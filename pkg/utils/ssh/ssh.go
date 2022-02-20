@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type Interface interface {
@@ -42,6 +46,7 @@ type Interface interface {
 }
 
 type SSH struct {
+	isStdout     bool
 	User         string
 	Password     string
 	PkFile       string
@@ -50,90 +55,25 @@ type SSH struct {
 	LocalAddress *[]net.Addr
 }
 
-//func NewSSHByCluster(cluster *v1.Cluster) Interface {
-//	if cluster.Spec.SSH.User == "" {
-//		cluster.Spec.SSH.User = common.ROOT
-//	}
-//	address, err := utils.IsLocalHostAddrs()
-//	if err != nil {
-//		logger.Warn("failed to get local address, %v", err)
-//	}
-//	return &SSH{
-//		User:         cluster.Spec.SSH.User,
-//		Password:     cluster.Spec.SSH.Passwd,
-//		PkFile:       cluster.Spec.SSH.Pk,
-//		PkPassword:   cluster.Spec.SSH.PkPasswd,
-//		LocalAddress: address,
-//	}
-//}
-//
-//func NewSSHClient(ssh *v1.SSH) Interface {
-//	if ssh.User == "" {
-//		ssh.User = common.ROOT
-//	}
-//	address, err := utils.IsLocalHostAddrs()
-//	if err != nil {
-//		logger.Warn("failed to get local address, %v", err)
-//	}
-//	return &SSH{
-//		User:         ssh.User,
-//		Password:     ssh.Passwd,
-//		PkFile:       ssh.Pk,
-//		PkPassword:   ssh.PkPasswd,
-//		LocalAddress: address,
-//	}
-//}
-//
-//func GetHostSSHClient(hostIP string, cluster *v2.Cluster) (Interface, error) {
-//	for _, host := range cluster.Spec.Hosts {
-//		for _, ip := range host.IPS {
-//			if hostIP == ip {
-//				if err := mergo.Merge(&host.SSH, &cluster.Spec.SSH); err != nil {
-//					return nil, err
-//				}
-//
-//				return NewSSHClient(&host.SSH), nil
-//			}
-//		}
-//	}
-//	return nil, fmt.Errorf("get host ssh client failed, host ip %s not in hosts ip list", hostIP)
-//}
-//
+func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
+	address, err := iputils.IsLocalHostAddrs()
+	if err != nil {
+		logger.Warn("failed to get local address, %v", err)
+	}
+	return &SSH{
+		isStdout:     isStdout,
+		User:         cluster.Spec.SSH.User,
+		Password:     cluster.Spec.SSH.Passwd,
+		PkFile:       cluster.Spec.SSH.Pk,
+		PkPassword:   cluster.Spec.SSH.PkPasswd,
+		LocalAddress: address,
+	}
+}
 
 type Client struct {
 	SSH  Interface
 	Host string
 }
-
-//
-//func NewSSHClientWithCluster(cluster *v1.Cluster) (*Client, error) {
-//	var (
-//		ipList []string
-//		host   string
-//	)
-//	sshClient := NewSSHByCluster(cluster)
-//	if cluster.Spec.Provider == common.AliCloud {
-//		host = cluster.GetAnnotationsByKey(common.Eip)
-//		if host == "" {
-//			return nil, fmt.Errorf("get cluster EIP failed")
-//		}
-//		ipList = append(ipList, host)
-//	} else {
-//		host = cluster.Spec.Masters.IPList[0]
-//		ipList = append(ipList, append(cluster.Spec.Masters.IPList, cluster.Spec.Nodes.IPList...)...)
-//	}
-//	err := WaitSSHReady(sshClient, 6, ipList...)
-//	if err != nil {
-//		return nil, err
-//	}
-//	if sshClient == nil {
-//		return nil, fmt.Errorf("cloud build init ssh client failed")
-//	}
-//	return &Client{
-//		SSH:  sshClient,
-//		Host: host,
-//	}, nil
-//}
 
 func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
 	var err error

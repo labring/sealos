@@ -17,27 +17,16 @@ limitations under the License.
 package kubeadm
 
 import (
-	"github.com/fanux/sealos/pkg/kustomize"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type InitConfigPatch struct {
-	InitConfig      []kustomize.Patch
-	ClusterConfig   []kustomize.Patch
-	KubeproxyConfig []kustomize.Patch
-	KubeletConfig   []kustomize.Patch
-}
-
-type JoinConfigPatch struct {
-	JoinConfig    []kustomize.Patch
-	KubeletConfig []kustomize.Patch
-}
-
 // https://datatracker.ietf.org/doc/html/rfc6902#section-3
-var defaultPatchExample = []kustomize.Patch{
+var defaultPatchExample = []v1beta1.Patch{
 	{
 		Op:    "add",
 		Path:  "/a/b/c",
-		Value: []string{"foo", "bar"},
+		Value: runtime.Unknown{Raw: []byte("[ \"foo\", \"bar\" ]")},
 	},
 	{
 		Op:   "remove",
@@ -46,7 +35,7 @@ var defaultPatchExample = []kustomize.Patch{
 	{
 		Op:    "replace",
 		Path:  "/a/b/c",
-		Value: "cccc",
+		Value: runtime.Unknown{Raw: []byte("42")},
 	},
 	{
 		Op:   "move",
@@ -61,24 +50,21 @@ var defaultPatchExample = []kustomize.Patch{
 	{
 		Op:    "test",
 		Path:  "/a/b/c",
-		Value: "foo",
+		Value: runtime.Unknown{Raw: []byte("\"foo\"")},
 	},
 }
 
-var defaultPatchEmptyExample []kustomize.Patch
+var defaultPatchEmptyExample []v1beta1.Patch
 
-func DefaultInitPatch() InitConfigPatch {
-	return InitConfigPatch{
-		InitConfig:      defaultPatchExample,
-		ClusterConfig:   defaultPatchEmptyExample,
-		KubeproxyConfig: defaultPatchEmptyExample,
-		KubeletConfig:   defaultPatchEmptyExample,
-	}
-}
-
-func DefaultJoinPatch() JoinConfigPatch {
-	return JoinConfigPatch{
-		JoinConfig:    defaultPatchExample,
-		KubeletConfig: defaultPatchEmptyExample,
-	}
+func DefaultPatchDefault() v1beta1.KubeadmConfig {
+	config := v1beta1.KubeadmConfig{}
+	config.APIVersion = v1beta1.SchemeGroupVersion.String()
+	config.Kind = "KubeadmConfig"
+	config.Name = "kubeadm-patch"
+	config.Spec.InitConfig = defaultPatchExample
+	config.Spec.ClusterConfig = defaultPatchEmptyExample
+	config.Spec.KubeProxyConfig = defaultPatchEmptyExample
+	config.Spec.KubeletConfig = defaultPatchEmptyExample
+	config.Spec.JoinConfig = defaultPatchEmptyExample
+	return config
 }

@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -292,7 +292,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	request.Scheme = Scheme
 	request.ImageId = imageID
 
-	request.Password = a.Infra.Spec.Cluster.AccessChannels.SSH.Passwd
+	request.Password = a.Infra.Spec.Metadata.AccessChannels.SSH.Passwd
 	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)

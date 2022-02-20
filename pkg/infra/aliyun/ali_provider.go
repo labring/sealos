@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -182,7 +182,7 @@ var DeleteFuncMap = map[ActionName]func(provider *AliProvider){
 }
 
 func (a *AliProvider) NewClient() error {
-	if len(a.Infra.Spec.Cluster.RegionIDs) == 0 {
+	if len(a.Infra.Spec.Metadata.RegionIDs) == 0 {
 		return errors.New("your infra module not set region id")
 	}
 	if len(a.Infra.Spec.Credential.AccessKey) == 0 {
@@ -192,7 +192,7 @@ func (a *AliProvider) NewClient() error {
 		return errors.New("your infra module not set AccessSecret")
 	}
 
-	regionID := a.Infra.Spec.Cluster.RegionIDs[rand.Rand(len(a.Infra.Spec.Cluster.RegionIDs))]
+	regionID := a.Infra.Spec.Metadata.RegionIDs[rand.Rand(len(a.Infra.Spec.Metadata.RegionIDs))]
 	a.Infra.Status.Cluster.RegionID = regionID
 	logger.Info("using regionID is %s", regionID)
 	ecsClient, err := ecs.NewClientWithAccessKey(a.Infra.Status.Cluster.RegionID, a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret)
@@ -248,7 +248,7 @@ func (a *AliProvider) Reconcile() error {
 }
 
 func (a *AliProvider) Apply() error {
-	if err := v1beta1.DefaultCluster(a.Infra, DefaultInfra); err != nil {
+	if err := v1beta1.DefaultInfra(a.Infra, DefaultInfra); err != nil {
 		return err
 	}
 	if err := validation.ValidateInfra(a.Infra, DefaultValidate); len(err) != 0 {
@@ -259,7 +259,7 @@ func (a *AliProvider) Apply() error {
 
 func DefaultInfra(infra *v1beta1.Infra) error {
 	//https://help.aliyun.com/document_detail/63440.htm?spm=a2c4g.11186623.0.0.f5952752gkxpB7#t9856.html
-	if infra.Spec.Cluster.Metadata.IsSeize {
+	if infra.Spec.Metadata.Instance.IsSeize {
 		infra.Status.Cluster.SpotStrategy = "SpotAsPriceGo"
 	} else {
 		infra.Status.Cluster.SpotStrategy = "NoSpot"

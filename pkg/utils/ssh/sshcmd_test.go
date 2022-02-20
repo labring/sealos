@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ func TestSSH_Cmd(t *testing.T) {
 			name: "touch test.txt",
 			args: args{
 				ssh: SSH{
+					false,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -51,6 +52,7 @@ func TestSSH_Cmd(t *testing.T) {
 			name: "ls /opt/test",
 			args: args{
 				ssh: SSH{
+					false,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -68,6 +70,7 @@ func TestSSH_Cmd(t *testing.T) {
 			name: "remove test.txt",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -85,6 +88,7 @@ func TestSSH_Cmd(t *testing.T) {
 			name: "exist 1",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -129,6 +133,7 @@ func TestSSH_CmdAsync(t *testing.T) {
 			name: "touch test.txt",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -145,6 +150,7 @@ func TestSSH_CmdAsync(t *testing.T) {
 			name: "ls /opt/test",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -161,6 +167,7 @@ func TestSSH_CmdAsync(t *testing.T) {
 			name: "remove test.txt",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -177,6 +184,7 @@ func TestSSH_CmdAsync(t *testing.T) {
 			name: "exist 1",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"huaijiahui.com",
 					"",
@@ -193,6 +201,7 @@ func TestSSH_CmdAsync(t *testing.T) {
 			name: "exist 1",
 			args: args{
 				ssh: SSH{
+					true,
 					"root",
 					"",
 					"/Users/cuisongliu/.ssh/id_rsa",
@@ -206,7 +215,6 @@ func TestSSH_CmdAsync(t *testing.T) {
 			wantErr: true, //Process exited with status 1
 		},
 	}
-	DebugMode = true
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.args.ssh.CmdAsync(tt.args.host, tt.args.cmd); (err != nil) != tt.wantErr {

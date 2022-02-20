@@ -141,7 +141,7 @@ package huawei
 //
 //	request := ecs.CreateDescribeImageSupportInstanceTypesRequest()
 //	request.Scheme = Scheme
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
+//	request.RegionId = a.Infra.Status.Metadata.RegionID
 //	request.ImageId = a.Infra.Status.Hosts[j].ImageID
 //
 //	//response := ecs.CreateDescribeImageSupportInstanceTypesResponse()
@@ -166,11 +166,11 @@ package huawei
 //func (a *HwProvider) GetAvailableResource(host *v1beta1.Host, systemCategory, dataCategory string) (instanceType []string, err error) {
 //	request := ecs.CreateDescribeAvailableResourceRequest()
 //	request.Scheme = Scheme
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
-//	request.ZoneId = a.Infra.Status.Cluster.ZoneID
+//	request.RegionId = a.Infra.Status.Metadata.RegionID
+//	request.ZoneId = a.Infra.Status.Metadata.ZoneID
 //	request.DestinationResource = DestinationResource
 //	request.InstanceChargeType = InstanceChargeType
-//	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
+//	request.SpotStrategy = a.Infra.Status.Metadata.SpotStrategy
 //	request.SystemDiskCategory = systemCategory
 //	request.DataDiskCategory = dataCategory
 //	request.Cores = requests.NewInteger(host.CPU)

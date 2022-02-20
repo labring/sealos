@@ -44,42 +44,42 @@ var (
 )
 
 func defaultCluster(infra *Infra) {
-	infra.Spec.Cluster.AccessChannels.SSH.Port = 22
-	if infra.Spec.Cluster.AccessChannels.SSH.Passwd == "" {
-		infra.Spec.Cluster.AccessChannels.SSH.Passwd = createPassword()
+	infra.Spec.Metadata.AccessChannels.SSH.Port = 22
+	if infra.Spec.Metadata.AccessChannels.SSH.Passwd == "" {
+		infra.Spec.Metadata.AccessChannels.SSH.Passwd = createPassword()
 	}
-	if infra.Spec.Cluster.Annotations == nil {
-		infra.Spec.Cluster.Annotations = make(map[string]string)
+	if infra.Spec.Metadata.Annotations == nil {
+		infra.Spec.Metadata.Annotations = make(map[string]string)
 	}
 
-	if infra.Spec.Cluster.RegionIDs != nil {
-		infra.Spec.Cluster.RegionIDs = strings.RemoveSliceEmpty(infra.Spec.Cluster.RegionIDs)
+	if infra.Spec.Metadata.RegionIDs != nil {
+		infra.Spec.Metadata.RegionIDs = strings.RemoveSliceEmpty(infra.Spec.Metadata.RegionIDs)
 	}
-	if infra.Spec.Cluster.ZoneIDs != nil {
-		infra.Spec.Cluster.ZoneIDs = strings.RemoveSliceEmpty(infra.Spec.Cluster.ZoneIDs)
+	if infra.Spec.Metadata.ZoneIDs != nil {
+		infra.Spec.Metadata.ZoneIDs = strings.RemoveSliceEmpty(infra.Spec.Metadata.ZoneIDs)
 	}
-	if infra.Spec.Cluster.Metadata.Network.Bandwidth == "" {
-		infra.Spec.Cluster.Metadata.Network.Bandwidth = "100"
+	if infra.Spec.Metadata.Instance.Network.Bandwidth == "" {
+		infra.Spec.Metadata.Instance.Network.Bandwidth = "100"
 	}
-	if len(infra.Spec.Cluster.Metadata.Network.ExportPorts) == 0 {
-		infra.Spec.Cluster.Metadata.Network.ExportPorts = []ExportPort{
+	if len(infra.Spec.Metadata.Instance.Network.ExportPorts) == 0 {
+		infra.Spec.Metadata.Instance.Network.ExportPorts = []ExportPort{
 			sshExportPort,
 			apiserverExportPort,
 		}
 	} else {
 		ports := sets.NewString()
-		for _, port := range infra.Spec.Cluster.Metadata.Network.ExportPorts {
+		for _, port := range infra.Spec.Metadata.Instance.Network.ExportPorts {
 			ports.Insert(port.PortRange)
 		}
 		if !ports.Has(SSHPort) {
-			infra.Spec.Cluster.Metadata.Network.ExportPorts = append(infra.Spec.Cluster.Metadata.Network.ExportPorts, sshExportPort)
+			infra.Spec.Metadata.Instance.Network.ExportPorts = append(infra.Spec.Metadata.Instance.Network.ExportPorts, sshExportPort)
 		}
 		if !ports.Has(APIServerPort) {
-			infra.Spec.Cluster.Metadata.Network.ExportPorts = append(infra.Spec.Cluster.Metadata.Network.ExportPorts, apiserverExportPort)
+			infra.Spec.Metadata.Instance.Network.ExportPorts = append(infra.Spec.Metadata.Instance.Network.ExportPorts, apiserverExportPort)
 		}
 	}
-	if infra.Spec.Cluster.Metadata.Network.PrivateCidrIP == "" {
-		infra.Spec.Cluster.Metadata.Network.PrivateCidrIP = "172.16.0.0/24"
+	if infra.Spec.Metadata.Instance.Network.PrivateCidrIP == "" {
+		infra.Spec.Metadata.Instance.Network.PrivateCidrIP = "172.16.0.0/24"
 	}
 }
 
@@ -154,4 +154,12 @@ func IsMaster(roles []string) bool {
 
 func IsNode(roles []string) bool {
 	return In(Node, roles)
+}
+
+func IsAmd64(roles []string) bool {
+	return In(string(AMD64), roles)
+}
+
+func IsArm64(roles []string) bool {
+	return In(string(AMD64), roles)
 }

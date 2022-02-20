@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ func newAliProvider(infra *v2.Infra) (Interface, error) {
 func newHwProvider(infra *v2.Infra) (Interface, error) {
 	hwProvider := new(huawei.HwProvider)
 	hwProvider.Infra = infra
-	if err := v2.DefaultCluster(hwProvider.Infra, huawei.DefaultInfra); err != nil {
+	if err := v2.DefaultInfra(hwProvider.Infra, huawei.DefaultInfra); err != nil {
 		return nil, err
 	}
 	if err := validation.ValidateInfra(hwProvider.Infra, huawei.DefaultValidate); len(err) != 0 {

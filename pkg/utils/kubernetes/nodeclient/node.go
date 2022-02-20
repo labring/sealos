@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/pkg/utils/strings"
 
@@ -44,7 +44,7 @@ const (
 )
 
 var (
-	KubeDefaultConfigPath = contants.DefaultConfigPath + "/admin.conf"
+	KubeDefaultConfigPath = v1beta1.DefaultConfigPath + "/admin.conf"
 )
 
 // NewClient is get clientSet by kubeConfig

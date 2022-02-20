@@ -32,7 +32,7 @@ func (a *HwProvider) CreateVPC() error {
 	request := &model.CreateVpcRequest{}
 	request.Body = &model.CreateVpcRequestBody{
 		Vpc: &model.CreateVpcOption{
-			Cidr: &a.Infra.Spec.Cluster.Metadata.Network.PrivateCidrIP,
+			Cidr: &a.Infra.Spec.Metadata.Instance.Network.PrivateCidrIP,
 		},
 	}
 	resp, err := a.RetryVpcRequest(request, v2.GenReqDefForCreateVpc())
@@ -74,10 +74,10 @@ func (a *HwProvider) DeleteVPC() error {
 //	}
 //	request := vpc.CreateCreateVSwitchRequest()
 //	request.Scheme = Scheme
-//	request.ZoneId = a.Infra.Status.Cluster.ZoneID
+//	request.ZoneId = a.Infra.Status.Metadata.ZoneID
 //	request.CidrBlock = CidrBlock
 //	request.VpcId = VpcID.Value(a.Infra.Status)
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
+//	request.RegionId = a.Infra.Status.Metadata.RegionID
 //	//response, err := d.Client.CreateVSwitch(request)
 //	response := vpc.CreateCreateVSwitchResponse()
 //	err := a.RetryVpcRequest(request, response)
@@ -109,7 +109,7 @@ func (a *HwProvider) DeleteVPC() error {
 //	}
 //	request := ecs.CreateCreateSecurityGroupRequest()
 //	request.Scheme = Scheme
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
+//	request.RegionId = a.Infra.Status.Metadata.RegionID
 //	request.VpcId = VpcID.Value(a.Infra.Status)
 //	response := ecs.CreateCreateSecurityGroupResponse()
 //	err := a.RetryEcsRequest(request, response)
@@ -167,10 +167,10 @@ func (a *HwProvider) DeleteVPC() error {
 //	if err != nil {
 //		return err
 //	}
-//	a.Infra.Status.Cluster.EIP = eIP
+//	a.Infra.Status.Metadata.EIP = eIP
 //	EipID.SetValue(a.Infra.Status, eIPID)
-//	a.Infra.Status.Cluster.Master0ID = master0.InstanceID
-//	a.Infra.Status.Cluster.Master0InternalIP = master0.PrimaryIPAddress
+//	a.Infra.Status.Metadata.Master0ID = master0.InstanceID
+//	a.Infra.Status.Metadata.Master0InternalIP = master0.PrimaryIPAddress
 //	return nil
 //}
 //

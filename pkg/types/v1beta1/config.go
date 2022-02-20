@@ -1,5 +1,5 @@
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2021 Alibaba Group.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,101 +14,95 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Application config file:
+
+Clusterfile:
+
+apiVersion: sealer.aliyun.com/v1alpha1
+kind: Cluster
+metadata:
+  name: my-cluster
+spec:
+  image: registry.cn-qingdao.aliyuncs.com/sealer-app/my-SAAS-all-inone:latest
+  provider: BAREMETAL
+---
+apiVersion: sealer.aliyun.com/v1alpha1
+kind: Config
+metadata:
+  name: mysql-config
+spec:
+  path: etc/mysql-config.yaml
+  data: |
+       mysql-user: root
+       mysql-passwd: xxx
+...
+---
+apiVersion: sealer.aliyun.com/v1alpha1
+kind: Config
+metadata:
+  name: redis-config
+spec:
+  path: etc/redis-config.yaml
+  data: |
+       redis-user: root
+       redis-passwd: xxx
+...
+
+When apply this Clusterfile, sealer will generate some values file for application config. Named etc/mysql-config.yaml etc/redis-config.yaml.
+
+So if you want to use those config, Kubefile is like this:
+
+FROM kuberentes:v1.19.9
+CMD helm install mysql -f etc/mysql-config.yaml
+CMD helm install mysql -f etc/redis-config.yaml
+*/
+
 package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type ConfigCNI struct {
-	Type    string            `json:"type"`
-	Version string            `json:"version"`
-	Data    map[string]string `json:"data"`
+type StrategyType string
+
+const (
+	Merge    StrategyType = "merge"
+	Override StrategyType = "override"
+)
+
+// ConfigSpec defines the desired state of Config
+type ConfigSpec struct {
+	Strategy StrategyType `json:"strategy,omitempty"`
+	Data     string       `json:"data,omitempty"`
+	Path     string       `json:"path,omitempty"`
 }
 
-type ConfigMetadata struct {
-	Version string `json:"version"`
-	Arch    string `json:"arch"`
+// ConfigStatus defines the observed state of Config
+type ConfigStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 }
 
-type ConfigTemplate struct {
-	Init          string
-	InitRegistry  string
-	CleanRegistry string
-}
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-type ConfigSystem struct {
-	CNI          ConfigCNI      `json:"cni"`
-	LvscareImage string         `json:"lvscareimage"`
-	Metadata     ConfigMetadata `json:"metadata"`
-	Template     ConfigTemplate `json:"template"`
-}
+// Config is the Schema for the configs API
+type Config struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-//
-type ConfigRegistry struct {
-	Domain    string  `json:"domain"`
-	Port      string  `json:"port"`
-	Username  string  `json:"username"`
-	Password  string  `json:"password"`
-	ConfigDir string  `json:"configDir"` // /etc/registry
-	DataDir   string  `json:"dataDir"`   // /var/lib/registry
-	Host      *string `json:"host,omitempty"`
-}
-
-type ConfigCRI struct {
-	Registry ConfigRegistry `json:"registry"`
-	DataDir  string         `json:"dataDir"`
-}
-
-type ConfigNetwork struct {
-	DNSDomain         string   `json:"dnsdomain"`
-	APIServerCertSANs []string `json:"apiservercertsans"`
-	VIP               string   `json:"vip"`
-	SvcCIDR           string   `json:"svccidr"`
-	PodCIDR           string   `json:"podcidr"`
-}
-
-type ConfigFiles struct {
-	CertPath        string `json:"cert"`
-	CertEtcdPath    string `json:"etcd"`
-	KubeadmInitPath string `json:"init"`
-	KubeadmJoinPath string `json:"join"`
-}
-
-type ConfigData struct {
-	CRI     ConfigCRI     `json:"cri"`
-	Network ConfigNetwork `json:"network"`
-	Files   ConfigFiles   `json:"files"`
+	Spec   ConfigSpec   `json:"spec,omitempty"`
+	Status ConfigStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Config is the Schema for the Config API
-type Config struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec ConfigSpec `json:"spec,omitempty"`
-}
-
-type ConfigSSH struct {
-	User     string `json:"user,omitempty"`
-	Passwd   string `json:"passwd,omitempty"`
-	Pk       string `json:"pk,omitempty"`
-	PkPasswd string `json:"pkPasswd,omitempty"`
-	Port     string `json:"port,omitempty"`
-}
-
-type ConfigHost struct {
-	IPS   []string `json:"ips,omitempty"`
-	Roles []string `json:"roles,omitempty"`
-}
-
-// ConfigSpec defines the desired state of Config
-type ConfigSpec struct {
-	SSH    ConfigSSH    `json:"ssh"`
-	Hosts  []ConfigHost `json:"hosts,omitempty"`
-	System ConfigSystem `json:"system"`
-	Data   ConfigData   `json:"data"`
+// ConfigList contains a list of Config
+type ConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []Config `json:"items"`
 }

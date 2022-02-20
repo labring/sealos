@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ func TestAliApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
-			Cluster: v2.Cluster{
+			Metadata: v2.Metadata{
 				RegionIDs: []string{"cn-shanghai"},
 				ZoneIDs:   []string{"cn-shanghai-l"},
 				AccessChannels: v2.AccessChannels{
@@ -49,7 +49,7 @@ func TestAliApply(t *testing.T) {
 						Port:   22,
 					},
 				},
-				Metadata: v2.ClusterMeta{
+				Instance: v2.Instance{
 					IsSeize: true,
 				},
 			},
@@ -144,7 +144,7 @@ func TestHuaweiApply(t *testing.T) {
 		},
 		Spec: v2.InfraSpec{
 			Credential: v2.Credential{ProjectID: "06b264130780105b2f50c0145ba32d41"},
-			Cluster: v2.Cluster{
+			Metadata: v2.Metadata{
 				RegionIDs: []string{"cn-north-4"},
 				ZoneIDs:   []string{""},
 				AccessChannels: v2.AccessChannels{
@@ -153,7 +153,7 @@ func TestHuaweiApply(t *testing.T) {
 						Port:   22,
 					},
 				},
-				Metadata: v2.ClusterMeta{IsSeize: true},
+				Instance: v2.Instance{IsSeize: true},
 			},
 			Hosts: []v2.Host{
 				{

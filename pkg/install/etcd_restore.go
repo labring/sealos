@@ -16,6 +16,7 @@ package install
 
 import (
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -153,10 +154,13 @@ func (e *EtcdFlags) AfterRestore() error {
 		tmpFile := fmt.Sprintf("/tmp/%s.tar", filepath.Base(location))
 		sdtTmpTar := fmt.Sprintf("/var/lib/%s.tar", filepath.Base(location))
 		// 压缩已经已经restore的文件
-		err := archive.CompressTar(location, tmpFile)
+		f, _ := os.Create(tmpFile)
+		r, err := archive.NewArchive(true, true).TarOrGzip(location)
 		if err != nil {
 			return err
 		}
+		_, _ = io.Copy(f, r)
+
 		logger.Info("compress file")
 		// 复制并解压到相应目录
 		// use quiet to tar

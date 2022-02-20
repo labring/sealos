@@ -21,7 +21,7 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/config"
+	"github.com/fanux/sealos/pkg/cfgbak"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -108,7 +108,7 @@ func (s *SealosInstaller) sendJoinCPConfig(joinMaster []string) {
 		go func(master string) {
 			defer wg.Done()
 			cgroup := s.getCgroupDriverFromShell(master)
-			templateData := string(config.JoinTemplate(iputils.IPFormat(master), cgroup))
+			templateData := string(cfgbak.JoinTemplate(iputils.IPFormat(master), cgroup))
 			cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = v1.SSHConfig.CmdAsync(master, cmd)
 		}(master)
@@ -165,7 +165,7 @@ func (s *SealosInstaller) JoinNodes() {
 			defer wg.Done()
 			// send join node config
 			cgroup := s.getCgroupDriverFromShell(node)
-			templateData := string(config.JoinTemplate("", cgroup))
+			templateData := string(cfgbak.JoinTemplate("", cgroup))
 			cmdJoinConfig := fmt.Sprintf(`echo "%s" > /root/kubeadm-join-config.yaml`, templateData)
 			_ = v1.SSHConfig.CmdAsync(node, cmdJoinConfig)
 

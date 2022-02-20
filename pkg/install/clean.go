@@ -20,7 +20,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/pkg/utils/confirm"
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -110,7 +110,7 @@ end:
 	i.Clean()
 	if i.cleanAll {
 		logger.Info("if clean all and clean sealos config")
-		cfgPath := contants.DefaultConfigPath
+		cfgPath := v1beta1.DefaultConfigPath
 		_, _ = exec.RunSimpleCmd("rm -rf " + cfgPath)
 	}
 }
@@ -175,7 +175,7 @@ func (s *SealosClean) cleanMaster(master string) {
 			_ = v1.SSHConfig.CmdAsync(v1.MasterIPs[0], fmt.Sprintf(cmd, strings.TrimSpace("hostname")))
 		}
 		//清空所有的nodes的数据
-		yaml, _ := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, contants.LvsCareStaticPodName)
+		yaml, _ := ipvs.LvsStaticPodYaml(v1.VIP, v1.MasterIPs, v1.LvscareImage, v1beta1.LvsCareStaticPodName)
 		var wg sync.WaitGroup
 		for _, node := range v1.NodeIPs {
 			wg.Add(1)

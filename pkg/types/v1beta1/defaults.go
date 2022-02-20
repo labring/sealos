@@ -16,7 +16,7 @@ limitations under the License.
 
 package v1beta1
 
-func DefaultCluster(infra *Infra, fn func(infra *Infra) error) error {
+func DefaultInfra(infra *Infra, fn func(infra *Infra) error) error {
 	defaultCluster(infra)
 	defaultHosts(infra)
 	defaultToStatus(infra)
@@ -30,4 +30,9 @@ func In(key string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+func DefaultCluster(cluster *Cluster, fn func(cluster *Cluster) error) error {
+	defaultSSH(cluster)
+	return fn(cluster)
 }

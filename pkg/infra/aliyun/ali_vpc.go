@@ -1,4 +1,4 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
+// Copyright © 2021 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ func (a *AliProvider) CreateVSwitch() error {
 	request := vpc.CreateCreateVSwitchRequest()
 	request.Scheme = Scheme
 	request.ZoneId = a.Infra.Status.Cluster.ZoneID
-	request.CidrBlock = a.Infra.Spec.Cluster.Metadata.Network.PrivateCidrIP
+	request.CidrBlock = a.Infra.Spec.Metadata.Instance.Network.PrivateCidrIP
 	request.VpcId = VpcID.Value(a.Infra.Status)
 	request.RegionId = a.Infra.Status.Cluster.RegionID
 	response := vpc.CreateCreateVSwitchResponse()
@@ -111,7 +111,7 @@ func (a *AliProvider) CreateSecurityGroup() error {
 		return err
 	}
 
-	for _, port := range a.Infra.Spec.Cluster.Metadata.Network.ExportPorts {
+	for _, port := range a.Infra.Spec.Metadata.Instance.Network.ExportPorts {
 		if !a.AuthorizeSecurityGroup(response.SecurityGroupId, port) {
 			return fmt.Errorf("authorize securitygroup port: %v failed", port)
 		}
@@ -141,8 +141,8 @@ func (a *AliProvider) GetAvailableZoneID() error {
 		logger.Info("get available resource success %s: %s", "GetAvailableZoneID", a.Infra.Status.Cluster.ZoneID)
 	}()
 
-	if len(a.Infra.Spec.Cluster.ZoneIDs) != 0 {
-		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Cluster.ZoneIDs[rand.Rand(len(a.Infra.Spec.Cluster.ZoneIDs))]
+	if len(a.Infra.Spec.Metadata.ZoneIDs) != 0 {
+		a.Infra.Status.Cluster.ZoneID = a.Infra.Spec.Metadata.ZoneIDs[rand.Rand(len(a.Infra.Spec.Metadata.ZoneIDs))]
 		return nil
 	}
 	request := vpc.CreateDescribeZonesRequest()
@@ -197,7 +197,7 @@ func (a *AliProvider) BindEipForMaster0() error {
 func (a *AliProvider) allocateEipAddress() (eIP, eIPID string, err error) {
 	request := vpc.CreateAllocateEipAddressRequest()
 	request.Scheme = Scheme
-	request.Bandwidth = a.Infra.Spec.Cluster.Metadata.Network.Bandwidth
+	request.Bandwidth = a.Infra.Spec.Metadata.Instance.Network.Bandwidth
 	request.InternetChargeType = "PayByTraffic"
 	response := vpc.CreateAllocateEipAddressResponse()
 	err = a.RetryVpcRequest(request, response)

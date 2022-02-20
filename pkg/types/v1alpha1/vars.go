@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/pkg/utils/ssh"
 
@@ -32,11 +32,11 @@ var (
 	APIServerCertSANs []string
 	SSHConfig         ssh.SSH
 	APIServer         string
-	CertPath          = contants.DefaultConfigPath + "/pki"
-	CertEtcdPath      = contants.DefaultConfigPath + "/pki/etcd"
-	EtcdCacart        = contants.DefaultConfigPath + "/pki/etcd/ca.crt"
-	EtcdCert          = contants.DefaultConfigPath + "/pki/etcd/healthcheck-client.crt"
-	EtcdKey           = contants.DefaultConfigPath + "/pki/etcd/healthcheck-client.key"
+	CertPath          = v1beta1.DefaultConfigPath + "/pki"
+	CertEtcdPath      = v1beta1.DefaultConfigPath + "/pki/etcd"
+	EtcdCacart        = v1beta1.DefaultConfigPath + "/pki/etcd/ca.crt"
+	EtcdCert          = v1beta1.DefaultConfigPath + "/pki/etcd/healthcheck-client.crt"
+	EtcdKey           = v1beta1.DefaultConfigPath + "/pki/etcd/healthcheck-client.key"
 
 	CriSocket    string
 	CgroupDriver string

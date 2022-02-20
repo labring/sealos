@@ -24,16 +24,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+
 	"github.com/fanux/sealos/pkg/cert"
 
 	"github.com/fanux/sealos/pkg/cni"
-	"github.com/fanux/sealos/pkg/types/contants"
-
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/config"
+	"github.com/fanux/sealos/pkg/cfgbak"
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
@@ -98,7 +98,7 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 	var templateData string
 	v1.CgroupDriver = s.getCgroupDriverFromShell(s.Masters[0])
 	if v1.KubeadmFile == "" {
-		templateData = string(config.Template())
+		templateData = string(cfgbak.Template())
 	} else {
 		fileData, err := ioutil.ReadFile(v1.KubeadmFile)
 		defer func() {
@@ -109,13 +109,13 @@ func (s *SealosInstaller) KubeadmConfigInstall() {
 		if err != nil {
 			panic(1)
 		}
-		templateData = string(config.TemplateFromTemplateContent(string(fileData)))
+		templateData = string(cfgbak.TemplateFromTemplateContent(string(fileData)))
 	}
 	cmd := fmt.Sprintf(`echo "%s" > /root/kubeadm-config.yaml`, templateData)
 	//cmd := "echo \"" + templateData + "\" > /root/kubeadm-config.yaml"
 	_ = v1.SSHConfig.CmdAsync(s.Masters[0], cmd)
 	//读取模板数据
-	kubeadm := config.KubeadmDataFromYaml(templateData)
+	kubeadm := cfgbak.KubeadmDataFromYaml(templateData)
 	if kubeadm != nil {
 		v1.DNSDomain = kubeadm.Networking.DNSDomain
 		v1.APIServerCertSANs = kubeadm.APIServer.CertSANs
@@ -182,7 +182,7 @@ func (s *SealosInstaller) CreateKubeconfig() {
 
 	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", v1.APIServer)
 
-	err := cert.CreateJoinControlPlaneKubeConfigFiles(contants.DefaultConfigPath,
+	err := cert.CreateJoinControlPlaneKubeConfigFiles(v1beta1.DefaultConfigPath,
 		certConfig, hostname, controlPlaneEndpoint, "kubernetes")
 	if err != nil {
 		logger.Error("generator kubeconfig failed %s", err)
@@ -238,9 +238,9 @@ func (s *SealosInstaller) InstallMaster0() {
 		}
 	}
 	//"{{if not .IPIP }}Off{{else}}Always{{end}}"
-	ipip := contants.DefaultCNIIPIPTrue
+	ipip := v1beta1.DefaultCNIIPIPTrue
 	if v1.BGP {
-		ipip = contants.DefaultCNIIPIPFalse
+		ipip = v1beta1.DefaultCNIIPIPFalse
 	}
 	cn := &cni.CNI{
 		Interface: v1.Interface,
@@ -249,7 +249,7 @@ func (s *SealosInstaller) InstallMaster0() {
 		MTU:       v1.MTU,
 	}
 	netyaml := cn.Manifests("")
-	configYamlPath := filepath.Join(contants.DefaultConfigPath, "cni.yaml")
+	configYamlPath := filepath.Join(v1beta1.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
 	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
 	_ = v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")

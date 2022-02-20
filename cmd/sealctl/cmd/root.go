@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
-	"github.com/fanux/sealos/pkg/types/contants"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
+	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +44,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(boot.OnBootOnDie)
-	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config", contants.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
+	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config", v1beta1.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
 	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
 	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
 }
