@@ -6,7 +6,6 @@ package doublylinkedlist
 
 import (
 	"encoding/json"
-
 	"github.com/emirpasic/gods/containers"
 )
 

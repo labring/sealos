@@ -22,10 +22,9 @@ package config
 import (
 	"context"
 	"fmt"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/httphandler"
 	"net"
 	"time"
-
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/httphandler"
 )
 
 const DefaultTimeout = 120 * time.Second
