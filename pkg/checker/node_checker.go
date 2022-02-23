@@ -17,9 +17,10 @@ package checker
 import (
 	"context"
 	"fmt"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"text/template"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/fanux/sealos/pkg/client-go/kubernetes"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
