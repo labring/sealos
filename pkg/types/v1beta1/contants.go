@@ -20,7 +20,6 @@ import "github.com/fanux/sealos/pkg/utils/file"
 
 const (
 	DefaultLvsCareImage     = "sealyun.hub:5000/sealyun/lvscare:latest"
-	DefaultConfigFile       = "/config.yaml"
 	LvsCareStaticPodName    = "kube-sealyun-lvscare"
 	DefaultVIP              = "10.103.97.2"
 	DefaultAPIServerDomain  = "apiserver.cluster.local"
@@ -39,15 +38,13 @@ var (
 )
 
 var (
-	DefaultVarCRIData             = "CRIData"        //cri-data
-	DefaultVarCRIRegistryDomain   = "RegistryDomain" //registry-domain
-	DefaultVarCRIRegistryPort     = "RegistryPort"   //registry-port
-	DefaultVarCRIRegistryData     = "RegistryData"   //registry-data
-	DefaultVarCRIRegistryConfig   = "RegistryConfig" //registry-config
-	DefaultVarCRIRegistryAuth     = "RegistryAuth"
+	DefaultVarCRIData             = "CRIData"          //cri-data
+	DefaultVarCRIRegistryDomain   = "RegistryDomain"   //registry-domain
+	DefaultVarCRIRegistryPort     = "RegistryPort"     //registry-port
+	DefaultVarCRIRegistryData     = "RegistryData"     //registry-data
+	DefaultVarCRIRegistryConfig   = "RegistryConfig"   //registry-config
 	DefaultVarCRIRegistryUsername = "RegistryUsername" //registry-username
 	DefaultVarCRIRegistryPassword = "RegistryPassword" //registry-password
-	DefaultVarLvsCareImage        = "LvsCareImage"     //lvscare-image
 
 	DefaultVarCNIInterface = "Interface" //cni-interface
 	DefaultVarCNIIPIP      = "IPIP"      //cni-ipip

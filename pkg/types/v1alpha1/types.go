@@ -69,7 +69,7 @@ type SealConfig struct {
 //Dump is
 func (c *SealConfig) Dump(path string) {
 	if path == "" {
-		path = v1beta1.DefaultConfigPath + v1beta1.DefaultConfigFile
+		path = v1beta1.DefaultConfigPath + DefaultConfigFile
 	}
 	MasterIPs = iputils.ParseIPs(MasterIPs)
 	c.Masters = MasterIPs
@@ -127,7 +127,7 @@ func Dump(path string, content interface{}) error {
 //Load is
 func (c *SealConfig) Load(path string) (err error) {
 	if path == "" {
-		path = v1beta1.DefaultConfigPath + v1beta1.DefaultConfigFile
+		path = v1beta1.DefaultConfigPath + DefaultConfigFile
 	}
 
 	y, err := ioutil.ReadFile(path)

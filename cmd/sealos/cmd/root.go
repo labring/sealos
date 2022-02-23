@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/types/v1alpha1"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/cmd/sealos/boot"
@@ -45,7 +47,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(boot.OnBootOnDie)
 	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config-dir", v1beta1.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
-	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigFile, "config-file", v1beta1.DefaultConfigFile, "config file (default is /config.yaml )")
+	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigFile, "config-file", v1alpha1.DefaultConfigFile, "config file (default is /config.yaml )")
 
 	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
 	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
