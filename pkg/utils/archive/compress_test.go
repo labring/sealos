@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
-
-	"golang.org/x/sys/unix"
 )
 
 const basePath = "/tmp"
@@ -134,9 +133,11 @@ func TestName(t *testing.T) {
 	//if err != nil {
 	//	t.Error(err)
 	//}
-	err := unix.Setxattr("abc", "trusted.overlay.opaque", []byte{'y'}, 0)
-	if err != nil {
-		t.Error(err)
-	}
+	//err := unix.Setxattr("abc", "trusted.overlay.opaque", []byte{'y'}, 0)
+	//if err != nil {
+	//	t.Error(err)
+	//}
 	//fmt.Println(fm.String())
+	data:=path.Join("http://localhost:10250","heathy")
+	t.Log(data)
 }

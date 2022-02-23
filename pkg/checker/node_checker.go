@@ -15,9 +15,12 @@
 package checker
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"text/template"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/fanux/sealos/pkg/client-go/kubernetes"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -32,7 +35,6 @@ const (
 )
 
 type NodeChecker struct {
-	client *kubernetes.Client
 }
 
 type NodeClusterStatus struct {
@@ -47,12 +49,11 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	// checker if all the node is ready
-	c, err := kubernetes.Newk8sClient()
+	c, err := kubernetes.NewKubernetesClient("")
 	if err != nil {
 		return err
 	}
-	n.client = c
-	nodes, err := n.client.ListNodes()
+	nodes, err := c.Kubernetes().CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
 	if err != nil {
 		return err
 	}
