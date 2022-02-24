@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -112,8 +111,8 @@ func NewKubeadmConfigInitTemplatesCmd() *cobra.Command {
 	return cmd
 }
 func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
-	var kubeVersion, apiserverDomain, master0, vip, podCIDR, svcCIDR, criSocket, patchPath, patch string
-	var masters, sans []string
+	var kubeVersion, apiserverDomain, master0, vip, podCIDR, svcCIDR, criSocket string
+	var masters, sans, patchPaths []string
 	var cmd = &cobra.Command{
 		Use:   "generator",
 		Short: "config manager kubeadm init generator",
@@ -122,19 +121,17 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath != "" {
-				if file.IsExist(patchPath) {
-					data, err := ioutil.ReadFile(patchPath)
-					if err != nil {
-						logger.Error(err.Error())
+			for _, patchPath := range patchPaths {
+				if patchPath != "" {
+					if !file.IsExist(patchPath) {
+						logger.Error("patch path %s is not exist", patchPath)
 						os.Exit(1)
 					}
-					patch = string(data)
 				}
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			data, err := kubeadm.GetterInitKubeadmConfig(kubeVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri.DefaultContainerdCRISocket, patch, masters, sans)
+			data, err := kubeadm.GetterInitKubeadmConfig(kubeVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri.DefaultContainerdCRISocket, patchPaths, masters, sans)
 			if err != nil {
 				logger.Error("generator kubeadm init-config  error: %s", err.Error())
 				os.Exit(1)
@@ -142,7 +139,7 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 			println(data)
 		},
 	}
-	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
+	cmd.Flags().StringSliceVar(&patchPaths, "patch-path", []string{}, "patch file path,use patch config")
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
 	cmd.Flags().StringVar(&apiserverDomain, "apiserver-domain", v1beta1.DefaultAPIServerDomain, "apiserver domain name")
 	cmd.Flags().StringVar(&vip, "vip", v1beta1.DefaultVIP, "virtual ip")
@@ -172,7 +169,8 @@ func NewKubeadmConfigJoinTemplatesCmd() *cobra.Command {
 	return cmd
 }
 func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
-	var kubeVersion, vip, criSocket, patchPath, patch string
+	var kubeVersion, vip, criSocket string
+	var patchPaths []string
 	var t token.Token
 	var cmd = &cobra.Command{
 		Use:   "generator-node",
@@ -182,19 +180,17 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath != "" {
-				if file.IsExist(patchPath) {
-					data, err := ioutil.ReadFile(patchPath)
-					if err != nil {
-						logger.Error(err.Error())
+			for _, patchPath := range patchPaths {
+				if patchPath != "" {
+					if !file.IsExist(patchPath) {
+						logger.Error("patch path %s is not exist", patchPath)
 						os.Exit(1)
 					}
-					patch = string(data)
 				}
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			data, err := kubeadm.GetterJoinNodeKubeadmConfig(kubeVersion, vip, criSocket, patch, t)
+			data, err := kubeadm.GetterJoinNodeKubeadmConfig(kubeVersion, vip, criSocket, patchPaths, t)
 			if err != nil {
 				logger.Error("generator kubeadm join-config  error: %s", err.Error())
 				os.Exit(1)
@@ -202,7 +198,7 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 			println(data)
 		},
 	}
-	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
+	cmd.Flags().StringSliceVar(&patchPaths, "patch-path", []string{}, "patch file path,use patch config")
 	cmd.Flags().StringVar(&vip, "vip", v1beta1.DefaultVIP, "virtual ip")
 	cmd.Flags().StringVar(&kubeVersion, "kube-version", "", "version is kubernetes version")
 	cmd.Flags().StringVar(&criSocket, "cri-socket", cri.DefaultContainerdCRISocket, "default container runtime socket")
@@ -213,7 +209,8 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 	return cmd
 }
 func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
-	var kubeVersion, master0, masterIP, vip, criSocket, patchPath, patch string
+	var kubeVersion, master0, masterIP, vip, criSocket string
+	var patchPaths []string
 	var t token.Token
 	var cmd = &cobra.Command{
 		Use:   "generator-master",
@@ -223,19 +220,17 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			if patchPath != "" {
-				if file.IsExist(patchPath) {
-					data, err := ioutil.ReadFile(patchPath)
-					if err != nil {
-						logger.Error(err.Error())
+			for _, patchPath := range patchPaths {
+				if patchPath != "" {
+					if !file.IsExist(patchPath) {
+						logger.Error("patch path %s is not exist", patchPath)
 						os.Exit(1)
 					}
-					patch = string(data)
 				}
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			data, err := kubeadm.GetterJoinMasterKubeadmConfig(kubeVersion, master0, masterIP, criSocket, patch, t)
+			data, err := kubeadm.GetterJoinMasterKubeadmConfig(kubeVersion, master0, masterIP, criSocket, patchPaths, t)
 			if err != nil {
 				logger.Error("generator kubeadm join-config  error: %s", err.Error())
 				os.Exit(1)
@@ -243,7 +238,7 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 			println(data)
 		},
 	}
-	cmd.Flags().StringVar(&patchPath, "patch-path", "", "patch file path,use patch config")
+	cmd.Flags().StringSliceVar(&patchPaths, "patch-path", []string{}, "patch file path,use patch config")
 	cmd.Flags().StringVar(&master0, "master0", "", "kubernetes master0 value")
 	cmd.Flags().StringVar(&masterIP, "master-ip", "", "kubernetes join masterIP value")
 

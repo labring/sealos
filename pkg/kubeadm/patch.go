@@ -56,10 +56,10 @@ var defaultPatchExample = []v1beta1.Patch{
 
 var defaultPatchEmptyExample []v1beta1.Patch
 
-func DefaultPatchDefault() v1beta1.KubeadmConfig {
-	config := v1beta1.KubeadmConfig{}
+func DefaultPatchDefault() v1beta1.Kubeadm {
+	config := v1beta1.Kubeadm{}
 	config.APIVersion = v1beta1.SchemeGroupVersion.String()
-	config.Kind = "KubeadmConfig"
+	config.Kind = "Kubeadm"
 	config.Name = "kubeadm-patch"
 	config.Spec.InitConfig = defaultPatchExample
 	config.Spec.ClusterConfig = defaultPatchEmptyExample

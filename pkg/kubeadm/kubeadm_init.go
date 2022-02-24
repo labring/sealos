@@ -18,6 +18,7 @@ package kubeadm
 
 import (
 	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/template"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,7 +50,7 @@ func (c *initConfig) DefaultTemplate() string {
 }
 
 func (c *initConfig) DefaultConfig() (string, error) {
-	return templateFromContent(initConfigDefault, c)
+	return template.FromContent(initConfigDefault, c)
 }
 
 func (c *initConfig) Kustomization(patch []v1beta1.Patch) (string, error) {

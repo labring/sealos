@@ -15,68 +15,21 @@
 package contants
 
 import (
-	"path/filepath"
-
 	"github.com/mitchellh/go-homedir"
 )
 
 const (
-	DefaultLogDir               = "/var/lib/sealos/log"
-	DefaultClusterFileName      = "Clusterfile"
-	DefaultClusterRootfsDir     = "/var/lib/sealos/data"
-	DefaultClusterInitBashFile  = "/var/lib/sealos/data/%s/kube/scripts/init.sh"
-	DefaultClusterClearBashFile = "/var/lib/sealos/data/%s/kube/scripts/clean.sh"
-	TarGzSuffix                 = ".tar.gz"
-	YamlSuffix                  = ".yaml"
-	KubeAdminConf               = "/etc/kubernetes/admin.conf"
-	ClusterWorkDir              = "/root/.sealos/%s"
-	RenderChartsDir             = "charts"
-	RenderManifestsDir          = "manifests"
-	DefaultWorkDir              = "/tmp/%s/workdir"
-)
-
-// image module
-const (
-	DefaultImageRootDir = "/var/lib/sealos/data"
+	TarGzSuffix = ".tar.gz"
+	YamlSuffix  = ".yaml"
 )
 
 //CRD kind
 const (
 	Config  = "Config"
 	Cluster = "Cluster"
+	Package = "Package"
+	Kubeadm = "Kubeadm"
 )
-
-func GetClusterWorkDir(clusterName string) string {
-	return filepath.Join(GetHomeDir(), ".sealos", clusterName)
-}
-
-func GetClusterWorkClusterfile(clusterName string) string {
-	return filepath.Join(GetHomeDir(), ".sealos", clusterName, "Clusterfile")
-}
-
-func DefaultMountCloudImageDir(clusterName string) string {
-	return filepath.Join(DefaultClusterRootfsDir, clusterName, "merge")
-}
-
-func DefaultKubeConfigFile() string {
-	return filepath.Join(GetHomeDir(), ".kube", "config")
-}
-
-func DefaultTheClusterRootfsDir(clusterName string) string {
-	return filepath.Join(DefaultClusterRootfsDir, clusterName, "kube")
-}
-
-func TheDefaultClusterPKIDir(clusterName string) string {
-	return filepath.Join(DefaultClusterRootfsDir, clusterName, "pki")
-}
-
-func TheDefaultClusterConfigDir(clusterName string) string {
-	return filepath.Join(DefaultClusterRootfsDir, clusterName, "config")
-}
-
-func DefaultClusterBaseDir(clusterName string) string {
-	return filepath.Join(DefaultClusterRootfsDir, clusterName)
-}
 
 func GetHomeDir() string {
 	home, err := homedir.Dir()

@@ -39,12 +39,30 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 	return
 }
 
+func Packages(filepath string) (configs []v1beta1.Package, err error) {
+	decodePackage, err := decodeCRD(filepath, contants.Package)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode package from %s, %v", filepath, err)
+	}
+	configs = decodePackage.([]v1beta1.Package)
+	return
+}
+
 func Configs(filepath string) (configs []v1beta1.Config, err error) {
 	decodeConfigs, err := decodeCRD(filepath, contants.Config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode config from %s, %v", filepath, err)
 	}
 	configs = decodeConfigs.([]v1beta1.Config)
+	return
+}
+
+func Kubeadm(filepath string) (kubeadms []v1beta1.Kubeadm, err error) {
+	decodeConfigs, err := decodeCRD(filepath, contants.Kubeadm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode kubeadm from %s, %v", filepath, err)
+	}
+	kubeadms = decodeConfigs.([]v1beta1.Kubeadm)
 	return
 }
 
@@ -62,13 +80,15 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		i        interface{}
 		clusters []v1beta1.Cluster
 		configs  []v1beta1.Config
+		packages []v1beta1.Package
+		kubeadms []v1beta1.Kubeadm
 	)
 
 	d := yaml.NewYAMLOrJSONDecoder(file, 4096)
 
 	for {
 		ext := runtime.RawExtension{}
-		if err := d.Decode(&ext); err != nil {
+		if err = d.Decode(&ext); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -83,7 +103,7 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		switch kind {
 		case contants.Cluster:
 			cluster := v1beta1.Cluster{}
-			err := yaml.Unmarshal(ext.Raw, &cluster)
+			err = yaml.Unmarshal(ext.Raw, &cluster)
 			if err != nil {
 				return nil, fmt.Errorf("decode cluster failed %v", err)
 			}
@@ -93,7 +113,7 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 			i = clusters
 		case contants.Config:
 			config := v1beta1.Config{}
-			err := yaml.Unmarshal(ext.Raw, &config)
+			err = yaml.Unmarshal(ext.Raw, &config)
 			if err != nil {
 				return nil, fmt.Errorf("decode config failed %v", err)
 			}
@@ -101,6 +121,26 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 				configs = append(configs, config)
 			}
 			i = configs
+		case contants.Package:
+			p := v1beta1.Package{}
+			err = yaml.Unmarshal(ext.Raw, &p)
+			if err != nil {
+				return nil, fmt.Errorf("decode package failed %v", err)
+			}
+			if p.Kind == contants.Package {
+				packages = append(packages, p)
+			}
+			i = packages
+		case contants.Kubeadm:
+			k := v1beta1.Kubeadm{}
+			err = yaml.Unmarshal(ext.Raw, &k)
+			if err != nil {
+				return nil, fmt.Errorf("decode kubeadm failed %v", err)
+			}
+			if k.Kind == contants.Kubeadm {
+				kubeadms = append(kubeadms, k)
+			}
+			i = kubeadms
 		}
 	}
 

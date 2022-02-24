@@ -89,7 +89,7 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 	for _, config := range c.Configs {
 		configData := []byte(config.Spec.Data)
-		configPath := filepath.Join(contants.DefaultTheClusterRootfsDir(c.ClusterName), config.Spec.Path)
+		configPath := filepath.Join(contants.NewData(c.ClusterName).DataPath(), config.Spec.Path)
 		//only the YAML format is supported
 		if config.Spec.Strategy == Merge {
 			configData, err = getMergeConfigData(configPath, configData)

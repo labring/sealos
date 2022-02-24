@@ -18,9 +18,12 @@ import (
 	"crypto/md5" // #nosec
 	"encoding/hex"
 	"fmt"
+	"hash"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/davecgh/go-spew/spew"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
@@ -46,4 +49,31 @@ func FileMD5(path string) string {
 
 	fileMd5 := fmt.Sprintf("%x", m.Sum(nil))
 	return fileMd5
+}
+
+// ToString gen hash string base on actual values of the nested objects.
+func ToString(obj interface{}) string {
+	hasher := md5.New()
+	DeepHashObject(hasher, obj)
+	return hex.EncodeToString(hasher.Sum(nil)[0:])
+}
+
+//func Hash(data interface{}) string {
+//	dataByte, _ := json.Marshal(data)
+//	sum := sha256.Sum256(dataByte)
+//	return fmt.Sprintf("%x", sum)
+//}
+
+// DeepHashObject writes specified object to hash using the spew library
+// which follows pointers and prints actual values of the nested objects
+// ensuring the hash does not change when a pointer changes.
+func DeepHashObject(hasher hash.Hash, objectToWrite interface{}) {
+	hasher.Reset()
+	printer := spew.ConfigState{
+		Indent:         " ",
+		SortKeys:       true,
+		DisableMethods: true,
+		SpewKeys:       true,
+	}
+	printer.Fprintf(hasher, "%#v", objectToWrite)
 }

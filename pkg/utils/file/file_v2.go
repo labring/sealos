@@ -107,8 +107,8 @@ func MkDirs(dirs ...string) error {
 	return nil
 }
 
-func MkTmpdir() (string, error) {
-	tempDir, err := ioutil.TempDir(DefaultTmpDir, ".DTmp-")
+func MkTmpdir(dir string) (string, error) {
+	tempDir, err := ioutil.TempDir(dir, ".DTmp-")
 	if err != nil {
 		return "", err
 	}
