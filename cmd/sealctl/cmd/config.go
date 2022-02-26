@@ -24,8 +24,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
-	"github.com/fanux/sealos/pkg/utils/file"
-
 	"github.com/fanux/sealos/cmd/sealos/boot"
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/kubeadm"
@@ -121,14 +119,6 @@ func NewKubeadmConfigInitGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			for _, patchPath := range patchPaths {
-				if patchPath != "" {
-					if !file.IsExist(patchPath) {
-						logger.Error("patch path %s is not exist", patchPath)
-						os.Exit(1)
-					}
-				}
-			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			data, err := kubeadm.GetterInitKubeadmConfig(kubeVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri.DefaultContainerdCRISocket, patchPaths, masters, sans)
@@ -180,14 +170,6 @@ func NewKubeadmConfigJoinNodeGeneratorCmd() *cobra.Command {
 				logger.Error(err.Error())
 				os.Exit(1)
 			}
-			for _, patchPath := range patchPaths {
-				if patchPath != "" {
-					if !file.IsExist(patchPath) {
-						logger.Error("patch path %s is not exist", patchPath)
-						os.Exit(1)
-					}
-				}
-			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			data, err := kubeadm.GetterJoinNodeKubeadmConfig(kubeVersion, vip, criSocket, patchPaths, t)
@@ -219,14 +201,6 @@ func NewKubeadmConfigJoinMasterGeneratorCmd() *cobra.Command {
 			if err := kubeadm.ValidateKubeVersionForKubeadm(kubeVersion); err != nil {
 				logger.Error(err.Error())
 				os.Exit(1)
-			}
-			for _, patchPath := range patchPaths {
-				if patchPath != "" {
-					if !file.IsExist(patchPath) {
-						logger.Error("patch path %s is not exist", patchPath)
-						os.Exit(1)
-					}
-				}
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {

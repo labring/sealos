@@ -38,6 +38,7 @@ type PackageSpec struct {
 type PackageStatus struct {
 	Arch     Arch            `json:"arch"`
 	Version  string          `json:"version"`
+	Path     string          `json:"path"`
 	Metadata runtime.Unknown `json:"metadata,omitempty"`
 }
 

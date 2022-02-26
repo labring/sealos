@@ -18,6 +18,7 @@ package kubeadm
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/file"
 	"io/ioutil"
 	"strings"
 
@@ -102,6 +103,9 @@ func kubeadms(yamls []string) (*v1beta1.Kubeadm, error) {
 		},
 	}
 	for i, yaml := range yamls {
+		if !file.IsExist(yaml) {
+			continue
+		}
 		kubeadmYAML, err := ioutil.ReadFile(yaml)
 		if err != nil {
 			return nil, fmt.Errorf("read %d yaml file failed: %s", i, err.Error())

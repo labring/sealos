@@ -39,10 +39,15 @@ type Data interface {
 	ManifestsPath() string
 	LogPath() string
 	DefaultJSONPath() string
+	SealctlPath() string
 }
 
 type data struct {
 	clusterName string
+}
+
+func (d *data) SealctlPath() string {
+	return filepath.Join(d.DataPath(), "opt", "sealctl")
 }
 
 func (d *data) ScriptsPath() string {

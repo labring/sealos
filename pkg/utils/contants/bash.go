@@ -25,6 +25,7 @@ const (
 	renderInitRegistry  = "init-registry"
 	renderCleanRegistry = "clean-registry"
 	renderAuth          = "auth"
+	renderCheck         = "check"
 )
 
 type Bash interface {
@@ -33,6 +34,7 @@ type Bash interface {
 	AuthBash() string
 	InitRegistryBash() string
 	CleanRegistryBash() string
+	CheckBash() string
 }
 
 type bash struct {
@@ -40,24 +42,46 @@ type bash struct {
 	render map[string]string
 }
 
+func (b *bash) CheckBash() string {
+	if val, ok := b.render[renderCheck]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
+}
+
 func (b *bash) InitBash() string {
-	return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), b.render[renderInit])
+	if val, ok := b.render[renderInit]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
 }
 
 func (b *bash) CleanBash() string {
-	return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), b.render[renderClean])
+	if val, ok := b.render[renderClean]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
 }
 
 func (b *bash) AuthBash() string {
-	return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), b.render[renderAuth])
+	if val, ok := b.render[renderAuth]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
 }
 
 func (b *bash) InitRegistryBash() string {
-	return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), b.render[renderInitRegistry])
+	if val, ok := b.render[renderInitRegistry]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
 }
 
 func (b *bash) CleanRegistryBash() string {
-	return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), b.render[renderCleanRegistry])
+	if val, ok := b.render[renderCleanRegistry]; ok {
+		return fmt.Sprintf(defaultBashFmt, b.data.ScriptsPath(), val)
+	}
+	return ""
 }
 
 func NewBash(clusterName string, render map[string]string) Bash {

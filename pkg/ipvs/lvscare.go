@@ -38,13 +38,13 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 	if image == "" {
 		image = v1beta1.DefaultLvsCareImage
 	}
-	args := []string{"care", "--vs", vip + ":6443", "--health-path", "/healthz", "--health-schem", "https"}
+	args := []string{"care", "--vs", vip, "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {
 		if strings.Contains(m, ":") {
 			m = strings.Split(m, ":")[0]
 		}
 		args = append(args, "--rs")
-		args = append(args, m+":6443")
+		args = append(args, m)
 	}
 	flag := true
 	pod := componentPod(v1.Container{
