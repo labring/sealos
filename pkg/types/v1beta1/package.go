@@ -21,50 +21,46 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+type PackageType string
+
 const (
-	OpTest    OpType = "test"
-	OpRemove  OpType = "remove"
-	OpAdd     OpType = "add"
-	OpReplace OpType = "replace"
-	OpMove    OpType = "move"
-	OpCopy    OpType = "copy"
+	Kubernetes  PackageType = "kubernetes"
+	Application PackageType = "application"
 )
 
-type OpType string
-
-type Patch struct {
-	Op    OpType          `json:"op"`
-	Path  string          `json:"path"`
-	From  string          `json:"from,omitempty"`
-	Value runtime.Unknown `json:"value,omitempty"`
+// PackageSpec defines the desired state of Package
+type PackageSpec struct {
+	Type PackageType `json:"type"`
+	Path string      `json:"path"`
 }
 
-// KubeadmSpec defines the desired state of Config
-type KubeadmSpec struct {
-	InitConfig      []Patch `json:"initConfig,omitempty"`
-	ClusterConfig   []Patch `json:"clusterConfig,omitempty"`
-	KubeProxyConfig []Patch `json:"kubeProxyConfig,omitempty"`
-	KubeletConfig   []Patch `json:"kubeletConfig,omitempty"`
-	JoinConfig      []Patch `json:"joinConfig,omitempty"`
+// PackageStatus defines the desired state of Package
+type PackageStatus struct {
+	Arch     Arch            `json:"arch"`
+	Version  string          `json:"version"`
+	Path     string          `json:"path"`
+	Metadata runtime.Unknown `json:"metadata,omitempty"`
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Kubeadm is the Schema for the configs API
-type Kubeadm struct {
+// Package is the Schema for the configs API
+type Package struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec KubeadmSpec `json:"spec,omitempty"`
+	Spec   PackageSpec   `json:"spec,omitempty"`
+	Status PackageStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// KubeadmList contains a list of Config
-type KubeadmList struct {
+// PackageList contains a list of Package
+type PackageList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Kubeadm `json:"items"`
+	Items           []Package `json:"items"`
 }

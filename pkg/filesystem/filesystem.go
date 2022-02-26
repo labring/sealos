@@ -14,4 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package filesystem
+
+import v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+
+type Interface interface {
+	MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error
+	UnMountRootfs(cluster *v2.Cluster, hosts []string) error
+	Clean(cluster *v2.Cluster) error
+}

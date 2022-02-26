@@ -46,21 +46,6 @@ type ClusterHost struct {
 	Env []string `json:"env,omitempty"`
 }
 
-//type PackageType string
-//
-//const (
-//	Kubernetes  PackageType = "kubernetes"
-//	Application PackageType = "application"
-//)
-//
-//type Package struct {
-//	Type     PackageType
-//	Arch     Arch
-//	Version  string
-//	Path     string
-//	Metadata *Metadata `json:"metadata,omitempty"`
-//}
-
 // ClusterSpec defines the desired state of Metadata
 type ClusterSpec struct {
 	SSH   ClusterSSH    `json:"ssh"`

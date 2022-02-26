@@ -14,4 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package cmd
+
+import (
+	"bytes"
+	"text/template"
+)
+
+func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {
+	var out bytes.Buffer
+	err := tmpl.Execute(&out, data)
+	if err != nil {
+		return "", err
+	}
+	return out.String(), nil
+}

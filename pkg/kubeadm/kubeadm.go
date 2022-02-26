@@ -24,7 +24,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
-	"sigs.k8s.io/yaml"
 )
 
 type Kubeadm interface {
@@ -79,12 +78,12 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 	return apiVersion
 }
 
-func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch string, masters, sans []string) (string, error) {
-	var config v1.KubeadmConfig
-	err := yaml.Unmarshal([]byte(patch), &config)
+func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri string, patch, masters, sans []string) (string, error) {
+	config, err := kubeadms(patch)
 	if err != nil {
 		return "", err
 	}
+
 	i := NewInit(k8sVersion, master0, cri)
 	ic, err := i.Kustomization(config.Spec.InitConfig)
 	if err != nil {
@@ -110,9 +109,8 @@ func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcC
 	return data, nil
 }
 
-func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri, patch string, t token.Token) (string, error) {
-	var config v1.KubeadmConfig
-	err := yaml.Unmarshal([]byte(patch), &config)
+func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri string, patch []string, t token.Token) (string, error) {
+	config, err := kubeadms(patch)
 	if err != nil {
 		return "", err
 	}
@@ -131,9 +129,8 @@ func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri, patch str
 	return data, nil
 }
 
-func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri, patch string, t token.Token) (string, error) {
-	var config v1.KubeadmConfig
-	err := yaml.Unmarshal([]byte(patch), &config)
+func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri string, patch []string, t token.Token) (string, error) {
+	config, err := kubeadms(patch)
 	if err != nil {
 		return "", err
 	}

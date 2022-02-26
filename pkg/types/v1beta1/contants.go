@@ -16,11 +16,12 @@ limitations under the License.
 
 package v1beta1
 
-import "github.com/fanux/sealos/pkg/utils/file"
+import (
+	"github.com/fanux/sealos/pkg/utils/contants"
+)
 
 const (
 	DefaultLvsCareImage     = "sealyun.hub:5000/sealyun/lvscare:latest"
-	DefaultConfigFile       = "/config.yaml"
 	LvsCareStaticPodName    = "kube-sealyun-lvscare"
 	DefaultVIP              = "10.103.97.2"
 	DefaultAPIServerDomain  = "apiserver.cluster.local"
@@ -34,20 +35,18 @@ const (
 )
 
 var (
-	DefaultConfigPath = file.UserHomeDir() + "/.sealos"
-	DefaultPKFile     = file.UserHomeDir() + "/.ssh/id_rsa"
+	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
+	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
 )
 
 var (
-	DefaultVarCRIData             = "CRIData"        //cri-data
-	DefaultVarCRIRegistryDomain   = "RegistryDomain" //registry-domain
-	DefaultVarCRIRegistryPort     = "RegistryPort"   //registry-port
-	DefaultVarCRIRegistryData     = "RegistryData"   //registry-data
-	DefaultVarCRIRegistryConfig   = "RegistryConfig" //registry-config
-	DefaultVarCRIRegistryAuth     = "RegistryAuth"
-	DefaultVarCRIRegistryUsername = "RegistryUsername" //registry-username
-	DefaultVarCRIRegistryPassword = "RegistryPassword" //registry-password
-	DefaultVarLvsCareImage        = "LvsCareImage"     //lvscare-image
+	DefaultVarCRIData             = "criData"          //cri-data
+	DefaultVarCRIRegistryDomain   = "registryDomain"   //registry-domain
+	DefaultVarCRIRegistryPort     = "registryPort"     //registry-port
+	DefaultVarCRIRegistryData     = "registryData"     //registry-data
+	DefaultVarCRIRegistryConfig   = "registryConfig"   //registry-config
+	DefaultVarCRIRegistryUsername = "registryUsername" //registry-username
+	DefaultVarCRIRegistryPassword = "registryPassword" //registry-password
 
 	DefaultVarCNIInterface = "Interface" //cni-interface
 	DefaultVarCNIIPIP      = "IPIP"      //cni-ipip

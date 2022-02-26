@@ -44,11 +44,6 @@ spec:
 Dump will dump the config to etc/redis-config.yaml file
 */
 
-const (
-	Merge     = "merge"
-	Overwrite = "overwrite"
-)
-
 type Interface interface {
 	// Dump Config in Clusterfile to the cluster rootfs disk
 	Dump(clusterfile string) error
@@ -89,9 +84,9 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 	for _, config := range c.Configs {
 		configData := []byte(config.Spec.Data)
-		configPath := filepath.Join(contants.DefaultTheClusterRootfsDir(c.ClusterName), config.Spec.Path)
+		configPath := filepath.Join(contants.NewData(c.ClusterName).DataPath(), config.Spec.Path)
 		//only the YAML format is supported
-		if config.Spec.Strategy == Merge {
+		if config.Spec.Strategy == v1beta1.Merge {
 			configData, err = getMergeConfigData(configPath, configData)
 			if err != nil {
 				return err

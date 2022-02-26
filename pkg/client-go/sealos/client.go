@@ -14,4 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package sealos
+
+import (
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+)
+
+type Client interface {
+	LoadCluster() (*v2.Cluster, error)
+}

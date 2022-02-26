@@ -25,6 +25,7 @@ import (
 )
 
 var (
+	DefaultConfigFile = "/config.yaml"
 	MasterIPs         []string
 	NodeIPs           []string
 	CertSANS          []string

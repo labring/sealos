@@ -14,4 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package template
+
+import (
+	"bytes"
+	"text/template"
+)
+
+func FromContent(templateContent string, param interface{}) (string, error) {
+	tmpl := template.Must(template.New("text").Parse(templateContent))
+	var buffer bytes.Buffer
+	err := tmpl.Execute(&buffer, param)
+	bs := buffer.Bytes()
+	if nil != bs && len(bs) > 0 {
+		return string(bs), nil
+	}
+	return "", err
+}
