@@ -18,9 +18,10 @@ package kubeadm
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/file"
 	"io/ioutil"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/template"
 	"k8s.io/apimachinery/pkg/util/json"

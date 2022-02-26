@@ -35,8 +35,8 @@ func Test_sealctl_Cert(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "default",
-			args:    args{
+			name: "default",
+			args: args{
 				altNames:    []string{"apiserver.cluster.doamin"},
 				nodeIP:      "127.0.0.1",
 				nodeName:    "localhost",
@@ -219,8 +219,8 @@ func Test_sealctl_IPVS(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "default",
-			args:    args{
+			name: "default",
+			args: args{
 				vip:     "10.0.79.2:6443",
 				masters: []string{"127.0.0.1:6443"},
 			},
@@ -361,8 +361,8 @@ func Test_sealctl_StaticPod(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "default",
-			args:    args{
+			name: "default",
+			args: args{
 				vip:     "10.0.79.2:6443",
 				image:   "sealyun/lvscare:latest",
 				masters: []string{"127.0.0.1:6443"},
@@ -371,7 +371,7 @@ func Test_sealctl_StaticPod(t *testing.T) {
 			wantErr: false,
 		},
 	}
-		for _, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &sealctl{}
 			got, err := s.StaticPod(tt.args.vip, tt.args.image, tt.args.masters)
@@ -392,7 +392,7 @@ func Test_sealctl_Token(t *testing.T) {
 		want string
 	}{
 		{
-			"default","sealctl token",
+			"default", "sealctl token",
 		},
 	}
 	for _, tt := range tests {
