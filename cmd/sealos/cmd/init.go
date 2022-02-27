@@ -17,11 +17,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/fanux/sealos/pkg/utils/contants"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/cmd/sealos/boot"
-
-	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
@@ -116,7 +116,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&v1.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", file.UserHomeDir()+"/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", contants.GetHomeDir()+"/.ssh/id_rsa", "private key for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&v1.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")

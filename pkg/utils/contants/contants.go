@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	TarGzSuffix = ".tar.gz"
-	YamlSuffix  = ".yaml"
+	MetadataFile = "Metadata"
+	SystemFile   = "system.yaml"
 )
 
 //CRD kind

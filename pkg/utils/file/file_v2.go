@@ -17,7 +17,6 @@ package file
 import (
 	"archive/tar"
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -30,6 +29,11 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/sys/unix"
 )
+
+func Filename(f string) string {
+	i := strings.LastIndexByte(f, '/')
+	return f[i+1:]
+}
 
 func IsExist(fileName string) bool {
 	if _, err := os.Stat(fileName); err != nil {
@@ -133,6 +137,7 @@ func WriteFile(fileName string, content []byte) error {
 	return nil
 }
 
+// RecursionCopy is copy
 // copy a.txt /var/lib/a.txt
 // copy /root/test/abc /tmp/abc
 func RecursionCopy(src, dst string) error {
@@ -279,47 +284,6 @@ func CleanFiles(file ...string) error {
 	return nil
 }
 
-func AppendFile(fileName string, content string) error {
-	bs, err := ReadAll(fileName)
-	if err != nil {
-		return errors.Wrapf(err, "read file %s failed", fileName)
-	}
-	if strings.Contains(string(bs), content) {
-		return nil
-	}
-	err = WriteFile(fileName, []byte(fmt.Sprintf("%s\n%s", bs, content)))
-	if err != nil {
-		return errors.Wrapf(err, "write file %s failed", fileName)
-	}
-	return nil
-}
-
-func RemoveFileContent(fileName string, content string) error {
-	bs, err := ReadAll(fileName)
-	if err != nil {
-		return errors.Wrapf(err, "read file %s failed", fileName)
-	}
-	//body := strings.TrimLeft(string(bs), content)
-	body := strings.Split(string(bs), content)
-	if len(body) != 2 {
-		return fmt.Errorf("remove file content failed %s %s", fileName, content)
-	}
-	err = WriteFile(fileName, []byte(body[0]+body[1]))
-	if err != nil {
-		return errors.Wrapf(err, "write file %s failed", fileName)
-	}
-	return nil
-}
-
-func IsFileContent(fileName string, content string) bool {
-	bs, err := ReadAll(fileName)
-	if err != nil {
-		logger.Error(err)
-		return false
-	}
-	return len(strings.Split(string(bs), content)) == 2
-}
-
 func IsDir(path string) bool {
 	s, err := os.Stat(path)
 	if err != nil {
@@ -371,16 +335,4 @@ func GetFilesSize(paths []string) (int64, error) {
 		size += s
 	}
 	return size, nil
-}
-
-func MarshalJSONToFile(file string, obj interface{}) error {
-	data, err := json.Marshal(obj)
-	if err != nil {
-		return err
-	}
-
-	if err = WriteFile(file, data); err != nil {
-		return err
-	}
-	return nil
 }

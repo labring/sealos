@@ -24,14 +24,18 @@ import (
 type PackageType string
 
 const (
-	Kubernetes  PackageType = "kubernetes"
-	Application PackageType = "application"
+	KubernetesTarGz  PackageType = "kubernetes/tar.gz"
+	ApplicationTarGz PackageType = "application/tar.gz"
+	FileBinaryAmd64  PackageType = "file/binary/amd64"
+	FileBinaryArm64  PackageType = "file/binary/arm64"
+	DefaultVersion               = "v0.0.0-master"
 )
 
 // PackageSpec defines the desired state of Package
 type PackageSpec struct {
-	Type PackageType `json:"type"`
-	Path string      `json:"path"`
+	Type     PackageType `json:"type"`
+	Path     string      `json:"path"`
+	Override string      `json:"override,omitempty"`
 }
 
 // PackageStatus defines the desired state of Package

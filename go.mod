@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
 	github.com/cavaliergopher/grab/v3 v3.0.1
+	github.com/davecgh/go-spew v1.1.1
 	github.com/distribution/distribution/v3 v3.0.0-20211125133600-cc4627fc6e5f
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.3-0.20211208011758-87521affb077+incompatible

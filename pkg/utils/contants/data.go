@@ -19,13 +19,19 @@ package contants
 import "path/filepath"
 
 const (
-	DefaultClusterRootfsDir = "/var/lib/sealos/data"
+	DefaultClusterRootfsDir = "/var/lib/sealos"
 )
+
+func LogPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "log")
+}
+
+func TempPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "temp")
+}
 
 type Data interface {
 	Homedir() string
-	TempPath() string
-	MergePath() string
 	PackagePath() string
 	ConfigPath() string
 	PkiPath() string
@@ -37,7 +43,6 @@ type Data interface {
 	Kubeadmfile() string
 	CharsPath() string
 	ManifestsPath() string
-	LogPath() string
 	DefaultJSONPath() string
 	SealctlPath() string
 }
@@ -54,10 +59,6 @@ func (d *data) ScriptsPath() string {
 	return filepath.Join(d.DataPath(), "scripts")
 }
 
-func (d *data) RegistryPath() string {
-	return filepath.Join(d.DataPath(), "registry")
-}
-
 func (d *data) DefaultJSONPath() string {
 	return filepath.Join(d.ScriptsPath(), "default.json")
 }
@@ -68,14 +69,6 @@ func (d *data) Kubeadmfile() string {
 
 func (d *data) RegistryFile() string {
 	return filepath.Join(d.DataPath(), "etc", "registry.yml")
-}
-
-func (d *data) LogPath() string {
-	return filepath.Join(d.Homedir(), "log")
-}
-
-func (d *data) TempPath() string {
-	return filepath.Join(d.Homedir(), "temp")
 }
 
 func (d *data) CharsPath() string {
@@ -90,8 +83,8 @@ func (d *data) KubeConfigFile() string {
 	return filepath.Join(d.ConfigPath(), "admin.conf")
 }
 
-func (d *data) MergePath() string {
-	return filepath.Join(d.Homedir(), "merge")
+func (d *data) RegistryPath() string {
+	return filepath.Join(d.Homedir(), "registry")
 }
 
 func (d *data) PackagePath() string {
@@ -111,7 +104,7 @@ func (d *data) DataPath() string {
 }
 
 func (d *data) Homedir() string {
-	return filepath.Join(DefaultClusterRootfsDir, d.clusterName)
+	return filepath.Join(DefaultClusterRootfsDir, "data", d.clusterName)
 }
 
 func NewData(clusterName string) Data {
