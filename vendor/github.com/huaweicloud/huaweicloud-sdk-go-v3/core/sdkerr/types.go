@@ -22,9 +22,10 @@ package sdkerr
 import (
 	"bytes"
 	"fmt"
-	jsoniter "github.com/json-iterator/go"
 	"io/ioutil"
 	"net/http"
+
+	jsoniter "github.com/json-iterator/go"
 
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/utils"
 )

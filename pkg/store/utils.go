@@ -14,4 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package file
+package store
+
+import (
+	"github.com/fanux/sealos/pkg/utils/file"
+	"k8s.io/apimachinery/pkg/util/json"
+)
+
+func jsonUnmarshal(path string) (map[string]interface{}, error) {
+	metadata, err := file.ReadAll(path)
+	if err != nil {
+		return nil, err
+	}
+	var data map[string]interface{}
+	err = json.Unmarshal(metadata, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}

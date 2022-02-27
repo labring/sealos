@@ -16,9 +16,9 @@ package collector
 
 import (
 	"path/filepath"
-	"strings"
 
 	"github.com/cavaliergopher/grab/v3"
+	"github.com/fanux/sealos/pkg/utils/file"
 )
 
 type webFileCollector struct {
@@ -26,8 +26,7 @@ type webFileCollector struct {
 
 func (w webFileCollector) Collect(buildContext, src, savePath string) error {
 	client := grab.NewClient()
-	i := strings.LastIndexByte(src, '/')
-	req, err := grab.NewRequest(filepath.Join(savePath, src[i+1:]), src)
+	req, err := grab.NewRequest(filepath.Join(savePath, file.Filename(src)), src)
 	if err != nil {
 		return err
 	}

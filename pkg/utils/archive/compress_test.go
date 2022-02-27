@@ -138,6 +138,6 @@ func TestName(t *testing.T) {
 	//	t.Error(err)
 	//}
 	//fmt.Println(fm.String())
-	data:=path.Join("http://localhost:10250","heathy")
+	data := path.Join("http://localhost:10250", "heathy")
 	t.Log(data)
 }

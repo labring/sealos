@@ -131,7 +131,7 @@ func (n *node) Bytes() []byte {
 		if n.Meta != nil {
 			buf.WriteString(fmt.Sprintf("[%v]  %v", n.Meta, n.Value))
 		} else {
-			buf.WriteString(fmt.Sprintf("%v",n.Value))
+			buf.WriteString(fmt.Sprintf("%v", n.Value))
 		}
 		buf.WriteByte('\n')
 	} else {
@@ -152,11 +152,11 @@ func (n *node) String() string {
 	return string(n.Bytes())
 }
 
-func (n *node) SetValue(value Value){
+func (n *node) SetValue(value Value) {
 	n.Value = value
 }
 
-func (n *node) SetMetaValue(meta MetaValue){
+func (n *node) SetMetaValue(meta MetaValue) {
 	n.Meta = meta
 }
 
@@ -205,9 +205,9 @@ func isEnded(levelsEnded []int, level int) bool {
 type EdgeType string
 
 var (
-	EdgeTypeLink  EdgeType = "│"
-	EdgeTypeMid   EdgeType = "├──"
-	EdgeTypeEnd   EdgeType = "└──"
+	EdgeTypeLink EdgeType = "│"
+	EdgeTypeMid  EdgeType = "├──"
+	EdgeTypeEnd  EdgeType = "└──"
 )
 
 func New() Tree {
