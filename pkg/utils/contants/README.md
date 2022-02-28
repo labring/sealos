@@ -29,6 +29,3 @@
 ## Work
 
 - clusterfile: ~/.sealos/<clusterName>/Clusterfile
-- packagefile: ~/.sealos/<clusterName>/Packagefile
-- configfile: ~/.sealos/<clusterName>/Configfile
-- kubeadmfile: ~/.sealos/<clusterName>/Kubeadmfile

@@ -15,9 +15,8 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/fanux/sealos/pkg/utils/contants"
+	"os"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
@@ -116,7 +115,7 @@ func init() {
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&v1.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", contants.GetHomeDir()+"/.ssh/id_rsa", "private key for ssh")
+	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", v1beta1.DefaultPKFile, "private key for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
 
 	initCmd.Flags().StringVar(&v1.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
@@ -137,7 +136,7 @@ func init() {
 	initCmd.Flags().BoolVar(&v1.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
 	initCmd.Flags().BoolVar(&v1.BGP, "bgp", false, "bgp mode enable, calico..")
 	initCmd.Flags().StringVar(&v1.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
-	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", v1beta1.DefaultLvsCareImage, "lvscare image name")
+	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
 
 	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
 }

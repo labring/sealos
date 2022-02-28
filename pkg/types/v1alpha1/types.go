@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"io/ioutil"
 	"os"
 
@@ -193,7 +194,7 @@ func (c *SealConfig) ShowDefaultConfig() {
 	c.APIServerCertSANs = []string{DefaultAPIServerDomain, "127.0.0.1"}
 	c.CertPath = v1beta1.DefaultConfigPath + "/pki"
 	c.CertEtcdPath = v1beta1.DefaultConfigPath + "/pki/etcd"
-	c.LvscareName = v1beta1.DefaultLvsCareImage
+	c.LvscareName = contants.DefaultLvsCareImage
 
 	y, err := yaml.Marshal(c)
 	if err != nil {

@@ -21,9 +21,6 @@ import "path/filepath"
 type Worker interface {
 	Homedir() string
 	Clusterfile() string
-	Packagefile() string
-	Configfile() string
-	Kubeadmfile() string
 }
 
 type worker struct {
@@ -32,9 +29,6 @@ type worker struct {
 
 const (
 	DefaultClusterFileName = "Clusterfile"
-	DefaultPackageFileName = "Packagefile"
-	DefaultConfigFileName  = "Configfile"
-	DefaultKubeadmFileName = "Kubeadmfile"
 )
 
 func (w *worker) Homedir() string {
@@ -43,18 +37,6 @@ func (w *worker) Homedir() string {
 
 func (w *worker) Clusterfile() string {
 	return filepath.Join(w.Homedir(), DefaultClusterFileName)
-}
-
-func (w *worker) Packagefile() string {
-	return filepath.Join(w.Homedir(), DefaultPackageFileName)
-}
-
-func (w *worker) Configfile() string {
-	return filepath.Join(w.Homedir(), DefaultConfigFileName)
-}
-
-func (w *worker) Kubeadmfile() string {
-	return filepath.Join(w.Homedir(), DefaultKubeadmFileName)
 }
 
 func NewWork(clusterName string) Worker {

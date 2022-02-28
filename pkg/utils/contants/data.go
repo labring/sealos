@@ -20,6 +20,7 @@ import "path/filepath"
 
 const (
 	DefaultClusterRootfsDir = "/var/lib/sealos"
+	DefaultKubeadmFileName = "Kubeadmfile"
 )
 
 func LogPath() string {
