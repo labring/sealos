@@ -39,12 +39,12 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 	return
 }
 
-func Packages(filepath string) (configs []v1beta1.Package, err error) {
+func Packages(filepath string) (configs []v1beta1.Resource, err error) {
 	decodePackage, err := decodeCRD(filepath, contants.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode package from %s, %v", filepath, err)
 	}
-	configs = decodePackage.([]v1beta1.Package)
+	configs = decodePackage.([]v1beta1.Resource)
 	return
 }
 
@@ -80,7 +80,7 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		i        interface{}
 		clusters []v1beta1.Cluster
 		configs  []v1beta1.Config
-		packages []v1beta1.Package
+		packages []v1beta1.Resource
 		kubeadms []v1beta1.Kubeadm
 	)
 
@@ -122,7 +122,7 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 			}
 			i = configs
 		case contants.Package:
-			p := v1beta1.Package{}
+			p := v1beta1.Resource{}
 			err = yaml.Unmarshal(ext.Raw, &p)
 			if err != nil {
 				return nil, fmt.Errorf("decode package failed %v", err)

@@ -24,7 +24,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 
-	"github.com/fanux/sealos/cmd/sealos/boot"
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/token"
@@ -94,9 +93,9 @@ func NewKubeadmConfigInitTemplatesCmd() *cobra.Command {
 		Use:   "print-templates",
 		Short: "config manager kubeadm init print-templates",
 		Run: func(cmd *cobra.Command, args []string) {
-			i := kubeadm.NewInit(boot.CmdFlag.Config.KubeVersion, "1.2.3.4", cri.DefaultContainerdCRISocket)
+			i := kubeadm.NewInit("v1.19.9", "1.2.3.4", cri.DefaultContainerdCRISocket)
 			ic := i.DefaultTemplate()
-			c := kubeadm.NewCluster(boot.CmdFlag.Config.KubeVersion, v1beta1.DefaultAPIServerDomain, v1beta1.DefaultPodCIDR, v1beta1.DefaultSvcCIDR, v1beta1.DefaultVIP, []string{"1.2.3.4"}, []string{})
+			c := kubeadm.NewCluster("v1.19.9", v1beta1.DefaultAPIServerDomain, v1beta1.DefaultPodCIDR, v1beta1.DefaultSvcCIDR, v1beta1.DefaultVIP, []string{"1.2.3.4"}, []string{})
 			cc := c.DefaultTemplate()
 			kp := kubeadm.NewKubeproxy(v1beta1.DefaultVIP)
 			kpc := kp.DefaultTemplate()
@@ -148,7 +147,7 @@ func NewKubeadmConfigJoinTemplatesCmd() *cobra.Command {
 		Use:   "print-templates",
 		Short: "config manager kubeadm join print-templates",
 		Run: func(cmd *cobra.Command, args []string) {
-			nj := kubeadm.NewJoinNode(boot.CmdFlag.Config.KubeVersion, cri.DefaultContainerdCRISocket, v1beta1.DefaultVIP, token.Token{})
+			nj := kubeadm.NewJoinNode("v1.19.9", cri.DefaultContainerdCRISocket, v1beta1.DefaultVIP, token.Token{})
 			njc := nj.DefaultTemplate()
 			kl := kubeadm.NewKubelet()
 			klc := kl.DefaultTemplate()

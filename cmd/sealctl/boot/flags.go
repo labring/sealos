@@ -65,7 +65,7 @@ type RegistryImageFlag struct {
 type RootFlag struct {
 	Debug     bool
 	ConfigDir string
-	ShowPatch bool
+	ShowPath  bool
 }
 
 type Flag struct {

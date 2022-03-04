@@ -26,6 +26,7 @@ const (
 const (
 	MetadataFile = "Metadata"
 	SystemFile   = "system.yaml"
+	DataDir      = "kube"
 )
 
 //CRD kind

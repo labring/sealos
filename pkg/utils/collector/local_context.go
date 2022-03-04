@@ -27,7 +27,7 @@ import (
 type localCollector struct {
 }
 
-func (l localCollector) Collect(buildContext, src, savePath string) error {
+func (l localCollector) Collect(src, savePath string) error {
 	xattrErrorHandler := func(dst, src, key string, err error) error {
 		logger.Warn(err)
 		return nil
@@ -36,7 +36,7 @@ func (l localCollector) Collect(buildContext, src, savePath string) error {
 		fsutil.WithXAttrErrorHandler(xattrErrorHandler),
 	}
 
-	m, err := fsutil.ResolveWildcards(buildContext, src, true)
+	m, err := fsutil.ResolveWildcards("", src, true)
 	if err != nil {
 		return err
 	}
@@ -44,8 +44,9 @@ func (l localCollector) Collect(buildContext, src, savePath string) error {
 	if len(m) == 0 {
 		return fmt.Errorf("%s not found", src)
 	}
+
 	for _, s := range m {
-		if err := fsutil.Copy(context.TODO(), buildContext, s, savePath, filepath.Base(s), opt...); err != nil {
+		if err := fsutil.Copy(context.TODO(), "", s, savePath, filepath.Base(s), opt...); err != nil {
 			return err
 		}
 	}

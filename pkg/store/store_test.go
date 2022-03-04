@@ -27,7 +27,7 @@ func Test_store_tarGz(t *testing.T) {
 		clusterName string
 	}
 	type args struct {
-		p *v1beta1.Package
+		p *v1beta1.Resource
 	}
 	tests := []struct {
 		name    string
@@ -41,8 +41,8 @@ func Test_store_tarGz(t *testing.T) {
 				clusterName: "xxxx",
 			},
 			args: args{
-				p: &v1beta1.Package{
-					Spec: v1beta1.PackageSpec{
+				p: &v1beta1.Resource{
+					Spec: v1beta1.ResourceSpec{
 						Type: v1beta1.KubernetesTarGz,
 						Path: "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
 					},
@@ -56,11 +56,26 @@ func Test_store_tarGz(t *testing.T) {
 				clusterName: "xxxx",
 			},
 			args: args{
-				p: &v1beta1.Package{
-					Spec: v1beta1.PackageSpec{
+				p: &v1beta1.Resource{
+					Spec: v1beta1.ResourceSpec{
 						Type:     v1beta1.FileBinaryAmd64,
 						Path:     "https://sealyun-temp.oss-accelerate.aliyuncs.com/sealos/3152531/sealctl",
 						Override: "/opt/sealctl",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "default-dir",
+			fields: fields{
+				clusterName: "xxxx",
+			},
+			args: args{
+				p: &v1beta1.Resource{
+					Spec: v1beta1.ResourceSpec{
+						Type:     v1beta1.KubernetesDir,
+						Path:     "/Users/cuisongliu/DockerImages/kube",
 					},
 				},
 			},
@@ -70,7 +85,7 @@ func Test_store_tarGz(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewStore(tt.fields.clusterName)
-			if err := s.SavePackage(tt.args.p); (err != nil) != tt.wantErr {
+			if err := s.Save(tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("tarGz() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("struct is %+v", tt.args.p)

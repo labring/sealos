@@ -21,25 +21,39 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type PackageType string
+type ResourceType string
 
 const (
-	KubernetesTarGz  PackageType = "kubernetes/tar.gz"
-	ApplicationTarGz PackageType = "application/tar.gz"
-	FileBinaryAmd64  PackageType = "file/binary/amd64"
-	FileBinaryArm64  PackageType = "file/binary/arm64"
-	DefaultVersion               = "v0.0.0-master"
+	KubernetesTarGz  ResourceType = "kubernetes/tar.gz"
+	KubernetesDir    ResourceType = "kubernetes/dir"
+	ApplicationTarGz ResourceType = "application/tar.gz"
+	ApplicationDir   ResourceType = "application/dir"
+	FileBinaryAmd64  ResourceType = "file/binary/amd64"
+	FileBinaryArm64  ResourceType = "file/binary/arm64"
+	DefaultVersion                = "v0.0.0-master"
 )
 
-// PackageSpec defines the desired state of Package
-type PackageSpec struct {
-	Type     PackageType `json:"type"`
-	Path     string      `json:"path"`
-	Override string      `json:"override,omitempty"`
+func (t ResourceType) IsDir() bool {
+	return t == KubernetesDir || t == ApplicationDir
+
+}
+func (t ResourceType) IsBinary() bool {
+	return t == FileBinaryAmd64 || t == FileBinaryArm64
 }
 
-// PackageStatus defines the desired state of Package
-type PackageStatus struct {
+func (t ResourceType) IsTarGz() bool {
+	return t == ApplicationTarGz || t == KubernetesTarGz
+}
+
+// ResourceSpec defines the desired state of Resource
+type ResourceSpec struct {
+	Type     ResourceType `json:"type"`
+	Path     string       `json:"path"`
+	Override string       `json:"override,omitempty"`
+}
+
+// ResourceStatus defines the desired state of Resource
+type ResourceStatus struct {
 	Arch     Arch            `json:"arch"`
 	Version  string          `json:"version"`
 	Path     string          `json:"path"`
@@ -50,21 +64,21 @@ type PackageStatus struct {
 // +kubebuilder:subresource:status
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Package is the Schema for the configs API
-type Package struct {
+// Resource is the Schema for the configs API
+type Resource struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   PackageSpec   `json:"spec,omitempty"`
-	Status PackageStatus `json:"status,omitempty"`
+	Spec   ResourceSpec   `json:"spec,omitempty"`
+	Status ResourceStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// PackageList contains a list of Package
-type PackageList struct {
+// ResourceList contains a list of Resource
+type ResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Package `json:"items"`
+	Items           []Resource `json:"items"`
 }

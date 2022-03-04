@@ -22,21 +22,16 @@ import (
 )
 
 type RootFlag struct {
-	Debug          bool
+	Debug    bool
+	ShowPath bool
+
 	ConfigDir      string
 	ConfigFile     string
-	ShowPatch      bool
 	ConfigFilePath string
 }
 
-type ConfigFlag struct {
-	KubeVersion string
-	PatchPath   string
-}
-
 type Flag struct {
-	Root   RootFlag
-	Config ConfigFlag
+	Root RootFlag
 }
 
 var CmdFlag Flag

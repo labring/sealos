@@ -109,10 +109,7 @@ func CheckIP(i string) bool {
 	if !strings.Contains(i, ":") {
 		return net.ParseIP(i) != nil
 	}
-	if _, err := net.ResolveTCPAddr("tcp", i); err != nil {
-		return false
-	}
-	return true
+	return false
 }
 
 func DisassembleIPList(arg string) (res []string) {

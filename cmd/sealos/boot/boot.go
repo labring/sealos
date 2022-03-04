@@ -26,7 +26,7 @@ import (
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	CmdFlag.Root.ConfigFilePath = CmdFlag.Root.ConfigDir + CmdFlag.Root.ConfigFile
-	logger.Cfg(CmdFlag.Root.Debug, CmdFlag.Root.ConfigDir, "sealos", CmdFlag.Root.ShowPatch)
+	logger.Cfg(CmdFlag.Root.Debug, CmdFlag.Root.ConfigDir, "sealos", CmdFlag.Root.ShowPath)
 }
 
 func initRootDirectory() error {

@@ -159,3 +159,24 @@ func RemoveDuplicate(list []string) []string {
 func WrapExecResult(host, command string, output []byte, err error) error {
 	return fmt.Errorf("failed to execute command(%s) on host(%s): output(%s), error(%v)", command, host, output, err)
 }
+func DedupeStrSlice(in []string) []string {
+	m := make(map[string]struct{})
+	var res []string
+	for _, s := range in {
+		if _, ok := m[s]; !ok {
+			res = append(res, s)
+			m[s] = struct{}{}
+		}
+	}
+	return res
+}
+// RemoveStrSlice remove dst element from src slice
+func RemoveStrSlice(src, dst []string) []string {
+	var ipList []string
+	for _, ip := range src {
+		if NotIn(ip, dst) {
+			ipList = append(ipList, ip)
+		}
+	}
+	return ipList
+}

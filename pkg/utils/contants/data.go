@@ -20,7 +20,7 @@ import "path/filepath"
 
 const (
 	DefaultClusterRootfsDir = "/var/lib/sealos"
-	DefaultKubeadmFileName = "Kubeadmfile"
+	DefaultKubeadmFileName  = "Kubeadmfile"
 )
 
 func LogPath() string {
@@ -34,6 +34,7 @@ func TempPath() string {
 type Data interface {
 	Homedir() string
 	PackagePath() string
+	TempPath() string
 	ConfigPath() string
 	PkiPath() string
 	DataPath() string
@@ -92,6 +93,10 @@ func (d *data) PackagePath() string {
 	return filepath.Join(d.Homedir(), "package")
 }
 
+func (d *data) TempPath() string {
+	return filepath.Join(d.Homedir(), "temp")
+}
+
 func (d *data) ConfigPath() string {
 	return filepath.Join(d.Homedir(), "etc")
 }
@@ -101,7 +106,7 @@ func (d *data) PkiPath() string {
 }
 
 func (d *data) DataPath() string {
-	return filepath.Join(d.Homedir(), "kube")
+	return filepath.Join(d.Homedir(), DataDir)
 }
 
 func (d *data) Homedir() string {

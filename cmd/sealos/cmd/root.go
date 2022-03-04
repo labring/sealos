@@ -50,5 +50,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigFile, "config-file", v1alpha1.DefaultConfigFile, "config file (default is /config.yaml )")
 
 	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
+	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPath, "path", false, "enable show code path")
 }

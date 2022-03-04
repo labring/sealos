@@ -126,17 +126,22 @@ func (c *Cluster) SetCRIData(criData string) {
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIData, criData))
 }
-func (c *Cluster) SetRegistryDomain(registryDomain string) {
-	if registryDomain == "" {
-		registryDomain = DefaultRegistryDomain
+func (c *Cluster) SetRegistryAddress(registryAddress string) {
+	var registryDomain, registryPort string
+	if registryAddress != "" {
+		data := strings.Split(registryAddress, ":")
+		if len(data) == 2 {
+			registryDomain = data[0]
+			registryPort = data[1]
+		}
 	}
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryDomain, registryDomain))
-}
-func (c *Cluster) SetRegistryPort(registryPort int) {
-	if registryPort == 0 {
+	if len(registryDomain) == 0 && len(registryPort) == 0 {
+		registryDomain = DefaultRegistryDomain
 		registryPort = DefaultRegistryPort
 	}
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%d", DefaultVarCRIRegistryPort, registryPort))
+	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryDomain, registryDomain))
+	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPort, registryPort))
+
 }
 func (c *Cluster) SetRegistryConfig(registryConfig string) {
 	if registryConfig == "" {
