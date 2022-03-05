@@ -86,8 +86,19 @@ func (c *Dumper) WriteFiles() (err error) {
 		configData := []byte(config.Spec.Data)
 		configPath := filepath.Join(contants.NewData(c.ClusterName).DataPath(), config.Spec.Path)
 		//only the YAML format is supported
-		if config.Spec.Strategy == v1beta1.Merge {
+		switch config.Spec.Strategy {
+		case v1beta1.Merge:
 			configData, err = getMergeConfigData(configPath, configData)
+			if err != nil {
+				return err
+			}
+		case v1beta1.Insert:
+			configData, err = getAppendOrInsertConfigData(configPath, configData, true)
+			if err != nil {
+				return err
+			}
+		case v1beta1.Append:
+			configData, err = getAppendOrInsertConfigData(configPath, configData, false)
 			if err != nil {
 				return err
 			}
@@ -99,6 +110,22 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 
 	return nil
+}
+
+func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte, error) {
+	var configs [][]byte
+	context, err := ioutil.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+	if insert {
+		configs = append(configs, data)
+		configs = append(configs, context)
+	} else {
+		configs = append(configs, context)
+		configs = append(configs, data)
+	}
+	return bytes.Join(configs, []byte("\n---\n")), nil
 }
 
 //merge the contents of data into the path file

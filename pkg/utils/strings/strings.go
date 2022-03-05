@@ -144,6 +144,11 @@ func RemoveSliceEmpty(list []string) (fList []string) {
 	return
 }
 
+func SplitRemoveEmpty(s, sep string) []string {
+	data := strings.Split(s, sep)
+	return RemoveSliceEmpty(data)
+}
+
 func RemoveDuplicate(list []string) []string {
 	var result []string
 	flagMap := map[string]struct{}{}

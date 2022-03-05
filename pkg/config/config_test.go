@@ -98,3 +98,36 @@ func Test_getMergeConfig(t *testing.T) {
 		})
 	}
 }
+
+func Test_getAppendOrInsertConfigData(t *testing.T) {
+	type args struct {
+		path   string
+		data   []byte
+		insert bool
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "default",
+			args: args{
+				path:   "test_clusterfile.yaml",
+				data:   []byte("aa: cc"),
+				insert: false,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getAppendOrInsertConfigData(tt.args.path, tt.args.data, tt.args.insert)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("getAppendOrInsertConfigData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			t.Log(string(got))
+		})
+	}
+}

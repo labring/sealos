@@ -18,10 +18,7 @@ package args
 
 import (
 	"fmt"
-	"strings"
-
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 )
@@ -60,12 +57,11 @@ type InitArgs struct {
 }
 
 type Init struct {
+	args              InitArgs
 	cluster           *v2.Cluster
 	configs           []v2.Config
 	resources         []v2.Resource
 	hosts             []v2.ClusterHost
-	data              contants.Data
-	work              contants.Worker
 	kubeadmBashSuffix string //add command for kubeamd end
 	dryRun            bool
 	withoutCNI        bool
@@ -73,32 +69,34 @@ type Init struct {
 
 func NewInit(args InitArgs) *Init {
 	r := &Init{}
-	r.data = contants.NewData(args.ClusterName)
-	r.work = contants.NewWork(args.ClusterName)
-	r.cluster = initCluster(args.ClusterName)
-	r.configs = []v2.Config{*initConfig(args.ClusterName, v2.ConfigSpec{})}
-	r.resources = []v2.Resource{*initResource(args.ClusterName, v2.ResourceSpec{})}
+	r.args = args
+	r.dryRun = args.DryRun
+	r.withoutCNI = args.WithoutCNI
+	r.kubeadmBashSuffix = fmt.Sprintf(" -v %d", args.Vlog)
 	return r
 }
 
-func (r *Init) processCluster(args InitArgs) error {
-	r.cluster.Spec.SSH.User = args.User
-	r.cluster.Spec.SSH.Pk = args.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.PkPassword
-	r.cluster.Spec.SSH.Port = args.Port
-	if args.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.Password
+func (r *Init) SetClusterArgs() error {
+	if r.cluster == nil {
+		r.cluster = initCluster(r.args.ClusterName)
+	}
+	r.cluster.Spec.SSH.User = r.args.User
+	r.cluster.Spec.SSH.Pk = r.args.Pk
+	r.cluster.Spec.SSH.PkPasswd = r.args.PkPassword
+	r.cluster.Spec.SSH.Port = r.args.Port
+	if r.args.Password != "" {
+		r.cluster.Spec.SSH.Passwd = r.args.Password
 	}
 
-	if err := PreProcessIPList(&args); err != nil {
+	if err := PreProcessIPList(&r.args); err != nil {
 		return err
 	}
 
-	if len(args.Masters) > 0 || len(args.MastersArm) > 0 {
-		masters := strings.Split(args.Masters, ",")
-		nodes := strings.Split(args.Nodes, ",")
-		masterArms := strings.Split(args.MastersArm, ",")
-		nodeArms := strings.Split(args.NodesArm, ",")
+	if len(r.args.Masters) > 0 || len(r.args.MastersArm) > 0 {
+		masters := strings2.SplitRemoveEmpty(r.args.Masters, ",")
+		nodes := strings2.SplitRemoveEmpty(r.args.Nodes, ",")
+		masterArms := strings2.SplitRemoveEmpty(r.args.MastersArm, ",")
+		nodeArms := strings2.SplitRemoveEmpty(r.args.NodesArm, ",")
 		r.hosts = []v2.ClusterHost{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
@@ -117,20 +115,29 @@ func (r *Init) processCluster(args InitArgs) error {
 		return fmt.Errorf("enter true iplist")
 	}
 
-	r.cluster.SetPodCIDR(args.PodCidr)
-	r.cluster.SetServiceCIDR(args.SvcCidr)
-	r.cluster.SetAPIServerDomain(args.APIServerDomain)
-	r.cluster.SetVip(args.VIP)
-	r.cluster.SetCertSANS(args.CertSANS)
-	if !args.WithoutCNI {
-		r.cluster.SetCNIInterface(args.Interface)
-		r.cluster.SetCNIIPIP(!args.IPIPFalse)
-		r.cluster.SetCNIMTU(args.MTU)
+	r.cluster.SetPodCIDR(r.args.PodCidr)
+	r.cluster.SetServiceCIDR(r.args.SvcCidr)
+	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
+	r.cluster.SetVip(r.args.VIP)
+	r.cluster.SetCertSANS(r.args.CertSANS)
+	if !r.args.WithoutCNI {
+		r.cluster.SetCNIInterface(r.args.Interface)
+		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
+		r.cluster.SetCNIMTU(r.args.MTU)
 	}
-	r.cluster.SetCRIData(args.CRIData)
-	r.cluster.SetRegistryData(args.RegistryData)
-	r.cluster.SetRegistryConfig(args.RegistryConfig)
-	r.cluster.SetRegistryAddress(args.RegistryAddress)
+	r.cluster.SetCRIData(r.args.CRIData)
+	r.cluster.SetRegistryData(r.args.RegistryData)
+	r.cluster.SetRegistryConfig(r.args.RegistryConfig)
+	r.cluster.SetRegistryAddress(r.args.RegistryAddress)
+	return nil
+}
+
+func (r *Init) SetConfigArgs() error {
+
+	return nil
+}
+func (r *Init) SetResourceArgs() error {
+
 	return nil
 }
 

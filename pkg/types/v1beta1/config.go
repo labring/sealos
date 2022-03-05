@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Alibaba Group.
+Copyright 2021 sealos.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,6 +69,8 @@ type StrategyType string
 const (
 	Merge    StrategyType = "merge"
 	Override StrategyType = "override"
+	Insert   StrategyType = "insert"
+	Append   StrategyType = "append"
 )
 
 // ConfigSpec defines the desired state of Config

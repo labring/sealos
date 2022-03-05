@@ -18,8 +18,6 @@ package args
 
 import (
 	"fmt"
-	"strings"
-
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -66,10 +64,11 @@ func PreProcessIPList(joinArgs *InitArgs) error {
 	if err := iputils.AssemblyIPList(&joinArgs.NodesArm); err != nil {
 		return err
 	}
-	masters := strings.Split(joinArgs.Masters, ",")
-	masterArms := strings.Split(joinArgs.MastersArm, ",")
-	nodes := strings.Split(joinArgs.Nodes, ",")
-	nodeArms := strings.Split(joinArgs.NodesArm, ",")
+
+	masters := strings2.SplitRemoveEmpty(joinArgs.Masters, ",")
+	masterArms := strings2.SplitRemoveEmpty(joinArgs.MastersArm, ",")
+	nodes := strings2.SplitRemoveEmpty(joinArgs.Nodes, ",")
+	nodeArms := strings2.SplitRemoveEmpty(joinArgs.NodesArm, ",")
 	length := len(masters) + len(masterArms) + len(nodes) + len(nodeArms)
 	data := sets.NewString(masters...)
 	data.Insert(masterArms...)

@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
 )
 
 func TestInit_processCluster(t *testing.T) {
@@ -29,8 +28,6 @@ func TestInit_processCluster(t *testing.T) {
 		configs           []v2.Config
 		resources         []v2.Resource
 		hosts             []v2.ClusterHost
-		data              contants.Data
-		work              contants.Worker
 		kubeadmBashSuffix string
 		dryRun            bool
 		withoutCNI        bool
@@ -48,12 +45,10 @@ func TestInit_processCluster(t *testing.T) {
 			name: "default",
 			fields: fields{
 				cluster: initCluster("xxxx"),
-				data:    contants.NewData("xxxx"),
-				work:    contants.NewWork("xxxx"),
 			},
 			args: args{
 				args: InitArgs{
-					Masters:    "172.16.1.1",
+					Masters:    "172.16.1.2,172.16.1.25",
 					MastersArm: "172.16.1.1",
 					Nodes:      "172.16.1.3-172.16.1.19",
 					NodesArm:   "172.16.1.20-172.16.1.22",
@@ -74,13 +69,12 @@ func TestInit_processCluster(t *testing.T) {
 				configs:           tt.fields.configs,
 				resources:         tt.fields.resources,
 				hosts:             tt.fields.hosts,
-				data:              tt.fields.data,
-				work:              tt.fields.work,
 				kubeadmBashSuffix: tt.fields.kubeadmBashSuffix,
 				dryRun:            tt.fields.dryRun,
 				withoutCNI:        tt.fields.withoutCNI,
+				args:              tt.args.args,
 			}
-			if err := r.processCluster(tt.args.args); (err != nil) != tt.wantErr {
+			if err := r.SetClusterArgs(); (err != nil) != tt.wantErr {
 				t.Errorf("processCluster() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

@@ -85,7 +85,7 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 	$ git remote -v
 	origin     https://github.com/<your-username>/sealos.git (fetch)
 	origin     https://github.com/<your-username>/sealos.git (push)
-	upstream   https://github.com/alibaba/sealos.git (fetch)
+	upstream   https://github.com/fanux/sealos.git (fetch)
 	upstream   no-pushing (push)
 	```
 

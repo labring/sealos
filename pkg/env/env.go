@@ -112,32 +112,5 @@ func (p *processor) getHostEnv(hostIP string) (env map[string]interface{}) {
 
 	hostEnv = mergeList(hostEnv, p.Spec.Env)
 
-	return convertEnv(hostEnv)
-}
-
-// Covert Env []string to map[string]interface{}, example [IP=127.0.0.1,IP=192.160.0.2,Key=value] will convert to {IP:[127.0.0.1,192.168.0.2],key:value}
-func convertEnv(envList []string) (env map[string]interface{}) {
-	temp := make(map[string][]string)
-	env = make(map[string]interface{})
-
-	for _, e := range envList {
-		var kv []string
-		if kv = strings.SplitN(e, "=", 2); len(kv) != 2 {
-			continue
-		}
-
-		temp[kv[0]] = append(temp[kv[0]], kv[1])
-	}
-
-	for k, v := range temp {
-		if len(v) > 1 {
-			env[k] = v
-			continue
-		}
-		if len(v) == 1 {
-			env[k] = v[0]
-		}
-	}
-
-	return
+	return v1beta1.ConvertEnv(hostEnv)
 }
