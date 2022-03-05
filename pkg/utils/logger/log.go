@@ -149,12 +149,11 @@ func init() {
 	defaultLogger = NewLogger(3)
 }
 
-func Cfg(debugMod bool, logDir, name string, showPath bool) {
+func CfgAndFile(debugMod bool, logDir, name string, showPath bool) {
 	debugMode = debugMod
 	logLev := 5
 	if debugMod {
 		logLev = 6
-		SetLogPath(true)
 	}
 	SetLogger(fmt.Sprintf(`{
 					"TimeFormat": "2006-01-02 15:04:05",
@@ -177,6 +176,23 @@ func Cfg(debugMod bool, logDir, name string, showPath bool) {
 		logLev, logDir, name, time.Now().Format("2006-01-02"),
 	))
 
+	SetLogPath(showPath)
+}
+func Cfg(debugMod bool, showPath bool) {
+	debugMode = debugMod
+	logLev := 5
+	if debugMod {
+		logLev = 6
+	}
+	SetLogger(fmt.Sprintf(`{
+					"TimeFormat": "2006-01-02 15:04:05",
+					"Console": {
+						"level": "",
+						"color": true,
+						"LogLevel": %d
+					}`,
+		logLev,
+	))
 	SetLogPath(showPath)
 }
 

@@ -19,7 +19,6 @@ package contants
 import "path/filepath"
 
 type Worker interface {
-	Homedir() string
 	Clusterfile() string
 }
 
@@ -31,12 +30,12 @@ const (
 	DefaultClusterFileName = "Clusterfile"
 )
 
-func (w *worker) Homedir() string {
-	return filepath.Join(GetHomeDir(), ".sealos", w.clusterName)
+func Homedir() string {
+	return filepath.Join(GetHomeDir(), ".sealos")
 }
 
 func (w *worker) Clusterfile() string {
-	return filepath.Join(w.Homedir(), DefaultClusterFileName)
+	return filepath.Join(Homedir(), w.clusterName, DefaultClusterFileName)
 }
 
 func NewWork(clusterName string) Worker {

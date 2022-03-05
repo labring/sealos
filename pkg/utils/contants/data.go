@@ -26,9 +26,8 @@ const (
 func LogPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "log")
 }
-
-func TempPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "temp")
+func DataPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "data")
 }
 
 type Data interface {

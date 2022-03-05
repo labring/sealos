@@ -15,12 +15,11 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"os"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/contants"
 
-	"github.com/fanux/sealos/cmd/sealos/boot"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 
@@ -42,10 +41,10 @@ var contact = `
     \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /   
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
 
-                  官方文档：sealyun.com
+                  官方文档：www.sealyun.com
                   项目地址：github.com/fanux/sealos
                   QQ群   ：98488045
-                  常见问题：sealyun.com/faq
+                  常见问题：github.com/fanux/sealos/issues
 `
 
 var exampleInit = `
@@ -85,23 +84,23 @@ var initCmd = &cobra.Command{
 		c := &v1.SealConfig{}
 		// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
 		// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
-		if boot.CmdFlag.Root.ConfigFilePath != "" && len(v1.MasterIPs) == 0 {
-			err := c.Load(boot.CmdFlag.Root.ConfigFilePath)
+		if configFilePath != "" && len(v1.MasterIPs) == 0 {
+			err := c.Load(configFilePath)
 			if err != nil {
-				logger.Error("load boot.ConfigFilePath %s err: %q", boot.CmdFlag.Root.ConfigFilePath, err)
+				logger.Error("load boot.ConfigFilePath %s err: %q", configFilePath, err)
 				os.Exit(1)
 			}
 		} else {
-			c.Dump(boot.CmdFlag.Root.ConfigFilePath)
+			c.Dump(configFilePath)
 		}
 		install.BuildInit()
 		// 安装完成后生成完整版
-		c.Dump(boot.CmdFlag.Root.ConfigFilePath)
+		c.Dump(configFilePath)
 		logger.Info(contact)
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
 		// 使用了boot.ConfigFilePath 就不进行preRun了
-		if boot.CmdFlag.Root.ConfigFilePath == "" && install.ExitInitCase() {
+		if configFilePath == "" && install.ExitInitCase() {
 			_ = cmd.Help()
 			os.Exit(install.ErrorExitOSCase)
 		}
@@ -109,7 +108,6 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
-	initCmd.AddCommand(NewInitGenerateCmd())
 	rootCmd.AddCommand(initCmd)
 
 	// Here you will define your flags and configuration settings.
@@ -139,15 +137,4 @@ func init() {
 	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
 
 	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
-}
-
-func NewInitGenerateCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "gen",
-		Short: "show default sealos init config",
-		Run: func(cmd *cobra.Command, args []string) {
-			c := &v1.SealConfig{}
-			c.ShowDefaultConfig()
-		},
-	}
 }

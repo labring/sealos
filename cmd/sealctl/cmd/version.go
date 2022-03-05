@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
-
 	"github.com/fanux/sealos/pkg/version"
 	"github.com/spf13/cobra"
 )
+
+var shortPrint bool
 
 var versionCmd = &cobra.Command{
 	Use:     "version",
@@ -34,7 +34,7 @@ var versionCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		if boot.CmdFlag.Version.ShortPrint {
+		if shortPrint {
 			fmt.Println(version.Get().String())
 		} else {
 			fmt.Println(string(marshalled))
@@ -46,5 +46,5 @@ var versionCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(&boot.CmdFlag.Version.ShortPrint, "short", false, "if true, print just the version number.")
+	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
 }

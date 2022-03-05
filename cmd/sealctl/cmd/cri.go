@@ -21,12 +21,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
-
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	utilsexec "k8s.io/utils/exec"
+)
+
+var (
+	criSocketPath string
+	criConfigPath string
 )
 
 func NewCRICmd() *cobra.Command {
@@ -44,8 +47,8 @@ func NewCRICmd() *cobra.Command {
 	cmd.AddCommand(NewPullImageCmd())
 	cmd.AddCommand(NewImageExistsCmd())
 	cmd.AddCommand(NewCGroupDriverCmd())
-	cmd.PersistentFlags().StringVar(&boot.CmdFlag.CRI.SocketPath, "socket-path", "", "cri socket path")
-	cmd.PersistentFlags().StringVar(&boot.CmdFlag.CRI.ConfigPath, "config", "", "cri config file")
+	cmd.PersistentFlags().StringVar(&criSocketPath, "socket-path", "", "cri socket path")
+	cmd.PersistentFlags().StringVar(&criConfigPath, "config", "", "cri config file")
 
 	return cmd
 }
@@ -92,7 +95,7 @@ func NewIsRunningCmd() *cobra.Command {
 	return cmd
 }
 func NewListKubeContainersCmd() *cobra.Command {
-	var shortPrint bool
+	var sPrint bool
 	var cmd = &cobra.Command{
 		Use:   "list-containers",
 		Short: "cri manager list-containers",
@@ -106,14 +109,14 @@ func NewListKubeContainersCmd() *cobra.Command {
 				logger.Error(err)
 				os.Exit(1)
 			}
-			if shortPrint {
+			if sPrint {
 				println(strings.Join(containers, ","))
 				return
 			}
 			logger.Info("container runtime containers is %+v", containers)
 		},
 	}
-	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
+	cmd.Flags().BoolVar(&sPrint, "short", false, "if true, print just result.")
 	return cmd
 }
 func NewRemoveContainersCmd() *cobra.Command {
@@ -224,8 +227,8 @@ func NewCGroupDriverCmd() *cobra.Command {
 
 func criCheck() {
 	var err error
-	if boot.CmdFlag.CRI.SocketPath == "" {
-		boot.CmdFlag.CRI.SocketPath, err = cri.DetectCRISocket()
+	if criSocketPath == "" {
+		criSocketPath, err = cri.DetectCRISocket()
 	}
 	if err != nil {
 		logger.Error(err)
@@ -233,7 +236,7 @@ func criCheck() {
 	}
 }
 func criRuntime() cri.ContainerRuntime {
-	rt, err := cri.NewContainerRuntime(utilsexec.New(), boot.CmdFlag.CRI.SocketPath, boot.CmdFlag.CRI.ConfigPath)
+	rt, err := cri.NewContainerRuntime(utilsexec.New(), criSocketPath, criConfigPath)
 	if err != nil {
 		logger.Error(err)
 		os.Exit(1)

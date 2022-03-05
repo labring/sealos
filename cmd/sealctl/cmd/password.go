@@ -18,7 +18,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
+	"github.com/fanux/sealos/pkg/utils/file"
+
 	"github.com/fanux/sealos/pkg/passwd"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
@@ -51,7 +52,7 @@ func NewRegistryCmd() *cobra.Command {
 				return
 			}
 			logger.Debug("password registry is %s", pwd)
-			if err := boot.InitRootDirectory([]string{pwdPath}); err != nil {
+			if err := file.MkDirs(pwdPath); err != nil {
 				logger.Error("init dir is error: %v", err)
 				os.Exit(1)
 			}

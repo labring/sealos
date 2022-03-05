@@ -95,7 +95,7 @@ func MkFileFullPathDir(fileName string) error {
 }
 
 func Mkdir(dirName string) error {
-	return os.MkdirAll(dirName, os.ModePerm)
+	return os.MkdirAll(dirName, 0755)
 }
 
 func MkDirs(dirs ...string) error {
@@ -103,7 +103,7 @@ func MkDirs(dirs ...string) error {
 		return nil
 	}
 	for _, dir := range dirs {
-		err := os.MkdirAll(dir, os.ModePerm)
+		err := os.MkdirAll(dir, 0755)
 		if err != nil {
 			return fmt.Errorf("failed to create %s, %v", dir, err)
 		}
@@ -116,7 +116,7 @@ func MkTmpdir(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return tempDir, os.MkdirAll(tempDir, os.ModePerm)
+	return tempDir, os.MkdirAll(tempDir, 0755)
 }
 
 func MkTmpFile(path string) (*os.File, error) {
