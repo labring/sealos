@@ -16,10 +16,11 @@ package install
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 

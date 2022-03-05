@@ -35,7 +35,6 @@ const (
 
 func (t ResourceType) IsDir() bool {
 	return t == KubernetesDir || t == ApplicationDir
-
 }
 func (t ResourceType) IsBinary() bool {
 	return t == FileBinaryAmd64 || t == FileBinaryArm64

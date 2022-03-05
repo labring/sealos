@@ -23,7 +23,7 @@ import (
 
 func (c *Cluster) initAnnotations() map[string]string {
 	if c.Annotations == nil {
-		c.Annotations = map[string]string{}
+		c.Annotations = make(map[string]string)
 	}
 	return c.Annotations
 }
@@ -53,6 +53,7 @@ func (c *Cluster) SetVip(vip string) {
 	c.Annotations = data
 }
 
+//nolint
 func (c *Cluster) GetAPIServerDomain() string {
 	return c.initAnnotations()["cluster_apiServerDomain"]
 }
@@ -141,7 +142,6 @@ func (c *Cluster) SetRegistryAddress(registryAddress string) {
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryDomain, registryDomain))
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPort, registryPort))
-
 }
 func (c *Cluster) SetRegistryConfig(registryConfig string) {
 	if registryConfig == "" {
@@ -154,12 +154,10 @@ func (c *Cluster) SetRegistryData(registryData string) {
 		registryData = DefaultRegistryData
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryData, registryData))
-
 }
 func (c *Cluster) SetRegistryUsername(registryUsername string) {
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryUsername, registryUsername))
 }
 func (c *Cluster) SetRegistryPassword(registryPassword string) {
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPassword, registryPassword))
-
 }

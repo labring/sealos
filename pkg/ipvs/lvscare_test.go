@@ -15,8 +15,9 @@
 package ipvs
 
 import (
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 )
 
 var want = []string{

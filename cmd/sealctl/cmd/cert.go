@@ -25,33 +25,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type certFlag struct {
-	AltNames     []string
-	NodeName     string
-	ServiceCIDR  string
-	NodeIP       string
-	DNSDomain    string
-	CertPath     string
-	CertEtcdPath string
-}
-
-var cFlag certFlag
-
-//// certCmd represents the cert command
-//var certCmd = &cobra.Command{
-//	Use:   "cert",
-//	Short: "generate certs",
-//	Long:  `you can specify expire time`,
-//	Run: func(cmd *cobra.Command, args []string) {
-//		flags.PrintFlags(cmd.Flags())
-//		err := cert.GenerateCert(boot.CmdFlag.Cert.CertPath, boot.CmdFlag.Cert.CertEtcdPath, boot.CmdFlag.Cert.AltNames, boot.CmdFlag.Cert.NodeIP, boot.CmdFlag.Cert.NodeName, boot.CmdFlag.Cert.ServiceCIDR, boot.CmdFlag.Cert.DNSDomain)
-//		if err != nil {
-//			logger.Error(err)
-//			os.Exit(1)
-//		}
-//	},
-//}
-
 func certCmd() *cobra.Command {
 	type certFlag struct {
 		AltNames     []string

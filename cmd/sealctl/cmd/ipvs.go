@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ipvs care.LvsCare
+var Ipvs care.LvsCare
 
 // ipvsCmd represents the ipvs command
 var ipvsCmd = &cobra.Command{
@@ -28,7 +28,7 @@ var ipvsCmd = &cobra.Command{
 	Short: "sealos create or care local ipvs lb",
 	Run: func(cmd *cobra.Command, args []string) {
 		flags.PrintFlags(cmd.Flags())
-		ipvs.VsAndRsCare()
+		Ipvs.VsAndRsCare()
 	},
 }
 
@@ -36,14 +36,14 @@ func init() {
 	rootCmd.AddCommand(ipvsCmd)
 
 	// Here you will define your flags and configuration settings.
-	ipvsCmd.Flags().BoolVar(&ipvs.RunOnce, "run-once", false, "is run once mode")
-	ipvsCmd.Flags().BoolVarP(&ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
-	ipvsCmd.Flags().StringVar(&ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
-	ipvsCmd.Flags().StringSliceVar(&ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
+	ipvsCmd.Flags().BoolVar(&Ipvs.RunOnce, "run-once", false, "is run once mode")
+	ipvsCmd.Flags().BoolVarP(&Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
+	ipvsCmd.Flags().StringVar(&Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
+	ipvsCmd.Flags().StringSliceVar(&Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
 
-	ipvsCmd.Flags().StringVar(&ipvs.HealthPath, "health-path", "/healthz", "health check path")
-	ipvsCmd.Flags().StringVar(&ipvs.HealthSchem, "health-schem", "https", "health check schem")
-	ipvsCmd.Flags().Int32Var(&ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
+	ipvsCmd.Flags().StringVar(&Ipvs.HealthPath, "health-path", "/healthz", "health check path")
+	ipvsCmd.Flags().StringVar(&Ipvs.HealthSchem, "health-schem", "https", "health check schem")
+	ipvsCmd.Flags().Int32Var(&Ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// ipvsCmd.PersistentFlags().String("foo", "", "A help for foo")

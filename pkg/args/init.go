@@ -18,11 +18,12 @@ package args
 
 import (
 	"fmt"
+	"strings"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"strings"
 )
 
 type InitArgs struct {
@@ -74,9 +75,9 @@ func NewInit(args InitArgs) *Init {
 	r := &Init{}
 	r.data = contants.NewData(args.ClusterName)
 	r.work = contants.NewWork(args.ClusterName)
-	cluster := initCluster(args.ClusterName)
-	r.cluster = cluster
-
+	r.cluster = initCluster(args.ClusterName)
+	r.configs = []v2.Config{*initConfig(args.ClusterName, v2.ConfigSpec{})}
+	r.resources = []v2.Resource{*initResource(args.ClusterName, v2.ResourceSpec{})}
 	return r
 }
 
@@ -88,8 +89,8 @@ func (r *Init) processCluster(args InitArgs) error {
 	if args.Password != "" {
 		r.cluster.Spec.SSH.Passwd = args.Password
 	}
-	err := PreProcessIPList(&args)
-	if err != nil {
+
+	if err := PreProcessIPList(&args); err != nil {
 		return err
 	}
 

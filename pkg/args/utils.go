@@ -18,11 +18,12 @@ package args
 
 import (
 	"fmt"
+	"strings"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"strings"
 )
 
 func initCluster(clusterName string) *v2.Cluster {
@@ -30,7 +31,7 @@ func initCluster(clusterName string) *v2.Cluster {
 	cluster.Name = clusterName
 	cluster.Kind = "Cluster"
 	cluster.APIVersion = v2.SchemeGroupVersion.String()
-	cluster.Annotations = make(map[string]string, 0)
+	cluster.Annotations = make(map[string]string)
 	return cluster
 }
 
@@ -43,7 +44,7 @@ func initConfig(name string, spec v2.ConfigSpec) *v2.Config {
 	return config
 }
 
-func initPackage(name string, spec v2.ResourceSpec) *v2.Resource {
+func initResource(name string, spec v2.ResourceSpec) *v2.Resource {
 	data := &v2.Resource{}
 	data.Name = name
 	data.Kind = "Resource"

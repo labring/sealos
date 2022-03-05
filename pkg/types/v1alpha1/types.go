@@ -16,9 +16,10 @@ package v1alpha1
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"io/ioutil"
 	"os"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 

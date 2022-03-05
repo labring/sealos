@@ -17,9 +17,10 @@ limitations under the License.
 package args
 
 import (
+	"testing"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"testing"
 )
 
 func TestInit_processCluster(t *testing.T) {

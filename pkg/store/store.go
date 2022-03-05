@@ -174,7 +174,7 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 		p.Status.Arch = v1beta1.AMD64
 	}
 
-	systemData, err := file.ReadAll(filepath.Join(md5Dir,contants.DataDir, contants.SystemFile))
+	systemData, err := file.ReadAll(filepath.Join(md5Dir, contants.DataDir, contants.SystemFile))
 	if err != nil {
 		return err
 	}

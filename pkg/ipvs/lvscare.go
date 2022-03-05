@@ -16,8 +16,9 @@ package ipvs
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"

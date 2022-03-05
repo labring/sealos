@@ -74,8 +74,8 @@ func Test_store_tarGz(t *testing.T) {
 			args: args{
 				p: &v1beta1.Resource{
 					Spec: v1beta1.ResourceSpec{
-						Type:     v1beta1.KubernetesDir,
-						Path:     "/Users/cuisongliu/DockerImages/kube",
+						Type: v1beta1.KubernetesDir,
+						Path: "/Users/cuisongliu/DockerImages/kube",
 					},
 				},
 			},
