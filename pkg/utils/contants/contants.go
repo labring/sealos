@@ -19,8 +19,14 @@ import (
 )
 
 const (
+	LvsCareStaticPodName = "kube-sealyun-lvscare"
+	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
+)
+
+const (
 	MetadataFile = "Metadata"
 	SystemFile   = "system.yaml"
+	DataDir      = "kube"
 )
 
 //CRD kind

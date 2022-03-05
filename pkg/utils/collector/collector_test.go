@@ -41,8 +41,8 @@ func TestNewCollector(t *testing.T) {
 		{
 			name: "local",
 			args: args{
-				src:      "utils.go",
-				savepath: "/tmp/sealos/temp",
+				src:      "/Users/cuisongliu/Workspaces/go/src/github.com/fanux/sealos/pkg/utils/collector/testdata",
+				savepath: "/tmp/sealos/temp/dffgg",
 			},
 			wantErr: false,
 		},
@@ -54,7 +54,7 @@ func TestNewCollector(t *testing.T) {
 				t.Errorf("NewCollector() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			err = got.Collect(".", tt.args.src, tt.args.savepath)
+			err = got.Collect(tt.args.src, tt.args.savepath)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Collect() error = %v, wantErr %v", err, tt.wantErr)
 				return

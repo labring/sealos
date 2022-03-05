@@ -14,32 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package boot
+package flags
 
 import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/pflag"
 )
-
-type RootFlag struct {
-	Debug          bool
-	ConfigDir      string
-	ConfigFile     string
-	ShowPatch      bool
-	ConfigFilePath string
-}
-
-type ConfigFlag struct {
-	KubeVersion string
-	PatchPath   string
-}
-
-type Flag struct {
-	Root   RootFlag
-	Config ConfigFlag
-}
-
-var CmdFlag Flag
 
 // PrintFlags logs the flags in the flagset
 func PrintFlags(flags *pflag.FlagSet) {

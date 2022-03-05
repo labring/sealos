@@ -18,10 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
 	"github.com/spf13/cobra"
+)
+
+var (
+	debug    bool
+	showPath bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -43,8 +47,10 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(boot.OnBootOnDie)
-	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config", v1beta1.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
-	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
+	cobra.OnInitialize(func() {
+		logger.Cfg(debug, showPath)
+	})
+
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
+	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
 }

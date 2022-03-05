@@ -24,7 +24,7 @@ import (
 type webFileCollector struct {
 }
 
-func (w webFileCollector) Collect(buildContext, src, savePath string) error {
+func (w webFileCollector) Collect(src, savePath string) error {
 	client := grab.NewClient()
 	req, err := grab.NewRequest(filepath.Join(savePath, file.Filename(src)), src)
 	if err != nil {

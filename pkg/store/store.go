@@ -20,20 +20,20 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/archive"
 	"github.com/fanux/sealos/pkg/utils/collector"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/hash"
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 type Store interface {
-	SavePackage(p *v1beta1.Package) error
+	Save(p *v1beta1.Resource) error
 }
 
 type store struct {
@@ -42,92 +42,68 @@ type store struct {
 	contants.Worker
 }
 
-func (s *store) SavePackage(p *v1beta1.Package) error {
+func (s *store) Save(p *v1beta1.Resource) error {
 	if p.Spec.Path == "" {
 		return errors.New("package path not allow empty")
 	}
-	switch p.Spec.Type {
-	case v1beta1.FileBinaryAmd64:
-		fallthrough
-	case v1beta1.FileBinaryArm64:
-		return s.binary(p)
-	default:
+	if p.Spec.Type.IsTarGz() {
 		return s.tarGz(p)
 	}
+	if p.Spec.Type.IsBinary() {
+		return s.binary(p)
+	}
+	return s.dir(p)
 }
 
-func (s *store) tarGz(p *v1beta1.Package) error {
+func (s *store) tarGz(p *v1beta1.Resource) error {
 	con, err := collector.NewCollector(p.Spec.Path)
 	if err != nil {
 		return err
 	}
-	err = con.Collect("", p.Spec.Path, s.Data.PackagePath())
+	err = con.Collect(p.Spec.Path, s.Data.TempPath())
 	if err != nil {
 		return err
 	}
-	fileNameAbs := filepath.Join(s.Data.PackagePath(), file.Filename(p.Spec.Path))
+
+	tarFileAbs := filepath.Join(s.Data.TempPath(), file.Filename(p.Spec.Path))
 	defer func() {
-		if err = file.CleanFiles(fileNameAbs); err != nil {
+		if err = file.CleanFiles(tarFileAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())
 		}
 	}()
-	md5 := hash.FileMD5(fileNameAbs)
+	md5 := hash.FileMD5(tarFileAbs)
 	md5Dir := filepath.Join(s.Data.PackagePath(), md5)
 	err = file.Mkdir(md5Dir)
 	if err != nil {
 		return err
 	}
-	fileNameAbsReadio, err := os.Open(filepath.Clean(fileNameAbs))
+	fileNameAbsReadIO, err := os.Open(filepath.Clean(tarFileAbs))
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if err = fileNameAbsReadio.Close(); err != nil {
+		if err = fileNameAbsReadIO.Close(); err != nil {
 			logger.Fatal("failed to close file")
 		}
 	}()
 
 	newArchive := archive.NewArchive(true, true)
-	_, err = newArchive.UnTarOrGzip(fileNameAbsReadio, md5Dir)
+	_, err = newArchive.UnTarOrGzip(fileNameAbsReadIO, md5Dir)
 	if err != nil {
 		return err
 	}
-	p.Status.Path = md5Dir
-	err = exec.CmdForPipe("bash", "-c", fmt.Sprintf("cd %s && mv kube/* . && rm -rf kube", md5Dir))
+	err = s.loadMetadata(p, md5Dir)
 	if err != nil {
 		return err
 	}
-	data, err := jsonUnmarshal(filepath.Join(md5Dir, contants.MetadataFile))
-	if err != nil {
-		return err
-	}
-	if version, ok := data["version"]; ok {
-		p.Status.Version = fmt.Sprintf("%+v", version)
-	} else {
-		p.Status.Version = v1beta1.DefaultVersion
-	}
-
-	if arch, ok := data["arch"]; ok {
-		p.Status.Arch = v1beta1.Arch(fmt.Sprintf("%+v", arch))
-	} else {
-		p.Status.Arch = v1beta1.AMD64
-	}
-
-	systemData, err := file.ReadAll(filepath.Join(md5Dir, contants.SystemFile))
-	if err != nil {
-		return err
-	}
-	if data != nil {
-		p.Status.Metadata.Raw = systemData
-	}
-	return err
+	return nil
 }
-func (s *store) binary(p *v1beta1.Package) error {
+func (s *store) binary(p *v1beta1.Resource) error {
 	con, err := collector.NewCollector(p.Spec.Path)
 	if err != nil {
 		return err
 	}
-	err = con.Collect("", p.Spec.Path, s.Data.PackagePath())
+	err = con.Collect(p.Spec.Path, s.Data.PackagePath())
 	if err != nil {
 		return err
 	}
@@ -154,6 +130,56 @@ func (s *store) binary(p *v1beta1.Package) error {
 		p.Status.Arch = v1beta1.AMD64
 	case v1beta1.FileBinaryArm64:
 		p.Status.Arch = v1beta1.ARM64
+	}
+	return nil
+}
+func (s *store) dir(p *v1beta1.Resource) error {
+	arch := archive.NewArchive(false, false)
+	digest, _, err := arch.Digest(p.Spec.Path)
+	if err != nil {
+		return err
+	}
+	con, err := collector.NewCollector(p.Spec.Path)
+	if err != nil {
+		return err
+	}
+	md5Dir := path.Join(s.Data.PackagePath(), digest.String())
+	err = con.Collect(p.Spec.Path, md5Dir)
+	if err != nil {
+		return err
+	}
+	err = s.loadMetadata(p, md5Dir)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
+	p.Status.Path = md5Dir
+
+	data, err := jsonUnmarshal(filepath.Join(md5Dir, contants.DataDir, contants.MetadataFile))
+	if err != nil {
+		return err
+	}
+	if version, ok := data["version"]; ok {
+		p.Status.Version = fmt.Sprintf("%+v", version)
+	} else {
+		p.Status.Version = v1beta1.DefaultVersion
+	}
+
+	if arch, ok := data["arch"]; ok {
+		p.Status.Arch = v1beta1.Arch(fmt.Sprintf("%+v", arch))
+	} else {
+		p.Status.Arch = v1beta1.AMD64
+	}
+
+	systemData, err := file.ReadAll(filepath.Join(md5Dir, contants.DataDir, contants.SystemFile))
+	if err != nil {
+		return err
+	}
+	if data != nil {
+		p.Status.Metadata.Raw = systemData
 	}
 	return nil
 }

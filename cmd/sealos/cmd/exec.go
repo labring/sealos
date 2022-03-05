@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/cmd/sealos/boot"
 	"github.com/fanux/sealos/pkg/install"
 	"github.com/spf13/cobra"
 )
@@ -49,7 +48,7 @@ func init() {
 }
 
 func ExecCmdFunc(cmd *cobra.Command, args []string) {
-	e := install.GetExecFlag(boot.CmdFlag.Root.ConfigFilePath)
+	e := install.GetExecFlag(configFilePath)
 	if e.IsUseCopy() {
 		e.Copy()
 	}

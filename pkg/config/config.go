@@ -46,7 +46,7 @@ Dump will dump the config to etc/redis-config.yaml file
 
 type Interface interface {
 	// Dump Config in Clusterfile to the cluster rootfs disk
-	Dump(clusterfile string) error
+	Dump(configfile string) error
 }
 
 type Dumper struct {

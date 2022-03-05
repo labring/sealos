@@ -17,11 +17,14 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/cmd/sealctl/boot"
-
 	"github.com/fanux/sealos/pkg/route"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
+)
+
+var (
+	routeHost      string
+	routeGatewayIP string
 )
 
 func NewRouteCmd() *cobra.Command {
@@ -31,7 +34,7 @@ func NewRouteCmd() *cobra.Command {
 		Short: "set default route gateway",
 	}
 	// check route for host
-	cmd.Flags().StringVar(&boot.CmdFlag.Route.Host, "host", "", "route host ip address for iFace")
+	cmd.Flags().StringVar(&routeHost, "host", "", "route host ip address for iFace")
 	cmd.AddCommand(NewCheckRouteCmd())
 	cmd.AddCommand(NewDelRouteCmd())
 	cmd.AddCommand(NewAddRouteCmd())
@@ -47,7 +50,7 @@ func NewCheckRouteCmd() *cobra.Command {
 		Use:   "check",
 		Short: "check route host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := route.CheckIsDefaultRoute(boot.CmdFlag.Route.Host); err != nil {
+			if err := route.CheckIsDefaultRoute(routeHost); err != nil {
 				logger.Error(err)
 				os.Exit(1)
 			}
@@ -61,7 +64,7 @@ func NewAddRouteCmd() *cobra.Command {
 		Use:   "add",
 		Short: "set route host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
-			r := route.NewRoute(boot.CmdFlag.Route.Host, boot.CmdFlag.Route.GatewayIP)
+			r := route.NewRoute(routeHost, routeGatewayIP)
 			if err := r.SetRoute(); err != nil {
 				logger.Error(err)
 				os.Exit(1)
@@ -69,7 +72,7 @@ func NewAddRouteCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&boot.CmdFlag.Route.GatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
+	cmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
 	return cmd
 }
 
@@ -78,7 +81,7 @@ func NewDelRouteCmd() *cobra.Command {
 		Use:   "del",
 		Short: "del route host via gateway, like ip route del host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
-			r := route.NewRoute(boot.CmdFlag.Route.Host, boot.CmdFlag.Route.GatewayIP)
+			r := route.NewRoute(routeHost, routeGatewayIP)
 			if err := r.DelRoute(); err != nil {
 				logger.Error(err)
 				os.Exit(1)
@@ -86,6 +89,6 @@ func NewDelRouteCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&boot.CmdFlag.Route.GatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
+	cmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
 	return cmd
 }

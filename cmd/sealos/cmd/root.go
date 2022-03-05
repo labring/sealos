@@ -18,12 +18,17 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/types/v1alpha1"
+	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-
-	"github.com/fanux/sealos/cmd/sealos/boot"
 	"github.com/spf13/cobra"
+)
+
+var (
+	debug          bool
+	showPath       bool
+	configFilePath string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,10 +50,21 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(boot.OnBootOnDie)
-	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigDir, "config-dir", v1beta1.DefaultConfigPath, "config dir (default is $HOME/.sealos)")
-	rootCmd.PersistentFlags().StringVar(&boot.CmdFlag.Root.ConfigFile, "config-file", v1alpha1.DefaultConfigFile, "config file (default is /config.yaml )")
+	cobra.OnInitialize(onBootOnDie)
 
-	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.Debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&boot.CmdFlag.Root.ShowPatch, "path", false, "enable show code path")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
+	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
+}
+
+func onBootOnDie() {
+	var rootDirs = []string{
+		contants.LogPath(),
+		contants.DataPath(),
+		contants.Homedir(),
+	}
+	if err := file.MkDirs(rootDirs...); err != nil {
+		logger.Error(err)
+		panic(1)
+	}
+	logger.CfgAndFile(debug, contants.LogPath(), "sealos", showPath)
 }

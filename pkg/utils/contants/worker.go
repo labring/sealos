@@ -19,11 +19,7 @@ package contants
 import "path/filepath"
 
 type Worker interface {
-	Homedir() string
 	Clusterfile() string
-	Packagefile() string
-	Configfile() string
-	Kubeadmfile() string
 }
 
 type worker struct {
@@ -32,29 +28,14 @@ type worker struct {
 
 const (
 	DefaultClusterFileName = "Clusterfile"
-	DefaultPackageFileName = "Packagefile"
-	DefaultConfigFileName  = "Configfile"
-	DefaultKubeadmFileName = "Kubeadmfile"
 )
 
-func (w *worker) Homedir() string {
-	return filepath.Join(GetHomeDir(), ".sealos", w.clusterName)
+func Homedir() string {
+	return filepath.Join(GetHomeDir(), ".sealos")
 }
 
 func (w *worker) Clusterfile() string {
-	return filepath.Join(w.Homedir(), DefaultClusterFileName)
-}
-
-func (w *worker) Packagefile() string {
-	return filepath.Join(w.Homedir(), DefaultPackageFileName)
-}
-
-func (w *worker) Configfile() string {
-	return filepath.Join(w.Homedir(), DefaultConfigFileName)
-}
-
-func (w *worker) Kubeadmfile() string {
-	return filepath.Join(w.Homedir(), DefaultKubeadmFileName)
+	return filepath.Join(Homedir(), w.clusterName, DefaultClusterFileName)
 }
 
 func NewWork(clusterName string) Worker {
