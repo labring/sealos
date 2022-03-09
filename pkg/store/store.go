@@ -23,6 +23,9 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"k8s.io/apimachinery/pkg/util/json"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/archive"
 	"github.com/fanux/sealos/pkg/utils/collector"
@@ -56,11 +59,11 @@ func (s *store) Save(p *v1beta1.Resource) error {
 }
 
 func (s *store) tarGz(p *v1beta1.Resource) error {
-	con, err := collector.NewCollector(p.Spec.Path)
-	if err != nil {
-		return err
-	}
-	err = con.Collect(p.Spec.Path, s.Data.TempPath())
+	//con, err := collector.NewCollector(p.Spec.Path)
+	//if err != nil {
+	//	return err
+	//}
+	err := collector.Download(p.Spec.Path, s.Data.TempPath())
 	if err != nil {
 		return err
 	}
@@ -99,11 +102,11 @@ func (s *store) tarGz(p *v1beta1.Resource) error {
 	return nil
 }
 func (s *store) binary(p *v1beta1.Resource) error {
-	con, err := collector.NewCollector(p.Spec.Path)
-	if err != nil {
-		return err
-	}
-	err = con.Collect(p.Spec.Path, s.Data.PackagePath())
+	//con, err := collector.NewCollector(p.Spec.Path)
+	//if err != nil {
+	//	return err
+	//}
+	err := collector.Download(p.Spec.Path, s.Data.PackagePath())
 	if err != nil {
 		return err
 	}
@@ -125,12 +128,7 @@ func (s *store) binary(p *v1beta1.Resource) error {
 	}
 	p.Status.Path = md5Abs
 	p.Status.Version = v1beta1.DefaultVersion
-	switch p.Spec.Type {
-	case v1beta1.FileBinaryAmd64:
-		p.Status.Arch = v1beta1.AMD64
-	case v1beta1.FileBinaryArm64:
-		p.Status.Arch = v1beta1.ARM64
-	}
+	p.Status.Arch = v1beta1.Arch(exec.ExecutableFileArch(md5Abs))
 	return nil
 }
 func (s *store) dir(p *v1beta1.Resource) error {
@@ -139,12 +137,12 @@ func (s *store) dir(p *v1beta1.Resource) error {
 	if err != nil {
 		return err
 	}
-	con, err := collector.NewCollector(p.Spec.Path)
-	if err != nil {
-		return err
-	}
+	//con, err := collector.NewCollector(p.Spec.Path)
+	//if err != nil {
+	//	return err
+	//}
 	md5Dir := path.Join(s.Data.PackagePath(), digest.String())
-	err = con.Collect(p.Spec.Path, md5Dir)
+	err = collector.Download(p.Spec.Path, md5Dir)
 	if err != nil {
 		return err
 	}
@@ -158,28 +156,46 @@ func (s *store) dir(p *v1beta1.Resource) error {
 func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 	p.Status.Path = md5Dir
 
-	data, err := jsonUnmarshal(filepath.Join(md5Dir, contants.DataDir, contants.MetadataFile))
+	metadata, err := jsonUnmarshal(filepath.Join(md5Dir, contants.DataDirName, contants.MetadataFile))
 	if err != nil {
 		return err
 	}
-	if version, ok := data["version"]; ok {
+	if version, ok := metadata["version"]; ok {
 		p.Status.Version = fmt.Sprintf("%+v", version)
 	} else {
 		p.Status.Version = v1beta1.DefaultVersion
 	}
 
-	if arch, ok := data["arch"]; ok {
+	if arch, ok := metadata["arch"]; ok {
 		p.Status.Arch = v1beta1.Arch(fmt.Sprintf("%+v", arch))
 	} else {
 		p.Status.Arch = v1beta1.AMD64
 	}
 
-	systemData, err := file.ReadAll(filepath.Join(md5Dir, contants.DataDir, contants.SystemFile))
-	if err != nil {
-		return err
+	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.SystemFile)
+	if file.IsExist(systemPath) {
+		systemData, err := file.ReadAll(systemPath)
+		if err != nil {
+			return err
+		}
+		if systemData != nil {
+			p.Status.Metadata.Raw = systemData
+		}
 	}
-	if data != nil {
-		p.Status.Metadata.Raw = systemData
+	defaultPath := filepath.Join(md5Dir, contants.DataDirName, "scripts", "default.json")
+	if file.IsExist(defaultPath) {
+		defaultData, err := file.ReadAll(defaultPath)
+		if err != nil {
+			return err
+		}
+		var data map[string]string
+		err = json.Unmarshal(defaultData, &data)
+		if err != nil {
+			return err
+		}
+		if data != nil {
+			p.Status.Data = data
+		}
 	}
 	return nil
 }

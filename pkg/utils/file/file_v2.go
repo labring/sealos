@@ -142,7 +142,7 @@ func WriteFile(fileName string, content []byte) error {
 // copy /root/test/abc /tmp/abc
 func RecursionCopy(src, dst string) error {
 	if IsDir(src) {
-		return CopyDir(src, dst)
+		return CopyDir(src, dst, false)
 	}
 
 	err := os.MkdirAll(filepath.Dir(dst), 0700|0055)
@@ -155,21 +155,22 @@ func RecursionCopy(src, dst string) error {
 }
 
 // cp -r /roo/test/* /tmp/abc
-func CopyDir(srcPath, dstPath string) error {
+func CopyDir(srcPath, dstPath string, overlayFs bool) error {
 	err := os.MkdirAll(dstPath, 0700|0055)
 	if err != nil {
 		return err
 	}
-
-	opaque, err := Lgetxattr(srcPath, "trusted.overlay.opaque")
-	if err != nil {
-		logger.Debug("failed to get trusted.overlay.opaque. err: %v", err)
-	}
-
-	if len(opaque) == 1 && opaque[0] == 'y' {
-		err = unix.Setxattr(dstPath, "trusted.overlay.opaque", []byte{'y'}, 0)
+	if overlayFs {
+		opaque, err := Lgetxattr(srcPath, "trusted.overlay.opaque")
 		if err != nil {
-			return fmt.Errorf("failed to set trusted.overlay.opaque, err: %v", err)
+			logger.Debug("failed to get trusted.overlay.opaque. err: %v", err)
+		}
+
+		if len(opaque) == 1 && opaque[0] == 'y' {
+			err = unix.Setxattr(dstPath, "trusted.overlay.opaque", []byte{'y'}, 0)
+			if err != nil {
+				return fmt.Errorf("failed to set trusted.overlay.opaque, err: %v", err)
+			}
 		}
 	}
 
@@ -181,7 +182,7 @@ func CopyDir(srcPath, dstPath string) error {
 		src := filepath.Join(srcPath, f.Name())
 		dst := filepath.Join(dstPath, f.Name())
 		if f.IsDir() {
-			err = CopyDir(src, dst)
+			err = CopyDir(src, dst, overlayFs)
 			if err != nil {
 				return err
 			}

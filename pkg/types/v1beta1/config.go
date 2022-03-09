@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Alibaba Group.
+Copyright 2021 sealos.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,7 +69,17 @@ type StrategyType string
 const (
 	Merge    StrategyType = "merge"
 	Override StrategyType = "override"
+	Insert   StrategyType = "insert"
+	Append   StrategyType = "append"
 )
+
+type RegistryConfig struct {
+	IP       string `json:"ip,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	Port     int    `json:"port,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
 
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {

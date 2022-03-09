@@ -39,8 +39,8 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 	return
 }
 
-func Packages(filepath string) (configs []v1beta1.Resource, err error) {
-	decodePackage, err := decodeCRD(filepath, contants.Package)
+func Resource(filepath string) (configs []v1beta1.Resource, err error) {
+	decodePackage, err := decodeCRD(filepath, contants.Resource)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode package from %s, %v", filepath, err)
 	}
@@ -57,15 +57,6 @@ func Configs(filepath string) (configs []v1beta1.Config, err error) {
 	return
 }
 
-func Kubeadm(filepath string) (kubeadms []v1beta1.Kubeadm, err error) {
-	decodeConfigs, err := decodeCRD(filepath, contants.Kubeadm)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode kubeadm from %s, %v", filepath, err)
-	}
-	kubeadms = decodeConfigs.([]v1beta1.Kubeadm)
-	return
-}
-
 func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 	file, err := os.Open(path.Clean(filepath))
 	if err != nil {
@@ -77,11 +68,11 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		}
 	}()
 	var (
-		i        interface{}
-		clusters []v1beta1.Cluster
-		configs  []v1beta1.Config
-		packages []v1beta1.Resource
-		kubeadms []v1beta1.Kubeadm
+		i         interface{}
+		clusters  []v1beta1.Cluster
+		configs   []v1beta1.Config
+		resources []v1beta1.Resource
+		kubeadms  []v1beta1.Kubeadm
 	)
 
 	d := yaml.NewYAMLOrJSONDecoder(file, 4096)
@@ -121,16 +112,16 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 				configs = append(configs, config)
 			}
 			i = configs
-		case contants.Package:
+		case contants.Resource:
 			p := v1beta1.Resource{}
 			err = yaml.Unmarshal(ext.Raw, &p)
 			if err != nil {
 				return nil, fmt.Errorf("decode package failed %v", err)
 			}
-			if p.Kind == contants.Package {
-				packages = append(packages, p)
+			if p.Kind == contants.Resource {
+				resources = append(resources, p)
 			}
-			i = packages
+			i = resources
 		case contants.Kubeadm:
 			k := v1beta1.Kubeadm{}
 			err = yaml.Unmarshal(ext.Raw, &k)

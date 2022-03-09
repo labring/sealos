@@ -20,8 +20,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
+
+	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -46,32 +47,40 @@ Dump will dump the config to etc/redis-config.yaml file
 
 type Interface interface {
 	// Dump Config in Clusterfile to the cluster rootfs disk
-	Dump(configfile string) error
+	Dump(clusterfile string) error
 }
 
 type Dumper struct {
-	Configs     []v1beta1.Config
-	ClusterName string
+	Configs  []v1beta1.Config
+	RootPath string
 }
 
-func NewConfiguration(clusterName string) Interface {
+func NewConfiguration(rootPath string, configs []v1beta1.Config) Interface {
 	return &Dumper{
-		ClusterName: clusterName,
+		RootPath: rootPath,
+		Configs:  configs,
+	}
+}
+func NewDefaultConfiguration(clusterName string) Interface {
+	return &Dumper{
+		RootPath: contants.NewData(clusterName).DataPath(),
 	}
 }
 
 func (c *Dumper) Dump(clusterfile string) error {
-	if clusterfile == "" {
+	if clusterfile == "" && len(c.Configs) == 0 {
 		logger.Debug("clusterfile is empty!")
 		return nil
 	}
-	configs, err := decode.Configs(clusterfile)
-	if err != nil {
-		return fmt.Errorf("failed to dump config %v", err)
+	if len(c.Configs) == 0 {
+		configs, err := decode.Configs(clusterfile)
+		if err != nil {
+			return fmt.Errorf("failed to dump config %v", err)
+		}
+		c.Configs = configs
 	}
-	c.Configs = configs
-	err = c.WriteFiles()
-	if err != nil {
+
+	if err := c.WriteFiles(); err != nil {
 		return fmt.Errorf("failed to write config files %v", err)
 	}
 	return nil
@@ -84,10 +93,21 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 	for _, config := range c.Configs {
 		configData := []byte(config.Spec.Data)
-		configPath := filepath.Join(contants.NewData(c.ClusterName).DataPath(), config.Spec.Path)
+		configPath := filepath.Join(c.RootPath, config.Spec.Path)
 		//only the YAML format is supported
-		if config.Spec.Strategy == v1beta1.Merge {
+		switch config.Spec.Strategy {
+		case v1beta1.Merge:
 			configData, err = getMergeConfigData(configPath, configData)
+			if err != nil {
+				return err
+			}
+		case v1beta1.Insert:
+			configData, err = getAppendOrInsertConfigData(configPath, configData, true)
+			if err != nil {
+				return err
+			}
+		case v1beta1.Append:
+			configData, err = getAppendOrInsertConfigData(configPath, configData, false)
 			if err != nil {
 				return err
 			}
@@ -99,6 +119,22 @@ func (c *Dumper) WriteFiles() (err error) {
 	}
 
 	return nil
+}
+
+func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte, error) {
+	var configs [][]byte
+	context, err := ioutil.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+	if insert {
+		configs = append(configs, data)
+		configs = append(configs, context)
+	} else {
+		configs = append(configs, context)
+		configs = append(configs, data)
+	}
+	return bytes.Join(configs, []byte("\n")), nil
 }
 
 //merge the contents of data into the path file

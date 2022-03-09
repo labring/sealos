@@ -72,44 +72,42 @@ var exampleInit = `
 	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
 `
 
-// initCmd represents the init command
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "Simplest way to init your kubernets HA cluster",
-	Long: `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
+func newInitCmd() *cobra.Command {
+	//var arg args.InitArgs
+	// initCmd represents the init command
+	var initCmd = &cobra.Command{
+		Use:   "init",
+		Short: "Simplest way to init your kubernets HA cluster",
+		Long: `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
 	--node 192.168.0.5 --user root --passwd your-server-password \
 	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz`,
-	Example: exampleInit,
-	Run: func(cmd *cobra.Command, args []string) {
-		c := &v1.SealConfig{}
-		// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
-		// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
-		if configFilePath != "" && len(v1.MasterIPs) == 0 {
-			err := c.Load(configFilePath)
-			if err != nil {
-				logger.Error("load boot.ConfigFilePath %s err: %q", configFilePath, err)
-				os.Exit(1)
+		Example: exampleInit,
+		Run: func(cmd *cobra.Command, args []string) {
+			c := &v1.SealConfig{}
+			// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
+			// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
+			if configFilePath != "" && len(v1.MasterIPs) == 0 {
+				err := c.Load(configFilePath)
+				if err != nil {
+					logger.Error("load boot.ConfigFilePath %s err: %q", configFilePath, err)
+					os.Exit(1)
+				}
+			} else {
+				c.Dump(configFilePath)
 			}
-		} else {
+			install.BuildInit()
+			// 安装完成后生成完整版
 			c.Dump(configFilePath)
-		}
-		install.BuildInit()
-		// 安装完成后生成完整版
-		c.Dump(configFilePath)
-		logger.Info(contact)
-	},
-	PreRun: func(cmd *cobra.Command, args []string) {
-		// 使用了boot.ConfigFilePath 就不进行preRun了
-		if configFilePath == "" && install.ExitInitCase() {
-			_ = cmd.Help()
-			os.Exit(install.ErrorExitOSCase)
-		}
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(initCmd)
-
+			logger.Info(contact)
+		},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// 使用了boot.ConfigFilePath 就不进行preRun了
+			if configFilePath == "" && install.ExitInitCase() {
+				_ = cmd.Help()
+				os.Exit(install.ErrorExitOSCase)
+			}
+		},
+	}
 	// Here you will define your flags and configuration settings.
 	initCmd.Flags().StringVar(&v1.SSHConfig.User, "user", "root", "servers user name for ssh")
 	initCmd.Flags().StringVar(&v1.SSHConfig.Password, "passwd", "", "password for ssh")
@@ -137,4 +135,9 @@ func init() {
 	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
 
 	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
+	return initCmd
+}
+
+func init() {
+	rootCmd.AddCommand(newInitCmd())
 }

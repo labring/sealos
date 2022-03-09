@@ -14,7 +14,13 @@
 
 package collector
 
-import "fmt"
+import (
+	"fmt"
+	"path/filepath"
+
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/progress"
+)
 
 type Collector interface {
 	// Collect git package;download common file work as wget or curl;copy local file to dst.
@@ -33,4 +39,8 @@ func NewCollector(src string) (Collector, error) {
 		//local context
 		return NewLocalCollector(), nil
 	}
+}
+
+func Download(src, savePath string) error {
+	return progress.Download(src, filepath.Join(savePath, file.Filename(src)))
 }

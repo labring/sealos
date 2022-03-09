@@ -32,7 +32,7 @@ const (
 	DefaultCNIIPIPFalse    = "Off"
 	DefaultCRIData         = "/var/lib/containerd"
 	DefaultRegistryDomain  = "sealos.hub"
-	DefaultRegistryPort    = "5000"
+	DefaultRegistryPort    = 5000
 	DefaultRegistryConfig  = "/etc/registry"
 	DefaultRegistryData    = "/var/lib/registry"
 )

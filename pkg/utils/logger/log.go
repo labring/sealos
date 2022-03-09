@@ -190,7 +190,7 @@ func Cfg(debugMod bool, showPath bool) {
 						"level": "",
 						"color": true,
 						"LogLevel": %d
-					}`,
+					}}`,
 		logLev,
 	))
 	SetLogPath(showPath)

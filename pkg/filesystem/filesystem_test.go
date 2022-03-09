@@ -14,66 +14,64 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package store
+package filesystem
 
 import (
 	"testing"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-func Test_store_tarGz(t *testing.T) {
+func TestFileSystem_MountResource(t *testing.T) {
 	type fields struct {
 		clusterName string
-	}
-	type args struct {
-		p *v1beta1.Resource
 	}
 	tests := []struct {
 		name    string
 		fields  fields
-		args    args
 		wantErr bool
 	}{
 		{
 			name: "default",
 			fields: fields{
-				clusterName: "xxxx",
-			},
-			args: args{
-				p: &v1beta1.Resource{
-					Spec: v1beta1.ResourceSpec{
-						Type: v1beta1.KubernetesTarGz,
-						Path: "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "default-bin",
-			fields: fields{
-				clusterName: "xxxx",
-			},
-			args: args{
-				p: &v1beta1.Resource{
-					Spec: v1beta1.ResourceSpec{
-						Type:     v1beta1.FileBinary,
-						Path:     "https://sealyun-temp.oss-accelerate.aliyuncs.com/sealos/3152531/sealctl",
-						Override: "/opt/sealctl",
-					},
-				},
+				clusterName: "default",
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewStore(tt.fields.clusterName)
-			if err := s.Save(tt.args.p); (err != nil) != tt.wantErr {
-				t.Errorf("tarGz() error = %v, wantErr %v", err, tt.wantErr)
+			f, _ := NewFilesystem(tt.fields.clusterName)
+			if err := f.MountResource(); (err != nil) != tt.wantErr {
+				t.Errorf("MountResource() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			t.Logf("struct is %+v", tt.args.p)
+		})
+	}
+}
+func TestFileSystem_MountRootfs(t *testing.T) {
+	type fields struct {
+		clusterName string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "default",
+			fields: fields{
+				clusterName: "default",
+			},
+			wantErr: false,
+		},
+	}
+	logger.Cfg(false, true)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			f, _ := NewFilesystem(tt.fields.clusterName)
+			if err := f.MountRootfs([]string{"192.168.64.15"}, false); (err != nil) != tt.wantErr {
+				t.Errorf("MountRootfs() error = %v, wantErr %v", err, tt.wantErr)
+			}
 		})
 	}
 }

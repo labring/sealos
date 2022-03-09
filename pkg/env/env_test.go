@@ -38,7 +38,7 @@ func Test_convertEnv(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotEnv := convertEnv(tt.args.envList); !reflect.DeepEqual(gotEnv, tt.wantEnv) {
+			if gotEnv := v2.ConvertEnv(tt.args.envList); !reflect.DeepEqual(gotEnv, tt.wantEnv) {
 				t.Errorf("convertEnv() = %v, want %v", gotEnv, tt.wantEnv)
 			}
 		})

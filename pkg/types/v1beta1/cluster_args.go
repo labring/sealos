@@ -21,71 +21,71 @@ import (
 	"strings"
 )
 
-func (c *Cluster) initAnnotations() map[string]string {
+func (c *Cluster) getData(key string) string {
 	if c.Annotations == nil {
 		c.Annotations = make(map[string]string)
 	}
-	return c.Annotations
+	data := c.Annotations[key]
+	return data
+}
+
+func (c *Cluster) setData(key, value string) {
+	if c.Annotations == nil {
+		c.Annotations = make(map[string]string)
+	}
+	data := c.Annotations
+	data[key] = value
+	c.Annotations = data
 }
 
 func (c *Cluster) GetCertSANS() []string {
-	data := c.initAnnotations()["cluster_certSANS"]
+	data := c.getData("cluster_certSANS")
 	return strings.Split(data, ",")
 }
 func (c *Cluster) SetCertSANS(certSans []string) {
 	if certSans == nil {
 		certSans = []string{}
 	}
-	data := c.initAnnotations()
-	data["cluster_certSANS"] = strings.Join(certSans, ",")
-	c.Annotations = data
+	c.setData("cluster_certSANS", strings.Join(certSans, ","))
 }
 
 func (c *Cluster) GetVip() string {
-	return c.initAnnotations()["cluster_vip"]
+	return c.getData("cluster_vip")
 }
 func (c *Cluster) SetVip(vip string) {
 	if vip == "" {
 		vip = DefaultVIP
 	}
-	data := c.initAnnotations()
-	data["cluster_vip"] = vip
-	c.Annotations = data
+	c.setData("cluster_vip", vip)
 }
 
 //nolint
 func (c *Cluster) GetAPIServerDomain() string {
-	return c.initAnnotations()["cluster_apiServerDomain"]
+	return c.getData("cluster_apiServerDomain")
 }
 func (c *Cluster) SetAPIServerDomain(domain string) {
 	if domain == "" {
 		domain = DefaultAPIServerDomain
 	}
-	data := c.initAnnotations()
-	data["cluster_apiServerDomain"] = domain
-	c.Annotations = data
+	c.setData("cluster_apiServerDomain", domain)
 }
 func (c *Cluster) GetPodCIDR() string {
-	return c.initAnnotations()["cluster_podCIDR"]
+	return c.getData("cluster_podCIDR")
 }
 func (c *Cluster) SetPodCIDR(podCIDR string) {
 	if podCIDR == "" {
 		podCIDR = DefaultPodCIDR
 	}
-	data := c.initAnnotations()
-	data["cluster_podCIDR"] = podCIDR
-	c.Annotations = data
+	c.setData("cluster_podCIDR", podCIDR)
 }
 func (c *Cluster) GetServiceCIDR() string {
-	return c.initAnnotations()["cluster_serviceCIDR"]
+	return c.getData("cluster_serviceCIDR")
 }
 func (c *Cluster) SetServiceCIDR(serviceCIDR string) {
 	if serviceCIDR == "" {
 		serviceCIDR = DefaultSvcCIDR
 	}
-	data := c.initAnnotations()
-	data["cluster_serviceCIDR"] = serviceCIDR
-	c.Annotations = data
+	c.setData("cluster_serviceCIDR", serviceCIDR)
 }
 func (c *Cluster) GetSSH() ClusterSSH {
 	return c.Spec.SSH
@@ -127,21 +127,15 @@ func (c *Cluster) SetCRIData(criData string) {
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIData, criData))
 }
-func (c *Cluster) SetRegistryAddress(registryAddress string) {
-	var registryDomain, registryPort string
-	if registryAddress != "" {
-		data := strings.Split(registryAddress, ":")
-		if len(data) == 2 {
-			registryDomain = data[0]
-			registryPort = data[1]
-		}
-	}
-	if len(registryDomain) == 0 && len(registryPort) == 0 {
+func (c *Cluster) SetRegistryAddress(registryDomain string, registryPort int) {
+	if registryDomain == "" {
 		registryDomain = DefaultRegistryDomain
+	}
+	if registryPort == 0 {
 		registryPort = DefaultRegistryPort
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryDomain, registryDomain))
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPort, registryPort))
+	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%d", DefaultVarCRIRegistryPort, registryPort))
 }
 func (c *Cluster) SetRegistryConfig(registryConfig string) {
 	if registryConfig == "" {
@@ -160,4 +154,72 @@ func (c *Cluster) SetRegistryUsername(registryUsername string) {
 }
 func (c *Cluster) SetRegistryPassword(registryPassword string) {
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPassword, registryPassword))
+}
+
+// ConvertEnv []string to map[string]interface{}, example [IP=127.0.0.1,IP=192.160.0.2,Key=value] will convert to {IP:[127.0.0.1,192.168.0.2],key:value}
+func ConvertEnv(envList []string) (env map[string]interface{}) {
+	temp := make(map[string][]string)
+	env = make(map[string]interface{})
+
+	for _, e := range envList {
+		var kv []string
+		if kv = strings.SplitN(e, "=", 2); len(kv) != 2 {
+			continue
+		}
+
+		temp[kv[0]] = append(temp[kv[0]], kv[1])
+	}
+
+	for k, v := range temp {
+		if len(v) > 1 {
+			env[k] = v
+			continue
+		}
+		if len(v) == 1 {
+			env[k] = v[0]
+		}
+	}
+
+	return
+}
+
+func (c *Cluster) GetMasterIPList() []string {
+	return c.GetIPSByRole(MASTER)
+}
+
+func (c *Cluster) GetNodeIPList() []string {
+	return c.GetIPSByRole(NODE)
+}
+
+func (c *Cluster) GetMaster0IP() string {
+	if len(c.Spec.Hosts) == 0 {
+		return ""
+	}
+	if len(c.Spec.Hosts[0].IPS) == 0 {
+		return ""
+	}
+	return c.Spec.Hosts[0].IPS[0]
+}
+
+func (c *Cluster) GetIPSByRole(role string) []string {
+	var hosts []string
+	for _, host := range c.Spec.Hosts {
+		for _, hostRole := range host.Roles {
+			if role == hostRole {
+				hosts = append(hosts, host.IPS...)
+				continue
+			}
+		}
+	}
+	return hosts
+}
+
+func (c *Cluster) GetRolesByIP(ip string) []string {
+	var routes []string
+	for _, host := range c.Spec.Hosts {
+		if In(ip, host.IPS) {
+			return host.Roles
+		}
+	}
+	return routes
 }

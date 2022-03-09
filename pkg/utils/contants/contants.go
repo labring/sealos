@@ -24,17 +24,18 @@ const (
 )
 
 const (
-	MetadataFile = "Metadata"
-	SystemFile   = "system.yaml"
-	DataDir      = "kube"
+	MetadataFile    = "Metadata"
+	SystemFile      = "system.json"
+	DataDirName     = "kube"
+	RegistryDirName = "registry"
 )
 
 //CRD kind
 const (
-	Config  = "Config"
-	Cluster = "Cluster"
-	Package = "Package"
-	Kubeadm = "Kubeadm"
+	Config   = "Config"
+	Cluster  = "Cluster"
+	Resource = "Resource"
+	Kubeadm  = "Kubeadm"
 )
 
 func GetHomeDir() string {

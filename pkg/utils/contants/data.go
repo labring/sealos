@@ -34,17 +34,15 @@ type Data interface {
 	Homedir() string
 	PackagePath() string
 	TempPath() string
-	ConfigPath() string
+	EtcPath() string
 	PkiPath() string
 	DataPath() string
 	ScriptsPath() string
 	RegistryPath() string
 	KubeConfigFile() string
-	RegistryFile() string
 	Kubeadmfile() string
 	CharsPath() string
 	ManifestsPath() string
-	DefaultJSONPath() string
 	SealctlPath() string
 }
 
@@ -60,16 +58,8 @@ func (d *data) ScriptsPath() string {
 	return filepath.Join(d.DataPath(), "scripts")
 }
 
-func (d *data) DefaultJSONPath() string {
-	return filepath.Join(d.ScriptsPath(), "default.json")
-}
-
 func (d *data) Kubeadmfile() string {
 	return filepath.Join(d.DataPath(), "etc", DefaultKubeadmFileName)
-}
-
-func (d *data) RegistryFile() string {
-	return filepath.Join(d.DataPath(), "etc", "registry.yml")
 }
 
 func (d *data) CharsPath() string {
@@ -81,11 +71,11 @@ func (d *data) ManifestsPath() string {
 }
 
 func (d *data) KubeConfigFile() string {
-	return filepath.Join(d.ConfigPath(), "admin.conf")
+	return filepath.Join(d.EtcPath(), "admin.conf")
 }
 
 func (d *data) RegistryPath() string {
-	return filepath.Join(d.Homedir(), "registry")
+	return filepath.Join(d.DataPath(), "registry")
 }
 
 func (d *data) PackagePath() string {
@@ -96,7 +86,7 @@ func (d *data) TempPath() string {
 	return filepath.Join(d.Homedir(), "temp")
 }
 
-func (d *data) ConfigPath() string {
+func (d *data) EtcPath() string {
 	return filepath.Join(d.Homedir(), "etc")
 }
 
@@ -105,7 +95,7 @@ func (d *data) PkiPath() string {
 }
 
 func (d *data) DataPath() string {
-	return filepath.Join(d.Homedir(), DataDir)
+	return filepath.Join(d.Homedir(), DataDirName)
 }
 
 func (d *data) Homedir() string {
