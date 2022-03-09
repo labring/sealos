@@ -29,14 +29,16 @@ func LogPath() string {
 func DataPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "data")
 }
+func ResourcePath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "resource")
+}
 
 type Data interface {
 	Homedir() string
-	PackagePath() string
 	TempPath() string
 	EtcPath() string
 	PkiPath() string
-	DataPath() string
+	KubePath() string
 	ScriptsPath() string
 	RegistryPath() string
 	KubeConfigFile() string
@@ -51,23 +53,23 @@ type data struct {
 }
 
 func (d *data) SealctlPath() string {
-	return filepath.Join(d.DataPath(), "opt", "sealctl")
+	return filepath.Join(d.KubePath(), "opt", "sealctl")
 }
 
 func (d *data) ScriptsPath() string {
-	return filepath.Join(d.DataPath(), "scripts")
+	return filepath.Join(d.KubePath(), "scripts")
 }
 
 func (d *data) Kubeadmfile() string {
-	return filepath.Join(d.DataPath(), "etc", DefaultKubeadmFileName)
+	return filepath.Join(d.KubePath(), "etc", DefaultKubeadmFileName)
 }
 
 func (d *data) CharsPath() string {
-	return filepath.Join(d.DataPath(), "charts")
+	return filepath.Join(d.KubePath(), "charts")
 }
 
 func (d *data) ManifestsPath() string {
-	return filepath.Join(d.DataPath(), "manifests")
+	return filepath.Join(d.KubePath(), "manifests")
 }
 
 func (d *data) KubeConfigFile() string {
@@ -75,11 +77,7 @@ func (d *data) KubeConfigFile() string {
 }
 
 func (d *data) RegistryPath() string {
-	return filepath.Join(d.DataPath(), "registry")
-}
-
-func (d *data) PackagePath() string {
-	return filepath.Join(d.Homedir(), "package")
+	return filepath.Join(d.KubePath(), "registry")
 }
 
 func (d *data) TempPath() string {
@@ -94,7 +92,7 @@ func (d *data) PkiPath() string {
 	return filepath.Join(d.Homedir(), "pki")
 }
 
-func (d *data) DataPath() string {
+func (d *data) KubePath() string {
 	return filepath.Join(d.Homedir(), DataDirName)
 }
 

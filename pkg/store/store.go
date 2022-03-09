@@ -59,10 +59,6 @@ func (s *store) Save(p *v1beta1.Resource) error {
 }
 
 func (s *store) tarGz(p *v1beta1.Resource) error {
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
 	err := collector.Download(p.Spec.Path, s.Data.TempPath())
 	if err != nil {
 		return err
@@ -75,7 +71,7 @@ func (s *store) tarGz(p *v1beta1.Resource) error {
 		}
 	}()
 	md5 := hash.FileMD5(tarFileAbs)
-	md5Dir := filepath.Join(s.Data.PackagePath(), md5)
+	md5Dir := filepath.Join(contants.ResourcePath(), md5)
 	err = file.Mkdir(md5Dir)
 	if err != nil {
 		return err
@@ -102,22 +98,18 @@ func (s *store) tarGz(p *v1beta1.Resource) error {
 	return nil
 }
 func (s *store) binary(p *v1beta1.Resource) error {
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
-	err := collector.Download(p.Spec.Path, s.Data.PackagePath())
+	err := collector.Download(p.Spec.Path, contants.ResourcePath())
 	if err != nil {
 		return err
 	}
-	fileNameAbs := filepath.Join(s.Data.PackagePath(), file.Filename(p.Spec.Path))
+	fileNameAbs := filepath.Join(contants.ResourcePath(), file.Filename(p.Spec.Path))
 	defer func() {
 		if err = file.CleanFiles(fileNameAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())
 		}
 	}()
 	md5 := hash.FileMD5(fileNameAbs)
-	md5Abs := filepath.Join(s.Data.PackagePath(), md5)
+	md5Abs := filepath.Join(contants.ResourcePath(), md5)
 	_, err = file.CopySingleFile(fileNameAbs, md5Abs)
 	if err != nil {
 		return err
@@ -137,11 +129,7 @@ func (s *store) dir(p *v1beta1.Resource) error {
 	if err != nil {
 		return err
 	}
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
-	md5Dir := path.Join(s.Data.PackagePath(), digest.String())
+	md5Dir := path.Join(contants.ResourcePath(), digest.String())
 	err = collector.Download(p.Spec.Path, md5Dir)
 	if err != nil {
 		return err

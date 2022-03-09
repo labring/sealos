@@ -42,5 +42,8 @@ func NewCollector(src string) (Collector, error) {
 }
 
 func Download(src, savePath string) error {
+	if err := file.MkDirs(savePath); err != nil {
+		return err
+	}
 	return progress.Download(src, filepath.Join(savePath, file.Filename(src)))
 }

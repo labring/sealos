@@ -50,6 +50,7 @@ type FileSystem struct {
 	configs   []v2.Config
 	resources []v2.Resource
 	data      contants.Data
+	work      contants.Worker
 }
 
 func (f *FileSystem) MountRootfs(hosts []string, initFlag bool) error {
@@ -57,7 +58,7 @@ func (f *FileSystem) MountRootfs(hosts []string, initFlag bool) error {
 }
 
 func (f *FileSystem) UnMountRootfs(hosts []string) error {
-	panic("implement me")
+	return f.unmountRootfs(hosts)
 }
 
 func (f *FileSystem) MountResource() error {
@@ -73,7 +74,7 @@ func (f *FileSystem) MountResource() error {
 			if err != nil {
 				return err
 			}
-			md5Dir := path.Join(f.data.PackagePath(), digest.String())
+			md5Dir := path.Join(contants.ResourcePath(), digest.String())
 			if err = file.CopyDir(r.Status.Path, md5Dir, false); err != nil {
 				return err
 			}
@@ -118,16 +119,18 @@ func (f *FileSystem) MountResource() error {
 		r.Status.RawPath = statusPath
 		f.resources[i] = r
 	}
-	_, err := SaveClusterFile(f.cluster, f.configs, f.resources, contants.NewWork(f.cluster.Name).Clusterfile())
+	_, err := SaveClusterFile(f.cluster, f.configs, f.resources, f.work.Clusterfile())
 	return err
 }
 
 func (f *FileSystem) Clean() error {
-	panic("implement me")
+	return file.CleanFiles(f.data.Homedir(), f.work.Homedir())
+
 }
 
 func NewFilesystem(clusterName string) (Interface, error) {
-	clusterFile := contants.NewWork(clusterName).Clusterfile()
+	work := contants.NewWork(clusterName)
+	clusterFile := work.Clusterfile()
 	clusters, err := decode.Cluster(clusterFile)
 	if err != nil {
 		return nil, err
@@ -153,6 +156,7 @@ func NewFilesystem(clusterName string) (Interface, error) {
 		configs:   configs,
 		resources: resources,
 		data:      contants.NewData(clusterName),
+		work:      work,
 	}, nil
 }
 
@@ -213,6 +217,30 @@ func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
 				}
 			}
 			return err
+		})
+	}
+	return eg.Wait()
+}
+func (f *FileSystem) unmountRootfs(ipList []string) error {
+	r := Rootfs(f.resources)
+	if r == nil {
+		return fmt.Errorf("get rootfs error,pelase mount data to  filesystem")
+	}
+	sh := contants.NewBash(f.cluster.Name, r.Status.Data)
+	clusterRootfsDir := f.data.KubePath()
+	execClean := sh.CleanBash()
+	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
+	envProcessor := env.NewEnvProcessor(f.cluster)
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, IP := range ipList {
+		ip := IP
+		eg.Go(func() error {
+			SSH := ssh.NewSSHByCluster(f.cluster, true)
+			cmd := fmt.Sprintf("%s && %s", execClean, rmRootfs)
+			if err := SSH.CmdAsync(ip, envProcessor.WrapperShell(ip, cmd)); err != nil {
+				return err
+			}
+			return nil
 		})
 	}
 	return eg.Wait()
