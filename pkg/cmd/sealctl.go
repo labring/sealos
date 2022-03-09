@@ -25,9 +25,6 @@ type Sealctl interface {
 	HostsAdd(host, domain string) string
 	HostsDelete(domain string) string
 	Cert(altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) (string, error)
-	ConfigInit() (string, error)
-	ConfigJoinMaster() (string, error)
-	ConfigJoinNode() (string, error)
 	Hostname() string
 	IsDocker() string
 	IPVS(vip string, masters []string) (string, error)
@@ -47,6 +44,7 @@ const (
 	routeAddCommandFmt    = "sealctl route add --host %s --gateway %s"
 	routeDeleteCommandFmt = "sealctl route del --host %s --gateway %s"
 	tokenCommandFmt       = "sealctl token"
+	aliasFmt              = "alias sealctl %s"
 )
 
 type sealctl struct{}
@@ -74,18 +72,6 @@ func (s *sealctl) Cert(altNames []string, nodeIP, nodeName, serviceCIRD, DNSDoma
 		"altNames":    altNames,
 	}
 	return renderTemplate(certCommandTemplate, data)
-}
-
-func (s *sealctl) ConfigInit() (string, error) {
-	panic("implement me")
-}
-
-func (s *sealctl) ConfigJoinMaster() (string, error) {
-	panic("implement me")
-}
-
-func (s *sealctl) ConfigJoinNode() (string, error) {
-	panic("implement me")
 }
 
 func (s *sealctl) Hostname() string {

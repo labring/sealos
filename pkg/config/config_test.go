@@ -47,10 +47,7 @@ func TestDumper_Dump(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &Dumper{
-				Configs:     tt.fields.configs,
-				ClusterName: tt.fields.clusterName,
-			}
+			c := NewDefaultConfiguration(tt.fields.clusterName)
 			if err := c.Dump(tt.args.clusterfile); (err != nil) != tt.wantErr {
 				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -114,7 +111,7 @@ func Test_getAppendOrInsertConfigData(t *testing.T) {
 			name: "default",
 			args: args{
 				path:   "test_clusterfile.yaml",
-				data:   []byte("aa: cc"),
+				data:   []byte("---\naa: cc\n---"),
 				insert: false,
 			},
 			wantErr: false,

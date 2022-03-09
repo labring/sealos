@@ -74,6 +74,8 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 	// kubernetes gt 1.22,
 	case versionutil.Compare(kubeVersion, V1220):
 		apiVersion = KubeadmV1beta3
+	default:
+		apiVersion = KubeadmV1beta2
 	}
 	return apiVersion
 }
@@ -105,7 +107,7 @@ func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcC
 		return "", err
 	}
 
-	data := strings.Join([]string{ic, cc, kpc, klc}, "\n---")
+	data := strings.Join([]string{ic, cc, kpc, klc}, "\n---\n")
 	return data, nil
 }
 

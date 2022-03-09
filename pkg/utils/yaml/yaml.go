@@ -19,8 +19,10 @@ package yaml
 import (
 	"bufio"
 	"bytes"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"io"
 	"path/filepath"
+	"sigs.k8s.io/yaml"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,6 +63,29 @@ func ToYalms(bs string) (yamls []string) {
 		yamls = append(yamls, string(patch))
 	}
 	return
+}
+
+func MarshalYamlToFile(file string, obj interface{}) error {
+	data, err := yaml.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	if err = fileutil.WriteFile(file, data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
+	var cfgs [][]byte
+	for _, cfg := range configs {
+		data, err := yaml.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		cfgs = append(cfgs, data)
+	}
+	return bytes.Join(cfgs, []byte("\n---\n")), nil
 }
 
 func Matcher(path string) bool {

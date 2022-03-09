@@ -17,27 +17,29 @@ limitations under the License.
 package filesystem
 
 import (
-	"fmt"
-	"io/ioutil"
-	"path/filepath"
-
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/yaml"
 )
 
-func LoadClusterFile(path string) (*v2.Cluster, error) {
-	var cluster v2.Cluster
-	rawClusterFile, err := ioutil.ReadFile(filepath.Clean(path))
+func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resources []v2.Resource, clusterfile string) (string, error) {
+	data := make([]interface{}, 0)
+	data = append(data, cluster)
+	for _, c := range configs {
+		data = append(data, c)
+	}
+	for _, s := range resources {
+		data = append(data, s)
+	}
+	ya, err := yaml.MarshalYamlConfigs(data...)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	if len(rawClusterFile) == 0 {
-		return nil, fmt.Errorf("ClusterFile content is empty")
+	if clusterfile != "" {
+		err = file.WriteFile(clusterfile, ya)
+		if err != nil {
+			return "", err
+		}
 	}
-
-	if err = yaml.Unmarshal(rawClusterFile, &cluster); err != nil {
-		return nil, err
-	}
-
-	return &cluster, nil
+	return string(ya), nil
 }

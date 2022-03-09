@@ -52,7 +52,7 @@ func Test_kFile(t *testing.T) {
 }
 
 func Test_kustomize(t *testing.T) {
-	k := NewKubeproxy("10.0.0.2")
+	k := NewCluster("v1.19.1","xxxx","10.0.0.1","10.0.0.2","10.0.0.2",[]string{"127.0.0.2"},[]string{"xxxdddd"})
 	config, err := k.Kustomization([]v1beta1.Patch{
 		{
 			Op:    "add",

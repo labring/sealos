@@ -16,10 +16,203 @@ limitations under the License.
 
 package filesystem
 
-import v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+import (
+	"context"
+	"fmt"
+	"github.com/fanux/sealos/pkg/config"
+	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/store"
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/archive"
+	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/decode"
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/fanux/sealos/pkg/utils/ssh"
+	"golang.org/x/sync/errgroup"
+	"io/ioutil"
+	"path"
+	"path/filepath"
+)
 
 type Interface interface {
-	MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error
-	UnMountRootfs(cluster *v2.Cluster, hosts []string) error
-	Clean(cluster *v2.Cluster) error
+	MountRootfs(hosts []string, initFlag bool) error
+	UnMountRootfs(hosts []string) error
+	MountResource() error
+	Clean() error
+}
+
+type FileSystem struct {
+	store     store.Store
+	env       env.Interface
+	cluster   *v2.Cluster
+	configs   []v2.Config
+	resources []v2.Resource
+	data      contants.Data
+}
+
+func (f *FileSystem) MountRootfs(hosts []string, initFlag bool) error {
+	return f.mountRootfs(hosts, initFlag)
+}
+
+func (f *FileSystem) UnMountRootfs(hosts []string) error {
+	panic("implement me")
+}
+
+func (f *FileSystem) MountResource() error {
+	var replaces []v2.Resource
+	for i, r := range f.resources {
+		if err := f.store.Save(&r); err != nil {
+			return err
+		}
+		statusPath := r.Status.Path
+		if r.Spec.Type == v2.KubernetesTarGz {
+			arch := archive.NewArchive(false, false)
+			if digest, _, err := arch.Digest(statusPath); err != nil {
+				return err
+			} else {
+				md5Dir := path.Join(f.data.PackagePath(), digest.String())
+				if err = file.CopyDir(r.Status.Path, md5Dir, false); err != nil {
+					return err
+				}
+				statusPath = md5Dir
+			}
+			cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
+			if err := cfg.Dump(""); err != nil {
+				return err
+			}
+		}
+		switch r.Spec.Type {
+		case v2.KubernetesTarGz:
+			cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
+			if err := cfg.Dump(""); err != nil {
+				return err
+			}
+			for _, replace := range replaces {
+				if replace.Status.Arch == r.Status.Arch {
+					if _, err := file.CopySingleFile(replace.Status.Path, path.Join(statusPath, contants.DataDirName, replace.Spec.Override)); err != nil {
+						return err
+					}
+				}
+			}
+			if _, err := exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, path.Join(statusPath, contants.DataDirName))); err != nil {
+				return err
+			}
+
+			renderEtc := f.data.EtcPath()
+			renderChart := f.data.CharsPath()
+			renderManifests := f.data.ManifestsPath()
+			for _, dir := range []string{renderEtc, renderChart, renderManifests} {
+				if file.IsExist(dir) {
+					err := f.env.RenderAll("", dir)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+		case v2.FileBinary:
+			replaces = append(replaces, r)
+		}
+		r.Status.RawPath = statusPath
+		f.resources[i] = r
+	}
+	_, err := SaveClusterFile(f.cluster, f.configs, f.resources, contants.NewWork(f.cluster.Name).Clusterfile())
+	return err
+}
+
+func (f *FileSystem) Clean() error {
+	panic("implement me")
+}
+
+func NewFilesystem(clusterName string) (Interface, error) {
+	clusterFile := contants.NewWork(clusterName).Clusterfile()
+	clusters, err := decode.Cluster(clusterFile)
+	if err != nil {
+		return nil, err
+	}
+	if len(clusters) != 1 {
+		return nil, fmt.Errorf("cluster data length must is one")
+	}
+	configs, err := decode.Configs(clusterFile)
+	if err != nil {
+		return nil, err
+	}
+	resources, err := decode.Resource(clusterFile)
+	if err != nil {
+		return nil, err
+	}
+	disk := store.NewStore(clusterName)
+	envInterface := env.NewEnvProcessor(&clusters[0])
+
+	return &FileSystem{
+		store:     disk,
+		env:       envInterface,
+		cluster:   &clusters[0],
+		configs:   configs,
+		resources: resources,
+		data:      contants.NewData(clusterName),
+	}, nil
+}
+
+func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) error {
+	files, err := ioutil.ReadDir(src)
+	if err != nil {
+		return fmt.Errorf("failed to copy files %s", err)
+	}
+
+	if isRegistry {
+		return sshEntry.Copy(ip, src, target)
+	}
+	for _, f := range files {
+		if f.Name() == contants.RegistryDirName {
+			continue
+		}
+		err = sshEntry.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
+		if err != nil {
+			return fmt.Errorf("failed to copy sub files %v", err)
+		}
+	}
+	return nil
+}
+
+func Rootfs(resources []v2.Resource) *v2.Resource {
+	for _, r := range resources {
+		if r.Status.RawPath != "" && r.Spec.Type == v2.KubernetesTarGz {
+			return &r
+		}
+	}
+	return nil
+}
+
+func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
+	r := Rootfs(f.resources)
+	if r == nil {
+		return fmt.Errorf("get rootfs error,pelase mount MountResource after mountRootfs")
+	}
+	sh := contants.NewBash(f.cluster.Name, r.Status.Data)
+
+	envProcessor := env.NewEnvProcessor(f.cluster)
+	eg, _ := errgroup.WithContext(context.Background())
+
+	for _, IP := range ipList {
+		ip := IP
+		eg.Go(func() error {
+			src := r.Status.RawPath
+			target := f.data.Homedir()
+			sshClient := ssh.NewSSHByCluster(f.cluster, true)
+			err := CopyFiles(sshClient, ip == f.cluster.GetMaster0IP(), ip, src, target)
+			if err != nil {
+				return fmt.Errorf("copy rootfs failed %v", err)
+			}
+			if initFlag {
+				err = sshClient.CmdAsync(ip, envProcessor.WrapperShell(ip, sh.InitBash()))
+				if err != nil {
+					return fmt.Errorf("exec init.sh failed %v", err)
+				}
+			}
+			return err
+		})
+	}
+	return eg.Wait()
 }

@@ -25,19 +25,13 @@ type ResourceType string
 
 const (
 	KubernetesTarGz  ResourceType = "kubernetes/tar.gz"
-	KubernetesDir    ResourceType = "kubernetes/dir"
 	ApplicationTarGz ResourceType = "application/tar.gz"
-	ApplicationDir   ResourceType = "application/dir"
-	FileBinaryAmd64  ResourceType = "file/binary/amd64"
-	FileBinaryArm64  ResourceType = "file/binary/arm64"
+	FileBinary       ResourceType = "file/binary"
 	DefaultVersion                = "v0.0.0-master"
 )
 
-func (t ResourceType) IsDir() bool {
-	return t == KubernetesDir || t == ApplicationDir
-}
 func (t ResourceType) IsBinary() bool {
-	return t == FileBinaryAmd64 || t == FileBinaryArm64
+	return t == FileBinary
 }
 
 func (t ResourceType) IsTarGz() bool {
@@ -53,10 +47,12 @@ type ResourceSpec struct {
 
 // ResourceStatus defines the desired state of Resource
 type ResourceStatus struct {
-	Arch     Arch            `json:"arch"`
-	Version  string          `json:"version"`
-	Path     string          `json:"path"`
-	Metadata runtime.Unknown `json:"metadata,omitempty"`
+	Arch     Arch              `json:"arch"`
+	Version  string            `json:"version"`
+	Path     string            `json:"path"`
+	RawPath  string            `json:"rawPath,omitempty"`
+	Metadata runtime.Unknown   `json:"metadata,omitempty"`
+	Data     map[string]string `json:"data,omitempty"`
 }
 
 // +kubebuilder:object:root=true

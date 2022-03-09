@@ -43,7 +43,7 @@ apiServer:
   - {{.VIP}}
   extraArgs:
     feature-gates: TTLAfterFinished=true
-	audit-policy-file: "/etc/kubernetes/audit-policy.yml"
+    audit-policy-file: "/etc/kubernetes/audit-policy.yml"
     audit-log-path: "/var/log/kubernetes/audit.log"
     audit-log-format: json
     audit-log-maxbackup: '10'

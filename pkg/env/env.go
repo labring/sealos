@@ -81,8 +81,10 @@ func (p *processor) RenderAll(host, dir string) error {
 		if err != nil {
 			return fmt.Errorf("failed to create template: %s %v", path, err)
 		}
-		if err := t.Execute(writer, p.getHostEnv(host)); err != nil {
-			return fmt.Errorf("failed to render env template: %s %v", path, err)
+		if host != "" {
+			if err := t.Execute(writer, p.getHostEnv(host)); err != nil {
+				return fmt.Errorf("failed to render env template: %s %v", path, err)
+			}
 		}
 		return nil
 	})

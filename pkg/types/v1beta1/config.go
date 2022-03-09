@@ -73,6 +73,14 @@ const (
 	Append   StrategyType = "append"
 )
 
+type RegistryConfig struct {
+	IP       string `json:"ip,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	Port     int    `json:"port,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+}
+
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
 	Strategy StrategyType `json:"strategy,omitempty"`

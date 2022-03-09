@@ -128,21 +128,15 @@ func (c *Cluster) SetCRIData(criData string) {
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIData, criData))
 }
-func (c *Cluster) SetRegistryAddress(registryAddress string) {
-	var registryDomain, registryPort string
-	if registryAddress != "" {
-		data := strings.Split(registryAddress, ":")
-		if len(data) == 2 {
-			registryDomain = data[0]
-			registryPort = data[1]
-		}
-	}
-	if len(registryDomain) == 0 && len(registryPort) == 0 {
+func (c *Cluster) SetRegistryAddress(registryDomain string, registryPort int) {
+	if registryDomain == "" {
 		registryDomain = DefaultRegistryDomain
+	}
+	if registryPort == 0 {
 		registryPort = DefaultRegistryPort
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryDomain, registryDomain))
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPort, registryPort))
+	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%d", DefaultVarCRIRegistryPort, registryPort))
 }
 func (c *Cluster) SetRegistryConfig(registryConfig string) {
 	if registryConfig == "" {
@@ -162,8 +156,6 @@ func (c *Cluster) SetRegistryUsername(registryUsername string) {
 func (c *Cluster) SetRegistryPassword(registryPassword string) {
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCRIRegistryPassword, registryPassword))
 }
-
-
 
 // ConvertEnv []string to map[string]interface{}, example [IP=127.0.0.1,IP=192.160.0.2,Key=value] will convert to {IP:[127.0.0.1,192.168.0.2],key:value}
 func ConvertEnv(envList []string) (env map[string]interface{}) {
@@ -190,4 +182,45 @@ func ConvertEnv(envList []string) (env map[string]interface{}) {
 	}
 
 	return
+}
+
+func (in *Cluster) GetMasterIPList() []string {
+	return in.GetIPSByRole(MASTER)
+}
+
+func (in *Cluster) GetNodeIPList() []string {
+	return in.GetIPSByRole(NODE)
+}
+
+func (in *Cluster) GetMaster0IP() string {
+	if len(in.Spec.Hosts) == 0 {
+		return ""
+	}
+	if len(in.Spec.Hosts[0].IPS) == 0 {
+		return ""
+	}
+	return in.Spec.Hosts[0].IPS[0]
+}
+
+func (in *Cluster) GetIPSByRole(role string) []string {
+	var hosts []string
+	for _, host := range in.Spec.Hosts {
+		for _, hostRole := range host.Roles {
+			if role == hostRole {
+				hosts = append(hosts, host.IPS...)
+				continue
+			}
+		}
+	}
+	return hosts
+}
+
+func (in *Cluster) GetRolesByIP(ip string) []string {
+	var routes []string
+	for _, host := range in.Spec.Hosts {
+		if In(ip, host.IPS) {
+			return host.Roles
+		}
+	}
+	return routes
 }
