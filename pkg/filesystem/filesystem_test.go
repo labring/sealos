@@ -17,8 +17,9 @@ limitations under the License.
 package filesystem
 
 import (
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func TestFileSystem_MountResource(t *testing.T) {
@@ -64,11 +65,11 @@ func TestFileSystem_MountRootfs(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	logger.Cfg(false,true)
+	logger.Cfg(false, true)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f, _ := NewFilesystem(tt.fields.clusterName)
-			if err := f.MountRootfs([]string{"192.168.64.15"},false); (err != nil) != tt.wantErr {
+			if err := f.MountRootfs([]string{"192.168.64.15"}, false); (err != nil) != tt.wantErr {
 				t.Errorf("MountRootfs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

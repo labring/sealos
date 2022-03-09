@@ -140,5 +140,4 @@ func newInitCmd() *cobra.Command {
 
 func init() {
 	rootCmd.AddCommand(newInitCmd())
-
 }

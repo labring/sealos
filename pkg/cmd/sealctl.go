@@ -44,7 +44,7 @@ const (
 	routeAddCommandFmt    = "sealctl route add --host %s --gateway %s"
 	routeDeleteCommandFmt = "sealctl route del --host %s --gateway %s"
 	tokenCommandFmt       = "sealctl token"
-	aliasFmt              = "alias sealctl %s"
+	//aliasFmt              = "alias sealctl %s"
 )
 
 type sealctl struct{}

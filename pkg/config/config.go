@@ -17,9 +17,10 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/decode"
@@ -79,8 +80,7 @@ func (c *Dumper) Dump(clusterfile string) error {
 		c.Configs = configs
 	}
 
-	err := c.WriteFiles()
-	if err != nil {
+	if err := c.WriteFiles(); err != nil {
 		return fmt.Errorf("failed to write config files %v", err)
 	}
 	return nil

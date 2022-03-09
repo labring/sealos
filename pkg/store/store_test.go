@@ -58,24 +58,9 @@ func Test_store_tarGz(t *testing.T) {
 			args: args{
 				p: &v1beta1.Resource{
 					Spec: v1beta1.ResourceSpec{
-						Type:     v1beta1.FileBinaryAmd64,
+						Type:     v1beta1.FileBinary,
 						Path:     "https://sealyun-temp.oss-accelerate.aliyuncs.com/sealos/3152531/sealctl",
 						Override: "/opt/sealctl",
-					},
-				},
-			},
-			wantErr: false,
-		},
-		{
-			name: "default-dir",
-			fields: fields{
-				clusterName: "xxxx",
-			},
-			args: args{
-				p: &v1beta1.Resource{
-					Spec: v1beta1.ResourceSpec{
-						Type: v1beta1.KubernetesDir,
-						Path: "/Users/cuisongliu/DockerImages/kube",
 					},
 				},
 			},

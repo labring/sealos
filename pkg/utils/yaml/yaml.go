@@ -19,11 +19,12 @@ package yaml
 import (
 	"bufio"
 	"bytes"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"io"
 	"path/filepath"
-	"sigs.k8s.io/yaml"
 	"strings"
+
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"

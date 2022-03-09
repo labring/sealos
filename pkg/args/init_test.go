@@ -17,8 +17,9 @@ limitations under the License.
 package args
 
 import (
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 )
@@ -50,9 +51,7 @@ func TestInit_SetClusterArgs(t *testing.T) {
 			args: args{
 				args: InitArgs{
 					Masters:    "172.16.1.2,172.16.1.25",
-					MastersArm: "172.16.1.1",
 					Nodes:      "172.16.1.3-172.16.1.19",
-					NodesArm:   "172.16.1.20-172.16.1.22",
 					User:       "root",
 					Password:   "admin",
 					Port:       22,
@@ -83,22 +82,16 @@ func TestInit_SetClusterArgs(t *testing.T) {
 }
 
 func TestInit_Output(t *testing.T) {
-	type fields struct {
-		configs   []v2.Config
-		resources []v2.Resource
-	}
 	type args struct {
 		args InitArgs
 	}
 	tests := []struct {
 		name    string
-		fields  fields
 		args    args
 		wantErr bool
 	}{
 		{
-			name:   "default",
-			fields: fields{},
+			name: "default",
 			args: args{
 				args: InitArgs{
 					Masters: "192.168.64.15",
@@ -150,7 +143,7 @@ func TestInit_Output(t *testing.T) {
 				t.Errorf("SetConfigArgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			logger.Cfg(true, false)
-			r.Output()
+			_ = r.Output()
 		})
 	}
 }

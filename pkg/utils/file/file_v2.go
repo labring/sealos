@@ -142,7 +142,7 @@ func WriteFile(fileName string, content []byte) error {
 // copy /root/test/abc /tmp/abc
 func RecursionCopy(src, dst string) error {
 	if IsDir(src) {
-		return CopyDir(src, dst,false)
+		return CopyDir(src, dst, false)
 	}
 
 	err := os.MkdirAll(filepath.Dir(dst), 0700|0055)

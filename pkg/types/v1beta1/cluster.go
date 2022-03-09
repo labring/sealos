@@ -56,4 +56,3 @@ type ClusterSpec struct {
 	Env     []string `json:"env,omitempty"`
 	CMDArgs []string `json:"cmd_args,omitempty"`
 }
-

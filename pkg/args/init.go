@@ -18,6 +18,8 @@ package args
 
 import (
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/filesystem"
 	"github.com/fanux/sealos/pkg/kubeadm"
@@ -28,15 +30,12 @@ import (
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"path"
 	"sigs.k8s.io/yaml"
 )
 
 type InitArgs struct {
 	Masters          string
 	Nodes            string
-	MastersArm       string
-	NodesArm         string
 	User             string
 	Password         string
 	Port             int32
@@ -67,15 +66,14 @@ type InitArgs struct {
 }
 
 func (a *InitArgs) Validate() error {
-	if a.Masters == "" && a.MastersArm == "" {
-		//master is null
-
+	if a.Masters == "" {
+		return fmt.Errorf("master not empty")
 	}
-	if (a.Masters != "" || a.Nodes != "") && a.KubeURI == "" {
-
+	if a.KubeURI == "" {
+		return fmt.Errorf("kube uri not empty")
 	}
 	if a.ClusterName == "" {
-
+		return fmt.Errorf("cluster name not empty")
 	}
 	return nil
 }
@@ -116,23 +114,15 @@ func (r *Init) SetClusterArgs() error {
 		return err
 	}
 
-	if len(r.args.Masters) > 0 || len(r.args.MastersArm) > 0 {
+	if len(r.args.Masters) > 0 {
 		masters := strings2.SplitRemoveEmpty(r.args.Masters, ",")
 		nodes := strings2.SplitRemoveEmpty(r.args.Nodes, ",")
-		masterArms := strings2.SplitRemoveEmpty(r.args.MastersArm, ",")
-		nodeArms := strings2.SplitRemoveEmpty(r.args.NodesArm, ",")
 		r.hosts = []v2.ClusterHost{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
 		}
-		if len(masterArms) != 0 {
-			r.setHostWithIpsPort(masterArms, []string{v2.MASTER, string(v2.ARM64)})
-		}
 		if len(nodes) != 0 {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
-		}
-		if len(nodeArms) != 0 {
-			r.setHostWithIpsPort(nodeArms, []string{v2.NODE, string(v2.ARM64)})
 		}
 		r.cluster.Spec.Hosts = r.hosts
 	} else {

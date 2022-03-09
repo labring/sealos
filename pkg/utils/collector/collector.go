@@ -16,9 +16,10 @@ package collector
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/progress"
-	"path/filepath"
 )
 
 type Collector interface {

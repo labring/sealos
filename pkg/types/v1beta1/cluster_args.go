@@ -105,7 +105,6 @@ func (c *Cluster) SetCNIInterface(cniInterface string) {
 		cniInterface = DefaultCNIInterface
 	}
 	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCNIInterface, cniInterface))
-
 }
 func (c *Cluster) SetCNIMTU(cniMTU string) {
 	if cniMTU == "" {
@@ -184,27 +183,27 @@ func ConvertEnv(envList []string) (env map[string]interface{}) {
 	return
 }
 
-func (in *Cluster) GetMasterIPList() []string {
-	return in.GetIPSByRole(MASTER)
+func (c *Cluster) GetMasterIPList() []string {
+	return c.GetIPSByRole(MASTER)
 }
 
-func (in *Cluster) GetNodeIPList() []string {
-	return in.GetIPSByRole(NODE)
+func (c *Cluster) GetNodeIPList() []string {
+	return c.GetIPSByRole(NODE)
 }
 
-func (in *Cluster) GetMaster0IP() string {
-	if len(in.Spec.Hosts) == 0 {
+func (c *Cluster) GetMaster0IP() string {
+	if len(c.Spec.Hosts) == 0 {
 		return ""
 	}
-	if len(in.Spec.Hosts[0].IPS) == 0 {
+	if len(c.Spec.Hosts[0].IPS) == 0 {
 		return ""
 	}
-	return in.Spec.Hosts[0].IPS[0]
+	return c.Spec.Hosts[0].IPS[0]
 }
 
-func (in *Cluster) GetIPSByRole(role string) []string {
+func (c *Cluster) GetIPSByRole(role string) []string {
 	var hosts []string
-	for _, host := range in.Spec.Hosts {
+	for _, host := range c.Spec.Hosts {
 		for _, hostRole := range host.Roles {
 			if role == hostRole {
 				hosts = append(hosts, host.IPS...)
@@ -215,9 +214,9 @@ func (in *Cluster) GetIPSByRole(role string) []string {
 	return hosts
 }
 
-func (in *Cluster) GetRolesByIP(ip string) []string {
+func (c *Cluster) GetRolesByIP(ip string) []string {
 	var routes []string
-	for _, host := range in.Spec.Hosts {
+	for _, host := range c.Spec.Hosts {
 		if In(ip, host.IPS) {
 			return host.Roles
 		}

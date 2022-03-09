@@ -19,6 +19,10 @@ package filesystem
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"path"
+	"path/filepath"
+
 	"github.com/fanux/sealos/pkg/config"
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/store"
@@ -30,9 +34,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
-	"io/ioutil"
-	"path"
-	"path/filepath"
 )
 
 type Interface interface {
@@ -68,15 +69,15 @@ func (f *FileSystem) MountResource() error {
 		statusPath := r.Status.Path
 		if r.Spec.Type == v2.KubernetesTarGz {
 			arch := archive.NewArchive(false, false)
-			if digest, _, err := arch.Digest(statusPath); err != nil {
+			digest, _, err := arch.Digest(statusPath)
+			if err != nil {
 				return err
-			} else {
-				md5Dir := path.Join(f.data.PackagePath(), digest.String())
-				if err = file.CopyDir(r.Status.Path, md5Dir, false); err != nil {
-					return err
-				}
-				statusPath = md5Dir
 			}
+			md5Dir := path.Join(f.data.PackagePath(), digest.String())
+			if err = file.CopyDir(r.Status.Path, md5Dir, false); err != nil {
+				return err
+			}
+			statusPath = md5Dir
 			cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
 			if err := cfg.Dump(""); err != nil {
 				return err

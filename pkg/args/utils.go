@@ -18,6 +18,7 @@ package args
 
 import (
 	"fmt"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -58,22 +59,12 @@ func PreProcessIPList(joinArgs *InitArgs) error {
 	if err := iputils.AssemblyIPList(&joinArgs.Nodes); err != nil {
 		return err
 	}
-	if err := iputils.AssemblyIPList(&joinArgs.MastersArm); err != nil {
-		return err
-	}
-	if err := iputils.AssemblyIPList(&joinArgs.NodesArm); err != nil {
-		return err
-	}
 
 	masters := strings2.SplitRemoveEmpty(joinArgs.Masters, ",")
-	masterArms := strings2.SplitRemoveEmpty(joinArgs.MastersArm, ",")
 	nodes := strings2.SplitRemoveEmpty(joinArgs.Nodes, ",")
-	nodeArms := strings2.SplitRemoveEmpty(joinArgs.NodesArm, ",")
-	length := len(masters) + len(masterArms) + len(nodes) + len(nodeArms)
+	length := len(masters) + len(nodes)
 	data := sets.NewString(masters...)
-	data.Insert(masterArms...)
 	data.Insert(nodes...)
-	data.Insert(nodeArms...)
 	if length != data.Len() {
 		return fmt.Errorf("has duplicate ip in iplist")
 	}

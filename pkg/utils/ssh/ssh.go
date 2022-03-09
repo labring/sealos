@@ -70,7 +70,6 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
 	}
 }
 
-
 type Client struct {
 	SSH  Interface
 	Host string
