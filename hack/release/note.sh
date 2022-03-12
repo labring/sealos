@@ -22,16 +22,16 @@ echo "### Usage" >> Note.md
 echo "
 \`\`\`sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \\
+$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \\
     chmod +x sealos && mv sealos /usr/bin
 \`\`\`
 " >> Note.md
 echo "### [amd64 下载地址]" >> Note.md
-echo "[oss 下载地址](https://${BUCKETNAME:-sealyun}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/${VERSION}/sealos)" >> Note.md
-echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/latest/sealos)" >> Note.md
+echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/${VERSION}/sealos)" >> Note.md
+echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/latest/sealos)" >> Note.md
 echo "### [arm64 下载地址]" >> Note.md
-echo "[oss 下载地址](https://${BUCKETNAME:-sealyun}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/${VERSION}/sealos-arm64)" >> Note.md
-echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/latest/sealos-arm64)" >> Note.md
+echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/${VERSION}/sealos-arm64)" >> Note.md
+echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/latest/sealos-arm64)" >> Note.md
 echo "### Docker images" >> Note.md
 echo "- \`${DOCKER_REPO:-fanux/sealos}:${VERSION}\`" >> Note.md
 echo "- \`${DOCKER_REPO:-fanux/sealos}:latest\`" >> Note.md
