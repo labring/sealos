@@ -18,6 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/ssh"
 	"text/template"
 )
 
@@ -44,7 +46,7 @@ const (
 	routeAddCommandFmt    = "sealctl route add --host %s --gateway %s"
 	routeDeleteCommandFmt = "sealctl route del --host %s --gateway %s"
 	tokenCommandFmt       = "sealctl token"
-	//aliasFmt              = "alias sealctl %s"
+	aliasFmt              = "alias sealctl %s"
 )
 
 type sealctl struct{}
@@ -123,4 +125,10 @@ func (s *sealctl) Token() string {
 
 func NewSealctl() Sealctl {
 	return &sealctl{}
+}
+
+func RemoteBash(clusterName string, sshInterface ssh.Interface, host, cmd string) (string, error) {
+	data := contants.NewData(clusterName)
+	alias := fmt.Sprintf(aliasFmt, data.KubeSealctlPath())
+	return sshInterface.CmdToString(host, fmt.Sprintf("%s && %s", alias, cmd), "")
 }

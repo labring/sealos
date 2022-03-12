@@ -33,63 +33,71 @@ func ResourcePath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "resource")
 }
 
+func TempPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "temp")
+}
+
 type Data interface {
 	Homedir() string
-	TempPath() string
-	EtcPath() string
-	PkiPath() string
 	KubePath() string
-	ScriptsPath() string
-	RegistryPath() string
-	KubeConfigFile() string
-	Kubeadmfile() string
-	CharsPath() string
-	ManifestsPath() string
-	SealctlPath() string
+	KubeEtcPath() string
+	KubeScriptsPath() string
+	KubeRegistryPath() string
+	KubeKubeadmfile() string
+
+	PkiPath() string
+	PkiEtcdPath() string
+	AdminFile() string
+	EtcPath() string
+
+	KubeCharsPath() string
+	KubeManifestsPath() string
+	KubeSealctlPath() string
 }
 
 type data struct {
 	clusterName string
 }
 
-func (d *data) SealctlPath() string {
+func (d *data) KubeSealctlPath() string {
 	return filepath.Join(d.KubePath(), "opt", "sealctl")
 }
 
-func (d *data) ScriptsPath() string {
+func (d *data) KubeScriptsPath() string {
 	return filepath.Join(d.KubePath(), "scripts")
 }
-
-func (d *data) Kubeadmfile() string {
+func (d *data) KubeEtcPath() string {
+	return filepath.Join(d.KubePath(), "etc")
+}
+func (d *data) KubeKubeadmfile() string {
 	return filepath.Join(d.KubePath(), "etc", DefaultKubeadmFileName)
 }
 
-func (d *data) CharsPath() string {
-	return filepath.Join(d.KubePath(), "charts")
-}
-
-func (d *data) ManifestsPath() string {
-	return filepath.Join(d.KubePath(), "manifests")
-}
-
-func (d *data) KubeConfigFile() string {
-	return filepath.Join(d.EtcPath(), "admin.conf")
-}
-
-func (d *data) RegistryPath() string {
+func (d *data) KubeRegistryPath() string {
 	return filepath.Join(d.KubePath(), "registry")
 }
 
-func (d *data) TempPath() string {
-	return filepath.Join(d.Homedir(), "temp")
+func (d *data) KubeCharsPath() string {
+	return filepath.Join(d.KubePath(), "charts")
+}
+
+func (d *data) KubeManifestsPath() string {
+	return filepath.Join(d.KubePath(), "manifests")
 }
 
 func (d *data) EtcPath() string {
 	return filepath.Join(d.Homedir(), "etc")
 }
+func (d *data) AdminFile() string {
+	return filepath.Join(d.EtcPath(), "admin.conf")
+}
 
 func (d *data) PkiPath() string {
 	return filepath.Join(d.Homedir(), "pki")
+}
+
+func (d *data) PkiEtcdPath() string {
+	return filepath.Join(d.PkiPath(), "etcd")
 }
 
 func (d *data) KubePath() string {

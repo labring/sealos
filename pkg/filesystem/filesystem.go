@@ -101,9 +101,9 @@ func (f *FileSystem) MountResource() error {
 				return err
 			}
 
-			renderEtc := f.data.EtcPath()
-			renderChart := f.data.CharsPath()
-			renderManifests := f.data.ManifestsPath()
+			renderEtc := f.data.KubeEtcPath()
+			renderChart := f.data.KubeCharsPath()
+			renderManifests := f.data.KubeManifestsPath()
 			for _, dir := range []string{renderEtc, renderChart, renderManifests} {
 				if file.IsExist(dir) {
 					err := f.env.RenderAll("", dir)
@@ -181,17 +181,8 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func Rootfs(resources []v2.Resource) *v2.Resource {
-	for _, r := range resources {
-		if r.Status.RawPath != "" && r.Spec.Type == v2.KubernetesTarGz {
-			return &r
-		}
-	}
-	return nil
-}
-
 func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
-	r := Rootfs(f.resources)
+	r := v2.Rootfs(f.resources)
 	if r == nil {
 		return fmt.Errorf("get rootfs error,pelase mount MountResource after mountRootfs")
 	}
@@ -222,7 +213,7 @@ func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
 	return eg.Wait()
 }
 func (f *FileSystem) unmountRootfs(ipList []string) error {
-	r := Rootfs(f.resources)
+	r := v2.Rootfs(f.resources)
 	if r == nil {
 		return fmt.Errorf("get rootfs error,pelase mount data to  filesystem")
 	}

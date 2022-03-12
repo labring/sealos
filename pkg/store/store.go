@@ -59,12 +59,12 @@ func (s *store) Save(p *v1beta1.Resource) error {
 }
 
 func (s *store) tarGz(p *v1beta1.Resource) error {
-	err := collector.Download(p.Spec.Path, s.Data.TempPath())
+	err := collector.Download(p.Spec.Path, contants.TempPath())
 	if err != nil {
 		return err
 	}
 
-	tarFileAbs := filepath.Join(s.Data.TempPath(), file.Filename(p.Spec.Path))
+	tarFileAbs := filepath.Join(contants.TempPath(), file.Filename(p.Spec.Path))
 	defer func() {
 		if err = file.CleanFiles(tarFileAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())

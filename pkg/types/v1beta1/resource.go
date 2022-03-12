@@ -77,3 +77,12 @@ type ResourceList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Resource `json:"items"`
 }
+
+func Rootfs(resources []Resource) *Resource {
+	for _, r := range resources {
+		if r.Status.RawPath != "" && r.Spec.Type == KubernetesTarGz {
+			return &r
+		}
+	}
+	return nil
+}

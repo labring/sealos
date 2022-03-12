@@ -79,14 +79,13 @@ func (a *InitArgs) Validate() error {
 }
 
 type Init struct {
-	args          InitArgs
-	cluster       *v2.Cluster
-	configs       []v2.Config
-	resources     []v2.Resource
-	hosts         []v2.ClusterHost
-	kubeadmSuffix string //add command for kubeamd end
-	dryRun        bool
-	withoutCNI    bool
+	args       InitArgs
+	cluster    *v2.Cluster
+	configs    []v2.Config
+	resources  []v2.Resource
+	hosts      []v2.ClusterHost
+	dryRun     bool
+	withoutCNI bool
 }
 
 func NewInit(args InitArgs) *Init {
@@ -94,7 +93,6 @@ func NewInit(args InitArgs) *Init {
 	r.args = args
 	r.dryRun = args.DryRun
 	r.withoutCNI = args.WithoutCNI
-	r.kubeadmSuffix = fmt.Sprintf(" -v %d ", args.Vlog)
 	return r
 }
 
