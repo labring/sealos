@@ -70,7 +70,7 @@ sleep 100 # wait for sshd
 # $2 is sealos clientip
 alias remotecmd="./sshcmd --passwd Fanux#123 --host $master0FIP --cmd"
 
-remotecmd "wget https://sealyun.oss-cn-beijing-internal.aliyuncs.com/v$3/sealos && chmod +x sealos && mv sealos /usr/bin"
+remotecmd "wget https://sealyun-home.oss-cn-beijing-internal.aliyuncs.com/sealos/v$3/sealos && chmod +x sealos && mv sealos /usr/bin"
 
 version=$1
 pkgurl=$2
