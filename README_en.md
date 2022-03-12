@@ -85,7 +85,7 @@ Server password：123456
 
 ```bash
 # download and install sealos, sealos is a binary tool of golang, just download and copy directly to the bin directory, the release page can also be downloaded
-wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin
 
 # download offline resource pack
