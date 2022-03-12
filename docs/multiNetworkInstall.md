@@ -30,7 +30,7 @@ $ ip route show | grep default
 希望使用万兆`ens32`内网部署`kubernetes v1.19.2`高可用集群。
 
 ```
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 ## 离线资源包自行下载， 默认已经下载到`/root/`。
@@ -84,7 +84,7 @@ interface|calico使用的网卡名称或者路由|ens32
 希望使用万兆内网部署`kubernetes v1.19.2`高可用集群, 三层有路由`192.168.253.1`。
 
 ```
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin 
 
 ## 离线资源包自行下载， 默认已经下载到`/root/`。

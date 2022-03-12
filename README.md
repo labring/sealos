@@ -96,7 +96,7 @@ node0|192.168.0.5
 
 ```sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-$ wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/latest/sealos && \
+$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \
     chmod +x sealos && mv sealos /usr/bin
 
 # 下载离线资源包

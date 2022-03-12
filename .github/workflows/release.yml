@@ -50,10 +50,10 @@ jobs:
         run: |
           echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
           wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun}/latest/sealos-arm64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos/${{ steps.prepare.outputs.tag_name }}/sealos
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos/latest/sealos
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos/latest/sealos-arm64
 
       - name: set up buildx
         id: buildx
