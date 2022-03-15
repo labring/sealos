@@ -101,18 +101,6 @@ func (f *FileSystem) MountResource() error {
 				return err
 			}
 
-			renderEtc := f.data.KubeEtcPath()
-			renderChart := f.data.KubeCharsPath()
-			renderManifests := f.data.KubeManifestsPath()
-			for _, dir := range []string{renderEtc, renderChart, renderManifests} {
-				if file.IsExist(dir) {
-					err := f.env.RenderAll("", dir)
-					if err != nil {
-						return err
-					}
-				}
-			}
-
 		case v2.FileBinary:
 			replaces = append(replaces, r)
 		}
@@ -195,8 +183,21 @@ func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
 		ip := IP
 		eg.Go(func() error {
 			src := r.Status.RawPath
+			baseRawPath := path.Join(src, contants.DataDirName)
+			renderEtc := path.Join(baseRawPath, contants.EtcDirName)
+			renderChart := path.Join(baseRawPath, contants.ChartsDirName)
+			renderManifests := path.Join(baseRawPath, contants.ManifestsDirName)
+			for _, dir := range []string{renderEtc, renderChart, renderManifests} {
+				if file.IsExist(dir) {
+					err := f.env.RenderAll(ip, dir)
+					if err != nil {
+						return err
+					}
+				}
+			}
+
 			target := f.data.Homedir()
-			sshClient := ssh.NewSSHByCluster(f.cluster, true)
+			sshClient := ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
 			err := CopyFiles(sshClient, ip == f.cluster.GetMaster0IP(), ip, src, target)
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)
@@ -217,17 +218,20 @@ func (f *FileSystem) unmountRootfs(ipList []string) error {
 	if r == nil {
 		return fmt.Errorf("get rootfs error,pelase mount data to  filesystem")
 	}
-	sh := contants.NewBash(f.cluster.Name, r.Status.Data)
-	clusterRootfsDir := f.data.KubePath()
-	execClean := sh.CleanBash()
+	clusterRootfsDir := f.data.Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
+
+	_, err := exec.RunBashCmd(rmRootfs)
+	if err != nil {
+		return err
+	}
 	envProcessor := env.NewEnvProcessor(f.cluster)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			SSH := ssh.NewSSHByCluster(f.cluster, true)
-			cmd := fmt.Sprintf("%s && %s", execClean, rmRootfs)
+			SSH := ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
+			cmd := fmt.Sprintf("%s", rmRootfs)
 			if err := SSH.CmdAsync(ip, envProcessor.WrapperShell(ip, cmd)); err != nil {
 				return err
 			}

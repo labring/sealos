@@ -160,7 +160,7 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 		p.Status.Arch = v1beta1.AMD64
 	}
 
-	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.SystemFile)
+	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.DefaultSystemFile)
 	if file.IsExist(systemPath) {
 		systemData, err := file.ReadAll(systemPath)
 		if err != nil {

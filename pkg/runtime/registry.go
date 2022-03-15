@@ -1,0 +1,65 @@
+/*
+Copyright 2022 cuisongliu@qq.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package runtime
+
+import (
+	"fmt"
+	"github.com/fanux/sealos/pkg/cmd"
+	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/utils/logger"
+)
+
+const DefaultCPFmt = "mkdir -p %s && cp -rf  %s/* %s/"
+
+func (k *KubeadmRuntime) ApplyRegistry() error {
+	logger.Info("start to apply registry")
+	err := k.sshInterface.CmdAsync(k.registry.IP, fmt.Sprintf(DefaultCPFmt, k.registry.Data, k.data.KubeRegistryPath(), k.registry.Data))
+	if err != nil {
+		return fmt.Errorf("copy registry data failed %v", err)
+	}
+	err = cmd.RemoteBashSync(k.data, k.sshInterface, k.registry.IP, k.ctl.HostsAdd(k.registry.IP, k.registry.Domain))
+	if err != nil {
+		return fmt.Errorf("add registry hosts failed %v", err)
+	}
+	envProcessor := env.NewEnvProcessor(k.cluster)
+	ip := k.cluster.GetMaster0IP()
+	err = k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.InitRegistryBash()))
+	if err != nil {
+		return fmt.Errorf("exec registry.sh failed %v", err)
+	}
+	err = k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.AuthBash()))
+	if err != nil {
+		return fmt.Errorf("exec auth.sh failed %v", err)
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) DeleteRegistry() error {
+	logger.Info("delete registry in master0...")
+	envProcessor := env.NewEnvProcessor(k.cluster)
+	ip := k.cluster.GetMaster0IP()
+	err := k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.CleanRegistryBash()))
+	if err != nil {
+		return fmt.Errorf("exec clean-registry.sh failed %v", err)
+	}
+
+	err = cmd.RemoteBashSync(k.data, k.sshInterface, k.registry.IP, k.ctl.HostsDelete(k.registry.Domain))
+	if err != nil {
+		return fmt.Errorf("delete registry hosts failed %v", err)
+	}
+	return nil
+}

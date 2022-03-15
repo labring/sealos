@@ -295,7 +295,7 @@ func (a *HwProvider) GetAvailableZoneID() error {
 //	request.Scheme = Scheme
 //	request.ImageId = imageID
 //
-//	request.Password = a.Infra.Spec.Metadata.AccessChannels.SSH.Passwd
+//	request.Password = a.Infra.Spec.Metadata.AccessChannels.sshInterface.Passwd
 //	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
 //	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
 //	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)

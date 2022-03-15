@@ -80,6 +80,18 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 	return apiVersion
 }
 
+func GetterInitKubeadmConfigFromTypes(resource *v1.Resource, cluster *v1.Cluster, cri string, patch []string) (string, error) {
+	version := resource.Status.Version
+	master0 := cluster.GetMaster0IP()
+	apiserverDomain := cluster.GetAPIServerDomain()
+	podCIDR := cluster.GetPodCIDR()
+	svcCIDR := cluster.GetServiceCIDR()
+	vip := cluster.GetVip()
+	masters := cluster.GetMasterIPList()
+	sans := cluster.GetCertSANS()
+	return GetterInitKubeadmConfig(version, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch, masters, sans)
+}
+
 func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri string, patch, masters, sans []string) (string, error) {
 	config, err := kubeadms(patch)
 	if err != nil {

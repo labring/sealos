@@ -23,12 +23,6 @@ const (
 	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
 )
 
-const (
-	MetadataFile    = "Metadata"
-	SystemFile      = "system.json"
-	DataDirName     = "kube"
-	RegistryDirName = "registry"
-)
 
 //CRD kind
 const (

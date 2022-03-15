@@ -19,8 +19,22 @@ package contants
 import "path/filepath"
 
 const (
-	DefaultClusterRootfsDir = "/var/lib/sealos"
-	DefaultKubeadmFileName  = "Kubeadmfile"
+	DefaultClusterRootfsDir          = "/var/lib/sealos"
+	DefaultKubeadmFileName           = "Kubeadmfile"
+	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
+	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
+	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
+	DefaultSystemFile                = "system.json"
+	MetadataFile                     = "Metadata"
+	DataDirName                      = "kube"
+	EtcDirName                       = "etc"
+	ChartsDirName                    = "charts"
+	ManifestsDirName                 = "manifests"
+	RegistryDirName                  = "registry"
+	PkiDirName                       = "pki"
+	PkiEtcdDirName                   = "etcd"
+	ScriptsDirName                   = "scripts"
+	StaticsDirName                   = "statics"
 )
 
 func LogPath() string {
@@ -41,6 +55,7 @@ type Data interface {
 	Homedir() string
 	KubePath() string
 	KubeEtcPath() string
+	KubeStaticsPath() string
 	KubeScriptsPath() string
 	KubeRegistryPath() string
 	KubeKubeadmfile() string
@@ -64,44 +79,48 @@ func (d *data) KubeSealctlPath() string {
 }
 
 func (d *data) KubeScriptsPath() string {
-	return filepath.Join(d.KubePath(), "scripts")
+	return filepath.Join(d.KubePath(), ScriptsDirName)
 }
 func (d *data) KubeEtcPath() string {
-	return filepath.Join(d.KubePath(), "etc")
+	return filepath.Join(d.KubePath(), EtcDirName)
 }
 func (d *data) KubeKubeadmfile() string {
-	return filepath.Join(d.KubePath(), "etc", DefaultKubeadmFileName)
+	return filepath.Join(d.KubePath(), EtcDirName, DefaultKubeadmFileName)
 }
 
 func (d *data) KubeRegistryPath() string {
-	return filepath.Join(d.KubePath(), "registry")
+	return filepath.Join(d.KubePath(), RegistryDirName)
 }
 
 func (d *data) KubeCharsPath() string {
-	return filepath.Join(d.KubePath(), "charts")
+	return filepath.Join(d.KubePath(), ChartsDirName)
 }
 
 func (d *data) KubeManifestsPath() string {
-	return filepath.Join(d.KubePath(), "manifests")
+	return filepath.Join(d.KubePath(), ManifestsDirName)
 }
 
 func (d *data) EtcPath() string {
-	return filepath.Join(d.Homedir(), "etc")
+	return filepath.Join(d.Homedir(), EtcDirName)
 }
 func (d *data) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }
 
 func (d *data) PkiPath() string {
-	return filepath.Join(d.Homedir(), "pki")
+	return filepath.Join(d.Homedir(), PkiDirName)
 }
 
 func (d *data) PkiEtcdPath() string {
-	return filepath.Join(d.PkiPath(), "etcd")
+	return filepath.Join(d.PkiPath(), PkiEtcdDirName)
 }
 
 func (d *data) KubePath() string {
 	return filepath.Join(d.Homedir(), DataDirName)
+}
+
+func (d *data) KubeStaticsPath() string {
+	return filepath.Join(d.KubePath(), StaticsDirName)
 }
 
 func (d *data) Homedir() string {

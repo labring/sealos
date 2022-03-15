@@ -130,6 +130,7 @@ func (r *Init) SetClusterArgs() error {
 	r.cluster.SetPodCIDR(r.args.PodCidr)
 	r.cluster.SetServiceCIDR(r.args.SvcCidr)
 	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
+	r.cluster.SetDNSDomain("")
 	r.cluster.SetVip(r.args.VIP)
 	r.cluster.SetCertSANS(r.args.CertSANS)
 	if !r.args.WithoutCNI {

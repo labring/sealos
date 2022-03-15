@@ -40,7 +40,10 @@ func (c *Cluster) setData(key, value string) {
 
 func (c *Cluster) GetCertSANS() []string {
 	data := c.getData("cluster_certSANS")
-	return strings.Split(data, ",")
+	if data != "" {
+		return strings.Split(data, ",")
+	}
+	return []string{}
 }
 func (c *Cluster) SetCertSANS(certSans []string) {
 	if certSans == nil {
@@ -69,6 +72,17 @@ func (c *Cluster) SetAPIServerDomain(domain string) {
 	}
 	c.setData("cluster_apiServerDomain", domain)
 }
+
+func (c *Cluster) GetDNSDomain() string {
+	return c.getData("cluster_DNSDomain")
+}
+func (c *Cluster) SetDNSDomain(domain string) {
+	if domain == "" {
+		domain = DefaultDNSDomain
+	}
+	c.setData("cluster_DNSDomain", domain)
+}
+
 func (c *Cluster) GetPodCIDR() string {
 	return c.getData("cluster_podCIDR")
 }

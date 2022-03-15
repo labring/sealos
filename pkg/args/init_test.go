@@ -69,7 +69,6 @@ func TestInit_SetClusterArgs(t *testing.T) {
 				configs:       tt.fields.configs,
 				resources:     tt.fields.resources,
 				hosts:         tt.fields.hosts,
-				kubeadmSuffix: tt.fields.kubeadmBashSuffix,
 				dryRun:        tt.fields.dryRun,
 				withoutCNI:    tt.fields.withoutCNI,
 				args:          tt.args.args,
