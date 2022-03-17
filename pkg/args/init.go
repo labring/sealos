@@ -20,9 +20,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/filesystem"
-	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/passwd"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -132,7 +130,12 @@ func (r *Init) SetClusterArgs() error {
 	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
 	r.cluster.SetDNSDomain("")
 	r.cluster.SetVip(r.args.VIP)
-	r.cluster.SetCertSANS(r.args.CertSANS)
+	var certSans []string
+	certSans = append(certSans, "127.0.0.1")
+	certSans = append(certSans, r.cluster.GetAPIServerDomain())
+	certSans = append(certSans, r.cluster.GetVip())
+	certSans = append(certSans, r.cluster.GetMasterIPList()...)
+	r.cluster.SetCertSANS(certSans)
 	if !r.args.WithoutCNI {
 		r.cluster.SetCNIInterface(r.args.Interface)
 		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
@@ -214,10 +217,6 @@ func (r *Init) SetResourceArgs() error {
 }
 
 func (r *Init) Output() error {
-	config, err := kubeadm.GetterInitKubeadmConfig("1.19.19", r.cluster.GetMaster0IP(), r.args.APIServerDomain, r.args.PodCidr, r.args.SvcCidr, r.args.VIP, cri.DefaultContainerdCRISocket, []string{r.args.KubeadmfilePath}, r.cluster.GetMasterIPList(), r.args.CertSANS)
-	if err != nil {
-		return err
-	}
 	var clusterFile string
 	if !r.args.DryRun {
 		clusterFile = contants.NewWork(r.args.ClusterName).Clusterfile()
@@ -227,8 +226,6 @@ func (r *Init) Output() error {
 		return err
 	}
 	logger.Debug("Output-Clusterfile: \n%s", ya)
-	logger.Debug("Output-kubeadm: \n%s", config)
-
 	return nil
 }
 

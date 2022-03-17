@@ -19,6 +19,7 @@ package store
 import (
 	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"path"
 	"path/filepath"
@@ -59,12 +60,12 @@ func (s *store) Save(p *v1beta1.Resource) error {
 }
 
 func (s *store) tarGz(p *v1beta1.Resource) error {
-	err := collector.Download(p.Spec.Path, contants.TempPath())
+	err := collector.Download(p.Spec.Path, contants.TmpPath())
 	if err != nil {
 		return err
 	}
 
-	tarFileAbs := filepath.Join(contants.TempPath(), file.Filename(p.Spec.Path))
+	tarFileAbs := filepath.Join(contants.TmpPath(), file.Filename(p.Spec.Path))
 	defer func() {
 		if err = file.CleanFiles(tarFileAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())
@@ -148,13 +149,14 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 	if err != nil {
 		return err
 	}
-	if version, ok := metadata["version"]; ok {
+
+	if version, ok, _ := unstructured.NestedString(metadata, "version"); ok {
 		p.Status.Version = fmt.Sprintf("%+v", version)
 	} else {
 		p.Status.Version = v1beta1.DefaultVersion
 	}
 
-	if arch, ok := metadata["arch"]; ok {
+	if arch, ok, _ := unstructured.NestedString(metadata, "arch"); ok {
 		p.Status.Arch = v1beta1.Arch(fmt.Sprintf("%+v", arch))
 	} else {
 		p.Status.Arch = v1beta1.AMD64
@@ -162,12 +164,23 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 
 	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.DefaultSystemFile)
 	if file.IsExist(systemPath) {
-		systemData, err := file.ReadAll(systemPath)
+		systemData, err := jsonUnmarshal(systemPath)
 		if err != nil {
 			return err
 		}
 		if systemData != nil {
-			p.Status.Metadata.Raw = systemData
+			p.Status.Metadata = make(map[string]string)
+			if lvscare, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
+				p.Status.Metadata[v1beta1.DefaultVarLvscare] = lvscare
+			} else {
+				p.Status.Metadata[v1beta1.DefaultVarLvscare] = contants.DefaultLvsCareImage
+			}
+
+			if cni, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
+				p.Status.Metadata[v1beta1.DefaultVarCNIType] = cni
+			} else {
+				p.Status.Metadata[v1beta1.DefaultVarCNIType] = contants.DefaultCNI
+			}
 		}
 	}
 	defaultPath := filepath.Join(md5Dir, contants.DataDirName, "scripts", "default.json")

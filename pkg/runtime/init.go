@@ -17,16 +17,39 @@ limitations under the License.
 package runtime
 
 import (
+	"context"
 	"fmt"
 	"github.com/fanux/sealos/pkg/cert"
 	"github.com/fanux/sealos/pkg/cmd"
 	"github.com/fanux/sealos/pkg/cri"
+	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 	"path"
 )
+
+func (k *KubeadmRuntime) bashInit(nodes []string) error {
+	envProcessor := env.NewEnvProcessor(k.cluster)
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range nodes {
+		node := node
+		eg.Go(func() error {
+			err := k.sshInterface.CmdAsync(node, envProcessor.WrapperShell(node, k.bash.InitBash()))
+			if err != nil {
+				return fmt.Errorf("exec init.sh failed %v", err)
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
+}
+
+func (k *KubeadmRuntime) BashInitOnMaster0() error {
+	return k.bashInit([]string{k.cluster.GetMaster0IP()})
+}
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
@@ -35,13 +58,13 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}
-	initConfigPath := path.Join(k.data.EtcPath(), contants.DefaultInitKubeadmFileName)
-
+	initConfigPath := path.Join(k.data.TmpPath(), contants.DefaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, []byte(data))
 	if err != nil {
 		return fmt.Errorf("write config init kubeadm config error: %s", err.Error())
 	}
-	err = k.sshInterface.Copy(k.cluster.GetMaster0IP(), initConfigPath, initConfigPath)
+	err = k.sshInterface.Copy(k.cluster.GetMaster0IP(), initConfigPath, outConfigPath)
 	if err != nil {
 		return fmt.Errorf("copy config init kubeadm config error: %s", err.Error())
 	}

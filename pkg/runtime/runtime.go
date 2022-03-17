@@ -59,6 +59,7 @@ type RegistryConfig struct {
 func (k *KubeadmRuntime) Init() error {
 
 	pipeline := []func() error{
+		k.BashInitOnMaster0,
 		k.ConfigInitKubeadmToMaster0,
 		k.GenerateCert,
 		k.CreateKubeConfig,

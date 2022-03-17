@@ -56,10 +56,5 @@ func (k *KubeadmRuntime) DeleteRegistry() error {
 	if err != nil {
 		return fmt.Errorf("exec clean-registry.sh failed %v", err)
 	}
-
-	err = cmd.RemoteBashSync(k.data, k.sshInterface, k.registry.IP, k.ctl.HostsDelete(k.registry.Domain))
-	if err != nil {
-		return fmt.Errorf("delete registry hosts failed %v", err)
-	}
 	return nil
 }

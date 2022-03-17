@@ -31,16 +31,12 @@ networking:
   podSubnet: {{.PodCIDR}}
   serviceSubnet: {{.SvcCIDR}}
 apiServer:
+  {{- if .CertSANs }}
   certSANs:
-  - 127.0.0.1
-  - {{.APIServerDomain}}
-  {{range .MasterIPs -}}
-  - {{.}}
-  {{end -}}
   {{range .CertSANs -}}
   - {{.}}
   {{end -}}
-  - {{.VIP}}
+  {{end -}}
   extraArgs:
     feature-gates: TTLAfterFinished=true
     audit-policy-file: "/etc/kubernetes/audit-policy.yml"
@@ -84,15 +80,13 @@ scheduler:
     readOnly: true
     pathType: File`
 
-func NewCluster(kubeAPI, apiserverDomain, podCIDR, svcCIDR, vip string, masters, certSANs []string) Kubeadm {
+func NewCluster(kubeAPI, apiserverDomain, podCIDR, svcCIDR string, certSANs []string) Kubeadm {
 	return &cluster{
 		KubeadmAPIVersion: GetterKubeadmAPIVersion(kubeAPI),
 		KubeVersion:       kubeAPI,
 		APIServerDomain:   apiserverDomain,
 		PodCIDR:           podCIDR,
 		SvcCIDR:           svcCIDR,
-		VIP:               vip,
-		MasterIPs:         masters,
 		CertSANs:          certSANs,
 	}
 }
@@ -103,8 +97,6 @@ type cluster struct {
 	APIServerDomain   string
 	PodCIDR           string
 	SvcCIDR           string
-	VIP               string
-	MasterIPs         []string
 	CertSANs          []string
 }
 

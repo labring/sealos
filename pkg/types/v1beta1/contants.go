@@ -60,4 +60,6 @@ var (
 	DefaultVarCNIIPIP             = "IPIP"             //cni-ipip
 	DefaultVarCNICIDR             = "CIDR"             //cni-cidr
 	DefaultVarCNIMTU              = "MTU"              //cni-mtu
+	DefaultVarLvscare             = "LvscareImage"
+	DefaultVarCNIType             = "CNIType"
 )

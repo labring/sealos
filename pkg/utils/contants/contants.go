@@ -21,8 +21,8 @@ import (
 const (
 	LvsCareStaticPodName = "kube-sealyun-lvscare"
 	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
+	DefaultCNI           = "calico"
 )
-
 
 //CRD kind
 const (

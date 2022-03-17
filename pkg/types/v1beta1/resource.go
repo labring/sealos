@@ -18,7 +18,6 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type ResourceType string
@@ -51,7 +50,7 @@ type ResourceStatus struct {
 	Version  string            `json:"version"`
 	Path     string            `json:"path"`
 	RawPath  string            `json:"rawPath,omitempty"`
-	Metadata runtime.Unknown   `json:"metadata,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 	Data     map[string]string `json:"data,omitempty"`
 }
 

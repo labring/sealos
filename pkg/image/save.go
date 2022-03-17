@@ -74,7 +74,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 
 	//handle image name
 	for _, image := range images {
-		named, err := parseNormalizedNamed(image)
+		named, err := ParseNormalizedNamed(image)
 		if err != nil {
 			return fmt.Errorf("parse image name error: %v", err)
 		}

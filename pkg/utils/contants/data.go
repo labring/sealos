@@ -47,8 +47,8 @@ func ResourcePath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "resource")
 }
 
-func TempPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "temp")
+func TmpPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "tmp")
 }
 
 type Data interface {
@@ -64,6 +64,7 @@ type Data interface {
 	PkiEtcdPath() string
 	AdminFile() string
 	EtcPath() string
+	TmpPath() string
 
 	KubeCharsPath() string
 	KubeManifestsPath() string
@@ -113,6 +114,10 @@ func (d *data) PkiPath() string {
 
 func (d *data) PkiEtcdPath() string {
 	return filepath.Join(d.PkiPath(), PkiEtcdDirName)
+}
+
+func (d *data) TmpPath() string {
+	return filepath.Join(d.Homedir(), "tmp")
 }
 
 func (d *data) KubePath() string {

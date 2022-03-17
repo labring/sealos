@@ -66,7 +66,7 @@ func splitDockerDomain(name string) (domain, remainder string) {
 	return
 }
 
-func parseNormalizedNamed(s string) (Named, error) {
+func ParseNormalizedNamed(s string) (Named, error) {
 	domain, remainder := splitDockerDomain(s)
 	var remoteName, tag string
 	if tagSep := strings.IndexRune(remainder, ':'); tagSep > -1 {

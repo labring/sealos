@@ -37,7 +37,7 @@ import (
 )
 
 type Interface interface {
-	MountRootfs(hosts []string, initFlag bool) error
+	MountRootfs(hosts []string) error
 	UnMountRootfs(hosts []string) error
 	MountResource() error
 	Clean() error
@@ -53,8 +53,8 @@ type FileSystem struct {
 	work      contants.Worker
 }
 
-func (f *FileSystem) MountRootfs(hosts []string, initFlag bool) error {
-	return f.mountRootfs(hosts, initFlag)
+func (f *FileSystem) MountRootfs(hosts []string) error {
+	return f.mountRootfs(hosts)
 }
 
 func (f *FileSystem) UnMountRootfs(hosts []string) error {
@@ -169,16 +169,13 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
+func (f *FileSystem) mountRootfs(ipList []string) error {
 	r := v2.Rootfs(f.resources)
 	if r == nil {
 		return fmt.Errorf("get rootfs error,pelase mount MountResource after mountRootfs")
 	}
-	sh := contants.NewBash(f.cluster.Name, r.Status.Data)
 
-	envProcessor := env.NewEnvProcessor(f.cluster)
 	eg, _ := errgroup.WithContext(context.Background())
-
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
@@ -202,12 +199,12 @@ func (f *FileSystem) mountRootfs(ipList []string, initFlag bool) error {
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)
 			}
-			if initFlag {
-				err = sshClient.CmdAsync(ip, envProcessor.WrapperShell(ip, sh.InitBash()))
-				if err != nil {
-					return fmt.Errorf("exec init.sh failed %v", err)
-				}
-			}
+			//if initFlag {
+			//	err = sshClient.CmdAsync(ip, envProcessor.WrapperShell(ip, sh.InitBash()))
+			//	if err != nil {
+			//		return fmt.Errorf("exec init.sh failed %v", err)
+			//	}
+			//}
 			return err
 		})
 	}

@@ -87,12 +87,11 @@ func GetterInitKubeadmConfigFromTypes(resource *v1.Resource, cluster *v1.Cluster
 	podCIDR := cluster.GetPodCIDR()
 	svcCIDR := cluster.GetServiceCIDR()
 	vip := cluster.GetVip()
-	masters := cluster.GetMasterIPList()
 	sans := cluster.GetCertSANS()
-	return GetterInitKubeadmConfig(version, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch, masters, sans)
+	return GetterInitKubeadmConfig(version, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch, sans)
 }
 
-func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri string, patch, masters, sans []string) (string, error) {
+func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri string, patch, sans []string) (string, error) {
 	config, err := kubeadms(patch)
 	if err != nil {
 		return "", err
@@ -103,7 +102,7 @@ func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcC
 	if err != nil {
 		return "", err
 	}
-	c := NewCluster(k8sVersion, apiserverDomain, podCIDR, svcCIDR, vip, masters, sans)
+	c := NewCluster(k8sVersion, apiserverDomain, podCIDR, svcCIDR, sans)
 	cc, err := c.Kustomization(config.Spec.ClusterConfig)
 	if err != nil {
 		return "", err
