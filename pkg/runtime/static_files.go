@@ -28,11 +28,11 @@ var MasterStaticFiles = []*StaticFile{
 }
 
 func (k *KubeadmRuntime) CopyStaticFilesToMasters() error {
-	logger.Info("start to copy static files to masters")
 	return k.CopyStaticFiles(k.getMasterIPList())
 }
 
 func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
+	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
 		staticFilePath := filepath.Join(k.data.KubeStaticsPath(), file.Name)
 		cmdLinkStatic := fmt.Sprintf(RemoteCmdCopyStatic, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
@@ -44,7 +44,7 @@ func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
 				if err != nil {
 					return fmt.Errorf("[%s] link static file failed, error:%s", host, err.Error())
 				}
-				return err
+				return nil
 			})
 		}
 		if err := eg.Wait(); err != nil {

@@ -88,7 +88,7 @@ func (k *KubeadmRuntime) getIPVSCmd(masters []string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("get ipvs cmd on once module failed %v", err)
 	}
-	return ipvsCmd, err
+	return ipvsCmd, nil
 }
 
 func (k *KubeadmRuntime) getIPVSYamlCmd(masters []string) (string, error) {
@@ -97,7 +97,7 @@ func (k *KubeadmRuntime) getIPVSYamlCmd(masters []string) (string, error) {
 		return "", fmt.Errorf("get ipvs static pod cmd failed %v", err)
 	}
 
-	return ipvsYamlCmd, err
+	return ipvsYamlCmd, nil
 }
 
 func (k *KubeadmRuntime) getInitKubeadmConfigFromTypes(resource *v1.Resource, cluster *v1.Cluster, cri string, patch []string) (string, error) {

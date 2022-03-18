@@ -18,6 +18,8 @@ rm -rf /var/lib/etcd && rm -rf /var/etcd
 )
 
 func (k *KubeadmRuntime) reset() error {
+	//Why delete registry is first?
+	//Because the registry use some cri command, eg 'nerdctl'
 	err := k.DeleteRegistry()
 	k.resetNodes(k.getNodeIPList())
 	k.resetMasters(k.getMasterIPList())
@@ -51,19 +53,20 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 }
 
 func (k *KubeadmRuntime) resetNode(node string) error {
+	logger.Info("start to reset node: %s", node)
 	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog)),
 		RemoveKubeConfig); err != nil {
-		return err
+		return fmt.Errorf("exec node clean in sealos failed %v", err)
 	}
 	err := k.execClean(node)
 	if err != nil {
 		return fmt.Errorf("exec clean.sh failed %v", err)
 	}
-	err = k.execHostsDelete(node,k.registry.Domain)
+	err = k.execHostsDelete(node, k.registry.Domain)
 	if err != nil {
 		return fmt.Errorf("delete registry hosts failed %v", err)
 	}
-	err = k.execHostsDelete(node,k.getAPIServerDomain())
+	err = k.execHostsDelete(node, k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("delete apiserver hosts failed %v", err)
 	}

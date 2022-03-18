@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const (
@@ -12,6 +13,7 @@ const (
 )
 
 func (k *KubeadmRuntime) UpdateCert() error {
+	logger.Info("start to generate cert and kubeConfig...")
 	if err := k.sshCmdAsync(k.getMaster0IP(), "rm -rf /etc/kubernetes/admin.conf"); err != nil {
 		return err
 	}

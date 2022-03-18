@@ -32,16 +32,17 @@ import (
 )
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
+	logger.Info("start to init filesystem join nodes...")
 	err := k.bashInit(newNodesIPList)
 	if err != nil {
-		return err
+		return fmt.Errorf("filesystem init failed %v", err)
 	}
 	if err = ssh.WaitSSHReady(k.sshInterface, 6, newNodesIPList...); err != nil {
 		return errors.Wrap(err, "join nodes wait for ssh ready time out")
 	}
 
-	if err = k.loadToken(); err != nil {
-		return err
+	if err = k.getKubernetesToken(); err != nil {
+		return fmt.Errorf("get kubernetes token failed %v", err)
 	}
 
 	masters := k.getMasterIPListAndPort()
@@ -71,30 +72,33 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err != nil {
 				return err
 			}
+			logger.Info("run ipvs once module: %s", node)
 			err = k.execProxySync(node, ipvsCmd)
 			if err != nil {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
-
+			logger.Info("start join node: %s", node)
 			cmd := k.Command(k.getKubeVersion(), JoinNode)
+			if cmd == "" {
+				return fmt.Errorf("get join node command failed, kubernetes version is %s", k.getKubeVersion())
+			}
 			if err = k.sshCmdAsync(node, cmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
-
+			logger.Info("sync ipvs yaml in node: %s", node)
 			err = k.execProxySync(node, ipvsYamlCmd)
 			if err != nil {
 				return fmt.Errorf("generator ipvs static pod failed %v", err)
 			}
-
-			logger.Info("Succeeded in joining %s as worker", node)
-			return err
+			logger.Info("succeeded in joining %s as worker", node)
+			return nil
 		})
 	}
 	return eg.Wait()
 }
 
 func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string, t *token.Token) error {
-	logger.Info("start to copy kubeadm join config to node")
+	logger.Info("start to copy kubeadm join config to node: %s", node)
 	patches := []string{k.data.KubeKubeadmfile()}
 	data, err := kubeadm.GetterJoinNodeKubeadmConfig(k.getKubeVersion(), k.getVip(), cri.DefaultContainerdCRISocket, patches, *t)
 	if err != nil {

@@ -60,6 +60,7 @@ func (k *KubeadmRuntime) pipeline(name string, pipeline []func() error) error {
 }
 
 func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...string) error {
+	logger.Info("start to copy kubeconfig files to masters")
 	for _, f := range files {
 		if err := k.sendKubeConfigFile(masters, f); err != nil {
 			return err
@@ -97,6 +98,7 @@ func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) err
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
+	logger.Info("start to copy etc pki files to masters")
 	return k.sendFileToHosts(hosts, k.data.PkiPath(), contants.KubernetesEtcPKI)
 }
 
@@ -115,6 +117,7 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 }
 
 func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
+	logger.Info("start to remove node from k8s %s", ip)
 	cli, err := kubernetes.NewKubernetesClient(k.data.AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
 		return err
@@ -132,7 +135,6 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 			}
 		}
 	}
-
 	if nodeType == nil {
 		logger.Warn("not find target delete node ip: %s", ip)
 		return nil
@@ -146,4 +148,24 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 		return err
 	}
 	return nil
+}
+
+func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
+	ipvsYamlCmd, err := k.getIPVSYamlCmd(masterIPs)
+	if err != nil {
+		return err
+	}
+	logger.Info("start to sync lvscare static pod")
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range k.getNodeIPList() {
+		node := node
+		eg.Go(func() error {
+			err := k.execProxySync(node, ipvsYamlCmd)
+			if err != nil {
+				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
 }

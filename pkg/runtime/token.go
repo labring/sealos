@@ -40,7 +40,8 @@ func vlogToStr(vlog int) string {
 	return " -v " + str
 }
 
-func (k *KubeadmRuntime) loadToken() error {
+func (k *KubeadmRuntime) getKubernetesToken() error {
+	logger.Info("start to get kubernetes token...")
 	if k.token == nil {
 		data, err := k.execToken(k.getMaster0IP())
 		if err != nil {

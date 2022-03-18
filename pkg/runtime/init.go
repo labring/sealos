@@ -44,7 +44,12 @@ func (k *KubeadmRuntime) bashInit(nodes []string) error {
 }
 
 func (k *KubeadmRuntime) BashInitOnMaster0() error {
-	return k.bashInit([]string{k.getMaster0IP()})
+	logger.Info("start to init filesystem master0...")
+	err := k.bashInit([]string{k.getMaster0IP()})
+	if err != nil {
+		return fmt.Errorf("filesystem init failed %v", err)
+	}
+	return nil
 }
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
@@ -71,7 +76,7 @@ func (k *KubeadmRuntime) GenerateCert() error {
 	logger.Info("start to generator cert and copy to masters...")
 	hostName, err := k.execHostname(k.getMaster0IP())
 	if err != nil {
-		return err
+		return fmt.Errorf("get hostname failed %v", err)
 	}
 	err = cert.GenerateCert(
 		k.data.PkiPath(),
@@ -92,7 +97,7 @@ func (k *KubeadmRuntime) CreateKubeConfig() error {
 	logger.Info("start to create kubeconfig...")
 	hostName, err := k.execHostname(k.getMaster0IP())
 	if err != nil {
-		return err
+		return fmt.Errorf("get hostname failed %v", err)
 	}
 	certConfig := cert.Config{
 		Path:     k.data.PkiPath(),
