@@ -28,6 +28,11 @@ import (
 
 var ForceDelete bool
 
+const (
+	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
+	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
+)
+
 func (k *KubeadmRuntime) confirmDeleteNodes() error {
 	if !ForceDelete {
 		prompt := "Are you sure to delete these nodes?"
@@ -62,9 +67,6 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 	return nil
 }
 
-func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.resources.Status.Version
-}
 func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 	version := k.getKubeVersion()
 	const V1991 = "v1.19.1"
@@ -74,7 +76,7 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 	if version == V1991 || version == V1992 {
 		for _, v := range masters {
 			replaceCmd := fmt.Sprintf(RemoteReplaceKubeConfig, KUBESCHEDULERCONFIGFILE, v, KUBECONTROLLERCONFIGFILE, v, KUBESCHEDULERCONFIGFILE)
-			if err := k.sshInterface.CmdAsync(v, replaceCmd); err != nil {
+			if err := k.sshCmdAsync(v, replaceCmd); err != nil {
 				logger.Info("failed to replace kube config on %s:%v ", v, err)
 				return false
 			}
@@ -99,7 +101,7 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 	for _, node := range Hosts {
 		node := node
 		eg.Go(func() error {
-			if err := k.sshInterface.Copy(node, src, dst); err != nil {
+			if err := k.sshCopy(node, src, dst); err != nil {
 				return fmt.Errorf("send file failed %v", err)
 			}
 			return nil

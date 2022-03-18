@@ -33,9 +33,10 @@ func TestNode(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ForceDelete = true
 			k, _ := NewDefaultRuntime("default")
-			if err := k.DeleteNodes([]string{"192.168.64.17"}); (err != nil) != tt.wantErr {
+			if err := k.JoinNodes([]string{"192.168.64.17"}); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			t.Log("process success")
 		})
 	}
 }

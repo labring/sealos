@@ -220,6 +220,11 @@ func (c *Cluster) GetMaster0IPAPIServer() string {
 	return fmt.Sprintf("https://%s:6443", master0)
 }
 
+func (c *Cluster) GetClusterAPIServer() string {
+	domain := c.GetAPIServerDomain()
+	return fmt.Sprintf("https://%s:6443", domain)
+}
+
 func (c *Cluster) GetIPSByRole(role string) []string {
 	var hosts []string
 	for _, host := range c.Spec.Hosts {

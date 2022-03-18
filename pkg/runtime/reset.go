@@ -1,23 +1,8 @@
-// Copyright © 2021 Alibaba Group Holding Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package runtime
 
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
 )
@@ -33,8 +18,8 @@ rm -rf /var/lib/etcd && rm -rf /var/etcd
 
 func (k *KubeadmRuntime) reset() error {
 	err := k.DeleteRegistry()
-	k.resetNodes(k.cluster.GetNodeIPList())
-	k.resetMasters(k.cluster.GetMasterIPList())
+	k.resetNodes(k.getNodeIPList())
+	k.resetMasters(k.getMasterIPList())
 	return err
 }
 
@@ -65,19 +50,19 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 }
 
 func (k *KubeadmRuntime) resetNode(node string) error {
-	if err := k.sshInterface.CmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog)),
+	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog)),
 		RemoveKubeConfig); err != nil {
 		return err
 	}
-	err := k.sshInterface.CmdAsync(node, k.envInterface.WrapperShell(node, k.bash.CleanBash()))
+	err := k.execClean(node)
 	if err != nil {
 		return fmt.Errorf("exec clean.sh failed %v", err)
 	}
-	err = remote.BashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.registry.Domain))
+	err = k.execHostsDelete(node,k.registry.Domain)
 	if err != nil {
 		return fmt.Errorf("delete registry hosts failed %v", err)
 	}
-	err = remote.BashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.cluster.GetAPIServerDomain()))
+	err = k.execHostsDelete(node,k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("delete apiserver hosts failed %v", err)
 	}

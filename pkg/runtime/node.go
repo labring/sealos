@@ -22,7 +22,6 @@ import (
 	"github.com/fanux/sealos/pkg/client-go/kubernetes"
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -50,14 +49,14 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	}
 
 	masters := make([]string, 0)
-	for _, master := range k.cluster.GetMasterIPList() {
+	for _, master := range k.getMasterIPList() {
 		masters = append(masters, fmt.Sprintf("%s:6443", master))
 	}
-	ipvsCmd, err := k.ctl.IPVS(fmt.Sprintf("%s:6443", k.cluster.GetVip()), masters)
+	ipvsCmd, err := k.ctl.IPVS(fmt.Sprintf("%s:6443", k.getVip()), masters)
 	if err != nil {
 		return fmt.Errorf("get ipvs cmd on once module failed %v", err)
 	}
-	ipvsYamlCmd, err := k.ctl.StaticPod(k.cluster.GetVip(), k.resources.Status.Metadata[v1beta1.DefaultVarLvscare], masters)
+	ipvsYamlCmd, err := k.ctl.StaticPod(k.getVip(), k.resources.Status.Metadata[v1beta1.DefaultVarLvscare], masters)
 	if err != nil {
 		return fmt.Errorf("get ipvs static pod cmd failed %v", err)
 	}
@@ -71,7 +70,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err != nil {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
-			err = remote.BashSync(k.data, k.sshInterface, node, k.ctl.HostsAdd(k.cluster.GetVip(), k.cluster.GetAPIServerDomain()))
+			err = k.execHostsAppend(node,k.getVip(),k.getAPIServerDomain())
 			if err != nil {
 				return fmt.Errorf("add apiserver domain hosts failed %v", err)
 			}
@@ -79,18 +78,17 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err != nil {
 				return err
 			}
-
-			err = remote.BashSync(k.data, k.sshInterface, node, ipvsCmd)
+			err = k.execProxySync(node, ipvsCmd)
 			if err != nil {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
 
 			cmd := k.Command(k.getKubeVersion(), JoinNode)
-			if err := k.sshInterface.CmdAsync(node, cmd); err != nil {
+			if err := k.sshCmdAsync(node, cmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
 
-			err = remote.BashSync(k.data, k.sshInterface, node, ipvsYamlCmd)
+			err = k.execProxySync(node, ipvsYamlCmd)
 			if err != nil {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
@@ -105,7 +103,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string, t *token.Token) error {
 	logger.Info("start to copy kubeadm join config to node")
 	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := kubeadm.GetterJoinNodeKubeadmConfig(k.getKubeVersion(), k.cluster.GetVip(), cri.DefaultContainerdCRISocket, patches, *t)
+	data, err := kubeadm.GetterJoinNodeKubeadmConfig(k.getKubeVersion(), k.getVip(), cri.DefaultContainerdCRISocket, patches, *t)
 	if err != nil {
 		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
 	}
@@ -115,7 +113,7 @@ func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string, t *token.Token
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())
 	}
-	err = k.sshInterface.Copy(node, joinConfigPath, outConfigPath)
+	err = k.sshCopy(node, joinConfigPath, outConfigPath)
 	if err != nil {
 		return fmt.Errorf("copy config join kubeadm config error: %s", err.Error())
 	}
@@ -146,8 +144,8 @@ func (k *KubeadmRuntime) deleteNode(node string) error {
 		return err
 	}
 	//remove node
-	if len(k.cluster.GetMasterIPList()) > 0 {
-		cli, err := kubernetes.NewKubernetesClient(k.data.AdminFile(), k.cluster.GetMaster0IPAPIServer())
+	if len(k.getMasterIPList()) > 0 {
+		cli, err := kubernetes.NewKubernetesClient(k.data.AdminFile(), k.getMaster0IPAPIServer())
 		if err != nil {
 			return err
 		}

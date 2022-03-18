@@ -19,7 +19,6 @@ package runtime
 import (
 	"fmt"
 	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -43,7 +42,7 @@ func vlogToStr(vlog int) string {
 
 func (k *KubeadmRuntime) loadToken() error {
 	if k.token == nil {
-		data, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Token())
+		data, err := k.execToken(k.getMaster0IP())
 		if err != nil {
 			return err
 		}
@@ -99,8 +98,8 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 
 	cmds := map[CommandType]string{
 		InitMaster: fmt.Sprintf(InitMaster115Lower, initConfigPath),
-		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.cluster.GetMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getCertificateKey()),
-		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.cluster.GetVip(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
+		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getCertificateKey()),
+		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
 	}
 	//other version >= 1.15.x
 	if versionutil.Compare(version, kubeadm.V1150) {

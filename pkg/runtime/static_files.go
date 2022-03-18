@@ -29,7 +29,7 @@ var MasterStaticFiles = []*StaticFile{
 
 func (k *KubeadmRuntime) CopyStaticFilesToMasters() error {
 	logger.Info("start to copy static files to masters")
-	return k.CopyStaticFiles(k.cluster.GetMasterIPList())
+	return k.CopyStaticFiles(k.getMasterIPList())
 }
 
 func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
@@ -40,7 +40,7 @@ func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
 		for _, host := range nodes {
 			host := host
 			eg.Go(func() error {
-				err := k.sshInterface.CmdAsync(host, cmdLinkStatic)
+				err := k.sshCmdAsync(host, cmdLinkStatic)
 				if err != nil {
 					return fmt.Errorf("[%s] link static file failed, error:%s", host, err.Error())
 				}

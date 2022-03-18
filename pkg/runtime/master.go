@@ -18,37 +18,27 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/logger"
-)
-
-const (
-	AdminConf                = "admin.conf"
-	ControllerConf           = "controller-manager.conf"
-	SchedulerConf            = "scheduler.conf"
-	KubeletConf              = "kubelet.conf"
-	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
-	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 )
 
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 
-	err := k.registryAuth(k.cluster.GetMaster0IP())
+	err := k.registryAuth(k.getMaster0IP())
 	if err != nil {
 		return err
 	}
-	err = remote.BashSync(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.HostsAdd(k.cluster.GetMaster0IP(), k.cluster.GetAPIServerDomain()))
+	err = k.execHostsAppend(k.getMaster0IP(),k.getMaster0IP(),k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
 
 	cmdInit := k.Command(k.getKubeVersion(), InitMaster)
-	err = k.sshInterface.CmdAsync(k.cluster.GetMaster0IP(), cmdInit)
+	err = k.sshCmdAsync(k.getMaster0IP(), cmdInit)
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	err = k.sshInterface.CmdAsync(k.cluster.GetMaster0IP(), RemoteCopyKubeConfig)
+	err = k.copyMasterKubeConfig(k.getMaster0IP())
 	if err != nil {
 		return err
 	}

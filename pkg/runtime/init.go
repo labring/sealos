@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"github.com/fanux/sealos/pkg/cert"
 	"github.com/fanux/sealos/pkg/cri"
-	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -35,7 +33,7 @@ func (k *KubeadmRuntime) bashInit(nodes []string) error {
 	for _, node := range nodes {
 		node := node
 		eg.Go(func() error {
-			err := k.sshInterface.CmdAsync(node, k.envInterface.WrapperShell(node, k.bash.InitBash()))
+			err := k.execInit(node)
 			if err != nil {
 				return fmt.Errorf("exec init.sh failed %v", err)
 			}
@@ -46,13 +44,13 @@ func (k *KubeadmRuntime) bashInit(nodes []string) error {
 }
 
 func (k *KubeadmRuntime) BashInitOnMaster0() error {
-	return k.bashInit([]string{k.cluster.GetMaster0IP()})
+	return k.bashInit([]string{k.getMaster0IP()})
 }
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
 	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := kubeadm.GetterInitKubeadmConfigFromTypes(k.resources, k.cluster, cri.DefaultContainerdCRISocket, patches)
+	data, err := k.getInitKubeadmConfigFromTypes(k.resources, k.cluster, cri.DefaultContainerdCRISocket, patches)
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}
@@ -62,7 +60,7 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	if err != nil {
 		return fmt.Errorf("write config init kubeadm config error: %s", err.Error())
 	}
-	err = k.sshInterface.Copy(k.cluster.GetMaster0IP(), initConfigPath, outConfigPath)
+	err = k.sshCopy(k.getMaster0IP(), initConfigPath, outConfigPath)
 	if err != nil {
 		return fmt.Errorf("copy config init kubeadm config error: %s", err.Error())
 	}
@@ -71,28 +69,28 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 
 func (k *KubeadmRuntime) GenerateCert() error {
 	logger.Info("start to generator cert and copy to masters...")
-	hostName, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
+	hostName, err := k.execHostname(k.getMaster0IP())
 	if err != nil {
 		return err
 	}
 	err = cert.GenerateCert(
 		k.data.PkiPath(),
 		k.data.PkiEtcdPath(),
-		k.cluster.GetCertSANS(),
-		k.cluster.GetMaster0IP(),
+		k.getCertSANS(),
+		k.getMaster0IP(),
 		hostName,
-		k.cluster.GetServiceCIDR(),
-		k.cluster.GetDNSDomain(),
+		k.getServiceCIDR(),
+		k.getDNSDomain(),
 	)
 	if err != nil {
 		return fmt.Errorf("generate certs failed %v", err)
 	}
-	return k.sendNewCertAndKey([]string{k.cluster.GetMaster0IP()})
+	return k.sendNewCertAndKey([]string{k.getMaster0IP()})
 }
 
 func (k *KubeadmRuntime) CreateKubeConfig() error {
 	logger.Info("start to create kubeconfig...")
-	hostName, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
+	hostName, err := k.execHostname(k.getMaster0IP())
 	if err != nil {
 		return err
 	}
@@ -101,9 +99,8 @@ func (k *KubeadmRuntime) CreateKubeConfig() error {
 		BaseName: "ca",
 	}
 
-	controlPlaneEndpoint := fmt.Sprintf("https://%s:6443", k.cluster.GetAPIServerDomain())
 	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.data.EtcPath(),
-		certConfig, hostName, controlPlaneEndpoint, "kubernetes")
+		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
 	if err != nil {
 		return fmt.Errorf("generator kubeconfig failed %s", err)
 	}
