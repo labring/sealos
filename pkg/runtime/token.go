@@ -18,15 +18,16 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+	"strconv"
+	"strings"
+
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 	"k8s.io/apimachinery/pkg/util/json"
-	"path"
-	"strconv"
-	"strings"
 )
 
 type CommandType string

@@ -80,8 +80,6 @@ func GetterKubeadmAPIVersion(kubeVersion string) string {
 	return apiVersion
 }
 
-
-
 func GetterInitKubeadmConfig(k8sVersion, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri string, patch, sans []string) (string, error) {
 	config, err := kubeadms(patch)
 	if err != nil {

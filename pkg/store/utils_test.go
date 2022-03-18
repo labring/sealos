@@ -17,8 +17,9 @@ limitations under the License.
 package store
 
 import (
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 func Test_jsonUnmarshal(t *testing.T) {
@@ -32,8 +33,8 @@ func Test_jsonUnmarshal(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{
-			name:    "default",
-			args:    args{
+			name: "default",
+			args: args{
 				path: "/var/lib/sealos/resource/sha256:29490abb48c65e824ebc9cdee908e92b15c3e916a3bbcbc1f104af3114a1b5bf/kube/system.json",
 			},
 			wantErr: false,
@@ -46,9 +47,9 @@ func Test_jsonUnmarshal(t *testing.T) {
 				t.Errorf("jsonUnmarshal() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			t.Logf("%+v",got)
-			ts,_,err:=unstructured.NestedString(got,"CNI","Type")
-			t.Logf("%+v",ts)
+			t.Logf("%+v", got)
+			ts, _, _ := unstructured.NestedString(got, "CNI", "Type")
+			t.Logf("%+v", ts)
 		})
 	}
 }

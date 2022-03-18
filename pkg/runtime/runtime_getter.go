@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/remote"
 	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -120,10 +121,10 @@ func (k *KubeadmRuntime) execProxyString(ip, cmd string) (string, error) {
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {
-	return remote.BashToString(k.data, k.sshInterface, ip, k.ctl.Token())
+	return k.execProxyString(ip, k.ctl.Token())
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
-	return remote.BashToString(k.data, k.sshInterface, ip, k.ctl.Hostname())
+	return k.execProxyString(ip, k.ctl.Hostname())
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
 	return remote.BashSync(k.data, k.sshInterface, ip, k.ctl.HostsAdd(host, domain))
@@ -156,9 +157,4 @@ func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 	return k.sshInterface.Copy(host, srcFilePath, dstFilePath)
-}
-
-func (k *KubeadmRuntime) deleteStaticPodFile(host, name string) error {
-	removeStaticPod := fmt.Sprintf("rm -rf %s/%s.%s", contants.KubernetesEtcStaticPod, name, contants.StaticPodFileSuffix)
-	return k.sshCmdAsync(host, removeStaticPod)
 }

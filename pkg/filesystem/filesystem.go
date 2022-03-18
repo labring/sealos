@@ -113,7 +113,6 @@ func (f *FileSystem) MountResource() error {
 
 func (f *FileSystem) Clean() error {
 	return file.CleanFiles(f.data.Homedir(), f.work.Homedir())
-
 }
 
 func NewFilesystem(clusterName string) (Interface, error) {
@@ -211,8 +210,7 @@ func (f *FileSystem) mountRootfs(ipList []string) error {
 	return eg.Wait()
 }
 func (f *FileSystem) unmountRootfs(ipList []string) error {
-	r := v2.Rootfs(f.resources)
-	if r == nil {
+	if r := v2.Rootfs(f.resources); r == nil {
 		return fmt.Errorf("get rootfs error,pelase mount data to  filesystem")
 	}
 	clusterRootfsDir := f.data.Homedir()
@@ -228,8 +226,7 @@ func (f *FileSystem) unmountRootfs(ipList []string) error {
 		ip := IP
 		eg.Go(func() error {
 			SSH := ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
-			cmd := fmt.Sprintf("%s", rmRootfs)
-			if err := SSH.CmdAsync(ip, envProcessor.WrapperShell(ip, cmd)); err != nil {
+			if err := SSH.CmdAsync(ip, envProcessor.WrapperShell(ip, rmRootfs)); err != nil {
 				return err
 			}
 			return nil

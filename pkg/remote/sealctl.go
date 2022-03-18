@@ -18,9 +18,10 @@ package remote
 
 import (
 	"fmt"
+	"text/template"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-	"text/template"
 )
 
 type Sealctl interface {
@@ -33,7 +34,7 @@ type Sealctl interface {
 	RouteCheck(host string) string
 	RouteAdd(host, gateway string) string
 	RouteDelete(host, gateway string) string
-	StaticPod(vip,name, image string, masters []string) (string, error)
+	StaticPod(vip, name, image string, masters []string) (string, error)
 	Token() string
 }
 

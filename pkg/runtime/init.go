@@ -19,13 +19,14 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/cert"
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
-	"path"
 )
 
 func (k *KubeadmRuntime) bashInit(nodes []string) error {

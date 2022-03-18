@@ -3,9 +3,10 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
-	"path/filepath"
 )
 
 const (

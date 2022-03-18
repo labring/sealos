@@ -26,13 +26,12 @@ import (
 
 func TestInit_SetClusterArgs(t *testing.T) {
 	type fields struct {
-		cluster           *v2.Cluster
-		configs           []v2.Config
-		resources         []v2.Resource
-		hosts             []v2.ClusterHost
-		kubeadmBashSuffix string
-		dryRun            bool
-		withoutCNI        bool
+		cluster    *v2.Cluster
+		configs    []v2.Config
+		resources  []v2.Resource
+		hosts      []v2.ClusterHost
+		dryRun     bool
+		withoutCNI bool
 	}
 	type args struct {
 		args InitArgs
@@ -65,13 +64,13 @@ func TestInit_SetClusterArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Init{
-				cluster:       tt.fields.cluster,
-				configs:       tt.fields.configs,
-				resources:     tt.fields.resources,
-				hosts:         tt.fields.hosts,
-				dryRun:        tt.fields.dryRun,
-				withoutCNI:    tt.fields.withoutCNI,
-				args:          tt.args.args,
+				cluster:    tt.fields.cluster,
+				configs:    tt.fields.configs,
+				resources:  tt.fields.resources,
+				hosts:      tt.fields.hosts,
+				dryRun:     tt.fields.dryRun,
+				withoutCNI: tt.fields.withoutCNI,
+				args:       tt.args.args,
 			}
 			if err := r.SetClusterArgs(); (err != nil) != tt.wantErr {
 				t.Errorf("processCluster() error = %v, wantErr %v", err, tt.wantErr)

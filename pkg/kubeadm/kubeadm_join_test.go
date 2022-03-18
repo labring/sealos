@@ -17,8 +17,9 @@ limitations under the License.
 package kubeadm
 
 import (
-	"github.com/fanux/sealos/pkg/token"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/token"
 )
 
 func Test_join_DefaultConfig(t *testing.T) {
@@ -36,16 +37,16 @@ func Test_join_DefaultConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "default",
-			fields:  fields{
+			name: "default",
+			fields: fields{
 				KubeadmAPIVersion: "v1.22.0",
 				Master0:           "1.1.1.1",
 				//MasterIP:          "2.2.2.2",
-				CriSocket:         "/xxxx/cri",
-				VIP:               "10.97.2.1",
-				Token:             token.Token{
+				CriSocket: "/xxxx/cri",
+				VIP:       "10.97.2.1",
+				Token: token.Token{
 					JoinToken:                "xxxx",
-					DiscoveryTokenCaCertHash: []string{"aa","bb"},
+					DiscoveryTokenCaCertHash: []string{"aa", "bb"},
 					CertificateKey:           "cc",
 				},
 			},

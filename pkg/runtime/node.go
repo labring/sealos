@@ -19,6 +19,8 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/token"
@@ -28,7 +30,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/ssh"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"path"
 )
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {

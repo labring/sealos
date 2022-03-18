@@ -2,14 +2,15 @@ package runtime
 
 import (
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const (
-	AdminConf                = "admin.conf"
-	ControllerConf           = "controller-manager.conf"
-	SchedulerConf            = "scheduler.conf"
-	KubeletConf              = "kubelet.conf"
+	AdminConf      = "admin.conf"
+	ControllerConf = "controller-manager.conf"
+	SchedulerConf  = "scheduler.conf"
+	KubeletConf    = "kubelet.conf"
 )
 
 func (k *KubeadmRuntime) UpdateCert() error {

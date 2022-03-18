@@ -21,12 +21,11 @@ package ipvs
 import (
 	"errors"
 	"fmt"
+	"github.com/sealyun/lvscare/internal/glog"
 	"net"
 	"strings"
 	"sync"
 	"syscall"
-
-	"github.com/sealyun/lvscare/internal/glog"
 
 	libipvs "github.com/moby/ipvs"
 )

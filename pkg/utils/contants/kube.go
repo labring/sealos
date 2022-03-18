@@ -21,4 +21,3 @@ const (
 	KubernetesEtc          = "/etc/kubernetes"
 	KubernetesEtcPKI       = "/etc/kubernetes/pki"
 )
-

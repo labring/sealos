@@ -17,9 +17,10 @@ package checker
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"os"
 	"text/template"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

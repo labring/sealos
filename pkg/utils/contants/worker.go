@@ -39,8 +39,8 @@ func (d *worker) Homedir() string {
 	return filepath.Join(Homedir(), d.clusterName)
 }
 
-func (w *worker) Clusterfile() string {
-	return filepath.Join(w.Homedir(), DefaultClusterFileName)
+func (d *worker) Clusterfile() string {
+	return filepath.Join(d.Homedir(), DefaultClusterFileName)
 }
 
 func NewWork(clusterName string) Worker {

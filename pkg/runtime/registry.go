@@ -18,6 +18,7 @@ package runtime
 
 import (
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
@@ -41,8 +42,7 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 func (k *KubeadmRuntime) DeleteRegistry() error {
 	logger.Info("delete registry in master0...")
 	ip := k.getMaster0IP()
-	err := k.execCleanRegistry(ip)
-	if err != nil {
+	if err := k.execCleanRegistry(ip); err != nil {
 		return fmt.Errorf("exec clean-registry.sh failed %v", err)
 	}
 	return nil

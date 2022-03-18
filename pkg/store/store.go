@@ -19,10 +19,11 @@ package store
 import (
 	"errors"
 	"fmt"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"os"
 	"path"
 	"path/filepath"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"k8s.io/apimachinery/pkg/util/json"

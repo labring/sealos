@@ -18,6 +18,8 @@ package runtime
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/token"
@@ -26,7 +28,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-	"sync"
 )
 
 type KubeadmRuntime struct {
@@ -54,7 +55,6 @@ type RegistryConfig struct {
 }
 
 func (k *KubeadmRuntime) Init() error {
-
 	pipeline := []func() error{
 		k.BashInitOnMaster0,
 		k.ConfigInitKubeadmToMaster0,
