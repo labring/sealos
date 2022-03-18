@@ -23,6 +23,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"k8s.io/apimachinery/pkg/util/json"
 
@@ -59,23 +61,19 @@ func (s *store) Save(p *v1beta1.Resource) error {
 }
 
 func (s *store) tarGz(p *v1beta1.Resource) error {
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
-	err := collector.Download(p.Spec.Path, s.Data.TempPath())
+	err := collector.Download(p.Spec.Path, contants.TmpPath())
 	if err != nil {
 		return err
 	}
 
-	tarFileAbs := filepath.Join(s.Data.TempPath(), file.Filename(p.Spec.Path))
+	tarFileAbs := filepath.Join(contants.TmpPath(), file.Filename(p.Spec.Path))
 	defer func() {
 		if err = file.CleanFiles(tarFileAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())
 		}
 	}()
 	md5 := hash.FileMD5(tarFileAbs)
-	md5Dir := filepath.Join(s.Data.PackagePath(), md5)
+	md5Dir := filepath.Join(contants.ResourcePath(), md5)
 	err = file.Mkdir(md5Dir)
 	if err != nil {
 		return err
@@ -102,22 +100,18 @@ func (s *store) tarGz(p *v1beta1.Resource) error {
 	return nil
 }
 func (s *store) binary(p *v1beta1.Resource) error {
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
-	err := collector.Download(p.Spec.Path, s.Data.PackagePath())
+	err := collector.Download(p.Spec.Path, contants.ResourcePath())
 	if err != nil {
 		return err
 	}
-	fileNameAbs := filepath.Join(s.Data.PackagePath(), file.Filename(p.Spec.Path))
+	fileNameAbs := filepath.Join(contants.ResourcePath(), file.Filename(p.Spec.Path))
 	defer func() {
 		if err = file.CleanFiles(fileNameAbs); err != nil {
 			logger.Warn("failed to clean file: %s", err.Error())
 		}
 	}()
 	md5 := hash.FileMD5(fileNameAbs)
-	md5Abs := filepath.Join(s.Data.PackagePath(), md5)
+	md5Abs := filepath.Join(contants.ResourcePath(), md5)
 	_, err = file.CopySingleFile(fileNameAbs, md5Abs)
 	if err != nil {
 		return err
@@ -137,11 +131,7 @@ func (s *store) dir(p *v1beta1.Resource) error {
 	if err != nil {
 		return err
 	}
-	//con, err := collector.NewCollector(p.Spec.Path)
-	//if err != nil {
-	//	return err
-	//}
-	md5Dir := path.Join(s.Data.PackagePath(), digest.String())
+	md5Dir := path.Join(contants.ResourcePath(), digest.String())
 	err = collector.Download(p.Spec.Path, md5Dir)
 	if err != nil {
 		return err
@@ -160,26 +150,38 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 	if err != nil {
 		return err
 	}
-	if version, ok := metadata["version"]; ok {
+
+	if version, ok, _ := unstructured.NestedString(metadata, "version"); ok {
 		p.Status.Version = fmt.Sprintf("%+v", version)
 	} else {
 		p.Status.Version = v1beta1.DefaultVersion
 	}
 
-	if arch, ok := metadata["arch"]; ok {
+	if arch, ok, _ := unstructured.NestedString(metadata, "arch"); ok {
 		p.Status.Arch = v1beta1.Arch(fmt.Sprintf("%+v", arch))
 	} else {
 		p.Status.Arch = v1beta1.AMD64
 	}
 
-	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.SystemFile)
+	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.DefaultSystemFile)
 	if file.IsExist(systemPath) {
-		systemData, err := file.ReadAll(systemPath)
+		systemData, err := jsonUnmarshal(systemPath)
 		if err != nil {
 			return err
 		}
 		if systemData != nil {
-			p.Status.Metadata.Raw = systemData
+			p.Status.Metadata = make(map[string]string)
+			if lvscare, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
+				p.Status.Metadata[v1beta1.DefaultVarLvscare] = lvscare
+			} else {
+				p.Status.Metadata[v1beta1.DefaultVarLvscare] = contants.DefaultLvsCareImage
+			}
+
+			if cni, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
+				p.Status.Metadata[v1beta1.DefaultVarCNIType] = cni
+			} else {
+				p.Status.Metadata[v1beta1.DefaultVarCNIType] = contants.DefaultCNI
+			}
 		}
 	}
 	defaultPath := filepath.Join(md5Dir, contants.DataDirName, "scripts", "default.json")

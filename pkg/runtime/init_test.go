@@ -14,18 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package runtime
 
 import (
-	"bytes"
-	"text/template"
+	"testing"
 )
 
-func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {
-	var out bytes.Buffer
-	err := tmpl.Execute(&out, data)
-	if err != nil {
-		return "", err
+func TestInit(t *testing.T) {
+	tests := []struct {
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "default",
+			wantErr: false,
+		},
 	}
-	return out.String(), nil
+	//logger.Cfg(true,false)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ForceDelete = true
+			k, _ := NewDefaultRuntime("default")
+			if err := k.Init(); (err != nil) != tt.wantErr {
+				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
 }

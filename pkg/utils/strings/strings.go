@@ -186,3 +186,12 @@ func RemoveStrSlice(src, dst []string) []string {
 	}
 	return ipList
 }
+
+func SliceRemoveStr(ss []string, s string) (result []string) {
+	for _, v := range ss {
+		if v != s {
+			result = append(result, v)
+		}
+	}
+	return
+}

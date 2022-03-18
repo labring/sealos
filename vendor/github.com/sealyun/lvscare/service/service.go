@@ -3,11 +3,10 @@ package service
 import (
 	"errors"
 	"fmt"
+	"github.com/sealyun/lvscare/internal/glog"
 	"net"
 	"strconv"
 	"syscall"
-
-	"github.com/sealyun/lvscare/internal/glog"
 
 	"github.com/sealyun/lvscare/internal/ipvs"
 	"github.com/sealyun/lvscare/utils"

@@ -3,13 +3,12 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/sealyun/lvscare/internal/ipvs"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/sealyun/lvscare/internal/glog"
-	"github.com/sealyun/lvscare/internal/ipvs"
 )
 
 //SplitServer is

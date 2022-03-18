@@ -14,12 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package sealos
+package contants
 
-import (
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+const (
+	KubernetesEtcStaticPod = "/etc/kubernetes/manifests"
+	KubernetesEtc          = "/etc/kubernetes"
+	KubernetesEtcPKI       = "/etc/kubernetes/pki"
 )
-
-type Client interface {
-	LoadCluster() (*v2.Cluster, error)
-}

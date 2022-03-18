@@ -50,14 +50,14 @@ func (h *hostname) toString() string {
 func appendToFile(filePath string, hostname *hostname) {
 	fp, err := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		logger.Warn("failed opening file %s : %s\n", filePath, err)
+		logger.Warn("failed opening file %s : %s", filePath, err)
 		return
 	}
 	defer fp.Close()
 
 	_, err = fp.WriteString(hostname.toString())
 	if err != nil {
-		logger.Warn("failed append string: %s: %s\n", filePath, err)
+		logger.Warn("failed append string: %s: %s", filePath, err)
 		return
 	}
 }
@@ -70,7 +70,7 @@ func (h *HostFile) ParseHostFile(path string) (*linkedhashmap.Map, error) {
 
 	fp, fpErr := os.Open(path)
 	if fpErr != nil {
-		logger.Warn("open file '%s' failed\n", path)
+		logger.Warn("open file '%s' failed", path)
 		return nil, fmt.Errorf("open file '%s' failed ", path)
 	}
 	defer fp.Close()
@@ -156,11 +156,28 @@ func (h *HostFile) DeleteDomain(domain string) {
 	}
 	_, found := currHostsMap.Get(domain)
 	if currHostsMap == nil || !found {
-		logger.Warn("domain %s not exist\n", domain)
+		logger.Warn("domain %s not exist", domain)
 		return
 	}
 	currHostsMap.Remove(domain)
 	h.writeToFile(currHostsMap, h.Path)
+}
+
+func (h *HostFile) HasDomain(domain string) bool {
+	if domain == "" {
+		return false
+	}
+
+	currHostsMap, parseErr := h.ParseHostFile(h.Path)
+	if parseErr != nil {
+		logger.Warn("parse file failed" + parseErr.Error())
+		return false
+	}
+	_, found := currHostsMap.Get(domain)
+	if currHostsMap == nil || !found {
+		return false
+	}
+	return true
 }
 
 func (h *HostFile) ListCurrentHosts() {

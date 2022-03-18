@@ -20,6 +20,7 @@ import "path/filepath"
 
 type Worker interface {
 	Clusterfile() string
+	Homedir() string
 }
 
 type worker struct {
@@ -34,8 +35,12 @@ func Homedir() string {
 	return filepath.Join(GetHomeDir(), ".sealos")
 }
 
-func (w *worker) Clusterfile() string {
-	return filepath.Join(Homedir(), w.clusterName, DefaultClusterFileName)
+func (d *worker) Homedir() string {
+	return filepath.Join(Homedir(), d.clusterName)
+}
+
+func (d *worker) Clusterfile() string {
+	return filepath.Join(d.Homedir(), DefaultClusterFileName)
 }
 
 func NewWork(clusterName string) Worker {

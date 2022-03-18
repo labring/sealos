@@ -35,11 +35,13 @@ discovery:
     apiServerEndpoint: {{.VIP}}:6443
     {{end -}}
     token: {{.JoinToken}}
-	certificateKey: {{.CertificateKey}}
+    certificateKey: {{.CertificateKey}}
+	{{- if .DiscoveryTokenCaCertHash}}
     caCertHashes:
-    {{range .discoveryTokenCaCertHash -}}
+    {{range .DiscoveryTokenCaCertHash -}}
     - {{.}}
     {{end -}}
+	{{end -}}
   timeout: 5m0s
 {{- if .MasterIP }}
 controlPlane:

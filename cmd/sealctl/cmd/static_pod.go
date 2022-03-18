@@ -40,7 +40,7 @@ func NewStaticPodCmd() *cobra.Command {
 	}
 	// check route for host
 	cmd.AddCommand(NewLvscareCmd())
-	cmd.PersistentFlags().StringVar(&staticPodPath, "path", "/etc/kubernetes/manifests", "default kubernetes static pod path")
+	cmd.PersistentFlags().StringVar(&staticPodPath, "path", contants.KubernetesEtcStaticPod, "default kubernetes static pod path")
 	return cmd
 }
 
@@ -58,7 +58,7 @@ func NewLvscareCmd() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			fileName := fmt.Sprintf("%s.yaml", name)
+			fileName := fmt.Sprintf("%s.%s", name, contants.StaticPodFileSuffix)
 			yaml, err := ipvs.LvsStaticPodYaml(vip, masters, image, name)
 			if err != nil {
 				logger.Error(err)

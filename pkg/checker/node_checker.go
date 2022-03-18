@@ -20,6 +20,8 @@ import (
 	"os"
 	"text/template"
 
+	"github.com/fanux/sealos/pkg/utils/contants"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/fanux/sealos/pkg/client-go/kubernetes"
@@ -49,7 +51,8 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	// checker if all the node is ready
-	c, err := kubernetes.NewKubernetesClient("")
+	data := contants.NewData(cluster.Name)
+	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), cluster.GetMaster0IPAPIServer())
 	if err != nil {
 		return err
 	}

@@ -55,11 +55,40 @@ type SSH struct {
 	LocalAddress *[]net.Addr
 }
 
-func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
+func NewSSHClient(ssh *v2.ClusterSSH, isStdout bool) Interface {
+	if ssh.User == "" {
+		ssh.User = v2.DefaultUserRoot
+	}
 	address, err := iputils.IsLocalHostAddrs()
 	if err != nil {
 		logger.Warn("failed to get local address, %v", err)
 	}
+	return &SSH{
+		isStdout:     isStdout,
+		User:         ssh.User,
+		Password:     ssh.Passwd,
+		PkFile:       ssh.Pk,
+		PkPassword:   ssh.PkPasswd,
+		LocalAddress: address,
+	}
+}
+
+func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
+	var (
+		ipList []string
+	)
+	address, err := iputils.IsLocalHostAddrs()
+	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
+	if err != nil {
+		logger.Warn("failed to get local address, %v", err)
+	}
+	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
+
+	err = WaitSSHReady(sshClient, 6, ipList...)
+	if err != nil {
+		return nil, err
+	}
+
 	return &SSH{
 		isStdout:     isStdout,
 		User:         cluster.Spec.SSH.User,
@@ -67,7 +96,7 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) Interface {
 		PkFile:       cluster.Spec.SSH.Pk,
 		PkPassword:   cluster.Spec.SSH.PkPasswd,
 		LocalAddress: address,
-	}
+	}, nil
 }
 
 type Client struct {

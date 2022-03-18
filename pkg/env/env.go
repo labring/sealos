@@ -53,7 +53,7 @@ func (p *processor) WrapperShell(host, shell string) string {
 		case []string:
 			env = fmt.Sprintf("%s%s=(%s) ", env, k, strings.Join(value, " "))
 		case string:
-			env = fmt.Sprintf("%s%s=%s ", env, k, value)
+			env = fmt.Sprintf("%s%s=\"%s\" ", env, k, value)
 		}
 	}
 	if env == "" {

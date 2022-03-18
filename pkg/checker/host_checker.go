@@ -45,7 +45,10 @@ func NewHostChecker() Interface {
 func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {
 	hostnameList := map[string]bool{}
 	for _, ip := range ipList {
-		s := ssh.NewSSHByCluster(cluster, false)
+		s, err := ssh.NewSSHByCluster(cluster, false)
+		if err != nil {
+			return fmt.Errorf("checker: failed to get host %s hostname, %v", ip, err)
+		}
 		hostname, err := s.CmdToString(ip, "hostname", "")
 		if err != nil {
 			return fmt.Errorf("checker: failed to get host %s hostname, %v", ip, err)
@@ -61,7 +64,10 @@ func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {
 //Check whether the node time is synchronized
 func checkTimeSync(cluster *v2.Cluster, ipList []string) error {
 	for _, ip := range ipList {
-		s := ssh.NewSSHByCluster(cluster, false)
+		s, err := ssh.NewSSHByCluster(cluster, false)
+		if err != nil {
+			return fmt.Errorf("checker: failed to get host %s hostname, %v", ip, err)
+		}
 		timeStamp, err := s.CmdToString(ip, "date +%s", "")
 		if err != nil {
 			return fmt.Errorf("checker: failed to get %s timestamp, %v", ip, err)

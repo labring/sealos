@@ -89,6 +89,9 @@ func processTokenList(data string) BootstrapTokens {
 			if ex < t {
 				continue
 			}
+			if len(token.Usages) == 0 || len(token.Groups) == 0 {
+				continue
+			}
 		}
 		result = append(result, token)
 	}
