@@ -33,7 +33,7 @@ type Sealctl interface {
 	RouteCheck(host string) string
 	RouteAdd(host, gateway string) string
 	RouteDelete(host, gateway string) string
-	StaticPod(vip, image string, masters []string) (string, error)
+	StaticPod(vip,name, image string, masters []string) (string, error)
 	Token() string
 }
 
@@ -106,14 +106,15 @@ func (s *sealctl) RouteDelete(host, gateway string) string {
 	return fmt.Sprintf(routeDeleteCommandFmt, host, gateway)
 }
 
-func (s *sealctl) StaticPod(vip, image string, masters []string) (string, error) {
+func (s *sealctl) StaticPod(vip, name, image string, masters []string) (string, error) {
 	var staticPodIPVSCommandTemplate = template.Must(template.New("lvscare").Parse(`` +
-		`static-pod lvscare --vip {{.vip}} --image {{.image}}  {{range $h := .masters}}--masters  {{$h}}{{end}}`,
+		`static-pod lvscare --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}}--masters  {{$h}}{{end}}`,
 	))
 	data := map[string]interface{}{
 		"vip":     vip,
 		"image":   image,
 		"masters": masters,
+		"name":    name,
 	}
 	return renderTemplate(staticPodIPVSCommandTemplate, data)
 }

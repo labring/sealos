@@ -18,12 +18,16 @@ package runtime
 
 import (
 	"context"
-	"errors"
+	e "errors"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cert"
+	"github.com/fanux/sealos/pkg/client-go/kubernetes"
 	"github.com/fanux/sealos/pkg/utils/confirm"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
+	v12 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var ForceDelete bool
@@ -40,7 +44,7 @@ func (k *KubeadmRuntime) confirmDeleteNodes() error {
 		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
 			return err
 		} else if !pass {
-			return errors.New(cancel)
+			return e.New(cancel)
 		}
 	}
 	return nil
@@ -87,13 +91,13 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 }
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
-	absKubeFile := fmt.Sprintf("%s/%s", cert.KubernetesDir, kubeFile)
+	absKubeFile := fmt.Sprintf("%s/%s", contants.KubernetesEtc, kubeFile)
 	sealerKubeFile := fmt.Sprintf("%s/%s", k.data.EtcPath(), kubeFile)
 	return k.sendFileToHosts(hosts, sealerKubeFile, absKubeFile)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
-	return k.sendFileToHosts(hosts, k.data.PkiPath(), cert.KubeDefaultCertPath)
+	return k.sendFileToHosts(hosts, k.data.PkiPath(), contants.KubernetesEtcPKI)
 }
 
 func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
@@ -108,4 +112,38 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 		})
 	}
 	return eg.Wait()
+}
+
+func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
+	cli, err := kubernetes.NewKubernetesClient(k.data.AdminFile(), k.getMaster0IPAPIServer())
+	if err != nil {
+		return err
+	}
+	ctx := context.Background()
+	nodeList, err := cli.Kubernetes().CoreV1().Nodes().List(ctx, v1.ListOptions{})
+	if err != nil {
+		return err
+	}
+	var nodeType *v12.Node
+	for _, n := range nodeList.Items {
+		for _, addr := range n.Status.Addresses {
+			if addr.Type == v12.NodeInternalIP && addr.Address == ip {
+				nodeType = &n
+			}
+		}
+	}
+
+	if nodeType == nil {
+		logger.Warn("not find target delete node ip: %s", ip)
+		return nil
+	}
+	deletePropagation := v1.DeletePropagationBackground
+	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, nodeType.Name, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			logger.Warn("not find target delete node ip: %s", ip)
+		}
+		return err
+	}
+	return nil
 }

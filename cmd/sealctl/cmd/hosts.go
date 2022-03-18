@@ -74,8 +74,10 @@ func NewHostsAddCmd() *cobra.Command {
 			hf := &hosts.HostFile{Path: hostsPath}
 			if hf.HasDomain(domain) {
 				hf.DeleteDomain(domain)
+				logger.Info("domain %s delete success", domain)
 			}
 			hf.AppendHost(domain, ip)
+			logger.Info("domain %s:%s append success", domain, ip)
 		},
 	}
 	cmd.Flags().StringVar(&ip, "ip", "", "ip address")
@@ -97,6 +99,7 @@ func NewHostsDeleteCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			hf := &hosts.HostFile{Path: hostsPath}
 			hf.DeleteDomain(domain)
+			logger.Info("domain %s delete success", domain)
 		},
 	}
 	cmd.Flags().StringVar(&domain, "domain", "", "domain address")

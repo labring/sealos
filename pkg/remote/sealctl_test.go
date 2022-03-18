@@ -17,6 +17,7 @@ limitations under the License.
 package remote
 
 import (
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"testing"
 )
 
@@ -305,7 +306,7 @@ func Test_sealctl_StaticPod(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := &sealctl{}
-			got, err := s.StaticPod(tt.args.vip, tt.args.image, tt.args.masters)
+			got, err := s.StaticPod(tt.args.vip,contants.LvsCareStaticPodName ,tt.args.image, tt.args.masters)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("StaticPod() error = %v, wantErr %v", err, tt.wantErr)
 				return

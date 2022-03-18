@@ -17,9 +17,11 @@ limitations under the License.
 package runtime
 
 import (
+	"fmt"
 	"github.com/fanux/sealos/pkg/kubeadm"
 	"github.com/fanux/sealos/pkg/remote"
 	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/contants"
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -34,8 +36,20 @@ func (k *KubeadmRuntime) getVip() string {
 	return k.cluster.GetVip()
 }
 
+func (k *KubeadmRuntime) getVipAndPort() string {
+	return fmt.Sprintf("%s:6443", k.getVip())
+}
+
 func (k *KubeadmRuntime) getMasterIPList() []string {
 	return k.cluster.GetMasterIPList()
+}
+
+func (k *KubeadmRuntime) getMasterIPListAndPort() []string {
+	masters := make([]string, 0)
+	for _, master := range k.getMasterIPList() {
+		masters = append(masters, fmt.Sprintf("%s:6443", master))
+	}
+	return masters
 }
 
 func (k *KubeadmRuntime) getNodeIPList() []string {
@@ -63,6 +77,27 @@ func (k *KubeadmRuntime) getServiceCIDR() string {
 }
 func (k *KubeadmRuntime) getDNSDomain() string {
 	return k.cluster.GetDNSDomain()
+}
+
+func (k *KubeadmRuntime) getLvscareImage() string {
+	return k.resources.Status.Metadata[v1.DefaultVarLvscare]
+}
+
+func (k *KubeadmRuntime) getIPVSCmd(masters []string) (string, error) {
+	ipvsCmd, err := k.ctl.IPVS(k.getVipAndPort(), masters)
+	if err != nil {
+		return "", fmt.Errorf("get ipvs cmd on once module failed %v", err)
+	}
+	return ipvsCmd, err
+}
+
+func (k *KubeadmRuntime) getIPVSYamlCmd(masters []string) (string, error) {
+	ipvsYamlCmd, err := k.ctl.StaticPod(k.getVip(), contants.LvsCareStaticPodName, k.getLvscareImage(), masters)
+	if err != nil {
+		return "", fmt.Errorf("get ipvs static pod cmd failed %v", err)
+	}
+
+	return ipvsYamlCmd, err
 }
 
 func (k *KubeadmRuntime) getInitKubeadmConfigFromTypes(resource *v1.Resource, cluster *v1.Cluster, cri string, patch []string) (string, error) {
@@ -121,4 +156,9 @@ func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 	return k.sshInterface.Copy(host, srcFilePath, dstFilePath)
+}
+
+func (k *KubeadmRuntime) deleteStaticPodFile(host, name string) error {
+	removeStaticPod := fmt.Sprintf("rm -rf %s/%s.%s", contants.KubernetesEtcStaticPod, name, contants.StaticPodFileSuffix)
+	return k.sshCmdAsync(host, removeStaticPod)
 }

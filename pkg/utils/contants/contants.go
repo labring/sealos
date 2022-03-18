@@ -20,6 +20,7 @@ import (
 
 const (
 	LvsCareStaticPodName = "kube-sealyun-lvscare"
+	StaticPodFileSuffix  = "yaml"
 	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
 	DefaultCNI           = "calico"
 )

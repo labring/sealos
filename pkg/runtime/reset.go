@@ -11,6 +11,7 @@ const (
 	RemoveKubeConfig        = "rm -rf .kube"
 	RemoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
 modprobe -r ipip  && lsmod && \
+rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
 rm -rf /var/lib/etcd && rm -rf /var/etcd 
 `
