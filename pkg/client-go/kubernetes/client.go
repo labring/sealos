@@ -43,8 +43,8 @@ type kubernetesClient struct {
 }
 
 // NewKubernetesClient creates a KubernetesClient
-func NewKubernetesClient(kubeconfig string) (Client, error) {
-	config := new(rest.Config)
+func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
+	var config *rest.Config
 	var err error
 	if config == nil {
 		config, err = rest.InClusterConfig()
@@ -52,7 +52,7 @@ func NewKubernetesClient(kubeconfig string) (Client, error) {
 			if kubeconfig == "" {
 				kubeconfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
 			}
-			config, err = clientcmd.BuildConfigFromFlags("", kubeconfig)
+			config, err = clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
 			if err != nil {
 				return nil, err
 			}

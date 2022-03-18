@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package remote
 
 import (
 	"fmt"
@@ -126,10 +126,10 @@ func NewSealctl() Sealctl {
 	return &sealctl{}
 }
 
-func RemoteBashToString(data contants.Data, sshInterface ssh.Interface, host, cmd string) (string, error) {
+func BashToString(data contants.Data, sshInterface ssh.Interface, host, cmd string) (string, error) {
 	return sshInterface.CmdToString(host, fmt.Sprintf("%s %s", data.KubeSealctlPath(), cmd), "")
 }
 
-func RemoteBashSync(data contants.Data, sshInterface ssh.Interface, host, cmd string) error {
+func BashSync(data contants.Data, sshInterface ssh.Interface, host, cmd string) error {
 	return sshInterface.CmdAsync(host, fmt.Sprintf("%s %s", data.KubeSealctlPath(), cmd))
 }

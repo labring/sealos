@@ -17,19 +17,15 @@ limitations under the License.
 package runtime
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cert"
-	"github.com/fanux/sealos/pkg/cmd"
+	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/token"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/confirm"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-	"golang.org/x/sync/errgroup"
 	"sync"
 )
 
@@ -42,9 +38,10 @@ type KubeadmRuntime struct {
 	work         contants.Worker
 	bash         contants.Bash
 	sshInterface ssh.Interface
+	envInterface env.Interface
 	registry     RegistryConfig
 	token        *token.Token
-	ctl          cmd.Sealctl
+	ctl          remote.Sealctl
 }
 
 type RegistryConfig struct {
@@ -61,8 +58,7 @@ func (k *KubeadmRuntime) Init() error {
 	pipeline := []func() error{
 		k.BashInitOnMaster0,
 		k.ConfigInitKubeadmToMaster0,
-		k.GenerateCert,
-		k.CreateKubeConfig,
+		k.UpdateCert,
 		k.CopyStaticFilesToMasters,
 		k.ApplyRegistry,
 		k.InitMaster0,
@@ -74,6 +70,8 @@ func (k *KubeadmRuntime) Init() error {
 type Interface interface {
 	Init() error
 	Reset() error
+	JoinNodes(newNodesIPList []string) error
+	DeleteNodes(nodeIPList []string) error
 }
 
 func (k *KubeadmRuntime) Reset() error {
@@ -84,86 +82,23 @@ func (k *KubeadmRuntime) Reset() error {
 	return k.reset()
 }
 
-var ForceDelete bool
-
-func (k *KubeadmRuntime) confirmDeleteNodes() error {
-	if !ForceDelete {
-		prompt := "Are you sure to delete these nodes?"
-		cancel := "You have canceled to delete these nodes !"
-		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
-			return err
-		} else if !pass {
-			return errors.New(cancel)
-		}
+func (k *KubeadmRuntime) JoinNodes(newNodesIPList []string) error {
+	if len(newNodesIPList) != 0 {
+		logger.Info("%s will be added as worker", newNodesIPList)
 	}
-	return nil
-}
-
-func (k *KubeadmRuntime) pipeline(name string, pipeline []func() error) error {
-	for _, f := range pipeline {
-		if err := f(); err != nil {
-			return fmt.Errorf("failed to %s %v", name, err)
-		}
+	if err := k.joinNodes(newNodesIPList); err != nil {
+		return err
 	}
-	return nil
+	return k.copyKubeConfig(newNodesIPList)
 }
-
-func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...string) error {
-	for _, f := range files {
-		if err := k.sendKubeConfigFile(masters, f); err != nil {
+func (k *KubeadmRuntime) DeleteNodes(nodesIPList []string) error {
+	if len(nodesIPList) != 0 {
+		logger.Info("worker %s will be deleted", nodesIPList)
+		if err := k.confirmDeleteNodes(); err != nil {
 			return err
 		}
 	}
-	if k.ReplaceKubeConfigV1991V1992(masters) {
-		logger.Info("set kubernetes v1.19.1 v1.19.2 kube config")
-	}
-	return nil
-}
-
-func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.resources.Status.Version
-}
-func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
-	version := k.getKubeVersion()
-	const V1991 = "v1.19.1"
-	const V1992 = "v1.19.2"
-	const RemoteReplaceKubeConfig = `grep -qF "apiserver.cluster.local" %s  && sed -i 's/apiserver.cluster.local/%s/' %s && sed -i 's/apiserver.cluster.local/%s/' %s`
-	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
-	if version == V1991 || version == V1992 {
-		for _, v := range masters {
-			replaceCmd := fmt.Sprintf(RemoteReplaceKubeConfig, KUBESCHEDULERCONFIGFILE, v, KUBECONTROLLERCONFIGFILE, v, KUBESCHEDULERCONFIGFILE)
-			if err := k.sshInterface.CmdAsync(v, replaceCmd); err != nil {
-				logger.Info("failed to replace kube config on %s:%v ", v, err)
-				return false
-			}
-		}
-		return true
-	}
-	return false
-}
-
-func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
-	absKubeFile := fmt.Sprintf("%s/%s", cert.KubernetesDir, kubeFile)
-	sealerKubeFile := fmt.Sprintf("%s/%s", k.data.EtcPath(), kubeFile)
-	return k.sendFileToHosts(hosts, sealerKubeFile, absKubeFile)
-}
-
-func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
-	return k.sendFileToHosts(hosts, k.data.PkiPath(), cert.KubeDefaultCertPath)
-}
-
-func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range Hosts {
-		node := node
-		eg.Go(func() error {
-			if err := k.sshInterface.Copy(node, src, dst); err != nil {
-				return fmt.Errorf("send file failed %v", err)
-			}
-			return nil
-		})
-	}
-	return eg.Wait()
+	return k.deleteNodes(nodesIPList)
 }
 
 func newKubeadmRuntime(clusterName string) (Interface, error) {
@@ -189,8 +124,9 @@ func newKubeadmRuntime(clusterName string) (Interface, error) {
 		work:         work,
 		bash:         contants.NewBash(clusterName, r.Status.Data),
 		sshInterface: ssh.NewSSHClient(&clusters[0].Spec.SSH, true),
+		envInterface: env.NewEnvProcessor(&clusters[0]),
 		registry:     getRegistry(&clusters[0]),
-		ctl:          cmd.NewSealctl(),
+		ctl:          remote.NewSealctl(),
 	}
 
 	if logger.IsDebugModel() {

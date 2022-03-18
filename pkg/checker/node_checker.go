@@ -17,6 +17,7 @@ package checker
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"os"
 	"text/template"
 
@@ -49,7 +50,8 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	// checker if all the node is ready
-	c, err := kubernetes.NewKubernetesClient("")
+	data := contants.NewData(cluster.Name)
+	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), cluster.GetMaster0IPAPIServer())
 	if err != nil {
 		return err
 	}

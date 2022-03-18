@@ -17,8 +17,7 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/cmd"
-	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
 )
@@ -70,16 +69,15 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 		RemoveKubeConfig); err != nil {
 		return err
 	}
-	envProcessor := env.NewEnvProcessor(k.cluster)
-	err := k.sshInterface.CmdAsync(node, envProcessor.WrapperShell(node, k.bash.CleanBash()))
+	err := k.sshInterface.CmdAsync(node, k.envInterface.WrapperShell(node, k.bash.CleanBash()))
 	if err != nil {
 		return fmt.Errorf("exec clean.sh failed %v", err)
 	}
-	err = cmd.RemoteBashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.registry.Domain))
+	err = remote.BashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.registry.Domain))
 	if err != nil {
 		return fmt.Errorf("delete registry hosts failed %v", err)
 	}
-	err = cmd.RemoteBashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.cluster.GetAPIServerDomain()))
+	err = remote.BashSync(k.data, k.sshInterface, node, k.ctl.HostsDelete(k.cluster.GetAPIServerDomain()))
 	if err != nil {
 		return fmt.Errorf("delete apiserver hosts failed %v", err)
 	}

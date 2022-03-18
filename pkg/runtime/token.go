@@ -18,8 +18,8 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/cmd"
 	"github.com/fanux/sealos/pkg/kubeadm"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -43,7 +43,7 @@ func vlogToStr(vlog int) string {
 
 func (k *KubeadmRuntime) loadToken() error {
 	if k.token == nil {
-		data, err := cmd.RemoteBashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Token())
+		data, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Token())
 		if err != nil {
 			return err
 		}

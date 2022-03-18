@@ -18,7 +18,7 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/cmd"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
@@ -34,16 +34,16 @@ const (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 
-	if err := k.SendJoinMasterKubeConfigs([]string{k.cluster.GetMaster0IP()}, AdminConf, ControllerConf, SchedulerConf, KubeletConf); err != nil {
+	err := k.registryAuth(k.cluster.GetMaster0IP())
+	if err != nil {
 		return err
 	}
-	err := cmd.RemoteBashSync(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.HostsAdd(k.cluster.GetMaster0IP(), k.cluster.GetAPIServerDomain()))
+	err = remote.BashSync(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.HostsAdd(k.cluster.GetMaster0IP(), k.cluster.GetAPIServerDomain()))
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
 
 	cmdInit := k.Command(k.getKubeVersion(), InitMaster)
-
 	err = k.sshInterface.CmdAsync(k.cluster.GetMaster0IP(), cmdInit)
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())

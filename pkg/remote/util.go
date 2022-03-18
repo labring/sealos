@@ -14,14 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package remote
 
-import "path"
+import (
+	"bytes"
+	"text/template"
+)
 
-const RemoteCopyKubeConfig = `rm -rf .kube/config && mkdir -p  .kube && cp /etc/kubernetes/admin.conf .kube/config`
-
-func (k *KubeadmRuntime) copyKubeConfig(hosts []string) error {
-	srcKubeFile:=k.data.AdminFile()
-	desKubeFile:=path.Join(".kube", "config")
-	return k.sendFileToHosts(hosts, srcKubeFile, desKubeFile)
+func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {
+	var out bytes.Buffer
+	err := tmpl.Execute(&out, data)
+	if err != nil {
+		return "", err
+	}
+	return out.String(), nil
 }

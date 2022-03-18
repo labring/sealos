@@ -20,10 +20,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/fanux/sealos/pkg/cert"
-	"github.com/fanux/sealos/pkg/cmd"
 	"github.com/fanux/sealos/pkg/cri"
-	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/kubeadm"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -32,12 +31,11 @@ import (
 )
 
 func (k *KubeadmRuntime) bashInit(nodes []string) error {
-	envProcessor := env.NewEnvProcessor(k.cluster)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range nodes {
 		node := node
 		eg.Go(func() error {
-			err := k.sshInterface.CmdAsync(node, envProcessor.WrapperShell(node, k.bash.InitBash()))
+			err := k.sshInterface.CmdAsync(node, k.envInterface.WrapperShell(node, k.bash.InitBash()))
 			if err != nil {
 				return fmt.Errorf("exec init.sh failed %v", err)
 			}
@@ -73,7 +71,7 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 
 func (k *KubeadmRuntime) GenerateCert() error {
 	logger.Info("start to generator cert and copy to masters...")
-	hostName, err := cmd.RemoteBashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
+	hostName, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
 	if err != nil {
 		return err
 	}
@@ -94,7 +92,7 @@ func (k *KubeadmRuntime) GenerateCert() error {
 
 func (k *KubeadmRuntime) CreateKubeConfig() error {
 	logger.Info("start to create kubeconfig...")
-	hostName, err := cmd.RemoteBashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
+	hostName, err := remote.BashToString(k.data, k.sshInterface, k.cluster.GetMaster0IP(), k.ctl.Hostname())
 	if err != nil {
 		return err
 	}

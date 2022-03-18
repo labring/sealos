@@ -18,8 +18,7 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/cmd"
-	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
@@ -31,30 +30,35 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
-	err = cmd.RemoteBashSync(k.data, k.sshInterface, k.registry.IP, k.ctl.HostsAdd(k.registry.IP, k.registry.Domain))
-	if err != nil {
-		return fmt.Errorf("add registry hosts failed %v", err)
-	}
-	envProcessor := env.NewEnvProcessor(k.cluster)
 	ip := k.cluster.GetMaster0IP()
-	err = k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.InitRegistryBash()))
+	err = k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.InitRegistryBash()))
 	if err != nil {
 		return fmt.Errorf("exec registry.sh failed %v", err)
 	}
-	err = k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.AuthBash()))
-	if err != nil {
-		return fmt.Errorf("exec auth.sh failed %v", err)
-	}
+
 	return nil
 }
 
 func (k *KubeadmRuntime) DeleteRegistry() error {
 	logger.Info("delete registry in master0...")
-	envProcessor := env.NewEnvProcessor(k.cluster)
 	ip := k.cluster.GetMaster0IP()
-	err := k.sshInterface.CmdAsync(ip, envProcessor.WrapperShell(ip, k.bash.CleanRegistryBash()))
+	err := k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.CleanRegistryBash()))
 	if err != nil {
 		return fmt.Errorf("exec clean-registry.sh failed %v", err)
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) registryAuth(ip string) error {
+	logger.Info("registry auth in node %s", ip)
+	err := remote.BashSync(k.data, k.sshInterface, ip, k.ctl.HostsAdd(k.registry.IP, k.registry.Domain))
+	if err != nil {
+		return fmt.Errorf("add registry hosts failed %v", err)
+	}
+
+	err = k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.AuthBash()))
+	if err != nil {
+		return fmt.Errorf("exec auth.sh failed %v", err)
 	}
 	return nil
 }

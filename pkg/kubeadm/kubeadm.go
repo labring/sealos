@@ -138,7 +138,7 @@ func GetterJoinMasterKubeadmConfig(k8sVersion, master0, masterIP, cri string, pa
 		return "", err
 	}
 
-	data := strings.Join([]string{ic, klc}, "\n---")
+	data := strings.Join([]string{ic, klc}, "\n---\n")
 	return data, nil
 }
 
@@ -158,7 +158,7 @@ func GetterJoinNodeKubeadmConfig(k8sVersion, vip, cri string, patch []string, t 
 		return "", err
 	}
 
-	data := strings.Join([]string{ic, klc}, "\n---")
+	data := strings.Join([]string{ic, klc}, "\n---\n")
 	return data, nil
 }
 

@@ -72,7 +72,9 @@ func NewHostsAddCmd() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			hf := &hosts.HostFile{Path: hostsPath}
-			hf.DeleteDomain(domain)
+			if hf.HasDomain(domain) {
+				hf.DeleteDomain(domain)
+			}
 			hf.AppendHost(domain, ip)
 		},
 	}
