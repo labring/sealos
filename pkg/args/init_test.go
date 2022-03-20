@@ -120,9 +120,6 @@ func TestInit_Output(t *testing.T) {
 			if err := r.SetResourceArgs(); (err != nil) != tt.wantErr {
 				t.Errorf("SetResourceArgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err := r.SetConfigArgs(); (err != nil) != tt.wantErr {
-				t.Errorf("SetConfigArgs() error = %v, wantErr %v", err, tt.wantErr)
-			}
 			logger.Cfg(true, false)
 			_ = r.Output()
 		})

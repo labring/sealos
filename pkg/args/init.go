@@ -18,49 +18,31 @@ package args
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/fanux/sealos/pkg/filesystem"
-	"github.com/fanux/sealos/pkg/passwd"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"sigs.k8s.io/yaml"
 )
 
 type InitArgs struct {
-	Masters          string
-	Nodes            string
-	User             string
-	Password         string
-	Port             int32
-	Pk               string
-	PkPassword       string
-	PodCidr          string
-	SvcCidr          string
-	APIServerDomain  string
-	VIP              string
-	CertSANS         []string
-	WithoutCNI       bool
-	Interface        string
-	IPIPFalse        bool
-	MTU              string
-	RegistryDomain   string
-	RegistryPort     int
-	CRIData          string
-	RegistryConfig   string
-	RegistryData     string
-	RegistryUsername string
-	RegistryPassword string
-	KubeadmfilePath  string
-	KubeURI          string
-	CtlURI           string
-	ClusterName      string
-	Vlog             int
-	DryRun           bool
+	Masters     string
+	Nodes       string
+	User        string
+	Password    string
+	Port        int32
+	Pk          string
+	PkPassword  string
+	WithoutCNI  bool
+	Interface   string
+	IPIPFalse   bool
+	MTU         string
+	KubeURI     string
+	ClusterName string
+	Vlog        int
+	DryRun      bool
 }
 
 func (a *InitArgs) Validate() error {
@@ -132,48 +114,7 @@ func (r *Init) SetClusterArgs() error {
 	}
 	return nil
 }
-func (r *Init) SetConfigArgs() error {
-	configs := make([]v2.Config, 0)
-	registry := &v2.RegistryConfig{
-		IP:       r.cluster.GetMaster0IP(),
-		Domain:   r.args.RegistryDomain,
-		Port:     r.args.RegistryPort,
-		Username: r.args.RegistryUsername,
-		Password: r.args.RegistryPassword,
-	}
-	data, err := yaml.Marshal(registry)
-	if err != nil {
-		return err
-	}
-	configs = append(configs, *initConfig("registry", v2.ConfigSpec{
-		Strategy: v2.Merge,
-		Data:     string(data),
-		Path:     "etc/registry.yml",
-	}))
 
-	if r.args.RegistryUsername != "" && r.args.RegistryPassword != "" {
-		configs = append(configs, *initConfig("registry_passwd", v2.ConfigSpec{
-			Strategy: v2.Override,
-			Data:     passwd.Htpasswd(r.args.RegistryUsername, r.args.RegistryPassword),
-			Path:     "etc/registry_htpasswd",
-		}))
-	}
-
-	if file.IsExist(r.args.KubeadmfilePath) {
-		kubeadmFile, err := file.ReadAll(r.args.KubeadmfilePath)
-		if err != nil {
-			return err
-		}
-		configs = append(configs, *initConfig("kubeadm", v2.ConfigSpec{
-			Strategy: v2.Append,
-			Data:     "\n---\n" + string(kubeadmFile),
-			Path:     path.Join("etc", contants.DefaultKubeadmFileName),
-		}))
-	}
-
-	r.configs = configs
-	return nil
-}
 func (r *Init) SetResourceArgs() error {
 	if len(r.args.KubeURI) > 0 {
 		spec := v2.ResourceSpec{
