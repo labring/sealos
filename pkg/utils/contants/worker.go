@@ -18,15 +18,6 @@ package contants
 
 import "path/filepath"
 
-type Worker interface {
-	Clusterfile() string
-	Homedir() string
-}
-
-type worker struct {
-	clusterName string
-}
-
 const (
 	DefaultClusterFileName = "Clusterfile"
 )
@@ -35,16 +26,10 @@ func Homedir() string {
 	return filepath.Join(GetHomeDir(), ".sealos")
 }
 
-func (d *worker) Homedir() string {
-	return filepath.Join(Homedir(), d.clusterName)
+func ClusterDir(clusterName string) string {
+	return filepath.Join(Homedir(), clusterName)
 }
 
-func (d *worker) Clusterfile() string {
-	return filepath.Join(d.Homedir(), DefaultClusterFileName)
-}
-
-func NewWork(clusterName string) Worker {
-	return &worker{
-		clusterName: clusterName,
-	}
+func Clusterfile(clusterName string) string {
+	return filepath.Join(Homedir(), clusterName, DefaultClusterFileName)
 }

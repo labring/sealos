@@ -72,7 +72,6 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		clusters  []v1beta1.Cluster
 		configs   []v1beta1.Config
 		resources []v1beta1.Resource
-		kubeadms  []v1beta1.Kubeadm
 	)
 
 	d := yaml.NewYAMLOrJSONDecoder(file, 4096)
@@ -122,16 +121,6 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 				resources = append(resources, p)
 			}
 			i = resources
-		case contants.Kubeadm:
-			k := v1beta1.Kubeadm{}
-			err = yaml.Unmarshal(ext.Raw, &k)
-			if err != nil {
-				return nil, fmt.Errorf("decode kubeadm failed %v", err)
-			}
-			if k.Kind == contants.Kubeadm {
-				kubeadms = append(kubeadms, k)
-			}
-			i = kubeadms
 		}
 	}
 

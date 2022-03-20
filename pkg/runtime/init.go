@@ -22,7 +22,6 @@ import (
 	"path"
 
 	"github.com/fanux/sealos/pkg/cert"
-	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -37,6 +36,9 @@ func (k *KubeadmRuntime) bashInit(nodes []string) error {
 			err := k.execInit(node)
 			if err != nil {
 				return fmt.Errorf("exec init.sh failed %v", err)
+			}
+			if node == k.getMaster0IP() {
+
 			}
 			return nil
 		})
@@ -55,8 +57,7 @@ func (k *KubeadmRuntime) BashInitOnMaster0() error {
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
-	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := k.getInitKubeadmConfigFromTypes(k.resources, k.cluster, cri.DefaultContainerdCRISocket, patches)
+	data, err := k.generateInitConfigs()
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}

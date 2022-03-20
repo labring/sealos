@@ -47,9 +47,26 @@ func NewCRICmd() *cobra.Command {
 	cmd.AddCommand(NewPullImageCmd())
 	cmd.AddCommand(NewImageExistsCmd())
 	cmd.AddCommand(NewCGroupDriverCmd())
+	cmd.AddCommand(NewCRISocketCmd())
 	cmd.PersistentFlags().StringVar(&criSocketPath, "socket-path", "", "cri socket path")
 	cmd.PersistentFlags().StringVar(&criConfigPath, "config", "", "cri config file")
 
+	return cmd
+}
+
+func NewCRISocketCmd() *cobra.Command {
+	var cmd = &cobra.Command{
+		Use:   "socket",
+		Short: "cri manager socket",
+		Run: func(cmd *cobra.Command, args []string) {
+			criSocket, err := cri.DetectCRISocket()
+			if err != nil {
+				logger.Error(err)
+				return
+			}
+			println(criSocket)
+		},
+	}
 	return cmd
 }
 

@@ -22,12 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
 type CommandType string
@@ -39,43 +36,6 @@ const JoinNode CommandType = "joinNode"
 func vlogToStr(vlog int) string {
 	str := strconv.Itoa(vlog)
 	return " -v " + str
-}
-
-func (k *KubeadmRuntime) getKubernetesToken() error {
-	logger.Info("start to get kubernetes token...")
-	if k.token == nil {
-		data, err := k.execToken(k.getMaster0IP())
-		if err != nil {
-			return err
-		}
-		var t token.Token
-		err = json.Unmarshal([]byte(data), &t)
-		if err != nil {
-			return err
-		}
-		k.token = &t
-	}
-	return nil
-}
-
-func (k *KubeadmRuntime) getJoinToken() string {
-	if k.token != nil {
-		return k.token.JoinToken
-	}
-	return ""
-}
-
-func (k *KubeadmRuntime) getTokenCaCertHash() []string {
-	if k.token != nil {
-		return k.token.DiscoveryTokenCaCertHash
-	}
-	return []string{}
-}
-func (k *KubeadmRuntime) getCertificateKey() string {
-	if k.token != nil {
-		return k.token.CertificateKey
-	}
-	return ""
 }
 
 func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) {
@@ -100,11 +60,11 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 
 	cmds := map[CommandType]string{
 		InitMaster: fmt.Sprintf(InitMaster115Lower, initConfigPath),
-		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getCertificateKey()),
+		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
 		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
 	}
 	//other version >= 1.15.x
-	if versionutil.Compare(version, kubeadm.V1150) {
+	if versionutil.Compare(version, V1150) {
 		cmds[InitMaster] = fmt.Sprintf(InitMaser115Upper, initConfigPath)
 		cmds[JoinMaster] = fmt.Sprintf(JoinMaster115Upper, joinMasterConfigPath)
 		cmds[JoinNode] = fmt.Sprintf(JoinNode115Upper, joinNodeConfigPath)

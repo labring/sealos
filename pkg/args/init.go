@@ -80,7 +80,7 @@ type Init struct {
 	args       InitArgs
 	cluster    *v2.Cluster
 	configs    []v2.Config
-	resources  []v2.Resource
+	resource   *v2.Resource
 	hosts      []v2.ClusterHost
 	dryRun     bool
 	withoutCNI bool
@@ -130,12 +130,7 @@ func (r *Init) SetClusterArgs() error {
 	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
 	r.cluster.SetDNSDomain("")
 	r.cluster.SetVip(r.args.VIP)
-	var certSans []string
-	certSans = append(certSans, "127.0.0.1")
-	certSans = append(certSans, r.cluster.GetAPIServerDomain())
-	certSans = append(certSans, r.cluster.GetVip())
-	certSans = append(certSans, r.cluster.GetMasterIPList()...)
-	r.cluster.SetCertSANS(certSans)
+	r.cluster.SetCertSANS(r.args.CertSANS)
 	if !r.args.WithoutCNI {
 		r.cluster.SetCNIInterface(r.args.Interface)
 		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
@@ -194,34 +189,24 @@ func (r *Init) SetConfigArgs() error {
 	return nil
 }
 func (r *Init) SetResourceArgs() error {
-	resources := make([]v2.Resource, 0)
-	override := "opt/sealctl"
-	if len(r.args.CtlURI) > 0 {
-		resources = append(resources, *initResource("sealctl", v2.ResourceSpec{
-			Type:     v2.FileBinary,
-			Path:     r.args.CtlURI,
-			Override: override,
-		}))
-	}
 
 	if len(r.args.KubeURI) > 0 {
 		spec := v2.ResourceSpec{
 			Type: v2.KubernetesTarGz,
 			Path: r.args.KubeURI,
 		}
-		resources = append(resources, *initResource("kube", spec))
+		r.resource = initResource("rootfs", spec)
 	}
 
-	r.resources = resources
 	return nil
 }
 
 func (r *Init) Output() error {
 	var clusterFile string
 	if !r.args.DryRun {
-		clusterFile = contants.NewWork(r.args.ClusterName).Clusterfile()
+		clusterFile = contants.Clusterfile(r.args.ClusterName)
 	}
-	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resources, clusterFile)
+	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resource, clusterFile)
 	if err != nil {
 		return err
 	}

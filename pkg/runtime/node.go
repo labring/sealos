@@ -21,9 +21,6 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/fanux/sealos/pkg/cri"
-	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -42,26 +39,13 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		return errors.Wrap(err, "join nodes wait for ssh ready time out")
 	}
 
-	if err = k.getKubernetesToken(); err != nil {
-		return fmt.Errorf("get kubernetes token failed %v", err)
-	}
-
 	masters := k.getMasterIPListAndPort()
-	ipvsCmd, err := k.getIPVSCmd(masters)
-	if err != nil {
-		return err
-	}
-	ipvsYamlCmd, err := k.getIPVSYamlCmd(masters)
-	if err != nil {
-		return err
-	}
-
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range newNodesIPList {
 		node := node
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
-			err = k.ConfigJoinNodeKubeadmToNode(node, k.token)
+			err = k.ConfigJoinNodeKubeadmToNode(node)
 			if err != nil {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
@@ -74,7 +58,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 				return err
 			}
 			logger.Info("run ipvs once module: %s", node)
-			err = k.execProxySync(node, ipvsCmd)
+			err = k.execIPVS(node, masters)
 			if err != nil {
 				return fmt.Errorf("run ipvs once failed %v", err)
 			}
@@ -87,7 +71,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
 			logger.Info("sync ipvs yaml in node: %s", node)
-			err = k.execProxySync(node, ipvsYamlCmd)
+			err = k.execIPVSPod(node, masters)
 			if err != nil {
 				return fmt.Errorf("generator ipvs static pod failed %v", err)
 			}
@@ -98,10 +82,9 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string, t *token.Token) error {
+func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
 	logger.Info("start to copy kubeadm join config to node: %s", node)
-	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := kubeadm.GetterJoinNodeKubeadmConfig(k.getKubeVersion(), k.getVip(), cri.DefaultContainerdCRISocket, patches, *t)
+	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
 		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
 	}

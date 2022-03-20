@@ -28,7 +28,7 @@ const (
 modprobe -r ipip  && lsmod && \
 rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
-rm -rf /var/lib/etcd && rm -rf /var/etcd 
+rm -rf %s
 `
 )
 
@@ -69,7 +69,7 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
-	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog)),
+	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir()),
 		RemoveKubeConfig); err != nil {
 		return fmt.Errorf("exec node clean in sealos failed %v", err)
 	}

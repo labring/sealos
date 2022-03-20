@@ -26,7 +26,7 @@ const (
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
 	DefaultSystemFile                = "system.json"
 	MetadataFile                     = "Metadata"
-	DataDirName                      = "kube"
+	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"
 	ChartsDirName                    = "charts"
 	ManifestsDirName                 = "manifests"

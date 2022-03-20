@@ -22,9 +22,6 @@ import (
 	"path"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/cri"
-	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -70,16 +67,15 @@ func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 		eg.Go(func() error {
 			k.Lock()
 			defer k.Unlock()
-			return k.ConfigJoinMasterKubeadmToMaster(master, k.token)
+			return k.ConfigJoinMasterKubeadmToMaster(master)
 		})
 	}
 	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string, t *token.Token) error {
+func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	logger.Info("start to copy kubeadm join config to master: %s", master)
-	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := kubeadm.GetterJoinMasterKubeadmConfig(k.getKubeVersion(), k.getMaster0IP(), master, cri.DefaultContainerdCRISocket, patches, *t)
+	data, err := k.generateJoinMasterConfigs(master)
 	if err != nil {
 		return fmt.Errorf("generator config join master kubeadm config error: %s", err.Error())
 	}
@@ -110,11 +106,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		return errors.Wrap(err, "join masters wait for ssh ready time out")
 	}
 
-	if err = k.getKubernetesToken(); err != nil {
-		return fmt.Errorf("get kubernetes token failed %v", err)
-	}
-
-	if err = k.CopyStaticFiles(k.getMasterIPList()); err != nil {
+	if err = k.CopyStaticFiles(masters); err != nil {
 		return err
 	}
 
@@ -136,14 +128,32 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	//
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
-		err = k.execHostsAppend(master, master, k.getAPIServerDomain())
-		if err != nil {
-			return fmt.Errorf("add apiserver domain hosts failed %v", err)
-		}
 		err = k.registryAuth(master)
 		if err != nil {
 			return err
 		}
+
+		logger.Info("start to generator cert %s as master", master)
+		err = k.execCert(master)
+		if err != nil {
+			return fmt.Errorf("generator master cert failed %v", err)
+		}
+
+		err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())
+		if err != nil {
+			return fmt.Errorf("add master0 apiserver domain hosts failed %v", err)
+		}
+
+		err = k.sshCmdAsync(master, cmd)
+		if err != nil {
+			return fmt.Errorf("exec kubeadm join failed %v", err)
+		}
+
+		err = k.execHostsAppend(master, master, k.getAPIServerDomain())
+		if err != nil {
+			return fmt.Errorf("add master0 apiserver domain hosts failed %v", err)
+		}
+
 		err = k.copyMasterKubeConfig(master)
 		if err != nil {
 			return err
@@ -151,7 +161,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		logger.Info("succeeded in joining %s as master", master)
 	}
 
-	return k.syncNodeIPVSYaml(masters)
+	return k.syncNodeIPVSYaml(strings.RemoveDuplicate(append(k.getMasterIPList(), masters...)))
 }
 
 func (k *KubeadmRuntime) deleteMasters(masters []string) error {

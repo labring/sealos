@@ -17,32 +17,40 @@ limitations under the License.
 package runtime
 
 import (
-	"fmt"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"sync"
 
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
-	"github.com/fanux/sealos/pkg/token"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	vlog         int
-	cluster      *v2.Cluster
-	resources    *v2.Resource
-	data         contants.Data
-	work         contants.Worker
-	bash         contants.Bash
+	cluster   *v2.Cluster
+	resources *v2.Resource
+	registry  RegistryConfig
+	*KubeadmConfig
+	*config
+	*client
+}
+
+type config struct {
+
+	// Clusterfile: the absolute path, we need to read kubeadm config from Clusterfile
+	ClusterFileKubeConfig *KubeadmConfig
+	apiServerDomain       string
+	vlog                  int
+}
+
+type client struct {
 	sshInterface ssh.Interface
 	envInterface env.Interface
-	registry     RegistryConfig
-	token        *token.Token
-	ctl          remote.Sealctl
+	ctlInterface remote.Interface
+	data         contants.Data
+	bash         contants.Bash
 }
 
 type RegistryConfig struct {
@@ -121,55 +129,16 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 }
 
 func newKubeadmRuntime(clusterName string) (Interface, error) {
-	work := contants.NewWork(clusterName)
-	clusterFile := work.Clusterfile()
-	clusters, err := decode.Cluster(clusterFile)
-	if err != nil {
+	k := &KubeadmRuntime{}
+	if err := k.setData(clusterName); err != nil {
 		return nil, err
 	}
-	if len(clusters) != 1 {
-		return nil, fmt.Errorf("cluster data length must is one")
-	}
-	resources, err := decode.Resource(clusterFile)
-	if err != nil {
+	if err := k.setRegistry(k.resources); err != nil {
 		return nil, err
 	}
-	r := v2.Rootfs(resources)
-
-	k := &KubeadmRuntime{
-		cluster:      &clusters[0],
-		resources:    r,
-		data:         contants.NewData(clusterName),
-		work:         work,
-		bash:         contants.NewBash(clusterName, r.Status.Data),
-		sshInterface: ssh.NewSSHClient(&clusters[0].Spec.SSH, true),
-		envInterface: env.NewEnvProcessor(&clusters[0]),
-		registry:     getRegistry(&clusters[0]),
-		ctl:          remote.NewSealctl(),
-	}
-
-	if logger.IsDebugModel() {
-		k.vlog = 6
-	}
+	k.setClient()
+	k.setCertSANS()
 	return k, nil
-}
-
-func getRegistry(cluster *v2.Cluster) RegistryConfig {
-	data := v2.ConvertEnv(cluster.Spec.Env)
-	registryData := data[v2.DefaultVarCRIRegistryData].(string)
-	registryDomain := data[v2.DefaultVarCRIRegistryDomain].(string)
-	registryPort := data[v2.DefaultVarCRIRegistryPort].(string)
-	registryUsername := data[v2.DefaultVarCRIRegistryUsername].(string)
-	registryPassword := data[v2.DefaultVarCRIRegistryPassword].(string)
-
-	return RegistryConfig{
-		IP:       cluster.GetMaster0IP(),
-		Domain:   registryDomain,
-		Port:     registryPort,
-		Username: registryUsername,
-		Password: registryPassword,
-		Data:     registryData,
-	}
 }
 
 // NewDefaultRuntime arg "clusterName" is the cluster name
