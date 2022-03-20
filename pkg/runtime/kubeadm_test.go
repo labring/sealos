@@ -41,9 +41,9 @@ func TestKubeadm(t *testing.T) {
 			//	t.Log(string(out))
 			//}
 
-			if err := k.(*KubeadmRuntime).setKubernetesToken();err!=nil{
+			if err := k.(*KubeadmRuntime).setKubernetesToken(); err != nil {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
-			}else {
+			} else {
 				t.Log("success")
 			}
 		})

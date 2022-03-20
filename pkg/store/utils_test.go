@@ -17,8 +17,9 @@ limitations under the License.
 package store
 
 import (
-	"github.com/fanux/sealos/pkg/utils/json"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/utils/json"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )

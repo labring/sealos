@@ -90,7 +90,7 @@ func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
 	}
 	joinConfigPath := path.Join(k.data.TmpPath(), contants.DefaultJoinNodeKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
-	err = file.WriteFile(joinConfigPath, []byte(data))
+	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())
 	}

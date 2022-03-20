@@ -18,6 +18,8 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -29,7 +31,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"path"
 )
 
 func (k *KubeadmRuntime) setRegistry(resource *v2.Resource) error {
@@ -61,9 +62,9 @@ func (k *KubeadmRuntime) setClient() {
 	k.client = &client{}
 	k.sshInterface = sshInterface
 	k.envInterface = env.NewEnvProcessor(k.cluster)
-	k.ctlInterface = remote.New(k.cluster.Name, sshInterface)
-	k.data = contants.NewData(k.cluster.Name)
-	k.bash = contants.NewBash(k.cluster.Name, k.resources.Status.Data)
+	k.ctlInterface = remote.New(k.getClusterName(), sshInterface)
+	k.data = contants.NewData(k.getClusterName())
+	k.bash = contants.NewBash(k.getClusterName(), k.resources.Status.Data)
 }
 
 func (k *KubeadmRuntime) setData(clusterName string) error {
@@ -95,7 +96,7 @@ func (k *KubeadmRuntime) setData(clusterName string) error {
 	k.KubeadmConfig = &KubeadmConfig{}
 	k.config = &config{
 		ClusterFileKubeConfig: kubeadmConfig,
-		apiServerDomain:       v2.DefaultAPIServerDomain,
+		apiServerDomain:       DefaultAPIServerDomain,
 	}
 	if err = k.checkList(); err != nil {
 		return err

@@ -17,8 +17,9 @@ limitations under the License.
 package runtime
 
 import (
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
@@ -37,14 +38,15 @@ type KubeadmRuntime struct {
 	*client
 }
 
+//nolint
 type config struct {
-
 	// Clusterfile: the absolute path, we need to read kubeadm config from Clusterfile
 	ClusterFileKubeConfig *KubeadmConfig
 	apiServerDomain       string
 	vlog                  int
 }
 
+//nolint
 type client struct {
 	sshInterface ssh.Interface
 	envInterface env.Interface

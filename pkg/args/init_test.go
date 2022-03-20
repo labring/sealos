@@ -28,7 +28,6 @@ func TestInit_SetClusterArgs(t *testing.T) {
 	type fields struct {
 		cluster    *v2.Cluster
 		configs    []v2.Config
-		resources  []v2.Resource
 		hosts      []v2.ClusterHost
 		dryRun     bool
 		withoutCNI bool
@@ -66,7 +65,6 @@ func TestInit_SetClusterArgs(t *testing.T) {
 			r := &Init{
 				cluster:    tt.fields.cluster,
 				configs:    tt.fields.configs,
-				resources:  tt.fields.resources,
 				hosts:      tt.fields.hosts,
 				dryRun:     tt.fields.dryRun,
 				withoutCNI: tt.fields.withoutCNI,
@@ -92,32 +90,17 @@ func TestInit_Output(t *testing.T) {
 			name: "default",
 			args: args{
 				args: InitArgs{
-					Masters:          "192.168.64.15",
-					Nodes:            "192.168.64.17",
-					User:             "root",
-					Pk:               v2.DefaultPKFile,
-					Port:             22,
-					PodCidr:          v2.DefaultPodCIDR,
-					SvcCidr:          v2.DefaultSvcCIDR,
-					APIServerDomain:  v2.DefaultAPIServerDomain,
-					VIP:              v2.DefaultVIP,
-					CertSANS:         []string{},
-					WithoutCNI:       false,
-					Interface:        v2.DefaultCNIInterface,
-					IPIPFalse:        false,
-					MTU:              v2.DefaultCNIMTU,
-					RegistryDomain:   "sealos.hub",
-					RegistryPort:     5000,
-					CRIData:          v2.DefaultCRIData,
-					RegistryConfig:   v2.DefaultRegistryConfig,
-					RegistryData:     v2.DefaultRegistryData,
-					RegistryUsername: "admin",
-					RegistryPassword: "passw0rd",
+					Masters:    "192.168.64.15",
+					Nodes:      "192.168.64.17",
+					User:       "root",
+					Pk:         v2.DefaultPKFile,
+					Port:       22,
+					WithoutCNI: false,
+					Interface:  v2.DefaultCNIInterface,
+					IPIPFalse:  false,
+					MTU:        v2.DefaultCNIMTU,
 					//KubeadmfilePath:  "/Users/cuisongliu/DockerImages/kube/system.yaml1",
-					KubeURI:          "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
-					//Arm64URI:         "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
-					CtlURI: "/Users/cuisongliu/Workspaces/go/src/github.com/fanux/sealos/dist/sealctl_darwin_amd64/sealctl",
-					//CTLArm64URI:      "https://sealyun-temp.oss-accelerate.aliyuncs.com/sealos/3152531/sealctl",
+					KubeURI:     "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
 					ClusterName: "default",
 					Vlog:        0,
 					DryRun:      true,

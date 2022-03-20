@@ -125,24 +125,10 @@ func (r *Init) SetClusterArgs() error {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 
-	r.cluster.SetPodCIDR(r.args.PodCidr)
-	r.cluster.SetServiceCIDR(r.args.SvcCidr)
-	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
-	r.cluster.SetDNSDomain("")
-	r.cluster.SetVip(r.args.VIP)
-	r.cluster.SetCertSANS(r.args.CertSANS)
 	if !r.args.WithoutCNI {
 		r.cluster.SetCNIInterface(r.args.Interface)
 		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
 		r.cluster.SetCNIMTU(r.args.MTU)
-	}
-	r.cluster.SetCRIData(r.args.CRIData)
-	r.cluster.SetRegistryData(r.args.RegistryData)
-	r.cluster.SetRegistryConfig(r.args.RegistryConfig)
-	r.cluster.SetRegistryAddress(r.args.RegistryDomain, r.args.RegistryPort)
-	if r.args.RegistryUsername != "" && r.args.RegistryPassword != "" {
-		r.cluster.SetRegistryUsername(r.args.RegistryUsername)
-		r.cluster.SetRegistryPassword(r.args.RegistryPassword)
 	}
 	return nil
 }
@@ -189,7 +175,6 @@ func (r *Init) SetConfigArgs() error {
 	return nil
 }
 func (r *Init) SetResourceArgs() error {
-
 	if len(r.args.KubeURI) > 0 {
 		spec := v2.ResourceSpec{
 			Type: v2.KubernetesTarGz,

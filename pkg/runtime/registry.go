@@ -18,9 +18,10 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/passwd"
 	"github.com/fanux/sealos/pkg/utils/file"
-	"path"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
@@ -29,7 +30,7 @@ const DefaultCPFmt = "mkdir -p %s && cp -rf  %s/* %s/"
 
 func (k *KubeadmRuntime) htpasswd() error {
 	htpasswdPath := path.Join(k.data.EtcPath(), "registry_htpasswd")
-	if k.registry.Username=="" && k.registry.Password==""{
+	if k.registry.Username == "" && k.registry.Password == "" {
 		return nil
 	}
 	data := passwd.Htpasswd(k.registry.Username, k.registry.Password)

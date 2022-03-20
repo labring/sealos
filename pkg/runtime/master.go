@@ -81,7 +81,7 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	}
 	joinConfigPath := path.Join(k.data.TmpPath(), contants.DefaultJoinMasterKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
-	err = file.WriteFile(joinConfigPath, []byte(data))
+	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())
 	}

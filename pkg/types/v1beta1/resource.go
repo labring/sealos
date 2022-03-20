@@ -41,13 +41,13 @@ type ResourceSpec struct {
 
 // ResourceStatus defines the desired state of Resource
 type ResourceStatus struct {
-	Arch     Arch              `json:"arch"`
-	Version  string            `json:"version"`
-	CNI      string            `json:"cni"`
-	Image    string            `json:"image"`
-	Path     string            `json:"path"`
-	RawPath  string            `json:"rawPath,omitempty"`
-	Data     map[string]string `json:"data,omitempty"`
+	Arch    Arch              `json:"arch"`
+	Version string            `json:"version"`
+	CNI     string            `json:"cni"`
+	Image   string            `json:"image"`
+	Path    string            `json:"path"`
+	RawPath string            `json:"rawPath,omitempty"`
+	Data    map[string]string `json:"data,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -19,10 +19,11 @@ package remote
 import (
 	"bytes"
 	"fmt"
+	"text/template"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-	"text/template"
 )
 
 func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {

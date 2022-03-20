@@ -150,5 +150,3 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 	}
 	return nil
 }
-
-

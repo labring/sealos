@@ -12,21 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package runtime
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/fanux/sealos/pkg/runtime/kubeadm_types/v1beta2"
 	"github.com/fanux/sealos/pkg/token"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/json"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -37,6 +36,10 @@ const (
 	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
+
+	DefaultVIP             = "10.103.97.2"
+	DefaultAPIServerDomain = "apiserver.cluster.local"
+	DefaultDNSDomain       = "cluster.local"
 )
 
 // k.getKubeVersion can't be empty
@@ -109,7 +112,7 @@ func (k *KubeadmRuntime) getClusterName() string {
 }
 
 func (k *KubeadmRuntime) getVip() string {
-	return v1beta1.DefaultVIP
+	return DefaultVIP
 }
 
 func (k *KubeadmRuntime) getVipAndPort() string {
@@ -130,13 +133,9 @@ func (k *KubeadmRuntime) getServiceCIDR() string {
 	return k.ClusterConfiguration.Networking.ServiceSubnet
 }
 
-func (k *KubeadmRuntime) getPodCIDR() string {
-	return k.ClusterConfiguration.Networking.PodSubnet
-}
-
 func (k *KubeadmRuntime) getDNSDomain() string {
 	if k.ClusterConfiguration.Networking.DNSDomain == "" {
-		k.ClusterConfiguration.Networking.DNSDomain = "cluster.local"
+		k.ClusterConfiguration.Networking.DNSDomain = DefaultDNSDomain
 	}
 	return k.ClusterConfiguration.Networking.DNSDomain
 }
@@ -255,6 +254,7 @@ func getEtcdEndpointsWithHTTPSPrefix(masters []string) string {
 	return strings.Join(tmpSlice, ",")
 }
 
+//nolint
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 	k.JoinConfiguration.NodeRegistration.CRISocket = criSocket
 	k.InitConfiguration.NodeRegistration.CRISocket = criSocket

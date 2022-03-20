@@ -17,8 +17,9 @@ limitations under the License.
 package runtime
 
 import (
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"testing"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 func TestNode(t *testing.T) {
@@ -35,7 +36,7 @@ func TestNode(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ForceDelete = true
-			logger.Cfg(true,false)
+			logger.Cfg(true, false)
 			k, _ := NewDefaultRuntime("default")
 			if err := k.JoinMasters([]string{"192.168.64.18"}); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)

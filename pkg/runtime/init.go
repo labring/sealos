@@ -37,9 +37,6 @@ func (k *KubeadmRuntime) bashInit(nodes []string) error {
 			if err != nil {
 				return fmt.Errorf("exec init.sh failed %v", err)
 			}
-			if node == k.getMaster0IP() {
-
-			}
 			return nil
 		})
 	}
@@ -63,7 +60,7 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	}
 	initConfigPath := path.Join(k.data.TmpPath(), contants.DefaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultInitKubeadmFileName)
-	err = file.WriteFile(initConfigPath, []byte(data))
+	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config init kubeadm config error: %s", err.Error())
 	}
