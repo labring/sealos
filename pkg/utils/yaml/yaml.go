@@ -30,6 +30,19 @@ import (
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
+func Unmarshal(path string) (map[string]interface{}, error) {
+	metadata, err := fileutil.ReadAll(path)
+	if err != nil {
+		return nil, err
+	}
+	var data map[string]interface{}
+	err = yaml.Unmarshal(metadata, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func ToJSON(bs []byte) (jsons []string) {
 	reader := bytes.NewReader(bs)
 	ext := runtime.RawExtension{}

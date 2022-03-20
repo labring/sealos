@@ -17,12 +17,12 @@ limitations under the License.
 package runtime
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/kubeadm"
-	"github.com/fanux/sealos/pkg/remote"
-	v1 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -31,14 +31,6 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getMaster0IP() string {
 	return k.cluster.GetMaster0IP()
-}
-
-func (k *KubeadmRuntime) getVip() string {
-	return k.cluster.GetVip()
-}
-
-func (k *KubeadmRuntime) getVipAndPort() string {
-	return fmt.Sprintf("%s:6443", k.getVip())
 }
 
 func (k *KubeadmRuntime) getMasterIPList() []string {
@@ -57,81 +49,63 @@ func (k *KubeadmRuntime) getNodeIPList() []string {
 	return k.cluster.GetNodeIPList()
 }
 
-func (k *KubeadmRuntime) getAPIServerDomain() string {
-	return k.cluster.GetAPIServerDomain()
-}
-
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 	return k.cluster.GetMaster0IPAPIServer()
 }
 
-func (k *KubeadmRuntime) getClusterAPIServer() string {
-	return k.cluster.GetClusterAPIServer()
-}
-
-func (k *KubeadmRuntime) getCertSANS() []string {
-	return k.cluster.GetCertSANS()
-}
-
-func (k *KubeadmRuntime) getServiceCIDR() string {
-	return k.cluster.GetServiceCIDR()
-}
-func (k *KubeadmRuntime) getDNSDomain() string {
-	return k.cluster.GetDNSDomain()
-}
-
 func (k *KubeadmRuntime) getLvscareImage() string {
-	return k.resources.Status.Metadata[v1.DefaultVarLvscare]
+	return k.resources.Status.Image
 }
 
-func (k *KubeadmRuntime) getIPVSCmd(masters []string) (string, error) {
-	ipvsCmd, err := k.ctl.IPVS(k.getVipAndPort(), masters)
-	if err != nil {
-		return "", fmt.Errorf("get ipvs cmd on once module failed %v", err)
-	}
-	return ipvsCmd, nil
+func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
+	return k.ctlInterface.IPVS(ip, k.getVipAndPort(), masters)
 }
 
-func (k *KubeadmRuntime) getIPVSYamlCmd(masters []string) (string, error) {
-	ipvsYamlCmd, err := k.ctl.StaticPod(k.getVip(), contants.LvsCareStaticPodName, k.getLvscareImage(), masters)
-	if err != nil {
-		return "", fmt.Errorf("get ipvs static pod cmd failed %v", err)
+func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
+	masters := make([]string, 0)
+	for _, master := range masterIPs {
+		masters = append(masters, fmt.Sprintf("%s:6443", master))
 	}
 
-	return ipvsYamlCmd, nil
+	logger.Info("start to sync lvscare static pod")
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, node := range k.getNodeIPList() {
+		node := node
+		eg.Go(func() error {
+			err := k.execIPVSPod(node, masters)
+			if err != nil {
+				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
+			}
+			return nil
+		})
+	}
+	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) getInitKubeadmConfigFromTypes(resource *v1.Resource, cluster *v1.Cluster, cri string, patch []string) (string, error) {
-	version := resource.Status.Version
-	master0 := cluster.GetMaster0IP()
-	apiserverDomain := cluster.GetAPIServerDomain()
-	podCIDR := cluster.GetPodCIDR()
-	svcCIDR := cluster.GetServiceCIDR()
-	vip := cluster.GetVip()
-	sans := cluster.GetCertSANS()
-	return kubeadm.GetterInitKubeadmConfig(version, master0, apiserverDomain, podCIDR, svcCIDR, vip, cri, patch, sans)
-}
-
-func (k *KubeadmRuntime) execProxySync(ip, cmd string) error {
-	return remote.BashSync(k.data, k.sshInterface, ip, cmd)
-}
-
-func (k *KubeadmRuntime) execProxyString(ip, cmd string) (string, error) {
-	return remote.BashToString(k.data, k.sshInterface, ip, cmd)
+func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
+	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, k.getLvscareImage(), masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {
-	return k.execProxyString(ip, k.ctl.Token())
+	return k.ctlInterface.Token(ip)
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
-	return k.execProxyString(ip, k.ctl.Hostname())
+	return k.ctlInterface.Hostname(ip)
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
-	return remote.BashSync(k.data, k.sshInterface, ip, k.ctl.HostsAdd(host, domain))
+	return k.ctlInterface.HostsAdd(ip, host, domain)
+}
+
+func (k *KubeadmRuntime) execCert(ip string) error {
+	hostname, err := k.execHostname(ip)
+	if err != nil {
+		return err
+	}
+	return k.ctlInterface.Cert(ip, k.getCertSANS(), ip, hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
-	return remote.BashSync(k.data, k.sshInterface, ip, k.ctl.HostsDelete(domain))
+	return k.ctlInterface.HostsDelete(ip, domain)
 }
 
 func (k *KubeadmRuntime) execInit(ip string) error {

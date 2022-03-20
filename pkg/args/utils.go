@@ -34,15 +34,6 @@ func initCluster(clusterName string) *v2.Cluster {
 	return cluster
 }
 
-func initConfig(name string, spec v2.ConfigSpec) *v2.Config {
-	config := &v2.Config{}
-	config.Name = name
-	config.Kind = "Config"
-	config.APIVersion = v2.SchemeGroupVersion.String()
-	config.Spec = spec
-	return config
-}
-
 func initResource(name string, spec v2.ResourceSpec) *v2.Resource {
 	data := &v2.Resource{}
 	data.Name = name

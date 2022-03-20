@@ -25,16 +25,15 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/fanux/sealos/pkg/utils/exec"
-	"k8s.io/apimachinery/pkg/util/json"
-
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/archive"
 	"github.com/fanux/sealos/pkg/utils/collector"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/hash"
+	jlib "github.com/fanux/sealos/pkg/utils/json"
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 type Store interface {
@@ -44,7 +43,6 @@ type Store interface {
 type store struct {
 	clusterName string
 	contants.Data
-	contants.Worker
 }
 
 func (s *store) Save(p *v1beta1.Resource) error {
@@ -53,9 +51,6 @@ func (s *store) Save(p *v1beta1.Resource) error {
 	}
 	if p.Spec.Type.IsTarGz() {
 		return s.tarGz(p)
-	}
-	if p.Spec.Type.IsBinary() {
-		return s.binary(p)
 	}
 	return s.dir(p)
 }
@@ -99,32 +94,6 @@ func (s *store) tarGz(p *v1beta1.Resource) error {
 	}
 	return nil
 }
-func (s *store) binary(p *v1beta1.Resource) error {
-	err := collector.Download(p.Spec.Path, contants.ResourcePath())
-	if err != nil {
-		return err
-	}
-	fileNameAbs := filepath.Join(contants.ResourcePath(), file.Filename(p.Spec.Path))
-	defer func() {
-		if err = file.CleanFiles(fileNameAbs); err != nil {
-			logger.Warn("failed to clean file: %s", err.Error())
-		}
-	}()
-	md5 := hash.FileMD5(fileNameAbs)
-	md5Abs := filepath.Join(contants.ResourcePath(), md5)
-	_, err = file.CopySingleFile(fileNameAbs, md5Abs)
-	if err != nil {
-		return err
-	}
-	err = os.Chmod(md5Abs, 0755)
-	if err != nil {
-		return err
-	}
-	p.Status.Path = md5Abs
-	p.Status.Version = v1beta1.DefaultVersion
-	p.Status.Arch = v1beta1.Arch(exec.ExecutableFileArch(md5Abs))
-	return nil
-}
 func (s *store) dir(p *v1beta1.Resource) error {
 	arch := archive.NewArchive(false, false)
 	digest, _, err := arch.Digest(p.Spec.Path)
@@ -146,7 +115,7 @@ func (s *store) dir(p *v1beta1.Resource) error {
 func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 	p.Status.Path = md5Dir
 
-	metadata, err := jsonUnmarshal(filepath.Join(md5Dir, contants.DataDirName, contants.MetadataFile))
+	metadata, err := jlib.Unmarshal(filepath.Join(md5Dir, contants.DataDirName, contants.MetadataFile))
 	if err != nil {
 		return err
 	}
@@ -163,27 +132,18 @@ func (s *store) loadMetadata(p *v1beta1.Resource, md5Dir string) error {
 		p.Status.Arch = v1beta1.AMD64
 	}
 
-	systemPath := filepath.Join(md5Dir, contants.DataDirName, contants.DefaultSystemFile)
-	if file.IsExist(systemPath) {
-		systemData, err := jsonUnmarshal(systemPath)
-		if err != nil {
-			return err
-		}
-		if systemData != nil {
-			p.Status.Metadata = make(map[string]string)
-			if lvscare, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
-				p.Status.Metadata[v1beta1.DefaultVarLvscare] = lvscare
-			} else {
-				p.Status.Metadata[v1beta1.DefaultVarLvscare] = contants.DefaultLvsCareImage
-			}
-
-			if cni, ok, _ := unstructured.NestedString(systemData, v1beta1.DefaultVarLvscare); ok {
-				p.Status.Metadata[v1beta1.DefaultVarCNIType] = cni
-			} else {
-				p.Status.Metadata[v1beta1.DefaultVarCNIType] = contants.DefaultCNI
-			}
-		}
+	if cni, ok, _ := unstructured.NestedString(metadata, "cni"); ok {
+		p.Status.CNI = cni
+	} else {
+		p.Status.CNI = contants.DefaultCNI
 	}
+
+	if image, ok, _ := unstructured.NestedString(metadata, "image"); ok {
+		p.Status.Image = image
+	} else {
+		p.Status.Image = contants.DefaultLvsCareImage
+	}
+
 	defaultPath := filepath.Join(md5Dir, contants.DataDirName, "scripts", "default.json")
 	if file.IsExist(defaultPath) {
 		defaultData, err := file.ReadAll(defaultPath)
@@ -206,6 +166,5 @@ func NewStore(clusterName string) Store {
 	return &store{
 		clusterName: clusterName,
 		Data:        contants.NewData(clusterName),
-		Worker:      contants.NewWork(clusterName),
 	}
 }

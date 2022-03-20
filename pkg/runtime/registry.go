@@ -18,11 +18,24 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+
+	"github.com/fanux/sealos/pkg/passwd"
+	"github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
 const DefaultCPFmt = "mkdir -p %s && cp -rf  %s/* %s/"
+
+func (k *KubeadmRuntime) htpasswd() error {
+	htpasswdPath := path.Join(k.data.EtcPath(), "registry_htpasswd")
+	if k.registry.Username == "" && k.registry.Password == "" {
+		return nil
+	}
+	data := passwd.Htpasswd(k.registry.Username, k.registry.Password)
+	return file.WriteFile(htpasswdPath, []byte(data))
+}
 
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
@@ -31,6 +44,10 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
 	ip := k.getMaster0IP()
+	err = k.htpasswd()
+	if err != nil {
+		return fmt.Errorf("generator registry htpasswd failed %v", err)
+	}
 	err = k.execInitRegistry(ip)
 	if err != nil {
 		return fmt.Errorf("exec registry.sh failed %v", err)

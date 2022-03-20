@@ -22,15 +22,13 @@ import (
 	"github.com/fanux/sealos/pkg/utils/yaml"
 )
 
-func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resources []v2.Resource, clusterfile string) (string, error) {
+func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resource *v2.Resource, clusterfile string) (string, error) {
 	data := make([]interface{}, 0)
 	data = append(data, cluster)
 	for _, c := range configs {
 		data = append(data, c)
 	}
-	for _, s := range resources {
-		data = append(data, s)
-	}
+	data = append(data, resource)
 	ya, err := yaml.MarshalYamlConfigs(data...)
 	if err != nil {
 		return "", err

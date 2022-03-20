@@ -22,7 +22,6 @@ import (
 	"path"
 
 	"github.com/fanux/sealos/pkg/cert"
-	"github.com/fanux/sealos/pkg/cri"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -55,14 +54,13 @@ func (k *KubeadmRuntime) BashInitOnMaster0() error {
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
-	patches := []string{k.data.KubeKubeadmfile()}
-	data, err := k.getInitKubeadmConfigFromTypes(k.resources, k.cluster, cri.DefaultContainerdCRISocket, patches)
+	data, err := k.generateInitConfigs()
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}
 	initConfigPath := path.Join(k.data.TmpPath(), contants.DefaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultInitKubeadmFileName)
-	err = file.WriteFile(initConfigPath, []byte(data))
+	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config init kubeadm config error: %s", err.Error())
 	}

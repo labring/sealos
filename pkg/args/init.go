@@ -18,49 +18,31 @@ package args
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/fanux/sealos/pkg/filesystem"
-	"github.com/fanux/sealos/pkg/passwd"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"sigs.k8s.io/yaml"
 )
 
 type InitArgs struct {
-	Masters          string
-	Nodes            string
-	User             string
-	Password         string
-	Port             int32
-	Pk               string
-	PkPassword       string
-	PodCidr          string
-	SvcCidr          string
-	APIServerDomain  string
-	VIP              string
-	CertSANS         []string
-	WithoutCNI       bool
-	Interface        string
-	IPIPFalse        bool
-	MTU              string
-	RegistryDomain   string
-	RegistryPort     int
-	CRIData          string
-	RegistryConfig   string
-	RegistryData     string
-	RegistryUsername string
-	RegistryPassword string
-	KubeadmfilePath  string
-	KubeURI          string
-	CtlURI           string
-	ClusterName      string
-	Vlog             int
-	DryRun           bool
+	Masters     string
+	Nodes       string
+	User        string
+	Password    string
+	Port        int32
+	Pk          string
+	PkPassword  string
+	WithoutCNI  bool
+	Interface   string
+	IPIPFalse   bool
+	MTU         string
+	KubeURI     string
+	ClusterName string
+	Vlog        int
+	DryRun      bool
 }
 
 func (a *InitArgs) Validate() error {
@@ -80,7 +62,7 @@ type Init struct {
 	args       InitArgs
 	cluster    *v2.Cluster
 	configs    []v2.Config
-	resources  []v2.Resource
+	resource   *v2.Resource
 	hosts      []v2.ClusterHost
 	dryRun     bool
 	withoutCNI bool
@@ -125,103 +107,32 @@ func (r *Init) SetClusterArgs() error {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 
-	r.cluster.SetPodCIDR(r.args.PodCidr)
-	r.cluster.SetServiceCIDR(r.args.SvcCidr)
-	r.cluster.SetAPIServerDomain(r.args.APIServerDomain)
-	r.cluster.SetDNSDomain("")
-	r.cluster.SetVip(r.args.VIP)
-	var certSans []string
-	certSans = append(certSans, "127.0.0.1")
-	certSans = append(certSans, r.cluster.GetAPIServerDomain())
-	certSans = append(certSans, r.cluster.GetVip())
-	certSans = append(certSans, r.cluster.GetMasterIPList()...)
-	r.cluster.SetCertSANS(certSans)
 	if !r.args.WithoutCNI {
 		r.cluster.SetCNIInterface(r.args.Interface)
 		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
 		r.cluster.SetCNIMTU(r.args.MTU)
 	}
-	r.cluster.SetCRIData(r.args.CRIData)
-	r.cluster.SetRegistryData(r.args.RegistryData)
-	r.cluster.SetRegistryConfig(r.args.RegistryConfig)
-	r.cluster.SetRegistryAddress(r.args.RegistryDomain, r.args.RegistryPort)
-	if r.args.RegistryUsername != "" && r.args.RegistryPassword != "" {
-		r.cluster.SetRegistryUsername(r.args.RegistryUsername)
-		r.cluster.SetRegistryPassword(r.args.RegistryPassword)
-	}
 	return nil
 }
-func (r *Init) SetConfigArgs() error {
-	configs := make([]v2.Config, 0)
-	registry := &v2.RegistryConfig{
-		IP:       r.cluster.GetMaster0IP(),
-		Domain:   r.args.RegistryDomain,
-		Port:     r.args.RegistryPort,
-		Username: r.args.RegistryUsername,
-		Password: r.args.RegistryPassword,
-	}
-	data, err := yaml.Marshal(registry)
-	if err != nil {
-		return err
-	}
-	configs = append(configs, *initConfig("registry", v2.ConfigSpec{
-		Strategy: v2.Merge,
-		Data:     string(data),
-		Path:     "etc/registry.yml",
-	}))
 
-	if r.args.RegistryUsername != "" && r.args.RegistryPassword != "" {
-		configs = append(configs, *initConfig("registry_passwd", v2.ConfigSpec{
-			Strategy: v2.Override,
-			Data:     passwd.Htpasswd(r.args.RegistryUsername, r.args.RegistryPassword),
-			Path:     "etc/registry_htpasswd",
-		}))
-	}
-
-	if file.IsExist(r.args.KubeadmfilePath) {
-		kubeadmFile, err := file.ReadAll(r.args.KubeadmfilePath)
-		if err != nil {
-			return err
-		}
-		configs = append(configs, *initConfig("kubeadm", v2.ConfigSpec{
-			Strategy: v2.Append,
-			Data:     "\n---\n" + string(kubeadmFile),
-			Path:     path.Join("etc", contants.DefaultKubeadmFileName),
-		}))
-	}
-
-	r.configs = configs
-	return nil
-}
 func (r *Init) SetResourceArgs() error {
-	resources := make([]v2.Resource, 0)
-	override := "opt/sealctl"
-	if len(r.args.CtlURI) > 0 {
-		resources = append(resources, *initResource("sealctl", v2.ResourceSpec{
-			Type:     v2.FileBinary,
-			Path:     r.args.CtlURI,
-			Override: override,
-		}))
-	}
-
 	if len(r.args.KubeURI) > 0 {
 		spec := v2.ResourceSpec{
 			Type: v2.KubernetesTarGz,
 			Path: r.args.KubeURI,
 		}
-		resources = append(resources, *initResource("kube", spec))
+		r.resource = initResource("rootfs", spec)
 	}
 
-	r.resources = resources
 	return nil
 }
 
 func (r *Init) Output() error {
 	var clusterFile string
 	if !r.args.DryRun {
-		clusterFile = contants.NewWork(r.args.ClusterName).Clusterfile()
+		clusterFile = contants.Clusterfile(r.args.ClusterName)
 	}
-	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resources, clusterFile)
+	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resource, clusterFile)
 	if err != nil {
 		return err
 	}

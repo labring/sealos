@@ -44,13 +44,12 @@ type Interface interface {
 }
 
 type FileSystem struct {
-	store     store.Store
-	env       env.Interface
-	cluster   *v2.Cluster
-	configs   []v2.Config
-	resources []v2.Resource
-	data      contants.Data
-	work      contants.Worker
+	store    store.Store
+	env      env.Interface
+	cluster  *v2.Cluster
+	configs  []v2.Config
+	resource *v2.Resource
+	data     contants.Data
 }
 
 func (f *FileSystem) MountRootfs(hosts []string) error {
@@ -62,62 +61,48 @@ func (f *FileSystem) UnMountRootfs(hosts []string) error {
 }
 
 func (f *FileSystem) MountResource() error {
-	var replaces []v2.Resource
-	for i, r := range f.resources {
-		if err := f.store.Save(&r); err != nil {
+	err := f.mountResource()
+	if err != nil {
+		return err
+	}
+	_, err = SaveClusterFile(f.cluster, f.configs, f.resource, contants.Clusterfile(f.cluster.Name))
+	return err
+}
+func (f *FileSystem) mountResource() error {
+	if err := f.store.Save(f.resource); err != nil {
+		return err
+	}
+	statusPath := f.resource.Status.Path
+	clusterFile := contants.Clusterfile(f.cluster.Name)
+	if f.resource.Spec.Type == v2.KubernetesTarGz {
+		arch := archive.NewArchive(false, false)
+		digest, _, err := arch.Digest(statusPath)
+		if err != nil {
 			return err
 		}
-		statusPath := r.Status.Path
-		if r.Spec.Type == v2.KubernetesTarGz {
-			arch := archive.NewArchive(false, false)
-			digest, _, err := arch.Digest(statusPath)
-			if err != nil {
-				return err
-			}
-			md5Dir := path.Join(contants.ResourcePath(), digest.String())
-			if err = file.CopyDir(r.Status.Path, md5Dir, false); err != nil {
-				return err
-			}
-			statusPath = md5Dir
-			cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
-			if err := cfg.Dump(""); err != nil {
-				return err
-			}
+		md5Dir := path.Join(contants.ResourcePath(), digest.String())
+		if err = file.CopyDir(f.resource.Status.Path, md5Dir, false); err != nil {
+			return err
 		}
-		switch r.Spec.Type {
-		case v2.KubernetesTarGz:
-			cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
-			if err := cfg.Dump(""); err != nil {
-				return err
-			}
-			for _, replace := range replaces {
-				if replace.Status.Arch == r.Status.Arch {
-					if _, err := file.CopySingleFile(replace.Status.Path, path.Join(statusPath, contants.DataDirName, replace.Spec.Override)); err != nil {
-						return err
-					}
-				}
-			}
-			if _, err := exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, path.Join(statusPath, contants.DataDirName))); err != nil {
-				return err
-			}
-
-		case v2.FileBinary:
-			replaces = append(replaces, r)
+		statusPath = md5Dir
+		cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
+		if err = cfg.Dump(clusterFile); err != nil {
+			return err
 		}
-		r.Status.RawPath = statusPath
-		f.resources[i] = r
+		if _, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, path.Join(statusPath, contants.DataDirName))); err != nil {
+			return err
+		}
 	}
-	_, err := SaveClusterFile(f.cluster, f.configs, f.resources, f.work.Clusterfile())
-	return err
+	f.resource.Status.RawPath = statusPath
+	return nil
 }
 
 func (f *FileSystem) Clean() error {
-	return file.CleanFiles(f.data.Homedir(), f.work.Homedir())
+	return file.CleanFiles(f.data.Homedir(), contants.ClusterDir(f.cluster.Name))
 }
 
 func NewFilesystem(clusterName string) (Interface, error) {
-	work := contants.NewWork(clusterName)
-	clusterFile := work.Clusterfile()
+	clusterFile := contants.Clusterfile(clusterName)
 	clusters, err := decode.Cluster(clusterFile)
 	if err != nil {
 		return nil, err
@@ -133,17 +118,19 @@ func NewFilesystem(clusterName string) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(resources) != 1 {
+		return nil, fmt.Errorf("resource data length must is one")
+	}
 	disk := store.NewStore(clusterName)
 	envInterface := env.NewEnvProcessor(&clusters[0])
 
 	return &FileSystem{
-		store:     disk,
-		env:       envInterface,
-		cluster:   &clusters[0],
-		configs:   configs,
-		resources: resources,
-		data:      contants.NewData(clusterName),
-		work:      work,
+		store:    disk,
+		env:      envInterface,
+		cluster:  &clusters[0],
+		configs:  configs,
+		resource: &resources[0],
+		data:     contants.NewData(clusterName),
 	}, nil
 }
 
@@ -169,8 +156,7 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 }
 
 func (f *FileSystem) mountRootfs(ipList []string) error {
-	r := v2.Rootfs(f.resources)
-	if r == nil {
+	if f.resource == nil {
 		return fmt.Errorf("get rootfs error,pelase mount MountResource after mountRootfs")
 	}
 
@@ -178,7 +164,7 @@ func (f *FileSystem) mountRootfs(ipList []string) error {
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			src := r.Status.RawPath
+			src := f.resource.Status.RawPath
 			baseRawPath := path.Join(src, contants.DataDirName)
 			renderEtc := path.Join(baseRawPath, contants.EtcDirName)
 			renderChart := path.Join(baseRawPath, contants.ChartsDirName)
@@ -198,19 +184,13 @@ func (f *FileSystem) mountRootfs(ipList []string) error {
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)
 			}
-			//if initFlag {
-			//	err = sshClient.CmdAsync(ip, envProcessor.WrapperShell(ip, sh.InitBash()))
-			//	if err != nil {
-			//		return fmt.Errorf("exec init.sh failed %v", err)
-			//	}
-			//}
 			return err
 		})
 	}
 	return eg.Wait()
 }
 func (f *FileSystem) unmountRootfs(ipList []string) error {
-	if r := v2.Rootfs(f.resources); r == nil {
+	if f.resource == nil {
 		return fmt.Errorf("get rootfs error,pelase mount data to  filesystem")
 	}
 	clusterRootfsDir := f.data.Homedir()

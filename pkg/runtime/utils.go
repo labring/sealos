@@ -150,23 +150,3 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 	}
 	return nil
 }
-
-func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
-	ipvsYamlCmd, err := k.getIPVSYamlCmd(masterIPs)
-	if err != nil {
-		return err
-	}
-	logger.Info("start to sync lvscare static pod")
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range k.getNodeIPList() {
-		node := node
-		eg.Go(func() error {
-			err := k.execProxySync(node, ipvsYamlCmd)
-			if err != nil {
-				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
-			}
-			return nil
-		})
-	}
-	return eg.Wait()
-}

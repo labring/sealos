@@ -21,21 +21,11 @@ import (
 )
 
 const (
-	DefaultVIP             = "10.103.97.2"
-	DefaultAPIServerDomain = "apiserver.cluster.local"
-	DefaultDNSDomain       = "cluster.local"
-	DefaultPodCIDR         = "100.64.0.0/10"
-	DefaultSvcCIDR         = "10.96.0.0/12"
-	DefaultUserRoot        = "root"
-	DefaultCNIInterface    = "eth.*|en.*|em.*"
-	DefaultCNIMTU          = "1440"
-	DefaultCNIIPIPTrue     = "Always"
-	DefaultCNIIPIPFalse    = "Off"
-	DefaultCRIData         = "/var/lib/containerd"
-	DefaultRegistryDomain  = "sealos.hub"
-	DefaultRegistryPort    = 5000
-	DefaultRegistryConfig  = "/etc/registry"
-	DefaultRegistryData    = "/var/lib/registry"
+	DefaultUserRoot     = "root"
+	DefaultCNIInterface = "eth.*|en.*|em.*"
+	DefaultCNIMTU       = "1440"
+	DefaultCNIIPIPTrue  = "Always"
+	DefaultCNIIPIPFalse = "Off"
 )
 
 var (
@@ -49,17 +39,8 @@ var (
 )
 
 var (
-	DefaultVarCRIData             = "criData"          //cri-data
-	DefaultVarCRIRegistryDomain   = "registryDomain"   //registry-domain
-	DefaultVarCRIRegistryPort     = "registryPort"     //registry-port
-	DefaultVarCRIRegistryData     = "registryData"     //registry-data
-	DefaultVarCRIRegistryConfig   = "registryConfig"   //registry-config
-	DefaultVarCRIRegistryUsername = "registryUsername" //registry-username
-	DefaultVarCRIRegistryPassword = "registryPassword" //registry-password
-	DefaultVarCNIInterface        = "Interface"        //cni-interface
-	DefaultVarCNIIPIP             = "IPIP"             //cni-ipip
-	DefaultVarCNICIDR             = "CIDR"             //cni-cidr
-	DefaultVarCNIMTU              = "MTU"              //cni-mtu
-	DefaultVarLvscare             = "LvscareImage"
-	DefaultVarCNIType             = "CNIType"
+	DefaultVarCNIInterface = "Interface" //cni-interface
+	DefaultVarCNIIPIP      = "IPIP"      //cni-ipip
+	DefaultVarCNICIDR      = "CIDR"      //cni-cidr
+	DefaultVarCNIMTU       = "MTU"       //cni-mtu
 )

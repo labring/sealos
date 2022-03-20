@@ -25,13 +25,8 @@ type ResourceType string
 const (
 	KubernetesTarGz  ResourceType = "kubernetes/tar.gz"
 	ApplicationTarGz ResourceType = "application/tar.gz"
-	FileBinary       ResourceType = "file/binary"
 	DefaultVersion                = "v0.0.0-master"
 )
-
-func (t ResourceType) IsBinary() bool {
-	return t == FileBinary
-}
 
 func (t ResourceType) IsTarGz() bool {
 	return t == ApplicationTarGz || t == KubernetesTarGz
@@ -46,12 +41,13 @@ type ResourceSpec struct {
 
 // ResourceStatus defines the desired state of Resource
 type ResourceStatus struct {
-	Arch     Arch              `json:"arch"`
-	Version  string            `json:"version"`
-	Path     string            `json:"path"`
-	RawPath  string            `json:"rawPath,omitempty"`
-	Metadata map[string]string `json:"metadata,omitempty"`
-	Data     map[string]string `json:"data,omitempty"`
+	Arch    Arch              `json:"arch"`
+	Version string            `json:"version"`
+	CNI     string            `json:"cni"`
+	Image   string            `json:"image"`
+	Path    string            `json:"path"`
+	RawPath string            `json:"rawPath,omitempty"`
+	Data    map[string]string `json:"data,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -75,13 +71,4 @@ type ResourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Resource `json:"items"`
-}
-
-func Rootfs(resources []Resource) *Resource {
-	for _, r := range resources {
-		if r.Status.RawPath != "" && r.Spec.Type == KubernetesTarGz {
-			return &r
-		}
-	}
-	return nil
 }
