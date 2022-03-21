@@ -169,3 +169,6 @@ version|[资源包](https://www.sealyun.com/goodsDetail?type=cloud_kernel&name=k
 # 📊 Stats
 
 ![Alt](https://repobeats.axiom.co/api/embed/10ce83c1d8452210bc4a0b5a5df9d59bbc35d889.svg "Repobeats analytics image")
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=fanux/sealos&type=Date)](https://star-history.com/#fanux/sealos&Date)
