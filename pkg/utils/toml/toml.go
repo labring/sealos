@@ -14,22 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package toml
 
 import (
-	"github.com/fanux/sealos/pkg/utils/contants"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	"github.com/pelletier/go-toml"
 )
 
-const (
-	DefaultUserRoot = "root"
-)
+func MarshalTomlToFile(file string, obj interface{}) error {
+	data, err := toml.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	if err = fileutil.WriteFile(file, data); err != nil {
+		return err
+	}
+	return nil
+}
 
-var (
-	MASTER = "master"
-	NODE   = "node"
-)
-
-var (
-	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
-	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
-)
+func UnmarshalTomlFromFile(file string, obj interface{}) error {
+	metadata, err := fileutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	err = toml.Unmarshal(metadata, obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -14,35 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package store
+package expansion
 
-import (
-	"errors"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/hash"
-)
-
-type Store interface {
-	Save(p *v1beta1.Resource) error
-}
-
-type store struct {
-}
-
-func (s *store) Save(p *v1beta1.Resource) error {
-	if p.Spec.Path == "" {
-		return errors.New("package path not allow empty")
+// ConvertCommandAndArgs expands the given Container's command by replacing variable references `with the values of given EnvVar.
+func ConvertCommandAndArgs(specCommands, specArgs []string, envs map[string]interface{}) (command []string, args []string) {
+	mapping := MappingFuncFor(envs)
+	if len(specCommands) != 0 {
+		for _, cmd := range specCommands {
+			command = append(command, Expand(cmd, mapping))
+		}
 	}
-	p.Name = hash.ToString(p.Spec.Path)
-	if p.Spec.Type.IsOCI() {
-		return s.oci(p)
-	}
-	if p.Spec.Type.IsTarGz() {
-		return s.tarGz(p)
-	}
-	return s.dir(p,p.Spec.Path,false)
-}
 
-func NewStore() Store {
-	return &store{}
+	if len(specArgs) != 0 {
+		for _, arg := range specArgs {
+			args = append(args, Expand(arg, mapping))
+		}
+	}
+
+	return command, args
 }

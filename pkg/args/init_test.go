@@ -30,7 +30,6 @@ func TestInit_SetClusterArgs(t *testing.T) {
 		configs    []v2.Config
 		hosts      []v2.ClusterHost
 		dryRun     bool
-		withoutCNI bool
 	}
 	type args struct {
 		args InitArgs
@@ -67,7 +66,6 @@ func TestInit_SetClusterArgs(t *testing.T) {
 				configs:    tt.fields.configs,
 				hosts:      tt.fields.hosts,
 				dryRun:     tt.fields.dryRun,
-				withoutCNI: tt.fields.withoutCNI,
 				args:       tt.args.args,
 			}
 			if err := r.SetClusterArgs(); (err != nil) != tt.wantErr {
@@ -95,10 +93,6 @@ func TestInit_Output(t *testing.T) {
 					User:       "root",
 					Pk:         v2.DefaultPKFile,
 					Port:       22,
-					WithoutCNI: false,
-					Interface:  v2.DefaultCNIInterface,
-					IPIPFalse:  false,
-					MTU:        v2.DefaultCNIMTU,
 					//KubeadmfilePath:  "/Users/cuisongliu/DockerImages/kube/system.yaml1",
 					KubeURI:     "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
 					ClusterName: "default",

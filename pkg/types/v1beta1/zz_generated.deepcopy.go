@@ -129,8 +129,13 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	if in.CMDArgs != nil {
-		in, out := &in.CMDArgs, &out.CMDArgs
+	if in.Command != nil {
+		in, out := &in.Command, &out.Command
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.Args != nil {
+		in, out := &in.Args, &out.Args
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

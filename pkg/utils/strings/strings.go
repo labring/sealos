@@ -195,3 +195,16 @@ func SliceRemoveStr(ss []string, s string) (result []string) {
 	}
 	return
 }
+
+func FormatSize(size int64) (Size string) {
+	if size < 1024 {
+		Size = fmt.Sprintf("%.2fB", float64(size)/float64(1))
+	} else if size < (1024 * 1024) {
+		Size = fmt.Sprintf("%.2fKB", float64(size)/float64(1024))
+	} else if size < (1024 * 1024 * 1024) {
+		Size = fmt.Sprintf("%.2fMB", float64(size)/float64(1024*1024))
+	} else {
+		Size = fmt.Sprintf("%.2fGB", float64(size)/float64(1024*1024*1024))
+	}
+	return
+}

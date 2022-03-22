@@ -17,9 +17,12 @@ limitations under the License.
 package filesystem
 
 import (
+	"github.com/fanux/sealos/pkg/env"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/yaml"
+	"path"
 )
 
 func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resource *v2.Resource, clusterfile string) (string, error) {
@@ -40,4 +43,25 @@ func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resource *v2.Reso
 		}
 	}
 	return string(ya), nil
+}
+
+func renderENV(mountDir string, ipList []string, p env.Interface) error {
+	var (
+		baseRawPath     = path.Join(mountDir, contants.DataDirName)
+		renderEtc       = path.Join(baseRawPath, contants.EtcDirName)
+		renderChart     = path.Join(baseRawPath, contants.ChartsDirName)
+		renderManifests = path.Join(baseRawPath, contants.ManifestsDirName)
+	)
+
+	for _, ip := range ipList {
+		for _, dir := range []string{renderEtc, renderChart, renderManifests} {
+			if file.IsExist(dir) {
+				err := p.RenderAll(ip, dir)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }

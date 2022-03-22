@@ -45,42 +45,42 @@ type bash struct {
 
 func (b *bash) CheckBash() string {
 	if val, ok := b.render[renderCheck]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }
 
 func (b *bash) InitBash() string {
 	if val, ok := b.render[renderInit]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }
 
 func (b *bash) CleanBash() string {
 	if val, ok := b.render[renderClean]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }
 
 func (b *bash) AuthBash() string {
 	if val, ok := b.render[renderAuth]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }
 
 func (b *bash) InitRegistryBash() string {
 	if val, ok := b.render[renderInitRegistry]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }
 
 func (b *bash) CleanRegistryBash() string {
 	if val, ok := b.render[renderCleanRegistry]; ok {
-		return fmt.Sprintf(DefaultBashFmt, b.data.KubeScriptsPath(), val)
+		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
 	return ""
 }

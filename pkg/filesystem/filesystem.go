@@ -19,15 +19,13 @@ package filesystem
 import (
 	"context"
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/collector"
 	"io/ioutil"
-	"path"
 	"path/filepath"
 
-	"github.com/fanux/sealos/pkg/config"
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/store"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/archive"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -72,28 +70,6 @@ func (f *FileSystem) mountResource() error {
 	if err := f.store.Save(f.resource); err != nil {
 		return err
 	}
-	statusPath := f.resource.Status.Path
-	clusterFile := contants.Clusterfile(f.cluster.Name)
-	if f.resource.Spec.Type == v2.KubernetesTarGz {
-		arch := archive.NewArchive(false, false)
-		digest, _, err := arch.Digest(statusPath)
-		if err != nil {
-			return err
-		}
-		md5Dir := path.Join(contants.ResourcePath(), digest.String())
-		if err = file.CopyDir(f.resource.Status.Path, md5Dir, false); err != nil {
-			return err
-		}
-		statusPath = md5Dir
-		cfg := config.NewConfiguration(path.Join(statusPath, contants.DataDirName), f.configs)
-		if err = cfg.Dump(clusterFile); err != nil {
-			return err
-		}
-		if _, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, path.Join(statusPath, contants.DataDirName))); err != nil {
-			return err
-		}
-	}
-	f.resource.Status.RawPath = statusPath
 	return nil
 }
 
@@ -121,7 +97,7 @@ func NewFilesystem(clusterName string) (Interface, error) {
 	if len(resources) != 1 {
 		return nil, fmt.Errorf("resource data length must is one")
 	}
-	disk := store.NewStore(clusterName)
+	disk := store.NewStore()
 	envInterface := env.NewEnvProcessor(&clusters[0])
 
 	return &FileSystem{
@@ -159,27 +135,29 @@ func (f *FileSystem) mountRootfs(ipList []string) error {
 	if f.resource == nil {
 		return fmt.Errorf("get rootfs error,pelase mount MountResource after mountRootfs")
 	}
+	data := f.data.Homedir()
+	src := f.data.RootFSPath()
+	//copy rootfs
+	err := collector.Download(f.resource.Status.Path, data)
+	if err != nil {
+		return err
+	}
 
+	err = renderENV(src, ipList, f.env)
+	if err != nil {
+		return err
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			src := f.resource.Status.RawPath
-			baseRawPath := path.Join(src, contants.DataDirName)
-			renderEtc := path.Join(baseRawPath, contants.EtcDirName)
-			renderChart := path.Join(baseRawPath, contants.ChartsDirName)
-			renderManifests := path.Join(baseRawPath, contants.ManifestsDirName)
-			for _, dir := range []string{renderEtc, renderChart, renderManifests} {
-				if file.IsExist(dir) {
-					err := f.env.RenderAll(ip, dir)
-					if err != nil {
-						return err
-					}
-				}
+			target := f.data.RootFSPath()
+			sshClient := ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
+			//TODO is host ip
+			if ip == "" {
+				return nil
 			}
 
-			target := f.data.Homedir()
-			sshClient := ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
 			err := CopyFiles(sshClient, ip == f.cluster.GetMaster0IP(), ip, src, target)
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)

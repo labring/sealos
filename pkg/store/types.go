@@ -14,22 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package store
 
-import (
-	"github.com/fanux/sealos/pkg/utils/contants"
-)
-
-const (
-	DefaultUserRoot = "root"
-)
-
-var (
-	MASTER = "master"
-	NODE   = "node"
-)
-
-var (
-	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
-	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
-)
+type config struct {
+	Version   string            `toml:"version"`
+	Resources map[string]string `toml:"resources"`
+}

@@ -58,7 +58,7 @@ func NewLvscareCmd() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			fileName := fmt.Sprintf("%s.%s", name, contants.StaticPodFileSuffix)
+			fileName := fmt.Sprintf("%s.%s", name, contants.YamlFileSuffix)
 			yaml, err := ipvs.LvsStaticPodYaml(vip, masters, image, name)
 			if err != nil {
 				logger.Error(err)

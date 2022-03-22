@@ -35,10 +35,6 @@ type InitArgs struct {
 	Port        int32
 	Pk          string
 	PkPassword  string
-	WithoutCNI  bool
-	Interface   string
-	IPIPFalse   bool
-	MTU         string
 	KubeURI     string
 	ClusterName string
 	Vlog        int
@@ -59,20 +55,18 @@ func (a *InitArgs) Validate() error {
 }
 
 type Init struct {
-	args       InitArgs
-	cluster    *v2.Cluster
-	configs    []v2.Config
-	resource   *v2.Resource
-	hosts      []v2.ClusterHost
-	dryRun     bool
-	withoutCNI bool
+	args     InitArgs
+	cluster  *v2.Cluster
+	configs  []v2.Config
+	resource *v2.Resource
+	hosts    []v2.ClusterHost
+	dryRun   bool
 }
 
 func NewInit(args InitArgs) *Init {
 	r := &Init{}
 	r.args = args
 	r.dryRun = args.DryRun
-	r.withoutCNI = args.WithoutCNI
 	return r
 }
 
@@ -107,11 +101,6 @@ func (r *Init) SetClusterArgs() error {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 
-	if !r.args.WithoutCNI {
-		r.cluster.SetCNIInterface(r.args.Interface)
-		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
-		r.cluster.SetCNIMTU(r.args.MTU)
-	}
 	return nil
 }
 

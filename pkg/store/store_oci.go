@@ -14,29 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cni
+package store
 
 import (
-	"strings"
-
+	"fmt"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/version"
 )
 
-type CNI struct {
-	Interface string
-	CIDR      string
-	IPIP      string
-	MTU       string
-}
-
-type Interface interface {
-	Manifests(template string) string
-}
-
-func (c *CNI) Manifests(template string) string {
-	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIInterface, c.Interface)
-	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNICIDR, c.CIDR)
-	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIIPIP, c.IPIP)
-	template = strings.ReplaceAll(template, v1beta1.DefaultVarCNIMTU, c.MTU)
-	return template
+func (s *store) oci(p *v1beta1.Resource) error {
+	return fmt.Errorf("current sealos %s not support oci as store interface", version.Get().GitVersion)
 }

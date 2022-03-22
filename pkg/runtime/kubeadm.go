@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/contants"
 	"path/filepath"
 	"strings"
 
@@ -104,7 +105,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.resources.Status.RawPath, "etc", "kubeadm.yml")
+	return filepath.Join(k.resources.Status.Path, contants.DataDirName, contants.EtcDirName, contants.DefaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {

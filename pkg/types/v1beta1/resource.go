@@ -25,28 +25,32 @@ type ResourceType string
 const (
 	KubernetesTarGz  ResourceType = "kubernetes/tar.gz"
 	ApplicationTarGz ResourceType = "application/tar.gz"
+	KubernetesOCI    ResourceType = "kubernetes/oci"
+	ApplicationOCI   ResourceType = "application/oci"
 	DefaultVersion                = "v0.0.0-master"
 )
 
 func (t ResourceType) IsTarGz() bool {
 	return t == ApplicationTarGz || t == KubernetesTarGz
 }
+func (t ResourceType) IsOCI() bool {
+	return t == ApplicationOCI || t == KubernetesOCI
+}
 
 // ResourceSpec defines the desired state of Resource
 type ResourceSpec struct {
-	Type     ResourceType `json:"type"`
-	Path     string       `json:"path"`
-	Override string       `json:"override,omitempty"`
+	Type ResourceType `json:"type"`
+	Path string       `json:"path"`
 }
 
 // ResourceStatus defines the desired state of Resource
 type ResourceStatus struct {
 	Arch    Arch              `json:"arch"`
 	Version string            `json:"version"`
-	CNI     string            `json:"cni"`
 	Image   string            `json:"image"`
 	Path    string            `json:"path"`
-	RawPath string            `json:"rawPath,omitempty"`
+	Id      string            `json:"id"`
+	Size    int64             `json:"size"`
 	Data    map[string]string `json:"data,omitempty"`
 }
 

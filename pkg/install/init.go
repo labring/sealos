@@ -28,7 +28,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/cert"
 
-	"github.com/fanux/sealos/pkg/cni"
 	"github.com/fanux/sealos/pkg/utils/versionutil"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
@@ -238,20 +237,20 @@ func (s *SealosInstaller) InstallMaster0() {
 		}
 	}
 	//"{{if not .IPIP }}Off{{else}}Always{{end}}"
-	ipip := v1beta1.DefaultCNIIPIPTrue
-	if v1.BGP {
-		ipip = v1beta1.DefaultCNIIPIPFalse
-	}
-	cn := &cni.CNI{
-		Interface: v1.Interface,
-		CIDR:      v1.PodCIDR,
-		IPIP:      ipip,
-		MTU:       v1.MTU,
-	}
-	netyaml := cn.Manifests("")
+	//ipip := "Always"
+	//if v1.BGP {
+	//	ipip = "Off"
+	//}
+	//cn := &cni.CNI{
+	//	Interface: v1.Interface,
+	//	CIDR:      v1.PodCIDR,
+	//	IPIP:      ipip,
+	//	MTU:       v1.MTU,
+	//}
+	//netyaml := cn.Manifests("")
 	configYamlPath := filepath.Join(v1beta1.DefaultConfigPath, "cni.yaml")
 	logger.Debug("cni yaml path is : ", configYamlPath)
-	_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
+	//_ = ioutil.WriteFile(configYamlPath, []byte(netyaml), 0755)
 	_ = v1.SSHConfig.Copy(s.Masters[0], configYamlPath, "/tmp/cni.yaml")
 	_, _ = v1.SSHConfig.Cmd(s.Masters[0], "kubectl apply -f /tmp/cni.yaml")
 }

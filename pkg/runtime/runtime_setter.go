@@ -35,7 +35,7 @@ import (
 
 func (k *KubeadmRuntime) setRegistry(resource *v2.Resource) error {
 	const registryCustomConfig = "registry.yml"
-	etcPath := path.Join(resource.Status.RawPath, contants.DataDirName, "etc", registryCustomConfig)
+	etcPath := path.Join(resource.Status.Path, contants.DataDirName, contants.EtcDirName, registryCustomConfig)
 	registryConfig, err := yaml.Unmarshal(etcPath)
 	if err != nil {
 		return err

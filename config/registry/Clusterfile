@@ -1,0 +1,46 @@
+apiVersion: apps.sealyun.com/v1
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: default
+spec:
+  env:
+  - criData=/var/lib/containerd
+  - registryData=/var/lib/registry
+  - registryConfig=/etc/registry
+  - registryDomain=sealos.hub
+  - registryPort=5000
+  - registryUsername=admin
+  - registryPassword=passw0rd
+  hosts:
+  - ips:
+    - 192.168.64.15
+    roles:
+    - master
+    - amd64
+  - ips:
+    - 192.168.64.17
+    roles:
+    - node
+    - amd64
+  ssh:
+    pk: /Users/cuisongliu/.ssh/id_rsa
+    port: 22
+    user: root
+
+---
+apiVersion: apps.sealyun.com/v1
+kind: Config
+metadata:
+  creationTimestamp: null
+  name: registry
+spec:
+  data: |
+    domain: sealos.hub
+    ip: 192.168.64.15
+    password: passw0rd
+    port: 5000
+    username: admin
+    data: /var/lib/registry
+  path: etc/registry.yml
+  strategy: merge

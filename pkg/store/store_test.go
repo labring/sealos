@@ -41,11 +41,13 @@ func Test_store_tarGz(t *testing.T) {
 				clusterName: "xxxx",
 			},
 			args: args{
+				//8379fbf9aa583dcc5d7f3193e5ad9923
 				p: &v1beta1.Resource{
 					Spec: v1beta1.ResourceSpec{
 						Type: v1beta1.KubernetesTarGz,
 						Path: "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
 					},
+					Status: v1beta1.ResourceStatus{Path: "/var/lib/sealos/resource/sha256:a8862375805f4feed24984d479fa56e0c812ddedc4f2fddb8489550acb08847d"},
 				},
 			},
 			wantErr: false,
@@ -53,7 +55,7 @@ func Test_store_tarGz(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewStore(tt.fields.clusterName)
+			s := NewStore()
 			if err := s.Save(tt.args.p); (err != nil) != tt.wantErr {
 				t.Errorf("tarGz() error = %v, wantErr %v", err, tt.wantErr)
 			}

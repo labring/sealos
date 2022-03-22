@@ -52,7 +52,7 @@ func Default() (*Token, error) {
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
 		if diff.Len() == 1 {
 			token.JoinToken = diff.List()[0]
-			hashs, err := discoveryTokenCaCertHash()
+			hashs, err := discoveryTokenCaCertHash(defaultAdminConf)
 			if err != nil {
 				return nil, err
 			}

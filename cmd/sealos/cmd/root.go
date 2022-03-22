@@ -60,7 +60,7 @@ func onBootOnDie() {
 	var rootDirs = []string{
 		contants.LogPath(),
 		contants.DataPath(),
-		contants.Homedir(),
+		contants.Workdir(),
 	}
 	if err := file.MkDirs(rootDirs...); err != nil {
 		logger.Error(err)
