@@ -105,12 +105,12 @@ $ sealos upgrade --version v1.19.2 --pkg-url /root/kube1.19.2.tar.gz -f | tee -a
 
 09:45:49 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 09:45:49 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 09:45:49 [DEBG] [ssh.go:24] [ssh][192.168.160.243:22]command result is: 1
 
 09:45:49 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 09:45:49 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 09:45:49 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 09:45:50 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 09:45:50 [INFO] [ssh.go:50] [192.168.160.243:22] kube/shell/master.sh
