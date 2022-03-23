@@ -58,12 +58,12 @@ sealos upgrade  --pkg-url kube1.19.2.tar.gz --version v1.19.2 -f
 
 16:09:19 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 16:09:19 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-16:09:19 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+16:09:19 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 16:09:19 [DEBG] [ssh.go:24] [ssh][192.168.160.244:22]command result is: 1
 
 16:09:19 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 16:09:19 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-16:09:19 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+16:09:19 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 16:09:20 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 16:09:20 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 16:09:20 [INFO] [ssh.go:50] [192.168.160.244:22] kube/shell/init.sh
@@ -214,13 +214,13 @@ $ sealos upgrade  --pkg-url kube1.19.2.tar.gz --version v1.19.2 -f
 
 17:02:33 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 17:02:33 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-17:02:33 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+17:02:33 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 17:02:35 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 17:02:35 [DEBG] [ssh.go:24] [ssh][192.168.160.244:22]command result is: 1
 
 17:02:35 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 17:02:35 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-17:02:35 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+17:02:35 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 17:02:35 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 17:02:36 [INFO] [ssh.go:50] [192.168.160.243:22] kube/bin/kubectl
 17:02:37 [INFO] [ssh.go:50] [192.168.160.243:22] kube/bin/crictl
@@ -352,12 +352,12 @@ $ sealos  upgrade  --pkg-url /root/kube1.18.3.tar.gz  --version v1.18.3 -f | tee
 
 19:49:48 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 19:49:48 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-19:49:48 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+19:49:48 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 19:49:49 [DEBG] [ssh.go:24] [ssh][192.168.160.243:22]command result is: 1
 
 19:49:49 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 19:49:49 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-19:49:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+19:49:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 19:49:49 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 19:49:49 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 19:49:50 [INFO] [ssh.go:50] [192.168.160.244:22] kube/bin/sealos
@@ -515,7 +515,7 @@ $ sealos upgrade --version v1.17.12 --pkg-url /root/kube1.17.12.tar.gz -f | tee 
 
 20:10:06 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 20:10:06 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-20:10:06 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.17.12.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+20:10:06 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.17.12.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 20:10:06 [DEBG] [ssh.go:24] [ssh][192.168.160.244:22]command result is: 0
 
 20:10:06 [DEBG] [scp.go:26] [ssh]source file md5 value is a4f6fa2b1721bc2bf6fe3172b72497f2
@@ -541,7 +541,7 @@ $ sealos upgrade --version v1.17.12 --pkg-url /root/kube1.17.12.tar.gz -f | tee 
 20:10:23 [INFO] [scp.go:33] [ssh]md5 validate true
 20:10:23 [INFO] [download.go:38] [192.168.160.244:22]copy file md5 validate success
 20:10:23 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-20:10:23 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.17.12.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+20:10:23 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.17.12.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 20:10:23 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 20:10:24 [INFO] [ssh.go:50] [192.168.160.244:22] kube/bin/kubectl
 20:10:25 [INFO] [ssh.go:50] [192.168.160.244:22] kube/bin/conntrack
@@ -755,12 +755,12 @@ dev-k8s-node     Ready    <none>   3h43m   v1.17.12
 
 23:51:57 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 23:51:57 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-23:51:57 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+23:51:57 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 23:51:57 [DEBG] [ssh.go:24] [ssh][192.168.160.243:22]command result is: 1
 
 23:51:57 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 23:51:57 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-23:51:57 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+23:51:57 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 23:51:58 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 23:51:58 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 23:51:58 [INFO] [ssh.go:50] [192.168.160.243:22] kube/shell/master.sh
@@ -892,7 +892,7 @@ dev-k8s-node     Ready    <none>   3h43m   v1.17.12
 1.16.10.new.log  CHANGELOG.md      harbor.yaml                     kube                   kube-prometheus      nginx-1.18.0          temp
 1.19.1.log       clean.log         hello-contour.yaml              kube1.16.10.tar.gz     kuboard.tar          oneMasterOneNode.log  Templates
 1.19.1.new.log   config            helloworld.yaml                 kube1.17.12.tar.gz     kuboard.yaml         on.log                test
-1.19.2.new.log   Desktop           httpbin.yaml                    kube1.18.0.tar.gz      LICENSE              Pictures              testsealos.sh
+1.19.2.new.log   Desktop           httpbin.yaml                    kube1.18.0.tar.gz      LICENSE              Pictrues              testsealos.sh
 a.log            Documents         ingress                         kube1.18.3.tar.gz      LICENSE.md           Public                upgrade.11610-11712.log
 anaconda-ks.cfg  doublemaster.log  install.log                     kube1.19.1.tar.gz      linux-amd64          README.md             upgrade.11712-1183.log
 as.log           Downloads         istio-1.6.8                     kube1.19.1.tar.gz.bak  manifests            sealos                upgrade.11712-1192.log
@@ -936,12 +936,12 @@ $ sealos upgrade --version v1.19.2 --pkg-url /root/kube1.19.2.tar.gz -f | tee -a
 
 09:45:49 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 09:45:49 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 09:45:49 [DEBG] [ssh.go:24] [ssh][192.168.160.243:22]command result is: 1
 
 09:45:49 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 09:45:49 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+09:45:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.19.2.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 09:45:49 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 09:45:50 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 09:45:50 [INFO] [ssh.go:50] [192.168.160.243:22] kube/shell/master.sh
@@ -1295,7 +1295,7 @@ dev-k8s-node     Ready    master   52m    v1.17.12
 
 13:42:53 [WARN] [download.go:35] [192.168.160.244:22]SendPackage: file is exist
 13:42:53 [DEBG] [download.go:44] [192.168.160.244:22]please wait for after hook
-13:42:53 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+13:42:53 [INFO] [ssh.go:57] [ssh][192.168.160.244:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 13:42:55 [INFO] [ssh.go:50] [192.168.160.244:22] kube/
 13:43:00 [INFO] [ssh.go:50] [192.168.160.244:22] kube/bin/sealos
 13:43:07 [INFO] [ssh.go:50] [192.168.160.244:22] kube/bin/kubectl
@@ -1309,7 +1309,7 @@ dev-k8s-node     Ready    master   52m    v1.17.12
 
 13:43:49 [WARN] [download.go:35] [192.168.160.243:22]SendPackage: file is exist
 13:43:49 [DEBG] [download.go:44] [192.168.160.243:22]please wait for after hook
-13:43:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+13:43:49 [INFO] [ssh.go:57] [ssh][192.168.160.243:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 13:43:53 [INFO] [ssh.go:50] [192.168.160.243:22] kube/
 13:44:03 [ALRT] [scp.go:100] [ssh][192.168.160.245:22]transfer total size is: 100.00MB ;speed is 100MB
 13:44:03 [INFO] [ssh.go:50] [192.168.160.243:22] kube/bin/sealos
@@ -1334,7 +1334,7 @@ dev-k8s-node     Ready    master   52m    v1.17.12
 13:48:31 [INFO] [scp.go:33] [ssh]md5 validate true
 13:48:31 [INFO] [download.go:38] [192.168.160.245:22]copy file md5 validate success
 13:48:31 [DEBG] [download.go:44] [192.168.160.245:22]please wait for after hook
-13:48:31 [INFO] [ssh.go:57] [ssh][192.168.160.245:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || ture) && cp -f ../bin/* /usr/bin/ 
+13:48:31 [INFO] [ssh.go:57] [ssh][192.168.160.245:22] cd /root && rm -rf kube && tar zxvf kube1.18.3.tar.gz  && cd /root/kube/shell && rm -f ../bin/sealos && (docker load -i ../images/images.tar || true) && cp -f ../bin/* /usr/bin/ 
 13:48:34 [INFO] [ssh.go:50] [192.168.160.245:22] kube/
 13:48:35 [INFO] [ssh.go:50] [192.168.160.244:22] Loaded image: k8s.gcr.io/kube-controller-manager:v1.18.3
 13:48:35 [INFO] [ssh.go:50] [192.168.160.244:22] Loaded image: k8s.gcr.io/kube-apiserver:v1.18.3

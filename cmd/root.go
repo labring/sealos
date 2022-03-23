@@ -57,7 +57,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sealos/config.yaml)")
-	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger ture for Info, false for Debug")
+	rootCmd.PersistentFlags().BoolVar(&Info, "info", false, "logger true for Info, false for Debug")
 }
 
 // initConfig reads in config file and ENV variables if set.
