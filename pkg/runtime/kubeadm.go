@@ -105,7 +105,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.resources.Status.Path, contants.DataDirName, contants.EtcDirName, contants.DefaultRootfsKubeadmFileName)
+	return filepath.Join(k.data.RootFSEtcPath(), contants.DefaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {

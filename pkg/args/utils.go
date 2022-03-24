@@ -34,15 +34,6 @@ func initCluster(clusterName string) *v2.Cluster {
 	return cluster
 }
 
-func initResource(name string, spec v2.ResourceSpec) *v2.Resource {
-	data := &v2.Resource{}
-	data.Name = name
-	data.Kind = "Resource"
-	data.APIVersion = v2.SchemeGroupVersion.String()
-	data.Spec = spec
-	return data
-}
-
 func PreProcessIPList(joinArgs *InitArgs) error {
 	if err := iputils.AssemblyIPList(&joinArgs.Masters); err != nil {
 		return err

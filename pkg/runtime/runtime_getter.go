@@ -63,8 +63,16 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 	return k.cluster.GetMaster0IPAPIServer()
 }
 
-func (k *KubeadmRuntime) getLvscareImage() string {
-	return k.resources.Status.Image
+func (k *KubeadmRuntime) getLvscareImage() (string, error) {
+	labels, err := k.getImageLabels()
+	if err != nil {
+		return "", err
+	}
+	image := labels["image"]
+	if image == "" {
+		image = contants.DefaultLvsCareImage
+	}
+	return image, nil
 }
 
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {

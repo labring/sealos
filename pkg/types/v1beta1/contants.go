@@ -21,7 +21,9 @@ import (
 )
 
 const (
-	DefaultUserRoot = "root"
+	DefaultUserRoot   = "root"
+	DefaultBaseLayer  = "scratch"
+	DefaultRootFSType = "layers"
 )
 
 var (

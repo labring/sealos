@@ -25,7 +25,7 @@ import (
 	"path"
 )
 
-func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resource *v2.Resource, clusterfile string) (string, error) {
+func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, clusterfile string) (string, error) {
 	data := make([]interface{}, 0)
 	data = append(data, cluster)
 	for _, c := range configs {

@@ -32,9 +32,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func (k *KubeadmRuntime) setRegistry(resource *v2.Resource) error {
+func (k *KubeadmRuntime) setRegistry() error {
 	const registryCustomConfig = "registry.yml"
-	etcPath := path.Join(resource.Status.Path, contants.DataDirName, contants.EtcDirName, registryCustomConfig)
+	etcPath := path.Join(k.data.RootFSPath(), contants.EtcDirName, registryCustomConfig)
 	registryConfig, err := yaml.Unmarshal(etcPath)
 	if err != nil {
 		return err

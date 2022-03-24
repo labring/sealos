@@ -39,15 +39,6 @@ func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
 	return
 }
 
-func Resource(filepath string) (configs []v1beta1.Resource, err error) {
-	decodePackage, err := decodeCRD(filepath, contants.Resource)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode package from %s, %v", filepath, err)
-	}
-	configs = decodePackage.([]v1beta1.Resource)
-	return
-}
-
 func Configs(filepath string) (configs []v1beta1.Config, err error) {
 	decodeConfigs, err := decodeCRD(filepath, contants.Config)
 	if err != nil {
@@ -110,16 +101,6 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 				configs = append(configs, config)
 			}
 			i = configs
-		case contants.Resource:
-			p := v1beta1.Resource{}
-			err = yaml.Unmarshal(ext.Raw, &p)
-			if err != nil {
-				return nil, fmt.Errorf("decode package failed %v", err)
-			}
-			if p.Kind == contants.Resource {
-				resources = append(resources, p)
-			}
-			i = resources
 		}
 	}
 

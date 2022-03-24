@@ -105,18 +105,6 @@ func (r *Init) SetClusterArgs() error {
 	return nil
 }
 
-func (r *Init) SetResourceArgs() error {
-	if len(r.args.KubeURI) > 0 {
-		spec := v2.ResourceSpec{
-			Type: v2.KubernetesTarGz,
-			Path: r.args.KubeURI,
-		}
-		r.resource = initResource("rootfs", spec)
-	}
-
-	return nil
-}
-
 func (r *Init) Output() error {
 	var clusterFile string
 	if !r.args.DryRun {

@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/fanux/sealos/pkg/env"
-	"github.com/fanux/sealos/pkg/store"
+	"github.com/fanux/sealos/pkg/image"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/decode"
@@ -43,12 +43,11 @@ type Interface interface {
 }
 
 type FileSystem struct {
-	store    store.Store
-	env      env.Interface
-	cluster  *v2.Cluster
-	configs  []v2.Config
-	resource *v2.Resource
-	data     contants.Data
+	imageService image.Service
+	env          env.Interface
+	cluster      *v2.Cluster
+	configs      []v2.Config
+	data         contants.Data
 }
 
 func (f *FileSystem) MountRootfs(hosts []string) error {
@@ -67,8 +66,8 @@ func (f *FileSystem) MountWorkingContainer() error {
 	_, err = SaveClusterFile(f.cluster, f.configs, contants.Clusterfile(f.getClusterName()))
 	return err
 }
-func (f *FileSystem) mountResource() error {
-	if err := f.store.Save(f.resource); err != nil {
+func (f *FileSystem) mountWorkingContainer() error {
+	if err := f.imageService.PullIfNotExist(f.getImageName()); err != nil {
 		return err
 	}
 	if err := f.imageService.CreateCluster(f.getImageName(), f.getClusterName()); err != nil {
@@ -138,7 +137,7 @@ func (f *FileSystem) mountRootfs(ipList []string) error {
 		return errors.Wrap(err, fmt.Sprintf("inspect container %s data failed", f.getClusterName()))
 	}
 	//copy rootfs
-	err := collector.Download(f.resource.Status.Path, data)
+	err = collector.Download(data.MountPoint, src)
 	if err != nil {
 		return err
 	}

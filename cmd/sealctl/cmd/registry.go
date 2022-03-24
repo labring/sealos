@@ -25,7 +25,7 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/fanux/sealos/pkg/buildimage"
-	"github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/registry"
 	"github.com/fanux/sealos/pkg/passwd"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
@@ -83,7 +83,7 @@ func NewRegistryImagePullRawCmd() *cobra.Command {
 				logger.Error("ImageFile convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
-			is := image.NewImageSaver(context.Background(), auth)
+			is := registry.NewImageSaver(context.Background(), auth)
 			err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
@@ -116,7 +116,7 @@ func NewRegistryImagePullYamlCmd() *cobra.Command {
 				logger.Error("yaml path convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
-			is := image.NewImageSaver(context.Background(), auth)
+			is := registry.NewImageSaver(context.Background(), auth)
 			err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
@@ -144,7 +144,7 @@ func NewRegistryImagePullDefaultCmd() *cobra.Command {
 		Short: "registry images manager pull to local dir by default type",
 		Run: func(cmd *cobra.Command, args []string) {
 			flags.PrintFlags(cmd.Flags())
-			is := image.NewImageSaver(context.Background(), auth)
+			is := registry.NewImageSaver(context.Background(), auth)
 			err := is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())

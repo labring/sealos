@@ -31,9 +31,9 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	cluster   *v2.Cluster
-	resources *v2.Resource
-	registry  RegistryConfig
+	cluster      *v2.Cluster
+	imageService image.Service
+	registry     RegistryConfig
 	*KubeadmConfig
 	*config
 	*client

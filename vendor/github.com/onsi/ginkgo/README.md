@@ -1,10 +1,23 @@
 ![Ginkgo: A Go BDD Testing Framework](https://onsi.github.io/ginkgo/images/ginkgo.png)
 
 [![Build Status](https://travis-ci.org/onsi/ginkgo.svg?branch=master)](https://travis-ci.org/onsi/ginkgo)
+[![test](https://github.com/onsi/ginkgo/workflows/test/badge.svg?branch=master)](https://github.com/onsi/ginkgo/actions?query=workflow%3Atest+branch%3Amaster)
 
-Jump to the [docs](https://onsi.github.io/ginkgo/) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set-me-up)!
+Jump to the [docs](https://onsi.github.io/ginkgo/) | [中文文档](https://ke-chain.github.io/ginkgodoc) to learn more.  To start rolling your Ginkgo tests *now* [keep reading](#set-me-up)!
 
 If you have a question, comment, bug report, feature request, etc. please open a GitHub issue, or visit the [Ginkgo Slack channel](https://app.slack.com/client/T029RQSE6/CQQ50BBNW).
+
+# Ginkgo 2.0 is coming soon!
+
+An effort is underway to develop and deliver Ginkgo 2.0.  The work is happening in the [v2](https://github.com/onsi/ginkgo/tree/v2) branch and a changelog and migration guide is being maintained on that branch [here](https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md).  Issue [#711](https://github.com/onsi/ginkgo/issues/711) is the central place for discussion and links to the original [proposal doc](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#).
+
+As described in the [changelog](https://github.com/onsi/ginkgo/blob/v2/docs/MIGRATING_TO_V2.md) and [proposal](https://docs.google.com/document/d/1h28ZknXRsTLPNNiOjdHIO-F2toCzq4xoZDXbfYaBdoQ/edit#), Ginkgo 2.0 will clean up the Ginkgo codebase, deprecate and remove some v1 functionality, and add several new much-requested features.  To help users get ready for the migration, Ginkgo v1 has started emitting deprecation warnings for features that will no longer be supported with links to documentation for how to migrate away from these features.  If you have concerns or comments please chime in on [#711](https://github.com/onsi/ginkgo/issues/711).
+
+The current timeline for completion of 2.0 looks like:
+
+- Early April 2021: first public release of 2.0, deprecation warnings land in v1.
+- May 2021: first beta/rc of 2.0 with most new functionality in place.
+- June/July 2021: 2.0 ships and fully replaces the 1.x codebase on master.
 
 ## TLDR
 Ginkgo builds on Go's `testing` package, allowing expressive [Behavior-Driven Development](https://en.wikipedia.org/wiki/Behavior-driven_development) ("BDD") style tests.
@@ -61,6 +74,8 @@ Describe("the strings package", func() {
 
 - [Completions for VSCode](https://github.com/onsi/vscode-ginkgo): just use VSCode's extension installer to install `vscode-ginkgo`.
 
+- [Ginkgo tools for VSCode](https://marketplace.visualstudio.com/items?itemName=joselitofilho.ginkgotestexplorer): just use VSCode's extension installer to install `ginkgoTestExplorer`.
+
 - Straightforward support for third-party testing libraries such as [Gomock](https://code.google.com/p/gomock/) and [Testify](https://github.com/stretchr/testify).  Check out the [docs](https://onsi.github.io/ginkgo/#third-party-integrations) for details.
 
 - A modular architecture that lets you easily:
@@ -80,10 +95,11 @@ Agouti allows you run WebDriver integration tests.  Learn more about Agouti [her
 You'll need the Go command-line tools. Follow the [installation instructions](https://golang.org/doc/install) if you don't have it installed.
 
 ### Global installation
-To install the Ginkgo command line interface into the `$PATH` (actually to `$GOBIN`):
+To install the Ginkgo command line interface:
 ```bash
 go get -u github.com/onsi/ginkgo/ginkgo
 ```
+Note that this will install it to `$GOBIN`, which will need to be in the `$PATH` (or equivalent). Run `go help install` for more information.
 
 ### Go module ["tools package"](https://github.com/golang/go/issues/25922):
 Create (or update) a file called `tools/tools.go` with the following contents:
@@ -93,7 +109,7 @@ Create (or update) a file called `tools/tools.go` with the following contents:
 package tools
 
 import (
-	_ "github.com/onsi/ginkgo"
+	_ "github.com/onsi/ginkgo/ginkgo"
 )
 
 // This file imports packages that are used when running go generate, or used
