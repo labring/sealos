@@ -66,7 +66,6 @@ func Test_getMergeConfig(t *testing.T) {
 		want    []byte
 		wantErr bool
 	}{
-		// TODO: Add test cases.
 		{
 			name: "test",
 			args: args{

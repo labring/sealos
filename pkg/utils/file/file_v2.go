@@ -112,7 +112,7 @@ func MkDirs(dirs ...string) error {
 }
 
 func MkTmpdir(dir string) (string, error) {
-	tempDir, err := ioutil.TempDir(dir, ".DTmp-")
+	tempDir, err := ioutil.TempDir(dir, "DTmp-")
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +120,7 @@ func MkTmpdir(dir string) (string, error) {
 }
 
 func MkTmpFile(path string) (*os.File, error) {
-	return ioutil.TempFile(path, ".FTmp-")
+	return ioutil.TempFile(path, "FTmp-")
 }
 
 func WriteFile(fileName string, content []byte) error {

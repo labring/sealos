@@ -22,14 +22,14 @@ const (
 	DefaultClusterFileName = "Clusterfile"
 )
 
-func Homedir() string {
+func Workdir() string {
 	return filepath.Join(GetHomeDir(), ".sealos")
 }
 
 func ClusterDir(clusterName string) string {
-	return filepath.Join(Homedir(), clusterName)
+	return filepath.Join(Workdir(), clusterName)
 }
 
 func Clusterfile(clusterName string) string {
-	return filepath.Join(Homedir(), clusterName, DefaultClusterFileName)
+	return filepath.Join(Workdir(), clusterName, DefaultClusterFileName)
 }

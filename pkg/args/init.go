@@ -35,11 +35,7 @@ type InitArgs struct {
 	Port        int32
 	Pk          string
 	PkPassword  string
-	WithoutCNI  bool
-	Interface   string
-	IPIPFalse   bool
-	MTU         string
-	KubeURI     string
+	ImageName   string
 	ClusterName string
 	Vlog        int
 	DryRun      bool
@@ -49,8 +45,8 @@ func (a *InitArgs) Validate() error {
 	if a.Masters == "" {
 		return fmt.Errorf("master not empty")
 	}
-	if a.KubeURI == "" {
-		return fmt.Errorf("kube uri not empty")
+	if a.ImageName == "" {
+		return fmt.Errorf("image name not empty")
 	}
 	if a.ClusterName == "" {
 		return fmt.Errorf("cluster name not empty")
@@ -59,20 +55,17 @@ func (a *InitArgs) Validate() error {
 }
 
 type Init struct {
-	args       InitArgs
-	cluster    *v2.Cluster
-	configs    []v2.Config
-	resource   *v2.Resource
-	hosts      []v2.ClusterHost
-	dryRun     bool
-	withoutCNI bool
+	args    InitArgs
+	cluster *v2.Cluster
+	configs []v2.Config
+	hosts   []v2.ClusterHost
+	dryRun  bool
 }
 
 func NewInit(args InitArgs) *Init {
 	r := &Init{}
 	r.args = args
 	r.dryRun = args.DryRun
-	r.withoutCNI = args.WithoutCNI
 	return r
 }
 
@@ -87,6 +80,8 @@ func (r *Init) SetClusterArgs() error {
 	if r.args.Password != "" {
 		r.cluster.Spec.SSH.Passwd = r.args.Password
 	}
+
+	r.cluster.Spec.Image = r.args.ImageName
 
 	if err := PreProcessIPList(&r.args); err != nil {
 		return err
@@ -107,23 +102,6 @@ func (r *Init) SetClusterArgs() error {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 
-	if !r.args.WithoutCNI {
-		r.cluster.SetCNIInterface(r.args.Interface)
-		r.cluster.SetCNIIPIP(!r.args.IPIPFalse)
-		r.cluster.SetCNIMTU(r.args.MTU)
-	}
-	return nil
-}
-
-func (r *Init) SetResourceArgs() error {
-	if len(r.args.KubeURI) > 0 {
-		spec := v2.ResourceSpec{
-			Type: v2.KubernetesTarGz,
-			Path: r.args.KubeURI,
-		}
-		r.resource = initResource("rootfs", spec)
-	}
-
 	return nil
 }
 
@@ -132,7 +110,7 @@ func (r *Init) Output() error {
 	if !r.args.DryRun {
 		clusterFile = contants.Clusterfile(r.args.ClusterName)
 	}
-	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resource, clusterFile)
+	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, clusterFile)
 	if err != nil {
 		return err
 	}

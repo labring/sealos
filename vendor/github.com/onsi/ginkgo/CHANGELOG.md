@@ -1,3 +1,68 @@
+## 1.16.4
+
+### Fixes
+1.16.4 retracts 1.16.3.  There are no code changes.  The 1.16.3 tag was associated with the wrong commit and an attempt to change it after-the-fact has proven problematic.  1.16.4 retracts 1.16.3 in Ginkgo's go.mod and creates a new, correctly tagged, release.
+
+## 1.16.3
+
+### Features
+- Measure is now deprecated and emits a deprecation warning.
+
+## 1.16.2
+
+### Fixes
+- Deprecations can be suppressed by setting an `ACK_GINKGO_DEPRECATIONS=<semver>` environment variable.
+
+## 1.16.1
+
+### Fixes
+- Supress --stream deprecation warning on windows (#793)
+
+## 1.16.0
+
+### Features
+- Advertise Ginkgo 2.0.  Introduce deprecations. [9ef1913]
+    - Update README.md to advertise that Ginkgo 2.0 is coming.
+    - Backport the 2.0 DeprecationTracker and start alerting users
+    about upcoming deprecations.
+
+- Add slim-sprig template functions to bootstrap/generate (#775) [9162b86]
+
+### Fixes
+- Fix accidental reference to 1488 (#784) [9fb7fe4]
+
+## 1.15.2
+
+### Fixes
+- ignore blank `-focus` and `-skip` flags (#780) [e90a4a0]
+
+## 1.15.1
+
+### Fixes
+- reporters/junit: Use `system-out` element instead of `passed` (#769) [9eda305]
+
+## 1.15.0
+
+### Features
+- Adds 'outline' command to print the outline of specs/containers in a file (#754) [071c369] [6803cc3] [935b538] [06744e8] [0c40583]
+- Add support for using template to generate tests (#752) [efb9e69]
+- Add a Chinese Doc #755 (#756) [5207632]
+- cli: allow multiple -focus and -skip flags (#736) [9a782fb]
+
+### Fixes
+- Add _internal to filename of tests created with internal flag (#751) [43c12da]
+
+## 1.14.2
+
+### Fixes
+- correct handling windows backslash in import path (#721) [97f3d51]
+- Add additional methods to GinkgoT() to improve compatibility with the testing.TB interface [b5fe44d]
+
+## 1.14.1
+
+### Fixes
+- Discard exported method declaration when running ginkgo bootstrap (#558) [f4b0240]
+
 ## 1.14.0
 
 ### Features

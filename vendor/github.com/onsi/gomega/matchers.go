@@ -423,8 +423,27 @@ func BeADirectory() types.GomegaMatcher {
 //Expected must be either an int or a string.
 //  Expect(resp).Should(HaveHTTPStatus(http.StatusOK))   // asserts that resp.StatusCode == 200
 //  Expect(resp).Should(HaveHTTPStatus("404 Not Found")) // asserts that resp.Status == "404 Not Found"
-func HaveHTTPStatus(expected interface{}) types.GomegaMatcher {
+//  Expect(resp).Should(HaveHTTPStatus(http.StatusOK, http.StatusNoContent))   // asserts that resp.StatusCode == 200 || resp.StatusCode == 204
+func HaveHTTPStatus(expected ...interface{}) types.GomegaMatcher {
 	return &matchers.HaveHTTPStatusMatcher{Expected: expected}
+}
+
+// HaveHTTPHeaderWithValue succeeds if the header is found and the value matches.
+// Actual must be either a *http.Response or *httptest.ResponseRecorder.
+// Expected must be a string header name, followed by a header value which
+// can be a string, or another matcher.
+func HaveHTTPHeaderWithValue(header string, value interface{}) types.GomegaMatcher {
+	return &matchers.HaveHTTPHeaderWithValueMatcher{
+		Header: header,
+		Value:  value,
+	}
+}
+
+// HaveHTTPBody matches if the body matches.
+// Actual must be either a *http.Response or *httptest.ResponseRecorder.
+// Expected must be either a string, []byte, or other matcher
+func HaveHTTPBody(expected interface{}) types.GomegaMatcher {
+	return &matchers.HaveHTTPBodyMatcher{Expected: expected}
 }
 
 //And succeeds only if all of the given matchers succeed.
@@ -473,4 +492,12 @@ func Not(matcher types.GomegaMatcher) types.GomegaMatcher {
 //And(), Or(), Not() and WithTransform() allow matchers to be composed into complex expressions.
 func WithTransform(transform interface{}, matcher types.GomegaMatcher) types.GomegaMatcher {
 	return matchers.NewWithTransformMatcher(transform, matcher)
+}
+
+//Satisfy matches the actual value against the `predicate` function.
+//The given predicate must be a function of one paramter that returns bool.
+//  var isEven = func(i int) bool { return i%2 == 0 }
+//  Expect(2).To(Satisfy(isEven))
+func Satisfy(predicate interface{}) types.GomegaMatcher {
+	return matchers.NewSatisfyMatcher(predicate)
 }

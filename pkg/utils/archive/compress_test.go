@@ -116,11 +116,11 @@ func TestTarWithoutRootDir(t *testing.T) {
 }
 
 func TestTarWithRootDir(t *testing.T) {
-	reader, err := NewArchive(false, false).TarOrGzip("testdata")
+	reader, err := NewArchive(true, false).TarOrGzip("testdata")
 	if err != nil {
 		t.Error(err)
 	}
-	tmp, err := os.Create("/tmp/sealos/temp/aaa.tar")
+	tmp, err := os.Create("/var/lib/sealos/tmp/aaa.gzip")
 	//tmp, err := ioutil.TempFile("/tmp", "tar")
 	_, err = io.Copy(tmp, reader)
 	if err != nil {

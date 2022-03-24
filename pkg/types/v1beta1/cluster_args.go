@@ -34,28 +34,6 @@ func (c *Cluster) SetHosts(hosts []ClusterHost) {
 	c.Spec.Hosts = hosts
 }
 
-func (c *Cluster) SetCNIInterface(cniInterface string) {
-	if cniInterface == "" {
-		cniInterface = DefaultCNIInterface
-	}
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCNIInterface, cniInterface))
-}
-func (c *Cluster) SetCNIMTU(cniMTU string) {
-	if cniMTU == "" {
-		cniMTU = DefaultCNIMTU
-	}
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCNIMTU, cniMTU))
-}
-func (c *Cluster) SetCNIIPIP(ipip bool) {
-	cniIPIP := ""
-	if ipip {
-		cniIPIP = DefaultCNIIPIPTrue
-	} else {
-		cniIPIP = DefaultCNIIPIPFalse
-	}
-	c.Spec.Env = append(c.Spec.Env, fmt.Sprintf("%s=%s", DefaultVarCNIIPIP, cniIPIP))
-}
-
 // ConvertEnv []string to map[string]interface{}, example [IP=127.0.0.1,IP=192.160.0.2,Key=value] will convert to {IP:[127.0.0.1,192.168.0.2],key:value}
 func ConvertEnv(envList []string) (env map[string]interface{}) {
 	temp := make(map[string][]string)

@@ -19,6 +19,8 @@ package runtime
 import (
 	"sync"
 
+	"github.com/fanux/sealos/pkg/image"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/env"
@@ -30,9 +32,9 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	cluster   *v2.Cluster
-	resources *v2.Resource
-	registry  RegistryConfig
+	cluster      *v2.Cluster
+	imageService image.Service
+	registry     RegistryConfig
 	*KubeadmConfig
 	*config
 	*client
@@ -132,13 +134,20 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 
 func newKubeadmRuntime(clusterName string) (Interface, error) {
 	k := &KubeadmRuntime{}
-	if err := k.setData(clusterName); err != nil {
+	imageService, err := image.NewImageService()
+	if err != nil {
 		return nil, err
 	}
-	if err := k.setRegistry(k.resources); err != nil {
+	k.imageService = imageService
+	if err = k.setData(clusterName); err != nil {
 		return nil, err
 	}
-	k.setClient()
+	if err = k.setRegistry(); err != nil {
+		return nil, err
+	}
+	if err = k.setClient(); err != nil {
+		return nil, err
+	}
 	k.setCertSANS()
 	return k, nil
 }

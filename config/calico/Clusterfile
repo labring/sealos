@@ -1,0 +1,29 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+networking:
+  podSubnet: 100.64.0.0/10
+---
+apiVersion: apps.sealyun.com/v1
+kind: Config
+metadata:
+  name: calico
+spec:
+  path: cni/custom-resources.yaml
+  data: |
+    apiVersion: operator.tigera.io/v1
+    kind: Installation
+    metadata:
+      name: default
+    spec:
+      # Configures Calico networking.
+      calicoNetwork:
+        # Note: The ipPools section cannot be modified post-install.
+        ipPools:
+        - blockSize: 26
+          # Note: Must be the same as podCIDR
+          cidr: 100.64.0.0/10
+          encapsulation: IPIP
+          natOutgoing: Enabled
+          nodeSelector: all()
+        nodeAddressAutodetectionV4:
+          interface: "eth.*|en.*"

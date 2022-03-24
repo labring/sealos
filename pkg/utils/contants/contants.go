@@ -20,9 +20,8 @@ import (
 
 const (
 	LvsCareStaticPodName = "kube-sealyun-lvscare"
-	StaticPodFileSuffix  = "yaml"
+	YamlFileSuffix       = "yaml"
 	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
-	DefaultCNI           = "calico"
 )
 
 //CRD kind
@@ -30,7 +29,6 @@ const (
 	Config   = "Config"
 	Cluster  = "Cluster"
 	Resource = "Resource"
-	Kubeadm  = "Kubeadm"
 )
 
 func GetHomeDir() string {

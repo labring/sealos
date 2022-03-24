@@ -25,6 +25,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 )
 
 func NotIn(key string, slice []string) bool {
@@ -194,4 +195,29 @@ func SliceRemoveStr(ss []string, s string) (result []string) {
 		}
 	}
 	return
+}
+
+func FormatSize(size int64) (Size string) {
+	if size < 1024 {
+		Size = fmt.Sprintf("%.2fB", float64(size)/float64(1))
+	} else if size < (1024 * 1024) {
+		Size = fmt.Sprintf("%.2fKB", float64(size)/float64(1024))
+	} else if size < (1024 * 1024 * 1024) {
+		Size = fmt.Sprintf("%.2fMB", float64(size)/float64(1024*1024))
+	} else {
+		Size = fmt.Sprintf("%.2fGB", float64(size)/float64(1024*1024*1024))
+	}
+	return
+}
+
+func IsLetterOrNumber(k string) bool {
+	for _, r := range k {
+		if r == '_' {
+			continue
+		}
+		if !unicode.IsLetter(r) && !unicode.IsNumber(r) {
+			return false
+		}
+	}
+	return true
 }

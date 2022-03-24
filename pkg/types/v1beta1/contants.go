@@ -21,11 +21,9 @@ import (
 )
 
 const (
-	DefaultUserRoot     = "root"
-	DefaultCNIInterface = "eth.*|en.*|em.*"
-	DefaultCNIMTU       = "1440"
-	DefaultCNIIPIPTrue  = "Always"
-	DefaultCNIIPIPFalse = "Off"
+	DefaultUserRoot   = "root"
+	DefaultBaseLayer  = "scratch"
+	DefaultRootFSType = "layers"
 )
 
 var (
@@ -36,11 +34,4 @@ var (
 var (
 	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
 	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
-)
-
-var (
-	DefaultVarCNIInterface = "Interface" //cni-interface
-	DefaultVarCNIIPIP      = "IPIP"      //cni-ipip
-	DefaultVarCNICIDR      = "CIDR"      //cni-cidr
-	DefaultVarCNIMTU       = "MTU"       //cni-mtu
 )

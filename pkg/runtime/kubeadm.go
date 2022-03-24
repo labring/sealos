@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/contants"
+
 	"github.com/fanux/sealos/pkg/runtime/kubeadm_types/v1beta2"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -104,7 +106,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.resources.Status.RawPath, "etc", "kubeadm.yml")
+	return filepath.Join(k.data.RootFSEtcPath(), contants.DefaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {

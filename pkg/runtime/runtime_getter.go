@@ -26,7 +26,17 @@ import (
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.resources.Status.Version
+	labels, err := k.getImageLabels()
+	if err != nil {
+		logger.Painc("get kubernetes version error: %+v")
+		return ""
+	}
+	image := labels["version"]
+	if image == "" {
+		logger.Painc("not fount kubernetes version")
+		return ""
+	}
+	return image
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
@@ -53,8 +63,16 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 	return k.cluster.GetMaster0IPAPIServer()
 }
 
-func (k *KubeadmRuntime) getLvscareImage() string {
-	return k.resources.Status.Image
+func (k *KubeadmRuntime) getLvscareImage() (string, error) {
+	labels, err := k.getImageLabels()
+	if err != nil {
+		return "", err
+	}
+	image := labels["image"]
+	if image == "" {
+		image = contants.DefaultLvsCareImage
+	}
+	return image, nil
 }
 
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
@@ -83,7 +101,11 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
 }
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
-	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, k.getLvscareImage(), masters)
+	image, err := k.getLvscareImage()
+	if err != nil {
+		return err
+	}
+	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, image, masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {

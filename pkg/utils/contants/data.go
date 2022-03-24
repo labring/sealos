@@ -20,11 +20,10 @@ import "path/filepath"
 
 const (
 	DefaultClusterRootfsDir          = "/var/lib/sealos"
-	DefaultKubeadmFileName           = "Kubeadmfile"
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
-	DefaultSystemFile                = "system.json"
+	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
 	MetadataFile                     = "Metadata"
 	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"
@@ -38,7 +37,7 @@ const (
 )
 
 func LogPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "log")
+	return filepath.Join(DefaultClusterRootfsDir, "logs")
 }
 func DataPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "data")
@@ -47,18 +46,21 @@ func ResourcePath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "resource")
 }
 
+func ResourceMetaPath() string {
+	return filepath.Join(DefaultClusterRootfsDir, "metadata")
+}
+
 func TmpPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "tmp")
 }
 
 type Data interface {
 	Homedir() string
-	KubePath() string
-	KubeEtcPath() string
-	KubeStaticsPath() string
-	KubeScriptsPath() string
-	KubeRegistryPath() string
-	KubeKubeadmfile() string
+	RootFSPath() string
+	RootFSEtcPath() string
+	RootFSStaticsPath() string
+	RootFSScriptsPath() string
+	RootFSRegistryPath() string
 
 	PkiPath() string
 	PkiEtcdPath() string
@@ -66,39 +68,36 @@ type Data interface {
 	EtcPath() string
 	TmpPath() string
 
-	KubeCharsPath() string
-	KubeManifestsPath() string
-	KubeSealctlPath() string
+	RootFSCharsPath() string
+	RootFSManifestsPath() string
+	RootFSSealctlPath() string
 }
 
 type data struct {
 	clusterName string
 }
 
-func (d *data) KubeSealctlPath() string {
-	return filepath.Join(d.KubePath(), "opt", "sealctl")
+func (d *data) RootFSSealctlPath() string {
+	return filepath.Join(d.RootFSPath(), "opt", "sealctl")
 }
 
-func (d *data) KubeScriptsPath() string {
-	return filepath.Join(d.KubePath(), ScriptsDirName)
+func (d *data) RootFSScriptsPath() string {
+	return filepath.Join(d.RootFSPath(), ScriptsDirName)
 }
-func (d *data) KubeEtcPath() string {
-	return filepath.Join(d.KubePath(), EtcDirName)
-}
-func (d *data) KubeKubeadmfile() string {
-	return filepath.Join(d.KubePath(), EtcDirName, DefaultKubeadmFileName)
+func (d *data) RootFSEtcPath() string {
+	return filepath.Join(d.RootFSPath(), EtcDirName)
 }
 
-func (d *data) KubeRegistryPath() string {
-	return filepath.Join(d.KubePath(), RegistryDirName)
+func (d *data) RootFSRegistryPath() string {
+	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
 
-func (d *data) KubeCharsPath() string {
-	return filepath.Join(d.KubePath(), ChartsDirName)
+func (d *data) RootFSCharsPath() string {
+	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }
 
-func (d *data) KubeManifestsPath() string {
-	return filepath.Join(d.KubePath(), ManifestsDirName)
+func (d *data) RootFSManifestsPath() string {
+	return filepath.Join(d.RootFSPath(), ManifestsDirName)
 }
 
 func (d *data) EtcPath() string {
@@ -120,12 +119,12 @@ func (d *data) TmpPath() string {
 	return filepath.Join(d.Homedir(), "tmp")
 }
 
-func (d *data) KubePath() string {
+func (d *data) RootFSPath() string {
 	return filepath.Join(d.Homedir(), DataDirName)
 }
 
-func (d *data) KubeStaticsPath() string {
-	return filepath.Join(d.KubePath(), StaticsDirName)
+func (d *data) RootFSStaticsPath() string {
+	return filepath.Join(d.RootFSPath(), StaticsDirName)
 }
 
 func (d *data) Homedir() string {

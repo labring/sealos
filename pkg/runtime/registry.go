@@ -39,7 +39,7 @@ func (k *KubeadmRuntime) htpasswd() error {
 
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
-	err := k.sshCmdAsync(k.registry.IP, fmt.Sprintf(DefaultCPFmt, k.registry.Data, k.data.KubeRegistryPath(), k.registry.Data))
+	err := k.sshCmdAsync(k.registry.IP, fmt.Sprintf(DefaultCPFmt, k.registry.Data, k.data.RootFSRegistryPath(), k.registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}

@@ -90,6 +90,18 @@ func MarshalYamlToFile(file string, obj interface{}) error {
 	return nil
 }
 
+func UnmarshalYamlFromFile(file string, obj interface{}) error {
+	metadata, err := fileutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+	err = yaml.Unmarshal(metadata, obj)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
 	var cfgs [][]byte
 	for _, cfg := range configs {

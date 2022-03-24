@@ -48,11 +48,34 @@ type ClusterHost struct {
 
 // ClusterSpec defines the desired state of Metadata
 type ClusterSpec struct {
+	// desired state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
+	// Foo is an example field of Cluster. Edit Cluster_types.go to remove/update
+	Image string        `json:"image,omitempty"`
 	SSH   ClusterSSH    `json:"ssh"`
 	Hosts []ClusterHost `json:"hosts,omitempty"`
 	// Why env not using map[string]string
 	// Because some argument is list, like: CertSANS=127.0.0.1 CertSANS=localhost, if ENV is map, will merge those two values
 	// but user want to Metadata a list, using array we can convert it to {CertSANS:[127.0.0.1, localhost]}
-	Env     []string `json:"env,omitempty"`
-	CMDArgs []string `json:"cmd_args,omitempty"`
+	Env []string `json:"env,omitempty"`
+	// Entrypoint array. Not executed within a shell.
+	// The docker image's ENTRYPOINT is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+	// to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+	// produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+	// of whether the variable exists or not. Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Command []string `json:"command,omitempty"`
+	// Arguments to the entrypoint.
+	// The docker image's CMD is used if this is not provided.
+	// Variable references $(VAR_NAME) are expanded using the container's environment. If a variable
+	// cannot be resolved, the reference in the input string will be unchanged. Double $$ are reduced
+	// to a single $, which allows for escaping the $(VAR_NAME) syntax: i.e. "$$(VAR_NAME)" will
+	// produce the string literal "$(VAR_NAME)". Escaped references will never be expanded, regardless
+	// of whether the variable exists or not. Cannot be updated.
+	// More info: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/#running-a-command-in-a-shell
+	// +optional
+	Args []string `json:"args,omitempty"`
 }

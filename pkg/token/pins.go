@@ -29,8 +29,8 @@ import (
 	"k8s.io/client-go/util/cert"
 )
 
-func discoveryTokenCaCertHash() ([]string, error) {
-	tlsBootstrapCfg, err := clientcmd.LoadFromFile(defaultAdminConf)
+func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
+	tlsBootstrapCfg, err := clientcmd.LoadFromFile(adminPath)
 	if err != nil {
 		return nil, err
 	}

@@ -34,8 +34,9 @@ func TestInit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ForceDelete = true
-			k, _ := NewDefaultRuntime("default")
-			if err := k.Init(); (err != nil) != tt.wantErr {
+			k, err := NewDefaultRuntime("default")
+			print(err)
+			if err := k.Reset(); (err != nil) != tt.wantErr {
 				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

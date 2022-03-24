@@ -17,15 +17,23 @@ github.com/aliyun/alibaba-cloud-sdk-go/services/ecs
 github.com/aliyun/alibaba-cloud-sdk-go/services/vpc
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
-# github.com/cavaliergopher/grab/v3 v3.0.1
-## explicit
-github.com/cavaliergopher/grab/v3
-github.com/cavaliergopher/grab/v3/pkg/bps
 # github.com/cespare/xxhash/v2 v2.1.1
 github.com/cespare/xxhash/v2
-# github.com/containerd/continuity v0.1.0
-github.com/containerd/continuity/fs
-github.com/containerd/continuity/sysx
+# github.com/containers/image/v5 v5.16.0
+## explicit
+github.com/containers/image/v5/docker/reference
+github.com/containers/image/v5/internal/pkg/platform
+github.com/containers/image/v5/manifest
+github.com/containers/image/v5/pkg/compression/internal
+github.com/containers/image/v5/pkg/compression/types
+github.com/containers/image/v5/pkg/strslice
+github.com/containers/image/v5/types
+# github.com/containers/libtrust v0.0.0-20190913040956-14b96171aa3b
+github.com/containers/libtrust
+# github.com/containers/ocicrypt v1.1.2
+github.com/containers/ocicrypt/spec
+# github.com/containers/storage v1.36.0
+## explicit
 # github.com/coreos/go-semver v0.3.0
 github.com/coreos/go-semver/semver
 # github.com/coreos/go-systemd/v22 v22.3.2
@@ -63,7 +71,7 @@ github.com/distribution/distribution/v3/uuid
 # github.com/docker/cli v20.10.12+incompatible
 ## explicit
 github.com/docker/cli/cli/streams
-# github.com/docker/docker v20.10.3-0.20211208011758-87521affb077+incompatible
+# github.com/docker/docker v20.10.8+incompatible
 ## explicit
 github.com/docker/docker/api/types
 github.com/docker/docker/api/types/blkiodev
@@ -76,19 +84,16 @@ github.com/docker/docker/api/types/strslice
 github.com/docker/docker/api/types/swarm
 github.com/docker/docker/api/types/swarm/runtime
 github.com/docker/docker/api/types/versions
-github.com/docker/docker/pkg/fileutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/progress
 github.com/docker/docker/pkg/streamformatter
 # github.com/docker/go-connections v0.4.0
-## explicit
 github.com/docker/go-connections/nat
 # github.com/docker/go-metrics v0.0.1
 github.com/docker/go-metrics
 # github.com/docker/go-units v0.4.0
-## explicit
 github.com/docker/go-units
-# github.com/docker/libtrust v0.0.0-20150114040149-fa567046d9b1
+# github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 github.com/docker/libtrust
 # github.com/dustin/go-humanize v1.0.0
 github.com/dustin/go-humanize
@@ -119,7 +124,8 @@ github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/btree v1.0.1
 github.com/google/btree
-# github.com/google/go-cmp v0.5.5
+# github.com/google/go-cmp v0.5.6
+## explicit
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -193,18 +199,18 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
 # github.com/morikuni/aec v1.0.0
-## explicit
 github.com/morikuni/aec
-# github.com/nxadm/tail v1.4.4
+# github.com/nxadm/tail v1.4.8
 github.com/nxadm/tail
 github.com/nxadm/tail/ratelimiter
 github.com/nxadm/tail/util
 github.com/nxadm/tail/watch
 github.com/nxadm/tail/winfile
-# github.com/onsi/ginkgo v1.14.0
+# github.com/onsi/ginkgo v1.16.4
 ## explicit
 github.com/onsi/ginkgo
 github.com/onsi/ginkgo/config
+github.com/onsi/ginkgo/formatter
 github.com/onsi/ginkgo/internal/codelocation
 github.com/onsi/ginkgo/internal/containernode
 github.com/onsi/ginkgo/internal/failer
@@ -222,16 +228,13 @@ github.com/onsi/ginkgo/reporters/stenographer
 github.com/onsi/ginkgo/reporters/stenographer/support/go-colorable
 github.com/onsi/ginkgo/reporters/stenographer/support/go-isatty
 github.com/onsi/ginkgo/types
-# github.com/onsi/gomega v1.10.1
+# github.com/onsi/gomega v1.16.0
 ## explicit
 github.com/onsi/gomega
 github.com/onsi/gomega/format
 github.com/onsi/gomega/gbytes
 github.com/onsi/gomega/gexec
-github.com/onsi/gomega/internal/assertion
-github.com/onsi/gomega/internal/asyncassertion
-github.com/onsi/gomega/internal/oraclematcher
-github.com/onsi/gomega/internal/testingtsupport
+github.com/onsi/gomega/internal
 github.com/onsi/gomega/matchers
 github.com/onsi/gomega/matchers/support/goraph/bipartitegraph
 github.com/onsi/gomega/matchers/support/goraph/edge
@@ -241,7 +244,7 @@ github.com/onsi/gomega/types
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v1.0.2
+# github.com/opencontainers/image-spec v1.0.3-0.20211202193544-a5463b7f9c84
 ## explicit
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
@@ -291,12 +294,7 @@ github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 ## explicit
 github.com/spf13/pflag
-# github.com/tonistiigi/fsutil v0.0.0-20220115021204-b19f7f9cb274
-## explicit
-github.com/tonistiigi/fsutil
-github.com/tonistiigi/fsutil/copy
-github.com/tonistiigi/fsutil/types
-# github.com/vishvananda/netlink v1.1.0
+# github.com/vishvananda/netlink v1.1.1-0.20201029203352-d40f9887b852 => github.com/vishvananda/netlink v1.1.0
 ## explicit
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
@@ -480,9 +478,6 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 golang.org/x/time/rate
-# golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
-golang.org/x/xerrors
-golang.org/x/xerrors/internal
 # google.golang.org/appengine v1.6.7
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base
@@ -812,3 +807,4 @@ sigs.k8s.io/structured-merge-diff/v4/value
 # sigs.k8s.io/yaml v1.2.0
 ## explicit
 sigs.k8s.io/yaml
+# github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0

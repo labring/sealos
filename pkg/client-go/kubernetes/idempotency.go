@@ -221,7 +221,6 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 		// First get the node object
 		n, err := ki.client.CoreV1().Nodes().Get(context.TODO(), nodeName, metav1.GetOptions{})
 		if err != nil {
-			// TODO this should only be for timeouts
 			return false, nil //nolint:nilerr
 		}
 
@@ -250,7 +249,6 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 		}
 
 		if _, err := ki.client.CoreV1().Nodes().Patch(context.TODO(), n.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
-			// TODO also check for timeouts
 			if apierrors.IsConflict(err) {
 				logger.Debug("Temporarily unable to update node metadata due to conflict (will retry)")
 				return false, nil
