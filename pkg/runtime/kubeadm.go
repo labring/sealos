@@ -16,9 +16,10 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/contants"
 	"path/filepath"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/runtime/kubeadm_types/v1beta2"
 	"github.com/fanux/sealos/pkg/token"

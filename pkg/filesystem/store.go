@@ -17,12 +17,13 @@ limitations under the License.
 package filesystem
 
 import (
+	"path"
+
 	"github.com/fanux/sealos/pkg/env"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	"path"
 )
 
 func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, clusterfile string) (string, error) {

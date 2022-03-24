@@ -19,10 +19,11 @@ package filesystem
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/collector"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/fanux/sealos/pkg/utils/collector"
+	"github.com/pkg/errors"
 
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/image"

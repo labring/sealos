@@ -25,8 +25,8 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/fanux/sealos/pkg/buildimage"
-	"github.com/fanux/sealos/pkg/registry"
 	"github.com/fanux/sealos/pkg/passwd"
+	"github.com/fanux/sealos/pkg/registry"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/fanux/sealos/pkg/utils/file"

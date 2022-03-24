@@ -17,8 +17,9 @@ limitations under the License.
 package runtime
 
 import (
-	"github.com/fanux/sealos/pkg/image"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/image"
 
 	"github.com/fanux/sealos/pkg/utils/contants"
 

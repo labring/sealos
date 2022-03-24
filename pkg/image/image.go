@@ -82,7 +82,7 @@ func (d *defaultImageService) Logout(RegistryURL string) error {
 func (d *defaultImageService) Images() ([]v1.Image, error) {
 	panic("implement me")
 }
-func (d *defaultImageService) InspectManifest(remoteImageName string) (*manifest.Schema2List, error){
+func (d *defaultImageService) InspectManifest(remoteImageName string) (*manifest.Schema2List, error) {
 	panic("implement me")
 }
 func (d *defaultImageService) Inspect(imageOrClusterName string) (*BuilderInfo, error) {
@@ -165,6 +165,5 @@ func (d *defaultImageService) Build(filePath, imageName string) error {
 }
 
 func NewImageService() (Service, error) {
-
 	return &defaultImageService{}, nil
 }
