@@ -21,8 +21,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/image"
 
-	"github.com/fanux/sealos/pkg/utils/contants"
-
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
@@ -33,7 +31,6 @@ type KubeadmRuntime struct {
 	imageInfo *image.BuilderInfo
 	*KubeadmConfig
 	*Config
-	*client
 }
 
 //nolint
@@ -42,11 +39,6 @@ type Config struct {
 	ClusterFileKubeConfig *KubeadmConfig
 	apiServerDomain       string
 	vlog                  int
-}
-
-//nolint
-type client struct {
-	data contants.Data
 }
 
 type RegistryConfig struct {
@@ -135,9 +127,6 @@ func newKubeadmRuntime(clusterName string) (Interface, error) {
 	}
 	k.imageInfo, err = imageService.Inspect(k.cluster.Spec.Image)
 	if err != nil {
-		return nil, err
-	}
-	if err = k.setClient(); err != nil {
 		return nil, err
 	}
 	k.setCertSANS()

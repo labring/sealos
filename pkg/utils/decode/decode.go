@@ -20,12 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
-	"path"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )
@@ -49,22 +47,23 @@ func Configs(filepath string) (configs []v1beta1.Config, err error) {
 }
 
 func decodeCRD(filepath string, kind string) (out interface{}, err error) {
-	file, err := os.Open(path.Clean(filepath))
+	data, err := fileutil.ReadAll(filepath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dump config %v", err)
+		return nil, fmt.Errorf("failed to read file %v", err)
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			logger.Warn("failed to dump config close clusterfile failed %v", err)
-		}
-	}()
+
+	return CRDForBytes(data, kind)
+}
+
+func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
+	r := bytes.NewReader(data)
 	var (
 		i        interface{}
 		clusters []v1beta1.Cluster
 		configs  []v1beta1.Config
 	)
 
-	d := yaml.NewYAMLOrJSONDecoder(file, 4096)
+	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
 		ext := runtime.RawExtension{}

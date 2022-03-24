@@ -16,90 +16,31 @@ limitations under the License.
 
 package filesystem
 
-import (
-	"testing"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
-)
-
-func TestFileSystem_MountResource(t *testing.T) {
-	type fields struct {
-		clusterName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "default",
-			fields: fields{
-				clusterName: "default",
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			f, _ := NewFilesystem(tt.fields.clusterName)
-			if err := f.MountWorkingContainer(); (err != nil) != tt.wantErr {
-				t.Errorf("MountWorkingContainer() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-func TestFileSystem_MountRootfs(t *testing.T) {
-	type fields struct {
-		clusterName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "default",
-			fields: fields{
-				clusterName: "default",
-			},
-			wantErr: false,
-		},
-	}
-	logger.Cfg(false, true)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			f, _ := NewFilesystem(tt.fields.clusterName)
-			if err := f.MountRootfs([]string{"192.168.64.18"}); (err != nil) != tt.wantErr {
-				t.Errorf("MountRootfs() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestFileSystem_UnMountRootfs(t *testing.T) {
-	type fields struct {
-		clusterName string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		{
-			name: "default",
-			fields: fields{
-				clusterName: "default",
-			},
-			wantErr: false,
-		},
-	}
-	logger.Cfg(false, true)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			f, _ := NewFilesystem(tt.fields.clusterName)
-			if err := f.UnMountRootfs([]string{"192.168.64.15"}); (err != nil) != tt.wantErr {
-				t.Errorf("MountRootfs() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
+//
+//func TestFileSystem_UnMountRootfs(t *testing.T) {
+//	type fields struct {
+//		clusterName string
+//	}
+//	tests := []struct {
+//		name    string
+//		fields  fields
+//		wantErr bool
+//	}{
+//		{
+//			name: "default",
+//			fields: fields{
+//				clusterName: "default",
+//			},
+//			wantErr: false,
+//		},
+//	}
+//	logger.Cfg(false, true)
+//	for _, tt := range tests {
+//		t.Run(tt.name, func(t *testing.T) {
+//			f, _ := NewFilesystem(tt.fields.clusterName)
+//			if err := f.UnMountRootfs([]string{"192.168.64.15"}); (err != nil) != tt.wantErr {
+//				t.Errorf("MountRootfs() error = %v, wantErr %v", err, tt.wantErr)
+//			}
+//		})
+//	}
+//}

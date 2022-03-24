@@ -19,7 +19,6 @@ package args
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/filesystem"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/iputils"
@@ -110,11 +109,12 @@ func (r *Init) Output() error {
 	if !r.args.DryRun {
 		clusterFile = contants.Clusterfile(r.args.ClusterName)
 	}
-	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, clusterFile)
-	if err != nil {
-		return err
-	}
-	logger.Debug("Output-Clusterfile: \n%s", ya)
+	//TODO storage clusterfile
+	//ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, clusterFile)
+	//if err != nil {
+	//	return err
+	//}
+	logger.Debug("Output-Clusterfile: \n%s", clusterFile)
 	return nil
 }
 

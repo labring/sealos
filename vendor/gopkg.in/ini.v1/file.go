@@ -142,6 +142,12 @@ func (f *File) GetSection(name string) (*Section, error) {
 	return secs[0], err
 }
 
+// HasSection returns true if the file contains a section with given name.
+func (f *File) HasSection(name string) bool {
+	section, _ := f.GetSection(name)
+	return section != nil
+}
+
 // SectionsByName returns all sections with given name.
 func (f *File) SectionsByName(name string) ([]*Section, error) {
 	if len(name) == 0 {
@@ -168,8 +174,9 @@ func (f *File) SectionsByName(name string) ([]*Section, error) {
 func (f *File) Section(name string) *Section {
 	sec, err := f.GetSection(name)
 	if err != nil {
-		// Note: It's OK here because the only possible error is empty section name,
-		// but if it's empty, this piece of code won't be executed.
+		if name == "" {
+			name = DefaultSection
+		}
 		sec, _ = f.NewSection(name)
 		return sec
 	}
