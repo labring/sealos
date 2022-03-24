@@ -59,12 +59,12 @@ func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
 //GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
 // The support matrix will look something like this now and in the future:
 // v1.10 and earlier: v1alpha1
-// v1.11: v1alpha1 read-only, writes only v1alpha2 config
-// v1.12: v1alpha2 read-only, writes only v1alpha3 config. Errors if the user tries to use v1alpha1
-// v1.13: v1alpha3 read-only, writes only v1beta1 config. Errors if the user tries to use v1alpha1 or v1alpha2
-// v1.14: v1alpha3 convert only, writes only v1beta1 config. Errors if the user tries to use v1alpha1 or v1alpha2
-// v1.15: v1beta1 read-only, writes only v1beta2 config. Errors if the user tries to use v1alpha1, v1alpha2 or v1alpha3
-// v1.22: v1beta2 read-only, writes only v1beta3 config. Errors if the user tries to use v1beta1 and older
+// v1.11: v1alpha1 read-only, writes only v1alpha2 Config
+// v1.12: v1alpha2 read-only, writes only v1alpha3 Config. Errors if the user tries to use v1alpha1
+// v1.13: v1alpha3 read-only, writes only v1beta1 Config. Errors if the user tries to use v1alpha1 or v1alpha2
+// v1.14: v1alpha3 convert only, writes only v1beta1 Config. Errors if the user tries to use v1alpha1 or v1alpha2
+// v1.15: v1beta1 read-only, writes only v1beta2 Config. Errors if the user tries to use v1alpha1, v1alpha2 or v1alpha3
+// v1.22: v1beta2 read-only, writes only v1beta3 Config. Errors if the user tries to use v1beta1 and older
 func getterKubeadmAPIVersion(kubeVersion string) string {
 	var apiVersion string
 	switch {
@@ -84,7 +84,7 @@ func getterKubeadmAPIVersion(kubeVersion string) string {
 }
 
 func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
-	driver, err := k.ctlInterface.CGroup(node)
+	driver, err := k.getRemoteInterface().CGroup(node)
 	if err != nil {
 		return "", err
 	}
@@ -93,13 +93,13 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 }
 
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
-	if k.config.ClusterFileKubeConfig != nil {
-		if err := k.LoadFromClusterfile(k.config.ClusterFileKubeConfig); err != nil {
-			return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
+	if k.Config.ClusterFileKubeConfig != nil {
+		if err := k.LoadFromClusterfile(k.Config.ClusterFileKubeConfig); err != nil {
+			return fmt.Errorf("failed to load kubeadm Config from clusterfile: %v", err)
 		}
 	}
 	if err := k.Merge(k.getDefaultKubeadmConfig()); err != nil {
-		return fmt.Errorf("failed to merge kubeadm config: %v", err)
+		return fmt.Errorf("failed to merge kubeadm Config: %v", err)
 	}
 	k.setKubeadmAPIVersion()
 	return nil
@@ -121,7 +121,7 @@ func (k *KubeadmRuntime) getVipAndPort() string {
 	return fmt.Sprintf("%s:6443", k.getVip())
 }
 func (k *KubeadmRuntime) getAPIServerDomain() string {
-	return k.config.apiServerDomain
+	return k.Config.apiServerDomain
 }
 func (k *KubeadmRuntime) getClusterAPIServer() string {
 	return fmt.Sprintf("https://%s:6443", k.getAPIServerDomain())

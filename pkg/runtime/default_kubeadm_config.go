@@ -89,7 +89,7 @@ etcd:
       listen-metrics-urls: http://0.0.0.0:2381
 
 ---
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
+apiVersion: kubeproxy.Config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
@@ -97,7 +97,7 @@ ipvs:
     - "10.103.97.2/32"
 
 ---
-apiVersion: kubelet.config.k8s.io/v1beta1
+apiVersion: kubelet.Config.k8s.io/v1beta1
 kind: KubeletConfiguration
 authentication:
   anonymous:
