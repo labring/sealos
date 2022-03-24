@@ -20,6 +20,10 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/fanux/sealos/pkg/passwd"
 	"github.com/fanux/sealos/pkg/utils/file"
 
@@ -28,18 +32,61 @@ import (
 
 const DefaultCPFmt = "mkdir -p %s && cp -rf  %s/* %s/"
 
+func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
+	const registryCustomConfig = "registry.yml"
+	var DefaultConfig = &RegistryConfig{
+		IP:     defaultRegistry,
+		Domain: contants.DefaultRegistryDomain,
+		Port:   "5000",
+	}
+	etcPath := path.Join(rootfs, contants.EtcDirName, registryCustomConfig)
+	registryConfig, err := yaml.Unmarshal(etcPath)
+	if err != nil {
+		logger.Debug("use default registry config")
+		return DefaultConfig
+	}
+	domain, _, _ := unstructured.NestedString(registryConfig, "domain")
+	port, _, _ := unstructured.NestedString(registryConfig, "port")
+	username, _, _ := unstructured.NestedString(registryConfig, "username")
+	password, _, _ := unstructured.NestedString(registryConfig, "password")
+	data, _, _ := unstructured.NestedString(registryConfig, "data")
+	ip, _, _ := unstructured.NestedString(registryConfig, "ip")
+
+	if ip == "" {
+		ip = defaultRegistry
+	}
+	if domain == "" {
+		domain = DefaultConfig.Domain
+	}
+	if port == "" {
+		domain = DefaultConfig.Port
+	}
+	rConfig := RegistryConfig{
+		IP:       ip,
+		Domain:   domain,
+		Port:     port,
+		Username: username,
+		Password: password,
+		Data:     data,
+	}
+	logger.Debug("show registry info, IP: %s, Domain: %s", rConfig.IP, rConfig.Domain)
+	return &rConfig
+}
+
 func (k *KubeadmRuntime) htpasswd() error {
 	htpasswdPath := path.Join(k.data.EtcPath(), "registry_htpasswd")
-	if k.registry.Username == "" && k.registry.Password == "" {
+	registry := k.getRegistry()
+	if registry.Username == "" && registry.Password == "" {
 		return nil
 	}
-	data := passwd.Htpasswd(k.registry.Username, k.registry.Password)
+	data := passwd.Htpasswd(registry.Username, registry.Password)
 	return file.WriteFile(htpasswdPath, []byte(data))
 }
 
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
-	err := k.sshCmdAsync(k.registry.IP, fmt.Sprintf(DefaultCPFmt, k.registry.Data, k.data.RootFSRegistryPath(), k.registry.Data))
+	registry := k.getRegistry()
+	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(DefaultCPFmt, registry.Data, k.data.RootFSRegistryPath(), registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
@@ -67,7 +114,8 @@ func (k *KubeadmRuntime) DeleteRegistry() error {
 
 func (k *KubeadmRuntime) registryAuth(ip string) error {
 	logger.Info("registry auth in node %s", ip)
-	err := k.execHostsAppend(ip, k.registry.IP, k.registry.Domain)
+	registry := k.getRegistry()
+	err := k.execHostsAppend(ip, registry.IP, registry.Domain)
 	if err != nil {
 		return fmt.Errorf("add registry hosts failed %v", err)
 	}

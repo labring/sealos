@@ -77,7 +77,7 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("exec clean.sh failed %v", err)
 	}
-	err = k.execHostsDelete(node, k.registry.Domain)
+	err = k.execHostsDelete(node, k.getRegistry().Domain)
 	if err != nil {
 		return fmt.Errorf("delete registry hosts failed %v", err)
 	}
