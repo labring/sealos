@@ -26,10 +26,10 @@ import (
 
 func TestInit_SetClusterArgs(t *testing.T) {
 	type fields struct {
-		cluster    *v2.Cluster
-		configs    []v2.Config
-		hosts      []v2.ClusterHost
-		dryRun     bool
+		cluster *v2.Cluster
+		configs []v2.Config
+		hosts   []v2.ClusterHost
+		dryRun  bool
 	}
 	type args struct {
 		args InitArgs
@@ -62,11 +62,11 @@ func TestInit_SetClusterArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			r := &Init{
-				cluster:    tt.fields.cluster,
-				configs:    tt.fields.configs,
-				hosts:      tt.fields.hosts,
-				dryRun:     tt.fields.dryRun,
-				args:       tt.args.args,
+				cluster: tt.fields.cluster,
+				configs: tt.fields.configs,
+				hosts:   tt.fields.hosts,
+				dryRun:  tt.fields.dryRun,
+				args:    tt.args.args,
 			}
 			if err := r.SetClusterArgs(); (err != nil) != tt.wantErr {
 				t.Errorf("processCluster() error = %v, wantErr %v", err, tt.wantErr)
@@ -88,13 +88,12 @@ func TestInit_Output(t *testing.T) {
 			name: "default",
 			args: args{
 				args: InitArgs{
-					Masters:    "192.168.64.15",
-					Nodes:      "192.168.64.17",
-					User:       "root",
-					Pk:         v2.DefaultPKFile,
-					Port:       22,
-					//KubeadmfilePath:  "/Users/cuisongliu/DockerImages/kube/system.yaml1",
-					KubeURI:     "/Users/cuisongliu/DockerImages/kube1.22.0-amd64.tar.gz",
+					Masters:     "192.168.64.15",
+					Nodes:       "192.168.64.17",
+					User:        "root",
+					Pk:          v2.DefaultPKFile,
+					Port:        22,
+					ImageName:   "localhost/kubernetes-sealos:1.22.0",
 					ClusterName: "default",
 					Vlog:        0,
 					DryRun:      true,
@@ -110,9 +109,6 @@ func TestInit_Output(t *testing.T) {
 			}
 			if err := r.SetClusterArgs(); (err != nil) != tt.wantErr {
 				t.Errorf("SetClusterArgs() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err := r.SetResourceArgs(); (err != nil) != tt.wantErr {
-				t.Errorf("SetResourceArgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			logger.Cfg(true, false)
 			_ = r.Output()

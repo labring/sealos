@@ -22,7 +22,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/decode"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
@@ -57,14 +56,31 @@ func (k *KubeadmRuntime) setRegistry(resource *v2.Resource) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) setClient() {
+func (k *KubeadmRuntime) getImageLabels() (map[string]string, error) {
+	data, err := k.imageService.Inspect(k.getImageName())
+	if err != nil {
+		return nil, err
+	}
+	return data.OCIv1.Config.Labels, err
+}
+
+func (k *KubeadmRuntime) getImageName() string {
+	return k.cluster.Spec.Image
+}
+
+func (k *KubeadmRuntime) setClient() error {
 	sshInterface := ssh.NewSSHClient(&k.cluster.Spec.SSH, true)
 	k.client = &client{}
 	k.sshInterface = sshInterface
 	k.envInterface = env.NewEnvProcessor(k.cluster)
 	k.ctlInterface = remote.New(k.getClusterName(), sshInterface)
 	k.data = contants.NewData(k.getClusterName())
-	k.bash = contants.NewBash(k.getClusterName(), k.resources.Status.Data)
+	render, err := k.getImageLabels()
+	if err != nil {
+		return err
+	}
+	k.bash = contants.NewBash(k.getClusterName(), render)
+	return nil
 }
 
 func (k *KubeadmRuntime) setData(clusterName string) error {
@@ -76,13 +92,6 @@ func (k *KubeadmRuntime) setData(clusterName string) error {
 	if len(clusters) != 1 {
 		return fmt.Errorf("cluster data length must is one")
 	}
-	resources, err := decode.Resource(clusterFile)
-	if err != nil {
-		return err
-	}
-	if len(resources) != 1 {
-		return fmt.Errorf("resources data length must is one")
-	}
 	data, err := fileutil.ReadAll(clusterFile)
 	if err != nil {
 		return errors.Wrap(err, "read cluster file data failed")
@@ -92,7 +101,6 @@ func (k *KubeadmRuntime) setData(clusterName string) error {
 		return err
 	}
 	k.cluster = &clusters[0]
-	k.resources = &resources[0]
 	k.KubeadmConfig = &KubeadmConfig{}
 	k.config = &config{
 		ClusterFileKubeConfig: kubeadmConfig,

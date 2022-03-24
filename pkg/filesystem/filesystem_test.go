@@ -42,8 +42,8 @@ func TestFileSystem_MountResource(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f, _ := NewFilesystem(tt.fields.clusterName)
-			if err := f.MountResource(); (err != nil) != tt.wantErr {
-				t.Errorf("MountResource() error = %v, wantErr %v", err, tt.wantErr)
+			if err := f.MountWorkingContainer(); (err != nil) != tt.wantErr {
+				t.Errorf("MountWorkingContainer() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

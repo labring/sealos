@@ -26,7 +26,17 @@ import (
 )
 
 func (k *KubeadmRuntime) getKubeVersion() string {
-	return k.resources.Status.Version
+	labels, err := k.getImageLabels()
+	if err != nil {
+		logger.Painc("get kubernetes version error: %+v")
+		return ""
+	}
+	image := labels["version"]
+	if image == "" {
+		logger.Painc("not fount kubernetes version")
+		return ""
+	}
+	return image
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
@@ -83,7 +93,11 @@ func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
 }
 
 func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
-	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, k.getLvscareImage(), masters)
+	image, err := k.getLvscareImage()
+	if err != nil {
+		return err
+	}
+	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, image, masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {

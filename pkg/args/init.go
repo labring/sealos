@@ -35,7 +35,7 @@ type InitArgs struct {
 	Port        int32
 	Pk          string
 	PkPassword  string
-	KubeURI     string
+	ImageName   string
 	ClusterName string
 	Vlog        int
 	DryRun      bool
@@ -45,8 +45,8 @@ func (a *InitArgs) Validate() error {
 	if a.Masters == "" {
 		return fmt.Errorf("master not empty")
 	}
-	if a.KubeURI == "" {
-		return fmt.Errorf("kube uri not empty")
+	if a.ImageName == "" {
+		return fmt.Errorf("image name not empty")
 	}
 	if a.ClusterName == "" {
 		return fmt.Errorf("cluster name not empty")
@@ -55,12 +55,11 @@ func (a *InitArgs) Validate() error {
 }
 
 type Init struct {
-	args     InitArgs
-	cluster  *v2.Cluster
-	configs  []v2.Config
-	resource *v2.Resource
-	hosts    []v2.ClusterHost
-	dryRun   bool
+	args    InitArgs
+	cluster *v2.Cluster
+	configs []v2.Config
+	hosts   []v2.ClusterHost
+	dryRun  bool
 }
 
 func NewInit(args InitArgs) *Init {
@@ -81,6 +80,8 @@ func (r *Init) SetClusterArgs() error {
 	if r.args.Password != "" {
 		r.cluster.Spec.SSH.Passwd = r.args.Password
 	}
+
+	r.cluster.Spec.Image = r.args.ImageName
 
 	if err := PreProcessIPList(&r.args); err != nil {
 		return err
@@ -121,7 +122,7 @@ func (r *Init) Output() error {
 	if !r.args.DryRun {
 		clusterFile = contants.Clusterfile(r.args.ClusterName)
 	}
-	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, r.resource, clusterFile)
+	ya, err := filesystem.SaveClusterFile(r.cluster, r.configs, clusterFile)
 	if err != nil {
 		return err
 	}

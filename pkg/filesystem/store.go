@@ -31,7 +31,6 @@ func SaveClusterFile(cluster *v2.Cluster, configs []v2.Config, resource *v2.Reso
 	for _, c := range configs {
 		data = append(data, c)
 	}
-	data = append(data, resource)
 	ya, err := yaml.MarshalYamlConfigs(data...)
 	if err != nil {
 		return "", err

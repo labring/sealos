@@ -68,10 +68,9 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 		}
 	}()
 	var (
-		i         interface{}
-		clusters  []v1beta1.Cluster
-		configs   []v1beta1.Config
-		resources []v1beta1.Resource
+		i        interface{}
+		clusters []v1beta1.Cluster
+		configs  []v1beta1.Config
 	)
 
 	d := yaml.NewYAMLOrJSONDecoder(file, 4096)

@@ -14,8 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package store
+package filesystem
 
-const (
-	defaultMetadataFileName = "metadata.toml"
-)
+import "github.com/fanux/sealos/pkg/utils/ssh"
+
+func (f *FileSystem) getClusterName() string {
+	return f.cluster.Name
+}
+func (f *FileSystem) getImageName() string {
+	return f.cluster.Spec.Image
+}
+
+func (f *FileSystem) getSSH() ssh.Interface {
+	return ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
+}
