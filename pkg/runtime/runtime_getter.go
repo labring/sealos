@@ -19,39 +19,17 @@ package runtime
 import (
 	"context"
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
-	"github.com/fanux/sealos/pkg/utils/ssh"
-	"github.com/fanux/sealos/pkg/utils/yaml"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"path"
-
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
 )
 
-func (k *KubeadmRuntime) getRegistry() (*RegistryConfig, error) {
-	const registryCustomConfig = "registry.yml"
-	etcPath := path.Join(k.data.RootFSPath(), contants.EtcDirName, registryCustomConfig)
-	registryConfig, err := yaml.Unmarshal(etcPath)
-	if err != nil {
-		return nil, err
-	}
-	domain, _, _ := unstructured.NestedString(registryConfig, "domain")
-	port, _, _ := unstructured.NestedFloat64(registryConfig, "port")
-	username, _, _ := unstructured.NestedString(registryConfig, "username")
-	password, _, _ := unstructured.NestedString(registryConfig, "password")
-	data, _, _ := unstructured.NestedString(registryConfig, "data")
-	rConfig := RegistryConfig{
-		IP:       k.getMaster0IP(),
-		Domain:   domain,
-		Port:     fmt.Sprintf("%d", int(port)),
-		Username: username,
-		Password: password,
-		Data:     data,
-	}
-	return &rConfig, nil
+func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
+	return GetRegistry(k.data.RootFSPath(), k.getMaster0IP())
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -179,10 +157,6 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 
 func (k *KubeadmRuntime) getImageLabels() map[string]string {
 	return k.imageInfo.OCIv1.Config.Labels
-}
-
-func (k *KubeadmRuntime) getImageName() string {
-	return k.cluster.Spec.Image
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {

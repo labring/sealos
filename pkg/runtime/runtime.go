@@ -46,7 +46,7 @@ type Config struct {
 
 //nolint
 type client struct {
-	data         contants.Data
+	data contants.Data
 }
 
 type RegistryConfig struct {
