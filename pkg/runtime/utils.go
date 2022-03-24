@@ -68,7 +68,7 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 		}
 	}
 	if k.ReplaceKubeConfigV1991V1992(masters) {
-		logger.Info("set kubernetes v1.19.1 v1.19.2 kube config")
+		logger.Info("set kubernetes v1.19.1 v1.19.2 kube Config")
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 		for _, v := range masters {
 			replaceCmd := fmt.Sprintf(RemoteReplaceKubeConfig, KUBESCHEDULERCONFIGFILE, v, KUBECONTROLLERCONFIGFILE, v, KUBESCHEDULERCONFIGFILE)
 			if err := k.sshCmdAsync(v, replaceCmd); err != nil {
-				logger.Info("failed to replace kube config on %s:%v ", v, err)
+				logger.Info("failed to replace kube Config on %s:%v ", v, err)
 				return false
 			}
 		}

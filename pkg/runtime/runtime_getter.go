@@ -20,17 +20,20 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/env"
+	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
 )
 
+func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
+	return GetRegistry(k.data.RootFSPath(), k.getMaster0IP())
+}
+
 func (k *KubeadmRuntime) getKubeVersion() string {
-	labels, err := k.getImageLabels()
-	if err != nil {
-		logger.Painc("get kubernetes version error: %+v")
-		return ""
-	}
+	labels := k.getImageLabels()
 	image := labels["version"]
 	if image == "" {
 		logger.Painc("not fount kubernetes version")
@@ -64,10 +67,7 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 }
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
-	labels, err := k.getImageLabels()
-	if err != nil {
-		return "", err
-	}
+	labels := k.getImageLabels()
 	image := labels["image"]
 	if image == "" {
 		image = contants.DefaultLvsCareImage
@@ -76,7 +76,7 @@ func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 }
 
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
-	return k.ctlInterface.IPVS(ip, k.getVipAndPort(), masters)
+	return k.getRemoteInterface().IPVS(ip, k.getVipAndPort(), masters)
 }
 
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
@@ -105,17 +105,17 @@ func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 	if err != nil {
 		return err
 	}
-	return k.ctlInterface.StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, image, masters)
+	return k.getRemoteInterface().StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, image, masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {
-	return k.ctlInterface.Token(ip)
+	return k.getRemoteInterface().Token(ip)
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
-	return k.ctlInterface.Hostname(ip)
+	return k.getRemoteInterface().Hostname(ip)
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
-	return k.ctlInterface.HostsAdd(ip, host, domain)
+	return k.getRemoteInterface().HostsAdd(ip, host, domain)
 }
 
 func (k *KubeadmRuntime) execCert(ip string) error {
@@ -123,34 +123,55 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	if err != nil {
 		return err
 	}
-	return k.ctlInterface.Cert(ip, k.getCertSANS(), ip, hostname, k.getServiceCIDR(), k.getDNSDomain())
+	return k.getRemoteInterface().Cert(ip, k.getCertSANS(), ip, hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
-	return k.ctlInterface.HostsDelete(ip, domain)
+	return k.getRemoteInterface().HostsDelete(ip, domain)
 }
 
 func (k *KubeadmRuntime) execInit(ip string) error {
-	return k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.InitBash()))
+	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().InitBash()))
 }
 
 func (k *KubeadmRuntime) execClean(ip string) error {
-	return k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.CleanBash()))
+	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanBash()))
 }
 func (k *KubeadmRuntime) execInitRegistry(ip string) error {
-	return k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.InitRegistryBash()))
+	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().InitRegistryBash()))
 }
 func (k *KubeadmRuntime) execCleanRegistry(ip string) error {
-	return k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.CleanRegistryBash()))
+	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanRegistryBash()))
 }
 func (k *KubeadmRuntime) execAuth(ip string) error {
-	return k.sshInterface.CmdAsync(ip, k.envInterface.WrapperShell(ip, k.bash.AuthBash()))
+	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().AuthBash()))
 }
 
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
-	return k.sshInterface.CmdAsync(host, cmd...)
+	return k.getSSHInterface().CmdAsync(host, cmd...)
 }
 
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
-	return k.sshInterface.Copy(host, srcFilePath, dstFilePath)
+	return k.getSSHInterface().Copy(host, srcFilePath, dstFilePath)
+}
+
+func (k *KubeadmRuntime) getImageLabels() map[string]string {
+	return k.imageInfo.OCIv1.Config.Labels
+}
+
+func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
+	return ssh.NewSSHClient(&k.cluster.Spec.SSH, true)
+}
+
+func (k *KubeadmRuntime) getENVInterface() env.Interface {
+	return env.NewEnvProcessor(k.cluster)
+}
+
+func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
+	return remote.New(k.getClusterName(), k.getSSHInterface())
+}
+
+func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
+	render := k.getImageLabels()
+	return contants.NewBash(k.getClusterName(), render)
 }

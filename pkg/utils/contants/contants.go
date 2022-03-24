@@ -19,9 +19,10 @@ import (
 )
 
 const (
-	LvsCareStaticPodName = "kube-sealyun-lvscare"
-	YamlFileSuffix       = "yaml"
-	DefaultLvsCareImage  = "sealyun.hub:5000/sealyun/lvscare:latest"
+	LvsCareStaticPodName  = "kube-sealyun-lvscare"
+	YamlFileSuffix        = "yaml"
+	DefaultRegistryDomain = "selayun.hub"
+	DefaultLvsCareImage   = "sealyun.hub:5000/sealyun/lvscare:latest"
 )
 
 //CRD kind

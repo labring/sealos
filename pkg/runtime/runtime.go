@@ -23,26 +23,22 @@ import (
 
 	"github.com/fanux/sealos/pkg/utils/contants"
 
-	"github.com/fanux/sealos/pkg/env"
-	"github.com/fanux/sealos/pkg/remote"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	cluster      *v2.Cluster
-	imageService image.Service
-	registry     RegistryConfig
+	cluster   *v2.Cluster
+	imageInfo *image.BuilderInfo
 	*KubeadmConfig
-	*config
+	*Config
 	*client
 }
 
 //nolint
-type config struct {
-	// Clusterfile: the absolute path, we need to read kubeadm config from Clusterfile
+type Config struct {
+	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
 	ClusterFileKubeConfig *KubeadmConfig
 	apiServerDomain       string
 	vlog                  int
@@ -50,11 +46,7 @@ type config struct {
 
 //nolint
 type client struct {
-	sshInterface ssh.Interface
-	envInterface env.Interface
-	ctlInterface remote.Interface
-	data         contants.Data
-	bash         contants.Bash
+	data contants.Data
 }
 
 type RegistryConfig struct {
@@ -138,11 +130,11 @@ func newKubeadmRuntime(clusterName string) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	k.imageService = imageService
 	if err = k.setData(clusterName); err != nil {
 		return nil, err
 	}
-	if err = k.setRegistry(); err != nil {
+	k.imageInfo, err = imageService.Inspect(k.cluster.Spec.Image)
+	if err != nil {
 		return nil, err
 	}
 	if err = k.setClient(); err != nil {

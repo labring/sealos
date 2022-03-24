@@ -74,20 +74,20 @@ func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 }
 
 func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
-	logger.Info("start to copy kubeadm join config to master: %s", master)
+	logger.Info("start to copy kubeadm join Config to master: %s", master)
 	data, err := k.generateJoinMasterConfigs(master)
 	if err != nil {
-		return fmt.Errorf("generator config join master kubeadm config error: %s", err.Error())
+		return fmt.Errorf("generator Config join master kubeadm Config error: %s", err.Error())
 	}
 	joinConfigPath := path.Join(k.data.TmpPath(), contants.DefaultJoinMasterKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())
+		return fmt.Errorf("write Config join master kubeadm Config error: %s", err.Error())
 	}
 	err = k.sshCopy(master, joinConfigPath, outConfigPath)
 	if err != nil {
-		return fmt.Errorf("copy config join master kubeadm config error: %s", err.Error())
+		return fmt.Errorf("copy Config join master kubeadm Config error: %s", err.Error())
 	}
 	return nil
 }
@@ -102,7 +102,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		return fmt.Errorf("filesystem init failed %v", err)
 	}
 
-	if err = ssh.WaitSSHReady(k.sshInterface, 6, masters...); err != nil {
+	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, masters...); err != nil {
 		return errors.Wrap(err, "join masters wait for ssh ready time out")
 	}
 
