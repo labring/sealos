@@ -35,7 +35,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	if err != nil {
 		return fmt.Errorf("filesystem init failed %v", err)
 	}
-	if err = ssh.WaitSSHReady(k.sshInterface, 6, newNodesIPList...); err != nil {
+	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, newNodesIPList...); err != nil {
 		return errors.Wrap(err, "join nodes wait for ssh ready time out")
 	}
 
@@ -47,7 +47,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			logger.Info("start to join %s as worker", node)
 			err = k.ConfigJoinNodeKubeadmToNode(node)
 			if err != nil {
-				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
+				return fmt.Errorf("failed to copy join node kubeadm Config %s %v", node, err)
 			}
 			err = k.execHostsAppend(node, k.getVip(), k.getAPIServerDomain())
 			if err != nil {
@@ -83,20 +83,20 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 }
 
 func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
-	logger.Info("start to copy kubeadm join config to node: %s", node)
+	logger.Info("start to copy kubeadm join Config to node: %s", node)
 	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
-		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
+		return fmt.Errorf("generator Config join kubeadm Config error: %s", err.Error())
 	}
 	joinConfigPath := path.Join(k.data.TmpPath(), contants.DefaultJoinNodeKubeadmFileName)
 	outConfigPath := path.Join(k.data.EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())
+		return fmt.Errorf("write Config join kubeadm Config error: %s", err.Error())
 	}
 	err = k.sshCopy(node, joinConfigPath, outConfigPath)
 	if err != nil {
-		return fmt.Errorf("copy config join kubeadm config error: %s", err.Error())
+		return fmt.Errorf("copy Config join kubeadm Config error: %s", err.Error())
 	}
 	return nil
 }
