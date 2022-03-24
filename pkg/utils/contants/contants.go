@@ -27,9 +27,8 @@ const (
 
 //CRD kind
 const (
-	Config   = "Config"
-	Cluster  = "Cluster"
-	Resource = "Resource"
+	Config  = "Config"
+	Cluster = "Cluster"
 )
 
 func GetHomeDir() string {

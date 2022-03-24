@@ -74,7 +74,7 @@ func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 }
 
 func (k *KubeadmRuntime) htpasswd() error {
-	htpasswdPath := path.Join(k.data.EtcPath(), "registry_htpasswd")
+	htpasswdPath := path.Join(k.getContantData().EtcPath(), "registry_htpasswd")
 	registry := k.getRegistry()
 	if registry.Username == "" && registry.Password == "" {
 		return nil
@@ -86,7 +86,7 @@ func (k *KubeadmRuntime) htpasswd() error {
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
-	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(DefaultCPFmt, registry.Data, k.data.RootFSRegistryPath(), registry.Data))
+	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(DefaultCPFmt, registry.Data, k.getContantData().RootFSRegistryPath(), registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}

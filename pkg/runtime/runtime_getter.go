@@ -29,7 +29,7 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
-	return GetRegistry(k.data.RootFSPath(), k.getMaster0IP())
+	return GetRegistry(k.getContantData().RootFSPath(), k.getMaster0IP())
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -174,4 +174,8 @@ func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
 	render := k.getImageLabels()
 	return contants.NewBash(k.getClusterName(), render)
+}
+
+func (k *KubeadmRuntime) getContantData() contants.Data {
+	return contants.NewData(k.getClusterName())
 }

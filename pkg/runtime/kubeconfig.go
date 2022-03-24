@@ -21,7 +21,7 @@ import "path"
 const RemoteCopyKubeConfig = `rm -rf .kube/Config && mkdir -p  .kube && cp /etc/kubernetes/admin.conf .kube/Config`
 
 func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
-	srcKubeFile := k.data.AdminFile()
+	srcKubeFile := k.getContantData().AdminFile()
 	desKubeFile := path.Join(".kube", "Config")
 	return k.sendFileToHosts(hosts, srcKubeFile, desKubeFile)
 }

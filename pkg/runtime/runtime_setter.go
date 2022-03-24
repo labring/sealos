@@ -26,12 +26,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (k *KubeadmRuntime) setClient() error {
-	k.client = &client{}
-	k.data = contants.NewData(k.getClusterName())
-	return nil
-}
-
 func (k *KubeadmRuntime) setData(clusterName string) error {
 	clusterFile := contants.Clusterfile(clusterName)
 	clusters, err := decode.Cluster(clusterFile)

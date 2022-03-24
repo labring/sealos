@@ -1,0 +1,76 @@
+package clusterfile
+
+import (
+	"fmt"
+	"io/ioutil"
+	"strings"
+
+	"github.com/fanux/sealos/pkg/runtime"
+	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/contants"
+	yaml2 "github.com/fanux/sealos/pkg/utils/yaml"
+
+	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
+)
+
+var ErrClusterNotExist = fmt.Errorf("no cluster exist")
+
+func GetDefaultClusterName() (string, error) {
+	files, err := ioutil.ReadDir(contants.Workdir())
+	if err != nil {
+		return "", err
+	}
+	var clusters []string
+	for _, f := range files {
+		if f.IsDir() {
+			clusters = append(clusters, f.Name())
+		}
+	}
+	if len(clusters) == 1 {
+		return clusters[0], nil
+	} else if len(clusters) > 1 {
+		return "", fmt.Errorf("Select a cluster through the -c parameter: " + strings.Join(clusters, ","))
+	}
+
+	return "", ErrClusterNotExist
+}
+
+func GetClusterFromFile(filepath string) (cluster *v2.Cluster, err error) {
+	cluster = &v2.Cluster{}
+	if err = yaml2.UnmarshalYamlFromFile(filepath, cluster); err != nil {
+		return nil, fmt.Errorf("failed to get cluster from %s, %v", filepath, err)
+	}
+	return cluster, nil
+}
+
+func GetDefaultCluster() (cluster *v2.Cluster, err error) {
+	name, err := GetDefaultClusterName()
+	if err != nil {
+		return nil, err
+	}
+
+	var filepath = contants.Clusterfile(name)
+
+	return GetClusterFromFile(filepath)
+}
+
+func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
+	var cluster *v2.Cluster
+	metaType := k8sV1.TypeMeta{}
+	err := yaml.Unmarshal(data, &metaType)
+	if err != nil {
+		return nil, err
+	}
+	if metaType.Kind != contants.Cluster {
+		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
+	}
+	c, err := runtime.DecodeCRDFromString(string(data), contants.Cluster)
+	if err != nil {
+		return nil, err
+	} else if c == nil {
+		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
+	}
+	cluster = c.(*v2.Cluster)
+	return cluster, nil
+}

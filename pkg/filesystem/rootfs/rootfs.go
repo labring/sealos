@@ -14,17 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package filesystem
+package rootfs
 
-import "github.com/fanux/sealos/pkg/utils/ssh"
+import v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 
-func (f *FileSystem) getClusterName() string {
-	return f.cluster.Name
-}
-func (f *FileSystem) getImageName() string {
-	return f.cluster.Spec.Image
-}
-
-func (f *FileSystem) getSSH() ssh.Interface {
-	return ssh.NewSSHClient(&f.cluster.Spec.SSH, true)
+type Interface interface {
+	// MountRootfs :send cloud rootfs to all hosts.
+	MountRootfs(cluster *v2.Cluster, hosts []string) error
+	// UnMountRootfs :umount rootfs on all hosts.
+	UnMountRootfs(cluster *v2.Cluster, hosts []string) error
 }

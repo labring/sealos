@@ -46,14 +46,6 @@ func ResourcePath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "resource")
 }
 
-func ResourceMetaPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "metadata")
-}
-
-func TmpPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "tmp")
-}
-
 type Data interface {
 	Homedir() string
 	RootFSPath() string
