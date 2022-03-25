@@ -169,7 +169,7 @@ func DecodeCRDFromReader(r io.Reader, kind string) (interface{}, error) {
 		metaType := metav1.TypeMeta{}
 		err := yaml.Unmarshal(ext.Raw, &metaType)
 		if err != nil {
-			return nil, fmt.Errorf("decode cluster failed %v", err)
+			return nil, fmt.Errorf("decode Cluster failed %v", err)
 		}
 		// ext.Raw
 		if metaType.Kind == kind {

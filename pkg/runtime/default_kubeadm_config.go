@@ -28,15 +28,15 @@ nodeRegistration:
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 kubernetesVersion: v1.19.8
-#controlPlaneEndpoint: "apiserver.cluster.local:6443"
+#controlPlaneEndpoint: "apiserver.Cluster.local:6443"
 networking:
-  # dnsDomain: cluster.local
+  # dnsDomain: Cluster.local
   podSubnet: 100.64.0.0/10
   serviceSubnet: 10.96.0.0/22
 apiServer:
   #  certSANs:
   #    - 127.0.0.1
-  #    - apiserver.cluster.local
+  #    - apiserver.Cluster.local
   #    - aliyun-inc.com
   #    - 10.0.0.2
   #    - 10.103.97.2
@@ -67,7 +67,7 @@ apiServer:
 controllerManager:
   extraArgs:
     feature-gates: TTLAfterFinished=true,EphemeralContainers=true
-    experimental-cluster-signing-duration: 876000h
+    experimental-Cluster-signing-duration: 876000h
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime
@@ -114,7 +114,7 @@ authorization:
     cacheUnauthorizedTTL: 30s
 cgroupDriver:
 cgroupsPerQOS: true
-clusterDomain: cluster.local
+clusterDomain: Cluster.local
 configMapAndSecretChangeDetectionStrategy: Watch
 containerLogMaxFiles: 5
 containerLogMaxSize: 10Mi

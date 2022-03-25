@@ -35,7 +35,7 @@ import (
 )
 
 type defaultRootfs struct {
-	imageService image.Service
+	clusterService image.ClusterService
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -56,7 +56,7 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
-	data, err := f.imageService.Inspect(f.getClusterName(cluster))
+	data, err := f.clusterService.Inspect(f.getClusterName(cluster))
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("inspect container %s data failed", f.getClusterName(cluster)))
 	}
@@ -108,7 +108,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	if err = eg.Wait(); err != nil {
 		return err
 	}
-	return f.imageService.RemoveCluster(f.getClusterName(cluster))
+	return f.clusterService.Delete(f.getClusterName(cluster))
 }
 
 func renderENV(mountDir string, ipList []string, p env.Interface) error {
@@ -152,6 +152,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(service image.Service) (Interface, error) {
-	return &defaultRootfs{imageService: service}, nil
+func NewDefaultRootfs(service image.ClusterService) (Interface, error) {
+	return &defaultRootfs{clusterService: service}, nil
 }

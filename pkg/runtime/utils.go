@@ -77,7 +77,7 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 	version := k.getKubeVersion()
 	const V1991 = "v1.19.1"
 	const V1992 = "v1.19.2"
-	const RemoteReplaceKubeConfig = `grep -qF "apiserver.cluster.local" %s  && sed -i 's/apiserver.cluster.local/%s/' %s && sed -i 's/apiserver.cluster.local/%s/' %s`
+	const RemoteReplaceKubeConfig = `grep -qF "apiserver.Cluster.local" %s  && sed -i 's/apiserver.Cluster.local/%s/' %s && sed -i 's/apiserver.Cluster.local/%s/' %s`
 	// fix > 1.19.1 kube-controller-manager and kube-scheduler use the LocalAPIEndpoint instead of the ControlPlaneEndpoint.
 	if version == V1991 || version == V1992 {
 		for _, v := range masters {
