@@ -40,8 +40,8 @@ const (
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
 
 	DefaultVIP             = "10.103.97.2"
-	DefaultAPIServerDomain = "apiserver.cluster.local"
-	DefaultDNSDomain       = "cluster.local"
+	DefaultAPIServerDomain = "apiserver.Cluster.local"
+	DefaultDNSDomain       = "Cluster.local"
 )
 
 // k.getKubeVersion can't be empty
@@ -110,7 +110,7 @@ func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
 }
 
 func (k *KubeadmRuntime) getClusterName() string {
-	return k.cluster.Name
+	return k.Cluster.Name
 }
 
 func (k *KubeadmRuntime) getVip() string {
@@ -121,7 +121,7 @@ func (k *KubeadmRuntime) getVipAndPort() string {
 	return fmt.Sprintf("%s:6443", k.getVip())
 }
 func (k *KubeadmRuntime) getAPIServerDomain() string {
-	return k.Config.apiServerDomain
+	return k.Config.APIServerDomain
 }
 func (k *KubeadmRuntime) getClusterAPIServer() string {
 	return fmt.Sprintf("https://%s:6443", k.getAPIServerDomain())

@@ -16,38 +16,28 @@ limitations under the License.
 
 package image
 
-import (
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-)
-
-// defaultImageService is the default service, which is used for image pull/push
-type defaultImageService struct {
+type defaultRegistryService struct {
 }
 
-func (d *defaultImageService) Rename(src, dst string) error {
+func (*defaultRegistryService) Login(domain, username, passwd string) error {
+	panic("implement me")
+}
+func (*defaultRegistryService) Logout(domain, username string) error {
+	panic("implement me")
+}
+func (*defaultRegistryService) Pull(image string) error {
+	panic("implement me")
+}
+func (*defaultRegistryService) PullIfNotExist(image string) error {
+	panic("implement me")
+}
+func (*defaultRegistryService) Push(image string) error {
+	panic("implement me")
+}
+func (*defaultRegistryService) Sync(localDir, imageName string) error {
 	panic("implement me")
 }
 
-func (d *defaultImageService) Remove(images ...string) error {
-	panic("implement me")
-}
-
-func (d *defaultImageService) Inspect(image string) (*v1.Image, error) {
-	panic("implement me")
-}
-
-func (d *defaultImageService) Build(options BuildOptions, contextDir, imageName string) error {
-	panic("implement me")
-}
-
-func (d *defaultImageService) Prune() error {
-	panic("implement me")
-}
-
-func (d *defaultImageService) ListImages(opt ListOptions) ([]v1.Image, error) {
-	panic("implement me")
-}
-
-func NewImageService() (Service, error) {
-	return &defaultImageService{}, nil
+func NewDefaultRegistryService() (RegistryService, error) {
+	return &defaultRegistryService{}, nil
 }

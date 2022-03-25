@@ -14,28 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package image
 
-import "testing"
+type defaultClusterService struct {
+}
 
-func TestReset(t *testing.T) {
-	tests := []struct {
-		name    string
-		wantErr bool
-	}{
-		{
-			name:    "default",
-			wantErr: false,
-		},
-	}
-	//logger.Cfg(true,false)
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ForceDelete = true
-			k, _ := NewDefaultRuntime("default")
-			if err := k.Reset(); (err != nil) != tt.wantErr {
-				t.Errorf("Init() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
+func (*defaultClusterService) Create(name, image string) (*ClusterManifest, error) {
+	return &ClusterManifest{}, nil
+}
+func (*defaultClusterService) Delete(name string) error {
+	return nil
+}
+func (*defaultClusterService) Inspect(name string) (*ClusterManifest, error) {
+	return &ClusterManifest{}, nil
+}
+
+func NewDefaultClusterService() (ClusterService, error) {
+	return &defaultClusterService{}, nil
 }

@@ -43,11 +43,11 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
-	return k.cluster.GetMaster0IP()
+	return k.Cluster.GetMaster0IP()
 }
 
 func (k *KubeadmRuntime) getMasterIPList() []string {
-	return k.cluster.GetMasterIPList()
+	return k.Cluster.GetMasterIPList()
 }
 
 func (k *KubeadmRuntime) getMasterIPListAndPort() []string {
@@ -59,11 +59,11 @@ func (k *KubeadmRuntime) getMasterIPListAndPort() []string {
 }
 
 func (k *KubeadmRuntime) getNodeIPList() []string {
-	return k.cluster.GetNodeIPList()
+	return k.Cluster.GetNodeIPList()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
-	return k.cluster.GetMaster0IPAPIServer()
+	return k.Cluster.GetMaster0IPAPIServer()
 }
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
@@ -156,15 +156,15 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 }
 
 func (k *KubeadmRuntime) getImageLabels() map[string]string {
-	return k.imageInfo.OCIv1.Config.Labels
+	return k.ImageInfo.Config.Labels
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
-	return ssh.NewSSHClient(&k.cluster.Spec.SSH, true)
+	return ssh.NewSSHClient(&k.Cluster.Spec.SSH, true)
 }
 
 func (k *KubeadmRuntime) getENVInterface() env.Interface {
-	return env.NewEnvProcessor(k.cluster)
+	return env.NewEnvProcessor(k.Cluster)
 }
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {

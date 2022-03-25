@@ -17,23 +17,13 @@ limitations under the License.
 package filesystem
 
 import (
-	"github.com/fanux/sealos/pkg/filesystem/image"
 	"github.com/fanux/sealos/pkg/filesystem/rootfs"
 	img "github.com/fanux/sealos/pkg/image"
 )
 
-// NewImageMounter :mount and unmount cloud image.
-func NewImageMounter() (image.Interface, error) {
-	is, err := img.NewImageService()
-	if err != nil {
-		return nil, err
-	}
-	return image.NewBuildahImage(is)
-}
-
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
 func NewRootfsMounter() (rootfs.Interface, error) {
-	is, err := img.NewImageService()
+	is, err := img.NewDefaultClusterService()
 	if err != nil {
 		return nil, err
 	}

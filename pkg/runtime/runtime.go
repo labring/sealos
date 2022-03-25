@@ -17,9 +17,10 @@ limitations under the License.
 package runtime
 
 import (
+	"fmt"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/image"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -27,8 +28,8 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	cluster   *v2.Cluster
-	imageInfo *image.BuilderInfo
+	Cluster   *v2.Cluster
+	ImageInfo *v1.Image
 	*KubeadmConfig
 	*Config
 }
@@ -37,7 +38,7 @@ type KubeadmRuntime struct {
 type Config struct {
 	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
 	ClusterFileKubeConfig *KubeadmConfig
-	apiServerDomain       string
+	APIServerDomain       string
 	vlog                  int
 }
 
@@ -73,7 +74,7 @@ type Interface interface {
 }
 
 func (k *KubeadmRuntime) Reset() error {
-	logger.Info("start to delete cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
+	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
 	if err := k.confirmDeleteNodes(); err != nil {
 		return err
 	}
@@ -116,24 +117,37 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(clusterName string) (Interface, error) {
-	k := &KubeadmRuntime{}
-	imageService, err := image.NewImageService()
-	if err != nil {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Image) (Interface, error) {
+	k := &KubeadmRuntime{
+		Cluster:   cluster,
+		ImageInfo: image,
+		Config: &Config{
+			ClusterFileKubeConfig: kubeadm,
+			APIServerDomain:       DefaultAPIServerDomain,
+		},
+		KubeadmConfig: &KubeadmConfig{},
+	}
+	if err := k.checkList(); err != nil {
 		return nil, err
 	}
-	if err = k.setData(clusterName); err != nil {
-		return nil, err
-	}
-	k.imageInfo, err = imageService.Inspect(k.cluster.Spec.Image)
-	if err != nil {
-		return nil, err
+	if logger.IsDebugModel() {
+		k.vlog = 6
 	}
 	k.setCertSANS()
 	return k, nil
 }
 
-// NewDefaultRuntime arg "clusterName" is the cluster name
-func NewDefaultRuntime(clusterName string) (Interface, error) {
-	return newKubeadmRuntime(clusterName)
+// NewDefaultRuntime arg "clusterName" is the Cluster name
+func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Image) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm, image)
+}
+
+func (k *KubeadmRuntime) checkList() error {
+	if len(k.Cluster.Spec.Hosts) == 0 {
+		return fmt.Errorf("master hosts cannot be empty")
+	}
+	if k.getMaster0IP() == "" {
+		return fmt.Errorf("master hosts ip cannot be empty")
+	}
+	return nil
 }
