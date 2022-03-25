@@ -39,9 +39,9 @@ const (
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
 	KubeadmV1beta3 = "kubeadm.k8s.io/v1beta3"
 
+	DefaultAPIServerDomain = "apiserver.cluster.local"
+	DefaultDNSDomain       = "cluster.local"
 	DefaultVIP             = "10.103.97.2"
-	DefaultAPIServerDomain = "apiserver.Cluster.local"
-	DefaultDNSDomain       = "Cluster.local"
 )
 
 // k.getKubeVersion can't be empty

@@ -36,7 +36,6 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 	labels := k.getImageLabels()
 	image := labels["version"]
 	if image == "" {
-		logger.Painc("not fount kubernetes version")
 		return ""
 	}
 	return image
