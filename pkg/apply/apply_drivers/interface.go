@@ -14,14 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package filesystem
+package apply_drivers
 
-import (
-	"github.com/fanux/sealos/pkg/filesystem/rootfs"
-	img "github.com/fanux/sealos/pkg/image"
-)
-
-// NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(service img.ClusterService) (rootfs.Interface, error) {
-	return rootfs.NewDefaultRootfs(service)
+type Interface interface {
+	Apply() error
+	Delete() error
 }

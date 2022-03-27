@@ -14,14 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package filesystem
+package apply
 
-import (
-	"github.com/fanux/sealos/pkg/filesystem/rootfs"
-	img "github.com/fanux/sealos/pkg/image"
-)
-
-// NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(service img.ClusterService) (rootfs.Interface, error) {
-	return rootfs.NewDefaultRootfs(service)
+type RunArgs struct {
+	Masters     string
+	Nodes       string
+	User        string
+	Password    string
+	Port        int32
+	Pk          string
+	PkPassword  string
+	Vlog        int
+	DryRun      bool
+	ClusterName string
 }

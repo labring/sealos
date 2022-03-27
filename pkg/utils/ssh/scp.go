@@ -111,7 +111,7 @@ func (s *SSH) Fetch(host, localFilePath, remoteFilePath string) error {
 	return err
 }
 
-// CopyLocalToRemote is copy file or dir to remotePath, add md5 validate
+// Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
 	if iputils.IsLocalIP(host, s.LocalAddress) {
 		logger.Debug("local copy files src %s to dst %s", localPath, remotePath)

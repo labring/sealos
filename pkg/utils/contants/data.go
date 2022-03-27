@@ -24,7 +24,6 @@ const (
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
 	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
-	MetadataFile                     = "Metadata"
 	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"
 	ChartsDirName                    = "charts"
@@ -41,9 +40,6 @@ func LogPath() string {
 }
 func DataPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "data")
-}
-func ResourcePath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "resource")
 }
 
 type Data interface {

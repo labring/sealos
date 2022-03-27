@@ -178,3 +178,7 @@ func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
 func (k *KubeadmRuntime) getContantData() contants.Data {
 	return contants.NewData(k.getClusterName())
 }
+
+func GetContantData(clusterName string) contants.Data {
+	return contants.NewData(clusterName)
+}

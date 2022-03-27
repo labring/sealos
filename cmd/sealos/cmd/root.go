@@ -26,9 +26,7 @@ import (
 )
 
 var (
-	debug          bool
-	showPath       bool
-	configFilePath string
+	debug bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -53,7 +51,6 @@ func init() {
 	cobra.OnInitialize(onBootOnDie)
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
 }
 
 func onBootOnDie() {
@@ -66,5 +63,5 @@ func onBootOnDie() {
 		logger.Error(err)
 		panic(1)
 	}
-	logger.CfgAndFile(debug, contants.LogPath(), "sealos", showPath)
+	logger.CfgAndFile(debug, contants.LogPath(), "sealos", false)
 }
