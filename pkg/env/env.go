@@ -47,7 +47,7 @@ func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 	return &processor{cluster}
 }
 func (p *processor) WrapperEnv(host string) map[string]string {
-	var env map[string]string
+	env := make(map[string]string)
 	for k, v := range p.getHostEnv(host) {
 		switch value := v.(type) {
 		case []string:

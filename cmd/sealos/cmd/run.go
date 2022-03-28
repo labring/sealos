@@ -15,10 +15,11 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/fanux/sealos/pkg/apply"
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
-	"os"
 
 	"github.com/spf13/cobra"
 )

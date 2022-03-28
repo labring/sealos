@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/fanux/sealos/pkg/apply/apply_drivers"
+	"github.com/fanux/sealos/pkg/apply/applydrivers"
 	"github.com/fanux/sealos/pkg/clusterfile"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/yaml"
@@ -38,7 +38,7 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewApplierFromArgs(imageName string, args *RunArgs) (apply_drivers.Interface, error) {
+func NewApplierFromArgs(imageName string, args *RunArgs) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
 	clusterPath := contants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
@@ -51,7 +51,7 @@ func NewApplierFromArgs(imageName string, args *RunArgs) (apply_drivers.Interfac
 		}
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
-			return apply_drivers.NewDefaultApplier(cluster)
+			return applydrivers.NewDefaultApplier(cluster)
 		}
 	}
 	c := &ClusterArgs{
@@ -64,7 +64,7 @@ func NewApplierFromArgs(imageName string, args *RunArgs) (apply_drivers.Interfac
 	if err := c.Process(args); err != nil {
 		return nil, err
 	}
-	return apply_drivers.NewDefaultApplier(c.cluster)
+	return applydrivers.NewDefaultApplier(c.cluster)
 }
 
 func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
