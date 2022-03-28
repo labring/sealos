@@ -33,7 +33,6 @@ func (c *Cluster) SetHosts(hosts []ClusterHost) {
 	c.Spec.Hosts = hosts
 }
 
-
 func (c *Cluster) GetMasterIPList() []string {
 	return c.GetIPSByRole(MASTER)
 }

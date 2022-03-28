@@ -17,9 +17,10 @@ limitations under the License.
 package v1beta1
 
 import (
+	"strings"
+
 	"github.com/fanux/sealos/pkg/utils/fork/golang/expansion"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"strings"
 )
 
 // ConvertEnv []string to map[string]interface{}, example [IP=127.0.0.1,IP=192.160.0.2,Key=value] will convert to {IP:[127.0.0.1,192.168.0.2],key:value}

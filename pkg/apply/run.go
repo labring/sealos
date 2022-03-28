@@ -18,11 +18,12 @@ package apply
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/fanux/sealos/pkg/apply/apply_drivers"
 	"github.com/fanux/sealos/pkg/clusterfile"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	"os"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -55,7 +56,7 @@ func NewApplierFromArgs(imageName string, args *RunArgs) (apply_drivers.Interfac
 	}
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
-		cluster: cluster,
+		cluster:     cluster,
 	}
 	if err := c.SetClusterArgs(imageName, args); err != nil {
 		return nil, err
