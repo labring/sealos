@@ -36,6 +36,7 @@ type Interface interface {
 	WrapperShell(host, shell string) string
 	// RenderAll :render env to all the files in dir
 	RenderAll(host, dir string) error
+	WrapperEnv(host string) map[string]string
 }
 
 type processor struct {
@@ -45,7 +46,18 @@ type processor struct {
 func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 	return &processor{cluster}
 }
-
+func (p *processor) WrapperEnv(host string) map[string]string {
+	var env map[string]string
+	for k, v := range p.getHostEnv(host) {
+		switch value := v.(type) {
+		case []string:
+			env[k] = strings.Join(value, " ")
+		case string:
+			env[k] = value
+		}
+	}
+	return env
+}
 func (p *processor) WrapperShell(host, shell string) string {
 	var env string
 	for k, v := range p.getHostEnv(host) {

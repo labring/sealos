@@ -15,16 +15,11 @@
 package cmd
 
 import (
+	"github.com/fanux/sealos/pkg/apply"
+	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/fanux/sealos/pkg/utils/logger"
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/contants"
-
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-
-	"github.com/fanux/sealos/pkg/utils/logger"
-
-	install "github.com/fanux/sealos/pkg/install"
-	v1 "github.com/fanux/sealos/pkg/types/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -43,99 +38,68 @@ var contact = `
 
                   官方文档：www.sealyun.com
                   项目地址：github.com/fanux/sealos
-                  QQ群   ：98488045
+                  QQ   群：98488045
                   常见问题：github.com/fanux/sealos/issues
 `
 
 var exampleInit = `
-	# init with password with three master one node
-	sealos init --passwd your-server-password  \
-	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
-	--node 192.168.0.5 --user root \
-	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
-	
-	# init with pk-file , when your server have different password
-	sealos init --pk /root/.ssh/id_rsa \
-	--master 192.168.0.2 --node 192.168.0.5 --user root \
-	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
-
-	# when use multi network. set a can-reach with --interface 
- 	sealos init --interface 192.168.0.254 \
-	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
-	--node 192.168.0.5 --user root --passwd your-server-password \
-	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
-	
-	# when your interface is not "eth*|en*|em*" like.
-	sealos init --interface your-interface-name \
-	--master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
-	--node 192.168.0.5 --user root --passwd your-server-password \
-	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz 
+create cluster to your baremetal server, appoint the iplist:
+	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+  Specify server SSH port :
+  All servers use the same SSH port (default port: 22)：
+	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
+  Different SSH port numbers exist：
+	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
+	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+create a cluster with custom environment variables:
+	sealer run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
+var runArgs *apply.RunArgs
 
 func newInitCmd() *cobra.Command {
-	//var arg args.InitArgs
-	// initCmd represents the init command
 	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "Simplest way to init your kubernets HA cluster",
-		Long: `sealos init --master 192.168.0.2 --master 192.168.0.3 --master 192.168.0.4 \
-	--node 192.168.0.5 --user root --passwd your-server-password \
-	--version v1.18.0 --pkg-url=/root/kube1.18.0.tar.gz`,
+		Use:     "run",
+		Short:   "Simplest way to run your kubernets HA cluster",
+		Long:    `sealer run registry.cn-qingdao.aliyuncs.com/sealos-io/kubernetes:v1.22.0 --masters [arg] --nodes [arg]`,
 		Example: exampleInit,
 		Run: func(cmd *cobra.Command, args []string) {
-			c := &v1.SealConfig{}
-			// 没有重大错误可以直接保存配置. 但是apiservercertsans为空. 但是不影响用户 clean
-			// 如果用户指定了配置文件,并不使用--master, 这里就不dump, 需要使用load获取配置文件了.
-			if configFilePath != "" && len(v1.MasterIPs) == 0 {
-				err := c.Load(configFilePath)
-				if err != nil {
-					logger.Error("load boot.ConfigFilePath %s err: %q", configFilePath, err)
-					os.Exit(1)
-				}
-			} else {
-				c.Dump(configFilePath)
+			runArgs.Debug = debug
+			applier, err := apply.NewApplierFromArgs(args[0], runArgs)
+			if err != nil {
+				logger.Error(err)
+				_ = cmd.Help()
+				os.Exit(1)
 			}
-			install.BuildInit()
-			// 安装完成后生成完整版
-			c.Dump(configFilePath)
+			if err = applier.Apply(); err != nil {
+				logger.Error(err)
+				_ = cmd.Help()
+				os.Exit(1)
+			}
 			logger.Info(contact)
 		},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			// 使用了boot.ConfigFilePath 就不进行preRun了
-			if configFilePath == "" && install.ExitInitCase() {
-				_ = cmd.Help()
-				os.Exit(install.ErrorExitOSCase)
-			}
-		},
 	}
-	// Here you will define your flags and configuration settings.
-	initCmd.Flags().StringVar(&v1.SSHConfig.User, "user", "root", "servers user name for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.Password, "passwd", "", "password for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.PkFile, "pk", v1beta1.DefaultPKFile, "private key for ssh")
-	initCmd.Flags().StringVar(&v1.SSHConfig.PkPassword, "pk-passwd", "", "private key password for ssh")
-
-	initCmd.Flags().StringVar(&v1.KubeadmFile, "kubeadm-config", "", "kubeadm-config.yaml template file")
-
-	initCmd.Flags().StringVar(&v1.APIServer, "apiserver", v1.DefaultAPIServerDomain, "apiserver domain name")
-	initCmd.Flags().StringVar(&v1.VIP, "vip", "10.103.97.2", "virtual ip")
-	initCmd.Flags().StringSliceVar(&v1.MasterIPs, "master", []string{}, "kubernetes multi-masters ex. 192.168.0.2-192.168.0.4")
-	initCmd.Flags().StringSliceVar(&v1.NodeIPs, "node", []string{}, "kubernetes multi-nodes ex. 192.168.0.5-192.168.0.5")
-	initCmd.Flags().StringSliceVar(&v1.CertSANS, "cert-sans", []string{}, "kubernetes apiServerCertSANs ex. 47.0.0.22 sealyun.com ")
-
-	initCmd.Flags().StringVar(&v1.PkgURL, "pkg-url", "", "http://store.lameleg.com/kube1.14.1.tar.gz download offline package url, or file location ex. /root/kube1.14.1.tar.gz")
-	initCmd.Flags().StringVar(&v1.Version, "version", "", "version is kubernetes version")
-	initCmd.Flags().StringVar(&v1.Repo, "repo", "k8s.gcr.io", "choose a container registry to pull control plane images from")
-	initCmd.Flags().StringVar(&v1.PodCIDR, "podcidr", "100.64.0.0/10", "Specify range of IP addresses for the pod network")
-	initCmd.Flags().StringVar(&v1.SvcCIDR, "svccidr", "10.96.0.0/12", "Use alternative range of IP address for service VIPs")
-	initCmd.Flags().StringVar(&v1.Interface, "interface", "eth.*|en.*|em.*", "name of network interface, when use calico IP_AUTODETECTION_METHOD, set your ipv4 with can-reach=192.168.0.1")
-
-	initCmd.Flags().BoolVar(&v1.WithoutCNI, "without-cni", false, "If true we not install cni plugin")
-	initCmd.Flags().BoolVar(&v1.BGP, "bgp", false, "bgp mode enable, calico..")
-	initCmd.Flags().StringVar(&v1.MTU, "mtu", "1440", "mtu of the ipip mode , calico..")
-	initCmd.Flags().StringVar(&v1.LvscareImage, "lvscare-image", contants.DefaultLvsCareImage, "lvscare image name")
-
-	initCmd.Flags().IntVar(&v1.Vlog, "vlog", 0, "kubeadm log level")
 	return initCmd
+}
+
+func init() {
+	runArgs = &apply.RunArgs{}
+	runCmd := newInitCmd()
+	rootCmd.AddCommand(runCmd)
+	runCmd.Flags().StringVarP(&runArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
+	runCmd.Flags().StringVarP(&runArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
+	runCmd.Flags().StringVarP(&runArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
+	runCmd.Flags().StringVarP(&runArgs.Password, "passwd", "p", "", "set cloud provider or baremetal server password")
+	runCmd.Flags().Uint16Var(&runArgs.Port, "port", 22, "set the sshd service port number for the server")
+	runCmd.Flags().StringVar(&runArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
+	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
+	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
+	runCmd.Flags().StringSliceVar(&runArgs.CustomArg, "arg", []string{}, "set arg for image endpoints instruction")
+	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
+	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
+	runCmd.Flags().BoolVar(&runArgs.DryRun, "dry-run", false, "enable dryRun")
 }
 
 func init() {

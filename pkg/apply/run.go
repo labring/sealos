@@ -37,7 +37,7 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewApplierFromArgs(imageName string, args RunArgs) (apply_drivers.Interface, error) {
+func NewApplierFromArgs(imageName string, args *RunArgs) (apply_drivers.Interface, error) {
 	var cluster *v2.Cluster
 	clusterPath := contants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
@@ -49,12 +49,13 @@ func NewApplierFromArgs(imageName string, args RunArgs) (apply_drivers.Interface
 			return nil, err
 		}
 		cluster = clusterFile.GetCluster()
-	}
-	if args.Nodes == "" && args.Masters == "" {
-		return apply_drivers.NewDefaultApplier(cluster)
+		if args.Nodes == "" && args.Masters == "" {
+			return apply_drivers.NewDefaultApplier(cluster)
+		}
 	}
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
+		cluster: cluster,
 	}
 	if err := c.SetClusterArgs(imageName, args); err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func NewApplierFromArgs(imageName string, args RunArgs) (apply_drivers.Interface
 	return apply_drivers.NewDefaultApplier(c.cluster)
 }
 
-func (r *ClusterArgs) SetClusterArgs(imageName string, args RunArgs) error {
+func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 	if imageName == "" {
 		return fmt.Errorf("image can not be empty")
 	}
@@ -73,6 +74,9 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args RunArgs) error {
 		return fmt.Errorf("cluster name can not be empty")
 	}
 
+	r.cluster.Spec.Env = args.CustomEnv
+	r.cluster.Spec.Command = args.CustomCMD
+	r.cluster.Spec.Args = args.CustomArg
 	r.cluster.Spec.SSH.User = args.User
 	r.cluster.Spec.SSH.Pk = args.Pk
 	r.cluster.Spec.SSH.PkPasswd = args.PkPassword
@@ -83,7 +87,7 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args RunArgs) error {
 
 	r.cluster.Spec.Image = imageName
 
-	if err := PreProcessIPList(&args); err != nil {
+	if err := PreProcessIPList(args); err != nil {
 		return err
 	}
 
@@ -105,7 +109,7 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args RunArgs) error {
 	return nil
 }
 
-func (r *ClusterArgs) Process(args RunArgs) error {
+func (r *ClusterArgs) Process(args *RunArgs) error {
 	clusterPath := contants.Clusterfile(args.ClusterName)
 	if !args.DryRun {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
