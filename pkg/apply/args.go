@@ -14,22 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1beta1
+package apply
 
-import (
-	"github.com/fanux/sealos/pkg/utils/contants"
-)
-
-const (
-	DefaultUserRoot = "root"
-)
-
-var (
-	MASTER = "master"
-	NODE   = "node"
-)
-
-var (
-	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
-	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
-)
+type RunArgs struct {
+	Masters     string
+	Nodes       string
+	User        string
+	Password    string
+	Port        uint16
+	Pk          string
+	PkPassword  string
+	Debug       bool
+	DryRun      bool
+	ClusterName string
+	CustomEnv   []string
+	CustomArg   []string
+	CustomCMD   []string
+}

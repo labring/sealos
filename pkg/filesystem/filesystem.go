@@ -22,10 +22,6 @@ import (
 )
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter() (rootfs.Interface, error) {
-	is, err := img.NewDefaultClusterService()
-	if err != nil {
-		return nil, err
-	}
-	return rootfs.NewDefaultRootfs(is)
+func NewRootfsMounter(service img.ClusterService) (rootfs.Interface, error) {
+	return rootfs.NewDefaultRootfs(service)
 }

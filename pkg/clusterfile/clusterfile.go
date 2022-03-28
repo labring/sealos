@@ -25,7 +25,7 @@ var ErrTypeNotFound = errors.New("no corresponding type structure was found")
 
 type ClusterFile struct {
 	path       string
-	Cluster    v2.Cluster
+	Cluster    *v2.Cluster
 	Configs    []v2.Config
 	KubeConfig *runtime.KubeadmConfig
 	//Plugins    []v1.Plugin
@@ -33,13 +33,13 @@ type ClusterFile struct {
 
 type Interface interface {
 	PreProcessor
-	GetCluster() v2.Cluster
+	GetCluster() *v2.Cluster
 	GetConfigs() []v2.Config
 	//GetPlugins() []v1.Plugin
 	GetKubeadmConfig() *runtime.KubeadmConfig
 }
 
-func (c *ClusterFile) GetCluster() v2.Cluster {
+func (c *ClusterFile) GetCluster() *v2.Cluster {
 	return c.Cluster
 }
 

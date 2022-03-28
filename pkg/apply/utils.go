@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package args
+package apply
 
 import (
 	"fmt"
@@ -22,6 +22,7 @@ import (
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -31,10 +32,11 @@ func initCluster(clusterName string) *v2.Cluster {
 	cluster.Kind = "Cluster"
 	cluster.APIVersion = v2.SchemeGroupVersion.String()
 	cluster.Annotations = make(map[string]string)
+	cluster.CreationTimestamp = v1.Now()
 	return cluster
 }
 
-func PreProcessIPList(joinArgs *InitArgs) error {
+func PreProcessIPList(joinArgs *RunArgs) error {
 	if err := iputils.AssemblyIPList(&joinArgs.Masters); err != nil {
 		return err
 	}

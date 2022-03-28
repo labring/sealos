@@ -36,7 +36,6 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 	labels := k.getImageLabels()
 	image := labels["version"]
 	if image == "" {
-		logger.Painc("not fount kubernetes version")
 		return ""
 	}
 	return image
@@ -178,4 +177,8 @@ func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
 
 func (k *KubeadmRuntime) getContantData() contants.Data {
 	return contants.NewData(k.getClusterName())
+}
+
+func GetContantData(clusterName string) contants.Data {
+	return contants.NewData(clusterName)
 }

@@ -93,13 +93,12 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	if err != nil {
 		return err
 	}
-	envProcessor := env.NewEnvProcessor(cluster)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
 			SSH := f.getSSH(cluster)
-			if err := SSH.CmdAsync(ip, envProcessor.WrapperShell(ip, rmRootfs)); err != nil {
+			if err := SSH.CmdAsync(ip, rmRootfs); err != nil {
 				return err
 			}
 			return nil

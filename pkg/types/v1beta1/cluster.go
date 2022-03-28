@@ -36,7 +36,7 @@ type ClusterSSH struct {
 	Passwd   string `json:"passwd,omitempty"`
 	Pk       string `json:"pk,omitempty"`
 	PkPasswd string `json:"pkPasswd,omitempty"`
-	Port     int32  `json:"port,omitempty"`
+	Port     uint16 `json:"port,omitempty"`
 }
 
 type ClusterHost struct {

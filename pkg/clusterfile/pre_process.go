@@ -58,7 +58,7 @@ func (c *ClusterFile) DecodeCluster(data []byte) error {
 	if cluster == nil {
 		return ErrTypeNotFound
 	}
-	c.Cluster = *cluster
+	c.Cluster = cluster
 	return nil
 }
 

@@ -127,7 +127,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Im
 		},
 		KubeadmConfig: &KubeadmConfig{},
 	}
-	if err := k.checkList(); err != nil {
+	if err := k.Validate(); err != nil {
 		return nil, err
 	}
 	if logger.IsDebugModel() {
@@ -142,12 +142,15 @@ func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Im
 	return newKubeadmRuntime(cluster, kubeadm, image)
 }
 
-func (k *KubeadmRuntime) checkList() error {
+func (k *KubeadmRuntime) Validate() error {
 	if len(k.Cluster.Spec.Hosts) == 0 {
 		return fmt.Errorf("master hosts cannot be empty")
 	}
 	if k.getMaster0IP() == "" {
 		return fmt.Errorf("master hosts ip cannot be empty")
+	}
+	if k.getKubeVersion() == "" {
+		return fmt.Errorf("cluster image kubernetes version cannot be empty")
 	}
 	return nil
 }
