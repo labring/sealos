@@ -79,7 +79,6 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 
 	r.cluster.Spec.Env = args.CustomEnv
 	r.cluster.Spec.Command = args.CustomCMD
-	r.cluster.Spec.Args = args.CustomArg
 	r.cluster.Spec.SSH.User = args.User
 	r.cluster.Spec.SSH.Pk = args.Pk
 	r.cluster.Spec.SSH.PkPasswd = args.PkPassword

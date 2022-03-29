@@ -20,6 +20,7 @@ import (
 	"github.com/fanux/sealos/pkg/clusterfile"
 	"github.com/fanux/sealos/pkg/filesystem"
 	"github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -28,11 +29,11 @@ import (
 )
 
 type DeleteProcessor struct {
-	ClusterManager image.ClusterService
-	ImageManager   image.Service
+	ClusterManager types.ClusterService
+	ImageManager   types.Service
 	ClusterFile    clusterfile.Interface
 	img            *v1.Image
-	cManifest      *image.ClusterManifest
+	cManifest      *types.ClusterManifest
 }
 
 // Execute :according to the different of desired cluster to delete cluster.
@@ -103,7 +104,7 @@ func NewDeleteProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	clusterSvc, err := image.NewDefaultClusterService()
+	clusterSvc, err := image.NewClusterService()
 	if err != nil {
 		return nil, err
 	}

@@ -14,10 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package image
+package binary
 
 import (
 	"fmt"
+
+	"github.com/fanux/sealos/pkg/image/types"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
 	"github.com/pkg/errors"
@@ -25,10 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-type defaultClusterService struct {
+type ClusterService struct {
 }
 
-func (d *defaultClusterService) Create(name, image string) (*ClusterManifest, error) {
+func (d *ClusterService) Create(name, image string) (*types.ClusterManifest, error) {
 	cmd := fmt.Sprintf("buildah from --name %s %s && buildah mount %s", name, image, name)
 	err := exec.CmdForPipe("bash", "-c", cmd)
 	if err != nil {
@@ -36,7 +38,7 @@ func (d *defaultClusterService) Create(name, image string) (*ClusterManifest, er
 	}
 	return d.Inspect(name)
 }
-func (*defaultClusterService) Delete(name string) error {
+func (*ClusterService) Delete(name string) error {
 	data := exec.BashEval("buildah containers --json")
 	infos, err := listContainer(data)
 	if err != nil {
@@ -51,12 +53,12 @@ func (*defaultClusterService) Delete(name string) error {
 	return nil
 }
 
-func (*defaultClusterService) Inspect(name string) (*ClusterManifest, error) {
+func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
 	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", name))
 	return inspectContainer(data)
 }
 
-func inspectContainer(data string) (*ClusterManifest, error) {
+func inspectContainer(data string) (*types.ClusterManifest, error) {
 	if data != "" {
 		var outStruct map[string]interface{}
 		err := json.Unmarshal([]byte(data), &outStruct)
@@ -66,7 +68,7 @@ func inspectContainer(data string) (*ClusterManifest, error) {
 		container, _, _ := unstructured.NestedString(outStruct, "Container")
 		containerID, _, _ := unstructured.NestedString(outStruct, "ContainerID")
 		mountPoint, _, _ := unstructured.NestedString(outStruct, "MountPoint")
-		manifest := &ClusterManifest{
+		manifest := &types.ClusterManifest{
 			Container:   container,
 			ContainerID: containerID,
 			MountPoint:  mountPoint,
@@ -96,6 +98,6 @@ func listContainer(data string) ([]ClusterInfo, error) {
 	return nil, errors.New("inspect output is empty")
 }
 
-func NewDefaultClusterService() (ClusterService, error) {
-	return &defaultClusterService{}, nil
+func NewClusterService() (types.ClusterService, error) {
+	return &ClusterService{}, nil
 }

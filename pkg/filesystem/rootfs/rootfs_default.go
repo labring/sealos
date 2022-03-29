@@ -23,10 +23,11 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/image/types"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/fanux/sealos/pkg/env"
-	"github.com/fanux/sealos/pkg/image"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -39,7 +40,7 @@ import (
 type defaultRootfs struct {
 	//clusterService image.ClusterService
 	img     *v1.Image
-	cluster *image.ClusterManifest
+	cluster *types.ClusterManifest
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -153,6 +154,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(cluster *image.ClusterManifest, img *v1.Image) (Interface, error) {
+func NewDefaultRootfs(cluster *types.ClusterManifest, img *v1.Image) (Interface, error) {
 	return &defaultRootfs{cluster: cluster, img: img}, nil
 }

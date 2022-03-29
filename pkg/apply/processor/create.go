@@ -22,6 +22,7 @@ import (
 	"github.com/fanux/sealos/pkg/filesystem"
 	"github.com/fanux/sealos/pkg/guest"
 	"github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -31,14 +32,14 @@ import (
 
 type CreateProcessor struct {
 	ClusterFile     clusterfile.Interface
-	ImageManager    image.Service
-	ClusterManager  image.ClusterService
-	RegistryManager image.RegistryService
+	ImageManager    types.Service
+	ClusterManager  types.ClusterService
+	RegistryManager types.RegistryService
 	Runtime         runtime.Interface
 	Guest           guest.Interface
 	Config          config.Interface
 	img             *v1.Image
-	cManifest       *image.ClusterManifest
+	cManifest       *types.ClusterManifest
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -141,12 +142,12 @@ func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 		return nil, err
 	}
 
-	clusterSvc, err := image.NewDefaultClusterService()
+	clusterSvc, err := image.NewClusterService()
 	if err != nil {
 		return nil, err
 	}
 
-	registrySvc, err := image.NewDefaultRegistryService()
+	registrySvc, err := image.NewRegistryService()
 	if err != nil {
 		return nil, err
 	}

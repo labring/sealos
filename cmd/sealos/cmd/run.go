@@ -97,7 +97,6 @@ func init() {
 	runCmd.Flags().StringVar(&runArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
 	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
 	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
-	runCmd.Flags().StringSliceVar(&runArgs.CustomArg, "arg", []string{}, "set arg for image endpoints instruction")
 	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
 	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
 	runCmd.Flags().BoolVar(&runArgs.DryRun, "dry-run", false, "enable dryRun")

@@ -28,6 +28,5 @@ type RunArgs struct {
 	DryRun      bool
 	ClusterName string
 	CustomEnv   []string
-	CustomArg   []string
 	CustomCMD   []string
 }

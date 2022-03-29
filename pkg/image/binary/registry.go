@@ -14,34 +14,36 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package image
+package binary
 
 import (
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/image/types"
+
 	"github.com/fanux/sealos/pkg/utils/exec"
 )
 
-type defaultRegistryService struct {
+type RegistryService struct {
 }
 
-func (*defaultRegistryService) Login(domain, username, passwd string) error {
+func (*RegistryService) Login(domain, username, passwd string) error {
 	panic("implement me")
 }
-func (*defaultRegistryService) Logout(domain, username string) error {
+func (*RegistryService) Logout(domain, username string) error {
 	panic("implement me")
 }
-func (*defaultRegistryService) Pull(image string) error {
+func (*RegistryService) Pull(image string) error {
 	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull %s", image))
 }
 
-func (*defaultRegistryService) Push(image string) error {
+func (*RegistryService) Push(image string) error {
 	panic("implement me")
 }
-func (*defaultRegistryService) Sync(localDir, imageName string) error {
+func (*RegistryService) Sync(localDir, imageName string) error {
 	panic("implement me")
 }
 
-func NewDefaultRegistryService() (RegistryService, error) {
-	return &defaultRegistryService{}, nil
+func NewRegistryService() (types.RegistryService, error) {
+	return &RegistryService{}, nil
 }

@@ -17,66 +17,35 @@ limitations under the License.
 package image
 
 import (
-	"fmt"
+	"errors"
 
+	"github.com/fanux/sealos/pkg/image/binary"
+	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/utils/exec"
-	json2 "github.com/fanux/sealos/pkg/utils/json"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
-// defaultImageService is the default service, which is used for image pull/push
-type defaultImageService struct {
-}
-
-func (d *defaultImageService) Rename(src, dst string) error {
-	panic("implement me")
-}
-
-func (d *defaultImageService) Remove(images ...string) error {
-	panic("implement me")
-}
-
-func (d *defaultImageService) Inspect(image string) (*v1.Image, error) {
-	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", image))
-	return inspectImage(data)
-}
-
-func inspectImage(data string) (*v1.Image, error) {
-	if data != "" {
-		var outStruct map[string]interface{}
-		err := json.Unmarshal([]byte(data), &outStruct)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode out json from image inspect failed")
-		}
-		imageData, _, err := unstructured.NestedFieldCopy(outStruct, "OCIv1")
-		if err != nil {
-			return nil, errors.Wrap(err, "decode out json from OCIv1 object failed")
-		}
-		img := &v1.Image{}
-		err = json2.Convert(imageData, img)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode OCIv1 to v1.Image failed")
-		}
-		return img, nil
+func NewClusterService() (types.ClusterService, error) {
+	if ok := checkBuildah(); ok {
+		return binary.NewClusterService()
 	}
-	return nil, errors.New("inspect output is empty")
+	return nil, errors.New("not fount cluster runtime")
 }
 
-func (d *defaultImageService) Build(options BuildOptions, contextDir, imageName string) error {
-	panic("implement me")
+func NewRegistryService() (types.RegistryService, error) {
+	if ok := checkBuildah(); ok {
+		return binary.NewRegistryService()
+	}
+	return nil, errors.New("not fount registry runtime")
 }
 
-func (d *defaultImageService) Prune() error {
-	panic("implement me")
+func NewImageService() (types.Service, error) {
+	if ok := checkBuildah(); ok {
+		return binary.NewImageService()
+	}
+	return nil, errors.New("not fount image runtime")
 }
 
-func (d *defaultImageService) ListImages(opt ListOptions) ([]v1.Image, error) {
-	panic("implement me")
-}
-
-func NewImageService() (Service, error) {
-	return &defaultImageService{}, nil
+func checkBuildah() bool {
+	_, ok := exec.CheckCmdIsExist("buildah")
+	return ok
 }

@@ -14,15 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package filesystem
+package types
 
-import (
-	"github.com/fanux/sealos/pkg/filesystem/rootfs"
-	"github.com/fanux/sealos/pkg/image/types"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-)
+type BuildOptions struct {
+}
 
-// NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(cluster *types.ClusterManifest, img *v1.Image) (rootfs.Interface, error) {
-	return rootfs.NewDefaultRootfs(cluster, img)
+type ListOptions struct {
+}
+
+type ClusterManifest struct {
+	Container   string
+	ContainerID string
+	MountPoint  string
 }
