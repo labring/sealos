@@ -31,9 +31,13 @@ func MapToString(data map[string]string) string {
 }
 
 func StringToMap(data string) map[string]string {
-	m := make(map[string]string)
 	list := strings.Split(data, ",")
-	for _, l := range list {
+	return ListToMap(list)
+}
+
+func ListToMap(data []string) map[string]string {
+	m := make(map[string]string)
+	for _, l := range data {
 		if l != "" {
 			kv := strings.Split(l, "=")
 			if len(kv) == 2 {
@@ -42,4 +46,35 @@ func StringToMap(data string) map[string]string {
 		}
 	}
 	return m
+}
+
+func MergeMap(ms ...map[string]string) map[string]string {
+	res := map[string]string{}
+	for _, m := range ms {
+		for k, v := range m {
+			res[k] = v
+		}
+	}
+	return res
+}
+
+func DeepMerge(dst, src *map[string]interface{}) {
+	for srcK, srcV := range *src {
+		dstV, ok := (*dst)[srcK]
+		if !ok {
+			continue
+		}
+		dV, ok := dstV.(map[string]interface{})
+		// dstV is string type
+		if !ok {
+			(*dst)[srcK] = srcV
+			continue
+		}
+		sV, ok := srcV.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		DeepMerge(&dV, &sV)
+		(*dst)[srcK] = dV
+	}
 }

@@ -17,7 +17,14 @@ limitations under the License.
 package image
 
 import (
+	"fmt"
+
+	"github.com/fanux/sealos/pkg/utils/exec"
+	json2 "github.com/fanux/sealos/pkg/utils/json"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // defaultImageService is the default service, which is used for image pull/push
@@ -33,7 +40,29 @@ func (d *defaultImageService) Remove(images ...string) error {
 }
 
 func (d *defaultImageService) Inspect(image string) (*v1.Image, error) {
-	panic("implement me")
+	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", image))
+	return inspectImage(data)
+}
+
+func inspectImage(data string) (*v1.Image, error) {
+	if data != "" {
+		var outStruct map[string]interface{}
+		err := json.Unmarshal([]byte(data), &outStruct)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode out json from image inspect failed")
+		}
+		imageData, _, err := unstructured.NestedFieldCopy(outStruct, "OCIv1")
+		if err != nil {
+			return nil, errors.Wrap(err, "decode out json from OCIv1 object failed")
+		}
+		img := &v1.Image{}
+		err = json2.Convert(imageData, img)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode OCIv1 to v1.Image failed")
+		}
+		return img, nil
+	}
+	return nil, errors.New("inspect output is empty")
 }
 
 func (d *defaultImageService) Build(options BuildOptions, contextDir, imageName string) error {

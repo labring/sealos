@@ -21,8 +21,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/maps"
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+
 	"github.com/fanux/sealos/pkg/types/v1beta1"
-	strlib "github.com/fanux/sealos/pkg/utils/strings"
 )
 
 const templateSuffix = ".tmpl"
@@ -48,30 +50,15 @@ func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
 }
 func (p *processor) WrapperEnv(host string) map[string]string {
 	env := make(map[string]string)
-	for k, v := range p.getHostEnv(host) {
-		switch value := v.(type) {
-		case []string:
-			env[k] = strings.Join(value, " ")
-		case string:
-			env[k] = value
-		}
+	envs := p.getHostEnv(host)
+	for k, v := range envs {
+		env[k] = v
 	}
 	return env
 }
 func (p *processor) WrapperShell(host, shell string) string {
-	var env string
-	for k, v := range p.getHostEnv(host) {
-		switch value := v.(type) {
-		case []string:
-			env = fmt.Sprintf("%s%s=(%s) ", env, k, strings.Join(value, " "))
-		case string:
-			env = fmt.Sprintf("%s%s=\"%s\" ", env, k, value)
-		}
-	}
-	if env == "" {
-		return shell
-	}
-	return fmt.Sprintf("%s&& %s", env, shell)
+	envs := p.getHostEnv(host)
+	return strings2.EnvFromMap(shell, envs)
 }
 
 func (p *processor) RenderAll(host, dir string) error {
@@ -102,20 +89,9 @@ func (p *processor) RenderAll(host, dir string) error {
 	})
 }
 
-func mergeList(dst, src []string) []string {
-	for _, s := range src {
-		if strlib.InList(s, dst) {
-			continue
-		}
-		dst = append(dst, s)
-	}
-	return dst
-}
-
 // Merge the host ENV and global env, the host env will overwrite cluster.Spec.Env
-func (p *processor) getHostEnv(hostIP string) (env map[string]interface{}) {
+func (p *processor) getHostEnv(hostIP string) (env map[string]string) {
 	var hostEnv []string
-
 	for _, host := range p.Spec.Hosts {
 		for _, ip := range host.IPS {
 			if ip == hostIP {
@@ -123,8 +99,8 @@ func (p *processor) getHostEnv(hostIP string) (env map[string]interface{}) {
 			}
 		}
 	}
+	hostEnvMap := maps.ListToMap(hostEnv)
+	specEnvMap := maps.ListToMap(p.Spec.Env)
 
-	hostEnv = mergeList(hostEnv, p.Spec.Env)
-
-	return v1beta1.ConvertEnv(hostEnv)
+	return maps.MergeMap(specEnvMap, hostEnvMap)
 }

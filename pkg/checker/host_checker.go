@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 )
@@ -43,6 +45,7 @@ func NewHostChecker() Interface {
 }
 
 func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {
+	logger.Info("checker:hostname %v", ipList)
 	hostnameList := map[string]bool{}
 	for _, ip := range ipList {
 		s, err := ssh.NewSSHByCluster(cluster, false)
@@ -63,6 +66,7 @@ func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {
 
 //Check whether the node time is synchronized
 func checkTimeSync(cluster *v2.Cluster, ipList []string) error {
+	logger.Info("checker:timeSync %v", ipList)
 	for _, ip := range ipList {
 		s, err := ssh.NewSSHByCluster(cluster, false)
 		if err != nil {

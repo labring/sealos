@@ -23,6 +23,8 @@ import (
 	"path"
 	"path/filepath"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/image"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -35,7 +37,9 @@ import (
 )
 
 type defaultRootfs struct {
-	clusterService image.ClusterService
+	//clusterService image.ClusterService
+	img     *v1.Image
+	cluster *image.ClusterManifest
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -56,13 +60,10 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
-	data, err := f.clusterService.Inspect(f.getClusterName(cluster))
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("inspect container %s data failed", f.getClusterName(cluster)))
-	}
-	src := data.MountPoint
+	src := f.cluster.MountPoint
+
 	envProcessor := env.NewEnvProcessor(cluster)
-	err = renderENV(src, ipList, envProcessor)
+	err := renderENV(src, ipList, envProcessor)
 	if err != nil {
 		return errors.Wrap(err, "render env to rootfs failed")
 	}
@@ -71,16 +72,17 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return errors.Wrap(err, "run chmod to rootfs failed")
 	}
 
+	check := contants.NewBash(f.getClusterName(cluster), f.img.Config.Labels)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
 			sshClient := f.getSSH(cluster)
-			err := CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, src, target)
+			err = CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, src, target)
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)
 			}
-			return err
+			return f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()))
 		})
 	}
 	return eg.Wait()
@@ -107,7 +109,7 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	if err = eg.Wait(); err != nil {
 		return err
 	}
-	return f.clusterService.Delete(f.getClusterName(cluster))
+	return nil
 }
 
 func renderENV(mountDir string, ipList []string, p env.Interface) error {
@@ -151,6 +153,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(service image.ClusterService) (Interface, error) {
-	return &defaultRootfs{clusterService: service}, nil
+func NewDefaultRootfs(cluster *image.ClusterManifest, img *v1.Image) (Interface, error) {
+	return &defaultRootfs{cluster: cluster, img: img}, nil
 }

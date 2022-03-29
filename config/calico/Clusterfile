@@ -3,7 +3,7 @@ kind: ClusterConfiguration
 networking:
   podSubnet: 100.64.0.0/10
 ---
-apiVersion: apps.sealyun.com/v1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: calico

@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2022 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1beta1
+package processor
 
-import (
-	"k8s.io/apimachinery/pkg/runtime/schema"
-)
+import v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 
-// GroupName is the group name use in this package
-const GroupName = "apps.sealyun.com"
-
-// SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1beta1"}
+type Interface interface {
+	// Execute :according to the different of desired cluster to do cluster apply.
+	Execute(cluster *v2.Cluster) error
+}

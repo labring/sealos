@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fanux/sealos/pkg/checker"
+
 	"github.com/fanux/sealos/pkg/apply/applydrivers"
 	"github.com/fanux/sealos/pkg/clusterfile"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
@@ -112,11 +114,15 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 
 func (r *ClusterArgs) Process(args *RunArgs) error {
 	clusterPath := contants.Clusterfile(args.ClusterName)
+	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, r.cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
 	if !args.DryRun {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
 		return yaml.MarshalYamlToFile(clusterPath, r.cluster)
 	}
-	data, err := fileutil.ReadAll(clusterPath)
+	data, err := yaml.MarshalYamlConfigs(r.cluster)
 	if err != nil {
 		return err
 	}
