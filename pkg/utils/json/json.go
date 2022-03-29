@@ -18,6 +18,7 @@ package json
 
 import (
 	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
@@ -32,4 +33,13 @@ func Unmarshal(path string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func Convert(from interface{}, to interface{}) error {
+	var data []byte
+	var err error
+	if data, err = json.Marshal(from); err != nil {
+		return errors.WithStack(err)
+	}
+	return errors.WithStack(json.Unmarshal(data, to))
 }

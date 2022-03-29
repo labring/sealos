@@ -20,6 +20,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/utils/maps"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 
 	"github.com/fanux/sealos/pkg/types/v1beta1"
@@ -158,7 +160,7 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		if len(configMap) == 0 {
 			continue
 		}
-		deepMerge(&configMap, &mergeConfigMap)
+		maps.DeepMerge(&configMap, &mergeConfigMap)
 
 		cfg, err := yaml.Marshal(&configMap)
 		if err != nil {
@@ -167,25 +169,4 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		configs = append(configs, cfg)
 	}
 	return bytes.Join(configs, []byte("\n---\n")), nil
-}
-
-func deepMerge(dst, src *map[string]interface{}) {
-	for srcK, srcV := range *src {
-		dstV, ok := (*dst)[srcK]
-		if !ok {
-			continue
-		}
-		dV, ok := dstV.(map[string]interface{})
-		// dstV is string type
-		if !ok {
-			(*dst)[srcK] = srcV
-			continue
-		}
-		sV, ok := srcV.(map[string]interface{})
-		if !ok {
-			continue
-		}
-		deepMerge(&dV, &sV)
-		(*dst)[srcK] = dV
-	}
 }

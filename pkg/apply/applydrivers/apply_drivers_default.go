@@ -19,11 +19,13 @@ package applydrivers
 import (
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/apply/processor"
+	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/utils/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/fanux/sealos/pkg/client-go/kubernetes"
 	"github.com/fanux/sealos/pkg/clusterfile"
-	"github.com/fanux/sealos/pkg/filesystem"
-	"github.com/fanux/sealos/pkg/filesystem/rootfs"
-	"github.com/fanux/sealos/pkg/image"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"k8s.io/apimachinery/pkg/version"
@@ -33,33 +35,10 @@ func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
-	imgSvc, err := image.NewImageService()
-	if err != nil {
-		return nil, err
-	}
-	clusterSvc, err := image.NewDefaultClusterService()
-	if err != nil {
-		return nil, err
-	}
-	registrySvc, err := image.NewDefaultRegistryService()
-	if err != nil {
-		return nil, err
-	}
-
-	mounter, err := filesystem.NewRootfsMounter(clusterSvc)
-	if err != nil {
-		return nil, err
-	}
-
 	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
-
 	return &Applier{
-		ClusterDesired:  cluster,
-		ImageManager:    imgSvc,
-		ClusterFile:     cFile,
-		RegistryManager: registrySvc,
-		ClusterManager:  clusterSvc,
-		RootfsFSystem:   mounter,
+		ClusterDesired: cluster,
+		ClusterFile:    cFile,
 	}, nil
 }
 
@@ -67,13 +46,63 @@ type Applier struct {
 	ClusterDesired     *v2.Cluster
 	ClusterCurrent     *v2.Cluster
 	ClusterFile        clusterfile.Interface
-	ImageManager       image.Service
-	RegistryManager    image.RegistryService
-	ClusterManager     image.ClusterService
-	RootfsFSystem      rootfs.Interface
 	Client             kubernetes.Client
 	CurrentClusterInfo *version.Info
 }
 
-func (*Applier) Apply() error  { return nil }
-func (*Applier) Delete() error { return nil }
+func (c *Applier) Apply() error {
+	clusterPath := contants.Clusterfile(c.ClusterDesired.Name)
+	if c.ClusterDesired.CreationTimestamp.IsZero() {
+		if err := c.initCluster(); err != nil {
+			return err
+		}
+		c.ClusterDesired.CreationTimestamp = metav1.Now()
+	} else {
+		if err := c.reconcileCluster(); err != nil {
+			return err
+		}
+	}
+	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, c.ClusterDesired)
+}
+
+func (c *Applier) reconcileCluster() error {
+	return nil
+}
+
+func (c *Applier) initCluster() error {
+	logger.Info("Start to create a new cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
+	createProcessor, err := processor.NewCreateProcessor(c.ClusterFile)
+	if err != nil {
+		return err
+	}
+
+	if err := createProcessor.Execute(c.ClusterDesired); err != nil {
+		return err
+	}
+
+	logger.Info("succeeded in creating a new cluster, enjoy it!")
+
+	return nil
+}
+
+func (c *Applier) Delete() error {
+	t := metav1.Now()
+	c.ClusterDesired.DeletionTimestamp = &t
+	return c.deleteCluster()
+}
+
+func (c *Applier) deleteCluster() error {
+	deleteProcessor, err := processor.NewDeleteProcessor(c.ClusterFile)
+	if err != nil {
+		return err
+	}
+
+	if err := deleteProcessor.Execute(c.ClusterDesired); err != nil {
+		return err
+	}
+
+	logger.Info("succeeded in deleting current cluster")
+
+	return nil
+}

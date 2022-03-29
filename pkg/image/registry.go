@@ -16,6 +16,12 @@ limitations under the License.
 
 package image
 
+import (
+	"fmt"
+
+	"github.com/fanux/sealos/pkg/utils/exec"
+)
+
 type defaultRegistryService struct {
 }
 
@@ -26,11 +32,9 @@ func (*defaultRegistryService) Logout(domain, username string) error {
 	panic("implement me")
 }
 func (*defaultRegistryService) Pull(image string) error {
-	panic("implement me")
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull %s", image))
 }
-func (*defaultRegistryService) PullIfNotExist(image string) error {
-	panic("implement me")
-}
+
 func (*defaultRegistryService) Push(image string) error {
 	panic("implement me")
 }

@@ -20,6 +20,7 @@ import "fmt"
 
 const (
 	DefaultBashFmt      = "cd %s && bash %s"
+	CdAndExecCmd        = "cd %s && %s"
 	renderInit          = "init"
 	renderClean         = "clean"
 	renderInitRegistry  = "init-registry"

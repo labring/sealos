@@ -34,7 +34,6 @@ type RegistryService interface {
 	Login(domain, username, passwd string) error
 	Logout(domain, username string) error
 	Pull(image string) error
-	PullIfNotExist(image string) error
 	Push(image string) error
 	Sync(localDir, imageName string) error
 }

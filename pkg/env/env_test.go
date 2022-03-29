@@ -15,35 +15,10 @@
 package env
 
 import (
-	"reflect"
 	"testing"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 )
-
-func Test_convertEnv(t *testing.T) {
-	type args struct {
-		envList []string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantEnv map[string]interface{}
-	}{
-		{
-			"test convert env",
-			args{envList: []string{"IP=127.0.0.1", "IP=192.168.0.2", "key=value"}},
-			map[string]interface{}{"IP": []string{"127.0.0.1", "192.168.0.2"}, "key": "value"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotEnv := v2.ConvertEnv(tt.args.envList); !reflect.DeepEqual(gotEnv, tt.wantEnv) {
-				t.Errorf("convertEnv() = %v, want %v", gotEnv, tt.wantEnv)
-			}
-		})
-	}
-}
 
 func getTestCluster() *v2.Cluster {
 	return &v2.Cluster{
@@ -53,7 +28,7 @@ func getTestCluster() *v2.Cluster {
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
 					Roles: []string{"master"},
-					Env:   []string{"key=bar", "key=foo", "foo=bar", "IP=127.0.0.2"},
+					Env:   []string{"key=bar", "foo=bar xxx ddd fffff", "IP=127.0.0.2"},
 				},
 			},
 			SSH: v2.ClusterSSH{},
@@ -82,7 +57,7 @@ func Test_processor_WrapperShell(t *testing.T) {
 				host:  "192.168.0.2",
 				shell: "echo $foo ${IP[@]}",
 			},
-			"key=(bar foo value) foo=bar IP=(127.0.0.2 127.0.0.1) && echo $foo ${IP[@]}",
+			"IP=(127.0.0.2) key=(bar) foo=(bar xxx ddd fffff) && echo $foo ${IP[@]}",
 		},
 	}
 	for _, tt := range tests {

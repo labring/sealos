@@ -221,3 +221,14 @@ func IsLetterOrNumber(k string) bool {
 	}
 	return true
 }
+
+func EnvFromMap(shell string, envs map[string]string) string {
+	var env string
+	for k, v := range envs {
+		env = fmt.Sprintf("%s%s=(%s) ", env, k, v)
+	}
+	if env == "" {
+		return shell
+	}
+	return fmt.Sprintf("%s&& %s", env, shell)
+}

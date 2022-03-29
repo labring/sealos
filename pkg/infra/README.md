@@ -85,7 +85,7 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
 2022-01-06 22:11:21 [INFO] [ali_ecs.go:216] reconcile {"roles":["master","ssdxxx"],"cpu":2,"memory":4,"count":1,"disks":[{"capacity":50,"category":""}],"arch":"amd64","ecsType":"ecs.c7a.large","os":{"name":"","version":"","id":"centos_8_0_x64_20G_alibase_20210712.vhd"}} instances success [172.16.0.140] 
 2022-01-06 22:11:23 [INFO] [ali_provider.go:70] create resource success www.sealyun.com/EipID: eip-uf6ptsp0s0uadt9pr7zcq
 <nil>=== RUN   TestAliApply/modify_instance_system_disk
-    infra_test.go:82: output yaml: apiVersion: apps.sealyun.com/v1
+    infra_test.go:82: output yaml: apiVersion: apps.sealyun.com/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null
@@ -165,7 +165,7 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
 2022-01-06 22:11:28 [INFO] [ali_ecs.go:206] get up IP list [172.16.0.140],  host count 1
 2022-01-06 22:11:28 [INFO] [ali_ecs.go:216] reconcile {"roles":["master","ssdxxx"],"cpu":2,"memory":4,"count":1,"disks":[{"capacity":50,"category":""}],"arch":"amd64","ecsType":"ecs.c7a.large","os":{"name":"","version":"","id":"centos_8_0_x64_20G_alibase_20210712.vhd"}} instances success [172.16.0.140] 
     infra_test.go:107: add server:<nil>
-    infra_test.go:109: output yaml: apiVersion: apps.sealyun.com/v1
+    infra_test.go:109: output yaml: apiVersion: apps.sealyun.com/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null
@@ -278,7 +278,7 @@ Recommend: https://error-center.aliyun.com/status/search?Keyword=ORDER.QUANTITY_
 RequestId: 1F933962-8116-55C7-A4A1-00F50835C480
 Message: User quota has exceeded the limit. ,skip it
     infra_test.go:124: delete:<nil>
-    infra_test.go:126: output yaml: apiVersion: apps.sealyun.com/v1
+    infra_test.go:126: output yaml: apiVersion: apps.sealyun.com/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null

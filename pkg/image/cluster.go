@@ -16,17 +16,84 @@ limitations under the License.
 
 package image
 
+import (
+	"fmt"
+
+	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
+)
+
 type defaultClusterService struct {
 }
 
-func (*defaultClusterService) Create(name, image string) (*ClusterManifest, error) {
-	return &ClusterManifest{}, nil
+func (d *defaultClusterService) Create(name, image string) (*ClusterManifest, error) {
+	cmd := fmt.Sprintf("buildah from --name %s %s && buildah mount %s", name, image, name)
+	err := exec.CmdForPipe("bash", "-c", cmd)
+	if err != nil {
+		return nil, err
+	}
+	return d.Inspect(name)
 }
 func (*defaultClusterService) Delete(name string) error {
+	data := exec.BashEval("buildah containers --json")
+	infos, err := listContainer(data)
+	if err != nil {
+		return err
+	}
+	for _, info := range infos {
+		if info.Containername == name {
+			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", name, name)
+			return exec.CmdForPipe("bash", "-c", cmd)
+		}
+	}
 	return nil
 }
+
 func (*defaultClusterService) Inspect(name string) (*ClusterManifest, error) {
-	return &ClusterManifest{}, nil
+	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", name))
+	return inspectContainer(data)
+}
+
+func inspectContainer(data string) (*ClusterManifest, error) {
+	if data != "" {
+		var outStruct map[string]interface{}
+		err := json.Unmarshal([]byte(data), &outStruct)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode out json from container inspect failed")
+		}
+		container, _, _ := unstructured.NestedString(outStruct, "Container")
+		containerID, _, _ := unstructured.NestedString(outStruct, "ContainerID")
+		mountPoint, _, _ := unstructured.NestedString(outStruct, "MountPoint")
+		manifest := &ClusterManifest{
+			Container:   container,
+			ContainerID: containerID,
+			MountPoint:  mountPoint,
+		}
+		return manifest, nil
+	}
+	return nil, errors.New("inspect output is empty")
+}
+
+type ClusterInfo struct {
+	ID            string `json:"id"`
+	Builder       bool   `json:"builder"`
+	Imageid       string `json:"imageid"`
+	Imagename     string `json:"imagename"`
+	Containername string `json:"containername"`
+}
+
+func listContainer(data string) ([]ClusterInfo, error) {
+	if data != "" {
+		var outStruct []ClusterInfo
+		err := json.Unmarshal([]byte(data), &outStruct)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode out json from list container failed")
+		}
+		return outStruct, nil
+	}
+	return nil, errors.New("inspect output is empty")
 }
 
 func NewDefaultClusterService() (ClusterService, error) {
