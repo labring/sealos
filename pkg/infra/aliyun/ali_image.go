@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	"github.com/fanux/sealos/pkg/types/v1beta1"
 )
 
-func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
+func (a *AliProvider) GetAvailableImageID(host *v1beta1.InfraHost) (string, error) {
 	if host.OS.ID != "" {
 		logger.Info("host tags is %v,using imageID is %s", host.Roles, host.OS.ID)
 		return host.OS.ID, nil
@@ -86,7 +86,7 @@ func (a *AliProvider) GetAvailableImageID(host *v1beta1.Host) (string, error) {
 	return images[rand.Rand(len(images))], nil
 }
 
-func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []string, data []string) {
+func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.InfraHost) (system []string, data []string) {
 	if host.Disks[0].Category != "" {
 		system = []string{host.Disks[0].Category}
 	} else {
@@ -104,7 +104,7 @@ func (a *AliProvider) GetDefaultDiskCategories(host *v1beta1.Host) (system []str
 	return
 }
 
-func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, error) {
+func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.InfraHost) ([]string, error) {
 	j := a.Infra.Status.FindHostsByRoles(host.Roles)
 	if j == -1 {
 		return nil, fmt.Errorf("failed to get host, %v", "not find host status,pelase retry")
@@ -178,7 +178,7 @@ func (a *AliProvider) GetAvailableInstanceType(host *v1beta1.Host) ([]string, er
 	return instanceTypes, nil
 }
 
-func (a *AliProvider) GetAvailableResource(host *v1beta1.Host, systemCategory, dataCategory string) (instanceType []string, err error) {
+func (a *AliProvider) GetAvailableResource(host *v1beta1.InfraHost, systemCategory, dataCategory string) (instanceType []string, err error) {
 	request := ecs.CreateDescribeAvailableResourceRequest()
 	request.Scheme = Scheme
 	request.RegionId = a.Infra.Status.Cluster.RegionID

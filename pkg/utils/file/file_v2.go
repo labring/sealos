@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ func ReadLines(fileName string) ([]string, error) {
 func ReadAll(fileName string) ([]byte, error) {
 	// step1：check file exist
 	if !IsExist(fileName) {
-		return nil, errors.New("no such file")
+		return nil, fmt.Errorf("path is %s no such file", fileName)
 	}
 	// step2：open file
 	file, err := os.Open(filepath.Clean(fileName))

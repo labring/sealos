@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
 package guest
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/fork/golang/expansion"
 
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/image"
@@ -23,7 +25,6 @@ import (
 	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/fork/golang/expansion"
 	"github.com/fanux/sealos/pkg/utils/maps"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"

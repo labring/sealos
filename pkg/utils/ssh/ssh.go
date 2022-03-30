@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ type SSH struct {
 	LocalAddress *[]net.Addr
 }
 
-func NewSSHClient(ssh *v2.ClusterSSH, isStdout bool) Interface {
+func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 	if ssh.User == "" {
 		ssh.User = v2.DefaultUserRoot
 	}

@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,15 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
+	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta3"
+	"github.com/pkg/errors"
 	"path/filepath"
 	"strings"
 
 	"github.com/fanux/sealos/pkg/utils/contants"
 
-	"github.com/fanux/sealos/pkg/runtime/kubeadm_types/v1beta2"
+	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
 	"github.com/fanux/sealos/pkg/token"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -46,8 +49,18 @@ const (
 
 // k.getKubeVersion can't be empty
 func (k *KubeadmRuntime) setKubeadmAPIVersion() {
-	version := getterKubeadmAPIVersion(k.getKubeVersion())
+	kubeVersion:=k.getKubeVersionFromImage()
+	version := getterKubeadmAPIVersion(kubeVersion)
 	k.setAPIVersion(version)
+	k.setKubeVersion(kubeVersion)
+}
+
+func (k *KubeadmRuntime) getKubeadmAPIVersion() string {
+	return k.InitConfiguration.APIVersion
+}
+
+func (k *KubeadmRuntime) setKubeVersion(version string) {
+	k.ClusterConfiguration.KubernetesVersion = version
 }
 
 func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
@@ -161,7 +174,7 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 
 func (k *KubeadmRuntime) setJoinToken(token string) {
 	if k.Discovery.BootstrapToken == nil {
-		k.Discovery.BootstrapToken = &v1beta2.BootstrapTokenDiscovery{}
+		k.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
 	}
 	k.Discovery.BootstrapToken.Token = token
 }
@@ -175,7 +188,7 @@ func (k *KubeadmRuntime) getJoinToken() string {
 
 func (k *KubeadmRuntime) setTokenCaCertHash(tokenCaCertHash []string) {
 	if k.Discovery.BootstrapToken == nil {
-		k.Discovery.BootstrapToken = &v1beta2.BootstrapTokenDiscovery{}
+		k.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
 	}
 	k.Discovery.BootstrapToken.CACertHashes = tokenCaCertHash
 }
@@ -209,7 +222,7 @@ func (k *KubeadmRuntime) setInitAdvertiseAddress(advertiseAddress string) {
 
 func (k *KubeadmRuntime) setJoinAdvertiseAddress(advertiseAddress string) {
 	if k.JoinConfiguration.ControlPlane == nil {
-		k.JoinConfiguration.ControlPlane = &v1beta2.JoinControlPlane{}
+		k.JoinConfiguration.ControlPlane = &kubeadm.JoinControlPlane{}
 	}
 	k.JoinConfiguration.ControlPlane.LocalAPIEndpoint.AdvertiseAddress = advertiseAddress
 }
@@ -277,15 +290,75 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 		k.APIServer.ExtraArgs = make(map[string]string)
 	}
 	k.APIServer.ExtraArgs["etcd-servers"] = getEtcdEndpointsWithHTTPSPrefix(k.getMasterIPList())
-	k.ClusterConfiguration.Etcd.Local = &v1beta2.LocalEtcd{DataDir: "/var/lib/etcd"}
+	k.ClusterConfiguration.Etcd.Local = &kubeadm.LocalEtcd{DataDir: "/var/lib/etcd"}
 
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 
-	return yaml.MarshalYamlConfigs(&k.InitConfiguration,
-		&k.ClusterConfiguration,
+	if err = k.convertKubeadmVersion(); err != nil {
+		return nil, errors.Wrap(err, "convert kubeadm version failed")
+	}
+
+	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
+		&k.conversion.ClusterConfiguration,
 		&k.KubeletConfiguration,
 		&k.KubeProxyConfiguration)
+}
+
+func (k *KubeadmRuntime) convertKubeadmVersion() error {
+	var err error
+	kubeadmVersion := k.getKubeadmAPIVersion()
+	switch kubeadmVersion {
+	case KubeadmV1beta2:
+		var v1beta2InitConfiguration v1beta2.InitConfiguration
+		var v1beta2ClusterConfiguration v1beta2.ClusterConfiguration
+		var v1beta2JoinConfiguration v1beta2.JoinConfiguration
+		if err = v1beta2.Convert_kubeadm_InitConfiguration_To_v1beta2_InitConfiguration(&k.InitConfiguration, &v1beta2InitConfiguration, nil); err != nil {
+			return err
+		}
+		if err = v1beta2.Convert_kubeadm_ClusterConfiguration_To_v1beta2_ClusterConfiguration(&k.ClusterConfiguration, &v1beta2ClusterConfiguration, nil); err != nil {
+			return err
+		}
+		if err = v1beta2.Convert_kubeadm_JoinConfiguration_To_v1beta2_JoinConfiguration(&k.JoinConfiguration, &v1beta2JoinConfiguration, nil); err != nil {
+			return err
+		}
+		v1beta2InitConfiguration.APIVersion = KubeadmV1beta2
+		v1beta2ClusterConfiguration.APIVersion = KubeadmV1beta2
+		v1beta2JoinConfiguration.APIVersion = KubeadmV1beta2
+		v1beta2InitConfiguration.Kind = "InitConfiguration"
+		v1beta2ClusterConfiguration.Kind = "ClusterConfiguration"
+		v1beta2JoinConfiguration.Kind = "JoinConfiguration"
+		k.conversion.InitConfiguration = v1beta2InitConfiguration
+		k.conversion.ClusterConfiguration = v1beta2ClusterConfiguration
+		k.conversion.JoinConfiguration = v1beta2JoinConfiguration
+	case KubeadmV1beta3:
+		var v1beta3InitConfiguration v1beta3.InitConfiguration
+		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
+		var v1beta3JoinConfiguration v1beta3.JoinConfiguration
+		if err = v1beta3.Convert_kubeadm_InitConfiguration_To_v1beta3_InitConfiguration(&k.InitConfiguration, &v1beta3InitConfiguration, nil); err != nil {
+			return err
+		}
+		if err = v1beta3.Convert_kubeadm_ClusterConfiguration_To_v1beta3_ClusterConfiguration(&k.ClusterConfiguration, &v1beta3ClusterConfiguration, nil); err != nil {
+			return err
+		}
+		if err = v1beta3.Convert_kubeadm_JoinConfiguration_To_v1beta3_JoinConfiguration(&k.JoinConfiguration, &v1beta3JoinConfiguration, nil); err != nil {
+			return err
+		}
+		v1beta3InitConfiguration.APIVersion = KubeadmV1beta2
+		v1beta3ClusterConfiguration.APIVersion = KubeadmV1beta2
+		v1beta3JoinConfiguration.APIVersion = KubeadmV1beta2
+		v1beta3InitConfiguration.Kind = "InitConfiguration"
+		v1beta3ClusterConfiguration.Kind = "ClusterConfiguration"
+		v1beta3JoinConfiguration.Kind = "JoinConfiguration"
+		k.conversion.InitConfiguration = v1beta3InitConfiguration
+		k.conversion.ClusterConfiguration = v1beta3ClusterConfiguration
+		k.conversion.JoinConfiguration = v1beta3JoinConfiguration
+	default:
+		k.conversion.InitConfiguration = k.InitConfiguration
+		k.conversion.ClusterConfiguration = k.ClusterConfiguration
+		k.conversion.JoinConfiguration = k.JoinConfiguration
+	}
+	return nil
 }
 
 func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
@@ -303,9 +376,12 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	}
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
+	if err = k.convertKubeadmVersion(); err != nil {
+		return nil, errors.Wrap(err, "convert kubeadm version failed")
+	}
 	return yaml.MarshalYamlConfigs(
 		&k.KubeletConfiguration,
-		&k.JoinConfiguration)
+		&k.conversion.JoinConfiguration)
 }
 
 func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, error) {
@@ -323,5 +399,8 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 		return nil, err
 	}
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:6443", k.getMaster0IP()))
-	return yaml.MarshalYamlConfigs(k.JoinConfiguration, k.KubeletConfiguration)
+	if err = k.convertKubeadmVersion(); err != nil {
+		return nil, errors.Wrap(err, "convert kubeadm version failed")
+	}
+	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.KubeletConfiguration)
 }

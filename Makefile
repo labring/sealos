@@ -57,7 +57,7 @@ install-addlicense: ## check license if not exist install go-lint tools
 filelicense:
 filelicense: install-addlicense
 	for file in ${Dirs} ; do \
-		if [[  $$file != '_output' && $$file != 'docs' && $$file != 'vendor' && $$file != 'logger' && $$file != 'applications' ]]; then \
+		if [[  $$file != '_output' && $$file != 'docs' && $$file != 'vendor' && $$file != 'logger' && $$file != 'fork' && $$file != 'applications' ]]; then \
 			$(ADDLICENSE_BIN)  -y $(shell date +"%Y") -c "sealos." -f hack/template/LICENSE ./$$file ; \
 		fi \
     done

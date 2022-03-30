@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ type CreateProcessor struct {
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
-	err := yaml.MarshalYamlToFile(contants.Clusterfile(cluster.GetClusterName()), cluster)
+	err := yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	c.Config = config.NewConfiguration(c.cManifest.MountPoint, c.ClusterFile.GetConfigs())
-	return c.Config.Dump(contants.Clusterfile(cluster.GetClusterName()))
+	return c.Config.Dump(contants.Clusterfile(cluster.Name))
 }
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
@@ -126,7 +126,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 		return err
 	}
 
-	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.GetClusterName()), cluster)
+	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {

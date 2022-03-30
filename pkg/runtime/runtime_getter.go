@@ -33,6 +33,10 @@ func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
+	return k.ClusterConfiguration.KubernetesVersion
+}
+
+func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
 	image := labels["version"]
 	if image == "" {

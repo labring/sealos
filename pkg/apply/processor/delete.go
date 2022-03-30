@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 
 	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig(), d.img)
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to delete runtime, %v", err)
 	}
 
 	err = runTime.Reset()

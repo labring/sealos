@@ -27,7 +27,7 @@ import (
 // ValidateInfraName validates that the given name can be used as a infra name.
 var ValidateInfraName = apimachineryvalidation.NameIsDNSSubdomain
 
-func validateHost(host *v1beta1.Host, fldPath *field.Path) field.ErrorList {
+func validateHost(host *v1beta1.InfraHost, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 	if host.Count == 0 {
 		allErrors = append(allErrors, field.Invalid(fldPath.Key("count"), host.Count,
@@ -62,7 +62,7 @@ func validateHost(host *v1beta1.Host, fldPath *field.Path) field.ErrorList {
 	return allErrors
 }
 
-func validateCluster(cluster *v1beta1.Metadata, fldPath *field.Path) field.ErrorList {
+func validateCluster(cluster *v1beta1.InfraMetadata, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
 	if len(cluster.RegionIDs) == 0 {
@@ -72,7 +72,7 @@ func validateCluster(cluster *v1beta1.Metadata, fldPath *field.Path) field.Error
 	return allErrors
 }
 
-func validateCredential(credential *v1beta1.Credential, fldPath *field.Path) field.ErrorList {
+func validateCredential(credential *v1beta1.InfraCredential, fldPath *field.Path) field.ErrorList {
 	allErrors := field.ErrorList{}
 
 	if len(credential.AccessKey) == 0 {

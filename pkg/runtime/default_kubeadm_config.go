@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 
 package runtime
 
@@ -89,7 +90,7 @@ etcd:
       listen-metrics-urls: http://0.0.0.0:2381
 
 ---
-apiVersion: kubeproxy.Config.k8s.io/v1alpha1
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
 kind: KubeProxyConfiguration
 mode: "ipvs"
 ipvs:
@@ -97,7 +98,7 @@ ipvs:
     - "10.103.97.2/32"
 
 ---
-apiVersion: kubelet.Config.k8s.io/v1beta1
+apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
 authentication:
   anonymous:

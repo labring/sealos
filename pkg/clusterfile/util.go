@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,9 @@ package clusterfile
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/runtime"
 	"io/ioutil"
 	"strings"
-
-	"github.com/fanux/sealos/pkg/utils/decode"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -80,7 +79,7 @@ func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	if metaType.Kind != contants.Cluster {
 		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
 	}
-	c, err := decode.CRDForBytes(data, contants.Cluster)
+	c, err := runtime.DecodeCRDFromString(string(data), contants.Cluster)
 	if err != nil {
 		return nil, err
 	} else if c == nil {

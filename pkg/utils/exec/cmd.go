@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ func Cmd(name string, args ...string) error {
 	return cmd.Run()
 }
 func CmdForPipe(exe string, args ...string) error {
+	logger.Debug("cmd for pipe in host: ", fmt.Sprintf("%s %s", exe, strings.Join(args," ")))
 	cmd := exec.Command(exe, args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {
@@ -75,11 +76,13 @@ func Output(name string, args ...string) ([]byte, error) {
 }
 
 func RunSimpleCmd(cmd string) (string, error) {
+	logger.Debug("cmd for sh in host: ", cmd)
 	result, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput() // #nosec
 	return string(result), err
 }
 
 func RunBashCmd(cmd string) (string, error) {
+	logger.Debug("cmd for bash in host: ", cmd)
 	result, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput() // #nosec
 	return string(result), err
 }

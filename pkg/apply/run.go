@@ -1,24 +1,23 @@
-/*
-Copyright 2022 cuisongliu@qq.com.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright © 2021 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package apply
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/fanux/sealos/pkg/checker"
 
@@ -36,7 +35,7 @@ import (
 
 type ClusterArgs struct {
 	cluster     *v2.Cluster
-	hosts       []v2.ClusterHost
+	hosts       []v2.Host
 	clusterName string
 }
 
@@ -68,6 +67,25 @@ func NewApplierFromArgs(imageName string, args *RunArgs) (applydrivers.Interface
 	}
 	return applydrivers.NewDefaultApplier(c.cluster)
 }
+func NewApplierFromFile(path string) (applydrivers.Interface, error) {
+	if !filepath.IsAbs(path) {
+		pa, err := os.Getwd()
+		if err != nil {
+			return nil, err
+		}
+		path = filepath.Join(pa, path)
+	}
+	Clusterfile := clusterfile.NewClusterFile(path)
+
+	if err := Clusterfile.Process(); err != nil {
+		return nil, err
+	}
+	cluster := Clusterfile.GetCluster()
+	if cluster.Name == "" {
+		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
+	}
+	return applydrivers.NewDefaultApplier(cluster)
+}
 
 func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 	if imageName == "" {
@@ -96,7 +114,7 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 	if len(args.Masters) > 0 {
 		masters := strings2.SplitRemoveEmpty(args.Masters, ",")
 		nodes := strings2.SplitRemoveEmpty(args.Nodes, ",")
-		r.hosts = []v2.ClusterHost{}
+		r.hosts = []v2.Host{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
 		}
@@ -117,24 +135,16 @@ func (r *ClusterArgs) Process(args *RunArgs) error {
 	if err != nil {
 		return err
 	}
-	if !args.DryRun {
-		logger.Debug("write cluster file to local storage: %s", clusterPath)
-		return yaml.MarshalYamlToFile(clusterPath, r.cluster)
-	}
-	data, err := yaml.MarshalYamlConfigs(r.cluster)
-	if err != nil {
-		return err
-	}
-	_, err = os.Stdout.WriteString(string(data))
-	return err
+	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, r.cluster)
 }
 
 func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
-	hostMap := map[string]*v2.ClusterHost{}
+	hostMap := map[string]*v2.Host{}
 	for i := range ips {
 		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], "22")
 		if _, ok := hostMap[port]; !ok {
-			hostMap[port] = &v2.ClusterHost{IPS: []string{ip}, Roles: roles}
+			hostMap[port] = &v2.Host{IPS: []string{ip}, Roles: roles}
 			continue
 		}
 		hostMap[port].IPS = append(hostMap[port].IPS, ip)
@@ -143,7 +153,7 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	for port, host := range hostMap {
 		host.IPS = removeIPListDuplicatesAndEmpty(host.IPS)
 		if port == master0Port && strings2.InList(v2.Master, roles) {
-			r.hosts = append([]v2.ClusterHost{*host}, r.hosts...)
+			r.hosts = append([]v2.Host{*host}, r.hosts...)
 			continue
 		}
 		r.hosts = append(r.hosts, *host)

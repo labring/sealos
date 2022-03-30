@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,27 +28,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
-	"github.com/fanux/sealos/pkg/runtime/kubeadm_types/v1beta2"
+	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
 	"github.com/imdario/mergo"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/kube-proxy/config/v1alpha1"
 	"k8s.io/kubelet/config/v1beta1"
 )
 
-// Read Config from https://github.com/alibaba/sealer/blob/main/docs/design/clusterfile-v2.md and overwrite default kubeadm.yaml
-// Use github.com/imdario/mergo to merge kubeadm Config in Clusterfile and the default kubeadm Config
-// Using a Config filter to handle some edge cases
-
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
 // Using map to overwrite Kubeadm configs
 
 //nolint
 type KubeadmConfig struct {
-	v1beta2.InitConfiguration
-	v1beta2.ClusterConfiguration
+	kubeadm.InitConfiguration
+	kubeadm.ClusterConfiguration
+	kubeadm.JoinConfiguration
 	v1alpha1.KubeProxyConfiguration
 	v1beta1.KubeletConfiguration
-	v1beta2.JoinConfiguration
+	conversion struct {
+		InitConfiguration interface{}
+		ClusterConfiguration interface{}
+		JoinConfiguration interface{}
+	}
 }
 
 const (
@@ -104,13 +105,13 @@ func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interf
 	if err != nil {
 		return nil, err
 	} else if initConfig != nil {
-		kubeadmConfig.InitConfiguration = *initConfig.(*v1beta2.InitConfiguration)
+		kubeadmConfig.InitConfiguration = *initConfig.(*kubeadm.InitConfiguration)
 	}
 	clusterConfig, err := decode(arg, ClusterConfiguration)
 	if err != nil {
 		return nil, err
 	} else if clusterConfig != nil {
-		kubeadmConfig.ClusterConfiguration = *clusterConfig.(*v1beta2.ClusterConfiguration)
+		kubeadmConfig.ClusterConfiguration = *clusterConfig.(*kubeadm.ClusterConfiguration)
 	}
 	kubeProxyConfig, err := decode(arg, KubeProxyConfiguration)
 	if err != nil {
@@ -128,7 +129,7 @@ func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interf
 	if err != nil {
 		return nil, err
 	} else if joinConfig != nil {
-		kubeadmConfig.JoinConfiguration = *joinConfig.(*v1beta2.JoinConfiguration)
+		kubeadmConfig.JoinConfiguration = *joinConfig.(*kubeadm.JoinConfiguration)
 	}
 	return kubeadmConfig, nil
 }
@@ -196,11 +197,11 @@ func typeConversion(kind string) interface{} {
 	case Cluster:
 		return &v2.Cluster{}
 	case InitConfiguration:
-		return &v1beta2.InitConfiguration{}
+		return &kubeadm.InitConfiguration{}
 	case JoinConfiguration:
-		return &v1beta2.JoinConfiguration{}
+		return &kubeadm.JoinConfiguration{}
 	case ClusterConfiguration:
-		return &v1beta2.ClusterConfiguration{}
+		return &kubeadm.ClusterConfiguration{}
 	case KubeletConfiguration:
 		return &v1beta1.KubeletConfiguration{}
 	case KubeProxyConfiguration:
