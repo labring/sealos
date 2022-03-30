@@ -1,12 +1,14 @@
 FROM scratch
 MAINTAINER sealyun
 LABEL init="init.sh $criData $registryDomain $registryPort $registryUsername $registryPassword"
-LABEL version="v1.22.0"
+LABEL version="v1.22.8"
 LABEL image="ghcr.io/sealyun/lvscare:v1.1.3-beta.2"
 LABEL clean="clean.sh $criData"
+LABEL check="check.sh"
 LABEL init-registry="init-registry.sh $registryPort $registryData $registryConfig"
 LABEL clean-registry="clean-registry.sh $registryData $registryConfig"
 LABEL auth="auth.sh"
+LABEL type="kubernetes"
 ENV criData=/var/lib/containerd
 ENV registryData=/var/lib/registry
 ENV registryConfig=/etc/registry
@@ -15,4 +17,3 @@ ENV registryPort=5000
 ENV registryUsername=admin
 ENV registryPassword=passw0rd
 COPY . .
-CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]

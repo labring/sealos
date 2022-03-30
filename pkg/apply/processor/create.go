@@ -72,7 +72,6 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.Join,
 		//c.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
-		c.DeleteCluster,
 		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
@@ -131,9 +130,6 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster)
-}
-func (c *CreateProcessor) DeleteCluster(cluster *v2.Cluster) error {
-	return c.ClusterManager.Delete(cluster.Name)
 }
 
 func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {

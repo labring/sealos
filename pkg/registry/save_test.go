@@ -26,7 +26,7 @@ import (
 )
 
 func TestSaveImages(t *testing.T) {
-	tests := []string{"fanux/lvscare"}
+	tests := []string{"quay.io/tigera/operator:v1.25.3"}
 	is := NewImageSaver(context.Background(), nil)
 	err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "arm64"})
 	if err != nil {
@@ -43,8 +43,8 @@ func Test_splitDockerDomain(t *testing.T) {
 	}{
 		{
 			name:       "test1",
-			imageName:  "docker.io/library/alpine:latest",
-			wantDomain: defaultDomain,
+			imageName:  "quay.io/tigera/operator:v1.25.3",
+			wantDomain: "quay.io",
 			wantRemain: "library/alpine:latest",
 		},
 		{
@@ -190,7 +190,7 @@ func Test_authConfigToProxy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := authConfigToProxy(tt.args.auth); !reflect.DeepEqual(got, tt.want) {
+			if got := authConfigToProxy(tt.args.auth,""); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("authConfigToProxy() = %v, want %v", got, tt.want)
 			}
 		})

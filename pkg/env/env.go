@@ -16,6 +16,7 @@ package env
 
 import (
 	"fmt"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -43,10 +44,11 @@ type Interface interface {
 
 type processor struct {
 	*v1beta1.Cluster
+	*v1.Image
 }
 
-func NewEnvProcessor(cluster *v1beta1.Cluster) Interface {
-	return &processor{cluster}
+func NewEnvProcessor(cluster *v1beta1.Cluster, image *v1.Image) Interface {
+	return &processor{cluster, image}
 }
 func (p *processor) WrapperEnv(host string) map[string]string {
 	env := make(map[string]string)
@@ -90,7 +92,7 @@ func (p *processor) RenderAll(host, dir string) error {
 }
 
 // Merge the host ENV and global env, the host env will overwrite cluster.Spec.Env
-func (p *processor) getHostEnv(hostIP string) (env map[string]string) {
+func (p *processor) getHostEnv(hostIP string) map[string]string {
 	var hostEnv []string
 	for _, host := range p.Spec.Hosts {
 		for _, ip := range host.IPS {
@@ -101,6 +103,8 @@ func (p *processor) getHostEnv(hostIP string) (env map[string]string) {
 	}
 	hostEnvMap := maps.ListToMap(hostEnv)
 	specEnvMap := maps.ListToMap(p.Spec.Env)
-
-	return maps.MergeMap(specEnvMap, hostEnvMap)
+	imageEnvMap := maps.ListToMap(p.Image.Config.Env)
+	envs := maps.MergeMap(imageEnvMap, specEnvMap, hostEnvMap)
+	delete(envs, "PATH")
+	return envs
 }

@@ -92,8 +92,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 			defer func() {
 				<-numCh
 			}()
-
-			registry, err := NewProxyRegistry(is.ctx, dir, is.auths[tmpnameds[0].domain])
+			registry, err := NewProxyRegistry(is.ctx, dir, is.auths[tmpnameds[0].domain], tmpnameds[0].domain)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
@@ -113,11 +112,16 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 	return nil
 }
 
-func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
+func authConfigToProxy(auth types.AuthConfig, domain string) configuration.Proxy {
 	// set the URL of registry
 	proxyURL := ""
 	if auth.ServerAddress == defaultDomain || auth.ServerAddress == "" {
-		proxyURL = defaultProxyURL
+		if domain == "docker.io" {
+			proxyURL = defaultProxyURL
+		} else {
+			proxyURL = HTTPS + domain
+		}
+
 	}
 	if proxyURL != "" {
 		auth.ServerAddress = proxyURL
@@ -137,9 +141,9 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	}
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig, domain string) (distribution.Namespace, error) {
 	config := configuration.Configuration{
-		Proxy: authConfigToProxy(auth),
+		Proxy: authConfigToProxy(auth, domain),
 		Storage: configuration.Storage{
 			driverName: configuration.Parameters{configRootDir: rootdir},
 		},
