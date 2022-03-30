@@ -22,7 +22,7 @@ const RemoteCopyKubeConfig = `rm -rf .kube/Config && mkdir -p  .kube && cp /etc/
 
 func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
 	srcKubeFile := k.getContantData().AdminFile()
-	desKubeFile := path.Join(".kube", "Config")
+	desKubeFile := path.Join(".kube", "config")
 	return k.sendFileToHosts(hosts, srcKubeFile, desKubeFile)
 }
 

@@ -156,7 +156,6 @@ func (h *HostFile) DeleteDomain(domain string) {
 	}
 	_, found := currHostsMap.Get(domain)
 	if currHostsMap == nil || !found {
-		logger.Warn("domain %s not exist", domain)
 		return
 	}
 	currHostsMap.Remove(domain)
