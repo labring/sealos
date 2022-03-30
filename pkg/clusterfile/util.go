@@ -16,9 +16,10 @@ package clusterfile
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/runtime"
 	"io/ioutil"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/runtime"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"

@@ -46,9 +46,9 @@ type KubeadmConfig struct {
 	v1alpha1.KubeProxyConfiguration
 	v1beta1.KubeletConfiguration
 	conversion struct {
-		InitConfiguration interface{}
+		InitConfiguration    interface{}
 		ClusterConfiguration interface{}
-		JoinConfiguration interface{}
+		JoinConfiguration    interface{}
 	}
 }
 

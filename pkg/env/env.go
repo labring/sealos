@@ -16,11 +16,12 @@ package env
 
 import (
 	"fmt"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
+
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/fanux/sealos/pkg/utils/maps"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"

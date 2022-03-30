@@ -121,7 +121,6 @@ func authConfigToProxy(auth types.AuthConfig, domain string) configuration.Proxy
 		} else {
 			proxyURL = HTTPS + domain
 		}
-
 	}
 	if proxyURL != "" {
 		auth.ServerAddress = proxyURL

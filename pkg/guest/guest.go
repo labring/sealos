@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 package guest
 
 import (
 	"fmt"
+
 	"github.com/fanux/sealos/fork/golang/expansion"
 
 	"github.com/fanux/sealos/pkg/env"
@@ -54,7 +54,7 @@ func (d *Default) Apply(cluster *v2.Cluster) error {
 		return fmt.Errorf("get cluster image failed, %s", err)
 	}
 	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
-	envInterface := env.NewEnvProcessor(cluster,img)
+	envInterface := env.NewEnvProcessor(cluster, img)
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
 	guestCMD := d.getGuestCmd(envs, cluster, img)
 	for _, value := range guestCMD {

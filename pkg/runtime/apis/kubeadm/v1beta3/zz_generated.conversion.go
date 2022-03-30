@@ -24,12 +24,12 @@ package v1beta3
 import (
 	unsafe "unsafe"
 
+	bootstraptokenv1 "github.com/fanux/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	kubeadm "github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
-	bootstraptokenv1 "github.com/fanux/sealos/pkg/runtime/apis/bootstraptoken/v1"
-	kubeadm "github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
 )
 
 func init() {

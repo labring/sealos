@@ -16,11 +16,12 @@ package runtime
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
 	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta3"
 	"github.com/pkg/errors"
-	"path/filepath"
-	"strings"
 
 	"github.com/fanux/sealos/pkg/utils/contants"
 
@@ -49,7 +50,7 @@ const (
 
 // k.getKubeVersion can't be empty
 func (k *KubeadmRuntime) setKubeadmAPIVersion() {
-	kubeVersion:=k.getKubeVersionFromImage()
+	kubeVersion := k.getKubeVersionFromImage()
 	version := getterKubeadmAPIVersion(kubeVersion)
 	k.setAPIVersion(version)
 	k.setKubeVersion(kubeVersion)

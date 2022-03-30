@@ -15,9 +15,10 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/fanux/sealos/pkg/runtime"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"os"
 
 	"github.com/fanux/sealos/pkg/apply"
 	"github.com/fanux/sealos/pkg/utils/logger"

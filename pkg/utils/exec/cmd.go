@@ -33,7 +33,7 @@ func Cmd(name string, args ...string) error {
 	return cmd.Run()
 }
 func CmdForPipe(exe string, args ...string) error {
-	logger.Debug("cmd for pipe in host: ", fmt.Sprintf("%s %s", exe, strings.Join(args," ")))
+	logger.Debug("cmd for pipe in host: ", fmt.Sprintf("%s %s", exe, strings.Join(args, " ")))
 	cmd := exec.Command(exe, args...)
 	outReader, err := cmd.StdoutPipe()
 	if err != nil {

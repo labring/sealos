@@ -190,7 +190,7 @@ func Test_authConfigToProxy(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := authConfigToProxy(tt.args.auth,""); !reflect.DeepEqual(got, tt.want) {
+			if got := authConfigToProxy(tt.args.auth, ""); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("authConfigToProxy() = %v, want %v", got, tt.want)
 			}
 		})

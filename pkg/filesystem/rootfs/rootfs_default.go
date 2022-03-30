@@ -19,10 +19,11 @@ package rootfs
 import (
 	"context"
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"io/ioutil"
 	"path"
 	"path/filepath"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/image/types"
 

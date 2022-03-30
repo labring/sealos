@@ -167,7 +167,7 @@ func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
 }
 
 func (k *KubeadmRuntime) getENVInterface() env.Interface {
-	return env.NewEnvProcessor(k.Cluster,k.ImageInfo)
+	return env.NewEnvProcessor(k.Cluster, k.ImageInfo)
 }
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
