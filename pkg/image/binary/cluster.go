@@ -58,6 +58,15 @@ func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
 	return inspectContainer(data)
 }
 
+func (*ClusterService) List() ([]types.ClusterInfo, error) {
+	data := exec.BashEval("buildah containers --json")
+	infos, err := listContainer(data)
+	if err != nil {
+		return nil, err
+	}
+	return infos, nil
+}
+
 func inspectContainer(data string) (*types.ClusterManifest, error) {
 	if data != "" {
 		var outStruct map[string]interface{}
@@ -78,24 +87,16 @@ func inspectContainer(data string) (*types.ClusterManifest, error) {
 	return nil, errors.New("inspect output is empty")
 }
 
-type ClusterInfo struct {
-	ID            string `json:"id"`
-	Builder       bool   `json:"builder"`
-	Imageid       string `json:"imageid"`
-	Imagename     string `json:"imagename"`
-	Containername string `json:"containername"`
-}
-
-func listContainer(data string) ([]ClusterInfo, error) {
+func listContainer(data string) ([]types.ClusterInfo, error) {
 	if data != "" {
-		var outStruct []ClusterInfo
+		var outStruct []types.ClusterInfo
 		err := json.Unmarshal([]byte(data), &outStruct)
 		if err != nil {
 			return nil, errors.Wrap(err, "decode out json from list container failed")
 		}
 		return outStruct, nil
 	}
-	return nil, errors.New("inspect output is empty")
+	return nil, errors.New("containers output is empty")
 }
 
 func NewClusterService() (types.ClusterService, error) {

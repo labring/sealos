@@ -43,4 +43,5 @@ type ClusterService interface {
 	Delete(name string) error
 	// Inspect return cluster(container) manifest
 	Inspect(name string) (*ClusterManifest, error)
+	List() ([]ClusterInfo, error)
 }
