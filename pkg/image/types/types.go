@@ -27,3 +27,11 @@ type ClusterManifest struct {
 	ContainerID string
 	MountPoint  string
 }
+
+type ClusterInfo struct {
+	ID            string `json:"id"`
+	Builder       bool   `json:"builder"`
+	Imageid       string `json:"imageid"`
+	Imagename     string `json:"imagename"`
+	Containername string `json:"containername"`
+}
