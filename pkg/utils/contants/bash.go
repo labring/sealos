@@ -48,42 +48,42 @@ func (b *bash) CheckBash() string {
 	if val, ok := b.render[renderCheck]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "check.sh"
 }
 
 func (b *bash) InitBash() string {
 	if val, ok := b.render[renderInit]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "init.sh"
 }
 
 func (b *bash) CleanBash() string {
 	if val, ok := b.render[renderClean]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "clean.sh"
 }
 
 func (b *bash) AuthBash() string {
 	if val, ok := b.render[renderAuth]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "auth.sh"
 }
 
 func (b *bash) InitRegistryBash() string {
 	if val, ok := b.render[renderInitRegistry]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "init-registry.sh"
 }
 
 func (b *bash) CleanRegistryBash() string {
 	if val, ok := b.render[renderCleanRegistry]; ok {
 		return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), val)
 	}
-	return ""
+	return "clean-registry.sh"
 }
 
 func NewBash(clusterName string, render map[string]string) Bash {
