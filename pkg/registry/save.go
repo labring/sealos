@@ -22,6 +22,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/http"
+
 	"github.com/fanux/sealos/pkg/passwd"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -92,7 +94,11 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 			defer func() {
 				<-numCh
 			}()
-			registry, err := NewProxyRegistry(is.ctx, dir, is.auths[tmpnameds[0].domain], tmpnameds[0].domain)
+			auth := is.auths[tmpnameds[0].domain]
+			if auth.ServerAddress == "" {
+				auth.ServerAddress = tmpnameds[0].domain
+			}
+			registry, err := NewProxyRegistry(is.ctx, dir, auth)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
@@ -112,18 +118,13 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 	return nil
 }
 
-func authConfigToProxy(auth types.AuthConfig, domain string) configuration.Proxy {
+func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	// set the URL of registry
-	proxyURL := ""
 	if auth.ServerAddress == defaultDomain || auth.ServerAddress == "" {
-		if domain == "docker.io" {
-			proxyURL = defaultProxyURL
-		} else {
-			proxyURL = HTTPS + domain
-		}
+		auth.ServerAddress = defaultProxyURL
 	}
-	if proxyURL != "" {
-		auth.ServerAddress = proxyURL
+	if _, ok := http.IsURL(auth.ServerAddress); !ok {
+		auth.ServerAddress = HTTPS + auth.ServerAddress
 	}
 	if auth.Auth != "" && auth.Username == "" && auth.Password == "" {
 		uPassword, _ := passwd.LoginAuthDecode(auth.Auth)
@@ -134,15 +135,15 @@ func authConfigToProxy(auth types.AuthConfig, domain string) configuration.Proxy
 	}
 
 	return configuration.Proxy{
-		RemoteURL: proxyURL,
+		RemoteURL: auth.ServerAddress,
 		Username:  auth.Username,
 		Password:  auth.Password,
 	}
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig, domain string) (distribution.Namespace, error) {
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
 	config := configuration.Configuration{
-		Proxy: authConfigToProxy(auth, domain),
+		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
 			driverName: configuration.Parameters{configRootDir: rootdir},
 		},
