@@ -31,12 +31,12 @@ const (
 )
 
 var (
-	sshExportPort = ExportPort{
+	sshExportPort = InfraExportPort{
 		Protocol:  ProtocolTCP,
 		CidrIP:    SourceCidrIP,
 		PortRange: SSHPort,
 	}
-	apiserverExportPort = ExportPort{
+	apiserverExportPort = InfraExportPort{
 		Protocol:  ProtocolTCP,
 		CidrIP:    SourceCidrIP,
 		PortRange: APIServerPort,
@@ -62,7 +62,7 @@ func defaultCluster(infra *Infra) {
 		infra.Spec.Metadata.Instance.Network.Bandwidth = "100"
 	}
 	if len(infra.Spec.Metadata.Instance.Network.ExportPorts) == 0 {
-		infra.Spec.Metadata.Instance.Network.ExportPorts = []ExportPort{
+		infra.Spec.Metadata.Instance.Network.ExportPorts = []InfraExportPort{
 			sshExportPort,
 			apiserverExportPort,
 		}
@@ -95,8 +95,8 @@ func defaultHosts(infra *Infra) {
 			infra.Spec.Hosts[i].CPU = 2
 		}
 		if len(h.Disks) == 0 {
-			disks := make([]Disk, 0)
-			disks = append(disks, Disk{
+			disks := make([]InfraDisk, 0)
+			disks = append(disks, InfraDisk{
 				Capacity: 50,
 			})
 			infra.Spec.Hosts[i].Disks = disks
@@ -110,12 +110,12 @@ func defaultToStatus(infra *Infra) {
 	}
 	status := infra.Status.Hosts
 	if status == nil {
-		status = make([]HostStatus, 0)
+		status = make([]InfraHostStatus, 0)
 	}
 	for _, h := range infra.Spec.Hosts {
 		index := infra.Status.FindHostsByRoles(h.Roles)
 		if index == -1 {
-			status = append(status, HostStatus{Roles: h.Roles, Arch: h.Arch})
+			status = append(status, InfraHostStatus{Roles: h.Roles, Arch: h.Arch})
 		}
 	}
 	infra.Status.Hosts = status

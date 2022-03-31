@@ -40,8 +40,8 @@ const (
 
 func (k *KubeadmRuntime) confirmDeleteNodes() error {
 	if !ForceDelete {
-		prompt := "Are you sure to delete these nodes?"
-		cancel := "You have canceled to delete these nodes !"
+		prompt := "are you sure to delete these nodes?"
+		cancel := "you have canceled to delete these nodes !"
 		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
 			return err
 		} else if !pass {
@@ -94,8 +94,8 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
 	absKubeFile := fmt.Sprintf("%s/%s", contants.KubernetesEtc, kubeFile)
-	sealerKubeFile := fmt.Sprintf("%s/%s", k.getContantData().EtcPath(), kubeFile)
-	return k.sendFileToHosts(hosts, sealerKubeFile, absKubeFile)
+	sealosKubeFile := fmt.Sprintf("%s/%s", k.getContantData().EtcPath(), kubeFile)
+	return k.sendFileToHosts(hosts, sealosKubeFile, absKubeFile)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {

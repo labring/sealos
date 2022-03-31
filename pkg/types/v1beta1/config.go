@@ -1,33 +1,31 @@
-/*
-Copyright 2021 sealos.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright © 2021 Alibaba Group Holding Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 /*
 Application config file:
 
 Clusterfile:
 
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Cluster
 metadata:
   name: my-cluster
 spec:
-  image: registry.cn-qingdao.aliyuncs.com/sealer-app/my-SAAS-all-inone:latest
+  image: registry.cn-qingdao.aliyuncs.com/sealos-app/my-SAAS-all-inone:latest
   provider: BAREMETAL
 ---
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: mysql-config
@@ -38,7 +36,7 @@ spec:
        mysql-passwd: xxx
 ...
 ---
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: redis-config
@@ -49,7 +47,7 @@ spec:
        redis-passwd: xxx
 ...
 
-When apply this Clusterfile, sealer will generate some values file for application config. Named etc/mysql-config.yaml etc/redis-config.yaml.
+When apply this Clusterfile, sealos will generate some values file for application config. Named etc/mysql-config.yaml etc/redis-config.yaml.
 
 So if you want to use those config, Kubefile is like this:
 

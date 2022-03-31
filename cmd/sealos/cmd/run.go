@@ -43,19 +43,19 @@ var contact = `
                   常见问题：github.com/fanux/sealos/issues
 `
 
-var exampleInit = `
+var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
-	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
-  Specify server SSH port :
-  All servers use the same SSH port (default port: 22)：
-	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+  Specify server InfraSSH port :
+  All servers use the same InfraSSH port (default port: 22)：
+	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
-  Different SSH port numbers exist：
-	sealer run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
+  Different InfraSSH port numbers exist：
+	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
 create a cluster with custom environment variables:
-	sealer run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
 var runArgs *apply.RunArgs
@@ -64,10 +64,9 @@ func newInitCmd() *cobra.Command {
 	var initCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Simplest way to run your kubernets HA cluster",
-		Long:    `sealer run registry.cn-qingdao.aliyuncs.com/sealos-io/kubernetes:v1.22.0 --masters [arg] --nodes [arg]`,
-		Example: exampleInit,
+		Long:    `sealos run registry.cn-qingdao.aliyuncs.com/sealos-io/kubernetes:v1.22.0 --masters [arg] --nodes [arg]`,
+		Example: exampleRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			runArgs.Debug = debug
 			applier, err := apply.NewApplierFromArgs(args[0], runArgs)
 			if err != nil {
 				logger.Error(err)
@@ -97,12 +96,6 @@ func init() {
 	runCmd.Flags().StringVar(&runArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
 	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
 	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
-	runCmd.Flags().StringSliceVar(&runArgs.CustomArg, "arg", []string{}, "set arg for image endpoints instruction")
 	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
 	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
-	runCmd.Flags().BoolVar(&runArgs.DryRun, "dry-run", false, "enable dryRun")
-}
-
-func init() {
-	rootCmd.AddCommand(newInitCmd())
 }

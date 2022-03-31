@@ -24,10 +24,7 @@ type RunArgs struct {
 	Port        uint16
 	Pk          string
 	PkPassword  string
-	Debug       bool
-	DryRun      bool
 	ClusterName string
 	CustomEnv   []string
-	CustomArg   []string
 	CustomCMD   []string
 }

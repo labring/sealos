@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"github.com/fanux/sealos/pkg/clusterfile"
 	"github.com/fanux/sealos/pkg/filesystem"
 	"github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -28,11 +29,11 @@ import (
 )
 
 type DeleteProcessor struct {
-	ClusterManager image.ClusterService
-	ImageManager   image.Service
+	ClusterManager types.ClusterService
+	ImageManager   types.Service
 	ClusterFile    clusterfile.Interface
 	img            *v1.Image
-	cManifest      *image.ClusterManifest
+	cManifest      *types.ClusterManifest
 }
 
 // Execute :according to the different of desired cluster to delete cluster.
@@ -48,7 +49,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 
 	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig(), d.img)
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to delete runtime, %v", err)
 	}
 
 	err = runTime.Reset()
@@ -103,7 +104,7 @@ func NewDeleteProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	clusterSvc, err := image.NewDefaultClusterService()
+	clusterSvc, err := image.NewClusterService()
 	if err != nil {
 		return nil, err
 	}

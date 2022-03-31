@@ -1,4 +1,4 @@
-// Copyright © 2022 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"github.com/fanux/sealos/pkg/filesystem"
 	"github.com/fanux/sealos/pkg/guest"
 	"github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -31,18 +32,18 @@ import (
 
 type CreateProcessor struct {
 	ClusterFile     clusterfile.Interface
-	ImageManager    image.Service
-	ClusterManager  image.ClusterService
-	RegistryManager image.RegistryService
+	ImageManager    types.Service
+	ClusterManager  types.ClusterService
+	RegistryManager types.RegistryService
 	Runtime         runtime.Interface
 	Guest           guest.Interface
 	Config          config.Interface
 	img             *v1.Image
-	cManifest       *image.ClusterManifest
+	cManifest       *types.ClusterManifest
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
-	err := yaml.MarshalYamlToFile(contants.Clusterfile(cluster.GetClusterName()), cluster)
+	err := yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
 	if err != nil {
 		return err
 	}
@@ -71,7 +72,6 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.Join,
 		//c.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
-		c.DeleteCluster,
 		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
@@ -98,7 +98,7 @@ func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	c.Config = config.NewConfiguration(c.cManifest.MountPoint, c.ClusterFile.GetConfigs())
-	return c.Config.Dump(contants.Clusterfile(cluster.GetClusterName()))
+	return c.Config.Dump(contants.Clusterfile(cluster.Name))
 }
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
@@ -125,14 +125,11 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 		return err
 	}
 
-	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.GetClusterName()), cluster)
+	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster)
-}
-func (c *CreateProcessor) DeleteCluster(cluster *v2.Cluster) error {
-	return c.ClusterManager.Delete(cluster.Name)
 }
 
 func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
@@ -141,12 +138,12 @@ func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 		return nil, err
 	}
 
-	clusterSvc, err := image.NewDefaultClusterService()
+	clusterSvc, err := image.NewClusterService()
 	if err != nil {
 		return nil, err
 	}
 
-	registrySvc, err := image.NewDefaultRegistryService()
+	registrySvc, err := image.NewRegistryService()
 	if err != nil {
 		return nil, err
 	}

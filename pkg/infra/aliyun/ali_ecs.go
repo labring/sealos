@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ type Instance struct {
 	PrimaryIPAddress string
 }
 
-func (a *AliProvider) InputIPlist(host *v1beta1.Host) (ipList []string, err error) {
+func (a *AliProvider) InputIPlist(host *v1beta1.InfraHost) (ipList []string, err error) {
 	if host == nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (a *AliProvider) StartInstance(instanceID string) error {
 	return a.RetryEcsRequest(request, response)
 }
 
-func (a *AliProvider) ChangeInstanceType(instanceID string, host *v1beta1.Host) error {
+func (a *AliProvider) ChangeInstanceType(instanceID string, host *v1beta1.InfraHost) error {
 	instanceStatus, err := a.GetInstanceStatus(instanceID)
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (a *AliProvider) ChangeInstanceType(instanceID string, host *v1beta1.Host) 
 	return a.StartInstance(instanceID)
 }
 
-func (a *AliProvider) GetInstancesInfo(host *v1beta1.Host, expectCount int) (instances []Instance, err error) {
+func (a *AliProvider) GetInstancesInfo(host *v1beta1.InfraHost, expectCount int) (instances []Instance, err error) {
 	var count int
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
@@ -144,7 +144,7 @@ func (a *AliProvider) GetInstancesInfo(host *v1beta1.Host, expectCount int) (ins
 	return
 }
 
-func (a *AliProvider) ReconcileInstances(host *v1beta1.Host, status *v1beta1.HostStatus) error {
+func (a *AliProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta1.InfraHostStatus) error {
 	var instances []Instance
 	switch host.ToRole() {
 	case v1beta1.Master:
@@ -250,7 +250,7 @@ func CreateDescribeInstancesTag(tags map[string]string) (instanceTags []ecs.Desc
 	return
 }
 
-func CreateInstanceDataDisk(dataDisks []v1beta1.Disk, category string) (instanceDisks []ecs.RunInstancesDataDisk) {
+func CreateInstanceDataDisk(dataDisks []v1beta1.InfraDisk, category string) (instanceDisks []ecs.RunInstancesDataDisk) {
 	for _, v := range dataDisks {
 		instanceDisks = append(instanceDisks,
 			ecs.RunInstancesDataDisk{Size: strconv.Itoa(v.Capacity), Category: category})
@@ -258,7 +258,7 @@ func CreateInstanceDataDisk(dataDisks []v1beta1.Disk, category string) (instance
 	return
 }
 
-func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
+func (a *AliProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 	if host == nil {
 		return errors.New("host not set")
 	}
@@ -312,7 +312,7 @@ func (a *AliProvider) RunInstances(host *v1beta1.Host, count int) error {
 	return nil
 }
 
-func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort v1beta1.ExportPort) bool {
+func (a *AliProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort v1beta1.InfraExportPort) bool {
 	request := ecs.CreateAuthorizeSecurityGroupRequest()
 	request.Scheme = Scheme
 	request.SecurityGroupId = securityGroupID

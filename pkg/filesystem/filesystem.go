@@ -18,11 +18,11 @@ package filesystem
 
 import (
 	"github.com/fanux/sealos/pkg/filesystem/rootfs"
-	img "github.com/fanux/sealos/pkg/image"
+	"github.com/fanux/sealos/pkg/image/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(cluster *img.ClusterManifest, img *v1.Image) (rootfs.Interface, error) {
+func NewRootfsMounter(cluster *types.ClusterManifest, img *v1.Image) (rootfs.Interface, error) {
 	return rootfs.NewDefaultRootfs(cluster, img)
 }

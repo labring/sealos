@@ -33,6 +33,10 @@ func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
+	return k.ClusterConfiguration.KubernetesVersion
+}
+
+func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
 	image := labels["version"]
 	if image == "" {
@@ -163,7 +167,7 @@ func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
 }
 
 func (k *KubeadmRuntime) getENVInterface() env.Interface {
-	return env.NewEnvProcessor(k.Cluster)
+	return env.NewEnvProcessor(k.Cluster, k.ImageInfo)
 }
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {

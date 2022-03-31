@@ -40,13 +40,13 @@ func vlogToStr(vlog int) string {
 
 func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) {
 	const (
-		InitMaster115Lower = `kubeadm init --Config=%s --experimental-upload-certs`
+		InitMaster115Lower = `kubeadm init --config=%s --experimental-upload-certs`
 		JoinMaster115Lower = "kubeadm join %s:6443 --token %s   %s --experimental-control-plane --certificate-key %s"
 		JoinNode115Lower   = "kubeadm join %s:6443 --token %s   %s"
 
-		InitMaser115Upper  = `kubeadm init --Config=%s --upload-certs`
-		JoinMaster115Upper = "kubeadm join --Config=%s"
-		JoinNode115Upper   = "kubeadm join --Config=%s"
+		InitMaser115Upper  = `kubeadm init --config=%s --upload-certs`
+		JoinMaster115Upper = "kubeadm join --config=%s"
+		JoinNode115Upper   = "kubeadm join --config=%s"
 	)
 
 	initConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultInitKubeadmFileName)

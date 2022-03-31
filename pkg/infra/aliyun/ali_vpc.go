@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ func (a *AliProvider) GetAvailableZoneID() error {
 }
 
 func (a *AliProvider) BindEipForMaster0() error {
-	var host *v1beta1.Host
+	var host *v1beta1.InfraHost
 	for _, h := range a.Infra.Status.Hosts {
 		if v1beta1.In(v1beta1.Master, h.Roles) && h.Ready {
 			host = h.ToHost()

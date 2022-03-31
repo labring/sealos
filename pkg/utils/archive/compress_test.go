@@ -108,7 +108,7 @@ func makeDir(root string, d dirDef) error {
 
 func TestTarWithoutRootDir(t *testing.T) {
 	arch := NewArchive(false, false)
-	digest, _, err := arch.Digest("/Users/eric/Workspace/src/sealer/empty")
+	digest, _, err := arch.Digest("/Users/eric/Workspace/src/sealos/empty")
 	if err != nil {
 		t.Error(err)
 	}

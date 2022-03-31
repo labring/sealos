@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +109,7 @@ var RecocileFuncMap = map[ActionName]func(provider *AliProvider) error{
 			host := &h
 			statusIndex := aliProvider.Infra.Status.FindHostsByRoles(h.Roles)
 			if statusIndex < 0 {
-				aliProvider.Infra.Status.Hosts = append(aliProvider.Infra.Status.Hosts, v1beta1.HostStatus{Roles: h.Roles})
+				aliProvider.Infra.Status.Hosts = append(aliProvider.Infra.Status.Hosts, v1beta1.InfraHostStatus{Roles: h.Roles})
 				statusIndex = len(aliProvider.Infra.Status.Hosts) - 1
 			}
 			status := &aliProvider.Infra.Status.Hosts[statusIndex]

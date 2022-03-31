@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,27 +40,27 @@ func TestAliApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
-			Metadata: v2.Metadata{
+			Metadata: v2.InfraMetadata{
 				RegionIDs: []string{"cn-shanghai"},
 				ZoneIDs:   []string{"cn-shanghai-l"},
-				AccessChannels: v2.AccessChannels{
-					SSH: v2.SSH{
+				AccessChannels: v2.InfraAccessChannels{
+					SSH: v2.InfraSSH{
 						Passwd: "Fanux#123",
 						Port:   22,
 					},
 				},
-				Instance: v2.Instance{
+				Instance: v2.InfraInstance{
 					IsSeize: true,
 				},
 			},
-			Hosts: []v2.Host{
+			Hosts: []v2.InfraHost{
 				{
 					Roles:  []string{"master", "ssdxxx"},
 					CPU:    2,
 					Memory: 4,
 					Count:  1,
-					Disks:  []v2.Disk{},
-					OS: v2.OS{
+					Disks:  []v2.InfraDisk{},
+					OS: v2.InfraOS{
 						ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 					},
 					EcsType: "ecs.c7a.large",
@@ -80,14 +80,14 @@ func TestAliApply(t *testing.T) {
 	t.Run("modify instance system disk", func(t *testing.T) {
 		j, _ := yaml.Marshal(&infra)
 		t.Log("output yaml:", string(j))
-		infra.Spec.Hosts = []v2.Host{
+		infra.Spec.Hosts = []v2.InfraHost{
 			{
 				Roles:  []string{"master", "ssd"},
 				CPU:    2,
 				Memory: 4,
 				Count:  1,
-				Disks:  []v2.Disk{},
-				OS: v2.OS{
+				Disks:  []v2.InfraDisk{},
+				OS: v2.InfraOS{
 					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
 				EcsType: "ecs.c7a.large",
@@ -97,8 +97,8 @@ func TestAliApply(t *testing.T) {
 				CPU:    2,
 				Memory: 4,
 				Count:  1,
-				Disks:  []v2.Disk{},
-				OS: v2.OS{
+				Disks:  []v2.InfraDisk{},
+				OS: v2.InfraOS{
 					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
 				EcsType: "ecs.c7a.large",
@@ -108,14 +108,14 @@ func TestAliApply(t *testing.T) {
 		j, _ = yaml.Marshal(&infra)
 		t.Log("output yaml:", string(j))
 		time.Sleep(10 * time.Second)
-		infra.Spec.Hosts = []v2.Host{
+		infra.Spec.Hosts = []v2.InfraHost{
 			{
 				Roles:  []string{"master", "ssd"},
 				CPU:    2,
 				Memory: 4,
 				Count:  1,
-				Disks:  []v2.Disk{},
-				OS: v2.OS{
+				Disks:  []v2.InfraDisk{},
+				OS: v2.InfraOS{
 					ID: "centos_8_0_x64_20G_alibase_20210712.vhd",
 				},
 				EcsType: "ecs.s6-c1m2.large",
@@ -143,26 +143,26 @@ func TestHuaweiApply(t *testing.T) {
 			Name: "my-infra",
 		},
 		Spec: v2.InfraSpec{
-			Credential: v2.Credential{ProjectID: "06b264130780105b2f50c0145ba32d41"},
-			Metadata: v2.Metadata{
+			Credential: v2.InfraCredential{ProjectID: "06b264130780105b2f50c0145ba32d41"},
+			Metadata: v2.InfraMetadata{
 				RegionIDs: []string{"cn-north-4"},
 				ZoneIDs:   []string{""},
-				AccessChannels: v2.AccessChannels{
-					SSH: v2.SSH{
+				AccessChannels: v2.InfraAccessChannels{
+					SSH: v2.InfraSSH{
 						Passwd: "Fanux#123",
 						Port:   22,
 					},
 				},
-				Instance: v2.Instance{IsSeize: true},
+				Instance: v2.InfraInstance{IsSeize: true},
 			},
-			Hosts: []v2.Host{
+			Hosts: []v2.InfraHost{
 				{
 					Roles:  []string{"master", "ssdxxx"},
 					CPU:    2,
 					Memory: 4,
 					Count:  1,
-					Disks:  []v2.Disk{},
-					OS: v2.OS{
+					Disks:  []v2.InfraDisk{},
+					OS: v2.InfraOS{
 						Name: "ubuntu",
 					},
 				},

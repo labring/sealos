@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2021 Alibaba Group Holding Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import (
 /*
 config in Clusterfile:
 
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: redis-config

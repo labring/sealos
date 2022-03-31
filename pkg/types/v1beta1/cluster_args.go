@@ -20,16 +20,16 @@ import (
 	"fmt"
 )
 
-func (c *Cluster) GetSSH() ClusterSSH {
+func (c *Cluster) GetSSH() SSH {
 	return c.Spec.SSH
 }
-func (c *Cluster) SetSSH(ssh ClusterSSH) {
+func (c *Cluster) SetSSH(ssh SSH) {
 	c.Spec.SSH = ssh
 }
-func (c *Cluster) GetHosts() []ClusterHost {
+func (c *Cluster) GetHosts() []Host {
 	return c.Spec.Hosts
 }
-func (c *Cluster) SetHosts(hosts []ClusterHost) {
+func (c *Cluster) SetHosts(hosts []Host) {
 	c.Spec.Hosts = hosts
 }
 

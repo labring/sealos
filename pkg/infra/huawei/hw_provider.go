@@ -260,10 +260,10 @@ func (a *HwProvider) Apply() error {
 }
 
 func DefaultInfra(infra *v2.Infra) error {
-	//if infra.Spec.Metadata.IsSeize {
-	//	infra.Status.Metadata.SpotStrategy = "SpotAsPriceGo"
+	//if infra.Spec.InfraMetadata.IsSeize {
+	//	infra.Status.InfraMetadata.SpotStrategy = "SpotAsPriceGo"
 	//} else {
-	//	infra.Status.Metadata.SpotStrategy = "NoSpot"
+	//	infra.Status.InfraMetadata.SpotStrategy = "NoSpot"
 	//}
 	return nil
 }

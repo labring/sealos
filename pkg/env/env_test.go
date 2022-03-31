@@ -24,14 +24,14 @@ func getTestCluster() *v2.Cluster {
 	return &v2.Cluster{
 		Spec: v2.ClusterSpec{
 			Env: []string{"IP=127.0.0.1", "key=value"},
-			Hosts: []v2.ClusterHost{
+			Hosts: []v2.Host{
 				{
 					IPS:   []string{"192.168.0.2", "192.168.0.3", "192.168.0.4"},
 					Roles: []string{"master"},
 					Env:   []string{"key=bar", "foo=bar xxx ddd fffff", "IP=127.0.0.2"},
 				},
 			},
-			SSH: v2.ClusterSSH{},
+			SSH: v2.SSH{},
 		},
 	}
 }

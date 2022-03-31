@@ -29,6 +29,22 @@ var (
 	NODE   = "node"
 )
 
+type Provider string
+
+type Arch string
+
+const (
+	AMD64 Arch = "amd64"
+	ARM64 Arch = "arm64"
+)
+
+type Protocol string
+
+const (
+	ProtocolTCP Protocol = "tcp"
+	ProtocolUDP Protocol = "udp"
+)
+
 var (
 	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
 	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"

@@ -23,10 +23,13 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/fanux/sealos/pkg/image/types"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/fanux/sealos/pkg/env"
-	"github.com/fanux/sealos/pkg/image"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -39,7 +42,7 @@ import (
 type defaultRootfs struct {
 	//clusterService image.ClusterService
 	img     *v1.Image
-	cluster *image.ClusterManifest
+	cluster *types.ClusterManifest
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -62,7 +65,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
 	src := f.cluster.MountPoint
 
-	envProcessor := env.NewEnvProcessor(cluster)
+	envProcessor := env.NewEnvProcessor(cluster, f.img)
 	err := renderENV(src, ipList, envProcessor)
 	if err != nil {
 		return errors.Wrap(err, "render env to rootfs failed")
@@ -81,6 +84,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			err = CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, src, target)
 			if err != nil {
 				return fmt.Errorf("copy rootfs failed %v", err)
+			}
+			checkBash := check.CheckBash()
+			if checkBash == "" {
+				return nil
 			}
 			return f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()))
 		})
@@ -114,14 +121,14 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 
 func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	var (
-		baseRawPath     = path.Join(mountDir, contants.DataDirName)
-		renderEtc       = path.Join(baseRawPath, contants.EtcDirName)
-		renderChart     = path.Join(baseRawPath, contants.ChartsDirName)
-		renderManifests = path.Join(baseRawPath, contants.ManifestsDirName)
+		renderEtc       = path.Join(mountDir, contants.EtcDirName)
+		renderChart     = path.Join(mountDir, contants.ChartsDirName)
+		renderManifests = path.Join(mountDir, contants.ManifestsDirName)
 	)
 
 	for _, ip := range ipList {
 		for _, dir := range []string{renderEtc, renderChart, renderManifests} {
+			logger.Debug("render env dir: %s", dir)
 			if file.IsExist(dir) {
 				err := p.RenderAll(ip, dir)
 				if err != nil {
@@ -153,6 +160,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(cluster *image.ClusterManifest, img *v1.Image) (Interface, error) {
+func NewDefaultRootfs(cluster *types.ClusterManifest, img *v1.Image) (Interface, error) {
 	return &defaultRootfs{cluster: cluster, img: img}, nil
 }
