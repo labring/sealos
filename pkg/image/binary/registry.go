@@ -28,17 +28,17 @@ type RegistryService struct {
 }
 
 func (*RegistryService) Login(domain, username, passwd string) error {
-	panic("implement me")
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah login --username %s --password %s %s", username, passwd, domain))
 }
-func (*RegistryService) Logout(domain, username string) error {
-	panic("implement me")
+func (*RegistryService) Logout(domain string) error {
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah logout %s", domain))
 }
 func (*RegistryService) Pull(image string) error {
 	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull %s", image))
 }
 
 func (*RegistryService) Push(image string) error {
-	panic("implement me")
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah push %s", image))
 }
 func (*RegistryService) Sync(localDir, imageName string) error {
 	panic("implement me")

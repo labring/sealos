@@ -16,10 +16,80 @@ limitations under the License.
 
 package types
 
+import (
+	"fmt"
+	"strings"
+	"time"
+)
+
+type PullType string
+
+const (
+	PullTypeIfMissing PullType = "false"
+	PullTypeIfNewer   PullType = "true"
+	PullTypeAlways    PullType = "always"
+	PullTypeNever     PullType = "never"
+)
+
 type BuildOptions struct {
+	NoCache            bool     //--no-cache
+	AllPlatforms       bool     //--all-platforms
+	OS                 string   //--os "linux"
+	Arch               string   //--arch "amd64"
+	DisableCompression bool     //--disable-compression default true
+	File               string   //--file -f
+	ForceRemove        bool     //--force-rm
+	Remove             bool     //--rm true
+	Platform           string   //--platform linux/amd64
+	Pull               PullType //--pull string[="true"] true  (true,always,never)
+	Tag                string
 }
 
-type ListOptions struct {
+func (opts *BuildOptions) Default() {
+	opts.NoCache = false
+	opts.AllPlatforms = false
+	opts.DisableCompression = true
+	opts.ForceRemove = false
+	opts.Remove = true
+	opts.Pull = PullTypeIfNewer
+}
+
+func (opts *BuildOptions) String() string {
+	var sb strings.Builder
+	if opts.NoCache {
+		sb.WriteString(" --no-cache ")
+	}
+	if opts.AllPlatforms {
+		sb.WriteString(" --all-platforms ")
+	}
+	if len(opts.OS) > 0 {
+		sb.WriteString(fmt.Sprintf(" --os %s ", opts.OS))
+	}
+	if len(opts.Arch) > 0 {
+		sb.WriteString(fmt.Sprintf(" --arch %s ", opts.Arch))
+	}
+	if !opts.DisableCompression {
+		sb.WriteString(" --disable-compression=false ")
+	}
+	if len(opts.File) > 0 {
+		sb.WriteString(fmt.Sprintf(" -f %s ", opts.File))
+	}
+	if opts.ForceRemove {
+		sb.WriteString(" --force-rm ")
+	}
+	if !opts.Remove {
+		sb.WriteString(" --rm=false ")
+	}
+	if len(opts.Platform) > 0 {
+		sb.WriteString(fmt.Sprintf(" --platform %s ", opts.Platform))
+	}
+	if len(opts.Pull) > 0 {
+		sb.WriteString(fmt.Sprintf(" --pull=%s ", string(opts.Pull)))
+	}
+	if len(opts.Tag) > 0 {
+		sb.WriteString(fmt.Sprintf(" -t %s ", opts.Tag))
+	}
+	return sb.String()
 }
 
 type ClusterManifest struct {
@@ -34,4 +104,16 @@ type ClusterInfo struct {
 	Imageid       string `json:"imageid"`
 	Imagename     string `json:"imagename"`
 	Containername string `json:"containername"`
+}
+
+type ImageInfo struct {
+	ID           string    `json:"id"`
+	Names        []string  `json:"names"`
+	Digest       string    `json:"digest"`
+	CreatedAt    string    `json:"createdat"`
+	Size         string    `json:"size"`
+	Created      int64     `json:"created"`
+	CreatedAtRaw time.Time `json:"createdatraw"`
+	ReadOnly     bool      `json:"readonly"`
+	History      []string  `json:"history"`
 }

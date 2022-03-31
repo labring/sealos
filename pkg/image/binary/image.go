@@ -18,6 +18,10 @@ package binary
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/image/types"
 
@@ -33,12 +37,32 @@ import (
 type ImageService struct {
 }
 
-func (d *ImageService) Rename(src, dst string) error {
-	panic("implement me")
+func (d *ImageService) Tag(src, dst string) error {
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah tag %s %s", src, dst))
 }
 
-func (d *ImageService) Remove(images ...string) error {
-	panic("implement me")
+func (d *ImageService) Save(imageName, archiveName string) error {
+	localDir := filepath.Dir(archiveName)
+	if !fileutil.IsExist(localDir) {
+		return errors.New("archive dir is not exist")
+	}
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s", imageName, archiveName))
+}
+
+func (d *ImageService) Load(archiveName string) error {
+	if !fileutil.IsExist(archiveName) {
+		return errors.New("archive file is not exist")
+	}
+	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull  oci-archive:%s", archiveName))
+}
+
+func (d *ImageService) Remove(force bool, images ...string) error {
+	var forceCMD string
+	if force {
+		forceCMD = "-f"
+	}
+	cmd := fmt.Sprintf("buildah rmi %s %s", forceCMD, strings.Join(images, " "))
+	return exec.CmdForPipe("bash", "-c", cmd)
 }
 
 func (d *ImageService) Inspect(image string) (*v1.Image, error) {
@@ -67,16 +91,35 @@ func inspectImage(data string) (*v1.Image, error) {
 	return nil, errors.New("inspect output is empty")
 }
 
-func (d *ImageService) Build(options types.BuildOptions, contextDir, imageName string) error {
-	panic("implement me")
+func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
+	options.Tag = imageName
+	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
+	return exec.CmdForPipe("bash", "-c", cmd)
 }
 
 func (d *ImageService) Prune() error {
-	panic("implement me")
+	return exec.CmdForPipe("bash", "-c", "buildah rmi --prune")
 }
 
-func (d *ImageService) ListImages(opt types.ListOptions) ([]v1.Image, error) {
-	panic("implement me")
+func (d *ImageService) ListImages() ([]types.ImageInfo, error) {
+	data := exec.BashEval("buildah images --json")
+	infos, err := listImage(data)
+	if err != nil {
+		return nil, err
+	}
+	return infos, nil
+}
+
+func listImage(data string) ([]types.ImageInfo, error) {
+	if data != "" {
+		var outStruct []types.ImageInfo
+		err := json.Unmarshal([]byte(data), &outStruct)
+		if err != nil {
+			return nil, errors.Wrap(err, "decode out json from list images failed")
+		}
+		return outStruct, nil
+	}
+	return nil, errors.New("images output is empty")
 }
 
 func NewImageService() (types.Service, error) {

@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"testing"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/docker/docker/api/types"
-
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func TestSaveImages(t *testing.T) {
