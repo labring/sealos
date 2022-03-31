@@ -20,19 +20,21 @@ import (
 
 type RegistryService interface {
 	Login(domain, username, passwd string) error
-	Logout(domain, username string) error
+	Logout(domain string) error
 	Pull(image string) error
 	Push(image string) error
 	Sync(localDir, imageName string) error
 }
 
 type Service interface {
-	Rename(src, dst string) error
-	Remove(images ...string) error
+	Tag(src, dst string) error
+	Save(imageName, archiveName string) error
+	Load(archiveName string) error
+	Remove(force bool, images ...string) error
 	Inspect(image string) (*v1.Image, error) //oci image
-	Build(options BuildOptions, contextDir, imageName string) error
+	Build(options *BuildOptions, contextDir, imageName string) error
 	Prune() error
-	ListImages(opt ListOptions) ([]v1.Image, error)
+	ListImages() ([]ImageInfo, error)
 }
 
 type ClusterService interface {
