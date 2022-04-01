@@ -77,14 +77,15 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, image
 
 	mapping := expansion.MappingFuncFor(envs)
 	command := make([]string, 0)
+	if len(image.Config.Cmd) != 0 {
+		for _, cmd := range image.Config.Cmd {
+			command = append(command, expansion.Expand(cmd, mapping))
+		}
+	}
 	if len(cluster.Spec.Command) != 0 {
 		for _, cmd := range cluster.Spec.Command {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
-	}
-
-	if len(command) == 0 {
-		command = image.Config.Cmd
 	}
 
 	return command
