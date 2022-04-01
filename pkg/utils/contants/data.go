@@ -23,6 +23,7 @@ const (
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
+	DefaultKubeadmTokenFileName      = "kubeadm-token.yaml"
 	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
 	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"

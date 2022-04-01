@@ -31,6 +31,7 @@ func checkBuildah() error {
 		if err := buildahStorageSync(); err != nil {
 			return err
 		}
+		return nil
 	}
 	return errors.New("buildah not found in host")
 }

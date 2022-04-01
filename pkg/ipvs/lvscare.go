@@ -16,7 +16,6 @@ package ipvs
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/fanux/sealos/pkg/utils/contants"
 
@@ -40,9 +39,6 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 	}
 	args := []string{"care", "--vs", vip, "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {
-		if strings.Contains(m, ":") {
-			m = strings.Split(m, ":")[0]
-		}
 		args = append(args, "--rs")
 		args = append(args, m)
 	}

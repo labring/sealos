@@ -27,19 +27,19 @@ func NewClusterService() (types.ClusterService, error) {
 	if err := checkBuildah(); err == nil {
 		return binary.NewClusterService()
 	}
-	return nil, errors.New("not fount cluster runtime")
+	return nil, errors.New("not found cluster runtime")
 }
 
 func NewRegistryService() (types.RegistryService, error) {
 	if err := checkBuildah(); err == nil {
 		return binary.NewRegistryService()
 	}
-	return nil, errors.New("not fount registry runtime")
+	return nil, errors.New("not found registry runtime")
 }
 
 func NewImageService() (types.Service, error) {
 	if err := checkBuildah(); err == nil {
 		return binary.NewImageService()
 	}
-	return nil, errors.New("not fount image runtime")
+	return nil, errors.New("not found image runtime")
 }

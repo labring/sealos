@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/fanux/sealos/pkg/token"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
@@ -28,6 +30,7 @@ type KubeadmRuntime struct {
 	*sync.Mutex
 	Cluster   *v2.Cluster
 	ImageInfo *v1.Image
+	Token     *token.Token
 	*KubeadmConfig
 	*Config
 }
@@ -51,7 +54,6 @@ type RegistryConfig struct {
 
 func (k *KubeadmRuntime) Init() error {
 	pipeline := []func() error{
-		k.BashInitOnMaster0,
 		k.ConfigInitKubeadmToMaster0,
 		k.UpdateCert,
 		k.CopyStaticFilesToMasters,
@@ -69,6 +71,7 @@ type Interface interface {
 	DeleteNodes(nodeIPList []string) error
 	JoinMasters(newMastersIPList []string) error
 	DeleteMasters(mastersIPList []string) error
+	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 }
 
 func (k *KubeadmRuntime) Reset() error {

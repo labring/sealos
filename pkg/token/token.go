@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1 "github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -30,10 +32,10 @@ import (
 )
 
 type Token struct {
-	JoinToken                string   `json:"joinToken,omitempty"`
-	DiscoveryTokenCaCertHash []string `json:"discoveryTokenCaCertHash,omitempty"`
-	CertificateKey           string   `json:"certificateKey,omitempty"`
-	Command                  string   `json:"command,omitempty"`
+	JoinToken                string       `json:"joinToken,omitempty"`
+	DiscoveryTokenCaCertHash []string     `json:"discoveryTokenCaCertHash,omitempty"`
+	CertificateKey           string       `json:"certificateKey,omitempty"`
+	Expires                  *metav1.Time `json:"expires,omitempty"`
 }
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
@@ -57,6 +59,12 @@ func Default() (*Token, error) {
 				return nil, err
 			}
 			token.DiscoveryTokenCaCertHash = hashs
+			for _, t := range afterTokens {
+				if t.Token.String() == token.JoinToken {
+					token.Expires = t.Expires
+					break
+				}
+			}
 			return token, nil
 		}
 		return nil, fmt.Errorf("token list found more than one")

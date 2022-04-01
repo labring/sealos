@@ -82,7 +82,7 @@ func (s *remote) IPVS(ip, vip string, masters []string) error {
 
 func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error {
 	var staticPodIPVSCommandTemplate = template.Must(template.New("lvscare").Parse(`` +
-		`static-pod lvscare --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}}--masters  {{$h}}{{end}}`,
+		`static-pod lvscare --name {{.name}} --vip {{.vip}} --image {{.image}}  {{range $h := .masters}} --masters  {{$h}}{{end}}`,
 	))
 	data := map[string]interface{}{
 		"vip":     vip,

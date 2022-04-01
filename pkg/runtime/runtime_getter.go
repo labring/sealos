@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/fanux/sealos/pkg/env"
 	"github.com/fanux/sealos/pkg/remote"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
 )
@@ -82,17 +83,17 @@ func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
 	return k.getRemoteInterface().IPVS(ip, k.getVipAndPort(), masters)
 }
 
-func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs []string) error {
+func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
 		masters = append(masters, fmt.Sprintf("%s:6443", master))
 	}
 
-	logger.Info("start to sync lvscare static pod")
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range k.getNodeIPList() {
+	for _, node := range nodesIPs {
 		node := node
 		eg.Go(func() error {
+			logger.Info("start to sync lvscare static pod to node: %s master: %+v", node, masters)
 			err := k.execIPVSPod(node, masters)
 			if err != nil {
 				return fmt.Errorf("update lvscare static pod failed %s %v", node, err)
@@ -131,10 +132,6 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
 	return k.getRemoteInterface().HostsDelete(ip, domain)
-}
-
-func (k *KubeadmRuntime) execInit(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().InitBash()))
 }
 
 func (k *KubeadmRuntime) execClean(ip string) error {

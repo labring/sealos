@@ -15,7 +15,6 @@
 package runtime
 
 import (
-	"context"
 	"fmt"
 	"path"
 
@@ -23,32 +22,7 @@ import (
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/logger"
-	"golang.org/x/sync/errgroup"
 )
-
-func (k *KubeadmRuntime) bashInit(nodes []string) error {
-	eg, _ := errgroup.WithContext(context.Background())
-	for _, node := range nodes {
-		node := node
-		eg.Go(func() error {
-			err := k.execInit(node)
-			if err != nil {
-				return fmt.Errorf("exec init.sh failed %v", err)
-			}
-			return nil
-		})
-	}
-	return eg.Wait()
-}
-
-func (k *KubeadmRuntime) BashInitOnMaster0() error {
-	logger.Info("start to init filesystem master0...")
-	err := k.bashInit([]string{k.getMaster0IP()})
-	if err != nil {
-		return fmt.Errorf("filesystem init failed %v", err)
-	}
-	return nil
-}
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
