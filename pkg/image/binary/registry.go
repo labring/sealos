@@ -40,9 +40,6 @@ func (*RegistryService) Pull(image string) error {
 func (*RegistryService) Push(image string) error {
 	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah push %s", image))
 }
-func (*RegistryService) Sync(localDir, imageName string) error {
-	panic("implement me")
-}
 
 func NewRegistryService() (types.RegistryService, error) {
 	return &RegistryService{}, nil

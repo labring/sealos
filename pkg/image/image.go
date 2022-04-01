@@ -21,31 +21,25 @@ import (
 
 	"github.com/fanux/sealos/pkg/image/binary"
 	"github.com/fanux/sealos/pkg/image/types"
-	"github.com/fanux/sealos/pkg/utils/exec"
 )
 
 func NewClusterService() (types.ClusterService, error) {
-	if ok := checkBuildah(); ok {
+	if err := checkBuildah(); err == nil {
 		return binary.NewClusterService()
 	}
 	return nil, errors.New("not fount cluster runtime")
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	if ok := checkBuildah(); ok {
+	if err := checkBuildah(); err == nil {
 		return binary.NewRegistryService()
 	}
 	return nil, errors.New("not fount registry runtime")
 }
 
 func NewImageService() (types.Service, error) {
-	if ok := checkBuildah(); ok {
+	if err := checkBuildah(); err == nil {
 		return binary.NewImageService()
 	}
 	return nil, errors.New("not fount image runtime")
-}
-
-func checkBuildah() bool {
-	_, ok := exec.CheckCmdIsExist("buildah")
-	return ok
 }

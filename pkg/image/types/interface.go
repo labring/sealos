@@ -23,7 +23,6 @@ type RegistryService interface {
 	Logout(domain string) error
 	Pull(image string) error
 	Push(image string) error
-	Sync(localDir, imageName string) error
 }
 
 type Service interface {
