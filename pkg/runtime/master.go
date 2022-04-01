@@ -72,16 +72,16 @@ func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
 }
 
 func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
-	logger.Info("start to copy kubeadm join Config to master: %s", master)
+	logger.Info("start to copy kubeadm join config to master: %s", master)
 	data, err := k.generateJoinMasterConfigs(master)
 	if err != nil {
-		return fmt.Errorf("generator Config join master kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("generator config join master kubeadm config error: %s", err.Error())
 	}
 	joinConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultJoinMasterKubeadmFileName)
 	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write Config join master kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())
 	}
 	err = k.sshCopy(master, joinConfigPath, outConfigPath)
 	if err != nil {
@@ -95,11 +95,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		return nil
 	}
 	logger.Info("start to init filesystem join masters...")
-	err := k.bashInit(masters)
-	if err != nil {
-		return fmt.Errorf("filesystem init failed %v", err)
-	}
-
+	var err error
 	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, masters...); err != nil {
 		return errors.Wrap(err, "join masters wait for ssh ready time out")
 	}
@@ -115,7 +111,9 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.sendNewCertAndKey(masters); err != nil {
 		return err
 	}
-
+	if err = k.setKubernetesToken(); err != nil {
+		return err
+	}
 	if err = k.sendJoinCPConfig(masters); err != nil {
 		return err
 	}
@@ -159,7 +157,11 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		logger.Info("succeeded in joining %s as master", master)
 	}
 
-	return k.syncNodeIPVSYaml(strings.RemoveDuplicate(append(k.getMasterIPList(), masters...)))
+	return nil
+}
+
+func (k *KubeadmRuntime) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {
+	return k.syncNodeIPVSYaml(strings.RemoveDuplicate(mastersIPList), nodeIPList)
 }
 
 func (k *KubeadmRuntime) deleteMasters(masters []string) error {
@@ -193,6 +195,5 @@ func (k *KubeadmRuntime) deleteMaster(master string) error {
 			return fmt.Errorf("delete master %s failed %v", master, err)
 		}
 	}
-
-	return k.syncNodeIPVSYaml(masterIPs)
+	return nil
 }

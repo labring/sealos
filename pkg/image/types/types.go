@@ -51,7 +51,7 @@ func (opts *BuildOptions) Default() {
 	opts.DisableCompression = true
 	opts.ForceRemove = false
 	opts.Remove = true
-	opts.Pull = PullTypeIfNewer
+	opts.Pull = PullTypeIfMissing
 }
 
 func (opts *BuildOptions) String() string {

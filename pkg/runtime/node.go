@@ -28,16 +28,15 @@ import (
 )
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
-	logger.Info("start to init filesystem join nodes...")
-	err := k.bashInit(newNodesIPList)
-	if err != nil {
-		return fmt.Errorf("filesystem init failed %v", err)
-	}
+	var err error
 	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, newNodesIPList...); err != nil {
 		return errors.Wrap(err, "join nodes wait for ssh ready time out")
 	}
 
 	masters := k.getMasterIPListAndPort()
+	if err = k.setKubernetesToken(); err != nil {
+		return err
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range newNodesIPList {
 		node := node
@@ -45,7 +44,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			logger.Info("start to join %s as worker", node)
 			err = k.ConfigJoinNodeKubeadmToNode(node)
 			if err != nil {
-				return fmt.Errorf("failed to copy join node kubeadm Config %s %v", node, err)
+				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
 			err = k.execHostsAppend(node, k.getVip(), k.getAPIServerDomain())
 			if err != nil {
@@ -68,11 +67,11 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err = k.sshCmdAsync(node, cmd); err != nil {
 				return fmt.Errorf("failed to join node %s %v", node, err)
 			}
-			logger.Info("sync ipvs yaml in node: %s", node)
-			err = k.execIPVSPod(node, masters)
-			if err != nil {
-				return fmt.Errorf("generator ipvs static pod failed %v", err)
-			}
+			//logger.Info("sync ipvs yaml in node: %s", node)
+			//err = k.execIPVSPod(node, masters)
+			//if err != nil {
+			//	return fmt.Errorf("generator ipvs static pod failed %v", err)
+			//}
 			logger.Info("succeeded in joining %s as worker", node)
 			return nil
 		})
@@ -81,16 +80,16 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 }
 
 func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
-	logger.Info("start to copy kubeadm join Config to node: %s", node)
+	logger.Info("start to copy kubeadm join config to node: %s", node)
 	data, err := k.generateJoinNodeConfigs(node)
 	if err != nil {
-		return fmt.Errorf("generator Config join kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
 	}
 	joinConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultJoinNodeKubeadmFileName)
 	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write Config join kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())
 	}
 	err = k.sshCopy(node, joinConfigPath, outConfigPath)
 	if err != nil {

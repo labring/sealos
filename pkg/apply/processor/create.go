@@ -124,7 +124,10 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-
+	err = c.Runtime.SyncNodeIPVS(cluster.GetMasterIPList(), cluster.GetNodeIPList())
+	if err != nil {
+		return err
+	}
 	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
 }
 

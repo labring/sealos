@@ -16,8 +16,12 @@ package runtime
 
 import (
 	"fmt"
+	"path"
 	"path/filepath"
 	"strings"
+	"time"
+
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
 	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta3"
@@ -156,10 +160,13 @@ func (k *KubeadmRuntime) getDNSDomain() string {
 	return k.ClusterConfiguration.Networking.DNSDomain
 }
 
-func (k *KubeadmRuntime) setKubernetesToken() error {
-	logger.Info("start to get kubernetes token...")
+func (k *KubeadmRuntime) writeTokenFile() error {
+	tokenFile := path.Join(k.getContantData().EtcPath(), contants.DefaultKubeadmTokenFileName)
 	data, err := k.execToken(k.getMaster0IP())
 	if err != nil {
+		return err
+	}
+	if err = fileutil.WriteFile(tokenFile, []byte(data)); err != nil {
 		return err
 	}
 	var t token.Token
@@ -167,9 +174,43 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 	if err != nil {
 		return err
 	}
-	k.setJoinToken(t.JoinToken)
-	k.setTokenCaCertHash(t.DiscoveryTokenCaCertHash)
-	k.setCertificateKey(t.CertificateKey)
+	k.Token = &t
+	return nil
+}
+
+func (k *KubeadmRuntime) setKubernetesToken() error {
+	logger.Info("start to get kubernetes token...")
+	if k.Token == nil {
+		tokenFile := path.Join(k.getContantData().EtcPath(), contants.DefaultKubeadmTokenFileName)
+		if !fileutil.IsExist(tokenFile) {
+			err := k.writeTokenFile()
+			if err != nil {
+				return err
+			}
+		} else {
+			data, err := fileutil.ReadAll(tokenFile)
+			if err != nil {
+				return err
+			}
+			var t token.Token
+			err = json.Unmarshal(data, &t)
+			if err != nil {
+				return err
+			}
+			now := time.Now().Unix()
+			ex := t.Expires.Time.Unix()
+			if ex < now {
+				err = k.writeTokenFile()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	k.setJoinToken(k.Token.JoinToken)
+	k.setTokenCaCertHash(k.Token.DiscoveryTokenCaCertHash)
+	k.setCertificateKey(k.Token.CertificateKey)
 	return nil
 }
 
@@ -371,10 +412,6 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 		return nil, err
 	}
 	k.setCgroupDriver(cGroupDriver)
-	err = k.setKubernetesToken()
-	if err != nil {
-		return nil, err
-	}
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
 	if err = k.convertKubeadmVersion(); err != nil {
@@ -395,10 +432,6 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	}
 	k.setCgroupDriver(cGroupDriver)
 	k.setJoinAdvertiseAddress(masterIP)
-	err = k.setKubernetesToken()
-	if err != nil {
-		return nil, err
-	}
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:6443", k.getMaster0IP()))
 	if err = k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
