@@ -16,6 +16,7 @@ package processor
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/clusterfile"
 	"github.com/fanux/sealos/pkg/filesystem"
@@ -40,7 +41,7 @@ type DeleteProcessor struct {
 func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	d.cManifest, err = d.ClusterManager.Inspect(cluster.Name)
 	if err != nil {
-		return fmt.Errorf("failed to inspect cluster, %v", err)
+		logger.Warn("delete process failed to inspect cluster, %v", err)
 	}
 	d.img, err = d.ImageManager.Inspect(cluster.Spec.Image)
 	if err != nil {
@@ -82,6 +83,10 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 
 func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
+	if d.cManifest == nil {
+		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
+		return nil
+	}
 	fs, err := filesystem.NewRootfsMounter(d.cManifest, d.img)
 	if err != nil {
 		return err

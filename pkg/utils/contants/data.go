@@ -30,6 +30,8 @@ const (
 	ChartsDirName                    = "charts"
 	ManifestsDirName                 = "manifests"
 	RegistryDirName                  = "registry"
+	ImagesDirName                    = "images"
+	ImageShimDirName                 = "shim"
 	PkiDirName                       = "pki"
 	PkiEtcdDirName                   = "etcd"
 	ScriptsDirName                   = "scripts"
