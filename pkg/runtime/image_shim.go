@@ -18,11 +18,12 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"path"
 )
 
 var defaultRootDirectory = "/var/lib/image-cri-shim"
