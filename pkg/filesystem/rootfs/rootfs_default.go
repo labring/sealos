@@ -23,6 +23,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/runtime"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/image/types"
@@ -89,7 +91,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			if checkBash == "" {
 				return nil
 			}
-			if err = f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash())); err != nil {
+			if err = f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
 				return err
 			}
 			if err = f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {

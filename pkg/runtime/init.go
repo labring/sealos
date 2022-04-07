@@ -28,13 +28,13 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
 	data, err := k.generateInitConfigs()
 	if err != nil {
-		return fmt.Errorf("generator Config init kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("generator config init kubeadm Config error: %s", err.Error())
 	}
 	initConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
-		return fmt.Errorf("write Config init kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("write Config init kubeadm config error: %s", err.Error())
 	}
 	err = k.sshCopy(k.getMaster0IP(), initConfigPath, outConfigPath)
 	if err != nil {

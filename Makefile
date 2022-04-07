@@ -68,9 +68,9 @@ install-ossutil: ## check license if not exist install go-lint tools
 
 
 push-oss:install-ossutil build
-	$(OSSUTIL_BIN) cp -f dist/sealos_linux_amd64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos
+	$(OSSUTIL_BIN) cp -f dist/sealos_linux_amd64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos-amd64
 	$(OSSUTIL_BIN) cp -f dist/sealos_linux_arm64/sealos oss://sealyun-temp/sealos/${COMMIT_ID}/sealos-arm64
-	$(OSSUTIL_BIN) cp -f dist/sealctl_linux_amd64/sealctl oss://sealyun-temp/sealos/${COMMIT_ID}/sealctl
+	$(OSSUTIL_BIN) cp -f dist/sealctl_linux_amd64/sealctl oss://sealyun-temp/sealos/${COMMIT_ID}/sealctl-amd64
 	$(OSSUTIL_BIN) cp -f dist/sealctl_linux_arm64/sealctl oss://sealyun-temp/sealos/${COMMIT_ID}/sealctl-arm64
 
 generator-contributors:

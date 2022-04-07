@@ -54,5 +54,5 @@ func PreProcessIPList(joinArgs *RunArgs) error {
 }
 
 func removeIPListDuplicatesAndEmpty(ipList []string) []string {
-	return strings2.DedupeStrSlice(strings2.RemoveStrSlice(ipList, []string{""}))
+	return strings2.RemoveDuplicate(strings2.RemoveStrSlice(ipList, []string{""}))
 }

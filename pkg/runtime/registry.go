@@ -28,8 +28,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
-const DefaultLnFmt = "ln -s %s %s" //ln -s src dest
-
 func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &RegistryConfig{
@@ -72,19 +70,20 @@ func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 }
 
 func (k *KubeadmRuntime) htpasswd() error {
-	htpasswdPath := path.Join(k.getContantData().EtcPath(), "registry_htpasswd")
+	htpasswdPath := path.Join(k.getContantData().RootFSEtcPath(), "registry_htpasswd")
 	registry := k.getRegistry()
 	if registry.Username == "" && registry.Password == "" {
 		return nil
 	}
 	data := passwd.Htpasswd(registry.Username, registry.Password)
+	logger.Debug("write htpasswd file: %s,data: %s", htpasswdPath, data)
 	return file.WriteFile(htpasswdPath, []byte(data))
 }
 
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
-	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(DefaultLnFmt, k.getContantData().RootFSRegistryPath(), registry.Data))
+	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(contants.DefaultLnFmt, k.getContantData().RootFSRegistryPath(), registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
