@@ -16,6 +16,7 @@ package env
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/image/types"
 	"html/template"
 	"os"
 	"path/filepath"
@@ -45,10 +46,10 @@ type Interface interface {
 
 type processor struct {
 	*v1beta1.Cluster
-	*v1.Image
+	types.ImageListOCIV1
 }
 
-func NewEnvProcessor(cluster *v1beta1.Cluster, image *v1.Image) Interface {
+func NewEnvProcessor(cluster *v1beta1.Cluster, image []v1.Image) Interface {
 	return &processor{cluster, image}
 }
 func (p *processor) WrapperEnv(host string) map[string]string {
@@ -104,7 +105,10 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	}
 	hostEnvMap := maps.ListToMap(hostEnv)
 	specEnvMap := maps.ListToMap(p.Spec.Env)
-	imageEnvMap := maps.ListToMap(p.Image.Config.Env)
+	var imageEnvMap map[string]string
+	for _, img := range p.ImageListOCIV1 {
+		imageEnvMap = maps.MergeMap(imageEnvMap, maps.ListToMap(img.Config.Env))
+	}
 	envs := maps.MergeMap(imageEnvMap, specEnvMap, hostEnvMap)
 	delete(envs, "PATH")
 	return envs

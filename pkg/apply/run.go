@@ -39,7 +39,7 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewApplierFromArgs(imageName string, args *RunArgs) (applydrivers.Interface, error) {
+func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
 	clusterPath := contants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
@@ -87,8 +87,8 @@ func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 	return applydrivers.NewDefaultApplier(cluster)
 }
 
-func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
-	if imageName == "" {
+func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
+	if len(imageList) == 0 {
 		return fmt.Errorf("image can not be empty")
 	}
 	if args.ClusterName == "" {
@@ -105,7 +105,7 @@ func (r *ClusterArgs) SetClusterArgs(imageName string, args *RunArgs) error {
 		r.cluster.Spec.SSH.Passwd = args.Password
 	}
 
-	r.cluster.Spec.Image = imageName
+	r.cluster.Spec.Image = imageList
 
 	if err := PreProcessIPList(args); err != nil {
 		return err

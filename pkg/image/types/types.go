@@ -18,11 +18,13 @@ package types
 
 import (
 	"fmt"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"strings"
 	"time"
 )
 
 type PullType string
+type ImageListOCIV1 []v1.Image
 
 const (
 	PullTypeIfMissing PullType = "false"

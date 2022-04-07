@@ -31,7 +31,7 @@ type ClusterService struct {
 }
 
 func (d *ClusterService) Create(name, image string) (*types.ClusterManifest, error) {
-	cmd := fmt.Sprintf("buildah from --pull=never --name %s %s && buildah mount %s", name, image, name)
+	cmd := fmt.Sprintf(" buildah from --pull=never --name%s %s && buildah mount %s", name, image, name)
 	err := exec.CmdForPipe("bash", "-c", cmd)
 	if err != nil {
 		return nil, err

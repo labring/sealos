@@ -29,8 +29,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/image/types"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/fanux/sealos/pkg/env"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -43,7 +41,7 @@ import (
 
 type defaultRootfs struct {
 	//clusterService image.ClusterService
-	img     *v1.Image
+	imgList types.ImageListOCIV1
 	cluster *types.ClusterManifest
 }
 
@@ -67,7 +65,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
 	src := f.cluster.MountPoint
 
-	envProcessor := env.NewEnvProcessor(cluster, f.img)
+	envProcessor := env.NewEnvProcessor(cluster, f.imgList)
 	err := renderENV(src, ipList, envProcessor)
 	if err != nil {
 		return errors.Wrap(err, "render env to rootfs failed")
@@ -77,7 +75,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		return errors.Wrap(err, "run chmod to rootfs failed")
 	}
 
-	check := contants.NewBash(f.getClusterName(cluster), f.img.Config.Labels)
+	check := contants.NewBash(f.getClusterName(cluster), runtime.GetImageLabels(f.imgList))
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP
@@ -168,6 +166,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(cluster *types.ClusterManifest, img *v1.Image) (Interface, error) {
-	return &defaultRootfs{cluster: cluster, img: img}, nil
+func NewDefaultRootfs(cluster *types.ClusterManifest, images types.ImageListOCIV1) (Interface, error) {
+	return &defaultRootfs{cluster: cluster, imgList: images}, nil
 }

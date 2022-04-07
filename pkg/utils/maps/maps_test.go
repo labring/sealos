@@ -94,6 +94,19 @@ func TestMergeMap(t *testing.T) {
 				"cc": "cc",
 			},
 		},
+		{
+			name: "default-delete-dest",
+			args: args{
+				dst: map[string]string{
+				},
+				src: map[string]string{
+					"cc": "cc",
+				},
+			},
+			want: map[string]string{
+				"cc": "cc",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

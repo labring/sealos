@@ -27,14 +27,13 @@ import (
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type DeleteProcessor struct {
 	ClusterManager types.ClusterService
 	ImageManager   types.Service
 	ClusterFile    clusterfile.Interface
-	img            *v1.Image
+	imgList        types.ImageListOCIV1
 	cManifest      *types.ClusterManifest
 }
 
@@ -44,12 +43,13 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		logger.Warn("delete process failed to inspect cluster, %v", err)
 	}
-	d.img, err = d.ImageManager.Inspect(cluster.Spec.Image)
+
+	d.imgList, err = d.ImageManager.Inspect(cluster.Spec.Image)
 	if err != nil {
 		return fmt.Errorf("failed to inspect image, %v", err)
 	}
 
-	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig(), d.img)
+	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig(), d.imgList)
 	if err != nil {
 		return fmt.Errorf("failed to delete runtime, %v", err)
 	}
@@ -88,7 +88,7 @@ func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil
 	}
-	fs, err := filesystem.NewRootfsMounter(d.cManifest, d.img)
+	fs, err := filesystem.NewRootfsMounter(d.cManifest, d.imgList)
 	if err != nil {
 		return err
 	}

@@ -48,14 +48,16 @@ type Host struct {
 	Env []string `json:"env,omitempty"`
 }
 
+type ImageList []string
+
 // ClusterSpec defines the desired state of InfraMetadata
 type ClusterSpec struct {
 	// desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	// Foo is an example field of Cluster. Edit Cluster_types.go to remove/update
-	Image string `json:"image,omitempty"`
-	SSH   SSH    `json:"ssh"`
-	Hosts []Host `json:"hosts,omitempty"`
+	Image ImageList `json:"image,omitempty"`
+	SSH   SSH       `json:"ssh"`
+	Hosts []Host    `json:"hosts,omitempty"`
 	// Why env not using map[string]string
 	// Because some argument is list, like: CertSANS=127.0.0.1 CertSANS=localhost, if ENV is map, will merge those two values
 	// but user want to InfraMetadata a list, using array we can convert it to {CertSANS:[127.0.0.1, localhost]}

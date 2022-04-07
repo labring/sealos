@@ -27,7 +27,6 @@ import (
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type CreateProcessor struct {
@@ -38,7 +37,7 @@ type CreateProcessor struct {
 	Runtime         runtime.Interface
 	Guest           guest.Interface
 	Config          config.Interface
-	img             *v1.Image
+	imageList       types.ImageListOCIV1
 	cManifest       *types.ClusterManifest
 }
 
@@ -86,8 +85,8 @@ func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	c.img = img
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), img)
+	c.imageList = img
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
@@ -103,7 +102,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifest, c.img)
+	fs, err := filesystem.NewRootfsMounter(c.cManifest, c.imageList)
 	if err != nil {
 		return err
 	}
