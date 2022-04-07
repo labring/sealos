@@ -27,7 +27,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/maps"
 	"github.com/fanux/sealos/pkg/utils/ssh"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type Interface interface {
@@ -49,7 +48,7 @@ func NewGuestManager() (Interface, error) {
 
 func (d *Default) Apply(cluster *v2.Cluster) error {
 	clusterRootfs := runtime.GetContantData(cluster.Name).RootFSPath()
-	img, err := d.imageService.Inspect(cluster.Spec.Image)
+	img, err := d.imageService.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return fmt.Errorf("get cluster image failed, %s", err)
 	}
@@ -69,22 +68,23 @@ func (d *Default) Apply(cluster *v2.Cluster) error {
 	return nil
 }
 
-func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, image *v1.Image) []string {
-	if image.Config.Env != nil {
-		baseEnvs := maps.ListToMap(image.Config.Env)
-		envs = maps.MergeMap(baseEnvs, envs)
-	}
-
-	mapping := expansion.MappingFuncFor(envs)
+func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, images types.ImageListOCIV1) []string {
 	command := make([]string, 0)
-	if len(image.Config.Cmd) != 0 {
-		for _, cmd := range image.Config.Cmd {
-			command = append(command, expansion.Expand(cmd, mapping))
+	for _, i := range images {
+		if i.Config.Env != nil {
+			baseEnvs := maps.ListToMap(i.Config.Env)
+			envs = maps.MergeMap(baseEnvs, envs)
 		}
-	}
-	if len(cluster.Spec.Command) != 0 {
-		for _, cmd := range cluster.Spec.Command {
-			command = append(command, expansion.Expand(cmd, mapping))
+		mapping := expansion.MappingFuncFor(envs)
+		if len(i.Config.Cmd) != 0 {
+			for _, cmd := range i.Config.Cmd {
+				command = append(command, expansion.Expand(cmd, mapping))
+			}
+		}
+		if len(cluster.Spec.Command) != 0 {
+			for _, cmd := range cluster.Spec.Command {
+				command = append(command, expansion.Expand(cmd, mapping))
+			}
 		}
 	}
 

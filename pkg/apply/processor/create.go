@@ -77,11 +77,11 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 }
 
 func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
-	err := c.RegistryManager.Pull(cluster.Spec.Image)
+	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(cluster.Spec.Image)
+	img, err := c.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = runTime
-	c.cManifest, err = c.ClusterManager.Create(cluster.Name, cluster.Spec.Image)
+	c.cManifest, err = c.ClusterManager.Create(cluster.Name, cluster.Spec.Image...)
 	return err
 }
 

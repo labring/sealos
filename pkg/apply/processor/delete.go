@@ -44,7 +44,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 		logger.Warn("delete process failed to inspect cluster, %v", err)
 	}
 
-	d.imgList, err = d.ImageManager.Inspect(cluster.Spec.Image)
+	d.imgList, err = d.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return fmt.Errorf("failed to inspect image, %v", err)
 	}

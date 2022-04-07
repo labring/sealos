@@ -14,14 +14,10 @@
 
 package types
 
-import (
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-)
-
 type RegistryService interface {
 	Login(domain, username, passwd string) error
 	Logout(domain string) error
-	Pull(image string) error
+	Pull(images ...string) error
 	Push(image string) error
 }
 
@@ -30,7 +26,7 @@ type Service interface {
 	Save(imageName, archiveName string) error
 	Load(archiveName string) error
 	Remove(force bool, images ...string) error
-	Inspect(image string) (*v1.Image, error) //oci image
+	Inspect(images ...string) (ImageListOCIV1, error) //oci image
 	Build(options *BuildOptions, contextDir, imageName string) error
 	Prune() error
 	ListImages() ([]ImageInfo, error)
@@ -39,7 +35,7 @@ type Service interface {
 type ClusterService interface {
 	// Create 1. buildah from <image> 2. buildah mount <container(cluster)> 3. return container(cluster) manifest
 	// for CloudImage we can take container as cluster instance. type ClusterManifest storage.Container
-	Create(name, image string) (*ClusterManifest, error)
+	Create(name string, images ...string) (*ClusterManifest, error)
 	// Delete umount rootfs and delete it
 	Delete(name string) error
 	// Inspect return cluster(container) manifest

@@ -65,9 +65,18 @@ func (d *ImageService) Remove(force bool, images ...string) error {
 	return exec.CmdForPipe("bash", "-c", cmd)
 }
 
-func (d *ImageService) Inspect(image string) (*v1.Image, error) {
-	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", image))
-	return inspectImage(data)
+func (d *ImageService) Inspect(images ...string) (types.ImageListOCIV1, error) {
+	var imageList types.ImageListOCIV1
+	for _, image := range images {
+		data := exec.BashEval(fmt.Sprintf("buildah inspect %s", image))
+		ociImage, err := inspectImage(data)
+		if err != nil {
+			return nil, err
+		}
+		imageList = append(imageList, *ociImage)
+	}
+
+	return imageList, nil
 }
 
 func inspectImage(data string) (*v1.Image, error) {
