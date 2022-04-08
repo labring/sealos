@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+
 	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/utils/maps"
 
@@ -164,7 +165,7 @@ func (k *KubeadmRuntime) getImageLabels() map[string]string {
 func GetImageLabels(imageInfo types.ImageListOCIV1) map[string]string {
 	var imageLabelMap map[string]string
 	for _, img := range imageInfo {
-		imageLabelMap = maps.MergeMap(imageLabelMap, maps.ListToMap(img.Config.Env))
+		imageLabelMap = maps.MergeMap(imageLabelMap, img.Config.Labels)
 	}
 	return imageLabelMap
 }

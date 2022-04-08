@@ -97,8 +97,7 @@ func TestMergeMap(t *testing.T) {
 		{
 			name: "default-delete-dest",
 			args: args{
-				dst: map[string]string{
-				},
+				dst: map[string]string{},
 				src: map[string]string{
 					"cc": "cc",
 				},

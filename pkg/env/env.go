@@ -16,13 +16,12 @@ package env
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/image/types"
 	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/fanux/sealos/pkg/image/types"
 
 	"github.com/fanux/sealos/pkg/utils/maps"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -49,7 +48,7 @@ type processor struct {
 	types.ImageListOCIV1
 }
 
-func NewEnvProcessor(cluster *v1beta1.Cluster, image []v1.Image) Interface {
+func NewEnvProcessor(cluster *v1beta1.Cluster, image types.ImageListOCIV1) Interface {
 	return &processor{cluster, image}
 }
 func (p *processor) WrapperEnv(host string) map[string]string {

@@ -34,12 +34,12 @@ type DeleteProcessor struct {
 	ImageManager   types.Service
 	ClusterFile    clusterfile.Interface
 	imgList        types.ImageListOCIV1
-	cManifest      *types.ClusterManifest
+	cManifestList  types.ClusterManifestList
 }
 
 // Execute :according to the different of desired cluster to delete cluster.
 func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
-	d.cManifest, err = d.ClusterManager.Inspect(cluster.Name)
+	d.cManifestList, err = d.ClusterManager.Inspect(cluster.Name, len(cluster.Spec.Image))
 	if err != nil {
 		logger.Warn("delete process failed to inspect cluster, %v", err)
 	}
@@ -84,11 +84,11 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 
 func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
-	if d.cManifest == nil {
+	if d.cManifestList == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil
 	}
-	fs, err := filesystem.NewRootfsMounter(d.cManifest, d.imgList)
+	fs, err := filesystem.NewRootfsMounter(d.cManifestList, d.imgList)
 	if err != nil {
 		return err
 	}

@@ -22,6 +22,6 @@ import (
 )
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(cluster *types.ClusterManifest, images types.ImageListOCIV1) (rootfs.Interface, error) {
+func NewRootfsMounter(cluster types.ClusterManifestList, images types.ImageListOCIV1) (rootfs.Interface, error) {
 	return rootfs.NewDefaultRootfs(cluster, images)
 }

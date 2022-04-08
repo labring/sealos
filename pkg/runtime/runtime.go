@@ -16,8 +16,9 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/image/types"
 	"sync"
+
+	"github.com/fanux/sealos/pkg/image/types"
 
 	"github.com/fanux/sealos/pkg/token"
 
