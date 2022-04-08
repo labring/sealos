@@ -27,5 +27,3 @@ echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSE
 echo "### [arm64 下载地址]" >> Note.md
 echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/${VERSION}/sealos-arm64)" >> Note.md
 echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/latest/sealos-arm64)" >> Note.md
-
-echo "
