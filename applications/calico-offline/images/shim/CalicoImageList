@@ -1,0 +1,9 @@
+docker.io/calico/cni:v3.22.1
+docker.io/calico/kube-controllers:v3.22.1
+docker.io/calico/node:v3.22.1
+docker.io/calico/typha:v3.22.1
+docker.io/calico/pod2daemon-flexvol:v3.22.1
+docker.io/calico/apiserver:v3.22.1
+docker.io/calico/windows-upgrade:v3.22.1
+quay.io/tigera/operator:v1.25.3
+quay.io/tigera/key-cert-provisioner:v1.1.1
