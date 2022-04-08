@@ -17,7 +17,7 @@ echo "### Usage" >> Note.md
 echo "
 \`\`\`sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos && \\
+$ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos && \\
     chmod +x sealos && mv sealos /usr/bin
 \`\`\`
 " >> Note.md
