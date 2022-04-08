@@ -13,11 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Author:louisehong4168
-# Blog:https://fenghong.tech
-# Time:2020-12-06 11:17:39
-# Name:test/note.sh
-# Description:This is a production script.
 echo "### Usage" >> Note.md
 echo "
 \`\`\`sh
@@ -27,17 +22,10 @@ $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos/latest/sealos 
 \`\`\`
 " >> Note.md
 echo "### [amd64 下载地址]" >> Note.md
-echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/${VERSION}/sealos)" >> Note.md
-echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/latest/sealos)" >> Note.md
+echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/${VERSION}/sealos-amd64)" >> Note.md
+echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/latest/sealos-amd64)" >> Note.md
 echo "### [arm64 下载地址]" >> Note.md
-echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/${VERSION}/sealos-arm64)" >> Note.md
-echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos/latest/sealos-arm64)" >> Note.md
-echo "### Docker images" >> Note.md
-echo "- \`${DOCKER_REPO:-fanux/sealos}:${VERSION}\`" >> Note.md
-echo "- \`${DOCKER_REPO:-fanux/sealos}:latest\`" >> Note.md
+echo "[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/${VERSION}/sealos-arm64)" >> Note.md
+echo "[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/latest/sealos-arm64)" >> Note.md
 
 echo "
-### CHANGELOG
-[https://github.com/fanux/sealos/blob/master/CHANGELOG.md#${VERSION}](https://github.com/fanux/sealos/blob/master/CHANGELOG.md#${VERSION})
-" >> Note.md
-cat Note.md
