@@ -33,8 +33,13 @@ func (*RegistryService) Login(domain, username, passwd string) error {
 func (*RegistryService) Logout(domain string) error {
 	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah logout %s", domain))
 }
-func (*RegistryService) Pull(image string) error {
-	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull %s", image))
+func (*RegistryService) Pull(images ...string) error {
+	for _, image := range images {
+		if err := exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull %s", image)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (*RegistryService) Push(image string) error {

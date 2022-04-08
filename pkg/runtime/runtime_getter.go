@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/image/types"
+	"github.com/fanux/sealos/pkg/utils/maps"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/fanux/sealos/pkg/env"
@@ -156,7 +159,15 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 }
 
 func (k *KubeadmRuntime) getImageLabels() map[string]string {
-	return k.ImageInfo.Config.Labels
+	return GetImageLabels(k.ImageInfo)
+}
+
+func GetImageLabels(imageInfo types.ImageListOCIV1) map[string]string {
+	var imageLabelMap map[string]string
+	for _, img := range imageInfo {
+		imageLabelMap = maps.MergeMap(imageLabelMap, img.Config.Labels)
+	}
+	return imageLabelMap
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {

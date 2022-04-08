@@ -20,9 +20,13 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type PullType string
+type ImageListOCIV1 []v1.Image
+type ClusterManifestList []ClusterManifest
 
 const (
 	PullTypeIfMissing PullType = "false"

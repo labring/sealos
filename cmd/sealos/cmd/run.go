@@ -67,7 +67,7 @@ func newInitCmd() *cobra.Command {
 		Long:    `sealos run registry.cn-qingdao.aliyuncs.com/sealos-io/kubernetes:v1.22.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		Run: func(cmd *cobra.Command, args []string) {
-			applier, err := apply.NewApplierFromArgs(args[0], runArgs)
+			applier, err := apply.NewApplierFromArgs(args, runArgs)
 			if err != nil {
 				logger.Error(err)
 				_ = cmd.Help()

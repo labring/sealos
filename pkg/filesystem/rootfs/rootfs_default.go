@@ -29,8 +29,6 @@ import (
 
 	"github.com/fanux/sealos/pkg/image/types"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-
 	"github.com/fanux/sealos/pkg/env"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
@@ -43,8 +41,8 @@ import (
 
 type defaultRootfs struct {
 	//clusterService image.ClusterService
-	img     *v1.Image
-	cluster *types.ClusterManifest
+	imgList types.ImageListOCIV1
+	cluster types.ClusterManifestList
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -65,36 +63,48 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
-	src := f.cluster.MountPoint
-
-	envProcessor := env.NewEnvProcessor(cluster, f.img)
-	err := renderENV(src, ipList, envProcessor)
-	if err != nil {
-		return errors.Wrap(err, "render env to rootfs failed")
-	}
-	_, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, src))
-	if err != nil {
-		return errors.Wrap(err, "run chmod to rootfs failed")
-	}
-
-	check := contants.NewBash(f.getClusterName(cluster), f.img.Config.Labels)
 	eg, _ := errgroup.WithContext(context.Background())
+	envProcessor := env.NewEnvProcessor(cluster, f.imgList)
+
+	for _, cInfo := range f.cluster {
+		src := cInfo
+		eg.Go(func() error {
+			err := renderENV(src.MountPoint, ipList, envProcessor)
+			if err != nil {
+				return errors.Wrap(err, "render env to rootfs failed")
+			}
+
+			_, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, src.MountPoint))
+			if err != nil {
+				return errors.Wrap(err, "run chmod to rootfs failed")
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	check := contants.NewBash(f.getClusterName(cluster), runtime.GetImageLabels(f.imgList))
+
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
 			sshClient := f.getSSH(cluster)
-			err = CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, src, target)
-			if err != nil {
-				return fmt.Errorf("copy rootfs failed %v", err)
+			for _, cInfo := range f.cluster {
+				err := CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+				if err != nil {
+					return fmt.Errorf("copy rootfs failed %v", err)
+				}
 			}
+
 			checkBash := check.CheckBash()
 			if checkBash == "" {
 				return nil
 			}
-			if err = f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
+			if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
 				return err
 			}
-			if err = f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
+			if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
 				return err
 			}
 			return nil
@@ -168,6 +178,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(cluster *types.ClusterManifest, img *v1.Image) (Interface, error) {
-	return &defaultRootfs{cluster: cluster, img: img}, nil
+func NewDefaultRootfs(cluster types.ClusterManifestList, images types.ImageListOCIV1) (Interface, error) {
+	return &defaultRootfs{cluster: cluster, imgList: images}, nil
 }

@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/token"
+	"github.com/fanux/sealos/pkg/image/types"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/fanux/sealos/pkg/token"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -29,7 +29,7 @@ import (
 type KubeadmRuntime struct {
 	*sync.Mutex
 	Cluster   *v2.Cluster
-	ImageInfo *v1.Image
+	ImageInfo types.ImageListOCIV1
 	Token     *token.Token
 	*KubeadmConfig
 	*Config
@@ -118,10 +118,10 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Image) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, images types.ImageListOCIV1) (Interface, error) {
 	k := &KubeadmRuntime{
 		Cluster:   cluster,
-		ImageInfo: image,
+		ImageInfo: images,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
 			APIServerDomain:       DefaultAPIServerDomain,
@@ -139,8 +139,8 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Im
 }
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
-func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, image *v1.Image) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm, image)
+func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, images types.ImageListOCIV1) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm, images)
 }
 
 func (k *KubeadmRuntime) Validate() error {

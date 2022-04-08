@@ -18,6 +18,7 @@ package binary
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fanux/sealos/pkg/image/types"
 
@@ -30,13 +31,20 @@ import (
 type ClusterService struct {
 }
 
-func (d *ClusterService) Create(name, image string) (*types.ClusterManifest, error) {
-	cmd := fmt.Sprintf("buildah from --pull=never --name %s %s && buildah mount %s", name, image, name)
-	err := exec.CmdForPipe("bash", "-c", cmd)
+func (d *ClusterService) Create(name string, images ...string) (types.ClusterManifestList, error) {
+	var cmd strings.Builder
+	for i, image := range images {
+		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s-%d %s && buildah mount %s-%d ", name, i, image, name, i))
+		if i != len(images)-1 {
+			cmd.WriteString(" && ")
+		}
+	}
+	err := exec.CmdForPipe("bash", "-c", cmd.String())
 	if err != nil {
 		return nil, err
 	}
-	return d.Inspect(name)
+
+	return d.Inspect(name, len(images))
 }
 func (*ClusterService) Delete(name string) error {
 	data := exec.BashEval("buildah containers --json")
@@ -53,9 +61,18 @@ func (*ClusterService) Delete(name string) error {
 	return nil
 }
 
-func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
-	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", name))
-	return inspectContainer(data)
+func (*ClusterService) Inspect(name string, imageNum int) (types.ClusterManifestList, error) {
+	var clusterList types.ClusterManifestList
+
+	for i := 0; i < imageNum; i++ {
+		data := exec.BashEval(fmt.Sprintf("buildah inspect %s-%d", name, i))
+		manifest, err := inspectContainer(data)
+		if err != nil {
+			return nil, err
+		}
+		clusterList = append(clusterList, *manifest)
+	}
+	return clusterList, nil
 }
 
 func (*ClusterService) List() ([]types.ClusterInfo, error) {

@@ -15,7 +15,10 @@
 package processor
 
 import (
+	"context"
 	"fmt"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/fanux/sealos/pkg/clusterfile"
 	"github.com/fanux/sealos/pkg/config"
@@ -27,7 +30,6 @@ import (
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/yaml"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type CreateProcessor struct {
@@ -37,9 +39,8 @@ type CreateProcessor struct {
 	RegistryManager types.RegistryService
 	Runtime         runtime.Interface
 	Guest           guest.Interface
-	Config          config.Interface
-	img             *v1.Image
-	cManifest       *types.ClusterManifest
+	imageList       types.ImageListOCIV1
+	cManifestList   types.ClusterManifestList
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -78,32 +79,39 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 }
 
 func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
-	err := c.RegistryManager.Pull(cluster.Spec.Image)
+	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(cluster.Spec.Image)
+	img, err := c.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
-	c.img = img
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), img)
+	c.imageList = img
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = runTime
-	c.cManifest, err = c.ClusterManager.Create(cluster.Name, cluster.Spec.Image)
+	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, cluster.Spec.Image...)
 	return err
 }
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
-	c.Config = config.NewConfiguration(c.cManifest.MountPoint, c.ClusterFile.GetConfigs())
-	return c.Config.Dump(contants.Clusterfile(cluster.Name))
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, cManifest := range c.cManifestList {
+		manifest := cManifest
+		eg.Go(func() error {
+			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
+			return cfg.Dump(contants.Clusterfile(cluster.Name))
+		})
+	}
+	return eg.Wait()
 }
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifest, c.img)
+	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
 	if err != nil {
 		return err
 	}
