@@ -8,7 +8,7 @@ main.exe
 main
 dist
 .vscode
-test/Note.md
+hack/release/Note.md
 .ossutil_checkpoint
 bin
 .run
