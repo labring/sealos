@@ -121,49 +121,41 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if cmd == "" {
 		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
-	k.Mutex = &sync.Mutex{}
-	eg, _ := errgroup.WithContext(context.Background())
 	for _, master := range masters {
-		master := master
-		eg.Go(func() error {
-			k.Lock()
-			defer k.Unlock()
-			logger.Info("start to join %s as master", master)
-			err = k.registryAuth(master)
-			if err != nil {
-				return err
-			}
+		logger.Info("start to join %s as master", master)
+		err = k.registryAuth(master)
+		if err != nil {
+			return err
+		}
 
-			logger.Info("start to generator cert %s as master", master)
-			err = k.execCert(master)
-			if err != nil {
-				return fmt.Errorf("generator master %s cert failed %v", master, err)
-			}
+		logger.Info("start to generator cert %s as master", master)
+		err = k.execCert(master)
+		if err != nil {
+			return fmt.Errorf("generator master %s cert failed %v", master, err)
+		}
 
-			err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())
-			if err != nil {
-				return fmt.Errorf("add master0 apiserver domain hosts to %s failed %v", master, err)
-			}
+		err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())
+		if err != nil {
+			return fmt.Errorf("add master0 apiserver domain hosts to %s failed %v", master, err)
+		}
 
-			err = k.sshCmdAsync(master, cmd)
-			if err != nil {
-				return fmt.Errorf("exec kubeadm join in %s failed %v", master, err)
-			}
+		err = k.sshCmdAsync(master, cmd)
+		if err != nil {
+			return fmt.Errorf("exec kubeadm join in %s failed %v", master, err)
+		}
 
-			err = k.execHostsAppend(master, master, k.getAPIServerDomain())
-			if err != nil {
-				return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
-			}
+		err = k.execHostsAppend(master, master, k.getAPIServerDomain())
+		if err != nil {
+			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
+		}
 
-			err = k.copyMasterKubeConfig(master)
-			if err != nil {
-				return err
-			}
-			logger.Info("succeeded in joining %s as master", master)
-			return nil
-		})
+		err = k.copyMasterKubeConfig(master)
+		if err != nil {
+			return err
+		}
+		logger.Info("succeeded in joining %s as master", master)
 	}
-	return eg.Wait()
+	return nil
 }
 
 func (k *KubeadmRuntime) SyncNodeIPVS(mastersIPList, nodeIPList []string) error {

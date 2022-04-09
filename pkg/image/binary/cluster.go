@@ -20,6 +20,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+
 	"github.com/fanux/sealos/pkg/image/types"
 
 	"github.com/fanux/sealos/pkg/utils/exec"
@@ -46,16 +50,23 @@ func (d *ClusterService) Create(name string, images ...string) (types.ClusterMan
 
 	return d.Inspect(name, len(images))
 }
-func (*ClusterService) Delete(name string) error {
+func (*ClusterService) Delete(name string, imageNum int) error {
 	data := exec.BashEval("buildah containers --json")
 	infos, err := listContainer(data)
 	if err != nil {
 		return err
 	}
+	var containerNames []string
+	for i := 0; i < imageNum; i++ {
+		containerNames = append(containerNames, fmt.Sprintf("%s-%d", name, i))
+	}
+	logger.Debug("current container names is: %v", containerNames)
 	for _, info := range infos {
-		if info.Containername == name {
-			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", name, name)
-			return exec.CmdForPipe("bash", "-c", cmd)
+		if strings2.InList(info.Containername, containerNames) {
+			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
+			if err := exec.CmdForPipe("bash", "-c", cmd); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
