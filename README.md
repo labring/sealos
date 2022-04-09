@@ -32,6 +32,8 @@
 
 **加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun)_**
 
+**4.0.0版本: _[sealos4.0](https://github.com/fanux/sealos/tree/release-v4.0.0/docs/4.0)_**
+
 ![](docs/images/arch.png)
 
 # ✨ 支持的环境
