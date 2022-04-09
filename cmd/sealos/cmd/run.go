@@ -45,15 +45,19 @@ var contact = `
 
 var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
-	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	sealos run registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+  multi image:
+    sealos run registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8 registry.cn-hongkong.aliyuncs.com/sealyun/oci-calico:v3.22.1 \ 
+        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22)：
-	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	sealos run registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
   Different InfraSSH port numbers exist：
-	sealos run kubernetes:v1.19.8 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
+	sealos run registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+  
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx

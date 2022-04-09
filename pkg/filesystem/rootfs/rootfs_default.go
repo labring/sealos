@@ -90,11 +90,19 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		ip := IP
 		eg.Go(func() error {
 			sshClient := f.getSSH(cluster)
+			fileEg, _ := errgroup.WithContext(context.Background())
 			for _, cInfo := range f.cluster {
-				err := CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
-				if err != nil {
-					return fmt.Errorf("copy rootfs failed %v", err)
-				}
+				cInfo := cInfo
+				fileEg.Go(func() error {
+					err := CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+					if err != nil {
+						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Container, err)
+					}
+					return nil
+				})
+			}
+			if err := fileEg.Wait(); err != nil {
+				return err
 			}
 
 			checkBash := check.CheckBash()
