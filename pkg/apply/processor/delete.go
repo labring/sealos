@@ -96,7 +96,7 @@ func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 }
 
 func (d DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
-	return d.ClusterManager.Delete(cluster.Name)
+	return d.ClusterManager.Delete(cluster.Name, len(cluster.Spec.Image))
 }
 
 func (d DeleteProcessor) CleanFS(cluster *v2.Cluster) error {

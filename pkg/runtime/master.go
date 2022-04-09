@@ -121,7 +121,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if cmd == "" {
 		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
-	//
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
 		err = k.registryAuth(master)
@@ -132,22 +131,22 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		logger.Info("start to generator cert %s as master", master)
 		err = k.execCert(master)
 		if err != nil {
-			return fmt.Errorf("generator master cert failed %v", err)
+			return fmt.Errorf("generator master %s cert failed %v", master, err)
 		}
 
 		err = k.execHostsAppend(master, k.getMaster0IP(), k.getAPIServerDomain())
 		if err != nil {
-			return fmt.Errorf("add master0 apiserver domain hosts failed %v", err)
+			return fmt.Errorf("add master0 apiserver domain hosts to %s failed %v", master, err)
 		}
 
 		err = k.sshCmdAsync(master, cmd)
 		if err != nil {
-			return fmt.Errorf("exec kubeadm join failed %v", err)
+			return fmt.Errorf("exec kubeadm join in %s failed %v", master, err)
 		}
 
 		err = k.execHostsAppend(master, master, k.getAPIServerDomain())
 		if err != nil {
-			return fmt.Errorf("add master0 apiserver domain hosts failed %v", err)
+			return fmt.Errorf("add master0 apiserver domain hosts in %s failed %v", master, err)
 		}
 
 		err = k.copyMasterKubeConfig(master)
@@ -156,7 +155,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 		}
 		logger.Info("succeeded in joining %s as master", master)
 	}
-
 	return nil
 }
 

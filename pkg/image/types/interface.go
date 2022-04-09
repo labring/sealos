@@ -37,7 +37,7 @@ type ClusterService interface {
 	// for CloudImage we can take container as cluster instance. type ClusterManifest storage.Container
 	Create(name string, images ...string) (ClusterManifestList, error)
 	// Delete umount rootfs and delete it
-	Delete(name string) error
+	Delete(name string, imageNum int) error
 	// Inspect return cluster(container) manifest
 	Inspect(name string, imageNum int) (ClusterManifestList, error)
 	List() ([]ClusterInfo, error)
