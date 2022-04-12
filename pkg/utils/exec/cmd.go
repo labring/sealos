@@ -48,14 +48,16 @@ func CmdForPipe(exe string, args ...string) error {
 	outScanner := bufio.NewScanner(outReader)
 	go func() {
 		for outScanner.Scan() {
-			logger.Info(outScanner.Text())
+			//logger.Info()
+			_, _ = os.Stdout.Write([]byte(outScanner.Text() + "\n"))
 		}
 	}()
 
 	errScanner := bufio.NewScanner(errReader)
 	go func() {
 		for errScanner.Scan() {
-			logger.Info(errScanner.Text())
+			//logger.Info(errScanner.Text())
+			_, _ = os.Stdout.Write([]byte(errScanner.Text() + "\n"))
 		}
 	}()
 

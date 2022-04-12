@@ -36,7 +36,7 @@ default:  build
 
 GORELEASER_BIN = $(shell pwd)/bin/goreleaser
 install-goreleaser: ## check license if not exist install go-lint tools
-	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@latest)
+	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 
 build: SHELL:=/bin/bash

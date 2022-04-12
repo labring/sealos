@@ -29,7 +29,7 @@ type Service interface {
 	Inspect(images ...string) (ImageListOCIV1, error) //oci image
 	Build(options *BuildOptions, contextDir, imageName string) error
 	Prune() error
-	ListImages() ([]ImageInfo, error)
+	ListImages() error
 }
 
 type ClusterService interface {
