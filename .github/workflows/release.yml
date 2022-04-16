@@ -36,9 +36,9 @@ jobs:
           cd hack/release && sh note.sh
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1.7.0
+        uses: goreleaser/goreleaser-action@v2
         with:
-          version: latest
+          version: v1.7.0
           args: release --timeout=1h  --release-notes=hack/release/Note.md
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
