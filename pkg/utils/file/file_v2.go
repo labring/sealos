@@ -15,7 +15,6 @@
 package file
 
 import (
-	"archive/tar"
 	"bufio"
 	"fmt"
 	"io"
@@ -27,7 +26,6 @@ import (
 	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
-	"golang.org/x/sys/unix"
 )
 
 func Filename(f string) string {
@@ -142,7 +140,7 @@ func WriteFile(fileName string, content []byte) error {
 // copy /root/test/abc /tmp/abc
 func RecursionCopy(src, dst string) error {
 	if IsDir(src) {
-		return CopyDir(src, dst, false)
+		return CopyDirV3(src, dst)
 	}
 
 	err := os.MkdirAll(filepath.Dir(dst), 0700|0055)
@@ -150,96 +148,7 @@ func RecursionCopy(src, dst string) error {
 		return fmt.Errorf("failed to mkdir for recursion copy, err: %v", err)
 	}
 
-	_, err = CopySingleFile(src, dst)
-	return err
-}
-
-// cp -r /roo/test/* /tmp/abc
-func CopyDir(srcPath, dstPath string, overlayFs bool) error {
-	err := os.MkdirAll(dstPath, 0700|0055)
-	if err != nil {
-		return err
-	}
-	if overlayFs {
-		opaque, err := Lgetxattr(srcPath, "trusted.overlay.opaque")
-		if err != nil {
-			logger.Debug("failed to get trusted.overlay.opaque. err: %v", err)
-		}
-
-		if len(opaque) == 1 && opaque[0] == 'y' {
-			err = unix.Setxattr(dstPath, "trusted.overlay.opaque", []byte{'y'}, 0)
-			if err != nil {
-				return fmt.Errorf("failed to set trusted.overlay.opaque, err: %v", err)
-			}
-		}
-	}
-
-	fis, err := ioutil.ReadDir(srcPath)
-	if err != nil {
-		return err
-	}
-	for _, f := range fis {
-		src := filepath.Join(srcPath, f.Name())
-		dst := filepath.Join(dstPath, f.Name())
-		if f.IsDir() {
-			err = CopyDir(src, dst, overlayFs)
-			if err != nil {
-				return err
-			}
-		} else {
-			_, err = CopySingleFile(src, dst)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func CopySingleFile(src, dst string) (int64, error) {
-	sourceFileStat, err := os.Stat(src)
-	if err != nil {
-		return 0, err
-	}
-
-	header, err := tar.FileInfoHeader(sourceFileStat, src)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get file info header for %s, err: %v", src, err)
-	}
-	if sourceFileStat.Mode()&os.ModeCharDevice != 0 && header.Devminor == 0 && header.Devmajor == 0 {
-		err = unix.Mknod(dst, unix.S_IFCHR, 0)
-		if err != nil {
-			return 0, err
-		}
-		return 0, os.Chown(dst, header.Uid, header.Gid)
-	}
-
-	if !sourceFileStat.Mode().IsRegular() {
-		return 0, fmt.Errorf("%s is not a regular file", src)
-	}
-
-	source, err := os.Open(filepath.Clean(src))
-	if err != nil {
-		return 0, err
-	}
-	defer source.Close()
-	//will overwrite dst when dst is existed
-	destination, err := os.Create(dst)
-	if err != nil {
-		return 0, err
-	}
-	defer destination.Close()
-	err = destination.Chmod(sourceFileStat.Mode())
-	if err != nil {
-		return 0, err
-	}
-
-	err = os.Chown(dst, header.Uid, header.Gid)
-	if err != nil {
-		return 0, err
-	}
-	nBytes, err := io.Copy(destination, source)
-	return nBytes, err
+	return Copy(src, dst)
 }
 
 func CleanFile(file *os.File) {
