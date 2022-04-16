@@ -18,6 +18,7 @@ package binary
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -110,25 +111,10 @@ func (d *ImageService) Prune() error {
 	return exec.CmdForPipe("bash", "-c", "buildah rmi --prune")
 }
 
-func (d *ImageService) ListImages() ([]types.ImageInfo, error) {
-	data := exec.BashEval("buildah images --json")
-	infos, err := listImage(data)
-	if err != nil {
-		return nil, err
-	}
-	return infos, nil
-}
-
-func listImage(data string) ([]types.ImageInfo, error) {
-	if data != "" {
-		var outStruct []types.ImageInfo
-		err := json.Unmarshal([]byte(data), &outStruct)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode out json from list images failed")
-		}
-		return outStruct, nil
-	}
-	return nil, errors.New("images output is empty")
+func (d *ImageService) ListImages() error {
+	data, err := exec.RunBashCmd("buildah images")
+	_, _ = os.Stdout.Write([]byte(data))
+	return err
 }
 
 func NewImageService() (types.Service, error) {
