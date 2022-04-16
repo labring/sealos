@@ -30,7 +30,7 @@
 
 **文档: _[官方文档](https://www.sealyun.com/instructions), [English Docs](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
-**加入组织: _钉钉群(35371178), [Telegram](https://t.me/gsealyun), QQ群（98488045）,作者微信：fangnux _** 
+**加入组织: 钉钉群(35371178), [Telegram](https://t.me/gsealyun), QQ群（98488045）,作者微信：fangnux** 
 
 **4.0.0版本: _[sealos4.0](https://github.com/fanux/sealos/tree/release-v4.0.0/docs/4.0)_**
 
