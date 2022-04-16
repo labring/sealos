@@ -36,7 +36,7 @@ jobs:
           cd hack/release && sh note.sh
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: goreleaser/goreleaser-action@v1.7.0
         with:
           version: latest
           args: release --timeout=1h  --release-notes=hack/release/Note.md

@@ -63,7 +63,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v1
+        uses: goreleaser/goreleaser-action@v1.7.0
         with:
           version: latest
           args: build --snapshot --rm-dist  --timeout=1h
