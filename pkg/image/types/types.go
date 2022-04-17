@@ -49,16 +49,10 @@ type BuildOptions struct {
 	Tag                string
 }
 
-func (opts *BuildOptions) Default() {
-	opts.NoCache = false
+func (opts *BuildOptions) String() string {
 	opts.AllPlatforms = false
 	opts.DisableCompression = true
-	opts.ForceRemove = false
-	opts.Remove = true
-	opts.Pull = PullTypeIfMissing
-}
-
-func (opts *BuildOptions) String() string {
+	opts.Pull = PullTypeIfNewer
 	var sb strings.Builder
 	if opts.NoCache {
 		sb.WriteString(" --no-cache ")

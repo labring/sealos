@@ -17,10 +17,18 @@ limitations under the License.
 package binary
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/fanux/sealos/pkg/buildimage"
+	"github.com/fanux/sealos/pkg/registry"
+	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 
@@ -102,6 +110,43 @@ func inspectImage(data string) (*v1.Image, error) {
 }
 
 func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
+	//contants.ImageShimDirName
+	imageFetchDir := path.Join(contextDir, contants.ImagesDirName, contants.ManifestsDirName)
+	images, err := buildimage.ParseYamlImages(imageFetchDir)
+	if err != nil {
+		return errors.Wrap(err, "get images list failed in this context")
+	}
+	imageListDir := path.Join(contextDir, contants.ImagesDirName, contants.ImageShimDirName)
+	imageListFile := path.Join(imageListDir, fmt.Sprintf("ImageList_%d", time.Now().Unix()))
+	if err = fileutil.WriteLines(imageListFile, images); err != nil {
+		return errors.Wrap(err, "write images list failed in this context")
+	}
+	images, err = buildimage.LoadImages(imageListDir)
+	if err != nil {
+		return errors.Wrap(err, "load images list failed in this context")
+	}
+	//TODO add auth
+	is := registry.NewImageSaver(context.Background(), nil)
+	platform := strings.Split(options.Platform, "/")
+	var platformVar v1.Platform
+	if len(platform) > 2 {
+		platformVar = v1.Platform{
+			Architecture: platform[1],
+			OS:           platform[0],
+			Variant:      platform[2],
+		}
+	} else {
+		platformVar = v1.Platform{
+			Architecture: platform[1],
+			OS:           platform[0],
+		}
+	}
+	logger.Info("pull images for platform is %s", strings.Join([]string{platformVar.OS, platformVar.Architecture, platformVar.Variant}, "/"))
+
+	err = is.SaveImages(images, path.Join(contextDir, contants.RegistryDirName), platformVar)
+	if err != nil {
+		return errors.Wrap(err, "save images failed in this context")
+	}
 	options.Tag = imageName
 	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
 	return exec.CmdForPipe("bash", "-c", cmd)

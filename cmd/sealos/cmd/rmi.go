@@ -34,7 +34,7 @@ func newRMICmd() *cobra.Command {
 			return registrySvc.Remove(force, args...)
 		},
 	}
-	rmiCmd.Flags().BoolVar(&force, "force", false, "force removal all of the image")
+	rmiCmd.Flags().BoolVarP(&force, "force", "f", false, "force removal all of the image")
 	return rmiCmd
 }
 
