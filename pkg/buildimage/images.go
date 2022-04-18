@@ -19,6 +19,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
+	"github.com/pkg/errors"
+
 	"github.com/fanux/sealos/pkg/buildimage/manifests"
 	"github.com/fanux/sealos/pkg/utils/file"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -27,6 +31,7 @@ import (
 
 func ParseYamlImages(srcPath string) ([]string, error) {
 	if !file.IsExist(srcPath) {
+		logger.Info("srcPath is empty", srcPath)
 		return nil, nil
 	}
 	var images []string
@@ -78,4 +83,23 @@ func trimQuotes(s string) string {
 		}
 	}
 	return s
+}
+
+func LoadImages(imageDir string) ([]string, error) {
+	var imageList []string
+	if imageDir != "" && file.IsExist(imageDir) {
+		paths, err := file.GetFiles(imageDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "load image list files error")
+		}
+		for _, p := range paths {
+			images, err := file.ReadLines(p)
+			if err != nil {
+				return nil, errors.Wrap(err, "load image list error")
+			}
+			imageList = append(imageList, images...)
+		}
+	}
+	imageList = FormatImages(imageList)
+	return imageList, nil
 }

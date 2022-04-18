@@ -49,9 +49,9 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 		JoinNode115Upper   = "kubeadm join --config=%s"
 	)
 
-	initConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultInitKubeadmFileName)
-	joinMasterConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
-	joinNodeConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
+	initConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultInitKubeadmFileName)
+	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
+	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
 
 	var discoveryTokens []string
 	for _, data := range k.getTokenCaCertHash() {

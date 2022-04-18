@@ -84,7 +84,7 @@ func NewRegistryImagePullRawCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			is := registry.NewImageSaver(context.Background(), auth)
-			err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
+			_, err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)
@@ -117,7 +117,7 @@ func NewRegistryImagePullYamlCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			is := registry.NewImageSaver(context.Background(), auth)
-			err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
+			_, err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)
@@ -145,7 +145,7 @@ func NewRegistryImagePullDefaultCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			flags.PrintFlags(cmd.Flags())
 			is := registry.NewImageSaver(context.Background(), auth)
-			err := is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
+			_, err := is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
 				os.Exit(1)

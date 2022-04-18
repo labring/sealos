@@ -30,13 +30,13 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm Config error: %s", err.Error())
 	}
-	initConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultInitKubeadmFileName)
-	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultInitKubeadmFileName)
+	initConfigPath := path.Join(k.getContentData().TmpPath(), contants.DefaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write Config init kubeadm config error: %s", err.Error())
 	}
-	err = k.sshCopy(k.getMaster0IP(), initConfigPath, outConfigPath)
+	err = k.sshCopy(k.getMaster0IPAndPort(), initConfigPath, outConfigPath)
 	if err != nil {
 		return fmt.Errorf("copy Config init kubeadm Config error: %s", err.Error())
 	}
@@ -45,13 +45,13 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 
 func (k *KubeadmRuntime) GenerateCert() error {
 	logger.Info("start to generator cert and copy to masters...")
-	hostName, err := k.execHostname(k.getMaster0IP())
+	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
 		return fmt.Errorf("get hostname failed %v", err)
 	}
 	err = cert.GenerateCert(
-		k.getContantData().PkiPath(),
-		k.getContantData().PkiEtcdPath(),
+		k.getContentData().PkiPath(),
+		k.getContentData().PkiEtcdPath(),
 		k.getCertSANS(),
 		k.getMaster0IP(),
 		hostName,
@@ -61,21 +61,21 @@ func (k *KubeadmRuntime) GenerateCert() error {
 	if err != nil {
 		return fmt.Errorf("generate certs failed %v", err)
 	}
-	return k.sendNewCertAndKey([]string{k.getMaster0IP()})
+	return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
 }
 
 func (k *KubeadmRuntime) CreateKubeConfig() error {
 	logger.Info("start to create kubeconfig...")
-	hostName, err := k.execHostname(k.getMaster0IP())
+	hostName, err := k.execHostname(k.getMaster0IPAndPort())
 	if err != nil {
 		return fmt.Errorf("get hostname failed %v", err)
 	}
 	certConfig := cert.Config{
-		Path:     k.getContantData().PkiPath(),
+		Path:     k.getContentData().PkiPath(),
 		BaseName: "ca",
 	}
 
-	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.getContantData().EtcPath(),
+	err = cert.CreateJoinControlPlaneKubeConfigFiles(k.getContentData().EtcPath(),
 		certConfig, hostName, k.getClusterAPIServer(), "kubernetes")
 	if err != nil {
 		return fmt.Errorf("generator kubeconfig failed %s", err)

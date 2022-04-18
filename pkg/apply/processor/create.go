@@ -110,7 +110,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
-	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
+	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
 	if err != nil {
 		return err
@@ -124,15 +124,15 @@ func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
-	err := c.Runtime.JoinMasters(cluster.GetMasterIPList()[1:])
+	err := c.Runtime.JoinMasters(cluster.GetMasterIPAndPortList()[1:])
 	if err != nil {
 		return err
 	}
-	err = c.Runtime.JoinNodes(cluster.GetNodeIPList())
+	err = c.Runtime.JoinNodes(cluster.GetNodeIPAndPortList())
 	if err != nil {
 		return err
 	}
-	err = c.Runtime.SyncNodeIPVS(cluster.GetMasterIPList(), cluster.GetNodeIPList())
+	err = c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
 	if err != nil {
 		return err
 	}

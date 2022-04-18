@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/image/types"
 	"github.com/fanux/sealos/pkg/utils/maps"
 
@@ -33,7 +35,7 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
-	return GetRegistry(k.getContantData().RootFSPath(), k.getMaster0IP())
+	return GetRegistry(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -50,14 +52,14 @@ func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
-	return k.Cluster.GetMaster0IP()
+	return iputils.GetHostIP(k.Cluster.GetMaster0IP())
 }
 
 func (k *KubeadmRuntime) getMasterIPList() []string {
 	return k.Cluster.GetMasterIPList()
 }
 
-func (k *KubeadmRuntime) getMasterIPListAndPort() []string {
+func (k *KubeadmRuntime) getMasterIPListAndHTTPSPort() []string {
 	masters := make([]string, 0)
 	for _, master := range k.getMasterIPList() {
 		masters = append(masters, fmt.Sprintf("%s:6443", master))
@@ -67,6 +69,18 @@ func (k *KubeadmRuntime) getMasterIPListAndPort() []string {
 
 func (k *KubeadmRuntime) getNodeIPList() []string {
 	return k.Cluster.GetNodeIPList()
+}
+
+func (k *KubeadmRuntime) getMasterIPAndPortList() []string {
+	return k.Cluster.GetMasterIPAndPortList()
+}
+
+func (k *KubeadmRuntime) getNodeIPAndPortList() []string {
+	return k.Cluster.GetNodeIPAndPortList()
+}
+
+func (k *KubeadmRuntime) getMaster0IPAndPort() string {
+	return k.Cluster.GetMaster0IPAndPort()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
@@ -89,7 +103,7 @@ func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
-		masters = append(masters, fmt.Sprintf("%s:6443", master))
+		masters = append(masters, fmt.Sprintf("%s:6443", iputils.GetHostIP(master)))
 	}
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -122,7 +136,7 @@ func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
 	return k.getRemoteInterface().Hostname(ip)
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
-	return k.getRemoteInterface().HostsAdd(ip, host, domain)
+	return k.getRemoteInterface().HostsAdd(ip, iputils.GetHostIP(host), domain)
 }
 
 func (k *KubeadmRuntime) execCert(ip string) error {
@@ -130,7 +144,7 @@ func (k *KubeadmRuntime) execCert(ip string) error {
 	if err != nil {
 		return err
 	}
-	return k.getRemoteInterface().Cert(ip, k.getCertSANS(), ip, hostname, k.getServiceCIDR(), k.getDNSDomain())
+	return k.getRemoteInterface().Cert(ip, k.getCertSANS(), iputils.GetHostIP(ip), hostname, k.getServiceCIDR(), k.getDNSDomain())
 }
 
 func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
@@ -187,7 +201,7 @@ func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
 	return contants.NewBash(k.getClusterName(), render)
 }
 
-func (k *KubeadmRuntime) getContantData() contants.Data {
+func (k *KubeadmRuntime) getContentData() contants.Data {
 	return contants.NewData(k.getClusterName())
 }
 

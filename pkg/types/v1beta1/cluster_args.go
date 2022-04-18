@@ -18,6 +18,8 @@ package v1beta1
 
 import (
 	"fmt"
+
+	"github.com/fanux/sealos/pkg/utils/iputils"
 )
 
 func (c *Cluster) GetSSH() SSH {
@@ -34,14 +36,31 @@ func (c *Cluster) SetHosts(hosts []Host) {
 }
 
 func (c *Cluster) GetMasterIPList() []string {
+	return iputils.GetHostIPs(c.GetIPSByRole(MASTER))
+}
+func (c *Cluster) GetMasterIPAndPortList() []string {
 	return c.GetIPSByRole(MASTER)
 }
 
 func (c *Cluster) GetNodeIPList() []string {
+	return iputils.GetHostIPs(c.GetIPSByRole(NODE))
+}
+
+func (c *Cluster) GetNodeIPAndPortList() []string {
 	return c.GetIPSByRole(NODE)
 }
 
 func (c *Cluster) GetMaster0IP() string {
+	if len(c.Spec.Hosts) == 0 {
+		return ""
+	}
+	if len(c.Spec.Hosts[0].IPS) == 0 {
+		return ""
+	}
+	return iputils.GetHostIP(c.Spec.Hosts[0].IPS[0])
+}
+
+func (c *Cluster) GetMaster0IPAndPort() string {
 	if len(c.Spec.Hosts) == 0 {
 		return ""
 	}

@@ -33,7 +33,7 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		return errors.Wrap(err, "join nodes wait for ssh ready time out")
 	}
 
-	masters := k.getMasterIPListAndPort()
+	masters := k.getMasterIPListAndHTTPSPort()
 	if err = k.setKubernetesToken(); err != nil {
 		return err
 	}
@@ -85,8 +85,8 @@ func (k *KubeadmRuntime) ConfigJoinNodeKubeadmToNode(node string) error {
 	if err != nil {
 		return fmt.Errorf("generator config join kubeadm config error: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultJoinNodeKubeadmFileName)
-	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
+	joinConfigPath := path.Join(k.getContentData().TmpPath(), contants.DefaultJoinNodeKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join kubeadm config error: %s", err.Error())

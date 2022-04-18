@@ -39,7 +39,20 @@ func IsExist(fileName string) bool {
 	}
 	return true
 }
-
+func GetFiles(path string) (paths []string, err error) {
+	_, err = os.Stat(path)
+	if err != nil {
+		return
+	}
+	err = filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		paths = append(paths, path)
+		return err
+	})
+	return paths, err
+}
 func ReadLines(fileName string) ([]string, error) {
 	var lines []string
 	if !IsExist(fileName) {
@@ -59,6 +72,14 @@ func ReadLines(fileName string) ([]string, error) {
 		lines = append(lines, string(line))
 	}
 	return lines, nil
+}
+
+func WriteLines(fileName string, lines []string) error {
+	var sb strings.Builder
+	for _, line := range lines {
+		sb.WriteString(line + "\n")
+	}
+	return WriteFile(fileName, []byte(sb.String()))
 }
 
 // ReadAll read file content

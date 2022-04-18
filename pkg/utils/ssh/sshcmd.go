@@ -67,10 +67,10 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			doneout := make(chan error, 1)
 			doneerr := make(chan error, 1)
 			go func() {
-				doneerr <- readPipe(stderr, &combineSlice, &combineLock, s.isStdout)
+				doneerr <- readPipe(host, stderr, &combineSlice, &combineLock, s.isStdout)
 			}()
 			go func() {
-				doneout <- readPipe(stdout, &combineSlice, &combineLock, s.isStdout)
+				doneout <- readPipe(host, stdout, &combineSlice, &combineLock, s.isStdout)
 			}()
 			<-doneerr
 			<-doneout
@@ -104,7 +104,7 @@ func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
 	return b, nil
 }
 
-func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
+func readPipe(host string, pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
 	r := bufio.NewReader(pipe)
 	for {
 		line, _, err := r.ReadLine()
@@ -115,7 +115,7 @@ func readPipe(pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, i
 		combineLock.Lock()
 		*combineSlice = append(*combineSlice, string(line))
 		if isStdout {
-			fmt.Println(string(line))
+			fmt.Printf("%s: %s", host, string(line))
 		}
 		combineLock.Unlock()
 	}

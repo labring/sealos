@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -70,7 +72,7 @@ func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 }
 
 func (k *KubeadmRuntime) htpasswd() error {
-	htpasswdPath := path.Join(k.getContantData().RootFSEtcPath(), "registry_htpasswd")
+	htpasswdPath := path.Join(k.getContentData().RootFSEtcPath(), "registry_htpasswd")
 	registry := k.getRegistry()
 	if registry.Username == "" && registry.Password == "" {
 		return nil
@@ -83,11 +85,11 @@ func (k *KubeadmRuntime) htpasswd() error {
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
-	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(contants.DefaultLnFmt, k.getContantData().RootFSRegistryPath(), registry.Data))
+	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(contants.DefaultLnFmt, k.getContentData().RootFSRegistryPath(), registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
-	ip := k.getMaster0IP()
+	ip := k.getMaster0IPAndPort()
 	err = k.htpasswd()
 	if err != nil {
 		return fmt.Errorf("generator registry htpasswd failed %v", err)
@@ -102,7 +104,7 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 
 func (k *KubeadmRuntime) DeleteRegistry() error {
 	logger.Info("delete registry in master0...")
-	ip := k.getMaster0IP()
+	ip := k.getMaster0IPAndPort()
 	if err := k.execCleanRegistry(ip); err != nil {
 		return fmt.Errorf("exec clean-registry.sh failed %v", err)
 	}
@@ -112,7 +114,7 @@ func (k *KubeadmRuntime) DeleteRegistry() error {
 func (k *KubeadmRuntime) registryAuth(ip string) error {
 	logger.Info("registry auth in node %s", ip)
 	registry := k.getRegistry()
-	err := k.execHostsAppend(ip, registry.IP, registry.Domain)
+	err := k.execHostsAppend(ip, iputils.GetHostIP(registry.IP), registry.Domain)
 	if err != nil {
 		return fmt.Errorf("add registry hosts failed %v", err)
 	}
