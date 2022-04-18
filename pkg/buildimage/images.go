@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
 
 	"github.com/fanux/sealos/pkg/buildimage/manifests"
@@ -29,6 +31,7 @@ import (
 
 func ParseYamlImages(srcPath string) ([]string, error) {
 	if !file.IsExist(srcPath) {
+		logger.Info("srcPath is empty", srcPath)
 		return nil, nil
 	}
 	var images []string

@@ -115,7 +115,7 @@ func readPipe(host string, pipe io.Reader, combineSlice *[]string, combineLock *
 		combineLock.Lock()
 		*combineSlice = append(*combineSlice, string(line))
 		if isStdout {
-			fmt.Println(fmt.Sprintf("%s: %s", host, string(line)))
+			fmt.Printf("%s: %s", host, string(line))
 		}
 		combineLock.Unlock()
 	}

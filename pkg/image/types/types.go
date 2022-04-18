@@ -72,12 +72,6 @@ func (opts *BuildOptions) String() string {
 	if len(opts.File) > 0 {
 		sb.WriteString(fmt.Sprintf(" -f %s ", opts.File))
 	}
-	if opts.ForceRemove {
-		sb.WriteString(" --force-rm ")
-	}
-	if !opts.Remove {
-		sb.WriteString(" --rm=false ")
-	}
 	if len(opts.Platform) > 0 {
 		sb.WriteString(fmt.Sprintf(" --platform %s ", opts.Platform))
 	}

@@ -111,8 +111,9 @@ func inspectImage(data string) (*v1.Image, error) {
 
 func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
 	//contants.ImageShimDirName
-	imageFetchDir := path.Join(contextDir, contants.ImagesDirName, contants.ManifestsDirName)
+	imageFetchDir := path.Join(contextDir, contants.ManifestsDirName)
 	images, err := buildimage.ParseYamlImages(imageFetchDir)
+	logger.Info("fetch manifests images: %v", images)
 	if err != nil {
 		return errors.Wrap(err, "get images list failed in this context")
 	}
@@ -141,7 +142,7 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 			OS:           platform[0],
 		}
 	}
-	logger.Info("pull images for platform is %s", strings.Join([]string{platformVar.OS, platformVar.Architecture, platformVar.Variant}, "/"))
+	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 
 	err = is.SaveImages(images, path.Join(contextDir, contants.RegistryDirName), platformVar)
 	if err != nil {
