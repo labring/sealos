@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/fanux/sealos/pkg/utils/http"
 
@@ -50,7 +51,7 @@ const (
 	HTTP                = "http://"
 	defaultProxyURL     = "https://registry-1.docker.io"
 	configRootDir       = "rootdirectory"
-	maxPullGoroutineNum = 2
+	maxPullGoroutineNum = 5
 
 	manifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
 	manifestOCI      = "application/vnd.oci.image.manifest.v1+json"
@@ -58,7 +59,7 @@ const (
 	manifestOCIIndex = "application/vnd.oci.image.index.v1+json"
 )
 
-func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1.Platform) error {
+func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
 	//init a pipe for display pull message
 	reader, writer := io.Pipe()
 	defer func() {
@@ -78,7 +79,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 	for _, image := range images {
 		named, err := ParseNormalizedNamed(image)
 		if err != nil {
-			return fmt.Errorf("parse image name error: %v", err)
+			return nil, fmt.Errorf("parse image name error: %v", err)
 		}
 		is.domainToImages[named.domain+named.repo] = append(is.domainToImages[named.domain+named.repo], named)
 		progress.Message(is.progressOut, "", fmt.Sprintf("Pulling image: %s", named.FullName()))
@@ -87,12 +88,15 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 	//perform image save ability
 	eg, _ := errgroup.WithContext(context.Background())
 	numCh := make(chan struct{}, maxPullGoroutineNum)
+	var outImages []string
+	var mu sync.Mutex
 	for _, nameds := range is.domainToImages {
 		tmpnameds := nameds
 		numCh <- struct{}{}
 		eg.Go(func() error {
 			defer func() {
 				<-numCh
+				mu.Unlock()
 			}()
 			auth := is.auths[tmpnameds[0].domain]
 			if auth.ServerAddress == "" {
@@ -102,20 +106,23 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
+			mu.Lock()
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
-				return fmt.Errorf("save domain %s image error: %v", tmpnameds[0].domain, err)
+				logger.Warn("save domain %s image %s error: %v", tmpnameds[0].domain, tmpnameds[0].FullName(), err)
+				return nil
 			}
+			outImages = append(outImages, tmpnameds[0].FullName())
 			return nil
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return err
+		return nil, err
 	}
 	if len(images) != 0 {
 		progress.Message(is.progressOut, "", "Status: images save success")
 	}
-	return nil
+	return outImages, nil
 }
 
 func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {

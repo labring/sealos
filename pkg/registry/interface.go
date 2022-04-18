@@ -26,7 +26,7 @@ import (
 //SaveImage can save a list of images of the specified platform
 type Save interface {
 	// SaveImages is not concurrently safe
-	SaveImages(images []string, dir string, platform v1.Platform) error
+	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)
 }
 
 type DefaultImageSaver struct {

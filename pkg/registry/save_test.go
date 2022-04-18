@@ -26,13 +26,14 @@ import (
 )
 
 func TestSaveImages(t *testing.T) {
-	tests := []string{"quay.io/tigera/operator:v1.25.3"}
-	//tests := []string{"nginx"}
+	//tests := []string{"quay.io/tigera/operator:v1.25.3"}
+	tests := []string{"registry.cn-beijing.aliyuncs.com/private-test/nginx"}
 	is := NewImageSaver(context.Background(), nil)
-	err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "arm64"})
+	images, err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "amd64"})
 	if err != nil {
 		t.Error(err)
 	}
+	t.Logf("%+v", images)
 }
 
 func Test_splitDockerDomain(t *testing.T) {

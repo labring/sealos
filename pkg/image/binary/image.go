@@ -144,9 +144,14 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	}
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 
-	err = is.SaveImages(images, path.Join(contextDir, contants.RegistryDirName), platformVar)
+	images, err = is.SaveImages(images, path.Join(contextDir, contants.RegistryDirName), platformVar)
 	if err != nil {
 		return errors.Wrap(err, "save images failed in this context")
+	}
+	logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
+	fileutil.CleanDir(imageListDir)
+	if err = fileutil.WriteLines(imageListFile, images); err != nil {
+		return errors.Wrap(err, "write out images list failed in this context")
 	}
 	options.Tag = imageName
 	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
