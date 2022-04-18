@@ -23,6 +23,8 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	"github.com/fanux/sealos/pkg/runtime"
 
 	"github.com/fanux/sealos/pkg/utils/logger"
@@ -94,7 +96,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			for _, cInfo := range f.cluster {
 				cInfo := cInfo
 				fileEg.Go(func() error {
-					err := CopyFiles(sshClient, ip == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
 					if err != nil {
 						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Container, err)
 					}

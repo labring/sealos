@@ -28,7 +28,7 @@ import (
 )
 
 func newBuildCmd() *cobra.Command {
-	var options *types.BuildOptions
+	var options types.BuildOptions
 	var buildCmd = &cobra.Command{
 		Use:     "build [flags] PATH",
 		Short:   "build an cloud image from a Kubefile",
@@ -46,7 +46,7 @@ func newBuildCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return imageSvc.Build(options, buildContext, options.Tag)
+			return imageSvc.Build(&options, buildContext, options.Tag)
 		},
 	}
 	buildCmd.Flags().StringVarP(&options.File, "kubefile", "f", "Kubefile", "kubefile filepath")

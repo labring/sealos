@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
+
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 
 	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
@@ -124,7 +126,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.getContantData().RootFSEtcPath(), contants.DefaultRootfsKubeadmFileName)
+	return filepath.Join(k.getContentData().RootFSEtcPath(), contants.DefaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {
@@ -161,8 +163,8 @@ func (k *KubeadmRuntime) getDNSDomain() string {
 }
 
 func (k *KubeadmRuntime) writeTokenFile() error {
-	tokenFile := path.Join(k.getContantData().EtcPath(), contants.DefaultKubeadmTokenFileName)
-	data, err := k.execToken(k.getMaster0IP())
+	tokenFile := path.Join(k.getContentData().EtcPath(), contants.DefaultKubeadmTokenFileName)
+	data, err := k.execToken(k.getMaster0IPAndPort())
 	if err != nil {
 		return err
 	}
@@ -181,7 +183,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 func (k *KubeadmRuntime) setKubernetesToken() error {
 	logger.Info("start to get kubernetes token...")
 	if k.Token == nil {
-		tokenFile := path.Join(k.getContantData().EtcPath(), contants.DefaultKubeadmTokenFileName)
+		tokenFile := path.Join(k.getContentData().EtcPath(), contants.DefaultKubeadmTokenFileName)
 		if !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile()
 			if err != nil {
@@ -321,7 +323,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	cGroupDriver, err := k.getCGroupDriver(k.getMaster0IP())
+	cGroupDriver, err := k.getCGroupDriver(k.getMaster0IPAndPort())
 	if err != nil {
 		return nil, err
 	}
@@ -431,7 +433,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 		return nil, err
 	}
 	k.setCgroupDriver(cGroupDriver)
-	k.setJoinAdvertiseAddress(masterIP)
+	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:6443", k.getMaster0IP()))
 	if err = k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")

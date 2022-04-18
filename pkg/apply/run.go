@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/fanux/sealos/pkg/checker"
 
@@ -106,7 +107,6 @@ func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
 	}
 
 	r.cluster.Spec.Image = imageList
-
 	if err := PreProcessIPList(args); err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
 	} else {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
-
+	logger.Debug("cluster info : %v", r.cluster)
 	return nil
 }
 
@@ -140,16 +140,17 @@ func (r *ClusterArgs) Process(args *RunArgs) error {
 }
 
 func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
+	defaultPort := strconv.Itoa(int(r.cluster.Spec.SSH.Port))
 	hostMap := map[string]*v2.Host{}
 	for i := range ips {
-		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], "22")
+		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], defaultPort)
 		if _, ok := hostMap[port]; !ok {
-			hostMap[port] = &v2.Host{IPS: []string{ip}, Roles: roles}
+			hostMap[port] = &v2.Host{IPS: []string{fmt.Sprintf("%s:%s", ip, port)}, Roles: roles}
 			continue
 		}
-		hostMap[port].IPS = append(hostMap[port].IPS, ip)
+		hostMap[port].IPS = append(hostMap[port].IPS, fmt.Sprintf("%s:%s", ip, port))
 	}
-	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], "22")
+	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], defaultPort)
 	for port, host := range hostMap {
 		host.IPS = removeIPListDuplicatesAndEmpty(host.IPS)
 		if port == master0Port && strings2.InList(v2.Master, roles) {

@@ -29,7 +29,7 @@ const (
 
 func (k *KubeadmRuntime) UpdateCert() error {
 	logger.Info("start to generate cert and kubeConfig...")
-	if err := k.sshCmdAsync(k.getMaster0IP(), "rm -rf /etc/kubernetes/admin.conf"); err != nil {
+	if err := k.sshCmdAsync(k.getMaster0IPAndPort(), "rm -rf /etc/kubernetes/admin.conf"); err != nil {
 		return err
 	}
 	pipeline := []func() error{

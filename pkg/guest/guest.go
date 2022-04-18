@@ -61,7 +61,7 @@ func (d *Default) Apply(cluster *v2.Cluster) error {
 			continue
 		}
 
-		if err = sshClient.CmdAsync(cluster.GetMaster0IP(), fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
+		if err = sshClient.CmdAsync(cluster.GetMaster0IPAndPort(), fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
 	}

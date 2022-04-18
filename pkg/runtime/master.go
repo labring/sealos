@@ -32,11 +32,11 @@ import (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 
-	err := k.registryAuth(k.getMaster0IP())
+	err := k.registryAuth(k.getMaster0IPAndPort())
 	if err != nil {
 		return err
 	}
-	err = k.execHostsAppend(k.getMaster0IP(), k.getMaster0IP(), k.getAPIServerDomain())
+	err = k.execHostsAppend(k.getMaster0IPAndPort(), k.getMaster0IP(), k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
@@ -45,11 +45,11 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if cmdInit == "" {
 		return fmt.Errorf("get init master command failed, kubernetes version is %s", k.getKubeVersion())
 	}
-	err = k.sshCmdAsync(k.getMaster0IP(), cmdInit)
+	err = k.sshCmdAsync(k.getMaster0IPAndPort(), cmdInit)
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	err = k.copyMasterKubeConfig(k.getMaster0IP())
+	err = k.copyMasterKubeConfig(k.getMaster0IPAndPort())
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,8 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	if err != nil {
 		return fmt.Errorf("generator config join master kubeadm config error: %s", err.Error())
 	}
-	joinConfigPath := path.Join(k.getContantData().TmpPath(), contants.DefaultJoinMasterKubeadmFileName)
-	outConfigPath := path.Join(k.getContantData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
+	joinConfigPath := path.Join(k.getContentData().TmpPath(), contants.DefaultJoinMasterKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
 	err = file.WriteFile(joinConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write config join master kubeadm config error: %s", err.Error())

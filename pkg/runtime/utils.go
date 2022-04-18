@@ -94,13 +94,13 @@ func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
 
 func (k *KubeadmRuntime) sendKubeConfigFile(hosts []string, kubeFile string) error {
 	absKubeFile := fmt.Sprintf("%s/%s", contants.KubernetesEtc, kubeFile)
-	sealosKubeFile := fmt.Sprintf("%s/%s", k.getContantData().EtcPath(), kubeFile)
+	sealosKubeFile := fmt.Sprintf("%s/%s", k.getContentData().EtcPath(), kubeFile)
 	return k.sendFileToHosts(hosts, sealosKubeFile, absKubeFile)
 }
 
 func (k *KubeadmRuntime) sendNewCertAndKey(hosts []string) error {
 	logger.Info("start to copy etc pki files to masters")
-	return k.sendFileToHosts(hosts, k.getContantData().PkiPath(), contants.KubernetesEtcPKI)
+	return k.sendFileToHosts(hosts, k.getContentData().PkiPath(), contants.KubernetesEtcPKI)
 }
 
 func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error {
@@ -119,7 +119,7 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 
 func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 	logger.Info("start to remove node from k8s %s", ip)
-	cli, err := kubernetes.NewKubernetesClient(k.getContantData().AdminFile(), k.getMaster0IPAPIServer())
+	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
 		return err
 	}

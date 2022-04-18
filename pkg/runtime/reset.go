@@ -36,8 +36,8 @@ func (k *KubeadmRuntime) reset() error {
 	//Why delete registry is first?
 	//Because the registry use some cri command, eg 'nerdctl'
 	err := k.DeleteRegistry()
-	k.resetNodes(k.getNodeIPList())
-	k.resetMasters(k.getMasterIPList())
+	k.resetNodes(k.getNodeIPAndPortList())
+	k.resetMasters(k.getMasterIPAndPortList())
 	return err
 }
 
@@ -70,7 +70,7 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
 	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir()),
-		RemoveKubeConfig, DeleteImageShimCMD(k.getContantData().RootFSPath())); err != nil {
+		RemoveKubeConfig, DeleteImageShimCMD(k.getContentData().RootFSPath())); err != nil {
 		return fmt.Errorf("exec node clean in sealos failed %v", err)
 	}
 	err := k.execClean(node)

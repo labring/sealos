@@ -63,7 +63,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		return err
 	}
-
+	//TODO if error is exec net process ???
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
 			return err
@@ -83,7 +83,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 }
 
 func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
-	hosts := append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
+	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	if d.cManifestList == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil

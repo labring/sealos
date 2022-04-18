@@ -226,6 +226,15 @@ func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localP
 		return fmt.Errorf("get file stat failed %v", err)
 	}
 	// TODO seems not work
+	//if fileStat.Mode()&os.ModeSymlink != 0 {
+	//	target, err := os.Readlink(filepath.Clean(localPath))
+	//	if err != nil {
+	//		return err
+	//	}
+	//	// NOTE: os.Chmod and os.Chtimes don't recoganize symbolic link,
+	//	// which will lead "no such file or directory" error.
+	//	return os.Symlink(target, dest)
+	//}
 	if err := dstFile.Chmod(fileStat.Mode()); err != nil {
 		return fmt.Errorf("chmod remote file failed %v", err)
 	}

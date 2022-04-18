@@ -43,13 +43,13 @@ var MasterStaticFiles = []*StaticFile{
 }
 
 func (k *KubeadmRuntime) CopyStaticFilesToMasters() error {
-	return k.CopyStaticFiles(k.getMasterIPList())
+	return k.CopyStaticFiles(k.getMasterIPAndPortList())
 }
 
 func (k *KubeadmRuntime) CopyStaticFiles(nodes []string) error {
 	logger.Info("start to copy static files to masters")
 	for _, file := range MasterStaticFiles {
-		staticFilePath := filepath.Join(k.getContantData().RootFSStaticsPath(), file.Name)
+		staticFilePath := filepath.Join(k.getContentData().RootFSStaticsPath(), file.Name)
 		cmdLinkStatic := fmt.Sprintf(RemoteCmdCopyStatic, file.DestinationDir, staticFilePath, filepath.Join(file.DestinationDir, file.Name))
 		eg, _ := errgroup.WithContext(context.Background())
 		for _, host := range nodes {
