@@ -66,7 +66,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	//TODO if error is exec net process ???
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
-			return err
+			logger.Warn("failed to exec delete process, %s", err.Error())
 		}
 	}
 
