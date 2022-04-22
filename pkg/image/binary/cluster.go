@@ -43,7 +43,7 @@ func (d *ClusterService) Create(name string, images ...string) (types.ClusterMan
 			cmd.WriteString(" && ")
 		}
 	}
-	err := exec.CmdForPipe("bash", "-c", cmd.String())
+	err := exec.Cmd("bash", "-c", cmd.String())
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (*ClusterService) Delete(name string, imageNum int) error {
 	for _, info := range infos {
 		if strings2.InList(info.Containername, containerNames) {
 			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
-			if err := exec.CmdForPipe("bash", "-c", cmd); err != nil {
+			if err := exec.Cmd("bash", "-c", cmd); err != nil {
 				return err
 			}
 		}

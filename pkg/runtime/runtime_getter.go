@@ -19,6 +19,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/fanux/sealos/pkg/utils/iputils"
 
@@ -133,7 +134,9 @@ func (k *KubeadmRuntime) execToken(ip string) (string, error) {
 	return k.getRemoteInterface().Token(ip)
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
-	return k.getRemoteInterface().Hostname(ip)
+	hostname, err := k.getRemoteInterface().Hostname(ip)
+	//tips: if hostname is upper,kubelet init master0 is not allowed to modify node
+	return strings.ToLower(hostname), err
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {
 	return k.getRemoteInterface().HostsAdd(ip, iputils.GetHostIP(host), domain)
