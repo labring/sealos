@@ -47,7 +47,7 @@ type ImageService struct {
 }
 
 func (d *ImageService) Tag(src, dst string) error {
-	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah tag %s %s", src, dst))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah tag %s %s", src, dst))
 }
 
 func (d *ImageService) Save(imageName, archiveName string) error {
@@ -55,14 +55,14 @@ func (d *ImageService) Save(imageName, archiveName string) error {
 	if !fileutil.IsExist(localDir) {
 		return errors.New("archive dir is not exist")
 	}
-	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s", imageName, archiveName))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s", imageName, archiveName))
 }
 
 func (d *ImageService) Load(archiveName string) error {
 	if !fileutil.IsExist(archiveName) {
 		return errors.New("archive file is not exist")
 	}
-	return exec.CmdForPipe("bash", "-c", fmt.Sprintf("buildah pull  oci-archive:%s", archiveName))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull  oci-archive:%s", archiveName))
 }
 
 func (d *ImageService) Remove(force bool, images ...string) error {
@@ -71,7 +71,7 @@ func (d *ImageService) Remove(force bool, images ...string) error {
 		forceCMD = "-f"
 	}
 	cmd := fmt.Sprintf("buildah rmi %s %s", forceCMD, strings.Join(images, " "))
-	return exec.CmdForPipe("bash", "-c", cmd)
+	return exec.Cmd("bash", "-c", cmd)
 }
 
 func (d *ImageService) Inspect(images ...string) (types.ImageListOCIV1, error) {
@@ -155,11 +155,11 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	}
 	options.Tag = imageName
 	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
-	return exec.CmdForPipe("bash", "-c", cmd)
+	return exec.Cmd("bash", "-c", cmd)
 }
 
 func (d *ImageService) Prune() error {
-	return exec.CmdForPipe("bash", "-c", "buildah rmi --prune")
+	return exec.Cmd("bash", "-c", "buildah rmi --prune")
 }
 
 func (d *ImageService) ListImages() error {
