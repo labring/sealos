@@ -25,6 +25,7 @@ import (
 )
 
 func Cmd(name string, args ...string) error {
+	logger.Debug("cmd for pipe in host: ", fmt.Sprintf("%s %s", name, strings.Join(args, " ")))
 	cmd := exec.Command(name, args[:]...) // #nosec
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr

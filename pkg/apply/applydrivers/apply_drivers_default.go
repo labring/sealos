@@ -65,7 +65,7 @@ func (c *Applier) Apply() error {
 }
 
 func (c *Applier) reconcileCluster() error {
-	return nil
+	return c.installApp()
 }
 
 func (c *Applier) initCluster() error {
@@ -80,6 +80,19 @@ func (c *Applier) initCluster() error {
 	}
 
 	logger.Info("succeeded in creating a new cluster, enjoy it!")
+
+	return nil
+}
+
+func (c *Applier) installApp() error {
+	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile)
+	if err != nil {
+		return err
+	}
+	err = installProcessor.Execute(c.ClusterDesired)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -16,8 +16,8 @@ package processor
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/strings"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/fanux/sealos/pkg/clusterfile"
@@ -26,28 +26,26 @@ import (
 	"github.com/fanux/sealos/pkg/guest"
 	"github.com/fanux/sealos/pkg/image"
 	"github.com/fanux/sealos/pkg/image/types"
-	"github.com/fanux/sealos/pkg/runtime"
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/yaml"
 )
 
-type CreateProcessor struct {
+type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
 	ImageManager    types.Service
 	ClusterManager  types.ClusterService
 	RegistryManager types.RegistryService
-	Runtime         runtime.Interface
 	Guest           guest.Interface
 	imageList       types.ImageListOCIV1
 	cManifestList   types.ClusterManifestList
 }
 
-func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
+func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
 		return err
 	}
+
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
 			return err
@@ -56,43 +54,51 @@ func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
 
 	return nil
 }
-func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
+func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
-		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
-		c.CreateCluster,
+		c.ChangeCluster,
 		c.RunConfig,
 		c.MountRootfs,
-		//c.GetPhasePluginFunc(plugin.PhasePreInit),
-		c.Init,
-		c.Join,
-		//c.GetPhasePluginFunc(plugin.PhasePreGuest),
+		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
-		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
+		//i.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
 }
 
-func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
-	err := c.RegistryManager.Pull(cluster.Spec.Image...)
+func diffImages(spec, curr *v2.Cluster) []string {
+	pullImages := make([]string, 0)
+	for _, img := range spec.Spec.Image {
+		if strings.NotIn(img, curr.Spec.Image) {
+			pullImages = append(pullImages, img)
+		}
+	}
+	return pullImages
+}
+
+func (c *InstallProcessor) ChangeCluster(cluster *v2.Cluster) error {
+	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(cluster.Spec.Image...)
+	current := c.ClusterFile.GetCluster()
+	pullImages := diffImages(cluster, current)
+	err = c.RegistryManager.Pull(pullImages...)
 	if err != nil {
 		return err
 	}
+	img, err := c.ImageManager.Inspect(pullImages...)
+	if err != nil {
+		return err
+	}
+	//TODO if app image is ok
 	c.imageList = img
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
-	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
-	}
-	c.Runtime = runTime
-	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, 0, cluster.Spec.Image...)
+	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, len(current.Spec.Image), pullImages...)
 	return err
 }
 
-func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
+func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range c.cManifestList {
 		manifest := cManifest
@@ -104,41 +110,21 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	return eg.Wait()
 }
 
-func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
+func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
 	if err != nil {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, true)
+	return fs.MountRootfs(cluster, hosts, false)
 }
 
-func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
-	return c.Runtime.Init()
-}
-
-func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
-	err := c.Runtime.JoinMasters(cluster.GetMasterIPAndPortList()[1:])
-	if err != nil {
-		return err
-	}
-	err = c.Runtime.JoinNodes(cluster.GetNodeIPAndPortList())
-	if err != nil {
-		return err
-	}
-	err = c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
-	if err != nil {
-		return err
-	}
-	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
-}
-
-func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
+func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster)
 }
 
-func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
+func NewInstallProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 	imgSvc, err := image.NewImageService()
 	if err != nil {
 		return nil, err
@@ -159,7 +145,7 @@ func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 		return nil, err
 	}
 
-	return &CreateProcessor{
+	return &InstallProcessor{
 		ClusterFile:     clusterFile,
 		ImageManager:    imgSvc,
 		ClusterManager:  clusterSvc,

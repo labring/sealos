@@ -35,10 +35,10 @@ import (
 type ClusterService struct {
 }
 
-func (d *ClusterService) Create(name string, images ...string) (types.ClusterManifestList, error) {
+func (d *ClusterService) Create(name string, index int, images ...string) (types.ClusterManifestList, error) {
 	var cmd strings.Builder
 	for i, image := range images {
-		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s-%d %s && buildah mount %s-%d ", name, i, image, name, i))
+		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s-%d %s && buildah mount %s-%d ", name, index+i, image, name, index+i))
 		if i != len(images)-1 {
 			cmd.WriteString(" && ")
 		}
@@ -48,7 +48,7 @@ func (d *ClusterService) Create(name string, images ...string) (types.ClusterMan
 		return nil, err
 	}
 
-	return d.Inspect(name, len(images))
+	return d.Inspect(name, index, len(images))
 }
 func (*ClusterService) Delete(name string, imageNum int) error {
 	data := exec.BashEval("buildah containers --json")
@@ -72,11 +72,11 @@ func (*ClusterService) Delete(name string, imageNum int) error {
 	return nil
 }
 
-func (*ClusterService) Inspect(name string, imageNum int) (types.ClusterManifestList, error) {
+func (*ClusterService) Inspect(name string, index int, imageNum int) (types.ClusterManifestList, error) {
 	var clusterList types.ClusterManifestList
 
 	for i := 0; i < imageNum; i++ {
-		data := exec.BashEval(fmt.Sprintf("buildah inspect %s-%d", name, i))
+		data := exec.BashEval(fmt.Sprintf("buildah inspect %s-%d", name, index+i))
 		manifest, err := inspectContainer(data)
 		if err != nil {
 			return nil, err
