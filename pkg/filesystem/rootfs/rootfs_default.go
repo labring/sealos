@@ -47,8 +47,8 @@ type defaultRootfs struct {
 	cluster types.ClusterManifestList
 }
 
-func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
-	return f.mountRootfs(cluster, hosts)
+func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error {
+	return f.mountRootfs(cluster, hosts, initFlag)
 }
 
 func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -63,7 +63,7 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 	return ssh.NewSSHClient(&cluster.Spec.SSH, true)
 }
 
-func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
+func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag bool) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
 	eg, _ := errgroup.WithContext(context.Background())
 	envProcessor := env.NewEnvProcessor(cluster, f.imgList)
@@ -106,16 +106,17 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			if err := fileEg.Wait(); err != nil {
 				return err
 			}
-
-			checkBash := check.CheckBash()
-			if checkBash == "" {
-				return nil
-			}
-			if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
-				return err
-			}
-			if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
-				return err
+			if initFlag {
+				checkBash := check.CheckBash()
+				if checkBash == "" {
+					return nil
+				}
+				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
+					return err
+				}
+				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
+					return err
+				}
 			}
 			return nil
 		})

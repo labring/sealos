@@ -39,7 +39,7 @@ type DeleteProcessor struct {
 
 // Execute :according to the different of desired cluster to delete cluster.
 func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
-	d.cManifestList, err = d.ClusterManager.Inspect(cluster.Name, len(cluster.Spec.Image))
+	d.cManifestList, err = d.ClusterManager.Inspect(cluster.Name, 0, len(cluster.Spec.Image))
 	if err != nil {
 		logger.Warn("delete process failed to inspect cluster, %v", err)
 	}

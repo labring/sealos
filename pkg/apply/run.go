@@ -53,6 +53,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 		}
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
+			cluster.Spec.Image = append(cluster.Spec.Image, imageName...)
 			return applydrivers.NewDefaultApplier(cluster)
 		}
 	}
