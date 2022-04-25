@@ -30,8 +30,8 @@ func MapToString(data map[string]string) string {
 	return strings.Join(result, ",")
 }
 
-func StringToMap(data string) map[string]string {
-	list := strings.Split(data, ",")
+func StringToMap(data string, spilt string) map[string]string {
+	list := strings.Split(data, spilt)
 	return ListToMap(list)
 }
 
