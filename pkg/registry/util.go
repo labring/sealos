@@ -16,6 +16,9 @@ package registry
 
 import (
 	"fmt"
+	"github.com/docker/docker/api/types"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	"k8s.io/apimachinery/pkg/util/json"
 	"strings"
 )
 
@@ -86,4 +89,21 @@ func ParseNormalizedNamed(s string) (Named, error) {
 		tag:    tag,
 	}
 	return named, nil
+}
+
+func GetAuthInfo() (map[string]types.AuthConfig, error) {
+	authFile := "/run/user/0/containers/auth.json"
+	type auths struct {
+		Auth map[string]types.AuthConfig
+	}
+	aus := &auths{}
+	data, err := fileutil.ReadAll(authFile)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, aus)
+	if err != nil {
+		return nil, err
+	}
+	return aus.Auth, nil
 }
