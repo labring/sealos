@@ -63,7 +63,7 @@ func NewRegistryImagePullCmd() *cobra.Command {
 	}
 	cmd.PersistentFlags().StringVar(&registryPullArch, "arch", "amd64", "pull images arch")
 	cmd.PersistentFlags().StringVar(&registryPullRegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
-	cmd.PersistentFlags().StringSliceVar(&registryPullAuths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io,auth=YWRtaW46YWRtaW4=\".")
+	cmd.PersistentFlags().StringSliceVar(&registryPullAuths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io&&auth=YWRtaW46YWRtaW4=\".")
 	cmd.AddCommand(NewRegistryImagePullRawCmd())
 	cmd.AddCommand(NewRegistryImagePullYamlCmd())
 	cmd.AddCommand(NewRegistryImagePullDefaultCmd())
@@ -167,10 +167,11 @@ func validateRegistryImagePull() map[string]types.AuthConfig {
 	}
 	data := make(map[string]types.AuthConfig)
 	for _, a := range registryPullAuths {
-		auth := maps.StringToMap(a)
+		auth := maps.StringToMap(a, "&&")
 		var ok bool
+		logger.Debug("range auth: %v", auth)
 		if _, ok = auth["address"]; !ok {
-			logger.Error("auths format is error, format is \"address=docker.io,auth=YWRtaW46YWRtaW4=\".")
+			logger.Error("auths format is error, format is \"address=docker.io&&auth=YWRtaW46YWRtaW4=\".")
 			os.Exit(1)
 		} else {
 			userAndPwd, _ := passwd.LoginAuthDecode(auth["auth"])

@@ -116,3 +116,8 @@ func TestMergeMap(t *testing.T) {
 		})
 	}
 }
+
+func TestStringToMap(t *testing.T) {
+	data := StringToMap("address=reg.real-ai.cn,auth=xxx", ",")
+	println(data["address"])
+}
