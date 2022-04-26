@@ -17,6 +17,8 @@ package applydrivers
 import (
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/strings"
+
 	"github.com/fanux/sealos/pkg/apply/processor"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/yaml"
@@ -83,9 +85,24 @@ func (c *Applier) initCluster() error {
 
 	return nil
 }
+func diffImages(spec, curr *v2.Cluster) []string {
+	pullImages := make([]string, 0)
+	for _, img := range spec.Spec.Image {
+		if strings.NotIn(img, curr.Spec.Image) {
+			pullImages = append(pullImages, img)
+		}
+	}
+	return pullImages
+}
 
 func (c *Applier) installApp() error {
-	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile)
+	err := c.ClusterFile.Process()
+	if err != nil {
+		return err
+	}
+	current := c.ClusterFile.GetCluster()
+	pullImages := diffImages(c.ClusterDesired, current)
+	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
 	if err != nil {
 		return err
 	}

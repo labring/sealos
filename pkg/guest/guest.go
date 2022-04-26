@@ -30,7 +30,7 @@ import (
 )
 
 type Interface interface {
-	Apply(cluster *v2.Cluster) error
+	Apply(cluster *v2.Cluster, images []string) error
 	Delete(cluster *v2.Cluster) error
 }
 
@@ -46,9 +46,9 @@ func NewGuestManager() (Interface, error) {
 	return &Default{imageService: is}, nil
 }
 
-func (d *Default) Apply(cluster *v2.Cluster) error {
+func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
 	clusterRootfs := runtime.GetContantData(cluster.Name).RootFSPath()
-	img, err := d.imageService.Inspect(cluster.Spec.Image...)
+	img, err := d.imageService.Inspect(images...)
 	if err != nil {
 		return fmt.Errorf("get cluster image failed, %s", err)
 	}

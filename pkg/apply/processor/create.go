@@ -135,7 +135,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
-	return c.Guest.Apply(cluster)
+	return c.Guest.Apply(cluster, nil)
 }
 
 func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
