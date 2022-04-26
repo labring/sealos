@@ -28,7 +28,7 @@
 
 ---
 
-**文档: _[官方文档](https://www.sealyun.com/instructions), [English Docs](/README_en.md), [博客](https://fuckcloudnative.io)_**
+**文档: _[官方文档](https://www.sealyun.com/instructions/1st), [English Docs](/README_en.md), [博客](https://fuckcloudnative.io)_**
 
 **加入组织: 钉钉群(35371178), [Telegram](https://t.me/gsealyun), QQ群（98488045）,作者微信：fangnux** 
 
