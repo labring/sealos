@@ -16,10 +16,11 @@ package registry
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/docker/docker/api/types"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/util/json"
-	"strings"
 )
 
 //this package contains some utils to handle docker image name
