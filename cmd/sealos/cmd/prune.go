@@ -24,7 +24,7 @@ func newPruneCmd() *cobra.Command {
 		Use:     "prune",
 		Short:   "prune  image ",
 		Example: `sealos prune`,
-		Args:    cobra.ExactArgs(2),
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewImageService()
 			if err != nil {

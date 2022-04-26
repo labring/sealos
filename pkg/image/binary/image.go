@@ -122,8 +122,11 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 		return errors.Wrap(err, "load images list failed in this context")
 	}
 	images = append(images, yamlImages...)
-	//TODO add auth
-	is := registry.NewImageSaver(context.Background(), nil)
+	auths, err := registry.GetAuthInfo()
+	if err != nil {
+		return err
+	}
+	is := registry.NewImageSaver(context.Background(), auths)
 	platform := strings.Split(options.Platform, "/")
 	var platformVar v1.Platform
 	if len(platform) > 2 {
