@@ -94,7 +94,7 @@ func ParseNormalizedNamed(s string) (Named, error) {
 func GetAuthInfo() (map[string]types.AuthConfig, error) {
 	authFile := "/run/user/0/containers/auth.json"
 	type auths struct {
-		Auth map[string]types.AuthConfig
+		Auths map[string]types.AuthConfig `json:"auths"`
 	}
 	aus := &auths{}
 	data, err := fileutil.ReadAll(authFile)
@@ -105,5 +105,5 @@ func GetAuthInfo() (map[string]types.AuthConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	return aus.Auth, nil
+	return aus.Auths, nil
 }

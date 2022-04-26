@@ -228,7 +228,7 @@ func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distr
 
 			desc, err := repo.Tags(is.ctx).Get(is.ctx, tmpnamed.tag)
 			if err != nil {
-				return fmt.Errorf("get %s tag descriptor error: %v, try \"docker login\" if you are using a private registry", tmpnamed.repo, err)
+				return fmt.Errorf("get %s tag descriptor error: %v, try \"sealos login\" if you are using a private registry", tmpnamed.repo, err)
 			}
 			imageDigest, err := is.handleManifest(manifest, desc.Digest, platform)
 			if err != nil {
