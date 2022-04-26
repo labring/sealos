@@ -17,7 +17,6 @@ package processor
 import (
 	"context"
 
-	"github.com/fanux/sealos/pkg/utils/strings"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/fanux/sealos/pkg/clusterfile"
@@ -36,6 +35,7 @@ type InstallProcessor struct {
 	ClusterManager  types.ClusterService
 	RegistryManager types.RegistryService
 	Guest           guest.Interface
+	pullImages      []string
 	imageList       types.ImageListOCIV1
 	cManifestList   types.ClusterManifestList
 }
@@ -67,34 +67,23 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 	return todoList, nil
 }
 
-func diffImages(spec, curr *v2.Cluster) []string {
-	pullImages := make([]string, 0)
-	for _, img := range spec.Spec.Image {
-		if strings.NotIn(img, curr.Spec.Image) {
-			pullImages = append(pullImages, img)
-		}
-	}
-	return pullImages
-}
-
 func (c *InstallProcessor) ChangeCluster(cluster *v2.Cluster) error {
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
 	}
 	current := c.ClusterFile.GetCluster()
-	pullImages := diffImages(cluster, current)
-	err = c.RegistryManager.Pull(pullImages...)
+	err = c.RegistryManager.Pull(c.pullImages...)
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(pullImages...)
+	img, err := c.ImageManager.Inspect(c.pullImages...)
 	if err != nil {
 		return err
 	}
 	//TODO if app image is ok
 	c.imageList = img
-	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, len(current.Spec.Image), pullImages...)
+	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, len(current.Spec.Image), c.pullImages...)
 	return err
 }
 
@@ -121,10 +110,11 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
-	return c.Guest.Apply(cluster)
+	images := c.pullImages
+	return c.Guest.Apply(cluster, images)
 }
 
-func NewInstallProcessor(clusterFile clusterfile.Interface) (Interface, error) {
+func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
 	imgSvc, err := image.NewImageService()
 	if err != nil {
 		return nil, err
@@ -151,5 +141,6 @@ func NewInstallProcessor(clusterFile clusterfile.Interface) (Interface, error) {
 		ClusterManager:  clusterSvc,
 		RegistryManager: registrySvc,
 		Guest:           gs,
+		pullImages:      images,
 	}, nil
 }
