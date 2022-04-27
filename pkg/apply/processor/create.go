@@ -60,7 +60,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
 		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
-		c.CreateCluster,
+		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
 		//c.GetPhasePluginFunc(plugin.PhasePreInit),
@@ -73,7 +73,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	return todoList, nil
 }
 
-func (c *CreateProcessor) CreateCluster(cluster *v2.Cluster) error {
+func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
 		return err

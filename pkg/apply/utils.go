@@ -18,6 +18,8 @@ package apply
 
 import (
 	"fmt"
+	"net"
+	"strings"
 
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/iputils"
@@ -55,4 +57,18 @@ func PreProcessIPList(joinArgs *RunArgs) error {
 
 func removeIPListDuplicatesAndEmpty(ipList []string) []string {
 	return strings2.RemoveDuplicate(strings2.RemoveStrSlice(ipList, []string{""}))
+}
+
+func IsIPList(args string) bool {
+	ipList := strings.Split(args, ",")
+
+	for _, i := range ipList {
+		if !strings.Contains(i, ":") {
+			return net.ParseIP(i) != nil
+		}
+		if _, err := net.ResolveTCPAddr("tcp", i); err != nil {
+			return false
+		}
+	}
+	return true
 }

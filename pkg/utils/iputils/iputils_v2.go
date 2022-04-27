@@ -20,6 +20,8 @@ import (
 	"net"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/fanux/sealos/pkg/utils/logger"
 )
 
@@ -29,6 +31,19 @@ func GetHostIP(host string) string {
 		return host
 	}
 	return strings.Split(host, ":")[0]
+}
+func GetDiffHosts(hostsOld, hostsNew []string) (add, sub []string) {
+	// Difference returns a set of objects that are not in s2
+	// For example:
+	// s1 = {a1, a2, a3}
+	// s2 = {a1, a2, a4, a5}
+	// s1.Difference(s2) = {a3}
+	// s2.Difference(s1) = {a4, a5}
+	oldSet := sets.NewString(hostsOld...)
+	newSet := sets.NewString(hostsNew...)
+	add = newSet.Difference(oldSet).List()
+	sub = oldSet.Difference(newSet).List()
+	return
 }
 
 func GetHostIPs(hosts []string) []string {

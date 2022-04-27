@@ -57,7 +57,7 @@ func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
-		c.ChangeCluster,
+		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
 		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
@@ -67,7 +67,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 	return todoList, nil
 }
 
-func (c *InstallProcessor) ChangeCluster(cluster *v2.Cluster) error {
+func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster, images)
 }
 
-func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
+func NewInstallProcessor(clusterFile clusterfile.Interface, images v2.ImageList) (Interface, error) {
 	imgSvc, err := image.NewImageService()
 	if err != nil {
 		return nil, err
