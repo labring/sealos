@@ -102,13 +102,16 @@ func (c *Applier) installApp() error {
 	}
 	current := c.ClusterFile.GetCluster()
 	pullImages := diffImages(c.ClusterDesired, current)
-	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
-	if err != nil {
-		return err
-	}
-	err = installProcessor.Execute(c.ClusterDesired)
-	if err != nil {
-		return err
+	if len(pullImages) != 0 {
+		logger.Info("no change exec install app images")
+		installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
+		if err != nil {
+			return err
+		}
+		err = installProcessor.Execute(c.ClusterDesired)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
