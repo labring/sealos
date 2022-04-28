@@ -270,6 +270,14 @@ func (k *KubeadmRuntime) setJoinAdvertiseAddress(advertiseAddress string) {
 	}
 	k.JoinConfiguration.ControlPlane.LocalAPIEndpoint.AdvertiseAddress = advertiseAddress
 }
+func (k *KubeadmRuntime) setDefaultEtcdData(etcdData string) {
+	if k.ClusterConfiguration.Etcd.Local == nil {
+		k.ClusterConfiguration.Etcd.Local = &kubeadm.LocalEtcd{}
+	}
+	if k.ClusterConfiguration.Etcd.Local.DataDir == "" {
+		k.ClusterConfiguration.Etcd.Local.DataDir = etcdData
+	}
+}
 
 func (k *KubeadmRuntime) cleanJoinLocalAPIEndPoint() {
 	k.JoinConfiguration.ControlPlane = nil
@@ -334,8 +342,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 		k.APIServer.ExtraArgs = make(map[string]string)
 	}
 	k.APIServer.ExtraArgs["etcd-servers"] = getEtcdEndpointsWithHTTPSPrefix(k.getMasterIPList())
-	k.ClusterConfiguration.Etcd.Local = &kubeadm.LocalEtcd{DataDir: "/var/lib/etcd"}
-
+	k.setDefaultEtcdData("/var/lib/etcd")
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 

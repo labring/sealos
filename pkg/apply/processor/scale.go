@@ -152,7 +152,7 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
-	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
 	if err != nil {
 		return err
