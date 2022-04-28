@@ -115,11 +115,11 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 	if k.Config.ClusterFileKubeConfig != nil {
 		if err := k.LoadFromClusterfile(k.Config.ClusterFileKubeConfig); err != nil {
-			return fmt.Errorf("failed to load kubeadm Config from clusterfile: %v", err)
+			return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
 		}
 	}
 	if err := k.Merge(k.getDefaultKubeadmConfig()); err != nil {
-		return fmt.Errorf("failed to merge kubeadm Config: %v", err)
+		return fmt.Errorf("failed to merge kubeadm config: %v", err)
 	}
 	k.setKubeadmAPIVersion()
 	return nil

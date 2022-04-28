@@ -88,12 +88,12 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	}
 	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, DecodeCRDFromFile)
 	if err != nil {
-		return fmt.Errorf("failed to found kubeadm Config from %s: %v", kubeadmYamlPath, err)
+		return fmt.Errorf("failed to found kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, defaultKubeadmConfig.APIServer.CertSANs...)
 	err = mergo.Merge(k, defaultKubeadmConfig)
 	if err != nil {
-		return fmt.Errorf("failed to merge kubeadm Config: %v", err)
+		return fmt.Errorf("failed to merge kubeadm config: %v", err)
 	}
 	//using the DefaultKubeadmConfig configuration merge
 	return k.Merge("")

@@ -15,8 +15,7 @@
 package runtime
 
 const (
-	DefaultKubeadmConfig = `
-apiVersion: kubeadm.k8s.io/v1beta2
+	DefaultKubeadmConfig = `apiVersion: kubeadm.k8s.io/v1beta2
 kind: InitConfiguration
 localAPIEndpoint:
   # advertiseAddress: 192.168.2.110
@@ -66,6 +65,7 @@ apiServer:
       pathType: File
 controllerManager:
   extraArgs:
+    bind-address: 0.0.0.0
     feature-gates: TTLAfterFinished=true,EphemeralContainers=true
     experimental-cluster-signing-duration: 876000h
   extraVolumes:
@@ -76,6 +76,7 @@ controllerManager:
       pathType: File
 scheduler:
   extraArgs:
+    bind-address: 0.0.0.0
     feature-gates: TTLAfterFinished=true,EphemeralContainers=true
   extraVolumes:
     - hostPath: /etc/localtime
