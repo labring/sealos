@@ -33,11 +33,12 @@ add to default cluster:
 	sealer add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
-			if err != nil {
-				return err
-			}
-			return applier.Apply()
+			return errors.New("add feature no support")
+			//applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
+			//if err != nil {
+			//	return err
+			//}
+			//return applier.Apply()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addArgs.Nodes == "" && addArgs.Masters == "" {
