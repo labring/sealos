@@ -16,6 +16,7 @@ package apply
 
 import (
 	"fmt"
+	"github.com/fanux/sealos/pkg/checker"
 	"strconv"
 	"strings"
 
@@ -53,6 +54,10 @@ func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.In
 	switch flag {
 	case "add":
 		err = Join(cluster, scaleArgs.ToRunArgs())
+		if err != nil {
+			return nil, err
+		}
+		err = Process(cluster)
 	case "delete":
 		err = Delete(cluster, scaleArgs.ToRunArgs())
 	}
@@ -60,6 +65,14 @@ func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.In
 		return nil, err
 	}
 	return applydrivers.NewDefaultScaleApplier(curr, cluster)
+}
+
+func Process(cluster *v2.Cluster) error {
+	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Join(cluster *v2.Cluster, scalingArgs *RunArgs) error {
@@ -78,7 +91,8 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 		for i := 0; i < len(cluster.Spec.Hosts); i++ {
 			role := cluster.Spec.Hosts[i].Roles
 			if strings2.InList(v2.MASTER, role) {
-				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, strings.Split(scaleArgs.Masters, ",")...))
+				ipset := iputils.GetHostIPAndPortSlice(strings.Split(scaleArgs.Masters, ","), strconv.Itoa(int(cluster.Spec.SSH.Port)))
+				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, ipset...))
 				break
 			}
 			if i == len(cluster.Spec.Hosts)-1 {
@@ -91,11 +105,12 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 		for i := 0; i < len(cluster.Spec.Hosts); i++ {
 			role := cluster.Spec.Hosts[i].Roles
 			if strings2.InList(v2.NODE, role) {
-				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, strings.Split(scaleArgs.Nodes, ",")...))
+				ipset := iputils.GetHostIPAndPortSlice(strings.Split(scaleArgs.Nodes, ","), strconv.Itoa(int(cluster.Spec.SSH.Port)))
+				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, ipset...))
 				break
 			}
 			if i == len(cluster.Spec.Hosts)-1 {
-				hosts := v2.Host{IPS: removeIPListDuplicatesAndEmpty(strings.Split(scaleArgs.Nodes, ",")), Roles: []string{v2.NODE}}
+				hosts := v2.Host{IPS: removeIPListDuplicatesAndEmpty(strings.Split(scaleArgs.Nodes, ",")), Roles: []string{v2.NODE, string(v2.AMD64)}}
 				cluster.Spec.Hosts = append(cluster.Spec.Hosts, hosts)
 			}
 		}
@@ -140,7 +155,7 @@ func returnFilteredIPList(clusterIPList []string, toBeDeletedIPList []string, de
 	toBeDeletedIPList = fillIPAndPort(toBeDeletedIPList, defaultPort)
 	for _, ip := range clusterIPList {
 		if strings2.NotIn(ip, toBeDeletedIPList) {
-			res = append(res, ip)
+			res = append(res, fmt.Sprintf("%s:%s", ip, defaultPort))
 		}
 	}
 	return

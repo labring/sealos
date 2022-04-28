@@ -20,15 +20,11 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/checker"
-
 	"github.com/fanux/sealos/pkg/apply/applydrivers"
 	"github.com/fanux/sealos/pkg/clusterfile"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/yaml"
-
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	strings2 "github.com/fanux/sealos/pkg/utils/strings"
@@ -64,7 +60,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err := c.SetClusterArgs(imageName, args); err != nil {
 		return nil, err
 	}
-	if err := c.Process(args); err != nil {
+	if err := Process(c.cluster); err != nil {
 		return nil, err
 	}
 	return applydrivers.NewDefaultApplier(c.cluster)
@@ -128,16 +124,6 @@ func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
 	}
 	logger.Debug("cluster info : %v", r.cluster)
 	return nil
-}
-
-func (r *ClusterArgs) Process(args *RunArgs) error {
-	clusterPath := contants.Clusterfile(args.ClusterName)
-	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, r.cluster, checker.PhasePre)
-	if err != nil {
-		return err
-	}
-	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, r.cluster)
 }
 
 func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {

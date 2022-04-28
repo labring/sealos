@@ -65,7 +65,13 @@ func GetHostIPAndPortOrDefault(host, Default string) (string, string) {
 func GetSSHHostIPAndPort(host string) (string, string) {
 	return GetHostIPAndPortOrDefault(host, "22")
 }
-
+func GetHostIPAndPortSlice(hosts []string, Default string) (res []string) {
+	for _, ip := range hosts {
+		_ip, port := GetHostIPAndPortOrDefault(ip, Default)
+		res = append(res, fmt.Sprintf("%s:%s", _ip, port))
+	}
+	return
+}
 func GetHostIPSlice(hosts []string) (res []string) {
 	for _, ip := range hosts {
 		res = append(res, GetHostIP(ip))
