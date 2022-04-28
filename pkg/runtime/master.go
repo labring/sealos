@@ -85,7 +85,7 @@ func (k *KubeadmRuntime) ConfigJoinMasterKubeadmToMaster(master string) error {
 	}
 	err = k.sshCopy(master, joinConfigPath, outConfigPath)
 	if err != nil {
-		return fmt.Errorf("copy Config join master kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("copy config join master kubeadm config error: %s", err.Error())
 	}
 	return nil
 }

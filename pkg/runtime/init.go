@@ -28,7 +28,7 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	logger.Info("start to copy kubeadm config to master0")
 	data, err := k.generateInitConfigs()
 	if err != nil {
-		return fmt.Errorf("generator config init kubeadm Config error: %s", err.Error())
+		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}
 	initConfigPath := path.Join(k.getContentData().TmpPath(), contants.DefaultInitKubeadmFileName)
 	outConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultInitKubeadmFileName)
