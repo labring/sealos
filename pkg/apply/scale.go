@@ -16,9 +16,10 @@ package apply
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/checker"
 	"strconv"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/checker"
 
 	"github.com/fanux/sealos/pkg/apply/applydrivers"
 	"github.com/fanux/sealos/pkg/clusterfile"

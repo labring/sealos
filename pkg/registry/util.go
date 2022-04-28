@@ -16,8 +16,9 @@ package registry
 
 import (
 	"fmt"
-	"github.com/fanux/sealos/pkg/utils/logger"
 	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/logger"
 
 	"github.com/docker/docker/api/types"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
