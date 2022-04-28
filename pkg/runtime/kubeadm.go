@@ -206,10 +206,11 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 				if err != nil {
 					return err
 				}
+			} else {
+				k.Token = &t
 			}
 		}
 	}
-
 	k.setJoinToken(k.Token.JoinToken)
 	k.setTokenCaCertHash(k.Token.DiscoveryTokenCaCertHash)
 	k.setCertificateKey(k.Token.CertificateKey)
@@ -246,6 +247,9 @@ func (k *KubeadmRuntime) getTokenCaCertHash() []string {
 
 func (k *KubeadmRuntime) setCertificateKey(certificateKey string) {
 	k.InitConfiguration.CertificateKey = certificateKey
+	if k.JoinConfiguration.ControlPlane == nil {
+		k.JoinConfiguration.ControlPlane = &kubeadm.JoinControlPlane{}
+	}
 	k.JoinConfiguration.ControlPlane.CertificateKey = certificateKey
 }
 
