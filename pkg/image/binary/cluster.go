@@ -36,14 +36,33 @@ type ClusterService struct {
 }
 
 func (d *ClusterService) Create(name string, index int, images ...string) (types.ClusterManifestList, error) {
+	data := exec.BashEval("buildah containers --json")
+	infos, err := listContainer(data)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, info := range infos {
+		for i := range images {
+			containerName := fmt.Sprintf("%s-%d", name, index+i)
+			if info.Containername == containerName {
+				cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
+				if err = exec.Cmd("bash", "-c", cmd); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+
 	var cmd strings.Builder
 	for i, image := range images {
-		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s-%d %s && buildah mount %s-%d ", name, index+i, image, name, index+i))
+		containerName := fmt.Sprintf("%s-%d", name, index+i)
+		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s %s && buildah mount %s ", containerName, image, containerName))
 		if i != len(images)-1 {
 			cmd.WriteString(" && ")
 		}
 	}
-	err := exec.Cmd("bash", "-c", cmd.String())
+	err = exec.Cmd("bash", "-c", cmd.String())
 	if err != nil {
 		return nil, err
 	}

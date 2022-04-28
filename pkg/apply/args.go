@@ -28,3 +28,17 @@ type RunArgs struct {
 	CustomEnv   []string
 	CustomCMD   []string
 }
+
+type ScaleArgs struct {
+	Masters     string
+	Nodes       string
+	ClusterName string
+}
+
+func (a ScaleArgs) ToRunArgs() *RunArgs {
+	return &RunArgs{
+		Masters:     a.Masters,
+		Nodes:       a.Nodes,
+		ClusterName: a.ClusterName,
+	}
+}

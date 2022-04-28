@@ -41,9 +41,9 @@ type DeleteProcessor struct {
 func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	d.cManifestList, err = d.ClusterManager.Inspect(cluster.Name, 0, len(cluster.Spec.Image))
 	if err != nil {
-		logger.Warn("delete process failed to inspect cluster, %v", err)
+		logger.Warn("delete process failed to inspect cluster,make sure you install k8s cluster.")
+		return err
 	}
-
 	d.imgList, err = d.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return fmt.Errorf("failed to inspect image, %v", err)

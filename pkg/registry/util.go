@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/docker/docker/api/types"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -94,17 +96,22 @@ func ParseNormalizedNamed(s string) (Named, error) {
 
 func GetAuthInfo() (map[string]types.AuthConfig, error) {
 	authFile := "/run/user/0/containers/auth.json"
-	type auths struct {
-		Auths map[string]types.AuthConfig `json:"auths"`
+	if !fileutil.IsExist(authFile) {
+		logger.Warn("if you access private registry,you must be 'sealos login' or 'buildah login'")
+	} else {
+		type auths struct {
+			Auths map[string]types.AuthConfig `json:"auths"`
+		}
+		aus := &auths{}
+		data, err := fileutil.ReadAll(authFile)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, aus)
+		if err != nil {
+			return nil, err
+		}
+		return aus.Auths, nil
 	}
-	aus := &auths{}
-	data, err := fileutil.ReadAll(authFile)
-	if err != nil {
-		return nil, err
-	}
-	err = json.Unmarshal(data, aus)
-	if err != nil {
-		return nil, err
-	}
-	return aus.Auths, nil
+	return nil, nil
 }

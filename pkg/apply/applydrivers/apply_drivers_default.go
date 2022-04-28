@@ -17,6 +17,7 @@ package applydrivers
 import (
 	"fmt"
 
+	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/strings"
 
 	"github.com/fanux/sealos/pkg/apply/processor"
@@ -39,6 +40,19 @@ func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
+		ClusterCurrent: cFile.GetCluster(),
+	}, nil
+}
+
+func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
+	if cluster.Name == "" {
+		return nil, fmt.Errorf("cluster name cannot be empty")
+	}
+	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
+	return &Applier{
+		ClusterDesired: cluster,
+		ClusterFile:    cFile,
+		ClusterCurrent: current,
 	}, nil
 }
 
@@ -67,7 +81,15 @@ func (c *Applier) Apply() error {
 }
 
 func (c *Applier) reconcileCluster() error {
-	return c.installApp()
+	if err := c.installApp(); err != nil {
+		return err
+	}
+	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPList(), c.ClusterDesired.GetMasterIPList())
+	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPList(), c.ClusterDesired.GetNodeIPList())
+	//if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
+	//	return c.upgrade()
+	//}
+	return c.scaleCluster(mj, md, nj, nd)
 }
 
 func (c *Applier) initCluster() error {
@@ -85,7 +107,7 @@ func (c *Applier) initCluster() error {
 
 	return nil
 }
-func diffImages(spec, curr *v2.Cluster) []string {
+func diffImages(spec, curr *v2.Cluster) v2.ImageList {
 	pullImages := make([]string, 0)
 	for _, img := range spec.Spec.Image {
 		if strings.NotIn(img, curr.Spec.Image) {
@@ -102,15 +124,38 @@ func (c *Applier) installApp() error {
 	}
 	current := c.ClusterFile.GetCluster()
 	pullImages := diffImages(c.ClusterDesired, current)
-	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
-	if err != nil {
-		return err
+	if len(pullImages) != 0 {
+		installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
+		if err != nil {
+			return err
+		}
+		err = installProcessor.Execute(c.ClusterDesired)
+		if err != nil {
+			return err
+		}
 	}
-	err = installProcessor.Execute(c.ClusterDesired)
-	if err != nil {
-		return err
-	}
+	logger.Info("no change exec install app images")
+	return nil
+}
 
+func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
+	logger.Info("Start to scale this cluster")
+	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPList(), c.ClusterCurrent.GetNodeIPList())
+	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
+	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
+		logger.Info("succeeded in scaling this cluster: no change nodes")
+		return nil
+	}
+	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	if err != nil {
+		return err
+	}
+	cluster := c.ClusterDesired
+	err = scaleProcessor.Execute(cluster)
+	if err != nil {
+		return err
+	}
+	logger.Info("succeeded in scaling this cluster")
 	return nil
 }
 
