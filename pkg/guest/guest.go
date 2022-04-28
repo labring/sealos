@@ -82,7 +82,8 @@ func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
 	}
 
 	for _, value := range guestCMD {
-		if value == "" {
+		//TODO temp solve it
+		if value == "" || value == "/bin/sh" || value == "-c" {
 			continue
 		}
 		logger.Debug("guest cmd is %s", value)
