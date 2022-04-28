@@ -19,6 +19,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/fanux/sealos/pkg/utils/yaml"
+
 	"github.com/fanux/sealos/pkg/checker"
 
 	"github.com/fanux/sealos/pkg/apply/applydrivers"
@@ -69,11 +72,13 @@ func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.In
 }
 
 func Process(cluster *v2.Cluster) error {
+	clusterPath := contants.Clusterfile(cluster.Name)
 	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
 	}
-	return nil
+	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, cluster)
 }
 
 func Join(cluster *v2.Cluster, scalingArgs *RunArgs) error {

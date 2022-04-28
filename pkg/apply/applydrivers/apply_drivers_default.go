@@ -17,10 +17,10 @@ package applydrivers
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	"github.com/fanux/sealos/pkg/utils/strings"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/fanux/sealos/pkg/apply/processor"
+	"github.com/fanux/sealos/pkg/utils/iputils"
 	"github.com/fanux/sealos/pkg/utils/logger"
 	"github.com/fanux/sealos/pkg/utils/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +37,7 @@ func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
 	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
+	_ = cFile.Process()
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
@@ -108,13 +109,9 @@ func (c *Applier) initCluster() error {
 	return nil
 }
 func diffImages(spec, curr *v2.Cluster) v2.ImageList {
-	pullImages := make([]string, 0)
-	for _, img := range spec.Spec.Image {
-		if strings.NotIn(img, curr.Spec.Image) {
-			pullImages = append(pullImages, img)
-		}
-	}
-	return pullImages
+	currImages := sets.NewString(curr.Spec.Image...)
+	specImages := sets.NewString(spec.Spec.Image...)
+	return specImages.Difference(currImages).List()
 }
 
 func (c *Applier) installApp() error {

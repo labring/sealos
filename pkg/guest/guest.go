@@ -19,6 +19,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fanux/sealos/pkg/utils/logger"
+
 	"github.com/fanux/sealos/pkg/utils/exec"
 	fileutil "github.com/fanux/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
@@ -80,9 +82,11 @@ func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
 	}
 
 	for _, value := range guestCMD {
-		if value == "" {
+		//TODO temp solve it
+		if value == "" || value == "/bin/sh" || value == "-c" {
 			continue
 		}
+		logger.Debug("guest cmd is %s", value)
 		if err = exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
