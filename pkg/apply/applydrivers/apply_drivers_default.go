@@ -37,6 +37,7 @@ func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
 	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
+	_ = cFile.Process()
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,

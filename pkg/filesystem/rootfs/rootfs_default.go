@@ -75,10 +75,15 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			if err != nil {
 				return errors.Wrap(err, "render env to rootfs failed")
 			}
-
-			_, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, src.MountPoint))
+			dirs, err := file.StatDir(src.MountPoint, true)
 			if err != nil {
-				return errors.Wrap(err, "run chmod to rootfs failed")
+				return errors.Wrap(err, "get rootfs files failed")
+			}
+			if len(dirs) != 0 {
+				_, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, src.MountPoint))
+				if err != nil {
+					return errors.Wrap(err, "run chmod to rootfs failed")
+				}
 			}
 			return nil
 		})
