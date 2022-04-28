@@ -16,6 +16,13 @@ package guest
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
+	"github.com/fanux/sealos/pkg/utils/exec"
+	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/fanux/sealos/fork/golang/expansion"
 
@@ -26,7 +33,6 @@ import (
 	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/fanux/sealos/pkg/utils/contants"
 	"github.com/fanux/sealos/pkg/utils/maps"
-	"github.com/fanux/sealos/pkg/utils/ssh"
 )
 
 type Interface interface {
@@ -52,16 +58,32 @@ func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
 	if err != nil {
 		return fmt.Errorf("get cluster image failed, %s", err)
 	}
-	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	envInterface := env.NewEnvProcessor(cluster, img)
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
 	guestCMD := d.getGuestCmd(envs, cluster, img)
+
+	kubeConfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	if !fileutil.IsExist(kubeConfig) {
+		adminFile := runtime.GetContantData(cluster.Name).AdminFile()
+		data, err := fileutil.ReadAll(adminFile)
+		if err != nil {
+			return errors.Wrap(err, "read admin.conf error in guest")
+		}
+		master0IP := cluster.GetMaster0IP()
+		outData := strings.ReplaceAll(string(data), runtime.DefaultAPIServerDomain, master0IP)
+		if err = fileutil.WriteFile(kubeConfig, []byte(outData)); err != nil {
+			return err
+		}
+		defer func() {
+			_ = fileutil.CleanFiles(kubeConfig)
+		}()
+	}
+
 	for _, value := range guestCMD {
 		if value == "" {
 			continue
 		}
-
-		if err = sshClient.CmdAsync(cluster.GetMaster0IPAndPort(), fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
+		if err = exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
 	}
