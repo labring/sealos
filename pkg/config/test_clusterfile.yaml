@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Cluster
 metadata:
   name: my-cluster
@@ -20,7 +20,7 @@ spec:
   image: registry.cn-qingdao.aliyuncs.com/sealer-app/my-SAAS-all-inone:latest
   provider: BAREMETAL
 ---
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: mysql-config
@@ -29,7 +29,7 @@ spec:
   data: |
      test
 ---
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: redis-config
@@ -39,12 +39,28 @@ spec:
     test
 
 ---
-apiVersion: sealer.aliyun.com/v1alpha1
+apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
-  name: REGISTRY
+  name: calico
 spec:
-  path: etc/registry.yaml
+  strategy: merge
+  path: manifests/calico.yaml
   data: |
-    domain: image.cai-inc.com
-    ip: 172.16.0.1
+    apiVersion: operator.tigera.io/v1
+    kind: Installation
+    metadata:
+      name: default
+    spec:
+      # Configures Calico networking.
+      calicoNetwork:
+        # Note: The ipPools section cannot be modified post-install.
+        ipPools:
+          - blockSize: 26
+            cidr: 100.63.0.0/10
+            encapsulation: IPIP
+            natOutgoing: Enabled
+            nodeSelector: all()
+        nodeAddressAutodetectionV4:
+          #  Interface enables IP auto-detection based on interfaces that match the given regex.
+          interface: "eth.*|en.*"

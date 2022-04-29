@@ -31,6 +31,7 @@ FROM scratch
 COPY cni ./cni
 COPY images ./images
 COPY registry ./registry
+COPY manifests ./manifests
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
 
@@ -39,7 +40,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 2. the cni dir is kubectl apply config files
 3. the registry is the registry data dir 
 4. exec `buildah build  -t registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes-calico:1.22.8-amd64 --arch amd64 --os linux -f Kubefile .` build the oci image
-
+5. manifests dis parse yaml images to offline image list
 
 ## build calico image in online module
 
