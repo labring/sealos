@@ -94,7 +94,11 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return c.Runtime.JoinNodes(c.NodesToJoin)
+	err = c.Runtime.JoinNodes(c.NodesToJoin)
+	if err != nil {
+		return err
+	}
+	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
 }
 
 func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
@@ -152,13 +156,13 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
-	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
 	if err != nil {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, false)
+	return fs.MountRootfs(cluster, hosts, true)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

@@ -33,7 +33,6 @@ func (a HostChecker) Check(cluster *v2.Cluster, phase string) error {
 	for _, hosts := range cluster.Spec.Hosts {
 		ipList = append(ipList, hosts.IPS...)
 	}
-
 	if err := checkHostnameUnique(cluster, ipList); err != nil {
 		return err
 	}

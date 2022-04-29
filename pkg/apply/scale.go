@@ -92,35 +92,68 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 	if (!IsIPList(scaleArgs.Nodes) && scaleArgs.Nodes != "") || (!IsIPList(scaleArgs.Masters) && scaleArgs.Masters != "") {
 		return fmt.Errorf(" Parameter error: The current mode should submit iplist！")
 	}
+	var hosts []v2.Host
+	var hasMaster bool
+	for i := 0; i < len(cluster.Spec.Hosts); i++ {
+		role := cluster.Spec.Hosts[i].Roles
+		if strings2.InList(v2.MASTER, role) {
+			hasMaster = true
+			res := iputils.GetHostIPAndPortSlice(cluster.Spec.Hosts[i].IPS, strconv.Itoa(int(cluster.Spec.SSH.Port)))
+			hosts = append(hosts, v2.Host{
+				IPS:   res,
+				Roles: role,
+				Env:   cluster.Spec.Hosts[i].Env,
+			})
+		}
+	}
+	if !hasMaster {
+		return fmt.Errorf("not found `master` role from file")
+	}
+	var ipAndPorts []string
+	waitAddMasters := strings.Split(scaleArgs.Masters, ",")
+	for _, j := range waitAddMasters {
+		if j == "" {
+			continue
+		}
+		_ip, port := iputils.GetHostIPAndPortOrDefault(j, strconv.Itoa(int(cluster.Spec.SSH.Port)))
+		ipAndPorts = append(ipAndPorts, fmt.Sprintf("%s:%s", _ip, port))
+	}
+	if len(ipAndPorts) > 0 {
+		hosts = append(hosts, v2.Host{
+			IPS:   ipAndPorts,
+			Roles: []string{v2.MASTER, string(v2.AMD64)},
+		})
+	}
 
-	if scaleArgs.Masters != "" && IsIPList(scaleArgs.Masters) {
-		for i := 0; i < len(cluster.Spec.Hosts); i++ {
-			role := cluster.Spec.Hosts[i].Roles
-			if strings2.InList(v2.MASTER, role) {
-				ipset := iputils.GetHostIPAndPortSlice(strings.Split(scaleArgs.Masters, ","), strconv.Itoa(int(cluster.Spec.SSH.Port)))
-				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, ipset...))
-				break
-			}
-			if i == len(cluster.Spec.Hosts)-1 {
-				return fmt.Errorf("not found `master` role from file")
-			}
-		}
-	}
 	//add join node
-	if scaleArgs.Nodes != "" && IsIPList(scaleArgs.Nodes) {
-		for i := 0; i < len(cluster.Spec.Hosts); i++ {
-			role := cluster.Spec.Hosts[i].Roles
-			if strings2.InList(v2.NODE, role) {
-				ipset := iputils.GetHostIPAndPortSlice(strings.Split(scaleArgs.Nodes, ","), strconv.Itoa(int(cluster.Spec.SSH.Port)))
-				cluster.Spec.Hosts[i].IPS = removeIPListDuplicatesAndEmpty(append(cluster.Spec.Hosts[i].IPS, ipset...))
-				break
-			}
-			if i == len(cluster.Spec.Hosts)-1 {
-				hosts := v2.Host{IPS: removeIPListDuplicatesAndEmpty(strings.Split(scaleArgs.Nodes, ",")), Roles: []string{v2.NODE, string(v2.AMD64)}}
-				cluster.Spec.Hosts = append(cluster.Spec.Hosts, hosts)
-			}
+	for i := 0; i < len(cluster.Spec.Hosts); i++ {
+		role := cluster.Spec.Hosts[i].Roles
+		if strings2.InList(v2.Node, role) {
+			res := iputils.GetHostIPAndPortSlice(cluster.Spec.Hosts[i].IPS, strconv.Itoa(int(cluster.Spec.SSH.Port)))
+			hosts = append(hosts, v2.Host{
+				IPS:   res,
+				Roles: role,
+				Env:   cluster.Spec.Hosts[i].Env,
+			})
 		}
 	}
+	ipAndPorts = []string{}
+	waitAddNodes := strings.Split(scaleArgs.Nodes, ",")
+	for _, j := range waitAddNodes {
+		if j == "" {
+			continue
+		}
+		_ip, port := iputils.GetHostIPAndPortOrDefault(j, strconv.Itoa(int(cluster.Spec.SSH.Port)))
+		ipAndPorts = append(ipAndPorts, fmt.Sprintf("%s:%s", _ip, port))
+	}
+	if len(ipAndPorts) > 0 {
+		hosts = append(hosts, v2.Host{
+			IPS:   ipAndPorts,
+			Roles: []string{v2.Node, string(v2.AMD64)},
+		})
+	}
+	logger.Debug("des nodes: %v", hosts)
+	cluster.Spec.Hosts = hosts
 	return nil
 }
 
@@ -139,6 +172,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 	if strings2.InList(cluster.GetMaster0IPAndPort(), strings.Split(scaleArgs.Masters, ",")) {
 		return fmt.Errorf("master0 machine cannot be deleted")
 	}
+
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
 	if scaleArgs.Masters != "" && IsIPList(scaleArgs.Masters) {
 		for i := range cluster.Spec.Hosts {
@@ -154,6 +188,13 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 			}
 		}
 	}
+	var hosts []v2.Host
+	for _, host := range cluster.Spec.Hosts {
+		if len(host.IPS) != 0 {
+			hosts = append(hosts, host)
+		}
+	}
+	cluster.Spec.Hosts = hosts
 	return nil
 }
 
