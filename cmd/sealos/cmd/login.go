@@ -17,8 +17,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/image"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/image"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )

@@ -22,7 +22,7 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/file"
 	"github.com/pelletier/go-toml"
 
 	"github.com/pkg/errors"

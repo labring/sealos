@@ -20,8 +20,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
-	strutil "github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	strutil "github.com/larbing/sealos/pkg/utils/strings"
 )
 
 func Cmd(name string, args ...string) error {

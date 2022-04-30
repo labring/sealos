@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"

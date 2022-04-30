@@ -1,4 +1,4 @@
-module github.com/fanux/sealos
+module github.com/larbing/sealos
 
 go 1.15
 

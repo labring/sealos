@@ -23,9 +23,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta3"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm/v1beta2"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm/v1beta3"
 )
 
 // Scheme is the runtime.Scheme to which all kubeadm api types are registered.

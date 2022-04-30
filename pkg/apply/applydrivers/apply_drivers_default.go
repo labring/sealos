@@ -19,16 +19,16 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/fanux/sealos/pkg/apply/processor"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/apply/processor"
+	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/fanux/sealos/pkg/client-go/kubernetes"
-	"github.com/fanux/sealos/pkg/clusterfile"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/client-go/kubernetes"
+	"github.com/larbing/sealos/pkg/clusterfile"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/contants"
 	"k8s.io/apimachinery/pkg/version"
 )
 

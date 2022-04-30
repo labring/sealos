@@ -17,9 +17,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/apply"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/apply"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -38,9 +38,9 @@ var contact = `
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
 
                   官方文档：www.sealyun.com
-                  项目地址：github.com/fanux/sealos
+                  项目地址：github.com/larbing/sealos
                   QQ   群：98488045
-                  常见问题：github.com/fanux/sealos/issues
+                  常见问题：github.com/larbing/sealos/issues
 `
 
 var exampleRun = `

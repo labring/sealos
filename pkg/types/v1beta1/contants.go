@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/contants"
 )
 
 const (

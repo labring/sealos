@@ -21,17 +21,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/flags"
+	"github.com/larbing/sealos/pkg/utils/flags"
 
 	"github.com/docker/docker/api/types"
-	"github.com/fanux/sealos/pkg/buildimage"
-	"github.com/fanux/sealos/pkg/passwd"
-	"github.com/fanux/sealos/pkg/registry"
+	"github.com/larbing/sealos/pkg/buildimage"
+	"github.com/larbing/sealos/pkg/passwd"
+	"github.com/larbing/sealos/pkg/registry"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/maps"
+	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/maps"
 	"github.com/spf13/cobra"
 )
 

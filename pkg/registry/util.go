@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/docker/docker/api/types"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 

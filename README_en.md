@@ -1,8 +1,8 @@
 
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-[![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
+[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/larbing/sealos)
+[![Build Status](https://github.com/larbing/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/larbing/sealos/actions)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
-[![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
+[![Go Report Card](https://goreportcard.com/badge/github.com/larbing/sealos)](https://goreportcard.com/report/github.com/larbing/sealos)
 [![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
 ---
 **Document: _[Official document](https://www.sealyun.com/instructions), [中文文档](/README.md), [Blog](https://fuckcloudnative.io)_**

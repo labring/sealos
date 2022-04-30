@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/ssh"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/ssh"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )

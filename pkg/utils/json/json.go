@@ -17,7 +17,7 @@ limitations under the License.
 package json
 
 import (
-	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 )

@@ -23,11 +23,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/utils/http"
+	"github.com/larbing/sealos/pkg/utils/http"
 
-	"github.com/fanux/sealos/pkg/passwd"
+	"github.com/larbing/sealos/pkg/passwd"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -43,7 +43,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/fanux/sealos/pkg/registry/distributionpkg/proxy"
+	"github.com/larbing/sealos/pkg/registry/distributionpkg/proxy"
 )
 
 const (

@@ -19,7 +19,7 @@ package v1beta1
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 )
 
 func (c *Cluster) GetSSH() SSH {

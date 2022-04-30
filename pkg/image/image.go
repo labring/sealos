@@ -19,8 +19,8 @@ package image
 import (
 	"errors"
 
-	"github.com/fanux/sealos/pkg/image/binary"
-	"github.com/fanux/sealos/pkg/image/types"
+	"github.com/larbing/sealos/pkg/image/binary"
+	"github.com/larbing/sealos/pkg/image/types"
 )
 
 func NewClusterService() (types.ClusterService, error) {

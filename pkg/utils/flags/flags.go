@@ -17,7 +17,7 @@ limitations under the License.
 package flags
 
 import (
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 	"github.com/spf13/pflag"
 )
 

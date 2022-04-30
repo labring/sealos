@@ -17,8 +17,8 @@ limitations under the License.
 package image
 
 import (
-	"github.com/fanux/sealos/pkg/utils/exec"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/exec"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 )
 

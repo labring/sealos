@@ -20,9 +20,9 @@ import (
 	"sync"
 	"time"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/logger"
 )
 
 type Interface interface {

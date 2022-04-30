@@ -20,14 +20,14 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/fanux/sealos/pkg/apply/applydrivers"
-	"github.com/fanux/sealos/pkg/clusterfile"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	"github.com/fanux/sealos/pkg/utils/logger"
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/apply/applydrivers"
+	"github.com/larbing/sealos/pkg/clusterfile"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
 )
 
 type ClusterArgs struct {

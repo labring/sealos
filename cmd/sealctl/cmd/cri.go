@@ -21,8 +21,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/cri"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/cri"
+	"github.com/larbing/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	utilsexec "k8s.io/utils/exec"
 )

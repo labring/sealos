@@ -17,16 +17,16 @@ package huawei
 import (
 	"fmt"
 
-	"github.com/fanux/sealos/pkg/utils/rand"
+	"github.com/larbing/sealos/pkg/utils/rand"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/auth/basic"
 	ecs "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
 
 	vpc "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/vpc/v2"
 )

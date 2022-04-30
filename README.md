@@ -17,10 +17,10 @@
   </p>
   <p>
 
-  [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/fanux/sealos)
-  [![Build Status](https://github.com/fanux/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/fanux/sealos/actions)
+  [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/larbing/sealos)
+  [![Build Status](https://github.com/larbing/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/larbing/sealos/actions)
   [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
-  [![Go Report Card](https://goreportcard.com/badge/github.com/fanux/sealos)](https://goreportcard.com/report/github.com/fanux/sealos)
+  [![Go Report Card](https://goreportcard.com/badge/github.com/larbing/sealos)](https://goreportcard.com/report/github.com/larbing/sealos)
   [![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
 
   </p>
@@ -32,7 +32,7 @@
 
 **加入组织: 钉钉群(35371178), [Telegram](https://t.me/gsealyun), QQ群（98488045）,作者微信：fangnux** 
 
-**4.0.0版本: _[sealos4.0](https://github.com/fanux/sealos/tree/release-v4.0.0/docs/4.0)_**
+**4.0.0版本: _[sealos4.0](https://github.com/larbing/sealos/tree/release-v4.0.0/docs/4.0)_**
 
 ![](docs/images/arch.png)
 
