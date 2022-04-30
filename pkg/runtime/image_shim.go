@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/logger"
-	"github.com/larbing/sealos/pkg/utils/yaml"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 

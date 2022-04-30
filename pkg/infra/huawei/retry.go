@@ -16,7 +16,7 @@ package huawei
 
 import (
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
-	"github.com/larbing/sealos/pkg/utils/retry"
+	"github.com/labring/sealos/pkg/utils/retry"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"

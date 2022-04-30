@@ -23,8 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 
-	bootstraptokenv1 "github.com/larbing/sealos/pkg/runtime/apis/bootstraptoken/v1"
-	kubeadm "github.com/larbing/sealos/pkg/runtime/apis/kubeadm"
+	bootstraptokenv1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	kubeadm "github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 )
 
 func Convert_kubeadm_InitConfiguration_To_v1beta2_InitConfiguration(in *kubeadm.InitConfiguration, out *InitConfiguration, s conversion.Scope) error {

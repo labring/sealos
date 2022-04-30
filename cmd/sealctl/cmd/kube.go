@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/spf13/cobra"
 )
 

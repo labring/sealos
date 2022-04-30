@@ -17,7 +17,7 @@ package ipvs
 import (
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/contants"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"

@@ -26,8 +26,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"golang.org/x/sys/unix"
 )

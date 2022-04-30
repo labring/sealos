@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/retry"
-	"github.com/larbing/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/retry"
+	"github.com/labring/sealos/pkg/utils/strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"

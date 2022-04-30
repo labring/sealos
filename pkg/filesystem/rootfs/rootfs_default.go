@@ -23,20 +23,20 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/larbing/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/image/types"
 
-	"github.com/larbing/sealos/pkg/env"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/exec"
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/larbing/sealos/pkg/utils/ssh"
+	"github.com/labring/sealos/pkg/env"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/ssh"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
@@ -141,16 +141,10 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 		ip := IP
 		eg.Go(func() error {
 			SSH := f.getSSH(cluster)
-			if err := SSH.CmdAsync(ip, rmRootfs); err != nil {
-				return err
-			}
-			return nil
+			return SSH.CmdAsync(ip, rmRootfs)
 		})
 	}
-	if err = eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func renderENV(mountDir string, ipList []string, p env.Interface) error {

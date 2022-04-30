@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
 )
 

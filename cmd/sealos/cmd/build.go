@@ -19,10 +19,10 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/image/types"
 
-	"github.com/larbing/sealos/pkg/image"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )

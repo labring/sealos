@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/version"
+	"github.com/labring/sealos/pkg/version"
 	"github.com/spf13/cobra"
 )
 

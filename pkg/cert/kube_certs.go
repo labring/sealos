@@ -22,7 +22,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (

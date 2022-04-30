@@ -23,11 +23,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/larbing/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/utils/http"
 
-	"github.com/larbing/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/passwd"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -43,7 +43,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/larbing/sealos/pkg/registry/distributionpkg/proxy"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
 )
 
 const (
@@ -367,8 +367,5 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }

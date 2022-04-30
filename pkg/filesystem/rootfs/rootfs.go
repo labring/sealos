@@ -16,7 +16,7 @@ limitations under the License.
 
 package rootfs
 
-import v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+import v2 "github.com/labring/sealos/pkg/types/v1beta1"
 
 type Interface interface {
 	// MountRootfs :send cloud rootfs to all hosts.

@@ -19,22 +19,22 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/utils/exec"
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/exec"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/homedir"
 
-	"github.com/larbing/sealos/fork/golang/expansion"
+	"github.com/labring/sealos/fork/golang/expansion"
 
-	"github.com/larbing/sealos/pkg/env"
-	"github.com/larbing/sealos/pkg/image"
-	"github.com/larbing/sealos/pkg/image/types"
-	"github.com/larbing/sealos/pkg/runtime"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/runtime"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 type Interface interface {

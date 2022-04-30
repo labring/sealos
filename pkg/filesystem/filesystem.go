@@ -17,8 +17,8 @@ limitations under the License.
 package filesystem
 
 import (
-	"github.com/larbing/sealos/pkg/filesystem/rootfs"
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/filesystem/rootfs"
+	"github.com/labring/sealos/pkg/image/types"
 )
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.

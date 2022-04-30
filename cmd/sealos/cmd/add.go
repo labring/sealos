@@ -17,7 +17,7 @@ package cmd
 import (
 	"errors"
 
-	"github.com/larbing/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/apply"
 	"github.com/spf13/cobra"
 )
 

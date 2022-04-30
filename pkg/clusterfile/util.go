@@ -19,11 +19,11 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime"
 
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	yaml2 "github.com/larbing/sealos/pkg/utils/yaml"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	yaml2 "github.com/labring/sealos/pkg/utils/yaml"
 
 	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"

@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	strings2 "github.com/larbing/sealos/pkg/utils/strings"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/image/types"
 
-	"github.com/larbing/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/json"

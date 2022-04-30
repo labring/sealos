@@ -17,9 +17,9 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -X github.com/larbing/sealos/pkg/version.gitVersion={{.Version}}
-      - -X github.com/larbing/sealos/pkg/version.gitCommit={{.ShortCommit}}
-      - -X github.com/larbing/sealos/pkg/version.buildDate={{.Date}}
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
   - env:
       - CGO_ENABLED=0
@@ -32,9 +32,9 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -X github.com/larbing/sealos/pkg/version.gitVersion={{.Version}}
-      - -X github.com/larbing/sealos/pkg/version.gitCommit={{.ShortCommit}}
-      - -X github.com/larbing/sealos/pkg/version.buildDate={{.Date}}
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
 
 #archives:

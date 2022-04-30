@@ -19,14 +19,14 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/larbing/sealos/pkg/clusterfile"
-	"github.com/larbing/sealos/pkg/config"
-	"github.com/larbing/sealos/pkg/filesystem"
-	"github.com/larbing/sealos/pkg/guest"
-	"github.com/larbing/sealos/pkg/image"
-	"github.com/larbing/sealos/pkg/image/types"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/config"
+	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/guest"
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
 )
 
 type InstallProcessor struct {

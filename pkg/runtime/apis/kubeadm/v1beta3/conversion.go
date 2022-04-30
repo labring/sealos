@@ -20,7 +20,7 @@ package v1beta3
 import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 
-	kubeadm "github.com/larbing/sealos/pkg/runtime/apis/kubeadm"
+	kubeadm "github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 )
 
 func Convert_kubeadm_InitConfiguration_To_v1beta3_InitConfiguration(in *kubeadm.InitConfiguration, out *InitConfiguration, s conversion.Scope) error {

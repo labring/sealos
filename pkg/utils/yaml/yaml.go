@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -84,10 +84,7 @@ func MarshalYamlToFile(file string, obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err = fileutil.WriteFile(file, data); err != nil {
-		return err
-	}
-	return nil
+	return fileutil.WriteFile(file, data)
 }
 
 func UnmarshalYamlFromFile(file string, obj interface{}) error {

@@ -275,7 +275,7 @@ kube-system   kube-sealyun-lvscare-dev-k8s-node          1/1     Running   0    
 
 ### 更多升级示例
 
-详细查看这个[pr](https://github.com/larbing/sealos/pull/481)
+详细查看这个[pr](https://github.com/labring/sealos/pull/481)
 
 ## 从故障状态恢复
 

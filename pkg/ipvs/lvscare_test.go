@@ -17,7 +17,7 @@ package ipvs
 import (
 	"testing"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/contants"
 )
 
 var want = []string{

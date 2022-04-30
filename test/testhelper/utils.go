@@ -21,11 +21,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/larbing/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/exec"
 
-	"github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/ssh"
-	"github.com/larbing/sealos/test/testhelper/settings"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/ssh"
+	"github.com/labring/sealos/test/testhelper/settings"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -58,10 +58,7 @@ func WriteFile(fileName string, content []byte) error {
 		}
 	}
 
-	if err := ioutil.WriteFile(fileName, content, settings.FileMode0644); err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(fileName, content, settings.FileMode0644)
 }
 
 type SSHClient struct {
@@ -100,10 +97,7 @@ func MarshalYamlToFile(file string, obj interface{}) error {
 	if err != nil {
 		return err
 	}
-	if err = WriteFile(file, data); err != nil {
-		return err
-	}
-	return nil
+	return WriteFile(file, data)
 }
 
 // GetFileDataLocally get file data for cloud apply

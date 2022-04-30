@@ -25,7 +25,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 

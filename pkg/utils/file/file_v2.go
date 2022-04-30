@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 )
@@ -150,10 +150,7 @@ func WriteFile(fileName string, content []byte) error {
 		}
 	}
 
-	if err := AtomicWriteFile(fileName, content, 0644); err != nil {
-		return err
-	}
-	return nil
+	return AtomicWriteFile(fileName, content, 0644)
 }
 
 // RecursionCopy is copy

@@ -19,7 +19,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mitchellh/go-homedir"
+	hd "github.com/mitchellh/go-homedir"
 )
 
 const (
@@ -45,7 +45,7 @@ var (
 )
 
 func GetWorkDir() string {
-	home, err := homedir.Dir()
+	home, err := hd.Dir()
 	if err != nil {
 		return ""
 	}

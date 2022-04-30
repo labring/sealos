@@ -17,7 +17,7 @@ package env
 import (
 	"testing"
 
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func getTestCluster() *v2.Cluster {

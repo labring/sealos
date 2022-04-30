@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/larbing/sealos/pkg/infra/huawei"
-	"github.com/larbing/sealos/pkg/types/validation"
+	"github.com/labring/sealos/pkg/infra/huawei"
+	"github.com/labring/sealos/pkg/types/validation"
 
-	"github.com/larbing/sealos/pkg/infra/aliyun"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/infra/aliyun"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Interface interface {

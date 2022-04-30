@@ -17,7 +17,7 @@ package runtime
 import (
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -41,9 +41,5 @@ func (k *KubeadmRuntime) UpdateCert() error {
 			return fmt.Errorf("failed to generate cert %v", err)
 		}
 	}
-	if err := k.SendJoinMasterKubeConfigs([]string{k.getMaster0IP()}, AdminConf, ControllerConf, SchedulerConf, KubeletConf); err != nil {
-		return err
-	}
-
-	return nil
+	return k.SendJoinMasterKubeConfigs([]string{k.getMaster0IP()}, AdminConf, ControllerConf, SchedulerConf, KubeletConf)
 }
