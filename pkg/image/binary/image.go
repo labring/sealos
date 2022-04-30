@@ -54,7 +54,7 @@ func (d *ImageService) Save(imageName, archiveName string) error {
 	if !fileutil.IsExist(localDir) {
 		return errors.New("archive dir is not exist")
 	}
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s", imageName, archiveName))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s:%s", imageName, archiveName, imageName))
 }
 
 func (d *ImageService) Load(archiveName string) error {
