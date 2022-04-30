@@ -1,3 +1,4 @@
+project_name: sealos
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -12,7 +13,6 @@ builds:
     binary: sealos
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64
@@ -28,7 +28,6 @@ builds:
     binary: sealctl
     goos:
       - linux
-      - darwin
     goarch:
       - amd64
       - arm64
