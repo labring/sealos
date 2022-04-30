@@ -19,9 +19,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/hosts"
+	"github.com/larbing/sealos/pkg/hosts"
 	"github.com/spf13/cobra"
 )
 

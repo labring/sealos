@@ -23,13 +23,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/hash"
+	"github.com/larbing/sealos/pkg/utils/hash"
 
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/progress"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/progress"
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/pkg/sftp"

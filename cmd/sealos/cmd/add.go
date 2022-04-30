@@ -17,7 +17,7 @@ package cmd
 import (
 	"errors"
 
-	"github.com/fanux/sealos/pkg/apply"
+	"github.com/larbing/sealos/pkg/apply"
 	"github.com/spf13/cobra"
 )
 

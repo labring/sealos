@@ -20,7 +20,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/utils/strings"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 

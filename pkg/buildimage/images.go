@@ -19,14 +19,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 
-	"github.com/fanux/sealos/pkg/buildimage/manifests"
-	"github.com/fanux/sealos/pkg/utils/file"
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/buildimage/manifests"
+	"github.com/larbing/sealos/pkg/utils/file"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 )
 
 func ParseYamlImages(srcPath string) ([]string, error) {

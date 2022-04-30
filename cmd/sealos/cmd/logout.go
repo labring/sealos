@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/image"
+	"github.com/larbing/sealos/pkg/image"
 	"github.com/spf13/cobra"
 )
 

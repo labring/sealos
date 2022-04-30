@@ -20,7 +20,7 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/fanux/sealos/test/testhelper/settings"
+	"github.com/larbing/sealos/test/testhelper/settings"
 
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"

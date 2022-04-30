@@ -24,17 +24,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/buildimage"
-	"github.com/fanux/sealos/pkg/registry"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/buildimage"
+	"github.com/larbing/sealos/pkg/registry"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 
-	"github.com/fanux/sealos/pkg/image/types"
+	"github.com/larbing/sealos/pkg/image/types"
 
-	"github.com/fanux/sealos/pkg/utils/exec"
-	json2 "github.com/fanux/sealos/pkg/utils/json"
+	"github.com/larbing/sealos/pkg/utils/exec"
+	json2 "github.com/larbing/sealos/pkg/utils/json"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

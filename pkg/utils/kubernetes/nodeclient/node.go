@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
 
-	"github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/utils/strings"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

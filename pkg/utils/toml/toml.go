@@ -17,7 +17,7 @@ limitations under the License.
 package toml
 
 import (
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 	"github.com/pelletier/go-toml"
 )
 

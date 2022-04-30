@@ -17,11 +17,11 @@ package cmd
 import (
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/flags"
+	"github.com/larbing/sealos/pkg/utils/flags"
 
-	"github.com/fanux/sealos/pkg/cert"
+	"github.com/larbing/sealos/pkg/cert"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 

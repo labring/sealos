@@ -23,11 +23,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	v1 "github.com/fanux/sealos/pkg/token/bootstraptoken/v1"
+	v1 "github.com/larbing/sealos/pkg/token/bootstraptoken/v1"
 
-	"github.com/fanux/sealos/pkg/utils/exec"
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/utils/exec"
+	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 

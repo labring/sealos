@@ -21,11 +21,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/exec"
+	"github.com/larbing/sealos/pkg/utils/exec"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/ssh"
-	"github.com/fanux/sealos/test/testhelper/settings"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/ssh"
+	"github.com/larbing/sealos/test/testhelper/settings"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"

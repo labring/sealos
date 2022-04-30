@@ -20,16 +20,16 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/fanux/sealos/pkg/clusterfile"
-	"github.com/fanux/sealos/pkg/config"
-	"github.com/fanux/sealos/pkg/filesystem"
-	"github.com/fanux/sealos/pkg/guest"
-	"github.com/fanux/sealos/pkg/image"
-	"github.com/fanux/sealos/pkg/image/types"
-	"github.com/fanux/sealos/pkg/runtime"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/clusterfile"
+	"github.com/larbing/sealos/pkg/config"
+	"github.com/larbing/sealos/pkg/filesystem"
+	"github.com/larbing/sealos/pkg/guest"
+	"github.com/larbing/sealos/pkg/image"
+	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/larbing/sealos/pkg/runtime"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 )
 
 type CreateProcessor struct {

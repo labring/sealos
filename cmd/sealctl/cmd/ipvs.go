@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/fanux/sealos/pkg/utils/flags"
+	"github.com/larbing/sealos/pkg/utils/flags"
 	"github.com/sealyun/lvscare/care"
 	"github.com/spf13/cobra"
 )

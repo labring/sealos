@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/fanux/sealos/cmd/sealctl/cmd"
+	"github.com/larbing/sealos/cmd/sealctl/cmd"
 )
 
 func main() {

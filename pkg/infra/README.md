@@ -71,7 +71,7 @@ status:
 ```
 GOROOT=/usr/local/go #gosetup
 GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
-/usr/local/go/bin/go test -c -o /private/var/folders/5w/gq4g84754jjc0wv0pr0s0fdc0000gn/T/GoLand/___aliyun.test github.com/fanux/sealos/pkg/infra #gosetup
+/usr/local/go/bin/go test -c -o /private/var/folders/5w/gq4g84754jjc0wv0pr0s0fdc0000gn/T/GoLand/___aliyun.test github.com/larbing/sealos/pkg/infra #gosetup
 /usr/local/go/bin/go tool test2json -t /private/var/folders/5w/gq4g84754jjc0wv0pr0s0fdc0000gn/T/GoLand/___aliyun.test -test.v -test.paniconexit0 -test.run ^\QTestAliApply\E$
 === RUN   TestAliApply
 2022-01-06 22:11:07 [INFO] [ali_provider.go:186] using regionID is cn-shanghai

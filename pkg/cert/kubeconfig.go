@@ -22,7 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"

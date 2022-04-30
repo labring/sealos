@@ -21,9 +21,9 @@ import (
 	"net"
 	"strings"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/iputils"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 

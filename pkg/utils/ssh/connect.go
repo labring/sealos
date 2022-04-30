@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"golang.org/x/crypto/ssh"
 )

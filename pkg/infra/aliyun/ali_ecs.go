@@ -20,13 +20,13 @@ import (
 	"strconv"
 	"strings"
 
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
 )
 
 type Instance struct {

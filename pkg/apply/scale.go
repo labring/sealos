@@ -19,18 +19,18 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 
-	"github.com/fanux/sealos/pkg/checker"
+	"github.com/larbing/sealos/pkg/checker"
 
-	"github.com/fanux/sealos/pkg/apply/applydrivers"
-	"github.com/fanux/sealos/pkg/clusterfile"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/iputils"
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/apply/applydrivers"
+	"github.com/larbing/sealos/pkg/clusterfile"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/iputils"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
 )
 
 // NewScaleApplierFromArgs will filter ip list from command parameters.

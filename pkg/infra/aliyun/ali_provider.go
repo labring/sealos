@@ -17,11 +17,11 @@ package aliyun
 import (
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/rand"
+	"github.com/larbing/sealos/pkg/utils/rand"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/types/validation"
+	"github.com/larbing/sealos/pkg/types/validation"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
@@ -31,7 +31,7 @@ import (
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
 )
 
 type ActionName string

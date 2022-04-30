@@ -18,12 +18,12 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/fanux/sealos/pkg/image/types"
+	"github.com/larbing/sealos/pkg/image/types"
 
-	"github.com/fanux/sealos/pkg/token"
+	"github.com/larbing/sealos/pkg/token"
 
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/logger"
 )
 
 type KubeadmRuntime struct {

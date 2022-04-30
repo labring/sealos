@@ -21,22 +21,22 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 
-	fileutil "github.com/fanux/sealos/pkg/utils/file"
+	fileutil "github.com/larbing/sealos/pkg/utils/file"
 
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta2"
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm/v1beta3"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm/v1beta2"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm/v1beta3"
 	"github.com/pkg/errors"
 
-	"github.com/fanux/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/contants"
 
-	"github.com/fanux/sealos/pkg/runtime/apis/kubeadm"
-	"github.com/fanux/sealos/pkg/token"
-	"github.com/fanux/sealos/pkg/utils/logger"
-	strings2 "github.com/fanux/sealos/pkg/utils/strings"
-	"github.com/fanux/sealos/pkg/utils/versionutil"
-	"github.com/fanux/sealos/pkg/utils/yaml"
+	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm"
+	"github.com/larbing/sealos/pkg/token"
+	"github.com/larbing/sealos/pkg/utils/logger"
+	strings2 "github.com/larbing/sealos/pkg/utils/strings"
+	"github.com/larbing/sealos/pkg/utils/versionutil"
+	"github.com/larbing/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/util/json"
 )
 

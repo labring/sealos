@@ -18,7 +18,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
 )
 
 func TestDumper_Dump(t *testing.T) {

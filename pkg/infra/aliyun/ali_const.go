@@ -19,7 +19,7 @@ package aliyun
 import (
 	"time"
 
-	"github.com/fanux/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/types/v1beta1"
 )
 
 const (

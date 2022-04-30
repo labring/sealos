@@ -18,10 +18,10 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/fanux/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/file"
 
-	"github.com/fanux/sealos/pkg/passwd"
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/passwd"
+	"github.com/larbing/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 

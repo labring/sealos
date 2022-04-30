@@ -20,7 +20,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
 	"github.com/distribution/distribution/v3/registry/client/auth"
 	"github.com/distribution/distribution/v3/registry/client/auth/challenge"

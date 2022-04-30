@@ -23,20 +23,20 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/fanux/sealos/pkg/utils/iputils"
+	"github.com/larbing/sealos/pkg/utils/iputils"
 
-	"github.com/fanux/sealos/pkg/runtime"
+	"github.com/larbing/sealos/pkg/runtime"
 
-	"github.com/fanux/sealos/pkg/utils/logger"
+	"github.com/larbing/sealos/pkg/utils/logger"
 
-	"github.com/fanux/sealos/pkg/image/types"
+	"github.com/larbing/sealos/pkg/image/types"
 
-	"github.com/fanux/sealos/pkg/env"
-	v2 "github.com/fanux/sealos/pkg/types/v1beta1"
-	"github.com/fanux/sealos/pkg/utils/contants"
-	"github.com/fanux/sealos/pkg/utils/exec"
-	"github.com/fanux/sealos/pkg/utils/file"
-	"github.com/fanux/sealos/pkg/utils/ssh"
+	"github.com/larbing/sealos/pkg/env"
+	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/larbing/sealos/pkg/utils/exec"
+	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/larbing/sealos/pkg/utils/ssh"
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )

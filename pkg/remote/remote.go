@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/fanux/sealos/pkg/utils/ssh"
+	"github.com/larbing/sealos/pkg/utils/ssh"
 )
 
 type Interface interface {
