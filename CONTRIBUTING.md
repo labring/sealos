@@ -72,10 +72,10 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 
 1. **CLONE** your own repository to master locally. Use `git clone https://github.com/<your-username>/sealos.git` to clone repository to your local machine. Then you can create new branches to finish the change you wish to make.
 
-1. **Set Remote** upstream to be `https://github.com/fanux/sealos.git` using the following two commands:
+1. **Set Remote** upstream to be `https://github.com/labring/sealos.git` using the following two commands:
 
 	```
-	git remote add upstream https://github.com/fanux/sealos.git
+	git remote add upstream https://github.com/labring/sealos.git
 	git remote set-url --push upstream no-pushing
 	```
 
