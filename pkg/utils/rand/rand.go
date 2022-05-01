@@ -31,7 +31,7 @@ func Rand(a int) int {
 
 func Generator(len int) string {
 	var container string
-	var str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	var str = "abcdefghijklmnopqrstuvwxyz1234567890"
 	b := bytes.NewBufferString(str)
 	length := b.Len()
 	bigInt := big.NewInt(int64(length))

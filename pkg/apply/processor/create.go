@@ -77,15 +77,6 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
-		return err
-	}
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
-	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
-	}
-	c.Runtime = runTime
-
 	for _, img := range cluster.Spec.Image {
 		clusterManifest, err := c.ClusterManager.Create(fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)), img)
 		if err != nil {
@@ -101,7 +92,15 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 		}
 		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 	}
-	return err
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
+		return err
+	}
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	if err != nil {
+		return fmt.Errorf("failed to init runtime, %v", err)
+	}
+	c.Runtime = runTime
+	return nil
 }
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
