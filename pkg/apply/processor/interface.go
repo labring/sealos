@@ -73,6 +73,7 @@ func OCIToImageMount(mount *v2.MountImage, imgService types.Service) error {
 			}
 			cmds = append(cmds, cmd)
 		}
+		mount.Cmd = cmds
 		mount.Labels = oci[0].Config.Labels
 		imageType := v2.RootfsImage
 		if mount.Labels[runtime.KubeVersionKey] != "" {
