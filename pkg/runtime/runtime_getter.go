@@ -21,17 +21,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/larbing/sealos/pkg/image/types"
-	"github.com/larbing/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/maps"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/env"
-	"github.com/larbing/sealos/pkg/remote"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/ssh"
+	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/remote"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
 )
 

@@ -21,12 +21,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/image/types"
 
-	"github.com/larbing/sealos/pkg/utils/maps"
-	strings2 "github.com/larbing/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/maps"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
-	"github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 const templateSuffix = ".tmpl"

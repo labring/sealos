@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/larbing/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image"
 	"github.com/spf13/cobra"
 )
 

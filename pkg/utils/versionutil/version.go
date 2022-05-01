@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // GetMajorMinorInt

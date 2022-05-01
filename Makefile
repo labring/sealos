@@ -27,10 +27,10 @@ endef
 
 GOLINT_BIN = $(shell pwd)/bin/golangci-lint
 install-golint: ## check license if not exist install go-lint tools
-	$(call go-get-tool,$(GOLINT_BIN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.43.0)
+	$(call go-get-tool,$(GOLINT_BIN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0)
 
 lint: install-golint ## Run go lint against code.
-	$(GOLINT_BIN) run -v ./...
+	$(GOLINT_BIN) run -c .golangci.yml -v ./...
 
 default:  build
 
@@ -83,7 +83,7 @@ install-deepcopy: ## check license if not exist install go-lint tools
 	$(call go-get-tool,$(DEEPCOPY_BIN),k8s.io/code-generator/cmd/deepcopy-gen@latest)
 
 HEAD_FILE := hack/template/boilerplate.go.txt
-INPUT_DIR := github.com/larbing/sealos/pkg/types/v1beta1
+INPUT_DIR := github.com/labring/sealos/pkg/types/v1beta1
 deepcopy:install-deepcopy
 	$(DEEPCOPY_BIN) \
       --input-dirs="$(INPUT_DIR)" \

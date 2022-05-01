@@ -2,7 +2,7 @@
 ## 前提条件
 * 安装并启动docker/containerd(1.20+安装containerd),**已经安装了会重启docker/containerd.** 高版本离线包自带docker/containerd，如没安装docker/containerd会自动安装.
 * 下载[kubernetes 离线安装包](https://www.sealyun.com/goodsList).
-* 下载[最新版本sealos](https://github.com/larbing/sealos/releases).
+* 下载[最新版本sealos](https://github.com/labring/sealos/releases).
 * 务必同步服务器时间
 * 主机名不可重复
 * master节点CPU必须2C以上
@@ -272,7 +272,7 @@ sealos clean --all
 
 
 
-命令帮助如下，详情[查看github](https://github.com/larbing/sealos/docs/etcdbackup.md)
+命令帮助如下，详情[查看github](https://github.com/labring/sealos/docs/etcdbackup.md)
 
 ```bash
 sealos etcd save -h

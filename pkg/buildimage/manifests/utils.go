@@ -18,7 +18,7 @@ import (
 	"bufio"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // DecodeImages decode image from yaml content

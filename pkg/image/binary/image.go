@@ -24,17 +24,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/buildimage"
-	"github.com/larbing/sealos/pkg/registry"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/buildimage"
+	"github.com/labring/sealos/pkg/registry"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 
-	"github.com/larbing/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/image/types"
 
-	"github.com/larbing/sealos/pkg/utils/exec"
-	json2 "github.com/larbing/sealos/pkg/utils/json"
+	"github.com/labring/sealos/pkg/utils/exec"
+	json2 "github.com/labring/sealos/pkg/utils/json"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

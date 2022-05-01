@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/contants"
 )
 
 const (

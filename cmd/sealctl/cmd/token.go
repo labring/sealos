@@ -17,9 +17,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/larbing/sealos/pkg/token"
+	"github.com/labring/sealos/pkg/token"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 )

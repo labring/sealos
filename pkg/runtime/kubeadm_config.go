@@ -22,14 +22,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/imdario/mergo"
-	"github.com/larbing/sealos/pkg/runtime/apis/kubeadm"
+	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/kube-proxy/config/v1alpha1"
 	"k8s.io/kubelet/config/v1beta1"

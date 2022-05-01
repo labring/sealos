@@ -114,7 +114,7 @@ func getDefaultRouteIp() (ip string, err error) {
 }
 ```
 
-具体详情请查看源码`"github.com/larbing/sealos/install/route.go"`
+具体详情请查看源码`"github.com/labring/sealos/install/route.go"`
 
 ### 配合和`sealos init`使用
 

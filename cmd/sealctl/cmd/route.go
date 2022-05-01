@@ -17,8 +17,8 @@ package cmd
 import (
 	"os"
 
-	"github.com/larbing/sealos/pkg/route"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/route"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 

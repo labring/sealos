@@ -14,7 +14,7 @@
 
 package processor
 
-import v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+import v2 "github.com/labring/sealos/pkg/types/v1beta1"
 
 type Interface interface {
 	// Execute :according to the different of desired cluster to do cluster apply.

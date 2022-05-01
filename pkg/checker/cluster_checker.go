@@ -20,14 +20,14 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/contants"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/larbing/sealos/pkg/client-go/kubernetes"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type ClusterChecker struct {

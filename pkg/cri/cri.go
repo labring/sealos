@@ -22,8 +22,8 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/pelletier/go-toml"
+	"github.com/labring/sealos/pkg/utils/file"
+	toml "github.com/pelletier/go-toml"
 
 	"github.com/pkg/errors"
 

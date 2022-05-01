@@ -20,14 +20,14 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/larbing/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/utils/maps"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/contants"
 
-	"github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/decode"
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/decode"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"sigs.k8s.io/yaml"
 )
 

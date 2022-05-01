@@ -21,7 +21,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // ParseIPs 解析ip 192.168.0.2-192.168.0.6

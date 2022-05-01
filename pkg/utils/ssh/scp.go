@@ -23,13 +23,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/hash"
+	"github.com/labring/sealos/pkg/utils/hash"
 
-	"github.com/larbing/sealos/pkg/utils/file"
-	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
-	"github.com/larbing/sealos/pkg/utils/progress"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/progress"
 	"github.com/schollz/progressbar/v3"
 
 	"github.com/pkg/sftp"

@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -147,22 +147,12 @@ func (s *SSH) IsFileExist(host, remoteFilePath string) bool {
 	remoteFileCommand := fmt.Sprintf("ls -l %s/%s 2>/dev/null |wc -l", remoteFileDirName, remoteFileName)
 
 	data, err := s.CmdToString(host, remoteFileCommand, " ")
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]remoteFileCommand err:%s", host, err)
-		}
-	}()
 	if err != nil {
-		panic(1)
+		logger.Error("[ssh][%s]remoteFileCommand err:%s", host, err)
 	}
 	count, err := strconv.Atoi(strings.TrimSpace(data))
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Error("[ssh][%s]RemoteFileExist:%s", host, err)
-		}
-	}()
 	if err != nil {
-		panic(1)
+		logger.Error("[ssh][%s]RemoteFileExist:%s", host, err)
 	}
 	return count != 0
 }

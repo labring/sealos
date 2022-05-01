@@ -17,8 +17,8 @@ limitations under the License.
 package image
 
 import (
-	"github.com/larbing/sealos/pkg/utils/exec"
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/exec"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 )
 
@@ -28,10 +28,7 @@ func checkBuildah() error {
 		if err := buildahPolicySync(); err != nil {
 			return err
 		}
-		if err := buildahStorageSync(); err != nil {
-			return err
-		}
-		return nil
+		return buildahStorageSync()
 	}
 	return errors.New("buildah not found in host")
 }

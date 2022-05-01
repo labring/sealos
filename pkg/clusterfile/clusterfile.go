@@ -17,8 +17,8 @@ package clusterfile
 import (
 	"errors"
 
-	"github.com/larbing/sealos/pkg/runtime"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/runtime"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 var ErrTypeNotFound = errors.New("no corresponding type structure was found")

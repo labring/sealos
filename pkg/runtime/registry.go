@@ -18,16 +18,16 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/larbing/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/yaml"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/larbing/sealos/pkg/passwd"
-	"github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/utils/file"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {

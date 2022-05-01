@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	bootstraptokenv1 "github.com/larbing/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	bootstraptokenv1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

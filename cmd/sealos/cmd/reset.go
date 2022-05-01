@@ -17,11 +17,11 @@ package cmd
 import (
 	"os"
 
-	"github.com/larbing/sealos/pkg/runtime"
-	"github.com/larbing/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/utils/contants"
 
-	"github.com/larbing/sealos/pkg/apply"
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
 )

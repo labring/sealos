@@ -15,11 +15,11 @@
 package clusterfile
 
 import (
-	"github.com/larbing/sealos/pkg/runtime"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/decode"
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/runtime"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/decode"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 type PreProcessor interface {

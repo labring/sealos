@@ -22,9 +22,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/larbing/sealos/pkg/utils/contants"
-	"github.com/larbing/sealos/pkg/utils/logger"
-	"github.com/larbing/sealos/pkg/utils/versionutil"
+	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/versionutil"
 )
 
 type CommandType string

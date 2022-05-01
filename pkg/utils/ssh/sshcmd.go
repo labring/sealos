@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	strings2 "github.com/larbing/sealos/pkg/utils/strings"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (s *SSH) Ping(host string) error {

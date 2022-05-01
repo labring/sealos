@@ -18,15 +18,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/rand"
+	"github.com/labring/sealos/pkg/utils/rand"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
-	"github.com/larbing/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func (a *AliProvider) CreateVPC() error {

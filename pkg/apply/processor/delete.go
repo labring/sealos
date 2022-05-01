@@ -17,16 +17,16 @@ package processor
 import (
 	"fmt"
 
-	"github.com/larbing/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/larbing/sealos/pkg/clusterfile"
-	"github.com/larbing/sealos/pkg/filesystem"
-	"github.com/larbing/sealos/pkg/image"
-	"github.com/larbing/sealos/pkg/image/types"
-	"github.com/larbing/sealos/pkg/runtime"
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/runtime"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 type DeleteProcessor struct {

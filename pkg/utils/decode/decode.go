@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/larbing/sealos/pkg/types/v1beta1"
-	"github.com/larbing/sealos/pkg/utils/contants"
-	fileutil "github.com/larbing/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )

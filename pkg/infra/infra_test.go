@@ -19,12 +19,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/larbing/sealos/pkg/infra/aliyun"
-	"github.com/larbing/sealos/pkg/infra/huawei"
+	"github.com/labring/sealos/pkg/infra/aliyun"
+	"github.com/labring/sealos/pkg/infra/huawei"
 
 	"sigs.k8s.io/yaml"
 
-	v2 "github.com/larbing/sealos/pkg/types/v1beta1"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -17,8 +17,8 @@ package cmd
 import (
 	"errors"
 
-	"github.com/larbing/sealos/pkg/apply"
-	"github.com/larbing/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/runtime"
 	"github.com/spf13/cobra"
 )
 

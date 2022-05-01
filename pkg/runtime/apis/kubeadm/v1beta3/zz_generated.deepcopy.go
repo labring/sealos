@@ -22,7 +22,7 @@ limitations under the License.
 package v1beta3
 
 import (
-	bootstraptokenv1 "github.com/larbing/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	bootstraptokenv1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
