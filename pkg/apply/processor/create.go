@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/rand"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -39,8 +40,6 @@ type CreateProcessor struct {
 	RegistryManager types.RegistryService
 	Runtime         runtime.Interface
 	Guest           guest.Interface
-	imageList       types.ImageListOCIV1
-	cManifestList   types.ClusterManifestList
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -78,23 +77,36 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(cluster.Spec.Image...)
-	if err != nil {
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
 		return err
 	}
-	c.imageList = img
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = runTime
-	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, 0, cluster.Spec.Image...)
+
+	for _, img := range cluster.Spec.Image {
+		clusterManifest, err := c.ClusterManager.Create(fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)), img)
+		if err != nil {
+			return err
+		}
+		mount := &v2.MountImage{
+			Name:       clusterManifest.Container,
+			ImageName:  img,
+			MountPoint: clusterManifest.MountPoint,
+		}
+		if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+			return err
+		}
+		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+	}
 	return err
 }
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.cManifestList {
+	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
@@ -106,7 +118,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
+	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
@@ -135,7 +147,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
-	return c.Guest.Apply(cluster, cluster.Spec.Image)
+	return c.Guest.Apply(cluster, cluster.Status.Mounts)
 }
 
 func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {

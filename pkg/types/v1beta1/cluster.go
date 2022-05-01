@@ -16,6 +16,7 @@ package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // +kubebuilder:object:root=true
@@ -30,7 +31,38 @@ type Cluster struct {
 	Status ClusterStatus `json:"status,omitempty"`
 }
 
+func (c *Cluster) String() string {
+	data, _ := yaml.Marshal(c)
+	return string(data)
+}
+
+type RegistryConfig struct {
+	IP       string `json:"ip,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	Port     string `json:"port,omitempty"`
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Data     string `json:"data,omitempty"`
+}
+type ImageType string
+
+const (
+	AppImage    ImageType = "application"
+	RootfsImage ImageType = "rootfs"
+)
+
+type MountImage struct {
+	Name       string            `json:"name"`
+	Type       ImageType         `json:"type"`
+	ImageName  string            `json:"imageName"`
+	MountPoint string            `json:"mountPoint"`
+	Env        map[string]string `json:"env,omitempty"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	Cmd        []string          `json:"cmd,omitempty"`
+}
 type ClusterStatus struct {
+	Registry *RegistryConfig `json:"registry,omitempty"`
+	Mounts   []MountImage    `json:"mounts"`
 }
 
 type SSH struct {

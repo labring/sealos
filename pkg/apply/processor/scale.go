@@ -37,8 +37,6 @@ type ScaleProcessor struct {
 	ImageManager    types.Service
 	ClusterManager  types.ClusterService
 	pullImages      []string
-	imageList       types.ImageListOCIV1
-	cManifestList   types.ClusterManifestList
 	MastersToJoin   []string
 	MastersToDelete []string
 	NodesToJoin     []string
@@ -103,11 +101,11 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 
 func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	if c.cManifestList == nil {
+	if cluster.Status.Mounts == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil
 	}
-	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
+	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
@@ -119,13 +117,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(c.pullImages...)
-	if err != nil {
-		return err
-	}
-	c.imageList = img
-	c.cManifestList, err = c.ClusterManager.Inspect(cluster.Name, 0, len(c.pullImages))
-	if err != nil {
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
 		return err
 	}
 	if c.IsScaleUp {
@@ -134,7 +126,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 	}
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
@@ -145,7 +137,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 
 func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.cManifestList {
+	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
@@ -157,7 +149,7 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
+	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}

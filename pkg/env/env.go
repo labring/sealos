@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/labring/sealos/pkg/utils/maps"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
@@ -45,11 +43,12 @@ type Interface interface {
 
 type processor struct {
 	*v1beta1.Cluster
-	types.ImageListOCIV1
+	//types.ImageListOCIV1
+	mounts []v1beta1.MountImage
 }
 
-func NewEnvProcessor(cluster *v1beta1.Cluster, image types.ImageListOCIV1) Interface {
-	return &processor{cluster, image}
+func NewEnvProcessor(cluster *v1beta1.Cluster, mounts []v1beta1.MountImage) Interface {
+	return &processor{Cluster: cluster, mounts: mounts}
 }
 func (p *processor) WrapperEnv(host string) map[string]string {
 	env := make(map[string]string)
@@ -105,10 +104,9 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	hostEnvMap := maps.ListToMap(hostEnv)
 	specEnvMap := maps.ListToMap(p.Spec.Env)
 	var imageEnvMap map[string]string
-	for _, img := range p.ImageListOCIV1 {
-		imageEnvMap = maps.MergeMap(imageEnvMap, maps.ListToMap(img.Config.Env))
+	for _, img := range p.mounts {
+		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
 	}
 	envs := maps.MergeMap(imageEnvMap, specEnvMap, hostEnvMap)
-	delete(envs, "PATH")
 	return envs
 }

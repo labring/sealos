@@ -38,7 +38,7 @@ import (
 )
 
 type Interface interface {
-	Apply(cluster *v2.Cluster, images []string) error
+	Apply(cluster *v2.Cluster, mounts []v2.MountImage) error
 	Delete(cluster *v2.Cluster) error
 }
 
@@ -54,15 +54,11 @@ func NewGuestManager() (Interface, error) {
 	return &Default{imageService: is}, nil
 }
 
-func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
+func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	clusterRootfs := runtime.GetContantData(cluster.Name).RootFSPath()
-	img, err := d.imageService.Inspect(images...)
-	if err != nil {
-		return fmt.Errorf("get cluster image failed, %s", err)
-	}
-	envInterface := env.NewEnvProcessor(cluster, img)
+	envInterface := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
-	guestCMD := d.getGuestCmd(envs, cluster, img)
+	guestCMD := d.getGuestCmd(envs, cluster, mounts)
 
 	kubeConfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
@@ -82,28 +78,27 @@ func (d *Default) Apply(cluster *v2.Cluster, images []string) error {
 	}
 
 	for _, value := range guestCMD {
-		//TODO temp solve it
-		if value == "" || value == "/bin/sh" || value == "-c" {
+		if value == "" {
 			continue
 		}
 		logger.Debug("guest cmd is %s", value)
-		if err = exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
+		if err := exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, images types.ImageListOCIV1) []string {
+func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mounts []v2.MountImage) []string {
 	command := make([]string, 0)
-	for _, i := range images {
-		if i.Config.Env != nil {
-			baseEnvs := maps.ListToMap(i.Config.Env)
-			envs = maps.MergeMap(baseEnvs, envs)
+	for _, i := range mounts {
+		var baseEnvs map[string]string
+		if i.Env != nil {
+			envs = maps.MergeMap(baseEnvs, i.Env)
 		}
 		mapping := expansion.MappingFuncFor(envs)
-		if len(i.Config.Cmd) != 0 {
-			for _, cmd := range i.Config.Cmd {
+		if len(i.Cmd) != 0 {
+			for _, cmd := range i.Cmd {
 				command = append(command, expansion.Expand(cmd, mapping))
 			}
 		}

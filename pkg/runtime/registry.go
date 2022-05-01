@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/utils/contants"
@@ -30,9 +32,9 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
+func GetRegistry(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
-	var DefaultConfig = &RegistryConfig{
+	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:     defaultRegistry,
 		Domain: contants.DefaultRegistryDomain,
 		Port:   "5000",
@@ -59,7 +61,7 @@ func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 	if port == "" {
 		domain = DefaultConfig.Port
 	}
-	rConfig := RegistryConfig{
+	rConfig := &v1beta1.RegistryConfig{
 		IP:       ip,
 		Domain:   domain,
 		Port:     port,
@@ -68,7 +70,7 @@ func GetRegistry(rootfs, defaultRegistry string) *RegistryConfig {
 		Data:     data,
 	}
 	logger.Debug("show registry info, IP: %s, Domain: %s", rConfig.IP, rConfig.Domain)
-	return &rConfig
+	return rConfig
 }
 
 func (k *KubeadmRuntime) htpasswd() error {

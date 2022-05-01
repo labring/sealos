@@ -50,7 +50,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
 			cluster.Spec.Image = append(cluster.Spec.Image, imageName...)
-			return applydrivers.NewDefaultApplier(cluster)
+			return applydrivers.NewDefaultApplier(cluster, imageName)
 		}
 	}
 	c := &ClusterArgs{
@@ -63,7 +63,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err := Process(c.cluster); err != nil {
 		return nil, err
 	}
-	return applydrivers.NewDefaultApplier(c.cluster)
+	return applydrivers.NewDefaultApplier(c.cluster, nil)
 }
 func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 	if !filepath.IsAbs(path) {
@@ -82,7 +82,7 @@ func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
-	return applydrivers.NewDefaultApplier(cluster)
+	return applydrivers.NewDefaultApplier(cluster, nil)
 }
 
 func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {

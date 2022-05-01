@@ -29,8 +29,6 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/labring/sealos/pkg/env"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/contants"
@@ -43,8 +41,9 @@ import (
 
 type defaultRootfs struct {
 	//clusterService image.ClusterService
-	imgList types.ImageListOCIV1
-	cluster types.ClusterManifestList
+	//imgList types.ImageListOCIV1
+	//cluster types.ClusterManifestList
+	images []v2.MountImage
 }
 
 func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error {
@@ -66,9 +65,12 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag bool) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
 	eg, _ := errgroup.WithContext(context.Background())
-	envProcessor := env.NewEnvProcessor(cluster, f.imgList)
+	envProcessor := env.NewEnvProcessor(cluster, f.images)
 
-	for _, cInfo := range f.cluster {
+	for _, cInfo := range f.images {
+		if initFlag && cInfo.Type != v2.RootfsImage {
+			continue
+		}
 		src := cInfo
 		eg.Go(func() error {
 			err := renderENV(src.MountPoint, ipList, envProcessor)
@@ -91,19 +93,22 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	if err := eg.Wait(); err != nil {
 		return err
 	}
-	check := contants.NewBash(f.getClusterName(cluster), runtime.GetImageLabels(f.imgList))
+	check := contants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
 
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
 			sshClient := f.getSSH(cluster)
 			fileEg, _ := errgroup.WithContext(context.Background())
-			for _, cInfo := range f.cluster {
+			for _, cInfo := range f.images {
 				cInfo := cInfo
 				fileEg.Go(func() error {
+					if cInfo.Type == v2.AppImage {
+						ip = "127.0.0.1"
+					}
 					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
 					if err != nil {
-						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Container, err)
+						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
 					}
 					return nil
 				})
@@ -188,6 +193,6 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	return nil
 }
 
-func NewDefaultRootfs(cluster types.ClusterManifestList, images types.ImageListOCIV1) (Interface, error) {
-	return &defaultRootfs{cluster: cluster, imgList: images}, nil
+func NewDefaultRootfs(images []v2.MountImage) (Interface, error) {
+	return &defaultRootfs{images: images}, nil
 }
