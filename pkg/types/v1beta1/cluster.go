@@ -49,6 +49,7 @@ type ImageType string
 const (
 	AppImage    ImageType = "application"
 	RootfsImage ImageType = "rootfs"
+	AddonsImage ImageType = "addons"
 )
 
 type MountImage struct {
@@ -61,8 +62,7 @@ type MountImage struct {
 	Cmd        []string          `json:"cmd,omitempty"`
 }
 type ClusterStatus struct {
-	Registry *RegistryConfig `json:"registry,omitempty"`
-	Mounts   []MountImage    `json:"mounts"`
+	Mounts []MountImage `json:"mounts"`
 }
 
 type SSH struct {

@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/checker"
+
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem"
@@ -62,6 +64,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	var todoList []func(cluster *v2.Cluster) error
 	if c.IsScaleUp {
 		todoList = append(todoList,
+			c.Check,
 			c.PreProcess,
 			c.RunConfig,
 			c.MountRootfs,
@@ -112,6 +115,14 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	return fs.UnMountRootfs(cluster, hosts)
 }
 
+func (c *ScaleProcessor) Check(cluster *v2.Cluster) error {
+	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	err := c.ClusterFile.Process()
 	if err != nil {
@@ -154,7 +165,7 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, true)
+	return fs.MountRootfs(cluster, hosts, true, false)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

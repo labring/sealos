@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/checker"
+
 	"github.com/labring/sealos/pkg/utils/rand"
 	"golang.org/x/sync/errgroup"
 
@@ -59,6 +61,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
 		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
+		c.Check,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
@@ -70,6 +73,13 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
+}
+func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
+	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -121,8 +131,7 @@ func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-
-	return fs.MountRootfs(cluster, hosts, true)
+	return fs.MountRootfs(cluster, hosts, true, cluster.HasAppImage())
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {

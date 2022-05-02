@@ -17,6 +17,8 @@ package cmd
 import (
 	"errors"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/spf13/cobra"
 )
@@ -45,6 +47,9 @@ add to default cluster:
 				return errors.New("node and master not empty in same time")
 			}
 			return nil
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(contact)
 		},
 	}
 	addArgs = &apply.ScaleArgs{}

@@ -20,7 +20,7 @@ import v2 "github.com/labring/sealos/pkg/types/v1beta1"
 
 type Interface interface {
 	// MountRootfs :send cloud rootfs to all hosts.
-	MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error
+	MountRootfs(cluster *v2.Cluster, hosts []string, initFlag, appFlag bool) error
 	// UnMountRootfs :umount rootfs on all hosts.
 	UnMountRootfs(cluster *v2.Cluster, hosts []string) error
 }

@@ -16,8 +16,8 @@ package processor
 
 import (
 	"github.com/labring/sealos/pkg/image/types"
-	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/strings"
@@ -67,17 +67,18 @@ func OCIToImageMount(mount *v2.MountImage, imgService types.Service) error {
 		delete(mount.Env, "PATH")
 		//mount.Cmd
 		cmds := oci[0].Config.Cmd
+		var newCMDs []string
 		for _, cmd := range cmds {
 			if cmd == "/bin/sh" || cmd == "-c" {
 				continue
 			}
-			cmds = append(cmds, cmd)
+			newCMDs = append(newCMDs, cmd)
 		}
-		mount.Cmd = cmds
+		mount.Cmd = newCMDs
 		mount.Labels = oci[0].Config.Labels
-		imageType := v2.RootfsImage
-		if mount.Labels[runtime.KubeVersionKey] != "" {
-			imageType = v2.RootfsImage
+		imageType := v2.AppImage
+		if mount.Labels[contants.ImageTypeKey] != "" {
+			imageType = v2.ImageType(mount.Labels[contants.ImageTypeKey])
 		}
 		mount.Type = imageType
 	}

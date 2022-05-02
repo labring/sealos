@@ -34,16 +34,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	KubeVersionKey = "version"
-	KubeImageKey   = "image"
-)
-
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	if k.Cluster.Status.Registry == nil {
-		k.Cluster.Status.Registry = GetRegistry(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
-	}
-	return k.Cluster.Status.Registry
+	return GetRegistry(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -52,7 +44,7 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
-	image := labels[KubeVersionKey]
+	image := labels[contants.ImageKubeVersionKey]
 	if image == "" {
 		return ""
 	}
@@ -97,7 +89,7 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	labels := k.getImageLabels()
-	image := labels[KubeImageKey]
+	image := labels[contants.ImageKubeLvscareImageKey]
 	if image == "" {
 		image = contants.DefaultLvsCareImage
 	}

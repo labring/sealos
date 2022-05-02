@@ -15,6 +15,8 @@
 package clusterfile
 
 import (
+	"errors"
+
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/contants"
@@ -31,6 +33,9 @@ func NewPreProcessor(path string) PreProcessor {
 }
 
 func (c *ClusterFile) Process() error {
+	if !fileutil.IsExist(c.path) {
+		return errors.New("the cluster file is not exist, make sure you cluster is install")
+	}
 	clusterFileData, err := fileutil.ReadAll(c.path)
 	if err != nil {
 		return err

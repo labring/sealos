@@ -123,12 +123,19 @@ func (c *Cluster) FindImage(targetImage string) *MountImage {
 	}
 	return image
 }
-func (c *Cluster) SetMountImage(targetMountName string, targetMount *MountImage) {
+func (c *Cluster) SetMountImage(targetMount *MountImage) {
 	if c.Status.Mounts != nil {
-		for i, img := range c.Status.Mounts {
-			if img.Name == targetMountName {
-				c.Status.Mounts[i] = *targetMount
-				break
+		if targetMount != nil {
+			hasMount := false
+			for i, img := range c.Status.Mounts {
+				if img.Name == targetMount.Name && img.Type == targetMount.Type {
+					c.Status.Mounts[i] = *targetMount
+					hasMount = true
+					break
+				}
+			}
+			if !hasMount {
+				c.Status.Mounts = append(c.Status.Mounts, *targetMount)
 			}
 		}
 	}
@@ -173,6 +180,16 @@ func (c *Cluster) GetAppImage(defaultImageName, defaultMount string) *MountImage
 		}
 	}
 	return image
+}
+func (c *Cluster) HasAppImage() bool {
+	if c.Status.Mounts != nil {
+		for _, img := range c.Status.Mounts {
+			if img.Type == AppImage {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (c *Cluster) GetRolesByIP(ip string) []string {

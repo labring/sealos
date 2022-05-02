@@ -110,6 +110,7 @@ func (c *Applier) initCluster() error {
 }
 
 func (c *Applier) installApp(images []string) error {
+	logger.Info("start to install app in this cluster")
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
@@ -126,7 +127,7 @@ func (c *Applier) installApp(images []string) error {
 }
 
 func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
-	logger.Info("Start to scale this cluster")
+	logger.Info("start to scale this cluster")
 	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPList(), c.ClusterCurrent.GetNodeIPList())
 	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
 	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {

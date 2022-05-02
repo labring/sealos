@@ -20,9 +20,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
-	"github.com/labring/sealos/pkg/checker"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -58,27 +55,14 @@ func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.In
 	switch flag {
 	case "add":
 		err = Join(cluster, scaleArgs.ToRunArgs())
-		if err != nil {
-			return nil, err
-		}
-		err = Process(cluster)
 	case "delete":
 		err = Delete(cluster, scaleArgs.ToRunArgs())
 	}
 	if err != nil {
 		return nil, err
 	}
-	return applydrivers.NewDefaultScaleApplier(curr, cluster)
-}
 
-func Process(cluster *v2.Cluster) error {
-	clusterPath := contants.Clusterfile(cluster.Name)
-	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
-	if err != nil {
-		return err
-	}
-	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, cluster)
+	return applydrivers.NewDefaultScaleApplier(curr, cluster)
 }
 
 func Join(cluster *v2.Cluster, scalingArgs *RunArgs) error {
@@ -116,7 +100,10 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 			continue
 		}
 		_ip, port := iputils.GetHostIPAndPortOrDefault(j, strconv.Itoa(int(cluster.Spec.SSH.Port)))
-		ipAndPorts = append(ipAndPorts, fmt.Sprintf("%s:%s", _ip, port))
+		addHost := fmt.Sprintf("%s:%s", _ip, port)
+		if !strings2.InList(addHost, cluster.GetMasterIPAndPortList()) {
+			ipAndPorts = append(ipAndPorts, addHost)
+		}
 	}
 	if len(ipAndPorts) > 0 {
 		hosts = append(hosts, v2.Host{
@@ -144,7 +131,10 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 			continue
 		}
 		_ip, port := iputils.GetHostIPAndPortOrDefault(j, strconv.Itoa(int(cluster.Spec.SSH.Port)))
-		ipAndPorts = append(ipAndPorts, fmt.Sprintf("%s:%s", _ip, port))
+		addHost := fmt.Sprintf("%s:%s", _ip, port)
+		if !strings2.InList(addHost, cluster.GetNodeIPAndPortList()) {
+			ipAndPorts = append(ipAndPorts, addHost)
+		}
 	}
 	if len(ipAndPorts) > 0 {
 		hosts = append(hosts, v2.Host{
@@ -152,7 +142,8 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 			Roles: []string{v2.Node, string(v2.AMD64)},
 		})
 	}
-	logger.Debug("des nodes: %v", hosts)
+	logger.Debug("des masters:", cluster.GetMasterIPList())
+	logger.Debug("des nodes:", cluster.GetNodeIPList())
 	cluster.Spec.Hosts = hosts
 	return nil
 }

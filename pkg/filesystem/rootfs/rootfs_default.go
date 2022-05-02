@@ -46,8 +46,8 @@ type defaultRootfs struct {
 	images []v2.MountImage
 }
 
-func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag bool) error {
-	return f.mountRootfs(cluster, hosts, initFlag)
+func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag, appFlag bool) error {
+	return f.mountRootfs(cluster, hosts, initFlag, appFlag)
 }
 
 func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -62,15 +62,12 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 	return ssh.NewSSHClient(&cluster.Spec.SSH, true)
 }
 
-func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag bool) error {
+func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag, appFlag bool) error {
 	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
 	eg, _ := errgroup.WithContext(context.Background())
 	envProcessor := env.NewEnvProcessor(cluster, f.images)
 
 	for _, cInfo := range f.images {
-		if initFlag && cInfo.Type != v2.RootfsImage {
-			continue
-		}
 		src := cInfo
 		eg.Go(func() error {
 			err := renderENV(src.MountPoint, ipList, envProcessor)
@@ -101,9 +98,18 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			sshClient := f.getSSH(cluster)
 			fileEg, _ := errgroup.WithContext(context.Background())
 			for _, cInfo := range f.images {
+				//if initFlag && cInfo.Type == v2.AppImage {
+				//	continue
+				//}
 				cInfo := cInfo
 				fileEg.Go(func() error {
-					if cInfo.Type == v2.AppImage {
+					if initFlag && cInfo.Type != v2.RootfsImage {
+						return nil
+					}
+					if appFlag && cInfo.Type != v2.AppImage {
+						return nil
+					}
+					if appFlag && cInfo.Type == v2.AppImage {
 						ip = "127.0.0.1"
 					}
 					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)

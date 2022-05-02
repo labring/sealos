@@ -18,6 +18,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/confirm"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/utils/rand"
 
 	"golang.org/x/sync/errgroup"
@@ -32,6 +35,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/contants"
 )
 
+var ForceOverride bool
+
 type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
 	ImageManager    types.Service
@@ -42,6 +47,17 @@ type InstallProcessor struct {
 	NewImages       []string
 }
 
+func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
+	if ForceOverride {
+		prompt := "are you sure to override these app?"
+		cancel := "you have canceled to override these apps !"
+		_, err := confirm.Confirm(prompt, cancel)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
@@ -59,11 +75,13 @@ func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
+		c.ConfirmOverrideApps,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
 		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
+		c.PostProcess,
 		//i.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
@@ -84,30 +102,46 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)
-		if mount != nil {
-			//update
-			cluster.SetMountImage(mount.Name, mount)
-		} else {
+		if mount == nil {
 			//create
 			mount = &v2.MountImage{
 				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
 				ImageName: img,
 			}
+			cluster.Spec.Image = append(cluster.Spec.Image, img)
+		} else {
+			if !ForceOverride {
+				mount = nil
+			}
 		}
-		manifest, err := c.ClusterManager.Create(mount.Name, img)
-		if err != nil {
-			return err
+		if mount != nil {
+			manifest, err := c.ClusterManager.Create(mount.Name, img)
+			if err != nil {
+				return err
+			}
+			mount.MountPoint = manifest.MountPoint
+			if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+				return err
+			}
+			cluster.SetMountImage(mount)
+			c.NewMounts = append(c.NewMounts, *mount)
 		}
-		mount.MountPoint = manifest.MountPoint
-		if err = OCIToImageMount(mount, c.ImageManager); err != nil {
-			return err
-		}
-		c.NewMounts = append(c.NewMounts, *mount)
+	}
+	return nil
+}
+func (c *InstallProcessor) PostProcess(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		logger.Info("succeeded install app in this cluster: no change apps")
+	} else {
+		logger.Info("succeeded install app in this cluster")
 	}
 	return nil
 }
 
 func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
@@ -120,16 +154,22 @@ func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, false)
+	return fs.MountRootfs(cluster, hosts, false, true)
 }
 
 func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
 	return c.Guest.Apply(cluster, c.NewMounts)
 }
 
