@@ -16,7 +16,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -99,6 +102,17 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	err = c.RegistryManager.Pull(c.NewImages...)
 	if err != nil {
 		return err
+	}
+	ociList, err := c.ImageManager.Inspect(c.NewImages...)
+	if err != nil {
+		return err
+	}
+	var imageTypes sets.String
+	for _, oci := range ociList {
+		imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+	}
+	if imageTypes.Has(string(v2.AddonsImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
+		return errors.New("not support only run addons images in this cluster")
 	}
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)
