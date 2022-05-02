@@ -23,6 +23,8 @@ import (
 	"path"
 	"path/filepath"
 
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/runtime"
@@ -103,7 +105,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				//}
 				cInfo := cInfo
 				fileEg.Go(func() error {
-					if initFlag && cInfo.Type != v2.RootfsImage {
+					if initFlag && !strings2.InList(string(cInfo.Type), []string{string(v2.RootfsImage), string(v2.AddonsImage)}) {
 						return nil
 					}
 					if appFlag && cInfo.Type != v2.AppImage {
