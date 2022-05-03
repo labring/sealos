@@ -91,26 +91,20 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		return err
 	}
 	check := contants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
-
+	sshClient := f.getSSH(cluster)
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
-			sshClient := f.getSSH(cluster)
 			fileEg, _ := errgroup.WithContext(context.Background())
-
 			for _, cInfo := range f.images {
 				cInfo := cInfo
 				fileEg.Go(func() error {
-					if initFlag && cInfo.Type != v2.RootfsImage {
-						return nil
-					}
-					if appFlag && cInfo.Type != v2.AppImage {
-						return nil
-					}
-					logger.Debug("send rootfs and app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
-					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), cInfo.Type == v2.AppImage, ip, cInfo.MountPoint, target)
-					if err != nil {
-						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+					if cInfo.Type == v2.RootfsImage {
+						logger.Debug("send rootfs images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
+						err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
+						if err != nil {
+							return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+						}
 					}
 					return nil
 				})
@@ -119,13 +113,12 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				return err
 			}
 			for _, cInfo := range f.images {
-				if initFlag && cInfo.Type != v2.AddonsImage {
-					continue
-				}
-				logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
-				err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
-				if err != nil {
-					return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+				if cInfo.Type == v2.AddonsImage {
+					logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
+					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
+					if err != nil {
+						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+					}
 				}
 			}
 			if initFlag {
@@ -143,7 +136,26 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			return nil
 		})
 	}
-	return eg.Wait()
+	err := eg.Wait()
+	if err != nil {
+		return err
+	}
+
+	endEg, _ := errgroup.WithContext(context.Background())
+	for _, cInfo := range f.images {
+		ip := cluster.GetMaster0IP()
+		endEg.Go(func() error {
+			if cInfo.Type == v2.AppImage {
+				logger.Debug("send  app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
+				err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), true, ip, cInfo.MountPoint, target)
+				if err != nil {
+					return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+				}
+			}
+			return nil
+		})
+	}
+	return endEg.Wait()
 }
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
 	clusterRootfsDir := contants.NewData(f.getClusterName(cluster)).Homedir()
