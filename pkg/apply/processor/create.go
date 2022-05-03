@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/checker"
 
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -79,7 +81,9 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	clusterPath := contants.Clusterfile(cluster.Name)
+	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, cluster)
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {

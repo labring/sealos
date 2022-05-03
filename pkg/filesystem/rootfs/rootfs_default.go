@@ -23,8 +23,6 @@ import (
 	"path"
 	"path/filepath"
 
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-
 	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/runtime"
@@ -99,18 +97,17 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		eg.Go(func() error {
 			sshClient := f.getSSH(cluster)
 			fileEg, _ := errgroup.WithContext(context.Background())
+
 			for _, cInfo := range f.images {
-				//if initFlag && cInfo.Type == v2.AppImage {
-				//	continue
-				//}
 				cInfo := cInfo
 				fileEg.Go(func() error {
-					if initFlag && !strings2.InList(string(cInfo.Type), []string{string(v2.RootfsImage), string(v2.AddonsImage)}) {
+					if initFlag && cInfo.Type != v2.RootfsImage {
 						return nil
 					}
 					if appFlag && cInfo.Type != v2.AppImage {
 						return nil
 					}
+					logger.Debug("send rootfs and app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
 					if appFlag && cInfo.Type == v2.AppImage {
 						ip = "127.0.0.1"
 					}
@@ -123,6 +120,16 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			}
 			if err := fileEg.Wait(); err != nil {
 				return err
+			}
+			for _, cInfo := range f.images {
+				if initFlag && cInfo.Type != v2.AddonsImage {
+					continue
+				}
+				logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
+				err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+				if err != nil {
+					return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
+				}
 			}
 			if initFlag {
 				checkBash := check.CheckBash()
