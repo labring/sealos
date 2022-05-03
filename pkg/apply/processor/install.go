@@ -107,9 +107,13 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	var imageTypes sets.String
+	imageTypes := sets.NewString()
 	for _, oci := range ociList {
-		imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+		if oci.Config.Labels != nil {
+			imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+		} else {
+			imageTypes.Insert(string(v2.AppImage))
+		}
 	}
 	if imageTypes.Has(string(v2.AddonsImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
 		return errors.New("not support only run addons images in this cluster")

@@ -108,10 +108,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 						return nil
 					}
 					logger.Debug("send rootfs and app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
-					if appFlag && cInfo.Type == v2.AppImage {
-						ip = "127.0.0.1"
-					}
-					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), cInfo.Type == v2.AppImage, ip, cInfo.MountPoint, target)
 					if err != nil {
 						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
 					}
@@ -126,7 +123,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 					continue
 				}
 				logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
-				err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), ip, cInfo.MountPoint, target)
+				err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
 				if err != nil {
 					return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
 				}
@@ -187,7 +184,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	}
 	return nil
 }
-func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) error {
+func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target string) error {
 	files, err := ioutil.ReadDir(src)
 	if err != nil {
 		return fmt.Errorf("failed to copy files %s", err)
@@ -196,11 +193,15 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry bool, ip, src, target string) 
 	if isRegistry {
 		return sshEntry.Copy(ip, src, target)
 	}
+	targetIP := ip
+	if isApp {
+		targetIP = "127.0.0.1"
+	}
 	for _, f := range files {
 		if f.Name() == contants.RegistryDirName {
 			continue
 		}
-		err = sshEntry.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
+		err = sshEntry.Copy(targetIP, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
 		if err != nil {
 			return fmt.Errorf("failed to copy sub files %v", err)
 		}
