@@ -17,8 +17,6 @@ package applydrivers
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -32,7 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 )
 
-func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
+func NewDefaultApplier(cluster *v2.Cluster, images []string) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
@@ -42,6 +40,7 @@ func NewDefaultApplier(cluster *v2.Cluster) (Interface, error) {
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
 		ClusterCurrent: cFile.GetCluster(),
+		RunNewImages:   images,
 	}, nil
 }
 
@@ -63,6 +62,7 @@ type Applier struct {
 	ClusterFile        clusterfile.Interface
 	Client             kubernetes.Client
 	CurrentClusterInfo *version.Info
+	RunNewImages       []string
 }
 
 func (c *Applier) Apply() error {
@@ -82,7 +82,7 @@ func (c *Applier) Apply() error {
 }
 
 func (c *Applier) reconcileCluster() error {
-	if err := c.installApp(); err != nil {
+	if err := c.installApp(c.RunNewImages); err != nil {
 		return err
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPList(), c.ClusterDesired.GetMasterIPList())
@@ -108,35 +108,26 @@ func (c *Applier) initCluster() error {
 
 	return nil
 }
-func diffImages(spec, curr *v2.Cluster) v2.ImageList {
-	currImages := sets.NewString(curr.Spec.Image...)
-	specImages := sets.NewString(spec.Spec.Image...)
-	return specImages.Difference(currImages).List()
-}
 
-func (c *Applier) installApp() error {
+func (c *Applier) installApp(images []string) error {
+	logger.Info("start to install app in this cluster")
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
 	}
-	current := c.ClusterFile.GetCluster()
-	pullImages := diffImages(c.ClusterDesired, current)
-	if len(pullImages) != 0 {
-		installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, pullImages)
-		if err != nil {
-			return err
-		}
-		err = installProcessor.Execute(c.ClusterDesired)
-		if err != nil {
-			return err
-		}
+	installProcessor, err := processor.NewInstallProcessor(c.ClusterFile, images)
+	if err != nil {
+		return err
 	}
-	logger.Info("no change exec install app images")
+	err = installProcessor.Execute(c.ClusterDesired)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
-	logger.Info("Start to scale this cluster")
+	logger.Info("start to scale this cluster")
 	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPList(), c.ClusterCurrent.GetNodeIPList())
 	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
 	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {

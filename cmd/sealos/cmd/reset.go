@@ -54,6 +54,9 @@ func newResetCmd() *cobra.Command {
 				os.Exit(1)
 			}
 		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(contact)
+		},
 	}
 	return initCmd
 }

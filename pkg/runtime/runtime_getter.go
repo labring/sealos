@@ -21,10 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 
-	"github.com/labring/sealos/pkg/image/types"
-	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -35,7 +34,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (k *KubeadmRuntime) getRegistry() *RegistryConfig {
+func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
 	return GetRegistry(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
 }
 
@@ -45,7 +44,7 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
-	image := labels["version"]
+	image := labels[contants.ImageKubeVersionKey]
 	if image == "" {
 		return ""
 	}
@@ -90,7 +89,7 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	labels := k.getImageLabels()
-	image := labels["image"]
+	image := labels[contants.ImageKubeLvscareImageKey]
 	if image == "" {
 		image = contants.DefaultLvsCareImage
 	}
@@ -176,15 +175,7 @@ func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
 }
 
 func (k *KubeadmRuntime) getImageLabels() map[string]string {
-	return GetImageLabels(k.ImageInfo)
-}
-
-func GetImageLabels(imageInfo types.ImageListOCIV1) map[string]string {
-	var imageLabelMap map[string]string
-	for _, img := range imageInfo {
-		imageLabelMap = maps.MergeMap(imageLabelMap, img.Config.Labels)
-	}
-	return imageLabelMap
+	return k.Cluster.GetImageLabels()
 }
 
 func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
@@ -192,7 +183,7 @@ func (k *KubeadmRuntime) getSSHInterface() ssh.Interface {
 }
 
 func (k *KubeadmRuntime) getENVInterface() env.Interface {
-	return env.NewEnvProcessor(k.Cluster, k.ImageInfo)
+	return env.NewEnvProcessor(k.Cluster, k.Cluster.Status.Mounts)
 }
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {

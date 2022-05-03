@@ -18,6 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/pkg/checker"
+
+	"github.com/labring/sealos/pkg/utils/rand"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -39,8 +44,6 @@ type CreateProcessor struct {
 	RegistryManager types.RegistryService
 	Runtime         runtime.Interface
 	Guest           guest.Interface
-	imageList       types.ImageListOCIV1
-	cManifestList   types.ClusterManifestList
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -60,6 +63,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
 		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
+		c.Check,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
@@ -72,29 +76,50 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	)
 	return todoList, nil
 }
+func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
+	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
+	clusterPath := contants.Clusterfile(cluster.Name)
+	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, cluster)
+}
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(cluster.Spec.Image...)
-	if err != nil {
+	for _, img := range cluster.Spec.Image {
+		clusterManifest, err := c.ClusterManager.Create(fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)), img)
+		if err != nil {
+			return err
+		}
+		mount := &v2.MountImage{
+			Name:       clusterManifest.Container,
+			ImageName:  img,
+			MountPoint: clusterManifest.MountPoint,
+		}
+		if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+			return err
+		}
+		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+	}
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
 		return err
 	}
-	c.imageList = img
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig(), c.imageList)
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
 	c.Runtime = runTime
-	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, 0, cluster.Spec.Image...)
-	return err
+	return nil
 }
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.cManifestList {
+	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
@@ -106,12 +131,11 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
+	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
-
-	return fs.MountRootfs(cluster, hosts, true)
+	return fs.MountRootfs(cluster, hosts, true, cluster.HasAppImage())
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
@@ -135,7 +159,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
-	return c.Guest.Apply(cluster, cluster.Spec.Image)
+	return c.Guest.Apply(cluster, cluster.Status.Mounts)
 }
 
 func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {

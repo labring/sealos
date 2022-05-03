@@ -15,7 +15,10 @@
 package processor
 
 import (
+	"context"
 	"fmt"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -33,32 +36,10 @@ type DeleteProcessor struct {
 	ClusterManager types.ClusterService
 	ImageManager   types.Service
 	ClusterFile    clusterfile.Interface
-	imgList        types.ImageListOCIV1
-	cManifestList  types.ClusterManifestList
 }
 
 // Execute :according to the different of desired cluster to delete cluster.
 func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
-	d.cManifestList, err = d.ClusterManager.Inspect(cluster.Name, 0, len(cluster.Spec.Image))
-	if err != nil {
-		logger.Warn("delete process failed to inspect cluster,make sure you install k8s cluster.")
-		return err
-	}
-	d.imgList, err = d.ImageManager.Inspect(cluster.Spec.Image...)
-	if err != nil {
-		return fmt.Errorf("failed to inspect image, %v", err)
-	}
-
-	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig(), d.imgList)
-	if err != nil {
-		return fmt.Errorf("failed to delete runtime, %v", err)
-	}
-
-	err = runTime.Reset()
-	if err != nil {
-		return err
-	}
-
 	pipLine, err := d.GetPipeLine()
 	if err != nil {
 		return err
@@ -75,6 +56,8 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
+		d.PreProcess,
+		d.Reset,
 		d.UnMountRootfs,
 		d.UnMountImage,
 		d.CleanFS,
@@ -82,13 +65,25 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 
+func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
+	return SyncClusterStatus(cluster, d.ClusterManager, d.ImageManager)
+}
+
+func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
+	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
+	if err != nil {
+		return fmt.Errorf("failed to delete runtime, %v", err)
+	}
+	return runTime.Reset()
+}
+
 func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	if d.cManifestList == nil {
-		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
+	if cluster.Status.Mounts == nil {
+		logger.Warn("delete process unmount rootfs skip is cluster not mount any rootfs")
 		return nil
 	}
-	fs, err := filesystem.NewRootfsMounter(d.cManifestList, d.imgList)
+	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
@@ -96,7 +91,14 @@ func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 }
 
 func (d DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
-	return d.ClusterManager.Delete(cluster.Name, len(cluster.Spec.Image))
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, mount := range cluster.Status.Mounts {
+		mount := mount
+		eg.Go(func() error {
+			return d.ClusterManager.Delete(mount.Name)
+		})
+	}
+	return eg.Wait()
 }
 
 func (d DeleteProcessor) CleanFS(cluster *v2.Cluster) error {

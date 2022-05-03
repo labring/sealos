@@ -18,10 +18,10 @@ package filesystem
 
 import (
 	"github.com/labring/sealos/pkg/filesystem/rootfs"
-	"github.com/labring/sealos/pkg/image/types"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 // NewRootfsMounter :according to the Metadata file content to determine what kind of Filesystem will be load.
-func NewRootfsMounter(cluster types.ClusterManifestList, images types.ImageListOCIV1) (rootfs.Interface, error) {
-	return rootfs.NewDefaultRootfs(cluster, images)
+func NewRootfsMounter(images []v2.MountImage) (rootfs.Interface, error) {
+	return rootfs.NewDefaultRootfs(images)
 }

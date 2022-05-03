@@ -35,10 +35,10 @@ type Service interface {
 type ClusterService interface {
 	// Create 1. buildah from <image> 2. buildah mount <container(cluster)> 3. return container(cluster) manifest
 	// for CloudImage we can take container as cluster instance. type ClusterManifest storage.Container
-	Create(name string, index int, images ...string) (ClusterManifestList, error)
+	Create(name string, image string) (*ClusterManifest, error)
 	// Delete umount rootfs and delete it
-	Delete(name string, imageNum int) error
+	Delete(name string) error
 	// Inspect return cluster(container) manifest
-	Inspect(name string, index int, imageNum int) (ClusterManifestList, error)
+	Inspect(name string) (*ClusterManifest, error)
 	List() ([]ClusterInfo, error)
 }

@@ -17,6 +17,9 @@ limitations under the License.
 package rand
 
 import (
+	"bytes"
+	crand "crypto/rand"
+	"math/big"
 	"math/rand"
 	"time"
 )
@@ -24,4 +27,17 @@ import (
 func Rand(a int) int {
 	rand.Seed(time.Now().Unix())
 	return rand.Intn(a)
+}
+
+func Generator(len int) string {
+	var container string
+	var str = "abcdefghijklmnopqrstuvwxyz1234567890"
+	b := bytes.NewBufferString(str)
+	length := b.Len()
+	bigInt := big.NewInt(int64(length))
+	for i := 0; i < len; i++ {
+		randomInt, _ := crand.Int(crand.Reader, bigInt)
+		container += string(str[randomInt.Int64()])
+	}
+	return container
 }

@@ -18,11 +18,8 @@ package binary
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/image/types"
 
@@ -35,7 +32,7 @@ import (
 type ClusterService struct {
 }
 
-func (d *ClusterService) Create(name string, index int, images ...string) (types.ClusterManifestList, error) {
+func (d *ClusterService) Create(name string, image string) (*types.ClusterManifest, error) {
 	data := exec.BashEval("buildah containers --json")
 	infos, err := listContainer(data)
 	if err != nil {
@@ -43,47 +40,32 @@ func (d *ClusterService) Create(name string, index int, images ...string) (types
 	}
 
 	for _, info := range infos {
-		for i := range images {
-			containerName := fmt.Sprintf("%s-%d", name, index+i)
-			if info.Containername == containerName {
-				cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
-				if err = exec.Cmd("bash", "-c", cmd); err != nil {
-					return nil, err
-				}
+		if info.Containername == name {
+			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
+			if err = exec.Cmd("bash", "-c", cmd); err != nil {
+				return nil, err
 			}
 		}
 	}
 
-	var cmd strings.Builder
-	for i, image := range images {
-		containerName := fmt.Sprintf("%s-%d", name, index+i)
-		cmd.WriteString(fmt.Sprintf(" buildah from --pull=never --name %s %s && buildah mount %s ", containerName, image, containerName))
-		if i != len(images)-1 {
-			cmd.WriteString(" && ")
-		}
-	}
-	err = exec.Cmd("bash", "-c", cmd.String())
+	cmd := fmt.Sprintf(" buildah from --pull=never --name %s %s && buildah mount %s ", name, image, name)
+	err = exec.Cmd("bash", "-c", cmd)
 	if err != nil {
 		return nil, err
 	}
-
-	return d.Inspect(name, index, len(images))
+	return d.Inspect(name)
 }
-func (*ClusterService) Delete(name string, imageNum int) error {
+func (*ClusterService) Delete(name string) error {
 	data := exec.BashEval("buildah containers --json")
 	infos, err := listContainer(data)
 	if err != nil {
 		return err
 	}
-	var containerNames []string
-	for i := 0; i < imageNum; i++ {
-		containerNames = append(containerNames, fmt.Sprintf("%s-%d", name, i))
-	}
-	logger.Debug("current container names is: %v", containerNames)
+	logger.Debug("current container names is: %v", name)
 	for _, info := range infos {
-		if strings2.InList(info.Containername, containerNames) {
+		if info.Containername == name {
 			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
-			if err := exec.Cmd("bash", "-c", cmd); err != nil {
+			if err = exec.Cmd("bash", "-c", cmd); err != nil {
 				return err
 			}
 		}
@@ -91,18 +73,13 @@ func (*ClusterService) Delete(name string, imageNum int) error {
 	return nil
 }
 
-func (*ClusterService) Inspect(name string, index int, imageNum int) (types.ClusterManifestList, error) {
-	var clusterList types.ClusterManifestList
-
-	for i := 0; i < imageNum; i++ {
-		data := exec.BashEval(fmt.Sprintf("buildah inspect %s-%d", name, index+i))
-		manifest, err := inspectContainer(data)
-		if err != nil {
-			return nil, err
-		}
-		clusterList = append(clusterList, *manifest)
+func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
+	data := exec.BashEval(fmt.Sprintf("buildah inspect %s", name))
+	manifest, err := inspectContainer(data)
+	if err != nil {
+		return nil, err
 	}
-	return clusterList, nil
+	return manifest, nil
 }
 
 func (*ClusterService) List() ([]types.ClusterInfo, error) {

@@ -16,6 +16,15 @@ package processor
 
 import (
 	"context"
+	"errors"
+	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/labring/sealos/pkg/utils/confirm"
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/pkg/utils/rand"
 
 	"golang.org/x/sync/errgroup"
 
@@ -29,17 +38,29 @@ import (
 	"github.com/labring/sealos/pkg/utils/contants"
 )
 
+var ForceOverride bool
+
 type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
 	ImageManager    types.Service
 	ClusterManager  types.ClusterService
 	RegistryManager types.RegistryService
 	Guest           guest.Interface
-	pullImages      []string
-	imageList       types.ImageListOCIV1
-	cManifestList   types.ClusterManifestList
+	NewMounts       []v2.MountImage
+	NewImages       []string
 }
 
+func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
+	if ForceOverride {
+		prompt := "are you sure to override these app?"
+		cancel := "you have canceled to override these apps !"
+		_, err := confirm.Confirm(prompt, cancel)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
@@ -57,11 +78,13 @@ func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
+		c.ConfirmOverrideApps,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
 		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
+		c.PostProcess,
 		//i.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
@@ -73,23 +96,72 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	current := c.ClusterFile.GetCluster()
-	err = c.RegistryManager.Pull(c.pullImages...)
+	if err = SyncClusterStatus(current, c.ClusterManager, c.ImageManager); err != nil {
+		return err
+	}
+	err = c.RegistryManager.Pull(c.NewImages...)
 	if err != nil {
 		return err
 	}
-	img, err := c.ImageManager.Inspect(c.pullImages...)
+	ociList, err := c.ImageManager.Inspect(c.NewImages...)
 	if err != nil {
 		return err
 	}
-	//TODO if app image is ok
-	c.imageList = img
-	c.cManifestList, err = c.ClusterManager.Create(cluster.Name, len(current.Spec.Image), c.pullImages...)
-	return err
+	imageTypes := sets.NewString()
+	for _, oci := range ociList {
+		if oci.Config.Labels != nil {
+			imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+		} else {
+			imageTypes.Insert(string(v2.AppImage))
+		}
+	}
+	if imageTypes.Has(string(v2.AddonsImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
+		return errors.New("not support only run addons images in this cluster")
+	}
+	for _, img := range c.NewImages {
+		mount := cluster.FindImage(img)
+		if mount == nil {
+			//create
+			mount = &v2.MountImage{
+				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
+				ImageName: img,
+			}
+			cluster.Spec.Image = append(cluster.Spec.Image, img)
+		} else {
+			if !ForceOverride {
+				mount = nil
+			}
+		}
+		if mount != nil {
+			manifest, err := c.ClusterManager.Create(mount.Name, img)
+			if err != nil {
+				return err
+			}
+			mount.MountPoint = manifest.MountPoint
+			if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+				return err
+			}
+			cluster.SetMountImage(mount)
+			c.NewMounts = append(c.NewMounts, *mount)
+		}
+	}
+	return nil
+}
+func (c *InstallProcessor) PostProcess(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		logger.Info("succeeded install app in this cluster: no change apps")
+	} else {
+		logger.Info("succeeded install app in this cluster")
+	}
+	return nil
 }
 
 func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
 	eg, _ := errgroup.WithContext(context.Background())
-	for _, cManifest := range c.cManifestList {
+	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
@@ -100,21 +172,26 @@ func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	fs, err := filesystem.NewRootfsMounter(c.cManifestList, c.imageList)
+	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, false)
+	return fs.MountRootfs(cluster, hosts, false, true)
 }
 
 func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
-	images := c.pullImages
-	return c.Guest.Apply(cluster, images)
+	if len(c.NewMounts) == 0 {
+		return nil
+	}
+	return c.Guest.Apply(cluster, c.NewMounts)
 }
 
-func NewInstallProcessor(clusterFile clusterfile.Interface, images v2.ImageList) (Interface, error) {
+func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
 	imgSvc, err := image.NewImageService()
 	if err != nil {
 		return nil, err
@@ -141,6 +218,6 @@ func NewInstallProcessor(clusterFile clusterfile.Interface, images v2.ImageList)
 		ClusterManager:  clusterSvc,
 		RegistryManager: registrySvc,
 		Guest:           gs,
-		pullImages:      images,
+		NewImages:       images,
 	}, nil
 }

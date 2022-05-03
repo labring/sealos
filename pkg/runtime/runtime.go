@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/labring/sealos/pkg/token"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -28,9 +26,8 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	Cluster   *v2.Cluster
-	ImageInfo types.ImageListOCIV1
-	Token     *token.Token
+	Cluster *v2.Cluster
+	Token   *token.Token
 	*KubeadmConfig
 	*Config
 }
@@ -41,15 +38,6 @@ type Config struct {
 	ClusterFileKubeConfig *KubeadmConfig
 	APIServerDomain       string
 	vlog                  int
-}
-
-type RegistryConfig struct {
-	IP       string
-	Domain   string
-	Port     string
-	Username string
-	Password string
-	Data     string
 }
 
 func (k *KubeadmRuntime) Init() error {
@@ -118,10 +106,9 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, images types.ImageListOCIV1) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
 	k := &KubeadmRuntime{
-		Cluster:   cluster,
-		ImageInfo: images,
+		Cluster: cluster,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
 			APIServerDomain:       DefaultAPIServerDomain,
@@ -139,8 +126,8 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, images types
 }
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
-func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, images types.ImageListOCIV1) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm, images)
+func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm)
 }
 
 func (k *KubeadmRuntime) Validate() error {

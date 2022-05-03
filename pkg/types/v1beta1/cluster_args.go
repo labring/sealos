@@ -19,6 +19,8 @@ package v1beta1
 import (
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/maps"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 )
 
@@ -86,6 +88,108 @@ func (c *Cluster) GetIPSByRole(role string) []string {
 		}
 	}
 	return hosts
+}
+
+func (c *Cluster) GetRootfsImage(defaultMount string) *MountImage {
+	var image *MountImage
+	if c.Status.Mounts != nil {
+		for _, img := range c.Status.Mounts {
+			if img.Type == RootfsImage {
+				image = &img
+				break
+			}
+		}
+	}
+	if image == nil {
+		image = &MountImage{
+			Name:       fmt.Sprintf("%s-%d", c.Name, 0),
+			Type:       RootfsImage,
+			ImageName:  c.Spec.Image[0],
+			MountPoint: defaultMount,
+		}
+	}
+	return image
+}
+
+func (c *Cluster) FindImage(targetImage string) *MountImage {
+	var image *MountImage
+	if c.Status.Mounts != nil {
+		for _, img := range c.Status.Mounts {
+			if img.ImageName == targetImage {
+				image = &img
+				break
+			}
+		}
+	}
+	return image
+}
+func (c *Cluster) SetMountImage(targetMount *MountImage) {
+	if c.Status.Mounts != nil {
+		if targetMount != nil {
+			hasMount := false
+			for i, img := range c.Status.Mounts {
+				if img.Name == targetMount.Name && img.Type == targetMount.Type {
+					c.Status.Mounts[i] = *targetMount
+					hasMount = true
+					break
+				}
+			}
+			if !hasMount {
+				c.Status.Mounts = append(c.Status.Mounts, *targetMount)
+			}
+		}
+	}
+}
+
+func (c *Cluster) GetImageLabels() map[string]string {
+	var imageLabelMap map[string]string
+	for _, img := range c.Status.Mounts {
+		imageLabelMap = maps.MergeMap(imageLabelMap, img.Labels)
+	}
+	return imageLabelMap
+}
+
+func (c *Cluster) GetImageEnvs() map[string]string {
+	var imageEnvMap map[string]string
+	for _, img := range c.Status.Mounts {
+		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
+	}
+	return imageEnvMap
+}
+
+func (c *Cluster) GetAppImage(defaultImageName, defaultMount string) *MountImage {
+	var image *MountImage
+	if c.Status.Mounts != nil {
+		for _, img := range c.Status.Mounts {
+			if img.Type == AppImage && img.ImageName == defaultImageName {
+				image = &img
+				break
+			}
+		}
+	}
+	if image == nil {
+		for i, img := range c.Spec.Image {
+			if img == defaultImageName {
+				image = &MountImage{
+					Name:       fmt.Sprintf("%s-%d", c.Name, i),
+					Type:       AppImage,
+					ImageName:  defaultImageName,
+					MountPoint: defaultMount,
+				}
+			}
+		}
+	}
+	return image
+}
+func (c *Cluster) HasAppImage() bool {
+	if c.Status.Mounts != nil {
+		for _, img := range c.Status.Mounts {
+			if img.Type == AppImage {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (c *Cluster) GetRolesByIP(ip string) []string {
