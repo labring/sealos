@@ -77,7 +77,13 @@ func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
-	return applydrivers.NewDefaultApplier(cluster, nil)
+
+	return &applydrivers.Applier{
+		ClusterDesired: cluster,
+		ClusterFile:    Clusterfile,
+		ClusterCurrent: cluster,
+		RunNewImages:   nil,
+	}, nil
 }
 
 func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {

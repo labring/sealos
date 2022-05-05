@@ -165,7 +165,7 @@ func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
-			return cfg.Dump(contants.Clusterfile(cluster.Name))
+			return cfg.Dump()
 		})
 	}
 	return eg.Wait()

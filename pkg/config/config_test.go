@@ -48,7 +48,7 @@ func TestDumper_Dump(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := NewDefaultConfiguration(tt.fields.clusterName)
-			if err := c.Dump(tt.args.clusterfile); (err != nil) != tt.wantErr {
+			if err := c.Dump(); (err != nil) != tt.wantErr {
 				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

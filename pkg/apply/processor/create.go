@@ -18,8 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/checker"
 
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -81,9 +79,7 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	clusterPath := contants.Clusterfile(cluster.Name)
-	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, cluster)
+	return nil
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
@@ -123,7 +119,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 		manifest := cManifest
 		eg.Go(func() error {
 			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
-			return cfg.Dump(contants.Clusterfile(cluster.Name))
+			return cfg.Dump()
 		})
 	}
 	return eg.Wait()
