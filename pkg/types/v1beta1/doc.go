@@ -16,6 +16,6 @@
 // +k8s:protobuf-gen=package
 // +k8s:openapi-gen=false
 // +k8s:defaulter-gen=TypeMeta
-// +groupName=apps.sealyun.com
+// +groupName=apps.sealos.io
 
 package v1beta1
