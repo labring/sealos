@@ -31,8 +31,8 @@ func newAddCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Example: `
 add to default cluster: 
-	sealer add --masters x.x.x.x --nodes x.x.x.x
-	sealer add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
+	sealos add --masters x.x.x.x --nodes x.x.x.x
+	sealos add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			//return errors.New("add feature no support")
