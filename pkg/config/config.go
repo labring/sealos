@@ -25,7 +25,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/contants"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/decode"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"sigs.k8s.io/yaml"
@@ -49,7 +48,7 @@ Dump will dump the config to etc/redis-config.yaml file
 
 type Interface interface {
 	// Dump Config in Clusterfile to the cluster rootfs disk
-	Dump(clusterfile string) error
+	Dump() error
 }
 
 type Dumper struct {
@@ -69,18 +68,18 @@ func NewDefaultConfiguration(clusterName string) Interface {
 	}
 }
 
-func (c *Dumper) Dump(clusterfile string) error {
-	if clusterfile == "" && len(c.Configs) == 0 {
-		logger.Debug("clusterfile is empty!")
+func (c *Dumper) Dump() error {
+	if len(c.Configs) == 0 {
+		logger.Debug("clusterfile config is empty!")
 		return nil
 	}
-	if len(c.Configs) == 0 {
-		configs, err := decode.Configs(clusterfile)
-		if err != nil {
-			return fmt.Errorf("failed to dump config %v", err)
-		}
-		c.Configs = configs
-	}
+	//if len(c.Configs) == 0 {
+	//	configs, err := decode.Configs(clusterfile)
+	//	if err != nil {
+	//		return fmt.Errorf("failed to dump config %v", err)
+	//	}
+	//	c.Configs = configs
+	//}
 
 	if err := c.WriteFiles(); err != nil {
 		return fmt.Errorf("failed to write config files %v", err)

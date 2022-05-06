@@ -15,8 +15,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/utils/contants"
 
@@ -40,19 +38,13 @@ func newResetCmd() *cobra.Command {
 		Long:    `sealos reset --name [arg]`,
 		Example: exampleReset,
 		Args:    cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			filePath := contants.Clusterfile(resetClusterName)
 			applier, err := apply.NewApplierFromFile(filePath)
 			if err != nil {
-				logger.Error(err)
-				_ = cmd.Help()
-				os.Exit(1)
+				return err
 			}
-			if err = applier.Delete(); err != nil {
-				logger.Error(err)
-				_ = cmd.Help()
-				os.Exit(1)
-			}
+			return applier.Delete()
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info(contact)
