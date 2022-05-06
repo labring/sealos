@@ -32,8 +32,8 @@ func newDeleteCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Example: `
 delete to default cluster: 
-	sealer delete --masters x.x.x.x --nodes x.x.x.x
-	sealer delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
+	sealos delete --masters x.x.x.x --nodes x.x.x.x
+	sealos delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			applier, err := apply.NewScaleApplierFromArgs(deleteArgs, "delete")
