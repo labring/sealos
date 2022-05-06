@@ -19,7 +19,6 @@ package yaml
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -110,23 +109,6 @@ func MarshalYamlConfigs(configs ...interface{}) ([]byte, error) {
 		cfgs = append(cfgs, data)
 	}
 	return bytes.Join(cfgs, []byte("\n---\n")), nil
-}
-
-func MarshalYamlConfigsToFiles(path string, configs ...interface{}) error {
-	var cfgs [][]byte
-	for _, cfg := range configs {
-		if configs == nil {
-			continue
-		}
-		data, err := yaml.Marshal(cfg)
-		if err != nil {
-			return err
-		}
-		cfgs = append(cfgs, data)
-	}
-	yamls := bytes.Join(cfgs, []byte("\n---\n"))
-	_ = fileutil.WriteFile(path, yamls)
-	return errors.New("xxxxxx")
 }
 
 func Matcher(path string) bool {
