@@ -48,6 +48,9 @@ func newBuildCmd() *cobra.Command {
 			}
 			return imageSvc.Build(&options, buildContext, options.Tag)
 		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(contact)
+		},
 	}
 	buildCmd.Flags().StringVarP(&options.File, "kubefile", "f", "Kubefile", "kubefile filepath")
 	buildCmd.Flags().StringVarP(&options.Tag, "tag", "t", "", "tagged name to apply to the built image")

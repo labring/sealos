@@ -15,8 +15,6 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
@@ -30,18 +28,14 @@ var applyCmd = &cobra.Command{
 	Short:   "apply a kubernetes cluster",
 	Example: `sealos apply -f Clusterfile`,
 	Args:    cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		applier, err := apply.NewApplierFromFile(clusterFile)
 		if err != nil {
-			logger.Error(err)
-			_ = cmd.Help()
-			os.Exit(1)
+			return err
 		}
-		if err = applier.Apply(); err != nil {
-			logger.Error(err)
-			_ = cmd.Help()
-			os.Exit(1)
-		}
+		return applier.Apply()
+	},
+	PostRun: func(cmd *cobra.Command, args []string) {
 		logger.Info(contact)
 	},
 }

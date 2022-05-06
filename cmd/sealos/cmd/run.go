@@ -15,14 +15,11 @@
 package cmd
 
 import (
-	"os"
-
 	"github.com/labring/sealos/pkg/apply/processor"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 
@@ -72,18 +69,14 @@ func newInitCmd() *cobra.Command {
 		Short:   "Simplest way to run your kubernets HA cluster",
 		Long:    `sealos run registry.cn-qingdao.aliyuncs.com/sealos-io/kubernetes:v1.22.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			applier, err := apply.NewApplierFromArgs(args, runArgs)
 			if err != nil {
-				logger.Error(err)
-				_ = cmd.Help()
-				os.Exit(1)
+				return err
 			}
-			if err = applier.Apply(); err != nil {
-				logger.Error(err)
-				_ = cmd.Help()
-				os.Exit(1)
-			}
+			return applier.Apply()
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info(contact)
 		},
 	}
