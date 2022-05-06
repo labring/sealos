@@ -103,7 +103,7 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
-	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	hosts := append(c.MastersToDelete, c.NodesToDelete...)
 	if cluster.Status.Mounts == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
 		return nil
