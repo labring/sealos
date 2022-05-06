@@ -26,12 +26,16 @@ import (
 )
 
 type HostChecker struct {
+	IPs []string
 }
 
 func (a HostChecker) Check(cluster *v2.Cluster, phase string) error {
 	var ipList []string
 	for _, hosts := range cluster.Spec.Hosts {
 		ipList = append(ipList, hosts.IPS...)
+	}
+	if len(a.IPs) != 0 {
+		ipList = a.IPs
 	}
 	if err := checkHostnameUnique(cluster, ipList); err != nil {
 		return err
@@ -41,6 +45,9 @@ func (a HostChecker) Check(cluster *v2.Cluster, phase string) error {
 
 func NewHostChecker() Interface {
 	return &HostChecker{}
+}
+func NewIPsHostChecker(ips []string) Interface {
+	return &HostChecker{IPs: ips}
 }
 
 func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {

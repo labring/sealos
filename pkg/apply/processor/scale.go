@@ -116,7 +116,11 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) Check(cluster *v2.Cluster) error {
-	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
+	var ips []string
+	ips = append(ips, cluster.GetMaster0IP())
+	ips = append(ips, c.MastersToJoin...)
+	ips = append(ips, c.NodesToJoin...)
+	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
 	}
