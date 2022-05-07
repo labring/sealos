@@ -161,10 +161,6 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	clusterRootfsDir := contants.NewData(f.getClusterName(cluster)).Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
 
-	_, err := exec.RunBashCmd(rmRootfs)
-	if err != nil {
-		return err
-	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, IP := range ipList {
 		ip := IP

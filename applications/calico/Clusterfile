@@ -1,14 +1,14 @@
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: ClusterConfiguration
 networking:
-  podSubnet: 100.64.0.0/10
+  podSubnet: 10.160.0.0/12
 ---
 apiVersion: apps.sealyun.com/v1beta1
 kind: Config
 metadata:
   name: calico
 spec:
-  path: cni/custom-resources.yaml
+  path: manifests/calico.yaml
   data: |
     apiVersion: operator.tigera.io/v1
     kind: Installation
@@ -21,7 +21,7 @@ spec:
         ipPools:
         - blockSize: 26
           # Note: Must be the same as podCIDR
-          cidr: 100.64.0.0/10
+          cidr: 10.160.0.0/12
           encapsulation: IPIP
           natOutgoing: Enabled
           nodeSelector: all()

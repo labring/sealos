@@ -399,9 +399,9 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 		if err = v1beta3.Convert_kubeadm_JoinConfiguration_To_v1beta3_JoinConfiguration(&k.JoinConfiguration, &v1beta3JoinConfiguration, nil); err != nil {
 			return err
 		}
-		v1beta3InitConfiguration.APIVersion = KubeadmV1beta2
-		v1beta3ClusterConfiguration.APIVersion = KubeadmV1beta2
-		v1beta3JoinConfiguration.APIVersion = KubeadmV1beta2
+		v1beta3InitConfiguration.APIVersion = KubeadmV1beta3
+		v1beta3ClusterConfiguration.APIVersion = KubeadmV1beta3
+		v1beta3JoinConfiguration.APIVersion = KubeadmV1beta3
 		v1beta3InitConfiguration.Kind = "InitConfiguration"
 		v1beta3ClusterConfiguration.Kind = "ClusterConfiguration"
 		v1beta3JoinConfiguration.Kind = "JoinConfiguration"
