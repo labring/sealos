@@ -10,9 +10,20 @@ package buildahsdk
 import (
 	"context"
 	"fmt"
+	"github.com/containers/buildah/define"
+	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/unshare"
+	"github.com/pkg/errors"
+	"os"
+	"time"
+
 	"github.com/labring/sealos/pkg/image/types"
 
 	"github.com/containers/buildah"
+	is "github.com/containers/image/v5/storage"
+	ct "github.com/containers/image/v5/types"
+	encconfig "github.com/containers/ocicrypt/config"
+	enchelpers "github.com/containers/ocicrypt/helpers"
 )
 
 type RegistryService struct {
@@ -27,7 +38,34 @@ func (*RegistryService) Logout(domain string) error {
 }
 
 func (*RegistryService) Pull(images ...string) error {
-	opts := buildah.PullOptions{}
+	decConfig, err := getDecryptConfig(nil)
+	if err != nil {
+		return errors.Wrapf(err, "unable to obtain decrypt config")
+	}
+
+	policy, ok := define.PolicyMap["missing"]
+	if !ok {
+		return fmt.Errorf("unsupported pull policy %q", "missing")
+	}
+
+	store, err := getStore()
+	if err != nil {
+		return err
+	}
+
+	opts := buildah.PullOptions{
+		SignaturePolicyPath: "",
+		Store:               store,
+		SystemContext:       &ct.SystemContext{},
+		BlobDirectory:       "",
+		AllTags:             false,
+		ReportWriter:        os.Stderr,
+		RemoveSignatures:    false,
+		MaxRetries:          3,
+		RetryDelay:          2 * time.Second,
+		OciDecryptConfig:    decConfig,
+		PullPolicy:          policy,
+	}
 	for _, image := range images {
 		imageId, err := buildah.Pull(context.Background(), image, opts)
 		if err != nil {
@@ -45,4 +83,29 @@ func (*RegistryService) Push(image string) error {
 
 func NewRegistryService() (types.RegistryService, error) {
 	return &RegistryService{}, nil
+}
+
+func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
+	decConfig := &encconfig.DecryptConfig{}
+	if len(decryptionKeys) > 0 {
+		// decryption
+		dcc, err := enchelpers.CreateCryptoConfig([]string{}, decryptionKeys)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid decryption keys")
+		}
+		cc := encconfig.CombineCryptoConfigs([]encconfig.CryptoConfig{dcc})
+		decConfig = cc.DecryptConfig
+	}
+
+	return decConfig, nil
+}
+
+func getStore() (storage.Store, error) {
+	options, err := storage.DefaultStoreOptions(unshare.IsRootless(), unshare.GetRootlessUID())
+
+	store, err := storage.GetStore(options)
+	if store != nil {
+		is.Transport.SetStore(store)
+	}
+	return store, err
 }
