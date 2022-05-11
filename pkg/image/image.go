@@ -18,6 +18,7 @@ package image
 
 import (
 	"errors"
+	"github.com/labring/sealos/pkg/image/buildahsdk"
 
 	"github.com/labring/sealos/pkg/image/binary"
 	"github.com/labring/sealos/pkg/image/types"
@@ -31,10 +32,11 @@ func NewClusterService() (types.ClusterService, error) {
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	if err := checkBuildah(); err == nil {
-		return binary.NewRegistryService()
-	}
-	return nil, errors.New("buildah not found in system path")
+	//if err := checkBuildah(); err == nil {
+	//	return binary.NewRegistryService()
+	//}
+	return buildahsdk.NewRegistryService()
+	//return nil, errors.New("buildah not found in system path")
 }
 
 func NewImageService() (types.Service, error) {
