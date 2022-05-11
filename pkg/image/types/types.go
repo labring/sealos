@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/buildah/pkg/cli"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -108,4 +109,121 @@ type ImageInfo struct {
 	CreatedAtRaw time.Time `json:"createdatraw"`
 	ReadOnly     bool      `json:"readonly"`
 	History      []string  `json:"history"`
+}
+
+type JSONImage struct {
+	ID           string    `json:"id"`
+	Names        []string  `json:"names"`
+	Digest       string    `json:"digest"`
+	CreatedAt    string    `json:"createdat"`
+	Size         string    `json:"size"`
+	Created      int64     `json:"created"`
+	CreatedAtRaw time.Time `json:"createdatraw"`
+	ReadOnly     bool      `json:"readonly"`
+	History      []string  `json:"history"`
+}
+
+type ImageResults struct {
+	Names []string
+	ImageOptions
+	Filter []string
+}
+
+type InspectResults struct {
+	Format      string
+	InspectType string
+}
+
+type ImageOptions struct {
+	All       bool
+	Digests   bool
+	Format    string
+	JSON      bool
+	NoHeading bool
+	Truncate  bool
+	Quiet     bool
+	ReadOnly  bool
+	History   bool
+}
+type ImageOutputParams struct {
+	Tag          string
+	ID           string
+	Name         string
+	Digest       string
+	Created      int64
+	CreatedAt    string
+	Size         string
+	CreatedAtRaw time.Time
+	ReadOnly     bool
+	History      string
+}
+type PullOptions struct {
+	AllTags          bool
+	Authfile         string
+	BlobCache        string
+	CertDir          string
+	Creds            string
+	SignaturePolicy  string
+	Quiet            bool
+	RemoveSignatures bool
+	TLSVerify        bool
+	DecryptionKeys   []string
+	PullPolicy       string
+	OS               string
+	Arch             string
+	Platform         []string
+	Variant          string
+}
+
+type GlobalBuildahFlags struct {
+	Debug                      bool
+	LogLevel                   string
+	Root                       string
+	RunRoot                    string
+	StorageDriver              string
+	RegistriesConf             string
+	RegistriesConfDir          string
+	DefaultMountsFile          string
+	StorageOpts                []string
+	UserNSUID                  []string
+	UserNSGID                  []string
+	CPUProfile                 string
+	MemoryProfile              string
+	UserShortNameAliasConfPath string
+	CgroupManager              string
+}
+
+type PushOptions struct {
+	All                bool
+	Authfile           string
+	BlobCache          string
+	CertDir            string
+	Creds              string
+	Digestfile         string
+	DisableCompression bool
+	Format             string
+	CompressionFormat  string
+	CompressionLevel   int
+	Rm                 bool
+	Quiet              bool
+	RemoveSignatures   bool
+	SignaturePolicy    string
+	SignBy             string
+	TLSVerify          bool
+	EncryptionKeys     []string
+	EncryptLayers      []int
+}
+
+type RmiOptions struct {
+	All   bool
+	Prune bool
+	Force bool
+}
+
+type BuildahBuildOptions struct {
+	*cli.LayerResults
+	*cli.BudResults
+	*cli.UserNSResults
+	*cli.FromAndBudResults
+	*cli.NameSpaceResults
 }

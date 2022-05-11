@@ -83,11 +83,11 @@ func CompileTest(packagePath string, args ...string) (compiledPath string, err e
 GetAndCompileTest is identical to CompileTest but `go get` the package before compiling tests.
 */
 func GetAndCompileTest(packagePath string, args ...string) (compiledPath string, err error) {
-	if err := getForTest(build.Default.GOPATH, packagePath, nil); err != nil {
+	if err := getForTest(build.Default.GOPATH, packagePath, []string{"GO111MODULE=off"}); err != nil {
 		return "", err
 	}
 
-	return doCompileTest(build.Default.GOPATH, packagePath, nil, args...)
+	return doCompileTest(build.Default.GOPATH, packagePath, []string{"GO111MODULE=off"}, args...)
 }
 
 /*
@@ -101,11 +101,11 @@ func CompileTestWithEnvironment(packagePath string, env []string, args ...string
 GetAndCompileTestWithEnvironment is identical to GetAndCompileTest but allows you to specify env vars to be set at build time.
 */
 func GetAndCompileTestWithEnvironment(packagePath string, env []string, args ...string) (compiledPath string, err error) {
-	if err := getForTest(build.Default.GOPATH, packagePath, env); err != nil {
+	if err := getForTest(build.Default.GOPATH, packagePath, append(env, "GO111MODULE=off")); err != nil {
 		return "", err
 	}
 
-	return doCompileTest(build.Default.GOPATH, packagePath, env, args...)
+	return doCompileTest(build.Default.GOPATH, packagePath, append(env, "GO111MODULE=off"), args...)
 }
 
 /*
@@ -119,11 +119,11 @@ func CompileTestIn(gopath string, packagePath string, args ...string) (compiledP
 GetAndCompileTestIn is identical to GetAndCompileTest but allows you to specify a custom $GOPATH (the first argument).
 */
 func GetAndCompileTestIn(gopath string, packagePath string, args ...string) (compiledPath string, err error) {
-	if err := getForTest(gopath, packagePath, nil); err != nil {
+	if err := getForTest(gopath, packagePath, []string{"GO111MODULE=off"}); err != nil {
 		return "", err
 	}
 
-	return doCompileTest(gopath, packagePath, nil, args...)
+	return doCompileTest(gopath, packagePath, []string{"GO111MODULE=off"}, args...)
 }
 
 func isLocalPackage(packagePath string) bool {

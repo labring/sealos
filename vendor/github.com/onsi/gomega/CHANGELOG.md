@@ -1,3 +1,19 @@
+## 1.19.0
+
+## Features
+- New [`HaveEach`](https://onsi.github.io/gomega/#haveeachelement-interface) matcher to ensure that each and every element in an `array`, `slice`, or `map` satisfies the passed in matcher. (#523) [9fc2ae2] (#524) [c8ba582]
+- Users can now wrap the `Gomega` interface to implement custom behavior on each assertion. (#521) [1f2e714]
+- [`ContainElement`](https://onsi.github.io/gomega/#containelementelement-interface) now accepts an additional pointer argument.  Elements that satisfy the matcher are stored in the pointer enabling developers to easily add subsequent, more detailed, assertions against the matching element. (#527) [1a4e27f]
+
+## Fixes
+- update RELEASING instructions to match ginkgo [0917cde]
+- Bump github.com/onsi/ginkgo/v2 from 2.0.0 to 2.1.3 (#519) [49ab4b0]
+- Fix CVE-2021-38561 (#534) [f1b4456]
+- Fix max number of samples in experiments on non-64-bit systems. (#528) [1c84497]
+- Remove dependency on ginkgo v1.16.4 (#530) [4dea8d5]
+- Fix for Go 1.18 (#532) [56d2a29]
+- Document precendence of timeouts (#533) [b607941]
+
 ## 1.18.1
 
 ## Fixes
