@@ -1,29 +1,37 @@
 /*
-@Date: 2022/5/11 11:44
-@Author: Yao
-@File : registry
-@Software: GoLand
-@Description: 这是一个描述
+Copyright 2022 191557539@qq.com.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
-package buildahsdk
+package registry
 
 import (
 	"context"
 	"fmt"
-	"github.com/containers/buildah/define"
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
-	"github.com/pkg/errors"
 	"os"
 	"time"
 
 	"github.com/labring/sealos/pkg/image/types"
 
 	"github.com/containers/buildah"
+	"github.com/containers/buildah/define"
 	is "github.com/containers/image/v5/storage"
 	ct "github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
+	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/unshare"
+	"github.com/pkg/errors"
 )
 
 type RegistryService struct {
