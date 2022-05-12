@@ -2,7 +2,7 @@ name: CI
 
 env:
   # Common versions
-  GO_VERSION: '1.16'
+  GO_VERSION: '1.17'
 
 on:
   push:
@@ -48,6 +48,9 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Install libgpg-dev
+        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
+
       - name: Run Linter
         run: make lint
 
@@ -62,6 +65,9 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Install libgpg-dev
+        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
@@ -72,18 +78,18 @@ jobs:
         with:
           name: sealos-amd64
           path: dist/sealos_linux_amd64/sealos
-      - name: Save build binaries linux-arm64
-        uses: actions/upload-artifact@v2
-        with:
-          name: sealos-arm64
-          path: dist/sealos_linux_arm64/sealos
+      #      - name: Save build binaries linux-arm64
+      #        uses: actions/upload-artifact@v2
+      #        with:
+      #          name: sealos-arm64
+      #          path: dist/sealos_linux_arm64/sealos
       - name: Save build binaries linux-amd64 sealctl
         uses: actions/upload-artifact@v2
         with:
           name: sealctl-amd64
           path: dist/sealctl_linux_amd64/sealctl
-      - name: Save build binaries linux-arm64
-        uses: actions/upload-artifact@v2
-        with:
-          name: sealctl-arm64
-          path: dist/sealctl_linux_arm64/sealctl
+#      - name: Save build binaries linux-arm64
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: sealctl-arm64
+#          path: dist/sealctl_linux_arm64/sealctl

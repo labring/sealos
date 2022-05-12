@@ -15,9 +15,13 @@
 package main
 
 import (
+	"github.com/containers/buildah"
 	"github.com/labring/sealos/cmd/sealos/cmd"
 )
 
 func main() {
+	if buildah.InitReexec() {
+		return
+	}
 	cmd.Execute()
 }

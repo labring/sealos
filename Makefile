@@ -30,7 +30,7 @@ install-golint: ## check license if not exist install go-lint tools
 	$(call go-get-tool,$(GOLINT_BIN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0)
 
 lint: install-golint ## Run go lint against code.
-	$(GOLINT_BIN) run -c .golangci.yml -v ./...
+	$(GOLINT_BIN) run --build-tags=musl -c .golangci.yml -v ./...
 
 default:  build
 

@@ -7,7 +7,7 @@ before:
     - go generate ./...
 builds:
   - env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
     main: ./cmd/sealos
     id: sealos
     binary: sealos
@@ -15,12 +15,12 @@ builds:
       - linux
     goarch:
       - amd64
-      - arm64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+
   - env:
       - CGO_ENABLED=0
     main: ./cmd/sealctl
