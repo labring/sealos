@@ -5,6 +5,8 @@ before:
     - go mod download
     # you may remove this if you don't need go generate
     - go generate ./...
+    - sudo apt update
+    - sudo apt install -y libgpgme-dev libdevmapper-dev
 builds:
   - env:
       - CGO_ENABLED=1
@@ -13,8 +15,6 @@ builds:
     binary: sealos
     goos:
       - linux
-    goarch:
-      - amd64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
@@ -28,9 +28,6 @@ builds:
     binary: sealctl
     goos:
       - linux
-    goarch:
-      - amd64
-      - arm64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
