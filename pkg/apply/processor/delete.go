@@ -32,6 +32,8 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
+var ForceDelete bool
+
 type DeleteProcessor struct {
 	ClusterManager types.ClusterService
 	ImageManager   types.Service

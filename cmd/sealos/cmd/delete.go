@@ -16,11 +16,11 @@ package cmd
 
 import (
 	"errors"
+	"github.com/labring/sealos/pkg/apply/processor"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/pkg/apply"
-	"github.com/labring/sealos/pkg/runtime"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +36,9 @@ delete to default cluster:
 	sealos delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := processor.ConfirmDeleteNodes(); err != nil {
+				return err
+			}
 			applier, err := apply.NewScaleApplierFromArgs(deleteArgs, "delete")
 			if err != nil {
 				return err
@@ -56,7 +59,7 @@ delete to default cluster:
 	deleteCmd.Flags().StringVarP(&deleteArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
 	deleteCmd.Flags().StringVarP(&deleteArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
 	deleteCmd.Flags().StringVarP(&deleteArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
-	deleteCmd.Flags().BoolVar(&runtime.ForceDelete, "force", false, "We also can input an --force flag to delete cluster by force")
+	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "We also can input an --force flag to delete cluster by force")
 	return deleteCmd
 }
 

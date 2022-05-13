@@ -18,11 +18,9 @@ package runtime
 
 import (
 	"context"
-	e "errors"
 	"fmt"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
@@ -31,25 +29,10 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var ForceDelete bool
-
 const (
 	KUBECONTROLLERCONFIGFILE = "/etc/kubernetes/controller-manager.conf"
 	KUBESCHEDULERCONFIGFILE  = "/etc/kubernetes/scheduler.conf"
 )
-
-func (k *KubeadmRuntime) confirmDeleteNodes() error {
-	if !ForceDelete {
-		prompt := "are you sure to delete these nodes?"
-		cancel := "you have canceled to delete these nodes !"
-		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
-			return err
-		} else if !pass {
-			return e.New(cancel)
-		}
-	}
-	return nil
-}
 
 func (k *KubeadmRuntime) pipeline(name string, pipeline []func() error) error {
 	for _, f := range pipeline {
