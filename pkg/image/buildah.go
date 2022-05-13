@@ -22,15 +22,17 @@ import (
 	"github.com/pkg/errors"
 )
 
-func checkBuildah() error {
-	_, ok := exec.CheckCmdIsExist("buildah")
-	if ok {
-		if err := buildahPolicySync(); err != nil {
-			return err
-		}
-		return buildahStorageSync()
+func initBuildah() (bool, error) {
+	err := buildahPolicySync()
+	if err != nil {
+		return false, errors.New("create policy.json fail")
 	}
-	return errors.New("buildah not found in host")
+	err = buildahStorageSync()
+	if err != nil {
+		return false, errors.New("create storage config fail")
+	}
+	_, ok := exec.CheckCmdIsExist("buildah")
+	return ok, nil
 }
 
 func buildahPolicySync() error {
