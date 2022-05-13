@@ -19,17 +19,20 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/labring/sealos/pkg/image/types"
+
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/common/pkg/config"
 	"github.com/containers/common/pkg/umask"
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
-	"github.com/pkg/errors"
-
 	is "github.com/containers/image/v5/storage"
 	ct "github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
+	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/unshare"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
@@ -47,25 +50,65 @@ func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error)
 	return decConfig, nil
 }
 
-func getStore() (storage.Store, error) {
-	options, _ := storage.DefaultStoreOptions(unshare.IsRootless(), unshare.GetRootlessUID())
-	options.GraphRoot = "/var/lib/containers/storage"
-	options.RunRoot = "/run/containers/storage"
+func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error) {
+	options, err := storage.DefaultStoreOptions(unshare.IsRootless(), unshare.GetRootlessUID())
+	if err != nil {
+		return nil, err
+	}
+
+	options.GraphRoot = globalFlagResults.Root
+	options.RunRoot = globalFlagResults.RunRoot
 
 	if err := setXDGRuntimeDir(); err != nil {
 		return nil, err
 	}
 
-	//options.GraphDriverName = options.GraphDriverName
+	options.GraphDriverName = globalFlagResults.StorageDriver
 	// If any options setup in config, these should be dropped if user overrode the driver
 	options.GraphDriverOptions = []string{}
+	options.GraphDriverOptions = globalFlagResults.StorageOpts
 
+	// Do not allow to mount a graphdriver that is not vfs if we are creating the userns as part
+	// of the mount command.
+	// Differently, allow the mount if we are already in a userns, as the mount point will still
+	// be accessible once "buildah mount" exits.
 	if os.Geteuid() != 0 && options.GraphDriverName != "vfs" {
 		return nil, errors.Errorf("cannot mount using driver %s in rootless mode. You need to run it in a `buildah unshare` session", options.GraphDriverName)
 	}
 
-	umask.Check()
+	if len(globalFlagResults.UserNSUID) > 0 {
+		uopts := globalFlagResults.UserNSUID
+		gopts := globalFlagResults.UserNSGID
 
+		if len(gopts) == 0 {
+			gopts = uopts
+		}
+
+		uidmap, gidmap, err := unshare.ParseIDMappings(uopts, gopts)
+		if err != nil {
+			return nil, err
+		}
+		options.UIDMap = uidmap
+		options.GIDMap = gidmap
+	} else {
+		if len(globalFlagResults.UserNSGID) > 0 {
+			return nil, errors.New("option --userns-gid-map can not be used without --userns-uid-map")
+		}
+	}
+
+	// If a subcommand has the flags, check if they are set; if so, override the global values
+	uopts := globalFlagResults.UserNSUID
+	gopts := globalFlagResults.UserNSGID
+	if len(gopts) == 0 {
+		gopts = uopts
+	}
+	uidmap, gidmap, err := unshare.ParseIDMappings(uopts, gopts)
+	if err != nil {
+		return nil, err
+	}
+	options.UIDMap = uidmap
+	options.GIDMap = gidmap
+	umask.Check()
 	store, err := storage.GetStore(options)
 	if store != nil {
 		is.Transport.SetStore(store)
@@ -120,14 +163,6 @@ func SystemContextFromFlagSet(opts pullOptions) (*ct.SystemContext, error) {
 	return ctx, nil
 }
 
-/*
-func getAuthFile(authfile string) string {
-	if authfile != "" {
-		return authfile
-	}
-	return os.Getenv("REGISTRY_AUTH_FILE")
-}*/
-
 // setXDGRuntimeDir sets XDG_RUNTIME_DIR when if it is unset under rootless
 func setXDGRuntimeDir() error {
 	if unshare.IsRootless() && os.Getenv("XDG_RUNTIME_DIR") == "" {
@@ -140,4 +175,42 @@ func setXDGRuntimeDir() error {
 		}
 	}
 	return nil
+}
+
+func newGlobalOptions() *types.GlobalBuildahFlags {
+	var (
+		defaultStoreDriverOptions []string
+	)
+	storageOptions, err := storage.DefaultStoreOptions(false, 0)
+	if err != nil {
+		logrus.Errorf(err.Error())
+		os.Exit(1)
+	}
+	if len(storageOptions.GraphDriverOptions) > 0 {
+		optionSlice := storageOptions.GraphDriverOptions[:]
+		defaultStoreDriverOptions = optionSlice
+	}
+	containerConfig, err := config.Default()
+	if err != nil {
+		logrus.Errorf(err.Error())
+		os.Exit(1)
+	}
+	containerConfig.CheckCgroupsAndAdjustConfig()
+	return &types.GlobalBuildahFlags{
+		Debug:                      true,
+		LogLevel:                   "warn",
+		Root:                       storageOptions.GraphRoot,
+		RunRoot:                    storageOptions.RunRoot,
+		StorageDriver:              storageOptions.GraphDriverName,
+		RegistriesConf:             "",
+		RegistriesConfDir:          "",
+		DefaultMountsFile:          "",
+		StorageOpts:                defaultStoreDriverOptions,
+		UserNSUID:                  []string{},
+		UserNSGID:                  []string{},
+		CPUProfile:                 "",
+		MemoryProfile:              "",
+		UserShortNameAliasConfPath: "",
+		CgroupManager:              containerConfig.Engine.CgroupManager,
+	}
 }
