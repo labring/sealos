@@ -82,7 +82,7 @@ jobs:
 
       - name: Copy Out Binarys
         run: |
-          docker run -d --name sealos --rm sealos:latest bash
+          docker run -itd --name sealos --rm sealos:latest bash
           docker cp sealos:/work/dist  .
 
       - name: Save build sealos binaries linux-amd64
