@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/labring/sealos/pkg/checker"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -93,7 +94,7 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 		}
 	}
 	if !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("not support only run not rootfs images in this cluster at create processor")
+		return errors.New("can't apply ApplicationImage, kubernetes cluster not found, need to run a BaseImage")
 	}
 	return nil
 }
