@@ -21,6 +21,7 @@ import (
 
 	"github.com/labring/sealos/pkg/image/binary"
 	buildah_image "github.com/labring/sealos/pkg/image/buildah/image"
+	"github.com/labring/sealos/pkg/image/buildah/registry"
 	"github.com/labring/sealos/pkg/image/types"
 )
 
@@ -35,7 +36,15 @@ func NewRegistryService() (types.RegistryService, error) {
 	if err := checkBuildah(); err == nil {
 		return binary.NewRegistryService()
 	}
-	return nil, errors.New("buildah not found in system path")
+	err := buildahPolicySync()
+	if err != nil {
+		return nil, errors.New("create policy.json fail")
+	}
+	err = buildahStorageSync()
+	if err != nil {
+		return nil, errors.New("create storagePath fail")
+	}
+	return registry.NewRegistryService()
 }
 
 func NewImageService() (types.Service, error) {
