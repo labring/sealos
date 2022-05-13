@@ -79,7 +79,6 @@ jobs:
           load: true
           tags: sealos:latest
 
-
       - name: Copy Out Binarys
         run: |
           docker run -itd --name sealos --rm sealos:latest bash

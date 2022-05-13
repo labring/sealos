@@ -20,7 +20,7 @@ ARG TARGETARCH
 WORKDIR /work
 COPY . /work
 # in china using this
-# RUN mv /work/sources.list /etc/apt
+# RUN mv /work/.github/sources.list /etc/apt
 RUN dpkg --add-architecture arm64 &&  \
       apt update &&  \
       apt install -y gcc-aarch64-linux-gnu && \
