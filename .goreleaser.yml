@@ -1,20 +1,57 @@
 project_name: sealos
+#gomod:
+#  # Proxy a module from proxy.golang.org, making the builds verifiable.
+#  # This will only be effective if running against a tag. Snapshots will ignore this setting.
+#  # Notice: for this to work your `build.main` must be a package, not a `.go` file.
+#  #
+#  # Default is false.
+#  proxy: true
+#
+#  # If proxy is true, use these environment variables when running `go mod` commands (namely, `go mod tidy`).
+#  # Defaults to `os.Environ()`.
+#  env:
+#    - GOPROXY=https://goproxy.cn
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
-    - go mod download
-    # you may remove this if you don't need go generate
+    #-  go mod download
     - go generate ./...
-    - sudo apt update
-    - sudo apt install -y libgpgme-dev libdevmapper-dev
 builds:
   - env:
       - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CC_FOR_TARGET=gcc-aarch64-linux-gnu
+      - PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig/
     main: ./cmd/sealos
-    id: sealos
+    id: sealos-arm64
+    binary: sealos
+    hooks:
+      pre: apt install -y libgpgme-dev:arm64 libdevmapper-dev:arm64
+    goos:
+      - linux
+    goarch:
+      - arm64
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
+  - env:
+      - CGO_ENABLED=1
+      - CC=x86_64-linux-gnu-gcc
+      - CC_FOR_TARGET=gcc-x86_64-linux-gnu
+      - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig/
+    main: ./cmd/sealos
+    id: sealos-amd64
+    hooks:
+      pre: apt install -y libgpgme-dev libdevmapper-dev
     binary: sealos
     goos:
       - linux
+    goarch:
+      - amd64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}

@@ -69,33 +69,42 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build and push
+      - name: Build in Docker
         uses: docker/build-push-action@v2
         with:
           context: ./
           file: ./Dockerfile
           builder: ${{ steps.buildx.outputs.name }}
           push: false
-#      - name: Save build binaries linux-amd64
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: sealos-amd64
-#          path: dist/sealos_linux_amd64/sealos
-#
-#      - name: cross-arm64
-#        run: docker run --rm -v $(pwd):/workdir -e CROSS_TRIPLE=aarch64-linux-gnu multiarch/crossbuild make build
-#      #      - name: Save build binaries linux-arm64
-#      #        uses: actions/upload-artifact@v2
-#      #        with:
-#      #          name: sealos-arm64
-#      #          path: dist/sealos_linux_arm64/sealos
-#      - name: Save build binaries linux-amd64 sealctl
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: sealctl-amd64
-#          path: dist/sealctl_linux_amd64/sealctl
-#      - name: Save build binaries linux-arm64
-#        uses: actions/upload-artifact@v2
-#        with:
-#          name: sealctl-arm64
-#          path: dist/sealctl_linux_arm64/sealctl
+          load: true
+          tags: sealos:latest
+
+
+      - name: Copy Out Binarys
+        run: |
+          docker run -d --name sealos --rm sealos:latest bash
+          docker cp sealos:/work/dist  .
+
+      - name: Save build sealos binaries linux-amd64
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealos-amd64
+          path: dist/sealos-amd64_linux_amd64/sealos
+
+      - name: Save build sealos binaries linux-arm64
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealos-arm64
+          path: dist/sealos-arm64_linux_arm64/sealos
+
+      - name: Save build binaries linux-amd64 sealctl
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealctl-amd64
+          path: dist/sealctl_linux_amd64/sealctl
+
+      - name: Save build binaries linux-arm64 sealctl
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealctl-arm64
+          path: dist/sealctl_linux_arm64/sealctl
