@@ -72,6 +72,7 @@ func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error
 	// of the mount command.
 	// Differently, allow the mount if we are already in a userns, as the mount point will still
 	// be accessible once "buildah mount" exits.
+
 	if os.Geteuid() != 0 && options.GraphDriverName != "vfs" {
 		return nil, errors.Errorf("cannot mount using driver %s in rootless mode. You need to run it in a `buildah unshare` session", options.GraphDriverName)
 	}
