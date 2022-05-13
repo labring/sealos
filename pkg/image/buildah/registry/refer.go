@@ -25,14 +25,15 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/common/pkg/umask"
+	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/unshare"
+	"github.com/pkg/errors"
 	is "github.com/containers/image/v5/storage"
 	ct "github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
-	"github.com/containers/storage"
-	"github.com/containers/storage/pkg/unshare"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 )
 
 func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
@@ -72,6 +73,7 @@ func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error
 	// of the mount command.
 	// Differently, allow the mount if we are already in a userns, as the mount point will still
 	// be accessible once "buildah mount" exits.
+
 	if os.Geteuid() != 0 && options.GraphDriverName != "vfs" {
 		return nil, errors.Errorf("cannot mount using driver %s in rootless mode. You need to run it in a `buildah unshare` session", options.GraphDriverName)
 	}
@@ -109,6 +111,7 @@ func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error
 	options.UIDMap = uidmap
 	options.GIDMap = gidmap
 	umask.Check()
+
 	store, err := storage.GetStore(options)
 	if store != nil {
 		is.Transport.SetStore(store)
@@ -163,6 +166,14 @@ func SystemContextFromFlagSet(opts pullOptions) (*ct.SystemContext, error) {
 	return ctx, nil
 }
 
+/*
+func getAuthFile(authfile string) string {
+	if authfile != "" {
+		return authfile
+	}
+	return os.Getenv("REGISTRY_AUTH_FILE")
+}*/
+
 // setXDGRuntimeDir sets XDG_RUNTIME_DIR when if it is unset under rootless
 func setXDGRuntimeDir() error {
 	if unshare.IsRootless() && os.Getenv("XDG_RUNTIME_DIR") == "" {
@@ -214,3 +225,4 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 		CgroupManager:              containerConfig.Engine.CgroupManager,
 	}
 }
+
