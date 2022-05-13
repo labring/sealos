@@ -108,7 +108,9 @@ func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error
 	}
 	options.UIDMap = uidmap
 	options.GIDMap = gidmap
+
 	umask.Check()
+
 	store, err := storage.GetStore(options)
 	if store != nil {
 		is.Transport.SetStore(store)
@@ -162,6 +164,14 @@ func SystemContextFromFlagSet(opts pullOptions) (*ct.SystemContext, error) {
 	ctx.BigFilesTemporaryDir = parse.GetTempDir()
 	return ctx, nil
 }
+
+/*
+func getAuthFile(authfile string) string {
+	if authfile != "" {
+		return authfile
+	}
+	return os.Getenv("REGISTRY_AUTH_FILE")
+}*/
 
 // setXDGRuntimeDir sets XDG_RUNTIME_DIR when if it is unset under rootless
 func setXDGRuntimeDir() error {

@@ -1,6 +1,16 @@
 Dirs=$(shell ls)
 COMMIT_ID ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
 
+# only support linux
+OS=linux
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+CGO_ENABLED=0
+endif
+ifeq ($(UNAME_S),Linux)
+CGO_ENABLED=1
+endif
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifneq (,$(shell go env GOBIN))
 GOBIN=$(shell go env GOPATH)/bin
@@ -25,6 +35,7 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
+
 GOLINT_BIN = $(shell pwd)/bin/golangci-lint
 install-golint: ## check license if not exist install go-lint tools
 	$(call go-get-tool,$(GOLINT_BIN),github.com/golangci/golangci-lint/cmd/golangci-lint@v1.39.0)
@@ -34,14 +45,25 @@ lint: install-golint ## Run go lint against code.
 
 default:  build
 
+build: build-amd64  build-arm64
+
+build-amd64:
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=amd64 go build  -o $(shell pwd)/bin/${OS}_amd64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
+	CGO_ENABLED=0 GOOS=${OS} GOARCH=amd64 go build  -o $(shell pwd)/bin/${OS}_amd64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
+
+build-arm64:
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
+	CGO_ENABLED=0 GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
+
 
 GORELEASER_BIN = $(shell pwd)/bin/goreleaser
 install-goreleaser: ## check license if not exist install go-lint tools
 	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 
-build: SHELL:=/bin/bash
-build: install-goreleaser clean ## build binaries by default
+
+build-pack: SHELL:=/bin/bash
+build-pack: install-goreleaser clean ## build binaries by default
 	@echo "build sealos bin"
 	$(GORELEASER_BIN) build --snapshot --rm-dist  --timeout=1h
 

@@ -26,29 +26,21 @@ import (
 )
 
 func NewClusterService() (types.ClusterService, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewClusterService()
 	}
 	return nil, errors.New("buildah not found in system path")
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewRegistryService()
-	}
-	err := buildahPolicySync()
-	if err != nil {
-		return nil, errors.New("create policy.json fail")
-	}
-	err = buildahStorageSync()
-	if err != nil {
-		return nil, errors.New("create storagePath fail")
 	}
 	return registry.NewRegistryService()
 }
 
 func NewImageService() (types.Service, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewImageService()
 	}
 	return buildah_image.NewImageService()
