@@ -16,9 +16,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
-
 	"github.com/labring/sealos/pkg/checker"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/rand"
 	"golang.org/x/sync/errgroup"
@@ -78,6 +79,21 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
+	}
+	ociList, err := c.ImageManager.Inspect(cluster.Spec.Image...)
+	if err != nil {
+		return err
+	}
+	imageTypes := sets.NewString()
+	for _, oci := range ociList {
+		if oci.Config.Labels != nil {
+			imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+		} else {
+			imageTypes.Insert(string(v2.AppImage))
+		}
+	}
+	if !imageTypes.Has(string(v2.RootfsImage)) {
+		return errors.New("not support only run not rootfs images in this cluster at create processor")
 	}
 	return nil
 }
