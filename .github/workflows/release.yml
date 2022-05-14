@@ -47,8 +47,7 @@ jobs:
           push: false
           load: true
           tags: sealos:latest
-          build-args:
-            - ACTION=build-release
+          build-args: ACTION=build-release
       # https://github.com/docker/build-push-action
 
       - name: Build binareies to oss
