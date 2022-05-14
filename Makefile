@@ -61,11 +61,11 @@ install-goreleaser: ## check license if not exist install go-lint tools
 	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 
-
-build-pack: SHELL:=/bin/bash
-build-pack: install-goreleaser clean ## build binaries by default
+build-release: SHELL:=/bin/bash
+build-release: install-goreleaser clean ## build binaries by default
 	@echo "build sealos bin"
-	$(GORELEASER_BIN) build --snapshot --rm-dist  --timeout=1h
+	$(GORELEASER_BIN) release --timeout=1h  --release-notes=hack/release/Note.md
+
 
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

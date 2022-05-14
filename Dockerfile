@@ -16,6 +16,7 @@ FROM --platform=$BUILDPLATFORM golang:1.17-buster as builder
 ENV GOPROXY=https://goproxy.cn
 
 ARG TARGETARCH
+ARG ACTION=build-pack
 
 WORKDIR /work
 COPY . /work
@@ -28,4 +29,4 @@ RUN dpkg --add-architecture arm64 &&  \
       apt install -y libgpgme-dev libdevmapper-dev && \
       apt install -y  libbtrfs-dev:arm64  btrfs-tools:arm64 && \
       apt install -y libgpgme-dev:arm64 libdevmapper-dev:arm64 && \
-      make build-pack
+      make ${ACTION}
