@@ -124,18 +124,19 @@ func (c *Cluster) FindImage(targetImage string) *MountImage {
 	return image
 }
 func (c *Cluster) SetMountImage(targetMount *MountImage) {
+	tgMount := targetMount.DeepCopy()
 	if c.Status.Mounts != nil {
-		if targetMount != nil {
+		if tgMount != nil {
 			hasMount := false
 			for i, img := range c.Status.Mounts {
-				if img.Name == targetMount.Name && img.Type == targetMount.Type {
-					c.Status.Mounts[i] = *targetMount
+				if img.Name == tgMount.Name && img.Type == tgMount.Type {
+					c.Status.Mounts[i] = *tgMount
 					hasMount = true
 					break
 				}
 			}
 			if !hasMount {
-				c.Status.Mounts = append(c.Status.Mounts, *targetMount)
+				c.Status.Mounts = append(c.Status.Mounts, *tgMount)
 			}
 		}
 	}

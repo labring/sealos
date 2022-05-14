@@ -17,10 +17,12 @@ package processor
 import (
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/strings"
+	"github.com/pkg/errors"
 )
 
 type Interface interface {
@@ -81,6 +83,19 @@ func OCIToImageMount(mount *v2.MountImage, imgService types.Service) error {
 			imageType = v2.ImageType(mount.Labels[contants.ImageTypeKey])
 		}
 		mount.Type = imageType
+	}
+	return nil
+}
+
+func ConfirmDeleteNodes() error {
+	if !ForceDelete {
+		prompt := "are you sure to delete these nodes?"
+		cancel := "you have canceled to delete these nodes !"
+		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
+			return err
+		} else if !pass {
+			return errors.New(cancel)
+		}
 	}
 	return nil
 }

@@ -43,7 +43,7 @@ func (*RegistryService) Pull(images ...string) error {
 }
 
 func (*RegistryService) Push(image string) error {
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s", image))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push --tls-verify=false %s", image))
 }
 
 func NewRegistryService() (types.RegistryService, error) {

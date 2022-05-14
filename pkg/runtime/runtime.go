@@ -64,9 +64,6 @@ type Interface interface {
 
 func (k *KubeadmRuntime) Reset() error {
 	logger.Info("start to delete Cluster: master %s, node %s", k.getMasterIPList(), k.getNodeIPList())
-	if err := k.confirmDeleteNodes(); err != nil {
-		return err
-	}
 	return k.reset()
 }
 
@@ -82,9 +79,6 @@ func (k *KubeadmRuntime) JoinNodes(newNodesIPList []string) error {
 func (k *KubeadmRuntime) DeleteNodes(nodesIPList []string) error {
 	if len(nodesIPList) != 0 {
 		logger.Info("worker %s will be deleted", nodesIPList)
-		if err := k.confirmDeleteNodes(); err != nil {
-			return err
-		}
 	}
 	return k.deleteNodes(nodesIPList)
 }
@@ -99,9 +93,6 @@ func (k *KubeadmRuntime) JoinMasters(newMastersIPList []string) error {
 func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	if len(mastersIPList) != 0 {
 		logger.Info("master %s will be deleted", mastersIPList)
-		if err := k.confirmDeleteNodes(); err != nil {
-			return err
-		}
 	}
 	return k.deleteMasters(mastersIPList)
 }

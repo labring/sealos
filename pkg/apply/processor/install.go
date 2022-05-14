@@ -54,9 +54,12 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 	if ForceOverride {
 		prompt := "are you sure to override these app?"
 		cancel := "you have canceled to override these apps !"
-		_, err := confirm.Confirm(prompt, cancel)
+		pass, err := confirm.Confirm(prompt, cancel)
 		if err != nil {
 			return err
+		}
+		if !pass {
+			return errors.New(cancel)
 		}
 	}
 	return nil
@@ -116,7 +119,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		}
 	}
 	if imageTypes.Has(string(v2.AddonsImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("not support only run addons images in this cluster")
+		return errors.New("can't apply AddonsImage only, need to init a Cluster to append it")
 	}
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)

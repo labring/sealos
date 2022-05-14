@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/containers/buildah"
 	"github.com/labring/sealos/pkg/image"
 	"github.com/spf13/cobra"
 )
@@ -37,6 +38,9 @@ func newPullCmd() *cobra.Command {
 }
 
 func init() {
+	if buildah.InitReexec() {
+		return
+	}
 	pullCmd := newPullCmd()
 	rootCmd.AddCommand(pullCmd)
 }

@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/utils/contants"
 
 	"github.com/labring/sealos/pkg/apply"
@@ -39,6 +39,9 @@ func newResetCmd() *cobra.Command {
 		Example: exampleReset,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := processor.ConfirmDeleteNodes(); err != nil {
+				return err
+			}
 			filePath := contants.Clusterfile(resetClusterName)
 			applier, err := apply.NewApplierFromFile(filePath)
 			if err != nil {
@@ -57,5 +60,5 @@ func init() {
 	resetCmd := newResetCmd()
 	rootCmd.AddCommand(resetCmd)
 	resetCmd.Flags().StringVarP(&resetClusterName, "cluster", "c", "default", "reset kubernetes cluster with cluster name")
-	resetCmd.Flags().BoolVar(&runtime.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
+	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
 }

@@ -21,25 +21,26 @@ import (
 
 	"github.com/labring/sealos/pkg/image/binary"
 	buildah_image "github.com/labring/sealos/pkg/image/buildah/image"
+	"github.com/labring/sealos/pkg/image/buildah/registry"
 	"github.com/labring/sealos/pkg/image/types"
 )
 
 func NewClusterService() (types.ClusterService, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewClusterService()
 	}
 	return nil, errors.New("buildah not found in system path")
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewRegistryService()
 	}
-	return nil, errors.New("buildah not found in system path")
+	return registry.NewRegistryService()
 }
 
 func NewImageService() (types.Service, error) {
-	if err := checkBuildah(); err == nil {
+	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewImageService()
 	}
 	return buildah_image.NewImageService()
