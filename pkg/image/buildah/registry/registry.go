@@ -114,9 +114,9 @@ func (*RegistryService) Pull(images ...string) error {
 	return nil
 }
 
-func (*RegistryService) Push(image string) error {
-	return nil
-}
+//func (*RegistryService) Push(image string) error {
+//	return nil
+//}
 
 func NewRegistryService() (types.RegistryService, error) {
 	return &RegistryService{}, nil
