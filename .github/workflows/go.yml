@@ -78,6 +78,7 @@ jobs:
           push: false
           load: true
           tags: sealos:latest
+          build-args: ACTION=build-pack
 
       - name: Copy Out Binarys
         run: |
