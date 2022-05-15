@@ -28,6 +28,7 @@ import (
 	"github.com/containers/buildah/util"
 	"github.com/containers/common/libimage"
 	"github.com/containers/common/libimage/manifests"
+	"github.com/containers/common/pkg/auth"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/common/pkg/umask"
 	cp "github.com/containers/image/v5/copy"
@@ -361,4 +362,57 @@ func getEncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.
 		encConfig = cc.EncryptConfig
 	}
 	return encConfig, encLayers, nil
+}
+
+func SystemContext() (*ct.SystemContext, error) {
+	certDir := ""
+	ctx := &ct.SystemContext{
+		DockerCertPath: certDir,
+	}
+	tlsVerify := false
+	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(tlsVerify)
+	ctx.OCIInsecureSkipTLSVerify = tlsVerify
+	ctx.DockerDaemonInsecureSkipTLSVerify = tlsVerify
+	//
+	//ctx.OCIAcceptUncompressedLayers = true
+	//
+	//creds := opts.creds
+	//
+	//var err error
+	//ctx.DockerAuthConfig, err = parse.AuthConfig(creds)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//sigPolicy := opts.signaturePolicy
+	//ctx.SignaturePolicyPath = sigPolicy
+	//
+	//authfile := opts.authfile
+	//ctx.AuthFilePath = getAuthFile(authfile)
+	//
+	//regConf := ""
+	//ctx.SystemRegistriesConfPath = regConf
+	//
+	//regConfDir := ""
+	//ctx.RegistriesDirPath = regConfDir
+	//
+	//shortNameAliasConf := ""
+	//ctx.UserShortNameAliasConfPath = shortNameAliasConf
+
+	ctx.DockerRegistryUserAgent = fmt.Sprintf("Buildah/%s", define.Version)
+
+	ctx.OSChoice = runtime.GOOS
+
+	ctx.ArchitectureChoice = runtime.GOARCH
+
+	ctx.VariantChoice = ""
+
+	ctx.BigFilesTemporaryDir = parse.GetTempDir()
+	return ctx, nil
+}
+
+type loginReply struct {
+	loginOpts auth.LoginOptions
+	getLogin  bool
+	tlsVerify bool
 }
