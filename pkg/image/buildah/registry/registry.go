@@ -31,14 +31,6 @@ import (
 type RegistryService struct {
 }
 
-func (*RegistryService) Login(domain, username, passwd string) error {
-	return nil
-}
-
-func (*RegistryService) Logout(domain string) error {
-	return nil
-}
-
 type pullOptions struct {
 	allTags          bool
 	authfile         string
@@ -113,10 +105,6 @@ func (*RegistryService) Pull(images ...string) error {
 
 	return nil
 }
-
-//func (*RegistryService) Push(image string) error {
-//	return nil
-//}
 
 func NewRegistryService() (types.RegistryService, error) {
 	return &RegistryService{}, nil
