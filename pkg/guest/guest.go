@@ -81,7 +81,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 		if value == "" {
 			continue
 		}
-		logger.Debug("guest cmd is %s", value)
+		logger.Info("guest cmd is %s", value)
 		if err := exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
