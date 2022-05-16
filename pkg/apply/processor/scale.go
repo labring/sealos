@@ -64,7 +64,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	var todoList []func(cluster *v2.Cluster) error
 	if c.IsScaleUp {
 		todoList = append(todoList,
-			c.Check,
+			c.JoinCheck,
 			c.PreProcess,
 			c.RunConfig,
 			c.MountRootfs,
@@ -76,6 +76,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	}
 
 	todoList = append(todoList,
+		c.DeleteCheck,
 		c.PreProcess,
 		c.Delete,
 		//c.ApplyCleanPlugin,
@@ -115,11 +116,23 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	return fs.UnMountRootfs(cluster, hosts)
 }
 
-func (c *ScaleProcessor) Check(cluster *v2.Cluster) error {
+func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	var ips []string
-	ips = append(ips, cluster.GetMaster0IP())
+	ips = append(ips, cluster.GetMaster0IPAndPort())
 	ips = append(ips, c.MastersToJoin...)
 	ips = append(ips, c.NodesToJoin...)
+	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
+	var ips []string
+	ips = append(ips, cluster.GetMaster0IPAndPort())
+	ips = append(ips, c.MastersToDelete...)
+	ips = append(ips, c.NodesToDelete...)
 	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
