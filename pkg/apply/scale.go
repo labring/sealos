@@ -16,6 +16,7 @@ package apply
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"strconv"
 	"strings"
 
@@ -165,6 +166,20 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 	}
 
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
+
+	hostsSet := sets.NewString()
+
+	for _, node := range cluster.Spec.Hosts {
+		hostsSet.Insert(node.IPS...)
+	}
+
+	for _, node := range strings.Split(scaleArgs.Nodes, ",") {
+		targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
+		if !hostsSet.Has(fmt.Sprintf("%s:%s", targetIP, targetPort)) {
+			return fmt.Errorf(" Parameter error: delete must be in cluster hosts ips！")
+		}
+	}
+
 	if scaleArgs.Masters != "" && IsIPList(scaleArgs.Masters) {
 		for i := range cluster.Spec.Hosts {
 			if strings2.InList(v2.MASTER, cluster.Spec.Hosts[i].Roles) {

@@ -39,10 +39,25 @@ func GetDiffHosts(hostsOld, hostsNew []string) (add, sub []string) {
 	// s2 = {a1, a2, a4, a5}
 	// s1.Difference(s2) = {a3}
 	// s2.Difference(s1) = {a4, a5}
-	oldSet := sets.NewString(hostsOld...)
-	newSet := sets.NewString(hostsNew...)
-	add = newSet.Difference(oldSet).List()
-	sub = oldSet.Difference(newSet).List()
+	oldSet := sets.NewString(GetHostIPs(hostsOld)...)
+	newSet := sets.NewString(GetHostIPs(hostsNew)...)
+	addIPs := newSet.Difference(oldSet).List()
+	subIPs := oldSet.Difference(newSet).List()
+
+	for _, ip := range hostsNew {
+		for _, aIP := range addIPs {
+			if aIP == GetHostIP(ip) {
+				add = append(add, ip)
+			}
+		}
+	}
+	for _, ip := range hostsOld {
+		for _, aIP := range subIPs {
+			if aIP == GetHostIP(ip) {
+				sub = append(sub, ip)
+			}
+		}
+	}
 	return
 }
 
