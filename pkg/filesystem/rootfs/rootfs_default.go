@@ -70,6 +70,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	for _, cInfo := range f.images {
 		src := cInfo
 		eg.Go(func() error {
+			if initFlag && src.Type == v2.AppImage {
+				logger.Debug("ApplicationImage %s render env init process continue", src.ImageName)
+				return nil
+			}
 			err := renderENV(src.MountPoint, ipList, envProcessor)
 			if err != nil {
 				return errors.Wrap(err, "render env to rootfs failed")
