@@ -38,6 +38,7 @@ import (
 )
 
 func (*RegistryService) Push(image string) error {
+	var src, destSpec string
 	iopts := types.PushOptions{
 		All:                false,
 		Authfile:           auth.GetDefaultAuthFile(),
@@ -61,6 +62,10 @@ func (*RegistryService) Push(image string) error {
 	if err := auth.CheckAuthFile(iopts.Authfile); err != nil {
 		return err
 	}
+
+	src = image
+	destSpec = src
+
 	compress := define.Gzip
 	if iopts.DisableCompression {
 		compress = define.Uncompressed
@@ -72,28 +77,28 @@ func (*RegistryService) Push(image string) error {
 		return err
 	}
 
-	dest, err := alltransports.ParseImageName(image)
+	dest, err := alltransports.ParseImageName(destSpec)
 
 	if err != nil {
-		destTransport := strings.Split(image, ":")[0]
+		destTransport := strings.Split(destSpec, ":")[0]
 		if t := transports.Get(destTransport); t != nil {
 			return err
 		}
 
-		if strings.Contains(image, "://") {
+		if strings.Contains(destSpec, "://") {
 			return err
 		}
 
-		image = "docker://" + image
-		dest2, err2 := alltransports.ParseImageName(image)
+		destSpec = "docker://" + destSpec
+		dest2, err2 := alltransports.ParseImageName(destSpec)
 		if err2 != nil {
 			return err
 		}
 		dest = dest2
-		logrus.Debugf("Assuming docker:// as the transport method for DESTINATION: %s", image)
+		logrus.Debugf("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
 
-	systemContext, _ := SystemContextFromPush(iopts)
+	systemContext, _ := getSystemContext(iopts.TLSVerify)
 
 	var manifestType string
 	if iopts.Format != "" {

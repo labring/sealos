@@ -29,13 +29,14 @@ func (*RegistryService) Logout(domain string) error {
 			AuthFile:           auth.GetDefaultAuthFile(),
 			All:                false,
 		}
+		tlsVerify = false
 	)
 
 	if err := setXDGRuntimeDir(); err != nil {
 		return err
 	}
 
-	systemContext, err := SystemContext()
+	systemContext, err := getSystemContext(tlsVerify)
 	if err != nil {
 		return errors.Wrapf(err, "error building system context")
 	}

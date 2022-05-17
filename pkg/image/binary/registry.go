@@ -28,14 +28,14 @@ type RegistryService struct {
 }
 
 func (*RegistryService) Login(domain, username, passwd string) error {
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah login --username %s --password %s %s", username, passwd, domain))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah login --tls-verify=false --username %s --password %s %s", username, passwd, domain))
 }
 func (*RegistryService) Logout(domain string) error {
 	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah logout %s", domain))
 }
 func (*RegistryService) Pull(images ...string) error {
 	for _, image := range images {
-		if err := exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull %s", image)); err != nil {
+		if err := exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull --tls-verify=false %s", image)); err != nil {
 			return err
 		}
 	}
