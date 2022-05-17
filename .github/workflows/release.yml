@@ -47,8 +47,16 @@ jobs:
           push: false
           load: true
           tags: sealos:latest
-          build-args: ACTION=build-release
+          build-args: |
+            ACTION=build-release
+            GITHUB_TOKEN=${{ secrets.GIT_AUTH_TOKEN }}
+          secrets: GITHUB_TOKEN=${{ secrets.GIT_AUTH_TOKEN }}
       # https://github.com/docker/build-push-action
+
+      - name: Copy Out Binarys
+        run: |
+          docker run -itd --name sealos --rm sealos:latest bash
+          docker cp sealos:/work/dist  .
 
       - name: Build binareies to oss
         env:
@@ -56,10 +64,10 @@ jobs:
         run: |
           echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
           wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-amd64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-amd64
-          ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-arm64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos-amd64_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-amd64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos-arm64_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos-amd64_linux_amd64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-amd64
+          ./ossutil64 -c .ossutilconfig cp -f dist/sealos-arm64_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-arm64
           ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealctl-amd64
           ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealctl-arm64
           ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-amd64

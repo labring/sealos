@@ -65,6 +65,9 @@ builds:
     binary: sealctl
     goos:
       - linux
+    goarch:
+      - arm64
+      - amd64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
@@ -78,6 +81,7 @@ builds:
 #      amd64: x86_64
 #      arm64: aarch64
 checksum:
+  disable: true
   name_template: '{{ .ProjectName }}_checksums.txt'
 snapshot:
   name_template: "{{ .Tag }}-next"

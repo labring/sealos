@@ -1,15 +1,25 @@
 Dirs=$(shell ls)
 COMMIT_ID ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
+BUILD_TIME=$(shell date +%FT%T%z)
+GIT_TAG               := $(shell git describe --exact-match --tags --abbrev=0  2> /dev/null || echo untagged)
+LDFLAGS=-ldflags
 
 # only support linux
 OS=linux
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 CGO_ENABLED=0
+OS=darwin
 endif
 ifeq ($(UNAME_S),Linux)
 CGO_ENABLED=1
 endif
+
+override LDFLAGS += "\
+  -X github.com/labring/sealos/pkg/version.gitVersion=${GIT_TAG} \
+  -X github.com/labring/sealos/pkg/version.gitCommit==${COMMIT_ID} \
+  -X github.com/labring/sealos/pkg/version.buildDate=${BUILD_TIME} "
+
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifneq (,$(shell go env GOBIN))
@@ -48,12 +58,12 @@ default:  build
 build: build-amd64  build-arm64
 
 build-amd64:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=amd64 go build  -o $(shell pwd)/bin/${OS}_amd64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
-	CGO_ENABLED=0 GOOS=${OS} GOARCH=amd64 go build  -o $(shell pwd)/bin/${OS}_amd64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=amd64 go build ${LDFLAGS}   -o $(shell pwd)/bin/${OS}_amd64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
+	CGO_ENABLED=0 GOOS=${OS} GOARCH=amd64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_amd64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
 
 build-arm64:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
-	CGO_ENABLED=0 GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=arm64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_arm64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
+	CGO_ENABLED=0 GOOS=${OS} GOARCH=arm64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_arm64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
 
 import:
 	goimports -l -w cmd
