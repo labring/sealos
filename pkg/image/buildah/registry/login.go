@@ -37,14 +37,14 @@ func (*RegistryService) Login(domain, username, passwd string) error {
 				GetLoginSet:        false,
 				Verbose:            false,
 			},
-			tlsVerify: true,
+			tlsVerify: false,
 			getLogin:  true,
 		}
 	)
 	if err := setXDGRuntimeDir(); err != nil {
 		return err
 	}
-	systemContext, err := SystemContext()
+	systemContext, err := getSystemContext(opts.tlsVerify)
 	if err != nil {
 		return errors.Wrapf(err, "error building system context")
 	}

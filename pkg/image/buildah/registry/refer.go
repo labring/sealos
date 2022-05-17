@@ -129,53 +129,6 @@ func getStore(globalFlagResults *types.GlobalBuildahFlags) (storage.Store, error
 	return store, err
 }
 
-func SystemContextFromFlagSet(opts pullOptions) (*ct.SystemContext, error) {
-	certDir := opts.certDir
-	ctx := &ct.SystemContext{
-		DockerCertPath: certDir,
-	}
-	//tlsVerify := opts.tlsVerify
-	//ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(!tlsVerify)
-	//ctx.OCIInsecureSkipTLSVerify = !tlsVerify
-	//ctx.DockerDaemonInsecureSkipTLSVerify = !tlsVerify
-	//
-	//ctx.OCIAcceptUncompressedLayers = true
-	//
-	//creds := opts.creds
-	//
-	//var err error
-	//ctx.DockerAuthConfig, err = parse.AuthConfig(creds)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//sigPolicy := opts.signaturePolicy
-	//ctx.SignaturePolicyPath = sigPolicy
-	//
-	//authfile := opts.authfile
-	//ctx.AuthFilePath = getAuthFile(authfile)
-	//
-	//regConf := ""
-	//ctx.SystemRegistriesConfPath = regConf
-	//
-	//regConfDir := ""
-	//ctx.RegistriesDirPath = regConfDir
-	//
-	//shortNameAliasConf := ""
-	//ctx.UserShortNameAliasConfPath = shortNameAliasConf
-
-	ctx.DockerRegistryUserAgent = fmt.Sprintf("Buildah/%s", define.Version)
-
-	ctx.OSChoice = runtime.GOOS
-
-	ctx.ArchitectureChoice = runtime.GOARCH
-
-	ctx.VariantChoice = ""
-
-	ctx.BigFilesTemporaryDir = parse.GetTempDir()
-	return ctx, nil
-}
-
 /*
 func getAuthFile(authfile string) string {
 	if authfile != "" {
@@ -300,53 +253,6 @@ func manifestPush(systemContext *ct.SystemContext, store storage.Store, listImag
 	return err
 }
 
-func SystemContextFromPush(opts types.PushOptions) (*ct.SystemContext, error) {
-	certDir := opts.CertDir
-	ctx := &ct.SystemContext{
-		DockerCertPath: certDir,
-	}
-	tlsVerify := opts.TLSVerify
-	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(tlsVerify)
-	ctx.OCIInsecureSkipTLSVerify = tlsVerify
-	ctx.DockerDaemonInsecureSkipTLSVerify = tlsVerify
-	//
-	//ctx.OCIAcceptUncompressedLayers = true
-	//
-	//creds := opts.creds
-	//
-	//var err error
-	//ctx.DockerAuthConfig, err = parse.AuthConfig(creds)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//sigPolicy := opts.signaturePolicy
-	//ctx.SignaturePolicyPath = sigPolicy
-	//
-	//authfile := opts.authfile
-	//ctx.AuthFilePath = getAuthFile(authfile)
-	//
-	//regConf := ""
-	//ctx.SystemRegistriesConfPath = regConf
-	//
-	//regConfDir := ""
-	//ctx.RegistriesDirPath = regConfDir
-	//
-	//shortNameAliasConf := ""
-	//ctx.UserShortNameAliasConfPath = shortNameAliasConf
-
-	ctx.DockerRegistryUserAgent = fmt.Sprintf("Buildah/%s", define.Version)
-
-	ctx.OSChoice = runtime.GOOS
-
-	ctx.ArchitectureChoice = runtime.GOARCH
-
-	ctx.VariantChoice = ""
-
-	ctx.BigFilesTemporaryDir = parse.GetTempDir()
-	return ctx, nil
-}
-
 func getEncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.EncryptConfig, *[]int, error) {
 	var encLayers *[]int
 	var encConfig *encconfig.EncryptConfig
@@ -364,17 +270,19 @@ func getEncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.
 	return encConfig, encLayers, nil
 }
 
-func SystemContext() (*ct.SystemContext, error) {
+// pull push login
+// Currently, only TLS is set
+func getSystemContext(tls bool) (*ct.SystemContext, error) {
 	certDir := ""
 	ctx := &ct.SystemContext{
 		DockerCertPath: certDir,
 	}
-	tlsVerify := false
-	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(tlsVerify)
-	ctx.OCIInsecureSkipTLSVerify = tlsVerify
-	ctx.DockerDaemonInsecureSkipTLSVerify = tlsVerify
+	tlsVerify := tls
+	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(!tlsVerify)
+	ctx.OCIInsecureSkipTLSVerify = !tlsVerify
+	ctx.DockerDaemonInsecureSkipTLSVerify = !tlsVerify
 	//
-	//ctx.OCIAcceptUncompressedLayers = true
+	ctx.OCIAcceptUncompressedLayers = true
 	//
 	//creds := opts.creds
 	//

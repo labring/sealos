@@ -55,7 +55,7 @@ func (*RegistryService) Pull(images ...string) error {
 		signaturePolicy:  "",
 		quiet:            false,
 		removeSignatures: false,
-		tlsVerify:        true,
+		tlsVerify:        false,
 		decryptionKeys:   nil,
 		pullPolicy:       "missing",
 	}
@@ -64,7 +64,7 @@ func (*RegistryService) Pull(images ...string) error {
 		return err
 	}
 
-	systemContext, _ := SystemContextFromFlagSet(opt)
+	systemContext, _ := getSystemContext(opt.tlsVerify)
 
 	decConfig, err := getDecryptConfig(opt.decryptionKeys)
 	if err != nil {
