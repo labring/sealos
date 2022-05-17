@@ -65,6 +65,9 @@ builds:
     binary: sealctl
     goos:
       - linux
+    goarch:
+      - arm64
+      - amd64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
