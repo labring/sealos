@@ -16,9 +16,10 @@ package apply
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"strconv"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
