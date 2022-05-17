@@ -118,7 +118,7 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 	for _, n := range nodeList.Items {
 		for _, addr := range n.Status.Addresses {
 			if addr.Type == v12.NodeInternalIP && addr.Address == ip {
-				nodeType = &n
+				nodeType = n.DeepCopy()
 			}
 		}
 	}

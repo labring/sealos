@@ -177,7 +177,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 	for _, node := range strings.Split(scaleArgs.Nodes, ",") {
 		targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
 		if !hostsSet.Has(fmt.Sprintf("%s:%s", targetIP, targetPort)) {
-			return fmt.Errorf(" Parameter error: delete must be in cluster hosts ips！")
+			return fmt.Errorf("parameter error: to delete IP %s must in cluster IP list", targetIP)
 		}
 	}
 
