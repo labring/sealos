@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	RemoveKubeConfig        = "rm -rf .kube"
-	RemoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
-modprobe -r ipip  && lsmod && \
+	removeKubeConfig        = "rm -rf .kube"
+	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
 rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
 rm -rf %s
@@ -69,21 +68,29 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
-	if err := k.sshCmdAsync(node, fmt.Sprintf(RemoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir()),
-		RemoveKubeConfig, DeleteImageShimCMD(k.getContentData().RootFSPath())); err != nil {
-		return fmt.Errorf("exec node clean in sealos failed %v", err)
+	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
+	deleteShimCmd := DeleteImageShimCMD(k.getContentData().RootFSPath())
+	if err := k.sshCmdAsync(node, resetCmd); err != nil {
+		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)
+	}
+	if err := k.sshCmdAsync(node, removeKubeConfig); err != nil {
+		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, err)
+	}
+
+	if err := k.sshCmdAsync(node, deleteShimCmd); err != nil {
+		logger.Error("failed to clean node, exec command %s failed, %v", deleteShimCmd, err)
 	}
 	err := k.execClean(node)
 	if err != nil {
-		return fmt.Errorf("exec clean.sh failed %v", err)
+		logger.Error("exec clean.sh failed %v", err)
 	}
 	err = k.execHostsDelete(node, k.getRegistry().Domain)
 	if err != nil {
-		return fmt.Errorf("delete registry hosts failed %v", err)
+		logger.Error("delete registry hosts failed %v", err)
 	}
 	err = k.execHostsDelete(node, k.getAPIServerDomain())
 	if err != nil {
-		return fmt.Errorf("delete apiserver hosts failed %v", err)
+		logger.Error("delete apiserver hosts failed %v", err)
 	}
 
 	return nil

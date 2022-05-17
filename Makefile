@@ -55,9 +55,14 @@ build-arm64:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
 	CGO_ENABLED=0 GOOS=${OS} GOARCH=arm64 go build  -o $(shell pwd)/bin/${OS}_arm64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
 
+import:
+	goimports -l -w cmd
+	goimports -l -w pkg
 
 GORELEASER_BIN = $(shell pwd)/bin/goreleaser
 install-goreleaser: ## check license if not exist install go-lint tools
+	#goimports -l -w cmd
+	#goimports -l -w pkg
 	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 build-pack: SHELL:=/bin/bash

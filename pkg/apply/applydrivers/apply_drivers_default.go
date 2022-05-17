@@ -85,8 +85,8 @@ func (c *Applier) reconcileCluster() error {
 	if err := c.installApp(c.RunNewImages); err != nil {
 		return err
 	}
-	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPList(), c.ClusterDesired.GetMasterIPList())
-	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPList(), c.ClusterDesired.GetNodeIPList())
+	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
+	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
 	//if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
 	//	return c.upgrade()
 	//}
@@ -128,8 +128,8 @@ func (c *Applier) installApp(images []string) error {
 
 func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 	logger.Info("start to scale this cluster")
-	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPList(), c.ClusterCurrent.GetNodeIPList())
-	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
+	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
+	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
 	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
 		logger.Info("succeeded in scaling this cluster: no change nodes")
 		return nil

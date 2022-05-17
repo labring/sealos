@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
@@ -165,6 +167,20 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *RunArgs) error {
 	}
 
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
+
+	hostsSet := sets.NewString()
+
+	for _, node := range cluster.Spec.Hosts {
+		hostsSet.Insert(node.IPS...)
+	}
+
+	for _, node := range strings.Split(scaleArgs.Nodes, ",") {
+		targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
+		if !hostsSet.Has(fmt.Sprintf("%s:%s", targetIP, targetPort)) {
+			return fmt.Errorf("parameter error: to delete IP %s must in cluster IP list", targetIP)
+		}
+	}
+
 	if scaleArgs.Masters != "" && IsIPList(scaleArgs.Masters) {
 		for i := range cluster.Spec.Hosts {
 			if strings2.InList(v2.MASTER, cluster.Spec.Hosts[i].Roles) {

@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -101,6 +103,7 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 }
 
 func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
+	ip = iputils.GetHostIP(ip)
 	logger.Info("start to remove node from k8s %s", ip)
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
@@ -115,7 +118,7 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 	for _, n := range nodeList.Items {
 		for _, addr := range n.Status.Addresses {
 			if addr.Type == v12.NodeInternalIP && addr.Address == ip {
-				nodeType = &n
+				nodeType = n.DeepCopy()
 			}
 		}
 	}
