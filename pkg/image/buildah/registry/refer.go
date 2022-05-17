@@ -15,7 +15,9 @@
 package registry
 
 import (
+	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 
@@ -23,14 +25,22 @@ import (
 
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/buildah/util"
+	"github.com/containers/common/libimage"
+	"github.com/containers/common/libimage/manifests"
+	"github.com/containers/common/pkg/auth"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/common/pkg/umask"
+	cp "github.com/containers/image/v5/copy"
+	"github.com/containers/image/v5/manifest"
 	is "github.com/containers/image/v5/storage"
+	"github.com/containers/image/v5/transports/alltransports"
 	ct "github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -224,4 +234,185 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 		UserShortNameAliasConfPath: "",
 		CgroupManager:              containerConfig.Engine.CgroupManager,
 	}
+}
+
+func manifestPush(systemContext *ct.SystemContext, store storage.Store, listImageSpec, destSpec string, opts types.PushOptions) error {
+	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	if err != nil {
+		return err
+	}
+
+	manifestList, err := runtime.LookupManifestList(listImageSpec)
+	if err != nil {
+		return err
+	}
+
+	_, list, err := manifests.LoadFromImage(store, manifestList.ID())
+	if err != nil {
+		return err
+	}
+
+	dest, err := alltransports.ParseImageName(destSpec)
+	if err != nil {
+		return err
+	}
+
+	var manifestType string
+	if opts.Format != "" {
+		switch opts.Format {
+		case "oci":
+			manifestType = imgspecv1.MediaTypeImageManifest
+		case "v2s2", "docker":
+			manifestType = manifest.DockerV2Schema2MediaType
+		default:
+			return errors.Errorf("unknown format %q. Choose on of the supported formats: 'oci' or 'v2s2'", opts.Format)
+		}
+	}
+
+	options := manifests.PushOptions{
+		Store:              store,
+		SystemContext:      systemContext,
+		ImageListSelection: cp.CopySpecificImages,
+		Instances:          nil,
+		RemoveSignatures:   opts.RemoveSignatures,
+		SignBy:             opts.SignBy,
+		ManifestType:       manifestType,
+	}
+	if opts.All {
+		options.ImageListSelection = cp.CopyAllImages
+	}
+	if !opts.Quiet {
+		options.ReportWriter = os.Stderr
+	}
+
+	_, digest, err := list.Push(context.TODO(), dest, options)
+
+	if err == nil && opts.Rm {
+		_, err = store.DeleteImage(manifestList.ID(), true)
+	}
+
+	if opts.Digestfile != "" {
+		if err = ioutil.WriteFile(opts.Digestfile, []byte(digest.String()), 0644); err != nil {
+			return util.GetFailureCause(err, errors.Wrapf(err, "failed to write digest to file %q", opts.Digestfile))
+		}
+	}
+
+	return err
+}
+
+func SystemContextFromPush(opts types.PushOptions) (*ct.SystemContext, error) {
+	certDir := opts.CertDir
+	ctx := &ct.SystemContext{
+		DockerCertPath: certDir,
+	}
+	tlsVerify := opts.TLSVerify
+	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(tlsVerify)
+	ctx.OCIInsecureSkipTLSVerify = tlsVerify
+	ctx.DockerDaemonInsecureSkipTLSVerify = tlsVerify
+	//
+	//ctx.OCIAcceptUncompressedLayers = true
+	//
+	//creds := opts.creds
+	//
+	//var err error
+	//ctx.DockerAuthConfig, err = parse.AuthConfig(creds)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//sigPolicy := opts.signaturePolicy
+	//ctx.SignaturePolicyPath = sigPolicy
+	//
+	//authfile := opts.authfile
+	//ctx.AuthFilePath = getAuthFile(authfile)
+	//
+	//regConf := ""
+	//ctx.SystemRegistriesConfPath = regConf
+	//
+	//regConfDir := ""
+	//ctx.RegistriesDirPath = regConfDir
+	//
+	//shortNameAliasConf := ""
+	//ctx.UserShortNameAliasConfPath = shortNameAliasConf
+
+	ctx.DockerRegistryUserAgent = fmt.Sprintf("Buildah/%s", define.Version)
+
+	ctx.OSChoice = runtime.GOOS
+
+	ctx.ArchitectureChoice = runtime.GOARCH
+
+	ctx.VariantChoice = ""
+
+	ctx.BigFilesTemporaryDir = parse.GetTempDir()
+	return ctx, nil
+}
+
+func getEncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.EncryptConfig, *[]int, error) {
+	var encLayers *[]int
+	var encConfig *encconfig.EncryptConfig
+
+	if len(encryptionKeys) > 0 {
+		// encryption
+		encLayers = &encryptLayers
+		ecc, err := enchelpers.CreateCryptoConfig(encryptionKeys, []string{})
+		if err != nil {
+			return nil, nil, errors.Wrapf(err, "invalid encryption keys")
+		}
+		cc := encconfig.CombineCryptoConfigs([]encconfig.CryptoConfig{ecc})
+		encConfig = cc.EncryptConfig
+	}
+	return encConfig, encLayers, nil
+}
+
+func SystemContext() (*ct.SystemContext, error) {
+	certDir := ""
+	ctx := &ct.SystemContext{
+		DockerCertPath: certDir,
+	}
+	tlsVerify := false
+	ctx.DockerInsecureSkipTLSVerify = ct.NewOptionalBool(tlsVerify)
+	ctx.OCIInsecureSkipTLSVerify = tlsVerify
+	ctx.DockerDaemonInsecureSkipTLSVerify = tlsVerify
+	//
+	//ctx.OCIAcceptUncompressedLayers = true
+	//
+	//creds := opts.creds
+	//
+	//var err error
+	//ctx.DockerAuthConfig, err = parse.AuthConfig(creds)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//sigPolicy := opts.signaturePolicy
+	//ctx.SignaturePolicyPath = sigPolicy
+	//
+	//authfile := opts.authfile
+	//ctx.AuthFilePath = getAuthFile(authfile)
+	//
+	//regConf := ""
+	//ctx.SystemRegistriesConfPath = regConf
+	//
+	//regConfDir := ""
+	//ctx.RegistriesDirPath = regConfDir
+	//
+	//shortNameAliasConf := ""
+	//ctx.UserShortNameAliasConfPath = shortNameAliasConf
+
+	ctx.DockerRegistryUserAgent = fmt.Sprintf("Buildah/%s", define.Version)
+
+	ctx.OSChoice = runtime.GOOS
+
+	ctx.ArchitectureChoice = runtime.GOARCH
+
+	ctx.VariantChoice = ""
+
+	ctx.BigFilesTemporaryDir = parse.GetTempDir()
+	return ctx, nil
+}
+
+type loginReply struct {
+	loginOpts auth.LoginOptions
+	getLogin  bool
+	tlsVerify bool
 }
