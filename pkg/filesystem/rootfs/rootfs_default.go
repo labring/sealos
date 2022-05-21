@@ -70,8 +70,9 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	for _, cInfo := range f.images {
 		src := cInfo
 		eg.Go(func() error {
-			if initFlag && !appFlag && src.Type == v2.AppImage {
-				logger.Debug("ApplicationImage %s render env init process continue", src.ImageName)
+
+			if !file.IsExist(src.MountPoint) {
+				logger.Debug("Image %s not exist,render env continue", src.ImageName)
 				return nil
 			}
 			err := renderENV(src.MountPoint, ipList, envProcessor)
