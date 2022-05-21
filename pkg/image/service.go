@@ -17,9 +17,8 @@ limitations under the License.
 package image
 
 import (
-	"errors"
-
 	"github.com/labring/sealos/pkg/image/binary"
+	buildah_cluster "github.com/labring/sealos/pkg/image/buildah/cluster"
 	buildah_image "github.com/labring/sealos/pkg/image/buildah/image"
 	"github.com/labring/sealos/pkg/image/buildah/registry"
 	"github.com/labring/sealos/pkg/image/types"
@@ -29,7 +28,7 @@ func NewClusterService() (types.ClusterService, error) {
 	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewClusterService()
 	}
-	return nil, errors.New("buildah not found in system path")
+	return buildah_cluster.NewClusterService()
 }
 
 func NewRegistryService() (types.RegistryService, error) {
