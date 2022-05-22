@@ -70,7 +70,6 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	for _, cInfo := range f.images {
 		src := cInfo
 		eg.Go(func() error {
-
 			if !file.IsExist(src.MountPoint) {
 				logger.Debug("Image %s not exist,render env continue", src.ImageName)
 				return nil
