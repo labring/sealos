@@ -9,7 +9,6 @@ OS=linux
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 CGO_ENABLED=0
-OS=darwin
 endif
 ifeq ($(UNAME_S),Linux)
 CGO_ENABLED=1
@@ -71,8 +70,6 @@ import:
 
 GORELEASER_BIN = $(shell pwd)/bin/goreleaser
 install-goreleaser: ## check license if not exist install go-lint tools
-	#goimports -l -w cmd
-	#goimports -l -w pkg
 	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 build-pack: SHELL:=/bin/bash
