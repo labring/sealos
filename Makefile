@@ -2,13 +2,22 @@ Dirs=$(shell ls)
 COMMIT_ID ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
 BUILD_TIME=$(shell date +%FT%T%z)
 GIT_TAG               := $(shell git describe --exact-match --tags --abbrev=0  2> /dev/null || echo untagged)
-LDFLAGS=-ldflags
+LDFLAGS=-ldflags -static-libgcc -static
+DEBUG=0
+EXTRA_LDFLAGS= -s -w -linkmode external -extldflags "-static -lm"
+CFLAGS=-static -pthread
+ifeq ($(DEBUG), 1)
+  override GOGCFLAGS += -N -l
+endif
+LDFLAGS += $(EXTRA_LDFLAGS)
+
 
 # only support linux
 OS=linux
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 CGO_ENABLED=0
+OS=darwin
 endif
 ifeq ($(UNAME_S),Linux)
 CGO_ENABLED=1
@@ -70,6 +79,8 @@ import:
 
 GORELEASER_BIN = $(shell pwd)/bin/goreleaser
 install-goreleaser: ## check license if not exist install go-lint tools
+	#goimports -l -w cmd
+	#goimports -l -w pkg
 	$(call go-get-tool,$(GORELEASER_BIN),github.com/goreleaser/goreleaser@v1.6.3)
 
 build-pack: SHELL:=/bin/bash
