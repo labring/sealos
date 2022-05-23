@@ -339,7 +339,6 @@ github.com/docker/docker/pkg/system
 github.com/docker/docker-credential-helpers/client
 github.com/docker/docker-credential-helpers/credentials
 # github.com/docker/go-connections v0.4.1-0.20210727194412-58542c764a11
-## explicit
 github.com/docker/go-connections/nat
 github.com/docker/go-connections/sockets
 github.com/docker/go-connections/tlsconfig
@@ -353,7 +352,6 @@ github.com/docker/libnetwork/resolvconf
 github.com/docker/libnetwork/resolvconf/dns
 github.com/docker/libnetwork/types
 # github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
-## explicit
 github.com/docker/libtrust
 # github.com/emirpasic/gods v1.12.0
 ## explicit
@@ -364,6 +362,7 @@ github.com/emirpasic/gods/maps
 github.com/emirpasic/gods/maps/linkedhashmap
 github.com/emirpasic/gods/utils
 # github.com/fsnotify/fsnotify v1.5.1
+## explicit
 github.com/fsnotify/fsnotify
 # github.com/fsouza/go-dockerclient v1.7.11
 github.com/fsouza/go-dockerclient
@@ -385,7 +384,6 @@ github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/go-cmp v0.5.8
-## explicit
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
@@ -489,7 +487,6 @@ github.com/moby/sys/mount
 # github.com/moby/sys/mountinfo v0.6.1
 github.com/moby/sys/mountinfo
 # github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-## explicit
 github.com/moby/term
 github.com/moby/term/windows
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
@@ -497,7 +494,6 @@ github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.2
 github.com/modern-go/reflect2
 # github.com/morikuni/aec v1.0.0
-## explicit
 github.com/morikuni/aec
 # github.com/nxadm/tail v1.4.8
 github.com/nxadm/tail
@@ -555,6 +551,7 @@ github.com/opencontainers/runc/libcontainer/user
 github.com/opencontainers/runc/libcontainer/userns
 github.com/opencontainers/runc/libcontainer/utils
 # github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
+## explicit
 github.com/opencontainers/runtime-spec/specs-go
 # github.com/opencontainers/runtime-tools v0.9.0
 github.com/opencontainers/runtime-tools/error
@@ -589,7 +586,6 @@ github.com/pkg/sftp
 # github.com/proglottis/gpgme v0.1.1
 github.com/proglottis/gpgme
 # github.com/prometheus/client_golang v1.11.1
-## explicit
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/internal
 github.com/prometheus/client_golang/prometheus/promhttp
@@ -629,8 +625,6 @@ github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 ## explicit
 github.com/spf13/pflag
-# github.com/spf13/viper v1.10.0
-## explicit
 # github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980
 github.com/stefanberger/go-pkcs11uri
 # github.com/sylabs/sif/v2 v2.7.0
@@ -658,7 +652,6 @@ github.com/vbauerster/mpb/v7/internal
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f
-## explicit
 github.com/vishvananda/netns
 # github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb
 github.com/xeipuuv/gojsonpointer
@@ -699,7 +692,6 @@ golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/terminal
 # golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-## explicit
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html
@@ -712,6 +704,7 @@ golang.org/x/net/idna
 golang.org/x/net/internal/timeseries
 golang.org/x/net/trace
 # golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+## explicit
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -727,6 +720,7 @@ golang.org/x/sys/plan9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+## explicit
 golang.org/x/term
 # golang.org/x/text v0.3.7
 golang.org/x/text/encoding
@@ -751,8 +745,6 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 golang.org/x/time/rate
-# golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f
-## explicit
 # google.golang.org/appengine v1.6.7
 google.golang.org/appengine/internal
 google.golang.org/appengine/internal/base
@@ -840,11 +832,10 @@ google.golang.org/protobuf/types/descriptorpb
 google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
-# gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
-## explicit
 # gopkg.in/inf.v0 v0.9.1
 gopkg.in/inf.v0
 # gopkg.in/ini.v1 v1.66.2
+## explicit
 gopkg.in/ini.v1
 # gopkg.in/square/go-jose.v2 v2.5.1
 gopkg.in/square/go-jose.v2
