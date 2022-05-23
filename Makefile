@@ -2,14 +2,14 @@ Dirs=$(shell ls)
 COMMIT_ID ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
 BUILD_TIME=$(shell date +%FT%T%z)
 GIT_TAG               := $(shell git describe --exact-match --tags --abbrev=0  2> /dev/null || echo untagged)
-LDFLAGS=-ldflags -static-libgcc -static
+LDFLAGS=-ldflags
 DEBUG=0
-EXTRA_LDFLAGS= -s -w -linkmode external -extldflags "-static -lm"
+BUILDOPTS=
 CFLAGS=-static -pthread
 ifeq ($(DEBUG), 1)
   override GOGCFLAGS += -N -l
 endif
-LDFLAGS += $(EXTRA_LDFLAGS)
+
 
 
 # only support linux
@@ -66,7 +66,7 @@ default:  build
 build: build-amd64  build-arm64
 
 build-amd64:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=amd64 go build ${LDFLAGS}   -o $(shell pwd)/bin/${OS}_amd64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=amd64 go build ${LDFLAGS}   -o $(shell pwd)/bin/${OS}_amd64/sealos  ${BUILDOPTS} -tags "containers_image_openpgp" cmd/sealos/main.go
 	CGO_ENABLED=0 GOOS=${OS} GOARCH=amd64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_amd64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
 
 build-arm64:
