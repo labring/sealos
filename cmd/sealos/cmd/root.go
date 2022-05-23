@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/labring/sealos/pkg/utils/contants"
@@ -64,4 +65,13 @@ func onBootOnDie() {
 		panic(1)
 	}
 	logger.CfgAndFile(debug, contants.LogPath(), "sealos", false)
+	setupLogrus()
+}
+
+const logLevel = "warn"
+
+func setupLogrus() error {
+	logrusLvl, _ := logrus.ParseLevel(logLevel)
+	logrus.SetLevel(logrusLvl)
+	return nil
 }
