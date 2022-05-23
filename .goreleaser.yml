@@ -32,11 +32,18 @@ builds:
       - linux
     goarch:
       - arm64
+    tags:
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -extldflags "-static -fpic"
       - -s -w
+      - -linkmode external
 
   - env:
       - CGO_ENABLED=1
@@ -52,11 +59,19 @@ builds:
       - linux
     goarch:
       - amd64
+    tags:
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -extldflags "-static -fpic"
       - -s -w
+      - -linkmode external
+
 
   - env:
       - CGO_ENABLED=0
