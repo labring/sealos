@@ -33,6 +33,7 @@ builds:
     goarch:
       - arm64
     tags:
+      - netgo
       - exclude_graphdriver_devicemapper
       - static
       - osusergo
@@ -60,6 +61,7 @@ builds:
     goarch:
       - amd64
     tags:
+      - netgo
       - exclude_graphdriver_devicemapper
       - static
       - osusergo
