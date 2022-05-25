@@ -16,12 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -70,8 +70,7 @@ func onBootOnDie() {
 
 const logLevel = "warn"
 
-func setupLogrus() error {
+func setupLogrus() {
 	logrusLvl, _ := logrus.ParseLevel(logLevel)
 	logrus.SetLevel(logrusLvl)
-	return nil
 }
