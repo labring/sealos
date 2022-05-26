@@ -1,7 +1,3 @@
-# ⚠️ 风险须知
-
-**由于sealos可以一条命令构建一个云，可能会导致您整个云部门被裁**
-
 <a href="https://trackgit.com">
   <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
 </a>
@@ -10,7 +6,7 @@
 
 <div align="center">
   <p>
-    <b>以kubernetes为内核的云操作系统发行版，让云原生简单普及!</b>
+    <b>让云原生简单普及!</b>
   </p>
   <p>
 
