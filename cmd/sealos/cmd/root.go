@@ -21,6 +21,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/contants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )
@@ -64,4 +65,12 @@ func onBootOnDie() {
 		panic(1)
 	}
 	logger.CfgAndFile(debug, contants.LogPath(), "sealos", false)
+	setupLogrus()
+}
+
+const logLevel = "warn"
+
+func setupLogrus() {
+	logrusLvl, _ := logrus.ParseLevel(logLevel)
+	logrus.SetLevel(logrusLvl)
 }

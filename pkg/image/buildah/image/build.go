@@ -89,10 +89,9 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	//fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
 	cliArgs := strings.Split(options.String(), " ")
 	// start call buildah build
-	output := ""
+	output := options.Tag
 	cleanTmpFile := false
 	var tags []string
-	tags = append(tags, options.Tag)
 
 	if err = auth.CheckAuthFile(d.buildahBuildOptions.BudResults.Authfile); err != nil {
 		return err
