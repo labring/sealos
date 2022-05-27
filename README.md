@@ -21,7 +21,9 @@
 
 ---
 
-**Documentation: _[Website](https://www.sealyun.com), [English Docs](/README_en.md), [Blog](https://fuckcloudnative.io)_**
+> English | [中文](docs/4.0/README.md)
+
+**Documentation: _[Website](https://www.sealyun.com), [Blog](https://icloudnative.io)_**
 
 **Join us: DingTalk(35371178), [Telegram](https://t.me/gsealyun), QQ Group(98488045), Wechat：fangnux**
 
