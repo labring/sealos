@@ -81,6 +81,10 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 	ociList, err := c.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
 		return err
@@ -98,10 +102,12 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	}
 	return nil
 }
-
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
+		return err
+	}
+	if err = c.CheckImageType(cluster); err != nil {
 		return err
 	}
 	for _, img := range cluster.Spec.Image {
