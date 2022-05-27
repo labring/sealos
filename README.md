@@ -14,7 +14,7 @@
 [![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
 [![Go Report Card](https://goreportcard.com/badge/github.com/labring/sealos)](https://goreportcard.com/report/github.com/labring/sealos)
-[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/gsealyun)
+[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/cloudnativer)
 
   </p>
 </div>
@@ -25,7 +25,7 @@
 
 **Documentation: _[Website](https://www.sealyun.com), [Blog](https://icloudnative.io)_**
 
-**Join us: DingTalk(35371178), [Telegram](https://t.me/gsealyun), QQ Group(98488045), Wechat：fangnux**
+**Join us: DingTalk(35371178), [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 
 ## What is sealos
 
