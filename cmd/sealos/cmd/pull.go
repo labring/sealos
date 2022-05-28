@@ -23,7 +23,7 @@ func newPullCmd() *cobra.Command {
 	var pullCmd = &cobra.Command{
 		Use:     "pull",
 		Short:   "pull cloud image",
-		Example: `sealos pull registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8`,
+		Example: `sealos pull kubernetes:v1.24.0`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewRegistryService()

@@ -23,7 +23,7 @@ func newTagCmd() *cobra.Command {
 	var tagCmd = &cobra.Command{
 		Use:     "tag",
 		Short:   "tag a image as a new one",
-		Example: `sealos tag localhost/oci-kubernetes:1.22.8 registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8`,
+		Example: `sealos tag kubernetes:v1.24.0 oci-kubernetes:v1.24.0`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewImageService()

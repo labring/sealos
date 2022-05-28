@@ -119,14 +119,14 @@ And the task is completed before the meeting ends.
 
 > Installing an HA kubernetes cluster with calico as CNI
 
-Here `kubernetes:1.24.0` and `calico:v3.22.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
+Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
 
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
 $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # Create a cluster
-$ sealos run kubernetes:1.24.0 calico:v3.22.1 \
+$ sealos run kubernetes:v1.24.0 calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```

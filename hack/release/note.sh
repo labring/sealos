@@ -23,7 +23,7 @@ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealo
 wget https://sealyun-home.oss-accelerate.aliyuncs.com/images/buildah.linux.amd64 --no-check-certificate -O buildah && \
 chmod a+x buildah && mv buildah /usr/bin
 # 创建一个集群
-sealos run registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes:1.22.8 registry.cn-hongkong.aliyuncs.com/sealyun/oci-calico:v3.22.1 --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
+sealos run kubernetes:v1.24.0 calico:v3.22.1 --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
 
 \`\`\`
 " >> Note.md

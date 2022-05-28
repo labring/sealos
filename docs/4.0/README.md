@@ -122,14 +122,14 @@ sealos run kubernetes:v1.24.0 openebs:v1.9.0 mysql:v8.0 minio:v4.4.16 ingress:v4
 
 > 安装一个高可用的kubernetes集群，并用calico作为网络插件
 
-这里的 `kubernetes:1.24.0` 和 `calico:v3.22.1` 就是存在registry里的集群镜像，完全兼容OCI标准, 当然聪明同学立马想到是不是可以用flannel，答案是当然！
+这里的 `kubernetes:v1.24.0` 和 `calico:v3.22.1` 就是存在registry里的集群镜像，完全兼容OCI标准, 当然聪明同学立马想到是不是可以用flannel，答案是当然！
 
 ```shell script
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
 wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
-sealos run kubernetes:1.24.0 calico:v3.22.1 \
+sealos run kubernetes:v1.24.0 calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```

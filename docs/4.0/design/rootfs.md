@@ -60,7 +60,7 @@
 FROM scratch
 MAINTAINER sealyun
 LABEL init="init.sh \$criData \$registryDomain \$registryPort \$registryUsername \$registryPassword"
-LABEL version="v1.22.8"
+LABEL version="v1.24.0"
 LABEL image=""
 LABEL clean="clean.sh \$criData"
 LABEL check="check.sh"
@@ -85,14 +85,14 @@ image-cri-shim can replace image to registry addr
   example ImageList file is :
   `
   ghcr.io/sealyun/lvscare:v1.1.3-beta.2
-  k8s.gcr.io/kube-apiserver:v1.22.8
-  k8s.gcr.io/kube-controller-manager:v1.22.8
-  k8s.gcr.io/kube-scheduler:v1.22.8
-  k8s.gcr.io/kube-proxy:v1.22.8
+  k8s.gcr.io/kube-apiserver:v1.24.0
+  k8s.gcr.io/kube-controller-manager:v1.24.0
+  k8s.gcr.io/kube-scheduler:v1.24.0
+  k8s.gcr.io/kube-proxy:v1.24.0
   k8s.gcr.io/pause:3.5
   k8s.gcr.io/etcd:3.5.0-0
   k8s.gcr.io/coredns/coredns:v1.8.4
   `
-  shim found image in imageList ,the  `k8s.gcr.io/kube-apiserver:v1.22.8` replace to `sealos.hub:5000/kube-apiserver:v1.22.8`
+  shim found image in imageList ,the  `k8s.gcr.io/kube-apiserver:v1.24.0` replace to `sealos.hub:5000/kube-apiserver:v1.24.0`
 - online (default module)
 

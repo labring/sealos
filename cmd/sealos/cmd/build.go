@@ -32,7 +32,7 @@ func newBuildCmd() *cobra.Command {
 	var buildCmd = &cobra.Command{
 		Use:     "build [flags] PATH",
 		Short:   "build an cloud image from a Kubefile",
-		Example: `sealos build -t registry.cn-qingdao.aliyuncs.com/oci-kubernetes:1.22.8 .`,
+		Example: `sealos build -t kubernetes:v1.24.0 .`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var (
