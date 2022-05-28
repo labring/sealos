@@ -18,8 +18,11 @@ package contants
 
 import "path/filepath"
 
+var (
+	DefaultClusterRootfsDir = "/var/lib/sealos"
+)
+
 const (
-	DefaultClusterRootfsDir          = "/var/lib/sealos"
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"

@@ -27,7 +27,8 @@ import (
 )
 
 var (
-	debug bool
+	debug          bool
+	clusterRootDir string
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -52,9 +53,11 @@ func init() {
 	cobra.OnInitialize(onBootOnDie)
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
+	rootCmd.PersistentFlags().StringVar(&clusterRootDir, "clusterRootDir", contants.DefaultClusterRootfsDir, "cluster root directory")
 }
 
 func onBootOnDie() {
+	contants.DefaultClusterRootfsDir = clusterRootDir
 	var rootDirs = []string{
 		contants.LogPath(),
 		contants.DataPath(),
