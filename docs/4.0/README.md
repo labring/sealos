@@ -143,10 +143,10 @@ sealos run kubernetes:v1.24.0 calico:v3.22.1 \
 接下来请不要震惊：
 
 ```shell script
-sealos run fanux/helm:v3.8.1 # 安装helm
-sealos run fanux/openebs:v1.9.0 # 安装openebs
-sealos run fanux/minio-operator:v4.4.16 fanux/ingress-nginx:4.1.0-daemonset \
-   fanux/mysql-operator:v8.0.23-14.1 fanux/redis-operator:5.0 # 喜欢的话可以把它们写一起
+sealos run helm:v3.8.2 # 安装helm
+sealos run openebs:v1.9.0 # 安装openebs
+sealos run minio-operator:v4.4.16 ingress-nginx:4.1.0 \
+   mysql-operator:8.0.23-14.1 redis-operator:3.1.4 # 喜欢的话可以把它们写一起
 ```
 
 然后你就啥都有了
