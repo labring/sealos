@@ -97,6 +97,12 @@ location = "ghcr.io/labring"
 
 [[registry.mirror]]
 location = "registry.cn-qingdao.aliyuncs.com/labring"
+
+[[registry.mirror]]
+location = "docker.io/lameleg"
+
+[[registry.mirror]]
+location = "docker.io/fanux"
 `
 	if !fileutil.IsExist(registryPath) {
 		return fileutil.WriteFile(registryPath, []byte(data))
