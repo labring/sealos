@@ -31,6 +31,10 @@ func initBuildah() (bool, error) {
 	if err != nil {
 		return false, errors.New("create storage config fail")
 	}
+	err = buildahRegistrySync()
+	if err != nil {
+		return false, errors.New("create storage config fail")
+	}
 	_, ok := exec.CheckCmdIsExist("buildah")
 	return ok, nil
 }
@@ -77,6 +81,31 @@ graphroot = "/var/lib/containers/storage"`
 	storageEtcPath := "/etc/containers/storage.conf"
 	if !fileutil.IsExist(storageEtcPath) {
 		return fileutil.WriteFile(storageEtcPath, []byte(data))
+	}
+	return nil
+}
+
+func buildahRegistrySync() error {
+	registryPath := "/etc/containers/registries.conf"
+	data := `unqualified-search-registries = ["localhost"]
+
+[[registry]]
+prefix = "localhost"
+
+[[registry.mirror]]
+location = "ghcr.io/labring"
+
+[[registry.mirror]]
+location = "registry.cn-qingdao.aliyuncs.com/labring"
+
+[[registry.mirror]]
+location = "docker.io/lameleg"
+
+[[registry.mirror]]
+location = "docker.io/fanux"
+`
+	if !fileutil.IsExist(registryPath) {
+		return fileutil.WriteFile(registryPath, []byte(data))
 	}
 	return nil
 }
