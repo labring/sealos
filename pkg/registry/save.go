@@ -93,10 +93,6 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 		tmpnameds := nameds
 		numCh <- struct{}{}
 		eg.Go(func() error {
-			defer func() {
-				<-numCh
-				mu.Unlock()
-			}()
 			auth := is.auths[tmpnameds[0].domain]
 			if auth.ServerAddress == "" {
 				auth.ServerAddress = tmpnameds[0].domain
@@ -106,6 +102,11 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 				return fmt.Errorf("init registry error: %v", err)
 			}
 			mu.Lock()
+			defer func() {
+				<-numCh
+				mu.Unlock()
+			}()
+
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
 				logger.Warn("save domain %s image %s error: %v", tmpnameds[0].domain, tmpnameds[0].FullName(), err)

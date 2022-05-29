@@ -91,6 +91,7 @@ func buildahRegistrySync() error {
 
 [[registry]]
 prefix = "localhost"
+location = "localhost"
 
 [[registry.mirror]]
 location = "docker.io/lameleg"
