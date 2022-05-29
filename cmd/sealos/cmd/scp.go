@@ -17,7 +17,9 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/ssh"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +29,7 @@ import (
 // var ips []string
 
 func newScpCmd() *cobra.Command {
+	var cluster *v1beta1.Cluster
 	var cmd = &cobra.Command{
 		Use: "scp",
 		// Aliases: []string{"cp"},
@@ -44,17 +47,25 @@ set ips to copy file:
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(ips) > 0 {
-				sshCmd, err := ssh.NewExecCmdFromIPs(clusterName, ips)
+				sshCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
 				if err != nil {
 					return err
 				}
 				return sshCmd.RunCopy(args[0], args[1])
 			}
-			sshCmd, err := ssh.NewExecCmdFromRoles(clusterName, roles)
+			sshCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
 			if err != nil {
 				return err
 			}
 			return sshCmd.RunCopy(args[0], args[1])
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			cls, err := clusterfile.GetClusterFromName(clusterName)
+			if err != nil {
+				return err
+			}
+			cluster = cls
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")

@@ -17,7 +17,9 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/ssh"
 	"github.com/spf13/cobra"
 )
 
@@ -26,6 +28,7 @@ var clusterName string
 var ips []string
 
 func newExecCmd() *cobra.Command {
+	var cluster *v1beta1.Cluster
 	var cmd = &cobra.Command{
 		Use:   "exec",
 		Short: "exec a shell command or script on all node.",
@@ -42,17 +45,25 @@ set ips to exec cmd:
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(ips) > 0 {
-				execCmd, err := ssh.NewExecCmdFromIPs(clusterName, ips)
+				execCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
 				if err != nil {
 					return err
 				}
 				return execCmd.RunCmd(args[0])
 			}
-			execCmd, err := ssh.NewExecCmdFromRoles(clusterName, roles)
+			execCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
 			if err != nil {
 				return err
 			}
 			return execCmd.RunCmd(args[0])
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			cls, err := clusterfile.GetClusterFromName(clusterName)
+			if err != nil {
+				return err
+			}
+			cluster = cls
+			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
