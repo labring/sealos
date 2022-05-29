@@ -33,10 +33,11 @@ type DefaultImageSaver struct {
 	ctx            context.Context
 	domainToImages map[string][]Named
 	progressOut    progress.Output
+	maxPullProcs   int
 	auths          map[string]types.AuthConfig
 }
 
-func NewImageSaver(ctx context.Context, auths map[string]types.AuthConfig) Save {
+func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Save {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -46,6 +47,7 @@ func NewImageSaver(ctx context.Context, auths map[string]types.AuthConfig) Save 
 	return &DefaultImageSaver{
 		ctx:            ctx,
 		domainToImages: make(map[string][]Named),
+		maxPullProcs:   maxPullProcs,
 		auths:          auths,
 	}
 }
