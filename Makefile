@@ -14,18 +14,18 @@ endif
 
 # only support linux
 OS=linux
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Darwin)
-CGO_ENABLED=0
-OS=darwin
-endif
-ifeq ($(UNAME_S),Linux)
-CGO_ENABLED=1
-endif
+#UNAME_S := $(shell uname -s)
+#ifeq ($(UNAME_S),Darwin)
+#CGO_ENABLED=0
+#OS=darwin
+#endif
+#ifeq ($(UNAME_S),Linux)
+#CGO_ENABLED=1
+#endif
 
 override LDFLAGS += "\
   -X github.com/labring/sealos/pkg/version.gitVersion=${GIT_TAG} \
-  -X github.com/labring/sealos/pkg/version.gitCommit==${COMMIT_ID} \
+  -X github.com/labring/sealos/pkg/version.gitCommit=${COMMIT_ID} \
   -X github.com/labring/sealos/pkg/version.buildDate=${BUILD_TIME} "
 
 

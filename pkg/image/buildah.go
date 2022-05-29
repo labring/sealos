@@ -25,15 +25,15 @@ import (
 func initBuildah() (bool, error) {
 	err := buildahPolicySync()
 	if err != nil {
-		return false, errors.New("create policy.json fail")
+		return false, errors.New("create policy.json failed")
 	}
 	err = buildahStorageSync()
 	if err != nil {
-		return false, errors.New("create storage config fail")
+		return false, errors.New("create storage config failed")
 	}
 	err = buildahRegistrySync()
 	if err != nil {
-		return false, errors.New("create storage config fail")
+		return false, errors.New("create registry config failed")
 	}
 	_, ok := exec.CheckCmdIsExist("buildah")
 	return ok, nil
@@ -93,16 +93,10 @@ func buildahRegistrySync() error {
 prefix = "localhost"
 
 [[registry.mirror]]
-location = "ghcr.io/labring"
-
-[[registry.mirror]]
-location = "registry.cn-qingdao.aliyuncs.com/labring"
-
-[[registry.mirror]]
 location = "docker.io/lameleg"
 
 [[registry.mirror]]
-location = "docker.io/fanux"
+location = "registry.cn-qingdao.aliyuncs.com/labring"
 `
 	if !fileutil.IsExist(registryPath) {
 		return fileutil.WriteFile(registryPath, []byte(data))

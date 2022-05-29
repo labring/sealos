@@ -122,14 +122,14 @@ sealos run kubernetes:v1.24.0 openebs:v1.9.0 mysql:v8.0 minio:v4.4.16 ingress:v4
 
 > 安装一个高可用的kubernetes集群，并用calico作为网络插件
 
-这里的 `kubernetes:1.24.0` 和 `calico:v3.22.1` 就是存在registry里的集群镜像，完全兼容OCI标准, 当然聪明同学立马想到是不是可以用flannel，答案是当然！
+这里的 `kubernetes:v1.24.0` 和 `calico:v3.22.1` 就是存在registry里的集群镜像，完全兼容OCI标准, 当然聪明同学立马想到是不是可以用flannel，答案是当然！
 
 ```shell script
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
 wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
-sealos run kubernetes:1.24.0 calico:v3.22.1 \
+sealos run kubernetes:v1.24.0 calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -143,10 +143,10 @@ sealos run kubernetes:1.24.0 calico:v3.22.1 \
 接下来请不要震惊：
 
 ```shell script
-sealos run fanux/helm:v3.8.1 # 安装helm
-sealos run fanux/openebs:v1.9.0 # 安装openebs
-sealos run fanux/minio-operator:v4.4.16 fanux/ingress-nginx:4.1.0-daemonset \
-   fanux/mysql-operator:v8.0.23-14.1 fanux/redis-operator:5.0 # 喜欢的话可以把它们写一起
+sealos run helm:v3.8.2 # 安装helm
+sealos run openebs:v1.9.0 # 安装openebs
+sealos run minio-operator:v4.4.16 ingress-nginx:4.1.0 \
+   mysql-operator:8.0.23-14.1 redis-operator:3.1.4 # 喜欢的话可以把它们写一起
 ```
 
 然后你就啥都有了
