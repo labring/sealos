@@ -15,6 +15,7 @@
 package config
 
 import (
+	"bytes"
 	"io/ioutil"
 	"testing"
 
@@ -124,6 +125,56 @@ func Test_getAppendOrInsertConfigData(t *testing.T) {
 				return
 			}
 			t.Log(string(got))
+		})
+	}
+}
+
+func Test_getOverrideConfig(t *testing.T) {
+	type args struct {
+		path string
+		data []byte
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []byte
+		wantErr bool
+	}{
+		{
+			name: "test",
+			args: args{
+				data: []byte("spec:\n  image: kubernetes:v1.19.8"),
+				path: "test_clusterfile.yaml",
+			},
+		}, {
+			name: "test",
+			args: args{
+				data: []byte("spec:\n  template:\n    metadata:\n      labels:\n        name: tigera-operatorssssss"),
+				path: "tigera-operator.yaml",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := getOverrideConfigData(tt.args.path, tt.args.data)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+
+			output := "test_" + tt.args.path
+			err = ioutil.WriteFile(output, got, 0644)
+			if err != nil {
+				t.Error(err)
+			}
+
+			content, err := ioutil.ReadFile(output)
+			if err != nil {
+				t.Error(err)
+			}
+			if !bytes.Equal(tt.args.data, content) {
+				t.Errorf("getOverrideConfigData() failed, expect %v, got %v", tt.args.data, content)
+			}
 		})
 	}
 }
