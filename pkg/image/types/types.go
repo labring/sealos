@@ -80,9 +80,6 @@ func (opts *BuildOptions) String() string {
 	if len(opts.Pull) > 0 {
 		sb.WriteString(fmt.Sprintf(" --pull=%s ", string(opts.Pull)))
 	}
-	if opts.MaxPullProcs > 0 {
-		sb.WriteString(fmt.Sprintf(" --max-pull-procs %d ", opts.MaxPullProcs))
-	}
 	if len(opts.Tag) > 0 {
 		sb.WriteString(fmt.Sprintf(" -t %s ", opts.Tag))
 	}
