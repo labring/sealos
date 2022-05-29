@@ -28,7 +28,7 @@ import (
 func TestSaveImages(t *testing.T) {
 	//tests := []string{"quay.io/tigera/operator:v1.25.3"}
 	tests := []string{"registry.cn-beijing.aliyuncs.com/private-test/nginx"}
-	is := NewImageSaver(context.Background(), nil)
+	is := NewImageSaver(context.Background(), 5, nil)
 	images, err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "amd64"})
 	if err != nil {
 		t.Error(err)

@@ -47,11 +47,10 @@ import (
 )
 
 const (
-	HTTPS               = "https://"
-	HTTP                = "http://"
-	defaultProxyURL     = "https://registry-1.docker.io"
-	configRootDir       = "rootdirectory"
-	maxPullGoroutineNum = 5
+	HTTPS           = "https://"
+	HTTP            = "http://"
+	defaultProxyURL = "https://registry-1.docker.io"
+	configRootDir   = "rootdirectory"
 
 	manifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
 	manifestOCI      = "application/vnd.oci.image.manifest.v1+json"
@@ -87,7 +86,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 
 	//perform image save ability
 	eg, _ := errgroup.WithContext(context.Background())
-	numCh := make(chan struct{}, maxPullGoroutineNum)
+	numCh := make(chan struct{}, is.maxPullProcs)
 	var outImages []string
 	var mu sync.Mutex
 	for _, nameds := range is.domainToImages {
@@ -216,7 +215,7 @@ func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distr
 		return nil, fmt.Errorf("get manifest service error: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	numCh := make(chan struct{}, maxPullGoroutineNum)
+	numCh := make(chan struct{}, is.maxPullProcs)
 	imageDigests := make([]digest.Digest, 0)
 	for _, named := range nameds {
 		tmpnamed := named
@@ -285,7 +284,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 		return fmt.Errorf("get blob service error: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	numCh := make(chan struct{}, maxPullGoroutineNum)
+	numCh := make(chan struct{}, is.maxPullProcs)
 	blobLists := make([]digest.Digest, 0)
 
 	//get blob list
