@@ -50,7 +50,17 @@ func GetDefaultClusterName() (string, error) {
 
 	return "", ErrClusterNotExist
 }
-
+func GetClusterFromName(clusterName string) (cluster *v2.Cluster, err error) {
+	if clusterName == "" {
+		clusterName, err = GetDefaultClusterName()
+		if err != nil {
+			return nil, err
+		}
+	}
+	clusterFile := contants.Clusterfile(clusterName)
+	cluster, err = GetClusterFromFile(clusterFile)
+	return
+}
 func GetClusterFromFile(filepath string) (cluster *v2.Cluster, err error) {
 	cluster = &v2.Cluster{}
 	if err = yaml2.UnmarshalYamlFromFile(filepath, cluster); err != nil {
