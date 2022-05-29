@@ -31,9 +31,14 @@ import (
 	utilsexec "k8s.io/utils/exec"
 )
 
+// defaultKnownCRISockets holds the set of known CRI endpoints
+var defaultKnownCRISockets = []string{
+	CRISocketContainerd,
+	CRISocketCRIO,
+	CRISocketDocker,
+}
+
 const (
-	DefaultDockerCRISocket     = "/var/run/dockershim.sock"
-	DefaultContainerdCRISocket = containerdSocket
 	DefaultCgroupDriver        = "cgroupfs"
 	DefaultSystemdCgroupDriver = "systemd"
 	// PullImageRetry specifies how many times ContainerRuntime retries when pulling image failed
@@ -68,7 +73,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config st
 	var toolName string
 	var runtime ContainerRuntime
 
-	if criSocket != DefaultDockerCRISocket {
+	if criSocket != CRISocketDocker {
 		toolName = "crictl"
 		// !!! temporary work around crictl warning:
 		// Using "/var/run/crio/crio.sock" as endpoint is deprecated,
@@ -278,21 +283,8 @@ func (runtime *DockerRuntime) ImageExists(image string) bool {
 }
 
 // detectCRISocketImpl is separated out only for test purposes, DON'T call it directly, use DetectCRISocket instead
-func detectCRISocketImpl(isSocket func(string) bool) (string, error) {
+func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (string, error) {
 	foundCRISockets := []string{}
-	knownCRISockets := []string{
-		// Docker and containerd sockets are special cased below, hence not to be included here
-		"/var/run/crio/crio.sock",
-	}
-
-	if isSocket(dockerSocket) {
-		// the path in dockerSocket is not CRI compatible, hence we should replace it with a CRI compatible socket
-		foundCRISockets = append(foundCRISockets, DefaultDockerCRISocket)
-	} else if isSocket(containerdSocket) {
-		// Docker 18.09 gets bundled together with containerd, thus having both dockerSocket and containerdSocket present.
-		// For compatibility reasons, we use the containerd socket only if Docker is not detected.
-		foundCRISockets = append(foundCRISockets, containerdSocket)
-	}
 
 	for _, socket := range knownCRISockets {
 		if isSocket(socket) {
@@ -302,8 +294,8 @@ func detectCRISocketImpl(isSocket func(string) bool) (string, error) {
 
 	switch len(foundCRISockets) {
 	case 0:
-		// Fall back to Docker if no CRI is detected, we can error out later on if we need it
-		return DefaultDockerCRISocket, nil
+		// Fall back to the default socket if no CRI is detected, we can error out later on if we need it
+		return DefaultCRISocket, nil
 	case 1:
 		// Precisely one CRI found, use that
 		return foundCRISockets[0], nil
@@ -315,5 +307,5 @@ func detectCRISocketImpl(isSocket func(string) bool) (string, error) {
 
 // DetectCRISocket uses a list of known CRI sockets to detect one. If more than one or none is discovered, an error is returned.
 func DetectCRISocket() (string, error) {
-	return detectCRISocketImpl(isExistingSocket)
+	return detectCRISocketImpl(isExistingSocket, defaultKnownCRISockets)
 }
