@@ -68,7 +68,7 @@ func (e *Exec) RunCmd(cmd string) error {
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("failed to sealos exec command, err: %v", err)
+		return fmt.Errorf("failed to exec command, err: %v", err)
 	}
 	return nil
 }
@@ -90,7 +90,7 @@ func (e *Exec) RunCopy(srcFilePath, dstFilePath string) error {
 		})
 	}
 	if err := eg.Wait(); err != nil {
-		return fmt.Errorf("failed to sealos copy command, err: %v", err)
+		return fmt.Errorf("failed to copy command, err: %v", err)
 	}
 	logger.Info("transfers files success")
 	return nil
