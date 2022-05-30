@@ -26,6 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/utils/file"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/tmpl"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -45,7 +46,7 @@ func ParseYamlImages(srcPath string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if f.IsDir() || !yaml.Matcher(f.Name()) {
+		if f.IsDir() || !yaml.Matcher(f.Name()) || !tmpl.Matcher(f.Name()) {
 			return nil
 		}
 		ima, err := imageSearcher.ListImages(path)
