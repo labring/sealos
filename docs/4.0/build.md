@@ -17,7 +17,7 @@
 run one image build func
 
 ```dockerfile
-FROM kubernetes:v1.24.0-amd64
+FROM labring/kubernetes:v1.24.0-amd64
 COPY cni ./cni
 COPY images ./images
 COPY registry ./registry
@@ -56,7 +56,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 run one image build func
 
 ```dockerfile
-FROM kubernetes:v1.24.0-amd64
+FROM labring/kubernetes:v1.24.0-amd64
 COPY cni ./cni
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]
 ```
@@ -86,7 +86,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 run one image build func
 
 ```dockerfile
-FROM registry.cn-hongkong.aliyuncs.com/sealyun/oci-kubernetes-calico:1.24.0-amd64
+FROM labring/oci-kubernetes-calico:1.24.0-amd64
 COPY manifests ./manifests
 CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml","kubectl apply -f manifests/openebs-operator.yaml"]
 ```

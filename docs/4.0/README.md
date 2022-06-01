@@ -110,7 +110,7 @@ CTO(掰掰手指头): kubernetes 3人，存储专家 1人，开发1人，paas 3�
 小张(默默举手): 我了解一个开源软件，貌似一键就可以搞定，小张共享了一下屏幕，默默敲下：
 
 ```shell script
-sealos run kubernetes:v1.24.0 openebs:v1.9.0 mysql:v8.0 minio:v4.4.16 ingress:v4.1.0 laf:v0.8.0
+sealos run labring/kubernetes:v1.24.0 labring/openebs:v1.9.0 labring/mysql:v8.0 labring/minio:v4.4.16 labring/ingress:v4.1.0 labring/laf:v0.8.0
        -m 192.168.0.2 -n 192.168.0.3 -p 123456
 ```
 
@@ -129,7 +129,7 @@ sealos run kubernetes:v1.24.0 openebs:v1.9.0 mysql:v8.0 minio:v4.4.16 ingress:v4
 wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
-sealos run kubernetes:v1.24.0 calico:v3.22.1 \
+sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -143,10 +143,10 @@ sealos run kubernetes:v1.24.0 calico:v3.22.1 \
 接下来请不要震惊：
 
 ```shell script
-sealos run helm:v3.8.2 # 安装helm
-sealos run openebs:v1.9.0 # 安装openebs
-sealos run minio-operator:v4.4.16 ingress-nginx:4.1.0 \
-   mysql-operator:8.0.23-14.1 redis-operator:3.1.4 # 喜欢的话可以把它们写一起
+sealos run labring/helm:v3.8.2 # 安装helm
+sealos run labring/openebs:v1.9.0 # 安装openebs
+sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
+   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # 喜欢的话可以把它们写一起
 ```
 
 然后你就啥都有了
