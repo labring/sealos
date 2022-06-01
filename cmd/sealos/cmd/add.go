@@ -30,6 +30,9 @@ func newAddCmd() *cobra.Command {
 		Short: "add some node",
 		Args:  cobra.NoArgs,
 		Example: `
+add to nodes :
+	sealos add --nodes x.x.x.x
+
 add to default cluster: 
 	sealos add --masters x.x.x.x --nodes x.x.x.x
 	sealos add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y

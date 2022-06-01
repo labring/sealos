@@ -25,17 +25,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// deleteCmd represents the delete command
-func newDeleteCmd() *cobra.Command {
-	var deleteCmd = &cobra.Command{
-		Use:   "delete",
-		Short: "delete some node",
-		Args:  cobra.NoArgs,
-		Example: `
+var exampledelete = `
+delete to nodes:
+	sealos delete --nodes x.x.x.x
+		if accidentally deleted; 
+		Use 'sealos add' to recover:
+			sealos add --nodes x.x.x.x
+
 delete to default cluster: 
 	sealos delete --masters x.x.x.x --nodes x.x.x.x
 	sealos delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
-`,
+`
+
+// deleteCmd represents the delete command
+func newDeleteCmd() *cobra.Command {
+	var deleteCmd = &cobra.Command{
+		Use:     "delete",
+		Short:   "delete some node",
+		Args:    cobra.NoArgs,
+		Example: exampledelete,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := processor.ConfirmDeleteNodes(); err != nil {
 				return err
