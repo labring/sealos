@@ -87,17 +87,16 @@ graphroot = "/var/lib/containers/storage"`
 
 func buildahRegistrySync() error {
 	registryPath := "/etc/containers/registries.conf"
-	data := `unqualified-search-registries = ["localhost"]
+	data := `unqualified-search-registries = ["docker.io"]
 
 [[registry]]
-prefix = "localhost"
-location = "localhost"
+prefix = "docker.io/labring"
+location = "docker.io/labring"
 
 [[registry.mirror]]
-location = "docker.io/lameleg"
-
-[[registry.mirror]]
+prefix = "docker.io/labring"
 location = "registry.cn-qingdao.aliyuncs.com/labring"
+
 `
 	if !fileutil.IsExist(registryPath) {
 		return fileutil.WriteFile(registryPath, []byte(data))
