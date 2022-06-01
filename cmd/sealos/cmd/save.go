@@ -24,7 +24,7 @@ func newSaveCmd() *cobra.Command {
 	var saveCmd = &cobra.Command{
 		Use:     "save",
 		Short:   "save cloud image to a tar file",
-		Example: `sealos save -o kubernetes.tar kubernetes:v1.24.0`,
+		Example: `sealos save -o kubernetes.tar labring/kubernetes:v1.24.0`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewImageService()

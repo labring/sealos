@@ -101,7 +101,7 @@ CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
 
 
 1. the cni dir is kubectl apply config files
-2. exec `buildah build  -t kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` build the oci image
+2. exec `buildah build  -t labring/kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` build the oci image
 
 tips: you need add calico cmd to openebs cmd layer,because the dockerfile override to old layer in run one image func
       

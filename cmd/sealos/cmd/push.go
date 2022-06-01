@@ -23,7 +23,7 @@ func newPushCmd() *cobra.Command {
 	var pushCmd = &cobra.Command{
 		Use:     "push",
 		Short:   "push cloud image",
-		Example: `sealos push kubernetes:v1.24.0`,
+		Example: `sealos push labring/kubernetes:v1.24.0`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewRegistryService()
