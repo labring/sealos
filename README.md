@@ -109,7 +109,7 @@ Everyone is talking, and a voice comes from the corner:
 "I know an open-source software that can handle this with a single command:"
 
 ```shell script
-$ sealos run kubernetes:v1.24.0 openebs:v1.9.0 mysql:v8.0 minio:v4.4.16 ingress:v4.1.0 laf:v0.8.0
+$ sealos run labring/kubernetes:v1.24.0 labring/openebs:v1.9.0 labring/mysql:v8.0 labring/minio:v4.4.16 labring/ingress:v4.1.0 labring/laf:v0.8.0
        -m 192.168.0.2 -n 192.168.0.3 -p 123456
 ```
 
@@ -126,7 +126,7 @@ Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the reg
 $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # Create a cluster
-$ sealos run kubernetes:v1.24.0 calico:v3.22.1 \
+$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -140,10 +140,10 @@ See [Building an ingress cluster image](https://github.com/labring/sealos/blob/m
 Don't be shocked by the following:
 
 ```shell script
-$ sealos run helm:v3.8.2 # install helm
-$ sealos run openebs:v1.9.0 # install openebs
-$ sealos run minio-operator:v4.4.16 ingress-nginx:4.1.0 \
-   mysql-operator:8.0.23-14.1 redis-operator:3.1.4 # oneliner
+$ sealos run labring/helm:v3.8.2 # install helm
+$ sealos run labring/openebs:v1.9.0 # install openebs
+$ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
+   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
 ```
 
 And now everything is ready.
