@@ -126,7 +126,7 @@ Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the reg
 $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
     chmod +x sealos && mv sealos /usr/bin
 # Create a cluster
-$ sealos run labring/bernetes:v1.24.0 labring/calico:v3.22.1 \
+$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
