@@ -36,10 +36,8 @@ var contact = `
     \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /   
      \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
 
-                  官方文档：www.sealyun.com
-                  项目地址：github.com/labring/sealos
-                  QQ   群：98488045
-                  常见问题：github.com/labring/sealos/issues
+                  Website :https://www.sealos.io/
+                  Address :github.com/labring/sealos
 `
 
 var exampleRun = `
