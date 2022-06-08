@@ -33,7 +33,7 @@ func TestSaveImages(t *testing.T) {
 			Username: "admin",
 			Password: "passw0rd",
 		},
-	})
+	}, true)
 	images, err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "amd64"})
 	if err != nil {
 		t.Error(err)
