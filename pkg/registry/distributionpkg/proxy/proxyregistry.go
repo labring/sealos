@@ -22,15 +22,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client/transport"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy/scheduler"
+
 	"github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/reference"
-	"github.com/distribution/distribution/v3/registry/client"
-	"github.com/distribution/distribution/v3/registry/client/auth"
-	"github.com/distribution/distribution/v3/registry/client/auth/challenge"
-	"github.com/distribution/distribution/v3/registry/client/transport"
-	"github.com/distribution/distribution/v3/registry/proxy/scheduler"
 	"github.com/distribution/distribution/v3/registry/storage"
 	"github.com/distribution/distribution/v3/registry/storage/driver"
 )
@@ -40,11 +41,12 @@ type proxyingRegistry struct {
 	embedded       distribution.Namespace // provides local registry functionality
 	scheduler      *scheduler.TTLExpirationScheduler
 	remoteURL      url.URL
+	basicAuth      bool
 	authChallenger authChallenger
 }
 
 // NewRegistryPullThroughCache creates a registry acting as a pull through cache
-func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, config configuration.Proxy) (distribution.Namespace, error) {
+func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, config configuration.Proxy, basicAuth bool) (distribution.Namespace, error) {
 	remoteURL, err := url.Parse(config.RemoteURL)
 	if err != nil {
 		return nil, err
@@ -108,7 +110,7 @@ func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Name
 	// 	return nil, err
 	// }
 
-	cs, err := configureAuth(config.Username, config.Password, config.RemoteURL)
+	cs, err := configureAuth(config.Username, config.Password, config.RemoteURL, basicAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +119,7 @@ func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Name
 		embedded:  registry,
 		scheduler: nil,
 		remoteURL: *remoteURL,
+		basicAuth: basicAuth,
 		authChallenger: &remoteAuthChallenger{
 			remoteURL: *remoteURL,
 			cm:        challenge.NewSimpleManager(),
@@ -148,16 +151,20 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 		},
 		Logger: dcontext.GetLogger(ctx),
 	}
-	tr := transport.NewTransport(http.DefaultTransport,
-		auth.NewAuthorizer(c.challengeManager(),
-			auth.NewTokenHandlerWithOptions(tkopts)))
+	authorizer := auth.NewAuthorizer(c.challengeManager(),
+		auth.NewTokenHandlerWithOptions(tkopts))
+	if pr.basicAuth {
+		authorizer = auth.NewAuthorizer(c.challengeManager(),
+			auth.NewBasicHandler(tkopts.Credentials, &pr.remoteURL))
+	}
+
+	tr := transport.NewTransport(http.DefaultTransport, authorizer)
 
 	tryClient := &http.Client{Transport: tr}
 	_, err := tryClient.Get(pr.remoteURL.String())
 	if err != nil && strings.Contains(err.Error(), certUnknown) {
 		tr = transport.NewTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
-			auth.NewAuthorizer(c.challengeManager(),
-				auth.NewTokenHandlerWithOptions(tkopts)))
+			authorizer)
 	}
 
 	localRepo, err := pr.embedded.Repository(ctx, name)

@@ -97,7 +97,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 			if auth.ServerAddress == "" {
 				auth.ServerAddress = tmpnameds[0].domain
 			}
-			registry, err := NewProxyRegistry(is.ctx, dir, auth)
+			registry, err := NewProxyRegistry(is.ctx, dir, auth, is.basicAuth)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
@@ -148,7 +148,7 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	}
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig, basicAuth bool) (distribution.Namespace, error) {
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
@@ -167,11 +167,11 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 		return nil, fmt.Errorf("create local registry error: %v", err)
 	}
 
-	proxyRegistry, err := proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy)
+	proxyRegistry, err := proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy, basicAuth)
 	if err != nil { // try http
 		logger.Warn("https error: %v, sealos try to use http", err)
 		config.Proxy.RemoteURL = strings.Replace(config.Proxy.RemoteURL, HTTPS, HTTP, 1)
-		proxyRegistry, err = proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy)
+		proxyRegistry, err = proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy, basicAuth)
 		if err != nil {
 			return nil, fmt.Errorf("create proxy registry error: %v", err)
 		}

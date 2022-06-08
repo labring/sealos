@@ -21,10 +21,11 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy/scheduler"
+
 	"github.com/distribution/distribution/v3"
 	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/reference"
-	"github.com/distribution/distribution/v3/registry/proxy/scheduler"
 	"github.com/opencontainers/go-digest"
 )
 

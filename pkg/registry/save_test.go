@@ -27,8 +27,13 @@ import (
 
 func TestSaveImages(t *testing.T) {
 	//tests := []string{"quay.io/tigera/operator:v1.25.3"}
-	tests := []string{"registry.cn-beijing.aliyuncs.com/private-test/nginx"}
-	is := NewImageSaver(context.Background(), 5, nil)
+	tests := []string{"47.94.15.171:5000/11c-code/11c-image-hook:0bb9121b"}
+	is := NewImageSaver(context.Background(), 5, map[string]types.AuthConfig{
+		"47.94.15.171:5000": {
+			Username: "admin",
+			Password: "passw0rd",
+		},
+	})
 	images, err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "amd64"})
 	if err != nil {
 		t.Error(err)

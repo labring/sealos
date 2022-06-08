@@ -48,6 +48,7 @@ type BuildOptions struct {
 	Platform           string   //--platform linux/amd64
 	Pull               PullType //--pull string[="true"] true  (true,always,never)
 	MaxPullProcs       int      //--max-pull-procs
+	BasicAuth          bool
 	Tag                string
 }
 
