@@ -46,7 +46,7 @@ func ParseYamlImages(srcPath string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if f.IsDir() || !yaml.Matcher(f.Name()) || !tmpl.Matcher(f.Name()) {
+		if f.IsDir() || (!yaml.Matcher(f.Name()) && !tmpl.Matcher(f.Name())) {
 			return nil
 		}
 		ima, err := imageSearcher.ListImages(path)
