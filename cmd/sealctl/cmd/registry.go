@@ -40,6 +40,7 @@ var (
 	registryPullAuths        []string
 	registryPullArch         string
 	registryPullMaxPullProcs int
+	registryPullAuthBasic    bool
 )
 
 func NewRegistryImageCmd() *cobra.Command {
@@ -66,6 +67,7 @@ func NewRegistryImagePullCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&registryPullRegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
 	cmd.PersistentFlags().StringSliceVar(&registryPullAuths, "auths", []string{}, "auths data for login mirror registry, format example is \"address=docker.io&&auth=YWRtaW46YWRtaW4=\".")
 	cmd.PersistentFlags().IntVar(&registryPullMaxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
+	cmd.PersistentFlags().BoolVar(&registryPullAuthBasic, "basic-auth", false, "pull image auth policy,default is token auth")
 	cmd.AddCommand(NewRegistryImagePullRawCmd())
 	cmd.AddCommand(NewRegistryImagePullYamlCmd())
 	cmd.AddCommand(NewRegistryImagePullDefaultCmd())
@@ -85,7 +87,7 @@ func NewRegistryImagePullRawCmd() *cobra.Command {
 				logger.Error("ImageFile convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
-			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth)
+			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth, registryPullAuthBasic)
 			_, err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
@@ -118,7 +120,7 @@ func NewRegistryImagePullYamlCmd() *cobra.Command {
 				logger.Error("yaml path convert images is error: %s", err.Error())
 				os.Exit(1)
 			}
-			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth)
+			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth, registryPullAuthBasic)
 			_, err = is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())
@@ -146,7 +148,7 @@ func NewRegistryImagePullDefaultCmd() *cobra.Command {
 		Short: "registry images manager pull to local dir by default type",
 		Run: func(cmd *cobra.Command, args []string) {
 			flags.PrintFlags(cmd.Flags())
-			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth)
+			is := registry.NewImageSaver(context.Background(), registryPullMaxPullProcs, auth, registryPullAuthBasic)
 			_, err := is.SaveImages(images, registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: registryPullArch})
 			if err != nil {
 				logger.Error("pull registry images is error: %s", err.Error())

@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
 
-	"github.com/distribution/distribution/v3/registry/client/auth"
-	"github.com/distribution/distribution/v3/registry/client/auth/challenge"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // comment this const because not used
@@ -54,7 +54,7 @@ func (c credentials) SetRefreshToken(u *url.URL, service, token string) {
 }
 
 // configureAuth stores credentials for challenge responses
-func configureAuth(username, password, remoteURL string) (auth.CredentialStore, error) {
+func configureAuth(username, password, remoteURL string, basicAuth bool) (auth.CredentialStore, error) {
 	creds := map[string]userpass{}
 
 	authURLs, err := getAuthURLs(remoteURL)
@@ -69,7 +69,12 @@ func configureAuth(username, password, remoteURL string) (auth.CredentialStore, 
 			password: password,
 		}
 	}
-
+	if len(authURLs) == 0 && basicAuth {
+		creds[remoteURL] = userpass{
+			username: username,
+			password: password,
+		}
+	}
 	return credentials{creds: creds}, nil
 }
 

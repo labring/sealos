@@ -126,7 +126,7 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	if err != nil {
 		return err
 	}
-	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths)
+	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths, options.BasicAuth)
 	platform := strings.Split(options.Platform, "/")
 	var platformVar v1.Platform
 	if len(platform) > 2 {
