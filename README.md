@@ -25,7 +25,7 @@
 
 **Documentation: _[Website](https://www.sealyun.com), [Blog](https://icloudnative.io)_**
 
-**Join us: DingTalk(35371178), [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
+**Join us: [DingTalk](https://qr.dingtalk.com/action/joingroup?code=v1,k1,1QW+Q/+iuEirIbgKFztrUNGrVBXAuKfltwpW1WlOTOo=&_dt_no_comment=1&origin=11), [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 
 ## What is sealos
 
@@ -150,6 +150,8 @@ And now everything is ready.
 
 ## Links
 
+- [Contribution Guidelines](./CONTRIBUTING.md)
+- [Development Guide](./DEVELOPGUIDE.md)
 - [sealos 3.0(older version)](https://github.com/labring/sealos/tree/release-v3.3.9#readme) For older version users. Note that sealos 4.0 includes significant improvements, so please upgrade ASAP.
 - [buildah](https://github.com/containers/buildah) Capabilities of buildah is widely used in sealos 4.0 to make cluster images compatible with container images and docker registry.
 - [sealer](https://github.com/sealerio/sealer) Capabilities of sealer is widely used in sealos 4.0 to make Clusterfile compatible with sealer, some module forked sealer source code.
