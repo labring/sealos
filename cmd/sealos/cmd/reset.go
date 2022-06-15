@@ -31,7 +31,7 @@ reset you current cluster:
 var resetArgs *apply.ResetArgs
 
 func newResetCmd() *cobra.Command {
-	var initCmd = &cobra.Command{
+	var resetCmd = &cobra.Command{
 		Use:     "reset",
 		Short:   "Simplest way to reset your cluster",
 		Long:    `sealos reset --name [arg]`,
@@ -51,12 +51,6 @@ func newResetCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	return initCmd
-}
-
-func init() {
-	resetCmd := newResetCmd()
-	rootCmd.AddCommand(resetCmd)
 	resetCmd.Flags().StringVarP(&resetArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
 	resetCmd.Flags().StringVarP(&resetArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
 	resetCmd.Flags().StringVarP(&resetArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
@@ -66,4 +60,10 @@ func init() {
 	resetCmd.Flags().StringVar(&resetArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
 	resetCmd.Flags().StringVar(&resetArgs.ClusterName, "name", "default", "set cluster name variables")
 	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
+	return resetCmd
+}
+
+func init() {
+	resetCmd := newResetCmd()
+	rootCmd.AddCommand(resetCmd)
 }
