@@ -56,7 +56,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 		clusterName: args.ClusterName,
 		cluster:     cluster,
 	}
-	if err := c.SetClusterArgs(imageName, args); err != nil {
+	if err := c.SetClusterRunArgs(imageName, args); err != nil {
 		return nil, err
 	}
 	return applydrivers.NewDefaultApplier(c.cluster, nil)
@@ -86,7 +86,7 @@ func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 	}, nil
 }
 
-func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
+func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error {
 	if len(imageList) == 0 {
 		return fmt.Errorf("image can not be empty")
 	}
@@ -105,6 +105,39 @@ func (r *ClusterArgs) SetClusterArgs(imageList []string, args *RunArgs) error {
 	}
 
 	r.cluster.Spec.Image = imageList
+	if err := PreProcessIPList(args); err != nil {
+		return err
+	}
+
+	if len(args.Masters) > 0 {
+		masters := strings2.SplitRemoveEmpty(args.Masters, ",")
+		nodes := strings2.SplitRemoveEmpty(args.Nodes, ",")
+		r.hosts = []v2.Host{}
+		if len(masters) != 0 {
+			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
+		}
+		if len(nodes) != 0 {
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
+		}
+		r.cluster.Spec.Hosts = r.hosts
+	} else {
+		return fmt.Errorf("enter true iplist, master ip length more than zero")
+	}
+	logger.Debug("cluster info : %v", r.cluster)
+	return nil
+}
+func (r *ClusterArgs) SetClusterResetArgs(args *RunArgs) error {
+	if args.ClusterName == "" {
+		return fmt.Errorf("cluster name can not be empty")
+	}
+	r.cluster.Spec.SSH.User = args.User
+	r.cluster.Spec.SSH.Pk = args.Pk
+	r.cluster.Spec.SSH.PkPasswd = args.PkPassword
+	r.cluster.Spec.SSH.Port = args.Port
+	if args.Password != "" {
+		r.cluster.Spec.SSH.Passwd = args.Password
+	}
+
 	if err := PreProcessIPList(args); err != nil {
 		return err
 	}

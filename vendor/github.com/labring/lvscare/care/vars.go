@@ -1,6 +1,6 @@
 package care
 
-import "github.com/sealyun/lvscare/service"
+import "github.com/labring/lvscare/service"
 
 type LvsCare struct {
 	HealthPath    string

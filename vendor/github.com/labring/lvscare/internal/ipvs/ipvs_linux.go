@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 /*
@@ -21,7 +22,7 @@ package ipvs
 import (
 	"errors"
 	"fmt"
-	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/glog"
 	"net"
 	"strings"
 	"sync"

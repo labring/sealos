@@ -50,7 +50,7 @@ func certCmd() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealyun.com or 10.103.97.2")
+	cmd.Flags().StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealos.io or 10.103.97.2")
 	cmd.Flags().StringVar(&flag.NodeName, "node-name", "", "like master0")
 	cmd.Flags().StringVar(&flag.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
 	cmd.Flags().StringVar(&flag.NodeIP, "node-ip", "", "like 10.103.97.2")

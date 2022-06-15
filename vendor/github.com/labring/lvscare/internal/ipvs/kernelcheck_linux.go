@@ -1,3 +1,4 @@
+//go:build linux
 // +build linux
 
 /*
@@ -20,12 +21,12 @@ package ipvs
 
 import (
 	"fmt"
-	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/glog"
 	"regexp"
 	"strings"
 
-	utilsexec "github.com/sealyun/lvscare/internal/exec"
-	"github.com/sealyun/lvscare/internal/sets"
+	utilsexec "github.com/labring/lvscare/internal/exec"
+	"github.com/labring/lvscare/internal/sets"
 
 	"github.com/lithammer/dedent"
 )

@@ -17,9 +17,9 @@ spec:
     regionIds: [cn-hangzhou, cn-shanghai]
     zoneIds: [cn-hangzhou-a, cn-hangzhou-b] # If the value is empty, a random value will be used.
     annotations: #set default value,if exist not delete resource
-		www.sealyun.com/VpcID: v-xxxxx
-        www.sealyun.com/VSwitchID: v-xxxxx
-        www.sealyun.com/SecurityGroupID: v-xxxxx
+        sealos.io/VpcID: v-xxxxx
+        sealos.io/VSwitchID: v-xxxxx
+        sealos.io/SecurityGroupID: v-xxxxx
     accessChannels: # If all access channels are the same, it will be filled.
       ssh:
         passwd: xxx #If the passwd is empty, a random password will be generated.
@@ -45,10 +45,10 @@ status:
     regionId: cn-hangzhou
     zoneId: cn-hangzhou-a
     annotations:
-        www.sealyun.com/VpcID: v-xxxxx
-        www.sealyun.com/VSwitchID: v-xxxxx
-        www.sealyun.com/SecurityGroupID: v-xxxxx
-        www.sealyun.com/EIPID: v-xxxxx
+        sealos.io/VpcID: v-xxxxx
+        sealos.io/VSwitchID: v-xxxxx
+        sealos.io/SecurityGroupID: v-xxxxx
+        sealos.io/EIPID: v-xxxxx
     spotStrategy: SpotAsPriceGo
     eip: 10.0.x.x
 	master0ID: xxxx
@@ -76,16 +76,16 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
 === RUN   TestAliApply
 2022-01-06 22:11:07 [INFO] [ali_provider.go:186] using regionID is cn-shanghai
 2022-01-06 22:11:07 [INFO] [ali_vpc.go:140] get available resource success GetAvailableZoneID: cn-shanghai-l
-2022-01-06 22:11:08 [INFO] [ali_provider.go:70] create resource success www.sealyun.com/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
-2022-01-06 22:11:13 [INFO] [ali_provider.go:70] create resource success www.sealyun.com/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
-2022-01-06 22:11:13 [INFO] [ali_provider.go:70] create resource success www.sealyun.com/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
+2022-01-06 22:11:08 [INFO] [ali_provider.go:70] create resource success sealos.io/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
+2022-01-06 22:11:13 [INFO] [ali_provider.go:70] create resource success sealos.io/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
+2022-01-06 22:11:13 [INFO] [ali_provider.go:70] create resource success sealos.io/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
 2022-01-06 22:11:13 [INFO] [ali_image.go:32] host tags is [master ssdxxx],using imageID is centos_8_0_x64_20G_alibase_20210712.vhd
 2022-01-06 22:11:17 [INFO] [retry.go:65] use instance type: ecs.c7a.large
 2022-01-06 22:11:21 [INFO] [ali_ecs.go:178] get scale up IP list [172.16.0.140], append iplist [172.16.0.140], host count 1
 2022-01-06 22:11:21 [INFO] [ali_ecs.go:216] reconcile {"roles":["master","ssdxxx"],"cpu":2,"memory":4,"count":1,"disks":[{"capacity":50,"category":""}],"arch":"amd64","ecsType":"ecs.c7a.large","os":{"name":"","version":"","id":"centos_8_0_x64_20G_alibase_20210712.vhd"}} instances success [172.16.0.140] 
-2022-01-06 22:11:23 [INFO] [ali_provider.go:70] create resource success www.sealyun.com/EipID: eip-uf6ptsp0s0uadt9pr7zcq
+2022-01-06 22:11:23 [INFO] [ali_provider.go:70] create resource success sealos.io/EipID: eip-uf6ptsp0s0uadt9pr7zcq
 <nil>=== RUN   TestAliApply/modify_instance_system_disk
-    infra_test.go:82: output yaml: apiVersion: apps.sealyun.com/v1beta1
+    infra_test.go:82: output yaml: apiVersion: apps.sealos.io/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null
@@ -135,10 +135,10 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
         status:
           cluster:
             annotations:
-              www.sealyun.com/EipID: eip-uf6ptsp0s0uadt9pr7zcq
-              www.sealyun.com/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
-              www.sealyun.com/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
-              www.sealyun.com/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
+              sealos.io/EipID: eip-uf6ptsp0s0uadt9pr7zcq
+              sealos.io/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
+              sealos.io/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
+              sealos.io/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
             eip: 106.15.195.252
             master0ID: i-uf6h5xw6053oqtgc3m33
             master0InternalIP: 172.16.0.140
@@ -165,7 +165,7 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
 2022-01-06 22:11:28 [INFO] [ali_ecs.go:206] get up IP list [172.16.0.140],  host count 1
 2022-01-06 22:11:28 [INFO] [ali_ecs.go:216] reconcile {"roles":["master","ssdxxx"],"cpu":2,"memory":4,"count":1,"disks":[{"capacity":50,"category":""}],"arch":"amd64","ecsType":"ecs.c7a.large","os":{"name":"","version":"","id":"centos_8_0_x64_20G_alibase_20210712.vhd"}} instances success [172.16.0.140] 
     infra_test.go:107: add server:<nil>
-    infra_test.go:109: output yaml: apiVersion: apps.sealyun.com/v1beta1
+    infra_test.go:109: output yaml: apiVersion: apps.sealos.io/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null
@@ -230,10 +230,10 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
         status:
           cluster:
             annotations:
-              www.sealyun.com/EipID: eip-uf6ptsp0s0uadt9pr7zcq
-              www.sealyun.com/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
-              www.sealyun.com/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
-              www.sealyun.com/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
+              sealos.io/EipID: eip-uf6ptsp0s0uadt9pr7zcq
+              sealos.io/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
+              sealos.io/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
+              sealos.io/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
             eip: 106.15.195.252
             master0ID: i-uf6h5xw6053oqtgc3m33
             master0InternalIP: 172.16.0.140
@@ -267,7 +267,7 @@ GOPATH=/Users/cuisongliu/Workspaces/go #gosetup
 2022-01-06 22:11:39 [INFO] [ali_ecs.go:206] get up IP list [172.16.0.141],  host count 1
 2022-01-06 22:11:39 [INFO] [ali_ecs.go:216] reconcile {"roles":["master","ssd"],"cpu":2,"memory":4,"count":1,"disks":[{"capacity":50,"category":""}],"arch":"amd64","ecsType":"ecs.s6-c1m2.large","os":{"name":"","version":"","id":"centos_8_0_x64_20G_alibase_20210712.vhd"}} instances success [172.16.0.141] 
 2022-01-06 22:12:17 [INFO] [ali_provider.go:84] delete resource Success ShouldBeDeleteInstancesIDs: i-uf6h5xw6053oqtgc3m33
-2022-01-06 22:14:02 [EROR] [ali_provider.go:66] reconcile resource www.sealyun.com/EipID failed err: retry action timeout: SDK.ServerError
+2022-01-06 22:14:02 [EROR] [ali_provider.go:66] reconcile resource sealos.io/EipID failed err: retry action timeout: SDK.ServerError
 ErrorCode: ORDER.QUANTITY_INVALID
 Recommend: https://error-center.aliyun.com/status/search?Keyword=ORDER.QUANTITY_INVALID&source=PopGw
 RequestId: 1F933962-8116-55C7-A4A1-00F50835C480
@@ -278,7 +278,7 @@ Recommend: https://error-center.aliyun.com/status/search?Keyword=ORDER.QUANTITY_
 RequestId: 1F933962-8116-55C7-A4A1-00F50835C480
 Message: User quota has exceeded the limit. ,skip it
     infra_test.go:124: delete:<nil>
-    infra_test.go:126: output yaml: apiVersion: apps.sealyun.com/v1beta1
+    infra_test.go:126: output yaml: apiVersion: apps.sealos.io/v1beta1
         kind: Infra
         metadata:
           creationTimestamp: null
@@ -329,9 +329,9 @@ Message: User quota has exceeded the limit. ,skip it
           cluster:
             annotations:
               ShouldBeDeleteInstancesIDs: ""
-              www.sealyun.com/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
-              www.sealyun.com/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
-              www.sealyun.com/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
+              sealos.io/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
+              sealos.io/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
+              sealos.io/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
             regionID: cn-shanghai
             spotStrategy: SpotAsPriceGo
             zoneID: cn-shanghai-l
@@ -349,11 +349,11 @@ Message: User quota has exceeded the limit. ,skip it
             systemCategory: ""
         
 2022-01-06 22:14:22 [INFO] [ali_provider.go:215] DeletionTimestamp not nil Clear Infra
-2022-01-06 22:14:22 [WARN] [ali_provider.go:78] delete resource not exists www.sealyun.com/EipID
+2022-01-06 22:14:22 [WARN] [ali_provider.go:78] delete resource not exists sealos.io/EipID
 2022-01-06 22:14:23 [INFO] [ali_provider.go:84] delete resource Success ShouldBeDeleteInstancesIDs: i-uf6iw7ipumgzpoq7l3op
-2022-01-06 22:14:49 [INFO] [ali_provider.go:84] delete resource Success www.sealyun.com/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
-2022-01-06 22:14:49 [INFO] [ali_provider.go:84] delete resource Success www.sealyun.com/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
-2022-01-06 22:14:50 [INFO] [ali_provider.go:84] delete resource Success www.sealyun.com/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
+2022-01-06 22:14:49 [INFO] [ali_provider.go:84] delete resource Success sealos.io/VSwitchID: vsw-uf6inewn0tgzjutzpcnh4
+2022-01-06 22:14:49 [INFO] [ali_provider.go:84] delete resource Success sealos.io/SecurityGroupID: sg-uf6hd5xi86hxd8pmi0nq
+2022-01-06 22:14:50 [INFO] [ali_provider.go:84] delete resource Success sealos.io/VpcID: vpc-uf6bdtosh4s8r37qgbsb7
 === CONT  TestAliApply
     infra_test.go:132: <nil>
 --- PASS: TestAliApply (223.10s)
@@ -369,9 +369,9 @@ Process finished with the exit code 0
 - regionIds 可选region，多个会随机选择
 - zoneIds 随机选择对应的zone 如果为空，则从可选zone中随机选择zone
 - annotations 会有一些默认值
-  - `www.sealyun.com/VpcID` vpcID ,如果没值系统会自动创建
-  - `www.sealyun.com/VSwitchID` 交换机ID ,如果没值系统会自动创建
-  - `www.sealyun.com/SecurityGroupID` 安全组ID ,如果没值系统会自动创建
+  - `sealos.io/VpcID` vpcID ,如果没值系统会自动创建
+  - `sealos.io/VSwitchID` 交换机ID ,如果没值系统会自动创建
+  - `sealos.io/SecurityGroupID` 安全组ID ,如果没值系统会自动创建
 - accessChannels 设置创建出虚拟机的密码
 - hosts 设置虚拟机参数
   - roles 对应的tag，这个tag全局唯一

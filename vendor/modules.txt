@@ -276,11 +276,6 @@ github.com/distribution/distribution/v3/metrics
 github.com/distribution/distribution/v3/reference
 github.com/distribution/distribution/v3/registry/api/errcode
 github.com/distribution/distribution/v3/registry/api/v2
-github.com/distribution/distribution/v3/registry/client
-github.com/distribution/distribution/v3/registry/client/auth
-github.com/distribution/distribution/v3/registry/client/auth/challenge
-github.com/distribution/distribution/v3/registry/client/transport
-github.com/distribution/distribution/v3/registry/proxy/scheduler
 github.com/distribution/distribution/v3/registry/storage
 github.com/distribution/distribution/v3/registry/storage/cache
 github.com/distribution/distribution/v3/registry/storage/cache/memory
@@ -459,6 +454,16 @@ github.com/klauspost/compress/zstd/internal/xxhash
 github.com/klauspost/pgzip
 # github.com/kr/fs v0.1.0
 github.com/kr/fs
+# github.com/labring/lvscare v1.1.3-beta.2
+## explicit
+github.com/labring/lvscare/care
+github.com/labring/lvscare/internal/exec
+github.com/labring/lvscare/internal/glog
+github.com/labring/lvscare/internal/ipvs
+github.com/labring/lvscare/internal/sets
+github.com/labring/lvscare/internal/version
+github.com/labring/lvscare/service
+github.com/labring/lvscare/utils
 # github.com/lithammer/dedent v1.1.0
 github.com/lithammer/dedent
 # github.com/manifoldco/promptui v0.9.0
@@ -604,16 +609,6 @@ github.com/rivo/uniseg
 # github.com/schollz/progressbar/v3 v3.8.5
 ## explicit
 github.com/schollz/progressbar/v3
-# github.com/sealyun/lvscare v1.1.3-beta.2
-## explicit
-github.com/sealyun/lvscare/care
-github.com/sealyun/lvscare/internal/exec
-github.com/sealyun/lvscare/internal/glog
-github.com/sealyun/lvscare/internal/ipvs
-github.com/sealyun/lvscare/internal/sets
-github.com/sealyun/lvscare/internal/version
-github.com/sealyun/lvscare/service
-github.com/sealyun/lvscare/utils
 # github.com/seccomp/libseccomp-golang v0.9.2-0.20210429002308-3879420cc921
 github.com/seccomp/libseccomp-golang
 # github.com/sirupsen/logrus v1.8.1

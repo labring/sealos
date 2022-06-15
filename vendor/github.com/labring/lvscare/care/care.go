@@ -1,10 +1,10 @@
 package care
 
 import (
-	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/glog"
 	"time"
 
-	"github.com/sealyun/lvscare/service"
+	"github.com/labring/lvscare/service"
 )
 
 //VsAndRsCare is

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/glog"
 )
 
 func Config(level string) {
