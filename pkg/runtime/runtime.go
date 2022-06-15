@@ -128,7 +128,7 @@ func (k *KubeadmRuntime) Validate() error {
 	if k.getMaster0IP() == "" {
 		return fmt.Errorf("master hosts ip cannot be empty")
 	}
-	if k.getKubeVersionFromImage() == "" {
+	if k.getKubeVersionFromImage() == "" && k.Cluster.DeletionTimestamp.IsZero() {
 		return fmt.Errorf("cluster image kubernetes version cannot be empty")
 	}
 	return nil

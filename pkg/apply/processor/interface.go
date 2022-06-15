@@ -30,7 +30,7 @@ type Interface interface {
 	Execute(cluster *v2.Cluster) error
 }
 
-func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.Service) error {
+func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.Service, reset bool) error {
 	if cluster.Status.Mounts == nil {
 		containers, err := service.List()
 		if err != nil {
@@ -38,19 +38,20 @@ func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgSer
 		}
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
 		for _, info := range containers {
-			if strings.InList(info.Imagename, cluster.Spec.Image) {
-				manifest, err := service.Inspect(info.Containername)
-				if err != nil {
-					return err
-				}
-				mount := &v2.MountImage{
-					MountPoint: manifest.MountPoint,
-					ImageName:  info.Imagename,
-					Name:       info.Containername,
-				}
-				if err = OCIToImageMount(mount, imgService); err != nil {
-					return err
-				}
+			manifest, err := service.Inspect(info.Containername)
+			if err != nil {
+				return err
+			}
+			mount := &v2.MountImage{
+				MountPoint: manifest.MountPoint,
+				ImageName:  info.Imagename,
+				Name:       info.Containername,
+			}
+			if err = OCIToImageMount(mount, imgService); err != nil {
+				return err
+			}
+
+			if reset || strings.InList(info.Imagename, cluster.Spec.Image) {
 				cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 			}
 		}

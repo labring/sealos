@@ -22,6 +22,7 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {
@@ -38,6 +39,10 @@ func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {
 			return applydrivers.NewDefaultApplier(cluster, nil)
 		}
 	}
+	cluster = &v2.Cluster{}
+	cluster.CreationTimestamp = metav1.Now()
+	cluster.Name = args.ClusterName
+	cluster.Kind = "Cluster"
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
 		cluster:     cluster,
