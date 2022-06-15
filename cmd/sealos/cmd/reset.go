@@ -67,5 +67,4 @@ func init() {
 	resetCmd.Flags().StringVar(&resetArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
 	resetCmd.Flags().StringVar(&resetArgs.ClusterName, "name", "default", "set cluster name variables")
 	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
-
 }
