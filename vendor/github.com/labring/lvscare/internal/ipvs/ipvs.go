@@ -18,8 +18,8 @@ package ipvs
 
 import (
 	"fmt"
-	"github.com/sealyun/lvscare/internal/exec"
-	"github.com/sealyun/lvscare/internal/version"
+	"github.com/labring/lvscare/internal/exec"
+	"github.com/labring/lvscare/internal/version"
 	"net"
 	"strconv"
 	"strings"

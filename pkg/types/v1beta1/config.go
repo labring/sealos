@@ -17,7 +17,7 @@ Application config file:
 
 Clusterfile:
 
-apiVersion: apps.sealyun.com/v1beta1
+apiVersion: apps.sealos.io/v1beta1
 kind: Cluster
 metadata:
   name: my-cluster
@@ -25,7 +25,7 @@ spec:
   image: registry.cn-qingdao.aliyuncs.com/sealos-app/my-SAAS-all-inone:latest
   provider: BAREMETAL
 ---
-apiVersion: apps.sealyun.com/v1beta1
+apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
   name: mysql-config
@@ -36,7 +36,7 @@ spec:
        mysql-passwd: xxx
 ...
 ---
-apiVersion: apps.sealyun.com/v1beta1
+apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
   name: redis-config

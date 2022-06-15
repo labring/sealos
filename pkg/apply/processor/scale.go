@@ -145,7 +145,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager, false); err != nil {
 		return err
 	}
 	if c.IsScaleUp {

@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/sealyun/lvscare/internal/ipvs"
+	"github.com/labring/lvscare/internal/ipvs"
 )
 
 //BuildLvscare is

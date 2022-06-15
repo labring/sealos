@@ -14,7 +14,7 @@ Build a kubernetes HA cluster for a production environment.
 
 ![](docs/images/arch.png)
 * Each node will be configured with an ipvs proxy for masters LB, so we needn't haproxy or keepalived any more.
-* Then run a [lvscare](https://github.com/fanux/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
+* Then run a [lvscare](https://github.com/labring/lvscare) as a staic pod to check apiserver is aviliable. `/etc/kubernetes/manifests/sealyun-lvscare.yaml`
 * If any master is down, lvscare will remove the ipvs realserver, when master recover it will add it back.
 * Sealos will send package and apply install commands, so we needn't ansible.
 

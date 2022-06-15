@@ -3,13 +3,13 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/sealyun/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/glog"
 	"net"
 	"strconv"
 	"syscall"
 
-	"github.com/sealyun/lvscare/internal/ipvs"
-	"github.com/sealyun/lvscare/utils"
+	"github.com/labring/lvscare/internal/ipvs"
+	"github.com/labring/lvscare/utils"
 )
 
 //EndPoint  is

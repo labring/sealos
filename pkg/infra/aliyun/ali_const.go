@@ -27,7 +27,7 @@ const (
 	Product             = "product"
 	Role                = "role"
 	Arch                = "arch"
-	AliDomain           = "www.sealyun.com/"
+	AliDomain           = "sealos.io/"
 	TryTimes            = 10
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0

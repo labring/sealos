@@ -3,8 +3,8 @@ package utils
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/sealyun/lvscare/internal/glog"
-	"github.com/sealyun/lvscare/internal/ipvs"
+	"github.com/labring/lvscare/internal/glog"
+	"github.com/labring/lvscare/internal/ipvs"
 	"net"
 	"net/http"
 	"strconv"

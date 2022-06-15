@@ -37,7 +37,7 @@ const (
 	Stopped             = "Stopped"
 	AvailableTypeStatus = "WithStock"
 	Bandwidth           = "100"
-	HwDomain            = "www.sealyun.com/"
+	HwDomain            = "sealos.io/"
 	TryTimes            = 10
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0

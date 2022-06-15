@@ -1,3 +1,4 @@
+//go:build !linux
 // +build !linux
 
 /*
@@ -19,7 +20,7 @@ limitations under the License.
 package ipvs
 
 import (
-	utilsexec "github.com/sealyun/lvscare/internal/exec"
+	utilsexec "github.com/labring/lvscare/internal/exec"
 )
 
 // RequiredIPVSKernelModulesAvailableCheck tests IPVS required kernel modules.

@@ -1,8 +1,8 @@
 package care
 
 import (
-	"github.com/sealyun/lvscare/internal/glog"
-	"github.com/sealyun/lvscare/service"
+	"github.com/labring/lvscare/internal/glog"
+	"github.com/labring/lvscare/service"
 )
 
 //createVsAndRs is

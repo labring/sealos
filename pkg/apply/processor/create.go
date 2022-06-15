@@ -125,7 +125,7 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 		}
 		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 	}
-	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager); err != nil {
+	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager, false); err != nil {
 		return err
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())

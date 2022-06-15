@@ -5,7 +5,7 @@ Clusterfile
 ```yaml
 ...
 ---
-apiVersion: apps.sealyun.com/v1beta1
+apiVersion: apps.sealos.io/v1beta1
 kind: Config
 metadata:
   name: calico

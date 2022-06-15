@@ -68,7 +68,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 }
 
 func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
-	return SyncClusterStatus(cluster, d.ClusterManager, d.ImageManager)
+	return SyncClusterStatus(cluster, d.ClusterManager, d.ImageManager, true)
 }
 
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {

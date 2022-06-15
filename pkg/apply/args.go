@@ -29,6 +29,30 @@ type RunArgs struct {
 	CustomCMD   []string
 }
 
+type ResetArgs struct {
+	Masters     string
+	Nodes       string
+	User        string
+	Password    string
+	Port        uint16
+	Pk          string
+	PkPassword  string
+	ClusterName string
+}
+
+func (a ResetArgs) ToRunArgs() *RunArgs {
+	return &RunArgs{
+		Masters:     a.Masters,
+		Nodes:       a.Nodes,
+		User:        a.User,
+		Password:    a.Password,
+		Port:        a.Port,
+		Pk:          a.Pk,
+		PkPassword:  a.PkPassword,
+		ClusterName: a.ClusterName,
+	}
+}
+
 type ScaleArgs struct {
 	Masters     string
 	Nodes       string
