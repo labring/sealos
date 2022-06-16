@@ -205,4 +205,3 @@ func Contains(sub, s string) (bool, error) {
 	}
 	return ipNet.Contains(ip), nil
 }
-
