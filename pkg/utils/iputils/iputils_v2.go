@@ -193,3 +193,15 @@ func NextIP(ip string) net.IP {
 	i := IPToInt(ip)
 	return i.Add(i, big.NewInt(1)).Bytes()
 }
+
+func Contains(sub, s string) (bool, error) {
+	_, ipNet, err := net.ParseCIDR(sub)
+	if err != nil {
+		return false, err
+	}
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return false, fmt.Errorf("%s is not a valid IP address", s)
+	}
+	return ipNet.Contains(ip), nil
+}
