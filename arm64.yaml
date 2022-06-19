@@ -1,0 +1,21 @@
+# nfpm example config file
+#
+# check https://nfpm.goreleaser.com/configuration for detailed usage
+#
+name: "sealos"
+arch: "arm64"
+platform: "linux"
+version: "v4.0.0"
+version_schema: semver
+maintainer: fanux(https://github.com/fanux)
+description: Cloud OS distribution with Kubernetes as kernel
+vendor: "https://github.com/fanux"
+homepage: "https://github.com/labring/sealos"
+license: "Apache-2.0 License"
+
+contents:
+- src: ./bin/linux_arm64/seactl
+  dst: /usr/bin/sealos
+
+- src: ./bin/linux_arm64/
+  dst: /usr/bin/sealos
