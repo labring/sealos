@@ -26,15 +26,20 @@ import (
 )
 
 var exampledelete = `
-delete to nodes:
+delete nodes:
 	sealos delete --nodes x.x.x.x
 		if accidentally deleted; 
 		Use 'sealos add' to recover:
 			sealos add --nodes x.x.x.x
 
-delete to default cluster: 
+delete masters:
+	sealos delete --masters x.x.x.x
+
+delete masters and nodes:
 	sealos delete --masters x.x.x.x --nodes x.x.x.x
 	sealos delete --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
+
+Please note that sealos will delete your master if the --masters parameter is specified.
 `
 
 // deleteCmd represents the delete command
