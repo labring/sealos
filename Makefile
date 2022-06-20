@@ -73,6 +73,22 @@ build-arm64:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${OS} GOARCH=arm64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_arm64/sealos -tags "containers_image_openpgp" cmd/sealos/main.go
 	CGO_ENABLED=0 GOOS=${OS} GOARCH=arm64 go build ${LDFLAGS} -o $(shell pwd)/bin/${OS}_arm64/seactl -tags "containers_image_openpgp" cmd/sealctl/main.go
 
+# upx is required for this
+upx: upx-amd64 upx-arm64
+upx-amd64:
+	cd bin/linux_amd64/ ; upx sealos ; upx seactl
+upx-arm64:
+	cd bin/linux_arm64/ ; upx sealos ; upx seactl
+
+# nfpm is required for making rpm & deb
+package: package-amd64 package-arm64
+package-amd64:
+	nfpm package -p rpm -f amd64.yaml -t bin/linux_amd64/
+	nfpm package -p deb -f amd64.yaml -t bin/linux_amd64/
+package-arm64:
+	nfpm package -p rpm -f arm64.yaml -t bin/linux_arm64/
+	nfpm package -p deb -f arm64.yaml -t bin/linux_arm64/
+
 import:
 	goimports -l -w cmd
 	goimports -l -w pkg
