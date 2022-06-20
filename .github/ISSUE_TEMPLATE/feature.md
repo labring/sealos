@@ -1,22 +1,23 @@
 ---
-name: 需求/任务
-about: 创建一个新的需求/任务
-title: '需求: 简短说明需求内容'
+name: Sealos feature request
+about: Suggest an idea for this project
+title: 'Feature: brief description of the feature'
 assignees: ''
 
 ---
 
-**哪个命令或者组件**
+**Which command or component**
+
 eg.  sealos xxx, sealos init
 
-**详细描述你的需求/任务**
-详细描述你的需求和任务要求
+**Detailed description of the feature**
 1.
 2.
 3.
 
-**是否有解决方案，如果有请详述**
-通过xxx方案来解决该任务（设想）
+**If you have solution，please describe it**
+
+Complete this feature through XXX
 1.
 2.
 3.
