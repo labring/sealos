@@ -17,7 +17,7 @@ limitations under the License.
 package v1beta1
 
 import (
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 )
 
 const (
@@ -46,6 +46,6 @@ const (
 )
 
 var (
-	DefaultConfigPath = contants.GetHomeDir() + "/.sealos"
-	DefaultPKFile     = contants.GetHomeDir() + "/.ssh/id_rsa"
+	DefaultConfigPath = constants.GetHomeDir() + "/.sealos"
+	DefaultPKFile     = constants.GetHomeDir() + "/.ssh/id_rsa"
 )

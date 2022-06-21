@@ -23,7 +23,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -38,7 +38,7 @@ type ClusterArgs struct {
 
 func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
-	clusterPath := contants.Clusterfile(args.ClusterName)
+	clusterPath := constants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
 		cluster = initCluster(args.ClusterName)
 	} else {

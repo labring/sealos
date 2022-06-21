@@ -33,7 +33,7 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -92,7 +92,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 	imageTypes := sets.NewString()
 	for _, oci := range ociList {
 		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -174,7 +174,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return yaml.MarshalYamlToFile(contants.Clusterfile(cluster.Name), cluster)
+	return yaml.MarshalYamlToFile(constants.Clusterfile(cluster.Name), cluster)
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {

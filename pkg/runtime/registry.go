@@ -22,7 +22,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/iputils"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -36,10 +36,10 @@ func GetRegistry(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:     defaultRegistry,
-		Domain: contants.DefaultRegistryDomain,
+		Domain: constants.DefaultRegistryDomain,
 		Port:   "5000",
 	}
-	etcPath := path.Join(rootfs, contants.EtcDirName, registryCustomConfig)
+	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
 	registryConfig, err := yaml.Unmarshal(etcPath)
 	if err != nil {
 		logger.Debug("use default registry config")
@@ -87,7 +87,7 @@ func (k *KubeadmRuntime) htpasswd() error {
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
-	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(contants.DefaultLnFmt, k.getContentData().RootFSRegistryPath(), registry.Data))
+	err := k.sshCmdAsync(registry.IP, fmt.Sprintf(constants.DefaultLnFmt, k.getContentData().RootFSRegistryPath(), registry.Data))
 	if err != nil {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}

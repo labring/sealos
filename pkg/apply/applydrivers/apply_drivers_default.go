@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"k8s.io/apimachinery/pkg/version"
 )
 
@@ -34,7 +34,7 @@ func NewDefaultApplier(cluster *v2.Cluster, images []string) (Interface, error) 
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
-	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
+	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	_ = cFile.Process()
 	return &Applier{
 		ClusterDesired: cluster,
@@ -48,7 +48,7 @@ func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
-	cFile := clusterfile.NewClusterFile(contants.Clusterfile(cluster.Name))
+	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
@@ -66,7 +66,7 @@ type Applier struct {
 }
 
 func (c *Applier) Apply() error {
-	clusterPath := contants.Clusterfile(c.ClusterDesired.Name)
+	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
 	if c.ClusterDesired.CreationTimestamp.IsZero() {
 		if err := c.initCluster(); err != nil {
 			return err

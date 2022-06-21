@@ -33,7 +33,7 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/maps"
 )
 
@@ -55,14 +55,14 @@ func NewGuestManager() (Interface, error) {
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
-	clusterRootfs := runtime.GetContantData(cluster.Name).RootFSPath()
+	clusterRootfs := runtime.GetConstantData(cluster.Name).RootFSPath()
 	envInterface := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
 	guestCMD := d.getGuestCmd(envs, cluster, mounts)
 
 	kubeConfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
-		adminFile := runtime.GetContantData(cluster.Name).AdminFile()
+		adminFile := runtime.GetConstantData(cluster.Name).AdminFile()
 		data, err := fileutil.ReadAll(adminFile)
 		if err != nil {
 			return errors.Wrap(err, "read admin.conf error in guest")
@@ -82,7 +82,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 			continue
 		}
 		logger.Info("guest cmd is %s", value)
-		if err := exec.Cmd("bash", "-c", fmt.Sprintf(contants.CdAndExecCmd, clusterRootfs, value)); err != nil {
+		if err := exec.Cmd("bash", "-c", fmt.Sprintf(constants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
 	}

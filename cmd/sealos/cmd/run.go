@@ -61,8 +61,8 @@ create a cluster with custom environment variables:
 `
 var runArgs *apply.RunArgs
 
-func newInitCmd() *cobra.Command {
-	var initCmd = &cobra.Command{
+func newRunCmd() *cobra.Command {
+	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Simplest way to run your kubernets HA cluster",
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
@@ -78,12 +78,12 @@ func newInitCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	return initCmd
+	return runCmd
 }
 
 func init() {
 	runArgs = &apply.RunArgs{}
-	runCmd := newInitCmd()
+	runCmd := newRunCmd()
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().StringVarP(&runArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
 	runCmd.Flags().StringVarP(&runArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
