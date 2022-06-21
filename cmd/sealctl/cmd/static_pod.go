@@ -20,7 +20,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 
 	"github.com/labring/sealos/pkg/ipvs"
@@ -40,7 +40,7 @@ func NewStaticPodCmd() *cobra.Command {
 	}
 	// check route for host
 	cmd.AddCommand(NewLvscareCmd())
-	cmd.PersistentFlags().StringVar(&staticPodPath, "path", contants.KubernetesEtcStaticPod, "default kubernetes static pod path")
+	cmd.PersistentFlags().StringVar(&staticPodPath, "path", constants.KubernetesEtcStaticPod, "default kubernetes static pod path")
 	return cmd
 }
 
@@ -58,7 +58,7 @@ func NewLvscareCmd() *cobra.Command {
 			}
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			fileName := fmt.Sprintf("%s.%s", name, contants.YamlFileSuffix)
+			fileName := fmt.Sprintf("%s.%s", name, constants.YamlFileSuffix)
 			yaml, err := ipvs.LvsStaticPodYaml(vip, masters, image, name)
 			if err != nil {
 				logger.Error(err)
@@ -83,8 +83,8 @@ func NewLvscareCmd() *cobra.Command {
 	}
 	// manually to set host via gateway
 	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2:6443", "default vip IP")
-	cmd.Flags().StringVar(&name, "name", contants.LvsCareStaticPodName, "generator lvscare static pod name")
-	cmd.Flags().StringVar(&image, "image", contants.DefaultLvsCareImage, "generator lvscare static pod image")
+	cmd.Flags().StringVar(&name, "name", constants.LvsCareStaticPodName, "generator lvscare static pod name")
+	cmd.Flags().StringVar(&image, "image", constants.DefaultLvsCareImage, "generator lvscare static pod image")
 	cmd.Flags().StringSliceVar(&masters, "masters", []string{}, "generator masters addrs")
 	cmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
 	return cmd

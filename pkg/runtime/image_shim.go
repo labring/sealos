@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -31,7 +31,7 @@ var defaultRootDirectory = "/var/lib/image-cri-shim"
 //GetImageShim default dir is /var/lib/image-cri-shim
 func GetImageShim(rootfs string) string {
 	const imageCustomConfig = "image-cri-shim.yaml"
-	etcPath := path.Join(rootfs, contants.EtcDirName, imageCustomConfig)
+	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)
 	registryConfig, err := yaml.Unmarshal(etcPath)
 	if err != nil {
 		logger.Debug("use default registry config")
@@ -44,7 +44,7 @@ func GetImageShim(rootfs string) string {
 
 func ApplyImageShimCMD(rootfs string) string {
 	shimData := GetImageShim(rootfs)
-	return fmt.Sprintf(contants.DefaultCPFmt, shimData, path.Join(rootfs, contants.ImagesDirName, contants.ImageShimDirName), shimData)
+	return fmt.Sprintf(constants.DefaultCPFmt, shimData, path.Join(rootfs, constants.ImagesDirName, constants.ImageShimDirName), shimData)
 }
 
 func DeleteImageShimCMD(rootfs string) string {

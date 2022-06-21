@@ -29,7 +29,7 @@ import (
 	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta3"
 	"github.com/pkg/errors"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 
 	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 	"github.com/labring/sealos/pkg/token"
@@ -140,7 +140,7 @@ func (k *KubeadmRuntime) validateVIP(ip string) error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.getContentData().RootFSEtcPath(), contants.DefaultRootfsKubeadmFileName)
+	return filepath.Join(k.getContentData().RootFSEtcPath(), constants.DefaultRootfsKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {
@@ -178,7 +178,7 @@ func (k *KubeadmRuntime) getDNSDomain() string {
 }
 
 func (k *KubeadmRuntime) writeTokenFile() error {
-	tokenFile := path.Join(k.getContentData().EtcPath(), contants.DefaultKubeadmTokenFileName)
+	tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
 	data, err := k.execToken(k.getMaster0IPAndPort())
 	if err != nil {
 		return err
@@ -198,7 +198,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 func (k *KubeadmRuntime) setKubernetesToken() error {
 	logger.Info("start to get kubernetes token...")
 	if k.Token == nil {
-		tokenFile := path.Join(k.getContentData().EtcPath(), contants.DefaultKubeadmTokenFileName)
+		tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
 		if !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile()
 			if err != nil {

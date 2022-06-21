@@ -22,7 +22,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/maps"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -64,7 +64,7 @@ func NewConfiguration(rootPath string, configs []v1beta1.Config) Interface {
 }
 func NewDefaultConfiguration(clusterName string) Interface {
 	return &Dumper{
-		RootPath: contants.NewData(clusterName).RootFSPath(),
+		RootPath: constants.NewData(clusterName).RootFSPath(),
 	}
 }
 

@@ -22,7 +22,7 @@ import (
 	"github.com/labring/sealos/pkg/runtime"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	yaml2 "github.com/labring/sealos/pkg/utils/yaml"
 
 	k8sV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +32,7 @@ import (
 var ErrClusterNotExist = fmt.Errorf("no cluster exist")
 
 func GetDefaultClusterName() (string, error) {
-	files, err := ioutil.ReadDir(contants.Workdir())
+	files, err := ioutil.ReadDir(constants.Workdir())
 	if err != nil {
 		return "", err
 	}
@@ -57,7 +57,7 @@ func GetClusterFromName(clusterName string) (cluster *v2.Cluster, err error) {
 			return nil, err
 		}
 	}
-	clusterFile := contants.Clusterfile(clusterName)
+	clusterFile := constants.Clusterfile(clusterName)
 	cluster, err = GetClusterFromFile(clusterFile)
 	return
 }
@@ -75,7 +75,7 @@ func GetDefaultCluster() (cluster *v2.Cluster, err error) {
 		return nil, err
 	}
 
-	var filepath = contants.Clusterfile(name)
+	var filepath = constants.Clusterfile(name)
 
 	return GetClusterFromFile(filepath)
 }
@@ -87,10 +87,10 @@ func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	if err != nil {
 		return nil, err
 	}
-	if metaType.Kind != contants.Cluster {
+	if metaType.Kind != constants.Cluster {
 		return nil, fmt.Errorf("not found type cluster from: \n%s", data)
 	}
-	c, err := runtime.DecodeCRDFromString(string(data), contants.Cluster)
+	c, err := runtime.DecodeCRDFromString(string(data), constants.Cluster)
 	if err != nil {
 		return nil, err
 	} else if c == nil {

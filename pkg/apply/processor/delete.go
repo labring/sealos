@@ -28,7 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
@@ -104,8 +104,8 @@ func (d DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 }
 
 func (d DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
-	workDir := contants.ClusterDir(cluster.Name)
-	dataDir := contants.NewData(cluster.Name).Homedir()
+	workDir := constants.ClusterDir(cluster.Name)
+	dataDir := constants.NewData(cluster.Name).Homedir()
 	return fileutil.CleanFiles(workDir, dataDir)
 }
 

@@ -18,7 +18,7 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/strings"
@@ -80,8 +80,8 @@ func OCIToImageMount(mount *v2.MountImage, imgService types.Service) error {
 		mount.Cmd = newCMDs
 		mount.Labels = oci[0].Config.Labels
 		imageType := v2.AppImage
-		if mount.Labels[contants.ImageTypeKey] != "" {
-			imageType = v2.ImageType(mount.Labels[contants.ImageTypeKey])
+		if mount.Labels[constants.ImageTypeKey] != "" {
+			imageType = v2.ImageType(mount.Labels[constants.ImageTypeKey])
 		}
 		mount.Type = imageType
 	}

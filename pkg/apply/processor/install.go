@@ -35,7 +35,7 @@ import (
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 )
 
 var ForceOverride bool
@@ -113,7 +113,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	imageTypes := sets.NewString()
 	for _, oci := range ociList {
 		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[contants.ImageTypeKey])
+			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/ssh"
 )
@@ -36,13 +36,13 @@ func renderTemplate(tmpl *template.Template, data map[string]interface{}) (strin
 }
 
 func bashToString(clusterName string, sshInterface ssh.Interface, host, cmd string) (string, error) {
-	data := contants.NewData(clusterName)
+	data := constants.NewData(clusterName)
 	cmd = fmt.Sprintf("%s %s", data.RootFSSealctlPath(), cmd)
 	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	return sshInterface.CmdToString(host, cmd, "")
 }
 func bashSync(clusterName string, sshInterface ssh.Interface, host, cmd string) error {
-	data := contants.NewData(clusterName)
+	data := constants.NewData(clusterName)
 	cmd = fmt.Sprintf("%s %s", data.RootFSSealctlPath(), cmd)
 	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	return sshInterface.CmdAsync(host, cmd)

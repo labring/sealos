@@ -17,7 +17,7 @@ package ipvs
 import (
 	"testing"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 )
 
 var want = []string{
@@ -92,7 +92,7 @@ func TestLvsStaticPodYaml(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, contants.LvsCareStaticPodName); got != tt.want {
+			if got, _ := LvsStaticPodYaml(tt.args.vip, tt.args.masters, tt.args.image, constants.LvsCareStaticPodName); got != tt.want {
 				t.Errorf("LvsStaticPodYaml() = %v, want %v", got, tt.want)
 			}
 		})

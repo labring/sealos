@@ -19,7 +19,7 @@ import (
 	"path"
 
 	"github.com/labring/sealos/pkg/cert"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -30,8 +30,8 @@ func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {
 	if err != nil {
 		return fmt.Errorf("generator config init kubeadm config error: %s", err.Error())
 	}
-	initConfigPath := path.Join(k.getContentData().TmpPath(), contants.DefaultInitKubeadmFileName)
-	outConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultInitKubeadmFileName)
+	initConfigPath := path.Join(k.getContentData().TmpPath(), constants.DefaultInitKubeadmFileName)
+	outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 	err = file.WriteFile(initConfigPath, data)
 	if err != nil {
 		return fmt.Errorf("write Config init kubeadm config error: %s", err.Error())

@@ -29,7 +29,7 @@ import (
 
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/remote"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/ssh"
 	"golang.org/x/sync/errgroup"
 )
@@ -44,7 +44,7 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
-	image := labels[contants.ImageKubeVersionKey]
+	image := labels[constants.ImageKubeVersionKey]
 	if image == "" {
 		return ""
 	}
@@ -89,9 +89,9 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	labels := k.getImageLabels()
-	image := labels[contants.ImageKubeLvscareImageKey]
+	image := labels[constants.ImageKubeLvscareImageKey]
 	if image == "" {
-		image = contants.DefaultLvsCareImage
+		image = constants.DefaultLvsCareImage
 	}
 	return image, nil
 }
@@ -126,7 +126,7 @@ func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 	if err != nil {
 		return err
 	}
-	return k.getRemoteInterface().StaticPod(ip, k.getVipAndPort(), contants.LvsCareStaticPodName, image, masters)
+	return k.getRemoteInterface().StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters)
 }
 
 func (k *KubeadmRuntime) execToken(ip string) (string, error) {
@@ -190,15 +190,15 @@ func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 	return remote.New(k.getClusterName(), k.getSSHInterface())
 }
 
-func (k *KubeadmRuntime) getScriptsBash() contants.Bash {
+func (k *KubeadmRuntime) getScriptsBash() constants.Bash {
 	render := k.getImageLabels()
-	return contants.NewBash(k.getClusterName(), render)
+	return constants.NewBash(k.getClusterName(), render)
 }
 
-func (k *KubeadmRuntime) getContentData() contants.Data {
-	return contants.NewData(k.getClusterName())
+func (k *KubeadmRuntime) getContentData() constants.Data {
+	return constants.NewData(k.getClusterName())
 }
 
-func GetContantData(clusterName string) contants.Data {
-	return contants.NewData(clusterName)
+func GetConstantData(clusterName string) constants.Data {
+	return constants.NewData(clusterName)
 }

@@ -20,7 +20,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -51,7 +51,7 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 		return nil
 	}
 	// checker if all the node is ready
-	data := contants.NewData(cluster.Name)
+	data := constants.NewData(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), cluster.GetMaster0IPAPIServer())
 	if err != nil {
 		return err

@@ -17,7 +17,7 @@ package ipvs
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -35,7 +35,7 @@ func LvsStaticPodYaml(vip string, masters []string, image, name string) (string,
 		return "", fmt.Errorf("vip and mster not allow empty")
 	}
 	if image == "" {
-		image = contants.DefaultLvsCareImage
+		image = constants.DefaultLvsCareImage
 	}
 	args := []string{"care", "--vs", vip, "--health-path", "/healthz", "--health-schem", "https"}
 	for _, m := range masters {

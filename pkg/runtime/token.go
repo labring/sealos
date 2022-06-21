@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )
@@ -49,9 +49,9 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 		JoinNode115Upper   = "kubeadm join --config=%s"
 	)
 
-	initConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultInitKubeadmFileName)
-	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinMasterKubeadmFileName)
-	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), contants.DefaultJoinNodeKubeadmFileName)
+	initConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
+	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
+	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
 
 	var discoveryTokens []string
 	for _, data := range k.getTokenCaCertHash() {

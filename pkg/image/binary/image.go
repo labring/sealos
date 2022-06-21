@@ -26,7 +26,7 @@ import (
 
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/registry"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -109,14 +109,14 @@ func inspectImage(data string) (*v1.Image, error) {
 }
 
 func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
-	//contants.ImageShimDirName
-	imageFetchDir := path.Join(contextDir, contants.ManifestsDirName)
+	//constants.ImageShimDirName
+	imageFetchDir := path.Join(contextDir, constants.ManifestsDirName)
 	yamlImages, err := buildimage.ParseYamlImages(imageFetchDir)
 	logger.Info("fetch manifests images: %v", yamlImages)
 	if err != nil {
 		return errors.Wrap(err, "get images list failed in this context")
 	}
-	imageListDir := path.Join(contextDir, contants.ImagesDirName, contants.ImageShimDirName)
+	imageListDir := path.Join(contextDir, constants.ImagesDirName, constants.ImageShimDirName)
 	images, err := buildimage.LoadImages(imageListDir)
 	if err != nil {
 		return errors.Wrap(err, "load images list failed in this context")
@@ -143,7 +143,7 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	}
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 
-	images, err = is.SaveImages(images, path.Join(contextDir, contants.RegistryDirName), platformVar)
+	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
 	if err != nil {
 		return errors.Wrap(err, "save images failed in this context")
 	}

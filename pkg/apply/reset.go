@@ -18,7 +18,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
@@ -27,7 +27,7 @@ import (
 
 func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
-	clusterPath := contants.Clusterfile(args.ClusterName)
+	clusterPath := constants.Clusterfile(args.ClusterName)
 	if fileutil.IsExist(clusterPath) {
 		clusterFile := clusterfile.NewClusterFile(clusterPath)
 		err := clusterFile.Process()

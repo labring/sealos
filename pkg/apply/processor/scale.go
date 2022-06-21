@@ -27,7 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 	"golang.org/x/sync/errgroup"
@@ -149,7 +149,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	if c.IsScaleUp {
-		clusterPath := contants.Clusterfile(cluster.Name)
+		clusterPath := constants.Clusterfile(cluster.Name)
 		if err = yaml.MarshalYamlToFile(clusterPath, cluster); err != nil {
 			return err
 		}

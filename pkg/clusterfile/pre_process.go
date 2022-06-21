@@ -19,7 +19,7 @@ import (
 
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/decode"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
@@ -68,7 +68,7 @@ func (c *ClusterFile) DecodeCluster(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeConfigs(data []byte) error {
-	configs, err := decode.CRDForBytes(data, contants.Config)
+	configs, err := decode.CRDForBytes(data, constants.Config)
 	if err != nil {
 		return err
 	}

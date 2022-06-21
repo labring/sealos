@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/sirupsen/logrus"
@@ -53,21 +53,21 @@ func init() {
 	cobra.OnInitialize(onBootOnDie)
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().StringVar(&clusterRootDir, "clusterRootDir", contants.DefaultClusterRootfsDir, "cluster root directory")
+	rootCmd.PersistentFlags().StringVar(&clusterRootDir, "cluster-root", constants.DefaultClusterRootfsDir, "cluster root directory")
 }
 
 func onBootOnDie() {
-	contants.DefaultClusterRootfsDir = clusterRootDir
+	constants.DefaultClusterRootfsDir = clusterRootDir
 	var rootDirs = []string{
-		contants.LogPath(),
-		contants.DataPath(),
-		contants.Workdir(),
+		constants.LogPath(),
+		constants.DataPath(),
+		constants.Workdir(),
 	}
 	if err := file.MkDirs(rootDirs...); err != nil {
 		logger.Error(err)
 		panic(1)
 	}
-	logger.CfgAndFile(debug, contants.LogPath(), "sealos", false)
+	logger.CfgAndFile(debug, constants.LogPath(), "sealos", false)
 	setupLogrus()
 }
 

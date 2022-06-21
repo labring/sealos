@@ -31,7 +31,7 @@ import (
 
 	"github.com/labring/sealos/pkg/env"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/ssh"
@@ -63,7 +63,7 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 }
 
 func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag, appFlag bool) error {
-	target := contants.NewData(f.getClusterName(cluster)).RootFSPath()
+	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
 	eg, _ := errgroup.WithContext(context.Background())
 	envProcessor := env.NewEnvProcessor(cluster, f.images)
 
@@ -83,7 +83,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				return errors.Wrap(err, "get rootfs files failed")
 			}
 			if len(dirs) != 0 {
-				_, err = exec.RunBashCmd(fmt.Sprintf(contants.DefaultChmodBash, src.MountPoint))
+				_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
 				if err != nil {
 					return errors.Wrap(err, "run chmod to rootfs failed")
 				}
@@ -94,7 +94,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	if err := eg.Wait(); err != nil {
 		return err
 	}
-	check := contants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
+	check := constants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
 	sshClient := f.getSSH(cluster)
 	for _, IP := range ipList {
 		ip := IP
@@ -163,7 +163,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	return endEg.Wait()
 }
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
-	clusterRootfsDir := contants.NewData(f.getClusterName(cluster)).Homedir()
+	clusterRootfsDir := constants.NewData(f.getClusterName(cluster)).Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
 
 	eg, _ := errgroup.WithContext(context.Background())
@@ -179,9 +179,9 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 
 func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	var (
-		renderEtc       = path.Join(mountDir, contants.EtcDirName)
-		renderChart     = path.Join(mountDir, contants.ChartsDirName)
-		renderManifests = path.Join(mountDir, contants.ManifestsDirName)
+		renderEtc       = path.Join(mountDir, constants.EtcDirName)
+		renderChart     = path.Join(mountDir, constants.ChartsDirName)
+		renderManifests = path.Join(mountDir, constants.ManifestsDirName)
 	)
 
 	for _, ip := range ipList {
@@ -211,7 +211,7 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target s
 		targetIP = "127.0.0.1"
 	}
 	for _, f := range files {
-		if f.Name() == contants.RegistryDirName {
+		if f.Name() == constants.RegistryDirName {
 			continue
 		}
 		err = sshEntry.Copy(targetIP, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))

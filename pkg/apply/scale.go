@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/contants"
+	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -36,7 +36,7 @@ import (
 func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
 	var curr *v2.Cluster
-	clusterPath := contants.Clusterfile(scaleArgs.ClusterName)
+	clusterPath := constants.Clusterfile(scaleArgs.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
 		cluster = initCluster(scaleArgs.ClusterName)
 		curr = cluster
