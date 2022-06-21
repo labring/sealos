@@ -18,6 +18,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"reflect"
 
 	"github.com/labring/sealos/pkg/checker"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -47,11 +49,13 @@ type CreateProcessor struct {
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
-	pipLine, err := c.GetPipeLine()
+	pipeLine, err := c.GetPipeLine()
 	if err != nil {
 		return err
 	}
-	for _, f := range pipLine {
+	for _, f := range pipeLine {
+		fName := reflect.TypeOf(f).Name()
+		logger.Info("create process exec pipeline: %s", fName)
 		if err = f(cluster); err != nil {
 			return err
 		}
