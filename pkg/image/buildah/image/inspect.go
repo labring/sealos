@@ -33,7 +33,7 @@ const (
 	inspectTypeManifest  = "manifest"
 )
 
-func (d *ImageService) Inspect(images ...string) (types.ImageListOCIV1, error) {
+func (d *Service) Inspect(images ...string) (types.ImageListOCIV1, error) {
 	var builder *buildah.Builder
 	var imageList types.ImageListOCIV1
 	var err error

@@ -43,7 +43,7 @@ var imagesHeader = map[string]string{
 	"History":   "HISTORY",
 }
 
-func (d *ImageService) ListImages() error {
+func (d *Service) ListImages() error {
 	store := *d.store
 	systemContext := &image_types.SystemContext{}
 

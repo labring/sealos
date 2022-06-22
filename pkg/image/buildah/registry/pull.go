@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type RegistryService struct {
+type Service struct {
 }
 
 type pullOptions struct {
@@ -45,7 +45,7 @@ type pullOptions struct {
 	pullPolicy       string
 }
 
-func (*RegistryService) Pull(images ...string) error {
+func (*Service) Pull(images ...string) error {
 	opt := pullOptions{
 		allTags:          false,
 		authfile:         auth.GetDefaultAuthFile(),
@@ -107,5 +107,5 @@ func (*RegistryService) Pull(images ...string) error {
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	return &RegistryService{}, nil
+	return &Service{}, nil
 }

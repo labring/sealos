@@ -21,7 +21,7 @@ type RegistryService interface {
 	Push(image string) error
 }
 
-type Service interface {
+type ImageService interface {
 	Tag(src, dst string) error
 	Save(imageName, archiveName string) error
 	Load(archiveName string) error

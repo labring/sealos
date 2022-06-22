@@ -39,7 +39,7 @@ import (
 
 type CreateProcessor struct {
 	ClusterFile     clusterfile.Interface
-	ImageManager    types.Service
+	ImageManager    types.ImageService
 	ClusterManager  types.ClusterService
 	RegistryManager types.RegistryService
 	Runtime         runtime.Interface

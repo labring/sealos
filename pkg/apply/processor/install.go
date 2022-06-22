@@ -42,7 +42,7 @@ var ForceOverride bool
 
 type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
-	ImageManager    types.Service
+	ImageManager    types.ImageService
 	ClusterManager  types.ClusterService
 	RegistryManager types.RegistryService
 	Guest           guest.Interface

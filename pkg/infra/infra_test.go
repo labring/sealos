@@ -104,7 +104,7 @@ func TestAliApply(t *testing.T) {
 				EcsType: "ecs.c7a.large",
 			},
 		}
-		t.Log(fmt.Sprintf("add server:%v", aliProvider.Apply()))
+		t.Logf("add server:%v", aliProvider.Apply())
 		j, _ = yaml.Marshal(&infra)
 		t.Log("output yaml:", string(j))
 		time.Sleep(10 * time.Second)
@@ -121,7 +121,7 @@ func TestAliApply(t *testing.T) {
 				EcsType: "ecs.s6-c1m2.large",
 			},
 		}
-		t.Log(fmt.Sprintf("delete:%v", aliProvider.Apply()))
+		t.Logf("delete:%v", aliProvider.Apply())
 		j, _ = yaml.Marshal(&infra)
 		t.Log("output yaml:", string(j))
 	})
@@ -129,7 +129,7 @@ func TestAliApply(t *testing.T) {
 	time.Sleep(20 * time.Second)
 	now := metav1.Now()
 	infra.ObjectMeta.DeletionTimestamp = &now
-	t.Log(fmt.Sprintf("%v", aliProvider.Apply()))
+	t.Logf("%v", aliProvider.Apply())
 }
 
 func TestHuaweiApply(t *testing.T) {
@@ -185,5 +185,5 @@ func TestHuaweiApply(t *testing.T) {
 	time.Sleep(20 * time.Second)
 	now := metav1.Now()
 	infra.ObjectMeta.DeletionTimestamp = &now
-	t.Log(fmt.Sprintf("%v", hwProvider.Apply()))
+	t.Logf("%v", hwProvider.Apply())
 }

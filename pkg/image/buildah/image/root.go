@@ -27,8 +27,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// ImageService is the default service, which is used for image pull/push
-type ImageService struct {
+// Service is the default service, which is used for image pull/push
+type Service struct {
 	store               *storage.Store
 	globalFlagResults   *types.GlobalBuildahFlags
 	listImageOpts       *types.ImageResults
@@ -168,13 +168,13 @@ func newRmiOptions() *types.RmiOptions {
 	}
 }
 
-func NewImageService() (types.Service, error) {
+func NewImageService() (types.ImageService, error) {
 	globalFlagResults := newGlobalOptions()
 	store, err := newStore(globalFlagResults)
 	if err != nil {
 		return nil, err
 	}
-	return &ImageService{
+	return &Service{
 		store:               store,
 		globalFlagResults:   globalFlagResults,
 		listImageOpts:       newListImageOptions(),

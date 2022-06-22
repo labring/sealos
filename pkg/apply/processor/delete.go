@@ -36,7 +36,7 @@ var ForceDelete bool
 
 type DeleteProcessor struct {
 	ClusterManager types.ClusterService
-	ImageManager   types.Service
+	ImageManager   types.ImageService
 	ClusterFile    clusterfile.Interface
 }
 
