@@ -19,7 +19,7 @@ import (
 	image_types "github.com/containers/image/v5/types"
 )
 
-func (d *ImageService) Tag(src, dst string) error {
+func (d *Service) Tag(src, dst string) error {
 	store := *d.store
 	systemContext := &image_types.SystemContext{}
 

@@ -14,6 +14,6 @@
 
 package image
 
-func (d *ImageService) Remove(force bool, images ...string) error {
+func (d *Service) Remove(force bool, images ...string) error {
 	return d.Rmi(false, force, images)
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (*RegistryService) Logout(domain string) error {
+func (*Service) Logout(domain string) error {
 	var (
 		opts = auth.LogoutOptions{
 			Stdout:             os.Stdout,

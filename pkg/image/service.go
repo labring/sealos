@@ -38,7 +38,7 @@ func NewRegistryService() (types.RegistryService, error) {
 	return registry.NewRegistryService()
 }
 
-func NewImageService() (types.Service, error) {
+func NewImageService() (types.ImageService, error) {
 	if ok, err := initBuildah(); err == nil && ok {
 		return binary.NewImageService()
 	}

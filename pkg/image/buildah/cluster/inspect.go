@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
+func (*Service) Inspect(name string) (*types.ClusterManifest, error) {
 	out, err := bb.Inspect(name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "inspect get data fail")

@@ -23,7 +23,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *ClusterService) Delete(name string) error {
+func (c *Service) Delete(name string) error {
 	infos, err := c.List()
 	if err != nil {
 		return errors.Wrapf(err, "delete get containers")

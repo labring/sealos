@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c *ClusterService) Create(name string, image string) (*types.ClusterManifest, error) {
+func (c *Service) Create(name string, image string) (*types.ClusterManifest, error) {
 	// delete
 	err := c.Delete(name)
 	if err != nil {

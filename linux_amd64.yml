@@ -23,8 +23,8 @@ homepage: "https://github.com/labring/sealos"
 license: "Apache-2.0 License"
 
 contents:
-- src: ./bin/linux_amd64/seactl
-  dst: /usr/bin/sealos
+  - src: ./bin/linux_amd64/sealctl
+    dst: /usr/bin/sealos
 
-- src: ./bin/linux_amd64/
-  dst: /usr/bin/sealos
+  - src: ./bin/linux_amd64/
+    dst: /usr/bin/sealos

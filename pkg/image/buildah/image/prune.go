@@ -23,7 +23,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 )
 
-func (d *ImageService) Rmi(prune, force bool, names []string) error {
+func (d *Service) Rmi(prune, force bool, names []string) error {
 	store := *d.store
 	systemContext := &image_types.SystemContext{}
 	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
@@ -58,6 +58,6 @@ func (d *ImageService) Rmi(prune, force bool, names []string) error {
 	return multiE.ErrorOrNil()
 }
 
-func (d *ImageService) Prune() error {
+func (d *Service) Prune() error {
 	return d.Rmi(true, d.rmiOpts.Force, []string{})
 }

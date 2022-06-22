@@ -24,7 +24,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (*ClusterService) List() ([]types.ClusterInfo, error) {
+func (*Service) List() ([]types.ClusterInfo, error) {
 	data, err := bb.GetContainers()
 	if err != nil {
 		return nil, err

@@ -45,7 +45,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
+func (d *Service) Build(options *types.BuildOptions, contextDir, imageName string) error {
 	//constants.ImageShimDirName
 	imageFetchDir := path.Join(contextDir, constants.ManifestsDirName)
 	yamlImages, err := buildimage.ParseYamlImages(imageFetchDir)

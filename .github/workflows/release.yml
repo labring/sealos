@@ -3,9 +3,9 @@ name: Release
 on:
   push:
     branches-ignore:
-      - '**'
+      - "**"
     tags:
-      - '*'
+      - "*"
 
 jobs:
   goreleaser:
@@ -33,7 +33,7 @@ jobs:
           OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
           DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
         run: |
-          cd hack/release && sh note.sh
+          cd scripts/release && sh note.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -48,17 +48,17 @@ jobs:
           load: true
           tags: sealos:latest
           build-args: |
-            ACTION=build-release
+            ACTION=release.release
             GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
           secrets: GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
       # https://github.com/docker/build-push-action
 
-      - name: Copy Out Binarys
+      - name: Copy Out Binaries
         run: |
           docker run -itd --name sealos --rm sealos:latest bash
           docker cp sealos:/work/dist  .
 
-      - name: Build binareies to oss
+      - name: Build binaries to oss
         env:
           BUCKETNAME: ${{ secrets.BUCKETNAME }}
         run: |
