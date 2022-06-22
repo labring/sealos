@@ -16,6 +16,7 @@ package applydrivers
 
 import (
 	"fmt"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -86,6 +87,7 @@ func (c *Applier) initStatus() {
 }
 
 func (c *Applier) finalStatus(err error) {
+	logger.Error("final status error: %v", err)
 	condition := v2.ClusterCondition{
 		Type:              "ApplierApplySuccess",
 		Status:            v1.ConditionTrue,
@@ -93,12 +95,16 @@ func (c *Applier) finalStatus(err error) {
 		Reason:            "Ready",
 		Message:           "applier apply successfully",
 	}
+	c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	if err != nil {
 		condition.Status = v1.ConditionFalse
 		condition.Reason = "ApplierApplyError"
 		condition.Message = err.Error()
 	}
-	v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
+	if err != nil {
+		c.ClusterDesired.Status.Phase = v2.ClusterFailed
+	}
+	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
 }
 
 func (c *Applier) reconcileCluster() error {
