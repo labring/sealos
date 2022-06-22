@@ -32,30 +32,30 @@ var (
 	criConfigPath string
 )
 
-func NewCRICmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newCRICmd() *cobra.Command {
+	var criCmd = &cobra.Command{
 		Use:   "cri",
 		Short: "cri manager",
 		//Run: func(cmd *cobra.Command, args []string) {
 		//
 		//},
 	}
-	cmd.AddCommand(NewIsDockerCmd())
-	cmd.AddCommand(NewIsRunningCmd())
-	cmd.AddCommand(NewListKubeContainersCmd())
-	cmd.AddCommand(NewRemoveContainersCmd())
-	cmd.AddCommand(NewPullImageCmd())
-	cmd.AddCommand(NewImageExistsCmd())
-	cmd.AddCommand(NewCGroupDriverCmd())
-	cmd.AddCommand(NewCRISocketCmd())
-	cmd.PersistentFlags().StringVar(&criSocketPath, "socket-path", "", "cri socket path")
-	cmd.PersistentFlags().StringVar(&criConfigPath, "config", "", "cri config file")
+	criCmd.AddCommand(newIsDockerCmd())
+	criCmd.AddCommand(newIsRunningCmd())
+	criCmd.AddCommand(newListKubeContainersCmd())
+	criCmd.AddCommand(newRemoveContainersCmd())
+	criCmd.AddCommand(newPullImageCmd())
+	criCmd.AddCommand(newImageExistsCmd())
+	criCmd.AddCommand(newCGroupDriverCmd())
+	criCmd.AddCommand(newCRISocketCmd())
+	criCmd.PersistentFlags().StringVar(&criSocketPath, "socket-path", "", "cri socket path")
+	criCmd.PersistentFlags().StringVar(&criConfigPath, "config", "", "cri config file")
 
-	return cmd
+	return criCmd
 }
 
-func NewCRISocketCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newCRISocketCmd() *cobra.Command {
+	var criSocketCmd = &cobra.Command{
 		Use:   "socket",
 		Short: "cri manager socket",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -67,11 +67,11 @@ func NewCRISocketCmd() *cobra.Command {
 			println(criSocket)
 		},
 	}
-	return cmd
+	return criSocketCmd
 }
 
-func NewIsDockerCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newIsDockerCmd() *cobra.Command {
+	var isDockerCmd = &cobra.Command{
 		Use:   "is-docker",
 		Short: "cri manager is-docker",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -83,12 +83,12 @@ func NewIsDockerCmd() *cobra.Command {
 			println(strconv.FormatBool(isDocker))
 		},
 	}
-	return cmd
+	return isDockerCmd
 }
 
-func NewIsRunningCmd() *cobra.Command {
+func newIsRunningCmd() *cobra.Command {
 	var shortPrint bool
-	var cmd = &cobra.Command{
+	var isRunningCmd = &cobra.Command{
 		Use:   "is-running",
 		Short: "cri manager is-running",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -108,12 +108,13 @@ func NewIsRunningCmd() *cobra.Command {
 			logger.Info("container runtime is running")
 		},
 	}
-	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
-	return cmd
+	isRunningCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
+	return isRunningCmd
 }
-func NewListKubeContainersCmd() *cobra.Command {
+
+func newListKubeContainersCmd() *cobra.Command {
 	var sPrint bool
-	var cmd = &cobra.Command{
+	var listKubeContainersCmd = &cobra.Command{
 		Use:   "list-containers",
 		Short: "cri manager list-containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -133,12 +134,13 @@ func NewListKubeContainersCmd() *cobra.Command {
 			logger.Info("container runtime containers is %+v", containers)
 		},
 	}
-	cmd.Flags().BoolVar(&sPrint, "short", false, "if true, print just result.")
-	return cmd
+	listKubeContainersCmd.Flags().BoolVar(&sPrint, "short", false, "if true, print just result.")
+	return listKubeContainersCmd
 }
-func NewRemoveContainersCmd() *cobra.Command {
+
+func newRemoveContainersCmd() *cobra.Command {
 	var containers []string
-	var cmd = &cobra.Command{
+	var removeContainersCmd = &cobra.Command{
 		Use:   "remove-containers",
 		Short: "cri manager remove-containers",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -158,12 +160,13 @@ func NewRemoveContainersCmd() *cobra.Command {
 			logger.Info("container runtime remove containers %+v success.", containers)
 		},
 	}
-	cmd.Flags().StringSliceVar(&containers, "containers", []string{}, "containers name list")
-	return cmd
+	removeContainersCmd.Flags().StringSliceVar(&containers, "containers", []string{}, "containers name list")
+	return removeContainersCmd
 }
-func NewPullImageCmd() *cobra.Command {
+
+func newPullImageCmd() *cobra.Command {
 	var imageName string
-	var cmd = &cobra.Command{
+	var pullImageCmd = &cobra.Command{
 		Use:   "pull-image",
 		Short: "cri manager pull-image",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -183,13 +186,14 @@ func NewPullImageCmd() *cobra.Command {
 			logger.Info("container runtime pull image %s success.", imageName)
 		},
 	}
-	cmd.Flags().StringVar(&imageName, "image", "", "image name")
-	return cmd
+	pullImageCmd.Flags().StringVar(&imageName, "image", "", "image name")
+	return pullImageCmd
 }
-func NewImageExistsCmd() *cobra.Command {
+
+func newImageExistsCmd() *cobra.Command {
 	var shortPrint bool
 	var imageName string
-	var cmd = &cobra.Command{
+	var imageExistsCmd = &cobra.Command{
 		Use:   "image-exists",
 		Short: "cri manager image-exists",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -213,12 +217,13 @@ func NewImageExistsCmd() *cobra.Command {
 			logger.Info("container runtime image name %s is exists", imageName)
 		},
 	}
-	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
-	return cmd
+	imageExistsCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
+	return imageExistsCmd
 }
-func NewCGroupDriverCmd() *cobra.Command {
+
+func newCGroupDriverCmd() *cobra.Command {
 	var shortPrint bool
-	var cmd = &cobra.Command{
+	var cGroupDriverCmd = &cobra.Command{
 		Use:   "cgroup-driver",
 		Short: "cri manager cgroup-driver",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -238,8 +243,8 @@ func NewCGroupDriverCmd() *cobra.Command {
 			logger.Info("container runtime cgroup-driver is %s", driver)
 		},
 	}
-	cmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
-	return cmd
+	cGroupDriverCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just result.")
+	return cGroupDriverCmd
 }
 
 func criCheck() {
@@ -252,6 +257,7 @@ func criCheck() {
 		os.Exit(1)
 	}
 }
+
 func criRuntime() cri.ContainerRuntime {
 	rt, err := cri.NewContainerRuntime(utilsexec.New(), criSocketPath, criConfigPath)
 	if err != nil {
@@ -260,6 +266,7 @@ func criRuntime() cri.ContainerRuntime {
 	}
 	return rt
 }
+
 func init() {
-	rootCmd.AddCommand(NewCRICmd())
+	rootCmd.AddCommand(newCRICmd())
 }

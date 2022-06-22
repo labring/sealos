@@ -27,35 +27,37 @@ var roles string
 var clusterName string
 var ips []string
 
-func newExecCmd() *cobra.Command {
-	var cluster *v1beta1.Cluster
-	var cmd = &cobra.Command{
-		Use:   "exec",
-		Short: "exec a shell command or script on all node.",
-		Example: `
+var exampleExec = `
 exec to default cluster: default
 	sealos exec "cat /etc/hosts"
 specify the cluster name(If there is only one cluster in the $HOME/.sealos directory, it should be applied. ):
     sealos exec -c my-cluster "cat /etc/hosts"
 set role label to exec cmd:
-    sealos exec -c my-cluster -r master,slave,node1 "cat /etc/hosts"	
+    sealos exec -c my-cluster -r master,slave,node1 "cat /etc/hosts"
 set ips to exec cmd:
-    sealos exec -c my-cluster --ips 172.16.1.38 "cat /etc/hosts"	
-`,
-		Args: cobra.ExactArgs(1),
+    sealos exec -c my-cluster --ips 172.16.1.38 "cat /etc/hosts"
+`
+
+func newExecCmd() *cobra.Command {
+	var cluster *v1beta1.Cluster
+	var execCmd = &cobra.Command{
+		Use:     "exec",
+		Short:   "exec a shell command or script on all node.",
+		Example: exampleExec,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(ips) > 0 {
-				execCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
+				execIPCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
 				if err != nil {
 					return err
 				}
-				return execCmd.RunCmd(args[0])
+				return execIPCmd.RunCmd(args[0])
 			}
-			execCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
+			execRoleCmd, err := ssh.NewExecCmdFromRoles(cluster, roles)
 			if err != nil {
 				return err
 			}
-			return execCmd.RunCmd(args[0])
+			return execRoleCmd.RunCmd(args[0])
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			cls, err := clusterfile.GetClusterFromName(clusterName)
@@ -66,10 +68,10 @@ set ips to exec cmd:
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
-	cmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
-	cmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
-	return cmd
+	execCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
+	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
+	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
+	return execCmd
 }
 
 func init() {

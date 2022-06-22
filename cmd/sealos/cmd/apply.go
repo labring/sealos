@@ -22,25 +22,28 @@ import (
 
 var clusterFile string
 
-// applyCmd represents the apply command
-var applyCmd = &cobra.Command{
-	Use:     "apply",
-	Short:   "apply a kubernetes cluster",
-	Example: `sealos apply -f Clusterfile`,
-	Args:    cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		applier, err := apply.NewApplierFromFile(clusterFile)
-		if err != nil {
-			return err
-		}
-		return applier.Apply()
-	},
-	PostRun: func(cmd *cobra.Command, args []string) {
-		logger.Info(contact)
-	},
+func newApplyCmd() *cobra.Command {
+	// applyCmd represents the apply command
+	var applyCmd = &cobra.Command{
+		Use:     "apply",
+		Short:   "apply a kubernetes cluster",
+		Example: `sealos apply -f Clusterfile`,
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			applier, err := apply.NewApplierFromFile(clusterFile)
+			if err != nil {
+				return err
+			}
+			return applier.Apply()
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(contact)
+		},
+	}
+	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
+	return applyCmd
 }
 
 func init() {
-	rootCmd.AddCommand(applyCmd)
-	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
+	rootCmd.AddCommand(newApplyCmd())
 }

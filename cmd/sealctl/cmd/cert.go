@@ -17,15 +17,13 @@ package cmd
 import (
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/flags"
-
 	"github.com/labring/sealos/pkg/cert"
-
+	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
-func certCmd() *cobra.Command {
+func newCertCmd() *cobra.Command {
 	type certFlag struct {
 		AltNames     []string
 		NodeName     string
@@ -37,7 +35,7 @@ func certCmd() *cobra.Command {
 	}
 	var flag certFlag
 
-	cmd := &cobra.Command{
+	certCmd := &cobra.Command{
 		Use:   "cert",
 		Short: "generate certs",
 		Long:  `you can specify expire time`,
@@ -50,17 +48,17 @@ func certCmd() *cobra.Command {
 			}
 		},
 	}
-	cmd.Flags().StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealos.io or 10.103.97.2")
-	cmd.Flags().StringVar(&flag.NodeName, "node-name", "", "like master0")
-	cmd.Flags().StringVar(&flag.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
-	cmd.Flags().StringVar(&flag.NodeIP, "node-ip", "", "like 10.103.97.2")
-	cmd.Flags().StringVar(&flag.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
-	cmd.Flags().StringVar(&flag.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
-	cmd.Flags().StringVar(&flag.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
+	certCmd.Flags().StringSliceVar(&flag.AltNames, "alt-names", []string{}, "like sealos.io or 10.103.97.2")
+	certCmd.Flags().StringVar(&flag.NodeName, "node-name", "", "like master0")
+	certCmd.Flags().StringVar(&flag.ServiceCIDR, "service-cidr", "", "like 10.103.97.2/24")
+	certCmd.Flags().StringVar(&flag.NodeIP, "node-ip", "", "like 10.103.97.2")
+	certCmd.Flags().StringVar(&flag.DNSDomain, "dns-domain", "cluster.local", "cluster dns domain")
+	certCmd.Flags().StringVar(&flag.CertPath, "cert-path", "/etc/kubernetes/pki", "kubernetes cert file path")
+	certCmd.Flags().StringVar(&flag.CertEtcdPath, "cert-etcd-path", "/etc/kubernetes/pki/etcd", "kubernetes etcd cert file path")
 
-	return cmd
+	return certCmd
 }
 
 func init() {
-	rootCmd.AddCommand(certCmd())
+	rootCmd.AddCommand(newCertCmd())
 }

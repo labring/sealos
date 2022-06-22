@@ -24,27 +24,29 @@ import (
 
 var shortPrint bool
 
-var versionCmd = &cobra.Command{
-	Use:     "version",
-	Short:   "version",
-	Args:    cobra.NoArgs,
-	Example: `sealos version`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		marshalled, err := json.Marshal(version.Get())
-		if err != nil {
-			return err
-		}
-		if shortPrint {
-			fmt.Println(version.Get().String())
-		} else {
-			fmt.Println(string(marshalled))
-		}
-		return nil
-
-	},
+func newVersionCmd() *cobra.Command {
+	var versionCmd = &cobra.Command{
+		Use:     "version",
+		Short:   "version",
+		Args:    cobra.NoArgs,
+		Example: `sealos version`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			marshalled, err := json.Marshal(version.Get())
+			if err != nil {
+				return err
+			}
+			if shortPrint {
+				fmt.Println(version.Get().String())
+			} else {
+				fmt.Println(string(marshalled))
+			}
+			return nil
+		},
+	}
+	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
+	return versionCmd
 }
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
+	rootCmd.AddCommand(newVersionCmd())
 }

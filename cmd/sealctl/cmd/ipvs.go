@@ -22,20 +22,15 @@ import (
 
 var Ipvs care.LvsCare
 
-// ipvsCmd represents the ipvs command
-var ipvsCmd = &cobra.Command{
-	Use:   "ipvs",
-	Short: "sealos create or care local ipvs lb",
-	Run: func(cmd *cobra.Command, args []string) {
-		flags.PrintFlags(cmd.Flags())
-		Ipvs.VsAndRsCare()
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(ipvsCmd)
-
-	// Here you will define your flags and configuration settings.
+func newIPVSCmd() *cobra.Command {
+	var ipvsCmd = &cobra.Command{
+		Use:   "ipvs",
+		Short: "sealos create or care local ipvs lb",
+		Run: func(cmd *cobra.Command, args []string) {
+			flags.PrintFlags(cmd.Flags())
+			Ipvs.VsAndRsCare()
+		},
+	}
 	ipvsCmd.Flags().BoolVar(&Ipvs.RunOnce, "run-once", false, "is run once mode")
 	ipvsCmd.Flags().BoolVarP(&Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
 	ipvsCmd.Flags().StringVar(&Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
@@ -44,11 +39,9 @@ func init() {
 	ipvsCmd.Flags().StringVar(&Ipvs.HealthPath, "health-path", "/healthz", "health check path")
 	ipvsCmd.Flags().StringVar(&Ipvs.HealthSchem, "health-schem", "https", "health check schem")
 	ipvsCmd.Flags().Int32Var(&Ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// ipvsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	return ipvsCmd
+}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// ipvsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func init() {
+	rootCmd.AddCommand(newIPVSCmd())
 }

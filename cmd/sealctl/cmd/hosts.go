@@ -19,16 +19,15 @@ package cmd
 import (
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/hosts"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
 var hostsPath string
 
-func NewHostsCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newHostsCmd() *cobra.Command {
+	var hostsCmd = &cobra.Command{
 		Use:   "hosts",
 		Short: "hosts manager",
 		//Run: func(cmd *cobra.Command, args []string) {
@@ -36,15 +35,15 @@ func NewHostsCmd() *cobra.Command {
 		//},
 	}
 	// check route for host
-	cmd.AddCommand(NewHostsListCmd())
-	cmd.AddCommand(NewHostsAddCmd())
-	cmd.AddCommand(NewHostsDeleteCmd())
-	cmd.PersistentFlags().StringVar(&hostsPath, "path", "/etc/hosts", "default hosts path")
-	return cmd
+	hostsCmd.AddCommand(newHostsListCmd())
+	hostsCmd.AddCommand(newHostsAddCmd())
+	hostsCmd.AddCommand(newHostsDeleteCmd())
+	hostsCmd.PersistentFlags().StringVar(&hostsPath, "path", "/etc/hosts", "default hosts path")
+	return hostsCmd
 }
 
-func NewHostsListCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newHostsListCmd() *cobra.Command {
+	var hostsListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "hosts manager list",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -52,12 +51,12 @@ func NewHostsListCmd() *cobra.Command {
 			hf.ListCurrentHosts()
 		},
 	}
-	return cmd
+	return hostsListCmd
 }
 
-func NewHostsAddCmd() *cobra.Command {
+func newHostsAddCmd() *cobra.Command {
 	var ip, domain string
-	var cmd = &cobra.Command{
+	var hostsAddCmd = &cobra.Command{
 		Use:   "add",
 		Short: "hosts manager add",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -80,14 +79,15 @@ func NewHostsAddCmd() *cobra.Command {
 			logger.Info("domain %s:%s append success", domain, ip)
 		},
 	}
-	cmd.Flags().StringVar(&ip, "ip", "", "ip address")
-	cmd.Flags().StringVar(&domain, "domain", "", "domain address")
+	hostsAddCmd.Flags().StringVar(&ip, "ip", "", "ip address")
+	hostsAddCmd.Flags().StringVar(&domain, "domain", "", "domain address")
 
-	return cmd
+	return hostsAddCmd
 }
-func NewHostsDeleteCmd() *cobra.Command {
+
+func newHostsDeleteCmd() *cobra.Command {
 	var domain string
-	var cmd = &cobra.Command{
+	var hostsDeleteCmd = &cobra.Command{
 		Use:   "delete",
 		Short: "hosts manager delete",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -102,21 +102,11 @@ func NewHostsDeleteCmd() *cobra.Command {
 			logger.Info("domain %s delete success", domain)
 		},
 	}
-	cmd.Flags().StringVar(&domain, "domain", "", "domain address")
+	hostsDeleteCmd.Flags().StringVar(&domain, "domain", "", "domain address")
 
-	return cmd
+	return hostsDeleteCmd
 }
 
 func init() {
-	rootCmd.AddCommand(NewHostsCmd())
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hostnameCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hostnameCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(newHostsCmd())
 }

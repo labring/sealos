@@ -18,34 +18,25 @@ import (
 	"os"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 
-// hostnameCmd represents the cert command
-var hostnameCmd = &cobra.Command{
-	Use:   "hostname",
-	Short: "get os.hostname",
-	Run: func(cmd *cobra.Command, args []string) {
-		hostname, err := os.Hostname()
-		if err != nil {
-			logger.Error(err)
-			os.Exit(1)
-		}
-		print(hostname)
-	},
+func newHostsNameCmd() *cobra.Command {
+	var hostsNameCmd = &cobra.Command{
+		Use:   "hostname",
+		Short: "get os.hostname",
+		Run: func(cmd *cobra.Command, args []string) {
+			hostname, err := os.Hostname()
+			if err != nil {
+				logger.Error(err)
+				os.Exit(1)
+			}
+			print(hostname)
+		},
+	}
+	return hostsNameCmd
 }
 
 func init() {
-	rootCmd.AddCommand(hostnameCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hostnameCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hostnameCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(newHostsNameCmd())
 }

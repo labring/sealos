@@ -18,15 +18,14 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/file"
-
 	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
-func NewPasswordCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newPasswordCmd() *cobra.Command {
+	var passwordCmd = &cobra.Command{
 		Use:   "password",
 		Short: "generator password",
 		//Run: func(cmd *cobra.Command, args []string) {
@@ -34,15 +33,15 @@ func NewPasswordCmd() *cobra.Command {
 		//},
 	}
 	// check route for host
-	cmd.AddCommand(NewRegistryCmd())
-	cmd.AddCommand(NewContainerdCmd())
-	return cmd
+	passwordCmd.AddCommand(newRegistryCmd())
+	passwordCmd.AddCommand(newContainerdCmd())
+	return passwordCmd
 }
 
-func NewRegistryCmd() *cobra.Command {
+func newRegistryCmd() *cobra.Command {
 	var pwdPath, username, password string
 	var printBool bool
-	var cmd = &cobra.Command{
+	var registryCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "generator registry password and file",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -65,17 +64,18 @@ func NewRegistryCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&pwdPath, "path", "/etc/registry/registry_htpasswd", "default password file")
-	cmd.Flags().StringVar(&username, "username", "admin", "username")
-	cmd.Flags().StringVar(&password, "password", "admin", "password")
+	registryCmd.Flags().StringVar(&pwdPath, "path", "/etc/registry/registry_htpasswd", "default password file")
+	registryCmd.Flags().StringVar(&username, "username", "admin", "username")
+	registryCmd.Flags().StringVar(&password, "password", "admin", "password")
 
-	cmd.Flags().BoolVar(&printBool, "print", false, "is print")
+	registryCmd.Flags().BoolVar(&printBool, "print", false, "is print")
 
-	return cmd
+	return registryCmd
 }
-func NewContainerdCmd() *cobra.Command {
+
+func newContainerdCmd() *cobra.Command {
 	var username, password string
-	var cmd = &cobra.Command{
+	var containerdCmd = &cobra.Command{
 		Use:   "containerd",
 		Short: "generator containerd password",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -84,22 +84,12 @@ func NewContainerdCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&username, "username", "admin", "username")
-	cmd.Flags().StringVar(&password, "password", "admin", "password")
+	containerdCmd.Flags().StringVar(&username, "username", "admin", "username")
+	containerdCmd.Flags().StringVar(&password, "password", "admin", "password")
 
-	return cmd
+	return containerdCmd
 }
 
 func init() {
-	rootCmd.AddCommand(NewPasswordCmd())
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hostnameCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hostnameCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(newPasswordCmd())
 }

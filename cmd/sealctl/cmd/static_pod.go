@@ -20,18 +20,17 @@ import (
 	"os"
 	"path"
 
+	"github.com/labring/sealos/pkg/ipvs"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
-
-	"github.com/labring/sealos/pkg/ipvs"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
 var staticPodPath string
 
-func NewStaticPodCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newStaticPodCmd() *cobra.Command {
+	var staticPodCmd = &cobra.Command{
 		Use:   "static-pod",
 		Short: "generator static pod",
 		//Run: func(cmd *cobra.Command, args []string) {
@@ -39,16 +38,16 @@ func NewStaticPodCmd() *cobra.Command {
 		//},
 	}
 	// check route for host
-	cmd.AddCommand(NewLvscareCmd())
-	cmd.PersistentFlags().StringVar(&staticPodPath, "path", constants.KubernetesEtcStaticPod, "default kubernetes static pod path")
-	return cmd
+	staticPodCmd.AddCommand(newLvscareCmd())
+	staticPodCmd.PersistentFlags().StringVar(&staticPodPath, "path", constants.KubernetesEtcStaticPod, "default kubernetes static pod path")
+	return staticPodCmd
 }
 
-func NewLvscareCmd() *cobra.Command {
+func newLvscareCmd() *cobra.Command {
 	var vip, image, name string
 	var masters []string
 	var printBool bool
-	var cmd = &cobra.Command{
+	var lvscareCmd = &cobra.Command{
 		Use:   "lvscare",
 		Short: "generator lvscare static pod file",
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -82,24 +81,14 @@ func NewLvscareCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&vip, "vip", "10.103.97.2:6443", "default vip IP")
-	cmd.Flags().StringVar(&name, "name", constants.LvsCareStaticPodName, "generator lvscare static pod name")
-	cmd.Flags().StringVar(&image, "image", constants.DefaultLvsCareImage, "generator lvscare static pod image")
-	cmd.Flags().StringSliceVar(&masters, "masters", []string{}, "generator masters addrs")
-	cmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
-	return cmd
+	lvscareCmd.Flags().StringVar(&vip, "vip", "10.103.97.2:6443", "default vip IP")
+	lvscareCmd.Flags().StringVar(&name, "name", constants.LvsCareStaticPodName, "generator lvscare static pod name")
+	lvscareCmd.Flags().StringVar(&image, "image", constants.DefaultLvsCareImage, "generator lvscare static pod image")
+	lvscareCmd.Flags().StringSliceVar(&masters, "masters", []string{}, "generator masters addrs")
+	lvscareCmd.Flags().BoolVar(&printBool, "print", false, "is print yaml")
+	return lvscareCmd
 }
 
 func init() {
-	rootCmd.AddCommand(NewStaticPodCmd())
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hostnameCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hostnameCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(newStaticPodCmd())
 }

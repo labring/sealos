@@ -22,7 +22,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/sirupsen/logrus"
-
 	"github.com/spf13/cobra"
 )
 
