@@ -30,7 +30,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (d *ImageService) Load(archiveName string) error {
+func (d *Service) Load(archiveName string) error {
 	if err := buildahcli.VerifyFlagsArgsOrder([]string{archiveName}); err != nil {
 		return err
 	}

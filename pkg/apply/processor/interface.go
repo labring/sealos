@@ -30,7 +30,7 @@ type Interface interface {
 	Execute(cluster *v2.Cluster) error
 }
 
-func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.Service, reset bool) error {
+func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.ImageService, reset bool) error {
 	if cluster.Status.Mounts == nil {
 		containers, err := service.List()
 		if err != nil {
@@ -60,7 +60,7 @@ func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgSer
 	return nil
 }
 
-func OCIToImageMount(mount *v2.MountImage, imgService types.Service) error {
+func OCIToImageMount(mount *v2.MountImage, imgService types.ImageService) error {
 	oci, err := imgService.Inspect(mount.ImageName)
 	if err != nil {
 		return err

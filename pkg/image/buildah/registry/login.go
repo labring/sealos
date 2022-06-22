@@ -22,7 +22,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (*RegistryService) Login(domain, username, passwd string) error {
+func (*Service) Login(domain, username, passwd string) error {
 	var (
 		opts = loginReply{
 			loginOpts: auth.LoginOptions{

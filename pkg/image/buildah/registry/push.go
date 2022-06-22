@@ -37,7 +37,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func (*RegistryService) Push(image string) error {
+func (*Service) Push(image string) error {
 	var src, destSpec string
 	iopts := types.PushOptions{
 		All:                false,

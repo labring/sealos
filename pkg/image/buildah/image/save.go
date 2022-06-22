@@ -39,7 +39,7 @@ import (
 
 // using buildah push
 
-func (d *ImageService) Save(imageName, archiveName string) error {
+func (d *Service) Save(imageName, archiveName string) error {
 	if err := auth.CheckAuthFile(d.pushOpts.Authfile); err != nil {
 		return err
 	}

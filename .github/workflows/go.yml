@@ -2,7 +2,7 @@ name: CI
 
 env:
   # Common versions
-  GO_VERSION: '1.17'
+  GO_VERSION: "1.17"
 
 on:
   push:
@@ -10,12 +10,11 @@ on:
   pull_request:
     branches: "*"
     paths-ignore:
-      - 'docs/**'
-      - 'vendor/**'
-      - '*.md'
-      - '*.yml'
+      - "docs/**"
+      - "vendor/**"
+      - "*.md"
+      - "*.yml"
 jobs:
-
   check-license:
     runs-on: ubuntu-18.04
     steps:
@@ -26,16 +25,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Run Check License
-        run: |
-          make filelicense
-          modifyCode=$(git status  -s | grep M | wc -l)
-          git status  -s
-          if [ $modifyCode -eq 0 ] ; then
-             echo "Lic check ok"
-          else
-             echo "Failed git modify files num is $modifyCode. Lic check error,please exec 'make install-addlicense && make filelicense' in your code "
-             exit -1
-          fi
+        run: make verify-license
   golangci-lint:
     runs-on: ubuntu-18.04
     steps:
@@ -78,9 +68,9 @@ jobs:
           push: false
           load: true
           tags: sealos:latest
-          build-args: ACTION=build-pack
+          build-args: ACTION=release.build
 
-      - name: Copy Out Binarys
+      - name: Copy Out Binaries
         run: |
           docker run -itd --name sealos --rm sealos:latest bash
           docker cp sealos:/work/dist  .

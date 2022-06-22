@@ -18,9 +18,9 @@ package cluster
 
 import "github.com/labring/sealos/pkg/image/types"
 
-type ClusterService struct {
+type Service struct {
 }
 
 func NewClusterService() (types.ClusterService, error) {
-	return &ClusterService{}, nil
+	return &Service{}, nil
 }
