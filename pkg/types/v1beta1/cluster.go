@@ -71,7 +71,7 @@ const (
 	ClusterInProcess ClusterPhase = "ClusterInProcess"
 )
 
-// ClusterCondition describes the state of a aijob at a certain point.
+// ClusterCondition describes the state of a cluster at a certain point.
 type ClusterCondition struct {
 	Type              string             `json:"type"`
 	Status            v1.ConditionStatus `json:"status"`
