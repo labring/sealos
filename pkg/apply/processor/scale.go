@@ -36,7 +36,7 @@ import (
 type ScaleProcessor struct {
 	ClusterFile     clusterfile.Interface
 	Runtime         runtime.Interface
-	ImageManager    types.Service
+	ImageManager    types.ImageService
 	ClusterManager  types.ClusterService
 	pullImages      []string
 	MastersToJoin   []string

@@ -45,7 +45,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName string) error {
+func (d *Service) Build(options *types.BuildOptions, contextDir, imageName string) error {
 	// charts
 	chartFetchDir := path.Join(contextDir, constants.ChartsDirName)
 	chartImages, err := buildimage.ParseChartImages(chartFetchDir)

@@ -171,6 +171,6 @@ func (d *ImageService) ListImages() error {
 	return err
 }
 
-func NewImageService() (types.Service, error) {
+func NewImageService() (types.ImageService, error) {
 	return &ImageService{}, nil
 }

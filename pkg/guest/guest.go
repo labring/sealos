@@ -43,7 +43,7 @@ type Interface interface {
 }
 
 type Default struct {
-	imageService types.Service
+	imageService types.ImageService
 }
 
 func NewGuestManager() (Interface, error) {
