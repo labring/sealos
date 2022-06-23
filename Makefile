@@ -1,3 +1,16 @@
+# Copyright © 2022 sealos.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 # ==============================================================================
 # Build options
@@ -23,16 +36,15 @@ define USAGE_OPTIONS
 
 Options:
   DEBUG            Whether or not to generate debug symbols. Default is 0.
-  CGO_ENABLED      Whether or not to use CGO. Default is 0.
   BINS             Binaries to build. Default is all binaries under cmd.
-                   This option is available when using: make build/compress(.multiarch)
+                   This option is available when using: make build/compress
                    Example: make build BINS="sealos seactl"
   PACKAGES         Packages to build. Default is rpm and deb.
-                   This option is available when using: make package/package.multiarch
+                   This option is available when using: make package
                    Example: make package PACKAGES="rpm deb"
-  PLATFORMS        Platforms to build for. Default is linux_amd64 and linux_arm64.
-                   This option is available when using: make *.multiarch
-                   Example: make build.multiarch PLATFORMS="linux_amd64 linux_arm64"
+  PLATFORM         Alternate platform to build for. Default is the host platform.
+                   This option is available when using: make build/compress/package
+                   Example: make build PLATFORM="linux_arm64"
   V                Set to 1 enable verbose build. Default is 0.
 endef
 export USAGE_OPTIONS
@@ -44,11 +56,6 @@ export USAGE_OPTIONS
 .PHONY: build
 build:
 	@$(MAKE) go.build
-
-## build.multiarch: Build source code for multiple platforms.
-.PHONY: build.multiarch
-build.multiarch:
-	@$(MAKE) go.build.multiarch
 
 ## lint: Check syntax and styling of go sources.
 .PHONY: lint
@@ -94,20 +101,10 @@ clean:
 compress:
 	@$(MAKE) release.upx
 
-## compress.multiarch: Compress the binaries using upx for multiple platforms.
-.PHONY: compress.multiarch
-compress.multiarch:
-	@$(MAKE) release.upx.multiarch
-
 ## package: Build rpm/deb packages for host platform.
 .PHONY: package
 package:
 	@$(MAKE) release.package
-
-## package.multiarch: Build rpm/deb packages for multiple platforms.
-.PHONY: package.multiarch
-package.multiarch:
-	@$(MAKE) release.package.multiarch
 
 ## update-contrib: Update list of contributors.
 .PHONY: update-contrib
