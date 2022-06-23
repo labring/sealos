@@ -42,22 +42,31 @@ ifneq ($(shell $(GO) version | grep -q 'go version go' && echo 0 || echo 1), 0)
 	$(error Go binary is not found. Please install Go first.')
 endif
 
-.PHONY: go.build.%
-go.build.%:
-	$(eval COMMAND := $(word 2,$(subst ., ,$*)))
+# TODO: merge go.build.%.sealos and go.build.%.sealctl
+.PHONY: go.build.%.sealos
+go.build.%.sealos:
+	$(eval COMMAND := sealos)
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
 	$(eval OS := $(word 1,$(subst _, ,$(PLATFORM))))
 	$(eval ARCH := $(word 2,$(subst _, ,$(PLATFORM))))
 
 	@echo "===========> Building binary $(COMMAND) for $(PLATFORM)"
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND)
+	CGO_ENABLED=1 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND)
+
+.PHONY: go.build.%.sealctl
+go.build.%.sealctl:
+	$(eval COMMAND := sealctl)
+	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
+	$(eval OS := $(word 1,$(subst _, ,$(PLATFORM))))
+	$(eval ARCH := $(word 2,$(subst _, ,$(PLATFORM))))
+
+	@echo "===========> Building binary $(COMMAND) for $(PLATFORM)"
+	@mkdir -p $(BIN_DIR)/$(PLATFORM)
+	CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND)
 
 .PHONY: go.build
 go.build: go.build.verify $(addprefix go.build., $(addprefix $(PLATFORM)., $(BINS)))
-
-.PHONY: go.build.multiarch
-go.build.multiarch: go.build.verify $(foreach p,$(PLATFORMS),$(addprefix go.build., $(addprefix $(p)., $(BINS))))
 
 .PHONY: go.clean
 go.clean:

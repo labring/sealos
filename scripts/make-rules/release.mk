@@ -31,9 +31,6 @@ release.upx.%:
 .PHONY: release.upx
 release.upx: tools.verify.upx $(addprefix release.upx., $(addprefix $(PLATFORM)., $(BINS)))
 
-.PHONY: release.upx.multiarch
-release.upx.multiarch: tools.verify.upx $(foreach p,$(PLATFORMS),$(addprefix release.upx., $(addprefix $(p)., $(BINS))))
-
 PACKAGES ?= rpm deb
 
 .PHONY: release.package.%
@@ -44,6 +41,3 @@ release.package.%:
 
 .PHONY: release.package
 release.package: tools.verify.nfpm $(addprefix release.package., $(addprefix $(PLATFORM)., $(PACKAGES)))
-
-.PHONY: release.package.multiarch
-release.package.multiarch: tools.verify.nfpm $(foreach p,$(PLATFORMS),$(addprefix release.package., $(addprefix $(p)., $(PACKAGES))))

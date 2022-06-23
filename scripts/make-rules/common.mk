@@ -15,7 +15,6 @@
 SHELL := /bin/bash
 DIRS=$(shell ls)
 DEBUG ?= 0
-CGO_ENABLED ?= 0
 GIT_TAG := $(shell git describe --exact-match --tags --abbrev=0  2> /dev/null || echo untagged)
 GIT_COMMIT ?= $(shell git rev-parse --short HEAD || echo "0.0.0")
 BUILD_DATE=$(shell date +%FT%T%z)
@@ -36,7 +35,6 @@ $(shell mkdir -p $(BIN_DIR))
 endif
 
 # only support linux
-PLATFORMS ?= linux_amd64 linux_arm64
 GOOS=linux
 
 # set a specific PLATFORM
