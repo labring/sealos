@@ -4,6 +4,12 @@ github.com/Azure/go-ansiterm/winterm
 # github.com/BurntSushi/toml v1.1.0
 github.com/BurntSushi/toml
 github.com/BurntSushi/toml/internal
+# github.com/Masterminds/goutils v1.1.1
+github.com/Masterminds/goutils
+# github.com/Masterminds/semver/v3 v3.1.1
+github.com/Masterminds/semver/v3
+# github.com/Masterminds/sprig/v3 v3.2.2
+github.com/Masterminds/sprig/v3
 # github.com/Microsoft/go-winio v0.5.2
 github.com/Microsoft/go-winio
 github.com/Microsoft/go-winio/backuptar
@@ -365,6 +371,15 @@ github.com/fsouza/go-dockerclient
 github.com/ghodss/yaml
 # github.com/go-logr/logr v1.2.2
 github.com/go-logr/logr
+# github.com/gobwas/glob v0.2.3
+github.com/gobwas/glob
+github.com/gobwas/glob/compiler
+github.com/gobwas/glob/match
+github.com/gobwas/glob/syntax
+github.com/gobwas/glob/syntax/ast
+github.com/gobwas/glob/syntax/lexer
+github.com/gobwas/glob/util/runes
+github.com/gobwas/glob/util/strings
 # github.com/gogo/protobuf v1.3.2
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
@@ -403,6 +418,8 @@ github.com/hashicorp/errwrap
 # github.com/hashicorp/go-multierror v1.1.1
 ## explicit
 github.com/hashicorp/go-multierror
+# github.com/huandu/xstrings v1.3.1
+github.com/huandu/xstrings
 # github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 ## explicit
 github.com/huaweicloud/huaweicloud-sdk-go-v3/core
@@ -482,9 +499,13 @@ github.com/miekg/pkcs11
 github.com/mistifyio/go-zfs
 # github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db
 github.com/mitchellh/colorstring
+# github.com/mitchellh/copystructure v1.1.1
+github.com/mitchellh/copystructure
 # github.com/mitchellh/go-homedir v1.1.0
 ## explicit
 github.com/mitchellh/go-homedir
+# github.com/mitchellh/reflectwalk v1.0.1
+github.com/mitchellh/reflectwalk
 # github.com/moby/ipvs v1.0.1
 github.com/moby/ipvs
 # github.com/moby/sys/mount v0.2.0
@@ -611,9 +632,13 @@ github.com/rivo/uniseg
 github.com/schollz/progressbar/v3
 # github.com/seccomp/libseccomp-golang v0.9.2-0.20210429002308-3879420cc921
 github.com/seccomp/libseccomp-golang
+# github.com/shopspring/decimal v1.2.0
+github.com/shopspring/decimal
 # github.com/sirupsen/logrus v1.8.1
 ## explicit
 github.com/sirupsen/logrus
+# github.com/spf13/cast v1.3.1
+github.com/spf13/cast
 # github.com/spf13/cobra v1.4.0
 ## explicit
 github.com/spf13/cobra
@@ -682,6 +707,7 @@ golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/packet
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/pbkdf2
+golang.org/x/crypto/scrypt
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
@@ -842,6 +868,15 @@ gopkg.in/tomb.v1
 gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 gopkg.in/yaml.v3
+# helm.sh/helm/v3 v3.6.0
+## explicit
+helm.sh/helm/v3/internal/ignore
+helm.sh/helm/v3/internal/sympath
+helm.sh/helm/v3/internal/version
+helm.sh/helm/v3/pkg/chart
+helm.sh/helm/v3/pkg/chart/loader
+helm.sh/helm/v3/pkg/chartutil
+helm.sh/helm/v3/pkg/engine
 # k8s.io/api v0.22.5
 ## explicit
 k8s.io/api/admissionregistration/v1
@@ -887,6 +922,10 @@ k8s.io/api/scheduling/v1beta1
 k8s.io/api/storage/v1
 k8s.io/api/storage/v1alpha1
 k8s.io/api/storage/v1beta1
+# k8s.io/apiextensions-apiserver v0.21.0
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
 # k8s.io/apimachinery v0.22.5
 ## explicit
 k8s.io/apimachinery/pkg/api/equality

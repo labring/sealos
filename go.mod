@@ -40,6 +40,7 @@ require (
 	golang.org/x/sys v0.0.0-20220429233432-b5fbb4746d32
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/ini.v1 v1.66.2 // indirect
+	helm.sh/helm/v3 v3.6.0
 	k8s.io/api v0.22.5
 	k8s.io/apimachinery v0.22.5
 	k8s.io/client-go v0.22.5

@@ -46,6 +46,13 @@ import (
 )
 
 func (d *Service) Build(options *types.BuildOptions, contextDir, imageName string) error {
+	// charts
+	chartFetchDir := path.Join(contextDir, constants.ChartsDirName)
+	chartImages, err := buildimage.ParseChartImages(chartFetchDir)
+	logger.Info("fetch chart images: %v", chartImages)
+	if err != nil {
+		return errors.Wrap(err, "get chart images list failed in this context")
+	}
 	//constants.ImageShimDirName
 	imageFetchDir := path.Join(contextDir, constants.ManifestsDirName)
 	yamlImages, err := buildimage.ParseYamlImages(imageFetchDir)
@@ -59,6 +66,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		return errors.Wrap(err, "load images list failed in this context")
 	}
 	images = append(images, yamlImages...)
+	images = append(images, chartImages...) // add chart
 	auths, err := registry.GetAuthInfo()
 	if err != nil {
 		return err
