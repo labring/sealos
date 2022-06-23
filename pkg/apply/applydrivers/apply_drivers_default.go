@@ -77,7 +77,7 @@ func (c *Applier) Apply() error {
 	} else {
 		err = c.reconcileCluster()
 	}
-	c.finalStatus(err)
+	c.updateStatus(err)
 	logger.Debug("write cluster file to local storage: %s", clusterPath)
 	return yaml.MarshalYamlToFile(clusterPath, c.ClusterDesired)
 }
@@ -86,20 +86,20 @@ func (c *Applier) initStatus() {
 	c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
 }
 
-func (c *Applier) finalStatus(err error) {
-	logger.Error("final status error: %v", err)
+func (c *Applier) updateStatus(err error) {
 	condition := v2.ClusterCondition{
-		Type:              "ApplierApplySuccess",
+		Type:              "ApplyClusterSuccess",
 		Status:            v1.ConditionTrue,
 		LastHeartbeatTime: metav1.Now(),
 		Reason:            "Ready",
-		Message:           "applier apply successfully",
+		Message:           "Applied to cluster successfully",
 	}
 	c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	if err != nil {
 		condition.Status = v1.ConditionFalse
-		condition.Reason = "ApplierApplyError"
+		condition.Reason = "ApplyClusterError"
 		condition.Message = err.Error()
+		logger.Error("Applied to cluster error: %v", err)
 	}
 	if err != nil {
 		c.ClusterDesired.Status.Phase = v2.ClusterFailed
