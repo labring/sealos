@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"io"
 
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {

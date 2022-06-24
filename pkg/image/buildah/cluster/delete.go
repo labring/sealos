@@ -17,10 +17,10 @@ limitations under the License.
 package cluster
 
 import (
-	bb "github.com/labring/sealos/pkg/image/buildah/cluster/buildah"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
+
+	bb "github.com/labring/sealos/pkg/image/buildah/cluster/buildah"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func (c *Service) Delete(name string) error {

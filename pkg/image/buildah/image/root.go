@@ -22,9 +22,10 @@ import (
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
-	"github.com/labring/sealos/pkg/image/types"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/labring/sealos/pkg/image/types"
 )
 
 // Service is the default service, which is used for image pull/push

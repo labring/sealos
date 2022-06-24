@@ -22,20 +22,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containers/buildah/pkg/formats"
-	"github.com/containers/common/libimage"
-	"github.com/docker/go-units"
-
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
+	"github.com/containers/buildah/pkg/formats"
+	"github.com/containers/common/libimage"
 	"github.com/containers/image/v5/types"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
-	labring_types "github.com/labring/sealos/pkg/image/types"
-
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
+	"github.com/docker/go-units"
 	"github.com/pkg/errors"
+
+	labring_types "github.com/labring/sealos/pkg/image/types"
 )
 
 const (

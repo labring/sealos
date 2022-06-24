@@ -17,9 +17,10 @@ limitations under the License.
 package cluster
 
 import (
+	"github.com/pkg/errors"
+
 	bb "github.com/labring/sealos/pkg/image/buildah/cluster/buildah"
 	"github.com/labring/sealos/pkg/image/types"
-	"github.com/pkg/errors"
 )
 
 func (c *Service) Create(name string, image string) (*types.ClusterManifest, error) {

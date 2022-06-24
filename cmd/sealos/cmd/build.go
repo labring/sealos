@@ -19,10 +19,11 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 func newBuildCmd() *cobra.Command {

@@ -22,13 +22,12 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	v1 "github.com/labring/sealos/pkg/token/bootstraptoken/v1"
-
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Token struct {

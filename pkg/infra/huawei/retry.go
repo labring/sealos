@@ -15,12 +15,12 @@
 package huawei
 
 import (
-	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
-	"github.com/labring/sealos/pkg/utils/retry"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/huaweicloud/huaweicloud-sdk-go-v3/core/def"
+
+	"github.com/labring/sealos/pkg/utils/retry"
 )
 
 func (a *HwProvider) RetryVpcRequest(request interface{}, def *def.HttpRequestDef) (interface{}, error) {

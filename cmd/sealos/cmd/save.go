@@ -15,8 +15,9 @@
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/image"
 	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/image"
 )
 
 func newSaveCmd() *cobra.Command {

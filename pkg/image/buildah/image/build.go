@@ -16,33 +16,30 @@ package image
 
 import (
 	"context"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/pkg/parse"
 	buildahutil "github.com/containers/buildah/pkg/util"
-
-	"io"
-	"io/ioutil"
-	"path/filepath"
-	"time"
-
+	"github.com/containers/common/pkg/auth"
 	image_types "github.com/containers/image/v5/types"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"os"
-	"path"
-	"strings"
-
-	"github.com/containers/common/pkg/auth"
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 func (d *Service) Build(options *types.BuildOptions, contextDir, imageName string) error {

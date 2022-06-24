@@ -17,9 +17,10 @@ package cmd
 import (
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/route"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 var (

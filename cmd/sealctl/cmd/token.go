@@ -17,10 +17,11 @@ package cmd
 import (
 	"os"
 
-	"github.com/labring/sealos/pkg/token"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/pkg/token"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func newTokenCmd() *cobra.Command {
