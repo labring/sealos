@@ -22,17 +22,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/imdario/mergo"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/kube-proxy/config/v1alpha1"
+	"k8s.io/kubelet/config/v1beta1"
+
+	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
-
-	"github.com/imdario/mergo"
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
-	k8sruntime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/kube-proxy/config/v1alpha1"
-	"k8s.io/kubelet/config/v1beta1"
 )
 
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go

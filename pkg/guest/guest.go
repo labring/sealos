@@ -19,21 +19,19 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/utils/exec"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/homedir"
 
 	"github.com/labring/sealos/fork/golang/expansion"
-
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/utils/exec"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 )
 

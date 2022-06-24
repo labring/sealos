@@ -22,6 +22,9 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/passwd"
 	"github.com/labring/sealos/pkg/registry"
@@ -29,8 +32,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/spf13/cobra"
 )
 
 var (

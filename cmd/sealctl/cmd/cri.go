@@ -21,10 +21,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labring/sealos/pkg/cri"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	utilsexec "k8s.io/utils/exec"
+
+	"github.com/labring/sealos/pkg/cri"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (

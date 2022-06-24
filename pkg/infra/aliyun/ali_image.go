@@ -18,13 +18,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/rand"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 )
 
 func (a *AliProvider) GetAvailableImageID(host *v1beta1.InfraHost) (string, error) {

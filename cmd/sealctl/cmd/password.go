@@ -18,10 +18,11 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/passwd"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 func newPasswordCmd() *cobra.Command {
