@@ -17,7 +17,6 @@ before:
     # You may remove this if you don't use go modules.
     #-  go mod download
     - go generate ./...
-    - apt-get install -y upx
 builds:
   - env:
       - CGO_ENABLED=1
@@ -94,6 +93,83 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+
+nfpms:
+- file_name_template: '{{ .ProjectName }}_{{ .Tag }}_{{ .Os }}_{{ .Arch }}'
+  homepage: https://github.com/labring/sealos
+  version_metadata: git
+  description: |-
+    Cloud OS distribution with Kubernetes as kernel
+  maintainer: https://github.com/labring
+  license: Apache
+  vendor: Apache-2.0 License
+  formats:
+  # - apk
+  - deb
+  - rpm
+  bindir: /usr/bin
+  section: utils
+  contents:
+    - src: ./completions/sealos.bash
+      dst: /usr/share/bash-completion/completions/sealos
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./completions/sealos.fish
+      dst: /usr/share/fish/completions/sealos.fish
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./completions/sealos.zsh
+      dst:  /usr/share/zsh/vendor-completions/_sealos
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./manpages/sealos.1.gz
+      dst: /usr/share/man/man1/sealos.1.gz
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./LICENSE
+      dst: /usr/share/doc/sealos/copyright
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./completions/sealctl.bash
+      dst: /usr/share/bash-completion/completions/sealctl
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./completions/sealctl.fish
+      dst: /usr/share/fish/completions/sealctl.fish
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./completions/sealctl.zsh
+      dst:  /usr/share/zsh/vendor-completions/_sealctl
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./manpages/sealctl.1.gz
+      dst: /usr/share/man/man1/sealctl.1.gz
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
+    - src: ./LICENSE
+      dst: /usr/share/doc/sealctl/copyright
+      file_info:
+        mode: 0644
+        owner: notRoot
+        group: notRoot
 
 #archives:
 #  - replacements:
