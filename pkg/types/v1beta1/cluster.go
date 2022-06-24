@@ -15,6 +15,7 @@
 package v1beta1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -60,9 +61,32 @@ type MountImage struct {
 	Env        map[string]string `json:"env,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`
 	Cmd        []string          `json:"cmd,omitempty"`
+	Entrypoint []string          `json:"entrypoint,omitempty"`
 }
+
+type ClusterPhase string
+
+const (
+	ClusterFailed    ClusterPhase = "ClusterFailed"
+	ClusterSuccess   ClusterPhase = "ClusterSuccess"
+	ClusterInProcess ClusterPhase = "ClusterInProcess"
+)
+
+// ClusterCondition describes the state of a cluster at a certain point.
+type ClusterCondition struct {
+	Type              string             `json:"type"`
+	Status            v1.ConditionStatus `json:"status"`
+	LastHeartbeatTime metav1.Time        `json:"lastHeartbeatTime,omitempty"`
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
 type ClusterStatus struct {
-	Mounts []MountImage `json:"mounts"`
+	Phase      ClusterPhase       `json:"phase,omitempty"`
+	Mounts     []MountImage       `json:"mounts"`
+	Conditions []ClusterCondition `json:"conditions,omitempty" `
 }
 
 type SSH struct {

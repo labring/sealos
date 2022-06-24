@@ -17,6 +17,8 @@ package applydrivers
 import (
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -67,18 +69,42 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
+	c.initStatus()
+	var err error
 	if c.ClusterDesired.CreationTimestamp.IsZero() {
-		if err := c.initCluster(); err != nil {
-			return err
-		}
+		err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
-		if err := c.reconcileCluster(); err != nil {
-			return err
-		}
+		err = c.reconcileCluster()
 	}
+	c.updateStatus(err)
 	logger.Debug("write cluster file to local storage: %s", clusterPath)
 	return yaml.MarshalYamlToFile(clusterPath, c.ClusterDesired)
+}
+func (c *Applier) initStatus() {
+	c.ClusterDesired.Status.Phase = v2.ClusterInProcess
+	c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
+}
+
+func (c *Applier) updateStatus(err error) {
+	condition := v2.ClusterCondition{
+		Type:              "ApplyClusterSuccess",
+		Status:            v1.ConditionTrue,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Ready",
+		Message:           "Applied to cluster successfully",
+	}
+	c.ClusterDesired.Status.Phase = v2.ClusterSuccess
+	if err != nil {
+		condition.Status = v1.ConditionFalse
+		condition.Reason = "ApplyClusterError"
+		condition.Message = err.Error()
+		logger.Error("Applied to cluster error: %v", err)
+	}
+	if err != nil {
+		c.ClusterDesired.Status.Phase = v2.ClusterFailed
+	}
+	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
 }
 
 func (c *Applier) reconcileCluster() error {

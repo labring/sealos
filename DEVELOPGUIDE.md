@@ -7,7 +7,7 @@ Some tools can be very handy to help you start a virtual machine such as [multip
 # Build the project
 
 ```shell script
-git clonne https://github.com/labrirng/sealos
+git clone https://github.com/labrirng/sealos
 cd sealos
 make build
 ```

@@ -68,6 +68,16 @@ func OCIToImageMount(mount *v2.MountImage, imgService types.ImageService) error 
 	if len(oci) > 0 {
 		mount.Env = maps.ListToMap(oci[0].Config.Env)
 		delete(mount.Env, "PATH")
+		// mount.Entrypoint
+		var entrypoint []string
+		for _, cmd := range oci[0].Config.Entrypoint {
+			if cmd == "/bin/sh" || cmd == "-c" {
+				continue
+			}
+			entrypoint = append(entrypoint, cmd)
+		}
+		mount.Entrypoint = entrypoint
+
 		//mount.Cmd
 		cmds := oci[0].Config.Cmd
 		var newCMDs []string

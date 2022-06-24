@@ -85,6 +85,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Delete in ScaleProcessor.")
 	err := c.Runtime.DeleteMasters(c.MastersToDelete)
 	if err != nil {
 		return err
@@ -92,6 +93,7 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 	return c.Runtime.DeleteNodes(c.NodesToDelete)
 }
 func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Join in ScaleProcessor.")
 	err := c.Runtime.JoinMasters(c.MastersToJoin)
 	if err != nil {
 		return err
@@ -104,6 +106,7 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline UnMountRootfs in ScaleProcessor.")
 	hosts := append(c.MastersToDelete, c.NodesToDelete...)
 	if cluster.Status.Mounts == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount rootfs")
@@ -117,6 +120,7 @@ func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline JoinCheck in ScaleProcessor.")
 	var ips []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	ips = append(ips, c.MastersToJoin...)
@@ -129,6 +133,7 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline DeleteCheck in ScaleProcessor.")
 	var ips []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	ips = append(ips, c.MastersToDelete...)
@@ -141,6 +146,7 @@ func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline PreProcess in ScaleProcessor.")
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
@@ -164,6 +170,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline RunConfig in ScaleProcessor.")
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
@@ -176,6 +183,7 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MountRootfs in ScaleProcessor.")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
