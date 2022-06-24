@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen
+BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen
 RELEASE_TOOLS ?= goreleaser ossutil upx nfpm
 
 .PHONY: tools.install
@@ -42,6 +42,10 @@ install.addlicense:
 .PHONY: install.deepcopy-gen
 install.deepcopy-gen:
 	@$(GO) install k8s.io/code-generator/cmd/deepcopy-gen@latest
+
+.PHONY: install.conversion-gen
+install.conversion-gen:
+	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@latest
 
 .PHONY: install.goreleaser
 install.goreleaser:
