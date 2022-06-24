@@ -18,16 +18,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
-func NewKubeCmd() *cobra.Command {
+func newKubeCmd() *cobra.Command {
 	var fieldSelector, selector, kubeConfig, sources, namespace string
 	var allNamespace bool
-	var cmd = &cobra.Command{
+	var kubeCmd = &cobra.Command{
 		Use:   "kube",
 		Short: "kube resource list json",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -61,26 +60,16 @@ func NewKubeCmd() *cobra.Command {
 			println(data)
 		},
 	}
-	cmd.Flags().BoolVar(&allNamespace, "--all-namespaces", false, " If present, list the requested object(s) across all namespaces. Namespace in current\ncontext is ignored even if specified with --namespace.")
-	cmd.Flags().StringVar(&namespace, "namespace", "", "kubernetes namespace")
-	cmd.Flags().StringVar(&sources, "sources", "nodes", "e.g. pods,deployments")
-	cmd.Flags().StringVar(&fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', and '!='.(e.g. --field-selector\nkey1=value1,key2=value2). The server only supports a limited number of field queries per type.")
-	cmd.Flags().StringVar(&selector, "selector", "", "Selector (label query) to filter on, supports '=', '==', and '!='.(e.g. -l key1=value1,key2=value2)")
-	cmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "Path to the kubeconfig file to use for CLI requests.")
+	kubeCmd.Flags().BoolVar(&allNamespace, "--all-namespaces", false, " If present, list the requested object(s) across all namespaces. Namespace in current\ncontext is ignored even if specified with --namespace.")
+	kubeCmd.Flags().StringVar(&namespace, "namespace", "", "kubernetes namespace")
+	kubeCmd.Flags().StringVar(&sources, "sources", "nodes", "e.g. pods,deployments")
+	kubeCmd.Flags().StringVar(&fieldSelector, "field-selector", "", "Selector (field query) to filter on, supports '=', '==', and '!='.(e.g. --field-selector\nkey1=value1,key2=value2). The server only supports a limited number of field queries per type.")
+	kubeCmd.Flags().StringVar(&selector, "selector", "", "Selector (label query) to filter on, supports '=', '==', and '!='.(e.g. -l key1=value1,key2=value2)")
+	kubeCmd.Flags().StringVar(&kubeConfig, "kubeconfig", "", "Path to the kubeconfig file to use for CLI requests.")
 
-	return cmd
+	return kubeCmd
 }
 
 func init() {
-	rootCmd.AddCommand(NewKubeCmd())
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// hostnameCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// hostnameCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.AddCommand(newKubeCmd())
 }

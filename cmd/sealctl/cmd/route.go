@@ -27,26 +27,22 @@ var (
 	routeGatewayIP string
 )
 
-func NewRouteCmd() *cobra.Command {
+func newRouteCmd() *cobra.Command {
 	// routeCmd represents the route command
-	var cmd = &cobra.Command{
+	var routeCmd = &cobra.Command{
 		Use:   "route",
 		Short: "set default route gateway",
 	}
 	// check route for host
-	cmd.Flags().StringVar(&routeHost, "host", "", "route host ip address for iFace")
-	cmd.AddCommand(NewCheckRouteCmd())
-	cmd.AddCommand(NewDelRouteCmd())
-	cmd.AddCommand(NewAddRouteCmd())
-	return cmd
+	routeCmd.Flags().StringVar(&routeHost, "host", "", "route host ip address for iFace")
+	routeCmd.AddCommand(newCheckRouteCmd())
+	routeCmd.AddCommand(newDelRouteCmd())
+	routeCmd.AddCommand(newAddRouteCmd())
+	return routeCmd
 }
 
-func init() {
-	rootCmd.AddCommand(NewRouteCmd())
-}
-
-func NewCheckRouteCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newCheckRouteCmd() *cobra.Command {
+	var checkRouteCmd = &cobra.Command{
 		Use:   "check",
 		Short: "check route host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -56,11 +52,11 @@ func NewCheckRouteCmd() *cobra.Command {
 			}
 		},
 	}
-	return cmd
+	return checkRouteCmd
 }
 
-func NewAddRouteCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newAddRouteCmd() *cobra.Command {
+	var addRouteCmd = &cobra.Command{
 		Use:   "add",
 		Short: "set route host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -72,12 +68,12 @@ func NewAddRouteCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
-	return cmd
+	addRouteCmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route add host via gateway")
+	return addRouteCmd
 }
 
-func NewDelRouteCmd() *cobra.Command {
-	var cmd = &cobra.Command{
+func newDelRouteCmd() *cobra.Command {
+	var delRouteCmd = &cobra.Command{
 		Use:   "del",
 		Short: "del route host via gateway, like ip route del host via gateway",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -89,6 +85,10 @@ func NewDelRouteCmd() *cobra.Command {
 		},
 	}
 	// manually to set host via gateway
-	cmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
-	return cmd
+	delRouteCmd.Flags().StringVar(&routeGatewayIP, "gateway", "", "route gateway ,ex ip route del host via gateway")
+	return delRouteCmd
+}
+
+func init() {
+	rootCmd.AddCommand(newRouteCmd())
 }

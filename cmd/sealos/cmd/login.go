@@ -19,7 +19,6 @@ import (
 
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +51,5 @@ func newLoginCmd() *cobra.Command {
 }
 
 func init() {
-	loginCmd := newLoginCmd()
-	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(newLoginCmd())
 }

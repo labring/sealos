@@ -19,11 +19,9 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 
@@ -66,6 +64,5 @@ func newBuildCmd() *cobra.Command {
 }
 
 func init() {
-	buildCmd := newBuildCmd()
-	rootCmd.AddCommand(buildCmd)
+	rootCmd.AddCommand(newBuildCmd())
 }

@@ -39,6 +39,5 @@ func newRMICmd() *cobra.Command {
 }
 
 func init() {
-	rmiCmd := newRMICmd()
-	rootCmd.AddCommand(rmiCmd)
+	rootCmd.AddCommand(newRMICmd())
 }

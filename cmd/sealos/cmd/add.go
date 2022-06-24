@@ -17,26 +17,27 @@ package cmd
 import (
 	"errors"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
-// addCmd represents the delete command
-func newAddCmd() *cobra.Command {
-	var deleteCmd = &cobra.Command{
-		Use:   "add",
-		Short: "add some node",
-		Args:  cobra.NoArgs,
-		Example: `
+const exampleAdd = `
 add to nodes :
 	sealos add --nodes x.x.x.x
 
-add to default cluster: 
+add to default cluster:
 	sealos add --masters x.x.x.x --nodes x.x.x.x
 	sealos add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
-`,
+`
+
+// addCmd represents the delete command
+func newAddCmd() *cobra.Command {
+	var addCmd = &cobra.Command{
+		Use:     "add",
+		Short:   "add some node",
+		Args:    cobra.NoArgs,
+		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			//return errors.New("add feature no support")
 			applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
@@ -56,10 +57,10 @@ add to default cluster:
 		},
 	}
 	addArgs = &apply.ScaleArgs{}
-	deleteCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
-	deleteCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
-	deleteCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
-	return deleteCmd
+	addCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
+	addCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
+	addCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
+	return addCmd
 }
 
 var addArgs *apply.ScaleArgs

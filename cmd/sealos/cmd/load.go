@@ -39,6 +39,5 @@ func newLoadCmd() *cobra.Command {
 }
 
 func init() {
-	loadCmd := newLoadCmd()
-	rootCmd.AddCommand(loadCmd)
+	rootCmd.AddCommand(newLoadCmd())
 }

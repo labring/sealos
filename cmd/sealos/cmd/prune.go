@@ -37,6 +37,5 @@ func newPruneCmd() *cobra.Command {
 }
 
 func init() {
-	pruneCmd := newPruneCmd()
-	rootCmd.AddCommand(pruneCmd)
+	rootCmd.AddCommand(newPruneCmd())
 }

@@ -19,7 +19,6 @@ import (
 	"os"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 )
 

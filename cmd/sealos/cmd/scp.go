@@ -28,23 +28,25 @@ import (
 // var clusterName string
 // var ips []string
 
-func newScpCmd() *cobra.Command {
-	var cluster *v1beta1.Cluster
-	var cmd = &cobra.Command{
-		Use: "scp",
-		// Aliases: []string{"cp"},
-		Short: "copy local file to remote on all node.",
-		Example: `
+const exampleScp = `
 copy file to default cluster: default
 	sealos scp "/root/aa.txt" "/root/dd.txt"
 specify the cluster name(If there is only one cluster in the $HOME/.sealos directory, it should be applied. ):
     sealos scp -c my-cluster "/root/aa.txt" "/root/dd.txt"
 set role label to copy file:
-    sealos scp -c my-cluster -r master,slave,node1 "cat /etc/hosts"	
+    sealos scp -c my-cluster -r master,slave,node1 "cat /etc/hosts"
 set ips to copy file:
     sealos scp -c my-cluster --ips 172.16.1.38  "/root/aa.txt" "/root/dd.txt"
-`,
-		Args: cobra.ExactArgs(2),
+`
+
+func newScpCmd() *cobra.Command {
+	var cluster *v1beta1.Cluster
+	var scpCmd = &cobra.Command{
+		Use: "scp",
+		// Aliases: []string{"cp"},
+		Short:   "copy local file to remote on all node.",
+		Example: exampleScp,
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(ips) > 0 {
 				sshCmd, err := ssh.NewExecCmdFromIPs(cluster, ips)
@@ -68,10 +70,10 @@ set ips to copy file:
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
-	cmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
-	cmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
-	return cmd
+	scpCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
+	scpCmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
+	scpCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
+	return scpCmd
 }
 
 func init() {

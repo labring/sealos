@@ -37,6 +37,5 @@ func newTagCmd() *cobra.Command {
 }
 
 func init() {
-	tagCmd := newTagCmd()
-	rootCmd.AddCommand(tagCmd)
+	rootCmd.AddCommand(newTagCmd())
 }

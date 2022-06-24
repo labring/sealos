@@ -39,6 +39,5 @@ func newSaveCmd() *cobra.Command {
 }
 
 func init() {
-	saveCmd := newSaveCmd()
-	rootCmd.AddCommand(saveCmd)
+	rootCmd.AddCommand(newSaveCmd())
 }

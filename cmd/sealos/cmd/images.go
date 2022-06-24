@@ -37,6 +37,5 @@ func newImagesCmd() *cobra.Command {
 }
 
 func init() {
-	imagesCmd := newImagesCmd()
-	rootCmd.AddCommand(imagesCmd)
+	rootCmd.AddCommand(newImagesCmd())
 }

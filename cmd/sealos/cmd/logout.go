@@ -37,6 +37,5 @@ func newLogoutCmd() *cobra.Command {
 }
 
 func init() {
-	logoutCmd := newLogoutCmd()
-	rootCmd.AddCommand(logoutCmd)
+	rootCmd.AddCommand(newLogoutCmd())
 }

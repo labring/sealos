@@ -15,26 +15,25 @@
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/apply/processor"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
 var contact = `
-      ___           ___           ___           ___       ___           ___     
-     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \    
-    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \   
-   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \  
-  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \ 
+      ___           ___           ___           ___       ___           ___
+     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \
+    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \
+   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \
+  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \
  /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
  \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
-  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\  
-   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /  
-    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /   
-     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/  
+  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\
+   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /
+    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /
+     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/
 
                   Website :https://www.sealos.io/
                   Address :github.com/labring/sealos
@@ -45,7 +44,7 @@ create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
   multi image:
-    sealos run labring/kubernetes:v1.24.0 calico:v3.22.1 \ 
+    sealos run labring/kubernetes:v1.24.0 calico:v3.22.1 \
         --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22)：
@@ -54,12 +53,12 @@ create cluster to your baremetal server, appoint the iplist:
   Different InfraSSH port numbers exist：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
-  
+
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
-var runArgs *apply.RunArgs
+var runArgs apply.RunArgs
 
 func newRunCmd() *cobra.Command {
 	var runCmd = &cobra.Command{
@@ -68,7 +67,7 @@ func newRunCmd() *cobra.Command {
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applier, err := apply.NewApplierFromArgs(args, runArgs)
+			applier, err := apply.NewApplierFromArgs(args, &runArgs)
 			if err != nil {
 				return err
 			}
@@ -78,13 +77,6 @@ func newRunCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	return runCmd
-}
-
-func init() {
-	runArgs = &apply.RunArgs{}
-	runCmd := newRunCmd()
-	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().StringVarP(&runArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
 	runCmd.Flags().StringVarP(&runArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
 	runCmd.Flags().StringVarP(&runArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
@@ -96,4 +88,9 @@ func init() {
 	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "we also can input an --force flag to run app in this cluster by force")
 	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
+	return runCmd
+}
+
+func init() {
+	rootCmd.AddCommand(newRunCmd())
 }
