@@ -178,7 +178,7 @@ PR is the only way to make change to sealos project files. To help reviewers bet
 As a contributor, if you want to make any contribution to sealos project, we should reach an agreement on the version of tools used in the development environment.
 Here are some dependents with specific version:
 
-* golang : v1.13
+* golang : v1.16+
 * golangci-lint: 1.39.0
 
 When you develop the sealos project at the local environment, you should use subcommands of Makefile to help yourself to check and build the latest version of sealos. For the convenience of developers, we use the docker to build sealos. It can reduce problems of the developing environment.
