@@ -21,10 +21,11 @@ import (
 	"net"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func initCluster(clusterName string) *v2.Cluster {

@@ -20,14 +20,13 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/maps"
-
-	"github.com/labring/sealos/pkg/utils/constants"
+	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"sigs.k8s.io/yaml"
+	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 /*

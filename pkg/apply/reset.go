@@ -15,6 +15,8 @@
 package apply
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -22,7 +24,6 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {

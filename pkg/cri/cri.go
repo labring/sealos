@@ -22,13 +22,12 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/file"
 	toml "github.com/pelletier/go-toml"
-
 	"github.com/pkg/errors"
-
 	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 	utilsexec "k8s.io/utils/exec"
+
+	"github.com/labring/sealos/pkg/utils/file"
 )
 
 // defaultKnownCRISockets holds the set of known CRI endpoints

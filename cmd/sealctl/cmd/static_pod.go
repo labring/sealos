@@ -20,11 +20,12 @@ import (
 	"os"
 	"path"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/ipvs"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 var staticPodPath string

@@ -23,20 +23,18 @@ import (
 	"path"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/iputils"
-
-	"github.com/labring/sealos/pkg/runtime"
-
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/ssh"
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
 )
 
 type defaultRootfs struct {

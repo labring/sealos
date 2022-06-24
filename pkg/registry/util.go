@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/docker/docker/api/types"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"k8s.io/apimachinery/pkg/util/json"
+
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 //this package contains some utils to handle docker image name

@@ -24,10 +24,10 @@ import (
 	"strings"
 
 	"github.com/emirpasic/gods/maps/linkedhashmap"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type HostFile struct {

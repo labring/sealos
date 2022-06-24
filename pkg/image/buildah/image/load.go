@@ -25,9 +25,10 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	image_types "github.com/containers/image/v5/types"
+	"github.com/pkg/errors"
+
 	labring_types "github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/pkg/errors"
 )
 
 func (d *Service) Load(archiveName string) error {

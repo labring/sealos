@@ -24,11 +24,10 @@ import (
 	"github.com/containers/buildah/pkg/formats"
 	"github.com/containers/common/libimage"
 	image_types "github.com/containers/image/v5/types"
-
 	"github.com/docker/go-units"
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/pkg/errors"
+
+	"github.com/labring/sealos/pkg/image/types"
 )
 
 const none = "<none>"

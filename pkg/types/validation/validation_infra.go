@@ -17,11 +17,12 @@ package validation
 import (
 	"strings"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 // ValidateInfraName validates that the given name can be used as a infra name.

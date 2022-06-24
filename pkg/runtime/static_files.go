@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (

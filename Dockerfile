@@ -25,8 +25,8 @@ COPY . /work
 RUN dpkg --add-architecture arm64 &&  \
       apt update &&  \
       apt install -y gcc-aarch64-linux-gnu && \
-      apt install -y  libbtrfs-dev  btrfs-tools && \
+      apt install -y libbtrfs-dev btrfs-tools && \
       apt install -y libgpgme-dev libdevmapper-dev && \
-      apt install -y  libbtrfs-dev:arm64  btrfs-tools:arm64 && \
+      apt install -y libbtrfs-dev:arm64 btrfs-tools:arm64 && \
       apt install -y libgpgme-dev:arm64 libdevmapper-dev:arm64 && \
       make ${ACTION}

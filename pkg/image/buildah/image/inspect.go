@@ -19,12 +19,13 @@ import (
 
 	"github.com/containers/buildah"
 	image_types "github.com/containers/image/v5/types"
-	"github.com/labring/sealos/pkg/image/types"
-	json2 "github.com/labring/sealos/pkg/utils/json"
-	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/labring/sealos/pkg/image/types"
+	json2 "github.com/labring/sealos/pkg/utils/json"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (

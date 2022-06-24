@@ -18,24 +18,23 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-
-	"github.com/containers/buildah/util"
-	cp "github.com/containers/image/v5/copy"
-
 	"io/ioutil"
 	"os"
 
+	"github.com/containers/buildah/util"
 	"github.com/containers/common/libimage"
 	"github.com/containers/common/libimage/manifests"
+	cp "github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
-	labring_types "github.com/labring/sealos/pkg/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	labring_types "github.com/labring/sealos/pkg/image/types"
 )
 
 func manifestInspect(ctx context.Context, store storage.Store, systemContext *types.SystemContext, imageSpec string) (string, error) {

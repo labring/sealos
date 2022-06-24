@@ -18,8 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/checker"
+	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem"
@@ -30,7 +31,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	"golang.org/x/sync/errgroup"
 )
 
 type ScaleProcessor struct {

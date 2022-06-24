@@ -23,17 +23,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/hash"
+	"github.com/pkg/sftp"
+	"github.com/schollz/progressbar/v3"
+	"golang.org/x/crypto/ssh"
 
 	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/iputils"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/progress"
-	"github.com/schollz/progressbar/v3"
-
-	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 )
 
 func (s *SSH) RemoteMd5Sum(host, remoteFilePath string) string {

@@ -17,10 +17,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/cert"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 func newCertCmd() *cobra.Command {
