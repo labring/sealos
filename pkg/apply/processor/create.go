@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/pkg/checker"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -47,11 +48,11 @@ type CreateProcessor struct {
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
-	pipLine, err := c.GetPipeLine()
+	pipeLine, err := c.GetPipeLine()
 	if err != nil {
 		return err
 	}
-	for _, f := range pipLine {
+	for _, f := range pipeLine {
 		if err = f(cluster); err != nil {
 			return err
 		}
@@ -77,6 +78,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	return todoList, nil
 }
 func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Check in CreateProcessor.")
 	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
@@ -103,6 +105,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 	return nil
 }
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
 	err := c.RegistryManager.Pull(cluster.Spec.Image...)
 	if err != nil {
 		return err
@@ -137,6 +140,7 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline RunConfig in CreateProcessor.")
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
@@ -149,6 +153,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
@@ -158,10 +163,12 @@ func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Init in CreateProcessor.")
 	return c.Runtime.Init()
 }
 
 func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Join in CreateProcessor.")
 	err := c.Runtime.JoinMasters(cluster.GetMasterIPAndPortList()[1:])
 	if err != nil {
 		return err
@@ -178,6 +185,7 @@ func (c *CreateProcessor) Join(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline RunGuest in CreateProcessor.")
 	return c.Guest.Apply(cluster, cluster.Status.Mounts)
 }
 
