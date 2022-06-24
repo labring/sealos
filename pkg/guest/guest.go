@@ -97,15 +97,15 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 			envs = maps.MergeMap(baseEnvs, i.Env)
 		}
 		mapping := expansion.MappingFuncFor(envs)
-		if len(i.Cmd) != 0 {
-			for _, cmd := range i.Cmd {
-				command = append(command, expansion.Expand(cmd, mapping))
-			}
+
+		for _, cmd := range i.Entrypoint {
+			command = append(command, expansion.Expand(cmd, mapping))
 		}
-		if len(cluster.Spec.Command) != 0 {
-			for _, cmd := range cluster.Spec.Command {
-				command = append(command, expansion.Expand(cmd, mapping))
-			}
+		for _, cmd := range i.Cmd {
+			command = append(command, expansion.Expand(cmd, mapping))
+		}
+		for _, cmd := range cluster.Spec.Command {
+			command = append(command, expansion.Expand(cmd, mapping))
 		}
 	}
 

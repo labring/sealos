@@ -61,6 +61,7 @@ type MountImage struct {
 	Env        map[string]string `json:"env,omitempty"`
 	Labels     map[string]string `json:"labels,omitempty"`
 	Cmd        []string          `json:"cmd,omitempty"`
+	Entrypoint []string          `json:"entrypoint,omitempty"`
 }
 
 type ClusterPhase string
