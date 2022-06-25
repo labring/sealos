@@ -25,7 +25,7 @@ tools.install.%:
 
 .PHONY: tools.verify.%
 tools.verify.%:
-	@if ! which $* &>/dev/null; then $(MAKE) tools.install.$*; fi
+	@if [ ! -f $(TOOLS_DIR)/$* ]; then GOBIN=$(TOOLS_DIR) $(MAKE) tools.install.$*; fi
 
 .PHONY: install.golangci-lint
 install.golangci-lint:
@@ -57,9 +57,9 @@ install.ossutil:
 
 .PHONY: install.upx
 install.upx:
-	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(GOARCH)_$(GOOS).tar.xz
 	@tar xf upx*.tar.xz
-	@sudo cp upx*/upx /usr/local/bin
+	@sudo cp upx*/upx $(TOOLS_DIR)
 	@rm -rf upx*
 
 .PHONY: install.nfpm

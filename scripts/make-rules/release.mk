@@ -15,18 +15,18 @@
 .PHONY: release.build
 release.build: tools.verify.goreleaser clean
 	@echo "===========> Building sealos release binary"
-	@goreleaser build --snapshot --rm-dist --timeout=1h
+	@$(TOOLS_DIR)/goreleaser build --snapshot --rm-dist --timeout=1h
 
 .PHONY: release.release
 release.release: tools.verify.goreleaser clean
 	@echo "===========> Releasing sealos release binary"
-	@goreleaser release --timeout=1h --release-notes=scripts/release/Note.md
+	@$(TOOLS_DIR)/goreleaser release --timeout=1h --release-notes=scripts/release/Note.md
 
 .PHONY: release.upx.%
 release.upx.%:
 	$(eval COMMAND := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	@upx $(BIN_DIR)/$(PLATFORM)/$(COMMAND)
+	@$(TOOLS_DIR)/upx $(BIN_DIR)/$(PLATFORM)/$(COMMAND)
 
 .PHONY: release.upx
 release.upx: tools.verify.upx $(addprefix release.upx., $(addprefix $(PLATFORM)., $(BINS)))
@@ -37,7 +37,7 @@ PACKAGES ?= rpm deb
 release.package.%:
 	$(eval PACKAGE := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	@nfpm package -p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
+	@$(TOOLS_DIR)/nfpm package -p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
 
 .PHONY: release.package
 release.package: tools.verify.nfpm $(addprefix release.package., $(addprefix $(PLATFORM)., $(PACKAGES)))

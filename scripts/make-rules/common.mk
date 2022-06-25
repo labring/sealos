@@ -33,6 +33,10 @@ ifeq ($(origin BIN_DIR),undefined)
 BIN_DIR := $(ROOT_DIR)/bin
 $(shell mkdir -p $(BIN_DIR))
 endif
+ifeq ($(origin TOOLS_DIR),undefined)
+TOOLS_DIR := $(ROOT_DIR)/tools
+$(shell mkdir -p $(TOOLS_DIR))
+endif
 
 # only support linux
 GOOS=linux
