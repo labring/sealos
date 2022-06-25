@@ -14,7 +14,7 @@
 
 .PHONY: oss.push
 oss.push: tools.verify.ossutil
-	@ossutil cp -f bin/linux_amd64/sealos oss://sealyun-temp/sealos/${GIT_COMMIT}/sealos-amd64
-	@ossutil cp -f bin/linux_arm64/sealos oss://sealyun-temp/sealos/${GIT_COMMIT}/sealos-arm64
-	@ossutil cp -f bin/linux_amd64/sealctl oss://sealyun-temp/sealos/${GIT_COMMIT}/sealctl-amd64
-	@ossutil cp -f bin/linux_arm64/sealctl oss://sealyun-temp/sealos/${GIT_COMMIT}/sealctl-arm64
+	@$(TOOLS_DIR)/ossutil cp -f bin/linux_amd64/sealos oss://sealyun-temp/sealos/${GIT_COMMIT}/sealos-amd64
+	@$(TOOLS_DIR)/ossutil cp -f bin/linux_arm64/sealos oss://sealyun-temp/sealos/${GIT_COMMIT}/sealos-arm64
+	@$(TOOLS_DIR)/ossutil cp -f bin/linux_amd64/sealctl oss://sealyun-temp/sealos/${GIT_COMMIT}/sealctl-amd64
+	@$(TOOLS_DIR)/ossutil cp -f bin/linux_arm64/sealctl oss://sealyun-temp/sealos/${GIT_COMMIT}/sealctl-arm64

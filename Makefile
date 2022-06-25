@@ -64,26 +64,23 @@ lint:
 
 ## format: Gofmt (reformat) package sources.
 .PHONY: format
-format: tools.verify.goimports
-	@echo "===========> Formating codes"
-	@$(FIND) -type f -name '*.go' | xargs gofmt -s -w
-	@$(FIND) -type f -name '*.go' | xargs goimports -l -w -local $(ROOT_PACKAGE)
-	@$(GO) mod edit -fmt
+format:
+	@$(MAKE) go.format
 
 ## verify-license: Verify the license headers for all files.
 .PHONY: verify-license
 verify-license:
 	@$(MAKE) license.verify
 
-## gen: Generate all necessary files.
-.PHONY: gen
-gen:
-	@$(MAKE) gen.run
-
 ## add-license: Ensure source code files have license headers.
 .PHONY: add-license
 add-license:
 	@$(MAKE) license.add
+
+## gen: Generate all necessary files.
+.PHONY: gen
+gen:
+	@$(MAKE) gen.run
 
 ## tools: Install dependent tools.
 .PHONY: tools

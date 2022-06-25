@@ -20,7 +20,7 @@ ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=
 endif
-GO_BUILD_FLAGS += -tags "containers_image_openpgp" -ldflags "$(GO_LDFLAGS)"
+GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -ldflags "$(GO_LDFLAGS)"
 
 ifeq ($(ROOT_PACKAGE),)
 	$(error the variable ROOT_PACKAGE must be set prior to including golang.mk)
@@ -76,4 +76,11 @@ go.clean:
 .PHONY: go.lint
 go.lint: tools.verify.golangci-lint
 	@echo "===========> Run golangci to lint source codes"
-	golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml
+	@$(TOOLS_DIR)/golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml
+
+.PHONY: go.format
+go.format: tools.verify.goimports
+	@echo "===========> Formating codes"
+	@$(FIND) -type f -name '*.go' | xargs gofmt -s -w
+	@$(FIND) -type f -name '*.go' | xargs $(TOOLS_DIR)/goimports -l -w -local $(ROOT_PACKAGE)
+	@$(GO) mod edit -fmt
