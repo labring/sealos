@@ -53,7 +53,7 @@ install.ossutil:
 
 .PHONY: install.upx
 install.upx:
-	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(GOARCH)_$(GOOS).tar.xz
 	@tar xf upx*.tar.xz
 	@sudo cp upx*/upx $(TOOLS_DIR)
 	@rm -rf upx*
