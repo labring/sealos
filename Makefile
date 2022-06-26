@@ -38,7 +38,7 @@ Options:
   DEBUG            Whether or not to generate debug symbols. Default is 0.
   BINS             Binaries to build. Default is all binaries under cmd.
                    This option is available when using: make build/compress
-                   Example: make build BINS="sealos seactl"
+                   Example: make build BINS="sealos sealctl"
   PACKAGES         Packages to build. Default is rpm and deb.
                    This option is available when using: make package
                    Example: make package PACKAGES="rpm deb"
