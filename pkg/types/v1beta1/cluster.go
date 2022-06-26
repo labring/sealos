@@ -85,7 +85,7 @@ type ClusterCondition struct {
 
 type ClusterStatus struct {
 	Phase      ClusterPhase       `json:"phase,omitempty"`
-	Mounts     []MountImage       `json:"mounts"`
+	Mounts     []MountImage       `json:"mounts,omitempty"`
 	Conditions []ClusterCondition `json:"conditions,omitempty" `
 }
 
