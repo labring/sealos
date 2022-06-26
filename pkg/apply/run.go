@@ -36,6 +36,18 @@ type ClusterArgs struct {
 	clusterName string
 }
 
+func NewClusterFromArgs(imageName []string, args *RunArgs) (*v2.Cluster, error) {
+	cluster := initCluster(args.ClusterName)
+	c := &ClusterArgs{
+		clusterName: args.ClusterName,
+		cluster:     cluster,
+	}
+	if err := c.SetClusterRunArgs(imageName, args); err != nil {
+		return nil, err
+	}
+	return c.cluster, nil
+}
+
 func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
 	var cluster *v2.Cluster
 	clusterPath := constants.Clusterfile(args.ClusterName)
