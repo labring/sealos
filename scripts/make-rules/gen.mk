@@ -16,16 +16,17 @@
 gen.run: gen.clean gen.deepcopy
 
 BOILERPLATE := $(ROOT_DIR)/scripts/template/boilerplate.go.txt
-INPUT_DIR := $(ROOT_PACKAGE)/pkg/types/v1beta1
+INPUT_DIR := $(ROOT_DIR)/pkg/types/v1beta1
+INPUT_DIRS := $(ROOT_PACKAGE)/pkg/types/v1beta1
 
 .PHONY: gen.deepcopy
 gen.deepcopy: tools.verify.deepcopy-gen
 	@echo "===========> Generating deepcopy go source files"
-	@deepcopy-gen --input-dirs="$(INPUT_DIR)" \
+	@$(TOOLS_DIR)/deepcopy-gen --input-dirs="$(INPUT_DIRS)" \
 	-O zz_generated.deepcopy \
 	--go-header-file "$(BOILERPLATE)" \
 	--output-base "${GOPATH}/src"
 
 .PHONY: gen.clean
 gen.clean:
-	@$(FIND) -type f -name '*_generated.*.go' -delete
+	@find $(INPUT_DIR) -type f -name '*_generated.*.go' -delete

@@ -17,8 +17,8 @@ TEMPLATE := $(ROOT_DIR)/scripts/template/LICENSE
 .PHONY: license.verify
 license.verify: tools.verify.addlicense
 	@echo "===========> Verifying the boilerplate headers for all files"
-	@addlicense -check -f $(TEMPLATE) $(CODE_DIRS)
+	@$(TOOLS_DIR)/addlicense -check -f $(TEMPLATE) $(CODE_DIRS)
 
 .PHONY: license.add
 license.add: tools.verify.addlicense
-	@addlicense -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE) $(CODE_DIRS)
+	@$(TOOLS_DIR)/addlicense -y $(shell date +"%Y") -c "sealos." -f $(TEMPLATE) $(CODE_DIRS)

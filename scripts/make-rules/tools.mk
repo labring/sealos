@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen
+BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen
 RELEASE_TOOLS ?= goreleaser ossutil upx nfpm
 
 .PHONY: tools.install
@@ -25,7 +25,7 @@ tools.install.%:
 
 .PHONY: tools.verify.%
 tools.verify.%:
-	@if ! which $* &>/dev/null; then $(MAKE) tools.install.$*; fi
+	@if [ ! -f $(TOOLS_DIR)/$* ]; then GOBIN=$(TOOLS_DIR) $(MAKE) tools.install.$*; fi
 
 .PHONY: install.golangci-lint
 install.golangci-lint:
@@ -43,6 +43,10 @@ install.addlicense:
 install.deepcopy-gen:
 	@$(GO) install k8s.io/code-generator/cmd/deepcopy-gen@latest
 
+.PHONY: install.conversion-gen
+install.conversion-gen:
+	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@latest
+
 .PHONY: install.goreleaser
 install.goreleaser:
 	@$(GO) install github.com/goreleaser/goreleaser@v1.6.3
@@ -53,9 +57,9 @@ install.ossutil:
 
 .PHONY: install.upx
 install.upx:
-	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-amd64_linux.tar.xz
+	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(GOARCH)_$(GOOS).tar.xz
 	@tar xf upx*.tar.xz
-	@sudo cp upx*/upx /usr/local/bin
+	@sudo cp upx*/upx $(TOOLS_DIR)
 	@rm -rf upx*
 
 .PHONY: install.nfpm
