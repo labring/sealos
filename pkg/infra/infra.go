@@ -16,6 +16,7 @@ package infra
 
 import (
 	"fmt"
+	aws_provider "github.com/labring/sealos/pkg/infra/aws"
 	"os"
 
 	"github.com/labring/sealos/pkg/infra/huawei"
@@ -69,6 +70,15 @@ func newHwProvider(infra *v2.Infra) (Interface, error) {
 	return hwProvider, nil
 }
 
+func newAwsProvider(infra *v2.Infra) (Interface, error) {
+	awsProvider := new(aws_provider.AwsProvider)
+	awsProvider.Infra = infra
+	if err := awsProvider.NewClient(); err != nil {
+		return nil, err
+	}
+	return awsProvider, nil
+}
+
 func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
 	loadConfig(infra)
 	switch infra.Spec.Provider {
@@ -76,6 +86,8 @@ func NewDefaultProvider(infra *v2.Infra) (Interface, error) {
 		return newAliProvider(infra)
 	case huawei.HuaweiProvider:
 		return newHwProvider(infra)
+	case aws_provider.AwsCloudProvider:
+		return newAwsProvider(infra)
 	default:
 		return nil, fmt.Errorf("the provider is invalid, please set the provider correctly")
 	}
