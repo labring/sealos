@@ -91,22 +91,20 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 	command := make([]string, 0)
 	overrideCmd := cluster.Spec.Command
 
-	if len(overrideCmd) > 0 {
-		// if --cmd is specified, only the CMD of the first MountImage will be overriden
-		mapping := expansion.MappingFuncFor(maps.MergeMap(envs, mounts[0].Env))
-
-		for _, cmd := range overrideCmd {
-			command = append(command, expansion.Expand(cmd, mapping))
-		}
-
-		return command
-	}
-
-	for _, i := range mounts {
+	for idx, i := range mounts {
 		mapping := expansion.MappingFuncFor(maps.MergeMap(envs, i.Env))
 		for _, cmd := range i.Entrypoint {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
+
+		// if --cmd is specified, only the CMD of the first MountImage will be overridden
+		if idx == 0 && len(overrideCmd) > 0 {
+			for _, cmd := range overrideCmd {
+				command = append(command, expansion.Expand(cmd, mapping))
+			}
+			continue
+		}
+
 		for _, cmd := range i.Cmd {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
