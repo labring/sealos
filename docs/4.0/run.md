@@ -33,6 +33,6 @@ sealos run labring/kubernetes:v1.24.0 \
   --masters 192.168.64.2,192.168.64.22,192.168.64.20  \
   --nodes 192.168.64.21,192.168.64.19
 
-sealos run  labring/calico:v3.22.1
-sealos run  labring/openebs:3.1.0
+sealos run labring/calico:v3.22.1
+sealos run labring/openebs:3.1.0
 ```
