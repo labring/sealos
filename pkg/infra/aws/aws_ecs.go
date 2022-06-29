@@ -17,7 +17,6 @@ package aws_provider
 import (
 	"errors"
 	"fmt"
-	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -371,29 +370,41 @@ func (a *AwsProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 	tag[Arch] = string(host.Arch)
 	instancesTag := CreateInstanceTag(tag)
 
-	dataDisks := host.Disks[1:]
-	datadisk := CreateInstanceDataDisk(dataDisks, a.Infra.Status.Hosts[j].DataCategory)
+	// dataDisks := host.Disks[1:]
 
-	request := ecs.CreateRunInstancesRequest()
-	request.Scheme = Scheme
-	request.ImageId = imageID
+	//datadisk := CreateInstanceDataDisk(dataDisks, a.Infra.Status.Hosts[j].DataCategory)
 
-	request.Password = a.Infra.Spec.Metadata.AccessChannels.SSH.Passwd
-	request.SecurityGroupId = SecurityGroupID.Value(a.Infra.Status)
-	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
-	request.SystemDiskSize = strconv.Itoa(systemDiskSize.Capacity)
-	request.SystemDiskCategory = a.Infra.Status.Hosts[j].SystemCategory
-	request.DataDisk = &datadisk
-	request.SpotStrategy = a.Infra.Status.Cluster.SpotStrategy
-	request.Amount = requests.NewInteger(count)
-	request.Tag = &instancesTag
-	response := ecs.CreateRunInstancesResponse()
-	err = a.RetryEcsInstanceType(request, response, instanceType, host.Roles)
+	input := &ec2.RunInstancesInput{
+		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
+			{
+				DeviceName: aws.String("/dev/sda"),
+				Ebs: &ec2.EbsBlockDevice{
+					VolumeSize: aws.Int64(int64(systemDiskSize.Capacity)),
+				},
+			},
+		},
+		ImageId:      aws.String(imageID),
+		InstanceType: aws.String(instanceType[0]),
+		MaxCount:     aws.Int64(1),
+		SecurityGroupIds: []*string{
+			aws.String(SecurityGroupID.Value(a.Infra.Status)),
+		},
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String("instance"),
+				Tags:         instancesTag,
+			},
+		},
+	}
+	instances, err := a.RetryEcsInstanceType(input)
 	if err != nil {
 		return err
 	}
-
-	instancesIDs := strings.Join(response.InstanceIdSets.InstanceIdSet, ",")
+	var ids []string
+	for idx := range instances {
+		ids = append(ids, *instances[idx].InstanceId)
+	}
+	instancesIDs := strings.Join(ids, ",")
 	a.Infra.Status.Hosts[j].IDs += instancesIDs
 	return nil
 }
@@ -421,9 +432,9 @@ func (a *AwsProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort 
 	}
 	return *response.Return
 }
-func CreateInstanceTag(tags map[string]string) (instanceTags []ec2.Tag) {
+func CreateInstanceTag(tags map[string]string) (instanceTags []*ec2.Tag) {
 	for k, v := range tags {
-		instanceTags = append(instanceTags, ec2.Tag{Key: aws.String(k), Value: aws.String(v)})
+		instanceTags = append(instanceTags, &ec2.Tag{Key: aws.String(k), Value: aws.String(v)})
 	}
 	return
 }

@@ -73,6 +73,17 @@ func (a *AwsProvider) ReconcileResource(resourceKey ResourceName, action AwsFunc
 	return nil
 }
 
+func (a *AwsProvider) RetryEcsInstanceType(req *ec2.RunInstancesInput) ([]*ec2.Instance, error) {
+	instances, err := a.EC2Helper.Svc.RunInstances(req)
+	if err != nil {
+		return nil, err
+	}
+	if len(instances.Instances) == 0 {
+		return nil, errors.New("Run instances failed.")
+	}
+	return instances.Instances, nil
+}
+
 func (a *AwsProvider) DeleteResource(resourceKey ResourceName, action AwsFunc) {
 	val := resourceKey.Value(a.Infra.Status)
 	if val == "" {

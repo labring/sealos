@@ -17,6 +17,7 @@ type EC2Helper struct {
 	Sess *session.Session
 }
 
+// GetLatestImages 根据条件获取最新的images列表
 func (h *EC2Helper) GetLatestImages(rootDeviceType *string, architectures []*string) (*map[string]*ec2.Image, error) {
 	var inputs *map[string]ec2.DescribeImagesInput
 	if rootDeviceType == nil {
@@ -44,6 +45,25 @@ func (h *EC2Helper) GetLatestImages(rootDeviceType *string, architectures []*str
 	}
 
 	return &images, nil
+}
+
+func (h *EC2Helper) GetVpcs() (vpcs []*ec2.Vpc, err error) {
+	input := &ec2.DescribeVpcsInput{
+		Filters: []*ec2.Filter{},
+	}
+
+	vpcs = make([]*ec2.Vpc, 0)
+
+	vpcOutput, err := h.Svc.DescribeVpcs(input)
+	if err != nil {
+		return
+	}
+	if len(vpcOutput.Vpcs) == 0 {
+		err = errors.New("Not found vpc list.")
+		return
+	}
+	vpcs = append(vpcs, vpcOutput.Vpcs...)
+	return
 }
 
 // Get the instance types based on input, with all pages concatenated
@@ -94,7 +114,7 @@ func getDescribeImagesInputs(rootDeviceType string, architectures []*string) *ma
 	imageInputs := map[string]ec2.DescribeImagesInput{}
 	for osName, rootDeviceTypes := range osDescs {
 
-		// Only add inputs if the corresponding root device type is applicable for the specified os
+		// Only add inputs if the corresponding root device type is applicabl e for the specified os
 		desc, found := rootDeviceTypes[rootDeviceType]
 		if found {
 			imageInputs[osName] = ec2.DescribeImagesInput{
@@ -129,6 +149,16 @@ func getDescribeImagesInputs(rootDeviceType string, architectures []*string) *ma
 	return &imageInputs
 }
 
+// HasEbsVolume todo
+func HasEbsVolume(image *ec2.Image) bool {
+	return false
+}
+
+// IsLinux todo
+func IsLinux(platform string) bool {
+	return true
+}
+
 /*
 Get a default instance type, which is a free-tier eligible type.
 Empty result is allowed.
@@ -155,6 +185,80 @@ func (h *EC2Helper) GetDefaultFreeTierInstanceType() (*ec2.InstanceTypeInfo, err
 
 	// Simply return the first available free instance type
 	return (instanceTypes)[0], nil
+}
+
+// GetDefaultImage find default linux os
+func (h *EC2Helper) GetDefaultImage(deviceType *string, supportedArchitectures []*string) (image *ec2.Image, err error) {
+	images, err := h.GetLatestImages(deviceType, supportedArchitectures)
+	if err != nil {
+		return
+	}
+	for osName := range *images {
+		if strings.Contains(osName, "Linux") || strings.Contains(osName, "Ubuntu") ||
+			strings.Contains(osName, "Red Hat") {
+			return (*images)[osName], nil
+		}
+	}
+	return nil, errors.New("Not found default image")
+}
+
+func (h *EC2Helper) getDefaultVpc() (*ec2.Vpc, error) {
+	vpcs, err := h.GetVpcs()
+	if err != nil {
+		return nil, err
+	}
+	return vpcs[0], nil
+}
+
+func (h *EC2Helper) GetSubnetsByVpc(vpcID string) (subnets []*ec2.Subnet, err error) {
+	input := &ec2.DescribeSubnetsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("vpc-id"),
+				Values: []*string{
+					aws.String(vpcID),
+				},
+			},
+		},
+	}
+	subnetsOutput, err := h.Svc.DescribeSubnets(input)
+	if err != nil {
+		return
+	}
+	if len(subnetsOutput.Subnets) == 0 {
+		err = errors.New("Not find subnets by vpcID: " + vpcID)
+	}
+	subnets = subnetsOutput.Subnets
+	return
+}
+
+// getDefaultSecurityGroup https://docs.aws.amazon.com/cli/latest/reference/ec2/describe-security-groups.html
+func (h *EC2Helper) getDefaultSecurityGroup(vpcID string) (ds *ec2.SecurityGroup, err error) {
+	input := &ec2.DescribeSecurityGroupsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("vpc-id"),
+				Values: []*string{
+					aws.String(vpcID),
+				},
+			},
+		},
+	}
+	dsOutput, err := h.Svc.DescribeSecurityGroups(input)
+	if err != nil {
+		return
+	}
+	if len(dsOutput.SecurityGroups) == 0 {
+		err = errors.New("Not find security group in vpcID: " + vpcID)
+		return
+	}
+	return dsOutput.SecurityGroups[0], nil
+}
+
+// createNetworkConfiguration ?
+func (h *EC2Helper) createNetworkConfiguration(sc *SimpleInfo, ri *ec2.RunInstancesInput) error {
+
+	return nil
 }
 
 // Get the default string config
