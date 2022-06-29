@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
+	github.com/casdoor/casdoor-go-sdk v0.4.1
 	github.com/containers/buildah v1.26.1
 	github.com/containers/common v0.48.0
 	github.com/containers/image/v5 v5.21.1
@@ -14,6 +15,7 @@ require (
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.14+incompatible
 	github.com/docker/go-units v0.4.0
+	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emirpasic/gods v1.18.1
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
@@ -39,6 +41,7 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	gopkg.in/ini.v1 v1.66.2 // indirect
 	helm.sh/helm/v3 v3.6.0
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1

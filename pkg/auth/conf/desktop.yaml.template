@@ -1,0 +1,12 @@
+port: 8080
+
+ssoType: "casdoor"
+callbackUrl: ""
+oauthProviders:
+  - type: "Github"
+    clientId: ""
+    clientSecret: ""
+
+kubeconfig: ""
+ssoEndpoint: ""
+caCert: ""
