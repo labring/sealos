@@ -68,7 +68,7 @@ jobs:
           push: false
           load: true
           tags: sealos:latest
-          build-args: ACTION=release.build
+          build-args: ACTION=release-build
 
       - name: Copy Out Binaries
         run: |
