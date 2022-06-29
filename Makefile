@@ -52,6 +52,8 @@ export USAGE_OPTIONS
 # ==============================================================================
 # Targets
 
+.DEFAULT_GOAL = build
+
 ## build: Build source code for host platform.
 .PHONY: build
 build:
@@ -92,6 +94,16 @@ tools:
 clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
+
+## release-build: Build release binaries for multiple platforms.
+.PHONY: release-build
+release-build:
+	@$(MAKE) release.build
+
+## release: Create a release with custom release notes.
+.PHONY: release
+release:
+	@$(MAKE) release.release
 
 ## compress: Compress the binaries using upx for host platform.
 .PHONY: compress

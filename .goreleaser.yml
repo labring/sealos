@@ -17,7 +17,7 @@ before:
     # You may remove this if you don't use go modules.
     #-  go mod download
     - go generate ./...
-    - apt-get install -y upx
+    - sudo apt-get install -y upx
 builds:
   - env:
       - CGO_ENABLED=1

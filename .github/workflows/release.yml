@@ -48,7 +48,7 @@ jobs:
           load: true
           tags: sealos:latest
           build-args: |
-            ACTION=release.release
+            ACTION=release
             GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
           secrets: GITHUB_TOKEN=${{ secrets.GH_TOKEN }}
       # https://github.com/docker/build-push-action
