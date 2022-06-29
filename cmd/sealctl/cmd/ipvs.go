@@ -15,10 +15,13 @@
 package cmd
 
 import (
-	"github.com/labring/lvscare/care"
-	"github.com/spf13/cobra"
+	"net"
 
+	"github.com/labring/lvscare/care"
+	"github.com/labring/sealos/pkg/hosts"
+	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/spf13/cobra"
 )
 
 var Ipvs care.LvsCare
@@ -31,11 +34,21 @@ func newIPVSCmd() *cobra.Command {
 			flags.PrintFlags(cmd.Flags())
 			Ipvs.VsAndRsCare()
 		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if Ipvs.TargetIP == nil {
+				hf := &hosts.HostFile{Path: constants.DefaultHostsPath}
+				if ip, ok := hf.HasDomain(constants.DefaultLvscareDomain); ok {
+					Ipvs.TargetIP = net.ParseIP(ip)
+				}
+			}
+			return nil
+		},
 	}
 	ipvsCmd.Flags().BoolVar(&Ipvs.RunOnce, "run-once", false, "is run once mode")
 	ipvsCmd.Flags().BoolVarP(&Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
 	ipvsCmd.Flags().StringVar(&Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
-	ipvsCmd.Flags().StringSliceVar(&Ipvs.RealServer, "rs", []string{}, "virturl server like 192.168.0.2:6443")
+	ipvsCmd.Flags().StringSliceVar(&Ipvs.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
+	ipvsCmd.Flags().IPVar(&Ipvs.TargetIP, "ip", nil, "target ip")
 
 	ipvsCmd.Flags().StringVar(&Ipvs.HealthPath, "health-path", "/healthz", "health check path")
 	ipvsCmd.Flags().StringVar(&Ipvs.HealthSchem, "health-schem", "https", "health check schem")
