@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/labring/sealos/pkg/utils/logger"
 	"net"
 
 	"github.com/labring/lvscare/care"
@@ -39,6 +40,10 @@ func newIPVSCmd() *cobra.Command {
 				hf := &hosts.HostFile{Path: constants.DefaultHostsPath}
 				if ip, ok := hf.HasDomain(constants.DefaultLvscareDomain); ok {
 					Ipvs.TargetIP = net.ParseIP(ip)
+				}
+				logger.Debug("found target route ip is %s", Ipvs.TargetIP.String())
+				if err := care.LVS.SyncRouter(); err != nil {
+					return err
 				}
 			}
 			return nil
