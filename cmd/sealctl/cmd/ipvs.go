@@ -17,48 +17,66 @@ package cmd
 import (
 	"net"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/lvscare/care"
+	"github.com/labring/lvscare/service"
 	"github.com/labring/sealos/pkg/hosts"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/route"
 	"github.com/spf13/cobra"
 )
 
-var Ipvs care.LvsCare
-
 func newIPVSCmd() *cobra.Command {
+	var clean bool
+	var vip string
 	var ipvsCmd = &cobra.Command{
 		Use:   "ipvs",
 		Short: "sealos create or care local ipvs lb",
-		Run: func(cmd *cobra.Command, args []string) {
-			flags.PrintFlags(cmd.Flags())
-			Ipvs.VsAndRsCare()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if clean {
+				lvs := service.BuildLvscare()
+				if err := lvs.DeleteVirtualServer(care.LVS.VirtualServer, false); err != nil {
+					return err
+				}
+				logger.Info("lvscare delete vip: %s success", care.LVS.VirtualServer)
+				routeOperator := route.NewRoute(vip, care.LVS.TargetIP.String())
+				if err := routeOperator.DelRoute(); err != nil {
+					return err
+				}
+				logger.Info("lvscare delete route: %s success", care.LVS.VirtualServer)
+				return nil
+			}
+			care.LVS.VsAndRsCare()
+			return nil
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if Ipvs.TargetIP == nil {
+			flags.PrintFlags(cmd.Flags())
+			if care.LVS.TargetIP == nil {
 				hf := &hosts.HostFile{Path: constants.DefaultHostsPath}
 				if ip, ok := hf.HasDomain(constants.DefaultLvscareDomain); ok {
-					Ipvs.TargetIP = net.ParseIP(ip)
+					care.LVS.TargetIP = net.ParseIP(ip)
 				}
-				logger.Debug("found target route ip is %s", Ipvs.TargetIP.String())
+				logger.Debug("found target route ip is %s", care.LVS.TargetIP.String())
 				if err := care.LVS.SyncRouter(); err != nil {
 					return err
 				}
 			}
+			care.LVS.Clean = true
+			vip = iputils.GetHostIP(care.LVS.VirtualServer)
 			return nil
 		},
 	}
-	ipvsCmd.Flags().BoolVar(&Ipvs.RunOnce, "run-once", false, "is run once mode")
-	ipvsCmd.Flags().BoolVarP(&Ipvs.Clean, "clean", "c", true, " clean Vip ipvs rule before join node, if Vip has no ipvs rule do nothing.")
-	ipvsCmd.Flags().StringVar(&Ipvs.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
-	ipvsCmd.Flags().StringSliceVar(&Ipvs.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
-	ipvsCmd.Flags().IPVar(&Ipvs.TargetIP, "ip", nil, "target ip")
+	ipvsCmd.Flags().BoolVarP(&clean, "clean", "C", false, "clean ipvs and route")
+	ipvsCmd.Flags().BoolVar(&care.LVS.RunOnce, "run-once", false, "is run once mode")
+	ipvsCmd.Flags().StringVar(&care.LVS.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
+	ipvsCmd.Flags().StringSliceVar(&care.LVS.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
+	ipvsCmd.Flags().IPVar(&care.LVS.TargetIP, "ip", nil, "target ip")
 
-	ipvsCmd.Flags().StringVar(&Ipvs.HealthPath, "health-path", "/healthz", "health check path")
-	ipvsCmd.Flags().StringVar(&Ipvs.HealthSchem, "health-schem", "https", "health check schem")
-	ipvsCmd.Flags().Int32Var(&Ipvs.Interval, "interval", 5, "health check interval, unit is sec.")
+	ipvsCmd.Flags().StringVar(&care.LVS.HealthPath, "health-path", "/healthz", "health check path")
+	ipvsCmd.Flags().StringVar(&care.LVS.HealthSchem, "health-schem", "https", "health check schem")
+	ipvsCmd.Flags().Int32Var(&care.LVS.Interval, "interval", 5, "health check interval, unit is sec.")
 	return ipvsCmd
 }
 
