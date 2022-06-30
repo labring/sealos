@@ -51,6 +51,10 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 			if err != nil {
 				return fmt.Errorf("add apiserver domain hosts failed %v", err)
 			}
+			err = k.execHostsAppend(node, node, constants.DefaultLvscareDomain)
+			if err != nil {
+				return fmt.Errorf("add lvscare domain hosts failed %v", err)
+			}
 			err = k.registryAuth(node)
 			if err != nil {
 				return err

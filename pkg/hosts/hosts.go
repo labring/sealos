@@ -162,21 +162,24 @@ func (h *HostFile) DeleteDomain(domain string) {
 	h.writeToFile(currHostsMap, h.Path)
 }
 
-func (h *HostFile) HasDomain(domain string) bool {
+func (h *HostFile) HasDomain(domain string) (string, bool) {
 	if domain == "" {
-		return false
+		return "", false
 	}
 
 	currHostsMap, parseErr := h.ParseHostFile(h.Path)
 	if parseErr != nil {
 		logger.Warn("parse file failed" + parseErr.Error())
-		return false
+		return "", false
 	}
-	_, found := currHostsMap.Get(domain)
+	value, found := currHostsMap.Get(domain)
 	if currHostsMap == nil || !found {
-		return false
+		return "", false
 	}
-	return true
+	if v, ok := value.(*hostname); ok {
+		return v.IP, true
+	}
+	return "", false
 }
 
 func (h *HostFile) ListCurrentHosts() {

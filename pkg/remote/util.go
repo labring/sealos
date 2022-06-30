@@ -41,9 +41,9 @@ func bashToString(clusterName string, sshInterface ssh.Interface, host, cmd stri
 	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	return sshInterface.CmdToString(host, cmd, "")
 }
-func bashSync(clusterName string, sshInterface ssh.Interface, host, cmd string) error {
+func bashCTLSync(clusterName string, sshInterface ssh.Interface, host, cmd string) error {
 	data := constants.NewData(clusterName)
-	cmd = fmt.Sprintf("%s %s", data.RootFSSealctlPath(), cmd)
+	cmd = fmt.Sprintf("%s  %s", data.RootFSSealctlPath(), cmd)
 	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	return sshInterface.CmdAsync(host, cmd)
 }

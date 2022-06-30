@@ -17,6 +17,7 @@ package ipvs
 import (
 	"fmt"
 
+	"github.com/labring/sealos/pkg/hosts"
 	"github.com/labring/sealos/pkg/utils/constants"
 
 	"github.com/pkg/errors"
@@ -83,10 +84,19 @@ func componentPod(container v1.Container) v1.Pod {
 			},
 		}},
 	}
+
 	container.VolumeMounts = []v1.VolumeMount{
 		{Name: mountName, ReadOnly: true, MountPath: "/lib/modules"},
 	}
-
+	hf := &hosts.HostFile{Path: constants.DefaultHostsPath}
+	if ip, ok := hf.HasDomain(constants.DefaultLvscareDomain); ok {
+		container.Env = []v1.EnvVar{
+			{
+				Name:  "LVSCARE_NODE_IP",
+				Value: ip,
+			},
+		}
+	}
 	return v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "v1",

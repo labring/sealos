@@ -89,20 +89,23 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 
 func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mounts []v2.MountImage) []string {
 	command := make([]string, 0)
-	for _, i := range mounts {
-		var baseEnvs map[string]string
-		if i.Env != nil {
-			envs = maps.MergeMap(baseEnvs, i.Env)
-		}
-		mapping := expansion.MappingFuncFor(envs)
+	overrideCmd := cluster.Spec.Command
 
+	for idx, i := range mounts {
+		mapping := expansion.MappingFuncFor(maps.MergeMap(envs, i.Env))
 		for _, cmd := range i.Entrypoint {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
-		for _, cmd := range i.Cmd {
-			command = append(command, expansion.Expand(cmd, mapping))
+
+		// if --cmd is specified, only the CMD of the first MountImage will be overridden
+		if idx == 0 && len(overrideCmd) > 0 {
+			for _, cmd := range overrideCmd {
+				command = append(command, expansion.Expand(cmd, mapping))
+			}
+			continue
 		}
-		for _, cmd := range cluster.Spec.Command {
+
+		for _, cmd := range i.Cmd {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
 	}

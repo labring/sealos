@@ -13,7 +13,6 @@
 # limitations under the License.
 
 FROM --platform=$BUILDPLATFORM golang:1.17-buster as builder
-ENV GOPROXY=https://goproxy.cn
 ARG GITHUB_TOKEN=$GITHUB_TOKEN
 ARG TARGETARCH
 ARG ACTION=build-pack

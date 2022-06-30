@@ -135,7 +135,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 			}
 		}
 	}
-	containerfiles := getContainerfiles(iopts.File)
+	containerfiles := getContainerfiles([]string{options.File})
 	format, err := getFormat(iopts.Format)
 	if err != nil {
 		return err

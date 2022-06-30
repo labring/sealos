@@ -21,15 +21,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
-
+	"github.com/labring/lvscare/utils"
 	"github.com/vishvananda/netlink"
-	k8snet "k8s.io/apimachinery/pkg/util/net"
 )
 
-var ErrNotIPV4 = errors.New("IP addresses are not IPV4 rules")
+var ErrNotIPV4 = errors.New("TargetIP addresses are not IPV4 rules")
 
 type Route struct {
 	Host    string
@@ -43,31 +39,19 @@ func NewRoute(host, gateway string) *Route {
 	}
 }
 
-func CheckIsDefaultRoute(host string) error {
-	ok, err := isDefaultRouteIP(host)
-	if err == nil && ok {
-		_, err = os.Stdout.WriteString("ok")
-	}
-	if err == nil && !ok {
-		_, err = os.Stderr.WriteString("failed")
-	}
-	return err
-}
-
 func (r *Route) SetRoute() error {
-	if !iputils.IsIpv4(r.Gateway) || !iputils.IsIpv4(r.Host) {
+	if !utils.IsIpv4(r.Gateway) || !utils.IsIpv4(r.Host) {
 		return ErrNotIPV4
 	}
 	err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
 	if err != nil && !errors.Is(err, os.ErrExist) /* return if route already exist */ {
 		return fmt.Errorf("failed to add %s route gateway via host err: %v", r.Host, err)
 	}
-	logger.Info(fmt.Sprintf("success to set route.(host:%s, gateway:%s)", r.Host, r.Gateway))
 	return nil
 }
 
 func (r *Route) DelRoute() error {
-	if !iputils.IsIpv4(r.Gateway) || !iputils.IsIpv4(r.Host) {
+	if !utils.IsIpv4(r.Gateway) || !utils.IsIpv4(r.Host) {
 		return ErrNotIPV4
 	}
 
@@ -75,17 +59,7 @@ func (r *Route) DelRoute() error {
 	if err != nil && !errors.Is(err, syscall.ESRCH) /* return if route does not exist */ {
 		return fmt.Errorf("failed to delete %s route gateway via host err: %v", r.Host, err)
 	}
-	logger.Info(fmt.Sprintf("success to del route.(host:%s, gateway:%s)", r.Host, r.Gateway))
 	return nil
-}
-
-// isDefaultRouteIP return true if host equal default route ip host.
-func isDefaultRouteIP(host string) (bool, error) {
-	netIP, err := k8snet.ChooseHostInterface()
-	if err != nil {
-		return false, fmt.Errorf("failed to get default route ip, err: %v", err)
-	}
-	return netIP.String() == host, nil
 }
 
 // addRouteGatewayViaHost host: 10.103.97.2  gateway 192.168.253.129

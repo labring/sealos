@@ -22,10 +22,12 @@ const (
 	LvsCareStaticPodName     = "kube-sealyun-lvscare"
 	YamlFileSuffix           = "yaml"
 	DefaultRegistryDomain    = "selayun.hub"
+	DefaultLvscareDomain     = "lvscare.node.ip"
 	DefaultLvsCareImage      = "sealyun.hub:5000/sealyun/lvscare:latest"
 	ImageKubeVersionKey      = "version"
 	ImageKubeLvscareImageKey = "image"
 	ImageTypeKey             = "sealos.io.type"
+	DefaultHostsPath         = "/etc/hosts"
 )
 
 //CRD kind
