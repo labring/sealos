@@ -53,12 +53,12 @@ type remote struct {
 
 func (s *remote) HostsAdd(ip, host, domain string) error {
 	out := fmt.Sprintf(addHostsCommandFmt, host, domain)
-	return bashSync(s.clusterName, s.sshInterface, ip, out)
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
 func (s *remote) HostsDelete(ip, domain string) error {
 	out := fmt.Sprintf(deleteHostsCommandFmt, domain)
-	return bashSync(s.clusterName, s.sshInterface, ip, out)
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
 func (s *remote) Hostname(ip string) (string, error) {
@@ -77,7 +77,7 @@ func (s *remote) IPVS(ip, vip string, masters []string) error {
 	if err != nil {
 		return err
 	}
-	return bashSync(s.clusterName, s.sshInterface, ip, out)
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
 func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error {
@@ -94,7 +94,8 @@ func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error 
 	if err != nil {
 		return err
 	}
-	return bashSync(s.clusterName, s.sshInterface, ip, out)
+
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
 func (s *remote) Token(ip string) (string, error) {
@@ -129,7 +130,7 @@ func (s *remote) Cert(ip string, altNames []string, nodeIP, nodeName, serviceCIR
 	if err != nil {
 		return err
 	}
-	return bashSync(s.clusterName, s.sshInterface, ip, out)
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
 func New(clusterName string, sshInterface ssh.Interface) Interface {

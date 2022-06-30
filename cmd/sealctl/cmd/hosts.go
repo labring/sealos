@@ -19,6 +19,8 @@ package cmd
 import (
 	"os"
 
+	"github.com/labring/sealos/pkg/utils/constants"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/hosts"
@@ -39,7 +41,7 @@ func newHostsCmd() *cobra.Command {
 	hostsCmd.AddCommand(newHostsListCmd())
 	hostsCmd.AddCommand(newHostsAddCmd())
 	hostsCmd.AddCommand(newHostsDeleteCmd())
-	hostsCmd.PersistentFlags().StringVar(&hostsPath, "path", "/etc/hosts", "default hosts path")
+	hostsCmd.PersistentFlags().StringVar(&hostsPath, "path", constants.DefaultHostsPath, "default hosts path")
 	return hostsCmd
 }
 
@@ -72,7 +74,7 @@ func newHostsAddCmd() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			hf := &hosts.HostFile{Path: hostsPath}
-			if hf.HasDomain(domain) {
+			if _, ok := hf.HasDomain(domain); ok {
 				hf.DeleteDomain(domain)
 				logger.Info("domain %s delete success", domain)
 			}

@@ -19,7 +19,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/imdario/mergo v0.3.12
-	github.com/labring/lvscare v1.1.3-beta.2
+	github.com/labring/lvscare v1.1.3-beta.6.0.20220628174630-40c1385188cd
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0

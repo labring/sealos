@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/constants"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -93,6 +95,9 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	if err != nil {
 		logger.Error("delete apiserver hosts failed %v", err)
 	}
-
+	err = k.execHostsDelete(node, constants.DefaultLvscareDomain)
+	if err != nil {
+		return fmt.Errorf("add lvscare domain hosts failed %v", err)
+	}
 	return nil
 }
