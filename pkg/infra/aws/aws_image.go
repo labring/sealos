@@ -12,51 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_provider
+package aws
 
 import (
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/pkg/errors"
+	"strconv"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
-
-func (a *AwsProvider) GetAvailableImageID(host *v1beta1.InfraHost) (string, error) {
-	if host.OS.ID != "" {
-		logger.Info("host tags is %v,using imageID is %s", host.Roles, host.OS.ID)
-		return host.OS.ID, nil
-	}
-	instanceTypeInfo, err := a.EC2Helper.GetInstanceType(host.EcsType)
-	if err != nil {
-		return "", errors.New("please supply the correct ec2type...")
-	}
-	if *instanceTypeInfo.InstanceStorageSupported {
-		rootDeviceType = "instance-store"
-	}
-
-	latestImages, err := a.EC2Helper.GetLatestImages(&rootDeviceType, instanceTypeInfo.ProcessorInfo.SupportedArchitectures)
-	if err != nil {
-		return "", err
-	}
-	if latestImages == nil || len(*latestImages) <= 0 {
-		return "", errors.New("No default image found")
-	}
-
-	var topImage *ec2.Image
-
-	// Pick the available image with the highest priority as the default choice
-	for _, osName := range GetImagePriority() {
-		image, found := (*latestImages)[osName]
-		if found {
-			topImage = image
-			break
-		}
-	}
-
-	return *topImage.ImageId, nil
-}
 
 func (a *AwsProvider) GetDefaultDiskCategories(host *v1beta1.InfraHost) (system []string, data []string) {
 	if host.Disks[0].Category != "" {
@@ -76,22 +43,54 @@ func (a *AwsProvider) GetDefaultDiskCategories(host *v1beta1.InfraHost) (system 
 	return
 }
 
+// GetAvailableInstanceType 根据yaml memory, cpu, arch 找到匹配的instance type
 func (a *AwsProvider) GetAvailableInstanceType(host *v1beta1.InfraHost) ([]string, error) {
-	// check Host EcsType is valid
-	if host.EcsType != "" {
-		output, err := a.EC2Helper.GetInstanceTypes(&ec2.DescribeInstanceTypesInput{
-			InstanceTypes: []*string{&host.EcsType},
-		})
-		if err != nil {
-			return nil, err
-		}
-		var ist []string
-		for _, i := range output {
-			ist = append(ist, *i.InstanceType)
-		}
-		return ist, nil
+	// 根据cpu, memory, arch 找到对应的instance
+	filters := make([]*ec2.Filter, 0)
+	if host.Memory <= 0 {
+		return nil, errors.New("host memory is not correct.")
 	}
-	return nil, errors.New("Please specify the ecs type(ec2type) for aws provider")
+	filters = append(filters, &ec2.Filter{
+		Name: aws.String("memory-info.size-in-mib"),
+		Values: []*string{
+			aws.String(strconv.Itoa(host.Memory * 1024)),
+		},
+	})
+	if host.CPU <= 0 {
+		return nil, errors.New("host cpu is not correct.")
+	}
+	filters = append(filters, &ec2.Filter{
+		Name: aws.String("vcpu-info.default-cores"),
+		Values: []*string{
+			aws.String(strconv.Itoa(host.CPU)),
+		},
+	})
+	if string(host.Arch) != "" {
+		filters = append(filters, &ec2.Filter{
+			Name: aws.String("processor-info.supported-architecture"),
+			Values: []*string{
+				aws.String(string(ConvertImageArch(host.Arch))),
+			},
+		})
+	}
+	input := &ec2.DescribeInstanceTypesInput{
+		Filters: filters,
+	}
+	instancesOutput, err := a.EC2Helper.GetInstanceTypes(input)
+	if err != nil {
+		return nil, errors.New("please supply the correct ec2type...")
+	}
+	if len(instancesOutput) == 0 {
+		return nil, errors.New("instance type is empty")
+	}
+	var types []string
+	for idx := range instancesOutput {
+		types = append(types, *instancesOutput[idx].InstanceType)
+	}
+	if len(types) == 0 {
+		return nil, errors.New("can not find ecs type(ec2type) for aws provider")
+	}
+	return types, nil
 }
 
 func (a *AwsProvider) GetAvailableResource(host *v1beta1.InfraHost, systemCategory, dataCategory string) (instanceType []string, err error) {

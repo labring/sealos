@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_provider
+package aws
 
 import (
 	"errors"
@@ -153,11 +153,11 @@ func (a *AwsProvider) ChangeInstanceType(instanceID string, host *v1beta1.InfraH
 	return a.StartInstance(instanceID)
 }
 
-func (a *AwsProvider) TryGetInstance(request *ec2.DescribeInstancesInput, response []*ec2.Instance, expectCount int) error {
+func (a *AwsProvider) TryGetInstance(request *ec2.DescribeInstancesInput, instanceInfos *[]*ec2.Instance, expectCount int) error {
 	return retry.Retry(TryTimes, TrySleepTime, func() error {
 		var err error
-		response, err = a.GetInstances(request)
-
+		response, err := a.GetInstances(request)
+		instanceInfos = &response
 		var ipList []string
 		if err != nil {
 			return err
@@ -166,7 +166,6 @@ func (a *AwsProvider) TryGetInstance(request *ec2.DescribeInstancesInput, respon
 		if expectCount == -1 {
 			return nil
 		}
-
 		if len(instances) != expectCount {
 			return errors.New("the number of instances is not as expected")
 		}
@@ -186,41 +185,42 @@ func (a *AwsProvider) TryGetInstance(request *ec2.DescribeInstancesInput, respon
 }
 
 func (a *AwsProvider) GetInstancesInfo(host *v1beta1.InfraHost, expectCount int) (instances []Instance, err error) {
-	var count int
 	tag := make(map[string]string)
 	tag[Product] = a.Infra.Name
 	tag[Role] = strings.Join(host.Roles, ",")
 	tag[Arch] = string(host.Arch)
-	if expectCount == 0 {
-		count = -1
-	} else {
-		count = expectCount
-	}
+
 	instancesTags := CreateDescribeInstancesTag(tag)
 	request := &ec2.DescribeInstancesInput{
 		Filters: instancesTags,
 	}
-
-	var ec2s []*ec2.Instance
-
-	err = a.TryGetInstance(request, ec2s, count)
+	ec2s, err := a.EC2Helper.GetInstanceInfos(request)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, i := range ec2s {
-		type_info, err := a.EC2Helper.GetInstanceType(*i.InstanceType)
+		typeInfo, err := a.EC2Helper.GetInstanceType(*i.InstanceType)
 		if err != nil {
 			logger.Warn("Can't get Instance type %s", *i.InstanceType)
 			continue
 		}
+
+		publicIp := ""
+		if i.PublicIpAddress != nil {
+			publicIp = *i.PublicIpAddress
+		}
+		privateIp := ""
+		if i.PrivateIpAddress != nil {
+			privateIp = *i.PrivateIpAddress
+		}
+
 		instances = append(instances,
 			Instance{
-				CPU:              (int)(*type_info.VCpuInfo.DefaultVCpus),
-				Memory:           (int)(*type_info.MemoryInfo.SizeInMiB),
+				CPU:              (int)(*typeInfo.VCpuInfo.DefaultVCpus),
+				Memory:           (int)(*typeInfo.MemoryInfo.SizeInMiB),
 				InstanceID:       *i.InstanceId,
-				PublicIPAddress:  *i.PublicIpAddress,
-				PrivateIpAddress: *i.PrivateIpAddress,
+				PublicIPAddress:  publicIp,
+				PrivateIpAddress: privateIp,
 			})
 	}
 	return
@@ -244,12 +244,13 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 	var err error
 	if status.IDs != "" {
 		instances, err = a.GetInstancesInfo(host, JustGetInstanceInfo)
+		if err != nil {
+			return err
+		}
 	}
-	if err != nil {
-		return err
-	}
-	if i := host.Count; len(instances) < i {
-		err = a.RunInstances(host, i-len(instances))
+
+	if len(instances) < host.Count {
+		err = a.RunInstances(host, host.Count-len(instances))
 		if err != nil {
 			return err
 		}
@@ -259,7 +260,7 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 		}
 		status.IPs = strings2.AppendIPList(status.IPs, ipList)
 		logger.Info("get scale up IP list %v, append iplist %v, host count %d", ipList, status.IPs, host.Count)
-	} else if len(instances) > i {
+	} else if len(instances) > host.Count {
 		var deleteInstancesIDs []string
 		var count int
 		for _, instance := range instances {
@@ -267,7 +268,7 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 				deleteInstancesIDs = append(deleteInstancesIDs, instance.InstanceID)
 				count++
 			}
-			if count == (len(instances) - i) {
+			if count == (len(instances) - host.Count) {
 				break
 			}
 		}
@@ -281,6 +282,7 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 		}
 		ipList, err := a.InputIPlist(host)
 		if err != nil {
+			logger.Error("272 err %v", err)
 			return err
 		}
 		status.IPs = strings2.ReduceIPList(status.IPs, ipList)
@@ -289,9 +291,11 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 		logger.Info("get up IP list %v,  host count %d", status.IPs, host.Count)
 	}
 	for _, instance := range instances {
-		if instance.CPU != host.CPU || instance.Memory != host.Memory {
+		if instance.CPU != host.CPU || instance.Memory != host.Memory*1024 {
+			logger.Info("instance cpu %d, memory %d, host cpu: %d, memory: %d", instance.CPU, instance.Memory, host.CPU, host.Memory)
 			err = a.ChangeInstanceType(instance.InstanceID, host)
 			if err != nil {
+				logger.Error("282 err %v", err)
 				return err
 			}
 		}
@@ -343,6 +347,7 @@ func CreateInstanceDataDisk(dataDisks []v1beta1.InfraDisk, category string) (ins
 	return
 }
 
+// RunInstances 用指定的instan规格部署image镜像
 func (a *AwsProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 	if host == nil {
 		return errors.New("host not set")
@@ -351,44 +356,39 @@ func (a *AwsProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 	if j == -1 {
 		return fmt.Errorf("failed to get status, %v", "not find host status,pelase retry")
 	}
-	systemDiskSize := host.Disks[0]
-	var instanceType []string
 	var err error
-	var imageID string
-	if imageID, err = a.GetAvailableImageID(host); err != nil {
+	availableInstanceTypeInfo, err := a.getAvailableInstanceType(host)
+	if err != nil {
+		return err
+	}
+	imageID, err := a.getAvailableImageID(host, *availableInstanceTypeInfo.InstanceStorageSupported)
+	if err != nil {
 		return err
 	}
 	a.Infra.Status.Hosts[j].ImageID = imageID
 	a.Infra.Status.Hosts[j].Arch = host.Arch
-	instanceType, err = a.GetAvailableInstanceType(host)
 	if err != nil {
 		return err
 	}
-	tag := make(map[string]string)
-	tag[Product] = a.Infra.Name
-	tag[Role] = strings.Join(host.Roles, ",")
-	tag[Arch] = string(host.Arch)
-	instancesTag := CreateInstanceTag(tag)
-
-	// dataDisks := host.Disks[1:]
-
-	//datadisk := CreateInstanceDataDisk(dataDisks, a.Infra.Status.Hosts[j].DataCategory)
-
+	instancesTag := CreateInstanceTag(map[string]string{
+		Product: a.Infra.Name,
+		Role:    strings.Join(host.Roles, ","),
+		Arch:    string(host.Arch),
+	})
+	err = a.CreateKeyPair()
+	if err != nil {
+		return err
+	}
 	input := &ec2.RunInstancesInput{
-		BlockDeviceMappings: []*ec2.BlockDeviceMapping{
-			{
-				DeviceName: aws.String("/dev/sda"),
-				Ebs: &ec2.EbsBlockDevice{
-					VolumeSize: aws.Int64(int64(systemDiskSize.Capacity)),
-				},
-			},
-		},
 		ImageId:      aws.String(imageID),
-		InstanceType: aws.String(instanceType[0]),
-		MaxCount:     aws.Int64(1),
+		InstanceType: aws.String(*availableInstanceTypeInfo.InstanceType),
+		MaxCount:     aws.Int64(int64(count)),
+		MinCount:     aws.Int64(1),
 		SecurityGroupIds: []*string{
 			aws.String(SecurityGroupID.Value(a.Infra.Status)),
 		},
+		SubnetId: aws.String(SubnetID.Value(a.Infra.Status)),
+		KeyName:  aws.String(KeyPairName),
 		TagSpecifications: []*ec2.TagSpecification{
 			{
 				ResourceType: aws.String("instance"),
@@ -409,7 +409,41 @@ func (a *AwsProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 	return nil
 }
 
-func (a *AwsProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort v1beta1.InfraExportPort) bool {
+func (a *AwsProvider) AuthorizeSecurityGroupIngress(securityGroupID string, exportPorts []v1beta1.InfraExportPort) bool {
+	ipPermission := make([]*ec2.IpPermission, 0)
+	for idx := range exportPorts {
+		exportRule := exportPorts[idx]
+		from, to, err := parserPort(exportRule.PortRange)
+		if err != nil {
+			logger.Error("%v", err)
+			return false
+		}
+		ipPermission = append(ipPermission, &ec2.IpPermission{
+			IpProtocol: aws.String(string(exportRule.Protocol)),
+			IpRanges: []*ec2.IpRange{
+				{
+					CidrIp:      aws.String(exportRule.CidrIP),
+					Description: aws.String("sealos ingress security group rule"),
+				},
+			},
+			FromPort: aws.Int64(from),
+			ToPort:   aws.Int64(to),
+		})
+	}
+
+	request := &ec2.AuthorizeSecurityGroupIngressInput{
+		GroupId:       aws.String(securityGroupID),
+		IpPermissions: ipPermission,
+	}
+	response, err := a.EC2Helper.Svc.AuthorizeSecurityGroupIngress(request)
+	if err != nil {
+		logger.Error("%v", err)
+		return false
+	}
+	return *response.Return
+}
+
+func (a *AwsProvider) AuthorizeSecurityGroup(securityGroupID, cidr string, exportPort v1beta1.InfraExportPort) bool {
 	proto := (string)(exportPort.Protocol)
 	pr, err := net.ParsePortRange(exportPort.PortRange)
 	if err != nil {
@@ -418,13 +452,21 @@ func (a *AwsProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort 
 	}
 
 	request := &ec2.AuthorizeSecurityGroupIngressInput{
-		FromPort:   aws.Int64((int64)(pr.Base)),
-		ToPort:     aws.Int64((int64)(pr.Base + pr.Size - 1)),
-		CidrIp:     aws.String(exportPort.CidrIP),
-		IpProtocol: aws.String(proto),
-		GroupId:    aws.String(securityGroupID),
+		GroupId: aws.String(securityGroupID),
+		IpPermissions: []*ec2.IpPermission{
+			{
+				FromPort:   aws.Int64((int64)(pr.Base)),
+				ToPort:     aws.Int64((int64)(pr.Base + pr.Size - 1)),
+				IpProtocol: aws.String(proto),
+				IpRanges: []*ec2.IpRange{
+					{
+						CidrIp:      aws.String(cidr),
+						Description: aws.String("sealos ip ranges"),
+					},
+				},
+			},
+		},
 	}
-
 	response, err := a.EC2Helper.Svc.AuthorizeSecurityGroupIngress(request)
 	if err != nil {
 		logger.Error("%v", err)
@@ -432,9 +474,108 @@ func (a *AwsProvider) AuthorizeSecurityGroup(securityGroupID string, exportPort 
 	}
 	return *response.Return
 }
+
 func CreateInstanceTag(tags map[string]string) (instanceTags []*ec2.Tag) {
 	for k, v := range tags {
 		instanceTags = append(instanceTags, &ec2.Tag{Key: aws.String(k), Value: aws.String(v)})
 	}
 	return
+}
+
+// ----------------
+
+// CreateKeyPair 创建key pair
+func (a *AwsProvider) CreateKeyPair() (err error) {
+	if ID := KeyPairID.Value(a.Infra.Status); ID != "" {
+		return
+	}
+	input := &ec2.CreateKeyPairInput{
+		KeyName: aws.String(KeyPairName),
+	}
+	_, err = a.EC2Helper.Svc.CreateKeyPair(input)
+	if err != nil {
+		return
+	}
+	KeyPairID.SetValue(a.Infra.Status, KeyPairName)
+	return
+}
+
+// getAvailableInstanceType 获取匹配到的instance type
+func (a *AwsProvider) getAvailableInstanceType(host *v1beta1.InfraHost) (*ec2.InstanceTypeInfo, error) {
+	instanceTypeInfos, err := a.EC2Helper.FindInstanceTypes(host.CPU, host.Memory, string(host.Arch), "")
+	if err != nil {
+		return nil, err
+	}
+	logger.Info("region ID %s", a.Infra.Status.Cluster.RegionID)
+	input := &ec2.DescribeInstanceTypeOfferingsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("location"),
+				Values: []*string{
+					aws.String(a.Infra.Status.Cluster.RegionID),
+				},
+			},
+		},
+	}
+	offerInstanceTypeMap := make(map[string]bool)
+	err = a.EC2Helper.Svc.DescribeInstanceTypeOfferingsPages(input, func(output *ec2.DescribeInstanceTypeOfferingsOutput, lastPage bool) bool {
+		for idx := range output.InstanceTypeOfferings {
+			offerInstanceTypeMap[*output.InstanceTypeOfferings[idx].InstanceType] = true
+		}
+		return !lastPage
+	})
+	logger.Info("offer instance type map %v", offerInstanceTypeMap)
+	if err != nil {
+		return nil, err
+	}
+	for idx := range instanceTypeInfos {
+		if _, ok := offerInstanceTypeMap[*instanceTypeInfos[idx].InstanceType]; ok {
+			return instanceTypeInfos[idx], nil
+		}
+	}
+	return nil, errors.New("not found instanceType")
+}
+
+// getAvailableImageID 获取匹配到的imageID
+func (a *AwsProvider) getAvailableImageID(host *v1beta1.InfraHost, isInstanceStorageSupported bool) (string, error) {
+	archArr := make([]*string, 0)
+	s := string(ConvertImageArch(host.Arch))
+	archArr = append(archArr, &s)
+	deviceType := EBS_ROOT_DEVICE_TYPE
+	if isInstanceStorageSupported {
+		deviceType = INSTANCE_STORE_ROOT_DEVICE_TYPE
+	}
+	latestImages, err := a.EC2Helper.GetLatestImages(&deviceType, archArr)
+	if err != nil {
+		return "", err
+	}
+	for idx := range latestImages {
+		if latestImages[idx].Description == nil {
+			continue
+		}
+		if strings.Contains(strings.ToLower(*latestImages[idx].Description), "docker") ||
+			strings.Contains(strings.ToLower(*latestImages[idx].Description), "k8s") {
+			continue
+		}
+		// hardcode: todo only find Canonical Ubuntu ?
+		if strings.Contains(strings.ToLower(*latestImages[idx].Description), "canonical") &&
+			strings.Contains(strings.ToLower(*latestImages[idx].Description), "22.04") {
+			return *latestImages[0].ImageId, nil
+		}
+	}
+	return "", errors.New("not found images")
+}
+
+// parserPort j解析rangePort
+func parserPort(rangePort string) (int64, int64, error) {
+	split := strings.Split(rangePort, "/")
+	from, err := strconv.Atoi(split[0])
+	if err != nil {
+		return 0, 0, err
+	}
+	to, err := strconv.Atoi(split[1])
+	if err != nil {
+		return 0, 0, err
+	}
+	return int64(from), int64(to), nil
 }

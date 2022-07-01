@@ -16,6 +16,7 @@ package infra
 
 import (
 	"fmt"
+	"github.com/labring/sealos/pkg/infra/aws"
 	"testing"
 	"time"
 
@@ -186,4 +187,116 @@ func TestHuaweiApply(t *testing.T) {
 	now := metav1.Now()
 	infra.ObjectMeta.DeletionTimestamp = &now
 	t.Logf("%v", hwProvider.Apply())
+}
+
+func TestAwsApply(t *testing.T) {
+	infra := v2.Infra{
+		Status: v2.InfraStatus{
+			Cluster: v2.InfraClusterStatus{
+				Annotations: map[string]string{
+					"sealos.io/VpcID":           "vpc-07a60c1491dd5f2b0",
+					"sealos.io/SecurityGroupID": "sg-0be20be7de74f711d",
+					"sealos.io/SubnetID":        "subnet-0fee346f57f44eb29",
+					"sealos.io/SubnetZoneID":    "cn-north-11",
+					"sealos.io/EgressGatewayID": "eigw-0fd645325e856d987`",
+					"sealos.io/KeyPairID":       "sealos.keypair",
+				},
+				RegionID: "cn-north-1",
+				ZoneID:   "cnn1-az4",
+			},
+			Hosts: []v2.InfraHostStatus{
+				{
+					IDs:     "i-0730bee1166665770,i-0526d1c152f4547a8",
+					Arch:    "arm64",
+					ImageID: "ami-000407aa966970eae",
+					Ready:   false,
+					Roles:   []string{"master", "node"},
+				},
+			},
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Infra",
+			APIVersion: v2.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-aws-infra",
+		},
+		Spec: v2.InfraSpec{
+			Metadata: v2.InfraMetadata{
+				RegionIDs: []string{"cn-north-1"},
+				ZoneIDs:   []string{},
+				AccessChannels: v2.InfraAccessChannels{
+					SSH: v2.InfraSSH{
+						Passwd: "Fanux#123",
+						Port:   22,
+					},
+				},
+				Instance: v2.InfraInstance{
+					IsSeize: true,
+				},
+			},
+			Hosts: []v2.InfraHost{
+				{
+					Roles:  []string{"master", "node"},
+					CPU:    2,
+					Memory: 4,
+					Count:  2,
+					Arch:   v2.ARM64,
+					Disks:  []v2.InfraDisk{},
+				},
+			},
+			Provider: aws.AwsCloudProvider,
+		},
+	}
+
+	provider, err := NewDefaultProvider(&infra)
+	if err != nil {
+		fmt.Printf("%v", err)
+	} else {
+		fmt.Printf("%v", provider.Apply())
+	}
+	j, _ := yaml.Marshal(&infra)
+	t.Log("output yaml:", string(j))
+	//// todo
+	//t.Run("modify instance system disk", func(t *testing.T) {
+	//	j, _ := yaml.Marshal(&infra)
+	//	t.Log("output yaml:", string(j))
+	//	infra.Spec.Hosts = []v2.InfraHost{
+	//		{
+	//			Roles:  []string{"master", "ssd"},
+	//			CPU:    2,
+	//			Memory: 4,
+	//			Count:  1,
+	//			Disks:  []v2.InfraDisk{},
+	//		},
+	//		{
+	//			Roles:  []string{"master", "ssd"},
+	//			CPU:    2,
+	//			Memory: 4,
+	//			Count:  1,
+	//			Disks:  []v2.InfraDisk{},
+	//		},
+	//	}
+	//	t.Logf("add server:%v", provider.Apply())
+	//	j, _ = yaml.Marshal(&infra)
+	//	t.Log("output yaml:", string(j))
+	//	time.Sleep(10 * time.Second)
+	//	infra.Spec.Hosts = []v2.InfraHost{
+	//		{
+	//			Roles:  []string{"master", "ssd"},
+	//			CPU:    2,
+	//			Memory: 4,
+	//			Count:  1,
+	//			Disks:  []v2.InfraDisk{},
+	//		},
+	//	}
+	//	t.Logf("delete:%v", provider.Apply())
+	//	j, _ = yaml.Marshal(&infra)
+	//	t.Log("output yaml:", string(j))
+	//})
+	////teardown
+	//time.Sleep(20 * time.Second)
+	//now := metav1.Now()
+	//infra.ObjectMeta.DeletionTimestamp = &now
+	//t.Logf("%v", provider.Apply())
 }

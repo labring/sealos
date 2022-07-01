@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_provider
+package aws
 
 import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/labring/sealos/pkg/utils/rand"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"strings"
 
@@ -25,14 +28,12 @@ import (
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/rand"
 )
 
 type ActionName string
 
 const (
 	CreateVPC           ActionName = "CreateVPC"
-	CreateVSwitch       ActionName = "CreateVSwitch"
 	CreateSecurityGroup ActionName = "CreateSecurityGroup"
 	ReconcileInstance   ActionName = "ReconcileInstance"
 	BindEIP             ActionName = "BindEIP"
@@ -54,6 +55,35 @@ func NewEc2Helper(sess *session.Session) *EC2Helper {
 		Svc:  ec2.New(sess),
 		Sess: sess,
 	}
+}
+
+func (a *AwsProvider) NewClient() error {
+	if len(a.Infra.Spec.Metadata.RegionIDs) == 0 {
+		return errors.New("your infra module not set region id")
+	}
+	if len(a.Infra.Spec.Credential.AccessKey) == 0 {
+		return errors.New("your infra module not set AccessKey")
+	}
+	if len(a.Infra.Spec.Credential.AccessSecret) == 0 {
+		return errors.New("your infra module not set AccessSecret")
+	}
+
+	regionID := a.Infra.Spec.Metadata.RegionIDs[rand.Rand(len(a.Infra.Spec.Metadata.RegionIDs))]
+	a.Infra.Status.Cluster.RegionID = regionID
+	logger.Info("using regionID is %s", regionID)
+	// Start a new session, with the default credentials and config loading
+	sess := session.Must(
+		session.NewSessionWithOptions(session.Options{
+			Config: aws.Config{
+				Credentials: credentials.NewStaticCredentials(a.Infra.Spec.Credential.AccessKey, a.Infra.Spec.Credential.AccessSecret, ""),
+				Region:      aws.String(regionID),
+			},
+			SharedConfigState: session.SharedConfigEnable,
+		}))
+
+	h := NewEc2Helper(sess)
+	a.EC2Helper = *h
+	return nil
 }
 
 type AwsFunc func() error
@@ -101,10 +131,6 @@ var RecocileFuncMap = map[ActionName]func(provider *AwsProvider) error{
 	CreateVPC: func(AwsProvider *AwsProvider) error {
 		return AwsProvider.ReconcileResource(VpcID, AwsProvider.CreateVPC)
 	},
-
-	//CreateVSwitch: func(AwsProvider *AwsProvider) error {
-	//	return AwsProvider.ReconcileResource(VSwitchID, AwsProvider.CreateVSwitch)
-	//},
 	CreateSecurityGroup: func(AwsProvider *AwsProvider) error {
 		return AwsProvider.ReconcileResource(SecurityGroupID, AwsProvider.CreateSecurityGroup)
 	},
@@ -181,36 +207,12 @@ var DeleteFuncMap = map[ActionName]func(provider *AwsProvider){
 		}
 		AwsProvider.DeleteResource(ShouldBeDeleteInstancesIDs, AwsProvider.DeleteInstances)
 	},
-	//DeleteVSwitch: func(AwsProvider *AwsProvider) {
-	//	AwsProvider.DeleteResource(VSwitchID, AwsProvider.DeleteVSwitch)
-	//},
 	DeleteSecurityGroup: func(AwsProvider *AwsProvider) {
 		AwsProvider.DeleteResource(SecurityGroupID, AwsProvider.DeleteSecurityGroup)
 	},
 	DeleteVPC: func(AwsProvider *AwsProvider) {
 		AwsProvider.DeleteResource(VpcID, AwsProvider.DeleteVPC)
 	},
-}
-
-func (a *AwsProvider) NewClient() error {
-	if len(a.Infra.Spec.Metadata.RegionIDs) == 0 {
-		return errors.New("your infra module not set region id")
-	}
-	if len(a.Infra.Spec.Credential.AccessKey) == 0 {
-		return errors.New("your infra module not set AccessKey")
-	}
-	if len(a.Infra.Spec.Credential.AccessSecret) == 0 {
-		return errors.New("your infra module not set AccessSecret")
-	}
-
-	regionID := a.Infra.Spec.Metadata.RegionIDs[rand.Rand(len(a.Infra.Spec.Metadata.RegionIDs))]
-	a.Infra.Status.Cluster.RegionID = regionID
-	logger.Info("using regionID is %s", regionID)
-	// Start a new session, with the default credentials and config loading
-	sess := session.Must(session.NewSessionWithOptions(session.Options{SharedConfigState: session.SharedConfigEnable}))
-	h := NewEc2Helper(sess)
-	a.EC2Helper = *h
-	return nil
 }
 
 func (a *AwsProvider) ClearCluster() {
@@ -235,17 +237,16 @@ func (a *AwsProvider) Reconcile() error {
 	todolist := []ActionName{
 		GetZoneID,
 		CreateVPC,
-		//CreateVSwitch,
 		CreateSecurityGroup,
 		ReconcileInstance,
 		BindEIP,
 	}
 
-	for _, actionname := range todolist {
-		err := RecocileFuncMap[actionname](a)
+	for _, actionName := range todolist {
+		err := RecocileFuncMap[actionName](a)
 		if err != nil {
-			logger.Warn("actionName: %s,err: %v ,skip it", actionname, err)
-			//return err
+			logger.Warn("actionName: %s,err: %v ,skip it", actionName, err)
+			return err
 		}
 	}
 
@@ -256,7 +257,7 @@ func (a *AwsProvider) Apply() error {
 	if err := v1beta1.DefaultInfra(a.Infra, DefaultInfra); err != nil {
 		return err
 	}
-	//if err := vAwsdation.VAwsdateInfra(a.Infra, DefaultVAwsdate); len(err) != 0 {
+	//if err := DefaultValidate(a.Infra, DefaultInfra); len(err) != 0 {
 	//	return err.ToAggregate()
 	//}
 	return a.Reconcile()
@@ -272,7 +273,7 @@ func DefaultInfra(infra *v1beta1.Infra) error {
 	return nil
 }
 
-func DefaultVAwsdate(infra *v1beta1.Infra) field.ErrorList {
+func DefaultValidate(infra *v1beta1.Infra) field.ErrorList {
 	allErrors := field.ErrorList{}
 	return allErrors
 }

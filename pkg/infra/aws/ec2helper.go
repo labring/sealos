@@ -1,4 +1,4 @@
-package aws_provider
+package aws
 
 import (
 	"encoding/base64"
@@ -6,9 +6,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -18,42 +19,47 @@ type EC2Helper struct {
 }
 
 // GetLatestImages 根据条件获取最新的images列表
-func (h *EC2Helper) GetLatestImages(rootDeviceType *string, architectures []*string) (*map[string]*ec2.Image, error) {
-	var inputs *map[string]ec2.DescribeImagesInput
+func (h *EC2Helper) GetLatestImages(rootDeviceType *string, architectures []*string) ([]*ec2.Image, error) {
+	filters := make([]*ec2.Filter, 0)
+	filters = append(filters, &ec2.Filter{
+		Name: aws.String("state"),
+		Values: []*string{
+			aws.String("available"),
+		},
+	})
+	filters = append(filters, &ec2.Filter{
+		Name:   aws.String("architecture"),
+		Values: architectures,
+	})
 	if rootDeviceType == nil {
-		inputs = getDescribeImagesInputs("ebs", architectures)
+		filters = append(filters, &ec2.Filter{
+			Name: aws.String("root-device-type"),
+			Values: []*string{
+				aws.String("ebs"),
+			},
+		})
 	} else {
-		inputs = getDescribeImagesInputs(*rootDeviceType, architectures)
+		filters = append(filters, &ec2.Filter{
+			Name: aws.String("root-device-type"),
+			Values: []*string{
+				aws.String(*rootDeviceType),
+			},
+		})
 	}
-
-	images := map[string]*ec2.Image{}
-	for osName, input := range *inputs {
-		output, err := h.Svc.DescribeImages(&input)
-		if err != nil {
-			return nil, err
-		}
-		if len(output.Images) <= 0 {
-			continue
-		}
-
-		// Sort the images and get the latest one
-		sort.Sort(byCreationDate(output.Images))
-		images[osName] = output.Images[len(output.Images)-1]
+	input := &ec2.DescribeImagesInput{
+		Filters: filters,
 	}
-	if len(images) <= 0 {
-		return nil, nil
+	imagesOutput, err := h.Svc.DescribeImages(input)
+	if err != nil {
+		return nil, err
 	}
-
-	return &images, nil
+	return imagesOutput.Images, nil
 }
 
+// GetVpcs 获取所有的vpc 列表
 func (h *EC2Helper) GetVpcs() (vpcs []*ec2.Vpc, err error) {
-	input := &ec2.DescribeVpcsInput{
-		Filters: []*ec2.Filter{},
-	}
-
+	input := &ec2.DescribeVpcsInput{}
 	vpcs = make([]*ec2.Vpc, 0)
-
 	vpcOutput, err := h.Svc.DescribeVpcs(input)
 	if err != nil {
 		return
@@ -66,23 +72,35 @@ func (h *EC2Helper) GetVpcs() (vpcs []*ec2.Vpc, err error) {
 	return
 }
 
-// Get the instance types based on input, with all pages concatenated
+// GetCidrByVpcID 根据vpcID 获取CIDR
+func (h *EC2Helper) GetCidrByVpcID(vpcID string) (string, error) {
+	input := &ec2.DescribeVpcsInput{
+		VpcIds: []*string{
+			aws.String(vpcID),
+		},
+	}
+	vpcOutput, err := h.Svc.DescribeVpcs(input)
+	if err != nil {
+		return "", err
+	}
+	if len(vpcOutput.Vpcs) == 0 {
+		return "", errors.New("Not found vpc by vpcID: " + vpcID)
+	}
+	return *(vpcOutput.Vpcs[0].CidrBlock), nil
+}
+
+// GetInstanceTypes Get the instance types based on input, with all pages concatenated
 func (h *EC2Helper) GetInstanceTypes(input *ec2.DescribeInstanceTypesInput) ([]*ec2.InstanceTypeInfo, error) {
-
-	allInstanceTypes := []*ec2.InstanceTypeInfo{}
-
+	allInstanceTypes := make([]*ec2.InstanceTypeInfo, 0)
 	err := h.Svc.DescribeInstanceTypesPages(input, func(page *ec2.DescribeInstanceTypesOutput, lastPage bool) bool {
 		allInstanceTypes = append(allInstanceTypes, page.InstanceTypes...)
 		return !lastPage
 	})
-
 	return allInstanceTypes, err
 }
 
-/*
-Get the specified instance type info given an instance type name.
-Empty result is not allowed.
-*/
+// GetInstanceType Get the specified instance type info given an instance type name.
+//Empty result is not allowed.
 func (h *EC2Helper) GetInstanceType(instanceType string) (*ec2.InstanceTypeInfo, error) {
 	input := &ec2.DescribeInstanceTypesInput{
 		InstanceTypes: []*string{
@@ -108,47 +126,6 @@ func (a byCreationDate) Len() int           { return len(a) }
 func (a byCreationDate) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a byCreationDate) Less(i, j int) bool { return *a[i].CreationDate < *a[j].CreationDate }
 
-// Get the appropriate input for describing images
-func getDescribeImagesInputs(rootDeviceType string, architectures []*string) *map[string]ec2.DescribeImagesInput {
-	// Construct all the inputs
-	imageInputs := map[string]ec2.DescribeImagesInput{}
-	for osName, rootDeviceTypes := range osDescs {
-
-		// Only add inputs if the corresponding root device type is applicabl e for the specified os
-		desc, found := rootDeviceTypes[rootDeviceType]
-		if found {
-			imageInputs[osName] = ec2.DescribeImagesInput{
-				Filters: []*ec2.Filter{
-					{
-						Name: aws.String("name"),
-						Values: []*string{
-							aws.String(desc),
-						},
-					},
-					{
-						Name: aws.String("state"),
-						Values: []*string{
-							aws.String("available"),
-						},
-					},
-					{
-						Name: aws.String("root-device-type"),
-						Values: []*string{
-							aws.String(rootDeviceType),
-						},
-					},
-					{
-						Name:   aws.String("architecture"),
-						Values: architectures,
-					},
-				},
-			}
-		}
-	}
-
-	return &imageInputs
-}
-
 // HasEbsVolume todo
 func HasEbsVolume(image *ec2.Image) bool {
 	return false
@@ -159,10 +136,7 @@ func IsLinux(platform string) bool {
 	return true
 }
 
-/*
-Get a default instance type, which is a free-tier eligible type.
-Empty result is allowed.
-*/
+// GetDefaultFreeTierInstanceType Get a default instance type, which is a free-tier eligible type.
 func (h *EC2Helper) GetDefaultFreeTierInstanceType() (*ec2.InstanceTypeInfo, error) {
 	input := &ec2.DescribeInstanceTypesInput{
 		Filters: []*ec2.Filter{
@@ -193,19 +167,18 @@ func (h *EC2Helper) GetDefaultImage(deviceType *string, supportedArchitectures [
 	if err != nil {
 		return
 	}
-	for osName := range *images {
-		if strings.Contains(osName, "Linux") || strings.Contains(osName, "Ubuntu") ||
-			strings.Contains(osName, "Red Hat") {
-			return (*images)[osName], nil
-		}
-	}
-	return nil, errors.New("Not found default image")
+	return images[0], nil
 }
 
 func (h *EC2Helper) getDefaultVpc() (*ec2.Vpc, error) {
 	vpcs, err := h.GetVpcs()
 	if err != nil {
 		return nil, err
+	}
+	for idx := range vpcs {
+		if *vpcs[idx].IsDefault {
+			return vpcs[idx], nil
+		}
 	}
 	return vpcs[0], nil
 }
@@ -259,6 +232,25 @@ func (h *EC2Helper) getDefaultSecurityGroup(vpcID string) (ds *ec2.SecurityGroup
 func (h *EC2Helper) createNetworkConfiguration(sc *SimpleInfo, ri *ec2.RunInstancesInput) error {
 
 	return nil
+}
+
+// GetOrCreateSubnetIDByVpcID 获取subnetID
+func (h *EC2Helper) GetOrCreateSubnetIDByVpcID(vpcID string) (*ec2.Subnet, error) {
+	subnets, err := h.GetSubnetsByVpc(vpcID)
+	if err == nil && len(subnets) > 0 {
+		return subnets[0], nil
+	}
+	input := &ec2.CreateSubnetInput{
+		CidrBlock: aws.String(DefaultSubnets),
+		VpcId:     aws.String(vpcID),
+	}
+
+	subnetOutput, err := h.Svc.CreateSubnet(input)
+
+	if err != nil {
+		return nil, err
+	}
+	return subnetOutput.Subnet, nil
 }
 
 // Get the default string config
@@ -433,4 +425,87 @@ func getRunInstanceInput(simpleConfig *SimpleInfo, detailedConfig *DetailedInfo)
 		}
 	}
 	return input
+}
+
+// -----------------------------
+
+// FindInstanceTypes 找到可以用的instance规格
+// cpu, memory is number
+// arch support arm64|amd64
+// deviceType support  ebs|instance-store
+func (h *EC2Helper) FindInstanceTypes(cpu, memory int, arch, deviceType string) ([]*ec2.InstanceTypeInfo, error) {
+	filters := make([]*ec2.Filter, 0)
+	if memory <= 0 {
+		return nil, errors.New("host memory is not correct.")
+	}
+	filters = append(filters, &ec2.Filter{
+		Name: aws.String("memory-info.size-in-mib"),
+		Values: []*string{
+			aws.String(strconv.Itoa(memory * 1024)),
+		},
+	})
+	if cpu <= 0 {
+		return nil, errors.New("host cpu is not correct.")
+	}
+	filters = append(filters, &ec2.Filter{
+		Name: aws.String("vcpu-info.default-cores"),
+		Values: []*string{
+			aws.String(strconv.Itoa(cpu)),
+		},
+	})
+	if string(arch) != "" {
+		filters = append(filters, &ec2.Filter{
+			Name: aws.String("processor-info.supported-architecture"),
+			Values: []*string{
+				aws.String(string(ConvertImageArch(v1beta1.Arch(arch)))),
+			},
+		})
+	}
+	if deviceType != "" {
+		filters = append(filters, &ec2.Filter{
+			Name: aws.String("supported-root-device-type"),
+			Values: []*string{
+				aws.String(deviceType),
+			},
+		})
+	}
+	input := &ec2.DescribeInstanceTypesInput{
+		Filters: filters,
+	}
+	instanceTypes, err := h.GetInstanceTypes(input)
+	if err != nil {
+		return nil, err
+	}
+	if len(instanceTypes) == 0 {
+		return nil, errors.New("get instance type result is empty")
+	}
+	return instanceTypes, nil
+}
+
+// BindEgressGatewayToVpc 绑定egress到vpc
+func (h *EC2Helper) BindEgressGatewayToVpc(vpcID string) (string, error) {
+	input := &ec2.CreateEgressOnlyInternetGatewayInput{
+		VpcId: aws.String(vpcID),
+	}
+	gateway, err := h.Svc.CreateEgressOnlyInternetGateway(input)
+	if err != nil {
+		return "", err
+	}
+	return *gateway.EgressOnlyInternetGateway.EgressOnlyInternetGatewayId, nil
+}
+
+// GetInstanceInfos 获取instance info
+func (h *EC2Helper) GetInstanceInfos(input *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
+	var allReservations []*ec2.Reservation
+	err := h.Svc.DescribeInstancesPages(input, func(page *ec2.DescribeInstancesOutput, lastPage bool) bool {
+		allReservations = append(allReservations, page.Reservations...)
+		return !lastPage
+	})
+	var allInstances []*ec2.Instance
+	for _, reservation := range allReservations {
+		for _, instance := range reservation.Instances {
+			allInstances = append(allInstances, instance)
+		}
+	}
+	return allInstances, err
 }

@@ -1,4 +1,4 @@
-package aws_provider
+package aws
 
 import (
 	"fmt"
@@ -6,5 +6,5 @@ import (
 )
 
 func TestRanda(t *testing.T) {
-	fmt.Println(RandSecurityGroup())
+	fmt.Println(RandSecurityGroupName())
 }

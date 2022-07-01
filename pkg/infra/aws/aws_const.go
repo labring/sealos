@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package aws_provider
+package aws
 
 import (
 	"math/rand"
@@ -26,14 +26,18 @@ import (
 const (
 	Scheme              = "https"
 	Product             = "product"
+	DefaultCIDR         = "192.168.0.0/16"
+	DefaultSubnets      = "192.168.0.0/20"
 	Role                = "role"
 	Arch                = "arch"
 	AwsDomain           = "sealos.io/"
 	TryTimes            = 10
 	TrySleepTime        = time.Second
 	JustGetInstanceInfo = 0
-	DefaultRegion       = ""
+	DefaultRegion       = "cn-north-1"
 	RegionEnv           = "AWS_DEFAULT_REGION"
+	DefaultTagKey       = "sealos.io/tag"
+	DefaultTagValue     = "sealos"
 )
 
 // Define all OS and corresponding AMI name formats
@@ -69,8 +73,10 @@ func GetImagePriority() []string {
 var categories = []string{"cloud", "cloud_efficiency", "cloud_ssd", "cloud_essd"}
 
 // Use instance-store if supported
-var rootDeviceType = "ebs"
 
+const INSTANCE_STORE_ROOT_DEVICE_TYPE = "instance-store"
+const EBS_ROOT_DEVICE_TYPE = "ebs"
+const KeyPairName = "sealos.keypair"
 const AwsCloudProvider v1beta1.Provider = "AwsProvider"
 
 type ResourceName string
@@ -78,9 +84,12 @@ type ResourceName string
 const (
 	EipID                      ResourceName = AwsDomain + "EipID"
 	VpcID                      ResourceName = AwsDomain + "VpcID"
-	VSwitchID                  ResourceName = AwsDomain + "VSwitchID"
+	SubnetID                   ResourceName = AwsDomain + "SubnetID"
+	SubnetZoneID               ResourceName = AwsDomain + "SubnetZoneID"
+	EgressGatewayID            ResourceName = AwsDomain + "EgressGatewayID"
 	SecurityGroupID            ResourceName = AwsDomain + "SecurityGroupID"
 	ZoneID                     ResourceName = AwsDomain + "ZoneID"
+	KeyPairID                  ResourceName = AwsDomain + "KeyPairID"
 	ShouldBeDeleteInstancesIDs ResourceName = "ShouldBeDeleteInstancesIDs"
 )
 
@@ -129,7 +138,7 @@ func RandStringBytesMask(n int) string {
 	return string(b)
 }
 
-func RandSecurityGroup() *string {
+func RandSecurityGroupName() *string {
 	s := RandStringBytesMask(5)
 	return &s
 }

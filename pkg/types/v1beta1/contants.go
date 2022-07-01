@@ -34,8 +34,9 @@ type Provider string
 type Arch string
 
 const (
-	AMD64 Arch = "amd64"
-	ARM64 Arch = "arm64"
+	AMD64  Arch = "amd64"
+	ARM64  Arch = "arm64"
+	X86_64 Arch = "x86_64"
 )
 
 type Protocol string

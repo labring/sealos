@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package aws_provider
+package aws
 
 import (
 	"errors"
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"strings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -31,13 +32,36 @@ func (a *AwsProvider) CreateVPC() error {
 		logger.Debug("VpcID using default value")
 		return nil
 	}
-	request := &ec2.CreateVpcInput{}
-	//response, err := d.Client.CreateVpc(request)
+	request := &ec2.CreateVpcInput{
+		CidrBlock: aws.String(DefaultCIDR),
+		TagSpecifications: []*ec2.TagSpecification{
+			{
+				ResourceType: aws.String("vpc"),
+				Tags: []*ec2.Tag{
+					{
+						Key:   aws.String(DefaultTagKey),
+						Value: aws.String(DefaultTagValue),
+					},
+				},
+			},
+		},
+	}
 	response, err := a.EC2Helper.Svc.CreateVpc(request)
 	if err != nil {
 		return err
 	}
 	VpcID.SetValue(a.Infra.Status, *response.Vpc.VpcId)
+	subnet, err := a.EC2Helper.GetOrCreateSubnetIDByVpcID(*response.Vpc.VpcId)
+	if err != nil {
+		return err
+	}
+	SubnetID.SetValue(a.Infra.Status, *subnet.SubnetId)
+	SubnetZoneID.SetValue(a.Infra.Status, *subnet.AvailabilityZoneId)
+	egressGatewayID, err := a.EC2Helper.BindEgressGatewayToVpc(*response.Vpc.VpcId)
+	if err != nil {
+		return err
+	}
+	EgressGatewayID.SetValue(a.Infra.Status, egressGatewayID)
 	return nil
 }
 
@@ -57,60 +81,25 @@ func (a *AwsProvider) DeleteVPC() error {
 	return nil
 }
 
-//func (a *AwsProvider) CreateVSwitch() error {
-//	if vSwitchID := VSwitchID.ClusterValue(a.Infra.Spec); vSwitchID != "" {
-//		logger.Debug("VSwitchID using default value")
-//		VSwitchID.SetValue(a.Infra.Status, vSwitchID)
-//		return nil
-//	}
-//	request := vpc.CreateCreateVSwitchRequest()
-//	request.Scheme = Scheme
-//	request.ZoneId = a.Infra.Status.Cluster.ZoneID
-//	request.CidrBlock = a.Infra.Spec.Metadata.Instance.Network.PrivateCidrIP
-//	request.VpcId = VpcID.Value(a.Infra.Status)
-//	request.RegionId = a.Infra.Status.Cluster.RegionID
-//	response := vpc.CreateCreateVSwitchResponse()
-//	err := a.RetryVpcRequest(request, response)
-//	if err != nil {
-//		return err
-//	}
-//	VSwitchID.SetValue(a.Infra.Status, response.VSwitchId)
-//
-//	return nil
-//}
-
-//func (a *AwsProvider) DeleteVSwitch() error {
-//	if VSwitchID.ClusterValue(a.Infra.Spec) != "" && VSwitchID.Value(a.Infra.Status) != "" {
-//		return nil
-//	}
-//	request := vpc.CreateDeleteVSwitchRequest()
-//	request.Scheme = Scheme
-//	request.VSwitchId = VSwitchID.Value(a.Infra.Status)
-//
-//	response := vpc.CreateDeleteVSwitchResponse()
-//	return a.RetryVpcRequest(request, response)
-//}
-
 func (a *AwsProvider) CreateSecurityGroup() error {
 	if securityGroupID := SecurityGroupID.ClusterValue(a.Infra.Spec); securityGroupID != "" {
 		logger.Debug("securityGroupID using default value")
 		SecurityGroupID.SetValue(a.Infra.Status, securityGroupID)
 		return nil
 	}
+	vpcID := VpcID.Value(a.Infra.Status)
 	request := &ec2.CreateSecurityGroupInput{
-		VpcId:     aws.String(VpcID.Value(a.Infra.Status)),
-		GroupName: RandSecurityGroup(),
+		Description: aws.String("sealos security group"),
+		VpcId:       aws.String(vpcID),
+		GroupName:   aws.String(fmt.Sprintf("%s-%s", "sealos", *RandSecurityGroupName())),
 	}
-	//request.RegionId = a.Infra.Status.Cluster.RegionID
 	response, err := a.EC2Helper.Svc.CreateSecurityGroup(request)
 	if err != nil {
 		return err
 	}
-
-	for _, port := range a.Infra.Spec.Metadata.Instance.Network.ExportPorts {
-		if !a.AuthorizeSecurityGroup(*response.GroupId, port) {
-			return fmt.Errorf("authorize securitygroup port: %v failed", port)
-		}
+	ingress := a.AuthorizeSecurityGroupIngress(*response.GroupId, a.Infra.Spec.Metadata.Instance.Network.ExportPorts)
+	if !ingress {
+		return fmt.Errorf("authorize securitygroup port: %v failed", a.Infra.Spec.Metadata.Instance.Network.ExportPorts)
 	}
 	SecurityGroupID.SetValue(a.Infra.Status, *response.GroupId)
 	return nil
@@ -146,7 +135,8 @@ func (a *AwsProvider) GetAvailableZoneID() error {
 	}
 	request := &ec2.DescribeAvailabilityZonesInput{
 		Filters: []*ec2.Filter{
-			&ec2.Filter{
+			{
+				// https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_DescribeAvailabilityZones.html
 				Name:   aws.String("region-name"),
 				Values: aws.StringSlice([]string{DefaultRegion}),
 			},
@@ -175,26 +165,43 @@ func (a *AwsProvider) BindEipForMaster0() error {
 	if host == nil {
 		return fmt.Errorf("bind eip for master error: ready master host not fount")
 	}
-	instances, err := a.GetInstancesInfo(host, JustGetInstanceInfo)
+
+	instancesTags := CreateDescribeInstancesTag(map[string]string{
+		Product: a.Infra.Name,
+		Role:    strings.Join(host.Roles, ","),
+		Arch:    string(host.Arch),
+	})
+	input := &ec2.DescribeInstancesInput{
+		Filters: instancesTags,
+	}
+
+	infos, err := a.EC2Helper.GetInstanceInfos(input)
 	if err != nil {
 		return err
 	}
-	if len(instances) == 0 {
-		return errors.New("can not find master0 ")
+
+	var master0 *ec2.Instance
+	for idx := range infos {
+		if *infos[idx].State.Code == 16 {
+			master0 = infos[idx]
+			break
+		}
 	}
-	master0 := instances[0]
+	if master0 == nil {
+		return errors.New("not found running instance")
+	}
 	eIP, eIPID, err := a.allocateEipAddress()
 	if err != nil {
 		return err
 	}
-	err = a.associateEipAddress(master0.InstanceID, eIPID)
+	err = a.associateEipAddress(*master0.InstanceId, eIPID)
 	if err != nil {
 		return err
 	}
 	a.Infra.Status.Cluster.EIP = eIP
 	EipID.SetValue(a.Infra.Status, eIPID)
-	a.Infra.Status.Cluster.Master0ID = master0.InstanceID
-	a.Infra.Status.Cluster.Master0InternalIP = master0.PrivateIpAddress
+	a.Infra.Status.Cluster.Master0ID = *master0.InstanceId
+	a.Infra.Status.Cluster.Master0InternalIP = *master0.PrivateIpAddress
 	return nil
 }
 
