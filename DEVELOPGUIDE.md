@@ -2,7 +2,7 @@
 
 sealos only support linux now, you need a linux server to test it.
 
-Some tools can be very handy to help you start a virtual machine such as [multipaas](https://multipass.run/)
+Some tools can be very handy to help you start a virtual machine such as [multipass](https://multipass.run/)
 
 # Build the project
 
