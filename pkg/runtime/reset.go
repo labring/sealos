@@ -79,7 +79,9 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	if err := k.sshCmdAsync(node, removeKubeConfig); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, err)
 	}
-
+	if err := k.execIPVSClean(node); err != nil {
+		logger.Error("failed to clean node route and ipvs failed, %v", err)
+	}
 	if err := k.sshCmdAsync(node, deleteShimCmd); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", deleteShimCmd, err)
 	}

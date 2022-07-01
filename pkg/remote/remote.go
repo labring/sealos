@@ -28,6 +28,7 @@ type Interface interface {
 	HostsDelete(ip, domain string) error
 	Hostname(ip string) (string, error)
 	IPVS(ip, vip string, masters []string) error
+	IPVSClean(ip, vip string) error
 	StaticPod(ip, vip, name, image string, masters []string) error
 	Token(ip string) (string, error)
 	IsDocker(ip string) (string, error)
@@ -72,6 +73,19 @@ func (s *remote) IPVS(ip, vip string, masters []string) error {
 	data := map[string]interface{}{
 		"vip":     vip,
 		"masters": masters,
+	}
+	out, err := renderTemplate(ipvsCommandTemplate, data)
+	if err != nil {
+		return err
+	}
+	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
+}
+func (s *remote) IPVSClean(ip, vip string) error {
+	var ipvsCommandTemplate = template.Must(template.New("ipvs").Parse(`` +
+		`ipvs --vs {{.vip}}  -C`,
+	))
+	data := map[string]interface{}{
+		"vip": vip,
 	}
 	out, err := renderTemplate(ipvsCommandTemplate, data)
 	if err != nil {

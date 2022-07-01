@@ -59,8 +59,10 @@ func newIPVSCmd() *cobra.Command {
 					care.LVS.TargetIP = net.ParseIP(ip)
 				}
 				logger.Debug("found target route ip is %s", care.LVS.TargetIP.String())
-				if err := care.LVS.SyncRouter(); err != nil {
-					return err
+				if !clean {
+					if err := care.LVS.SyncRouter(); err != nil {
+						return err
+					}
 				}
 			}
 			care.LVS.Clean = true
