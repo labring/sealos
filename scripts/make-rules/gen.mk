@@ -13,7 +13,7 @@
 # limitations under the License.
 
 .PHONY: gen.run
-gen.run: gen.clean gen.deepcopy
+gen.run: gen.clean gen.deepcopy gen.docs
 
 BOILERPLATE := $(ROOT_DIR)/scripts/template/boilerplate.go.txt
 INPUT_DIR := $(ROOT_DIR)/pkg/types/v1beta1
@@ -26,6 +26,11 @@ gen.deepcopy: tools.verify.deepcopy-gen
 	-O zz_generated.deepcopy \
 	--go-header-file "$(BOILERPLATE)" \
 	--output-base "${GOPATH}/src"
+
+.PHONY: gen.docs
+gen.docs: go.build
+	@echo "===========> Generating docs"
+	@$(BIN_DIR)/$(PLATFORM)/sealos docs
 
 .PHONY: gen.clean
 gen.clean:
