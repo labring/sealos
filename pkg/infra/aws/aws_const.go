@@ -86,6 +86,7 @@ const (
 	VpcID                      ResourceName = AwsDomain + "VpcID"
 	SubnetID                   ResourceName = AwsDomain + "SubnetID"
 	SubnetZoneID               ResourceName = AwsDomain + "SubnetZoneID"
+	IngressGatewayID           ResourceName = AwsDomain + "IngressGatewayID"
 	EgressGatewayID            ResourceName = AwsDomain + "EgressGatewayID"
 	SecurityGroupID            ResourceName = AwsDomain + "SecurityGroupID"
 	ZoneID                     ResourceName = AwsDomain + "ZoneID"

@@ -217,7 +217,7 @@ var DeleteFuncMap = map[ActionName]func(provider *AwsProvider){
 
 func (a *AwsProvider) ClearCluster() {
 	todolist := []ActionName{
-		ReleaseEIP,
+		//ReleaseEIP,
 		ClearInstances,
 		DeleteVSwitch,
 		DeleteSecurityGroup,
@@ -239,7 +239,7 @@ func (a *AwsProvider) Reconcile() error {
 		CreateVPC,
 		CreateSecurityGroup,
 		ReconcileInstance,
-		BindEIP,
+		// BindEIP,
 	}
 
 	for _, actionName := range todolist {
@@ -260,6 +260,7 @@ func (a *AwsProvider) Apply() error {
 	//if err := DefaultValidate(a.Infra, DefaultInfra); len(err) != 0 {
 	//	return err.ToAggregate()
 	//}
+
 	return a.Reconcile()
 }
 

@@ -244,9 +244,23 @@ func (h *EC2Helper) GetOrCreateSubnetIDByVpcID(vpcID string) (*ec2.Subnet, error
 		CidrBlock: aws.String(DefaultSubnets),
 		VpcId:     aws.String(vpcID),
 	}
-
 	subnetOutput, err := h.Svc.CreateSubnet(input)
+	if err != nil {
+		return nil, err
+	}
+	_, err = h.Svc.ModifySubnetAttribute(&ec2.ModifySubnetAttributeInput{
+		MapPublicIpOnLaunch: &ec2.AttributeBooleanValue{
+			Value: aws.Bool(true),
+		},
+		SubnetId: aws.String(*subnetOutput.Subnet.SubnetId),
+	})
 
+	_, err = h.Svc.ModifySubnetAttribute(&ec2.ModifySubnetAttributeInput{
+		SubnetId: aws.String(*subnetOutput.Subnet.SubnetId),
+		EnableResourceNameDnsARecordOnLaunch: &ec2.AttributeBooleanValue{
+			Value: aws.Bool(true),
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -494,6 +508,33 @@ func (h *EC2Helper) BindEgressGatewayToVpc(vpcID string) (string, error) {
 	return *gateway.EgressOnlyInternetGateway.EgressOnlyInternetGatewayId, nil
 }
 
+// BindIngressGatewayToVpc 绑定ingress到vpc
+func (h *EC2Helper) BindIngressGatewayToVpc(vpcID string) (string, error) {
+	gateway, err := h.Svc.CreateInternetGateway(&ec2.CreateInternetGatewayInput{})
+	if err != nil {
+		return *gateway.InternetGateway.InternetGatewayId, err
+	}
+
+	_, err = h.Svc.AttachInternetGateway(&ec2.AttachInternetGatewayInput{
+		InternetGatewayId: aws.String(*gateway.InternetGateway.InternetGatewayId),
+		VpcId:             aws.String(vpcID),
+	})
+	if err != nil {
+		return *gateway.InternetGateway.InternetGatewayId, err
+	}
+
+	routeTableID, err := h.GetMainRouteTable(vpcID)
+	if err != nil {
+		return *gateway.InternetGateway.InternetGatewayId, err
+	}
+	_, err = h.Svc.CreateRoute(&ec2.CreateRouteInput{
+		DestinationCidrBlock: aws.String("0.0.0.0/0"),
+		GatewayId:            aws.String(*gateway.InternetGateway.InternetGatewayId),
+		RouteTableId:         aws.String(routeTableID),
+	})
+	return *gateway.InternetGateway.InternetGatewayId, err
+}
+
 // GetInstanceInfos 获取instance info
 func (h *EC2Helper) GetInstanceInfos(input *ec2.DescribeInstancesInput) ([]*ec2.Instance, error) {
 	var allReservations []*ec2.Reservation
@@ -508,4 +549,33 @@ func (h *EC2Helper) GetInstanceInfos(input *ec2.DescribeInstancesInput) ([]*ec2.
 		}
 	}
 	return allInstances, err
+}
+
+func (h *EC2Helper) GetRouteTables(vpcID string) ([]*ec2.RouteTable, error) {
+	tables, err := h.Svc.DescribeRouteTables(&ec2.DescribeRouteTablesInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("vpc-id"),
+				Values: []*string{
+					aws.String(vpcID),
+				},
+			},
+		},
+	})
+	return tables.RouteTables, err
+}
+
+func (h *EC2Helper) GetMainRouteTable(vpcID string) (string, error) {
+	tables, err := h.GetRouteTables(vpcID)
+	if err != nil {
+		return "", err
+	}
+	for idx := range tables {
+		for associaID := range tables[idx].Associations {
+			if *tables[idx].Associations[associaID].Main == true {
+				return *tables[idx].RouteTableId, nil
+			}
+		}
+	}
+	return "", errors.New("not found main route table.")
 }

@@ -50,18 +50,32 @@ func (a *AwsProvider) CreateVPC() error {
 	if err != nil {
 		return err
 	}
-	VpcID.SetValue(a.Infra.Status, *response.Vpc.VpcId)
+	_, err = a.EC2Helper.Svc.ModifyVpcAttribute(&ec2.ModifyVpcAttributeInput{
+		EnableDnsSupport: &ec2.AttributeBooleanValue{
+			Value: aws.Bool(true),
+		},
+		VpcId: aws.String(*response.Vpc.VpcId),
+	})
+	if err != nil {
+		return err
+	}
 	subnet, err := a.EC2Helper.GetOrCreateSubnetIDByVpcID(*response.Vpc.VpcId)
 	if err != nil {
 		return err
 	}
 	SubnetID.SetValue(a.Infra.Status, *subnet.SubnetId)
 	SubnetZoneID.SetValue(a.Infra.Status, *subnet.AvailabilityZoneId)
+	IngressGateway, err := a.EC2Helper.BindIngressGatewayToVpc(*response.Vpc.VpcId)
+	if err != nil {
+		return err
+	}
+	IngressGatewayID.SetValue(a.Infra.Status, IngressGateway)
 	egressGatewayID, err := a.EC2Helper.BindEgressGatewayToVpc(*response.Vpc.VpcId)
 	if err != nil {
 		return err
 	}
 	EgressGatewayID.SetValue(a.Infra.Status, egressGatewayID)
+	VpcID.SetValue(a.Infra.Status, *response.Vpc.VpcId)
 	return nil
 }
 

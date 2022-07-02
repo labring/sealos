@@ -248,7 +248,7 @@ func (a *AwsProvider) ReconcileInstances(host *v1beta1.InfraHost, status *v1beta
 			return err
 		}
 	}
-
+	logger.Info("instance len %d, host count %d", len(instances), host.Count)
 	if len(instances) < host.Count {
 		err = a.RunInstances(host, host.Count-len(instances))
 		if err != nil {
@@ -486,17 +486,33 @@ func CreateInstanceTag(tags map[string]string) (instanceTags []*ec2.Tag) {
 
 // CreateKeyPair 创建key pair
 func (a *AwsProvider) CreateKeyPair() (err error) {
+	pairs, _ := a.EC2Helper.Svc.DescribeKeyPairs(&ec2.DescribeKeyPairsInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("key-name"),
+				Values: []*string{
+					aws.String(KeyPairName),
+				},
+			},
+		},
+	})
+	if len(pairs.KeyPairs) > 0 {
+		KeyPairID.SetValue(a.Infra.Status, *pairs.KeyPairs[0].KeyPairId)
+	}
 	if ID := KeyPairID.Value(a.Infra.Status); ID != "" {
 		return
 	}
 	input := &ec2.CreateKeyPairInput{
 		KeyName: aws.String(KeyPairName),
 	}
-	_, err = a.EC2Helper.Svc.CreateKeyPair(input)
+	keyPair, err := a.EC2Helper.Svc.CreateKeyPair(input)
 	if err != nil {
 		return
 	}
-	KeyPairID.SetValue(a.Infra.Status, KeyPairName)
+
+	logger.Info("p key %s  keyMaterial is %s ", *keyPair.KeyFingerprint, *keyPair.KeyMaterial)
+
+	KeyPairID.SetValue(a.Infra.Status, *keyPair.KeyPairId)
 	return
 }
 

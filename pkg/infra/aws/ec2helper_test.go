@@ -186,3 +186,17 @@ func TestEC2Helper_BindEgressGatewayToVpc(t *testing.T) {
 	assert.NoError(t, err)
 	t.Log("vpc", vpc)
 }
+
+func TestEC2Helper_GetRouteTables(t *testing.T) {
+	helper := GetHelper(loadConfig())
+	tables, err := helper.GetRouteTables("vpc-00157e2f5c8f0d87d")
+	assert.NoError(t, err)
+	t.Log("tables", tables)
+}
+
+func TestEc2Helper_BindIngressGatewayToVpc(t *testing.T) {
+	helper := GetHelper(loadConfig())
+	isBind, err := helper.BindIngressGatewayToVpc("vpc-00157e2f5c8f0d87d")
+	assert.NoError(t, err)
+	t.Log("is_bind", isBind)
+}
