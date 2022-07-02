@@ -194,29 +194,29 @@ func TestAwsApply(t *testing.T) {
 		Status: v2.InfraStatus{
 			Cluster: v2.InfraClusterStatus{
 				Annotations: map[string]string{
-					"sealos.io/EgressGatewayID":  "eigw-016653d42af31f5e2",
-					"sealos.io/IngressGatewayID": "igw-0d0cecf4566a85755",
+					"sealos.io/EgressGatewayID":  "eigw-0d1758beee0de19e1",
+					"sealos.io/IngressGatewayID": "igw-075971d5ee49992b9",
 					"sealos.io/KeyPairID":        "key-09101cbc7e7e31478",
-					"sealos.io/SecurityGroupID":  "sg-06b46e53a6e6e24bf",
-					"sealos.io/SubnetID":         "subnet-0f37dac4c63e6cbc9",
+					"sealos.io/SecurityGroupID":  "sg-031216262cbf278c5",
+					"sealos.io/SubnetID":         "subnet-0a71f793d119bb69f",
 					"sealos.io/SubnetZoneID":     "cnn1-az1",
-					"sealos.io/VpcID":            "vpc-0a8681a60089d202e",
+					"sealos.io/VpcID":            "vpc-0f9fa01d0b4f0ae79",
 				},
 				RegionID: "cn-north-1",
 				ZoneID:   "cnn1-az4",
 			},
 			Hosts: []v2.InfraHostStatus{
 				{
-					IDs:     "i-0f5af781ea1dd4aaf,i-014509e51de59f39f",
-					IPs:     []string{"192.168.0.109", "192.168.10.207"},
+					IDs:     "i-071ee0d2faf560f0c,i-0c90c94f67403645a",
+					IPs:     []string{"192.168.14.182", "192.168.8.200"},
 					Arch:    "arm64",
 					ImageID: "ami-000407aa966970eae",
 					Ready:   true,
 					Roles:   []string{"master", "node"},
 				},
 				{
-					IDs:     "i-09818f0518a8844aa",
-					IPs:     []string{"192.168.4.99"},
+					IDs:     "i-06f85f8f1df21465d",
+					IPs:     []string{"192.168.8.208"},
 					Arch:    "arm64",
 					ImageID: "ami-000407aa966970eae",
 					Ready:   true,

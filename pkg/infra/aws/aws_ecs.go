@@ -315,6 +315,7 @@ func (a *AwsProvider) DeleteInstances() error {
 		ids = append(ids, &id)
 	}
 	request.InstanceIds = ids
+	logger.Info("delete instance ids %v", request)
 	_, err := a.EC2Helper.Svc.TerminateInstances(request)
 	if err != nil {
 		return err

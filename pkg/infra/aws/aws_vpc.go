@@ -119,6 +119,26 @@ func (a *AwsProvider) CreateSecurityGroup() error {
 	return nil
 }
 
+func (a *AwsProvider) DeleteSubnets() error {
+	if VpcID.ClusterValue(a.Infra.Spec) != "" && VpcID.Value(a.Infra.Status) != "" {
+		return nil
+	}
+	vpcId := VpcID.Value(a.Infra.Status)
+	subnets, err := a.EC2Helper.GetSubnetsByVpc(vpcId)
+	if err != nil {
+		return err
+	}
+	for idx := range subnets {
+		_, err := a.EC2Helper.Svc.DeleteSubnet(&ec2.DeleteSubnetInput{
+			SubnetId: aws.String(*subnets[idx].SubnetId),
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (a *AwsProvider) DeleteSecurityGroup() error {
 	if SecurityGroupID.ClusterValue(a.Infra.Spec) != "" && SecurityGroupID.Value(a.Infra.Status) != "" {
 		return nil
@@ -126,9 +146,51 @@ func (a *AwsProvider) DeleteSecurityGroup() error {
 	request := &ec2.DeleteSecurityGroupInput{
 		GroupId: aws.String(SecurityGroupID.Value(a.Infra.Status)),
 	}
-
 	_, err := a.EC2Helper.Svc.DeleteSecurityGroup(request)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *AwsProvider) DeleteGateway() error {
+	if VpcID.ClusterValue(a.Infra.Spec) != "" && VpcID.Value(a.Infra.Status) != "" {
+		return nil
+	}
+	vpcId := VpcID.Value(a.Infra.Status)
+	internetGateways, err := a.EC2Helper.Svc.DescribeInternetGateways(&ec2.DescribeInternetGatewaysInput{
+		Filters: []*ec2.Filter{
+			{
+				Name: aws.String("attachment.vpc-id"),
+				Values: []*string{
+					aws.String(vpcId),
+				},
+			},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	for idx := range internetGateways.InternetGateways {
+		_, err = a.EC2Helper.Svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{
+			InternetGatewayId: aws.String(*internetGateways.InternetGateways[idx].InternetGatewayId),
+			VpcId:             aws.String(vpcId),
+		})
+		if err != nil {
+			return err
+		}
+		_, err = a.EC2Helper.Svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{
+			InternetGatewayId: aws.String(*internetGateways.InternetGateways[idx].InternetGatewayId),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	if EgressGatewayID.Value(a.Infra.Status) != "" {
+		_, err = a.EC2Helper.Svc.DeleteEgressOnlyInternetGateway(&ec2.DeleteEgressOnlyInternetGatewayInput{
+			EgressOnlyInternetGatewayId: aws.String(EgressGatewayID.Value(a.Infra.Status)),
+		})
 		return err
 	}
 	return nil

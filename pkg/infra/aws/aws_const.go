@@ -78,6 +78,7 @@ const INSTANCE_STORE_ROOT_DEVICE_TYPE = "instance-store"
 const EBS_ROOT_DEVICE_TYPE = "ebs"
 const KeyPairName = "sealos.keypair"
 const AwsCloudProvider v1beta1.Provider = "AwsProvider"
+const AwsInstanceTerminatedCode = 48
 
 type ResourceName string
 

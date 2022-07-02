@@ -183,6 +183,7 @@ func (h *EC2Helper) getDefaultVpc() (*ec2.Vpc, error) {
 	return vpcs[0], nil
 }
 
+// GetSubnetsByVpc 获取子网
 func (h *EC2Helper) GetSubnetsByVpc(vpcID string) (subnets []*ec2.Subnet, err error) {
 	input := &ec2.DescribeSubnetsInput{
 		Filters: []*ec2.Filter{
@@ -545,7 +546,9 @@ func (h *EC2Helper) GetInstanceInfos(input *ec2.DescribeInstancesInput) ([]*ec2.
 	var allInstances []*ec2.Instance
 	for _, reservation := range allReservations {
 		for _, instance := range reservation.Instances {
-			allInstances = append(allInstances, instance)
+			if *instance.State.Code != AwsInstanceTerminatedCode {
+				allInstances = append(allInstances, instance)
+			}
 		}
 	}
 	return allInstances, err

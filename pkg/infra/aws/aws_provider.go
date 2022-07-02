@@ -41,6 +41,8 @@ const (
 	ClearInstances      ActionName = "ClearInstances"
 	DeleteVSwitch       ActionName = "DeleteVSwitch"
 	DeleteSecurityGroup ActionName = "DeleteSecurityGroup"
+	DeleteGateway       ActionName = "DeleteGateway"
+	DeleteSubnets       ActionName = "DeleteSubnets"
 	DeleteVPC           ActionName = "DeleteVPC"
 	GetZoneID           ActionName = "GetAvailableZoneID"
 )
@@ -187,9 +189,6 @@ var RecocileFuncMap = map[ActionName]func(provider *AwsProvider) error{
 }
 
 var DeleteFuncMap = map[ActionName]func(provider *AwsProvider){
-	ReleaseEIP: func(AwsProvider *AwsProvider) {
-		AwsProvider.DeleteResource(EipID, AwsProvider.ReleaseEipAddress)
-	},
 	ClearInstances: func(AwsProvider *AwsProvider) {
 		var instanceIDs []string
 		for _, h := range AwsProvider.Infra.Status.Hosts {
@@ -200,15 +199,24 @@ var DeleteFuncMap = map[ActionName]func(provider *AwsProvider){
 			for _, instance := range instances {
 				instanceIDs = append(instanceIDs, instance.InstanceID)
 			}
+			logger.Debug("instance ids %v", instanceIDs)
 		}
 
 		if len(instanceIDs) != 0 {
 			ShouldBeDeleteInstancesIDs.SetValue(AwsProvider.Infra.Status, strings.Join(instanceIDs, ","))
 		}
 		AwsProvider.DeleteResource(ShouldBeDeleteInstancesIDs, AwsProvider.DeleteInstances)
+
+		// wait instance resource deleted.
 	},
-	DeleteSecurityGroup: func(AwsProvider *AwsProvider) {
-		AwsProvider.DeleteResource(SecurityGroupID, AwsProvider.DeleteSecurityGroup)
+	DeleteSubnets: func(provider *AwsProvider) {
+		provider.DeleteResource(SecurityGroupID, provider.DeleteSubnets)
+	},
+	DeleteSecurityGroup: func(provider *AwsProvider) {
+		provider.DeleteResource(SecurityGroupID, provider.DeleteSecurityGroup)
+	},
+	DeleteGateway: func(provider *AwsProvider) {
+		provider.DeleteResource(SecurityGroupID, provider.DeleteGateway)
 	},
 	DeleteVPC: func(AwsProvider *AwsProvider) {
 		AwsProvider.DeleteResource(VpcID, AwsProvider.DeleteVPC)
@@ -219,7 +227,8 @@ func (a *AwsProvider) ClearCluster() {
 	todolist := []ActionName{
 		//ReleaseEIP,
 		ClearInstances,
-		DeleteVSwitch,
+		DeleteSubnets,
+		DeleteGateway,
 		DeleteSecurityGroup,
 		DeleteVPC,
 	}
@@ -253,15 +262,16 @@ func (a *AwsProvider) Reconcile() error {
 	return nil
 }
 
-func (a *AwsProvider) Apply() error {
-	if err := v1beta1.DefaultInfra(a.Infra, DefaultInfra); err != nil {
+func (a *AwsProvider) Apply() (err error) {
+	if err = v1beta1.DefaultInfra(a.Infra, DefaultInfra); err != nil {
 		return err
 	}
 	//if err := DefaultValidate(a.Infra, DefaultInfra); len(err) != 0 {
 	//	return err.ToAggregate()
 	//}
-
-	return a.Reconcile()
+	// a.ClearCluster()
+	err = a.Reconcile()
+	return err
 }
 
 func DefaultInfra(infra *v1beta1.Infra) error {
