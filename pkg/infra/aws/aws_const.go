@@ -91,6 +91,7 @@ const (
 	EgressGatewayID            ResourceName = AwsDomain + "EgressGatewayID"
 	SecurityGroupID            ResourceName = AwsDomain + "SecurityGroupID"
 	ZoneID                     ResourceName = AwsDomain + "ZoneID"
+	KeyPairPath                ResourceName = AwsDomain + "KeyPairPath"
 	KeyPairID                  ResourceName = AwsDomain + "KeyPairID"
 	ShouldBeDeleteInstancesIDs ResourceName = "ShouldBeDeleteInstancesIDs"
 )

@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/docker/docker/pkg/homedir"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -199,4 +200,29 @@ func TestEc2Helper_BindIngressGatewayToVpc(t *testing.T) {
 	isBind, err := helper.BindIngressGatewayToVpc("vpc-00157e2f5c8f0d87d")
 	assert.NoError(t, err)
 	t.Log("is_bind", isBind)
+}
+
+func TestEc2Helper_CreateKeyPair(t *testing.T) {
+	helper := GetHelper(loadConfig())
+	keypair, err := helper.Svc.CreateKeyPair(&ec2.CreateKeyPairInput{
+		KeyName: aws.String("sealos-test02"),
+	})
+	assert.NoError(t, err)
+	dir := homedir.Get()
+	t.Log("dir", dir)
+	f, err := os.Create(homedir.Get() + "/.ssh/aaa/.sealos.pk")
+	assert.NoError(t, err)
+	defer f.Close()
+	writeString, err := f.WriteString(*keypair.KeyMaterial)
+	assert.NoError(t, err)
+	err = f.Sync()
+	assert.NoError(t, err)
+	t.Log(writeString)
+
+}
+
+func TestEc2Helper_CheckAll(t *testing.T) {
+	helper := GetHelper(loadConfig())
+	terminate := helper.CheckAllInstanceIsTerminate([]string{"i-0a2939f9a4f2004ac", "i-0972826835574dc27"})
+	t.Log(terminate)
 }

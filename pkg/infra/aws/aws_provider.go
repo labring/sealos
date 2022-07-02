@@ -20,11 +20,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/labring/sealos/pkg/utils/rand"
-	"k8s.io/apimachinery/pkg/util/validation/field"
-	"strings"
-
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"strings"
+	"time"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -199,15 +199,19 @@ var DeleteFuncMap = map[ActionName]func(provider *AwsProvider){
 			for _, instance := range instances {
 				instanceIDs = append(instanceIDs, instance.InstanceID)
 			}
-			logger.Debug("instance ids %v", instanceIDs)
 		}
-
-		if len(instanceIDs) != 0 {
-			ShouldBeDeleteInstancesIDs.SetValue(AwsProvider.Infra.Status, strings.Join(instanceIDs, ","))
+		logger.Info("no instance need to clear.")
+		if len(instanceIDs) == 0 {
+			return
 		}
+		ShouldBeDeleteInstancesIDs.SetValue(AwsProvider.Infra.Status, strings.Join(instanceIDs, ","))
 		AwsProvider.DeleteResource(ShouldBeDeleteInstancesIDs, AwsProvider.DeleteInstances)
-
-		// wait instance resource deleted.
+		for {
+			if AwsProvider.EC2Helper.CheckAllInstanceIsTerminate(instanceIDs) {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
 	},
 	DeleteSubnets: func(provider *AwsProvider) {
 		provider.DeleteResource(SecurityGroupID, provider.DeleteSubnets)
@@ -248,7 +252,6 @@ func (a *AwsProvider) Reconcile() error {
 		CreateVPC,
 		CreateSecurityGroup,
 		ReconcileInstance,
-		// BindEIP,
 	}
 
 	for _, actionName := range todolist {
@@ -269,8 +272,8 @@ func (a *AwsProvider) Apply() (err error) {
 	//if err := DefaultValidate(a.Infra, DefaultInfra); len(err) != 0 {
 	//	return err.ToAggregate()
 	//}
-	// a.ClearCluster()
-	err = a.Reconcile()
+	a.ClearCluster()
+	// err = a.Reconcile()
 	return err
 }
 

@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"strconv"
@@ -581,4 +582,31 @@ func (h *EC2Helper) GetMainRouteTable(vpcID string) (string, error) {
 		}
 	}
 	return "", errors.New("not found main route table.")
+}
+
+func (h *EC2Helper) CheckAllInstanceIsTerminate(instanceIDs []string) bool {
+	var ids []*string
+	for idx := range instanceIDs {
+		ids = append(ids, &instanceIDs[idx])
+	}
+
+	ins := make([]*ec2.Instance, 0)
+	err := h.Svc.DescribeInstancesPages(&ec2.DescribeInstancesInput{
+		InstanceIds: ids,
+	}, func(output *ec2.DescribeInstancesOutput, b bool) bool {
+		for idx := range output.Reservations {
+			ins = append(ins, output.Reservations[idx].Instances...)
+		}
+		return !b
+	})
+	if err != nil {
+		return false
+	}
+	for idx := range ins {
+		if *ins[idx].State.Code != AwsInstanceTerminatedCode {
+			logger.Info("instance_id %v, status code is %v, wait to terminated.", *ins[idx].InstanceId, *ins[idx].State.Code)
+			return false
+		}
+	}
+	return true
 }

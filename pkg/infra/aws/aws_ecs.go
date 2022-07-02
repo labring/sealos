@@ -17,11 +17,12 @@ package aws
 import (
 	"errors"
 	"fmt"
-	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/docker/docker/pkg/homedir"
 	"github.com/labring/sealos/pkg/utils/retry"
 	"k8s.io/apimachinery/pkg/util/net"
+	"os"
 	"strconv"
 	"strings"
 
@@ -309,16 +310,17 @@ func (a *AwsProvider) DeleteInstances() error {
 	if len(instanceIDs) == 0 {
 		return nil
 	}
-	request := &ec2.TerminateInstancesInput{}
-	var ids []*string
-	for _, id := range instanceIDs {
-		ids = append(ids, &id)
-	}
-	request.InstanceIds = ids
-	logger.Info("delete instance ids %v", request)
-	_, err := a.EC2Helper.Svc.TerminateInstances(request)
-	if err != nil {
-		return err
+
+	for idx := range instanceIDs {
+		input := &ec2.TerminateInstancesInput{
+			InstanceIds: []*string{
+				aws.String(instanceIDs[idx]),
+			},
+		}
+		_, err := a.EC2Helper.Svc.TerminateInstances(input)
+		if err != nil {
+			return err
+		}
 	}
 	ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, "")
 	if v1beta1.In(a.Infra.Status.Cluster.Master0ID, instanceIDs) {
@@ -336,14 +338,6 @@ func CreateDescribeInstancesTag(tags map[string]string) (instanceTags []*ec2.Fil
 		// tag:<key> in filter
 		k = "tag:" + k
 		instanceTags = append(instanceTags, &ec2.Filter{Name: aws.String(k), Values: aws.StringSlice([]string{v})})
-	}
-	return
-}
-
-func CreateInstanceDataDisk(dataDisks []v1beta1.InfraDisk, category string) (instanceDisks []ecs.RunInstancesDataDisk) {
-	for _, v := range dataDisks {
-		instanceDisks = append(instanceDisks,
-			ecs.RunInstancesDataDisk{Size: strconv.Itoa(v.Capacity), Category: category})
 	}
 	return
 }
@@ -406,7 +400,12 @@ func (a *AwsProvider) RunInstances(host *v1beta1.InfraHost, count int) error {
 		ids = append(ids, *instances[idx].InstanceId)
 	}
 	instancesIDs := strings.Join(ids, ",")
-	a.Infra.Status.Hosts[j].IDs += instancesIDs
+	if a.Infra.Status.Hosts[j].IDs != "" {
+		a.Infra.Status.Hosts[j].IDs += "," + instancesIDs
+	} else {
+		a.Infra.Status.Hosts[j].IDs += instancesIDs
+	}
+	logger.Info("create instanceIDs %v", instancesIDs)
 	return nil
 }
 
@@ -512,6 +511,20 @@ func (a *AwsProvider) CreateKeyPair() (err error) {
 	}
 
 	logger.Info("p key %s  keyMaterial is %s ", *keyPair.KeyFingerprint, *keyPair.KeyMaterial)
+	pkFile := homedir.Get() + "/.sealos.pk"
+	f, err := os.Create(pkFile)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.WriteString(*keyPair.KeyMaterial)
+	if err != nil {
+		return err
+	}
+	if err = f.Sync(); err != nil {
+		return err
+	}
+	KeyPairPath.SetValue(a.Infra.Status, pkFile)
 
 	KeyPairID.SetValue(a.Infra.Status, *keyPair.KeyPairId)
 	return
