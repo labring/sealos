@@ -6,9 +6,9 @@ env:
 
 on:
   push:
-    branches: "*"
+    branches: ["*"]
   pull_request:
-    branches: "*"
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "vendor/**"
@@ -98,3 +98,44 @@ jobs:
         with:
           name: sealctl-arm64
           path: dist/sealctl_linux_arm64/sealctl
+  test-coverage:
+    runs-on: ubuntu-latest
+    name: Test Coverage
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+          submodules: true
+    - name: Setup Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    - name: Install Dependencies
+      run: |
+        sudo apt-get install -y libgpgme-dev libdevmapper-dev
+        go install github.com/jstemmer/go-junit-report/v2@latest
+        go install github.com/t-yuki/gocover-cobertura
+    - name: Run Test
+      run: go test -coverprofile=coverage.txt -covermode count `go list ./... | grep -v tests` -v 2>&1 | tee test_output.txt
+    - name: Generate Coverage
+      run: gocover-cobertura < coverage.txt > coverage.cobertura.xml
+
+    - name: Code Coverage Summary Report
+      uses: irongut/CodeCoverageSummary@v1.2.0
+      with:
+        filename: coverage.cobertura.xml
+        badge: true
+        fail_below_min: false
+        format: markdown
+        hide_branch_rate: false
+        hide_complexity: false
+        indicators: true
+        output: both
+        thresholds: '50 80'
+
+    - name: Add Coverage PR Comment
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        path: code-coverage-results.md
