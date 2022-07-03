@@ -15,10 +15,12 @@
 GO := go
 GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
-	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE}
+	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
+	-extldflags "-static -fpic" \
+    -linkmode external
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
-	GO_LDFLAGS=
+	GO_LDFLAGS= " -s -w "
 endif
 GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -ldflags "$(GO_LDFLAGS)"
 
@@ -73,18 +75,7 @@ go.clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(BIN_DIR)
 
-.PHONY: go.tidy
-go.tidy:
-	@$(GO) mod tidy
-
 .PHONY: go.lint
 go.lint: tools.verify.golangci-lint
 	@echo "===========> Run golangci to lint source codes"
-	@$(TOOLS_DIR)/golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml
-
-.PHONY: go.format
-go.format: tools.verify.goimports
-	@echo "===========> Formating codes"
-	@$(FIND) -type f -name '*.go' | xargs gofmt -s -w
-	@$(FIND) -type f -name '*.go' | xargs $(TOOLS_DIR)/goimports -l -w -local $(ROOT_PACKAGE)
-	@$(GO) mod edit -fmt
+	golangci-lint run --build-tags=musl -c $(ROOT_DIR)/.golangci.yml --modules-download-mode=mod
