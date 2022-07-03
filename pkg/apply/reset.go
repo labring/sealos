@@ -48,7 +48,7 @@ func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {
 		clusterName: args.ClusterName,
 		cluster:     cluster,
 	}
-	if err := c.SetClusterResetArgs(args.ToRunArgs()); err != nil {
+	if err := c.SetClusterResetArgs(args); err != nil {
 		return nil, err
 	}
 	logger.Debug("write reset cluster file to local storage: %s", clusterPath)

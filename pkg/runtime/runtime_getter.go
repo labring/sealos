@@ -98,6 +98,10 @@ func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
 	return k.getRemoteInterface().IPVS(ip, k.getVipAndPort(), masters)
 }
 
+func (k *KubeadmRuntime) execIPVSClean(ip string) error {
+	return k.getRemoteInterface().IPVSClean(ip, k.getVipAndPort())
+}
+
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
