@@ -119,7 +119,6 @@ jobs:
       run: |
         go get github.com/t-yuki/gocover-cobertura
         gocover-cobertura < coverage.txt > coverage.cobertura.xml
-
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.2.0
       with:
@@ -132,10 +131,5 @@ jobs:
         indicators: true
         output: both
         thresholds: '50 80'
-
-    - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2
-      if: github.event_name == 'pull_request'
-      with:
-        recreate: true
-        path: code-coverage-results.md
+    - name: Adding Coverage Markdown
+      run: cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
