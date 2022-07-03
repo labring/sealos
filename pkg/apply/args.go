@@ -16,53 +16,32 @@ limitations under the License.
 
 package apply
 
-type RunArgs struct {
+type Cluster struct {
 	Masters     string
 	Nodes       string
-	User        string
-	Password    string
-	Port        uint16
-	Pk          string
-	PkPassword  string
 	ClusterName string
-	CustomEnv   []string
-	CustomCMD   []string
+}
+
+type SSH struct {
+	User       string
+	Password   string
+	Pk         string
+	PkPassword string
+	Port       uint16
+}
+
+type RunArgs struct {
+	Cluster
+	SSH
+	CustomEnv []string
+	CustomCMD []string
 }
 
 type ResetArgs struct {
-	Masters     string
-	Nodes       string
-	User        string
-	Password    string
-	Port        uint16
-	Pk          string
-	PkPassword  string
-	ClusterName string
-}
-
-func (a ResetArgs) ToRunArgs() *RunArgs {
-	return &RunArgs{
-		Masters:     a.Masters,
-		Nodes:       a.Nodes,
-		User:        a.User,
-		Password:    a.Password,
-		Port:        a.Port,
-		Pk:          a.Pk,
-		PkPassword:  a.PkPassword,
-		ClusterName: a.ClusterName,
-	}
+	Cluster
+	SSH
 }
 
 type ScaleArgs struct {
-	Masters     string
-	Nodes       string
-	ClusterName string
-}
-
-func (a ScaleArgs) ToRunArgs() *RunArgs {
-	return &RunArgs{
-		Masters:     a.Masters,
-		Nodes:       a.Nodes,
-		ClusterName: a.ClusterName,
-	}
+	Cluster
 }
