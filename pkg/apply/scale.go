@@ -77,7 +77,7 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 	}
 	masters, nodes := scaleArgs.Cluster.Masters, scaleArgs.Cluster.Nodes
 	if (!IsIPList(nodes) && nodes != "") || (!IsIPList(masters) && masters != "") {
-		return fmt.Errorf(" Parameter error: The current mode should submit iplist!")
+		return fmt.Errorf("parameter error: The current mode should submit iplist")
 	}
 	var hosts []v2.Host
 	var hasMaster bool
@@ -163,7 +163,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 	}
 	masters, nodes := scaleArgs.Cluster.Masters, scaleArgs.Cluster.Nodes
 	if (!IsIPList(nodes) && nodes != "") || (!IsIPList(masters) && masters != "") {
-		return fmt.Errorf(" Parameter error: The current mode should submit iplist!")
+		return fmt.Errorf("parameter error: The current mode should submit iplist")
 	}
 	//master0 machine cannot be deleted
 	if strings2.InList(cluster.GetMaster0IPAndPort(), strings.Split(masters, ",")) {
