@@ -100,7 +100,6 @@ jobs:
           path: dist/sealctl_linux_arm64/sealctl
   test-coverage:
     runs-on: ubuntu-latest
-    name: Test Coverage
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -114,11 +113,12 @@ jobs:
       run: |
         sudo apt-get install -y libgpgme-dev libdevmapper-dev
         go install github.com/jstemmer/go-junit-report/v2@latest
-        go install github.com/t-yuki/gocover-cobertura
     - name: Run Test
       run: go test -coverprofile=coverage.txt -covermode count `go list ./... | grep -v tests` -v 2>&1 | tee test_output.txt
     - name: Generate Coverage
-      run: gocover-cobertura < coverage.txt > coverage.cobertura.xml
+      run: |
+        go get github.com/t-yuki/gocover-cobertura
+        gocover-cobertura < coverage.txt > coverage.cobertura.xml
 
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.2.0
