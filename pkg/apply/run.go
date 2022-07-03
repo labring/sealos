@@ -102,28 +102,28 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if len(imageList) == 0 {
 		return fmt.Errorf("image can not be empty")
 	}
-	if args.ClusterName == "" {
+	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
 
 	r.cluster.Spec.Env = args.CustomEnv
 	r.cluster.Spec.Command = args.CustomCMD
-	r.cluster.Spec.SSH.User = args.User
-	r.cluster.Spec.SSH.Pk = args.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.PkPassword
-	r.cluster.Spec.SSH.Port = args.Port
-	if args.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.Password
+	r.cluster.Spec.SSH.User = args.SSH.User
+	r.cluster.Spec.SSH.Pk = args.SSH.Pk
+	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+	r.cluster.Spec.SSH.Port = args.SSH.Port
+	if args.SSH.Password != "" {
+		r.cluster.Spec.SSH.Passwd = args.SSH.Password
 	}
 
 	r.cluster.Spec.Image = imageList
-	if err := PreProcessIPList(args); err != nil {
+	if err := PreProcessIPList(&args.Cluster); err != nil {
 		return err
 	}
 
-	if len(args.Masters) > 0 {
-		masters := strings2.SplitRemoveEmpty(args.Masters, ",")
-		nodes := strings2.SplitRemoveEmpty(args.Nodes, ",")
+	if len(args.Cluster.Masters) > 0 {
+		masters := strings2.SplitRemoveEmpty(args.Cluster.Masters, ",")
+		nodes := strings2.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
@@ -138,25 +138,26 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	logger.Debug("cluster info : %v", r.cluster)
 	return nil
 }
-func (r *ClusterArgs) SetClusterResetArgs(args *RunArgs) error {
-	if args.ClusterName == "" {
+
+func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
+	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-	r.cluster.Spec.SSH.User = args.User
-	r.cluster.Spec.SSH.Pk = args.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.PkPassword
-	r.cluster.Spec.SSH.Port = args.Port
-	if args.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.Password
+	r.cluster.Spec.SSH.User = args.SSH.User
+	r.cluster.Spec.SSH.Pk = args.SSH.Pk
+	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+	r.cluster.Spec.SSH.Port = args.SSH.Port
+	if args.SSH.Password != "" {
+		r.cluster.Spec.SSH.Passwd = args.SSH.Password
 	}
 
-	if err := PreProcessIPList(args); err != nil {
+	if err := PreProcessIPList(&args.Cluster); err != nil {
 		return err
 	}
 
-	if len(args.Masters) > 0 {
-		masters := strings2.SplitRemoveEmpty(args.Masters, ",")
-		nodes := strings2.SplitRemoveEmpty(args.Nodes, ",")
+	if len(args.Cluster.Masters) > 0 {
+		masters := strings2.SplitRemoveEmpty(args.Cluster.Masters, ",")
+		nodes := strings2.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})

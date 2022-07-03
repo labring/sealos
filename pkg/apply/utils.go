@@ -37,7 +37,7 @@ func initCluster(clusterName string) *v2.Cluster {
 	return cluster
 }
 
-func PreProcessIPList(joinArgs *RunArgs) error {
+func PreProcessIPList(joinArgs *Cluster) error {
 	if err := iputils.AssemblyIPList(&joinArgs.Masters); err != nil {
 		return err
 	}
