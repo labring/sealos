@@ -17,9 +17,10 @@ package cmd
 import (
 	"net"
 
+	"github.com/labring/sealos/pkg/utils/hosts"
+
 	"github.com/labring/lvscare/care"
 	"github.com/labring/lvscare/service"
-	"github.com/labring/sealos/pkg/hosts"
 	"github.com/labring/sealos/pkg/utils/constants"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/iputils"

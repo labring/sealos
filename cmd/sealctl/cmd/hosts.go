@@ -19,11 +19,12 @@ package cmd
 import (
 	"os"
 
+	"github.com/labring/sealos/pkg/utils/hosts"
+
 	"github.com/labring/sealos/pkg/utils/constants"
 
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/hosts"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
