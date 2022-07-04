@@ -91,3 +91,8 @@ func (b *bash) CleanRegistryBash() string {
 func NewBash(clusterName string, render map[string]string) Bash {
 	return &bash{data: NewData(clusterName), render: render}
 }
+
+// add sudo
+func AddSudo(cmd string) string {
+	return strings.Replace(strings.Replace(cmd, "cd", "sudo cd", 1), "bash", "sudo bash", 1)
+}

@@ -103,6 +103,9 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				fileEg.Go(func() error {
 					if img.Type == v2.RootfsImage {
 						logger.Debug("send rootfs images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, img.ImageName, img.Type)
+						// when user is not root,first use func RemoteDirExist to check target
+						// then mkdir target
+						// then copy file.
 						err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, img.MountPoint, target)
 						if err != nil {
 							return fmt.Errorf("copy container %s rootfs failed %v", img.Name, err)
@@ -117,6 +120,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			for _, cInfo := range f.images {
 				if cInfo.Type == v2.AddonsImage {
 					logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
+					// Refer to the above
 					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
 					if err != nil {
 						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
@@ -128,11 +132,23 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				if checkBash == "" {
 					return nil
 				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
-					return err
-				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
-					return err
+				// bashcmd like  cd ***;bash ***.sh
+				// change to sudo cd ***;sudo bash ***.sh
+				if cluster.Spec.SSH.User != "root" {
+					if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, constants.AddSudo(check.CheckBash())), constants.AddSudo(runtime.ApplyImageShimCMD(target))); err != nil {
+						return err
+					}
+					// Refer to the above
+					if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, constants.AddSudo(check.InitBash()))); err != nil {
+						return err
+					}
+				} else {
+					if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
+						return err
+					}
+					if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
+						return err
+					}
 				}
 			}
 			return nil
