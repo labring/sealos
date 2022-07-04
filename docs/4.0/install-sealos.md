@@ -18,6 +18,6 @@ chmod a+x buildah && mv buildah /usr/bin
 ###  install sealos
 
 ```shell
-wget -c https://sealyun.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
+wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \
 chmod +x sealos && mv sealos /usr/bin 
 ```
