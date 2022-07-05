@@ -20,14 +20,14 @@ import (
 	"path"
 	"sync"
 
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/ssh"
 	"github.com/labring/sealos/pkg/utils/strings"
+
+	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 func (k *KubeadmRuntime) InitMaster0() error {

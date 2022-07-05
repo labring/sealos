@@ -94,6 +94,40 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/lvscare
+    id: lvscare
+    hooks:
+      post: upx "{{ .Path }}"
+    binary: lvscare
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/image-cri-shim
+    id: image-cri-shim
+    hooks:
+      post: upx "{{ .Path }}"
+    binary: image-cri-shim
+    goos:
+      - linux
+    goarch:
+      - arm64
+      - amd64
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
 
 #archives:
 #  - replacements:

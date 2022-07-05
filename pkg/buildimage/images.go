@@ -19,15 +19,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/tmpl"
+	"github.com/labring/sealos/pkg/utils/yaml"
 
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/buildimage/manifests"
-	"github.com/labring/sealos/pkg/utils/file"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-	"github.com/labring/sealos/pkg/utils/tmpl"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 func ParseYamlImages(srcPath string) ([]string, error) {

@@ -20,10 +20,10 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth"
 	"github.com/labring/sealos/pkg/registry/distributionpkg/client/auth/challenge"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // comment this const because not used

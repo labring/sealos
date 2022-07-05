@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/ssh"
 )
 
 func renderTemplate(tmpl *template.Template, data map[string]interface{}) (string, error) {

@@ -15,15 +15,15 @@
 package processor
 
 import (
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/confirm"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/utils/strings"
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/confirm"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
-	"github.com/labring/sealos/pkg/utils/strings"
 )
 
 type Interface interface {

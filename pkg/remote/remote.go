@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"text/template"
 
-	"github.com/labring/sealos/pkg/utils/ssh"
+	"github.com/labring/sealos/pkg/ssh"
 )
 
 type Interface interface {

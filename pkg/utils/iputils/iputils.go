@@ -101,6 +101,11 @@ func IsIpv4(ip string) bool {
 	return true
 }
 
+// IsIPv6 returns if netIP is IPv6.
+func IsIPv6(netIP net.IP) bool {
+	return netIP != nil && netIP.To4() == nil
+}
+
 func CheckDomain(domain string) bool {
 	_, errURL := url.Parse(domain)
 	return errURL == nil

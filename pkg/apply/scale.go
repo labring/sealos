@@ -19,17 +19,17 @@ import (
 	"strconv"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
+	"github.com/labring/sealos/pkg/constants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 // NewScaleApplierFromArgs will filter ip list from command parameters.

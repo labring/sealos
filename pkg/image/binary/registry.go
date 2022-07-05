@@ -19,9 +19,9 @@ package binary
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/image/types"
-
 	"github.com/labring/sealos/pkg/utils/exec"
+
+	"github.com/labring/sealos/pkg/image/types"
 )
 
 type RegistryService struct {

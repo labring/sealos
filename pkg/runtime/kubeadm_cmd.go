@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )

@@ -20,9 +20,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/utils/constants"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

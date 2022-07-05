@@ -23,11 +23,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 	"sigs.k8s.io/yaml"
-
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 func Unmarshal(path string) (map[string]interface{}, error) {

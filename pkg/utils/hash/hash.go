@@ -23,9 +23,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/davecgh/go-spew/spew"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func MD5(body []byte) string {

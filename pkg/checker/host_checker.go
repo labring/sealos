@@ -19,10 +19,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/ssh"
 )
 
 type HostChecker struct {

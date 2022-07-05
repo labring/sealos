@@ -24,10 +24,9 @@ import (
 	"sync"
 
 	"github.com/labring/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/pkg/passwd"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
