@@ -17,68 +17,192 @@ limitations under the License.
 package runtime
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
-	"path"
-	"strconv"
 	"strings"
+	"time"
 
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
+	v1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/tools/clientcmd"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/util/cert"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-type CommandType string
-
-const InitMaster CommandType = "initMaster"
-const JoinMaster CommandType = "joinMaster"
-const JoinNode CommandType = "joinNode"
-
-func vlogToStr(vlog int) string {
-	str := strconv.Itoa(vlog)
-	return " -v " + str
+type Token struct {
+	JoinToken                string       `json:"joinToken,omitempty"`
+	DiscoveryTokenCaCertHash []string     `json:"discoveryTokenCaCertHash,omitempty"`
+	CertificateKey           string       `json:"certificateKey,omitempty"`
+	Expires                  *metav1.Time `json:"expires,omitempty"`
 }
 
-func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) {
-	const (
-		InitMaster115Lower = `kubeadm init --config=%s --experimental-upload-certs`
-		JoinMaster115Lower = "kubeadm join %s:6443 --token %s   %s --experimental-control-plane --certificate-key %s"
-		JoinNode115Lower   = "kubeadm join %s:6443 --token %s   %s"
+const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-		InitMaser115Upper  = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print` // --upload-certs --skip-certificate-key-print --skip-token-print
-		JoinMaster115Upper = "kubeadm join --config=%s"
-		JoinNode115Upper   = "kubeadm join --config=%s"
-	)
-
-	initConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
-	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
-	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
-
-	var discoveryTokens []string
-	for _, data := range k.getTokenCaCertHash() {
-		discoveryTokens = append(discoveryTokens, "--discovery-token-ca-cert-hash "+data)
+func Default() (*Token, error) {
+	token := &Token{}
+	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
+		key, _ := CreateCertificateKey()
+		token.CertificateKey = key
+		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
+		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
+		tokens := ListToken()
+		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s"
+		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
+		afterTokens := ListToken()
+		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())
+		if diff.Len() == 1 {
+			token.JoinToken = diff.List()[0]
+			hashs, err := discoveryTokenCaCertHash(defaultAdminConf)
+			if err != nil {
+				return nil, err
+			}
+			token.DiscoveryTokenCaCertHash = hashs
+			for _, t := range afterTokens {
+				if t.Token.String() == token.JoinToken {
+					token.Expires = t.Expires
+					break
+				}
+			}
+			return token, nil
+		}
+		return nil, fmt.Errorf("token list found more than one")
 	}
 
-	cmds := map[CommandType]string{
-		InitMaster: fmt.Sprintf(InitMaster115Lower, initConfigPath),
-		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
-		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
+	return nil, fmt.Errorf("kubeadm command not found or /etc/kubernetes/admin.conf not exist")
+}
+
+func ListToken() BootstrapTokens {
+	const tokenListShell = "kubeadm token list -o yaml"
+	data, _ := exec.RunBashCmd(tokenListShell)
+	return processTokenList(data)
+}
+
+func processTokenList(data string) BootstrapTokens {
+	var slice []v1.BootstrapToken
+	if data != "" {
+		jsons := yaml.ToJSON([]byte(data))
+		for _, j := range jsons {
+			var to v1.BootstrapToken
+			_ = json.Unmarshal([]byte(j), &to)
+			slice = append(slice, to)
+		}
 	}
-	//other version >= 1.15.x
-	if versionutil.Compare(version, V1150) {
-		cmds[InitMaster] = fmt.Sprintf(InitMaser115Upper, initConfigPath)
-		cmds[JoinMaster] = fmt.Sprintf(JoinMaster115Upper, joinMasterConfigPath)
-		cmds[JoinNode] = fmt.Sprintf(JoinNode115Upper, joinNodeConfigPath)
+	var result []v1.BootstrapToken
+	for _, token := range slice {
+		if token.Expires != nil {
+			t := time.Now().Unix()
+			ex := token.Expires.Time.Unix()
+			if ex < t {
+				continue
+			}
+			if len(token.Usages) == 0 || len(token.Groups) == 0 {
+				continue
+			}
+		}
+		result = append(result, token)
+	}
+	return result
+}
+
+type BootstrapTokens []v1.BootstrapToken
+
+func (c BootstrapTokens) ToStrings() sets.String {
+	s := sets.NewString()
+	for _, token := range c {
+		s.Insert(token.Token.String())
+	}
+	return s
+}
+
+func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
+	tlsBootstrapCfg, err := clientcmd.LoadFromFile(adminPath)
+	if err != nil {
+		return nil, err
+	}
+	// load the default cluster config
+	clusterConfig := GetClusterFromKubeConfig(tlsBootstrapCfg)
+	if clusterConfig == nil {
+		return nil, errors.New("failed to get default cluster config")
 	}
 
-	v, ok := cmds[name]
-	if !ok {
-		logger.Error("get kubeadm command failed %v", cmds)
-		return ""
+	// load CA certificates from the kubeconfig (either from PEM data or by file path)
+	var caCerts []*x509.Certificate
+	if clusterConfig.CertificateAuthorityData != nil {
+		caCerts, err = cert.ParseCertsPEM(clusterConfig.CertificateAuthorityData)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse CA certificate from kubeconfig")
+		}
+	} else if clusterConfig.CertificateAuthority != "" {
+		caCerts, err = cert.CertsFromFile(clusterConfig.CertificateAuthority)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to load CA certificate referenced by kubeconfig")
+		}
+	} else {
+		return nil, errors.New("no CA certificates found in kubeconfig")
 	}
 
-	if name == InitMaster || name == JoinMaster {
-		return fmt.Sprintf("%s%s%s", v, vlogToStr(k.vlog), " --ignore-preflight-errors=SystemVerification")
+	// hash all the CA certs and include their public key pins as trusted values
+	publicKeyPins := make([]string, 0, len(caCerts))
+	for _, caCert := range caCerts {
+		publicKeyPins = append(publicKeyPins, Hash(caCert))
 	}
+	return publicKeyPins, nil
+}
 
-	return fmt.Sprintf("%s%s", v, vlogToStr(k.vlog))
+// CreateRandBytes returns a cryptographically secure slice of random bytes with a given size
+func CreateRandBytes(size uint32) ([]byte, error) {
+	bytes := make([]byte, size)
+	if _, err := rand.Read(bytes); err != nil {
+		return nil, err
+	}
+	return bytes, nil
+}
+
+const (
+	CertificateKeySize = 32
+)
+
+//CreateCertificateKey returns a cryptographically secure random key
+func CreateCertificateKey() (string, error) {
+	randBytes, err := CreateRandBytes(CertificateKeySize)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(randBytes), nil
+}
+
+// GetClusterFromKubeConfig returns the default Infra of the specified KubeConfig
+func GetClusterFromKubeConfig(config *clientcmdapi.Config) *clientcmdapi.Cluster {
+	// If there is an unnamed cluster object, use it
+	if config.Clusters[""] != nil {
+		return config.Clusters[""]
+	}
+	if config.Contexts[config.CurrentContext] != nil {
+		return config.Clusters[config.Contexts[config.CurrentContext].Cluster]
+	}
+	return nil
+}
+
+const (
+	// formatSHA256 is the prefix for pins that are full-length SHA-256 hashes encoded in base 16 (hex)
+	formatSHA256 = "sha256"
+)
+
+// Hash calculates the SHA-256 hash of the Subject Public Key Information (SPKI)
+// object in an x509 certificate (in DER encoding). It returns the full hash as a
+// hex encoded string (suitable for passing to Set.Allow).
+func Hash(certificate *x509.Certificate) string {
+	spkiHash := sha256.Sum256(certificate.RawSubjectPublicKeyInfo)
+	return formatSHA256 + ":" + strings.ToLower(hex.EncodeToString(spkiHash[:]))
 }

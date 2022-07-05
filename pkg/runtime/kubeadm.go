@@ -27,7 +27,6 @@ import (
 	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta2"
 	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta3"
-	"github.com/labring/sealos/pkg/token"
 	"github.com/labring/sealos/pkg/utils/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -183,7 +182,7 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 	if err = fileutil.WriteFile(tokenFile, []byte(data)); err != nil {
 		return err
 	}
-	var t token.Token
+	var t Token
 	err = json.Unmarshal([]byte(data), &t)
 	if err != nil {
 		return err
@@ -206,7 +205,7 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 			if err != nil {
 				return err
 			}
-			var t token.Token
+			var t Token
 			err = json.Unmarshal(data, &t)
 			if err != nil {
 				return err

@@ -3,68 +3,65 @@
 根据Clusterfile里的定义去申请IaaS资源，保障IaaS资源与Clusterfile中的定义保持终态一致
 
 ```yaml
-apiVersion: xxx 
+apiVersion: xxx
 kind: Infra
 metadata:
-  name: alicloud-infra-demo
+  name: aws-infra-demo
+  annotations:
+    sealos.io/VpcID: v-xxxxx
+    sealos.io/RouteID: v-xxxxx
+    sealos.io/IgwID: v-xxxxxx
+    sealos.io/EgwID: v-xxxxxx
+    sealos.io/SubnetID: v-xxxxx
+    sealos.io/SecurityGroupID: v-xxxxx
+    sealos.io/EIPID: v-xxxxx
 spec:
   provider: AliyunProvider
   credential:
     accessKey: xxx
     accessSecret: xxx
   cluster:
-    isSeize: true
     regionIds: [cn-hangzhou, cn-shanghai]
-    zoneIds: [cn-hangzhou-a, cn-hangzhou-b] # If the value is empty, a random value will be used.
-    annotations: #set default value,if exist not delete resource
-        sealos.io/VpcID: v-xxxxx
-        sealos.io/VSwitchID: v-xxxxx
-        sealos.io/SecurityGroupID: v-xxxxx
-    accessChannels: # If all access channels are the same, it will be filled.
+    zoneIds: [cn-hangzhou-a, cn-hangzhou-b]
+    accessChannels:
       ssh:
-        passwd: xxx #If the passwd is empty, a random password will be generated.
+        user: ubuntu
+        pk: $homedir/.ssh/id_rsa
+        passwd:
         port: 22
   hosts:
-    - roles: [master, aaa, bbb]
-      count: 3
-      cpu: 4
-      memory: 4
-      arch: amd64 # ENUM: amd64/arm64 (NOTE: the default value is amd64)
-	  ecsType: "ecs.n1.medium" #fixed ecs type
-      os: # 默认 CentOS 7.6
-        name: CentOS # ENUM: CentOS/Ubuntu/Debain and so on.
-        version: 7.6
-        id: xxx # 允许用户指定已有的镜像ID （Optional）
+    - roles: [master, aaa, bbb] # required
+      count: 3 # Required
+      resources:
+        cpu: 2
+        memory: 4
+      # ENUM: amd64/arm64 (NOTE: the default value is amd64)
+      arch: amd64
+      image: ubuntu:20.04
       disks:
-        - capacity: 100 # The first disk is system disk. Otherwise, it is a data disk.
-		  category: cloud_ssd
         - capacity: 50
-          category: cloud_essd
+          # ENUM: system/data
+          type: system
 status:
   cluster:
+    id: cluster-uuid
+    name: regionID-zoneID
     regionId: cn-hangzhou
     zoneId: cn-hangzhou-a
-    annotations:
-        sealos.io/VpcID: v-xxxxx
-        sealos.io/VSwitchID: v-xxxxx
-        sealos.io/SecurityGroupID: v-xxxxx
-        sealos.io/EIPID: v-xxxxx
-    spotStrategy: SpotAsPriceGo
     eip: 10.0.x.x
-	master0ID: xxxx
+    master0ID: xxxx
     master0InternalIP: 192.168.x.x
   hosts:
-	- ready: true
+    - ready: true
       roles: [master,sss]
-      IDs: xxx,xxxx,xxx
-      IPs: xxx,xxx,xxx
+      InternalIPs:
+        instance_id: []string{ip1, ip2}
       instanceType: xxxx
       arch: arm64
       imageID: xxxxx
-      systemCategory: xxxx
-      dataCategory: xxxx
 ```
 
+用户要输入的最基本参数：credential中的密钥以及hosts(roles, count, cpu, memory). 其他参数都可以默认。
 
 ### aliyun 模块
 

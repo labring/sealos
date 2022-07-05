@@ -17,10 +17,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/labring/sealos/pkg/runtime"
+
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/labring/sealos/pkg/token"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -29,7 +30,7 @@ func newTokenCmd() *cobra.Command {
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
-			t, err := token.Default()
+			t, err := runtime.Default()
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)
