@@ -25,22 +25,19 @@ spec:
     zoneIds: [cn-hangzhou-a, cn-hangzhou-b]
     accessChannels:
       ssh:
-        username: ubuntu
-        # ENUM: passfile/pkfile
-        type: pkfile
-        data: $homedir/.ssh/seolos.pk or $homedir/.ssh/seolos.pass
+        user: ubuntu
+        pk: $homedir/.ssh/id_rsa
+        passwd:
         port: 22
   hosts:
     - roles: [master, aaa, bbb] # required
       count: 3 # Required
-      cpu: 2
-      memory: 4
+      resources:
+        cpu: 2
+        memory: 4
       # ENUM: amd64/arm64 (NOTE: the default value is amd64)
       arch: amd64
-      os:
-        # ENUM: CentOS/Ubuntu/Debain and so on.
-        name: Ubuntu
-        version: 20.04
+      image: ubuntu:20.04
       disks:
         - capacity: 50
           # ENUM: system/data
