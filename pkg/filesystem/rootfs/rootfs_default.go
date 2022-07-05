@@ -23,18 +23,19 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/utils/exec"
+	file2 "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/exec"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/ssh"
 )
 
 type defaultRootfs struct {
@@ -68,7 +69,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	for _, cInfo := range f.images {
 		src := cInfo
 		eg.Go(func() error {
-			if !file.IsExist(src.MountPoint) {
+			if !file2.IsExist(src.MountPoint) {
 				logger.Debug("Image %s not exist,render env continue", src.ImageName)
 				return nil
 			}
@@ -76,7 +77,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			if err != nil {
 				return errors.Wrap(err, "render env to rootfs failed")
 			}
-			dirs, err := file.StatDir(src.MountPoint, true)
+			dirs, err := file2.StatDir(src.MountPoint, true)
 			if err != nil {
 				return errors.Wrap(err, "get rootfs files failed")
 			}
@@ -185,7 +186,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	for _, ip := range ipList {
 		for _, dir := range []string{renderEtc, renderChart, renderManifests} {
 			logger.Debug("render env dir: %s", dir)
-			if file.IsExist(dir) {
+			if file2.IsExist(dir) {
 				err := p.RenderAll(ip, dir)
 				if err != nil {
 					return err

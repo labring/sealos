@@ -18,11 +18,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (

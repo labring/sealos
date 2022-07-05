@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/exec"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/ssh"
 	"github.com/labring/sealos/test/testhelper/settings"
 
 	"github.com/onsi/gomega"

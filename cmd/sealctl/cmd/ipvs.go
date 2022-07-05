@@ -17,15 +17,14 @@ package cmd
 import (
 	"net"
 
-	"github.com/labring/sealos/pkg/utils/hosts"
+	"github.com/labring/lvscare/pkg/route"
 
 	"github.com/labring/lvscare/care"
-	"github.com/labring/lvscare/service"
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/labring/sealos/pkg/utils/hosts"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/route"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +36,7 @@ func newIPVSCmd() *cobra.Command {
 		Short: "sealos create or care local ipvs lb",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if clean {
-				lvs := service.BuildLvscare()
+				lvs := care.BuildLvscare()
 				if err := lvs.DeleteVirtualServer(care.LVS.VirtualServer, false); err != nil {
 					return err
 				}

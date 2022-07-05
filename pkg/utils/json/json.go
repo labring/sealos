@@ -17,10 +17,9 @@ limitations under the License.
 package json
 
 import (
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
-
-	"github.com/labring/sealos/pkg/utils/file"
 )
 
 func Unmarshal(path string) (map[string]interface{}, error) {

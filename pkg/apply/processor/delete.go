@@ -18,9 +18,11 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/sync/errgroup"
-
+	"github.com/labring/sealos/pkg/constants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/filesystem"
@@ -28,8 +30,6 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 var ForceDelete bool

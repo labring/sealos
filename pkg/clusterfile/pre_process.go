@@ -17,11 +17,11 @@ package clusterfile
 import (
 	"errors"
 
+	"github.com/labring/sealos/pkg/constants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/decode"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 type PreProcessor interface {
@@ -68,7 +68,7 @@ func (c *ClusterFile) DecodeCluster(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeConfigs(data []byte) error {
-	configs, err := decode.CRDForBytes(data, constants.Config)
+	configs, err := CRDForBytes(data, constants.Config)
 	if err != nil {
 		return err
 	}

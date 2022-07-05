@@ -19,6 +19,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/exec"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/maps"
+
 	"github.com/pkg/errors"
 	"k8s.io/client-go/util/homedir"
 
@@ -28,11 +34,6 @@ import (
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/exec"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 type Interface interface {

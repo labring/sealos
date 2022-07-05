@@ -17,10 +17,9 @@ limitations under the License.
 package image
 
 import (
-	"github.com/pkg/errors"
-
 	"github.com/labring/sealos/pkg/utils/exec"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/pkg/errors"
 )
 
 func initBuildah() (bool, error) {

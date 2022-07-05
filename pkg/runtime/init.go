@@ -18,10 +18,11 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/cert"
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/pkg/cert"
 )
 
 func (k *KubeadmRuntime) ConfigInitKubeadmToMaster0() error {

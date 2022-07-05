@@ -17,9 +17,8 @@ package huawei
 import (
 	"errors"
 
-	"github.com/labring/sealos/pkg/utils/rand"
-
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 
 	v2 "github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2"
 	"github.com/huaweicloud/huaweicloud-sdk-go-v3/services/ecs/v2/model"

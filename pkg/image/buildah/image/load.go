@@ -19,6 +19,8 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -28,7 +30,6 @@ import (
 	"github.com/pkg/errors"
 
 	labring_types "github.com/labring/sealos/pkg/image/types"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func (d *Service) Load(archiveName string) error {

@@ -21,19 +21,20 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/json"
-
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta2"
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta3"
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 	"github.com/labring/sealos/pkg/utils/yaml"
+
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
+	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta2"
+	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta3"
 )
 
 const (

@@ -24,6 +24,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -38,8 +41,6 @@ import (
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/registry"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func (d *Service) Build(options *types.BuildOptions, contextDir, imageName string) error {
