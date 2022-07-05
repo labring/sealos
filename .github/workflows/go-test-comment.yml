@@ -1,0 +1,22 @@
+name: "CI Comment on PR Test Done"
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+jobs:
+  go-test-coverage-comment:
+    runs-on: ubuntu-20.04
+    if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: 'Download Coverage Artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage-data
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: github.event_name == 'pull_request'
+        with:
+          recreate: true
+          path: code-coverage-results.md
