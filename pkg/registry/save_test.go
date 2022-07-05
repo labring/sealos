@@ -15,31 +15,12 @@
 package registry
 
 import (
-	"context"
 	"reflect"
 	"testing"
-
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/docker/docker/api/types"
 )
-
-func TestSaveImages(t *testing.T) {
-	//tests := []string{"quay.io/tigera/operator:v1.25.3"}
-	tests := []string{"47.94.15.171:5000/11c-code/11c-image-hook:0bb9121b"}
-	is := NewImageSaver(context.Background(), 5, map[string]types.AuthConfig{
-		"47.94.15.171:5000": {
-			Username: "admin",
-			Password: "passw0rd",
-		},
-	}, true)
-	images, err := is.SaveImages(tests, "/Users/cuisongliu/DockerImages/registry", v1.Platform{OS: "linux", Architecture: "amd64"})
-	if err != nil {
-		t.Error(err)
-	}
-	t.Logf("%+v", images)
-}
 
 func Test_splitDockerDomain(t *testing.T) {
 	tests := []struct {
