@@ -21,13 +21,11 @@ import (
 	"fmt"
 
 	"golang.org/x/sync/errgroup"
-	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -103,31 +101,18 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 }
 
 func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
-	ip = iputils.GetHostIP(ip)
 	logger.Info("start to remove node from k8s %s", ip)
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
 		return err
 	}
 	ctx := context.Background()
-	nodeList, err := cli.Kubernetes().CoreV1().Nodes().List(ctx, v1.ListOptions{})
+	hostname, err := k.execHostname(ip)
 	if err != nil {
 		return err
 	}
-	var nodeType *v12.Node
-	for _, n := range nodeList.Items {
-		for _, addr := range n.Status.Addresses {
-			if addr.Type == v12.NodeInternalIP && addr.Address == ip {
-				nodeType = n.DeepCopy()
-			}
-		}
-	}
-	if nodeType == nil {
-		logger.Warn("not find target delete node ip: %s", ip)
-		return nil
-	}
 	deletePropagation := v1.DeletePropagationBackground
-	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, nodeType.Name, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
+	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Warn("not find target delete node ip: %s", ip)
