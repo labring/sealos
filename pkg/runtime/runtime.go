@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/labring/sealos/pkg/token"
-
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -27,7 +25,7 @@ import (
 type KubeadmRuntime struct {
 	*sync.Mutex
 	Cluster *v2.Cluster
-	Token   *token.Token
+	Token   *Token
 	*KubeadmConfig
 	*Config
 }

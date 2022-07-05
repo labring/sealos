@@ -63,7 +63,7 @@ func checkHostnameUnique(cluster *v2.Cluster, ipList []string) error {
 			return fmt.Errorf("checker: failed to get host %s hostname, %v", ip, err)
 		}
 		if hostnameList[hostname] {
-			return fmt.Errorf("checker: hostname cannot be repeated, please set diffent hostname")
+			return fmt.Errorf("checker: hostname cannot be repeated, please set different hostname")
 		}
 		hostnameList[hostname] = true
 	}
