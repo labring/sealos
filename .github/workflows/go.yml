@@ -111,7 +111,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
     - name: Install Dependencies
       run: |
-        sudo apt install -y libbtrfs-dev btrfs-tools libgpgme-dev libdevmapper-dev
+        sudo apt install -y libbtrfs-dev btrfs-progs libgpgme-dev libdevmapper-dev
         go install github.com/jstemmer/go-junit-report/v2@latest
     - name: Run Test
       run: go test -coverprofile=coverage.txt -covermode count `go list ./... | grep -v tests` -v 2>&1 | tee test_output.txt
