@@ -36,10 +36,8 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
-
       - name: Install Dependencies
-        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
-
+        run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
       - name: Run Linter
         run: make lint
 
@@ -53,7 +51,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
+        run: sudo apt install -y libgpgme-dev libdevmapper-dev
       - name: Run Coverage
         run: make coverage
       - name: Upload Coverage to Codecov
@@ -84,7 +82,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt update  || true
-          sudo apt-get install -y upx
+          sudo apt install -y upx
           sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} 
           sudo apt install -y libgpgme-dev:${{ matrix.arch }}
 

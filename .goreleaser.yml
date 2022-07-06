@@ -93,7 +93,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
-      -
+
   - env:
       - CGO_ENABLED=0
     main: ./cmd/sealctl
