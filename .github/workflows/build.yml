@@ -86,7 +86,7 @@ jobs:
       - name: Save build sealos binaries
         uses: actions/upload-artifact@v2
         with:
-          name: sealos-arm64
+          name: sealos-${{ matrix.arch }}
           path: dist/sealos-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealos
 
       - name: Building Binaries

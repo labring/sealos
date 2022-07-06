@@ -37,7 +37,7 @@ PACKAGES ?= rpm deb
 release.package.%:
 	$(eval PACKAGE := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	@$(TOOLS_DIR)/nfpm package ma-p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
+	@$(TOOLS_DIR)/nfpm package -p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
 
 .PHONY: release.package
 release.package: tools.verify.nfpm $(addprefix release.package., $(addprefix $(PLATFORM)., $(PACKAGES)))
