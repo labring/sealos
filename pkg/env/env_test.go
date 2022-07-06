@@ -15,6 +15,7 @@
 package env
 
 import (
+	"strings"
 	"testing"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -48,7 +49,7 @@ func Test_processor_WrapperShell(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   string
+		want   []string
 	}{
 		{
 			"test command ENV",
@@ -57,7 +58,12 @@ func Test_processor_WrapperShell(t *testing.T) {
 				host:  "192.168.0.2",
 				shell: "echo $foo ${IP[@]}",
 			},
-			"IP=(127.0.0.2) key=(bar) foo=(bar xxx ddd fffff) && echo $foo ${IP[@]}",
+			[]string{
+				"IP=(127.0.0.2)",
+				"key=(bar)",
+				"foo=(bar xxx ddd fffff)",
+				"&& echo $foo ${IP[@]}",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -65,8 +71,11 @@ func Test_processor_WrapperShell(t *testing.T) {
 			p := &processor{
 				Cluster: tt.fields.Cluster,
 			}
-			if got := p.WrapperShell(tt.args.host, tt.args.shell); got != tt.want {
-				t.Errorf("WrapperShell() = %v, want %v", got, tt.want)
+			got := p.WrapperShell(tt.args.host, tt.args.shell)
+			for _, want := range tt.want {
+				if !strings.Contains(got, want) {
+					t.Errorf("WrapperShell() = %v, want %v", got, want)
+				}
 			}
 		})
 	}

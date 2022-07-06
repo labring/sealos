@@ -69,6 +69,11 @@ lint:
 format:
 	@$(MAKE) go.format
 
+## coverage: Run unit tests and output test coverage.
+.PHONY: coverage
+coverage:
+	@$(MAKE) go.coverage
+
 ## verify-license: Verify the license headers for all files.
 .PHONY: verify-license
 verify-license:
