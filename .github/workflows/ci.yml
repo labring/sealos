@@ -32,8 +32,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
@@ -48,17 +46,17 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
         with:
-          fetch-depth: 2
-      - name: Install libgpg-dev
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install Dependencies
         run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
-      - uses: actions/setup-go@v2
-        with:
-          go-version: "1.17"
-      - name: Run coverage
-        run: go test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env | grep -v "/test\|/fork"`
-      - name: Upload coverage to Codecov
+      - name: Run Coverage
+        run: make coverage
+      - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v2
 
   build:
@@ -66,24 +64,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        binary: [sealos, sealctl]
         arch: [arm64, amd64]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          submodules: true
       - name: Setup Go
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Setup MultiArch Apt
+        if: ${{ matrix.arch == 'arm64' }}
         run: |
           sudo \cp .github/sources.list /etc/apt/sources.list
           sudo apt update || true
           sudo dpkg --add-architecture ${{ matrix.arch }}
-
-        if: ${{matrix.arch == 'arm64'}}
 
       - name: Install Build Dependencies
         run: |
@@ -93,25 +89,15 @@ jobs:
           sudo apt install -y libgpgme-dev:${{ matrix.arch }}
 
       - name: Install gcc
+        if: ${{ matrix.arch == 'arm64' }}
         run: sudo apt install -y gcc-aarch64-linux-gnu
-        if: ${{matrix.arch == 'arm64'}}
 
-      - name: Build sealos Binaries
+      - name: Build Binaries
         run: |
-          make release-build BUILDSTEP=sealos-${{ matrix.arch }}
+          make release-build BUILDSTEP=${{ matrix.binary }}-${{ matrix.arch }}
 
-      - name: Save sealos binaries
+      - name: Save binaries
         uses: actions/upload-artifact@v2
         with:
-          name: sealos-${{ matrix.arch }}
-          path: dist/sealos-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealos
-
-      - name: Build sealctl Binaries
-        run: |
-          make release-build BUILDSTEP=sealctl-${{ matrix.arch }}
-
-      - name: Save sealctl binaries
-        uses: actions/upload-artifact@v2
-        with:
-          name: sealctl-${{ matrix.arch }}
-          path: dist/sealctl-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealctl
+          name: ${{ matrix.binary }}-${{ matrix.arch }}
+          path: dist/${{ matrix.binary }}-${{ matrix.arch }}_linux_${{ matrix.arch }}/${{ matrix.binary }}

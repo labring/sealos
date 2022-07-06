@@ -88,3 +88,7 @@ go.format: tools.verify.goimports
 	@$(FIND) -type f -name '*.go' | xargs gofmt -s -w
 	@$(FIND) -type f -name '*.go' | xargs $(TOOLS_DIR)/goimports -l -w -local $(ROOT_PACKAGE)
 	@$(GO) mod edit -fmt
+
+.PHONY: go.coverage
+go.coverage:
+	@go test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env | grep -v "/test\|/fork"`
