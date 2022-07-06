@@ -62,7 +62,7 @@ jobs:
         uses: codecov/codecov-action@v2
 
   build:
-    needs: [check, golangci-lint, coverage]
+    needs: [check-license, golangci-lint, coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
