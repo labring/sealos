@@ -15,7 +15,7 @@
 .PHONY: release.build
 release.build: tools.verify.goreleaser clean
 	@echo "===========> Building sealos release binary"
-	@$(TOOLS_DIR)/goreleaser build --snapshot --rm-dist --timeout=1h
+	@$(TOOLS_DIR)/goreleaser build --snapshot  --timeout=1h --id=${BUILDSTEP}
 
 .PHONY: release.release
 release.release: tools.verify.goreleaser clean
