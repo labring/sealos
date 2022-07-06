@@ -130,7 +130,7 @@ func From(containerName, imageName string) error {
 		return errors.Wrapf(err, "get CommonBuildOptionsFromFlagSet")
 	}
 
-	isolation, err := parse.IsolationOption(iopts.Isolation)
+	isolation, err := parse.IsolationOption(iopts.FromAndBudResults.Isolation)
 	if err != nil {
 		return errors.Wrapf(err, "IsolationOption")
 	}
@@ -150,7 +150,7 @@ func From(containerName, imageName string) error {
 		return err
 	}
 	devices := define.ContainerDevices{}
-	for _, device := range append(defaultContainerConfig.Containers.Devices, iopts.Devices...) {
+	for _, device := range append(defaultContainerConfig.Containers.Devices, iopts.FromAndBudResults.Devices...) {
 		dev, err := parse.DeviceFromPath(device)
 		if err != nil {
 			return err
@@ -158,14 +158,14 @@ func From(containerName, imageName string) error {
 		devices = append(devices, dev...)
 	}
 
-	capabilities, err := defaultContainerConfig.Capabilities("", iopts.CapAdd, iopts.CapDrop)
+	capabilities, err := defaultContainerConfig.Capabilities("", iopts.FromAndBudResults.CapAdd, iopts.FromAndBudResults.CapDrop)
 	if err != nil {
 		return err
 	}
 
 	commonOpts.Ulimit = append(defaultContainerConfig.Containers.DefaultUlimits, commonOpts.Ulimit...)
 
-	decConfig, err := getDecryptConfig(iopts.DecryptionKeys)
+	decConfig, err := getDecryptConfig(iopts.FromAndBudResults.DecryptionKeys)
 	if err != nil {
 		return errors.Wrapf(err, "unable to obtain decrypt config")
 	}
@@ -181,13 +181,13 @@ func From(containerName, imageName string) error {
 		Isolation:             isolation,
 		NamespaceOptions:      namespaceOptions,
 		ConfigureNetwork:      networkPolicy,
-		CNIPluginPath:         iopts.CNIPlugInPath,
-		CNIConfigDir:          iopts.CNIConfigDir,
+		CNIPluginPath:         iopts.NameSpaceResults.CNIPlugInPath,
+		CNIConfigDir:          iopts.NameSpaceResults.CNIConfigDir,
 		IDMappingOptions:      idmappingOptions,
 		Capabilities:          capabilities,
 		CommonBuildOpts:       commonOpts,
 		Format:                format,
-		BlobDirectory:         iopts.BlobCache,
+		BlobDirectory:         iopts.FromAndBudResults.BlobCache,
 		Devices:               devices,
 		MaxPullRetries:        maxPullPushRetries,
 		PullRetryDelay:        pullPushRetryDelay,
