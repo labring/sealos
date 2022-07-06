@@ -100,7 +100,7 @@ builds:
     id: sealctl-arm64
     hooks:
       post: upx "{{ .Path }}"
-    binary: sealctl-arm64
+    binary: sealctl
     goos:
       - linux
     goarch:
@@ -128,7 +128,6 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
-
 
   - env:
       - CGO_ENABLED=0
