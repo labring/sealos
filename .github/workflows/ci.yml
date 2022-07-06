@@ -1,0 +1,101 @@
+name: CI
+
+env:
+  # Common versions
+  GO_VERSION: "1.17"
+
+on:
+  pull_request:
+    branches: "*"
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - "*.yml"
+  push:
+    branches: main
+
+jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Check License
+        run: make verify-license
+
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install Dependencies
+        run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
+      - name: Run Linter
+        run: make lint
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install Dependencies
+        run: sudo apt install -y libgpgme-dev libdevmapper-dev
+      - name: Run Coverage
+        run: make coverage
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v2
+
+  build:
+    needs: [check-license, golangci-lint, coverage]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        binary: [sealos, sealctl]
+        arch: [arm64, amd64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup MultiArch Apt
+        if: ${{ matrix.arch == 'arm64' }}
+        run: |
+          sudo \cp .github/sources.list /etc/apt/sources.list
+          sudo apt update || true
+          sudo dpkg --add-architecture ${{ matrix.arch }}
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt update  || true
+          sudo apt install -y upx
+          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} 
+          sudo apt install -y libgpgme-dev:${{ matrix.arch }}
+
+      - name: Install gcc
+        if: ${{ matrix.arch == 'arm64' }}
+        run: sudo apt install -y gcc-aarch64-linux-gnu
+
+      - name: Build Binaries
+        run: |
+          make release-build BUILDSTEP=${{ matrix.binary }}-${{ matrix.arch }}
+
+      - name: Save binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.binary }}-${{ matrix.arch }}
+          path: dist/${{ matrix.binary }}-${{ matrix.arch }}_linux_${{ matrix.arch }}/${{ matrix.binary }}

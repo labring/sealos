@@ -13,3 +13,4 @@ scripts/release/Note.md
 bin
 .run
 tools
+coverage.out
