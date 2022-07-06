@@ -24,6 +24,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/exec"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	json2 "github.com/labring/sealos/pkg/utils/json"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -32,11 +38,6 @@ import (
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/registry"
-	"github.com/labring/sealos/pkg/utils/constants"
-	"github.com/labring/sealos/pkg/utils/exec"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	json2 "github.com/labring/sealos/pkg/utils/json"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // ImageService is the default service, which is used for image pull/push

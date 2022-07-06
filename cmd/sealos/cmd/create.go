@@ -15,10 +15,10 @@
 package cmd
 
 import (
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var exampleCreate = `

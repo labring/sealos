@@ -20,14 +20,15 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/labring/sealos/pkg/apply/applydrivers"
-	"github.com/labring/sealos/pkg/clusterfile"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
+	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
+
+	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/labring/sealos/pkg/clusterfile"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type ClusterArgs struct {

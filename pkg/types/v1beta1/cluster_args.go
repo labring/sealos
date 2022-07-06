@@ -19,9 +19,8 @@ package v1beta1
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/maps"
-
 	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/maps"
 )
 
 func (c *Cluster) GetSSH() SSH {

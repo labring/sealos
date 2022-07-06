@@ -20,9 +20,9 @@ import (
 	"math/rand"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/pkg/utils/strings"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (

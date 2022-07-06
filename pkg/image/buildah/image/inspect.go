@@ -17,6 +17,9 @@ package image
 import (
 	"encoding/json"
 
+	json2 "github.com/labring/sealos/pkg/utils/json"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/containers/buildah"
 	image_types "github.com/containers/image/v5/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -24,8 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/labring/sealos/pkg/image/types"
-	json2 "github.com/labring/sealos/pkg/utils/json"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (

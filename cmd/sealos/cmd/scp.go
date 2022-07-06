@@ -17,11 +17,11 @@ limitations under the License.
 package cmd
 
 import (
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/ssh"
 )
 
 // Shared with exec.go

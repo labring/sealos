@@ -19,12 +19,12 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/utils/rand"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"golang.org/x/sync/errgroup"
 
@@ -35,7 +35,6 @@ import (
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/constants"
 )
 
 var ForceOverride bool

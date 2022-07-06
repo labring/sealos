@@ -17,10 +17,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func newLoginCmd() *cobra.Command {

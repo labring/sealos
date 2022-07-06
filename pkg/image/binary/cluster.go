@@ -19,13 +19,14 @@ package binary
 import (
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/image/types"
-	"github.com/labring/sealos/pkg/utils/exec"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type ClusterService struct {
