@@ -1,0 +1,101 @@
+name: CI-Build
+
+env:
+  # Common versions
+  GO_VERSION: "1.17"
+
+on:
+  push:
+    branches: "*"
+  pull_request:
+    branches: "*"
+    paths-ignore:
+      - "docs/**"
+      - "vendor/**"
+      - "*.md"
+      - "*.yml"
+jobs:
+  check-license:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run Check License
+        run: make verify-license
+  golangci-lint:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install libgpg-dev
+        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
+
+      - name: Run Linter
+        run: make lint
+
+  build-binaries:
+    strategy:
+      matrix:
+        arch: [ arm64,amd64 ]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Set MultiArch Apt
+        run: |
+          sudo \cp .github/sources.list /etc/apt/sources.list
+          sudo apt update || true
+          sudo dpkg --add-architecture ${{ matrix.arch }}
+
+        if: ${{matrix.arch == 'arm64'}}
+
+      - name: Install Build Requirments
+        run: |
+          sudo apt update  || true
+          sudo apt-get install -y upx
+          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} 
+          sudo apt install -y libgpgme-dev:${{ matrix.arch }} 
+
+      - name: Install Gcc
+        run: sudo apt install -y gcc-aarch64-linux-gnu
+        if: ${{matrix.arch == 'arm64'}}
+
+
+      - name: Building Binaries
+        run: |
+          make release-build BUILDSTEP=sealos-${{ matrix.arch }}
+
+      - name: Save build sealos binaries
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealos-${{ matrix.arch }}
+          path: dist/sealos-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealos
+
+      - name: Building Binaries
+        run: |
+          make release-build BUILDSTEP=sealctl-${{ matrix.arch }}
+
+      - name: Save build binaries  sealctl
+        uses: actions/upload-artifact@v2
+        with:
+          name: sealctl-${{ matrix.arch }}
+          path: dist/sealctl-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealctl
+

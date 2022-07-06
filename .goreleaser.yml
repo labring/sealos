@@ -17,7 +17,7 @@ before:
     # You may remove this if you don't use go modules.
     #-  go mod download
     - go generate ./...
-    - apt-get install -y upx
+#    - apt-get install -y upx
 builds:
   - env:
       - CGO_ENABLED=1
@@ -28,7 +28,7 @@ builds:
     id: sealos-arm64
     binary: sealos
     hooks:
-      pre: apt-get install -y libgpgme-dev:arm64 libdevmapper-dev:arm64
+      #      pre: apt-get install -y libgpgme-dev:arm64 libdevmapper-dev:arm64
       post: upx "{{ .Path }}"
     goos:
       - linux
@@ -56,7 +56,7 @@ builds:
     main: ./cmd/sealos
     id: sealos-amd64
     hooks:
-      pre: apt-get install -y libgpgme-dev libdevmapper-dev
+      #      pre: apt-get install -y libgpgme-dev libdevmapper-dev
       post: upx "{{ .Path }}"
     binary: sealos
     goos:
@@ -80,20 +80,37 @@ builds:
   - env:
       - CGO_ENABLED=0
     main: ./cmd/sealctl
-    id: sealctl
+    id: sealctl-amd64
     hooks:
       post: upx "{{ .Path }}"
     binary: sealctl
     goos:
       - linux
     goarch:
-      - arm64
       - amd64
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+      -
+  - env:
+      - CGO_ENABLED=0
+    main: ./cmd/sealctl
+    id: sealctl-arm64
+    hooks:
+      post: upx "{{ .Path }}"
+    binary: sealctl-arm64
+    goos:
+      - linux
+    goarch:
+      - arm64
+    ldflags:
+      - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
+      - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
+      - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
+      - -s -w
+
   - env:
       - CGO_ENABLED=0
     main: ./cmd/lvscare
@@ -111,6 +128,8 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+
+
   - env:
       - CGO_ENABLED=0
     main: ./cmd/image-cri-shim
