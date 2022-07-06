@@ -20,16 +20,12 @@ If you use multipaas, you can mount the bin dir to the vm:
 multipass mount /your-bin-dir <name>[:<path>]
 ```
 
-## Notice About build and cross build
-
-Since Golang CGO_ENABLED is enabled by default if it is not specified, if you compile the sealos binary of linuxos on
-macos, it is cross-compiled, and since CGO_ENABLED is not explicitly specified, go will close CGO_ENABLED by default,
-that is, CGO_ENABLED=0, and compile at this time Some functions of sealos will not be supported, such as
-'images' subcommand depends on cgo for overlay. At this time, sealos does not support overlay driver by default, and
-will report "driver not supported" error. Therefore, if you are developing or debugging images storage related
-functions, it is best to compile sealos in a linux environment such as ubuntu.
-
-In addition, the final release build of sealos is based on the ubuntu environment of Github Action. The built binary
-defaults to open CGO and supports overlay driver.
-
 Then test it locally.
+
+## Notes about cross-platform building
+
+If not explicitly specified, `CGO_ENABLED` will be `0` (disabled), which allows cross-platform building but sacrificing support for subcommands like `images` that relies on CGO. That is, when running `sealos images`, since overlay driver is not supported without CGO, a "driver not supported" error will occur.
+
+Therefore, if you are developing or debugging images storage related functions, you have to build sealos under Linux.
+
+In addition, the released version of sealos is built under Ubuntu (thanks to Github Actions) and has `CGO_ENABLED=1` to support overlay driver.
