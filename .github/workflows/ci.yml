@@ -1,22 +1,22 @@
-name: CI-Build
+name: CI
 
 env:
   # Common versions
   GO_VERSION: "1.17"
 
 on:
-  push:
-    branches: "*"
   pull_request:
     branches: "*"
     paths-ignore:
       - "docs/**"
-      - "vendor/**"
       - "*.md"
       - "*.yml"
+  push:
+    branches: main
+
 jobs:
   check-license:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -24,10 +24,11 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Run Check License
+      - name: Check License
         run: make verify-license
+
   golangci-lint:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -44,11 +45,28 @@ jobs:
       - name: Run Linter
         run: make lint
 
-  build-binaries:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Install libgpg-dev
+        run: sudo apt-get install -y libgpgme-dev libdevmapper-dev
+      - uses: actions/setup-go@v2
+        with:
+          go-version: "1.17"
+      - name: Run coverage
+        run: go test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env | grep -v "/test\|/fork"`
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v2
+
+  build:
+    needs: [check, golangci-lint, coverage]
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [ arm64,amd64 ]
-    runs-on: ubuntu-20.04
+        arch: [arm64, amd64]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -59,7 +77,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Set MultiArch Apt
+      - name: Setup MultiArch Apt
         run: |
           sudo \cp .github/sources.list /etc/apt/sources.list
           sudo apt update || true
@@ -67,35 +85,33 @@ jobs:
 
         if: ${{matrix.arch == 'arm64'}}
 
-      - name: Install Build Requirments
+      - name: Install Build Dependencies
         run: |
           sudo apt update  || true
           sudo apt-get install -y upx
           sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} 
-          sudo apt install -y libgpgme-dev:${{ matrix.arch }} 
+          sudo apt install -y libgpgme-dev:${{ matrix.arch }}
 
-      - name: Install Gcc
+      - name: Install gcc
         run: sudo apt install -y gcc-aarch64-linux-gnu
         if: ${{matrix.arch == 'arm64'}}
 
-
-      - name: Building Binaries
+      - name: Build sealos Binaries
         run: |
           make release-build BUILDSTEP=sealos-${{ matrix.arch }}
 
-      - name: Save build sealos binaries
+      - name: Save sealos binaries
         uses: actions/upload-artifact@v2
         with:
           name: sealos-${{ matrix.arch }}
           path: dist/sealos-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealos
 
-      - name: Building Binaries
+      - name: Build sealctl Binaries
         run: |
           make release-build BUILDSTEP=sealctl-${{ matrix.arch }}
 
-      - name: Save build binaries  sealctl
+      - name: Save sealctl binaries
         uses: actions/upload-artifact@v2
         with:
           name: sealctl-${{ matrix.arch }}
           path: dist/sealctl-${{ matrix.arch }}_linux_${{ matrix.arch }}/sealctl
-
