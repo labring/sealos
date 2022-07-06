@@ -15,7 +15,7 @@
 .PHONY: release.build
 release.build: tools.verify.goreleaser clean
 	@echo "===========> Building sealos release binary"
-	@$(TOOLS_DIR)/goreleaser build --snapshot --rm-dist --timeout=1h
+	@$(TOOLS_DIR)/goreleaser build --snapshot  --timeout=1h --id=${BUILDSTEP}
 
 .PHONY: release.release
 release.release: tools.verify.goreleaser clean
@@ -37,7 +37,7 @@ PACKAGES ?= rpm deb
 release.package.%:
 	$(eval PACKAGE := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	@$(TOOLS_DIR)/nfpm package -p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
+	@$(TOOLS_DIR)/nfpm package ma-p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
 
 .PHONY: release.package
 release.package: tools.verify.nfpm $(addprefix release.package., $(addprefix $(PLATFORM)., $(PACKAGES)))
