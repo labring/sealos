@@ -145,6 +145,9 @@ func AssemblyIPList(args *string) error {
 	if result == "" {
 		return fmt.Errorf("ip is invalid，check you command agrs")
 	}
+	if result[len(result)-1:] == "," {
+		result = result[:len(result)-1]
+	}
 	*args = result
 	return nil
 }

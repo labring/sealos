@@ -16,6 +16,7 @@ package apply
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 
@@ -169,6 +170,9 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 	if strings2.InList(cluster.GetMaster0IPAndPort(), strings.Split(masters, ",")) {
 		return fmt.Errorf("master0 machine cannot be deleted")
 	}
+	if strings2.InList(cluster.GetMaster0IP(), strings.Split(masters, ",")) {
+		return fmt.Errorf("master0 machine cannot be deleted")
+	}
 
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
 
@@ -177,11 +181,20 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 	for _, node := range cluster.Spec.Hosts {
 		hostsSet.Insert(node.IPS...)
 	}
-
-	for _, node := range strings.Split(nodes, ",") {
-		targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
-		if !hostsSet.Has(fmt.Sprintf("%s:%s", targetIP, targetPort)) {
-			return fmt.Errorf("parameter error: to delete IP %s must in cluster IP list", targetIP)
+	if nodes != "" {
+		for _, node := range strings.Split(nodes, ",") {
+			targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
+			if !hostsSet.Has(net.JoinHostPort(targetIP, targetPort)) {
+				return fmt.Errorf("parameter error: to delete node IP %s:%s must in cluster IP list", targetIP, targetPort)
+			}
+		}
+	}
+	if masters != "" {
+		for _, node := range strings.Split(masters, ",") {
+			targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(node, defaultPort)
+			if !hostsSet.Has(net.JoinHostPort(targetIP, targetPort)) {
+				return fmt.Errorf("parameter error: to delete master IP %s:%s must in cluster IP list", targetIP, targetPort)
+			}
 		}
 	}
 
@@ -213,7 +226,7 @@ func returnFilteredIPList(clusterIPList []string, toBeDeletedIPList []string, de
 	toBeDeletedIPList = fillIPAndPort(toBeDeletedIPList, defaultPort)
 	for _, ip := range clusterIPList {
 		if strings2.NotIn(ip, toBeDeletedIPList) {
-			res = append(res, fmt.Sprintf("%s:%s", ip, defaultPort))
+			res = append(res, net.JoinHostPort(iputils.GetHostIPAndPortOrDefault(ip, defaultPort)))
 		}
 	}
 	return
@@ -222,6 +235,9 @@ func returnFilteredIPList(clusterIPList []string, toBeDeletedIPList []string, de
 func fillIPAndPort(ipList []string, defaultPort string) []string {
 	var ipAndPorts []string
 	for _, ip := range ipList {
+		if ip == "" {
+			continue
+		}
 		targetIP, targetPort := iputils.GetHostIPAndPortOrDefault(ip, defaultPort)
 		ipAndPort := fmt.Sprintf("%s:%s", targetIP, targetPort)
 		ipAndPorts = append(ipAndPorts, ipAndPort)
