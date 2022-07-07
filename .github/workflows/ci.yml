@@ -5,59 +5,83 @@ env:
   GO_VERSION: "1.17"
 
 on:
+  push:
+    branches: main
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yml"
   pull_request:
     branches: ["*"]
     paths-ignore:
       - "docs/**"
-      - "*.md"
-      - "*.yml"
-  push:
-    branches: ["main"]
+      - "**/*.md"
+      - "**/*.yml"
 
 jobs:
   fossa:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: fossa-contrib/fossa-action@v1
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Run FOSSA scan and upload build data
+        uses: fossa-contrib/fossa-action@v1
         with:
           # https://docs.fossa.com/docs/api-reference#push-only-api-token
           fossa-api-key: 36dc4d03f7a9b11859e44311c907a2e0
+
   check-license:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Check License
         run: make verify-license
 
-  golangci-lint:
+  resolve-modules:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      - name: Resolve Modules
+        id: set-matrix
+        run: sh ./scripts/resolve-modules.sh
+
+  golangci-lint:
+    needs: [check-license, resolve-modules]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
         run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
       - name: Run Linter
-        run: make lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.46.2
+          working-directory: ${{ matrix.workdir }}
+          args: "--out-${NO_FUTURE}format colored-line-number"
 
   coverage:
+    needs: [check-license]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
@@ -68,7 +92,7 @@ jobs:
         uses: codecov/codecov-action@v2
 
   build:
-    needs: [check-license, golangci-lint, coverage]
+    needs: [golangci-lint, coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -76,9 +100,9 @@ jobs:
         arch: [arm64, amd64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
