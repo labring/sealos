@@ -6,13 +6,13 @@ env:
 
 on:
   pull_request:
-    branches: "*"
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "*.md"
       - "*.yml"
   push:
-    branches: main
+    branches: ["main"]
 
 jobs:
   check-license:
@@ -51,7 +51,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libdevmapper-dev
+        run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
       - name: Run Coverage
         run: make coverage
       - name: Upload Coverage to Codecov
@@ -83,7 +83,7 @@ jobs:
         run: |
           sudo apt update  || true
           sudo apt install -y upx
-          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} 
+          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }}
           sudo apt install -y libgpgme-dev:${{ matrix.arch }}
 
       - name: Install gcc
