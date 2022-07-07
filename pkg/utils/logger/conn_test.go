@@ -15,10 +15,38 @@
 package logger
 
 import (
+	"fmt"
+	"net"
 	"testing"
 )
 
 func TestConn(t *testing.T) {
+	testPort, l, err := createTestServer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Close()
+
+	netAddr := fmt.Sprintf(`{"net":"tcp","addr":"localhost:%d"}`, testPort)
+
 	log := NewLogger()
+	log.SetLogger(AdapterConn, netAddr)
 	log.Info("this is informational to net")
+	log.SetLogger(AdapterConn, netAddr)
+	log.Debug("this is informational to net")
+	log.Info("this is informational to net")
+	log.Warn("this is informational to net")
+}
+
+func createTestServer() (int, *net.TCPListener, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, nil, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, nil, err
+	}
+	return l.Addr().(*net.TCPAddr).Port, l, nil
 }

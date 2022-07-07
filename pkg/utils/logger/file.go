@@ -153,7 +153,7 @@ func (f *fileLogger) newFile() error {
 	}
 	if f.fileWriter != nil {
 		err := f.fileWriter.Close()
-		if err != nil {
+		if err != nil && errors.Unwrap(err).Error() != "file already closed" {
 			return err
 		}
 	}

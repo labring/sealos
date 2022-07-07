@@ -19,14 +19,18 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestFilePermit(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := tempDir + "/test.log"
+
 	log := NewLogger()
-	log.SetLogger(AdapterFile, `{"filename":"test.log",
-	 "rotateperm": "0666",
+	log.SetLogger(AdapterFile, `{"filename":"`+logFile+`",
+	"permit": "0666",
 	"maxlines":100000,
 	"maxsize":1,
 	"append":true} `)
@@ -41,19 +45,23 @@ func TestFilePermit(t *testing.T) {
 	log.Crit("critical")
 	log.Emer("emergency")
 
-	file, err := os.Stat("test.log")
+	file, err := os.Stat(logFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if file.Mode() != 0666 {
 		t.Fatal("unexpected log file permission")
 	}
-	os.Remove("test.log")
+
+	os.Remove(logFile)
 }
 
 func TestFileLine(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := tempDir + "/test2.log"
+
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test2.log"}`)
+	log.SetLogger("file", `{"filename":"`+logFile+`"}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Debug("debug")
@@ -62,7 +70,7 @@ func TestFileLine(t *testing.T) {
 	log.Alert("alert")
 	log.Crit("critical")
 	log.Emer("emergency")
-	f, err := os.Open("test.log")
+	f, err := os.Open(logFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,21 +85,26 @@ func TestFileLine(t *testing.T) {
 			lineNum++
 		}
 	}
-	var expected = LevelTrace + 1
+	// without 2 debug log
+	var expected = LevelTrace - 1
 	if lineNum != int(expected) {
 		t.Fatal(lineNum, "not "+strconv.Itoa(int(expected))+" lines")
 	}
-	os.Remove("test2.log")
+
+	os.Remove(logFile)
 }
 
 func TestFileSize(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := tempDir + "/test2.log"
+
 	log := NewLogger()
-	log.SetLogger(AdapterFile, `{"filename":"test.log",
-	 "rotateperm": "0666",
-	"maxlines":100000,
-	"maxsize":1,
+	log.SetLogger(AdapterFile, `{"filename":"`+logFile+`",
+	"permit": "0666",
+	"maxlines":10000,
+	"maxsize":10240,
 	"append":true} `)
-	for i := 0; i < 3000; i++ {
+	for i := 0; i < 1000; i++ {
 		log.Trace("trace")
 		log.Debug("debug")
 		log.Info("info")
@@ -101,14 +114,18 @@ func TestFileSize(t *testing.T) {
 		log.Alert("alert")
 		log.Crit("critical")
 		log.Emer("emergency")
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond)
 	}
-	// 手动删
+
+	os.Remove(logFile)
 }
 
 func TestFileByMaxLine(t *testing.T) {
+	tempDir := t.TempDir()
+	logFile := tempDir + "/test2.log"
+
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test3.log","maxlines":4}`)
+	log.SetLogger("file", `{"filename":"`+logFile+`","maxlines":4}`)
 	log.Debug("debug")
 	log.Info("info")
 	log.Warn("warning")
@@ -116,19 +133,22 @@ func TestFileByMaxLine(t *testing.T) {
 	log.Alert("alert")
 	log.Crit("critical")
 	log.Emer("emergency")
-	rotateName := "test3" + fmt.Sprintf(".%s.%03d", time.Now().Format("2006-01-02"), 1) + ".log"
+	rotateName := tempDir + "/test2" + fmt.Sprintf(".%s.%03d", time.Now().Format("2006-01-02"), 1) + ".log"
 	b, err := exists(rotateName)
 	if !b || err != nil {
-		os.Remove("test3.log")
+		os.Remove(logFile)
 		t.Fatal("rotate not generated")
 	}
+
 	os.Remove(rotateName)
-	os.Remove("test3.log")
+	os.Remove(logFile)
 }
 
 func TestFileByTime(t *testing.T) {
-	fn1 := "rotate_day.log"
-	fn2 := "rotate_day" + fmt.Sprintf(".%s.%03d", time.Now().Add(-24*time.Hour).Format("2006-01-02"), 1) + ".log"
+	tempDir := t.TempDir()
+	fn1 := tempDir + "rotate_day.log"
+	fn2 := tempDir + "rotate_day" + fmt.Sprintf(".%s.%03d", time.Now().Add(-24*time.Hour).Format("2006-01-02"), 1) + ".log"
+
 	fw := &fileLogger{
 		Daily:      true,
 		MaxDays:    7,
@@ -168,28 +188,51 @@ func exists(path string) (bool, error) {
 }
 
 func BenchmarkFile(b *testing.B) {
+	tempDir := b.TempDir()
+	logFile := tempDir + "/test4F.log"
+
+	b.ResetTimer()
+
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"`+logFile+`","maxlines":100000}`)
 	for i := 0; i < b.N; i++ {
-		log.Debug("debug")
+		log.Info("debug")
 	}
-	os.Remove("test4.log")
+	os.Remove(logFile)
 }
 
 func BenchmarkFileCallDepth(b *testing.B) {
+	tempDir := b.TempDir()
+	logFile := tempDir + "/test4C.log"
+
+	b.ResetTimer()
+
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"`+logFile+`","maxlines":100000}`)
 	for i := 0; i < b.N; i++ {
-		log.Debug("debug")
+		log.Info("debug")
 	}
-	os.Remove("test4.log")
+	os.Remove(logFile)
 }
 
 func BenchmarkFileOnGoroutine(b *testing.B) {
+	tempDir := b.TempDir()
+	logFile := tempDir + "/test4O.log"
+
+	b.ResetTimer()
+
+	var wg sync.WaitGroup
+
 	log := NewLogger()
-	log.SetLogger("file", `{"filename":"test4.log"}`)
+	log.SetLogger("file", `{"filename":"`+logFile+`","maxlines":100000}`)
 	for i := 0; i < b.N; i++ {
-		go log.Debug("debug")
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			log.Info("debug")
+		}()
 	}
-	os.Remove("test4.log")
+
+	wg.Wait()
+	os.Remove(logFile)
 }
