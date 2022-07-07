@@ -39,14 +39,13 @@ require (
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
-	gopkg.in/ini.v1 v1.66.2 // indirect
 	helm.sh/helm/v3 v3.6.0
-	k8s.io/api v0.22.5
-	k8s.io/apimachinery v0.24.2
-	k8s.io/client-go v0.22.5
-	k8s.io/cluster-bootstrap v0.21.0
-	k8s.io/kube-proxy v0.21.0
-	k8s.io/kubelet v0.21.0
+	k8s.io/api v0.23.1
+	k8s.io/apimachinery v0.23.1
+	k8s.io/client-go v0.23.1
+	k8s.io/cluster-bootstrap v0.23.1
+	k8s.io/kube-proxy v0.23.1
+	k8s.io/kubelet v0.23.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/yaml v1.3.0
 )

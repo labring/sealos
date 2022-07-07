@@ -20,24 +20,7 @@ import (
 	"net"
 	"net/url"
 	"strings"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 )
-
-// ParseIPs 解析ip 192.168.0.2-192.168.0.6
-func ParseIPs(ipList []string) (res []string) {
-	for _, i := range ipList {
-		if strings.Contains(i, "-") {
-			if err := AssemblyIPList(&i); err != nil {
-				logger.Warn("failed to get Addrs, %s", err.Error())
-				continue
-			}
-			res = append(res, strings.Split(i, ",")...)
-		}
-		res = append(res, i)
-	}
-	return
-}
 
 //IPFormat is
 func IPFormat(ipStr string) string {
