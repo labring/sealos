@@ -79,4 +79,4 @@ go.format: tools.verify.goimports
 
 .PHONY: go.coverage
 go.coverage:
-	@go test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env | grep -v "/test\|/fork"`
+	@go test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./... | grep -v "/test\|/fork"`
