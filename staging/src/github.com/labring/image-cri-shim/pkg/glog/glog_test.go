@@ -257,7 +257,7 @@ func TestVmoduleOn(t *testing.T) {
 	defer logging.swap(logging.newBuffers())
 	_ = logging.vmodule.Set("glog_test=2")
 	defer func() {
-		logging.vmodule.Set("")
+		_ = logging.vmodule.Set("")
 	}()
 	if !V(1) {
 		t.Error("V not enabled for 1")
@@ -318,8 +318,10 @@ var vGlobs = map[string]bool{
 func testVmoduleGlob(pat string, match bool, t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	defer logging.vmodule.Set("")
-	logging.vmodule.Set(pat)
+	defer func() {
+		_ = logging.vmodule.Set("")
+	}()
+	_ = logging.vmodule.Set(pat)
 	if V(2) != Verbose(match) {
 		t.Errorf("incorrect match for %q: got %t expected %t", pat, V(2), match)
 	}

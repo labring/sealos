@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:staticcheck
 package utils
 
 import (
@@ -141,7 +142,7 @@ func isFatalDialError(err error) bool {
 			}
 		}
 
-		switch err.(type) { //nolint:gosimple，go-staticcheck
+		switch err.(type) { //nolint:gosimple，staticcheck
 		case *net.OpError:
 			err = err.(*net.OpError).Err
 			continue

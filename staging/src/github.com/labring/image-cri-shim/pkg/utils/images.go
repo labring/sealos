@@ -54,10 +54,10 @@ func RunBashCmd(cmd string) (string, error) {
 }
 
 //crictl images -q
-func IsImageID(out, imageId string) bool {
+func IsImageID(out, imageID string) bool {
 	imageIDs := strings.Split(out, "\n")
 	for _, v := range imageIDs {
-		if strings.Contains(v, fmt.Sprintf("sha256:%s", imageId)) {
+		if strings.Contains(v, fmt.Sprintf("sha256:%s", imageID)) {
 			return true
 		}
 	}
