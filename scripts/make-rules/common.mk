@@ -40,12 +40,12 @@ endif
 
 # only support linux
 GOOS=linux
-
+# set a specific GOARCH
+ifeq ($(origin GOARCH), undefined)
+	GOARCH := $(shell go env GOARCH)
+endif
 # set a specific PLATFORM
 ifeq ($(origin PLATFORM), undefined)
-	ifeq ($(origin GOARCH), undefined)
-		GOARCH := $(shell go env GOARCH)
-	endif
 	PLATFORM := $(GOOS)_$(GOARCH)
 endif
 
