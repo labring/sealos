@@ -40,7 +40,8 @@ func GetRegistry(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
 	registryConfig, err := yaml.Unmarshal(etcPath)
 	if err != nil {
-		logger.Debug("use default registry config")
+		logger.Warn("read registry config path error: %+v", err)
+		logger.Info("use default registry config")
 		return DefaultConfig
 	}
 	domain, _, _ := unstructured.NestedString(registryConfig, "domain")
