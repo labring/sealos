@@ -19,9 +19,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/spf13/cobra"
 )
 
 var exampleGen = `

@@ -207,8 +207,8 @@ func (l *lvscare) GetRealServer(rsHost string) (rs *EndPoint, weight int) {
 
 //
 func (l *lvscare) DeleteRealServer(rs string, config bool) error {
-	realIp, realPort := SplitServer(rs)
-	if realIp == "" || realPort == 0 {
+	realIP, realPort := SplitServer(rs)
+	if realIP == "" || realPort == 0 {
 		glog.Error("DeleteRealServer error: real server ip and port is empty ")
 		return fmt.Errorf("real server ip and port is null")
 	}
@@ -228,7 +228,7 @@ func (l *lvscare) DeleteRealServer(rs string, config bool) error {
 		//clean delete data
 		var resultRS []*EndPoint
 		for _, r := range l.rs {
-			if r.IP == realIp && r.Port == realPort {
+			if r.IP == realIP && r.Port == realPort {
 				continue
 			} else {
 				resultRS = append(resultRS, &EndPoint{

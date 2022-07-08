@@ -30,11 +30,12 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/yaml"
 
-	v1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
+
+	v1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

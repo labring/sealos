@@ -25,9 +25,10 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	corev1 "k8s.io/api/core/v1"
+
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 const (

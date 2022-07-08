@@ -20,12 +20,13 @@ import (
 	"github.com/labring/lvscare/pkg/route"
 
 	"github.com/labring/lvscare/care"
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/hosts"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
 )
 
 func newIPVSCmd() *cobra.Command {
