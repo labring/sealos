@@ -146,7 +146,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 
 	endEg, _ := errgroup.WithContext(context.Background())
 	for _, cInfo := range f.images {
-		ip := cluster.GetMaster0IP()
+		ip := cluster.GetMaster0IPAndPort()
 		img := cInfo
 		endEg.Go(func() error {
 			if appFlag && img.Type == v2.AppImage {
