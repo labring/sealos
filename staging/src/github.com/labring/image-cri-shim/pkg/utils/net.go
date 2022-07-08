@@ -142,7 +142,7 @@ func isFatalDialError(err error) bool {
 			}
 		}
 
-		switch err.(type) { //nolint:gosimple，staticcheck
+		switch err.(type) { //nolint:gosimple
 		case *net.OpError:
 			err = err.(*net.OpError).Err
 			continue
