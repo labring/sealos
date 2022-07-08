@@ -105,8 +105,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt update || true
-          sudo apt install -y upx
-          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
+          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
 
       - name: Install gcc
         if: ${{ matrix.arch == 'arm64' }}
