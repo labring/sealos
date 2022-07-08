@@ -20,10 +20,11 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/labring/sealos/pkg/image"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+
+	"github.com/labring/sealos/pkg/image"
 )
 
 var exampleInspect = `

@@ -19,8 +19,9 @@ package apply
 import (
 	"testing"
 
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func Test_Delete(t *testing.T) {

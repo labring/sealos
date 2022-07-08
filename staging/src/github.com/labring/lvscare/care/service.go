@@ -65,13 +65,13 @@ type lvscare struct {
 }
 
 func (l *lvscare) CreateVirtualServer(vs string, config bool) error {
-	virIp, virPort := SplitServer(vs)
-	if virIp == "" || virPort == 0 {
+	virIP, virPort := SplitServer(vs)
+	if virIP == "" || virPort == 0 {
 		glog.Error("CreateVirtualServer error: virtual server ip and port is empty")
 		return fmt.Errorf("virtual server ip and port is empty")
 	}
 	if config {
-		l.vs = &EndPoint{IP: virIp, Port: virPort}
+		l.vs = &EndPoint{IP: virIP, Port: virPort}
 	}
 	vServer := BuildVirtualServer(vs)
 	err := l.handle.AddVirtualServer(vServer)
@@ -104,12 +104,12 @@ func (l *lvscare) DeleteVirtualServer(vs string, config bool) error {
 }
 
 func (l *lvscare) CreateRealServer(rs string, config bool) error {
-	realIp, realPort := SplitServer(rs)
-	if realIp == "" || realPort == 0 {
+	realIP, realPort := SplitServer(rs)
+	if realIP == "" || realPort == 0 {
 		glog.Error("CreateRealServer error: real server ip and port is empty")
 		return fmt.Errorf("real server ip and port is empty")
 	}
-	rsEp := &EndPoint{IP: realIp, Port: realPort}
+	rsEp := &EndPoint{IP: realIP, Port: realPort}
 	if config {
 		l.rs = append(l.rs, rsEp)
 	}
@@ -127,11 +127,9 @@ func (l *lvscare) CreateRealServer(rs string, config bool) error {
 			return fmt.Errorf("new real server failed: %s", err)
 		}
 		return nil
-	} else {
-		glog.Error("CreateRealServer error: virtual server is empty.")
-		return fmt.Errorf("virtual server is empty.")
 	}
-
+	glog.Error("CreateRealServer error: virtual server is empty.")
+	return fmt.Errorf("virtual server is empty")
 }
 func (l *lvscare) IsVirtualServerAvailable(vs string) bool {
 	virArray, err := l.handle.GetVirtualServers()
@@ -209,28 +207,28 @@ func (l *lvscare) GetRealServer(rsHost string) (rs *EndPoint, weight int) {
 
 //
 func (l *lvscare) DeleteRealServer(rs string, config bool) error {
-	realIp, realPort := SplitServer(rs)
-	if realIp == "" || realPort == 0 {
+	realIP, realPort := SplitServer(rs)
+	if realIP == "" || realPort == 0 {
 		glog.Error("DeleteRealServer error: real server ip and port is empty ")
 		return fmt.Errorf("real server ip and port is null")
 	}
 
 	if l.vs == nil {
 		glog.Error("DeleteRealServer error: virtual service is empty.")
-		return fmt.Errorf("virtual service is empty.")
+		return fmt.Errorf("virtual service is empty")
 	}
 	virServer := BuildVirtualServer(l.vs.String())
 	realServer := BuildRealServer(rs)
 	err := l.handle.DeleteRealServer(virServer, realServer)
 	if err != nil {
-		glog.Error("DeleteRealServer error[real server delete error]: %v", err)
+		glog.Errorf("DeleteRealServer error[real server delete error]: %v", err)
 		return fmt.Errorf("real server delete error: %v", err)
 	}
 	if config {
 		//clean delete data
 		var resultRS []*EndPoint
 		for _, r := range l.rs {
-			if r.IP == realIp && r.Port == realPort {
+			if r.IP == realIP && r.Port == realPort {
 				continue
 			} else {
 				resultRS = append(resultRS, &EndPoint{

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:staticcheck
 package utils
 
 import (
@@ -31,18 +32,18 @@ func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) er
 	var connp **grpc.ClientConn
 
 	for _, o := range opts {
-		switch o.(type) {
+		switch o := o.(type) {
 		case func(error) bool:
-			errChecker = append(errChecker, o.(func(error) bool))
+			errChecker = append(errChecker, o)
 		case grpc.DialOption:
-			dialOpts = append(dialOpts, o.(grpc.DialOption))
+			dialOpts = append(dialOpts, o)
 		case []grpc.DialOption:
-			dialOpts = append(dialOpts, o.([]grpc.DialOption)...)
+			dialOpts = append(dialOpts, o...)
 		case **grpc.ClientConn:
 			if connp != nil {
 				return fmt.Errorf("WaitForServer: multiple net.Conn pointer options given")
 			}
-			connp = o.(**grpc.ClientConn)
+			connp = o
 		default:
 			return fmt.Errorf("WaitForServer: invalid option of type %T", o)
 		}
@@ -141,12 +142,12 @@ func isFatalDialError(err error) bool {
 			}
 		}
 
-		switch err.(type) {
+		switch err.(type) { //nolint:gosimple
 		case *net.OpError:
-			err = err.(*net.OpError).Err
+			err = err.(*net.OpError).Err //nolint:gosimple
 			continue
 		case *os.SyscallError:
-			ne := err.(*os.SyscallError)
+			ne := err.(*os.SyscallError) //nolint:gosimple
 			switch {
 			case os.IsPermission(ne):
 				return true

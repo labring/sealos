@@ -17,8 +17,9 @@ limitations under the License.
 package cluster
 
 import (
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	bb "github.com/labring/sealos/pkg/image/buildah/cluster/buildah"
 )

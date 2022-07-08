@@ -54,10 +54,10 @@ func RunBashCmd(cmd string) (string, error) {
 }
 
 //crictl images -q
-func IsImageId(out, imageId string) bool {
+func IsImageID(out, imageID string) bool {
 	imageIDs := strings.Split(out, "\n")
 	for _, v := range imageIDs {
-		if strings.Contains(v, fmt.Sprintf("sha256:%s", imageId)) {
+		if strings.Contains(v, fmt.Sprintf("sha256:%s", imageID)) {
 			return true
 		}
 	}
@@ -104,27 +104,6 @@ func NormalizeName(name string) (reference.Named, error) {
 
 	// Make sure to tag "latest".
 	return reference.TagNameOnly(named), nil
-}
-
-// normalizeTaggedDigestedString strips the tag off the specified string iff it
-// is tagged and digested. Note that the tag is entirely ignored to match
-// Docker behavior.
-func normalizeTaggedDigestedString(s string) (string, error) {
-	// Note that the input string is not expected to be parseable, so we
-	// return it verbatim in error cases.
-	ref, err := reference.Parse(s)
-	if err != nil {
-		return "", err
-	}
-	named, ok := ref.(reference.Named)
-	if !ok {
-		return s, nil
-	}
-	named, err = normalizeTaggedDigestedNamed(named)
-	if err != nil {
-		return "", err
-	}
-	return named.String(), nil
 }
 
 // normalizeTaggedDigestedNamed strips the tag off the specified named

@@ -78,7 +78,7 @@ func (r RequiredIPVSKernelModulesAvailableCheck) Check() (warnings, errors []err
 		for _, builtInMode := range ipvsModules {
 			match, _ := regexp.Match(builtInMode+".ko", out)
 			if !match {
-				builtInModules.Insert(string(builtInMode))
+				builtInModules.Insert(builtInMode)
 			}
 		}
 		if len(builtInModules) != 0 {

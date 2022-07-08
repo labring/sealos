@@ -28,12 +28,10 @@ const (
 	legacyDefaultDomain = "index.docker.io"
 	defaultDomain       = "docker.io"
 	officialRepoName    = "library"
-	defaultTag          = "latest"
 )
 
 func (s *server) ListImages(ctx context.Context,
 	req *api.ListImagesRequest) (*api.ListImagesResponse, error) {
-
 	rsp, err := (*s.imageService).ListImages(ctx, req)
 
 	if err != nil {
@@ -109,7 +107,7 @@ func (s *server) replaceImage(image, action string) string {
 		glog.Warningf("exec crictl images -q error: %s", err.Error())
 		return image
 	}
-	if utils.IsImageId(images, image) {
+	if utils.IsImageID(images, image) {
 		glog.Infof("image: %s is imageID,skip replace", image)
 		return image
 	}
@@ -119,7 +117,7 @@ func (s *server) replaceImage(image, action string) string {
 	if len(ShimImages) == 0 || (len(ShimImages) != 0 && utils.NotIn(image, ShimImages)) {
 		if utils.RegistryHasImage(SealosHub, Base64Auth, named) {
 			newImage := getRegistrDomain() + "/" + named
-			glog.Infof("begin image: %s ,after image: %s", image, newImage, action)
+			glog.Infof("begin image: %s ,after image: %s", image, newImage)
 			return newImage
 		}
 		glog.Infof("skip replace images %s", image)

@@ -79,7 +79,7 @@ func (s *server) RegisterImageService(service k8sapi.ImageServiceServer) error {
 
 func (s *server) Start() error {
 	go func() {
-		s.server.Serve(s.listener)
+		_ = s.server.Serve(s.listener)
 	}()
 
 	if err := utils.WaitForServer(s.options.Socket, time.Second); err != nil {

@@ -44,8 +44,8 @@ func (care *LvsCare) VsAndRsCare() {
 		return
 	}
 	t := time.NewTicker(time.Duration(care.Interval) * time.Second)
-	sig := make(chan os.Signal)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGKILL)
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		select {
 		case <-t.C:

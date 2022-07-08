@@ -39,5 +39,5 @@ sha256:6bf6d481d77e8c65754ca3e637b3c2b237710775c19434c2f0a829a8b8e5b8f0
 sha256:ed210e3e4a5bae1237f1bb44d72a05a2f1e5c6bfe7a7e73da179e2534269c459`
 
 func TestHTTP(t *testing.T) {
-	IsImageId(out, "7a71aca7b60fc")
+	IsImageID(out, "7a71aca7b60fc")
 }
