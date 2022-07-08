@@ -15,12 +15,13 @@
 GO := go
 GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
-	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE}
+	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
+	-s -w
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=
 endif
-GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -ldflags "$(GO_LDFLAGS)"
+GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -trimpath -ldflags "$(GO_LDFLAGS)"
 
 ifeq ($(ROOT_PACKAGE),)
 	$(error the variable ROOT_PACKAGE must be set prior to including golang.mk)
