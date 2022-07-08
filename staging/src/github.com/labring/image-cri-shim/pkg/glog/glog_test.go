@@ -238,8 +238,10 @@ func TestWarning(t *testing.T) {
 func TestV(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.verbosity.Set("2")
-	defer logging.verbosity.Set("0")
+	_ = logging.verbosity.Set("2")
+	defer func() {
+		_ = logging.verbosity.Set("0")
+	}()
 	V(2).Info("test")
 	if !contains(infoLog, "I", t) {
 		t.Errorf("Info has wrong character: %q", contents(infoLog))
@@ -253,8 +255,10 @@ func TestV(t *testing.T) {
 func TestVmoduleOn(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("glog_test=2")
-	defer logging.vmodule.Set("")
+	_ = logging.vmodule.Set("glog_test=2")
+	defer func() {
+		logging.vmodule.Set("")
+	}()
 	if !V(1) {
 		t.Error("V not enabled for 1")
 	}
@@ -277,8 +281,10 @@ func TestVmoduleOn(t *testing.T) {
 func TestVmoduleOff(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("notthisfile=2")
-	defer logging.vmodule.Set("")
+	_ = logging.vmodule.Set("notthisfile=2")
+	defer func() {
+		_ = logging.vmodule.Set("")
+	}()
 	for i := 1; i <= 3; i++ {
 		if V(Level(i)) {
 			t.Errorf("V enabled for %d", i)
@@ -344,7 +350,7 @@ func TestRollover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("info has initial error: %v", err)
 	}
-	fname0 := info.file.Name()
+	fname0 := info.file.Name()              //nolint:ifshort
 	Info(strings.Repeat("x", int(MaxSize))) // force a rollover
 	if err != nil {
 		t.Fatalf("info has error after big write: %v", err)
@@ -362,8 +368,7 @@ func TestRollover(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error after rotation: %v", err)
 	}
-	fname1 := info.file.Name()
-	if fname0 == fname1 {
+	if fname0 == info.file.Name() {
 		t.Errorf("info.f.Name did not change: %v", fname0)
 	}
 	if info.nbytes >= MaxSize {

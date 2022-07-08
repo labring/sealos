@@ -31,18 +31,18 @@ func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) er
 	var connp **grpc.ClientConn
 
 	for _, o := range opts {
-		switch o.(type) {
+		switch o := o.(type) {
 		case func(error) bool:
-			errChecker = append(errChecker, o.(func(error) bool))
+			errChecker = append(errChecker, o)
 		case grpc.DialOption:
-			dialOpts = append(dialOpts, o.(grpc.DialOption))
+			dialOpts = append(dialOpts, o)
 		case []grpc.DialOption:
-			dialOpts = append(dialOpts, o.([]grpc.DialOption)...)
+			dialOpts = append(dialOpts, o...)
 		case **grpc.ClientConn:
 			if connp != nil {
 				return fmt.Errorf("WaitForServer: multiple net.Conn pointer options given")
 			}
-			connp = o.(**grpc.ClientConn)
+			connp = o
 		default:
 			return fmt.Errorf("WaitForServer: invalid option of type %T", o)
 		}
@@ -141,7 +141,7 @@ func isFatalDialError(err error) bool {
 			}
 		}
 
-		switch err.(type) {
+		switch err.(type) { //nolint:gosimple，go-staticcheck
 		case *net.OpError:
 			err = err.(*net.OpError).Err
 			continue
