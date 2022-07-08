@@ -144,10 +144,10 @@ func isFatalDialError(err error) bool {
 
 		switch err.(type) { //nolint:gosimple
 		case *net.OpError:
-			err = err.(*net.OpError).Err
+			err = err.(*net.OpError).Err //nolint:gosimple
 			continue
 		case *os.SyscallError:
-			ne := err.(*os.SyscallError)
+			ne := err.(*os.SyscallError) //nolint:gosimple
 			switch {
 			case os.IsPermission(ne):
 				return true
