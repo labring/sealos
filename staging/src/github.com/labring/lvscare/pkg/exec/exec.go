@@ -181,11 +181,11 @@ func (cmd *cmdWrapper) Stop() {
 		return
 	}
 
-	c.Process.Signal(syscall.SIGTERM)
+	_ = c.Process.Signal(syscall.SIGTERM)
 
 	time.AfterFunc(10*time.Second, func() {
 		if !c.ProcessState.Exited() {
-			c.Process.Signal(syscall.SIGKILL)
+			_ = c.Process.Signal(syscall.SIGKILL)
 		}
 	})
 }

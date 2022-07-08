@@ -697,16 +697,16 @@ func (l *loggingT) output(s severity, buf *buffer, file string, line int, alsoTo
 		}
 		switch s {
 		case fatalLog:
-			l.file[fatalLog].Write(data)
+			_, _ = l.file[fatalLog].Write(data)
 			fallthrough
 		case errorLog:
-			l.file[errorLog].Write(data)
+			_, _ = l.file[errorLog].Write(data)
 			fallthrough
 		case warningLog:
-			l.file[warningLog].Write(data)
+			_, _ = l.file[warningLog].Write(data)
 			fallthrough
 		case infoLog:
-			l.file[infoLog].Write(data)
+			_, _ = l.file[infoLog].Write(data)
 		}
 	}
 	if s == fatalLog {
@@ -728,7 +728,7 @@ func (l *loggingT) output(s severity, buf *buffer, file string, line int, alsoTo
 		logExitFunc = func(error) {} // If we get a write error, we'll still exit below.
 		for log := fatalLog; log >= infoLog; log-- {
 			if f := l.file[log]; f != nil { // Can be nil if -logtostderr is set.
-				f.Write(trace)
+				_, _ = f.Write(trace)
 			}
 		}
 		l.mu.Unlock()
@@ -902,8 +902,8 @@ func (l *loggingT) flushAll() {
 	for s := fatalLog; s >= infoLog; s-- {
 		file := l.file[s]
 		if file != nil {
-			file.Flush() // ignore error
-			file.Sync()  // ignore error
+			_ = file.Flush() // ignore error
+			_ = file.Sync()  // ignore error
 		}
 	}
 }
