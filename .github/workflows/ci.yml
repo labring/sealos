@@ -15,16 +15,6 @@ on:
     branches: ["main"]
 
 jobs:
-  fossa:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: fossa-contrib/fossa-action@v1
-        with:
-          # https://docs.fossa.com/docs/api-reference#push-only-api-token
-          fossa-api-key: 36dc4d03f7a9b11859e44311c907a2e0
   check-license:
     runs-on: ubuntu-latest
     steps:
