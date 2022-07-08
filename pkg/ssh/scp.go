@@ -70,45 +70,6 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 	return sshClient, sftpClient, err
 }
 
-// CopyRemoteFileToLocal is scp remote file to local
-func (s *SSH) Fetch(host, localFilePath, remoteFilePath string) error {
-	if iputils.IsLocalIP(host, s.LocalAddress) {
-		if remoteFilePath != localFilePath {
-			logger.Debug("local copy files src %s to dst %s", remoteFilePath, localFilePath)
-			return file.RecursionCopy(remoteFilePath, localFilePath)
-		}
-		return nil
-	}
-	sshClient, sftpClient, err := s.sftpConnect(host)
-	if err != nil {
-		return fmt.Errorf("new sftp client failed %v", err)
-	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
-	// open remote source file
-	srcFile, err := sftpClient.Open(remoteFilePath)
-	if err != nil {
-		return fmt.Errorf("open remote file failed %v, remote path: %s", err, remoteFilePath)
-	}
-	defer srcFile.Close()
-
-	err = file.MkFileFullPathDir(localFilePath)
-	if err != nil {
-		return err
-	}
-	// open local Destination file
-	dstFile, err := os.Create(localFilePath)
-	if err != nil {
-		return fmt.Errorf("create local file failed %v", err)
-	}
-	defer dstFile.Close()
-	// copy to local file
-	_, err = srcFile.WriteTo(dstFile)
-	return err
-}
-
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
 	if iputils.IsLocalIP(host, s.LocalAddress) {
@@ -203,7 +164,7 @@ func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localP
 		srcMd5, dstMd5 string
 	)
 	srcMd5 = hash.FileMD5(localPath)
-	if s.IsFileExist(host, remotePath) {
+	if s.remoteFileExist(host, remotePath) {
 		dstMd5 = s.RemoteMd5Sum(host, remotePath)
 		if srcMd5 == dstMd5 {
 			logger.Debug("remote dst %s already exists and is the latest version , skip copying process", remotePath)
@@ -246,20 +207,4 @@ func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localP
 		return fmt.Errorf("[ssh][%s] validate md5sum failed %s != %s", host, srcMd5, dstMd5)
 	}
 	return nil
-}
-
-//if remote file not exist return false and nil
-func (s *SSH) RemoteDirExist(host, remoteDirpath string) (bool, error) {
-	sshClient, sftpClient, err := s.sftpConnect(host)
-	if err != nil {
-		return false, err
-	}
-	defer func() {
-		_ = sftpClient.Close()
-		_ = sshClient.Close()
-	}()
-	if _, err := sftpClient.ReadDir(remoteDirpath); err != nil {
-		return false, err
-	}
-	return true, nil
 }

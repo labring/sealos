@@ -21,6 +21,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
@@ -37,12 +41,23 @@ func (s *SSH) Ping(host string) error {
 }
 
 func (s *SSH) CmdAsync(host string, cmds ...string) error {
+	var isLocal bool
+	if iputils.IsLocalIP(host, s.LocalAddress) {
+		logger.Debug("ip is local ip ,local ssh cmd exec")
+		isLocal = true
+	}
 	for _, cmd := range cmds {
 		if cmd == "" {
 			continue
 		}
 
 		if err := func(cmd string) error {
+			if isLocal {
+				_, err := exec.RunBashCmd(cmd)
+				if err != nil {
+					return err
+				}
+			}
 			client, session, err := s.Connect(host)
 			if err != nil {
 				return fmt.Errorf("failed to create ssh session for %s: %v", host, err)
@@ -90,6 +105,12 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 }
 
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
+	if iputils.IsLocalIP(host, s.LocalAddress) {
+		logger.Debug("ip is local ip ,local ssh cmd exec")
+		d, err := exec.RunBashCmd(cmd)
+		return []byte(d), err
+	}
+
 	client, session, err := s.Connect(host)
 	if err != nil {
 		return nil, fmt.Errorf("[ssh][%s] create ssh session failed, %s", host, err)
