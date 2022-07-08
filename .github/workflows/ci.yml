@@ -104,10 +104,9 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          sudo apt update  || true
+          sudo apt update || true
           sudo apt install -y upx
-          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }}
-          sudo apt install -y libgpgme-dev:${{ matrix.arch }}
+          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} btrfs-progs:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
 
       - name: Install gcc
         if: ${{ matrix.arch == 'arm64' }}
@@ -115,10 +114,14 @@ jobs:
 
       - name: Build Binaries
         run: |
-          make release-build BUILDSTEP=${{ matrix.binary }}-${{ matrix.arch }}
+          make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
+
+      - name: Compress Binaries
+        run: |
+          make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
       - name: Save binaries
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
-          path: dist/${{ matrix.binary }}-${{ matrix.arch }}_linux_${{ matrix.arch }}/${{ matrix.binary }}
+          path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
