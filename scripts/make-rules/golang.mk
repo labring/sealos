@@ -21,7 +21,7 @@ ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=
 endif
-GO_BUILD_FLAGS += -tags "containers_image_openpgp netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -trimpath -ldflags "$(GO_LDFLAGS)"
+GO_BUILD_FLAGS += -tags "netgo exclude_graphdriver_devicemapper static osusergo exclude_graphdriver_btrfs" -trimpath -ldflags "$(GO_LDFLAGS)"
 
 ifeq ($(ROOT_PACKAGE),)
 	$(error the variable ROOT_PACKAGE must be set prior to including golang.mk)

@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        binary: [sealos, sealctl]
+        binary: [sealos, sealctl, lvscare, image-cri-shim]
         arch: [arm64, amd64]
     steps:
       - name: Checkout
@@ -107,10 +107,11 @@ jobs:
           sudo apt update || true
           sudo apt install -y libbtrfs-dev:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
 
-      - name: Install gcc
-        if: ${{ matrix.arch == 'arm64' }}
-        run: sudo apt install -y gcc-aarch64-linux-gnu
+      # - name: Install gcc
+      #   if: ${{ matrix.arch == 'arm64' }}
+      #   run: sudo apt install -y gcc-aarch64-linux-gnu
 
+      # Note: CGO_ENABLED=0
       - name: Build Binaries
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
@@ -120,7 +121,7 @@ jobs:
           make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
       - name: Save binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
