@@ -95,20 +95,16 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Setup MultiArch Apt
+      - name: Setup MultiArch Apt and Install gcc
         if: ${{ matrix.arch == 'arm64' }}
         run: |
-          sudo \cp .github/sources.list /etc/apt/sources.list
           sudo dpkg --add-architecture ${{ matrix.arch }}
           sudo apt update || true
+          sudo apt install -y gcc-aarch64-linux-gnu
 
       - name: Install Build Dependencies
         run: |
           sudo apt install -y libgpgme-dev:${{ matrix.arch }} libbtrfs-dev:${{ matrix.arch }}
-
-      - name: Install gcc
-        if: ${{ matrix.arch == 'arm64' }}
-        run: sudo apt install -y gcc-aarch64-linux-gnu
 
       # Note: CGO_ENABLED=0
       - name: Build Binaries
