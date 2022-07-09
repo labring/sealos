@@ -55,7 +55,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev
+        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
@@ -74,11 +74,11 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev
+        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Run Coverage
         run: make coverage
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
   build:
     needs: [golangci-lint, coverage]
@@ -104,7 +104,7 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
-          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
+          sudo apt install -y libgpgme-dev:${{ matrix.arch }} libbtrfs-dev:${{ matrix.arch }}
 
       - name: Install gcc
         if: ${{ matrix.arch == 'arm64' }}
