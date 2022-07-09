@@ -21,9 +21,9 @@ import (
 const (
 	LvsCareStaticPodName     = "kube-sealos-lvscare"
 	YamlFileSuffix           = "yaml"
-	DefaultRegistryDomain    = "selayun.hub"
+	DefaultRegistryDomain    = "sealos.hub"
 	DefaultLvscareDomain     = "lvscare.node.ip"
-	DefaultLvsCareImage      = "sealyun.hub:5000/sealos/lvscare:latest"
+	DefaultLvsCareImage      = "sealos.hub:5000/sealos/lvscare:latest"
 	ImageKubeVersionKey      = "version"
 	ImageKubeLvscareImageKey = "image"
 	ImageTypeKey             = "sealos.io.type"
