@@ -98,6 +98,7 @@ jobs:
       - name: Setup MultiArch Apt and Install gcc
         if: ${{ matrix.arch == 'arm64' }}
         run: |
+          sudo \cp .github/sources.list /etc/apt/sources.list
           sudo dpkg --add-architecture ${{ matrix.arch }}
           sudo apt update || true
           sudo apt install -y gcc-aarch64-linux-gnu
