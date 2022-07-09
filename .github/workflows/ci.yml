@@ -55,11 +55,11 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
+        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.39.0
+          version: v1.46.2
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
@@ -74,18 +74,18 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libdevmapper-dev libbtrfs-dev
+        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Run Coverage
         run: make coverage
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
 
   build:
     needs: [golangci-lint, coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        binary: [sealos, sealctl]
+        binary: [sealos, sealctl, lvscare, image-cri-shim]
         arch: [arm64, amd64]
     steps:
       - name: Checkout
@@ -99,18 +99,14 @@ jobs:
         if: ${{ matrix.arch == 'arm64' }}
         run: |
           sudo \cp .github/sources.list /etc/apt/sources.list
-          sudo apt update || true
           sudo dpkg --add-architecture ${{ matrix.arch }}
+          sudo apt update || true
 
       - name: Install Build Dependencies
         run: |
-          sudo apt update || true
-          sudo apt install -y libbtrfs-dev:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }}
+          sudo apt install -y libgpgme-dev:${{ matrix.arch }} libbtrfs-dev:${{ matrix.arch }}
 
-      - name: Install gcc
-        if: ${{ matrix.arch == 'arm64' }}
-        run: sudo apt install -y gcc-aarch64-linux-gnu
-
+      # Note: CGO_ENABLED=0
       - name: Build Binaries
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
@@ -120,7 +116,7 @@ jobs:
           make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
       - name: Save binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
