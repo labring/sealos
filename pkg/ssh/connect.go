@@ -135,8 +135,7 @@ func (s *SSH) addrReformat(host, port string) string {
 	return host
 }
 
-//RemoteFileExist is
-func (s *SSH) IsFileExist(host, remoteFilePath string) bool {
+func (s *SSH) remoteFileExist(host, remoteFilePath string) bool {
 	// if remote file is
 	// ls -l | grep aa | wc -l
 	remoteFileName := path.Base(remoteFilePath) // aa
