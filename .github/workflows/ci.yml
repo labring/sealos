@@ -105,6 +105,7 @@ jobs:
 
       - name: Install Build Dependencies
         run: |
+          sudo apt update || true
           sudo apt install -y libgpgme-dev:${{ matrix.arch }} libbtrfs-dev:${{ matrix.arch }}
 
       # Note: CGO_ENABLED=0
