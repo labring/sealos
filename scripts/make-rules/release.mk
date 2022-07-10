@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: release.build
-release.build: tools.verify.goreleaser clean
-	@echo "===========> Building sealos release binary"
-	@$(TOOLS_DIR)/goreleaser build --snapshot  --timeout=1h --id=${BUILDSTEP}
+# .PHONY: release.build
+# release.build: tools.verify.goreleaser clean
+# 	@echo "===========> Building sealos release binary"
+# 	@$(TOOLS_DIR)/goreleaser build --snapshot  --timeout=1h --id=${BUILDSTEP}
 
-.PHONY: release.release
-release.release: tools.verify.goreleaser clean
+# Should only be used in actions
+.PHONY: release
+release: tools.verify.goreleaser clean
 	@echo "===========> Releasing sealos release binary"
 	@$(TOOLS_DIR)/goreleaser release --timeout=1h --release-notes=scripts/release/Note.md
 
 .PHONY: release.upx.%
-release.upx.%:
+release.upx.%: go.bin.%
 	$(eval COMMAND := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
 	@$(TOOLS_DIR)/upx $(BIN_DIR)/$(PLATFORM)/$(COMMAND)
@@ -31,13 +32,20 @@ release.upx.%:
 .PHONY: release.upx
 release.upx: tools.verify.upx $(addprefix release.upx., $(addprefix $(PLATFORM)., $(BINS)))
 
+.PHONY: release.upx.multiarch
+release.upx.multiarch: tools.verify.upx $(foreach p,$(PLATFORMS),$(addprefix release.upx., $(addprefix $(p)., $(BINS))))
+
 PACKAGES ?= rpm deb
 
+# Should only be used in actions
 .PHONY: release.package.%
-release.package.%:
+release.package.%: go.bin.%
 	$(eval PACKAGE := $(word 2,$(subst ., ,$*)))
 	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
 	@$(TOOLS_DIR)/nfpm package -p $(PACKAGE) -f $(ROOT_DIR)/scripts/$(PLATFORM).yml -t $(BIN_DIR)/$(PLATFORM)
 
 .PHONY: release.package
 release.package: tools.verify.nfpm $(addprefix release.package., $(addprefix $(PLATFORM)., $(PACKAGES)))
+
+.PHONY: release.package.multiarch
+release.package.multiarch: tools.verify.nfpm $(foreach p,$(PLATFORMS),$(addprefix release.package., $(addprefix $(p)., $(BINS))))

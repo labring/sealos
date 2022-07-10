@@ -24,6 +24,7 @@ VERSION_PACKAGE=github.com/labring/sealos/pkg/version
 include scripts/make-rules/common.mk # must be the first to include
 include scripts/make-rules/golang.mk
 include scripts/make-rules/gen.mk
+include scripts/make-rules/image.mk
 include scripts/make-rules/license.mk
 include scripts/make-rules/oss.mk
 include scripts/make-rules/release.mk
@@ -36,15 +37,19 @@ define USAGE_OPTIONS
 
 Options:
   DEBUG            Whether or not to generate debug symbols. Default is 0.
+
   BINS             Binaries to build. Default is all binaries under cmd.
-                   This option is available when using: make build/compress
+                   This option is available when using: make {build/compress}(.multiarch)
                    Example: make build BINS="sealos sealctl"
-  PACKAGES         Packages to build. Default is rpm and deb.
-                   This option is available when using: make package
-                   Example: make package PACKAGES="rpm deb"
-  PLATFORM         Alternate platform to build for. Default is the host platform.
-                   This option is available when using: make build/compress/package
-                   Example: make build PLATFORM="linux_arm64"
+
+  IMAGES           Images to build. Default is lvscare.
+                   This option is available when using: make {image/push}(.multiarch)
+                   Example: make image IMAGES="lvscare image-cri-shim"
+
+  PLATFORMS        Platform to build for. Default is linux_arm64 and linux_amd64.
+                   This option is available when using: make {build/image/push/compress}.multiarch
+                   Example: make build.multiarch PLATFORMS="linux_arm64 linux_amd64"
+
   V                Set to 1 enable verbose build. Default is 0.
 endef
 export USAGE_OPTIONS
@@ -58,6 +63,31 @@ export USAGE_OPTIONS
 .PHONY: build
 build:
 	@$(MAKE) go.build
+
+## build.multiarch: Build source code for multiple platforms. See option PLATFORMS.
+.PHONY: build.multiarch
+build.multiarch:
+	@$(MAKE) go.build.multiarch
+
+## image: Build docker images for host platform.
+.PHONY: image
+image:
+	@$(MAKE) image.build
+
+## image.multiarch: Build docker images for multiple platforms. See option PLATFORMS.
+.PHONY: image.multiarch
+image.multiarch:
+	@$(MAKE) image.build.multiarch
+
+## push: Push docker images for host platform to registry.
+.PHONY: push
+push:
+	@$(MAKE) image.build
+
+## push.multiarch: Push docker images for multiple platforms to registry. See option PLATFORMS.
+.PHONY: push.multiarch
+push.multiarch:
+	@$(MAKE) image.build.multiarch
 
 ## lint: Check syntax and styling of go sources.
 .PHONY: lint
@@ -100,25 +130,15 @@ clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
 
-## release-build: Build release binaries for multiple platforms.
-.PHONY: release-build
-release-build:
-	@$(MAKE) release.build
-
-## release: Create a release with custom release notes.
-.PHONY: release
-release:
-	@$(MAKE) release.release
-
 ## compress: Compress the binaries using upx for host platform.
 .PHONY: compress
 compress:
 	@$(MAKE) release.upx
 
-## package: Build rpm/deb packages for host platform.
-.PHONY: package
-package:
-	@$(MAKE) release.package
+## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
+.PHONY: compress.multiarch
+compress.multiarch:
+	@$(MAKE) release.upx.multiarch
 
 ## update-contrib: Update list of contributors.
 .PHONY: update-contrib
