@@ -47,7 +47,7 @@ Options:
                    Example: make image IMAGES="lvscare image-cri-shim"
 
   PLATFORMS        Platform to build for. Default is linux_arm64 and linux_amd64.
-                   This option is available when using: make {build/image/push/compress/package}.multiarch
+                   This option is available when using: make {build/image/push/compress}.multiarch
                    Example: make build.multiarch PLATFORMS="linux_arm64 linux_amd64"
 
   V                Set to 1 enable verbose build. Default is 0.
