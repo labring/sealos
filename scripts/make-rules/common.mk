@@ -50,14 +50,12 @@ PLATFORMS ?= linux_arm64 linux_amd64
 
 # only support linux
 GOOS=linux
-# set a specific PLATFORM
+# set a specific PLATFORM, defaults to the host platform
 ifeq ($(origin PLATFORM), undefined)
 	ifeq ($(origin GOARCH), undefined)
 		GOARCH := $(shell go env GOARCH)
 	endif
 	PLATFORM := $(GOOS)_$(GOARCH)
-else
-	GOARCH := $(word 2, $(subst _, , $(PLATFORM)))
 endif
 
 # Linux command settings

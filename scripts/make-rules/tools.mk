@@ -55,9 +55,10 @@ install.goreleaser:
 install.ossutil:
 	@$(GO) install github.com/aliyun/ossutil@latest
 
+# upx platform is NOT relevant to cross-compiling platforms
 .PHONY: install.upx
 install.upx:
-	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(GOARCH)_$(GOOS).tar.xz
+	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(shell go env GOARCH)_$(GOOS).tar.xz
 	@tar xf upx*.tar.xz
 	@sudo cp upx*/upx $(TOOLS_DIR)
 	@rm -rf upx*
