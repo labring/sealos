@@ -85,6 +85,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	)
 	return todoList, nil
 }
+
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Delete in ScaleProcessor.")
 	err := c.Runtime.DeleteMasters(c.MastersToDelete)

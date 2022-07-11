@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"path"
 
+	"github.com/labring/sealos/pkg/ssh"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
@@ -29,25 +31,33 @@ import (
 
 var defaultRootDirectory = "/var/lib/image-cri-shim"
 
-//GetImageShim default dir is /var/lib/image-cri-shim
-func GetImageShim(rootfs string) string {
+type ImageShim struct {
+	SSHInterface ssh.Interface
+	IP           string
+}
+
+//GetInfo default dir is /var/lib/image-cri-shim
+func (is *ImageShim) GetInfo(rootfs string) string {
 	const imageCustomConfig = "image-cri-shim.yaml"
+	is.SSHInterface.SetStdout(false)
+	defer is.SSHInterface.SetStdout(true)
 	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)
-	registryConfig, err := yaml.Unmarshal(etcPath)
+	data, _ := is.SSHInterface.Cmd(is.IP, fmt.Sprintf("cat %s", etcPath))
+	shimConfig, err := yaml.UnmarshalData(data)
 	if err != nil {
-		logger.Debug("use default registry config")
+		logger.Debug("use default image shim config")
 		return defaultRootDirectory
 	}
-	image, _, _ := unstructured.NestedString(registryConfig, "image")
+	image, _, _ := unstructured.NestedString(shimConfig, "image")
 	logger.Debug("show image shim info, image dir : %s ", image)
 	return image
 }
 
-func ApplyImageShimCMD(rootfs string) string {
-	shimData := GetImageShim(rootfs)
+func (is *ImageShim) ApplyCMD(rootfs string) string {
+	shimData := is.GetInfo(rootfs)
 	return fmt.Sprintf(constants.DefaultCPFmt, shimData, path.Join(rootfs, constants.ImagesDirName, constants.ImageShimDirName), shimData)
 }
 
-func DeleteImageShimCMD(rootfs string) string {
-	return fmt.Sprintf("rm -rf %s", GetImageShim(rootfs))
+func (is *ImageShim) DeleteCMD(rootfs string) string {
+	return fmt.Sprintf("rm -rf %s", is.GetInfo(rootfs))
 }

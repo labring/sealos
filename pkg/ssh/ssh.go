@@ -37,6 +37,7 @@ type Interface interface {
 	Cmd(host, cmd string) ([]byte, error)
 	//CmdToString is exec command on remote host, and return spilt standard output and standard error
 	CmdToString(host, cmd, spilt string) (string, error)
+	SetStdout(enable bool)
 	Ping(host string) error
 }
 
@@ -48,6 +49,10 @@ type SSH struct {
 	PkPassword   string
 	Timeout      *time.Duration
 	LocalAddress *[]net.Addr
+}
+
+func (s *SSH) SetStdout(enable bool) {
+	s.isStdout = enable
 }
 
 func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {

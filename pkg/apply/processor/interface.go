@@ -15,6 +15,9 @@
 package processor
 
 import (
+	"path"
+
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -30,6 +33,20 @@ import (
 type Interface interface {
 	// Execute :according to the different of desired cluster to do cluster apply.
 	Execute(cluster *v2.Cluster) error
+}
+
+func SyncNewVersionConfig(cluster *v2.Cluster) {
+	d := constants.NewData(cluster.Name)
+	if !file.IsFile(d.PkiPath()) {
+		src, target := path.Join(d.Homedir(), constants.PkiDirName), d.PkiPath()
+		logger.Info("sync new version copy pki config: %s %s", src, target)
+		_ = file.RecursionCopy(src, target)
+	}
+	if !file.IsFile(d.EtcPath()) {
+		src, target := path.Join(d.Homedir(), constants.EtcDirName), d.EtcPath()
+		logger.Info("sync new version copy etc config: %s %s", src, target)
+		_ = file.RecursionCopy(src, target)
+	}
 }
 
 func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.ImageService, reset bool) error {

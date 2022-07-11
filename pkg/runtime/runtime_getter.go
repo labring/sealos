@@ -34,7 +34,7 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	return GetRegistry(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	return k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {

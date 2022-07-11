@@ -73,7 +73,7 @@ func (care *LvsCare) SyncRouter() error {
 	if len(LVS.VirtualServer) == 0 {
 		return errors.New("virtual server can't empty")
 	}
-	if len(LVS.RealServer) > 0 {
+	if LVS.TargetIP != nil {
 		var ipv4 bool
 		vIP, _, err := net.SplitHostPort(LVS.VirtualServer)
 		if err != nil {
@@ -92,7 +92,7 @@ func (care *LvsCare) SyncRouter() error {
 		LVS.Route = route.NewRoute(vIP, LVS.TargetIP.String())
 		return LVS.Route.SetRoute()
 	}
-	return errors.New("real server can't empty")
+	return nil
 }
 
 func SetTargetIP() error {

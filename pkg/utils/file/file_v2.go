@@ -104,19 +104,6 @@ func ReadAll(fileName string) ([]byte, error) {
 	return content, nil
 }
 
-// file ./test/dir/xxx.txt if dir ./test/dir not exist, create it
-func MkFileFullPathDir(fileName string) error {
-	localDir := filepath.Dir(fileName)
-	if err := Mkdir(localDir); err != nil {
-		return fmt.Errorf("failed to create local dir %s: %v", localDir, err)
-	}
-	return nil
-}
-
-func Mkdir(dirName string) error {
-	return os.MkdirAll(dirName, 0755)
-}
-
 func MkDirs(dirs ...string) error {
 	if len(dirs) == 0 {
 		return nil
