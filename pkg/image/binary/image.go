@@ -53,14 +53,14 @@ func (d *ImageService) Save(imageName, archiveName string) error {
 	if !fileutil.IsExist(localDir) {
 		return errors.New("archive dir is not exist")
 	}
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s oci-archive:%s:%s", imageName, archiveName, imageName))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s %s:%s:%s", imageName, types.DefaultTransport, archiveName, imageName))
 }
 
 func (d *ImageService) Load(archiveName string) error {
 	if !fileutil.IsExist(archiveName) {
 		return errors.New("archive file is not exist")
 	}
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull  oci-archive:%s", archiveName))
+	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull %s:%s", types.DefaultTransport, archiveName))
 }
 
 func (d *ImageService) Remove(force bool, images ...string) error {

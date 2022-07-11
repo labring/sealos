@@ -91,10 +91,9 @@ func (d *Service) Save(imageName, archiveName string) error {
 		options.CompressionFormat = &algo
 	}
 	options.CompressionLevel = &d.pushOpts.CompressionLevel
-	defaultTransport := "oci-archive"
 
 	// Default here
-	destSpec := fmt.Sprintf("%s:%s:%s", defaultTransport, archiveName, imageName)
+	destSpec := fmt.Sprintf("%s:%s:%s", labring_types.DefaultTransport, archiveName, imageName)
 	dest, err := alltransports.ParseImageName(destSpec)
 	// add the docker:// transport to see if they neglected it.
 	if err != nil {

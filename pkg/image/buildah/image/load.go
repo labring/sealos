@@ -73,7 +73,7 @@ func (d *Service) Load(archiveName string) error {
 	if d.pullOpts.Quiet {
 		options.ReportWriter = nil // Turns off logging output
 	}
-	id, err := buildah.Pull(getContext(), fmt.Sprintf("oci-archive:%s", archiveName), options)
+	id, err := buildah.Pull(getContext(), fmt.Sprintf("%s:%s", labring_types.DefaultTransport, archiveName), options)
 	if err != nil {
 		return err
 	}
