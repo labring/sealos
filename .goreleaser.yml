@@ -138,6 +138,7 @@ release:
     owner: labring
     repo: sealos
   draft: true
+  prerelease: auto
 
 #archives:
 #  - replacements:
