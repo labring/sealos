@@ -11,7 +11,8 @@ project_name: sealos
 #  # Defaults to `os.Environ()`.
 #  env:
 #    - GOPROXY=https://goproxy.cn
-
+release:
+  prerelease: auto
 before:
   hooks:
     # You may remove this if you don't use go modules.
