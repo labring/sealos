@@ -15,7 +15,7 @@
 DOCKER := docker
 DOCKER_SUPPORTED_API_VERSION ?= 1.40
 
-REGISTRY_PREFIX ?= docker.io/signormercurio
+REGISTRY_PREFIX ?= ghcr.io/labring
 IMAGES ?= lvscare
 IMAGE_PLAT ?= $(subst $(SPACE),$(COMMA),$(subst _,/,$(PLATFORMS)))
 
