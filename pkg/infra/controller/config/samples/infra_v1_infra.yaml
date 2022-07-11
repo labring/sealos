@@ -12,5 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bar xxx ddd fffff
-127.0.0.2
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: infra-sample
+spec:
+  # TODO(user): Add fields here
