@@ -95,17 +95,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Setup MultiArch Apt
-        if: ${{ matrix.arch == 'arm64' }}
-        run: |
-          sudo \cp .github/sources.list /etc/apt/sources.list
-          sudo dpkg --add-architecture ${{ matrix.arch }}
-          sudo apt update || true
-
-      - name: Install Build Dependencies
-        run: |
-          sudo apt install -y  libc6-dev:${{ matrix.arch }} libgpgme-dev:${{ matrix.arch }} libbtrfs-dev:${{ matrix.arch }}
-
       # Note: CGO_ENABLED=0
       - name: Build Binaries
         run: |
