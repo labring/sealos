@@ -36,6 +36,8 @@ const (
 	PullTypeNever     PullType = "never"
 )
 
+var DefaultTransport = "oci-archive"
+
 type BuildOptions struct {
 	NoCache            bool     //--no-cache
 	AllPlatforms       bool     //--all-platforms
