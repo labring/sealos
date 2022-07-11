@@ -82,12 +82,12 @@ image.multiarch:
 ## push: Push docker images for host platform to registry.
 .PHONY: push
 push:
-	@$(MAKE) image.build
+	@$(MAKE) image.push
 
 ## push.multiarch: Push docker images for multiple platforms to registry. See option PLATFORMS.
 .PHONY: push.multiarch
 push.multiarch:
-	@$(MAKE) image.build.multiarch
+	@$(MAKE) image.push.multiarch
 
 ## lint: Check syntax and styling of go sources.
 .PHONY: lint

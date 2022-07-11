@@ -1,4 +1,5 @@
 FROM alpine AS production
+ARG TARGETOS TARGETARCH
 
-COPY ./lvscare .
+COPY ./$TARGETOS\_$TARGETARCH/lvscare .
 ENTRYPOINT ["./lvscare"]

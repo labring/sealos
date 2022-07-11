@@ -133,6 +133,12 @@ builds:
       - -trimpath
       - -s -w
 
+release:
+  github:
+    owner: labring
+    repo: sealos
+  draft: true
+
 #archives:
 #  - replacements:
 #      darwin: Darwin
