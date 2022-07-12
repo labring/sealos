@@ -36,7 +36,12 @@ const (
 	PullTypeNever     PullType = "never"
 )
 
-var DefaultTransport = "oci-archive"
+const (
+	OCIArchive    string = "oci-archive"
+	DockerArchive string = "docker-archive"
+)
+
+var DefaultTransport = OCIArchive
 
 type BuildOptions struct {
 	NoCache            bool     //--no-cache
