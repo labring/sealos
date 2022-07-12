@@ -52,18 +52,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Install ossutil
+        run: |
+          cd /tmp
+          echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
+          wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64 && chmod 755 ossutil64
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --release-notes=scripts/release/Note.md
+          args: release --rm-dist --release-notes=scripts/release/Note.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-
-      # - name: Install ossutil
-      #   run: |
-      #     echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
-      #     wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64  && chmod 755 ossutil64
+          BUCKETNAME: ${{ secrets.BUCKETNAME }}
 
       # - name: Push binaries to oss
       #   env:
@@ -78,12 +80,3 @@ jobs:
       #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealctl-arm64
       #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64_v1/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-amd64
       #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-arm64
-
-      # - name: Publish DEB and RPM packages
-      #   env:
-      #     TOKEN: ${{ secrets.FURY_TOKEN }}
-      #   run: |
-      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.deb https://$TOKEN@push.fury.io/labring/
-      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.rpm https://$TOKEN@push.fury.io/labring/
-      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.deb https://$TOKEN@push.fury.io/labring/
-      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.rpm https://$TOKEN@push.fury.io/labring/
