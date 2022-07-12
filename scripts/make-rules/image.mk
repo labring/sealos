@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This file is currently not in use, but please do not delete it as
+# it may be useful in the future.
+
 DOCKER := docker
 DOCKER_SUPPORTED_API_VERSION ?= 1.40
 

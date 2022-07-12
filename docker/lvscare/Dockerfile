@@ -1,5 +1,4 @@
-FROM alpine AS production
-ARG TARGETOS TARGETARCH
+FROM scratch
 
-COPY ./$TARGETOS\_$TARGETARCH/lvscare /usr/bin/lvscare
+COPY lvscare /usr/bin/lvscare
 ENTRYPOINT ["/usr/bin/lvscare"]

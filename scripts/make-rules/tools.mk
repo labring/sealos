@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen
-RELEASE_TOOLS ?= upx nfpm
+BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen upx
 
 .PHONY: tools.install
-tools.install: $(addprefix tools.install., $(BUILD_TOOLS) $(RELEASE_TOOLS))
+tools.install: $(addprefix tools.install., $(BUILD_TOOLS))
 
 .PHONY: tools.install.%
 tools.install.%:
@@ -54,7 +53,3 @@ install.upx:
 	@tar xf upx*.tar.xz
 	@sudo cp upx*/upx $(TOOLS_DIR)
 	@rm -rf upx*
-
-.PHONY: install.nfpm
-install.nfpm:
-	@$(GO) install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest

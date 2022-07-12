@@ -24,9 +24,7 @@ VERSION_PACKAGE=github.com/labring/sealos/pkg/version
 include scripts/make-rules/common.mk # must be the first to include
 include scripts/make-rules/golang.mk
 include scripts/make-rules/gen.mk
-include scripts/make-rules/image.mk
 include scripts/make-rules/license.mk
-include scripts/make-rules/release.mk
 include scripts/make-rules/tools.mk
 
 # ==============================================================================
@@ -41,12 +39,8 @@ Options:
                    This option is available when using: make {build/compress}(.multiarch)
                    Example: make build BINS="sealos sealctl"
 
-  IMAGES           Images to build. Default is lvscare.
-                   This option is available when using: make {image/push}(.multiarch)
-                   Example: make image IMAGES="lvscare image-cri-shim"
-
   PLATFORMS        Platform to build for. Default is linux_arm64 and linux_amd64.
-                   This option is available when using: make {build/image/push/compress}.multiarch
+                   This option is available when using: make {build/compress}.multiarch
                    Example: make build.multiarch PLATFORMS="linux_arm64 linux_amd64"
 
   V                Set to 1 enable verbose build. Default is 0.
@@ -68,25 +62,25 @@ build:
 build.multiarch:
 	@$(MAKE) go.build.multiarch
 
-## image: Build docker images for host platform.
-.PHONY: image
-image:
-	@$(MAKE) image.build
+# ## image: Build docker images for host platform.
+# .PHONY: image
+# image:
+# 	@$(MAKE) image.build
 
-## image.multiarch: Build docker images for multiple platforms. See option PLATFORMS.
-.PHONY: image.multiarch
-image.multiarch:
-	@$(MAKE) image.build.multiarch
+# ## image.multiarch: Build docker images for multiple platforms. See option PLATFORMS.
+# .PHONY: image.multiarch
+# image.multiarch:
+# 	@$(MAKE) image.build.multiarch
 
-## push: Push docker images for host platform to registry.
-.PHONY: push
-push:
-	@$(MAKE) image.push
+# ## push: Push docker images for host platform to registry.
+# .PHONY: push
+# push:
+# 	@$(MAKE) image.push
 
-## push.multiarch: Push docker images for multiple platforms to registry. See option PLATFORMS.
-.PHONY: push.multiarch
-push.multiarch:
-	@$(MAKE) image.push.multiarch
+# ## push.multiarch: Push docker images for multiple platforms to registry. See option PLATFORMS.
+# .PHONY: push.multiarch
+# push.multiarch:
+# 	@$(MAKE) image.push.multiarch
 
 ## lint: Check syntax and styling of go sources.
 .PHONY: lint
@@ -102,6 +96,16 @@ format:
 .PHONY: coverage
 coverage:
 	@$(MAKE) go.coverage
+
+## compress: Compress the binaries using upx for host platform.
+.PHONY: compress
+compress:
+	@$(MAKE) go.compress
+
+## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
+.PHONY: compress.multiarch
+compress.multiarch:
+	@$(MAKE) go.compress.multiarch
 
 ## verify-license: Verify the license headers for all files.
 .PHONY: verify-license
@@ -128,16 +132,6 @@ tools:
 clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
-
-## compress: Compress the binaries using upx for host platform.
-.PHONY: compress
-compress:
-	@$(MAKE) release.upx
-
-## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
-.PHONY: compress.multiarch
-compress.multiarch:
-	@$(MAKE) release.upx.multiarch
 
 ## update-contrib: Update list of contributors.
 .PHONY: update-contrib
