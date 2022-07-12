@@ -37,7 +37,6 @@ jobs:
           VERSION: ${{ steps.prepare.outputs.tag_name }}
           BUCKETNAME: ${{ secrets.BUCKETNAME }}
           OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
-          DOCKER_REPO: ${{ secrets.DOCKER_REPO }}
         run: |
           cd scripts/release && sh note.sh
 
