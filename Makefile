@@ -26,7 +26,6 @@ include scripts/make-rules/golang.mk
 include scripts/make-rules/gen.mk
 include scripts/make-rules/image.mk
 include scripts/make-rules/license.mk
-include scripts/make-rules/oss.mk
 include scripts/make-rules/release.mk
 include scripts/make-rules/tools.mk
 
@@ -82,12 +81,12 @@ image.multiarch:
 ## push: Push docker images for host platform to registry.
 .PHONY: push
 push:
-	@$(MAKE) image.build
+	@$(MAKE) image.push
 
 ## push.multiarch: Push docker images for multiple platforms to registry. See option PLATFORMS.
 .PHONY: push.multiarch
 push.multiarch:
-	@$(MAKE) image.build.multiarch
+	@$(MAKE) image.push.multiarch
 
 ## lint: Check syntax and styling of go sources.
 .PHONY: lint

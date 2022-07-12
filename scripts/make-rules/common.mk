@@ -66,3 +66,7 @@ FIND := find $(CODE_DIRS)
 ifndef V
 MAKEFLAGS += --no-print-directory
 endif
+
+COMMA := ,
+SPACE :=
+SPACE +=

@@ -17,6 +17,7 @@ DOCKER_SUPPORTED_API_VERSION ?= 1.40
 
 REGISTRY_PREFIX ?= ghcr.io/labring
 IMAGES ?= lvscare
+IMAGE_PLAT ?= $(subst $(SPACE),$(COMMA),$(subst _,/,$(PLATFORMS)))
 
 ifeq (${IMAGES},)
   $(error Could not determine IMAGES, set ROOT_DIR or run in source dir)
@@ -52,42 +53,37 @@ image.build.%: go.bin.%
 	$(eval IMAGE_PLAT := $(subst _,/,$(PLATFORM)))
 	$(eval ARCH := $(word 2,$(subst _, ,$(PLATFORM))))
 
-	@echo "===========> Building docker image $(IMAGE) $(VERSION) for $(IMAGE_PLAT)"
-	@mkdir -p $(TMP_DIR)/$(IMAGE)
+	@echo "===========> Building LOCAL docker image $(IMAGE) $(VERSION) for $(IMAGE_PLAT)"
+	@mkdir -p $(TMP_DIR)/$(IMAGE)/$(PLATFORM)
 	@cat $(ROOT_DIR)/docker/$(IMAGE)/Dockerfile\
 		>$(TMP_DIR)/$(IMAGE)/Dockerfile
-	@cp $(BIN_DIR)/$(PLATFORM)/$(IMAGE) $(TMP_DIR)/$(IMAGE)/
+	@cp $(BIN_DIR)/$(PLATFORM)/$(IMAGE) $(TMP_DIR)/$(IMAGE)/$(PLATFORM)
 
-	$(eval BUILD_SUFFIX := --pull -t $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) $(TMP_DIR)/$(IMAGE))
-	$(eval BUILD_SUFFIX_ARM := --pull -t $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION) $(TMP_DIR)/$(IMAGE))
+	$(eval BUILD_SUFFIX := --load --pull -t $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) $(TMP_DIR)/$(IMAGE))
+	$(eval BUILD_SUFFIX_ARM := --load --pull -t $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION) $(TMP_DIR)/$(IMAGE))
 	@if [ "$(ARCH)" == "amd64" ]; then \
-		echo "===========> Creating docker image tag $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) for $(ARCH)"; \
-		$(DOCKER) build --platform $(IMAGE_PLAT) $(BUILD_SUFFIX); \
+		echo "===========> Creating LOCAL docker image tag $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) for $(ARCH)"; \
+		$(DOCKER) buildx build --platform $(IMAGE_PLAT) $(BUILD_SUFFIX); \
 	else \
-		echo "===========> Creating docker image tag $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION) for $(ARCH)"; \
-		$(DOCKER) build --platform $(IMAGE_PLAT) $(BUILD_SUFFIX_ARM); \
+		echo "===========> Creating LOCAL docker image tag $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION) for $(ARCH)"; \
+		$(DOCKER) buildx build --platform $(IMAGE_PLAT) $(BUILD_SUFFIX_ARM); \
 	fi
 
 .PHONY: image.push
 image.push: image.verify $(addprefix image.push., $(addprefix $(PLATFORM)., $(IMAGES)))
 
 .PHONY: image.push.multiarch
-image.push.multiarch: image.verify $(foreach p,$(PLATFORMS),$(addprefix image.push., $(addprefix $(p)., $(IMAGES)))) 
+image.push.multiarch: image.verify $(addprefix image.push.multiarch., $(IMAGES))
 
+# buildx will use the cache from image.build.% so no worries
 .PHONY: image.push.%
-image.push.%:
-	$(eval IMAGE := $(word 2,$(subst ., ,$*)))
-	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	$(eval OS := $(word 1,$(subst _, ,$(PLATFORM))))
-	$(eval ARCH := $(word 2,$(subst _, ,$(PLATFORM))))
-	$(eval IMAGE_PLAT := $(subst _,/,$(PLATFORM)))
+image.push.%: image.build.%
+	@echo "===========> Pushing image $(IMAGE) $(VERSION) for $(IMAGE_PLAT) to $(REGISTRY_PREFIX)"
+	$(eval PUSH_SUFFIX := --push --pull -t $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) $(TMP_DIR)/$(IMAGE))
+	$(DOCKER) buildx build --platform $(IMAGE_PLAT) $(PUSH_SUFFIX)
 
-	@echo "===========> Pushing image $(IMAGE) $(VERSION) to $(REGISTRY_PREFIX)"
-	@if [ "$(ARCH)" == "amd64" ]; then \
-		echo "===========> Pushing docker image tag $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) for $(ARCH)"; \
-		$(DOCKER) push $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION); \
-	else \
-		echo "===========> Pushing docker image tag $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION) for $(ARCH)"; \
-		$(DOCKER) push $(REGISTRY_PREFIX)/$(IMAGE).$(ARCH):$(VERSION); \
-	fi
-
+.PHONY: image.push.multiarch.%
+image.push.multiarch.%: $(foreach p,$(PLATFORMS),$(addprefix image.build., $(addprefix $(p)., %)))
+	@echo "===========> Pushing multi-arch image $(IMAGE) $(VERSION) to $(REGISTRY_PREFIX)"
+	$(eval PUSH_SUFFIX := --push --pull -t $(REGISTRY_PREFIX)/$(IMAGE):$(VERSION) $(TMP_DIR)/$(IMAGE))
+	$(DOCKER) buildx build --platform $(subst _,/,$(subst $(SPACE),$(COMMA),$(PLATFORMS))) $(PUSH_SUFFIX)
