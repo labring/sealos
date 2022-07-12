@@ -179,7 +179,6 @@ publishers:
   - name: "oss"
     ids:
       - sealos
-      - sealctl
     env:
       - BUCKETNAME={{ .Env.BUCKETNAME }}
     dir: "{{ dir .ArtifactPath }}"
