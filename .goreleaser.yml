@@ -157,7 +157,8 @@ docker_manifests:
       - lvscare:{{ .Tag }}-arm64
 
 nfpms:
-  - builds:
+  - id: packages
+    builds:
       - sealos
       - sealctl
     vendor: labring
@@ -171,14 +172,11 @@ nfpms:
 
 publishers:
   - name: "fury.io"
-    env:
-      - TOKEN={{ .Env.FURY_TOKEN }}
+    ids:
+      - packages
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
-      curl -F package=@sealos_{{ .Tag }}_linux_amd64.deb https://$TOKEN@push.fury.io/labring/
-      curl -F package=@sealos_{{ .Tag }}_linux_amd64.rpm https://$TOKEN@push.fury.io/labring/
-      curl -F package=@sealos_{{ .Tag }}_linux_arm64.deb https://$TOKEN@push.fury.io/labring/
-      curl -F package=@sealos_{{ .Tag }}_linux_arm64.rpm https://$TOKEN@push.fury.io/labring/
+      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/labring/
 
 checksum:
   disable: true
