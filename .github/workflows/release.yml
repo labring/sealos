@@ -58,6 +58,7 @@ jobs:
           args: release --release-notes=scripts/release/Note.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
       # - name: Install ossutil
       #   run: |
@@ -78,11 +79,11 @@ jobs:
       #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64_v1/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-amd64
       #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-arm64
 
-      - name: Publish DEB and RPM packages
-        env:
-          TOKEN: ${{ secrets.FURY_TOKEN }}
-        run: |
-          curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.deb https://$TOKEN@push.fury.io/labring/
-          curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.rpm https://$TOKEN@push.fury.io/labring/
-          curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.deb https://$TOKEN@push.fury.io/labring/
-          curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.rpm https://$TOKEN@push.fury.io/labring/
+      # - name: Publish DEB and RPM packages
+      #   env:
+      #     TOKEN: ${{ secrets.FURY_TOKEN }}
+      #   run: |
+      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.deb https://$TOKEN@push.fury.io/labring/
+      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_amd64.rpm https://$TOKEN@push.fury.io/labring/
+      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.deb https://$TOKEN@push.fury.io/labring/
+      #     curl -F package=@dist/sealos_{{ .Tag }}_linux_arm64.rpm https://$TOKEN@push.fury.io/labring/

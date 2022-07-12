@@ -169,6 +169,17 @@ nfpms:
       - deb
       - rpm
 
+publishers:
+  - name: "fury.io"
+    env:
+      - TOKEN={{ .Env.FURY_TOKEN }}
+    dir: "{{ dir .ArtifactPath }}"
+    cmd: |
+      curl -F package=@sealos_{{ .Tag }}_linux_amd64.deb https://$TOKEN@push.fury.io/labring/
+      curl -F package=@sealos_{{ .Tag }}_linux_amd64.rpm https://$TOKEN@push.fury.io/labring/
+      curl -F package=@sealos_{{ .Tag }}_linux_arm64.deb https://$TOKEN@push.fury.io/labring/
+      curl -F package=@sealos_{{ .Tag }}_linux_arm64.rpm https://$TOKEN@push.fury.io/labring/
+
 checksum:
   disable: true
   name_template: "{{ .ProjectName }}_checksums.txt"
