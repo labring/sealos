@@ -26,7 +26,6 @@ include scripts/make-rules/golang.mk
 include scripts/make-rules/gen.mk
 include scripts/make-rules/image.mk
 include scripts/make-rules/license.mk
-include scripts/make-rules/release.mk
 include scripts/make-rules/tools.mk
 
 # ==============================================================================
@@ -103,6 +102,16 @@ format:
 coverage:
 	@$(MAKE) go.coverage
 
+## compress: Compress the binaries using upx for host platform.
+.PHONY: compress
+compress:
+	@$(MAKE) go.compress
+
+## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
+.PHONY: compress.multiarch
+compress.multiarch:
+	@$(MAKE) go.compress.multiarch
+
 ## verify-license: Verify the license headers for all files.
 .PHONY: verify-license
 verify-license:
@@ -128,16 +137,6 @@ tools:
 clean:
 	@echo "===========> Cleaning all build output"
 	@-rm -vrf $(OUTPUT_DIR) $(BIN_DIR)
-
-## compress: Compress the binaries using upx for host platform.
-.PHONY: compress
-compress:
-	@$(MAKE) release.upx
-
-## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
-.PHONY: compress.multiarch
-compress.multiarch:
-	@$(MAKE) release.upx.multiarch
 
 ## update-contrib: Update list of contributors.
 .PHONY: update-contrib

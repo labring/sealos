@@ -127,6 +127,48 @@ release:
     name: sealos
   prerelease: auto
 
+dockers:
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - lvscare:{{ .Tag }}-amd64
+    dockerfile: docker/lvscare/Dockerfile
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - lvscare:{{ .Tag }}-arm64
+    dockerfile: docker/lvscare/Dockerfile
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+docker_manifests:
+  - name_template: ghcr.io/labring/lvscare:{{ .Tag }}
+    image_templates:
+      - lvscare:{{ .Tag }}-amd64
+      - lvscare:{{ .Tag }}-arm64
+
+nfpms:
+  builds:
+    - sealos
+    - sealctl
+  vendor: labring
+  homepage: https://github.com/labring/sealos
+  maintainer: fanux (https://github.com/fanux)
+  description: Cloud OS distribution with Kubernetes as kernel
+  license: Apache 2.0
+  formats:
+    - deb
+    - rpm
+
 checksum:
   disable: true
   name_template: "{{ .ProjectName }}_checksums.txt"
