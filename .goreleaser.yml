@@ -18,7 +18,8 @@ before:
     - go generate ./...
     - go mod tidy
 builds:
-  - env:
+  - id: sealos
+    env:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
       - CC_FOR_TARGET=gcc-aarch64-linux-gnu
@@ -57,7 +58,8 @@ builds:
           - CC_FOR_TARGET=gcc-x86_64-linux-gnu
           - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig/
 
-  - env:
+  - id: sealctl
+    env:
       - CGO_ENABLED=0
     main: ./cmd/sealctl
     hooks:
@@ -76,7 +78,8 @@ builds:
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
 
-  - env:
+  - id: lvscare
+    env:
       - CGO_ENABLED=0
     main: ./cmd/lvscare
     hooks:
@@ -95,7 +98,8 @@ builds:
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
 
-  - env:
+  - id: image-cri-shim
+    env:
       - CGO_ENABLED=0
     main: ./cmd/image-cri-shim
     hooks:
