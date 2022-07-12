@@ -26,7 +26,6 @@ include scripts/make-rules/golang.mk
 include scripts/make-rules/gen.mk
 include scripts/make-rules/image.mk
 include scripts/make-rules/license.mk
-include scripts/make-rules/oss.mk
 include scripts/make-rules/release.mk
 include scripts/make-rules/tools.mk
 
