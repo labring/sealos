@@ -56,5 +56,3 @@ deb [arch=arm64]  http://ports.ubuntu.com/ubuntu-ports focal-updates main restri
 deb [arch=arm64]  http://ports.ubuntu.com/ubuntu-ports focal-backports main restricted universe multiverse
 
 deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-security main restricted universe multiverse
-
-deb [arch=arm64] http://archive.canonical.com/ubuntu focal partner
