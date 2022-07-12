@@ -55,7 +55,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --rm-dist --release-notes=scripts/release/Note.md
+          args: release --release-notes=scripts/release/Note.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
