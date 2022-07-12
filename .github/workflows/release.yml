@@ -68,7 +68,8 @@ jobs:
         run: |
           sudo apt install -y gcc-aarch64-linux-gnu upx \
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
-            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64
+            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64 || true
+          sudo apt install -f
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
