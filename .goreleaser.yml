@@ -160,7 +160,6 @@ nfpms:
   - id: packages
     builds:
       - sealos
-      - sealctl
     vendor: labring
     homepage: https://github.com/labring/sealos
     maintainer: fanux (https://github.com/fanux)
