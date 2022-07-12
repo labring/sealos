@@ -135,7 +135,7 @@ builds:
 
 release:
   github:
-    owner: labring
+    owner: SignorMercurio
     repo: sealos
   draft: true
   prerelease: auto
