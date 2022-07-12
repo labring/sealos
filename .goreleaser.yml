@@ -127,19 +127,25 @@ release:
     name: sealos
   prerelease: auto
 
-#archives:
-#  - replacements:
-#      darwin: Darwin
-#      linux: Linux
-#      amd64: x86_64
-#      arm64: aarch64
 checksum:
   disable: true
   name_template: "{{ .ProjectName }}_checksums.txt"
+
 snapshot:
   name_template: "{{ .Tag }}-next"
+
 changelog:
+  use: github
   sort: asc
+  groups:
+    - title: Features
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: "Bug fixes"
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: Others
+      order: 999
   filters:
     exclude:
       - "^docs:"
