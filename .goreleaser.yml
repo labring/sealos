@@ -157,17 +157,17 @@ docker_manifests:
       - lvscare:{{ .Tag }}-arm64
 
 nfpms:
-  builds:
-    - sealos
-    - sealctl
-  vendor: labring
-  homepage: https://github.com/labring/sealos
-  maintainer: fanux (https://github.com/fanux)
-  description: Cloud OS distribution with Kubernetes as kernel
-  license: Apache 2.0
-  formats:
-    - deb
-    - rpm
+  - builds:
+      - sealos
+      - sealctl
+    vendor: labring
+    homepage: https://github.com/labring/sealos
+    maintainer: fanux (https://github.com/fanux)
+    description: Cloud OS distribution with Kubernetes as kernel
+    license: Apache 2.0
+    formats:
+      - deb
+      - rpm
 
 checksum:
   disable: true
