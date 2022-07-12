@@ -66,9 +66,9 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu upx \
-            libbtrfs-dev libgpgme-dev libdevmapper-dev \
-            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64 || true
+          sudo apt install -y gcc-aarch64-linux-gnu upx
+          sudo apt install -y libbtrfs-dev libgpgme-dev libdevmapper-dev
+          sudo apt install -y libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64
           sudo apt install -f
 
       - name: Run GoReleaser
