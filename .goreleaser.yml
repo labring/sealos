@@ -186,7 +186,7 @@ publishers:
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
       /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/{{ .Tag }}/{{ .ArtifactName }}-{{ .Arch }}
-      /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/lastest/{{ .ArtifactName }}-{{ .Arch }}
+      /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/{{ .ArtifactName }}-{{ .Arch }}
 
 checksum:
   disable: true

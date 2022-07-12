@@ -49,8 +49,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.owner }}
+          password: ${{ secrets.GH_TOKEN }}
 
       - name: Install ossutil
         run: |
