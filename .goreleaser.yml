@@ -136,7 +136,7 @@ builds:
 release:
   github:
     owner: SignorMercurio
-    repo: sealos
+    name: sealos
   draft: true
   prerelease: auto
 
