@@ -52,6 +52,9 @@ builds:
     overrides:
       - goos: linux
         goarch: amd64
+        goamd64: v1
+        goarm: ""
+        gomips: ""
         env:
           - CGO_ENABLED=1
           - CC=x86_64-linux-gnu-gcc
