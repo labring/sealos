@@ -61,16 +61,14 @@ jobs:
       - name: Setup MultiArch Apt
         run: |
           sudo \cp .github/sources.list /etc/apt/sources.list
-          sudo dpkg --add-architecture arm
+          sudo dpkg --add-architecture arm64
           sudo apt update || true
 
       - name: Install Dependencies
         run: |
-          sudo apt update || true
           sudo apt install -y gcc-aarch64-linux-gnu upx \
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
-            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64 || true
-          sudo apt install -f
+            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
