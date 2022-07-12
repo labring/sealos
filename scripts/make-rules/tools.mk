@@ -13,7 +13,7 @@
 # limitations under the License.
 
 BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen
-RELEASE_TOOLS ?= goreleaser ossutil upx nfpm
+RELEASE_TOOLS ?= upx nfpm
 
 .PHONY: tools.install
 tools.install: $(addprefix tools.install., $(BUILD_TOOLS) $(RELEASE_TOOLS))
@@ -46,14 +46,6 @@ install.deepcopy-gen:
 .PHONY: install.conversion-gen
 install.conversion-gen:
 	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@latest
-
-.PHONY: install.goreleaser
-install.goreleaser:
-	@$(GO) install github.com/goreleaser/goreleaser@v1.6.3
-
-.PHONY: install.ossutil
-install.ossutil:
-	@$(GO) install github.com/aliyun/ossutil@latest
 
 # upx platform is NOT relevant to cross-compiling platforms
 .PHONY: install.upx

@@ -12,17 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# .PHONY: release.build
-# release.build: tools.verify.goreleaser clean
-# 	@echo "===========> Building sealos release binary"
-# 	@$(TOOLS_DIR)/goreleaser build --snapshot  --timeout=1h --id=${BUILDSTEP}
-
-# Should only be used in actions
-.PHONY: release
-release: tools.verify.goreleaser clean
-	@echo "===========> Releasing sealos release binary"
-	@$(TOOLS_DIR)/goreleaser release --timeout=1h --release-notes=scripts/release/Note.md
-
 .PHONY: release.upx.%
 release.upx.%: go.bin.%
 	$(eval COMMAND := $(word 2,$(subst ., ,$*)))
