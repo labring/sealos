@@ -18,9 +18,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/labring/image-cri-shim/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
@@ -104,23 +103,23 @@ func (s *server) replaceImage(image, action string) string {
 	//for image id
 	images, err := utils.RunBashCmd("crictl images -q")
 	if err != nil {
-		glog.Warningf("exec crictl images -q error: %s", err.Error())
+		logger.Warn("exec crictl images -q error: %s", err.Error())
 		return image
 	}
 	if utils.IsImageID(images, image) {
-		glog.Infof("image: %s is imageID,skip replace", image)
+		logger.Info("image: %s is imageID,skip replace", image)
 		return image
 	}
 	//for image name
 	domain, named := splitDockerDomain(image)
-	glog.Infof("domain: %s,named: %s,action: %s", domain, named, action)
+	logger.Info("domain: %s,named: %s,action: %s", domain, named, action)
 	if len(ShimImages) == 0 || (len(ShimImages) != 0 && utils.NotIn(image, ShimImages)) {
 		if utils.RegistryHasImage(SealosHub, Base64Auth, named) {
 			newImage := getRegistrDomain() + "/" + named
-			glog.Infof("begin image: %s ,after image: %s", image, newImage)
+			logger.Info("begin image: %s ,after image: %s", image, newImage)
 			return newImage
 		}
-		glog.Infof("skip replace images %s", image)
+		logger.Info("skip replace images %s", image)
 		return image
 	}
 
@@ -132,7 +131,7 @@ func (s *server) replaceImage(image, action string) string {
 	}
 
 	if Debug {
-		glog.Infof("begin image: %s ,after image: %s , action: %s", image, fixImageName, action)
+		logger.Info("begin image: %s ,after image: %s , action: %s", image, fixImageName, action)
 	}
 	return fixImageName
 }

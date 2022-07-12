@@ -22,9 +22,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labring/lvscare/pkg/glog"
 	"github.com/labring/lvscare/pkg/route"
 	"github.com/labring/lvscare/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 //VsAndRsCare is
@@ -33,10 +33,10 @@ func (care *LvsCare) VsAndRsCare() {
 	//set inner lvs
 	care.lvs = lvs
 	if care.Clean {
-		glog.V(8).Info("lvscare deleteVirtualServer")
+		logger.Info("lvscare deleteVirtualServer")
 		err := lvs.DeleteVirtualServer(care.VirtualServer, false)
 		if err != nil {
-			glog.Infof("virtualServer is not exist skip...: %v", err)
+			logger.Info("virtualServer is not exist skip...: %v", err)
 		}
 	}
 	care.createVsAndRs()
@@ -55,7 +55,7 @@ func (care *LvsCare) VsAndRsCare() {
 				err := care.lvs.CreateVirtualServer(care.VirtualServer, true)
 				//virtual server is exists
 				if err != nil {
-					glog.Errorf("failed to create virtual server: %v", err)
+					logger.Error("failed to create virtual server: %v", err)
 
 					return
 				}
@@ -63,7 +63,7 @@ func (care *LvsCare) VsAndRsCare() {
 			//check real server
 			lvs.CheckRealServers(care.HealthPath, care.HealthSchem)
 		case signa := <-sig:
-			glog.Infof("receive kill signal: %+v", signa)
+			logger.Info("receive kill signal: %+v", signa)
 			_ = LVS.Route.DelRoute()
 			return
 		}
@@ -85,10 +85,10 @@ func (care *LvsCare) SyncRouter() error {
 			ipv4 = true
 		}
 		if !ipv4 {
-			glog.Infof("tip: %s is not ipv4", LVS.TargetIP.String())
+			logger.Info("tip: %s is not ipv4", LVS.TargetIP.String())
 			return nil
 		}
-		glog.Infof("tip: %s,vip: %s", LVS.TargetIP.String(), vIP)
+		logger.Info("tip: %s,vip: %s", LVS.TargetIP.String(), vIP)
 		LVS.Route = route.NewRoute(vIP, LVS.TargetIP.String())
 		return LVS.Route.SetRoute()
 	}

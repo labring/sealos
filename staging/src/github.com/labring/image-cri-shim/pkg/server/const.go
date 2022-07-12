@@ -18,9 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/labring/image-cri-shim/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -44,7 +43,7 @@ var (
 func getData() map[string]interface{} {
 	data, err := utils.Unmarshal(ConfigFile)
 	if err != nil {
-		glog.Warningf("load config from image shim: %v", err)
+		logger.Warn("load config from image shim: %v", err)
 		return nil
 	}
 	return data
@@ -65,10 +64,10 @@ func RunLoad() {
 		go wait.Forever(func() {
 			images, err := utils.LoadImages(imageDir)
 			if err != nil {
-				glog.Warningf("load images from image dir: %v", err)
+				logger.Warn("load images from image dir: %v", err)
 			}
 			ShimImages = images
-			glog.Infof("sync image list for image dir,sync second is %d,data is %+v", sync, images)
+			logger.Info("sync image list for image dir,sync second is %d,data is %+v", sync, images)
 		}, time.Duration(sync*int64(time.Second)))
 	}
 }

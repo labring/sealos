@@ -22,6 +22,7 @@ import (
 	"runtime"
 
 	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/pkg/parse"
@@ -42,7 +43,6 @@ import (
 	"github.com/containers/storage/pkg/unshare"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
@@ -157,7 +157,7 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 	)
 	storageOptions, err := storage.DefaultStoreOptions(false, 0)
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	if len(storageOptions.GraphDriverOptions) > 0 {
@@ -166,7 +166,7 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 	}
 	containerConfig, err := config.Default()
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	containerConfig.CheckCgroupsAndAdjustConfig()

@@ -21,24 +21,23 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/labring/lvscare/pkg/glog"
-
 	"github.com/labring/lvscare/pkg/ipvs"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 //SplitServer is
 func SplitServer(server string) (string, uint16) {
-	glog.Infof("server %s", server)
+	logger.Info("server %s", server)
 
 	ip, port, err := net.SplitHostPort(server)
 	if err != nil {
-		glog.Errorf("SplitServer error: %v.", err)
+		logger.Error("SplitServer error: %v.", err)
 		return "", 0
 	}
-	glog.V(5).Infof("SplitServer debug: TargetIP: %s, Port: %s", ip, port)
+	logger.Info("SplitServer debug: TargetIP: %s, Port: %s", ip, port)
 	p, err := strconv.Atoi(port)
 	if err != nil {
-		glog.Warningf("SplitServer error: %v", err)
+		logger.Warn("SplitServer error: %v", err)
 		return "", 0
 	}
 	return ip, uint16(p)
@@ -50,7 +49,7 @@ func IsHTTPAPIHealth(ip, port, path, schem string) bool {
 	url := fmt.Sprintf("%s://%s%s", schem, net.JoinHostPort(ip, port), path)
 	resp, err := http.Get(url)
 	if err != nil {
-		glog.V(5).Infof("IsHTTPAPIHealth error: %v", err)
+		logger.Warn("IsHTTPAPIHealth error: %v", err)
 		return false
 	}
 	defer resp.Body.Close()

@@ -7,15 +7,23 @@ replace github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
 require (
 	github.com/lithammer/dedent v1.1.0
 	github.com/moby/ipvs v1.0.2
-	github.com/vishvananda/netlink v1.1.0
+	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5
 )
 
 require (
-	github.com/google/go-cmp v0.5.5 // indirect
-	github.com/konsorten/go-windows-terminal-sequences v1.0.1 // indirect
-	github.com/sirupsen/logrus v1.4.2 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
+	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
+)
+
+require github.com/labring/sealos v0.0.0-00010101000000-000000000000
+
+replace (
+	github.com/labring/image-cri-shim => ../image-cri-shim
+	github.com/labring/lvscare => ../lvscare
+	github.com/labring/sealos => ../../../../../
 )

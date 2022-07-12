@@ -22,7 +22,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -67,13 +66,5 @@ func onBootOnDie() {
 		logger.Error(err)
 		panic(1)
 	}
-	logger.CfgAndFile(debug, constants.LogPath(), "sealos", false)
-	setupLogrus()
-}
-
-const logLevel = "warn"
-
-func setupLogrus() {
-	logrusLvl, _ := logrus.ParseLevel(logLevel)
-	logrus.SetLevel(logrusLvl)
+	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }
