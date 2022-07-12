@@ -30,15 +30,21 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func GetRegistry(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
+func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
-		IP:     defaultRegistry,
-		Domain: constants.DefaultRegistryDomain,
-		Port:   "5000",
+		IP:       defaultRegistry,
+		Domain:   constants.DefaultRegistryDomain,
+		Port:     "5000",
+		Username: constants.DefaultRegistryUsername,
+		Password: constants.DefaultRegistryPassword,
+		Data:     constants.DefaultRegistryData,
 	}
+	k.getSSHInterface().SetStdout(false)
+	defer k.getSSHInterface().SetStdout(true)
 	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
-	registryConfig, err := yaml.Unmarshal(etcPath)
+	out, _ := k.getSSHInterface().Cmd(k.getMaster0IPAPIServer(), fmt.Sprintf("cat %s", etcPath))
+	registryConfig, err := yaml.UnmarshalData(out)
 	if err != nil {
 		logger.Warn("read registry config path error: %+v", err)
 		logger.Info("use default registry config")
@@ -72,15 +78,15 @@ func GetRegistry(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	return rConfig
 }
 
-func (k *KubeadmRuntime) htpasswd() error {
+func (k *KubeadmRuntime) htpasswd() (string, error) {
 	htpasswdPath := path.Join(k.getContentData().RootFSEtcPath(), "registry_htpasswd")
 	registry := k.getRegistry()
 	if registry.Username == "" && registry.Password == "" {
-		return nil
+		return "", nil
 	}
 	data := passwd.Htpasswd(registry.Username, registry.Password)
 	logger.Debug("write htpasswd file: %s,data: %s", htpasswdPath, data)
-	return file.WriteFile(htpasswdPath, []byte(data))
+	return htpasswdPath, file.WriteFile(htpasswdPath, []byte(data))
 }
 
 func (k *KubeadmRuntime) ApplyRegistry() error {
@@ -91,9 +97,13 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
 	ip := k.getMaster0IPAndPort()
-	err = k.htpasswd()
+	htpasswdPath, err := k.htpasswd()
 	if err != nil {
 		return fmt.Errorf("generator registry htpasswd failed %v", err)
+	}
+	err = k.sshCopy(registry.IP, htpasswdPath, htpasswdPath)
+	if err != nil {
+		return fmt.Errorf("copy generator registry htpasswd failed %v", err)
 	}
 	err = k.execInitRegistry(ip)
 	if err != nil {

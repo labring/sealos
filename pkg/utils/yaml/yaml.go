@@ -43,6 +43,15 @@ func Unmarshal(path string) (map[string]interface{}, error) {
 	return data, nil
 }
 
+func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
+	var data map[string]interface{}
+	err := yaml.Unmarshal(metadata, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 func ToJSON(bs []byte) (jsons []string) {
 	reader := bytes.NewReader(bs)
 	ext := runtime.RawExtension{}

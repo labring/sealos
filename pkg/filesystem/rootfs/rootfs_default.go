@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/exec"
-	file2 "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -65,11 +65,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
 	eg, _ := errgroup.WithContext(context.Background())
 	envProcessor := env.NewEnvProcessor(cluster, f.images)
-
 	for _, cInfo := range f.images {
 		src := cInfo
 		eg.Go(func() error {
-			if !file2.IsExist(src.MountPoint) {
+			if !file.IsExist(src.MountPoint) {
 				logger.Debug("Image %s not exist,render env continue", src.ImageName)
 				return nil
 			}
@@ -77,7 +76,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			if err != nil {
 				return errors.Wrap(err, "render env to rootfs failed")
 			}
-			dirs, err := file2.StatDir(src.MountPoint, true)
+			dirs, err := file.StatDir(src.MountPoint, true)
 			if err != nil {
 				return errors.Wrap(err, "get rootfs files failed")
 			}
@@ -95,6 +94,10 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	}
 	check := constants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
 	sshClient := f.getSSH(cluster)
+	shim := runtime.ImageShim{
+		SSHInterface: sshClient,
+		IP:           cluster.GetMaster0IPAndPort(),
+	}
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
@@ -129,7 +132,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				if checkBash == "" {
 					return nil
 				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), runtime.ApplyImageShimCMD(target)); err != nil {
+				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), shim.ApplyCMD(target)); err != nil {
 					return err
 				}
 				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
@@ -186,7 +189,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	for _, ip := range ipList {
 		for _, dir := range []string{renderEtc, renderChart, renderManifests} {
 			logger.Debug("render env dir: %s", dir)
-			if file2.IsExist(dir) {
+			if file.IsExist(dir) {
 				err := p.RenderAll(ip, dir)
 				if err != nil {
 					return err
@@ -201,19 +204,14 @@ func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target s
 	if err != nil {
 		return fmt.Errorf("failed to copy files %s", err)
 	}
-
-	if isRegistry {
+	if isRegistry || isApp {
 		return sshEntry.Copy(ip, src, target)
-	}
-	targetIP := ip
-	if isApp {
-		targetIP = "127.0.0.1"
 	}
 	for _, f := range files {
 		if f.Name() == constants.RegistryDirName {
 			continue
 		}
-		err = sshEntry.Copy(targetIP, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
+		err = sshEntry.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
 		if err != nil {
 			return fmt.Errorf("failed to copy sub files %v", err)
 		}

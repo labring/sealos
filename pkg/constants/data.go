@@ -95,14 +95,14 @@ func (d *data) RootFSManifestsPath() string {
 }
 
 func (d *data) EtcPath() string {
-	return filepath.Join(d.Homedir(), EtcDirName)
+	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
 }
 func (d *data) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }
 
 func (d *data) PkiPath() string {
-	return filepath.Join(d.Homedir(), PkiDirName)
+	return filepath.Join(ClusterDir(d.clusterName), PkiDirName)
 }
 
 func (d *data) PkiEtcdPath() string {

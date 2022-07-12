@@ -19,8 +19,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/ssh"
+
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/exec"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -75,13 +76,14 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 			_ = fileutil.CleanFiles(kubeConfig)
 		}()
 	}
+	sshInterface := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 
 	for _, value := range guestCMD {
 		if value == "" {
 			continue
 		}
 		logger.Info("guest cmd is %s", value)
-		if err := exec.Cmd("bash", "-c", fmt.Sprintf(constants.CdAndExecCmd, clusterRootfs, value)); err != nil {
+		if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), fmt.Sprintf(constants.CdAndExecCmd, clusterRootfs, value)); err != nil {
 			return err
 		}
 	}
