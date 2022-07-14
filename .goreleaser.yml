@@ -122,9 +122,8 @@ builds:
       - -s -w
 
 release:
-  github:
-    owner: labring
-    name: sealos
+#  github:
+#    name: sealos
   prerelease: auto
 
 dockers:
@@ -134,7 +133,7 @@ dockers:
     goos: linux
     goarch: amd64
     image_templates:
-      - lvscare:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
     dockerfile: docker/lvscare/Dockerfile
     build_flag_templates:
       - --pull
@@ -145,16 +144,16 @@ dockers:
     goos: linux
     goarch: arm64
     image_templates:
-      - lvscare:{{ .Tag }}-arm64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
     dockerfile: docker/lvscare/Dockerfile
     build_flag_templates:
       - --pull
       - --platform=linux/arm64
 docker_manifests:
-  - name_template: ghcr.io/labring/lvscare:{{ .Tag }}
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
     image_templates:
-      - lvscare:{{ .Tag }}-amd64
-      - lvscare:{{ .Tag }}-arm64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
 
 nfpms:
   - id: packages
@@ -175,12 +174,13 @@ publishers:
       - packages
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
-      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/labring/
+      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
   - name: "oss"
     ids:
       - sealos
     env:
       - BUCKETNAME={{ .Env.BUCKETNAME }}
+      - USERNAME={{ .Env.USERNAME }}
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
       /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/{{ .Tag }}/{{ .ArtifactName }}-{{ .Arch }}

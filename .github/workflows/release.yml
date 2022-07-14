@@ -49,7 +49,7 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: ${{ github.owner }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
 
       - name: Install ossutil
@@ -63,20 +63,7 @@ jobs:
         with:
           args: release --rm-dist --release-notes=scripts/release/Note.md
         env:
+          USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
           BUCKETNAME: ${{ secrets.BUCKETNAME }}
-
-      # - name: Push binaries to oss
-      #   env:
-      #     BUCKETNAME: ${{ secrets.BUCKETNAME }}
-      #   run: |
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64_v1/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-amd64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealos-arm64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_amd64_v1/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-amd64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealos_linux_arm64/sealos oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealos-arm64
-
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64_v1/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealctl-amd64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/${{ steps.prepare.outputs.tag_name }}/sealctl-arm64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_amd64_v1/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-amd64
-      #     ./ossutil64 -c .ossutilconfig cp -f dist/sealctl_linux_arm64/sealctl oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/sealctl-arm64
