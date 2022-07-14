@@ -37,6 +37,7 @@ jobs:
           VERSION: ${{ steps.prepare.outputs.tag_name }}
           BUCKETNAME: ${{ secrets.BUCKETNAME }}
           OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
+          USERNAME: ${{ github.repository_owner }}
         run: |
           cd scripts/release && sh note.sh
 
