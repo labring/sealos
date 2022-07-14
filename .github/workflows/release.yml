@@ -53,12 +53,6 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
 
-#      - name: Install ossutil
-#        run: |
-#          cd /tmp
-#          echo ${{ secrets.OSS_CONFIG }} |base64 --decode >> .ossutilconfig
-#          wget http://gosspublic.alicdn.com/ossutil/1.6.19/ossutil64 && chmod 755 ossutil64
-
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:

@@ -18,7 +18,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
@@ -53,10 +52,6 @@ func newRegistryCmd() *cobra.Command {
 				return
 			}
 			logger.Debug("password registry is %s", pwd)
-			if err := file.MkDirs(pwdPath); err != nil {
-				logger.Error("init dir is error: %v", err)
-				os.Exit(1)
-			}
 			err := ioutil.WriteFile(pwdPath, []byte(pwd), 0755)
 			if err != nil {
 				logger.Error(err)

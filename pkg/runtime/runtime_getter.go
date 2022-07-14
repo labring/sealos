@@ -20,13 +20,11 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/env"
@@ -35,12 +33,9 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	var mx sync.Mutex
-	mx.Lock()
-	defer mx.Unlock()
-	if k.Registry == nil {
-		return k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
-	}
+	k.registryOnce.Do(func() {
+		k.Registry = k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	})
 	return k.Registry
 }
 

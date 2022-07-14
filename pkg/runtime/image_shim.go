@@ -39,8 +39,6 @@ type ImageShim struct {
 //GetInfo default dir is /var/lib/image-cri-shim
 func (is *ImageShim) GetInfo(rootfs string) string {
 	const imageCustomConfig = "image-cri-shim.yaml"
-	is.SSHInterface.SetStdout(false)
-	defer is.SSHInterface.SetStdout(true)
 	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)
 	data, _ := is.SSHInterface.Cmd(is.IP, fmt.Sprintf("cat %s", etcPath))
 	logger.Debug("image shim data info: %s", string(data))
