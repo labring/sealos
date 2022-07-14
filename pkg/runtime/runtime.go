@@ -25,8 +25,9 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	Cluster *v2.Cluster
-	Token   *Token
+	Cluster  *v2.Cluster
+	Token    *Token
+	Registry *v2.RegistryConfig
 	*KubeadmConfig
 	*Config
 }

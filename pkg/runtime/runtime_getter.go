@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -34,7 +35,13 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	return k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	var mx sync.Mutex
+	mx.Lock()
+	defer mx.Unlock()
+	if k.Registry == nil {
+		return k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	}
+	return k.Registry
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {

@@ -43,7 +43,8 @@ func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta
 	k.getSSHInterface().SetStdout(false)
 	defer k.getSSHInterface().SetStdout(true)
 	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
-	out, _ := k.getSSHInterface().Cmd(k.getMaster0IPAPIServer(), fmt.Sprintf("cat %s", etcPath))
+	out, _ := k.getSSHInterface().Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
+	logger.Debug("image shim data info: %s", string(out))
 	registryConfig, err := yaml.UnmarshalData(out)
 	if err != nil {
 		logger.Warn("read registry config path error: %+v", err)
@@ -74,13 +75,12 @@ func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta
 		Password: password,
 		Data:     data,
 	}
-	logger.Debug("show registry info, IP: %s, Domain: %s", rConfig.IP, rConfig.Domain)
+	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", rConfig.IP, rConfig.Domain, rConfig.Data)
 	return rConfig
 }
 
-func (k *KubeadmRuntime) htpasswd() (string, error) {
+func (k *KubeadmRuntime) htpasswd(registry *v1beta1.RegistryConfig) (string, error) {
 	htpasswdPath := path.Join(k.getContentData().RootFSEtcPath(), "registry_htpasswd")
-	registry := k.getRegistry()
 	if registry.Username == "" && registry.Password == "" {
 		return "", nil
 	}
@@ -97,7 +97,7 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 		return fmt.Errorf("copy registry data failed %v", err)
 	}
 	ip := k.getMaster0IPAndPort()
-	htpasswdPath, err := k.htpasswd()
+	htpasswdPath, err := k.htpasswd(registry)
 	if err != nil {
 		return fmt.Errorf("generator registry htpasswd failed %v", err)
 	}

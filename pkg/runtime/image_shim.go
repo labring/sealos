@@ -43,6 +43,7 @@ func (is *ImageShim) GetInfo(rootfs string) string {
 	defer is.SSHInterface.SetStdout(true)
 	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)
 	data, _ := is.SSHInterface.Cmd(is.IP, fmt.Sprintf("cat %s", etcPath))
+	logger.Debug("image shim data info: %s", string(data))
 	shimConfig, err := yaml.UnmarshalData(data)
 	if err != nil {
 		logger.Debug("use default image shim config")
