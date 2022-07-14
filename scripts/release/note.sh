@@ -17,8 +17,8 @@ cat << EOF > Note.md
 ### Usage
 \`\`\`sh
 # 下载并安装sealos, sealos是个golang的二进制工具，直接下载拷贝到bin目录即可, release页面也可下载
-wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos && \\
-    chmod +x sealos && mv sealos /usr/bin
+wget  https://github.com/${USERNAME:-labring}/sealos/releases/download/${VERSION}/sealos_${VERSION##v}_linux_amd64.tar.gz  && \\
+    tar -zxvf sealos_${VERSION##v}_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
 sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
@@ -26,18 +26,20 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
     --passwd your-own-ssh-passwd
 \`\`\`
 
-### amd64 sealos 下载地址
-[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/${VERSION}/sealos-amd64)
-[latest 版本 oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/latest/sealos-amd64)
-### arm64 sealos 下载地址
-[oss 下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/${VERSION}/sealos-arm64)
-[latest 版本 oss下载地址](https://${BUCKETNAME:-sealyun-home}.${OSSENDPOINT:-oss-cn-beijing.aliyuncs.com}/sealos-4.0/latest/sealos-arm64)
 ### amd64 buildah 下载地址
 [oss下载地址](https://sealyun-home.oss-accelerate.aliyuncs.com/images/buildah.linux.amd64)
 ### arm64 buildah 下载地址
 [oss下载地址](https://sealyun-home.oss-accelerate.aliyuncs.com/images/buildah.linux.arm64)
 
 ### Docker images
+
+sealos:
+
+\`\`\`
+docker pull ghcr.io/${USERNAME:-labring}/sealos:${VERSION}
+\`\`\`
+
+lvscare:
 
 \`\`\`
 docker pull ghcr.io/${USERNAME:-labring}/lvscare:${VERSION}

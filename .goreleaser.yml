@@ -159,12 +159,47 @@ dockers:
       - --label=io.sealos.image.revision={{.ShortCommit}}
       - --label=io.sealos.image.version={{.Tag }}
       - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+    dockerfile: docker/sealos/Dockerfile
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+    dockerfile: docker/sealos/Dockerfile
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
 docker_manifests:
   - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
     image_templates:
       - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
       - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
-
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
 nfpms:
   - id: packages
     builds:
@@ -185,16 +220,6 @@ publishers:
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
       curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
-  - name: "oss"
-    ids:
-      - sealos
-    env:
-      - BUCKETNAME={{ .Env.BUCKETNAME }}
-      - USERNAME={{ .Env.USERNAME }}
-    dir: "{{ dir .ArtifactPath }}"
-    cmd: |
-      /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/{{ .Tag }}/{{ .ArtifactName }}-{{ .Arch }}
-      /tmp/ossutil64 -c /tmp/.ossutilconfig cp -f {{ .ArtifactName }} oss://${BUCKETNAME:-sealyun-home}/sealos-4.0/latest/{{ .ArtifactName }}-{{ .Arch }}
 
 checksum:
   disable: true
@@ -204,7 +229,6 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 
 changelog:
-  skip: true
   use: github
   sort: asc
   groups:
