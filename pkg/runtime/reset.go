@@ -72,7 +72,7 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
 	shim := &ImageShim{
-		SSHInterface: nil,
+		SSHInterface: k.getSSHInterface(),
 		IP:           k.getMaster0IPAndPort(),
 	}
 	deleteShimCmd := shim.DeleteCMD(k.getContentData().RootFSPath())
