@@ -138,6 +138,11 @@ dockers:
     build_flag_templates:
       - --pull
       - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
   - use: buildx
     ids:
       - lvscare
@@ -149,6 +154,11 @@ dockers:
     build_flag_templates:
       - --pull
       - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
 docker_manifests:
   - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
     image_templates:
@@ -194,6 +204,7 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 
 changelog:
+  skip: true
   use: github
   sort: asc
   groups:
