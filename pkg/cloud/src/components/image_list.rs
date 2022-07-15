@@ -25,14 +25,14 @@ use yew::{
 
 #[derive(Debug)]
 pub enum Msg {
-    GetRegistryCatelog(Result<RegistryCatalog, anyhow::Error>),
+    GetRegistryCatalog(Result<RegistryCatalog, anyhow::Error>),
 }
 
 enum Class {
     Provider,
     Categories,
     OperatingSystems,
-    Architectrues,
+    Architectures,
 }
 
 enum Label {
@@ -74,7 +74,7 @@ impl Component for Images {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         use Msg::*;
         match msg {
-            GetRegistryCatelog(response) => match response {
+            GetRegistryCatalog(response) => match response {
                 Ok(repos) => {
                     ConsoleService::info(&format!("info {:?}", repos)); 
                     self.repos = Some(repos.repositories);
@@ -96,7 +96,7 @@ impl Component for Images {
             let callback = self.link.callback(
                 |response: Response<Json<Result<RegistryCatalog, anyhow::Error>>>| {
                     let Json(data) = response.into_body();
-                    Msg::GetRegistryCatelog(data)
+                    Msg::GetRegistryCatalog(data)
                 },
             );
             let task = FetchService::fetch(request, callback).expect("failed to start request");
@@ -147,7 +147,7 @@ impl Images {
              <li><a>{ "Monitoring" }</a></li>
              </ul>
              <p class="menu-label">
-               { "Architecutures" }
+               { "Architectures" }
              </p>
              <ul class="menu-list">
              <li><a>{ "ARM64" }</a></li>

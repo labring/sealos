@@ -63,7 +63,7 @@ impl Header {
        html! {
            <div class="navbar-end">
              <div class="navbar-item">
-               <div class="botton" >
+               <div class="button" >
                   <i class="fab fa-github fa-2x"></i>
                </div>
              </div>
