@@ -1,0 +1,34 @@
+.main {
+  height: 100vh;
+  width: 100vw;
+  border: 1px solid black;
+}
+
+
+.menu {
+  height: 40px;
+  width: 100%;
+  background: #f0fff0;
+  text-align: center;
+}
+
+.container {
+  height: calc(100vh - 120px);
+  width: 100%;
+  border: 1px solid gray;
+  background: #f0f0ff;
+}
+
+.container .iframe {
+  height: 100%;
+  width: 100%;
+}
+
+.dock {
+  height: 80px;
+  width: 100%;
+  background: #fff0f0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
