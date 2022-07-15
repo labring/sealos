@@ -12,5 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bar xxx ddd fffff
-127.0.0.2
+# permissions for end users to view infras.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: infra-viewer-role
+rules:
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/status
+  verbs:
+  - get
