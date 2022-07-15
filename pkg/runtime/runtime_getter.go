@@ -63,7 +63,7 @@ func (k *KubeadmRuntime) getMasterIPList() []string {
 func (k *KubeadmRuntime) getMasterIPListAndHTTPSPort() []string {
 	masters := make([]string, 0)
 	for _, master := range k.getMasterIPList() {
-		masters = append(masters, fmt.Sprintf("%s:6443", master))
+		masters = append(masters, fmt.Sprintf("%s:%d", master, k.getAPIServerPort()))
 	}
 	return masters
 }
@@ -108,7 +108,7 @@ func (k *KubeadmRuntime) execIPVSClean(ip string) error {
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
-		masters = append(masters, fmt.Sprintf("%s:6443", iputils.GetHostIP(master)))
+		masters = append(masters, fmt.Sprintf("%s:%d", iputils.GetHostIP(master), k.getAPIServerPort()))
 	}
 
 	eg, _ := errgroup.WithContext(context.Background())
