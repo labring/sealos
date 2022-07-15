@@ -149,14 +149,18 @@ func (k *KubeadmRuntime) getVip() string {
 	return DefaultVIP
 }
 
+func (k *KubeadmRuntime) getAPIServerPort() int32 {
+	return k.InitConfiguration.LocalAPIEndpoint.BindPort
+}
+
 func (k *KubeadmRuntime) getVipAndPort() string {
-	return fmt.Sprintf("%s:6443", k.getVip())
+	return fmt.Sprintf("%s:%d", k.getVip(), k.getAPIServerPort())
 }
 func (k *KubeadmRuntime) getAPIServerDomain() string {
 	return k.Config.APIServerDomain
 }
 func (k *KubeadmRuntime) getClusterAPIServer() string {
-	return fmt.Sprintf("https://%s:6443", k.getAPIServerDomain())
+	return fmt.Sprintf("https://%s:%d", k.getAPIServerDomain(), k.getAPIServerPort())
 }
 
 func (k *KubeadmRuntime) getCertSANS() []string {
@@ -353,7 +357,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	}
 	k.setCgroupDriver(cGroupDriver)
 	k.setInitAdvertiseAddress(k.getMaster0IP())
-	k.setControlPlaneEndpoint(fmt.Sprintf("%s:6443", k.getAPIServerDomain()))
+	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.APIServer.ExtraArgs == nil {
 		k.APIServer.ExtraArgs = make(map[string]string)
 	}
@@ -457,7 +461,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	}
 	k.setCgroupDriver(cGroupDriver)
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
-	k.setAPIServerEndpoint(fmt.Sprintf("%s:6443", k.getMaster0IP()))
+	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
 	if err = k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
