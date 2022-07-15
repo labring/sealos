@@ -23,6 +23,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/labring/sealos/pkg/version"
+
 	"github.com/labring/image-cri-shim/pkg/cri"
 	"github.com/labring/image-cri-shim/pkg/glog"
 	"github.com/labring/image-cri-shim/pkg/server"
@@ -31,8 +33,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/labring/sealos/pkg/utils/version"
 )
 
 var shimSocket, criSocket string

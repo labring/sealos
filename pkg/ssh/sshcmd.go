@@ -53,10 +53,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 
 		if err := func(cmd string) error {
 			if isLocal {
-				_, err := exec.RunBashCmd(cmd)
-				if err != nil {
-					return err
-				}
+				return exec.Cmd("bash", "-c", cmd)
 			}
 			client, session, err := s.Connect(host)
 			if err != nil {
