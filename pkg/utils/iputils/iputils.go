@@ -19,7 +19,6 @@ package iputils
 import (
 	"net"
 	"net/url"
-	"strings"
 )
 
 //IPFormat is
@@ -46,7 +45,7 @@ func HostnameAndIP(node []string) ([]string, []string) {
 		return node, node
 	}
 	for _, n := range node {
-		if !IsIpv4(n) {
+		if !IsIpv4String(n) {
 			resHost = append(resHost, n)
 		} else {
 			resIP = append(resIP, n)
@@ -55,33 +54,15 @@ func HostnameAndIP(node []string) ([]string, []string) {
 	return resHost, resIP
 }
 
-func IsIpv4(ip string) bool {
-	//matched, _ := regexp.MatchString("((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})(\\.((2(5[0-5]|[0-4]\\d))|[0-1]?\\d{1,2})){3}", ip)
+// IsIpv4String returns if ip is IPv4.
+func IsIpv4String(ip string) bool {
+	netIP := net.ParseIP(ip)
+	return IsIpv4(netIP)
+}
 
-	arr := strings.Split(ip, ".")
-	if len(arr) != 4 {
-		return false
-	}
-	for _, v := range arr {
-		if v == "" {
-			return false
-		}
-		if len(v) > 1 && v[0] == '0' {
-			return false
-		}
-		num := 0
-		for _, c := range v {
-			if c >= '0' && c <= '9' {
-				num = num*10 + int(c-'0')
-			} else {
-				return false
-			}
-		}
-		if num > 255 {
-			return false
-		}
-	}
-	return true
+// IsIPv4 returns if ip is IPv4.
+func IsIpv4(netIP net.IP) bool {
+	return netIP != nil && netIP.To4() != nil
 }
 
 // IsIPv6 returns if netIP is IPv6.
