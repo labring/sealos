@@ -17,8 +17,6 @@ GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
 	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
 	-s -w
-CGO_ENABLED ?= 0
-CC ?= gcc
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
 	GO_LDFLAGS=
@@ -62,7 +60,12 @@ go.build.%:
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
 	
 	@if [ "$(COMMAND)" == "sealos" ]; then \
-		CGO_ENABLED=$(CGO_ENABLED) CC=$(CC) GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
+		CGO_ENABLED=1; \
+		CC=x86_64-linux-gnu-gcc; \
+		if [ "$(ARCH)" == "arm64" ]; then \
+			CC=aarch64-linux-gnu-gcc; \
+		fi; \
+		CGO_ENABLED=$$CGO_ENABLED CC=$$CC GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
 	else \
 		CGO_ENABLED=0 GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
 	fi

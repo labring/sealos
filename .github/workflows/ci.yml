@@ -95,7 +95,11 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      # Note: CGO_ENABLED=0
+      - name: Install Dependencies
+        if: ${{ matrix.binary == 'sealos' && matrix.arch == 'arm64' }}
+        run: |
+          sudo apt install -y gcc-aarch64-linux-gnu
+
       - name: Build Binaries
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
