@@ -27,7 +27,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/labring/lvscare/pkg/glog"
+	"github.com/labring/sealos/pkg/utils/logger"
 	libipvs "github.com/moby/ipvs"
 )
 
@@ -44,7 +44,7 @@ type Protocol uint16
 func New() Interface {
 	handle, err := libipvs.New("")
 	if err != nil {
-		glog.Errorf("IPVS interface can't be initialized, error: %v", err)
+		logger.Error("IPVS interface can't be initialized, error: %v", err)
 		return nil
 	}
 	return &runner{

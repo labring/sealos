@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	utilsexec "github.com/labring/lvscare/pkg/exec"
-	"github.com/labring/lvscare/pkg/glog"
 	"github.com/labring/lvscare/pkg/sets"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/lithammer/dedent"
 )
@@ -44,7 +44,7 @@ func (r RequiredIPVSKernelModulesAvailableCheck) Name() string {
 // Check try to validates IPVS required kernel modules exists or not.
 // The name of function can not be changed.
 func (r RequiredIPVSKernelModulesAvailableCheck) Check() (warnings, errors []error) {
-	glog.V(8).Infoln("validating the kernel module IPVS required exists in machine or not")
+	logger.Info("validating the kernel module IPVS required exists in machine or not")
 
 	kernelVersion, ipvsModules, err := GetKernelVersionAndIPVSMods(r.Executor)
 	if err != nil {

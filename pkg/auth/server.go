@@ -15,7 +15,6 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -63,5 +62,5 @@ func httpServer() {
 	logger.Info("start listening on localhost", authHTTPPortString)
 	server := &http.Server{Addr: authHTTPPortString, Handler: container}
 
-	log.Fatal(server.ListenAndServe())
+	logger.Fatal(server.ListenAndServe())
 }

@@ -32,9 +32,9 @@ import (
 	"github.com/containers/storage"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	labring_types "github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func manifestInspect(ctx context.Context, store storage.Store, systemContext *types.SystemContext, imageSpec string) (string, error) {
@@ -82,7 +82,7 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ty
 	// implement a `*.LookupImageIndex`.
 	refs, err := util.ResolveNameToReferences(store, systemContext, imageSpec)
 	if err != nil {
-		logrus.Debugf("error parsing reference to image %q: %v", imageSpec, err)
+		logger.Debug("error parsing reference to image %q: %v", imageSpec, err)
 	}
 
 	if ref, _, err := util.FindImage(store, "", systemContext, imageSpec); err == nil {
@@ -108,7 +108,7 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ty
 	}
 
 	for _, ref := range refs {
-		logrus.Debugf("Testing reference %q for possible manifest", transports.ImageName(ref))
+		logger.Debug("Testing reference %q for possible manifest", transports.ImageName(ref))
 
 		src, err := ref.NewImageSource(ctx, systemContext)
 		if err != nil {

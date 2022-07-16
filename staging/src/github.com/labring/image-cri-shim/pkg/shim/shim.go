@@ -19,10 +19,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/labring/image-cri-shim/pkg/server"
 	"github.com/labring/image-cri-shim/pkg/shim/client"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -131,16 +130,16 @@ func (r *shim) Server() server.Server {
 
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {
 	if err != nil {
-		glog.Errorf("failed to determine permissions/ownership of client socket %q: %v",
+		logger.Error("failed to determine permissions/ownership of client socket %q: %v",
 			socket, err)
 		return
 	}
 
 	if err = r.server.Chown(uid, gid); err != nil {
-		glog.Errorf("server socket ownership change request failed: %v", err)
+		logger.Error("server socket ownership change request failed: %v", err)
 	} else {
 		if err := r.server.Chmod(mode); err != nil {
-			glog.Errorf("server socket permissions change request failed: %v", err)
+			logger.Error("server socket permissions change request failed: %v", err)
 		}
 	}
 }

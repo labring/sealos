@@ -26,10 +26,10 @@ import (
 	"github.com/labring/sealos/pkg/version"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
-	"github.com/labring/image-cri-shim/pkg/glog"
 	"github.com/labring/image-cri-shim/pkg/server"
 	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/labring/image-cri-shim/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -55,22 +55,22 @@ var rootCmd = &cobra.Command{
 			return errors.Wrap(err, "image shim config load error")
 		}
 		shimSocket, _, _ = unstructured.NestedString(data, "shim")
-		glog.Infof("shim-socket: %s", shimSocket)
+		logger.Info("shim-socket: %s", shimSocket)
 		criSocket, _, _ = unstructured.NestedString(data, "cri")
-		glog.Infof("cri-socket: %s", criSocket)
+		logger.Info("cri-socket: %s", criSocket)
 		server.SealosHub, _, _ = unstructured.NestedString(data, "address")
-		glog.Infof("hub-address: %s", server.SealosHub)
+		logger.Info("hub-address: %s", server.SealosHub)
 		force, _, _ = unstructured.NestedBool(data, "force")
-		glog.Infof("force: %v", force)
+		logger.Info("force: %v", force)
 		server.Debug, _, _ = unstructured.NestedBool(data, "debug")
-		glog.Infof("debug: %v", server.Debug)
+		logger.Info("debug: %v", server.Debug)
 		imageDir, _, _ := unstructured.NestedString(data, "image")
-		glog.Infof("image-dir: %v", imageDir)
+		logger.Info("image-dir: %v", imageDir)
 		server.Auth, _, _ = unstructured.NestedString(data, "auth")
 		if server.Auth != "" {
-			glog.Infof("auth: %v", server.Auth)
+			logger.Info("auth: %v", server.Auth)
 			server.Base64Auth = base64.StdEncoding.EncodeToString([]byte(server.Auth))
-			glog.Infof("base64 auth: %v", server.Base64Auth)
+			logger.Info("base64 auth: %v", server.Base64Auth)
 		}
 
 		if imageDir != "" {
@@ -81,7 +81,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		if server.SealosHub == "" {
-			glog.Warning("registry addr is empty")
+			logger.Warn("registry addr is empty")
 		}
 		if criSocket == "" {
 			socket, err := cri.DetectCRISocket()
@@ -124,20 +124,20 @@ func run(socket string, criSocket string) {
 		ShimSocket:  socket,
 		ImageSocket: criSocket,
 	}
-	glog.Infof("socket info shim: %v ,image: %v, registry: %v", socket, criSocket, server.SealosHub)
+	logger.Info("socket info shim: %v ,image: %v, registry: %v", socket, criSocket, server.SealosHub)
 	_shim, err := shim.NewShim(options)
 	if err != nil {
-		glog.Fatalf("failed to new _shim, %s", err)
+		logger.Fatal("failed to new _shim, %s", err)
 	}
 
 	err = _shim.Setup()
 	if err != nil {
-		glog.Fatalf("failed to setup image _shim, %s", err)
+		logger.Fatal("failed to setup image _shim, %s", err)
 	}
 
 	err = _shim.Start()
 	if err != nil {
-		glog.Fatalf(fmt.Sprintf("failed to start image _shim, %s", err))
+		logger.Fatal(fmt.Sprintf("failed to start image _shim, %s", err))
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -150,5 +150,5 @@ func run(socket string, criSocket string) {
 	case <-stopCh:
 	}
 	_ = os.Remove(socket)
-	glog.Infof("Shutting down the image _shim")
+	logger.Info("Shutting down the image _shim")
 }

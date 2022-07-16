@@ -36,7 +36,6 @@ import (
 	image_types "github.com/containers/image/v5/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/image/types"
@@ -120,7 +119,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 	if iopts.PullNever || strings.EqualFold(strings.TrimSpace(iopts.Pull), "never") {
 		pullPolicy = define.PullNever
 	}
-	logrus.Debugf("Pull Policy for pull [%v]", pullPolicy)
+	logger.Debug("Pull Policy for pull [%v]", pullPolicy)
 
 	args := make(map[string]string)
 	for _, arg := range iopts.BuildArg {
@@ -160,7 +159,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 			// Delete it later.
 			defer func() {
 				if err = os.RemoveAll(tempDir); err != nil {
-					logrus.Errorf("error removing temporary directory: %v", err)
+					logger.Error("error removing temporary directory: %v", err)
 				}
 			}()
 			contextDir = filepath.Join(tempDir, subDir)
@@ -292,7 +291,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 
 	id, ref, err := imagebuildah.BuildDockerfiles(getContext(), store, buildahOptions, containerfiles...)
 	if err == nil && buildahOptions.Manifest != "" {
-		logrus.Debugf("manifest list id = %q, ref = %q", id, ref.String())
+		logger.Debug("manifest list id = %q, ref = %q", id, ref.String())
 	}
 	return err
 }

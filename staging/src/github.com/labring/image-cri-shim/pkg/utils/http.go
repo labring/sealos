@@ -23,9 +23,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/labring/endpoints-operator/library/probe/http"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 )
@@ -61,13 +60,13 @@ func RegistryHasImage(registryAddress, registryBase64Auth, imageName string) boo
 		Tags []string
 	}
 	var registry RegistryData
-	glog.Infof("address: %s,base64: %s,imageName: %s", registryAddress, registryBase64Auth, imageName)
+	logger.Info("address: %s,base64: %s,imageName: %s", registryAddress, registryBase64Auth, imageName)
 	data, _ := HTTP(fmt.Sprintf("%s/v2/%s/tags/list", registryAddress, imageName), map[string]string{"Authorization": "Basic " + registryBase64Auth})
 	if data != "" {
-		glog.Infof("data: %s", data)
+		logger.Info("data: %s", data)
 		err := json.Unmarshal([]byte(data), &registry)
 		if err != nil {
-			glog.Warning("convert registry data error")
+			logger.Warn("convert registry data error")
 			return false
 		}
 	}

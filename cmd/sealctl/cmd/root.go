@@ -48,7 +48,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(func() {
-		logger.Cfg(debug, showPath)
+		logger.CfgConsoleLogger(debug, showPath)
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")

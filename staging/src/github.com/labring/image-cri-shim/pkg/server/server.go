@@ -23,9 +23,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/labring/image-cri-shim/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"google.golang.org/grpc"
 	k8sapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
@@ -144,7 +143,7 @@ func (s *server) Chmod(mode os.FileMode) error {
 			return serverError("failed to change permissions of socket %q to %v: %v",
 				s.options.Socket, mode, err)
 		}
-		glog.Infof("changed permissions of socket %q to %v", s.options.Socket, mode)
+		logger.Info("changed permissions of socket %q to %v", s.options.Socket, mode)
 	}
 
 	s.options.Mode = mode
@@ -167,7 +166,7 @@ func (s *server) Chown(uid, gid int) error {
 			return serverError("failed to change ownership of socket %q to %s/%s: %v",
 				s.options.Socket, userName, groupName, err)
 		}
-		glog.Infof("changed ownership of socket %q to %s/%s", s.options.Socket, userName, groupName)
+		logger.Info("changed ownership of socket %q to %s/%s", s.options.Socket, userName, groupName)
 	}
 
 	s.options.User = uid
@@ -177,7 +176,7 @@ func (s *server) Chown(uid, gid int) error {
 }
 
 func (s *server) Stop() {
-	glog.Infof("stopping server on socket %s...", s.options.Socket)
+	logger.Info("stopping server on socket %s...", s.options.Socket)
 	s.server.Stop()
 }
 

@@ -17,7 +17,6 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/emirpasic/gods v1.18.1
-	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/imdario/mergo v0.3.12
@@ -33,15 +32,14 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.0
 	github.com/schollz/progressbar/v3 v3.8.6
-	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
+	go.uber.org/zap v1.21.0
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
-	gopkg.in/ini.v1 v1.66.2 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	helm.sh/helm/v3 v3.6.0
 	k8s.io/api v0.23.1
 	k8s.io/apimachinery v0.23.1
@@ -56,6 +54,7 @@ require (
 replace (
 	github.com/labring/image-cri-shim => ./staging/src/github.com/labring/image-cri-shim
 	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
+	github.com/labring/sealos => ../sealos
 )
 
 replace github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
