@@ -35,19 +35,19 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-func RandomHexStr(n int) string {
+func RandomHexStr(n int) (string, error) {
 	b := make([]byte, n)
 	if _, err := rand.Read(b); err != nil {
-		panic(err)
+		return "", err
 	}
-	return hex.EncodeToString(b)
+	return hex.EncodeToString(b), nil
 }
 
-func CreateJWTPublicAndPrivateKey() (string, string) {
+func CreateJWTPublicAndPrivateKey() (string, string, error) {
 	// Generate RSA key.
 	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 
 	// Encode private key to PKCS#1 ASN.1 PEM.
@@ -71,7 +71,7 @@ func CreateJWTPublicAndPrivateKey() (string, string) {
 	}
 	cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &key.PublicKey, key)
 	if err != nil {
-		panic(err)
+		return "", "", err
 	}
 
 	// Generate a pem block with the certificate
@@ -80,7 +80,7 @@ func CreateJWTPublicAndPrivateKey() (string, string) {
 		Bytes: cert,
 	})
 
-	return string(certPem), string(privateKeyPem)
+	return string(certPem), string(privateKeyPem), nil
 }
 
 func GenerateKubeConfig(username string) (string, error) {
@@ -115,11 +115,15 @@ func GenerateKubeConfig(username string) (string, error) {
 	}
 
 	ctx := fmt.Sprintf("%s@%s", username, "kubernetes")
+	cert, err := GetCaCert()
+	if err != nil {
+		return "", err
+	}
 	config := &api.Config{
 		Clusters: map[string]*api.Cluster{
 			"kubernetes": {
 				Server:                   "https://apiserver.cluster.local:6443",
-				CertificateAuthorityData: []byte(GetCaCert()),
+				CertificateAuthorityData: []byte(cert),
 			},
 		},
 		Contexts: map[string]*api.Context{
@@ -144,16 +148,16 @@ func GenerateKubeConfig(username string) (string, error) {
 	return string(content), nil
 }
 
-func GetCaCert() string {
+func GetCaCert() (string, error) {
 	if conf.GlobalConfig.Kubeconfig == "" {
 		caCert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 		if err != nil {
-			panic(err)
+			return "", err
 		}
-		return string(caCert)
+		return string(caCert), nil
 	}
 	if conf.GlobalConfig.CaCert == "" {
-		panic(fmt.Errorf("ca cert is empty"))
+		return "", fmt.Errorf("ca cert is empty")
 	}
-	return conf.GlobalConfig.CaCert
+	return conf.GlobalConfig.CaCert, nil
 }
