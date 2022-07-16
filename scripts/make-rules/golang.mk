@@ -61,6 +61,10 @@ go.build.%:
 	@echo "===========> Building binary $(COMMAND) $(VERSION) for $(PLATFORM)"
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
 	
+	@if [ "$(PLATFORM)" == "linux_arm64" ]; then \
+		$(eval CC := aarch64-linux-gnu-gcc) \
+	fi
+	
 	@if [ "$(COMMAND)" == "sealos" ]; then \
 		CGO_ENABLED=$(CGO_ENABLED) CC=$(CC) GOOS=$(OS) GOARCH=$(ARCH) $(GO) build $(GO_BUILD_FLAGS) -o $(BIN_DIR)/$(PLATFORM)/$(COMMAND) $(ROOT_PACKAGE)/cmd/$(COMMAND); \
 	else \
