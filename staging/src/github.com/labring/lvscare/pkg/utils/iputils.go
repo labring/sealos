@@ -18,7 +18,6 @@ package utils
 
 import (
 	"net"
-	"strings"
 )
 
 // IsIPv4 returns if ip is IPv4.
