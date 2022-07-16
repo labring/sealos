@@ -65,7 +65,7 @@ func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta
 		domain = DefaultConfig.Domain
 	}
 	if port == "" {
-		domain = DefaultConfig.Port
+		port = DefaultConfig.Port
 	}
 	rConfig := &v1beta1.RegistryConfig{
 		IP:       ip,
