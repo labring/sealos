@@ -17,7 +17,7 @@ GO_LDFLAGS += -X $(VERSION_PACKAGE).gitVersion=${GIT_TAG} \
 	-X $(VERSION_PACKAGE).gitCommit=${GIT_COMMIT} \
 	-X $(VERSION_PACKAGE).buildDate=${BUILD_DATE} \
 	-s -w
-CGO_ENABLED ?= 0
+CGO_ENABLED ?= 1
 CC ?= gcc
 ifeq ($(DEBUG), 1)
 	GO_BUILD_FLAGS += -gcflags "all=-N -l"
