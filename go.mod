@@ -4,6 +4,9 @@ go 1.15
 
 require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
+	github.com/aws/aws-sdk-go-v2 v1.16.7 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.15.14 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.49.0 // indirect
 	github.com/casdoor/casdoor-go-sdk v0.4.1
 	github.com/containers/buildah v1.26.1
 	github.com/containers/common v0.48.0
