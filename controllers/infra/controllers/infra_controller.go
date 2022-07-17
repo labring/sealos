@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	infrav1 "github.com/labring/sealos/api/v1"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
 // InfraReconciler reconciles a Infra object

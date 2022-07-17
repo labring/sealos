@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	infrav1 "github.com/labring/sealos/api/v1"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 
