@@ -27,12 +27,16 @@ type LvsCare struct {
 	RealServer    []string
 	RunOnce       bool
 	Clean         bool
+	Test          bool
 	Interval      int32
 	Logger        string
 	TargetIP      net.IP
-	//
-	lvs   Lvser
-	Route *route.Route
+	// runtime
+	cleanupFuncs []func() error
+	lvs          Lvser
+	Route        *route.Route
 }
 
 var LVS LvsCare
+
+const dummyIfaceName = "lvscare"

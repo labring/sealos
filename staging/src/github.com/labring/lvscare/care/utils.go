@@ -25,16 +25,16 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-//SplitServer is
+// SplitServer split host and port
 func SplitServer(server string) (string, uint16) {
-	logger.Info("server %s", server)
+	logger.Debug("server %s", server)
 
 	ip, port, err := net.SplitHostPort(server)
 	if err != nil {
 		logger.Error("SplitServer error: %v.", err)
 		return "", 0
 	}
-	logger.Info("SplitServer debug: TargetIP: %s, Port: %s", ip, port)
+	logger.Debug("SplitServer debug: TargetIP: %s, Port: %s", ip, port)
 	p, err := strconv.Atoi(port)
 	if err != nil {
 		logger.Warn("SplitServer error: %v", err)
@@ -79,4 +79,41 @@ func BuildRealServer(real string) *ipvs.RealServer {
 		Weight:  1,
 	}
 	return realServer
+}
+
+func ipAddrsFromNetworkAddrs(s ...string) ([]string, error) {
+	var ret []string
+	for i := range s {
+		host, _, err := net.SplitHostPort(s[i])
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, host)
+	}
+	return ret, nil
+}
+
+func isAnyLocalHostAddr(s ...string) (bool, error) {
+	var ips []net.IP
+	for i := range s {
+		ip := net.ParseIP(s[i])
+		if ip == nil {
+			return false, fmt.Errorf("%s is not a valid IP address", s)
+		}
+		ips = append(ips, ip)
+	}
+	ifaceAddrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return false, err
+	}
+	for _, addr := range ifaceAddrs {
+		if ipn, ok := addr.(*net.IPNet); ok {
+			for _, ip := range ips {
+				if ipn.IP.Equal(ip) {
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
 }

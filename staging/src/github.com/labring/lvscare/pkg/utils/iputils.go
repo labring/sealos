@@ -19,6 +19,8 @@ package utils
 import (
 	"net"
 	"strings"
+
+	"github.com/vishvananda/netlink"
 )
 
 func IsIpv4(ip string) bool {
@@ -53,4 +55,39 @@ func IsIpv4(ip string) bool {
 // IsIPv6 returns if netIP is IPv6.
 func IsIPv6(netIP net.IP) bool {
 	return netIP != nil && netIP.To4() == nil
+}
+
+func GetOrCreateDummyLink(name string) (netlink.Link, error) {
+	link, _ := netlink.LinkByName(name)
+	if link != nil {
+		return link, nil
+	}
+	link = &netlink.Dummy{
+		LinkAttrs: netlink.LinkAttrs{
+			Name: name,
+		},
+	}
+	return link, netlink.LinkAdd(link)
+}
+
+func AssignIPToLink(s string, link netlink.Link) error {
+	if strings.Index(s, "/") < 0 {
+		s = s + "/32"
+	}
+	addr, err := netlink.ParseAddr(s)
+	if err != nil {
+		return err
+	}
+	return netlink.AddrAdd(link, addr)
+}
+
+func DeleteLinkByName(name string) error {
+	l, err := netlink.LinkByName(name)
+	if err != nil {
+		if err, ok := err.(netlink.LinkNotFoundError); !ok {
+			return err
+		}
+		return nil
+	}
+	return netlink.LinkDel(l)
 }

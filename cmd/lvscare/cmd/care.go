@@ -24,8 +24,8 @@ import (
 var careCmd = &cobra.Command{
 	Use:   "care",
 	Short: "A lightweight LVS baby care, support ipvs health check.",
-	Run: func(cmd *cobra.Command, args []string) {
-		care.LVS.VsAndRsCare()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return care.LVS.VsAndRsCare()
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		if err := care.SetTargetIP(); err != nil {
@@ -63,6 +63,7 @@ func init() {
 	careCmd.Flags().StringSliceVar(&care.LVS.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
 	careCmd.Flags().StringVar(&care.LVS.Logger, "logger", "INFO", "logger level: DEBG/INFO")
 	careCmd.Flags().BoolVar(&care.LVS.Clean, "clean", false, "before run clean ipvs rules")
+	careCmd.Flags().BoolVarP(&care.LVS.Test, "test", "t", false, "test mode")
 
 	careCmd.Flags().StringVar(&care.LVS.HealthPath, "health-path", "/healthz", "health check path")
 	careCmd.Flags().StringVar(&care.LVS.HealthSchem, "health-schem", "https", "health check schem")
