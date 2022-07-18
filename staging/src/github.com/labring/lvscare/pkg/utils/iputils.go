@@ -71,7 +71,7 @@ func GetOrCreateDummyLink(name string) (netlink.Link, error) {
 }
 
 func AssignIPToLink(s string, link netlink.Link) error {
-	if strings.Index(s, "/") < 0 {
+	if !strings.Contains(s, "/") {
 		s = s + "/32"
 	}
 	addr, err := netlink.ParseAddr(s)

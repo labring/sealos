@@ -29,10 +29,17 @@ import (
 )
 
 // VsAndRsCare is
-func (care *LvsCare) VsAndRsCare() error {
+func (care *LvsCare) VsAndRsCare() (err error) {
 	if care.lvs == nil {
 		care.lvs = BuildLvscare()
 	}
+
+	defer func() {
+		if err != nil {
+			return
+		}
+		err = care.cleanup()
+	}()
 
 	cleanVirtualServer := func() error {
 		logger.Info("lvscare deleteVirtualServer")
@@ -40,21 +47,22 @@ func (care *LvsCare) VsAndRsCare() error {
 		if err != nil {
 			logger.Warn("virtualServer is not exist skip...: %v", err)
 		}
-		return nil
+		return err
 	}
 
 	if care.Clean {
-		cleanVirtualServer()
+		// we don't care error here
+		_ = cleanVirtualServer()
 		care.cleanupFuncs = append(care.cleanupFuncs, cleanVirtualServer)
 	}
-	if err := care.test(); err != nil {
-		return err
+	if err = care.test(); err != nil {
+		return
 	}
-	if err := care.createVsAndRs(); err != nil {
-		return err
+	if err = care.createVsAndRs(); err != nil {
+		return
 	}
 	if care.RunOnce {
-		return nil
+		return
 	}
 
 	t := time.NewTicker(time.Duration(care.Interval) * time.Second)
@@ -68,25 +76,33 @@ func (care *LvsCare) VsAndRsCare() error {
 			// in some cases, virtual server maybe removed
 			isAvailable := care.lvs.IsVirtualServerAvailable(care.VirtualServer)
 			if !isAvailable {
-				err := care.lvs.CreateVirtualServer(care.VirtualServer, true)
+				err = care.lvs.CreateVirtualServer(care.VirtualServer, true)
 				// virtual server is exists
 				if err != nil {
 					logger.Error("failed to create virtual server: %v", err)
-					return err
+					return
 				}
 			}
 			// check real server
 			care.lvs.CheckRealServers(care.HealthPath, care.HealthSchem)
 		case signa := <-sig:
 			logger.Info("receive kill signal: %+v", signa)
-			for _, fn := range care.cleanupFuncs {
-				if err := fn(); err != nil {
-					return err
-				}
-			}
-			return nil
+			return
 		}
 	}
+}
+
+func (care *LvsCare) cleanup() error {
+	var errs []string
+	for _, fn := range care.cleanupFuncs {
+		if err := fn(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
+	}
+	return nil
 }
 
 func (care *LvsCare) test() error {
