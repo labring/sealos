@@ -49,6 +49,7 @@ const (
 	DefaultAPIServerDomain = "apiserver.cluster.local"
 	DefaultDNSDomain       = "cluster.local"
 	DefaultVIP             = "10.103.97.2"
+	DefaultAPIServerPort   = 6443
 )
 
 // k.getKubeVersion can't be empty
@@ -150,6 +151,9 @@ func (k *KubeadmRuntime) getVip() string {
 }
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {
+	if k.InitConfiguration.LocalAPIEndpoint.BindPort == 0 {
+		return DefaultAPIServerPort
+	}
 	return k.InitConfiguration.LocalAPIEndpoint.BindPort
 }
 
