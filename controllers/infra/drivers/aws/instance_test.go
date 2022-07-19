@@ -23,7 +23,7 @@ func TestReconcileInstance(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ReconcileInstance(tt.args.infra); (err != nil) != tt.wantErr {
+			if err, _ := ReconcileInstance(tt.args.infra); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileInstance() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

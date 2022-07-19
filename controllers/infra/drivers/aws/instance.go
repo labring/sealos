@@ -21,6 +21,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/controllers/infra/common"
+
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -47,33 +55,79 @@ func GetInstances(c context.Context, api EC2DescribeInstancesAPI, input *ec2.Des
 	return api.DescribeInstances(c, input)
 }
 
-func ReconcileInstance(infra *v1.Infra) error {
+func ReconcileInstance(infra *v1.Infra) (*v1beta1.Cluster, error) {
+	fmt.Println("access key id is: ", os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_ACCESS_KEY_ID"))
+	if len(infra.Spec.Hosts) == 0 {
+		logger.Debug("desired host len is 0")
+		return nil, nil
+	}
+
+	tag := infra.GetInstancesTag()
+	instances, err := GetInstancesByLabel(common.InfraInstancesLabel, tag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query instances: %v", err)
+	}
+
+	// TODO create instances
+	// if len(instances) == 0 {
+	// }
+
+	for _, i := range instances {
+		if err := checkInstanceTags(i.Tags, common.InfraInstancesLabel, tag); err != nil {
+			return nil, fmt.Errorf("instance not contains infra label: %s, %v, %v", *i.InstanceId, i.Tags, err)
+		}
+	}
+
+	return nil, nil
+}
+
+func checkInstanceTags(tags []types.Tag, key, value string) error {
+	// TODO check tags contain key, value, if not return an error
+
+	return nil
+}
+
+/*
+Use this to uniquely identify which cluster the virtual machine belongs to
+
+  key=infra.sealos.io/instances/label
+  value=[namespace]/[infra name]
+
+For example:
+  apiVersion: infra.sealos.io/v1
+  kind: Infra
+  metadata:
+    name: aws-infra-demo
+    namespace: default
+The value should be: default/aws-infra-demo
+*/
+func GetInstancesByLabel(key string, value string) ([]types.Instance, error) {
+	var instances []types.Instance
 	fmt.Println("access key id is: ", os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_ACCESS_KEY_ID"))
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("load default config failed %s", err)
 	}
-
 	client := ec2.NewFromConfig(cfg)
-
-	input := &ec2.DescribeInstancesInput{}
+	tag := fmt.Sprintf("tag:%s", key)
+	input := &ec2.DescribeInstancesInput{
+		Filters: []types.Filter{
+			{
+				Name:   &tag,
+				Values: []string{value},
+			},
+		},
+	}
 
 	result, err := GetInstances(context.TODO(), client, input)
 	if err != nil {
-		fmt.Println("Got an error retrieving information about your Amazon EC2 instances:")
-		fmt.Println(err)
-		return err
+		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
 	}
 
 	for _, r := range result.Reservations {
-		fmt.Println("Reservation ID: " + *r.ReservationId)
-		fmt.Println("Instance IDs:")
-		for _, i := range r.Instances {
-			fmt.Println("   " + *i.InstanceId)
-		}
-
-		fmt.Println("")
+		instances = append(instances, r.Instances...)
 	}
-	return nil
+
+	return instances, nil
 }
