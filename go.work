@@ -3,6 +3,7 @@ go 1.18
 use (
 	.
 	./controllers/infra
+	./service/auth
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
 )
