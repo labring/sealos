@@ -50,7 +50,7 @@ type ImageType string
 const (
 	AppImage    ImageType = "application"
 	RootfsImage ImageType = "rootfs"
-	AddonsImage ImageType = "addons"
+	PatchImage  ImageType = "patch"
 )
 
 type MountImage struct {
