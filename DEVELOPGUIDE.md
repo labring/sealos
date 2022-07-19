@@ -24,8 +24,6 @@ Then test it locally.
 
 ## Notes about cross-platform building
 
-If not explicitly specified, `CGO_ENABLED` will be `0` (disabled), which allows cross-platform building but sacrificing support for subcommands like `images` that relies on CGO. That is, when running `sealos images`, since overlay driver is not supported without CGO, a "driver not supported" error will occur.
+All the binaries except `sealos` can be built anywhere since they have `CGO_ENABLED=0`. However, `sealos` needs to support overlay driver when running some subcommands like `images`, which relies on CGO. Therefore CGO is switched on when building `sealos`, making it impossible to build `sealos` binaries on platforms other than Linux.
 
-Therefore, if you are developing or debugging images storage related functions, you have to build sealos under Linux.
-
-In addition, the released version of sealos is built under Ubuntu (thanks to Github Actions) and has `CGO_ENABLED=1` to support overlay driver.
+> Both Makefile and GoReleaser in this project have this setting.
