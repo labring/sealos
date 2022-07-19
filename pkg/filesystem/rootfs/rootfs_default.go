@@ -119,7 +119,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				return err
 			}
 			for _, cInfo := range f.images {
-				if cInfo.Type == v2.AddonsImage {
+				if cInfo.Type == v2.PatchImage {
 					logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
 					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
 					if err != nil {
