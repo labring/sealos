@@ -19,7 +19,7 @@ To be honest, we regard every user of sealos as a very kind contributor. After e
 
 Since we collaborate project sealos in a distributed way, we appreciate **WELL-WRITTEN**, **DETAILED**, **EXPLICIT** issue reports. To make the communication more efficient, we wish everyone could search if your issue is an existing one in the searching list. If you find it existing, please add your details in comments under the existing issue instead of opening a brand new one.
 
-To make the issue details as standard as possible, we setup an [ISSUE TEMPLATE](./.github/ISSUE_TEMPLATE) for issue reporters. You can find three kinds of issue templates there: question, bug report and feature request. Please **BE SURE** to follow the instructions to fill fields in template.
+To make the issue details as standard as possible, we setup an [ISSUE TEMPLATE](https://github.com/labring/sealos/tree/main/.github/ISSUE_TEMPLATE) for issue reporters. You can find three kinds of issue templates there: question, bug report and feature request. Please **BE SURE** to follow the instructions to fill fields in template.
 
 There are lot of cases when you could open an issue:
 
@@ -68,20 +68,20 @@ Since you are ready to improve sealos with a PR, we suggest you could take a loo
 
 To put forward a PR, we assume you have registered a GitHub ID. Then you could finish the preparation in the following steps:
 
-1. **FORK** sealos to your repository. To make this work, you just need to click the button Fork in right-left of [fanux/sealos](https://github.com/labring/sealos) main page. Then you will end up with your repository in `https://github.com/<your-username>/sealos`, in which `your-username` is your GitHub username.
+1. **FORK** sealos to your repository. To make this work, you just need to click the button Fork in right-left of [labring/sealos](https://github.com/labring/sealos) main page. Then you will end up with your repository in `https://github.com/<your-username>/sealos`, in which `your-username` is your GitHub username.
 
 1. **CLONE** your own repository to master locally. Use `git clone https://github.com/<your-username>/sealos.git` to clone repository to your local machine. Then you can create new branches to finish the change you wish to make.
 
 1. **Set Remote** upstream to be `https://github.com/labring/sealos.git` using the following two commands:
 
-   ```
+   ```shell
    git remote add upstream https://github.com/labring/sealos.git
    git remote set-url --push upstream no-pushing
    ```
 
    With this remote setting, you can check your git remote configuration like this:
 
-   ```
+   ```shell
    $ git remote -v
    origin     https://github.com/<your-username>/sealos.git (fetch)
    origin     https://github.com/<your-username>/sealos.git (push)
@@ -95,17 +95,17 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 
    Update local working directory and remote forked repository:
 
-   ```
+   ```shell
    cd sealos
    git fetch upstream
    git checkout main
    git rebase upstream/main
-   git push	// default origin, update your forked repository
+   git push	# default origin, update your forked repository
    ```
 
    Create a new branch:
 
-   ```
+   ```shell
    git checkout -b <new-branch>
    ```
 
@@ -113,31 +113,32 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 
 1. **Push your branch** to your forked repository, try not to generate multiple commit message within a pr.
 
-   ```
-   golangci-lint run -c .golangci.yml	// lint
-   git commit -a -s -m "message for your changes"	// -a is git add ., -s adds a Signed-off-by trailer
-   git rebase -i	<commit-id> // do this if your pr has multiple commits
-   git push	// push to your forked repository after rebase done
-   ```
-   
-   If you don't want to use `git rebase -i`, you can use `git commit -s --amend && git push -f`
-   
-   If you develop multiple features in same branch, you should rebase the main branch:
-   ```shell script
-   // create new branch, for example git checkout -b feature/infra
-   git checkout -b <new branch>
-   // update some code, feature1
-   git commit -m -s "init infra"
-   git push
-   // then create pull request, and merge
-   
-   // update some new feature, feature2, rebase main branch first.
-   git rebase upstream/main
-   git commit -m -s "init infra"
-   // then create pull request, and merge
+   ```shell
+   golangci-lint run -c .golangci.yml # lint
+   git commit -a -s -m "message for your changes" # -a is git add ., -s adds a Signed-off-by trailer
+   git rebase -i	<commit-id> # do this if your pr has multiple commits
+   git push # push to your forked repository after rebase done
    ```
 
-1. **File a pull request** to fanux/sealos:master
+   If you don't want to use `git rebase -i`, you can use `git commit -s --amend && git push -f`
+
+   If you develop multiple features in same branch, you should rebase the main branch:
+
+   ```shell
+   # create new branch, for example git checkout -b feature/infra
+   git checkout -b <new branch>
+   # update some code, feature1
+   git commit -m -s "init infra"
+   git push
+   # then create pull request, and merge
+
+   # update some new feature, feature2, rebase main branch first.
+   git rebase upstream/main
+   git commit -m -s "init infra"
+   # then create pull request, and merge
+   ```
+
+1. **File a pull request** to labring/sealos:master
 
 ### Branch Definition
 
@@ -188,7 +189,7 @@ No matter what the commit message, or commit content is, we do take more emphasi
 
 ### PR Description
 
-PR is the only way to make change to sealos project files. To help reviewers better get your purpose, PR description could not be too detailed. We encourage contributors to follow the [PR template](./.github/PULL_REQUEST_TEMPLATE.md) to finish the pull request.
+PR is the only way to make change to sealos project files. To help reviewers better get your purpose, PR description could not be too detailed. We encourage contributors to follow the [PR template](https://github.com/labring/sealos/tree/main/.github/PULL_REQUEST_TEMPLATE.md) to finish the pull request.
 
 ### Developing Environment
 
