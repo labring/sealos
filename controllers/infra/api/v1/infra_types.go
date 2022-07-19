@@ -17,9 +17,12 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/kustomize/api/resid"
 )
 
 /*
@@ -122,6 +125,15 @@ type InfraList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Infra `json:"items"`
+}
+
+func (i *Infra) GetInstancesTag() string {
+	namespace := i.Namespace
+	if namespace == "" {
+		namespace = resid.DefaultNamespace
+	}
+	// TODO maybe we also needs a cluster identify
+	return fmt.Sprintf("%s/%s", namespace, i.Name)
 }
 
 func init() {
