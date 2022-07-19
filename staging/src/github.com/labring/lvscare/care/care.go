@@ -39,7 +39,7 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 		if err != nil {
 			return
 		}
-		err = care.cleanup()
+		err = care.CleanUp()
 	}()
 
 	cleanVirtualServer := func() error {
@@ -54,9 +54,8 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 	if care.Clean {
 		// we don't care error here
 		_ = cleanVirtualServer()
-		care.cleanupFuncs = append(care.cleanupFuncs, cleanVirtualServer)
 	}
-	if err = care.test(); err != nil {
+	if err = care.setupDummyIfaceOrSkip(); err != nil {
 		return
 	}
 	if err = care.createVsAndRs(); err != nil {
@@ -65,6 +64,8 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 	if care.RunOnce {
 		return
 	}
+	// clean ipvs rule before exiting
+	care.cleanupFuncs = append(care.cleanupFuncs, cleanVirtualServer)
 
 	t := time.NewTicker(time.Duration(care.Interval) * time.Second)
 	defer t.Stop()
@@ -93,7 +94,7 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 	}
 }
 
-func (care *LvsCare) cleanup() error {
+func (care *LvsCare) CleanUp() error {
 	var errs []string
 	for _, fn := range care.cleanupFuncs {
 		if err := fn(); err != nil {
@@ -106,7 +107,7 @@ func (care *LvsCare) cleanup() error {
 	return nil
 }
 
-func (care *LvsCare) test() error {
+func (care *LvsCare) setupDummyIfaceOrSkip() error {
 	if care.Test {
 		ips, err := ipAddrsFromNetworkAddrs(care.RealServer...)
 		if err != nil {
@@ -123,14 +124,14 @@ func (care *LvsCare) test() error {
 		if virIP == "" || virPort == 0 {
 			return fmt.Errorf("virtual server ip and port is empty")
 		}
-		logger.Info("create dummy interface with name %s", dummyIfaceName)
-		link, err := utils.GetOrCreateDummyLink(dummyIfaceName)
+		logger.Info("create dummy interface with name %s", care.IfaceName)
+		link, err := utils.GetOrCreateDummyLink(care.IfaceName)
 		if err != nil {
 			return err
 		}
 		care.cleanupFuncs = append(care.cleanupFuncs, func() error {
-			logger.Info("remove dummy interface %s", dummyIfaceName)
-			return utils.DeleteLinkByName(dummyIfaceName)
+			logger.Info("remove dummy interface %s", care.IfaceName)
+			return utils.DeleteLinkByName(care.IfaceName)
 		})
 		logger.Info("assign IP %s/32 to interface", virIP)
 		return utils.AssignIPToLink(virIP+"/32", link)
@@ -162,7 +163,9 @@ func (care *LvsCare) SyncRouter() error {
 		if err = care.Route.SetRoute(); err != nil {
 			return err
 		}
-		care.cleanupFuncs = append(care.cleanupFuncs, care.Route.DelRoute)
+		if !care.RunOnce {
+			care.cleanupFuncs = append(care.cleanupFuncs, care.Route.DelRoute)
+		}
 		return nil
 	}
 	return nil

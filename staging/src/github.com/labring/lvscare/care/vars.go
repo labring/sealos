@@ -18,6 +18,7 @@ import (
 	"net"
 
 	"github.com/labring/lvscare/pkg/route"
+	"github.com/spf13/pflag"
 )
 
 type LvsCare struct {
@@ -29,6 +30,7 @@ type LvsCare struct {
 	Clean         bool
 	Test          bool
 	Interval      int32
+	IfaceName     string
 	Logger        string
 	TargetIP      net.IP
 	// runtime
@@ -37,6 +39,20 @@ type LvsCare struct {
 	Route        *route.Route
 }
 
-var LVS LvsCare
+func (l *LvsCare) RegisterFlags(fs *pflag.FlagSet) {
+	fs.IPVar(&l.TargetIP, "ip", nil, "target ip")
+	fs.BoolVar(&l.RunOnce, "run-once", false, "is run once mode")
+	fs.StringVar(&l.VirtualServer, "vs", "", "virtual server like 10.54.0.2:6443")
+	fs.StringSliceVar(&l.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
+	fs.StringVar(&l.Logger, "logger", "INFO", "logger level: DEBG/INFO")
+	fs.BoolVarP(&l.Clean, "clean", "C", false, "before run clean ipvs rules")
+	fs.BoolVarP(&l.Test, "test", "t", false, "use when any of real server is listening on the same host, "+
+		"enable test mode will automatically create a dummy type interface and bind virtual IP to it")
+	fs.StringVar(&l.IfaceName, "iface", "lvscare", "name of dummy network interface to setup")
 
-const dummyIfaceName = "lvscare"
+	fs.StringVar(&l.HealthPath, "health-path", "/healthz", "health check path")
+	fs.StringVar(&l.HealthSchem, "health-schem", "https", "health check schem")
+	fs.Int32Var(&l.Interval, "interval", 5, "health check interval, unit is sec.")
+}
+
+var LVS LvsCare

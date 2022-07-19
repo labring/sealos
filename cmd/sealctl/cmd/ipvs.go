@@ -30,13 +30,12 @@ import (
 )
 
 func newIPVSCmd() *cobra.Command {
-	var clean bool
 	var vip string
 	var ipvsCmd = &cobra.Command{
 		Use:   "ipvs",
 		Short: "sealos create or care local ipvs lb",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if clean {
+			if care.LVS.Clean {
 				lvs := care.BuildLvscare()
 				if err := lvs.DeleteVirtualServer(care.LVS.VirtualServer, false); err != nil {
 					return err
@@ -49,8 +48,7 @@ func newIPVSCmd() *cobra.Command {
 				logger.Info("lvscare delete route: %s success", care.LVS.VirtualServer)
 				return nil
 			}
-			care.LVS.VsAndRsCare()
-			return nil
+			return care.LVS.VsAndRsCare()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			flags.PrintFlags(cmd.Flags())
@@ -60,7 +58,7 @@ func newIPVSCmd() *cobra.Command {
 					care.LVS.TargetIP = net.ParseIP(ip)
 				}
 				logger.Debug("found target route ip is %s", care.LVS.TargetIP.String())
-				if !clean {
+				if !care.LVS.Clean {
 					if err := care.LVS.SyncRouter(); err != nil {
 						return err
 					}
@@ -71,15 +69,7 @@ func newIPVSCmd() *cobra.Command {
 			return nil
 		},
 	}
-	ipvsCmd.Flags().BoolVarP(&clean, "clean", "C", false, "clean ipvs and route")
-	ipvsCmd.Flags().BoolVar(&care.LVS.RunOnce, "run-once", false, "is run once mode")
-	ipvsCmd.Flags().StringVar(&care.LVS.VirtualServer, "vs", "", "virturl server like 10.54.0.2:6443")
-	ipvsCmd.Flags().StringSliceVar(&care.LVS.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
-	ipvsCmd.Flags().IPVar(&care.LVS.TargetIP, "ip", nil, "target ip")
-
-	ipvsCmd.Flags().StringVar(&care.LVS.HealthPath, "health-path", "/healthz", "health check path")
-	ipvsCmd.Flags().StringVar(&care.LVS.HealthSchem, "health-schem", "https", "health check schem")
-	ipvsCmd.Flags().Int32Var(&care.LVS.Interval, "interval", 5, "health check interval, unit is sec.")
+	care.LVS.RegisterFlags(ipvsCmd.Flags())
 	return ipvsCmd
 }
 
