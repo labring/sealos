@@ -117,10 +117,12 @@ func IsLocalHostAddrs() (*[]net.Addr, error) {
 }
 
 func IsLocalIP(ip string, addrs *[]net.Addr) bool {
+	logger.Debug("exec IsLocalIP is %s", ip)
 	if defaultIP, _, err := net.SplitHostPort(ip); err == nil {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
+		logger.Debug("search local addr is %+v", address.String())
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
 			return true
 		}
