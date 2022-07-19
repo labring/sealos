@@ -16,6 +16,7 @@
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
 [![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
 [![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/cloudnativer)
+
   </p>
 </div>
 
@@ -36,29 +37,29 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 
 > Core Capabilities
 
-- Cluster image 
-  - [x] The entire cluster will be able to build, ship and run. 
+- Cluster image
+  - [x] The entire cluster will be able to build, ship and run.
   - [x] Semantics of docker will be extended to clusters so that any distributed applications can be defined and run smoothly.
-- hub.sealos 
+- hub.sealos
   - [x] A cluster image repository where you can retrieve pre-built distributed applications such as basic Kubernetes cluster image, high availability pgsql cluster image, high availability minio cluster image, etc.
-- desktop.sealos 
+- desktop.sealos
   - [ ] A desktop for cloud OS, not to be confused with traditional cloud desktop. It is similar to macOS, but manages cluster and distributed applications instead of personal computers.
-- Distributed application matrix 
+- Distributed application matrix
   - [x] Anything you need including storage / network / HA database / message queue / monitoring can be retrieved with a click of the mouse, or simply `sealos run`.
   - [x] sealos now support 20+ HA applications.
 
 ## Core features
 
-- Manage clusters lifecycle 
+- Manage clusters lifecycle
   - [x] Quickly install HA Kubernetes clusters
   - [x] Add / remove nodes
   - [x] Clean the cluster, backup and auto recovering, etc.
 - Download and use OCI-compatible distributed applications
-  - [x] Openebs, minio, ingress, pgsql, mysql, redis, etc.
+  - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
 - Customize you own distributed applications
-  - [x] Using Dockerfile to build distributed applications images, save all dependencies.
-  - [x] Push distributed applications images to docker hub.
-  - [x] Combine many applications to build your own cloud platform.
+  - [x] Using Dockerfile to build distributed applications images, saving all dependencies.
+  - [x] Push distributed applications images to Docker Hub.
+  - [x] Combine multiple applications to build your own cloud platform.
 
 ## Quickstart
 
@@ -78,16 +79,16 @@ $ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
 
 > Building a custom cluster image
 
-See [Building an ingress cluster image](https://github.com/labring/sealos/blob/main/docs/4.0/build-example-ingress-helm.md).
+See [Building an Example CloudImage](https://www.sealos.io/docs/examples/build-example-cloudimage).
 
 > Storage, message queue, database, etc.
 
 Don't be shocked by the following:
 
 ```shell script
-$ sealos run labring/helm:v3.8.2 # install helm
-$ sealos run labring/openebs:v1.9.0 # install openebs
-$ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
+sealos run labring/helm:v3.8.2 # install helm
+sealos run labring/openebs:v1.9.0 # install openebs
+sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
    labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # oneliner
 ```
 
@@ -103,6 +104,6 @@ And now everything is ready.
 
 **Join us: [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 
-
 ## License
+
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large)
