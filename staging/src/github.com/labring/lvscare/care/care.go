@@ -16,34 +16,65 @@ package care
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
+	"os/user"
+	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/labring/lvscare/pkg/route"
 	"github.com/labring/lvscare/pkg/utils"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/hosts"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 //VsAndRsCare is
-func (care *LvsCare) VsAndRsCare() {
-	lvs := BuildLvscare()
-	//set inner lvs
-	care.lvs = lvs
-	if care.Clean {
-		logger.Info("lvscare deleteVirtualServer")
-		err := lvs.DeleteVirtualServer(care.VirtualServer, false)
-		if err != nil {
-			logger.Info("virtualServer is not exist skip...: %v", err)
-		}
+func (care *LvsCare) VsAndRsCare() (err error) {
+	if care.lvs == nil {
+		care.lvs = BuildLvscare()
 	}
-	care.createVsAndRs()
+
+	defer func() {
+		if err != nil {
+			return
+		}
+		err = care.CleanUp()
+	}()
+
+	cleanVirtualServer := func() error {
+		logger.Info("lvscare deleteVirtualServer")
+		err := care.lvs.DeleteVirtualServer(care.VirtualServer, false)
+		if err != nil {
+			logger.Warn("virtualServer is not exist skip: %v", err)
+		}
+		return err
+	}
+
+	// clean and exit
+	if care.Clean {
+		care.cleanupFuncs = append(care.cleanupFuncs, cleanVirtualServer)
+		if care.Route != nil {
+			care.cleanupFuncs = append(care.cleanupFuncs, care.Route.DelRoute)
+		}
+		return
+	}
+
+	if err = care.createVsAndRs(); err != nil {
+		return
+	}
 	if care.RunOnce {
 		return
 	}
+	// clean ipvs rule before exiting
+	care.cleanupFuncs = append(care.cleanupFuncs, cleanVirtualServer)
+
 	t := time.NewTicker(time.Duration(care.Interval) * time.Second)
+	defer t.Stop()
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	for {
@@ -52,53 +83,97 @@ func (care *LvsCare) VsAndRsCare() {
 			// in some cases, virtual server maybe removed
 			isAvailable := care.lvs.IsVirtualServerAvailable(care.VirtualServer)
 			if !isAvailable {
-				err := care.lvs.CreateVirtualServer(care.VirtualServer, true)
-				//virtual server is exists
+				err = care.lvs.CreateVirtualServer(care.VirtualServer, true)
 				if err != nil {
 					logger.Error("failed to create virtual server: %v", err)
-
 					return
 				}
 			}
-			//check real server
-			lvs.CheckRealServers(care.HealthPath, care.HealthSchem)
+			// check real server
+			care.lvs.CheckRealServers(care.HealthPath, care.HealthSchem)
 		case signa := <-sig:
 			logger.Info("receive kill signal: %+v", signa)
-			_ = LVS.Route.DelRoute()
 			return
 		}
 	}
 }
-func (care *LvsCare) SyncRouter() error {
-	if len(LVS.VirtualServer) == 0 {
-		return errors.New("virtual server can't empty")
+
+func (care *LvsCare) CleanUp() error {
+	var errs []string
+	for _, fn := range care.cleanupFuncs {
+		if err := fn(); err != nil {
+			errs = append(errs, err.Error())
+		}
 	}
-	if LVS.TargetIP != nil {
+	if len(errs) > 0 {
+		return errors.New(strings.Join(errs, ", "))
+	}
+	return nil
+}
+
+var syncOnce sync.Once
+
+func (care *LvsCare) SyncRouter() (err error) {
+	syncOnce.Do(func() {
+		if care.Route != nil {
+			if err := care.Route.SetRoute(); err != nil {
+				return
+			}
+			if !care.RunOnce {
+				care.cleanupFuncs = append(care.cleanupFuncs, care.Route.DelRoute)
+			}
+		}
+	})
+	return
+}
+
+func (care *LvsCare) validatePermission() error {
+	curUser, err := user.Current()
+	if err != nil {
+		return err
+	}
+	if curUser.Uid != "0" {
+		return fmt.Errorf("must run with root privileges, current user %s", curUser.Uid)
+	}
+	return nil
+}
+
+func (care *LvsCare) ValidateAndSetDefaults() error {
+	if err := care.validatePermission(); err != nil {
+		return err
+	}
+	if len(care.VirtualServer) == 0 {
+		return errors.New("virtual server can't be empty")
+	}
+	if len(care.RealServer) == 0 {
+		return errors.New("real server can't be empty")
+	}
+	if care.TargetIP == nil {
+		if v := os.Getenv("LVSCARE_NODE_IP"); len(v) > 0 {
+			care.TargetIP = net.ParseIP(v)
+		} else {
+			hf := &hosts.HostFile{Path: constants.DefaultHostsPath}
+			if ip, ok := hf.HasDomain(constants.DefaultLvscareDomain); ok {
+				care.TargetIP = net.ParseIP(ip)
+			}
+		}
+	}
+	if care.TargetIP != nil {
 		var ipv4 bool
-		vIP, _, err := net.SplitHostPort(LVS.VirtualServer)
+		vIP, _, err := net.SplitHostPort(care.VirtualServer)
 		if err != nil {
 			return err
 		}
-		if utils.IsIPv6(LVS.TargetIP) {
+		if utils.IsIPv6(care.TargetIP) {
 			ipv4 = false
 		} else {
 			ipv4 = true
 		}
 		if !ipv4 {
-			logger.Info("tip: %s is not ipv4", LVS.TargetIP.String())
+			logger.Info("skip: %s is not ipv4", care.TargetIP.String())
 			return nil
 		}
-		logger.Info("tip: %s,vip: %s", LVS.TargetIP.String(), vIP)
-		LVS.Route = route.NewRoute(vIP, LVS.TargetIP.String())
-		return LVS.Route.SetRoute()
+		care.Route = route.NewRoute(vIP, care.TargetIP.String())
 	}
-	return nil
-}
-
-func SetTargetIP() error {
-	if LVS.TargetIP == nil {
-		LVS.TargetIP = net.ParseIP(os.Getenv("LVSCARE_NODE_IP"))
-	}
-
 	return nil
 }

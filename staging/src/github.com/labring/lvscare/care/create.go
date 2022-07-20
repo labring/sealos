@@ -15,22 +15,20 @@
 package care
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-//createVsAndRs is
-func (care *LvsCare) createVsAndRs() {
-	//ip, _ := utils.SplitServer(vs)
-	if care.lvs == nil {
-		care.lvs = BuildLvscare()
-	}
+func (care *LvsCare) createVsAndRs() error {
 	var errs []string
 	isAvailable := care.lvs.IsVirtualServerAvailable(care.VirtualServer)
 	if !isAvailable {
 		err := care.lvs.CreateVirtualServer(care.VirtualServer, true)
-		//virtual server is exists
+		// virtual server is exists
 		if err != nil {
-			//can't return
+			// can't return
 			errs = append(errs, err.Error())
 		}
 	}
@@ -41,6 +39,8 @@ func (care *LvsCare) createVsAndRs() {
 		}
 	}
 	if len(errs) != 0 {
-		logger.Error("createVsAndRs error: %v", errs)
+		logger.Error("createVsAndRs error: %s", errs)
+		return fmt.Errorf(strings.Join(errs, ","))
 	}
+	return nil
 }
