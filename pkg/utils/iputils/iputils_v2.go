@@ -122,7 +122,6 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
-		logger.Debug("search local addr is %+v", address.String())
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
 			return true
 		}
