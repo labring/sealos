@@ -4,7 +4,7 @@ on:
     branches:
       - main
     paths:
-      - staging/src/github.com/labring
+      - staging/src/github.com/labring/**
   workflow_dispatch:
 jobs:
   sync:
