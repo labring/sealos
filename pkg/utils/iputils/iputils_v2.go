@@ -19,10 +19,15 @@ import (
 	"math/big"
 	"net"
 	"strings"
+	"sync/atomic"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+var (
+	ipDebugged int64
 )
 
 //use only one
@@ -117,12 +122,23 @@ func IsLocalHostAddrs() (*[]net.Addr, error) {
 }
 
 func IsLocalIP(ip string, addrs *[]net.Addr) bool {
-	logger.Debug("exec IsLocalIP is %s", ip)
+	var isIpDebugged = atomic.LoadInt64(&ipDebugged)
+	if isIpDebugged == 0 {
+		atomic.AddInt64(&ipDebugged, 1)
+	}
+
+	if isIpDebugged == 0 {
+		logger.Debug("exec IsLocalIP is %s", ip)
+	}
+
 	if defaultIP, _, err := net.SplitHostPort(ip); err == nil {
 		ip = defaultIP
 	}
 	for _, address := range *addrs {
-		logger.Debug("search local addr is %+v", address.String())
+		if isIpDebugged == 0 {
+			logger.Debug("search local addr is %+v", address.String())
+		}
+
 		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil && ipnet.IP.String() == ip {
 			return true
 		}
