@@ -1,6 +1,6 @@
 module github.com/labring/lvscare
 
-go 1.17
+go 1.18
 
 replace github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
 
@@ -22,8 +22,4 @@ require (
 
 require github.com/labring/sealos v0.0.0-00010101000000-000000000000
 
-replace (
-	github.com/labring/image-cri-shim => ../image-cri-shim
-	github.com/labring/lvscare => ../lvscare
-	github.com/labring/sealos => ../../../../../
-)
+replace github.com/labring/sealos => ../../../../../

@@ -2,7 +2,7 @@ name: Release
 
 env:
   # Common versions
-  GO_VERSION: "1.17"
+  GO_VERSION: "1.18"
 
 on:
   workflow_dispatch:
