@@ -1,6 +1,6 @@
 module github.com/labring/image-cri-shim
 
-go 1.17
+go 1.18
 
 require (
 	github.com/containers/image/v5 v5.21.1
@@ -41,8 +41,4 @@ require (
 
 require github.com/labring/sealos v0.0.0-00010101000000-000000000000
 
-replace (
-	github.com/labring/image-cri-shim => ../image-cri-shim
-	github.com/labring/lvscare => ../lvscare
-	github.com/labring/sealos => ../../../../../
-)
+replace github.com/labring/sealos => ../../../../../
