@@ -1,6 +1,3 @@
-[![Build Status](https://github.com/labring/lvscare/actions/workflows/go.yml/badge.svg)](https://github.com/labring/lvscare/actions/workflows/go.yml)
-[![Release](https://github.com/labring/lvscare/actions/workflows/release.yml/badge.svg)](https://github.com/labring/lvscare/actions/workflows/release.yml)
-
 # LVScare
 
 A lightweight LVS baby care, support ipvs health check， [sealos](https://github.com/labring/sealos) using lvscare for kubernetes masters HA.
