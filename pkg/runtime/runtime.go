@@ -25,8 +25,10 @@ import (
 
 type KubeadmRuntime struct {
 	*sync.Mutex
-	Cluster *v2.Cluster
-	Token   *Token
+	Cluster      *v2.Cluster
+	Token        *Token
+	registryOnce sync.Once
+	Registry     *v2.RegistryConfig
 	*KubeadmConfig
 	*Config
 }
@@ -108,7 +110,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 	if err := k.Validate(); err != nil {
 		return nil, err
 	}
-	if logger.IsDebugModel() {
+	if logger.IsDebugMode() {
 		k.vlog = 6
 	}
 	k.setCertSANS()

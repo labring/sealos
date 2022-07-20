@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"text/template"
 
+	"github.com/labring/sealos/pkg/utils/iputils"
+
 	"github.com/labring/sealos/pkg/ssh"
 )
 
@@ -84,9 +86,10 @@ func (s *remote) IPVSClean(ip, vip string) error {
 	var ipvsCommandTemplate = template.Must(template.New("ipvs").Parse(`` +
 		`ipvs --vs {{.vip}} --ip {{.ip}}  -C`,
 	))
+
 	data := map[string]interface{}{
 		"vip": vip,
-		"ip":  ip,
+		"ip":  iputils.GetHostIP(ip),
 	}
 	out, err := renderTemplate(ipvsCommandTemplate, data)
 	if err != nil {

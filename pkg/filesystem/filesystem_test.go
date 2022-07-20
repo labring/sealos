@@ -34,7 +34,7 @@ package filesystem
 //			wantErr: false,
 //		},
 //	}
-//	logger.Cfg(false, true)
+//	logger.CfgConsoleLogger(false, true)
 //	for _, tt := range tests {
 //		t.Run(tt.name, func(t *testing.T) {
 //			f, _ := NewFilesystem(tt.fields.clusterName)

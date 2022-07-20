@@ -21,8 +21,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/labring/lvscare/pkg/glog"
 	"github.com/labring/lvscare/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/vishvananda/netlink"
 )
@@ -49,7 +49,7 @@ func (r *Route) SetRoute() error {
 	if err != nil && !errors.Is(err, os.ErrExist) /* return if route already exist */ {
 		return fmt.Errorf("failed to add %s route gateway via host err: %v", r.Host, err)
 	}
-	glog.Infof("success to set route.(host:%s, gateway:%s)", r.Host, r.Gateway)
+	logger.Info("success to set route.(host:%s, gateway:%s)", r.Host, r.Gateway)
 	return nil
 }
 
@@ -62,7 +62,7 @@ func (r *Route) DelRoute() error {
 	if err != nil && !errors.Is(err, syscall.ESRCH) /* return if route does not exist */ {
 		return fmt.Errorf("failed to delete %s route gateway via host err: %v", r.Host, err)
 	}
-	glog.Infof("success to del route.(host:%s, gateway:%s)", r.Host, r.Gateway)
+	logger.Info("success to del route.(host:%s, gateway:%s)", r.Host, r.Gateway)
 	return nil
 }
 

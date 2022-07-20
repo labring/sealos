@@ -43,7 +43,7 @@ func (s *SSH) Ping(host string) error {
 func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	var isLocal bool
 	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("ip is local ip ,local ssh cmd exec")
+		logger.Debug("ip %s is local ip ,local ssh cmd exec", host)
 		isLocal = true
 	}
 	for _, cmd := range cmds {
@@ -53,10 +53,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 
 		if err := func(cmd string) error {
 			if isLocal {
-				_, err := exec.RunBashCmd(cmd)
-				if err != nil {
-					return err
-				}
+				return exec.Cmd("bash", "-c", cmd)
 			}
 			client, session, err := s.Connect(host)
 			if err != nil {
@@ -106,7 +103,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
 	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("ip is local ip ,local ssh cmd exec")
+		logger.Debug("ip is local ip %s default,local ssh cmd exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}

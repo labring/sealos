@@ -25,8 +25,8 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "desktop",
 	Short: "Run sealos desktop",
-	Run: func(cmd *cobra.Command, args []string) {
-		auth.Serve()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return auth.Serve()
 	},
 }
 

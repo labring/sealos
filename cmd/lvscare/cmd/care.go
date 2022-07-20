@@ -16,7 +16,7 @@ package cmd
 
 import (
 	"github.com/labring/lvscare/care"
-	"github.com/labring/lvscare/pkg/glog"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -41,13 +41,14 @@ var careCmd = &cobra.Command{
 
 func init() {
 	cobra.OnInitialize(func() {
+		//TODO: expose showPath flag?
 		switch care.LVS.Logger {
 		case "INFO":
-			glog.InitVerbosity(0)
+			logger.CfgConsoleLogger(false, false)
 		case "DEBG":
-			glog.InitVerbosity(9)
+			logger.CfgConsoleLogger(true, false)
 		default:
-			glog.InitVerbosity(0)
+			logger.CfgConsoleLogger(false, false)
 		}
 	})
 	rootCmd.AddCommand(careCmd)

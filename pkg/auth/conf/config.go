@@ -36,10 +36,9 @@ type Provider struct {
 	ClientSecret string `yaml:"clientSecret"`
 }
 
-func InitConfig(configPath string) *Config {
-	config := &Config{}
-	if err := yaml.UnmarshalYamlFromFile(configPath, config); err != nil {
-		panic(err)
+func InitConfig(configPath string) error {
+	if err := yaml.UnmarshalYamlFromFile(configPath, GlobalConfig); err != nil {
+		return err
 	}
-	return config
+	return nil
 }

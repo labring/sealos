@@ -112,11 +112,19 @@ type Provider struct {
 	ClientSecret string `json:"clientSecret"`
 }
 
-func NewCasdoorClient() *CasdoorClient {
+func NewCasdoorClient() (*CasdoorClient, error) {
+	clientID, err := utils.RandomHexStr(10)
+	if err != nil {
+		return nil, err
+	}
+	clientSecret, err := utils.RandomHexStr(20)
+	if err != nil {
+		return nil, err
+	}
 	client := &CasdoorClient{
 		Endpoint:     "http://casdoor-svc.sealos.svc.cluster.local:8000",
-		ClientID:     utils.RandomHexStr(10),
-		ClientSecret: utils.RandomHexStr(20),
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
 		Organization: "sealos",
 		Application:  "sealos-desktop",
 		CallbackURL:  conf.GlobalConfig.CallbackURL,
@@ -126,7 +134,10 @@ func NewCasdoorClient() *CasdoorClient {
 	}
 
 	// Generate jwt public and private key
-	publicKey, privateKey := utils.CreateJWTPublicAndPrivateKey()
+	publicKey, privateKey, err := utils.CreateJWTPublicAndPrivateKey()
+	if err != nil {
+		return nil, err
+	}
 	client.JwtPublicKey = publicKey
 	client.JwtPrivateKey = privateKey
 
@@ -134,15 +145,15 @@ func NewCasdoorClient() *CasdoorClient {
 
 	newInitData, err := json.Marshal(initData)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	if err = client.initCasdoorServer(string(newInitData)); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Init Casdoor SDK
 	casdoorAuth.InitConfig(client.Endpoint, client.ClientID, client.ClientSecret, client.JwtPublicKey, "sealos", "sealos-desktop")
-	return client
+	return client, nil
 }
 
 func (c *CasdoorClient) GetRedirectURL() (string, error) {

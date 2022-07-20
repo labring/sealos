@@ -15,7 +15,7 @@
 package care
 
 import (
-	"github.com/labring/lvscare/pkg/glog"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 //createVsAndRs is
@@ -41,6 +41,6 @@ func (care *LvsCare) createVsAndRs() {
 		}
 	}
 	if len(errs) != 0 {
-		glog.Errorf("createVsAndRs error: %v", errs)
+		logger.Error("createVsAndRs error: %v", errs)
 	}
 }

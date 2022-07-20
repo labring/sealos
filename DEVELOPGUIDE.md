@@ -4,7 +4,7 @@ sealos only support linux now, you need a linux server to test it.
 
 Some tools can be very handy to help you start a virtual machine such as [multipass](https://multipass.run/)
 
-# Build the project
+## Build the project
 
 ```shell script
 git clone https://github.com/labrirng/sealos
@@ -24,8 +24,10 @@ Then test it locally.
 
 ## Notes about cross-platform building
 
-If not explicitly specified, `CGO_ENABLED` will be `0` (disabled), which allows cross-platform building but sacrificing support for subcommands like `images` that relies on CGO. That is, when running `sealos images`, since overlay driver is not supported without CGO, a "driver not supported" error will occur.
+All the binaries except `sealos` can be built anywhere since they have `CGO_ENABLED=0`. However, `sealos` needs to support overlay driver when running some subcommands like `images`, which relies on CGO. Therefore CGO is switched on when building `sealos`, making it impossible to build `sealos` binaries on platforms other than Linux.
 
-Therefore, if you are developing or debugging images storage related functions, you have to build sealos under Linux.
+> Both Makefile and GoReleaser in this project have this setting.
 
-In addition, the released version of sealos is built under Ubuntu (thanks to Github Actions) and has `CGO_ENABLED=1` to support overlay driver.
+## Notes about go workspace
+
+As sealos is using go1.18's workspace feature, once you add a new module, you need to run `go work usr -r .` at root directry to update the workspace synced.

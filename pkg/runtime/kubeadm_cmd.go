@@ -41,8 +41,8 @@ func vlogToStr(vlog int) string {
 func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) {
 	const (
 		InitMaster115Lower = `kubeadm init --config=%s --experimental-upload-certs`
-		JoinMaster115Lower = "kubeadm join %s:6443 --token %s   %s --experimental-control-plane --certificate-key %s"
-		JoinNode115Lower   = "kubeadm join %s:6443 --token %s   %s"
+		JoinMaster115Lower = "kubeadm join %s:%d --token %s   %s --experimental-control-plane --certificate-key %s"
+		JoinNode115Lower   = "kubeadm join %s:%d --token %s   %s"
 
 		InitMaser115Upper  = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print` // --upload-certs --skip-certificate-key-print --skip-token-print
 		JoinMaster115Upper = "kubeadm join --config=%s"
@@ -60,8 +60,8 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 
 	cmds := map[CommandType]string{
 		InitMaster: fmt.Sprintf(InitMaster115Lower, initConfigPath),
-		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
-		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
+		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
+		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
 	}
 	//other version >= 1.15.x
 	if versionutil.Compare(version, V1150) {

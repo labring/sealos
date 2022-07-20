@@ -29,6 +29,7 @@ import (
 	"unicode"
 
 	pp "github.com/labring/sealos/pkg/image/buildah/cluster/buildah/parse"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
@@ -50,7 +51,6 @@ import (
 	"github.com/docker/go-units"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 )
 
@@ -129,7 +129,7 @@ func newGlobalOptions() *globalFlags {
 	)
 	storageOptions, err := storage.DefaultStoreOptions(false, 0)
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	if len(storageOptions.GraphDriverOptions) > 0 {
@@ -138,7 +138,7 @@ func newGlobalOptions() *globalFlags {
 	}
 	containerConfig, err := config.Default()
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	containerConfig.CheckCgroupsAndAdjustConfig()
@@ -187,7 +187,7 @@ func getGlobalOptionsFlag() *pflag.FlagSet {
 	fs := pflag.FlagSet{}
 	storageOptions, err := storage.DefaultStoreOptions(false, 0)
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 
@@ -198,7 +198,7 @@ func getGlobalOptionsFlag() *pflag.FlagSet {
 
 	containerConfig, err := config.Default()
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	containerConfig.CheckCgroupsAndAdjustConfig()
@@ -567,13 +567,13 @@ func NamespaceOptions(flags *pflag.FlagSet) (namespaceOptions define.NamespaceOp
 			}
 			switch how {
 			case "", "container", "private":
-				logrus.Debugf("setting %q namespace to %q", what, "")
+				logger.Debug("setting %q namespace to %q", what, "")
 				policy = define.NetworkEnabled
 				options.AddOrReplace(define.NamespaceOption{
 					Name: what,
 				})
 			case "host":
-				logrus.Debugf("setting %q namespace to host", what)
+				logger.Debug("setting %q namespace to host", what)
 				policy = define.NetworkEnabled
 				options.AddOrReplace(define.NamespaceOption{
 					Name: what,
@@ -586,7 +586,7 @@ func NamespaceOptions(flags *pflag.FlagSet) (namespaceOptions define.NamespaceOp
 							Name: what,
 						})
 						policy = define.NetworkDisabled
-						logrus.Debugf("setting network to disabled")
+						logger.Debug("setting network to disabled")
 						break
 					}
 				}
@@ -598,7 +598,7 @@ func NamespaceOptions(flags *pflag.FlagSet) (namespaceOptions define.NamespaceOp
 					}
 				}
 				policy = define.NetworkEnabled
-				logrus.Debugf("setting %q namespace to %q", what, how)
+				logger.Debug("setting %q namespace to %q", what, how)
 				options.AddOrReplace(define.NamespaceOption{
 					Name: what,
 					Path: how,
@@ -713,7 +713,7 @@ func IDMappingOptions(flags *pflag.FlagSet, persistentFlags *pflag.FlagSet) (use
 		if _, err := os.Stat(how); err != nil {
 			return nil, nil, errors.Wrapf(err, "checking %s namespace", string(specs.UserNamespace))
 		}
-		logrus.Debugf("setting %q namespace to %q", string(specs.UserNamespace), how)
+		logger.Debug("setting %q namespace to %q", string(specs.UserNamespace), how)
 		usernsOption.Path = how
 	}
 
@@ -839,7 +839,7 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ct
 	// implement a `*.LookupImageIndex`.
 	refs, err := util.ResolveNameToReferences(store, systemContext, imageSpec)
 	if err != nil {
-		logrus.Debugf("error parsing reference to image %q: %v", imageSpec, err)
+		logger.Debug("error parsing reference to image %q: %v", imageSpec, err)
 	}
 
 	if ref, _, err := util.FindImage(store, "", systemContext, imageSpec); err == nil {
@@ -865,7 +865,7 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ct
 	}
 
 	for _, ref := range refs {
-		logrus.Debugf("Testing reference %q for possible manifest", transports.ImageName(ref))
+		logger.Debug("Testing reference %q for possible manifest", transports.ImageName(ref))
 
 		src, err := ref.NewImageSource(ctx, systemContext)
 		if err != nil {

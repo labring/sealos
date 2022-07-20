@@ -2,11 +2,11 @@ name: CI
 
 env:
   # Common versions
-  GO_VERSION: "1.17"
+  GO_VERSION: "1.18"
 
 on:
   push:
-    branches: main
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -95,7 +95,11 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      # Note: CGO_ENABLED=0
+      - name: Install Dependencies
+        if: ${{ matrix.binary == 'sealos' && matrix.arch == 'arm64' }}
+        run: |
+          sudo apt install -y gcc-aarch64-linux-gnu
+
       - name: Build Binaries
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}

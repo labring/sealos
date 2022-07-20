@@ -119,7 +119,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				return err
 			}
 			for _, cInfo := range f.images {
-				if cInfo.Type == v2.AddonsImage {
+				if cInfo.Type == v2.PatchImage {
 					logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
 					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetMaster0IP(), false, ip, cInfo.MountPoint, target)
 					if err != nil {
@@ -200,6 +200,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	return nil
 }
 func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target string) error {
+	logger.Debug("copyFiles isRegistry: %v,isApp: %v,ip: %v,src: %v,target: %v", isRegistry, isApp, ip, src, target)
 	files, err := ioutil.ReadDir(src)
 	if err != nil {
 		return fmt.Errorf("failed to copy files %s", err)

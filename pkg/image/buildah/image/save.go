@@ -32,9 +32,9 @@ import (
 	"github.com/containers/storage"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	labring_types "github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // using buildah push
@@ -112,7 +112,7 @@ func (d *Service) Save(imageName, archiveName string) error {
 			return err
 		}
 		dest = dest2
-		logrus.Debugf("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
+		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
 
 	ref, digest, err := buildah.Push(getContext(), imageName, dest, options)
@@ -126,9 +126,9 @@ func (d *Service) Save(imageName, archiveName string) error {
 		return util.GetFailureCause(err, errors.Wrapf(err, "error pushing image %q to %q", imageName, archiveName))
 	}
 	if ref != nil {
-		logrus.Debugf("pushed image %q with digest %s", ref, digest.String())
+		logger.Debug("pushed image %q with digest %s", ref, digest.String())
 	} else {
-		logrus.Debugf("pushed image with digest %s", digest.String())
+		logger.Debug("pushed image with digest %s", digest.String())
 	}
 	if d.pushOpts.Digestfile != "" {
 		if err = ioutil.WriteFile(d.pushOpts.Digestfile, []byte(digest.String()), 0644); err != nil {

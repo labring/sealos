@@ -15,7 +15,6 @@
 package auth
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -35,12 +34,19 @@ var (
 )
 
 //Serve start a auth server
-func Serve() {
-	conf.GlobalConfig = conf.InitConfig(ConfigPath)
+func Serve() error {
+	err := conf.InitConfig(ConfigPath)
+	if err != nil {
+		return err
+	}
 	logger.Info("Loaded configuration")
-	ssoClient = sso.InitSSO()
+	ssoClient, err = sso.InitSSO()
+	if err != nil {
+		return err
+	}
 	logger.Info("Init SSO platform successfully")
 	httpServer()
+	return nil
 }
 
 func httpServer() {
@@ -56,5 +62,5 @@ func httpServer() {
 	logger.Info("start listening on localhost", authHTTPPortString)
 	server := &http.Server{Addr: authHTTPPortString, Handler: container}
 
-	log.Fatal(server.ListenAndServe())
+	logger.Fatal(server.ListenAndServe())
 }

@@ -18,7 +18,7 @@ package runtime
 
 import "path"
 
-const RemoteCopyKubeConfig = `rm -rf .kube/config && mkdir -p  .kube && cp /etc/kubernetes/admin.conf .kube/config`
+const RemoteCopyKubeConfig = `rm -rf $HOME/.kube/config && mkdir -p  $HOME/.kube && cp /etc/kubernetes/admin.conf $HOME/.kube/config`
 
 func (k *KubeadmRuntime) copyNodeKubeConfig(hosts []string) error {
 	srcKubeFile := k.getContentData().AdminFile()

@@ -35,13 +35,18 @@ type ClientType string
 
 const CasdoorClientType ClientType = "casdoor"
 
-func InitSSO() Client {
+func InitSSO() (Client, error) {
 	var client Client
+	var err error
 	switch ClientType(strings.ToLower(conf.GlobalConfig.SSOType)) {
 	case CasdoorClientType:
-		client = NewCasdoorClient()
+		client, err = NewCasdoorClient()
 	default:
 		logger.Warn("No valid SSO platform specified")
 	}
-	return client
+	if err != nil {
+		logger.Error("Init SSO platform failed")
+		return nil, err
+	}
+	return client, nil
 }

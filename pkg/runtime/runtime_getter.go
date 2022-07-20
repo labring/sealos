@@ -25,7 +25,6 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/env"
@@ -34,7 +33,10 @@ import (
 )
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	return k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	k.registryOnce.Do(func() {
+		k.Registry = k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+	})
+	return k.Registry
 }
 
 func (k *KubeadmRuntime) getKubeVersion() string {
@@ -61,7 +63,7 @@ func (k *KubeadmRuntime) getMasterIPList() []string {
 func (k *KubeadmRuntime) getMasterIPListAndHTTPSPort() []string {
 	masters := make([]string, 0)
 	for _, master := range k.getMasterIPList() {
-		masters = append(masters, fmt.Sprintf("%s:6443", master))
+		masters = append(masters, fmt.Sprintf("%s:%d", master, k.getAPIServerPort()))
 	}
 	return masters
 }
@@ -106,7 +108,7 @@ func (k *KubeadmRuntime) execIPVSClean(ip string) error {
 func (k *KubeadmRuntime) syncNodeIPVSYaml(masterIPs, nodesIPs []string) error {
 	masters := make([]string, 0)
 	for _, master := range masterIPs {
-		masters = append(masters, fmt.Sprintf("%s:6443", iputils.GetHostIP(master)))
+		masters = append(masters, fmt.Sprintf("%s:%d", iputils.GetHostIP(master), k.getAPIServerPort()))
 	}
 
 	eg, _ := errgroup.WithContext(context.Background())

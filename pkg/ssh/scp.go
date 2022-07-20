@@ -73,7 +73,7 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
 	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("local copy files src %s to dst %s", localPath, remotePath)
+		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)

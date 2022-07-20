@@ -26,8 +26,9 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/common/pkg/config"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 type fromReply struct {
@@ -97,7 +98,7 @@ func From(containerName, imageName string) error {
 	//	return err
 	//}
 	//if len(platforms) > 1 {
-	//	logrus.Warnf("ignoring platforms other than %+v: %+v", platforms[0], platforms[1:])
+	//	logger.Warn("ignoring platforms other than %+v: %+v", platforms[0], platforms[1:])
 	//}
 
 	// Allow for --pull, --pull=true, --pull=false, --pull=never, --pull=always
@@ -114,7 +115,7 @@ func From(containerName, imageName string) error {
 	if iopts.pullNever || strings.EqualFold(strings.TrimSpace(iopts.pull), "never") {
 		pullPolicy = define.PullNever
 	}
-	logrus.Debugf("Pull Policy for pull [%v]", pullPolicy)
+	logger.Debug("Pull Policy for pull [%v]", pullPolicy)
 
 	signaturePolicy := iopts.signaturePolicy
 
@@ -291,7 +292,7 @@ func onBuild(builder *buildah.Builder, quiet bool) error {
 		case "WORKINGDIR":
 			builder.SetWorkDir(strings.Join(args, " "))
 		default:
-			logrus.Errorf("unknown OnBuild command %q; ignored", onBuildSpec)
+			logger.Error("unknown OnBuild command %q; ignored", onBuildSpec)
 		}
 	}
 	builder.ClearOnBuild()

@@ -1,3 +1,0 @@
-FROM labring/kubernetes:v1.24.0
-COPY manifests ./cni
-CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-resources.yaml"]

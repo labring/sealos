@@ -1,0 +1,17 @@
+fanux/sealos-site:
+  - source: docs/4.0/docs/
+    dest: docs/
+    deleteOrphaned: true
+  - source: docs/4.0/i18n/zh-Hans/
+    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/
+    deleteOrphaned: true
+  - source: README.md
+    dest: docs/Intro.md
+  - source: CONTRIBUTING.md
+    dest: docs/CONTRIBUTING.md
+  - source: CONTRIBUTING.md
+    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/CONTRIBUTING.md
+  - source: DEVELOPGUIDE.md
+    dest: docs/DEVELOPGUIDE.md
+  - source: DEVELOPGUIDE.md
+    dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/DEVELOPGUIDE.md

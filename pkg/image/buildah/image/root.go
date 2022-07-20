@@ -23,9 +23,9 @@ import (
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // Service is the default service, which is used for image pull/push
@@ -46,7 +46,7 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 	)
 	storageOptions, err := storage.DefaultStoreOptions(false, 0)
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	if len(storageOptions.GraphDriverOptions) > 0 {
@@ -55,7 +55,7 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 	}
 	containerConfig, err := config.Default()
 	if err != nil {
-		logrus.Errorf(err.Error())
+		logger.Error(err.Error())
 		os.Exit(1)
 	}
 	containerConfig.CheckCgroupsAndAdjustConfig()

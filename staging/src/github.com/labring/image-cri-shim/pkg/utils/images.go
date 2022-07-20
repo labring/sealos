@@ -21,9 +21,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/labring/image-cri-shim/pkg/glog"
-
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
 )
 
@@ -31,7 +30,7 @@ func LoadImages(imageDir string) ([]string, error) {
 	var imageList []string
 	if imageDir != "" && IsExist(imageDir) {
 		paths, err := GetFiles(imageDir)
-		glog.Infof("get files path is %v", paths)
+		logger.Info("get files path is %v", paths)
 		if err != nil {
 			return nil, errors.Wrap(err, "load image list files error")
 		}
@@ -48,7 +47,7 @@ func LoadImages(imageDir string) ([]string, error) {
 }
 
 func RunBashCmd(cmd string) (string, error) {
-	glog.V(5).Infof("cmd for bash in host: %s", cmd)
+	logger.Info("cmd for bash in host: %s", cmd)
 	result, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput() // #nosec
 	return string(result), err
 }
@@ -126,7 +125,7 @@ func normalizeTaggedDigestedNamed(named reference.Named) (reference.Named, error
 	if err != nil {
 		return named, err
 	}
-	glog.V(5).Infof("Stripped off tag from tagged and digested reference %q", named.String())
+	logger.Info("Stripped off tag from tagged and digested reference %q", named.String())
 	return newNamed, nil
 }
 

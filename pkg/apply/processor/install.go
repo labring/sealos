@@ -117,8 +117,8 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			imageTypes.Insert(string(v2.AppImage))
 		}
 	}
-	if imageTypes.Has(string(v2.AddonsImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("can't apply AddonsImage only, need to init a Cluster to append it")
+	if imageTypes.Has(string(v2.PatchImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
+		return errors.New("can't apply PatchImage only, need to init a Cluster to append it")
 	}
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)
