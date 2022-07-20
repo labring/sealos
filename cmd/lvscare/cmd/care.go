@@ -15,33 +15,34 @@
 package cmd
 
 import (
-	"github.com/labring/lvscare/care"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
+
+	"github.com/labring/lvscare/care"
+	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // careCmd represents the care command
 var careCmd = &cobra.Command{
 	Use:   "care",
 	Short: "A lightweight LVS baby care, support ipvs health check.",
-	Run: func(cmd *cobra.Command, args []string) {
-		care.LVS.VsAndRsCare()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return care.LVS.VsAndRsCare()
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		if err := care.SetTargetIP(); err != nil {
+		flags.PrintFlags(cmd.Flags())
+		if err := care.LVS.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
-		// if target ip is empty, skip sync router
-		if care.LVS.TargetIP == nil {
-			return nil
+		if !care.LVS.Clean {
+			return care.LVS.SyncRouter()
 		}
-		return care.LVS.SyncRouter()
+		return nil
 	},
 }
 
 func init() {
 	cobra.OnInitialize(func() {
-		//TODO: expose showPath flag?
 		switch care.LVS.Logger {
 		case "INFO":
 			logger.CfgConsoleLogger(false, false)
@@ -51,23 +52,6 @@ func init() {
 			logger.CfgConsoleLogger(false, false)
 		}
 	})
+	care.LVS.RegisterFlags(careCmd.Flags())
 	rootCmd.AddCommand(careCmd)
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// careCmd.PersistentFlags().String("foo", "", "A help for foo")
-	careCmd.Flags().IPVar(&care.LVS.TargetIP, "ip", nil, "target ip")
-	careCmd.Flags().BoolVar(&care.LVS.RunOnce, "run-once", false, "is run once mode")
-	careCmd.Flags().StringVar(&care.LVS.VirtualServer, "vs", "", "virtual server like 10.54.0.2:6443")
-	careCmd.Flags().StringSliceVar(&care.LVS.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
-	careCmd.Flags().StringVar(&care.LVS.Logger, "logger", "INFO", "logger level: DEBG/INFO")
-	careCmd.Flags().BoolVar(&care.LVS.Clean, "clean", false, "before run clean ipvs rules")
-
-	careCmd.Flags().StringVar(&care.LVS.HealthPath, "health-path", "/healthz", "health check path")
-	careCmd.Flags().StringVar(&care.LVS.HealthSchem, "health-schem", "https", "health check schem")
-	careCmd.Flags().Int32Var(&care.LVS.Interval, "interval", 5, "health check interval, unit is sec.")
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// careCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

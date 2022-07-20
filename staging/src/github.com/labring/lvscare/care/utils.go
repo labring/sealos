@@ -25,19 +25,17 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-//SplitServer is
+// SplitServer return host and port
 func SplitServer(server string) (string, uint16) {
-	logger.Info("server %s", server)
-
 	ip, port, err := net.SplitHostPort(server)
 	if err != nil {
 		logger.Error("SplitServer error: %v.", err)
 		return "", 0
 	}
-	logger.Info("SplitServer debug: TargetIP: %s, Port: %s", ip, port)
+	logger.Debug("SplitServer: TargetIP: %s, Port: %s", ip, port)
 	p, err := strconv.Atoi(port)
 	if err != nil {
-		logger.Warn("SplitServer error: %v", err)
+		logger.Error("SplitServer error: %v", err)
 		return "", 0
 	}
 	return ip, uint16(p)
