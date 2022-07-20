@@ -16,3 +16,4 @@ tools
 coverage.out
 tmp
 ./pkg/infra/controller/bin
+desktop/.DS_Store
