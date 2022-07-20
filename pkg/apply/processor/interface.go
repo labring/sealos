@@ -37,12 +37,12 @@ type Interface interface {
 
 func SyncNewVersionConfig(cluster *v2.Cluster) {
 	d := constants.NewData(cluster.Name)
-	if !file.IsFile(d.PkiPath()) {
+	if !file.IsExist(d.PkiPath()) {
 		src, target := path.Join(d.Homedir(), constants.PkiDirName), d.PkiPath()
 		logger.Info("sync new version copy pki config: %s %s", src, target)
 		_ = file.RecursionCopy(src, target)
 	}
-	if !file.IsFile(d.EtcPath()) {
+	if !file.IsExist(d.EtcPath()) {
 		src, target := path.Join(d.Homedir(), constants.EtcDirName), d.EtcPath()
 		logger.Info("sync new version copy etc config: %s %s", src, target)
 		_ = file.RecursionCopy(src, target)
