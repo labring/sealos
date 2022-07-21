@@ -108,15 +108,9 @@ jobs:
         run: |
           make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
-      - name: Compress Binaries
-        run: |
-         sudo docker run -ti -d --net=host --name tmp-registry registry:2.7.1
-         sudo docker login 127.0.0.1:5000
-         sudo docker ps  
-
       - name: Save binaries
-        run: |
-          cd bin/linux_${{ matrix.arch}} && sudo docker build -t 127.0.0.1:5000/lvscare:temp-${{ matrix.arch}} .
-          sudo docker push 127.0.0.1:5000/lvscare:temp-${{ matrix.arch}}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.binary }}-${{ matrix.arch }}
+          path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
 
-          
