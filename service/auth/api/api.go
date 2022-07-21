@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package api
 
 import (
 	"github.com/emicklei/go-restful"
-	"github.com/labring/sealos/pkg/auth/utils"
+	"github.com/labring/sealos/pkg/auth"
 )
 
-func ConfigRegister(auth *restful.WebService) {
-	auth.Path("/").
+// RegisterRouter Register auth Router
+func RegisterRouter(webService *restful.WebService) {
+	webService.Path("/").
 		Consumes("*/*").
 		Produces(restful.MIME_JSON)
 	// redirect to login page
-	auth.Route(auth.GET("/login").To(handlerLogin))
+	webService.Route(webService.GET("/login").To(handlerLogin))
 	// SSO callback, generate kubeconfig according to user info
-	auth.Route(auth.GET("/config").To(handlerConfig))
+	webService.Route(webService.GET("/config").To(handlerConfig))
 }
 
-func handlerLogin(request *restful.Request, response *restful.Response) {
-	redirectURL, err := ssoClient.GetRedirectURL()
+func handlerLogin(_ *restful.Request, response *restful.Response) {
+	redirectURL, err := auth.GetLoginRedirect()
 	if err != nil {
 		_ = response.WriteError(500, err)
 		return
@@ -42,13 +43,7 @@ func handlerLogin(request *restful.Request, response *restful.Response) {
 func handlerConfig(request *restful.Request, response *restful.Response) {
 	state := request.QueryParameter("state")
 	code := request.QueryParameter("code")
-	user, err := ssoClient.GetUserInfo(state, code)
-	if err != nil {
-		_ = response.WriteError(500, err)
-		return
-	}
-
-	kubeConfig, err := utils.GenerateKubeConfig(user.ID)
+	kubeConfig, err := auth.GetKubeConfig(state, code)
 	if err != nil {
 		_ = response.WriteError(500, err)
 		return
