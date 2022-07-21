@@ -40,7 +40,7 @@ endif
 .PHONY: go.build.verify
 go.build.verify:
 ifneq ($(shell $(GO) version | grep -q 'go version go' && echo 0 || echo 1), 0)
-	$(error Go binary is not found. Please install Go first.')
+	$(error Go binary is not found. Please install Go first.)
 endif
 
 .PHONY: go.bin.%
