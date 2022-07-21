@@ -32,39 +32,28 @@ import (
 type ClusterService struct {
 }
 
-func (d *ClusterService) Create(name string, image string) (*types.ClusterManifest, error) {
-	data := exec.BashEval("buildah containers --json")
-	infos, err := listContainer(data)
-	if err != nil {
+func (s *ClusterService) Create(name string, image string) (*types.ClusterManifest, error) {
+	if err := s.Delete(name); err != nil {
 		return nil, err
 	}
 
-	for _, info := range infos {
-		if info.Containername == name {
-			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
-			if err = exec.Cmd("bash", "-c", cmd); err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	cmd := fmt.Sprintf(" buildah from --pull=never --name %s %s && buildah mount %s ", name, image, name)
-	err = exec.Cmd("bash", "-c", cmd)
+	cmd := fmt.Sprintf("buildah from --pull=never --name %s %s && buildah mount %s ", name, image, name)
+	err := exec.Cmd("bash", "-c", cmd)
 	if err != nil {
 		return nil, err
 	}
-	return d.Inspect(name)
+	return s.Inspect(name)
 }
-func (*ClusterService) Delete(name string) error {
-	data := exec.BashEval("buildah containers --json")
-	infos, err := listContainer(data)
+
+func (s *ClusterService) Delete(name string) error {
+	infos, err := s.List()
 	if err != nil {
 		return err
 	}
 	logger.Debug("current container names is: %v", name)
 	for _, info := range infos {
 		if info.Containername == name {
-			cmd := fmt.Sprintf("buildah unmount %s && buildah rm  %s", info.Containername, info.Containername)
+			cmd := fmt.Sprintf("buildah unmount %s && buildah rm %s", info.Containername, info.Containername)
 			if err = exec.Cmd("bash", "-c", cmd); err != nil {
 				return err
 			}
@@ -84,11 +73,7 @@ func (*ClusterService) Inspect(name string) (*types.ClusterManifest, error) {
 
 func (*ClusterService) List() ([]types.ClusterInfo, error) {
 	data := exec.BashEval("buildah containers --json")
-	infos, err := listContainer(data)
-	if err != nil {
-		return nil, err
-	}
-	return infos, nil
+	return listContainer(data)
 }
 
 func inspectContainer(data string) (*types.ClusterManifest, error) {
