@@ -29,6 +29,10 @@ import (
 )
 
 func (s *SSH) Ping(host string) error {
+	if iputils.IsLocalIP(host, s.LocalAddress) {
+		logger.Debug("ip %s is local ip ,ping is true", host)
+		return nil
+	}
 	client, _, err := s.Connect(host)
 	if err != nil {
 		return fmt.Errorf("[ssh %s]create ssh session failed, %v", host, err)
