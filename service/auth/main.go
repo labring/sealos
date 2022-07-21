@@ -17,6 +17,7 @@ package main
 import (
 	"flag"
 
+	"github.com/labring/sealos/pkg/auth"
 	"github.com/labring/sealos/pkg/utils/httpserver"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/service/auth/api"
@@ -26,7 +27,7 @@ import (
 var configPath string
 
 func main() {
-	flag.StringVar(&configPath, "config file path", "", "Spec the auth service run config file path.")
+	flag.StringVar(&configPath, "config", "", "Spec the auth service run config file path.")
 
 	flag.Parse()
 
@@ -35,7 +36,9 @@ func main() {
 	}
 	logger.Info("Loaded configuration")
 
-	// TODO: impl: auth.Init()
+	if err := auth.Init(conf.GlobalConfig.Config); err != nil {
+		logger.Fatal("Init auth pkg failed: %s", err)
+	}
 
 	logger.Info("Init Auth pkg successfully")
 	if err := httpserver.GoRestful(api.RegisterRouter, conf.GlobalConfig.Addr); err != nil {
