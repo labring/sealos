@@ -25,7 +25,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"k8s.io/apimachinery/pkg/util/json"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func IsExist(fileName string) bool {
@@ -88,7 +88,7 @@ func Unmarshal(path string) (map[string]interface{}, error) {
 		return nil, err
 	}
 	var data map[string]interface{}
-	err = json.Unmarshal(metadata, &data)
+	err = yaml.Unmarshal(metadata, &data)
 	if err != nil {
 		return nil, err
 	}
