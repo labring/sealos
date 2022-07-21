@@ -43,7 +43,7 @@ func (care *LvsCare) RegisterFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&care.RunOnce, "run-once", false, "run once mode, creating ipvs rules and routes and exit")
 	fs.StringVar(&care.VirtualServer, "vs", "", "virtual server like 10.54.0.2:6443")
 	fs.StringSliceVar(&care.RealServer, "rs", []string{}, "real server like 192.168.0.2:6443")
-	fs.StringVar(&care.IfaceName, "iface", "lvscare", "name of interface to created if needed, "+
+	fs.StringVar(&care.IfaceName, "iface", "", "name of interface to created when specified if needed, "+
 		"use when any of real server is listening locally, this command will create a dummy network interface "+
 		"and bind virtual ip to it automatically, setting this parameter to null will skip this behaviour")
 	fs.StringVar(&care.Logger, "logger", "INFO", "logger level: DEBG/INFO")
