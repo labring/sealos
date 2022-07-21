@@ -138,7 +138,7 @@ func AssemblyIPList(args *string) error {
 		return fmt.Errorf("ip is invalid，ip range format is xxx.xxx.xxx.1-xxx.xxx.xxx.2")
 	}
 	if !CheckIP(ips[0]) || !CheckIP(ips[1]) {
-		return fmt.Errorf("ip is invalid，check you command agrs")
+		return fmt.Errorf("ip is invalid，check you command args")
 	}
 	for res, _ := CompareIP(ips[0], ips[1]); res <= 0; {
 		result = ips[0] + "," + result
@@ -146,7 +146,7 @@ func AssemblyIPList(args *string) error {
 		res, _ = CompareIP(ips[0], ips[1])
 	}
 	if result == "" {
-		return fmt.Errorf("ip is invalid，check you command agrs")
+		return fmt.Errorf("ip is invalid，check you command args")
 	}
 	if result[len(result)-1:] == "," {
 		result = result[:len(result)-1]
@@ -190,7 +190,7 @@ func CompareIP(v1, v2 string) (int, error) {
 	j := IPToInt(v2)
 
 	if i == nil || j == nil {
-		return 2, fmt.Errorf("ip is invalid，check you command agrs")
+		return 2, fmt.Errorf("ip is invalid，check you command args")
 	}
 	return i.Cmp(j), nil
 }

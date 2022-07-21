@@ -103,10 +103,20 @@ func (c Chart) GetImages() ([]string, error) {
 	}
 	var images []string
 	var tmp string
+	rrr := regexp.MustCompile(`\simage:`)
+	blankReg := regexp.MustCompile(`[\s\p{Zs}]{1,}`)
+	shaReg := regexp.MustCompile(`@.*$`)
+
+	delBlank := func(a string) string {
+		return blankReg.ReplaceAllString(a, "")
+	}
+	delImageSha := func(a string) string {
+		return shaReg.ReplaceAllString(a, "")
+	}
+
 	for _, v := range content {
 		if delLF(v) != "" { // Text has content
 			for _, s := range strings.Split(v, "\n") {
-				rrr := regexp.MustCompile(`\simage:`)
 				if rrr.MatchString(s) {
 					image := delImageSha(strings.Replace(strings.Replace(delBlank(s), "image:", "", -1), "\"", "", -1))
 					if image != tmp {
@@ -118,16 +128,6 @@ func (c Chart) GetImages() ([]string, error) {
 		}
 	}
 	return images, nil
-}
-
-func delBlank(a string) string {
-	reg := regexp.MustCompile(`[\s\p{Zs}]{1,}`)
-	return reg.ReplaceAllString(a, "")
-}
-
-func delImageSha(a string) string {
-	reg := regexp.MustCompile(`@.*$`)
-	return reg.ReplaceAllString(a, "")
 }
 
 func delLF(a string) string {
