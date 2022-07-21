@@ -64,6 +64,12 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 		return
 	}
 
+	if care.IfaceName != "" {
+		if err = care.setupDummyIfaceOrSkip(); err != nil {
+			return
+		}
+	}
+
 	if err = care.createVsAndRs(); err != nil {
 		return
 	}
@@ -125,6 +131,37 @@ func (care *LvsCare) SyncRouter() (err error) {
 		}
 	})
 	return
+}
+
+func (care *LvsCare) setupDummyIfaceOrSkip() error {
+	ips, err := ipAddrsFromNetworkAddrs(care.RealServer...)
+	if err != nil {
+		return err
+	}
+	hasLocal, err := isAnyLocalHostAddr(ips...)
+	if err != nil {
+		return err
+	}
+	if !hasLocal {
+		return nil
+	}
+
+	vIP, _, err := net.SplitHostPort(care.VirtualServer)
+	if err != nil {
+		return err
+	}
+	logger.Info("create dummy interface with name '%s'", care.IfaceName)
+	link, err := utils.GetOrCreateDummyLink(care.IfaceName)
+	if err != nil {
+		return err
+	}
+	care.cleanupFuncs = append(care.cleanupFuncs, func() error {
+		logger.Info("remove dummy interface %s", care.IfaceName)
+		return utils.DeleteLinkByName(care.IfaceName)
+	})
+
+	logger.Info("assign IP %s/32 to interface", vIP)
+	return utils.AssignIPToLink(vIP+"/32", link)
 }
 
 func (care *LvsCare) validatePermission() error {
