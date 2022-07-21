@@ -40,7 +40,7 @@ endif
 .PHONY: go.build.verify
 go.build.verify:
 ifneq ($(shell $(GO) version | grep -q 'go version go' && echo 0 || echo 1), 0)
-	$(error Go binary is not found. Please install Go first.')
+	$(error Go binary is not found. Please install Go first.)
 endif
 
 .PHONY: go.bin.%
@@ -60,8 +60,8 @@ go.build.%:
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
 	
 	@if [ "$(COMMAND)" == "sealos" ]; then \
-		CGO_ENABLED=1; \
-		CC=x86_64-linux-gnu-gcc; \
+		CGO_ENABLED=0; \
+		CC="/opt/homebrew/bin/x86_64-linux-musl-gcc"; \
 		if [ "$(ARCH)" == "arm64" ]; then \
 			CC=aarch64-linux-gnu-gcc; \
 		fi; \
