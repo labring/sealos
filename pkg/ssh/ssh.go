@@ -54,7 +54,8 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 	if ssh.User == "" {
 		ssh.User = v2.DefaultUserRoot
 	}
-	address, err := iputils.IsLocalHostAddrs()
+	address, err := iputils.ListLocalHostAddrs()
+	// todo: return error?
 	if err != nil {
 		logger.Warn("failed to get local address, %v", err)
 	}
@@ -69,29 +70,16 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 }
 
 func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
-	var (
-		ipList []string
-	)
-	address, err := iputils.IsLocalHostAddrs()
+	var ipList []string
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
-	if err != nil {
-		logger.Warn("failed to get local address, %v", err)
-	}
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
 
-	err = WaitSSHReady(sshClient, 6, ipList...)
+	err := WaitSSHReady(sshClient, 6, ipList...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &SSH{
-		isStdout:     isStdout,
-		User:         cluster.Spec.SSH.User,
-		Password:     cluster.Spec.SSH.Passwd,
-		PkFile:       cluster.Spec.SSH.Pk,
-		PkPassword:   cluster.Spec.SSH.PkPasswd,
-		LocalAddress: address,
-	}, nil
+	return sshClient, nil
 }
 
 type Client struct {

@@ -94,7 +94,7 @@ func GetHostIPSlice(hosts []string) (res []string) {
 	return
 }
 
-func IsLocalHostAddrs() (*[]net.Addr, error) {
+func ListLocalHostAddrs() (*[]net.Addr, error) {
 	netInterfaces, err := net.Interfaces()
 	if err != nil {
 		logger.Warn("net.Interfaces failed, err:", err.Error())
