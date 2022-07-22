@@ -15,8 +15,10 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -88,22 +90,34 @@ type Client struct {
 }
 
 func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
-	var err error
+	errCh := make(chan error, len(hosts))
 	var wg sync.WaitGroup
 	for _, h := range hosts {
 		wg.Add(1)
 		go func(host string) {
 			defer wg.Done()
+			var err error
 			for i := 0; i < tryTimes; i++ {
 				err = ssh.Ping(host)
 				if err == nil {
+					errCh <- nil
 					return
 				}
 				time.Sleep(time.Duration(i) * time.Second)
 			}
-			err = fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
+			errCh <- fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
 		}(h)
 	}
 	wg.Wait()
-	return err
+	close(errCh)
+	var ret []string
+	for err := range errCh {
+		if err != nil {
+			ret = append(ret, err.Error())
+		}
+	}
+	if len(ret) > 0 {
+		return errors.New(strings.Join(ret, ","))
+	}
+	return nil
 }
