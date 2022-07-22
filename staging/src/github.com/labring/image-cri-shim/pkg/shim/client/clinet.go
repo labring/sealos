@@ -163,7 +163,7 @@ func (c *client) connect(kind, socket string, options ConnectOptions) (*grpc.Cli
 		grpc.WithContextDialer(func(ctx context.Context, socket string) (net.Conn, error) {
 			var conn net.Conn
 			if deadLine, ok := ctx.Deadline(); ok {
-				conn, err = net.DialTimeout("unix", socket, deadLine.Sub(time.Now()))
+				conn, err = net.DialTimeout("unix", socket, time.Until(deadLine))
 			} else {
 				conn, err = net.Dial("unix", socket)
 			}
