@@ -16,6 +16,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -26,6 +27,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
+	"google.golang.org/grpc/credentials/insecure"
 
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
@@ -155,11 +157,16 @@ func (c *client) connect(kind, socket string, options ConnectOptions) (*grpc.Cli
 	}
 
 	dialOpts := []grpc.DialOption{
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.FailOnNonTempDialError(true),
-		grpc.WithDialer(func(socket string, timeout time.Duration) (net.Conn, error) {
-			conn, err := net.DialTimeout("unix", socket, timeout)
+		grpc.WithContextDialer(func(ctx context.Context, socket string) (net.Conn, error) {
+			var conn net.Conn
+			if deadLine, ok := ctx.Deadline(); ok {
+				conn, err = net.DialTimeout("unix", socket, time.Until(deadLine))
+			} else {
+				conn, err = net.Dial("unix", socket)
+			}
 			if err != nil {
 				return conn, err
 			}
