@@ -1,5 +1,5 @@
 FROM scratch
-LABEL image="ghcr.io/labring/lvscare:v1.1.3-beta.8"
+LABEL image="__lvscare__"
 LABEL sealos.io.type="patch"
 COPY images ./images
 COPY registry ./registry
