@@ -15,8 +15,10 @@
 package ssh
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -54,7 +56,8 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 	if ssh.User == "" {
 		ssh.User = v2.DefaultUserRoot
 	}
-	address, err := iputils.IsLocalHostAddrs()
+	address, err := iputils.ListLocalHostAddrs()
+	// todo: return error?
 	if err != nil {
 		logger.Warn("failed to get local address, %v", err)
 	}
@@ -69,29 +72,16 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 }
 
 func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
-	var (
-		ipList []string
-	)
-	address, err := iputils.IsLocalHostAddrs()
+	var ipList []string
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
-	if err != nil {
-		logger.Warn("failed to get local address, %v", err)
-	}
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
 
-	err = WaitSSHReady(sshClient, 6, ipList...)
+	err := WaitSSHReady(sshClient, 6, ipList...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &SSH{
-		isStdout:     isStdout,
-		User:         cluster.Spec.SSH.User,
-		Password:     cluster.Spec.SSH.Passwd,
-		PkFile:       cluster.Spec.SSH.Pk,
-		PkPassword:   cluster.Spec.SSH.PkPasswd,
-		LocalAddress: address,
-	}, nil
+	return sshClient, nil
 }
 
 type Client struct {
@@ -100,22 +90,34 @@ type Client struct {
 }
 
 func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
-	var err error
+	errCh := make(chan error, len(hosts))
 	var wg sync.WaitGroup
 	for _, h := range hosts {
 		wg.Add(1)
 		go func(host string) {
 			defer wg.Done()
+			var err error
 			for i := 0; i < tryTimes; i++ {
 				err = ssh.Ping(host)
 				if err == nil {
+					errCh <- nil
 					return
 				}
 				time.Sleep(time.Duration(i) * time.Second)
 			}
-			err = fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
+			errCh <- fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
 		}(h)
 	}
 	wg.Wait()
-	return err
+	close(errCh)
+	var ret []string
+	for err := range errCh {
+		if err != nil {
+			ret = append(ret, err.Error())
+		}
+	}
+	if len(ret) > 0 {
+		return errors.New(strings.Join(ret, ","))
+	}
+	return nil
 }
