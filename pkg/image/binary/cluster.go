@@ -38,8 +38,7 @@ func (s *ClusterService) Create(name string, image string) (*types.ClusterManife
 	}
 
 	cmd := fmt.Sprintf("buildah from --pull=never --name %s %s && buildah mount %s ", name, image, name)
-	err := exec.Cmd("bash", "-c", cmd)
-	if err != nil {
+	if err := exec.Cmd("bash", "-c", cmd); err != nil {
 		return nil, err
 	}
 	return s.Inspect(name)
