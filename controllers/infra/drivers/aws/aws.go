@@ -17,52 +17,27 @@ limitations under the License.
 package aws
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/labring/sealos/controllers/infra/drivers"
-
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
-
-	v1 "github.com/labring/sealos/controllers/infra/api/v1"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
 type Driver struct {
-	config       aws.Config
-	client       *ec2.Client
-	infraCurrent *v1.Infra
-	infraDesired *v1.Infra
-	cluster      *v1beta1.Cluster
+	Config aws.Config
+	Client *ec2.Client
 }
 
-func (d *Driver) CreateInstances(infra *v1.Infra) error {
-	// TODO
+func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
+	//TODO implement me
 	return nil
 }
 
-func (d *Driver) GetInstancesByLabel(key string, value string) ([]types.Instance, error) {
-	// TODO
-	return nil, nil
+func (d Driver) DeleteInstances(instanceID string, infra *v1.Infra) error {
+	//TODO implement me
+	return nil
 }
 
-func NewDriver() (drivers.Driver, error) {
-	config, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return nil, fmt.Errorf("load default config failed %s", err)
-	}
-	client := ec2.NewFromConfig(config)
-
-	return &Driver{
-		config,
-		client,
-		nil,
-		nil,
-		nil,
-	}, nil
+func (d Driver) GetInstancesByLabel(key string, value string) ([]v1.Hosts, error) {
+	//TODO implement me
+	return nil, nil
 }

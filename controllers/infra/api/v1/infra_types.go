@@ -48,6 +48,9 @@ spec:
        user: root
    hosts:
    - roles: [master, aaa, bbb] # required
+     metadata:
+     - ips: [127.0.0.1, 1921.68.0.2]
+       id: instanceID
      count: 3 # Required
      # key values resources.
      resources:
@@ -65,8 +68,13 @@ spec:
        type: system
 */
 
+type Metadata struct {
+	IP []string `json:"ips,omitempty"`
+	ID string   `json:"id,omitempty"`
+}
+
 type Hosts struct {
-	Roles []string `json:"hosts,omitempty"`
+	Roles []string `json:"roles,omitempty"`
 	Count int      `json:"count,omitempty"`
 	// key values resources.
 	// cpu: 2
@@ -78,8 +86,9 @@ type Hosts struct {
 	// ENUM: amd64/arm64 (NOTE: the default value is amd64)
 	Arch string `json:"arch,omitempty"`
 	// ENUM: ubuntu:20.04, centos:7.2 and so on.
-	Image string `json:"image,omitempty"`
-	Disks []Disk `json:"disks,omitempty"`
+	Image    string     `json:"image,omitempty"`
+	Disks    []Disk     `json:"disks,omitempty"`
+	Metadata []Metadata `json:"metadata,omitempty"`
 }
 
 type Disk struct {

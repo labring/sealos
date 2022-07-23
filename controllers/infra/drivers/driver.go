@@ -17,12 +17,32 @@ limitations under the License.
 package drivers
 
 import (
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Driver interface {
-	CreateInstances(infra *v1.Infra) error
+	CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error
+	DeleteInstances(instanceID string, infra *v1.Infra) error
 	// TODO other cloud instance should convert to aws instance.
-	GetInstancesByLabel(key string, value string) ([]types.Instance, error)
+	GetInstancesByLabel(key string, value string) ([]v1.Hosts, error)
 }
+
+type Reconcile interface {
+	ReconcileInstance(infra *v1.Infra, driver Driver) (*v1beta1.Cluster, error)
+}
+
+/*
+func NewDriver() (Driver, error) {
+	config, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		return nil, fmt.Errorf("load default config failed %s", err)
+	}
+	client := ec2.NewFromConfig(config)
+
+	return &awsdriver.Driver{
+		Config: config,
+		Client: client,
+	}, nil
+}
+*/
