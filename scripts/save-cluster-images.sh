@@ -2,7 +2,7 @@
 
 IMAGE=localhost:5000/labring/lvscare:$COMMIT_SHA-$ARCH
 PATCH=docker.io/labring/patch:$COMMIT_SHA-$ARCH
-SEALOS=docker/sealos/sealos
+SEALOS=docker/sealos/sealos-$ARCH
 PATCH_DIR=docker/patch
 
 # resolve buildah conflicts
