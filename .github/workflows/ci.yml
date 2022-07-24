@@ -151,7 +151,6 @@ jobs:
           path: docker/patch/image-cri-shim
 
       - name: Download sealos
-        id: download-sealos
         uses: actions/download-artifact@v3
         with:
           name: sealos-${{ matrix.arch }}
@@ -173,7 +172,6 @@ jobs:
       - name: Save Cluster Images
         run: scripts/save-cluster-images.sh
         env:
-          SEALOS: ${{ steps.download-sealos.outputs.download-path }}
           ARCH: ${{ matrix.arch }}
 
       - name: Upload Cluster Images
