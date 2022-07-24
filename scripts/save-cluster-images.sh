@@ -21,7 +21,7 @@ echo "$IMAGE" > images/shim/lvscareImage
 sed -i "s#__lvscare__#$IMAGE#g" Dockerfile
 
 # build patch image, must be under $PATCH_DIR
-sudo sealos build -t $PATCH --platform linux/$ARCH .
+sudo sealos build -t $PATCH --platform linux/$ARCH -f Dockerfile .
 
 # save patch image
 cd - && sudo sealos save -o patch-$ARCH.tar $PATCH
