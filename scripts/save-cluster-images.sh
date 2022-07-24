@@ -16,5 +16,5 @@ sed -i "s#__lvscare__#$IMAGE#g" $PATCH_DIR/Dockerfile
 
 # make sure sealos binary is executable, build and save patch image
 chmod +x $SEALOS
-sudo $SEALOS build -t $PATCH --platform linux/$ARCH -f $PATCH_DIR/Dockerfile $PATCH_DIR
-sudo $SEALOS save -o patch-$ARCH.tar $PATCH
+sudo env "PATH=$PATH" $SEALOS build -t $PATCH --platform linux/$ARCH -f $PATCH_DIR/Dockerfile $PATCH_DIR
+sudo env "PATH=$PATH" $SEALOS save -o patch-$ARCH.tar $PATCH
