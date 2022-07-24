@@ -19,5 +19,5 @@ tar -zxf sealos_4.0.0_linux_amd64.tar.gz sealos
 chmod +x sealos
 
 # build and save patch image
-sudo sealos build -t $PATCH --platform linux/$ARCH -f $PATCH_DIR/Dockerfile $PATCH_DIR
-sudo sealos save -o patch-$ARCH.tar $PATCH
+sudo ./sealos build -t $PATCH --platform linux/$ARCH -f $PATCH_DIR/Dockerfile $PATCH_DIR
+sudo ./sealos save -o patch-$ARCH.tar $PATCH
