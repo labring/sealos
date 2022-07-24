@@ -169,7 +169,7 @@ jobs:
           push: true
           tags: localhost:5000/labring/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
 
-      - name: Save Cluster Images
+      - name: Build and Save Cluster Images
         run: scripts/save-cluster-images.sh
         env:
           ARCH: ${{ matrix.arch }}
