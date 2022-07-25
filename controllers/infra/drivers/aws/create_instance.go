@@ -66,7 +66,7 @@ func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTags
 	return api.CreateTags(c, input)
 }
 
-func CreateInstances(infra *v1.Infra) error {
+func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	// Tag name and tag value
 	name := common.InfraInstancesLabel
 	value := infra.GetInstancesTag()

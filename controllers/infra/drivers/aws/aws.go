@@ -28,8 +28,7 @@ type Driver struct {
 }
 
 func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
-	//TODO implement me
-	return nil
+	return d.createInstances(hosts, infra)
 }
 
 func (d Driver) DeleteInstances(instanceID string, infra *v1.Infra) error {

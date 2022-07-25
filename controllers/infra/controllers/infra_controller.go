@@ -61,7 +61,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	infra := &infrav1.Infra{}
 
 	if err := r.Get(context.TODO(), req.NamespacedName, infra); err != nil {
-		logger.Debug("ingnore not found infra error: %v", err)
+		logger.Debug("ignore not found infra error: %v", err)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
