@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -55,12 +55,15 @@ create cluster to your baremetal server, appoint the iplist:
   Different InfraSSH port numbers exist：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+  Single kubernetes cluster：
+	sealos run labring/kubernetes:v1.24.0 --single
 
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
 var runArgs apply.RunArgs
+var runSingle bool
 
 func newRunCmd() *cobra.Command {
 	var runCmd = &cobra.Command{
@@ -69,6 +72,10 @@ func newRunCmd() *cobra.Command {
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if runSingle {
+				addr, _ := iputils.ListLocalHostAddrs()
+				runArgs.Masters = iputils.LocalIP(addr)
+			}
 			applier, err := apply.NewApplierFromArgs(args, &runArgs)
 			if err != nil {
 				return err
@@ -88,6 +95,7 @@ func newRunCmd() *cobra.Command {
 	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
 	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
 	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
+	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "we also can input an --force flag to run app in this cluster by force")
 	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
 	return runCmd

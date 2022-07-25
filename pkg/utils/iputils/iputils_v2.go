@@ -128,6 +128,15 @@ func IsLocalIP(ip string, addrs *[]net.Addr) bool {
 	return false
 }
 
+func LocalIP(addrs *[]net.Addr) string {
+	for _, address := range *addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+			return ipnet.IP.String()
+		}
+	}
+	return ""
+}
+
 func AssemblyIPList(args *string) error {
 	var result string
 	var ips = strings.Split(*args, "-")
