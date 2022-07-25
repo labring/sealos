@@ -1,9 +1,25 @@
 # service-auth 
 Auth service to manage all namespaces and users.
 
-
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+The auth service is to manage all namespaces and users.
+It handle all login actions and pages using [casdoor](https://github.com/casdoor/casdoor).
+Users can easily add oauth2 providers to login.
+
+## Start
+
+@see: depoy Kubefile
+
+
+## UML Graph
+
+// TODO: Add UML graph
+
+
+## Devolpment
+
+// TODO: Add pre-requirements and runtime dependencies.
+
 
 ## License
 

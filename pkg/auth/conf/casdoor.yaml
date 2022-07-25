@@ -71,9 +71,11 @@ metadata:
   labels:
     app: casdoor
 spec:
+  type: NodePort
   ports:
     - protocol: TCP
       port: 8000
+      nodePort: 30006
   selector:
     app: casdoor
 
