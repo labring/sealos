@@ -22,7 +22,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) (*v2.Cluster
 
 	if !infra.DeletionTimestamp.IsZero() {
 		logger.Debug("remove all hosts")
-		// TODO driver.RemoveInfra(infra *v1.Infra)
+		// TODO driver.RemoveInfra(infra *v1.Infra, driver Driver)
 	}
 
 	// get current hosts

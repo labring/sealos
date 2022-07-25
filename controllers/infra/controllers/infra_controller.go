@@ -18,6 +18,13 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+
+	"k8s.io/client-go/tools/record"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/labring/sealos/controllers/infra/drivers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,7 +37,10 @@ import (
 // InfraReconciler reconciles a Infra object
 type InfraReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	driver   drivers.Driver
+	applier  drivers.Reconcile
+	recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -48,14 +58,34 @@ type InfraReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
+	infra := &infrav1.Infra{}
 
-	// TODO(user): your logic here
+	if err := r.Get(context.TODO(), req.NamespacedName, infra); err != nil {
+		logger.Debug("ingnore not found infra error: %v", err)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	cluster, err := r.applier.ReconcileInstance(infra, r.driver)
+	if err != nil {
+		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
+	logger.Info("cluster is: %v", cluster)
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	var err error
+	r.driver, err = drivers.NewDriver()
+	if err != nil {
+		return fmt.Errorf("infra controller new driver failed: %v", err)
+	}
+	r.applier = &drivers.Applier{}
+	r.recorder = mgr.GetEventRecorderFor("salos-infra-controller")
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}).
 		Complete(r)
