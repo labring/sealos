@@ -17,6 +17,13 @@ limitations under the License.
 package drivers
 
 import (
+	"context"
+	"fmt"
+
+	"github.com/labring/sealos/controllers/infra/drivers/aws"
+
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -32,7 +39,6 @@ type Reconcile interface {
 	ReconcileInstance(infra *v1.Infra, driver Driver) (*v1beta1.Cluster, error)
 }
 
-/*
 func NewDriver() (Driver, error) {
 	config, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -40,9 +46,8 @@ func NewDriver() (Driver, error) {
 	}
 	client := ec2.NewFromConfig(config)
 
-	return &awsdriver.Driver{
+	return &aws.Driver{
 		Config: config,
 		Client: client,
 	}, nil
 }
-*/
