@@ -12,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package conf
+package main
 
 import (
-	"github.com/labring/sealos/pkg/auth/conf"
-	"github.com/labring/sealos/pkg/utils/yaml"
+	"os"
+	"testing"
 )
 
-var GlobalConfig Config
+func TestAuthServer(t *testing.T) {
+	os.Args = append(os.Args, "-config", "./auth.yaml")
 
-type Config struct {
-	Addr string `yaml:"addr"`
-
-	conf.Config
-}
-
-func InitConfig(configPath string) error {
-	if err := yaml.UnmarshalYamlFromFile(configPath, &GlobalConfig); err != nil {
-		return err
-	}
-	return nil
+	main()
 }

@@ -126,7 +126,7 @@ func NewCasdoorClient() (*CasdoorClient, error) {
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		Organization: "sealos",
-		Application:  "sealos-desktop",
+		Application:  "service-auth",
 		CallbackURL:  conf.GlobalConfig.CallbackURL,
 	}
 	if conf.GlobalConfig.Kubeconfig != "" {
@@ -152,7 +152,7 @@ func NewCasdoorClient() (*CasdoorClient, error) {
 	}
 
 	// Init Casdoor SDK
-	casdoorAuth.InitConfig(client.Endpoint, client.ClientID, client.ClientSecret, client.JwtPublicKey, "sealos", "sealos-desktop")
+	casdoorAuth.InitConfig(client.Endpoint, client.ClientID, client.ClientSecret, client.JwtPublicKey, "sealos", "service-auth")
 	return client, nil
 }
 
@@ -192,18 +192,18 @@ func (c *CasdoorClient) newCasdoorInitData() *CasdoorInitData {
 		Applications: []Application{
 			{
 				Owner:          "admin",
-				Name:           "sealos-desktop",
-				DisplayName:    "sealos-desktop",
+				Name:           "service-auth",
+				DisplayName:    "service-auth",
 				Logo:           "https://www.sealos.io/img/sealos-left.png",
 				HomepageURL:    "https://www.sealos.io/",
 				Organization:   "sealos",
-				Cert:           "cert-sealos-desktop",
+				Cert:           "cert-service-auth",
 				EnablePassword: true,
 				EnableSignUp:   true,
 				ClientID:       c.ClientID,
 				ClientSecret:   c.ClientSecret,
 				RedirectUris:   []string{conf.GlobalConfig.CallbackURL},
-				ExpireInHours:  1024,
+				ExpireInHours:  24 * 30,
 				SignupItems: []SignupItem{
 					{
 						Name:     "ID",
@@ -267,8 +267,8 @@ func (c *CasdoorClient) newCasdoorInitData() *CasdoorInitData {
 		Certs: []Cert{
 			{
 				Owner:           "admin",
-				Name:            "cert-sealos-desktop",
-				DisplayName:     "Sealos Desktop Cert",
+				Name:            "cert-service-auth",
+				DisplayName:     "Sealos Service Auth Cert",
 				Scope:           "JWT",
 				Type:            "x509",
 				CryptoAlgorithm: "RS256",
