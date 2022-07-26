@@ -8,18 +8,77 @@ Users can easily add oauth2 providers to login.
 
 ## Start
 
-@see: depoy Kubefile
+### Step by step installation and run
 
+1. A Running `sealos kubernetes` cluster with admin access.  
+    ```shell
+    sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters xxx --nodes xxx -p/-pk
+    ```
+2. Cluster must have `helm` and `openebs` installed as base requirement.
+    ```shell
+    sealos run labring/helm:v3.8.2 
+    sealos run labring/openebs:v1.9.0
+    ```
+3. Apply auth's requirement: `casdoor.yaml`
+    ```shell
+    kubectl apply -f pkg/auth/conf/casdoor.yaml
+    ```
+4. Apply auth's service `auth.yaml`, *must change 3rd login types and keys.*
+    ```shell
+    kubectl apply -f deploy/manifests/auth.yaml
+    ```
+5. Open browser head to `http://ip*:30007/login`
 
 ## UML Graph
 
-// TODO: Add UML graph
+```mermaid
+sequenceDiagram
+    participant uf as User/Frontend
+    participant sa as Service-Auth
+    participant caf as Casdoor/Frontend
+    participant ca as Casdoor
+    participant op as OAuth-Provider
+    uf->>sa: click login button|redirect
+    sa->>ca: request login page|redirect
+    ca->>ca: check all oauth providers config
+    ca->>caf: show login page
+    par password login
+        caf->>ca: input username and password
+        ca->>caf: redirect page with code&state
+    and oauth login
+        caf->>ca: do oauth login
+        ca->>op: redirect to oauth provider's page
+        op->>caf: redirect to casdoor's page
+        ca->>caf: redirect page with code&state
+    end
+    caf->>uf: redirect login page with code&state
+    uf->>sa: request `kubeconfig` using code&state
+    sa->>ca: request user_info by code&state
+    ca->>sa: response user_info
+    sa->>sa: generate `kubeconfig`
+    sa->>uf: response kubeconfig
+```
 
+## Development
 
-## Devolpment
+1. `service/auth` is the entry point for api service, any routes and config check should be done here.
+2. `pkg/auth` is the base implementing of auth service.
+    1. It's duty to start all auth service's internal needed backend, like `mysql`,`openebs`,`casdoor` etc.
+    2. It should provide sdk access to auth service and manage all information up to date, not aware of api calls and/or sdk calls.
 
-// TODO: Add pre-requirements and runtime dependencies.
+Since the `go.work` workspace structure, currently we cannot build docker under `service/auth` dir, so we build binary using makefile and then package it to docker image.
 
+### Troubleshooting
+
+1. Callback urls cannot auto update at mysql db level.
+
+## RoadMap
+
+1. Combine service-auth with cluster images like below:
+    ```shell
+    sealos apply -f deploy/Kubefile
+    ```
+2. Add support for more third-party login methods
 
 ## License
 

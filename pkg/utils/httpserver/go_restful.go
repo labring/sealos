@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/emicklei/go-restful"
-	"github.com/labring/sealos/pkg/auth/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -32,7 +31,7 @@ func GoRestful(registerFunc func(*restful.WebService), addr string) error {
 
 	container.Add(webService)
 	//cors
-	utils.Cors(container)
+	Cors(container)
 
 	server := &http.Server{Addr: addr, Handler: container}
 	logger.Info("start listening on addr", addr)

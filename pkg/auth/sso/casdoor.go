@@ -129,7 +129,7 @@ func NewCasdoorClient() (*CasdoorClient, error) {
 		Application:  "service-auth",
 		CallbackURL:  conf.GlobalConfig.CallbackURL,
 	}
-	if conf.GlobalConfig.Kubeconfig != "" {
+	if conf.GlobalConfig.SSOEndpoint != "" {
 		client.Endpoint = conf.GlobalConfig.SSOEndpoint
 	}
 
