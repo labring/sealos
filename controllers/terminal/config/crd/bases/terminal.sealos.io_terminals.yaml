@@ -1,0 +1,52 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: terminals.terminal.sealos.io
+spec:
+  group: terminal.sealos.io
+  names:
+    kind: Terminal
+    listKind: TerminalList
+    plural: terminals
+    singular: terminal
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Terminal is the Schema for the terminals API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: TerminalSpec defines the desired state of Terminal
+            properties:
+              keepalived:
+                type: string
+              token:
+                type: string
+              user:
+                type: string
+            type: object
+          status:
+            description: TerminalStatus defines the observed state of Terminal
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

@@ -1,0 +1,16 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: terminal
+repo: github.com/labring/sealos
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: terminal
+  kind: Terminal
+  path: github.com/labring/sealos/controllers/terminal/api/v1
+  version: v1
+version: "3"
