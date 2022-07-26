@@ -3,11 +3,11 @@ package drivers
 import (
 	"fmt"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/common"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/strings"
 )
 
 type Applier struct {
@@ -76,7 +76,7 @@ func (a *Applier) ReconcileByRole(infra *v1.Infra, driver Driver, role string) e
 
 func GetHostsByRole(hosts []v1.Hosts, role string) (res []v1.Hosts) {
 	for _, host := range hosts {
-		if !utils.In(role, host.Roles) {
+		if strings.NotIn(role, host.Roles) {
 			continue
 		}
 
