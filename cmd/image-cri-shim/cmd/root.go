@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 	Short: "cri for kubelet endpoint-image-service",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	Version: version.Get().String(),
+	Version: fmt.Sprintf("%s-%s", version.Get().GitVersion, version.Get().GitCommit),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		run(shimSocket, criSocket)

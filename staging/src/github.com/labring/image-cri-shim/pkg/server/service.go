@@ -137,7 +137,7 @@ func (s *server) replaceImage(image, action string) string {
 }
 func splitDockerDomain(name string) (domain, remainder string) {
 	i := strings.IndexRune(name, '/')
-	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && name[:i] != "localhost" && strings.ToLower(name[:i]) == name[:i]) {
+	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && strings.ToLower(name[:i]) == name[:i]) {
 		domain, remainder = "", name
 	} else {
 		domain, remainder = name[:i], name[i+1:]

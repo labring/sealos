@@ -84,7 +84,7 @@ func (s *remote) IPVS(ip, vip string, masters []string) error {
 }
 func (s *remote) IPVSClean(ip, vip string) error {
 	var ipvsCommandTemplate = template.Must(template.New("ipvs").Parse(`` +
-		`ipvs --vs {{.vip}} --ip {{.ip}}  -C`,
+		`ipvs --vs {{.vip}}  -C`,
 	))
 
 	data := map[string]interface{}{
