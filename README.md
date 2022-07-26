@@ -70,7 +70,7 @@ Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the reg
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   tar zxvf sealos_4.0.0_linux_amd64.tar.gz && chmod +x sealos && mv sealos /usr/bin
+   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz && chmod +x sealos && mv sealos /usr/bin
 # Create a cluster
 $ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
