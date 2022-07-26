@@ -1,0 +1,6 @@
+apiVersion: terminal.sealos.io/v1
+kind: Terminal
+metadata:
+  name: terminal-sample
+spec:
+  # TODO(user): Add fields here
