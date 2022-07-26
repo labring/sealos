@@ -78,7 +78,7 @@ runroot = "/run/containers/storage"
 # following commands:
 # semanage fcontext -a -e /var/lib/containers/storage /NEWSTORAGEPATH
 # restorecon -R -v /NEWSTORAGEPATH
-graphroot = "/var/lib/containers/storage"`
+graphroot = "$HOME/.local/share/containers/storage"`
 	storageEtcPath := "/etc/containers/storage.conf"
 	if !fileutil.IsExist(storageEtcPath) {
 		return fileutil.WriteFile(storageEtcPath, []byte(data))

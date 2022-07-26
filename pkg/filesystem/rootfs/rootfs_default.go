@@ -81,9 +81,18 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				return errors.Wrap(err, "get rootfs files failed")
 			}
 			if len(dirs) != 0 {
-				_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
-				if err != nil {
-					return errors.Wrap(err, "run chmod to rootfs failed")
+				if cluster.GetSSH().User != "root" {
+					// chmod 755  $HOME/.local
+					logger.Info("sudo %s", fmt.Sprintf("sudo chmod 755 -R /home/%s/.local", cluster.GetSSH().User))
+					_, err = exec.RunBashCmd(fmt.Sprintf("sudo chmod 755 -R /home/%s/.local", cluster.GetSSH().User))
+					if err != nil {
+						return errors.Wrap(err, "run chmod to rootfs failed")
+					}
+				} else {
+					_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
+					if err != nil {
+						return errors.Wrap(err, "run chmod to rootfs failed")
+					}
 				}
 			}
 			return nil
