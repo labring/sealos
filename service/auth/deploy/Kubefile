@@ -1,0 +1,3 @@
+FROM scratch
+COPY . .
+CMD ["kubectl apply -f manifests/casdoor.yaml", "kubectl apply -f manifests/auth.yaml"]

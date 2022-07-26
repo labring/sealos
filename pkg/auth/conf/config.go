@@ -14,13 +14,10 @@
 
 package conf
 
-import "github.com/labring/sealos/pkg/utils/yaml"
-
-var GlobalConfig *Config
+var GlobalConfig Config
 var Namespace = "sealos"
 
 type Config struct {
-	Port           uint16     `yaml:"port"`
 	SSOType        string     `yaml:"ssoType"`
 	CallbackURL    string     `yaml:"callbackUrl"`
 	OAuthProviders []Provider `yaml:"oauthProviders"`
@@ -34,11 +31,4 @@ type Provider struct {
 	Type         string `yaml:"type"`
 	ClientID     string `yaml:"clientId"`
 	ClientSecret string `yaml:"clientSecret"`
-}
-
-func InitConfig(configPath string) error {
-	if err := yaml.UnmarshalYamlFromFile(configPath, GlobalConfig); err != nil {
-		return err
-	}
-	return nil
 }
