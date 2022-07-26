@@ -145,7 +145,7 @@ func (l *lvscare) IsVirtualServerAvailable(vs string) bool {
 			}
 		}
 	} else {
-		logger.Warn("IsVirtualServerAvailable warn: virtual server is empty.")
+		logger.Warn("IsVirtualServerAvailable warn: virtual server is not exists now.")
 	}
 	return false
 }

@@ -56,11 +56,12 @@ func RegistryHasImage(registryAddress, registryBase64Auth, imageName string) boo
 		tag = "latest"
 	}
 	type RegistryData struct {
-		Name string
-		Tags []string
+		Name string   `json:"name"`
+		Tags []string `json:"tags"`
 	}
 	var registry RegistryData
 	logger.Info("address: %s,base64: %s,imageName: %s", registryAddress, registryBase64Auth, imageName)
+	logger.Info("pre image name: %s, pre image tag %s", imageName, tag)
 	data, _ := HTTP(fmt.Sprintf("%s/v2/%s/tags/list", registryAddress, imageName), map[string]string{"Authorization": "Basic " + registryBase64Auth})
 	if data != "" {
 		logger.Info("data: %s", data)
@@ -71,12 +72,14 @@ func RegistryHasImage(registryAddress, registryBase64Auth, imageName string) boo
 		}
 	}
 	if In(tag, registry.Tags) {
+		logger.Info("tag in registry.Tags")
 		return true
 	}
 	return false
 }
 
 func In(key string, slice []string) bool {
+	logger.Info("target %s,source:%+v", key, slice)
 	for _, s := range slice {
 		if key == s {
 			return true

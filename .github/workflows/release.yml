@@ -35,8 +35,6 @@ jobs:
         id: Note
         env:
           VERSION: ${{ steps.prepare.outputs.tag_name }}
-          BUCKETNAME: ${{ secrets.BUCKETNAME }}
-          OSSENDPOINT: ${{ secrets.OSSENDPOINT }}
           USERNAME: ${{ github.repository_owner }}
         run: |
           cd scripts/release && sh note.sh
@@ -61,4 +59,3 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
-          BUCKETNAME: ${{ secrets.BUCKETNAME }}

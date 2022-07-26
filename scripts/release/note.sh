@@ -27,9 +27,9 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
 \`\`\`
 
 ### amd64 buildah 下载地址
-[oss下载地址](https://sealyun-home.oss-accelerate.aliyuncs.com/images/buildah.linux.amd64)
+[下载地址](https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64)
 ### arm64 buildah 下载地址
-[oss下载地址](https://sealyun-home.oss-accelerate.aliyuncs.com/images/buildah.linux.arm64)
+[下载地址](https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64)
 
 ### Docker images
 
@@ -50,13 +50,13 @@ docker pull ghcr.io/${USERNAME:-labring}/lvscare:${VERSION}
 Use your public APT Repository URL to install DEB packages:
 
 \`\`\`
-https://apt.fury.io/cuisongliu/
+https://apt.fury.io/${USERNAME:-labring}/
 \`\`\`
 
 To enable, add the following file **/etc/apt/sources.list.d/fury.list**:
 
 \`\`\`
-deb [trusted=yes] https://apt.fury.io/cuisongliu/ /
+deb [trusted=yes] https://apt.fury.io/${USERNAME:-labring}/ /
 \`\`\`
 
 ### Yum源
@@ -64,7 +64,7 @@ deb [trusted=yes] https://apt.fury.io/cuisongliu/ /
 Use your public YUM Repository URL to install RPM packages:
 
 \`\`\`
-https://yum.fury.io/cuisongliu/
+https://yum.fury.io/${USERNAME:-labring}/
 \`\`\`
 
 To enable, add the following file **/etc/yum.repos.d/fury.repo**:
@@ -72,7 +72,7 @@ To enable, add the following file **/etc/yum.repos.d/fury.repo**:
 \`\`\`
 [fury]
 name=Gemfury Private Repo
-baseurl=https://yum.fury.io/cuisongliu/
+baseurl=https://yum.fury.io/${USERNAME:-labring}/
 enabled=1
 gpgcheck=0
 \`\`\`

@@ -47,7 +47,7 @@ func (care *LvsCare) VsAndRsCare() (err error) {
 	}()
 
 	cleanVirtualServer := func() error {
-		logger.Info("lvscare deleteVirtualServer")
+		logger.Info("lvscare deleteVirtualServer %s", care.VirtualServer)
 		err := care.lvs.DeleteVirtualServer(care.VirtualServer, false)
 		if err != nil {
 			logger.Warn("virtualServer is not exist skip: %v", err)
@@ -182,7 +182,7 @@ func (care *LvsCare) ValidateAndSetDefaults() error {
 	if len(care.VirtualServer) == 0 {
 		return errors.New("virtual server can't be empty")
 	}
-	if len(care.RealServer) == 0 {
+	if len(care.RealServer) == 0 && !care.Clean {
 		return errors.New("real server can't be empty")
 	}
 	if care.TargetIP == nil {

@@ -136,30 +136,36 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: lvscare-${{ matrix.arch }}
-          path: docker/lvscare/lvscare
+          path: docker/lvscare
 
       - name: Download sealctl
         uses: actions/download-artifact@v3
         with:
           name: sealctl-${{ matrix.arch }}
-          path: docker/patch/sealctl
+          path: docker/patch
 
       - name: Download image-cri-shim
         uses: actions/download-artifact@v3
         with:
           name: image-cri-shim-${{ matrix.arch }}
-          path: docker/patch/image-cri-shim
+          path: docker/patch
 
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
           name: sealos-${{ matrix.arch }}
-          path: docker/sealos/sealos
+          path: docker/sealos
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           driver-opts: network=host
+
+      - name: Chmod a+x for docker
+        run: |
+          chmod a+x docker/sealos/*
+          chmod a+x docker/patch/*
+          chmod a+x docker/lvscare/*
 
       - name: Build and Push lvscare Image
         uses: docker/build-push-action@v3
