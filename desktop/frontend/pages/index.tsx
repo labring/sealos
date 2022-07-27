@@ -14,7 +14,7 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <a href="https://www.sealos.io/">sealos!</a>
+          Welcome to <Link href="https://www.sealos.io/"><a>sealos!</a></Link>
         </h1>
 
         <p className={styles.description}>
@@ -22,46 +22,48 @@ const Home: NextPage = () => {
         </p>
 
         <div className={styles.grid}>
-          <a href="https://www.sealos.io/docs/intro" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about sealos features and API.</p>
-          </a>
+          <Link href="https://www.sealos.io/docs/intro">
+            <a className={styles.card}>
+              <h2>Documentation &rarr;</h2>
+              <p>Find in-depth information about sealos features and API.</p>
+            </a>
+          </Link>
 
-          <a href="https://www.sealos.io/blog" className={styles.card}>
-            <h2>Blog &rarr;</h2>
-            <p>Find newest information about sealos design and news!</p>
-          </a>
+          <Link href="https://www.sealos.io/blog">
+            <a className={styles.card}>
+              <h2>Blog &rarr;</h2>
+              <p>Find newest information about sealos design and news!</p>
+            </a>
+          </Link>
 
-          <a
-            href="https://github.com/labring/sealos"
-            className={styles.card}
-          >
-            <h2>GitHub &rarr;</h2>
-            <p>Discover sealos in open source world! </p>
-          </a>
+          <Link
+            href="https://github.com/labring/sealos">
+            <a className={styles.card}>
+              <h2>GitHub &rarr;</h2>
+              <p>Discover sealos in open source world!</p>
+            </a>
+          </Link>
 
-          <a
-            href="/login"
-            className={styles.card}
-          >
-            <h2>Login & Register &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+          <Link href="/login">
+            <a className={styles.card}>
+              <h2>Login & Register &rarr;</h2>
+              <p>
+                Instantly deploy your Next.js site to a public URL with Vercel.
+              </p>
+            </a>
+          </Link>
         </div>
       </main>
 
       <footer className={styles.footer}>
-        <a
+        <Link
           href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          passHref
         >
-          Powered by{' '} Next.js
-        </a>
+          <a target="_blank" rel="noopener noreferrer">Powered by{' '} Next.js</a>
+        </Link>
       </footer>
-    </div>
+    </div >
   )
 }
 

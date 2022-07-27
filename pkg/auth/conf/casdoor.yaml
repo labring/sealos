@@ -13,16 +13,6 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: sealos
-  annotations:
-  labels:
-    name: sealos
-
----
-
-apiVersion: v1
 kind: Secret
 metadata:
   name: mysql-root-credentials
@@ -71,11 +61,9 @@ metadata:
   labels:
     app: casdoor
 spec:
-  type: NodePort
   ports:
     - protocol: TCP
       port: 8000
-      nodePort: 30006
   selector:
     app: casdoor
 
@@ -177,13 +165,31 @@ spec:
 
 ---
 
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: service-auth-storage-class
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: /service-auth
+provisioner: openebs.io/local
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+
+---
+
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: mysql-pv-claim
   namespace: sealos
   annotations:
-    volume.beta.kubernetes.io/storage-class: local-hostpath
+    volume.beta.kubernetes.io/storage-class: service-auth-storage-class
 spec:
   accessModes:
     - ReadWriteOnce

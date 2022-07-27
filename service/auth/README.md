@@ -44,11 +44,13 @@ sequenceDiagram
     ca->>caf: show login page
     par password login
         caf->>ca: input username and password
+        ca->>ca: check user login/register status
         ca->>caf: redirect page with code&state
     and oauth login
         caf->>ca: do oauth login
         ca->>op: redirect to oauth provider's page
-        op->>caf: redirect to casdoor's page
+        op->>ca: redirect to casdoor's service
+        ca->>ca: check user login/register status
         ca->>caf: redirect page with code&state
     end
     caf->>uf: redirect login page with code&state
