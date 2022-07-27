@@ -1,5 +1,5 @@
 <a href="https://trackgit.com">
-  <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
+   <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kof6vgldhbx8pzyxyfck" alt="trackgit-views" />
 </a>
 
 <div align="center">
