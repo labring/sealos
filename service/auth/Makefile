@@ -1,6 +1,7 @@
 
+SERVICE_NAME=service-auth
 # Image URL to use all building/pushing image targets
-IMG ?= service-auth:latest
+IMG ?= $(SERVICE_NAME):latest
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -9,11 +10,13 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-# Setting SHELL to bash allows bash commands to be executed by recipes.
-# This is a requirement for 'setup-envtest.sh' in the test target.
-# Options are set to exit when a recipe line exits non-zero or a piped command fails.
-SHELL = /usr/bin/env bash -o pipefail
-.SHELLFLAGS = -ec
+# only support linux, non cgo
+PLATFORMS ?= linux_arm64 linux_amd64
+GOOS=linux
+CGO_ENABLED=0
+GOARCH=$(shell go env GOARCH)
+
+GO_BUILD_FLAGS=-trimpath -ldflags "-s -w"
 
 .PHONY: all
 all: build
@@ -37,30 +40,28 @@ help: ## Display this help.
 
 ##@ Build
 
+.PHONY: clean
+clean:
+	rm -f $(SERVICE_NAME)
+
 .PHONY: build
-build: ## Build manager binary.
-	go build -o bin/manager main.go
+build: clean ## Build service-auth binary.
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(ARCH) go build $(GO_BUILD_FLAGS) -o $(SERVICE_NAME) main.go
 
 .PHONY: run
-run: ## Run a controller from your host.
-	go run ./main.go
+run: ## Run a dev service from host.
+	go run ./main.go -conf ./conf/auth.yml
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
-
-.PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push localhost:5000/${IMG}
+docker-build: ## Build docker image with the service-auth.
+	sudo docker build -t $(IMG) .
 
 ##@ Deployment
 
-ifndef ignore-not-found
-  ignore-not-found = false
-endif
+.PHONY: docker-push
+docker-push:  ## Push docker image.
+	echo "To be done."
 
-.PHONY: install
-install: ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	sealos run
+#TODO: add support of docker push
 
-
+#TODO: add support of sealos apply
