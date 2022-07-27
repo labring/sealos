@@ -72,7 +72,7 @@
 ```shell script
 # 下载并安装 sealos, sealos 是个 golang 的二进制工具，直接下载拷贝到 bin 目录即可, release 页面也可下载
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz && chmod +x sealos && mv sealos /usr/bin
+   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
 sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \

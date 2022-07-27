@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 ```shell
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz && chmod +x sealos && mv sealos /usr/bin
+   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
@@ -20,7 +20,7 @@ $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_l
 
 ```shell
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_arm64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_arm64.tar.gz && chmod +x sealos && mv sealos /usr/bin
+   && tar zxvf sealos_4.0.0_linux_arm64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
