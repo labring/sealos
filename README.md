@@ -35,18 +35,15 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 - From now on, think of all your machines as an abstract supercomputer whose operating system is sealos, where Kubernetes serves as the OS kernel.
 - Instead of IaaS, PaaS and SaaS, there will only be cloud OS drivers(CSI, CNI and CRI implementations), cloud OS kernel(Kubernetes) and distributed applications.
 
-> Core Capabilities
+## sealos cloud overview
 
-- Cluster image
-  - [x] The entire cluster will be able to build, ship and run.
-  - [x] Semantics of docker will be extended to clusters so that any distributed applications can be defined and run smoothly.
-- hub.sealos
-  - [x] A cluster image repository where you can retrieve pre-built distributed applications such as basic Kubernetes cluster image, high availability pgsql cluster image, high availability minio cluster image, etc.
-- desktop.sealos
-  - [ ] A desktop for cloud OS, not to be confused with traditional cloud desktop. It is similar to macOS, but manages cluster and distributed applications instead of personal computers.
-- Distributed application matrix
-  - [x] Anything you need including storage / network / HA database / message queue / monitoring can be retrieved with a click of the mouse, or simply `sealos run`.
-  - [x] sealos now support 20+ HA applications.
+> Embedded dashboard application
+
+![](https://user-images.githubusercontent.com/8912557/181175228-ce599b53-340a-4eb2-9a66-0563267a8d2c.png)
+
+> Embedded terminal application
+
+![](https://user-images.githubusercontent.com/8912557/181174718-12aa119e-880e-41d0-b4ba-b60d0c7283b8.png)
 
 ## Core features
 
@@ -60,6 +57,9 @@ In the early stages, operatings systems have adopted a layered architecture, whi
   - [x] Using Dockerfile to build distributed applications images, saving all dependencies.
   - [x] Push distributed applications images to Docker Hub.
   - [x] Combine multiple applications to build your own cloud platform.
+- Sealos cloud
+  - [x] Run any distributed applications
+  - [x] Have a full public cloud capability，and run it anywhere
 
 ## Quickstart
 
