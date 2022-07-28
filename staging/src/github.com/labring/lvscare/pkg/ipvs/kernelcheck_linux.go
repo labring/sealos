@@ -24,11 +24,11 @@ import (
 	"regexp"
 	"strings"
 
-	utilsexec "github.com/labring/lvscare/pkg/exec"
-	"github.com/labring/lvscare/pkg/sets"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/lithammer/dedent"
+	"k8s.io/apimachinery/pkg/util/sets"
+	utilsexec "k8s.io/utils/exec"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // RequiredIPVSKernelModulesAvailableCheck tests IPVS required kernel modules.

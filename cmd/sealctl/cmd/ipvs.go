@@ -23,23 +23,21 @@ import (
 
 func newIPVSCmd() *cobra.Command {
 	var ipvsCmd = &cobra.Command{
-		Use:   "ipvs",
-		Short: "sealos create or care local ipvs lb",
+		Use:          "ipvs",
+		Short:        "sealos create or care local ipvs lb",
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return care.LVS.VsAndRsCare()
-		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			flags.PrintFlags(cmd.Flags())
 			if err := care.LVS.ValidateAndSetDefaults(); err != nil {
 				return err
 			}
-			if !care.LVS.Clean {
-				return care.LVS.SyncRouter()
-			}
-			return nil
+			return care.LVS.Run()
+		},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			flags.SetFlagsFromEnv(cmd.Use, cmd.Flags())
+			flags.PrintFlags(cmd.Flags())
 		},
 	}
-	care.LVS.RegisterFlags(ipvsCmd.Flags())
+	care.LVS.RegisterCommandFlags(ipvsCmd)
 	return ipvsCmd
 }
 

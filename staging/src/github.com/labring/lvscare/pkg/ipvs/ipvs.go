@@ -22,7 +22,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/labring/lvscare/pkg/exec"
+	"k8s.io/utils/exec"
+
 	"github.com/labring/lvscare/pkg/version"
 )
 

@@ -24,20 +24,18 @@ import (
 
 // careCmd represents the care command
 var careCmd = &cobra.Command{
-	Use:   "care",
-	Short: "A lightweight LVS baby care, support ipvs health check.",
+	Use:          "care",
+	Short:        "A lightweight LVS baby care, support ipvs health check.",
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return care.LVS.VsAndRsCare()
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		flags.PrintFlags(cmd.Flags())
 		if err := care.LVS.ValidateAndSetDefaults(); err != nil {
 			return err
 		}
-		if !care.LVS.Clean {
-			return care.LVS.SyncRouter()
-		}
-		return nil
+		return care.LVS.Run()
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		flags.SetFlagsFromEnv(cmd.Use, cmd.Flags())
+		flags.PrintFlags(cmd.Flags())
 	},
 }
 
@@ -52,6 +50,6 @@ func init() {
 			logger.CfgConsoleLogger(false, false)
 		}
 	})
-	care.LVS.RegisterFlags(careCmd.Flags())
+	care.LVS.RegisterCommandFlags(careCmd)
 	rootCmd.AddCommand(careCmd)
 }
