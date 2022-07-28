@@ -43,7 +43,7 @@ func RandomHexStr(n int) (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func CreateJWTPublicAndPrivateKey() (string, string, error) {
+func CreateJWTCertificateAndPrivateKey() (string, string, error) {
 	// Generate RSA key.
 	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
