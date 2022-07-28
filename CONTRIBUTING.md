@@ -62,7 +62,7 @@ Since you are ready to improve sealos with a PR, we suggest you could take a loo
 - [Commit Rules](#commit-rules)
 - [PR Description](#pr-description)
 - [Developing Environment](#developing-environment)
-- [Golang Dependency Management](#golang-dependency-management)
+- [Docs Contribution](#docs-contribution)
 
 ### Workspace Preparation
 
@@ -200,6 +200,23 @@ Here are some dependents with specific version:
 - golangci-lint: 1.46.2
 
 When you develop the sealos project at the local environment, you should use subcommands of Makefile to help yourself to check and build the latest version of sealos. For the convenience of developers, we use the docker to build sealos. It can reduce problems of the developing environment.
+
+### Docs Contribution
+
+The documentation for sealos includes:
+
+- [README.md](https://github.com/labring/sealos/blob/main/README.md)
+- [CONTRIBUTING.md](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md)
+- [DEVELOPGUIDE.md](https://github.com/labring/sealos/blob/main/DEVELOPGUIDE.md)
+- Markdown files under [docs/4.0](https://github.com/labring/sealos/blob/main/docs/4.0)
+   - English docs under [docs/4.0/docs](https://github.com/labring/sealos/tree/main/docs/4.0/docs)
+   - Chinese docs under [docs/4.0/i18n/zh-Hans](https://github.com/labring/sealos/tree/main/docs/4.0/i18n/zh-Hans)
+
+If you have experiences in [Docusaurus 2](https://docusaurus.io), you might find the directory structure familiar. Indeed, the [documentation website](https://github.com/fanux/sealos-site) is built with [Docusaurus 2](https://docusaurus.io) and any update to the docs here will be synchronized there.
+
+Therefore, to update the documentation, rather than contributing to the [website repo](https://github.com/fanux/sealos-site), you should contribute to this repo directly, unless you want to update the home page or custom pages like the [company page](https://www.sealos.io/company).
+
+For a complete list of the docs synchronization mappings, see [sync_docs.yml](https://github.com/labring/sealos/tree/main/.github/sync_docs.yml).
 
 ## Engage to help anything
 
