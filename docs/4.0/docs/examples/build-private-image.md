@@ -24,7 +24,7 @@ Download helm chart template:
 git clone https://github.com/luanshaotong/scienson_osm.git
 ```
 
-```yaml title="templates/deploy.yaml"
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -58,7 +58,7 @@ spec:
               memory: 4096Mi
 ```
 
-```yaml title="templates/service.yaml"
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -75,7 +75,7 @@ spec:
 
 Expose service outside the cluster:
 
-```yaml title="templates/ingress.yaml"
+```yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -97,7 +97,7 @@ spec:
 
 Render replicas of the service
 
-```yaml title="values.yaml"
+```yaml
 osm:
   replicaCount: 1
 ```
