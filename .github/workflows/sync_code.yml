@@ -20,3 +20,4 @@ jobs:
           CONFIG_PATH: .github/sync_code.yml
           ORIGINAL_MESSAGE: true
           SKIP_PR: true
+          COMMIT_EACH_FILE: false
