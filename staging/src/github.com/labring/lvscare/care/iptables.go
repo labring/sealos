@@ -54,7 +54,6 @@ const (
 
 const (
 	sysctlVSConnTrack = "net/ipv4/vs/conntrack"
-	masqueradeBit     = 1
 )
 
 var iptablesJumpChain = []struct {

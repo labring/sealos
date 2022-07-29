@@ -77,8 +77,8 @@ func (r *runner) Run() (err error) {
 	go func() {
 		errCh <- r.proxier.RunLoop(ctx)
 	}()
-	// fire at once
-	r.proxier.TryRun()
+	// fire at once, no need to check error here
+	_ = r.proxier.TryRun()
 	// ensure ipvs
 	if err := r.ensureIPVSRules(); err != nil {
 		return err
@@ -130,7 +130,7 @@ func (r *runner) RegisterCommandFlags(cmd *cobra.Command) {
 		}
 		if requirer, ok := iter.(flagRequirer); ok {
 			for _, fs := range requirer.RequiredFlags() {
-				cmd.MarkFlagRequired(fs)
+				_ = cmd.MarkFlagRequired(fs)
 			}
 		}
 	}

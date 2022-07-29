@@ -105,7 +105,7 @@ func (p *httpProber) Probe(host, port string) error {
 	}
 	defer resp.Body.Close()
 	defer func() {
-		io.Copy(io.Discard, resp.Body)
+		_, _ = io.Copy(io.Discard, resp.Body)
 	}()
 	if p.validStatus.Len() > 0 {
 		if p.validStatus.Has(resp.StatusCode) {
