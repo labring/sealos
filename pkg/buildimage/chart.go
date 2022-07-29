@@ -113,12 +113,18 @@ func (c Chart) GetImages() ([]string, error) {
 	delImageSha := func(a string) string {
 		return shaReg.ReplaceAllString(a, "")
 	}
+	// add del -image: and image:
+	delImageReg := regexp.MustCompile(`-{0,1}image:`)
+	delImage := func(str string) string {
+		return delImageReg.ReplaceAllString(str, "")
+	}
 
 	for _, v := range content {
 		if delLF(v) != "" { // Text has content
 			for _, s := range strings.Split(v, "\n") {
 				if rrr.MatchString(s) {
-					image := delImageSha(strings.Replace(strings.Replace(delBlank(s), "image:", "", -1), "\"", "", -1))
+					//image := delImageSha(strings.Replace(strings.Replace(delBlank(s), "image:", "", -1), "\"", "", -1))
+					image := delImageSha(strings.Replace(delImage(delBlank(s)), "\"", "", -1))
 					if image != tmp {
 						images = append(images, image)
 						tmp = image
