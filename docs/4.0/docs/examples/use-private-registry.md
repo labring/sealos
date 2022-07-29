@@ -1,4 +1,4 @@
-# how to use sealos private registry
+# How to use sealos private registry
 
 ## where it is
 
