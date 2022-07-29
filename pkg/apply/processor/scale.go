@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/pkg/constants"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 
@@ -67,6 +68,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		todoList = append(todoList,
 			c.JoinCheck,
 			c.PreProcess,
+			c.PreProcessImage,
 			c.RunConfig,
 			c.MountRootfs,
 			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
@@ -169,6 +171,28 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	c.Runtime = runTime
 
 	return err
+}
+
+func (c *ScaleProcessor) PreProcessImage(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline PreProcessImage in ScaleProcessor.")
+
+	for i, mount := range cluster.Status.Mounts {
+		if mount.Type == v2.AppImage {
+			continue
+		}
+		dirs, _ := fileutil.GetAllSubDirs(mount.MountPoint)
+		if len(dirs) == 0 {
+			clusterManifest, err := c.ClusterManager.Create(mount.Name, mount.ImageName)
+			if err != nil {
+				return err
+			}
+			mount.Name = clusterManifest.Container
+			mount.MountPoint = clusterManifest.MountPoint
+			cluster.Status.Mounts[i] = mount
+		}
+	}
+
+	return nil
 }
 
 func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
