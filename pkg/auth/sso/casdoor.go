@@ -18,31 +18,33 @@ import (
 	"context"
 	"encoding/json"
 
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/pkg/errors"
+
 	casdoorAuth "github.com/casdoor/casdoor-go-sdk/auth"
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/auth/utils"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
-
-	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const name = "casdoor"
+const initDataName = "casdoor-init-data"
 
 type CasdoorClient struct {
 	Client
 
-	Endpoint      string
-	ClientID      string
-	ClientSecret  string
-	JwtPublicKey  string
-	JwtPrivateKey string
-	Organization  string
-	Application   string
-	CallbackURL   string
+	Endpoint       string
+	ClientID       string
+	ClientSecret   string
+	JwtCertificate string
+	JwtPrivateKey  string
+	Organization   string
+	Application    string
+	CallbackURL    string
 }
 
 type CasdoorInitData struct {
@@ -98,7 +100,7 @@ type Cert struct {
 	CryptoAlgorithm string `json:"cryptoAlgorithm"`
 	BitSize         int    `json:"bitSize"`
 	ExpireInYears   int    `json:"expireInYears"`
-	PublicKey       string `json:"publicKey"`
+	Certificate     string `json:"certificate"`
 	PrivateKey      string `json:"privateKey"`
 }
 
@@ -113,46 +115,17 @@ type Provider struct {
 }
 
 func NewCasdoorClient() (*CasdoorClient, error) {
-	clientID, err := utils.RandomHexStr(10)
-	if err != nil {
-		return nil, err
-	}
-	clientSecret, err := utils.RandomHexStr(20)
-	if err != nil {
-		return nil, err
-	}
 	client := &CasdoorClient{
-		Endpoint:     "http://casdoor-svc.sealos.svc.cluster.local:8000",
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		Endpoint:     conf.GlobalConfig.SSOEndpoint,
 		Organization: "sealos",
 		Application:  "service-auth",
 		CallbackURL:  conf.GlobalConfig.CallbackURL,
 	}
-	if conf.GlobalConfig.SSOEndpoint != "" {
-		client.Endpoint = conf.GlobalConfig.SSOEndpoint
+	if err := client.initCasdoorServer(); err != nil {
+		return nil, errors.Wrap(err, "Init Casdoor server failed")
 	}
-
-	// Generate jwt public and private key
-	publicKey, privateKey, err := utils.CreateJWTPublicAndPrivateKey()
-	if err != nil {
-		return nil, err
-	}
-	client.JwtPublicKey = publicKey
-	client.JwtPrivateKey = privateKey
-
-	initData := client.newCasdoorInitData()
-
-	newInitData, err := json.Marshal(initData)
-	if err != nil {
-		return nil, err
-	}
-	if err = client.initCasdoorServer(string(newInitData)); err != nil {
-		return nil, err
-	}
-
 	// Init Casdoor SDK
-	casdoorAuth.InitConfig(client.Endpoint, client.ClientID, client.ClientSecret, client.JwtPublicKey, "sealos", "service-auth")
+	casdoorAuth.InitConfig(client.Endpoint, client.ClientID, client.ClientSecret, client.JwtCertificate, "sealos", "service-auth")
 	return client, nil
 }
 
@@ -160,14 +133,14 @@ func (c *CasdoorClient) GetRedirectURL() (string, error) {
 	return casdoorAuth.GetSigninUrl(c.CallbackURL), nil
 }
 
-func (c *CasdoorClient) GetUserInfo(state string, code string) (User, error) {
+func (c *CasdoorClient) GetUserInfo(state, code string) (User, error) {
 	token, err := casdoorAuth.GetOAuthToken(code, state)
 	if err != nil {
-		return User{}, err
+		return User{}, errors.Wrap(err, "Get OAuth token failed")
 	}
 	casdoorUser, err := casdoorAuth.ParseJwtToken(token.AccessToken)
 	if err != nil {
-		return User{}, err
+		return User{}, errors.Wrap(err, "Parse Jwt token failed")
 	}
 	return User{
 		ID:   casdoorUser.Id,
@@ -175,7 +148,23 @@ func (c *CasdoorClient) GetUserInfo(state string, code string) (User, error) {
 	}, nil
 }
 
-func (c *CasdoorClient) newCasdoorInitData() *CasdoorInitData {
+func (c *CasdoorClient) newCasdoorInitData() (*CasdoorInitData, error) {
+	var err error
+	c.ClientID, err = utils.RandomHexStr(10)
+	if err != nil {
+		return nil, errors.Wrap(err, "Generate Casdoor client ID failed")
+	}
+	c.ClientSecret, err = utils.RandomHexStr(20)
+	if err != nil {
+		return nil, errors.Wrap(err, "Generate Casdoor client secret failed")
+	}
+	// Generate jwt certificate and private key
+	certificate, privateKey, err := utils.CreateJWTCertificateAndPrivateKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "Create jwt certificate and private key failed")
+	}
+	c.JwtCertificate = certificate
+	c.JwtPrivateKey = privateKey
 	initData := CasdoorInitData{
 		Organizations: []casdoorAuth.Organization{
 			{
@@ -274,83 +263,104 @@ func (c *CasdoorClient) newCasdoorInitData() *CasdoorInitData {
 				CryptoAlgorithm: "RS256",
 				BitSize:         4096,
 				ExpireInYears:   99,
-				PublicKey:       c.JwtPublicKey,
+				Certificate:     c.JwtCertificate,
 				PrivateKey:      c.JwtPrivateKey,
 			},
 		},
 	}
 
 	for _, provider := range conf.GlobalConfig.OAuthProviders {
-		switch strings.ToLower(provider.Type) {
-		case "github":
-			if provider.ClientID != "" && provider.ClientSecret != "" {
-				initData.Providers = append(initData.Providers, Provider{
-					Owner:        "admin",
-					Name:         "provider_sealos_github",
-					DisplayName:  "Provider for Sealos GitHub",
-					Category:     "OAuth",
-					Type:         "GitHub",
-					ClientID:     provider.ClientID,
-					ClientSecret: provider.ClientSecret,
-				})
-				initData.Applications[0].Providers = append(initData.Applications[0].Providers, ProviderItem{
-					Name:      "provider_sealos_github",
-					CanSignUp: true,
-					CanSignIn: true,
-					CanUnlink: true,
-					Prompted:  false,
-					AlertType: "None",
-				})
-			}
-		default:
-			logger.Warn("Not supported provider type: " + provider.Type)
+		if provider.ClientID != "" && provider.ClientSecret != "" {
+			initData.Providers = append(initData.Providers, Provider{
+				Owner:        "admin",
+				Name:         "provider_sealos_" + provider.Type,
+				DisplayName:  "Provider for Sealos " + provider.Type,
+				Category:     "OAuth",
+				Type:         provider.Type,
+				ClientID:     provider.ClientID,
+				ClientSecret: provider.ClientSecret,
+			})
+			initData.Applications[0].Providers = append(initData.Applications[0].Providers, ProviderItem{
+				Name:      "provider_sealos_" + provider.Type,
+				CanSignUp: true,
+				CanSignIn: true,
+				CanUnlink: true,
+				Prompted:  false,
+				AlertType: "None",
+			})
 		}
 	}
 
-	return &initData
+	return &initData, nil
 }
 
-func (c *CasdoorClient) initCasdoorServer(initData string) error {
+func (c *CasdoorClient) initCasdoorServer() error {
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
-		return err
-	}
-	// Create configuration as ConfigMap
-	if _, err := utils.ApplyConfigMap(client, "casdoor-init-data", "init_data.json", initData); err != nil {
-		return err
+		return errors.Wrap(err, "Create k8s client failed")
 	}
 
-	// Update deployment to mount ConfigMap. K8s will automatically restart Casdoor server.
-	casdoorServer, err := client.Kubernetes().AppsV1().Deployments(conf.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	// As clientId, clientSecret, and JWT keys are generated randomly, we need to replace the old one.
-	i := 0
-	for _, volume := range casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts {
-		if volume.MountPath != "/init_data.json" {
-			casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts[i] = volume
-			i++
+	initData := &CasdoorInitData{}
+	configMap, err := client.Kubernetes().CoreV1().ConfigMaps(conf.Namespace).Get(context.TODO(), initDataName, metav1.GetOptions{})
+	// If Casdoor has already been initialized, we just read init data for connection
+	if err == nil {
+		err := json.Unmarshal([]byte(configMap.Data["init_data.json"]), initData)
+		if err != nil {
+			return errors.Wrap(err, "Parse existed Casdoor init data failed")
 		}
-	}
-	// Mount init data to Casdoor
-	// The volume name must be random, otherwise the pod will not restart even when ConfigMap has been updated.
-	casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts = append(casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts[:i], v1.VolumeMount{
-		Name:      "casdoor-init-data-volume-" + c.ClientID,
-		MountPath: "/init_data.json",
-		SubPath:   "init_data.json",
-	})
-	casdoorServer.Spec.Template.Spec.Volumes = append(casdoorServer.Spec.Template.Spec.Volumes, v1.Volume{
-		Name: "casdoor-init-data-volume-" + c.ClientID,
-		VolumeSource: v1.VolumeSource{
-			ConfigMap: &v1.ConfigMapVolumeSource{
-				LocalObjectReference: v1.LocalObjectReference{
-					Name: "casdoor-init-data",
+		c.ClientID = initData.Applications[0].ClientID
+		c.ClientSecret = initData.Applications[0].ClientSecret
+		c.JwtCertificate = initData.Certs[0].Certificate
+		return nil
+	} else if k8sErrors.IsNotFound(err) {
+		initData, err = c.newCasdoorInitData()
+		if err != nil {
+			return errors.Wrap(err, "Create new Casdoor init data failed")
+		}
+		newInitData, err := json.Marshal(initData)
+		if err != nil {
+			return errors.Wrap(err, "Marshal Casdoor init data failed")
+		}
+
+		// Create configuration as ConfigMap
+		if _, err := utils.ApplyConfigMap(client, initDataName, "init_data.json", string(newInitData)); err != nil {
+			return errors.Wrap(err, "Create Casdoor init data as ConfigMap failed")
+		}
+
+		// Update deployment to mount ConfigMap. K8s will automatically restart Casdoor server.
+		casdoorServer, err := client.Kubernetes().AppsV1().Deployments(conf.Namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrap(err, "Get Casdoor deployment failed")
+		}
+
+		// As clientId, clientSecret, and JWT keys are generated randomly, we need to replace the old one.
+		i := 0
+		for _, volume := range casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts {
+			if volume.MountPath != "/init_data.json" {
+				casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts[i] = volume
+				i++
+			}
+		}
+		// Mount init data to Casdoor
+		// The volume name must be random, otherwise the pod will not restart even when ConfigMap has been updated.
+		casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts = append(casdoorServer.Spec.Template.Spec.Containers[0].VolumeMounts[:i], v1.VolumeMount{
+			Name:      "casdoor-init-data-volume-" + c.ClientID,
+			MountPath: "/init_data.json",
+			SubPath:   "init_data.json",
+		})
+		casdoorServer.Spec.Template.Spec.Volumes = append(casdoorServer.Spec.Template.Spec.Volumes, v1.Volume{
+			Name: "casdoor-init-data-volume-" + c.ClientID,
+			VolumeSource: v1.VolumeSource{
+				ConfigMap: &v1.ConfigMapVolumeSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: "casdoor-init-data",
+					},
 				},
 			},
-		},
-	})
-	_, err = client.Kubernetes().AppsV1().Deployments(conf.Namespace).Update(context.TODO(), casdoorServer, metav1.UpdateOptions{})
-	return err
+		})
+		_, err = client.Kubernetes().AppsV1().Deployments(conf.Namespace).Update(context.TODO(), casdoorServer, metav1.UpdateOptions{})
+		return errors.Wrap(err, "Mount init data to Casdoor deployment failed")
+	} else {
+		return errors.Wrap(err, "Check Casdoor init data from Configmap failed")
+	}
 }

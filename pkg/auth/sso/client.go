@@ -28,7 +28,7 @@ type User struct {
 
 type Client interface {
 	GetRedirectURL() (string, error)
-	GetUserInfo(state string, code string) (User, error)
+	GetUserInfo(state, code string) (User, error)
 }
 
 type ClientType string
