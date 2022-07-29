@@ -43,7 +43,7 @@ func SetFlagsFromEnv(prefix string, flags *pflag.FlagSet) {
 		}
 		envVar := strings.ToUpper(strings.Replace(prefix+flag.Name, "-", "_", -1))
 		if v := os.Getenv(envVar); v != "" {
-			flags.Set(flag.Name, v)
+			_ = flags.Set(flag.Name, v)
 		}
 	})
 }

@@ -11,6 +11,7 @@ require (
 	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.3
 	sigs.k8s.io/controller-runtime v0.12.3
+	sigs.k8s.io/kustomize/kyaml v0.13.6
 )
 
 require (
@@ -98,9 +99,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require (
-	github.com/labring/sealos v0.0.0-00010101000000-000000000000
-	sigs.k8s.io/kustomize/kyaml v0.13.6
-)
+require github.com/labring/sealos v0.0.0-00010101000000-000000000000
 
 replace github.com/labring/sealos => ../../
