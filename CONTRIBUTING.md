@@ -203,6 +203,8 @@ When you develop the sealos project at the local environment, you should use sub
 
 ### Docs Contribution
 
+#### Structure and Repo
+
 The documentation for sealos includes:
 
 - [README.md](https://github.com/labring/sealos/blob/main/README.md)
@@ -212,11 +214,24 @@ The documentation for sealos includes:
    - English docs under [docs/4.0/docs](https://github.com/labring/sealos/tree/main/docs/4.0/docs)
    - Chinese docs under [docs/4.0/i18n/zh-Hans](https://github.com/labring/sealos/tree/main/docs/4.0/i18n/zh-Hans)
 
-If you have experiences in [Docusaurus 2](https://docusaurus.io), you might find the directory structure familiar. Indeed, the [documentation website](https://github.com/fanux/sealos-site) is built with [Docusaurus 2](https://docusaurus.io) and any update to the docs here will be synchronized there.
+If you have experiences in [Docusaurus 2](https://docusaurus.io), you might find the directory structure familiar. Indeed, the [sealos documentation website](https://github.com/fanux/sealos-site) is built with [Docusaurus 2](https://docusaurus.io) and any update to the docs **here** will be synchronized **there**.
 
 Therefore, to update the documentation, rather than contributing to the [website repo](https://github.com/fanux/sealos-site), you should contribute to this repo directly, unless you want to update the home page or custom pages like the [company page](https://www.sealos.io/company).
 
 For a complete list of the docs synchronization mappings, see [sync_docs.yml](https://github.com/labring/sealos/tree/main/.github/sync_docs.yml).
+
+#### Formatting
+
+Please obey the following rules to better format the docs, which would greatly improve the reading experience.
+
+1. Please do not use Chinese punctuations in English docs, and vice versa.
+1. Please use upper case letters where applicable, like the first letter of sentences / headings, etc.
+1. Please specify a language for each Markdown code blocks, unless there's no associated languages.
+1. Please insert a whitespace between Chinese and English words.
+1. Please use the correct case for technical terms, such as using HTTP instead of http, MySQL rather than mysql, Kubernetes instead of kubernetes, etc.
+1. Please check if there's any typos in the docs before submitting PRs.
+
+You can also check out the [Docusaurus docs](https://docusaurus.io/docs/markdown-features) to write docs with richer feature.
 
 ## Engage to help anything
 
