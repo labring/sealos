@@ -18,7 +18,7 @@ the registry images data store in  follow directory:
 
 ## login to registry
 
-sealos private registry run with http and `--net host ` option，you should config insecure-registry at local and connect with first node ipaddress，example of docker client:
+sealos private registry runs with HTTP and `--net host` option. You should configure `insecure-registries` at local and connect with the first node's IP address. Example of docker client:
 
 ```
 # cat /etc/docker/daemon.json 
