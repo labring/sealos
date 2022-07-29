@@ -8,7 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/labring/lvscare/pkg/ipvs"
+	"k8s.io/kubernetes/pkg/util/ipvs"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 

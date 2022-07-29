@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	utilipset "github.com/labring/lvscare/pkg/ipset"
-	utiliptables "github.com/labring/lvscare/pkg/iptables"
-	"github.com/labring/lvscare/pkg/netlink"
-	utilsysctl "github.com/labring/lvscare/pkg/sysctl"
+	utilsysctl "k8s.io/component-helpers/node/util/sysctl"
+	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
+	utilipset "k8s.io/kubernetes/pkg/util/ipset"
+	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
 	"k8s.io/utils/exec"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -18,7 +18,7 @@ import (
 type iptablesImpl struct {
 	ipset    utilipset.Interface
 	iptables utiliptables.Interface
-	nl       netlink.NetLinkHandle
+	nl       proxyipvs.NetLinkHandle
 	sysctl   utilsysctl.Interface
 
 	bindAddresses  []string
@@ -95,7 +95,7 @@ func newIptablesImpl(iface string, masqueradeBit int, virtualIPs ...string) (Rul
 	return &iptablesImpl{
 		ipset:          utilipset.New(execer),
 		iptables:       utiliptables.New(execer, utiliptables.ProtocolIPv4),
-		nl:             netlink.NewNetLinkHandle(false),
+		nl:             proxyipvs.NewNetLinkHandle(false),
 		sysctl:         utilsysctl.New(),
 		bindAddresses:  bindAddresses,
 		virtualEntries: virtualEntries,
@@ -162,7 +162,7 @@ func ensureSysctl(sysctl utilsysctl.Interface, name string, newVal int) error {
 	return nil
 }
 
-func ensureDummyDeviceAndAddresses(nl netlink.NetLinkHandle, ifaceName string, addresses ...string) error {
+func ensureDummyDeviceAndAddresses(nl proxyipvs.NetLinkHandle, ifaceName string, addresses ...string) error {
 	if _, err := nl.EnsureDummyDevice(ifaceName); err != nil {
 		return err
 	}
