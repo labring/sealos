@@ -13,16 +13,6 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: Namespace
-metadata:
-  name: sealos
-  annotations:
-  labels:
-    name: sealos
-
----
-
-apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: service-auth
@@ -51,12 +41,12 @@ metadata:
   name: service-auth
   namespace: sealos
 spec:
-  type: NodePort
+  # type: NodePort
   ports:
     - port: 8080
       # By default and for convenience,
       # the Kubernetes control plane will allocate a port from a range (default: 30000-32767)
-      nodePort: 30007
+      # nodePort: 30007
   selector:
     app: service-auth
 
@@ -71,13 +61,13 @@ data:
   auth.yaml: |-
     addr: :8080
     ssoType: "casdoor"
-    callbackUrl: "cloud.sealos.io:30007/config"
+    callbackUrl: "cloud.sealos.io/logincallback"
     oauthProviders:
       - type: "Github"
         clientId: ""
         clientSecret: ""
     kubeconfig: ""
-    ssoEndpoint: "cloud.sealos.io:30006"
+    ssoEndpoint: "cloud.sealos.io/casdoor"
     caCert: ""
 
 ---
