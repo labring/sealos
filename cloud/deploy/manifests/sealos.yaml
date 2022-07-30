@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-
-# FROM gcr.io/distroless/static:nonroot
-FROM scratch
-WORKDIR /
-COPY /service-auth .
-USER 65532:65532
-
-ENTRYPOINT ["/service-auth", "-config", "/auth.yaml"]
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sealos
+  annotations:
+  labels:
+    name: sealos
