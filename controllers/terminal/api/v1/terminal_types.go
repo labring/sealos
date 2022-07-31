@@ -28,9 +28,18 @@ type TerminalSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	User       string `json:"user,omitempty"`
-	Token      string `json:"token,omitempty"`
-	Keepalived string `json:"keepalived,omitempty"`
+	//+kubebuilder:validation:Required
+	User string `json:"user"`
+	//+kubebuilder:validation:Required
+	Token string `json:"token"`
+	//+kubebuilder:validation:Required
+	APIServer string `json:"apiServer"`
+	//+kubebuilder:validation:Required
+	TTYImage string `json:"ttyImage"`
+	//+kubebuilder:validation:Required
+	Replicas *int32 `json:"replicas"`
+	//+kubebuilder:validation:Required
+	Keepalived string `json:"keepalived"`
 }
 
 // TerminalStatus defines the observed state of Terminal

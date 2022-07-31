@@ -3,4 +3,9 @@ kind: Terminal
 metadata:
   name: terminal-sample
 spec:
-  # TODO(user): Add fields here
+  user: ccl
+  token: abc
+  apiServer: https://192.168.49.2:8443
+  ttyImage: fanux/fist-tty-tools:v1.0.0
+  replicas: 3
+  keepalived: 11h
