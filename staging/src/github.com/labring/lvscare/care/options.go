@@ -45,7 +45,7 @@ type options struct {
 	Mode          string
 	RunOnce       bool
 	CleanAndExit  bool
-	Interval      time.Duration
+	Interval      durationOrSecondValue
 	TargetIP      net.IP
 	MasqueradeBit int
 }
@@ -59,7 +59,7 @@ func (o *options) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&o.Mode, "mode", routeMode, fmt.Sprintf("proxy mode: %s/%s", routeMode, linkMode))
 	fs.BoolVar(&o.RunOnce, "run-once", false, "create proxy rules and exit")
 	fs.BoolVarP(&o.CleanAndExit, "clean", "C", false, "clean existing rules and then exit")
-	fs.DurationVar(&o.Interval, "interval", 5*time.Second, "health check interval")
+	fs.Var(&o.Interval, "interval", "health check interval")
 	fs.IPVar(&o.TargetIP, "ip", nil, "target ip as route gateway, use with route mode")
 	fs.IntVar(&o.MasqueradeBit, "masqueradebit", 0, "IPTables masquerade bit")
 
@@ -91,5 +91,27 @@ func (o *options) ValidateAndSetDefaults() error {
 			o.TargetIP = net.ParseIP(ip)
 		}
 	}
+	if o.Interval == 0 {
+		o.Interval = durationOrSecondValue(5 * time.Second)
+	}
 	return nil
 }
+
+type durationOrSecondValue time.Duration
+
+func (d *durationOrSecondValue) Set(s string) error {
+	v, err := strconv.Atoi(s)
+	if err == nil {
+		*d = durationOrSecondValue(v * int(time.Second))
+		return nil
+	}
+	vv, err := time.ParseDuration(s)
+	*d = durationOrSecondValue(vv)
+	return err
+}
+
+func (d *durationOrSecondValue) Type() string {
+	return "durationOrSecond"
+}
+
+func (d *durationOrSecondValue) String() string { return (*time.Duration)(d).String() }

@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -144,7 +145,7 @@ func (r *runner) ValidateAndSetDefaults() error {
 			}
 		}
 	}
-	r.proxier = NewProxier(r.options.scheduler, r.options.Interval, r.prober, r.periodicRun)
+	r.proxier = NewProxier(r.options.scheduler, time.Duration(r.options.Interval), r.prober, r.periodicRun)
 	virtualIP, _, err := splitHostPort(r.options.VirtualServer)
 	if err != nil {
 		return err
