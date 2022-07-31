@@ -46,6 +46,32 @@ and run lvscare foreground
 lvscare care --vs 169.254.0.1:80 --rs 127.0.0.1:8081 --rs 1.0.0.1:8082 --rs 127.0.0.1:8083 --logger DEBG --health-schem http --health-path / --mode link
 ```
 
+`link` mode actually automatically setup rules below.
+
+```bash
+ip link add lvscare type dummy
+ip addr add 169.254.0.1/32 dev lvscare
+
+# enable conntrack for ipvs
+echo 1 | tee /proc/sys/net/ipv4/vs/conntrack
+
+iptables -t nat -N VIRTUAL-SERVICES
+iptables -t nat -A PREROUTING -m comment --comment "virtual service portals" -j VIRTUAL-SERVICES
+
+iptables -t nat -N VIRTUAL-MARK-MASQ
+# create ipset
+ipset create VIRTUAL-IP hash:ip,port -exist
+iptables -t nat -A VIRTUAL-SERVICES -m comment --comment "virtual service ip + port for masquerade purpose" -m set --match-set VIRTUAL-IP dst,dst -j VIRTUAL-MARK-MASQ
+# do mark
+iptables -t nat -A VIRTUAL-MARK-MASQ -j MARK --set-xmark 0x2
+# do snat at POSTROUTING
+iptables -t nat -N VIRTUAL-POSTROUTING
+iptables -t nat -A POSTROUTING -m comment --comment "virtual service postrouting rules" -j VIRTUAL-POSTROUTING
+iptables -t nat -A VIRTUAL-POSTROUTING -m comment --comment "virtual service traffic requiring SNAT" -m mark --mark 0x2 -j MASQUERADE
+
+iptables -t nat -A OUTPUT -m comment --comment "virtual service portals" -j VIRTUAL-SERVICES
+```
+
 create another terminal, check ipvs rules:
 
 ```bash
