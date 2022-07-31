@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"time"
 
@@ -115,7 +114,6 @@ func GenerateKubeConfig(username string) (string, error) {
 	}
 
 	ctx := fmt.Sprintf("%s@%s", username, "kubernetes")
-	cert, err := GetCaCert()
 	if err != nil {
 		return "", err
 	}
@@ -123,7 +121,7 @@ func GenerateKubeConfig(username string) (string, error) {
 		Clusters: map[string]*api.Cluster{
 			"kubernetes": {
 				Server:                   "https://apiserver.cluster.local:6443",
-				CertificateAuthorityData: []byte(cert),
+				CertificateAuthorityData: client.Config().TLSClientConfig.CAData,
 			},
 		},
 		Contexts: map[string]*api.Context{
@@ -146,18 +144,4 @@ func GenerateKubeConfig(username string) (string, error) {
 	}
 
 	return string(content), nil
-}
-
-func GetCaCert() (string, error) {
-	if conf.GlobalConfig.Kubeconfig == "" {
-		caCert, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
-		if err != nil {
-			return "", err
-		}
-		return string(caCert), nil
-	}
-	if conf.GlobalConfig.CaCert == "" {
-		return "", fmt.Errorf("ca cert is empty")
-	}
-	return conf.GlobalConfig.CaCert, nil
 }
