@@ -24,7 +24,6 @@ type Config struct {
 	// Empty if in InCluster mode
 	Kubeconfig  string `yaml:"kubeconfig"`
 	SSOEndpoint string `yaml:"ssoEndpoint"`
-	CaCert      string `yaml:"caCert"`
 }
 
 type Provider struct {

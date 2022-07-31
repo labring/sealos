@@ -68,7 +68,6 @@ data:
         clientSecret: ""
     kubeconfig: ""
     ssoEndpoint: "cloud.sealos.io/casdoor"
-    caCert: ""
 
 ---
 
