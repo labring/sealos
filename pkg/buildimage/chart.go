@@ -104,6 +104,30 @@ func (c Chart) GetImages() ([]string, error) {
 	var images []string
 	var tmp string
 	rrr := regexp.MustCompile(`\simage:`)
+
+	delLF := func(a string) string {
+		return strings.Replace(a, "\n", "", -1)
+	}
+
+	for _, v := range content {
+		if delLF(v) == "" { // Text has no content
+			continue
+		}
+
+		for _, s := range strings.Split(v, "\n") {
+			if rrr.MatchString(s) {
+				image := c.getImage(s)
+				if image != tmp {
+					images = append(images, image)
+					tmp = image
+				}
+			}
+		}
+	}
+	return images, nil
+}
+
+func (c Chart) getImage(aaa string) string {
 	blankReg := regexp.MustCompile(`[\s\p{Zs}]{1,}`)
 	shaReg := regexp.MustCompile(`@.*$`)
 
@@ -113,25 +137,13 @@ func (c Chart) GetImages() ([]string, error) {
 	delImageSha := func(a string) string {
 		return shaReg.ReplaceAllString(a, "")
 	}
-
-	for _, v := range content {
-		if delLF(v) != "" { // Text has content
-			for _, s := range strings.Split(v, "\n") {
-				if rrr.MatchString(s) {
-					image := delImageSha(strings.Replace(strings.Replace(delBlank(s), "image:", "", -1), "\"", "", -1))
-					if image != tmp {
-						images = append(images, image)
-						tmp = image
-					}
-				}
-			}
-		}
+	// add del -image: and image:
+	delImageReg := regexp.MustCompile(`-{0,1}image:`)
+	delImage := func(str string) string {
+		return delImageReg.ReplaceAllString(str, "")
 	}
-	return images, nil
-}
 
-func delLF(a string) string {
-	return strings.Replace(a, "\n", "", -1)
+	return delImageSha(strings.Replace(delImage(delBlank(aaa)), "\"", "", -1))
 }
 
 // from charts dir get 1 sub path,not nested
