@@ -240,8 +240,50 @@ func (p *realProxier) Stop() {
 	close(p.errCh)
 }
 
+func (p *realProxier) checkRealServer(wg *sync.WaitGroup, vSrv *ipvs.VirtualServer, rs endpoint) {
+	defer wg.Done()
+	probeErr := p.prober.Probe(rs.IP, strconv.Itoa(int(rs.Port)))
+	rSrv, err := p.getRealServer(vSrv, p.buildRealServer(&rs))
+	if err != nil {
+		logger.Warn("Failed to get real server: %v", err)
+		return
+	}
+	if probeErr != nil {
+		logger.Debug("probe error: %v", probeErr)
+		if rSrv != nil {
+			if rSrv.Weight != 0 {
+				logger.Debug("Trying to update wight to 0 for graceful termination")
+				rSrv.Weight = 0
+				if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
+					logger.Warn("Failed to update real server wight: %v", err)
+				}
+				return
+			}
+			logger.Debug("Trying to delete real server")
+			if err = p.ipvsHandle.DeleteRealServer(vSrv, rSrv); err != nil {
+				logger.Warn("Failed to delete real server: %v", err)
+			}
+		}
+		return
+	}
+	if rSrv != nil {
+		if rSrv.Weight == 0 {
+			logger.Debug("Trying to update wight to 1 to receive traffic")
+			rSrv.Weight = 1
+			if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
+				logger.Warn("Failed to update real server wight: %v", err)
+			}
+		}
+		return
+	}
+	logger.Debug("Trying to add real server back")
+	if err = p.ipvsHandle.AddRealServer(vSrv, p.buildRealServer(&rs)); err != nil {
+		logger.Warn("Failed to add real server back: %v", err)
+	}
+}
+
 func (p *realProxier) runCheck() {
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 	for vs, rsMap := range p.serviceMap {
 		vSrv, err := p.ensureVirtualServer(p.buildVirtualServer(&vs))
 		if err != nil {
@@ -250,47 +292,7 @@ func (p *realProxier) runCheck() {
 		}
 		for _, rs := range rsMap {
 			wg.Add(1)
-			go func(rs endpoint) {
-				defer wg.Done()
-				probeErr := p.prober.Probe(rs.IP, strconv.Itoa(int(rs.Port)))
-				rSrv, err := p.getRealServer(vSrv, p.buildRealServer(&rs))
-				if err != nil {
-					logger.Warn("Failed to get real server: %v", err)
-					return
-				}
-				if probeErr != nil {
-					logger.Debug("probe: %v", probeErr)
-					if rSrv != nil {
-						if rSrv.Weight != 0 {
-							logger.Debug("Trying to update wight to 0 for graceful termination")
-							rSrv.Weight = 0
-							if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
-								logger.Warn("Failed to update real server wight: %v", err)
-							}
-						} else {
-							logger.Debug("Trying to delete real server")
-							if err = p.ipvsHandle.DeleteRealServer(vSrv, rSrv); err != nil {
-								logger.Warn("Failed to delete real server: %v", err)
-							}
-						}
-					}
-				} else {
-					if rSrv != nil {
-						if rSrv.Weight == 0 {
-							logger.Debug("Trying to update wight to 1 to receive traffic")
-							rSrv.Weight = 1
-							if err = p.ipvsHandle.UpdateRealServer(vSrv, rSrv); err != nil {
-								logger.Warn("Failed to update real server wight: %v", err)
-							}
-						}
-					} else {
-						logger.Debug("Trying to add real server back")
-						if err = p.ipvsHandle.AddRealServer(vSrv, p.buildRealServer(&rs)); err != nil {
-							logger.Warn("Failed to add real server back: %v", err)
-						}
-					}
-				}
-			}(rs)
+			go p.checkRealServer(wg, vSrv, rs)
 		}
 	}
 	wg.Wait()
