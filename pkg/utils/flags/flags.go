@@ -17,6 +17,9 @@ limitations under the License.
 package flags
 
 import (
+	"os"
+	"strings"
+
 	"github.com/spf13/pflag"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -26,5 +29,21 @@ import (
 func PrintFlags(flags *pflag.FlagSet) {
 	flags.VisitAll(func(flag *pflag.Flag) {
 		logger.Debug("FLAG: --%s=%q", flag.Name, flag.Value)
+	})
+}
+
+// SetFlagsFromEnv set value of flag if not changed but has env key
+func SetFlagsFromEnv(prefix string, flags *pflag.FlagSet) {
+	if prefix != "" && !strings.HasSuffix(prefix, "_") {
+		prefix += "_"
+	}
+	flags.VisitAll(func(flag *pflag.Flag) {
+		if flag.Changed {
+			return
+		}
+		envVar := strings.ToUpper(strings.Replace(prefix+flag.Name, "-", "_", -1))
+		if v := os.Getenv(envVar); v != "" {
+			_ = flags.Set(flag.Name, v)
+		}
 	})
 }

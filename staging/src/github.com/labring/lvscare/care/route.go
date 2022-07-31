@@ -15,32 +15,26 @@
 package care
 
 import (
-	"fmt"
-	"strings"
-
+	"github.com/labring/lvscare/pkg/route"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func (care *LvsCare) createVsAndRs() error {
-	var errs []string
-	isAvailable := care.lvs.IsVirtualServerAvailable(care.VirtualServer)
-	if !isAvailable {
-		err := care.lvs.CreateVirtualServer(care.VirtualServer, true)
-		// virtual server is exists
-		if err != nil {
-			// can't return
-			errs = append(errs, err.Error())
-		}
-	}
-	for _, r := range care.RealServer {
-		err := care.lvs.CreateRealServer(r, true)
-		if err != nil {
-			errs = append(errs, err.Error())
-		}
-	}
-	if len(errs) != 0 {
-		logger.Error("createVsAndRs error: %s", errs)
-		return fmt.Errorf(strings.Join(errs, ","))
-	}
-	return nil
+type routeImpl struct {
+	*route.Route
+}
+
+func newRouteImpl(target, gw string) (Ruler, error) {
+	return &routeImpl{
+		route.New(target, gw),
+	}, nil
+}
+
+func (impl *routeImpl) Setup() error {
+	logger.Info("Trying to add route")
+	return impl.SetRoute()
+}
+
+func (impl *routeImpl) Cleanup() error {
+	logger.Info("Trying to delete route")
+	return impl.DelRoute()
 }

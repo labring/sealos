@@ -27,24 +27,34 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-var ErrNotIPV4 = errors.New("TargetIP addresses are not IPV4 rules")
+var ErrNotIPV4Fmt = "IP %s is not valid IPV4 address"
 
 type Route struct {
 	Host    string
 	Gateway string
 }
 
-func NewRoute(host, gateway string) *Route {
+func New(host, gateway string) *Route {
 	return &Route{
 		Host:    host,
 		Gateway: gateway,
 	}
 }
 
-func (r *Route) SetRoute() error {
-	if !utils.IsIpv4(r.Gateway) || !utils.IsIpv4(r.Host) {
-		return ErrNotIPV4
+func validateIPv4Type(addresses ...string) error {
+	for i := range addresses {
+		if !utils.IsIpv4(addresses[i]) {
+			return fmt.Errorf(ErrNotIPV4Fmt, addresses[i])
+		}
 	}
+	return nil
+}
+
+func (r *Route) SetRoute() error {
+	if err := validateIPv4Type(r.Gateway, r.Host); err != nil {
+		return err
+	}
+
 	err := addRouteGatewayViaHost(r.Host, r.Gateway, 50)
 	if err != nil && !errors.Is(err, os.ErrExist) /* return if route already exist */ {
 		return fmt.Errorf("failed to add %s route gateway via host err: %v", r.Host, err)
@@ -54,8 +64,8 @@ func (r *Route) SetRoute() error {
 }
 
 func (r *Route) DelRoute() error {
-	if !utils.IsIpv4(r.Gateway) || !utils.IsIpv4(r.Host) {
-		return ErrNotIPV4
+	if err := validateIPv4Type(r.Gateway, r.Host); err != nil {
+		return err
 	}
 
 	err := delRouteGatewayViaHost(r.Host, r.Gateway)
