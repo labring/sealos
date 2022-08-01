@@ -30,9 +30,9 @@ import (
 
 type Driver interface {
 	CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error
-	DeleteInstances(instanceID string, infra *v1.Infra) error
-	// TODO other cloud instance should convert to aws instance.
-	GetInstancesByLabel(key string, value string) ([]v1.Hosts, error)
+	DeleteInstances(hosts *v1.Hosts, infra *v1.Infra) error
+	DeleteInstanceByID(instanceID string, infra *v1.Infra) error
+	GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error)
 }
 
 type Reconcile interface {
