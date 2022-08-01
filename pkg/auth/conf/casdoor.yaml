@@ -56,7 +56,7 @@ data:
 apiVersion: v1
 kind: Service
 metadata:
-  name: casdoor-svc
+  name: casdoor
   namespace: sealos
   labels:
     app: casdoor

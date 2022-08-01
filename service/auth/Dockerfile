@@ -16,7 +16,12 @@
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 
 # FROM gcr.io/distroless/static:nonroot
-FROM scratch
+FROM alpine:latest
+
+RUN sed -i 's/https/http/' /etc/apk/repositories
+RUN apk add curl
+RUN apk add ca-certificates && update-ca-certificates
+
 WORKDIR /
 COPY /service-auth .
 USER 65532:65532
