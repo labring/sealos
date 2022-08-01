@@ -19,7 +19,7 @@ CONTAINER ID    IMAGE                               COMMAND                   CR
 eb772a8cc788    docker.io/library/registry:2.7.1    "/entrypoint.sh /etc…"    22 hours ago    Up                 sealos-registry 
 ```
 
-**Notes:** The data of the registry  is saved in `/var/lib/sealos/data/default/rootfs/registry/` directory.
+**Notes:** The data of the registry is saved in `/var/lib/sealos/data/default/rootfs/registry/` directory.
 
 ## Login to the private registry
 
