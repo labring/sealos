@@ -131,7 +131,7 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
    # update some code, feature1
    git add -A
    git commit -m -s "init infra"
-   git push
+   git push --set-upstream origin <new-branch>
    # then create pull request, and merge
    
    # update some new feature, feature2, rebase main branch first.
