@@ -11,7 +11,7 @@ root@node01:~# containerd config dump |grep sealos.hub
 
 ## Where the private registry running
 
-The sealos private  registry runs on the first node of the cluster，The first node of the cluster is where you run the create cluster command,You can see this container with the following command.
+The sealos private registry runs on the first node of the cluster，The first node of the cluster is where you run the create cluster command, you can see this container with the following command.
 
 ```shell
 root@node01:~# nerdctl ps
