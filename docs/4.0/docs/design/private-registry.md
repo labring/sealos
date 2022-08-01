@@ -61,7 +61,7 @@ c550c8e0f355: Pushed
 latest: digest: sha256:238efd85942755fbd28d4d23d1f8dedd99e9eec20777e946f132633b826a9295 size: 1570
 ```
 
-Pull image examle.
+Pull image example.
 
 ```shell
 sealos pull 192.168.72.50:5000/skopeo/stable
