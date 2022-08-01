@@ -30,7 +30,7 @@ import (
 
 type Driver interface {
 	CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error
-	DeleteInstances(hosts *v1.Hosts, infra *v1.Infra) error
+	DeleteInstances(hosts *v1.Hosts) error
 	DeleteInstanceByID(instanceID string, infra *v1.Infra) error
 	GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error)
 }
