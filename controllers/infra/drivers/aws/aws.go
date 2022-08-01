@@ -27,16 +27,20 @@ type Driver struct {
 	Client *ec2.Client
 }
 
+func (d Driver) DeleteInstances(hosts *v1.Hosts, infra *v1.Infra) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (d Driver) DeleteInstanceByID(instanceID string, infra *v1.Infra) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	return d.createInstances(hosts, infra)
 }
 
-func (d Driver) DeleteInstances(instanceID string, infra *v1.Infra) error {
-	//TODO implement me
-	return nil
-}
-
-func (d Driver) GetInstancesByLabel(key string, value string) ([]v1.Hosts, error) {
-	//TODO implement me
-	return nil, nil
+func (d Driver) GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
+	return d.getInstancesByLabel(key, value, infra)
 }

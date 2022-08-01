@@ -19,19 +19,13 @@ package aws
 import (
 	"context"
 	"fmt"
-	"os"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
-
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 )
 
@@ -55,6 +49,7 @@ func GetInstances(c context.Context, api EC2DescribeInstancesAPI, input *ec2.Des
 	return api.DescribeInstances(c, input)
 }
 
+/*
 func ReconcileInstance(infra *v1.Infra) (*v1beta1.Cluster, error) {
 	fmt.Println("access key id is: ", os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_ACCESS_KEY_ID"))
 	if len(infra.Spec.Hosts) == 0 {
@@ -86,6 +81,7 @@ func checkInstanceTags(tags []types.Tag, key, value string) error {
 
 	return nil
 }
+*/
 
 /*
 Use this to uniquely identify which cluster the virtual machine belongs to
@@ -101,20 +97,22 @@ For example:
     namespace: default
 The value should be: default/aws-infra-demo
 */
-func GetInstancesByLabel(key string, value string) ([]types.Instance, error) {
-	var instances []types.Instance
-	fmt.Println("access key id is: ", os.Getenv("AWS_DEFAULT_REGION"), os.Getenv("AWS_ACCESS_KEY_ID"))
+func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
+	hosts := &v1.Hosts{}
+	nameKey := fmt.Sprintf("tag:%s", common.InfraInstancesLabel)
+	fullName := infra.GetInstancesTag()
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return nil, fmt.Errorf("load default config failed %s", err)
-	}
-	client := ec2.NewFromConfig(cfg)
-	tag := fmt.Sprintf("tag:%s", key)
+	roleKey := fmt.Sprintf("tag:%s", key)
+
+	client := d.Client
 	input := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
-				Name:   &tag,
+				Name:   &nameKey,
+				Values: []string{fullName},
+			},
+			{
+				Name:   &roleKey,
 				Values: []string{value},
 			},
 		},
@@ -126,8 +124,18 @@ func GetInstancesByLabel(key string, value string) ([]types.Instance, error) {
 	}
 
 	for _, r := range result.Reservations {
-		instances = append(instances, r.Instances...)
+		for _, i := range r.Instances {
+			hosts.Count++
+			metadata := v1.Metadata{
+				IP: []string{*i.PrivateIpAddress},
+				ID: *i.InstanceId,
+			}
+			hosts.Metadata = append(hosts.Metadata, metadata)
+
+			fmt.Printf("got instance id: %v, tags: %v, ip: %v, Eip: %v",
+				i.InstanceId, i.Tags, i.PrivateIpAddress, i.PublicIpAddress)
+		}
 	}
 
-	return instances, nil
+	return hosts, nil
 }

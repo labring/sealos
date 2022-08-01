@@ -28,11 +28,11 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) (*v2.Cluster
 	// get current hosts
 	tag := infra.GetInstancesTag()
 	var err error
-	a.currentHosts, err = driver.GetInstancesByLabel(common.InfraInstancesLabel, tag)
+	hosts, err := driver.GetInstancesByLabel(common.InfraInstancesLabel, tag, infra)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query instances: %v", err)
 	}
-
+	a.currentHosts = append(a.currentHosts, *hosts)
 	// TODO if hosts not contains label "master" and "node", should delete it
 	// if err = checkCrrentHostsLabel(driver); err != nil {
 	// }
@@ -63,7 +63,7 @@ func (a *Applier) ReconcileByRole(infra *v1.Infra, driver Driver, role string) e
 	}
 	if count < 0 {
 		for i := 0; i < count; i++ {
-			if err := driver.DeleteInstances(current[i].Metadata[0].ID, infra); err != nil {
+			if err := driver.DeleteInstanceByID(current[i].Metadata[0].ID, infra); err != nil {
 				return fmt.Errorf("delete instance failed: %v", err)
 			}
 		}

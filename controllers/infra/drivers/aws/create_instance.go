@@ -24,8 +24,6 @@ import (
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
@@ -66,46 +64,59 @@ func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTags
 	return api.CreateTags(c, input)
 }
 
+func GetInstanceType(hosts *v1.Hosts) types.InstanceType {
+	// TODO search instance type by CPU and memory
+
+	return types.InstanceType(hosts.Flavor)
+}
+
+func rolesToTags(roles []string) (tags []types.Tag) {
+	t := "true"
+
+	for _, r := range roles {
+		tag := types.Tag{
+			Key:   &r,
+			Value: &t,
+		}
+
+		tags = append(tags, tag)
+	}
+	return tags
+}
+
 func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	// Tag name and tag value
 	name := common.InfraInstancesLabel
 	value := infra.GetInstancesTag()
+	client := d.Client
+	var count = int32(hosts.Count)
 
-	cfg, err := config.LoadDefaultConfig(context.TODO())
-	if err != nil {
-		return err
-	}
-
-	client := ec2.NewFromConfig(cfg)
-	var count int32 = 1
+	tags := rolesToTags(hosts.Roles)
+	tags = append(tags, types.Tag{
+		Key:   &name,
+		Value: &value,
+	})
 	input := &ec2.RunInstancesInput{
-		ImageId:      aws.String("ami-e7527ed7"),
-		InstanceType: types.InstanceTypeT2Micro,
+		ImageId:      &hosts.Image,
+		InstanceType: GetInstanceType(hosts),
 		MinCount:     &count,
 		MaxCount:     &count,
+		TagSpecifications: []types.TagSpecification{
+			{
+				ResourceType: types.ResourceTypeInstance,
+				Tags:         tags,
+			},
+		},
 	}
 
 	result, err := MakeInstance(context.TODO(), client, input)
 	if err != nil {
 		return err
 	}
-
-	tagInput := &ec2.CreateTagsInput{
-		Resources: []string{*result.Instances[0].InstanceId},
-		Tags: []types.Tag{
-			{
-				Key:   &name,
-				Value: &value,
-			},
-		},
+	for _, instance := range result.Instances {
+		fmt.Printf("instance id: %v, tags: %v, ip: %v, Eip: %v",
+			instance.InstanceId, instance.Tags, instance.PrivateIpAddress, instance.PublicIpAddress)
 	}
 
-	_, err = MakeTags(context.TODO(), client, tagInput)
-	if err != nil {
-		fmt.Println("Got an error tagging the instance:")
-		return err
-	}
-
-	fmt.Println("Created tagged instance with ID " + *result.Instances[0].InstanceId)
 	return nil
 }
