@@ -1,9 +1,8 @@
 import type { NextPage } from 'next'
 import Head from 'next/head'
-import styles from '../../styles/Dashboard.module.css'
+import styles from './dashboard.module.css'
 import { SearchOutlined } from '@ant-design/icons';
 import { Tooltip, Button } from 'antd'
-
 
 const Login: NextPage = () => {
   return (
@@ -18,16 +17,16 @@ const Login: NextPage = () => {
         <div className={styles.menu}> header menu</div>
 
         <div className={styles.container}>
-          <iframe className={styles.iframe} src="https://sealos.io/" title="baidu" />
+          <iframe className={styles.iframe} src="https://sealos.io/" title="sealos.io" />
         </div>
 
         <div className={styles.dock}>
-        <Tooltip title="search">
-          <Button type="primary" shape="circle" icon={<SearchOutlined />} />
-        </Tooltip>
-        <Tooltip title="search">
-          <Button type="primary" shape="circle" icon={<SearchOutlined />} />
-        </Tooltip>
+          <Tooltip title="search">
+            <Button type="primary" shape="circle" icon={<SearchOutlined />} />
+          </Tooltip>
+          <Tooltip title="search">
+            <Button type="primary" shape="circle" icon={<SearchOutlined />} />
+          </Tooltip>
         </div>
       </main>
     </div>
