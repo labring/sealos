@@ -14,13 +14,13 @@
 
 package httpserver
 
-import "github.com/emicklei/go-restful"
+import restful "github.com/emicklei/go-restful/v3"
 
-//Cors is cors for restful utils
+// Cors is cors for restful utils
 func Cors(wsContainer *restful.Container) {
 	// Add container filter to enable CORS
 	cors := restful.CrossOriginResourceSharing{
-		ExposeHeaders:  []string{"X-My-Header"},
+		// ExposeHeaders:  []string{"X-My-Header"},
 		AllowedHeaders: []string{"Content-Type", "Accept"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		CookiesAllowed: true,

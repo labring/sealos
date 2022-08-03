@@ -44,7 +44,7 @@ const Home: NextPage = () => {
             </a>
           </Link>
 
-          <Link href="/login">
+          <Link href="/api/login">
             <a className={styles.card}>
               <h2>Login & Register &rarr;</h2>
               <p>

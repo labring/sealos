@@ -15,7 +15,7 @@
 package api
 
 import (
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/labring/sealos/pkg/auth"
 )
 
@@ -26,8 +26,12 @@ func RegisterRouter(webService *restful.WebService) {
 		Produces(restful.MIME_JSON)
 	// redirect to login page
 	webService.Route(webService.GET("/login").To(handlerLogin))
-	// SSO callback, generate kubeconfig according to user info
-	webService.Route(webService.GET("/config").To(handlerConfig))
+	// SSO callback, get token
+	webService.Route(webService.GET("/token").To(handlerToken))
+	// return user info
+	webService.Route(webService.GET("/userinfo").To(handlerUserInfo))
+	// generate kubeconfig according to user info
+	webService.Route(webService.GET("/kubeconfig").To(handlerKubeConfig))
 }
 
 func handlerLogin(_ *restful.Request, response *restful.Response) {
@@ -40,10 +44,42 @@ func handlerLogin(_ *restful.Request, response *restful.Response) {
 	response.WriteHeader(302)
 }
 
-func handlerConfig(request *restful.Request, response *restful.Response) {
+func handlerToken(request *restful.Request, response *restful.Response) {
 	state := request.QueryParameter("state")
 	code := request.QueryParameter("code")
-	kubeConfig, err := auth.GetKubeConfig(state, code)
+	if state == "" || code == "" {
+		_ = response.WriteError(500, nil)
+		return
+	}
+
+	oauthToken, err := auth.GetOAuthToken(state, code)
+	if err != nil {
+		_ = response.WriteError(500, err)
+		return
+	}
+
+	_ = response.WriteEntity(oauthToken)
+}
+
+func handlerUserInfo(request *restful.Request, response *restful.Response) {
+	accessToken := request.QueryParameter("access_token")
+	userInfo, err := auth.GetUserInfo(accessToken)
+	if err != nil {
+		_ = response.WriteError(500, err)
+		return
+	}
+
+	_ = response.WriteEntity(userInfo)
+}
+
+func handlerKubeConfig(request *restful.Request, response *restful.Response) {
+	accessToken := request.QueryParameter("access_token")
+	if accessToken == "" {
+		_ = response.WriteError(500, nil)
+		return
+	}
+
+	kubeConfig, err := auth.GetKubeConfig(accessToken)
 	if err != nil {
 		_ = response.WriteError(500, err)
 		return
