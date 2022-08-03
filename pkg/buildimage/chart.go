@@ -11,11 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package buildimage
 
 import (
 	"io/ioutil"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/file"
@@ -28,10 +30,10 @@ import (
 )
 
 func ParseChartImages(chartPath string) ([]string, error) {
-	logger.Info("srcPath:", chartPath)
+	logger.Info("charts srcPath:", chartPath)
 	var allImages []string
 	if !file.IsExist(chartPath) {
-		logger.Info("srcPath is empty", chartPath)
+		logger.Info("charts srcPath is empty", chartPath)
 		return nil, nil
 	}
 	subChartPaths, _ := getChartSub1Paths(chartPath)
@@ -39,11 +41,11 @@ func ParseChartImages(chartPath string) ([]string, error) {
 		return []string{}, nil // if chartPath not exist, return []
 	}
 	for _, subChartPath := range subChartPaths {
-		logger.Info("subChartPath is:", subChartPath)
-		ccc := Chart{
+		logger.Info("charts subChartPath is:", subChartPath)
+		c := Chart{
 			Path: chartPath + "/" + subChartPath,
 		}
-		images, _ := ccc.GetImages()
+		images, _ := c.GetImages()
 		if len(images) >= 1 {
 			allImages = append(allImages, images...)
 		}
@@ -124,10 +126,11 @@ func (c Chart) GetImages() ([]string, error) {
 			}
 		}
 	}
+	sort.Strings(images)
 	return images, nil
 }
 
-func (c Chart) getImage(aaa string) string {
+func (c Chart) getImage(image string) string {
 	blankReg := regexp.MustCompile(`[\s\p{Zs}]{1,}`)
 	shaReg := regexp.MustCompile(`@.*$`)
 
@@ -143,7 +146,7 @@ func (c Chart) getImage(aaa string) string {
 		return delImageReg.ReplaceAllString(str, "")
 	}
 
-	return delImageSha(strings.Replace(delImage(delBlank(aaa)), "\"", "", -1))
+	return delImageSha(strings.Replace(delImage(delBlank(image)), "\"", "", -1))
 }
 
 // from charts dir get 1 sub path,not nested
