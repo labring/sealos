@@ -15,6 +15,7 @@
 package buildimage
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -55,6 +56,39 @@ func TestChart_getImage(t *testing.T) {
 			}
 			if got := c.getImage(tt.args.aaa); got != tt.want {
 				t.Errorf("getImage() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestParseChartImages(t *testing.T) {
+	type args struct {
+		chartPath string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		{
+			name: "chart",
+			args: args{
+				chartPath: "testcharts/charts",
+			},
+			want:    []string{"quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseChartImages(tt.args.chartPath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseChartImages() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseChartImages() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

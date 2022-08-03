@@ -25,7 +25,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Driver interface {
@@ -33,10 +32,12 @@ type Driver interface {
 	DeleteInstances(hosts *v1.Hosts) error
 	DeleteInstanceByID(instanceID string, infra *v1.Infra) error
 	GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error)
+	// get infra all current hosts
+	GetInstances(infra *v1.Infra) ([]v1.Hosts, error)
 }
 
 type Reconcile interface {
-	ReconcileInstance(infra *v1.Infra, driver Driver) (*v1beta1.Cluster, error)
+	ReconcileInstance(infra *v1.Infra, driver Driver) error
 }
 
 func NewDriver() (Driver, error) {

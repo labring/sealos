@@ -70,10 +70,18 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 				instanceID,
 			},
 		}
+		terminateInput := &ec2.TerminateInstancesInput{
+			InstanceIds: []string{instanceID},
+			DryRun:      aws.Bool(false),
+		}
 
 		_, err := StopInstance(context.TODO(), client, input)
 		if err != nil {
-			return fmt.Errorf("aws stop instance failed: %s", instanceID)
+			return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)
+		}
+		_, err = client.TerminateInstances(context.TODO(), terminateInput)
+		if err != nil {
+			return fmt.Errorf("aws terminate instance failed: %s, %v", instanceID, err)
 		}
 	}
 

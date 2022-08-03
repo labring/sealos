@@ -65,13 +65,12 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	cluster, err := r.applier.ReconcileInstance(infra, r.driver)
+	err := r.applier.ReconcileInstance(infra, r.driver)
 	if err != nil {
 		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
-	logger.Info("cluster is: %v", cluster)
 
 	return ctrl.Result{}, nil
 }
