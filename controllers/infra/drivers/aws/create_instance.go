@@ -91,6 +91,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	client := d.Client
 	var count = int32(hosts.Count)
 
+	// TODO add the index tags, key: commono.InfraInstancesIndex value: hosts.Index
 	tags := rolesToTags(hosts.Roles)
 	tags = append(tags, types.Tag{
 		Key:   &name,

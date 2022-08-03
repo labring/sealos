@@ -19,6 +19,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -138,4 +139,68 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 	}
 
 	return hosts, nil
+}
+
+func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
+	var hosts []v1.Hosts
+	hostmap := make(map[int]*v1.Hosts)
+
+	nameKey := fmt.Sprintf("tag:%s", common.InfraInstancesLabel)
+	fullName := infra.GetInstancesTag()
+
+	client := d.Client
+	input := &ec2.DescribeInstancesInput{
+		Filters: []types.Filter{
+			{
+				Name:   &nameKey,
+				Values: []string{fullName},
+			},
+		},
+	}
+
+	result, err := GetInstances(context.TODO(), client, input)
+	if err != nil {
+		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
+	}
+
+	for _, r := range result.Reservations {
+		for _, i := range r.Instances {
+			index, err := getIndex(i)
+			if err != nil {
+				return nil, fmt.Errorf("aws ecs not found index label: %v", err)
+			}
+			metadata := v1.Metadata{
+				IP: []string{*i.PrivateIpAddress},
+				ID: *i.InstanceId,
+			}
+
+			if h, ok := hostmap[index]; ok {
+				h.Count++
+				continue
+			}
+			hostmap[index] = &v1.Hosts{
+				Count:    1,
+				Metadata: []v1.Metadata{metadata},
+				Index:    index,
+			}
+
+			fmt.Printf("got instance id: %v, tags: %v, ip: %v, Eip: %v",
+				i.InstanceId, i.Tags, i.PrivateIpAddress, i.PublicIpAddress)
+		}
+	}
+
+	for _, v := range hostmap {
+		hosts = append(hosts, *v)
+	}
+
+	return hosts, nil
+}
+
+func getIndex(i types.Instance) (int, error) {
+	for _, tag := range i.Tags {
+		if *tag.Key == common.InfraInstancesIndex {
+			return strconv.Atoi(*tag.Value)
+		}
+	}
+	return -1, fmt.Errorf("not found index tag: %v", i.Tags)
 }
