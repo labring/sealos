@@ -22,6 +22,7 @@ func TestDriver_DeleteInstances(t *testing.T) {
 				Metadata: []v1.Metadata{
 					{
 						IP: nil,
+						// TODO this test case should get the instance id from create interface.
 						ID: "i-0d72e0c54323d1d67",
 					},
 				},
