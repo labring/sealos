@@ -20,7 +20,6 @@ import (
 	"fmt"
 	http2 "net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/labring/endpoints-operator/library/probe/http"
@@ -44,24 +43,14 @@ func HTTP(address string, header map[string]string) (string, error) {
 	return "", errors.Wrap(err, "convert url error")
 }
 
-func RegistryHasImage(registryAddress, registryBase64Auth, imageName string) bool {
-	images := strings.Split(imageName, ":")
-	if len(images) > 1 {
-		imageName = images[0]
-	}
-	var tag string
-	if len(images) == 2 {
-		tag = images[1]
-	} else {
-		tag = "latest"
-	}
+func RegistryHasImage(registryAddress, registryBase64Auth, imageName, imageTag string) bool {
 	type RegistryData struct {
 		Name string   `json:"name"`
 		Tags []string `json:"tags"`
 	}
 	var registry RegistryData
-	logger.Info("address: %s,base64: %s,imageName: %s", registryAddress, registryBase64Auth, imageName)
-	logger.Info("pre image name: %s, pre image tag %s", imageName, tag)
+	logger.Info("address: %s, base64: %s, imageName: %s", registryAddress, registryBase64Auth, imageName)
+	logger.Info("pre image name: %s, pre image tag: %s", imageName, imageTag)
 	data, _ := HTTP(fmt.Sprintf("%s/v2/%s/tags/list", registryAddress, imageName), map[string]string{"Authorization": "Basic " + registryBase64Auth})
 	if data != "" {
 		logger.Info("data: %s", data)
@@ -71,8 +60,8 @@ func RegistryHasImage(registryAddress, registryBase64Auth, imageName string) boo
 			return false
 		}
 	}
-	if In(tag, registry.Tags) {
-		logger.Info("tag in registry.Tags")
+	if In(imageTag, registry.Tags) {
+		logger.Info("imageTag found in registry.Tags")
 		return true
 	}
 	return false
