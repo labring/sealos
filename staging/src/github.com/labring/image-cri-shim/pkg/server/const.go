@@ -49,7 +49,7 @@ func getData() map[string]interface{} {
 	return data
 }
 
-func getRegistrDomain() string {
+func getRegistryDomain() string {
 	domain := SealosHub
 	domain = strings.ReplaceAll(domain, "http://", "")
 	domain = strings.ReplaceAll(domain, "https://", "")

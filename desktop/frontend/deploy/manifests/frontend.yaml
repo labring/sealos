@@ -19,7 +19,6 @@ metadata:
   namespace: sealos
 
 ---
-
 # kind: ClusterRoleBinding
 # apiVersion: rbac.authorization.k8s.io/v1
 # metadata:
@@ -49,7 +48,6 @@ spec:
     app: desktop-frontend
 
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -60,7 +58,6 @@ data:
     addr: :3000
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -83,9 +80,9 @@ spec:
           image: fanux/frontend:latest
           imagePullPolicy: Always
           volumeMounts:
-              - name: desktop-frontend-volume
-                mountPath: /auth.yaml
-                subPath: auth.yaml
+            - name: desktop-frontend-volume
+              mountPath: /auth.yaml
+              subPath: auth.yaml
       volumes:
         - name: desktop-frontend-volume
           configMap:

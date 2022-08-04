@@ -17,11 +17,11 @@ package httpserver
 import (
 	"net/http"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-// GoRestful is a http server using go-restful
+// GoRestful is a http server using go-restful/v3
 func GoRestful(registerFunc func(*restful.WebService), addr string) error {
 	container := restful.NewContainer()
 	container.Router(restful.CurlyRouter{})

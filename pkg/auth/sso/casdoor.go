@@ -18,17 +18,16 @@ import (
 	"context"
 	"encoding/json"
 
-	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"github.com/pkg/errors"
-
 	casdoorAuth "github.com/casdoor/casdoor-go-sdk/auth"
+	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+	v1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/auth/utils"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	v1 "k8s.io/api/core/v1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const name = "casdoor"
@@ -133,18 +132,19 @@ func (c *CasdoorClient) GetRedirectURL() (string, error) {
 	return casdoorAuth.GetSigninUrl(c.CallbackURL), nil
 }
 
-func (c *CasdoorClient) GetUserInfo(state, code string) (User, error) {
-	token, err := casdoorAuth.GetOAuthToken(code, state)
+func (c *CasdoorClient) GetToken(state, code string) (*oauth2.Token, error) {
+	return casdoorAuth.GetOAuthToken(code, state)
+}
+
+func (c *CasdoorClient) GetUserInfo(accessToken string) (*User, error) {
+	casdoorUser, err := casdoorAuth.ParseJwtToken(accessToken)
 	if err != nil {
-		return User{}, errors.Wrap(err, "Get OAuth token failed")
+		return nil, errors.Wrap(err, "Parse Jwt token failed")
 	}
-	casdoorUser, err := casdoorAuth.ParseJwtToken(token.AccessToken)
-	if err != nil {
-		return User{}, errors.Wrap(err, "Parse Jwt token failed")
-	}
-	return User{
-		ID:   casdoorUser.Id,
-		Name: casdoorUser.Name,
+	return &User{
+		ID:     casdoorUser.Id,
+		Name:   casdoorUser.Name,
+		Avatar: casdoorUser.Avatar,
 	}, nil
 }
 
