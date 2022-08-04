@@ -1,12 +1,13 @@
 # How to use sealos private registry
 
-All cluster nodes have been configure priave registry, When pulling an image, it will pull from the private image registry,You can use the follow command view the configuration on any cluster node:
+## How it works
+
+Each node will run an image-cri-shim daemon,The Kubelet performs grpc interaction with image-cri-shim when pulling the image.It finds the image in the private registry according to the image name.If the image exist it pulls from local,otherwise pull from remote.
+
+You can run the follow command verify the image-cri-shim daemon:
 
 ```shell
-root@node01:~# containerd config dump |grep sealos.hub
-    sandbox_image = "sealos.hub:5000/pause:3.7"
-        [plugins."io.containerd.grpc.v1.cri".registry.configs."sealos.hub:5000"]
-          [plugins."io.containerd.grpc.v1.cri".registry.configs."sealos.hub:5000".auth]
+$ systemctl status image-cri-shim.service 
 ```
 
 ## Where the private registry running
