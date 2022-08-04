@@ -2,12 +2,12 @@
 
 ## How it works
 
-Each node will run an image-cri-shim daemon,Kubelet performs grpc interaction with image-cri-shim when pulling the image,It finds the image in the private registry according to the image name,If the image exist it pulls from local，otherwise pull from remote.
+Each node will run an image-cri-shim daemon,The Kubelet performs grpc interaction with image-cri-shim when pulling the image.It finds the image in the private registry according to the image name.If the image exist it pulls from local,otherwise pull from remote.
 
 You can run the follow command verify the image-cri-shim daemon:
 
 ```shell
-# systemctl status image-cri-shim.service 
+$ systemctl status image-cri-shim.service 
 ```
 
 ## Where the private registry running
