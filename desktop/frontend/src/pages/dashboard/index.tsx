@@ -18,7 +18,7 @@ const Dashboard: NextPage = () => {
 
         <div className={styles.container}>
           <iframe className={styles.iframe} src="https://kubernetes-dashboard.cloud.sealos.io/" title="kubernetes-dashboard-cloud-sealos-io" />
-        </div>ß
+        </div>
 
         <div className={styles.dock}>
           <Tooltip title="search">
