@@ -15,12 +15,15 @@
 package buildimage
 
 import (
+	"fmt"
 	"io/ioutil"
+	"path"
 	"strings"
 
 	"github.com/labring/sealos/pkg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -76,10 +79,20 @@ func (c Chart) getRenderContent() (map[string]string, error) {
 		return nil, err
 	}
 
+	// todo: remove hardcode
+	valuesFile := path.Join(path.Dir(c.Path), fmt.Sprintf("%s.values.yaml", ccc.Metadata.Name))
+	values := make(map[string]interface{})
+	if file.IsExist(valuesFile) {
+		logger.Debug("found named customize values file %s", valuesFile)
+		if err = yaml.UnmarshalYamlFromFile(valuesFile, &values); err != nil {
+			return nil, err
+		}
+	}
+
 	options := chartutil.ReleaseOptions{
 		Name: "dryrun",
 	}
-	valuesToRender, err := chartutil.ToRenderValues(ccc, nil, options, nil)
+	valuesToRender, err := chartutil.ToRenderValues(ccc, values, options, nil)
 	if err != nil {
 		return nil, err
 	}
