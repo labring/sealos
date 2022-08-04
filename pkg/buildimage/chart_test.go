@@ -19,48 +19,6 @@ import (
 	"testing"
 )
 
-func TestChart_getImage(t *testing.T) {
-	type fields struct {
-		File string
-		Path string
-	}
-	type args struct {
-		aaa string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
-	}{
-		{
-			name: "success",
-			args: args{
-				"- image: quay.io/cilium/operator-generic:v1.11.0@sha256:b522279577d0d5f1ad7cadaacb7321d1b172d8ae8c8bc816e503c897b420cfe3",
-			},
-			want: "quay.io/cilium/operator-generic:v1.11.0",
-		},
-		{
-			name: "success",
-			args: args{
-				`image: "quay.io/cilium/cilium:v1.11.0@sha256:ea677508010800214b0b5497055f38ed3bff57963fa2399bcb1c69cf9476453a"`,
-			},
-			want: "quay.io/cilium/cilium:v1.11.0",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			c := Chart{
-				File: tt.fields.File,
-				Path: tt.fields.Path,
-			}
-			if got := c.getImage(tt.args.aaa); got != tt.want {
-				t.Errorf("getImage() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestParseChartImages(t *testing.T) {
 	type args struct {
 		chartPath string
