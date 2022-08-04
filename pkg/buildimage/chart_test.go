@@ -32,9 +32,9 @@ func TestParseChartImages(t *testing.T) {
 		{
 			name: "chart",
 			args: args{
-				chartPath: "testcharts/charts",
+				chartPath: "test/charts",
 			},
-			want:    []string{"quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
+			want:    []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
 			wantErr: false,
 		},
 	}
