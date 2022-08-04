@@ -79,18 +79,17 @@ metadata:
     kubernetes.io/ingress.class: nginx
     # add an annotation indicating the issuer to use.
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    cert-manager.io/common-name: login.cloud.sealos.io
+    cert-manager.io/common-name: login.sealos.io
     cert-manager.io/duration: "2160h"
     cert-manager.io/renew-before: "360h"
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    # nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: nginx-casdoor
   namespace: sealos
 spec:
   rules:
-    - host: login.cloud.sealos.io
+    - host: login.sealos.io
       http:
         paths:
           - pathType: Prefix
@@ -102,5 +101,5 @@ spec:
                   number: 8000
   tls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
     - hosts:
-        - login.cloud.sealos.io
-      secretName: login-cloud-sealos-io-cert # < cert-manager will store the created certificate in this secret.
+        - login.sealos.io
+      secretName: login-sealos-io-cert # < cert-manager will store the created certificate in this secret.

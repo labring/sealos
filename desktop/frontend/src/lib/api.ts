@@ -1,10 +1,6 @@
 const api_host = process.env.NEXT_PUBLIC_API_HOST;
 
-export default async function fetchAPI(
-  query: string = '',
-  variables?: any,
-  method: string = 'GET'
-) {
+async function fetchAPI(query: string = '', variables?: any, method: string = 'GET') {
   const headers = { 'Content-Type': 'application/json' };
 
   if (method === 'GET' && variables !== undefined) {
@@ -23,4 +19,12 @@ export default async function fetchAPI(
     throw new Error('Failed to fetch API');
   }
   return json;
+}
+
+export async function fetchGet(query: string = '', variables?: any) {
+  return fetchAPI(query, variables, 'GET');
+}
+
+export async function fetchPost(query: string = '', variables?: any) {
+  return fetchAPI(query, variables, 'POST');
 }

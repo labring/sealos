@@ -38,3 +38,11 @@ func GoRestful(registerFunc func(*restful.WebService), addr string) error {
 
 	return server.ListenAndServe()
 }
+
+func GetAccessToken(request *restful.Request) string {
+	authStr := request.HeaderParameter("Authorization")
+	if len(authStr) > 7 && authStr[0:7] == "Bearer " {
+		return authStr[7:]
+	}
+	return ""
+}

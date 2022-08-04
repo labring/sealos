@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
-import fetchAPI from '../../lib/api'
+import { fetchPost } from '../../lib/api'
 import { OAuthToken } from '../../store/session'
 
 const Callback: NextPage = () => {
@@ -16,7 +16,7 @@ const Callback: NextPage = () => {
 
     const { code, state } = router.query;
     if (code !== undefined && code !== '' && state !== undefined && state != '') {
-      fetchAPI('api/token', { code: code, state: state }).then((res) => {
+      fetchPost('api/token', { code: code, state: state }).then((res) => {
         console.log(res)
         setConf(res)
 

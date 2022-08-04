@@ -16,7 +16,9 @@ package api
 
 import (
 	restful "github.com/emicklei/go-restful/v3"
+
 	"github.com/labring/sealos/pkg/auth"
+	"github.com/labring/sealos/pkg/utils/httpserver"
 )
 
 // RegisterRouter Register auth Router
@@ -27,11 +29,11 @@ func RegisterRouter(webService *restful.WebService) {
 	// redirect to login page
 	webService.Route(webService.GET("/login").To(handlerLogin))
 	// SSO callback, get token
-	webService.Route(webService.GET("/token").To(handlerToken))
+	webService.Route(webService.POST("/token").To(handlerToken))
 	// return user info
-	webService.Route(webService.GET("/userinfo").To(handlerUserInfo))
+	webService.Route(webService.POST("/userinfo").To(handlerUserInfo))
 	// generate kubeconfig according to user info
-	webService.Route(webService.GET("/kubeconfig").To(handlerKubeConfig))
+	webService.Route(webService.POST("/kubeconfig").To(handlerKubeConfig))
 }
 
 func handlerLogin(_ *restful.Request, response *restful.Response) {
@@ -45,14 +47,17 @@ func handlerLogin(_ *restful.Request, response *restful.Response) {
 }
 
 func handlerToken(request *restful.Request, response *restful.Response) {
-	state := request.QueryParameter("state")
-	code := request.QueryParameter("code")
-	if state == "" || code == "" {
+	cs := &codeState{}
+	if err := request.ReadEntity(&cs); err != nil {
+		_ = response.WriteError(500, err)
+		return
+	}
+	if cs.State == "" || cs.Code == "" {
 		_ = response.WriteError(500, nil)
 		return
 	}
 
-	oauthToken, err := auth.GetOAuthToken(state, code)
+	oauthToken, err := auth.GetOAuthToken(cs.State, cs.Code)
 	if err != nil {
 		_ = response.WriteError(500, err)
 		return
@@ -62,7 +67,7 @@ func handlerToken(request *restful.Request, response *restful.Response) {
 }
 
 func handlerUserInfo(request *restful.Request, response *restful.Response) {
-	accessToken := request.QueryParameter("access_token")
+	accessToken := httpserver.GetAccessToken(request)
 	userInfo, err := auth.GetUserInfo(accessToken)
 	if err != nil {
 		_ = response.WriteError(500, err)
@@ -73,12 +78,7 @@ func handlerUserInfo(request *restful.Request, response *restful.Response) {
 }
 
 func handlerKubeConfig(request *restful.Request, response *restful.Response) {
-	accessToken := request.QueryParameter("access_token")
-	if accessToken == "" {
-		_ = response.WriteError(500, nil)
-		return
-	}
-
+	accessToken := httpserver.GetAccessToken(request)
 	kubeConfig, err := auth.GetKubeConfig(accessToken)
 	if err != nil {
 		_ = response.WriteError(500, err)
