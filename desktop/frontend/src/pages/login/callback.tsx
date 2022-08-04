@@ -3,9 +3,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import fetchAPI from '../../lib/api'
+import { OAuthToken } from '../../store/session'
 
 const Callback: NextPage = () => {
-  const [conf, setConf] = useState('')
+  const [conf, setConf] = useState<any>(null)
   const [redirect, setRedirect] = useState('')
 
   const router = useRouter();
@@ -28,7 +29,7 @@ const Callback: NextPage = () => {
     }
   }, [router.isReady]);
 
-  return <>conf: {conf}<Link href={redirect}>d∏ashboard</Link></>
+  return <>conf: {conf}<Link href={redirect}>dashboard</Link></>
 }
 
 export default Callback

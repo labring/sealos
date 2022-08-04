@@ -23,12 +23,11 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-    - http01:
-        ingress:
-          class: nginx
+      - http01:
+          ingress:
+            class: nginx
 
 ---
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -43,34 +42,36 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/rewrite-target: /$2
+    #@see: https://github.com/nginxinc/kubernetes-ingress/tree/v2.3.0/examples/rewrites
+    # nginx.org/rewrites: "serviceName=desktop-frontend rewrite=/"
   name: nginx-default
   namespace: sealos
 spec:
   rules:
-  - host: cloud.sealos.io
-    http:
-      paths:
-      - pathType: Prefix
-        path: /
-        backend:
-          service:
-            name: desktop-frontend
-            port:
-              number: 3000
-      - pathType: Prefix
-        path: /api(/|$)(.*)
-        backend:
-          service:
-            name: service-auth
-            port:
-              number: 8080
+    - host: cloud.sealos.io
+      http:
+        paths:
+          - pathType: Prefix
+            #@see: https://github.com/kubernetes/ingress-nginx/issues/3122#issuecomment-1125881703
+            path: /()(.*)
+            backend:
+              service:
+                name: desktop-frontend
+                port:
+                  number: 3000
+          - pathType: Prefix
+            path: /api(/|$)(.*)
+            backend:
+              service:
+                name: service-auth
+                port:
+                  number: 8080
   tls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
-  - hosts:
-    - cloud.sealos.io
-    secretName: cloud-sealos-io-cert # < cert-manager will store the created certificate in this secret.
+    - hosts:
+        - cloud.sealos.io
+      secretName: cloud-sealos-io-cert # < cert-manager will store the created certificate in this secret.
 
 ---
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -84,7 +85,7 @@ metadata:
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: nginx-casdoor
   namespace: sealos
 spec:

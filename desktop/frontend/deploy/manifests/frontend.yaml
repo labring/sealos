@@ -54,7 +54,7 @@ metadata:
   name: desktop-frontend-config
   namespace: sealos
 data:
-  auth.yaml: |-
+  config.yaml: |-
     addr: :3000
 
 ---
@@ -81,8 +81,8 @@ spec:
           imagePullPolicy: Always
           volumeMounts:
             - name: desktop-frontend-volume
-              mountPath: /auth.yaml
-              subPath: auth.yaml
+              mountPath: /config.yaml
+              subPath: config.yaml
       volumes:
         - name: desktop-frontend-volume
           configMap:

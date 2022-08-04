@@ -19,8 +19,9 @@
 FROM alpine:latest
 
 RUN sed -i 's/https/http/' /etc/apk/repositories
-RUN apk add curl
-RUN apk add ca-certificates && update-ca-certificates
+RUN apk add curl \
+    && apk add ca-certificates \
+    && update-ca-certificates
 
 WORKDIR /
 COPY /service-auth .

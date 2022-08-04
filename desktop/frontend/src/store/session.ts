@@ -1,5 +1,12 @@
-type Session = {
-  readonly token: string;
+export type OAuthToken = {
+  readonly access_token: string;
+  readonly token_type: string;
+  readonly refresh_token: string;
+  readonly expiry: string;
+};
+
+export type Session = {
+  readonly token: OAuthToken;
   readonly uid: string;
   readonly user_name: string;
 };
@@ -21,7 +28,7 @@ export function getUserInfo() {
 
     if (got && got !== '') {
       const got_obj = JSON.parse(got);
-      if (got_obj && got_obj.token !== '') {
+      if (got_obj && got_obj.token !== undefined) {
         session = got_obj;
       }
     }
