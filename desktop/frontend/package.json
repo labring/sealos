@@ -10,17 +10,17 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
-    "antd": "4.22.0",
-    "next": "12.2.3",
+    "antd": "4.22.3",
+    "next": "12.2.4",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@types/node": "18.6.1",
+    "@types/node": "18.6.4",
     "@types/react": "18.0.15",
     "@types/react-dom": "18.0.6",
-    "eslint": "8.20.0",
-    "eslint-config-next": "12.2.3",
+    "eslint": "8.21.0",
+    "eslint-config-next": "12.2.4",
     "typescript": "4.7.4"
   }
 }
