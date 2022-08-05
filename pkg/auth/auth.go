@@ -19,6 +19,7 @@ import (
 	"github.com/labring/sealos/pkg/auth/sso"
 	"github.com/labring/sealos/pkg/auth/utils"
 	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -41,8 +42,16 @@ func GetLoginRedirect() (string, error) {
 	return redirectURL, errors.Wrap(err, "Get redirect url failed")
 }
 
-func GetKubeConfig(state, code string) (string, error) {
-	user, err := ssoClient.GetUserInfo(state, code)
+func GetOAuthToken(state, code string) (*oauth2.Token, error) {
+	return ssoClient.GetToken(state, code)
+}
+
+func GetUserInfo(accessToken string) (*sso.User, error) {
+	return ssoClient.GetUserInfo(accessToken)
+}
+
+func GetKubeConfig(accessToken string) (string, error) {
+	user, err := ssoClient.GetUserInfo(accessToken)
 	if err != nil {
 		return "", errors.Wrap(err, "Get user info failed")
 	}

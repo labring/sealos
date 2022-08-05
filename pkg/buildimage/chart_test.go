@@ -15,46 +15,38 @@
 package buildimage
 
 import (
+	"reflect"
 	"testing"
 )
 
-func TestChart_getImage(t *testing.T) {
-	type fields struct {
-		File string
-		Path string
-	}
+func TestParseChartImages(t *testing.T) {
 	type args struct {
-		aaa string
+		chartPath string
 	}
 	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
+		name    string
+		args    args
+		want    []string
+		wantErr bool
 	}{
 		{
-			name: "success",
+			name: "chart",
 			args: args{
-				"- image: quay.io/cilium/operator-generic:v1.11.0@sha256:b522279577d0d5f1ad7cadaacb7321d1b172d8ae8c8bc816e503c897b420cfe3",
+				chartPath: "test/charts",
 			},
-			want: "quay.io/cilium/operator-generic:v1.11.0",
-		},
-		{
-			name: "success",
-			args: args{
-				`image: "quay.io/cilium/cilium:v1.11.0@sha256:ea677508010800214b0b5497055f38ed3bff57963fa2399bcb1c69cf9476453a"`,
-			},
-			want: "quay.io/cilium/cilium:v1.11.0",
+			want:    []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := Chart{
-				File: tt.fields.File,
-				Path: tt.fields.Path,
+			got, err := ParseChartImages(tt.args.chartPath)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseChartImages() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
-			if got := c.getImage(tt.args.aaa); got != tt.want {
-				t.Errorf("getImage() = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseChartImages() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

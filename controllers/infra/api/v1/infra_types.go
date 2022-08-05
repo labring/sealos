@@ -89,6 +89,22 @@ type Hosts struct {
 	Image    string     `json:"image,omitempty"`
 	Disks    []Disk     `json:"disks,omitempty"`
 	Metadata []Metadata `json:"metadata,omitempty"`
+	// Find the mapping between expected hosts and actual hosts
+	Index int `json:"index,omitempty"`
+}
+
+type IndexHosts []Hosts
+
+func (hosts IndexHosts) Len() int {
+	return len(hosts)
+}
+
+func (hosts IndexHosts) Less(i, j int) bool {
+	return hosts[i].Index < hosts[j].Index
+}
+
+func (hosts IndexHosts) Swap(i, j int) {
+	hosts[i], hosts[j] = hosts[j], hosts[i]
 }
 
 type Disk struct {

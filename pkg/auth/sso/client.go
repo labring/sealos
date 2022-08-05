@@ -19,16 +19,20 @@ import (
 
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"golang.org/x/oauth2"
 )
 
 type User struct {
-	ID   string
-	Name string
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
 }
 
 type Client interface {
 	GetRedirectURL() (string, error)
-	GetUserInfo(state, code string) (User, error)
+	GetToken(state, code string) (*oauth2.Token, error)
+	GetUserInfo(accessToken string) (*User, error)
 }
 
 type ClientType string

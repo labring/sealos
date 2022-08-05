@@ -11,44 +11,50 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package buildimage
 
 import (
+	"fmt"
 	"io/ioutil"
-	"regexp"
+	"path"
 	"strings"
 
+	"github.com/labring/sealos/pkg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/engine"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func ParseChartImages(chartPath string) ([]string, error) {
-	logger.Info("srcPath:", chartPath)
-	var allImages []string
+	logger.Info("lookup in path", chartPath)
+
 	if !file.IsExist(chartPath) {
-		logger.Info("srcPath is empty", chartPath)
+		logger.Info("path %s is not exists, skip", chartPath)
 		return nil, nil
 	}
 	subChartPaths, _ := getChartSub1Paths(chartPath)
 	if len(subChartPaths) == 0 {
 		return []string{}, nil // if chartPath not exist, return []
 	}
+	allImages := sets.NewString()
 	for _, subChartPath := range subChartPaths {
-		logger.Info("subChartPath is:", subChartPath)
-		ccc := Chart{
+		logger.Info("sub chart is", subChartPath)
+		c := Chart{
 			Path: chartPath + "/" + subChartPath,
 		}
-		images, _ := ccc.GetImages()
-		if len(images) >= 1 {
-			allImages = append(allImages, images...)
+		images, _ := c.GetImages()
+		if len(images) > 0 {
+			allImages = allImages.Insert(images...)
 		}
 	}
-	return allImages, nil
+	return allImages.List(), nil
 }
 
 type Chart struct {
@@ -56,19 +62,10 @@ type Chart struct {
 	Path string
 }
 
-// LoadFile loads from an archive file.
-/*
-func (c Chart) loadFile() (*chart.Chart, error) {
-	ccc, err := loader.LoadFile(c.File)
-	if err != nil {
-		return nil, err
-	}
-	return ccc, nil
-}*/
-
 // LoadPath loads from a path.
 func (c Chart) loadPath() (*chart.Chart, error) {
-	ccc, err := loader.LoadDir(c.Path)
+	logger.Debug("trying to load chart %s", c.Path)
+	ccc, err := loader.Load(c.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -82,10 +79,20 @@ func (c Chart) getRenderContent() (map[string]string, error) {
 		return nil, err
 	}
 
+	// todo: remove hardcode
+	valuesFile := path.Join(path.Dir(c.Path), fmt.Sprintf("%s.values.yaml", ccc.Metadata.Name))
+	values := make(map[string]interface{})
+	if file.IsExist(valuesFile) {
+		logger.Debug("found named customize values file %s", valuesFile)
+		if err = yaml.UnmarshalYamlFromFile(valuesFile, &values); err != nil {
+			return nil, err
+		}
+	}
+
 	options := chartutil.ReleaseOptions{
 		Name: "dryrun",
 	}
-	valuesToRender, err := chartutil.ToRenderValues(ccc, nil, options, nil)
+	valuesToRender, err := chartutil.ToRenderValues(ccc, values, options, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -101,10 +108,7 @@ func (c Chart) GetImages() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var images []string
-	var tmp string
-	rrr := regexp.MustCompile(`\simage:`)
-
+	list := sets.NewString()
 	delLF := func(a string) string {
 		return strings.Replace(a, "\n", "", -1)
 	}
@@ -113,37 +117,13 @@ func (c Chart) GetImages() ([]string, error) {
 		if delLF(v) == "" { // Text has no content
 			continue
 		}
-
-		for _, s := range strings.Split(v, "\n") {
-			if rrr.MatchString(s) {
-				image := c.getImage(s)
-				if image != tmp {
-					images = append(images, image)
-					tmp = image
-				}
-			}
+		images, err := manifests.ParseImages(v)
+		if err != nil {
+			return images, err
 		}
+		list = list.Insert(images...)
 	}
-	return images, nil
-}
-
-func (c Chart) getImage(aaa string) string {
-	blankReg := regexp.MustCompile(`[\s\p{Zs}]{1,}`)
-	shaReg := regexp.MustCompile(`@.*$`)
-
-	delBlank := func(a string) string {
-		return blankReg.ReplaceAllString(a, "")
-	}
-	delImageSha := func(a string) string {
-		return shaReg.ReplaceAllString(a, "")
-	}
-	// add del -image: and image:
-	delImageReg := regexp.MustCompile(`-{0,1}image:`)
-	delImage := func(str string) string {
-		return delImageReg.ReplaceAllString(str, "")
-	}
-
-	return delImageSha(strings.Replace(delImage(delBlank(aaa)), "\"", "", -1))
+	return list.List(), nil
 }
 
 // from charts dir get 1 sub path,not nested
@@ -154,7 +134,7 @@ func getChartSub1Paths(pp string) ([]string, error) {
 		return nil, err
 	}
 	for _, d := range dir {
-		if d.IsDir() {
+		if d.IsDir() || strings.HasSuffix(d.Name(), "tgz") {
 			paths = append(paths, d.Name())
 		}
 	}

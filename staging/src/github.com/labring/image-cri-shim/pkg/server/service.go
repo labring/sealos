@@ -92,7 +92,9 @@ func (s *server) ImageFsInfo(ctx context.Context,
 
 	return rsp, err
 }
-func (s *server) replaceImage(image, action string) string {
+
+// replaceImage replaces the image name to a new valid image name with the private registry.
+func (s *server) replaceImage(image, action string) (newImage string) {
 	// TODO we can change the image name of req, and make the cri pull the image we need.
 	// for example:
 	// req.Image.Image = "sealer.hub/library/nginx:1.1.1"
@@ -100,41 +102,67 @@ func (s *server) replaceImage(image, action string) string {
 	// note:
 	// but kubelet sometimes will invoke imageService.RemoveImage() or something else. The req.Image.Image will the original name.
 	// so we'd better tag "sealer.hub/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
-	//for image id
+	//for image id]
+	newImage = image
 	images, err := utils.RunBashCmd("crictl images -q")
 	if err != nil {
-		logger.Warn("exec crictl images -q error: %s", err.Error())
-		return image
+		logger.Warn("error executing `crictl images -q`: %s", err.Error())
+		return
 	}
 	if utils.IsImageID(images, image) {
-		logger.Info("image: %s is imageID,skip replace", image)
-		return image
+		logger.Info("image %s already exist, skipping", image)
+		return
 	}
-	//for image name
-	domain, named := splitDockerDomain(image)
-	logger.Info("domain: %s,named: %s,action: %s", domain, named, action)
+
+	domain, imageName := splitDockerDomain(image)
+	logger.Info("domain: %s, imageName: %s, action: %s", domain, imageName, action)
+	name, tag := parseImageNameAndTag(imageName)
+	tag = stripTagDigest(tag)
+	newImageName := name + ":" + tag
+
+	// there's no list of image-shims, or image is not found on the list
 	if len(ShimImages) == 0 || (len(ShimImages) != 0 && utils.NotIn(image, ShimImages)) {
-		if utils.RegistryHasImage(SealosHub, Base64Auth, named) {
-			newImage := getRegistrDomain() + "/" + named
-			logger.Info("begin image: %s ,after image: %s", image, newImage)
-			return newImage
+		if utils.RegistryHasImage(SealosHub, Base64Auth, name, tag) {
+			newImage = prependRegistry(newImageName)
+		} else {
+			logger.Info("image %s not found in registry, skipping", newImageName)
+			newImage = joinDockerDomain(domain, newImageName)
 		}
-		logger.Info("skip replace images %s", image)
-		return image
+	} else if SealosHub != "" && domain != "" {
+		// image found on the list, and there is a private registry and a domain in the original image
+		newImage = prependRegistry(newImageName)
 	}
 
-	fixImageName := image
-	if SealosHub != "" {
-		if domain != "" {
-			fixImageName = getRegistrDomain() + "/" + named
-		}
-	}
-
-	if Debug {
-		logger.Info("begin image: %s ,after image: %s , action: %s", image, fixImageName, action)
-	}
-	return fixImageName
+	logger.Info("begin image: %s, after image: %s, action: %s", image, newImage, action)
+	return
 }
+
+// parseImageNameAndTag splits the input image name into its name and tag.
+func parseImageNameAndTag(imageName string) (name, tag string) {
+	imageSplitted := strings.Split(imageName, ":")
+	name, tag = imageSplitted[0], "latest"
+	if len(imageSplitted) > 1 {
+		tag = imageSplitted[1]
+	}
+
+	return
+}
+
+// stripTagDigest strips the digest from the tag, and returns the stripped tag.
+func stripTagDigest(tag string) string {
+	tagSplitted := strings.Split(tag, "@")
+	if len(tagSplitted) > 1 {
+		logger.Info("stripped digest in tag: %s", tagSplitted[1])
+	}
+	return tagSplitted[0]
+}
+
+// prependRegistry prepends the private registry to the imageName.
+func prependRegistry(imageName string) string {
+	return getRegistryDomain() + "/" + imageName
+}
+
+// splitDockerDomain splits image into domain and remainder as well as normalizes them.
 func splitDockerDomain(name string) (domain, remainder string) {
 	i := strings.IndexRune(name, '/')
 	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && strings.ToLower(name[:i]) == name[:i]) {
@@ -149,4 +177,12 @@ func splitDockerDomain(name string) (domain, remainder string) {
 		remainder = officialRepoName + "/" + remainder
 	}
 	return
+}
+
+// joinDockerDomain joins the domain and the remainder, which is sort of the inverse of splitDockerDomain.
+func joinDockerDomain(domain, remainder string) string {
+	if domain == "" {
+		return remainder
+	}
+	return domain + "/" + remainder
 }
