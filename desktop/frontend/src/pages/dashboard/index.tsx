@@ -4,7 +4,7 @@ import styles from './dashboard.module.css'
 import { SearchOutlined } from '@ant-design/icons';
 import { Tooltip, Button } from 'antd'
 
-const Login: NextPage = () => {
+const Dashboard: NextPage = () => {
   return (
     <div className={styles.container}>
       <Head>
@@ -14,11 +14,11 @@ const Login: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <div className={styles.menu}> header menu</div>
+        <div className={styles.menu}>header menu</div>
 
         <div className={styles.container}>
-          <iframe className={styles.iframe} src="https://sealos.io/" title="sealos.io" />
-        </div>
+          <iframe className={styles.iframe} src="https://kubernetes-dashboard.cloud.sealos.io/" title="kubernetes-dashboard-cloud-sealos-io" />
+        </div>ß
 
         <div className={styles.dock}>
           <Tooltip title="search">
@@ -33,4 +33,4 @@ const Login: NextPage = () => {
   )
 }
 
-export default Login
+export default Dashboard
