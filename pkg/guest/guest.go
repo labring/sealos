@@ -95,7 +95,8 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 	overrideCmd := cluster.Spec.Command
 
 	for idx, i := range mounts {
-		mapping := expansion.MappingFuncFor(maps.MergeMap(envs, i.Env))
+		mergeENV := maps.MergeMap(i.Env, envs)
+		mapping := expansion.MappingFuncFor(mergeENV)
 		for _, cmd := range i.Entrypoint {
 			command = append(command, expansion.Expand(cmd, mapping))
 		}
