@@ -115,9 +115,10 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
 
    ```shell
    golangci-lint run -c .golangci.yml # lint
+   git add -A
    git commit -a -s -m "message for your changes" # -a is git add ., -s adds a Signed-off-by trailer
    git rebase -i	<commit-id> # do this if your pr has multiple commits
-   git push # push to your forked repository after rebase done
+   git push # push to your forked repository after rebase done, if it's first time push, run git push --set-upstream origin <new-branch>
    ```
 
    If you don't want to use `git rebase -i`, you can use `git commit -s --amend && git push -f`
@@ -128,10 +129,10 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
    # create new branch, for example git checkout -b feature/infra
    git checkout -b <new branch>
    # update some code, feature1
+   git add -A
    git commit -m -s "init infra"
-   git push
+   git push # if it's first time push, run git push --set-upstream origin <new-branch>
    # then create pull request, and merge
-
    # update some new feature, feature2, rebase main branch first.
    git rebase upstream/main
    git commit -m -s "init infra"
