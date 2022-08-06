@@ -108,7 +108,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	})
 	// Set name tag
 	nameKey := "Name"
-	nameValue := labelValue + "-" + strconv.Itoa(hosts.Index)
+	nameValue := fmt.Sprintf("%s-%d", labelValue, hosts.Index)
 	tags = append(tags, types.Tag{
 		Key:   &nameKey,
 		Value: &nameValue,
