@@ -19,6 +19,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -85,17 +86,32 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 }
 
 func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
-	// Tag name and tag value
-	name := common.InfraInstancesLabel
-	value := infra.GetInstancesTag()
 	client := d.Client
 	var count = int32(hosts.Count)
 
-	// TODO add the index tags, key: commono.InfraInstancesIndex value: hosts.Index
+	// Tag name and tag value
+	// Set role tag
 	tags := rolesToTags(hosts.Roles)
+	// Set label tag
+	labelKey := common.InfraInstancesLabel
+	labelValue := infra.GetInstancesTag()
 	tags = append(tags, types.Tag{
-		Key:   &name,
-		Value: &value,
+		Key:   &labelKey,
+		Value: &labelValue,
+	})
+	// Set index tag
+	indexKey := common.InfraInstancesIndex
+	indexValue := strconv.Itoa(hosts.Index)
+	tags = append(tags, types.Tag{
+		Key:   &indexKey,
+		Value: &indexValue,
+	})
+	// Set name tag
+	nameKey := "Name"
+	nameValue := fmt.Sprintf("%s-%d", labelValue, hosts.Index)
+	tags = append(tags, types.Tag{
+		Key:   &nameKey,
+		Value: &nameValue,
 	})
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
