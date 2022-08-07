@@ -19,8 +19,9 @@ package aws
 import (
 	"context"
 	"fmt"
-	"github.com/labring/sealos/controllers/infra/common"
 	"strconv"
+
+	"github.com/labring/sealos/controllers/infra/common"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 
