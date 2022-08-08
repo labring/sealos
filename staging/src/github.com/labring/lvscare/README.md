@@ -63,10 +63,11 @@ iptables -t nat -N VIRTUAL-MARK-MASQ
 ipset create VIRTUAL-IP hash:ip,port -exist
 iptables -t nat -A VIRTUAL-SERVICES -m comment --comment "virtual service ip + port for masquerade purpose" -m set --match-set VIRTUAL-IP dst,dst -j VIRTUAL-MARK-MASQ
 # do mark
-iptables -t nat -A VIRTUAL-MARK-MASQ -j MARK --set-xmark 0x2
+iptables -t nat -A VIRTUAL-MARK-MASQ -j MARK --set-xmark 0x2/0x2
 # do snat at POSTROUTING
 iptables -t nat -N VIRTUAL-POSTROUTING
 iptables -t nat -A POSTROUTING -m comment --comment "virtual service postrouting rules" -j VIRTUAL-POSTROUTING
+iptables -t nat -A VIRTUAL-POSTROUTING -m mark ! --mark 0x2/0x2 -j RETURN
 iptables -t nat -A VIRTUAL-POSTROUTING -m comment --comment "virtual service traffic requiring SNAT" -m mark --mark 0x2 -j MASQUERADE
 
 iptables -t nat -A OUTPUT -m comment --comment "virtual service portals" -j VIRTUAL-SERVICES
