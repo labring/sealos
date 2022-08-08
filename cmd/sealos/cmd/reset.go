@@ -34,7 +34,7 @@ var resetArgs apply.ResetArgs
 func newResetCmd() *cobra.Command {
 	var resetCmd = &cobra.Command{
 		Use:     "reset",
-		Short:   "Simplest way to reset your cluster",
+		Short:   "simplest way to reset your cluster",
 		Long:    `sealos reset --name [arg]`,
 		Example: exampleReset,
 		Args:    cobra.NoArgs,

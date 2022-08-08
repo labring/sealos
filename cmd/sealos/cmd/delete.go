@@ -74,7 +74,7 @@ func newDeleteCmd() *cobra.Command {
 	deleteCmd.Flags().StringVarP(&deleteArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
 	deleteCmd.Flags().StringVarP(&deleteArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
 	deleteCmd.Flags().StringVarP(&deleteArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
-	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "We also can input an --force flag to delete cluster by force")
+	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
 	return deleteCmd
 }
 

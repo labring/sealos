@@ -24,7 +24,7 @@ func newRMICmd() *cobra.Command {
 	var force bool
 	var rmiCmd = &cobra.Command{
 		Use:     "rmi",
-		Short:   "Remove one or more cloud images",
+		Short:   "remove one or more cloud images",
 		Example: `sealos rmi [-f] labring/kubernetes:v1.24.0`,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

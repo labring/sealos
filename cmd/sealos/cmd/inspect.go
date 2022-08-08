@@ -37,7 +37,7 @@ var inspectType string
 func newInspectCmd() *cobra.Command {
 	var inspectCmd = &cobra.Command{
 		Use:     "inspect",
-		Short:   "Inspect the configuration of a application or image",
+		Short:   "inspect the configuration of a application or image",
 		Example: exampleInspect,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
