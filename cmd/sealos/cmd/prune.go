@@ -23,7 +23,7 @@ import (
 func newPruneCmd() *cobra.Command {
 	var pruneCmd = &cobra.Command{
 		Use:     "prune",
-		Short:   "prune  image ",
+		Short:   "prune image",
 		Example: `sealos prune`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
