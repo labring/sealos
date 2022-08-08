@@ -16,6 +16,10 @@ TerminalSpec
 - user(string)
 - token(string)
 - keepalived(string) 
+- apiServer(string)
+
+  APIServer address of the cluster. Default to https://apiserver.svc.cluster.local:6443
+
 - ttyImage(string)
 
     TTY Image Name. 

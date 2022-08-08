@@ -36,7 +36,8 @@ import (
 )
 
 const (
-	FinalizerName = "terminal.sealos.io/finalizer"
+	FinalizerName    = "terminal.sealos.io/finalizer"
+	DefaultAPIServer = "https://apiserver.svc.cluster.local:6443"
 )
 
 // TerminalReconciler reconciles a Terminal object
@@ -80,6 +81,10 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			}
 		}
 		return ctrl.Result{}, nil
+	}
+
+	if err := r.fillDefaultValue(ctx, terminal); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	if err := r.syncDeployment(ctx, terminal); err != nil {
@@ -203,6 +208,14 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	}); err != nil {
 		logger.Debug("create or update deployment error: %v", err)
 		return err
+	}
+	return nil
+}
+
+func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *terminalv1.Terminal) error {
+	if terminal.Spec.APIServer == "" {
+		terminal.Spec.APIServer = DefaultAPIServer
+		return r.Update(ctx, terminal)
 	}
 	return nil
 }

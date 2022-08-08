@@ -49,7 +49,6 @@ spec:
               user:
                 type: string
             required:
-            - apiServer
             - keepalived
             - replicas
             - token

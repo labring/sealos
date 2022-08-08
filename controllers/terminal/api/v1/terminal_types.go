@@ -33,13 +33,13 @@ type TerminalSpec struct {
 	//+kubebuilder:validation:Required
 	Token string `json:"token"`
 	//+kubebuilder:validation:Required
-	APIServer string `json:"apiServer"`
-	//+kubebuilder:validation:Required
 	TTYImage string `json:"ttyImage"`
 	//+kubebuilder:validation:Required
 	Replicas *int32 `json:"replicas"`
 	//+kubebuilder:validation:Required
 	Keepalived string `json:"keepalived"`
+	//+kubebuilder:validation:Optional
+	APIServer string `json:"apiServer"`
 }
 
 // TerminalStatus defines the observed state of Terminal
