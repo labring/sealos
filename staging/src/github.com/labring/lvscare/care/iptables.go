@@ -237,6 +237,12 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 				"-j", "MARK", "--or-mark", impl.masqueradeMark,
 			},
 		},
+		// RETURN directly for packets those didn't marked
+		{
+			utiliptables.Append, utiliptables.TableNAT, virtualPostroutingChain, []string{
+				"-m", "mark", "!", "--mark", impl.masqueradeMark, "-j", "RETURN",
+			},
+		},
 	}
 	masqArgs := []string{
 		"-m", "comment", "--comment", `virtual service traffic requiring SNAT`,
