@@ -1,5 +1,5 @@
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2022 sealos.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,19 +14,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package http
 
 import (
-	"net"
+	http2 "net/http"
+	"net/url"
+	"time"
+
+	"github.com/labring/endpoints-operator/library/probe/http"
+	"github.com/pkg/errors"
 )
 
-// IsIpv4 returns if netIP is IPv4.
-func IsIpv4(ip string) bool {
-	netIP := net.ParseIP(ip)
-	return netIP != nil && netIP.To4() != nil
-}
-
-// IsIPv6 returns if netIP is IPv6.
-func IsIPv6(netIP net.IP) bool {
-	return netIP != nil && netIP.To4() == nil
+func Request(address string, header map[string]string) (string, error) {
+	prob := http.New(false)
+	timeout := time.Duration(10) * time.Second
+	url, err := url.Parse(address)
+	if url != nil {
+		head := http2.Header{}
+		for k, v := range header {
+			head.Add(k, v)
+		}
+		_, data, err := prob.Probe(url, head, timeout)
+		return data, err
+	}
+	return "", errors.Wrap(err, "convert url error")
 }

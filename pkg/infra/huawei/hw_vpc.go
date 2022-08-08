@@ -143,7 +143,7 @@ func (a *HwProvider) DeleteVPC() error {
 //func (a *HwProvider) BindEipForMaster0() error {
 //	var host *v1beta1.Host
 //	for i, h := range a.Infra.Status.Hosts {
-//		if v1beta1.In(v1beta1.Master, h.Roles) && h.Ready {
+//		if strings2.In(v1beta1.Master, h.Roles) && h.Ready {
 //			host = &a.Infra.Spec.Hosts[i]
 //			break
 //		}

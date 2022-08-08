@@ -21,39 +21,7 @@ import (
 	"net/url"
 )
 
-//IPFormat is
-func IPFormat(ipStr string) string {
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
-		host, _, err := net.SplitHostPort(ipStr)
-		if err != nil {
-			//logger.Error("invalied host fomat [%s], must like 172.0.0.2:22.error: %s", ipStr, err)
-			return ""
-		}
-		ip = net.ParseIP(host)
-	}
-	if ip == nil {
-		//logger.Error("invalied host fomat [%s], must like 172.0.0.2:22", ipStr)
-		return ""
-	}
-	return ip.String()
-}
-
-func HostnameAndIP(node []string) ([]string, []string) {
-	var resHost, resIP []string
-	if len(node) == 0 {
-		return node, node
-	}
-	for _, n := range node {
-		if !IsIpv4(n) {
-			resHost = append(resHost, n)
-		} else {
-			resIP = append(resIP, n)
-		}
-	}
-	return resHost, resIP
-}
-
+// IsIpv4 returns if netIP is IPv4.
 func IsIpv4(ip string) bool {
 	netIP := net.ParseIP(ip)
 	return netIP != nil && netIP.To4() != nil
@@ -64,6 +32,7 @@ func IsIPv6(netIP net.IP) bool {
 	return netIP != nil && netIP.To4() == nil
 }
 
+// CheckDomain returns if the domain is valid.
 func CheckDomain(domain string) bool {
 	_, errURL := url.Parse(domain)
 	return errURL == nil

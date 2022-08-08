@@ -20,6 +20,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
@@ -162,7 +163,7 @@ func (a *AliProvider) GetAvailableZoneID() error {
 func (a *AliProvider) BindEipForMaster0() error {
 	var host *v1beta1.InfraHost
 	for _, h := range a.Infra.Status.Hosts {
-		if v1beta1.In(v1beta1.Master, h.Roles) && h.Ready {
+		if strings2.In(v1beta1.Master, h.Roles) && h.Ready {
 			host = h.ToHost()
 			break
 		}

@@ -22,7 +22,7 @@ import (
 	goruntime "runtime"
 	"strings"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/file"
 
 	toml "github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
@@ -141,7 +141,7 @@ func (runtime *ContainerdRuntime) CGroupDriver() (string, error) {
 
 func (runtime *ContainerdRuntime) configFile() {
 	const defaultConfig = "/etc/containerd/config.toml"
-	if !utils.IsExist(runtime.config) {
+	if !file.IsExist(runtime.config) {
 		runtime.config = defaultConfig
 	}
 }
@@ -174,7 +174,7 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 		} `toml:"plugins"`
 	}
 	config := &Config{}
-	if utils.IsExist(runtime.config) {
+	if file.IsExist(runtime.config) {
 		data, err := ioutil.ReadFile(runtime.config)
 		if err != nil {
 			return "", err
