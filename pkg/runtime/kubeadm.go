@@ -345,7 +345,7 @@ func getEtcdEndpointsWithHTTPSPrefix(masters []string) string {
 	return strings.Join(tmpSlice, ",")
 }
 
-//nolint
+//nolint:all
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 	k.JoinConfiguration.NodeRegistration.CRISocket = criSocket
 	k.InitConfiguration.NodeRegistration.CRISocket = criSocket

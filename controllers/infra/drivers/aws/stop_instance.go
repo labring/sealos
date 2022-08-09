@@ -41,12 +41,15 @@ type EC2StopInstancesAPI interface {
 
 // StopInstance stops an Amazon Elastic Compute Cloud (Amazon EC2) instance.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a StopInstancesOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to StopInstances.
+//
+//	If success, a StopInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to StopInstances.
 func StopInstance(c context.Context, api EC2StopInstancesAPI, input *ec2.StopInstancesInput) (*ec2.StopInstancesOutput, error) {
 	resp, err := api.StopInstances(c, input)
 

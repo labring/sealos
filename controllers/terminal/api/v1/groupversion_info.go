@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the terminal v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=terminal.sealos.io
+// +kubebuilder:object:generate=true
+// +groupName=terminal.sealos.io
 package v1
 
 import (
