@@ -28,8 +28,8 @@ import (
 	"github.com/labring/image-cri-shim/pkg/cri"
 	"github.com/labring/image-cri-shim/pkg/server"
 	"github.com/labring/image-cri-shim/pkg/shim"
-	"github.com/labring/image-cri-shim/pkg/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -50,7 +50,7 @@ var rootCmd = &cobra.Command{
 		run(shimSocket, criSocket)
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		data, err := utils.Unmarshal(server.ConfigFile)
+		data, err := yaml.Unmarshal(server.ConfigFile)
 		if err != nil {
 			return errors.Wrap(err, "image shim config load error")
 		}

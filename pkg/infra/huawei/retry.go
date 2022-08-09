@@ -99,7 +99,7 @@ func (a *HwProvider) TryGetInstance(request *ecs.DescribeInstancesRequest, respo
 		//	if instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress == "" {
 		//		return errors.New("PrimaryIpAddress cannt nob be nil")
 		//	}
-		//	if len(ipList) != 0 && !utils.NotIn(instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress, ipList) {
+		//	if len(ipList) != 0 && utils.In(instance.NetworkInterfaces.NetworkInterface[0].PrimaryIpAddress, ipList) {
 		//		return errors.New("PrimaryIpAddress cannt nob be same")
 		//	}
 		//

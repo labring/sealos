@@ -23,8 +23,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	netutil "github.com/labring/sealos/pkg/utils/net"
 	"google.golang.org/grpc"
 	k8sapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
@@ -81,7 +81,7 @@ func (s *server) Start() error {
 		_ = s.server.Serve(s.listener)
 	}()
 
-	if err := utils.WaitForServer(s.options.Socket, time.Second); err != nil {
+	if err := netutil.WaitForServer(s.options.Socket, time.Second); err != nil {
 		return serverError("starting CRI server failed: %v", err)
 	}
 
@@ -101,7 +101,7 @@ func (s *server) createGrpcServer() error {
 
 	l, err := net.Listen("unix", s.options.Socket)
 	if err != nil {
-		if utils.ServerActiveAt(s.options.Socket) {
+		if netutil.ServerActiveAt(s.options.Socket) {
 			return serverError("failed to create server: socket %s already in use",
 				s.options.Socket)
 		}

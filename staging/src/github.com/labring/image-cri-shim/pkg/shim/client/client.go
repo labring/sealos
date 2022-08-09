@@ -23,8 +23,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
-
+	netutil "github.com/labring/sealos/pkg/utils/net"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
@@ -176,7 +175,7 @@ func (c *client) connect(kind, socket string, options ConnectOptions) (*grpc.Cli
 	}
 
 	if options.Wait {
-		if err = utils.WaitForServer(socket, -1, dialOpts, &cc); err != nil {
+		if err = netutil.WaitForServer(socket, -1, dialOpts, &cc); err != nil {
 			return nil, clientError("failed to connect to %s: %v", kind, err)
 		}
 	} else {

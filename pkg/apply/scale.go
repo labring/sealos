@@ -225,7 +225,7 @@ func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 func returnFilteredIPList(clusterIPList []string, toBeDeletedIPList []string, defaultPort string) (res []string) {
 	toBeDeletedIPList = fillIPAndPort(toBeDeletedIPList, defaultPort)
 	for _, ip := range clusterIPList {
-		if strings2.NotIn(ip, toBeDeletedIPList) {
+		if !strings2.In(ip, toBeDeletedIPList) {
 			res = append(res, net.JoinHostPort(iputils.GetHostIPAndPortOrDefault(ip, defaultPort)))
 		}
 	}

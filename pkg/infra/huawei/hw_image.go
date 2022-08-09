@@ -151,7 +151,7 @@ package huawei
 //	//}
 //	//for _, i := range response.InstanceTypes.InstanceType {
 //	//	if i.CpuCoreCount == host.CPU && int(i.MemorySize) == host.Memory {
-//	//		if v1beta1.In(i.InstanceTypeId, systemInstanceTypes) {
+//	//		if strings2.In(i.InstanceTypeId, systemInstanceTypes) {
 //	//			logger.Debug("host tags is %v,append InstanceType is %s", host.Roles, i.InstanceTypeId)
 //	//			instanceTypes = append(instanceTypes, i.InstanceTypeId)
 //	//		}

@@ -21,7 +21,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/labring/lvscare/pkg/utils"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/vishvananda/netlink"
@@ -43,7 +43,7 @@ func New(host, gateway string) *Route {
 
 func validateIPv4Type(addresses ...string) error {
 	for i := range addresses {
-		if !utils.IsIpv4(addresses[i]) {
+		if !iputils.IsIpv4(addresses[i]) {
 			return fmt.Errorf(ErrNotIPV4Fmt, addresses[i])
 		}
 	}
