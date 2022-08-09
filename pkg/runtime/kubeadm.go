@@ -74,7 +74,7 @@ func (k *KubeadmRuntime) setAPIVersion(apiVersion string) {
 	k.JoinConfiguration.APIVersion = apiVersion
 }
 
-//GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
+// GetterKubeadmAPIVersion is covert version to kubeadmAPIServerVersion
 // The support matrix will look something like this now and in the future:
 // v1.10 and earlier: v1alpha1
 // v1.11: v1alpha1 read-only, writes only v1alpha2 Config

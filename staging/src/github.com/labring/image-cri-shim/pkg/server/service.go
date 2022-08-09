@@ -18,11 +18,11 @@ import (
 	"context"
 	"strings"
 
-	img "github.com/labring/sealos/pkg/utils/images"
-	str "github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/labring/sealos/pkg/utils/logger"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+
+	img "github.com/labring/sealos/pkg/utils/images"
+	"github.com/labring/sealos/pkg/utils/logger"
+	str "github.com/labring/sealos/pkg/utils/strings"
 )
 
 const (

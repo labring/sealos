@@ -26,9 +26,9 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/common/pkg/config"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/pkg/errors"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type fromReply struct {

@@ -33,7 +33,7 @@ const (
 	DefaultHostsPath         = "/etc/hosts"
 )
 
-//CRD kind
+// CRD kind
 const (
 	Config  = "Config"
 	Cluster = "Cluster"

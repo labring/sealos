@@ -22,8 +22,8 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-//this package unmarshal blobs from json into a BlobList struct
-//then return a slice of blob digest
+// this package unmarshal blobs from json into a BlobList struct
+// then return a slice of blob digest
 type BlobList struct {
 	Layers    []distribution.Descriptor `json:"layers"`
 	Config    distribution.Descriptor   `json:"config"`

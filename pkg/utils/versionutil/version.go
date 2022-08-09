@@ -82,7 +82,7 @@ func For120(version string) bool {
 	return false
 }
 
-//ToInt v1.15.6  => 115
+// ToInt v1.15.6  => 115
 func ToInt(version string) int {
 	// v1.15.6  => 1.15.6
 	version = strings.Replace(version, "v", "", -1)
@@ -96,7 +96,7 @@ func ToInt(version string) int {
 	return 0
 }
 
-//ToIntAll v1.19.1 ==> 1191
+// ToIntAll v1.19.1 ==> 1191
 func ToIntAll(version string) int {
 	version = strings.Replace(version, "v", "", -1)
 	arr := strings.Split(version, ".")
@@ -109,7 +109,7 @@ func ToIntAll(version string) int {
 	return 0
 }
 
-//Compare is version compare
+// Compare is version compare
 // if v1 >= v2 return true, else return false
 func Compare(v1, v2 string) bool {
 	v1 = strings.Replace(v1, "v", "", -1)
