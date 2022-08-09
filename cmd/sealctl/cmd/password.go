@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -52,7 +51,7 @@ func newRegistryCmd() *cobra.Command {
 				return
 			}
 			logger.Debug("password registry is %s", pwd)
-			err := ioutil.WriteFile(pwdPath, []byte(pwd), 0755)
+			err := os.WriteFile(pwdPath, []byte(pwd), 0755)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 
 	"github.com/containers/buildah/util"
@@ -193,7 +192,7 @@ func manifestPush(systemContext *types.SystemContext, store storage.Store, listI
 	}
 
 	if opts.Digestfile != "" {
-		if err = ioutil.WriteFile(opts.Digestfile, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(opts.Digestfile, []byte(digest.String()), 0644); err != nil {
 			return util.GetFailureCause(err, errors.Wrapf(err, "failed to write digest to file %q", opts.Digestfile))
 		}
 	}

@@ -17,7 +17,6 @@ package registry
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"runtime"
 
@@ -245,7 +244,7 @@ func manifestPush(systemContext *ct.SystemContext, store storage.Store, listImag
 	}
 
 	if opts.Digestfile != "" {
-		if err = ioutil.WriteFile(opts.Digestfile, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(opts.Digestfile, []byte(digest.String()), 0644); err != nil {
 			return util.GetFailureCause(err, errors.Wrapf(err, "failed to write digest to file %q", opts.Digestfile))
 		}
 	}

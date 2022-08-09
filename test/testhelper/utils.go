@@ -16,7 +16,6 @@ package testhelper
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -40,7 +39,7 @@ func GetPwd() string {
 
 func CreateTempFile() string {
 	dir := os.TempDir()
-	file, err := ioutil.TempFile(dir, "tmpfile")
+	file, err := os.CreateTemp(dir, "tmpfile")
 	CheckErr(err)
 	defer CheckErr(file.Close())
 	return file.Name()
@@ -58,7 +57,7 @@ func WriteFile(fileName string, content []byte) error {
 		}
 	}
 
-	return ioutil.WriteFile(fileName, content, settings.FileMode0644)
+	return os.WriteFile(fileName, content, settings.FileMode0644)
 }
 
 type SSHClient struct {
@@ -84,7 +83,7 @@ func IsFileExist(filename string) bool {
 }
 
 func UnmarshalYamlFile(file string, obj interface{}) error {
-	data, err := ioutil.ReadFile(filepath.Clean(file))
+	data, err := os.ReadFile(filepath.Clean(file))
 	if err != nil {
 		return err
 	}

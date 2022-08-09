@@ -17,7 +17,6 @@ package ssh
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -43,7 +42,7 @@ func (s *SSH) RemoteMd5Sum(host, remoteFilePath string) string {
 	return remoteMD5
 }
 
-//CmdToString is in host exec cmd and replace to spilt str
+// CmdToString is in host exec cmd and replace to spilt str
 func (s *SSH) CmdToString(host, cmd, spilt string) (string, error) {
 	data, err := s.Cmd(host, cmd)
 	str := string(data)
@@ -58,7 +57,7 @@ func (s *SSH) CmdToString(host, cmd, spilt string) (string, error) {
 	return str, fmt.Errorf("command %s %s return nil", host, cmd)
 }
 
-//SftpConnect  is
+// SftpConnect  is
 func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 	sshClient, err := s.connect(host)
 	if err != nil {
@@ -127,7 +126,7 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 }
 
 func (s *SSH) copyLocalDirToRemote(host string, sftpClient *sftp.Client, localPath, remotePath string, epu *progressbar.ProgressBar) {
-	localFiles, err := ioutil.ReadDir(localPath)
+	localFiles, err := os.ReadDir(localPath)
 	if err != nil {
 		logger.Error("read local path dir failed %s %s", host, localPath)
 		return

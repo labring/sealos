@@ -16,7 +16,6 @@ package ssh
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -31,9 +30,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-/**
-  SSH connection operation
-*/
+// SSH connection operation
 func (s *SSH) connect(host string) (*ssh.Client, error) {
 	auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkPassword)
 	config := ssh.Config{
@@ -97,9 +94,9 @@ func (s *SSH) sshAuthMethod(password, pkFile, pkPasswd string) (auth []ssh.AuthM
 	return auth
 }
 
-//Authentication with a private key,private key has password and no password to verify in this
+// Authentication with a private key,private key has password and no password to verify in this
 func (s *SSH) sshPrivateKeyMethod(pkFile, pkPassword string) (am ssh.AuthMethod, err error) {
-	pkData, err := ioutil.ReadFile(filepath.Clean(pkFile))
+	pkData, err := os.ReadFile(filepath.Clean(pkFile))
 	if err != nil {
 		return nil, err
 	}

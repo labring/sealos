@@ -16,7 +16,7 @@ package manifests
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -24,7 +24,7 @@ type Manifests struct{}
 
 // ListImages List all the containers images in manifest files
 func (manifests *Manifests) ListImages(yamlFile string) ([]string, error) {
-	yamlBytes, err := ioutil.ReadFile(filepath.Clean(yamlFile))
+	yamlBytes, err := os.ReadFile(filepath.Clean(yamlFile))
 	if err != nil {
 		return nil, fmt.Errorf("read file failed %s", err)
 	}

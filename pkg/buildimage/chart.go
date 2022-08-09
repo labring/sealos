@@ -16,7 +16,7 @@ package buildimage
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 
@@ -129,7 +129,7 @@ func (c Chart) GetImages() ([]string, error) {
 // from charts dir get 1 sub path,not nested
 func getChartSub1Paths(pp string) ([]string, error) {
 	var paths []string
-	dir, err := ioutil.ReadDir(pp)
+	dir, err := os.ReadDir(pp)
 	if err != nil {
 		return nil, err
 	}
