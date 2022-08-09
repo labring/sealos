@@ -20,6 +20,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/imdario/mergo v0.3.12
+	github.com/labring/endpoints-operator/library v0.0.0-20220502074813-383c42324175
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/mitchellh/go-homedir v1.1.0
@@ -40,6 +41,7 @@ require (
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+	google.golang.org/grpc v1.47.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	helm.sh/helm/v3 v3.9.1
 	k8s.io/api v0.24.3
@@ -54,8 +56,6 @@ require (
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
 	sigs.k8s.io/yaml v1.3.0
 )
-
-require github.com/containers/image v3.0.2+incompatible
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -119,7 +119,6 @@ require (
 	github.com/klauspost/compress v1.15.2 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
-	github.com/labring/endpoints-operator/library v0.0.0-20220502074813-383c42324175 // indirect
 	github.com/lithammer/dedent v1.1.0 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/manifoldco/promptui v0.9.0 // indirect
@@ -178,7 +177,6 @@ require (
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220304144024-325a89244dc8 // indirect
-	google.golang.org/grpc v1.47.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect

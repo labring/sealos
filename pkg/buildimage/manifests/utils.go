@@ -18,7 +18,7 @@ import (
 	"bufio"
 	"strings"
 
-	"github.com/containers/image/docker/reference"
+	"github.com/containers/image/v5/docker/reference"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/logger"
