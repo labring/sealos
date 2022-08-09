@@ -23,33 +23,23 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type UIEndPoint struct {
-	Name  string `json:"name,omitempty"`
-	Theme string `json:"theme,omitempty"`
-	URL   string `json:"url,omitempty"`
-}
-
-// AppSpec defines the desired state of App
-type AppSpec struct {
+// ActionsSpec defines the desired state of Actions
+type ActionsSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of App. Edit app_types.go to remove/update
-	UIEndPoints []*UIEndPoint `json:"uiendpoints,omitempty"`
-	// The application logo url
-	Logo string `json:"logo,omitempty"`
-	// Applications info, key value
-	Info map[string]string `json:"info,omitempty"`
-	// Applications markdown docs
-	Docs string `json:"docs,omitempty"`
-	// Actions name list, the actions will in the application same namespace
-	Actions []string `json:"actions,omitempty"`
-	Workdir string   `json:"workdir,omitempty"`
-	Image   string   `json:"image,omitempty"`
+	// Application name, actions will bind to an application
+	AppName string `json:"appName,omitempty"`
+	// Alias will show it on dashboard. like DELETE UPDATE MIGRATE...
+	Alias string `json:"alias,omitempty"`
+	// Args, the actions input args, like oss backup address...
+	Args map[string]string `json:"args,omitempty"`
+	// Actions exec command, support render some args and downward API, like application name, service name ...
+	CMD string `json:"cmd,omitempty"`
 }
 
-// AppStatus defines the observed state of App
-type AppStatus struct {
+// ActionsStatus defines the observed state of Actions
+type ActionsStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -57,24 +47,24 @@ type AppStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// App is the Schema for the apps API
-type App struct {
+// Actions is the Schema for the actions API
+type Actions struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   AppSpec   `json:"spec,omitempty"`
-	Status AppStatus `json:"status,omitempty"`
+	Spec   ActionsSpec   `json:"spec,omitempty"`
+	Status ActionsStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// AppList contains a list of App
-type AppList struct {
+// ActionsList contains a list of Actions
+type ActionsList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []App `json:"items"`
+	Items           []Actions `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&App{}, &AppList{})
+	SchemeBuilder.Register(&Actions{}, &ActionsList{})
 }
