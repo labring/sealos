@@ -29,10 +29,10 @@ const Callback: NextPage = () => {
 
             const user_info = userinfo as UserInfo;
             if (user_info.uid !== '') {
-              setRedirect('/dashboard')
-
               const session: Session = { token: oauth_token, user: user_info }
               setSession(session);
+
+              setRedirect('/dashboard');
             }
           }).catch((err) => {
             console.log(err);
@@ -44,9 +44,19 @@ const Callback: NextPage = () => {
     }
   }, [router.isReady]);
 
+  useEffect(() => {
+    if (redirect === '') return;
+
+    const timer = setTimeout(() => {
+      router.replace('/dashboard');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [redirect]);
+
   return (
     <>
-      conf: {uinfo}{otoken}
+      <pre>{uinfo}</pre>
+      <pre>{otoken}</pre>
       <Link href={redirect}>dashboard</Link>
     </>
   )
