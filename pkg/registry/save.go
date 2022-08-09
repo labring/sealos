@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -353,7 +352,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 			}()
 
 			//store to local filesystem
-			content, err := ioutil.ReadAll(preader)
+			content, err := io.ReadAll(preader)
 			if err != nil {
 				return fmt.Errorf("blob %s content error: %v", tmpBlob, err)
 			}

@@ -16,7 +16,7 @@ package config
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
@@ -88,7 +88,7 @@ func Test_getMergeConfig(t *testing.T) {
 				t.Error(err)
 				return
 			}
-			err = ioutil.WriteFile("test_"+tt.args.path, got, 0644)
+			err = os.WriteFile("test_"+tt.args.path, got, 0644)
 			if err != nil {
 				t.Error(err)
 			}
@@ -163,12 +163,12 @@ func Test_getOverrideConfig(t *testing.T) {
 			}
 
 			output := "test_" + tt.args.path
-			err = ioutil.WriteFile(output, got, 0644)
+			err = os.WriteFile(output, got, 0644)
 			if err != nil {
 				t.Error(err)
 			}
 
-			content, err := ioutil.ReadFile(output)
+			content, err := os.ReadFile(output)
 			if err != nil {
 				t.Error(err)
 			}

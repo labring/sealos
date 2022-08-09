@@ -40,9 +40,8 @@ linters:
 linters-settings:
   errcheck:
     check-type-assertions: false
-    ignore: fmt:.*,io/ioutil:^Read.*
+    ignore: fmt:.*
     exclude-functions:
-      - io/ioutil.ReadFile
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
 

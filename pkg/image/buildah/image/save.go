@@ -16,7 +16,6 @@ package image
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -131,7 +130,7 @@ func (d *Service) Save(imageName, archiveName string) error {
 		logger.Debug("pushed image with digest %s", digest.String())
 	}
 	if d.pushOpts.Digestfile != "" {
-		if err = ioutil.WriteFile(d.pushOpts.Digestfile, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(d.pushOpts.Digestfile, []byte(digest.String()), 0644); err != nil {
 			return util.GetFailureCause(err, errors.Wrapf(err, "failed to write digest to file %q", d.pushOpts.Digestfile))
 		}
 	}

@@ -17,7 +17,6 @@ package image
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -270,7 +269,7 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		OSVersion:               iopts.OSVersion,
 	}
 	if iopts.Quiet {
-		buildahOptions.ReportWriter = ioutil.Discard
+		buildahOptions.ReportWriter = io.Discard
 	}
 
 	id, ref, err := imagebuildah.BuildDockerfiles(getContext(), store, buildahOptions, containerfiles...)

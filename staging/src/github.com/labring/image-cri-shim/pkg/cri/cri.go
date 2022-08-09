@@ -17,7 +17,7 @@ limitations under the License.
 package cri
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	goruntime "runtime"
 	"strings"
@@ -175,7 +175,7 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 	}
 	config := &Config{}
 	if file.IsExist(runtime.config) {
-		data, err := ioutil.ReadFile(runtime.config)
+		data, err := os.ReadFile(runtime.config)
 		if err != nil {
 			return "", err
 		}

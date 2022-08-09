@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 
@@ -74,7 +73,7 @@ func newLvscareCmd() *cobra.Command {
 				logger.Error("init dir is error: %v", err)
 				os.Exit(1)
 			}
-			err = ioutil.WriteFile(path.Join(staticPodPath, fileName), []byte(yaml), 0755)
+			err = os.WriteFile(path.Join(staticPodPath, fileName), []byte(yaml), 0755)
 			if err != nil {
 				logger.Error(err)
 				os.Exit(1)

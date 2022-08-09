@@ -16,7 +16,6 @@ package registry
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -164,7 +163,7 @@ func (*Service) Push(image string) error {
 	}
 
 	if iopts.Digestfile != "" {
-		if err = ioutil.WriteFile(iopts.Digestfile, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(iopts.Digestfile, []byte(digest.String()), 0644); err != nil {
 			return util.GetFailureCause(err, errors.Wrapf(err, "failed to write digest to file %q", iopts.Digestfile))
 		}
 	}

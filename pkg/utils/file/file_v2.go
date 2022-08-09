@@ -18,7 +18,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -122,7 +121,7 @@ func ReadAll(fileName string) ([]byte, error) {
 	defer file.Close()
 
 	// step3：read file content
-	content, err := ioutil.ReadFile(filepath.Clean(fileName))
+	content, err := os.ReadFile(filepath.Clean(fileName))
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +145,7 @@ func MkDirs(dirs ...string) error {
 
 // MkTmpdir creates a temporary directory.
 func MkTmpdir(dir string) (string, error) {
-	tempDir, err := ioutil.TempDir(dir, "DTmp-")
+	tempDir, err := os.MkdirTemp(dir, "DTmp-")
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +154,7 @@ func MkTmpdir(dir string) (string, error) {
 
 // MkTmpFile creates a temporary file.
 func MkTmpFile(path string) (*os.File, error) {
-	return ioutil.TempFile(path, "FTmp-")
+	return os.CreateTemp(path, "FTmp-")
 }
 
 // WriteFile outputs all content to the file.
