@@ -1,4 +1,4 @@
-module sealos.io/app
+module github.com/labring/sealos/controllers/app
 
 go 1.18
 

@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	appv1 "sealos.io/app/api/v1"
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 )
 
 // AppReconciler reconciles a App object
