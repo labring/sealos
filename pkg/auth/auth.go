@@ -15,11 +15,12 @@
 package auth
 
 import (
+	"github.com/pkg/errors"
+	"golang.org/x/oauth2"
+
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/auth/sso"
 	"github.com/labring/sealos/pkg/auth/utils"
-	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 )
 
 var (

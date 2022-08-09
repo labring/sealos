@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/json"
 )
 
-//this package contains some utils to handle docker image name
+// this package contains some utils to handle docker image name
 const (
 	legacyDefaultDomain = "index.docker.io"
 	defaultDomain       = "docker.io"

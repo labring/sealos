@@ -23,7 +23,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-//SaveImage can save a list of images of the specified platform
+// SaveImage can save a list of images of the specified platform
 type Save interface {
 	// SaveImages is not concurrently safe
 	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)

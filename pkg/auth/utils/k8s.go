@@ -18,14 +18,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/auth/conf"
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	coreV1 "k8s.io/api/core/v1"
 	rbacV1 "k8s.io/api/rbac/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	applyCoreV1 "k8s.io/client-go/applyconfigurations/core/v1"
 	applyMetaV1 "k8s.io/client-go/applyconfigurations/meta/v1"
 	applyRbacV1 "k8s.io/client-go/applyconfigurations/rbac/v1"
+
+	"github.com/labring/sealos/pkg/auth/conf"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 )
 
 func ApplyServiceAccount(client kubernetes.Client, username string) (*coreV1.ServiceAccount, error) {

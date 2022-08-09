@@ -22,8 +22,8 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-//this package unmarshal manifests from json into a ManifestList struct
-//then choose corresponding manifest by platform
+// this package unmarshal manifests from json into a ManifestList struct
+// then choose corresponding manifest by platform
 type ManifestList struct {
 	List      []Manifest `json:"manifests"`
 	MediaType string     `json:"mediaType"`

@@ -174,7 +174,7 @@ const (
 	CertificateKeySize = 32
 )
 
-//CreateCertificateKey returns a cryptographically secure random key
+// CreateCertificateKey returns a cryptographically secure random key
 func CreateCertificateKey() (string, error) {
 	randBytes, err := CreateRandBytes(CertificateKeySize)
 	if err != nil {

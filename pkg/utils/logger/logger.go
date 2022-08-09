@@ -45,7 +45,7 @@ func CfgConsoleLogger(debugMode bool, showPath bool) {
 	defaultLogger = zap.New(zc, zos...)
 }
 
-//TODO: export more file configs
+// TODO: export more file configs
 // CfgConsoleAndFileLogger config for both console and file logs
 // cfg donot support concurrent calls (as any package should init cfg at startup once)
 func CfgConsoleAndFileLogger(debugMode bool, logDir, name string, showPath bool) {

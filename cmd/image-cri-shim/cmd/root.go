@@ -28,11 +28,12 @@ import (
 	"github.com/labring/image-cri-shim/pkg/cri"
 	"github.com/labring/image-cri-shim/pkg/server"
 	"github.com/labring/image-cri-shim/pkg/shim"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var shimSocket, criSocket string

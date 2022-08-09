@@ -22,12 +22,13 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
+
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 	str "github.com/labring/sealos/pkg/utils/strings"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
 func LoadImages(imageDir string) ([]string, error) {
@@ -56,7 +57,7 @@ func RunBashCmd(cmd string) (string, error) {
 	return string(result), err
 }
 
-//crictl images -q
+// crictl images -q
 func IsImageID(out, imageID string) bool {
 	imageIDs := strings.Split(out, "\n")
 	for _, v := range imageIDs {

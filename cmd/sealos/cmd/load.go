@@ -17,9 +17,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/strings"
-	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/image"
 )
