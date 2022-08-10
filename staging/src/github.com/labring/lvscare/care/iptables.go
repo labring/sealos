@@ -17,7 +17,9 @@ package care
 import (
 	"errors"
 	"fmt"
+	"time"
 
+	"k8s.io/apimachinery/pkg/util/wait"
 	utilsysctl "k8s.io/component-helpers/node/util/sysctl"
 	proxyipvs "k8s.io/kubernetes/pkg/proxy/ipvs"
 	utilipset "k8s.io/kubernetes/pkg/util/ipset"
@@ -27,8 +29,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-// todo: iptables implementation will cause 'unable to resolve host $HOSTNAME: Temporary failure in name resolution' warning
-// if the hostname is not specified in the /etc/hosts file
 type iptablesImpl struct {
 	ipset    utilipset.Interface
 	iptables utiliptables.Interface
@@ -130,10 +130,19 @@ func (impl *iptablesImpl) Setup() error {
 		logger.Error("Failed to ensure ipset: %v", err)
 		return err
 	}
-	if err := impl.ensureIptablesChains(); err != nil {
-		return err
+	err := impl.ensureIptablesChains()
+	if err == nil {
+		go impl.iptables.Monitor(utiliptables.Chain("VIRTUAL-CANARY"),
+			[]utiliptables.Table{utiliptables.TableFilter, utiliptables.TableNAT},
+			func() {
+				logger.Info("looks like canary rules has been flushed, rebuild it")
+				if err := impl.ensureIptablesChains(); err != nil {
+					logger.Error("Failed to ensure iptables chains: %v", err)
+				}
+			},
+			time.Minute, wait.NeverStop /*todo: graceful shutdown*/)
 	}
-	return nil
+	return err
 }
 
 func (impl *iptablesImpl) Cleanup() error {
@@ -150,7 +159,7 @@ func (impl *iptablesImpl) cleanupLeftovers() (encounteredError bool) {
 		encounteredError = true
 	}
 	logger.Info("Cleanup IPTables rules")
-	encounteredError = cleanupIptablesLeftovers(impl.iptables) || encounteredError
+	encounteredError = impl.cleanupIptablesLeftovers() || encounteredError
 	for _, set := range ipsetInfo {
 		logger.Info("Destroying ipset %s", set.name)
 		err := impl.ipset.DestroySet(set.name)
@@ -200,6 +209,31 @@ func (impl *iptablesImpl) ensureIpset() error {
 	return nil
 }
 
+type iptablesRule struct {
+	position utiliptables.RulePosition
+	table    utiliptables.Table
+	chain    utiliptables.Chain
+	args     []string
+}
+
+func (impl *iptablesImpl) extraChainRules() []iptablesRule {
+	rules := make([]iptablesRule, 0)
+	rules = append(rules, iptablesRule{
+		// use `-I`, ACCEPT for packets those marked in filter table at the very first
+		// CNI rules MUST always behind it, for example,
+		// cilium should configured with `prepend-iptables-chains: false`
+		position: utiliptables.Prepend,
+		table:    utiliptables.TableFilter,
+		chain:    utiliptables.ChainOutput,
+		args: []string{
+			"-m", "comment", "--comment", `accept for all marked by ` + appName,
+			"-m", "mark", "--mark", impl.masqueradeMark,
+			"-j", "ACCEPT",
+		},
+	})
+	return rules
+}
+
 func (impl *iptablesImpl) ensureIptablesChains() error {
 	// service chain
 	for _, ch := range iptablesChains {
@@ -211,20 +245,13 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 	// jump chain
 	for _, jc := range iptablesJumpChain {
 		args := []string{"-m", "comment", "--comment", jc.comment, "-j", string(jc.to)}
-		// Prepend or Append?
 		if _, err := impl.iptables.EnsureRule(utiliptables.Append, jc.table, jc.from, args...); err != nil {
 			logger.Error("Failed to ensure chain jumps, table: %s, src: %s, dst: %s, %v", jc.table, jc.from, jc.to, err)
 		}
 	}
 
-	// markmasq chain
-	type iptablesRule struct {
-		position utiliptables.RulePosition
-		table    utiliptables.Table
-		chain    utiliptables.Chain
-		args     []string
-	}
 	rules := []iptablesRule{
+		// match ipset
 		{
 			utiliptables.Append, utiliptables.TableNAT, virtualServicesChain, []string{
 				"-m", "comment", "--comment", virtualIPSetComment,
@@ -232,6 +259,7 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 				"dst,dst", "-j", string(virtualMarkMasqChain),
 			},
 		},
+		// do masq for marked
 		{
 			utiliptables.Append, utiliptables.TableNAT, virtualMarkMasqChain, []string{
 				"-j", "MARK", "--or-mark", impl.masqueradeMark,
@@ -244,6 +272,7 @@ func (impl *iptablesImpl) ensureIptablesChains() error {
 			},
 		},
 	}
+	rules = append(rules, impl.extraChainRules()...)
 	masqArgs := []string{
 		"-m", "comment", "--comment", `virtual service traffic requiring SNAT`,
 		"-j", "MASQUERADE",
@@ -278,14 +307,22 @@ func ensureIPSetWithEntries(handle utilipset.Interface, name, comment string, se
 	return nil
 }
 
-func cleanupIptablesLeftovers(ipt utiliptables.Interface) (encounteredError bool) {
+func (impl *iptablesImpl) cleanupIptablesLeftovers() (encounteredError bool) {
 	// Unlink the iptables chains created by ipvs Proxier
 	for _, jc := range iptablesJumpChain {
 		args := []string{
 			"-m", "comment", "--comment", jc.comment,
 			"-j", string(jc.to),
 		}
-		if err := ipt.DeleteRule(jc.table, jc.from, args...); err != nil {
+		if err := impl.iptables.DeleteRule(jc.table, jc.from, args...); err != nil {
+			if !utiliptables.IsNotFoundError(err) {
+				logger.Error("Error removing iptables rules: %v", err)
+				encounteredError = true
+			}
+		}
+	}
+	for _, rule := range impl.extraChainRules() {
+		if err := impl.iptables.DeleteRule(rule.table, rule.chain, rule.args...); err != nil {
 			if !utiliptables.IsNotFoundError(err) {
 				logger.Error("Error removing iptables rules: %v", err)
 				encounteredError = true
@@ -295,7 +332,7 @@ func cleanupIptablesLeftovers(ipt utiliptables.Interface) (encounteredError bool
 
 	// Flush and remove all of our chains. Flushing all chains before removing them also removes all links between chains first.
 	for _, ch := range iptablesChains {
-		if err := ipt.FlushChain(ch.table, ch.chain); err != nil {
+		if err := impl.iptables.FlushChain(ch.table, ch.chain); err != nil {
 			if !utiliptables.IsNotFoundError(err) {
 				logger.Error("Error removing iptables rules: %v", err)
 				encounteredError = true
@@ -305,7 +342,7 @@ func cleanupIptablesLeftovers(ipt utiliptables.Interface) (encounteredError bool
 
 	// Remove all of our chains.
 	for _, ch := range iptablesChains {
-		if err := ipt.DeleteChain(ch.table, ch.chain); err != nil {
+		if err := impl.iptables.DeleteChain(ch.table, ch.chain); err != nil {
 			if !utiliptables.IsNotFoundError(err) {
 				logger.Error("Error removing iptables rules: %v", err)
 				encounteredError = true

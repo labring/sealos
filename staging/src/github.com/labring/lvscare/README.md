@@ -6,6 +6,10 @@ A lightweight LVS baby care, support health check, currently only HTTP prober su
 
 If real server is unavailable, lvscare firstly set weight of rs to 0(for TCP graceful termination), and remove it from backends during the next check, if real server return to available, add it back. This is useful for kubernetes master HA.
 
+## Attention
+
+1. running lvscare static pod in kubernetes with cilium CNI, cilium **MUST** configured with `prepend-iptables-chains: false`
+
 ## Quick Start
 
 ```bash
