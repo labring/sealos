@@ -130,12 +130,19 @@ func (impl *iptablesImpl) Setup() error {
 		logger.Error("Failed to ensure ipset: %v", err)
 		return err
 	}
-	go wait.JitterUntil(func() {
-		if err := impl.ensureIptablesChains(); err != nil {
-			logger.Error("Failed to ensure iptables: %v", err)
-		}
-	}, time.Minute, 0, true, wait.NeverStop)
-	return nil
+	err := impl.ensureIptablesChains()
+	if err == nil {
+		go impl.iptables.Monitor(utiliptables.Chain("VIRTUAL-CANARY"),
+			[]utiliptables.Table{utiliptables.TableFilter, utiliptables.TableNAT},
+			func() {
+				logger.Info("looks like canary rules has been flushed, rebuild it")
+				if err := impl.ensureIptablesChains(); err != nil {
+					logger.Error("Failed to ensure iptables chains: %v", err)
+				}
+			},
+			time.Minute, wait.NeverStop /*todo: graceful shutdown*/)
+	}
+	return err
 }
 
 func (impl *iptablesImpl) Cleanup() error {
@@ -211,21 +218,19 @@ type iptablesRule struct {
 
 func (impl *iptablesImpl) extraChainRules() []iptablesRule {
 	rules := make([]iptablesRule, 0)
-	if exists, _ := impl.iptables.ChainExists(utiliptables.TableFilter, "CILIUM_OUTPUT"); exists {
-		// another work around is set `prependIptablesChains=false` in cilium agent's config
-		// then prepend a rule to `OUTPUT` chain directly
-		rules = append(rules, iptablesRule{
-			// MUST use `-I`, ACCEPT for packets those marked in filter table at the very first
-			position: utiliptables.Prepend,
-			table:    utiliptables.TableFilter,
-			chain:    "CILIUM_OUTPUT",
-			args: []string{
-				"-m", "comment", "--comment", `accept for all marked by ` + appName,
-				"-m", "mark", "--mark", impl.masqueradeMark,
-				"-j", "ACCEPT",
-			},
-		})
-	}
+	rules = append(rules, iptablesRule{
+		// use `-I`, ACCEPT for packets those marked in filter table at the very first
+		// CNI rules MUST always behind it, for example,
+		// cilium should configured with `prepend-iptables-chains: false`
+		position: utiliptables.Prepend,
+		table:    utiliptables.TableFilter,
+		chain:    utiliptables.ChainOutput,
+		args: []string{
+			"-m", "comment", "--comment", `accept for all marked by ` + appName,
+			"-m", "mark", "--mark", impl.masqueradeMark,
+			"-j", "ACCEPT",
+		},
+	})
 	return rules
 }
 
