@@ -40,12 +40,15 @@ type EC2DescribeInstancesAPI interface {
 
 // GetInstances retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a DescribeInstancesOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to DescribeInstances.
+//
+//	If success, a DescribeInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to DescribeInstances.
 func GetInstances(c context.Context, api EC2DescribeInstancesAPI, input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
 	return api.DescribeInstances(c, input)
 }
@@ -87,15 +90,17 @@ func checkInstanceTags(tags []types.Tag, key, value string) error {
 /*
 Use this to uniquely identify which cluster the virtual machine belongs to
 
-  key=infra.sealos.io/instances/label
-  value=[namespace]/[infra name]
+	key=infra.sealos.io/instances/label
+	value=[namespace]/[infra name]
 
 For example:
-  apiVersion: infra.sealos.io/v1
-  kind: Infra
-  metadata:
-    name: aws-infra-demo
-    namespace: default
+
+	apiVersion: infra.sealos.io/v1
+	kind: Infra
+	metadata:
+	  name: aws-infra-demo
+	  namespace: default
+
 The value should be: default/aws-infra-demo
 */
 func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {

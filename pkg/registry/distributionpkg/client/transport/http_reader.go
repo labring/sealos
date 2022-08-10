@@ -125,7 +125,7 @@ func (hrs *httpReadSeeker) Seek(offset int64, whence int) (int64, error) {
 		hrs.readerOffset = lastReaderOffset
 		return 0, err
 	}
-	//nolint
+	//nolint:all
 	newOffset := hrs.seekOffset
 
 	switch whence {

@@ -43,24 +43,30 @@ type EC2CreateInstanceAPI interface {
 
 // MakeInstance creates an Amazon Elastic Compute Cloud (Amazon EC2) instance.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a RunInstancesOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to RunInstances.
+//
+//	If success, a RunInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to RunInstances.
 func MakeInstance(c context.Context, api EC2CreateInstanceAPI, input *ec2.RunInstancesInput) (*ec2.RunInstancesOutput, error) {
 	return api.RunInstances(c, input)
 }
 
 // MakeTags creates tags for an Amazon Elastic Compute Cloud (Amazon EC2) instance.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a CreateTagsOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to CreateTags.
+//
+//	If success, a CreateTagsOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to CreateTags.
 func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	return api.CreateTags(c, input)
 }

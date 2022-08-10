@@ -33,7 +33,7 @@ type KubeadmRuntime struct {
 	*Config
 }
 
-//nolint
+//nolint:all
 type Config struct {
 	// Clusterfile: the absolute path, we need to read kubeadm Config from Clusterfile
 	ClusterFileKubeConfig *KubeadmConfig
