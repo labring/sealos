@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,7 +37,9 @@ import (
 )
 
 const (
-	FinalizerName = "terminal.sealos.io/finalizer"
+	FinalizerName       = "terminal.sealos.io/finalizer"
+	DefaultAPIServer    = "https://apiserver.svc.cluster.local:6443"
+	KeepaliveAnnotation = "lastUpdateTime"
 )
 
 // TerminalReconciler reconciles a Terminal object
@@ -82,17 +85,30 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.syncDeployment(ctx, terminal); err != nil {
-		r.recorder.Eventf(terminal, "Error", "Create deployment failed", "%v", err)
-		return ctrl.Result{}, err
-	}
-	if err := r.syncService(ctx, terminal); err != nil {
-		r.recorder.Eventf(terminal, "Error", "Create service failed", "%v", err)
+	if err := r.fillDefaultValue(ctx, terminal); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	r.recorder.Eventf(terminal, "Normal", "Created", "create terminal success: %v", terminal.Name)
-	return ctrl.Result{}, nil
+	if isExpired(terminal) {
+		if err := r.Delete(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+		logger.Debug("delete expired terminal %v success", req.NamespacedName)
+		return ctrl.Result{}, nil
+	}
+
+	if err := r.syncDeployment(ctx, terminal); err != nil {
+		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+	if err := r.syncService(ctx, terminal); err != nil {
+		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create service failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+
+	r.recorder.Eventf(terminal, corev1.EventTypeNormal, "Created", "create terminal success: %v", terminal.Name)
+	duration, _ := time.ParseDuration(terminal.Spec.Keepalived)
+	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
 func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminalv1.Terminal) error {
@@ -119,7 +135,17 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 	}
 
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, service, func() error {
-		service.Spec = expectService.Spec
+		// only update some specific fields
+		service.Spec.Selector = expectService.Spec.Selector
+		service.Spec.Type = expectService.Spec.Type
+		if len(service.Spec.Ports) == 0 {
+			service.Spec.Ports = expectService.Spec.Ports
+		} else {
+			service.Spec.Ports[0].Name = expectService.Spec.Ports[0].Name
+			service.Spec.Ports[0].Port = expectService.Spec.Ports[0].Port
+			service.Spec.Ports[0].TargetPort = expectService.Spec.Ports[0].TargetPort
+			service.Spec.Ports[0].Protocol = expectService.Spec.Ports[0].Protocol
+		}
 		if err := controllerutil.SetControllerReference(terminal, service, r.Scheme); err != nil {
 			logger.Debug("SetControllerReference error: %v", err)
 			return err
@@ -190,10 +216,18 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	}
 
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, deployment, func() error {
+		// only update some specific fields
 		deployment.Spec.Replicas = expectDeployment.Spec.Replicas
 		deployment.Spec.Selector = expectDeployment.Spec.Selector
 		deployment.Spec.Template.ObjectMeta.Labels = expectDeployment.Spec.Template.Labels
-		deployment.Spec.Template.Spec.Containers = expectDeployment.Spec.Template.Spec.Containers
+		if len(deployment.Spec.Template.Spec.Containers) == 0 {
+			deployment.Spec.Template.Spec.Containers = containers
+		} else {
+			deployment.Spec.Template.Spec.Containers[0].Name = containers[0].Name
+			deployment.Spec.Template.Spec.Containers[0].Image = containers[0].Image
+			deployment.Spec.Template.Spec.Containers[0].Ports = containers[0].Ports
+			deployment.Spec.Template.Spec.Containers[0].Env = containers[0].Env
+		}
 
 		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
 			logger.Debug("SetControllerReference error: %v", err)
@@ -205,6 +239,38 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		return err
 	}
 	return nil
+}
+
+func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *terminalv1.Terminal) error {
+	hasUpdate := false
+	if terminal.Spec.APIServer == "" {
+		terminal.Spec.APIServer = DefaultAPIServer
+		hasUpdate = true
+	}
+
+	if _, ok := terminal.ObjectMeta.Annotations[KeepaliveAnnotation]; !ok {
+		terminal.ObjectMeta.Annotations[KeepaliveAnnotation] = time.Now().Format(time.RFC3339)
+		hasUpdate = true
+	}
+
+	if hasUpdate {
+		return r.Update(ctx, terminal)
+	}
+
+	return nil
+}
+
+// isExpired return true if the terminal has expired
+func isExpired(terminal *terminalv1.Terminal) bool {
+	anno := terminal.ObjectMeta.Annotations
+	lastUpdateTime, err := time.Parse(time.RFC3339, anno[KeepaliveAnnotation])
+	if err != nil {
+		// treat parse errors as not expired
+		return false
+	}
+
+	duration, _ := time.ParseDuration(terminal.Spec.Keepalived)
+	return lastUpdateTime.Add(duration).Before(time.Now())
 }
 
 func buildLabelsMap(terminal *terminalv1.Terminal) map[string]string {
