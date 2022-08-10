@@ -3,7 +3,7 @@ kind: Terminal
 metadata:
   name: terminal-sample
   annotations:
-    lastUpdateTime: "2022-08-09T15:22:49+08:00"
+    lastUpdateTime: "2022-08-10T9:22:49+08:00"
 spec:
   user: ccl
   token: abc
