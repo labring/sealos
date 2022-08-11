@@ -131,6 +131,9 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 
 	for _, r := range result.Reservations {
 		for _, i := range r.Instances {
+			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
+				continue
+			}
 			hosts.Count++
 			metadata := v1.Metadata{
 				IP: []string{*i.PrivateIpAddress},
@@ -170,6 +173,9 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 
 	for _, r := range result.Reservations {
 		for _, i := range r.Instances {
+			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
+				continue
+			}
 			index, err := getIndex(i)
 			if err != nil {
 				return nil, fmt.Errorf("aws ecs not found index label: %v", err)
@@ -181,6 +187,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 
 			if h, ok := hostmap[index]; ok {
 				h.Count++
+				hostmap[index].Metadata = append(hostmap[index].Metadata, metadata)
 				continue
 			}
 			hostmap[index] = &v1.Hosts{
