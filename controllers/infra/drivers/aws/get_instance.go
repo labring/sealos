@@ -131,7 +131,7 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 
 	for _, r := range result.Reservations {
 		for _, i := range r.Instances {
-			if i.State.Name == types.InstanceStateNameShuttingDown || i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameStopping || i.State.Name == types.InstanceStateNameStopped {
+			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
 				continue
 			}
 			hosts.Count++
@@ -173,7 +173,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 
 	for _, r := range result.Reservations {
 		for _, i := range r.Instances {
-			if i.State.Name == types.InstanceStateNameShuttingDown || i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameStopping || i.State.Name == types.InstanceStateNameStopped {
+			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
 				continue
 			}
 			index, err := getIndex(i)
