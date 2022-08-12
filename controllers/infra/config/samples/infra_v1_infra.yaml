@@ -15,6 +15,31 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: infra-sample
+  name: infra-apply-test
 spec:
-  # TODO(user): Add fields here
+  hosts:
+  - roles: [master] # required
+    count: 0 # Required
+    # key values resources.
+    flavor: "t2.micro"
+    # ENUM: ubuntu:20.04, centos:7.2 and so on.
+    image: "ami-05248307900d52e3a"
+    disks:
+    - capacity: 50G
+       # ENUM: system/data
+       type: system
+    - capacity: 1T
+       # ENUM: system/data
+       type: data
+  - roles: [ node ] # required
+    count: 3 # Required
+    # key values resources.
+    flavor: "t2.micro"
+    # ENUM: ubuntu:20.04, centos:7.2 and so on.
+    image: "ami-05248307900d52e3a"
+  - roles: [ node ] # required
+    count: 5 # Required
+    # key values resources.
+    flavor: "t2.large"
+    # ENUM: ubuntu:20.04, centos:7.2 and so on.
+    image: "ami-05248307900d52e3a"

@@ -57,13 +57,24 @@ spec:
                     flavor:
                       description: ecs.t5-lc1m2.large
                       type: string
-                    hosts:
-                      items:
-                        type: string
-                      type: array
                     image:
                       description: 'ENUM: ubuntu:20.04, centos:7.2 and so on.'
                       type: string
+                    index:
+                      description: Find the mapping between expected hosts and actual
+                        hosts
+                      type: integer
+                    metadata:
+                      items:
+                        properties:
+                          id:
+                            type: string
+                          ips:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      type: array
                     resources:
                       additionalProperties:
                         anyOf:
@@ -74,6 +85,10 @@ spec:
                       description: 'key values resources. cpu: 2 memory: 4 other resources
                         like GPU'
                       type: object
+                    roles:
+                      items:
+                        type: string
+                      type: array
                   type: object
                 type: array
               regionIDs:
