@@ -224,7 +224,10 @@ replace (
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.24.3
 )
 
-replace github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
+replace (
+	github.com/containers/storage => github.com/containers/storage v1.40.2
+	github.com/vishvananda/netlink => github.com/vishvananda/netlink v1.1.0
+)
 
 replace (
 	github.com/labring/image-cri-shim => ./staging/src/github.com/labring/image-cri-shim
