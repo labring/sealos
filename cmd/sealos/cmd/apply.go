@@ -25,6 +25,7 @@ import (
 var clusterFile string
 
 func newApplyCmd() *cobra.Command {
+	var applyArgs apply.ApplyArgs
 	// applyCmd represents the apply command
 	var applyCmd = &cobra.Command{
 		Use:     "apply",
@@ -32,7 +33,8 @@ func newApplyCmd() *cobra.Command {
 		Example: `sealos apply -f Clusterfile`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			applier, err := apply.NewApplierFromFile(clusterFile)
+			// OR args instead?
+			applier, err := apply.NewApplierFromFile(clusterFile, &applyArgs)
 			if err != nil {
 				return err
 			}
@@ -43,6 +45,9 @@ func newApplyCmd() *cobra.Command {
 		},
 	}
 	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")
+	applyCmd.Flags().StringSliceVar(&applyArgs.Values, "values", []string{}, "values file to apply into Clusterfile")
+	applyCmd.Flags().StringSliceVar(&applyArgs.Sets, "set", []string{}, "set values on the command line")
+	applyCmd.Flags().StringSliceVar(&applyArgs.CustomEnv, "env", []string{}, "envs to set during command execution")
 	return applyCmd
 }
 

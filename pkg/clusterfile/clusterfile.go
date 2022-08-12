@@ -24,10 +24,13 @@ import (
 var ErrTypeNotFound = errors.New("no corresponding type structure was found")
 
 type ClusterFile struct {
-	path       string
-	Cluster    *v2.Cluster
-	Configs    []v2.Config
-	KubeConfig *runtime.KubeadmConfig
+	path         string
+	customValues []string
+	customSets   []string
+	customEnvs   []string
+	Cluster      *v2.Cluster
+	Configs      []v2.Config
+	KubeConfig   *runtime.KubeadmConfig
 	//Plugins    []v1.Plugin
 }
 
@@ -55,6 +58,32 @@ func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
 	return c.KubeConfig
 }
 
-func NewClusterFile(path string) Interface {
-	return &ClusterFile{path: path}
+type ClusterFileOption func(*ClusterFile)
+
+func WithCustomValues(valueFiles []string) ClusterFileOption {
+	return func(c *ClusterFile) {
+		c.customValues = valueFiles
+	}
+}
+
+func WithCustomSets(sets []string) ClusterFileOption {
+	return func(c *ClusterFile) {
+		c.customSets = sets
+	}
+}
+
+func WithCustomEnvs(envs []string) ClusterFileOption {
+	return func(c *ClusterFile) {
+		c.customEnvs = envs
+	}
+}
+
+func NewClusterFile(path string, opts ...ClusterFileOption) Interface {
+	cf := &ClusterFile{
+		path: path,
+	}
+	for _, opt := range opts {
+		opt(cf)
+	}
+	return cf
 }
