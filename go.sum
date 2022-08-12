@@ -361,7 +361,6 @@ github.com/containers/buildah v1.26.1 h1:D65Vuo+orsI14WWtJhSX6KrpgBBa7+hveVWevzG
 github.com/containers/buildah v1.26.1/go.mod h1:CsWSG8OpJd8v3mlLREJzVAOBgC93DjRNALUVHoi8QsY=
 github.com/containers/common v0.48.0 h1:997nnXBZ+eNpfSM7L4SxhhZubQrfEyw3jRyNMTSsNlw=
 github.com/containers/common v0.48.0/go.mod h1:zPLZCfLXfnd1jI0QRsD4By54fP4k1+ifQs+tulIe3o0=
-github.com/containers/image/v5 v5.21.1 h1:Cr3zw2f0FZs4SCkdGlc8SN/mpcmg2AKG4OUuDbeGS/Q=
 github.com/containers/image/v5 v5.21.1/go.mod h1:zl35egpcDQa79IEXIuoUe1bW+D1pdxRxYjNlyb3YiXw=
 github.com/containers/image/v5 v5.22.0 h1:KemxPmD4D2YYOFZN2SgoTk7nBFcnwPiPW0MqjYtknSE=
 github.com/containers/image/v5 v5.22.0/go.mod h1:D8Ksv2RNB8qLJ7xe1P3rgJJOSQpahA6amv2Ax++/YO4=
@@ -377,9 +376,8 @@ github.com/containers/ocicrypt v1.1.5 h1:UO+gBnBXvMvC7HTXLh0bPgLslfW8HlY+oxYcoSH
 github.com/containers/ocicrypt v1.1.5/go.mod h1:WgjxPWdTJMqYMjf3M6cuIFFA1/MpyyhIM99YInA+Rvc=
 github.com/containers/storage v1.37.0/go.mod h1:kqeJeS0b7DO2ZT1nVWs0XufrmPFbgV3c+Q/45RlH6r4=
 github.com/containers/storage v1.40.0/go.mod h1:zUyPC3CFIGR1OhY1CKkffxgw9+LuH76PGvVcFj38dgs=
+github.com/containers/storage v1.40.2 h1:GUlHaGnrs1JOEwv6YEvkQdgYXOXZdU1Angy4wgWNgF8=
 github.com/containers/storage v1.40.2/go.mod h1:zUyPC3CFIGR1OhY1CKkffxgw9+LuH76PGvVcFj38dgs=
-github.com/containers/storage v1.42.0 h1:zm2AQD4NDeTB3JQ8X+Wo5+VRqNB+b4ocEd7Qj6ylPJA=
-github.com/containers/storage v1.42.0/go.mod h1:JiUJwOgOo1dr2DdOUc1MRe2GCAXABYoYmOdPF8yvH78=
 github.com/coredns/caddy v1.1.0/go.mod h1:A6ntJQlAWuQfFlsd9hvigKbo2WS0VUs2l1e2F+BawD4=
 github.com/coredns/corefile-migration v1.0.14/go.mod h1:XnhgULOEouimnzgn0t4WPuFDN2/PJQcTxdWKC5eXNGE=
 github.com/coreos/bbolt v1.3.2/go.mod h1:iRUV2dpdMOn7Bo10OQBFzIJO9kkE559Wcmn+qkEiiKk=

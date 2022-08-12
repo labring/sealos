@@ -7,9 +7,9 @@ require (
 	github.com/casdoor/casdoor-go-sdk v0.4.1
 	github.com/containers/buildah v1.26.1
 	github.com/containers/common v0.48.0
-	github.com/containers/image/v5 v5.22.0
+	github.com/containers/image/v5 v5.21.1
 	github.com/containers/ocicrypt v1.1.5
-	github.com/containers/storage v1.42.0
+	github.com/containers/storage v1.40.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/distribution/distribution/v3 v3.0.0-20220526142353-ffbd94cbe269
 	github.com/docker/cli v20.10.17+incompatible
