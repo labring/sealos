@@ -21,7 +21,7 @@ func Cors(wsContainer *restful.Container) {
 	// Add container filter to enable CORS
 	cors := restful.CrossOriginResourceSharing{
 		// ExposeHeaders:  []string{"X-My-Header"},
-		AllowedHeaders: []string{"Content-Type", "Accept"},
+		AllowedHeaders: []string{"Content-Type", "Accept", "Authorization"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE"},
 		CookiesAllowed: true,
 		Container:      wsContainer}

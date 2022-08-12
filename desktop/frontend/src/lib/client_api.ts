@@ -1,3 +1,5 @@
+import type { ApiResp } from '../interfaces/api';
+
 const api_host = process.env.NEXT_PUBLIC_API_HOST;
 
 async function fetchAPI(query: string = '', variables?: {}, headers?: {}, method: string = 'GET') {
@@ -21,7 +23,13 @@ async function fetchAPI(query: string = '', variables?: {}, headers?: {}, method
     console.error(json.errors);
     throw new Error('Failed to fetch API');
   }
-  return json;
+
+  const json_data = json as ApiResp;
+  if (json_data.code !== 200) {
+    throw new Error(json_data.code + ': ' + json_data.message);
+  }
+
+  return json_data.data;
 }
 
 export async function fetchGet(query: string = '', variables?: {}, headers?: {}) {
