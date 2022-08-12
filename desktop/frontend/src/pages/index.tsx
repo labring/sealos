@@ -1,7 +1,7 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Link from 'next/link'
-import styles from '../styles/Home.module.css'
+import type { NextPage } from 'next';
+import Head from 'next/head';
+import Link from 'next/link';
+import styles from './index.module.css';
 
 const Home: NextPage = () => {
   return (
@@ -14,7 +14,7 @@ const Home: NextPage = () => {
 
       <main className={styles.main}>
         <h1 className={styles.title}>
-          Welcome to <Link href="https://www.sealos.io/"><a>sealos!</a></Link>
+          Welcome to <Link href="https://www.sealos.io/">SealOS </Link> Cloud!
         </h1>
 
         <p className={styles.description}>
@@ -22,35 +22,24 @@ const Home: NextPage = () => {
         </p>
 
         <div className={styles.grid}>
-          <Link href="https://www.sealos.io/docs/intro">
-            <a className={styles.card}>
-              <h2>Documentation &rarr;</h2>
-              <p>Find in-depth information about sealos features and API.</p>
-            </a>
+          <Link href="https://www.sealos.io/docs/intro" className={styles.card}>
+            <h2>Documentation &rarr;</h2>
+            <p>Find in-depth information about sealos features and API.</p>
           </Link>
 
-          <Link href="https://www.sealos.io/blog">
-            <a className={styles.card}>
-              <h2>Blog &rarr;</h2>
-              <p>Find newest information about sealos design and news!</p>
-            </a>
+          <Link href="https://www.sealos.io/blog" className={styles.card}>
+            <h2>Blog &rarr;</h2>
+            <p>Find newest information about sealos design and news!</p>
           </Link>
 
-          <Link
-            href="https://github.com/labring/sealos">
-            <a className={styles.card}>
-              <h2>GitHub &rarr;</h2>
-              <p>Discover sealos in open source world!</p>
-            </a>
+          <Link href="https://github.com/labring/sealos" className={styles.card}>
+            <h2>GitHub &rarr;</h2>
+            <p>Discover sealos in open source world!</p>
           </Link>
 
-          <Link href="/api/login">
-            <a className={styles.card}>
-              <h2>Login & Register &rarr;</h2>
-              <p>
-                Instantly deploy your Next.js site to a public URL with Vercel.
-              </p>
-            </a>
+          <Link href="/api/login" className={styles.card}>
+            <h2>Login & Register &rarr;</h2>
+            <p>Instantly deploy your Next.js site to a public URL with Vercel.</p>
           </Link>
         </div>
       </main>
@@ -58,13 +47,14 @@ const Home: NextPage = () => {
       <footer className={styles.footer}>
         <Link
           href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          passHref
+          target="_blank"
+          rel="noopener noreferrer"
         >
-          <a target="_blank" rel="noopener noreferrer">Powered by{' '} Next.js</a>
+          Powered by Next.js
         </Link>
       </footer>
-    </div >
-  )
-}
+    </div>
+  );
+};
 
-export default Home
+export default Home;
