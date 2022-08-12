@@ -6,8 +6,9 @@ export type OAuthToken = {
 };
 
 export type UserInfo = {
-  readonly uid: string;
-  readonly user_name: string;
+  readonly id: string;
+  readonly name: string;
+  readonly avatar: string;
 };
 
 export type Session = {
