@@ -33,19 +33,6 @@ import (
 )
 
 // funcMap returns a mapping of all of the functions that Engine has.
-//
-// Because some functions are late-bound (e.g. contain context-sensitive
-// data), the functions may not all perform identically outside of an Engine
-// as they will inside of an Engine.
-//
-// Known late-bound functions:
-//
-//	- "include"
-//	- "tpl"
-//
-// These are late-bound in Engine.Render().  The
-// version included in the FuncMap is a placeholder.
-//
 func funcMap() template.FuncMap {
 	f := sprig.TxtFuncMap()
 	// delete(f, "env")
@@ -62,18 +49,6 @@ func funcMap() template.FuncMap {
 		"fromJsonArray": fromJSONArray,
 		"ipNet":         ipNet,
 		"ipAt":          ipAt,
-
-		// This is a placeholder for the "include" function, which is
-		// late-bound to a template. By declaring it here, we preserve the
-		// integrity of the linter.
-		"include":  func(string, interface{}) string { return "not implemented" },
-		"tpl":      func(string, interface{}) interface{} { return "not implemented" },
-		"required": func(string, interface{}) (interface{}, error) { return "not implemented", nil },
-		// Provide a placeholder for the "lookup" function, which requires a kubernetes
-		// connection.
-		"lookup": func(string, string, string, string) (map[string]interface{}, error) {
-			return map[string]interface{}{}, nil
-		},
 	}
 
 	for k, v := range extra {
@@ -133,8 +108,7 @@ func fromYAMLArray(str string) []interface{} {
 func toTOML(v interface{}) string {
 	b := bytes.NewBuffer(nil)
 	e := toml.NewEncoder(b)
-	err := e.Encode(v)
-	if err != nil {
+	if err := e.Encode(v); err != nil {
 		return err.Error()
 	}
 	return b.String()
