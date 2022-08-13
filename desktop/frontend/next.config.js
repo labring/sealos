@@ -7,6 +7,21 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: 'standalone',
-}
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.svg$/i,
+      issuer: /\.[jt]sx?$/,
+      use: ['@svgr/webpack']
+    });
 
-module.exports = nextConfig
+    return config;
+  },
+  experimental: {
+    images: {
+      allowFutureImage: true
+    },
+    newNextLinkBehavior: true
+  }
+};
+
+module.exports = nextConfig;

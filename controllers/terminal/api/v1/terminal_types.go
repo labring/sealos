@@ -28,9 +28,18 @@ type TerminalSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	User       string `json:"user,omitempty"`
-	Token      string `json:"token,omitempty"`
-	Keepalived string `json:"keepalived,omitempty"`
+	//+kubebuilder:validation:Required
+	User string `json:"user"`
+	//+kubebuilder:validation:Required
+	Token string `json:"token"`
+	//+kubebuilder:validation:Required
+	TTYImage string `json:"ttyImage"`
+	//+kubebuilder:validation:Required
+	Replicas *int32 `json:"replicas"`
+	//+kubebuilder:validation:Required
+	Keepalived string `json:"keepalived"`
+	//+kubebuilder:validation:Optional
+	APIServer string `json:"apiServer"`
 }
 
 // TerminalStatus defines the observed state of Terminal
@@ -41,6 +50,11 @@ type TerminalStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="User",type=string,JSONPath=".spec.user"
+//+kubebuilder:printcolumn:name="Keepalived",type=string,JSONPath=".spec.keepalived"
+//+kubebuilder:printcolumn:name="APIServer",priority=1,type=string,JSONPath=".spec.apiServer"
+//+kubebuilder:printcolumn:name="LastUpdateTime",priority=1,type=string,JSONPath=".metadata.annotations.lastUpdateTime"
+//+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Terminal is the Schema for the terminals API
 type Terminal struct {

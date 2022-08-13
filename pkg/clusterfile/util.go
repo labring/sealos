@@ -16,7 +16,7 @@ package clusterfile
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -33,7 +33,7 @@ import (
 var ErrClusterNotExist = fmt.Errorf("no cluster exist")
 
 func GetDefaultClusterName() (string, error) {
-	files, err := ioutil.ReadDir(constants.Workdir())
+	files, err := os.ReadDir(constants.Workdir())
 	if err != nil {
 		return "", err
 	}

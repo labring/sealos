@@ -46,7 +46,7 @@ func ExecutableFileArch(path string) string {
 	return ""
 }
 
-//FetchSealosAbsPath 获取sealos绝对路径
+// FetchSealosAbsPath 获取sealos绝对路径
 func FetchSealosAbsPath() string {
 	ex, _ := os.Executable()
 	exPath, _ := filepath.Abs(ex)

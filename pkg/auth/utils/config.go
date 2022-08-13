@@ -26,12 +26,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/labring/sealos/pkg/auth/conf"
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/labring/sealos/pkg/auth/conf"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 )
 
 func RandomHexStr(n int) (string, error) {

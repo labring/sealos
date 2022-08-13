@@ -39,7 +39,7 @@ import (
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
 // Using map to overwrite Kubeadm configs
 
-//nolint
+//nolint:all
 type KubeadmConfig struct {
 	kubeadm.InitConfiguration
 	kubeadm.ClusterConfiguration

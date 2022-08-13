@@ -17,9 +17,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/strings"
-	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/image"
 )
@@ -39,7 +40,7 @@ func newLoadCmd() *cobra.Command {
 			return registrySvc.Load(archiveName)
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if strings.NotIn(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
+			if !strings.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
 				return fmt.Errorf("transport parameters must be %s or %s", types.OCIArchive, types.DockerArchive)
 			}
 			return nil

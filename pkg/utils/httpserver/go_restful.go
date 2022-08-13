@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	restful "github.com/emicklei/go-restful/v3"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -37,4 +38,12 @@ func GoRestful(registerFunc func(*restful.WebService), addr string) error {
 	logger.Info("start listening on addr", addr)
 
 	return server.ListenAndServe()
+}
+
+func GetAccessToken(request *restful.Request) string {
+	authStr := request.HeaderParameter("Authorization")
+	if len(authStr) > 7 && authStr[0:7] == "Bearer " {
+		return authStr[7:]
+	}
+	return ""
 }

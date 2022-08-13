@@ -1,12 +1,14 @@
-import type { NextPage } from 'next'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
-import fetchAPI from '../../lib/api'
+import type { NextPage } from 'next';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { fetchPost } from '../../lib/api';
+import { OAuthToken, Session, setSession, UserInfo } from '../../store/session';
 
 const Callback: NextPage = () => {
-  const [conf, setConf] = useState('')
-  const [redirect, setRedirect] = useState('')
+  const [otoken, setOToken] = useState<any>(null);
+  const [uinfo, setUInfo] = useState<any>(null);
+  const [redirect, setRedirect] = useState('');
 
   const router = useRouter();
 
@@ -15,20 +17,57 @@ const Callback: NextPage = () => {
 
     const { code, state } = router.query;
     if (code !== undefined && code !== '' && state !== undefined && state != '') {
-      fetchAPI('api/token', { code: code, state: state }).then((res) => {
-        console.log(res)
-        setConf(res)
+      fetchPost('api/token', { code: code, state: state })
+        .then((token) => {
+          console.log(token);
+          setOToken(JSON.stringify(token));
 
-        if (res.access_token !== '') {
-          setRedirect('/dashboard')
-        }
-      }).catch((err) => {
-        console.log(err);
-      });
+          const oauth_token = token as OAuthToken;
+          if (oauth_token.access_token !== '') {
+            fetchPost(
+              'api/userinfo',
+              { code: code, state: state },
+              { authorization: 'Bearer ' + oauth_token.access_token }
+            )
+              .then((userinfo) => {
+                console.log(userinfo);
+                setUInfo(JSON.stringify(userinfo));
+
+                const user_info = userinfo as UserInfo;
+                if (user_info.id !== '') {
+                  const session: Session = { token: oauth_token, user: user_info };
+                  setSession(session);
+
+                  setRedirect('/dashboard');
+                }
+              })
+              .catch((err) => {
+                console.log(err);
+              });
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   }, [router.isReady]);
 
-  return <>conf: {conf}<Link href={redirect}>d∏ashboard</Link></>
-}
+  useEffect(() => {
+    if (redirect === '') return;
 
-export default Callback
+    const timer = setTimeout(() => {
+      router.replace('/dashboard');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [redirect]);
+
+  return (
+    <>
+      <pre>{uinfo}</pre>
+      <pre>{otoken}</pre>
+      <Link href={redirect}>dashboard</Link>
+    </>
+  );
+};
+
+export default Callback;

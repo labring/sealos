@@ -19,6 +19,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -42,24 +43,30 @@ type EC2CreateInstanceAPI interface {
 
 // MakeInstance creates an Amazon Elastic Compute Cloud (Amazon EC2) instance.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a RunInstancesOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to RunInstances.
+//
+//	If success, a RunInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to RunInstances.
 func MakeInstance(c context.Context, api EC2CreateInstanceAPI, input *ec2.RunInstancesInput) (*ec2.RunInstancesOutput, error) {
 	return api.RunInstances(c, input)
 }
 
 // MakeTags creates tags for an Amazon Elastic Compute Cloud (Amazon EC2) instance.
 // Inputs:
-//     c is the context of the method call, which includes the AWS Region.
-//     api is the interface that defines the method call.
-//     input defines the input arguments to the service call.
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
 // Output:
-//     If success, a CreateTagsOutput object containing the result of the service call and nil.
-//     Otherwise, nil and an error from the call to CreateTags.
+//
+//	If success, a CreateTagsOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to CreateTags.
 func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	return api.CreateTags(c, input)
 }
@@ -85,17 +92,32 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 }
 
 func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
-	// Tag name and tag value
-	name := common.InfraInstancesLabel
-	value := infra.GetInstancesTag()
 	client := d.Client
 	var count = int32(hosts.Count)
 
-	// TODO add the index tags, key: commono.InfraInstancesIndex value: hosts.Index
+	// Tag name and tag value
+	// Set role tag
 	tags := rolesToTags(hosts.Roles)
+	// Set label tag
+	labelKey := common.InfraInstancesLabel
+	labelValue := infra.GetInstancesTag()
 	tags = append(tags, types.Tag{
-		Key:   &name,
-		Value: &value,
+		Key:   &labelKey,
+		Value: &labelValue,
+	})
+	// Set index tag
+	indexKey := common.InfraInstancesIndex
+	indexValue := strconv.Itoa(hosts.Index)
+	tags = append(tags, types.Tag{
+		Key:   &indexKey,
+		Value: &indexValue,
+	})
+	// Set name tag
+	nameKey := "Name"
+	nameValue := fmt.Sprintf("%s-%d", labelValue, hosts.Index)
+	tags = append(tags, types.Tag{
+		Key:   &nameKey,
+		Value: &nameValue,
 	})
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,

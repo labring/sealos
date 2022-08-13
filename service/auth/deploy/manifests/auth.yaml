@@ -19,22 +19,20 @@ metadata:
   namespace: sealos
 
 ---
-
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: service-auth-crd
 subjects:
-- kind: ServiceAccount
-  name: service-auth # Name is case sensitive
-  namespace: sealos
+  - kind: ServiceAccount
+    name: service-auth # Name is case sensitive
+    namespace: sealos
 roleRef:
   kind: ClusterRole
-  name: cluster-admin  # using admin role
+  name: cluster-admin # using admin role
   apiGroup: rbac.authorization.k8s.io
 
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -51,7 +49,6 @@ spec:
     app: service-auth
 
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -70,7 +67,6 @@ data:
     ssoEndpoint: "cloud.sealos.io/casdoor"
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -94,12 +90,12 @@ spec:
           imagePullPolicy: Always
           # image: centos
           # command:
-            # - "sleep"
-            # - "100000"
+          # - "sleep"
+          # - "100000"
           volumeMounts:
-              - name: service-auth-volume
-                mountPath: /auth.yaml
-                subPath: auth.yaml
+            - name: service-auth-volume
+              mountPath: /auth.yaml
+              subPath: auth.yaml
       volumes:
         - name: service-auth-volume
           configMap:

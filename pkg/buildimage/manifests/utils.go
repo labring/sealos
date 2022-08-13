@@ -18,38 +18,51 @@ import (
 	"bufio"
 	"strings"
 
+	"github.com/containers/image/v5/docker/reference"
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/utils/logger"
+	strutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
-// DecodeImages decode image from yaml content
-func DecodeImages(body string) []string {
-	var list []string
-
+// ParseImages parse image from yaml content
+func ParseImages(body string) ([]string, error) {
+	list := sets.NewString()
 	reader := strings.NewReader(body)
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		l := decodeLine(scanner.Text())
+		l := parseImageRefFromLine(scanner.Text())
 		if l != "" {
-			list = append(list, l)
+			list.Insert(l)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		logger.Error(err.Error())
-		return list
-	}
-
-	return list
+	return list.List(), scanner.Err()
 }
 
-func decodeLine(line string) string {
-	l := strings.Replace(line, `"`, "", -1)
-	ss := strings.SplitN(l, ":", 2)
-	if len(ss) != 2 {
-		return ""
-	}
-	if !strings.HasSuffix(ss[0], "image") || strings.Contains(ss[0], "#") {
-		return ""
-	}
+const imageIdentity = "image:"
 
-	return strings.Replace(ss[1], " ", "", -1)
+// parseImageRefFromLine return valid image ref from line or null
+func parseImageRefFromLine(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "#") {
+		return ""
+	}
+	idx := strings.Index(s, imageIdentity)
+	if idx < 0 {
+		return ""
+	}
+	imageStr := strutil.TrimQuotes(strings.TrimSpace(s[idx+len(imageIdentity):]))
+	if imageStr == "" {
+		return ""
+	}
+	named, err := reference.ParseNormalizedNamed(imageStr)
+	if err != nil {
+		logger.Error("failed to parse image name %s: %v", s, err)
+		return ""
+	}
+	// return namedtag only
+	if namedTag, ok := named.(reference.NamedTagged); ok {
+		return namedTag.Name() + ":" + namedTag.Tag()
+	}
+	return named.String()
 }

@@ -71,7 +71,7 @@ func checkHostnameUnique(s ssh.Interface, ipList []string) error {
 	return nil
 }
 
-//Check whether the node time is synchronized
+// Check whether the node time is synchronized
 func checkTimeSync(s ssh.Interface, ipList []string) error {
 	logger.Info("checker:timeSync %v", ipList)
 	for _, ip := range ipList {

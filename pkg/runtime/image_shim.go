@@ -36,7 +36,7 @@ type ImageShim struct {
 	IP           string
 }
 
-//GetInfo default dir is /var/lib/image-cri-shim
+// GetInfo default dir is /var/lib/image-cri-shim
 func (is *ImageShim) GetInfo(rootfs string) string {
 	const imageCustomConfig = "image-cri-shim.yaml"
 	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)

@@ -44,8 +44,8 @@ var genArgs apply.RunArgs
 func newGenCmd() *cobra.Command {
 	var genCmd = &cobra.Command{
 		Use:     "gen",
-		Short:   "Generate a Clusterfile",
-		Long:    `Generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
+		Short:   "generate a Clusterfile",
+		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cluster, err := apply.NewClusterFromArgs(args, &genArgs)

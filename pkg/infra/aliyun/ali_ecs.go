@@ -233,7 +233,7 @@ func (a *AliProvider) DeleteInstances() error {
 		return err
 	}
 	ShouldBeDeleteInstancesIDs.SetValue(a.Infra.Status, "")
-	if v1beta1.In(a.Infra.Status.Cluster.Master0ID, instanceIDs) {
+	if strings2.In(a.Infra.Status.Cluster.Master0ID, instanceIDs) {
 		logger.Debug("delete instance success,need delete about instance info[master0id,master0InternalIP,eip,eipID]")
 		a.Infra.Status.Cluster.Master0ID = ""
 		a.Infra.Status.Cluster.Master0InternalIP = ""

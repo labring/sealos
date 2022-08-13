@@ -8,19 +8,26 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "browserslist": [
+    "defaults",
+    "not ie 11",
+    "not op_mini all"
+  ],
   "dependencies": {
-    "@ant-design/icons": "^4.7.0",
-    "antd": "4.22.0",
-    "next": "12.2.3",
+    "@nextui-org/react": "^1.0.0-beta.9",
+    "clsx": "^1.2.1",
+    "next": "12.2.4",
+    "next-themes": "^0.2.0",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@types/node": "18.6.1",
-    "@types/react": "18.0.15",
+    "@svgr/webpack": "^6.3.1",
+    "@types/node": "18.7.1",
+    "@types/react": "18.0.17",
     "@types/react-dom": "18.0.6",
-    "eslint": "8.20.0",
-    "eslint-config-next": "12.2.3",
+    "eslint": "8.21.0",
+    "eslint-config-next": "12.2.4",
     "typescript": "4.7.4"
   }
 }

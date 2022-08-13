@@ -28,17 +28,18 @@ import (
 	"unicode"
 )
 
-func NotIn(key string, slice []string) bool {
+// In returns if the key is in the slice.
+func In(key string, slice []string) bool {
 	for _, s := range slice {
 		if key == s {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func InList(key string, slice []string) bool {
-	return !NotIn(key, slice)
+	return In(key, slice)
 }
 
 func NotInIPList(key string, slice []string) bool {
@@ -56,7 +57,7 @@ func NotInIPList(key string, slice []string) bool {
 func ReduceIPList(src, dst []string) []string {
 	var ipList []string
 	for _, ip := range src {
-		if !NotIn(ip, dst) {
+		if In(ip, dst) {
 			ipList = append(ipList, ip)
 		}
 	}
@@ -65,7 +66,7 @@ func ReduceIPList(src, dst []string) []string {
 
 func AppendIPList(src, dst []string) []string {
 	for _, ip := range dst {
-		if NotIn(ip, src) {
+		if !In(ip, src) {
 			src = append(src, ip)
 		}
 	}
@@ -150,6 +151,7 @@ func SplitRemoveEmpty(s, sep string) []string {
 	return RemoveSliceEmpty(data)
 }
 
+// RemoveDuplicate removes duplicate entry in the list.
 func RemoveDuplicate(list []string) []string {
 	var result []string
 	flagMap := map[string]struct{}{}
@@ -170,7 +172,7 @@ func WrapExecResult(host, command string, output []byte, err error) error {
 func RemoveStrSlice(src, dst []string) []string {
 	var ipList []string
 	for _, ip := range src {
-		if NotIn(ip, dst) {
+		if !In(ip, dst) {
 			ipList = append(ipList, ip)
 		}
 	}
@@ -220,4 +222,13 @@ func EnvFromMap(shell string, envs map[string]string) string {
 		return shell
 	}
 	return fmt.Sprintf("%s&& %s", env, shell)
+}
+
+func TrimQuotes(s string) string {
+	if len(s) >= 2 {
+		if c := s[len(s)-1]; s[0] == c && (c == '"' || c == '\'') {
+			return s[1 : len(s)-1]
+		}
+	}
+	return s
 }

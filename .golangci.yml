@@ -40,9 +40,8 @@ linters:
 linters-settings:
   errcheck:
     check-type-assertions: false
-    ignore: fmt:.*,io/ioutil:^Read.*
+    ignore: fmt:.*
     exclude-functions:
-      - io/ioutil.ReadFile
       - io.Copy(*bytes.Buffer)
       - io.Copy(os.Stdout)
 
@@ -50,4 +49,4 @@ linters-settings:
 # https://github.com/golangci/golangci/wiki/Configuration
 service:
   # use the fixed version to not introduce new linters unexpectedly
-  golangci-lint-version: 1.46.2
+  golangci-lint-version: latest

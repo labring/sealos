@@ -37,7 +37,7 @@ add to default cluster:
 func newAddCmd() *cobra.Command {
 	var addCmd = &cobra.Command{
 		Use:     "add",
-		Short:   "add some node",
+		Short:   "add some nodes",
 		Args:    cobra.NoArgs,
 		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1 contains API Schema definitions for the infra v1 API group
-//+kubebuilder:object:generate=true
-//+groupName=infra.sealos.io
+// +kubebuilder:object:generate=true
+// +groupName=infra.sealos.io
 package v1
 
 import (

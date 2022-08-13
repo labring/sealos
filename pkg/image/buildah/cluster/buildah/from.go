@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://github.com/containers/buildah/blob/main/LICENSE
+//	https://github.com/containers/buildah/blob/main/LICENSE
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,6 @@ package buildah
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -26,9 +25,9 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/common/pkg/config"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/pkg/errors"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type fromReply struct {
@@ -210,7 +209,7 @@ func From(containerName, imageName string) error {
 
 	if iopts.cidfile != "" {
 		filePath := iopts.cidfile
-		if err := ioutil.WriteFile(filePath, []byte(builder.ContainerID), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(builder.ContainerID), 0644); err != nil {
 			return errors.Wrapf(err, "filed to write Container ID File %q", filePath)
 		}
 	}
@@ -276,7 +275,7 @@ func onBuild(builder *buildah.Builder, quiet bool) error {
 		case "RUN":
 			var stdout io.Writer
 			if quiet {
-				stdout = ioutil.Discard
+				stdout = io.Discard
 			}
 			if err := builder.Run(args, buildah.RunOptions{Stdout: stdout}); err != nil {
 				return err

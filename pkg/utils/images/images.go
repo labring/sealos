@@ -1,5 +1,5 @@
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2022 sealos.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package images
 
 import (
 	"fmt"
@@ -22,27 +22,32 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/utils/logger"
+	str "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func LoadImages(imageDir string) ([]string, error) {
 	var imageList []string
-	if imageDir != "" && IsExist(imageDir) {
-		paths, err := GetFiles(imageDir)
+	if imageDir != "" && file.IsExist(imageDir) {
+		paths, err := file.GetFiles(imageDir)
 		logger.Info("get files path is %v", paths)
 		if err != nil {
 			return nil, errors.Wrap(err, "load image list files error")
 		}
 		for _, p := range paths {
-			images, err := ReadLines(p)
+			images, err := file.ReadLines(p)
 			if err != nil {
 				return nil, errors.Wrap(err, "load image list error")
 			}
 			imageList = append(imageList, images...)
 		}
 	}
-	imageList = RemoveDuplicate(imageList)
+	imageList = str.RemoveDuplicate(imageList)
 	return imageList, nil
 }
 
@@ -52,7 +57,7 @@ func RunBashCmd(cmd string) (string, error) {
 	return string(result), err
 }
 
-//crictl images -q
+// crictl images -q
 func IsImageID(out, imageID string) bool {
 	imageIDs := strings.Split(out, "\n")
 	for _, v := range imageIDs {
@@ -132,4 +137,29 @@ func normalizeTaggedDigestedNamed(named reference.Named) (reference.Named, error
 // prefix the specified name with "localhost/".
 func toLocalImageName(name string) string {
 	return "localhost/" + strings.TrimLeft(name, "/")
+}
+
+// RegistryHasImage returns if the registry has the image.
+func RegistryHasImage(registryAddress, registryBase64Auth, imageName, imageTag string) bool {
+	type RegistryData struct {
+		Name string   `json:"name"`
+		Tags []string `json:"tags"`
+	}
+	var registry RegistryData
+	logger.Info("address: %s, base64: %s, imageName: %s", registryAddress, registryBase64Auth, imageName)
+	logger.Info("pre image name: %s, pre image tag: %s", imageName, imageTag)
+	data, _ := http.Request(fmt.Sprintf("%s/v2/%s/tags/list", registryAddress, imageName), map[string]string{"Authorization": "Basic " + registryBase64Auth})
+	if data != "" {
+		logger.Info("data: %s", data)
+		err := json.Unmarshal([]byte(data), &registry)
+		if err != nil {
+			logger.Warn("convert registry data error")
+			return false
+		}
+	}
+	if str.In(imageTag, registry.Tags) {
+		logger.Info("imageTag found in registry.Tags")
+		return true
+	}
+	return false
 }

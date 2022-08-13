@@ -25,7 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-//use only one
+// use only one
 func GetHostIP(host string) string {
 	if !strings.ContainsRune(host, ':') {
 		return host

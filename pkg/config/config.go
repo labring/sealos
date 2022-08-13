@@ -17,17 +17,16 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 
 	"sigs.k8s.io/yaml"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 /*
@@ -129,7 +128,7 @@ func (c *Dumper) WriteFiles() (err error) {
 
 func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte, error) {
 	var configs [][]byte
-	context, err := ioutil.ReadFile(filepath.Clean(path))
+	context, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}
@@ -143,10 +142,10 @@ func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte,
 	return bytes.Join(configs, []byte("\n")), nil
 }
 
-//merge the contents of data into the path file
+// merge the contents of data into the path file
 func getMergeConfigData(path string, data []byte) ([]byte, error) {
 	var configs [][]byte
-	context, err := ioutil.ReadFile(filepath.Clean(path))
+	context, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}

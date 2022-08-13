@@ -18,9 +18,11 @@ import (
 	"context"
 	"strings"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
-	"github.com/labring/sealos/pkg/utils/logger"
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+
+	img "github.com/labring/sealos/pkg/utils/images"
+	"github.com/labring/sealos/pkg/utils/logger"
+	str "github.com/labring/sealos/pkg/utils/strings"
 )
 
 const (
@@ -104,12 +106,12 @@ func (s *server) replaceImage(image, action string) (newImage string) {
 	// so we'd better tag "sealer.hub/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
 	//for image id]
 	newImage = image
-	images, err := utils.RunBashCmd("crictl images -q")
+	images, err := img.RunBashCmd("crictl images -q")
 	if err != nil {
 		logger.Warn("error executing `crictl images -q`: %s", err.Error())
 		return
 	}
-	if utils.IsImageID(images, image) {
+	if img.IsImageID(images, image) {
 		logger.Info("image %s already exist, skipping", image)
 		return
 	}
@@ -121,8 +123,8 @@ func (s *server) replaceImage(image, action string) (newImage string) {
 	newImageName := name + ":" + tag
 
 	// there's no list of image-shims, or image is not found on the list
-	if len(ShimImages) == 0 || (len(ShimImages) != 0 && utils.NotIn(image, ShimImages)) {
-		if utils.RegistryHasImage(SealosHub, Base64Auth, name, tag) {
+	if len(ShimImages) == 0 || (len(ShimImages) != 0 && !str.In(image, ShimImages)) {
+		if img.RegistryHasImage(SealosHub, Base64Auth, name, tag) {
 			newImage = prependRegistry(newImageName)
 		} else {
 			logger.Info("image %s not found in registry, skipping", newImageName)

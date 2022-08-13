@@ -23,6 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 // ValidateInfraName validates that the given name can be used as a infra name.
@@ -114,7 +115,7 @@ func validateInfraSpec(spec *v1beta1.InfraSpec, fldPath *field.Path) field.Error
 		allErrors = append(allErrors, field.Invalid(fldPath.Key("hosts"), spec.Hosts,
 			"hosts not empty"))
 	}
-	if !v1beta1.In(v1beta1.Master, roles) {
+	if !strings2.In(v1beta1.Master, roles) {
 		allErrors = append(allErrors, field.Invalid(fldPath.Key("hosts"), spec.Hosts,
 			"hosts must has role is master"))
 	}

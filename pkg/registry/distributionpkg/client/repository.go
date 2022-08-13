@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -241,7 +240,7 @@ func (t *tags) All(ctx context.Context) ([]string, error) {
 		defer resp.Body.Close()
 
 		if SuccessStatus(resp.StatusCode) {
-			b, err := ioutil.ReadAll(resp.Body)
+			b, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return tags, err
 			}
@@ -282,7 +281,7 @@ func descriptorFromResponse(response *http.Response) (distribution.Descriptor, e
 
 	digestHeader := headers.Get("Docker-Content-Digest")
 	if digestHeader == "" {
-		bytes, err := ioutil.ReadAll(response.Body)
+		bytes, err := io.ReadAll(response.Body)
 		if err != nil {
 			return distribution.Descriptor{}, err
 		}
@@ -541,7 +540,7 @@ func (ms *manifests) Get(ctx context.Context, dgst digest.Digest, options ...dis
 			}
 		}
 		mt := resp.Header.Get("Content-Type")
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
 
 		if err != nil {
 			return nil, err
@@ -689,7 +688,7 @@ func (bs *blobs) Get(ctx context.Context, dgst digest.Digest) ([]byte, error) {
 	}
 	defer reader.Close()
 
-	return ioutil.ReadAll(reader)
+	return io.ReadAll(reader)
 }
 
 func (bs *blobs) Open(ctx context.Context, dgst digest.Digest) (distribution.ReadSeekCloser, error) {

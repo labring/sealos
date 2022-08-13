@@ -2,5 +2,12 @@ apiVersion: terminal.sealos.io/v1
 kind: Terminal
 metadata:
   name: terminal-sample
+  annotations:
+    lastUpdateTime: "2022-08-10T9:22:49+08:00"
 spec:
-  # TODO(user): Add fields here
+  user: ccl
+  token: abc
+  apiServer: https://192.168.49.2:8443
+  ttyImage: fanux/fist-tty-tools:v1.0.0
+  replicas: 1
+  keepalived: 11h

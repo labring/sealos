@@ -19,7 +19,7 @@ import (
 	"regexp"
 )
 
-//Confirm is send the prompt and get result
+// Confirm is send the prompt and get result
 func Confirm(prompt, cancel string) (bool, error) {
 	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
 	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")

@@ -32,7 +32,7 @@ with custom cluster name:
 func newCreateCmd() *cobra.Command {
 	var createCmd = &cobra.Command{
 		Use:     "create",
-		Short:   "Create a cluster without running the CMD",
+		Short:   "create a cluster without running the CMD",
 		Long:    `sealos create [image name] [args]`,
 		Example: exampleCreate,
 		Args:    cobra.ExactArgs(1),

@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"time"
@@ -139,7 +138,7 @@ func (d *driver) GetContent(ctx context.Context, path string) ([]byte, error) {
 	}
 	defer rc.Close()
 
-	p, err := ioutil.ReadAll(rc)
+	p, err := io.ReadAll(rc)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,7 @@ name: CI
 
 env:
   # Common versions
-  GO_VERSION: "1.18"
+  GO_VERSION: "1.19"
 
 on:
   push:
@@ -59,7 +59,7 @@ jobs:
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
-          version: v1.46.2
+          version: latest
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 

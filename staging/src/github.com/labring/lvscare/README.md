@@ -6,6 +6,10 @@ A lightweight LVS baby care, support health check, currently only HTTP prober su
 
 If real server is unavailable, lvscare firstly set weight of rs to 0(for TCP graceful termination), and remove it from backends during the next check, if real server return to available, add it back. This is useful for kubernetes master HA.
 
+## Attention
+
+1. running lvscare static pod in kubernetes with cilium CNI, cilium **MUST** configured with `prepend-iptables-chains: false`
+
 ## Quick Start
 
 ```bash
@@ -63,10 +67,11 @@ iptables -t nat -N VIRTUAL-MARK-MASQ
 ipset create VIRTUAL-IP hash:ip,port -exist
 iptables -t nat -A VIRTUAL-SERVICES -m comment --comment "virtual service ip + port for masquerade purpose" -m set --match-set VIRTUAL-IP dst,dst -j VIRTUAL-MARK-MASQ
 # do mark
-iptables -t nat -A VIRTUAL-MARK-MASQ -j MARK --set-xmark 0x2
+iptables -t nat -A VIRTUAL-MARK-MASQ -j MARK --set-xmark 0x2/0x2
 # do snat at POSTROUTING
 iptables -t nat -N VIRTUAL-POSTROUTING
 iptables -t nat -A POSTROUTING -m comment --comment "virtual service postrouting rules" -j VIRTUAL-POSTROUTING
+iptables -t nat -A VIRTUAL-POSTROUTING -m mark ! --mark 0x2/0x2 -j RETURN
 iptables -t nat -A VIRTUAL-POSTROUTING -m comment --comment "virtual service traffic requiring SNAT" -m mark --mark 0x2 -j MASQUERADE
 
 iptables -t nat -A OUTPUT -m comment --comment "virtual service portals" -j VIRTUAL-SERVICES

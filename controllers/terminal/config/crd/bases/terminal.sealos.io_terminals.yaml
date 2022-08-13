@@ -15,7 +15,25 @@ spec:
     singular: terminal
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.user
+      name: User
+      type: string
+    - jsonPath: .spec.keepalived
+      name: Keepalived
+      type: string
+    - jsonPath: .spec.apiServer
+      name: APIServer
+      priority: 1
+      type: string
+    - jsonPath: .metadata.annotations.lastUpdateTime
+      name: LastUpdateTime
+      priority: 1
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: Terminal is the Schema for the terminals API
@@ -35,12 +53,25 @@ spec:
           spec:
             description: TerminalSpec defines the desired state of Terminal
             properties:
+              apiServer:
+                type: string
               keepalived:
                 type: string
+              replicas:
+                format: int32
+                type: integer
               token:
+                type: string
+              ttyImage:
                 type: string
               user:
                 type: string
+            required:
+            - keepalived
+            - replicas
+            - token
+            - ttyImage
+            - user
             type: object
           status:
             description: TerminalStatus defines the observed state of Terminal

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //nolint:staticcheck
-package utils
+package net
 
 import (
 	"fmt"

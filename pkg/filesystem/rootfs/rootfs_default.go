@@ -19,7 +19,7 @@ package rootfs
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 
@@ -201,7 +201,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 }
 func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target string) error {
 	logger.Debug("copyFiles isRegistry: %v,isApp: %v,ip: %v,src: %v,target: %v", isRegistry, isApp, ip, src, target)
-	files, err := ioutil.ReadDir(src)
+	files, err := os.ReadDir(src)
 	if err != nil {
 		return fmt.Errorf("failed to copy files %s", err)
 	}

@@ -23,13 +23,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+
+	netutil "github.com/labring/sealos/pkg/utils/net"
 )
 
 // DialNotifyFn is a function to call after a successful net.Dial[Timeout]().
@@ -176,7 +175,7 @@ func (c *client) connect(kind, socket string, options ConnectOptions) (*grpc.Cli
 	}
 
 	if options.Wait {
-		if err = utils.WaitForServer(socket, -1, dialOpts, &cc); err != nil {
+		if err = netutil.WaitForServer(socket, -1, dialOpts, &cc); err != nil {
 			return nil, clientError("failed to connect to %s: %v", kind, err)
 		}
 	} else {

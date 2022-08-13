@@ -16,7 +16,7 @@ package manifests
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -24,23 +24,17 @@ type Manifests struct{}
 
 // ListImages List all the containers images in manifest files
 func (manifests *Manifests) ListImages(yamlFile string) ([]string, error) {
-	var list []string
-
-	yamlBytes, err := ioutil.ReadFile(filepath.Clean(yamlFile))
+	yamlBytes, err := os.ReadFile(filepath.Clean(yamlFile))
 	if err != nil {
 		return nil, fmt.Errorf("read file failed %s", err)
 	}
 
-	images := DecodeImages(string(yamlBytes))
-	if len(images) != 0 {
-		list = append(list, images...)
-	}
-
+	images, err := ParseImages(string(yamlBytes))
 	if err != nil {
-		return list, fmt.Errorf("filepath walk failed %s", err)
+		return images, fmt.Errorf("failed to parse images from file %s", err)
 	}
 
-	return list, nil
+	return images, nil
 }
 
 func NewManifests() (*Manifests, error) {

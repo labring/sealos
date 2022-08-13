@@ -18,10 +18,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/utils"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	img "github.com/labring/sealos/pkg/utils/images"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 const (
@@ -41,7 +43,7 @@ var (
 )
 
 func getData() map[string]interface{} {
-	data, err := utils.Unmarshal(ConfigFile)
+	data, err := yaml.Unmarshal(ConfigFile)
 	if err != nil {
 		logger.Warn("load config from image shim: %v", err)
 		return nil
@@ -62,7 +64,7 @@ func RunLoad() {
 	sync, _, _ := unstructured.NestedInt64(data, "sync")
 	if sync != 0 {
 		go wait.Forever(func() {
-			images, err := utils.LoadImages(imageDir)
+			images, err := img.LoadImages(imageDir)
 			if err != nil {
 				logger.Warn("load images from image dir: %v", err)
 			}

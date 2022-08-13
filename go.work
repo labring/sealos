@@ -1,7 +1,8 @@
-go 1.18
+go 1.19
 
 use (
 	.
+	./controllers/app
 	./controllers/infra
 	./controllers/terminal
 	./service/auth
