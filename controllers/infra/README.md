@@ -1,8 +1,6 @@
 # controller
-// TODO(user): Add simple overview of use/purpose
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Infra controller, apply any infra resource your want.
 
 ## Getting Started
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
@@ -41,9 +39,6 @@ UnDeploy the controller to the cluster:
 make undeploy
 ```
 
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
 
@@ -75,6 +70,83 @@ make manifests
 **NOTE:** Run `make --help` for more information on all potential `make` targets
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+
+# Create infra
+
+infra.yaml: 
+
+```yaml
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: infra-apply-test
+spec:
+  hosts:
+  - roles: [master] # required
+    count: 3 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+  - roles: [ node ] # required
+    count: 3 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+```
+
+```shell
+kubectl apply -f infra.yaml
+```
+
+Scale down:
+
+```yaml
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: infra-apply-test
+spec:
+  hosts:
+  - roles: [master] # required
+    count: 1 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+  - roles: [ node ] # required
+    count: 1 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+```
+
+```shell
+kubectl apply -f infra.yaml
+```
+
+Scale up:
+
+```yaml
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: infra-apply-test
+spec:
+  hosts:
+  - roles: [master] # required
+    count: 3 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+  - roles: [ node ] # required
+    count: 3 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+```
+
+```shell
+kubectl apply -f infra.yaml
+```
+
+Clean infra:
+
+```shell
+kubectl delete -f infra.yaml
+```
 
 ## License
 
