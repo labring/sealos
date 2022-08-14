@@ -108,9 +108,26 @@ func (hosts IndexHosts) Swap(i, j int) {
 }
 
 type Disk struct {
-	Capacity string `json:"capacity,omitempty"`
+	Id       string `json:"id,omitempty"`
+	Capacity int    `json:"capacity,omitempty"`
 	// ENUM: system/data
 	Type string `json:"type,omitempty"`
+	// types: Device name
+	Name string `json:"name,omitempty"`
+}
+
+type NameDisks []Disk
+
+func (disks NameDisks) Len() int {
+	return len(disks)
+}
+
+func (disks NameDisks) Less(i, j int) bool {
+	return disks[i].Name < disks[j].Name
+}
+
+func (disks NameDisks) Swap(i, j int) {
+	disks[i], disks[j] = disks[j], disks[i]
 }
 
 // InfraSpec defines the desired state of Infra

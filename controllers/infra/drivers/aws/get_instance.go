@@ -171,6 +171,11 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
 	}
 
+	diskMap, err := d.getVolumes()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, r := range result.Reservations {
 		for _, i := range r.Instances {
 			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
@@ -194,8 +199,19 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 				Count:    1,
 				Metadata: []v1.Metadata{metadata},
 				Index:    index,
+				Disks:    []v1.Disk{},
 			}
-
+			for j := range i.BlockDeviceMappings {
+				volumeId := *i.BlockDeviceMappings[j].Ebs.VolumeId
+				hostmap[index].Disks = append(hostmap[index].Disks,
+					v1.Disk{
+						Id:       volumeId,
+						Name:     *i.BlockDeviceMappings[j].DeviceName,
+						Capacity: diskMap[volumeId].Capacity,
+						Type:     diskMap[volumeId].Type,
+					},
+				)
+			}
 			fmt.Printf("got instance id: %v, tags: %v, ip: %v, Eip: %v",
 				i.InstanceId, i.Tags, i.PrivateIpAddress, i.PublicIpAddress)
 		}
@@ -204,8 +220,25 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	for _, v := range hostmap {
 		hosts = append(hosts, *v)
 	}
-
 	return hosts, nil
+}
+
+func (d Driver) getVolumes() (map[string]v1.Disk, error) {
+	client := d.Client
+	input := &ec2.DescribeVolumesInput{}
+	result, err := client.DescribeVolumes(context.TODO(), input)
+	if err != nil {
+		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 volumes: %v", err)
+	}
+
+	diskMap := make(map[string]v1.Disk, len(result.Volumes))
+	for _, v := range result.Volumes {
+		diskMap[*v.VolumeId] = v1.Disk{
+			Type:     string(v.VolumeType),
+			Capacity: int(*v.Size),
+		}
+	}
+	return diskMap, nil
 }
 
 func getIndex(i types.Instance) (int, error) {

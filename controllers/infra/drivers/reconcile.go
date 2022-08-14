@@ -57,8 +57,22 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	return nil
 }
 
+func sortDisksByName(disks v1.NameDisks) {
+	sort.Sort(disks)
+}
+
 func sortHostsByIndex(hosts v1.IndexHosts) {
 	sort.Sort(hosts)
+}
+
+func getHostsByIndex(index int, hosts []v1.Hosts) *v1.Hosts {
+	for _, h := range hosts {
+		if h.Index == index {
+			return &h
+		}
+	}
+
+	return nil
 }
 
 func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Driver) error {
@@ -72,17 +86,21 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			}
 			continue
 		}
+		sortDisksByName(v1.NameDisks(d.Disks))
+		sortDisksByName(v1.NameDisks(cur.Disks))
+		if len(d.Disks) != len(cur.Disks) {
 
+		} else {
+
+		}
 		count := d.Count - cur.Count
-		if count == 0 {
-			continue
-		} else if count > 0 {
+		if count > 0 {
 			host := d
 			host.Count = count
 			if err := driver.CreateInstances(&host, infra); err != nil {
 				return fmt.Errorf("desired instance > current instance create instance failed: %v", err)
 			}
-		} else {
+		} else if count < 0 {
 			host := cur
 			host.Count = -count
 			if err := driver.DeleteInstances(host); err != nil {
@@ -91,16 +109,6 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 		}
 
 		// TODO check CPU memory...
-	}
-
-	return nil
-}
-
-func getHostsByIndex(index int, hosts []v1.Hosts) *v1.Hosts {
-	for _, h := range hosts {
-		if h.Index == index {
-			return &h
-		}
 	}
 
 	return nil

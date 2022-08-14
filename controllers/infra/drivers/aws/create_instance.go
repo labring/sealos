@@ -132,6 +132,17 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				Tags:         tags,
 			},
 		},
+		BlockDeviceMappings: make([]types.BlockDeviceMapping, len(hosts.Disks)),
+	}
+
+	// assign to BlockDeviceMappings from host.Disk
+	for i := range input.BlockDeviceMappings {
+		name, size, volumeType := hosts.Disks[i].Name, int32(hosts.Disks[i].Capacity), hosts.Disks[i].Type
+		input.BlockDeviceMappings[i].DeviceName = &name
+		input.BlockDeviceMappings[i].Ebs = &types.EbsBlockDevice{
+			VolumeSize: &size,
+			VolumeType: types.VolumeType(volumeType),
+		}
 	}
 
 	result, err := MakeInstance(context.TODO(), client, input)

@@ -47,3 +47,14 @@ func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 func (d Driver) GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
 	return d.getInstancesByLabel(key, value, infra)
 }
+
+func (d Driver) CreateVolume(host *v1.Hosts, disk *v1.Disk) error {
+	return d.createAndAttachVolume(host, disk)
+}
+
+func (d Driver) DeleteVolume() error {
+	return nil
+}
+func (d Driver) ModifyVolume() error {
+	return nil
+}
