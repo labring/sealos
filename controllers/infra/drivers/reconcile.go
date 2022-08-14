@@ -63,7 +63,6 @@ func sortHostsByIndex(hosts v1.IndexHosts) {
 
 func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Driver) error {
 	desired := infra.Spec.Hosts
-
 	for _, d := range desired {
 		cur := getHostsByIndex(d.Index, current)
 		if cur == nil {
@@ -85,7 +84,7 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			}
 		} else {
 			host := cur
-			host.Count = count
+			host.Count = -count
 			if err := driver.DeleteInstances(host); err != nil {
 				return fmt.Errorf("desired instance < current instance delete instance failed: %v", err)
 			}
