@@ -1,0 +1,6 @@
+apiVersion: user.sealos.io/v1
+kind: Group
+metadata:
+  name: group-sample
+spec:
+  # TODO(user): Add fields here

@@ -1,0 +1,24 @@
+# permissions for end users to edit groups.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: group-editor-role
+rules:
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - groups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - groups/status
+  verbs:
+  - get
