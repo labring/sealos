@@ -94,7 +94,9 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	client := d.Client
 	var count = int32(hosts.Count)
-
+	if count == 0 {
+		return nil
+	}
 	// Tag name and tag value
 	// Set role tag
 	tags := rolesToTags(hosts.Roles)
