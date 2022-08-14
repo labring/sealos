@@ -66,7 +66,8 @@ func StopInstance(c context.Context, api EC2StopInstancesAPI, input *ec2.StopIns
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	client := d.Client
 
-	for _, metadata := range hosts.Metadata {
+	for i := 0; i < hosts.Count; i++ {
+		metadata := hosts.Metadata[i]
 		instanceID := metadata.ID
 		input := &ec2.StopInstancesInput{
 			InstanceIds: []string{
