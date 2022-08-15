@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type PreProcessor interface {
@@ -52,6 +53,7 @@ func (c *ClusterFile) Process() error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("read Clusterfile: %s", string(clusterFileData))
 	return c.decode(clusterFileData)
 }
 
