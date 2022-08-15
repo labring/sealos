@@ -46,11 +46,10 @@ import (
 )
 
 const (
-	HTTPS               = "https://"
-	HTTP                = "http://"
-	defaultProxyURL     = "https://registry-1.docker.io"
-	configRootDir       = "rootdirectory"
-	maxPullGoroutineNum = 4
+	HTTPS           = "https://"
+	HTTP            = "http://"
+	defaultProxyURL = "https://registry-1.docker.io"
+	configRootDir   = "rootdirectory"
 
 	manifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
 	manifestOCI      = "application/vnd.oci.image.manifest.v1+json"
@@ -285,7 +284,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 		return fmt.Errorf("failed to get blob service: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
-	numCh := make(chan struct{}, maxPullGoroutineNum)
+	numCh := make(chan struct{}, is.maxPullProcs)
 	blobLists := make([]digest.Digest, 0)
 
 	//get blob list
