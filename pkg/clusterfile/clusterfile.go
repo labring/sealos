@@ -58,27 +58,27 @@ func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
 	return c.KubeConfig
 }
 
-type ClusterFileOption func(*ClusterFile)
+type OptionFunc func(*ClusterFile)
 
-func WithCustomValues(valueFiles []string) ClusterFileOption {
+func WithCustomValues(valueFiles []string) OptionFunc {
 	return func(c *ClusterFile) {
 		c.customValues = valueFiles
 	}
 }
 
-func WithCustomSets(sets []string) ClusterFileOption {
+func WithCustomSets(sets []string) OptionFunc {
 	return func(c *ClusterFile) {
 		c.customSets = sets
 	}
 }
 
-func WithCustomEnvs(envs []string) ClusterFileOption {
+func WithCustomEnvs(envs []string) OptionFunc {
 	return func(c *ClusterFile) {
 		c.customEnvs = envs
 	}
 }
 
-func NewClusterFile(path string, opts ...ClusterFileOption) Interface {
+func NewClusterFile(path string, opts ...OptionFunc) Interface {
 	cf := &ClusterFile{
 		path: path,
 	}

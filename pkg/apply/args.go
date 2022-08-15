@@ -37,7 +37,7 @@ type RunArgs struct {
 	CustomCMD []string
 }
 
-type ApplyArgs struct {
+type Args struct {
 	Values    []string
 	Sets      []string
 	CustomEnv []string

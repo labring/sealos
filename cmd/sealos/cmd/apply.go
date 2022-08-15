@@ -25,7 +25,7 @@ import (
 var clusterFile string
 
 func newApplyCmd() *cobra.Command {
-	var applyArgs apply.ApplyArgs
+	var applyArgs apply.Args
 	// applyCmd represents the apply command
 	var applyCmd = &cobra.Command{
 		Use:     "apply",
@@ -33,7 +33,6 @@ func newApplyCmd() *cobra.Command {
 		Example: `sealos apply -f Clusterfile`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// OR args instead?
 			applier, err := apply.NewApplierFromFile(clusterFile, &applyArgs)
 			if err != nil {
 				return err

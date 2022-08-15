@@ -75,7 +75,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	return applydrivers.NewDefaultApplier(c.cluster, nil)
 }
 
-func NewApplierFromFile(path string, args *ApplyArgs) (applydrivers.Interface, error) {
+func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
 	if !filepath.IsAbs(path) {
 		pa, err := os.Getwd()
 		if err != nil {
