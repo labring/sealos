@@ -20,25 +20,26 @@ import (
 	"context"
 	"time"
 
+	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
 const (
 	FinalizerName       = "terminal.sealos.io/finalizer"
-	DefaultAPIServer    = "https://apiserver.svc.cluster.local:6443"
+	DefaultAPIServer    = "https://kubernetes.default.svc.cluster.local:443"
 	KeepaliveAnnotation = "lastUpdateTime"
 )
 
@@ -52,8 +53,11 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals/finalizers,verbs=update
-//+kubebuilder"rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder"rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -65,6 +69,7 @@ type TerminalReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	logger := log.FromContext(ctx, "terminal", req.NamespacedName)
 	terminal := &terminalv1.Terminal{}
 	if err := r.Get(ctx, req.NamespacedName, terminal); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -93,22 +98,68 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err := r.Delete(ctx, terminal); err != nil {
 			return ctrl.Result{}, err
 		}
-		logger.Debug("delete expired terminal %v success", req.NamespacedName)
+		logger.Info("delete expired terminal success")
 		return ctrl.Result{}, nil
 	}
 
 	if err := r.syncDeployment(ctx, terminal); err != nil {
+		logger.Error(err, "create deployment failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 	if err := r.syncService(ctx, terminal); err != nil {
+		logger.Error(err, "create service failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create service failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+
+	if err := r.syncIngress(ctx, req, terminal); err != nil {
+		logger.Error(err, "create ingress failed")
+		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create ingress failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
 	r.recorder.Eventf(terminal, corev1.EventTypeNormal, "Created", "create terminal success: %v", terminal.Name)
 	duration, _ := time.ParseDuration(terminal.Spec.Keepalived)
 	return ctrl.Result{RequeueAfter: duration}, nil
+}
+
+func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, terminal *terminalv1.Terminal) error {
+	if err := r.Get(ctx, req.NamespacedName, &certv1.Certificate{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		cert, err := createCert(terminal)
+		if err != nil {
+			return err
+		}
+		if err := controllerutil.SetControllerReference(terminal, cert, r.Scheme); err != nil {
+			return err
+		}
+		err = r.Create(ctx, cert)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := r.Get(ctx, req.NamespacedName, &networkingv1.Ingress{}); err != nil {
+		if !errors.IsNotFound(err) {
+			return err
+		}
+		ingress, err := createIngress(terminal)
+		if err != nil {
+			return err
+		}
+		if err := controllerutil.SetControllerReference(terminal, ingress, r.Scheme); err != nil {
+			return err
+		}
+		err = r.Create(ctx, ingress)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminalv1.Terminal) error {
@@ -120,7 +171,7 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 		},
 		Spec: corev1.ServiceSpec{
 			Selector: labelsMap,
-			Type:     corev1.ServiceTypeNodePort,
+			Type:     corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{Name: "tty", Port: 8080, TargetPort: intstr.FromInt(8080), Protocol: corev1.ProtocolTCP},
 			},
@@ -147,12 +198,10 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 			service.Spec.Ports[0].Protocol = expectService.Spec.Ports[0].Protocol
 		}
 		if err := controllerutil.SetControllerReference(terminal, service, r.Scheme); err != nil {
-			logger.Debug("SetControllerReference error: %v", err)
 			return err
 		}
 		return nil
 	}); err != nil {
-		logger.Debug("create or update service error: %v", err)
 		return err
 	}
 	return nil
@@ -230,12 +279,10 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 		}
 
 		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
-			logger.Debug("SetControllerReference error: %v", err)
 			return err
 		}
 		return nil
 	}); err != nil {
-		logger.Debug("create or update deployment error: %v", err)
 		return err
 	}
 	return nil
@@ -283,6 +330,11 @@ func buildLabelsMap(terminal *terminalv1.Terminal) map[string]string {
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
+	err := certv1.AddToScheme(r.Scheme)
+	if err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminalv1.Terminal{}).
 		Complete(r)
