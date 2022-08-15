@@ -1,3 +1,7 @@
+---
+sidebar_position: 0
+---
+
 ## Prerequisites
 
 Sealos is a simple go binary file that can be installed in most Linux Operating Systems.

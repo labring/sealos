@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Updating a Cluster
 
 1. Run `sealos reset` to reset your cluster if you have started the cluster.
