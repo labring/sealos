@@ -4,4 +4,9 @@ ARG TARGETPLATFORM
 
 RUN apk add --no-cache ipset iptables
 ENTRYPOINT ["/usr/bin/lvscare"]
-RUN --mount=target=/build cp /build/dist/lvscare_linux_${TARGETPLATFORM}/lvscare  /usr/bin/
+
+WORKDIR /root
+
+RUN --mount=target=/build tar xf /build/dist/sealos_*_$(echo ${TARGETPLATFORM} | tr '/' '_' | sed -e 's/arm_/arm/').tar.gz && cp lvscare /usr/bin
+
+CMD ["--help"]
