@@ -88,6 +88,9 @@ func (c Chart) getRenderContent() (map[string]string, error) {
 			return nil, err
 		}
 	}
+	if err := chartutil.ProcessDependencies(ccc, values); err != nil {
+		return nil, err
+	}
 
 	options := chartutil.ReleaseOptions{
 		Name: "dryrun",
