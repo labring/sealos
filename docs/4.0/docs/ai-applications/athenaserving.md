@@ -1,6 +1,5 @@
 # AthenaServing Framework (ASF)
-
-## vision
+## Vision
 
 Provide a consistent solution for engineering management of AI capabilities for any scenario that requires the use of AI
 capabilities. Users of AI scenarios in any field can quickly implement their algorithm models into a unified standard
@@ -53,7 +52,7 @@ engineering solution.
 * Hundred billions of PV traffic polishing
 * Support multiple load balancing strategies
 * Added support for Python code reasoning
-  *...
+* ...
 
 ## Architecture
 
@@ -73,6 +72,8 @@ Prepare a test machine (4c8G), hard disk >=40G
 $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sealos-amd64 -O sealos &&  chmod +x sealos && mv sealos /usr/bin
 ```
 
+
+
 2. Create the cluster
 
 ```shell
@@ -88,9 +89,7 @@ $ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.22.1   --masters 192.
 ```shell
 $ sealos run labring/helm:v3.8.2 
 ```
-
 * Install openebs
-
 ```shell
 $ sealos run labring/openebs:v1.9.0 
 
@@ -99,6 +98,7 @@ $ sealos run labring/openebs:v1.9.0
 ```shell
 $ sealos run lregistry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 ```
+
 
 3. HTTP call AI demo capability MMOCR capability
 
@@ -179,7 +179,7 @@ for box in result[0].get("result"):
     print(msg.format(**box))
 ```
 
-***调用以及结果***
+***Call and the Response ***
 
 ```bash
 cd /var/lib/sealos/data/default/rootfs/athenaserving/charts/mmocr_ase
@@ -218,7 +218,7 @@ MMocr Result: box located at [208, 224, 210, 212, 223, 214, 220, 227], box score
 MMocr Result: box located at [223, 214, 240, 214, 240, 226, 223, 226], box score is 0.969144344329834.  Detected text is the , text  score is 1.0...
 ```
 
-## 集成接入您的自定义AI能力
+## Integrate access to your custom AI capabilities
 
 For new AI capabilities, you need to develop and build your AI capability image according to the loader specification,
 and then deploy it to the cluster.
