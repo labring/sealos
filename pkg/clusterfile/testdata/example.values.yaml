@@ -1,0 +1,14 @@
+# clusterName: default
+images:
+  - dockerhub.tencentcloudcr.com/labring/kubernetes:v1.23.8
+  - dockerhub.tencentcloudcr.com/labring/calico:v3.22.1
+masters:
+  - 10.74.16.27:22
+  - 10.74.16.140:22
+  - 10.74.16.101:22
+nodes: []
+ssh:
+  # passwd: s3cret
+  pk: /path/to/private/key/file
+  port: 22
+  user: root

@@ -1,0 +1,18 @@
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  name: {{ .Values.clusterName }}
+spec:
+  hosts:
+    - ips: {{ .Values.masters | toYaml | nindent 8 }}
+      roles: ["master", "amd64"]
+    {{- with .Values.nodes }}
+    - ips: {{ . | toYaml | nindent 8 }}
+      roles: ["node", "amd64"]
+    {{- end }}
+  image: {{ .Values.images | toYaml | nindent 4 }}
+  ssh:
+    passwd: {{ default (env "SSH_PASSWORD") .Values.ssh.passwd }}
+    pk: {{ default "~/.ssh/id_rsa" .Values.ssh.pk }}
+    port: {{ default 22 .Values.ssh.port | int }}
+    user: {{ default "root" .Values.ssh.user }}
