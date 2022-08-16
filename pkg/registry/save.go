@@ -50,7 +50,7 @@ const (
 	HTTP                = "http://"
 	defaultProxyURL     = "https://registry-1.docker.io"
 	configRootDir       = "rootdirectory"
-	maxPullGoroutineNum = 4
+	maxPullGoroutineNum = 1
 
 	manifestV2       = "application/vnd.docker.distribution.manifest.v2+json"
 	manifestOCI      = "application/vnd.oci.image.manifest.v1+json"
