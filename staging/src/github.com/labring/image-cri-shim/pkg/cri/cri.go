@@ -22,6 +22,8 @@ import (
 	goruntime "runtime"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/utils/file"
 
 	toml "github.com/pelletier/go-toml"
@@ -291,7 +293,7 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 			foundCRISockets = append(foundCRISockets, socket)
 		}
 	}
-
+	logger.Debug("knownCRISockets: %+v,foundCRISockets: %+v", knownCRISockets, foundCRISockets)
 	switch len(foundCRISockets) {
 	case 0:
 		// Fall back to the default socket if no CRI is detected, we can error out later on if we need it
