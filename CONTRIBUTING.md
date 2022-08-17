@@ -211,9 +211,10 @@ The documentation for sealos includes:
 - [README.md](https://github.com/labring/sealos/blob/main/README.md)
 - [CONTRIBUTING.md](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md)
 - [DEVELOPGUIDE.md](https://github.com/labring/sealos/blob/main/DEVELOPGUIDE.md)
-- Markdown files under [docs/4.0](https://github.com/labring/sealos/blob/main/docs/4.0)
+- Files under [docs/4.0](https://github.com/labring/sealos/blob/main/docs/4.0)
    - English docs under [docs/4.0/docs](https://github.com/labring/sealos/tree/main/docs/4.0/docs)
    - Chinese docs under [docs/4.0/i18n/zh-Hans](https://github.com/labring/sealos/tree/main/docs/4.0/i18n/zh-Hans)
+   - Images under [docs/4.0/img](https://github.com/labring/sealos/tree/main/docs/4.0/img)
 
 If you have experiences in [Docusaurus 2](https://docusaurus.io), you might find the directory structure familiar. Indeed, the [sealos documentation website](https://github.com/fanux/sealos-site) is built with [Docusaurus 2](https://docusaurus.io) and any update to the docs **here** will be synchronized **there**.
 

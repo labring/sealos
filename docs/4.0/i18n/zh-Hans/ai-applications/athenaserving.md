@@ -64,9 +64,9 @@ $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sea
 $ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.22.1   --masters 192.168.64.2 -p <password>
 ```
 
-![img](imgs/sealos4-run-k8s.png)
-![img2](imgs/sealos4-run-k8s-2.png)
-![img2](imgs/sealos4-run-k8s-3.png)
+![](/img/ai-applications/sealos4-run-k8s.png)
+![](/img/ai-applications/sealos4-run-k8s-2.png)
+![](/img/ai-applications/sealos4-run-k8s-3.png)
 
 * Install helm
 
