@@ -15,7 +15,6 @@
 package registry
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -353,23 +352,11 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 			}()
 
 			//store to local filesystem
-			//content, err := ioutil.ReadAll(preader)
-			bf := bufio.NewReader(preader)
+			content, err := io.ReadAll(preader)
 			if err != nil {
-				return fmt.Errorf("blob %s content error: %v", tmpBlob, err)
+				return fmt.Errorf("failed to read preader: %v", err)
 			}
-			bw, err := blobStore.Create(is.ctx)
-			if err != nil {
-				return fmt.Errorf("failed to create blob store writer: %v", err)
-			}
-			if _, err = bf.WriteTo(bw); err != nil {
-				return fmt.Errorf("failed to write blob to service: %v", err)
-			}
-			_, err = bw.Commit(is.ctx, distribution.Descriptor{
-				MediaType: "",
-				Size:      bw.Size(),
-				Digest:    tmpBlob,
-			})
+			_, err = blobStore.Put(is.ctx, "", content)
 			if err != nil {
 				return fmt.Errorf("failed to store blob %s to local: %v", tmpBlob, err)
 			}
@@ -378,8 +365,5 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
