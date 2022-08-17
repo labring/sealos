@@ -118,7 +118,8 @@ func GenerateKubeConfig(username string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	config := &api.Config{
+
+	config := api.Config{
 		Clusters: map[string]*api.Cluster{
 			"kubernetes": {
 				Server:                   "https://apiserver.cluster.local:6443",
@@ -139,7 +140,7 @@ func GenerateKubeConfig(username string) (string, error) {
 		CurrentContext: ctx,
 	}
 
-	content, err := clientcmd.Write(*config)
+	content, err := clientcmd.Write(config)
 	if err != nil {
 		return "", fmt.Errorf("write kubeconfig failed %s", err)
 	}

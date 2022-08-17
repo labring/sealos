@@ -15,10 +15,12 @@
 package api
 
 import (
+	"errors"
+
 	restful "github.com/emicklei/go-restful/v3"
 
 	"github.com/labring/sealos/pkg/auth"
-	"github.com/labring/sealos/pkg/utils/httpserver"
+	hs "github.com/labring/sealos/pkg/utils/httpserver"
 )
 
 // RegisterRouter Register auth Router
@@ -31,61 +33,66 @@ func RegisterRouter(webService *restful.WebService) {
 	// SSO callback, get token
 	webService.Route(webService.POST("/token").To(handlerToken))
 	// return user info
-	webService.Route(webService.POST("/userinfo").To(handlerUserInfo))
+	webService.Route(webService.GET("/userinfo").To(handlerUserInfo))
 	// generate kubeconfig according to user info
-	webService.Route(webService.POST("/kubeconfig").To(handlerKubeConfig))
+	webService.Route(webService.GET("/kubeconfig").To(handlerKubeConfig))
 }
 
 func handlerLogin(_ *restful.Request, response *restful.Response) {
 	redirectURL, err := auth.GetLoginRedirect()
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = hs.RespError(response, err)
 		return
 	}
-	response.Header().Set("Location", redirectURL)
-	response.WriteHeader(302)
+	hs.RespRedirect(response, redirectURL)
 }
 
 func handlerToken(request *restful.Request, response *restful.Response) {
 	cs := &codeState{}
 	if err := request.ReadEntity(&cs); err != nil {
-		_ = response.WriteError(500, err)
+		_ = hs.RespError(response, err)
 		return
 	}
 	if cs.State == "" || cs.Code == "" {
-		_ = response.WriteError(500, nil)
+		_ = hs.RespError(response, errors.New("state or code is empty"))
 		return
 	}
 
 	oauthToken, err := auth.GetOAuthToken(cs.State, cs.Code)
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = hs.RespError(response, err)
 		return
 	}
 
-	_ = response.WriteEntity(oauthToken)
+	_ = hs.RespData(response, oauthToken)
 }
 
 func handlerUserInfo(request *restful.Request, response *restful.Response) {
-	accessToken := httpserver.GetAccessToken(request)
+	accessToken := hs.GetAccessToken(request)
+	if accessToken == "" {
+		_ = hs.RespError(response, errors.New("access token is empty"))
+		return
+	}
 	userInfo, err := auth.GetUserInfo(accessToken)
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = hs.RespError(response, err)
 		return
 	}
 
-	_ = response.WriteEntity(userInfo)
+	_ = hs.RespData(response, userInfo)
 }
 
 func handlerKubeConfig(request *restful.Request, response *restful.Response) {
-	accessToken := httpserver.GetAccessToken(request)
+	accessToken := hs.GetAccessToken(request)
+	if accessToken == "" {
+		_ = hs.RespError(response, errors.New("access token is empty"))
+		return
+	}
 	kubeConfig, err := auth.GetKubeConfig(accessToken)
 	if err != nil {
-		_ = response.WriteError(500, err)
+		_ = hs.RespError(response, err)
 		return
 	}
 
-	_ = response.WriteEntity(map[string]string{
-		"config": kubeConfig,
-	})
+	_ = hs.RespData(response, kubeConfig)
 }

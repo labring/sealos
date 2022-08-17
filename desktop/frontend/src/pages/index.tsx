@@ -37,7 +37,7 @@ const Home: NextPage = () => {
             <p>Discover sealos in open source world!</p>
           </Link>
 
-          <Link href="/api/login" className={styles.card}>
+          <Link href={process.env.NEXT_PUBLIC_API_HOST + 'auth/login'} className={styles.card}>
             <h2>Login & Register &rarr;</h2>
             <p>Instantly deploy your Next.js site to a public URL with Vercel.</p>
           </Link>

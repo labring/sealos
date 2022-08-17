@@ -60,7 +60,7 @@ spec:
                 port:
                   number: 3000
           - pathType: Prefix
-            path: /api(/|$)(.*)
+            path: /service/auth(/|$)(.*)
             backend:
               service:
                 name: service-auth
