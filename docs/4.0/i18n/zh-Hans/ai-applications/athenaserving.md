@@ -23,9 +23,10 @@
 * AIGES 与 Language Wrapper
 
 - C/C++ Wrapper
-  [](/img/ai-applications/c++.png)
+  ![](/img/ai-applications/c++.png)
+
 - Python Wrapper
-  [](/img/ai-applications/python.png)
+  ![](/img/ai-applications/python.png)
 
 ## 面向场景
 

@@ -36,10 +36,10 @@ code (according to established standards) into grpc/http services
 * AIGES And Language Wrapper
 
 - C/C++ Wrapper
-  [](/img/ai-applications/c++.png)
+  ![](/img/ai-applications/c++.png)
 
 - Python Wrapper
-  [](/img/ai-applications/python.png)
+  ![](/img/ai-applications/python.png)
 
 ## Scene Oriented
 
