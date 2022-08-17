@@ -20,6 +20,14 @@
 
 `AIGES` 是  `ASF`核心的组件，中文名称加载器。主要负责将用户的推理代码(按照既定标准)转换成 grpc/http 服务
 
+* AIGES 与 Language Wrapper
+
+- C/C++ Wrapper
+  ![](/img/ai-applications/c++.png)
+
+- Python Wrapper
+  ![](/img/ai-applications/python.png)
+
 ## 面向场景
 
 AI能力最终需要落地工程化，部分企业缺乏统一标准的AI工程化方案。
@@ -82,7 +90,7 @@ $ sealos run labring/openebs:v1.9.0
 ```
 
 ```shell
-$ sealos run lregistry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
+$ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 ```
 
 3. HTTP 调用AI demo能力 MMOCR能力

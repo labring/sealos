@@ -33,6 +33,14 @@ provide HTTP APIs to the outside world.
 `AIGES` is the core component of `ASF`, the Chinese name loader. Mainly responsible for converting the user's reasoning
 code (according to established standards) into grpc/http services
 
+* AIGES And Language Wrapper
+
+- C/C++ Wrapper
+  ![](/img/ai-applications/c++.png)
+
+- Python Wrapper
+  ![](/img/ai-applications/python.png)
+
 ## Scene Oriented
 
 AI capabilities ultimately need to be implemented into engineering, and some companies lack a unified standard AI
@@ -96,7 +104,7 @@ $ sealos run labring/openebs:v1.9.0
 ```
 
 ```shell
-$ sealos run lregistry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
+$ sealos run registry.cn-qingdao.aliyuncs.com/labring/athenaserving:v2.0.0rc1
 ```
 
 
