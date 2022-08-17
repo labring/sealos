@@ -22,6 +22,8 @@ import (
 	goruntime "runtime"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/utils/file"
 
 	toml "github.com/pelletier/go-toml"
@@ -35,6 +37,7 @@ var defaultKnownCRISockets = []string{
 	CRISocketContainerd,
 	CRISocketCRIO,
 	CRISocketDocker,
+	CRISocketDockerLower,
 }
 
 const (
@@ -72,7 +75,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config st
 	var toolName string
 	var runtime ContainerRuntime
 
-	if criSocket != CRISocketDocker {
+	if criSocket != CRISocketDocker && criSocket != CRISocketDockerLower {
 		toolName = "crictl"
 		// !!! temporary work around crictl warning:
 		// Using "/var/run/crio/crio.sock" as endpoint is deprecated,
@@ -290,7 +293,7 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 			foundCRISockets = append(foundCRISockets, socket)
 		}
 	}
-
+	logger.Debug("knownCRISockets: %+v,foundCRISockets: %+v", knownCRISockets, foundCRISockets)
 	switch len(foundCRISockets) {
 	case 0:
 		// Fall back to the default socket if no CRI is detected, we can error out later on if we need it
