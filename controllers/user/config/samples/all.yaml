@@ -1,0 +1,90 @@
+apiVersion: user.sealos.io/v1
+kind: User
+metadata:
+  name: f8699ded-58d3-432b-a9ff-56568b57a38d
+spec:
+  displayName: cuisongliu
+---
+apiVersion: user.sealos.io/v1
+kind: UserGroup
+metadata:
+  name: f8699ded-58d3-432b-a9ff-56568b57a38d
+---
+apiVersion: user.sealos.io/v1
+kind: UserGroupBinding
+metadata:
+  name: f8699ded-58d3-432b-a9ff-56568b57a38d
+subject:
+  kind: User
+  name: "f8699ded-58d3-432b-a9ff-56568b57a38d" # Name is case sensitive
+  apiGroup: sealos.io/v1
+userGroupRef: f8699ded-58d3-432b-a9ff-56568b57a38d
+roleRefs:
+  kind: ClusterRole
+  name: sealos-user-admin-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: user.sealos.io/v1
+kind: UserGroupBinding
+metadata:
+  name: f8699ded-58d3-432b-a9ff-56568b57a38d
+subject:
+  kind: Namespace
+  name: "f8699ded-58d3-432b-a9ff-56568b57a38d"
+userGroupRef: f8699ded-58d3-432b-a9ff-56568b57a38d
+
+##  创建者  sealos-user-create-role权限
+##  管理员  不能创建管理员使用webhook校验操作 新增sealos-user-manager-role权限
+##  只有管理员和创建者才需要设置role其他不需要设置（默认给namespace设置cluster-admin的Role权限）
+##  创建User默认创建UserGroup 和 2个UserGroupBinding (对user(直接是创建人的role)和对namespace)
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealos-user-create-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroupbindings'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'listusergroupsbyuser'
+      - 'listuserbyusergroup'
+    verbs:
+      - list
+      - get
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealos-user-manager-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - '*'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'listusergroupsbyuser'
+      - 'listuserbyusergroup'
+      - 'listnamespacebyusergroup'
+    verbs:
+      - list
+      - get
+      - watch

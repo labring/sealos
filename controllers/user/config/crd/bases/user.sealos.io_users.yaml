@@ -13,9 +13,16 @@ spec:
     listKind: UserList
     plural: users
     singular: user
-  scope: Namespaced
+  scope: Cluster
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.displayName
+      name: DisplayName
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: User is the Schema for the users API
@@ -35,13 +42,18 @@ spec:
           spec:
             description: UserSpec defines the desired state of User
             properties:
-              foo:
-                description: Foo is an example field of User. Edit user_types.go to
-                  remove/update
+              displayName:
                 type: string
+            required:
+            - displayName
             type: object
           status:
             description: UserStatus defines the observed state of User
+            properties:
+              config:
+                type: string
+            required:
+            - config
             type: object
         type: object
     served: true

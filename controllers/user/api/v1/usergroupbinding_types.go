@@ -17,48 +17,45 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// GroupSpec defines the desired state of Group
-type GroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Group. Edit group_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// GroupStatus defines the observed state of Group
-type GroupStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="UserGroup",type="string",JSONPath=".userGroupRef"
+// +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".subject.kind"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
-// Group is the Schema for the groups API
-type Group struct {
+// UserGroupBinding is the Schema for the usergroupbindings API
+type UserGroupBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   GroupSpec   `json:"spec,omitempty"`
-	Status GroupStatus `json:"status,omitempty"`
+	// Subject holds references to the objects the role applies to.
+	// +optional
+	Subject v1.Subject `json:"subject"`
+
+	// RoleRef can only reference a ClusterRole in the global namespace.
+	// If the RoleRef cannot be resolved, the Authorizer must return an error.
+	RoleRef *v1.RoleRef `json:"roleRef,omitempty"`
+
+	UserGroupRef string `json:"userGroupRef"`
 }
 
 //+kubebuilder:object:root=true
 
-// GroupList contains a list of Group
-type GroupList struct {
+// UserGroupBindingList contains a list of UserGroupBinding
+type UserGroupBindingList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Group `json:"items"`
+	Items           []UserGroupBinding `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Group{}, &GroupList{})
+	SchemeBuilder.Register(&UserGroupBinding{}, &UserGroupBindingList{})
 }

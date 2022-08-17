@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,11 +26,6 @@ import (
 
 // UserGroupSpec defines the desired state of UserGroup
 type UserGroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of UserGroup. Edit usergroup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
 }
 
 // UserGroupStatus defines the observed state of UserGroup
@@ -40,14 +36,16 @@ type UserGroupStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // UserGroup is the Schema for the usergroups API
 type UserGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   UserGroupSpec   `json:"spec,omitempty"`
-	Status UserGroupStatus `json:"status,omitempty"`
+	// RoleRef can only reference a ClusterRole in the global namespace.
+	// If the RoleRef cannot be resolved, the Authorizer must return an error.
+	RoleRef v1.RoleRef `json:"roleRef" protobuf:"bytes,3,opt,name=roleRef"`
 }
 
 //+kubebuilder:object:root=true

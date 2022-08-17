@@ -5,24 +5,30 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.0
   creationTimestamp: null
-  name: usergroups.user.sealos.io
+  name: usergroupbindings.user.sealos.io
 spec:
   group: user.sealos.io
   names:
-    kind: UserGroup
-    listKind: UserGroupList
-    plural: usergroups
-    singular: usergroup
+    kind: UserGroupBinding
+    listKind: UserGroupBindingList
+    plural: usergroupbindings
+    singular: usergroupbinding
   scope: Cluster
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .userGroupRef
+      name: UserGroup
+      type: string
+    - jsonPath: .subject.kind
+      name: Kind
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
     name: v1
     schema:
       openAPIV3Schema:
-        description: UserGroup is the Schema for the usergroups API
+        description: UserGroupBinding is the Schema for the usergroupbindings API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -54,8 +60,37 @@ spec:
             - kind
             - name
             type: object
+          subject:
+            description: Subject holds references to the objects the role applies
+              to.
+            properties:
+              apiGroup:
+                description: APIGroup holds the API group of the referenced subject.
+                  Defaults to "" for ServiceAccount subjects. Defaults to "rbac.authorization.k8s.io"
+                  for User and Group subjects.
+                type: string
+              kind:
+                description: Kind of object being referenced. Values defined by this
+                  API group are "User", "Group", and "ServiceAccount". If the Authorizer
+                  does not recognized the kind value, the Authorizer should report
+                  an error.
+                type: string
+              name:
+                description: Name of the object being referenced.
+                type: string
+              namespace:
+                description: Namespace of the referenced object.  If the object kind
+                  is non-namespace, such as "User" or "Group", and this value is not
+                  empty the Authorizer should report an error.
+                type: string
+            required:
+            - kind
+            - name
+            type: object
+          userGroupRef:
+            type: string
         required:
-        - roleRef
+        - userGroupRef
         type: object
     served: true
     storage: true

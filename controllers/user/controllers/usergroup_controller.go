@@ -55,7 +55,7 @@ type UserGroupReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *UserGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(4).Info("start reconcile for user groups")
-	userGroup := &userv1.Group{}
+	userGroup := &userv1.UserGroup{}
 	ctr := controller.Controller{
 		Client:   r.Client,
 		Logger:   r.Logger,
