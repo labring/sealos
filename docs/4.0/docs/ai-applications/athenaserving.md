@@ -1,37 +1,26 @@
 # AthenaServing Framework (ASF)
 ## Vision
 
-Provide a consistent solution for engineering management of AI capabilities for any scenario that requires the use of AI
-capabilities. Users of AI scenarios in any field can quickly implement their algorithm models into a unified standard
-HTTP API service.
+Provide a consistent solution for engineering management of AI capabilities for any scenario that requires AI capabilities. Users of AI scenarios in any field can quickly implement their algorithm models into a unified standard HTTP API service.
 
 ## Framework introduction
 
-`AthenaServing Framework (hereinafter referred to as ASF)` AI reasoning service framework relies on iFLYTEK's years of
-experience in cloud service of AI algorithm engine and continuous exploration and practice of cloud native. Enjoy the
-convenience and speed of related cloud native components through `ASF`. AI algorithm engine developers can focus on the
-evolution and research of the algorithm, and do not need to be distracted in the management of hardware resources and
-the development and operation of cloud services.
-
-`ASF` is a serverless and fully managed platform framework for AI algorithm engine specially designed for AI capability
-developers. You can quickly deploy the AI ​​algorithm engine by integrating the plug-ins provided in `ASF`, and use
-network and distribution strategies , data processing and other supporting auxiliary systems. The engine hosting
-platform is committed to accelerating the cloud service of AI algorithm engines, and provides multiple guarantees for
-the stability of cloud services with the help of cloud native architecture. Deploy, upgrade, scale, operate, and monitor
-engines securely.
-
-At present, the deployment of `ASF` requires developers to master a certain knowledge of K8s, helm, etc., and the
-installation and deployment depends on the online mirror warehouse and helm repo, which is somewhat weak in the face of
-offline environment and various operating system deployment requirements. `Cluster mirror`, `images-shim` and other
-solutions allow applications to make offline deployment very smooth without any additional operations. After sealos
-supports `ASF` cluster mirroring, anyone can work in any scene and in any environment. Delivers `ASF` that pulls up
-an `ASF` environment with just one command. Users can centrally deploy their AI capabilities on the `ASF` framework and
-provide HTTP APIs to the outside world.
+`AthenaServing Framework (hereinafter referred to as ASF)` AI reasoning service framework relies on iFLYTEK's years of experience in cloud service of AI algorithm engine and continuous exploration and practice of cloud-native. Enjoy the convenience and speed of related cloud-native components through `ASF`. AI algorithm engine developers can focus on algorithm research and technical evolution. What's more, the developers do not need to be distracted by the management of hardware resources and the development and operation of cloud services.
+`ASF` is a serverless and fully managed platform framework for AI algorithm engines specially designed for AI capability developers. You can quickly deploy the AI algorithm engine by integrating the plug-ins provided in `ASF`, using network and distribution strategies, data processing, and other supporting auxiliary systems. The engine hosting platform is committed to accelerating the cloud service of AI algorithm engines. And it also provides multiple guarantees for the stability of cloud services with the help of cloud-native architecture. Deploy, upgrade, scale, operate, and monitor engines securely.
+Currently, the deployment of `ASF` requires developers to master some knowledge of K8s, helm, etc. Meanwhile, the installation and deployment depend on the online mirror warehouse and helm repo, which is somewhat weak in the face of the offline environment and various operating system deployment requirements. `Cluster mirror`, `images-shim`, and other solutions allow applications to make offline deployment very smooth without any additional operations. After sealos supports `ASF` cluster mirroring, anyone can work in any scene and environment. Delivers `ASF` that pulls up an `ASF` environment with just one command. Users can centrally deploy their AI capabilities on the `ASF` framework and provide HTTP APIs to the outside world.
 
 ## What is AIGES
 
-`AIGES` is the core component of `ASF`, the Chinese name loader. Mainly responsible for converting the user's reasoning
-code (according to established standards) into grpc/http services
+`AIGES`, the Chinese name loader, is the core component of `ASF`. Mainly responsible for converting the user's reasoning
+code (according to established standards) into grpc/HTTP services
+
+* AIGES And Language Wrapper
+
+- C/C++ Wrapper
+  ![](/img/ai-applications/c++.png)
+
+- Python Wrapper
+  ![](/img/ai-applications/python.png)
 
 * AIGES And Language Wrapper
 
@@ -46,10 +35,10 @@ code (according to established standards) into grpc/http services
 AI capabilities ultimately need to be implemented into engineering, and some companies lack a unified standard AI
 engineering solution.
 
-## Solve the problems
+## Problem Solutions
 
 * AI capabilities are more service-oriented, and there is no standard
-* The AI ​​capability service is online, and there is a lot of redundant work in the service process
+* The AI capability service is online, and there is a lot of redundant work in the service process
 * No AI engineering team
 * No final standard service agreement
 
@@ -57,7 +46,7 @@ engineering solution.
 
 * Optimized XRPC framework based on GRPC
 * Definition of unified standard service agreement
-* Hundred billions of PV traffic polishing
+* Hundred billion of PV traffic polishing
 * Support multiple load balancing strategies
 * Added support for Python code reasoning
 * ...
@@ -228,8 +217,7 @@ MMocr Result: box located at [223, 214, 240, 214, 240, 226, 223, 226], box score
 
 ## Integrate access to your custom AI capabilities
 
-For new AI capabilities, you need to develop and build your AI capability image according to the loader specification,
-and then deploy it to the cluster.
+To implement new AI capabilities, you should develop and build your AI Capability image according to the loader Spec Sheet. And then deploy it to the cluster.
 
 How to build your custom AI capability image, please refer
 to:[Fastly create wrapper.py](https://iflytek.github.io/athena_website/docs/%E5%8A%A0%E8%BD%BD%E5%99%A8/Python%E6%8F%92%E4%BB%B6)
@@ -243,3 +231,4 @@ to:[Fastly create wrapper.py](https://iflytek.github.io/athena_website/docs/%E5%
 * Contact:
 
 ![weixin](https://raw.githubusercontent.com/berlinsaint/readme/main/weixin_ybyang.jpg)
+
