@@ -59,6 +59,7 @@ https://cli.im/
 */
 func (u Payment) getCodeURL(request *restful.Request, response *restful.Response) {
 	amount := request.QueryParameter("amount")
+	user := request.QueryParameter("user")
 	a, err := strconv.Atoi(amount)
 	if a <= 0 {
 		_ = response.WriteErrorString(http.StatusBadRequest, fmt.Sprintf("error amount : %s", amount))
@@ -69,7 +70,7 @@ func (u Payment) getCodeURL(request *restful.Request, response *restful.Response
 		return
 	}
 
-	codeURL, err := WechatPay(int64(a), "", "", os.Getenv(CallbackURL))
+	codeURL, err := WechatPay(int64(a), user, "", "", os.Getenv(CallbackURL))
 	if err != nil {
 		_ = response.WriteErrorString(http.StatusInternalServerError, fmt.Sprintf("payment error : %v", err))
 		return
@@ -79,6 +80,8 @@ func (u Payment) getCodeURL(request *restful.Request, response *restful.Response
 	if err != nil {
 		log.Print("write code url failed : ", err)
 	}
+	// qrterminal.Generate(codeURL, qrterminal.L, response.ResponseWriter)
+	// qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
 }
 
 func (u Payment) paymentCallBack(request *restful.Request, response *restful.Response) {
