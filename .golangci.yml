@@ -30,11 +30,9 @@ linters:
     - errcheck
     - govet
     - staticcheck
-    - structcheck
     - unused
     - varcheck
     - nilerr
-    - ifshort
     - unconvert
 
 linters-settings:
