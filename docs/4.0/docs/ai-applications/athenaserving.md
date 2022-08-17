@@ -22,13 +22,6 @@ code (according to established standards) into grpc/HTTP services
 - Python Wrapper
   ![](/img/ai-applications/python.png)
 
-* AIGES And Language Wrapper
-
-- C/C++ Wrapper
-  ![](/img/ai-applications/c++.png)
-
-- Python Wrapper
-  ![](/img/ai-applications/python.png)
 
 ## Scene Oriented
 
