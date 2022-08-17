@@ -41,7 +41,7 @@ const (
 )
 
 // 1 ¥ = amount 100
-func WechatPay(amount int64, tradeNO, describe, callback string) (string, error) {
+func WechatPay(amount int64, user, tradeNO, describe, callback string) (string, error) {
 	mchID := os.Getenv(MchID)                                           // 商户号
 	mchCertificateSerialNumber := os.Getenv(MchCertificateSerialNumber) // 商户证书序列号
 	mchAPIv3Key := os.Getenv(MchAPIv3Key)                               // 商户APIv3密钥
@@ -81,7 +81,7 @@ func WechatPay(amount int64, tradeNO, describe, callback string) (string, error)
 			Description:   core.String(describe),
 			OutTradeNo:    core.String(tradeNO),
 			TimeExpire:    core.Time(time.Now()),
-			Attach:        core.String("sealos cloud recharge"),
+			Attach:        core.String(user),
 			NotifyUrl:     core.String(callback),
 			GoodsTag:      core.String("sealos recharge"),
 			SupportFapiao: core.Bool(false),
