@@ -98,7 +98,7 @@ func ReadLines(fileName string) ([]string, error) {
 	return lines, nil
 }
 
-// Writelines outputs lines to the file.
+// WriteLines outputs lines to the file.
 func WriteLines(fileName string, lines []string) error {
 	var sb strings.Builder
 	for _, line := range lines {
@@ -109,24 +109,7 @@ func WriteLines(fileName string, lines []string) error {
 
 // ReadAll reads all the content of the file.
 func ReadAll(fileName string) ([]byte, error) {
-	// step1：check file exist
-	if !IsExist(fileName) {
-		return nil, fmt.Errorf("path is %s no such file", fileName)
-	}
-	// step2：open file
-	file, err := os.Open(filepath.Clean(fileName))
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	// step3：read file content
-	content, err := os.ReadFile(filepath.Clean(fileName))
-	if err != nil {
-		return nil, err
-	}
-
-	return content, nil
+	return os.ReadFile(fileName)
 }
 
 // MkDirs creates directories.

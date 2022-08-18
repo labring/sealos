@@ -37,6 +37,12 @@ type RunArgs struct {
 	CustomCMD []string
 }
 
+type Args struct {
+	Values    []string
+	Sets      []string
+	CustomEnv []string
+}
+
 type ResetArgs struct {
 	Cluster
 	SSH
