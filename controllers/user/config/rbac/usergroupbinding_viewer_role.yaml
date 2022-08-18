@@ -1,24 +1,20 @@
-# permissions for end users to edit groups.
+# permissions for end users to view usergroupbindings.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: group-editor-role
+  name: usergroupbinding-viewer-role
 rules:
 - apiGroups:
   - user.sealos.io
   resources:
-  - groups
+  - usergroupbindings
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
   - user.sealos.io
   resources:
-  - groups/status
+  - usergroupbindings/status
   verbs:
   - get

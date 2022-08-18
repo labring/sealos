@@ -2,5 +2,3 @@ apiVersion: user.sealos.io/v1
 kind: UserGroup
 metadata:
   name: usergroup-sample
-spec:
-  # TODO(user): Add fields here

@@ -28,18 +28,19 @@ type UserSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of User. Edit user_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	DisplayName string `json:"displayName"`
 }
 
 // UserStatus defines the observed state of User
 type UserStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Config string `json:"config"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="DisplayName",type="string",JSONPath=".spec.displayName"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // User is the Schema for the users API
 type User struct {
