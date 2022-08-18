@@ -28,6 +28,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 
@@ -116,6 +117,11 @@ func GenerateKubeConfig(username string) (string, error) {
 
 	ctx := fmt.Sprintf("%s@%s", username, "kubernetes")
 	if err != nil {
+		return "", err
+	}
+
+	// make sure cadata is loaded into config under incluster mode
+	if err := rest.LoadTLSFiles(client.Config()); err != nil {
 		return "", err
 	}
 
