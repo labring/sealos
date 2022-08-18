@@ -20,6 +20,8 @@ import (
 	"context"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +41,6 @@ import (
 
 const (
 	FinalizerName       = "terminal.sealos.io/finalizer"
-	DefaultAPIServer    = "https://kubernetes.default.svc.cluster.local:443"
 	KeepaliveAnnotation = "lastUpdateTime"
 )
 
@@ -48,6 +49,7 @@ type TerminalReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
+	Config   *rest.Config
 }
 
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals,verbs=get;list;watch;create;update;patch;delete
@@ -291,7 +293,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *terminalv1.Terminal) error {
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
-		terminal.Spec.APIServer = DefaultAPIServer
+		terminal.Spec.APIServer = r.Config.Host
 		hasUpdate = true
 	}
 
@@ -330,11 +332,7 @@ func buildLabelsMap(terminal *terminalv1.Terminal) map[string]string {
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
-	err := certv1.AddToScheme(r.Scheme)
-	if err != nil {
-		return err
-	}
-
+	r.Config = mgr.GetConfig()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminalv1.Terminal{}).
 		Complete(r)
