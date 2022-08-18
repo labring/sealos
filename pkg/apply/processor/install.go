@@ -166,7 +166,7 @@ func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 	for _, cManifest := range c.NewMounts {
 		manifest := cManifest
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
 			return cfg.Dump()
 		})
 	}

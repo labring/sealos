@@ -19,7 +19,10 @@ import (
 	"os"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/file"
 )
 
 func TestDumper_Dump(t *testing.T) {
@@ -52,6 +55,63 @@ func TestDumper_Dump(t *testing.T) {
 			if err := c.Dump(); (err != nil) != tt.wantErr {
 				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func Test_NewConfiguration_Dump(t *testing.T) {
+	type fields struct {
+		configs  []v1beta1.Config
+		name     string
+		rootPath string
+		origin   string
+		expect   string
+	}
+	filename := "test.yaml"
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			"test dump clusterfile configs",
+			fields{
+				configs: []v1beta1.Config{
+					{
+						TypeMeta: metav1.TypeMeta{
+							Kind:       "Config",
+							APIVersion: "apps.sealos.io/v1beta1",
+						},
+						Spec: v1beta1.ConfigSpec{
+							Strategy: v1beta1.Merge,
+							Path:     filename,
+							Match:    "dockerhub.tencentcloudcr.com/labring/calico:v3.22.1",
+							Data:     "config:\n  test: true",
+						},
+					},
+				},
+				name:     "dockerhub.tencentcloudcr.com/labring/calico:v3.22.1",
+				rootPath: "./",
+				origin:   "config:\n  test: false\n",
+				expect:   "config:\n  test: true\n",
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := file.AtomicWriteFile(filename, []byte(tt.fields.origin), 0644); err != nil {
+				t.Errorf("failed to write file %v", err)
+			}
+			c := NewConfiguration(tt.fields.name, tt.fields.rootPath, tt.fields.configs)
+			if err := c.Dump(); (err != nil) != tt.wantErr {
+				t.Errorf("Dump() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			b, _ := file.ReadAll(filename)
+			if string(b) != tt.fields.expect {
+				t.Errorf("unexpected merge result, %s != %s", string(b), tt.fields.expect)
+			}
+			_ = os.Remove(filename)
 		})
 	}
 }

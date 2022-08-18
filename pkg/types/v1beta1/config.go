@@ -73,6 +73,7 @@ const (
 
 // ConfigSpec defines the desired state of Config
 type ConfigSpec struct {
+	Match    string       `json:"match,omitempty"`
 	Strategy StrategyType `json:"strategy,omitempty"`
 	Data     string       `json:"data,omitempty"`
 	Path     string       `json:"path,omitempty"`
