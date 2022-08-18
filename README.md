@@ -22,7 +22,7 @@
 
 ---
 
-[Docs](https://sealos.io) | [简体中文](https://www.sealos.io/zh-Hans/)
+[Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
 
 ## What is sealos
 
