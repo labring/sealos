@@ -56,6 +56,8 @@
     └── audit-policy.yml
 ```
 
+Kubefile 内容, 其它文件内容可以 `sealos pull kubernetes:v1.24.0` 然后在 `/var/lib/sealos` 下面查看：
+
 ```dockerfile
 FROM scratch
 MAINTAINER sealyun
@@ -74,14 +76,7 @@ ENV registryDomain=sealos.hub
 ENV registryPort=5000
 ENV registryUsername=admin
 ENV registryPassword=passw0rd
-COPY .. .
+COPY . .
 ```
 
-image-cri-shim can replace image to registry addr
-
-- offline
-  if offline module,you need add imageList file in dir `images/shim`
-  example ImageList file is :
-  `ghcr.io/sealyun/lvscare:v1.1.3-beta.2 k8s.gcr.io/kube-apiserver:v1.24.0 k8s.gcr.io/kube-controller-manager:v1.24.0 k8s.gcr.io/kube-scheduler:v1.24.0 k8s.gcr.io/kube-proxy:v1.24.0 k8s.gcr.io/pause:3.5 k8s.gcr.io/etcd:3.5.0-0 k8s.gcr.io/coredns/coredns:v1.8.4`
-  shim found image in imageList ,the `k8s.gcr.io/kube-apiserver:v1.24.0` replace to `sealos.hub:5000/kube-apiserver:v1.24.0`
-- online (default module)
+`sealos build -t kubernetes:v1.24.0 .` 即可
