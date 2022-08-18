@@ -30,6 +30,8 @@ import (
 	"net"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -83,6 +85,10 @@ func GenerateKubeConfig(conf Config) ([]byte, error) {
 	}
 	client, err := kubernetes.NewKubernetesClient("", "")
 	if err != nil {
+		return nil, err
+	}
+	// make sure cadata is loaded into config under incluster mode
+	if err = rest.LoadTLSFiles(client.Config()); err != nil {
 		return nil, err
 	}
 	certs, err := cert.ParseCertsPEM(client.Config().CAData)
