@@ -19,6 +19,9 @@ spec:
     - jsonPath: .spec.displayName
       name: DisplayName
       type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -50,10 +53,14 @@ spec:
           status:
             description: UserStatus defines the observed state of User
             properties:
-              config:
+              kubeConfig:
+                type: string
+              phase:
+                default: UserUnknown
+                description: Phase is the recently observed lifecycle phase of user
                 type: string
             required:
-            - config
+            - kubeConfig
             type: object
         type: object
     served: true

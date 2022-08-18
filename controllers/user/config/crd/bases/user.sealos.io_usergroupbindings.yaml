@@ -12,6 +12,8 @@ spec:
     kind: UserGroupBinding
     listKind: UserGroupBindingList
     plural: usergroupbindings
+    shortNames:
+    - ugbinding
     singular: usergroupbinding
   scope: Cluster
   versions:
