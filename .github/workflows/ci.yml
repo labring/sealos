@@ -5,6 +5,7 @@ env:
   GO_VERSION: "1.19"
 
 on:
+  workflow_dispatch:
   push:
     branches: [ "main" ]
     paths-ignore:
@@ -136,7 +137,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: lvscare-${{ matrix.arch }}
-          path: docker/lvscare
+          path: docker/patch
 
       - name: Download sealctl
         uses: actions/download-artifact@v3
@@ -170,9 +171,11 @@ jobs:
       - name: Build and Push lvscare Image
         uses: docker/build-push-action@v3
         with:
-          context: docker/lvscare
-          file: docker/lvscare/Dockerfile
+          context: docker/patch
+          file: docker/patch/Dockerfile.build
           push: true
+          build-args: Bin=lvscare
+          platforms: linux/${{ matrix.arch }}
           tags: localhost:5000/labring/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
 
       - name: Build and Save Cluster Images

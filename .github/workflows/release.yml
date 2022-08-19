@@ -44,6 +44,12 @@ jobs:
           sudo apt install -y gcc-aarch64-linux-gnu upx \
             libbtrfs-dev libgpgme-dev libdevmapper-dev
 
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -59,3 +65,28 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+
+      - name: build (and publish) main image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f docker/lvscare/Dockerfile \
+          .
+      - name: build (and publish) tag image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f docker/lvscare/Dockerfile \
+          .
