@@ -21,6 +21,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/labring/sealos/pkg/pay"
+
 	restful "github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
 )
@@ -70,7 +72,7 @@ func (u Payment) getCodeURL(request *restful.Request, response *restful.Response
 		return
 	}
 
-	codeURL, err := WechatPay(int64(a), user, "", "", os.Getenv(CallbackURL))
+	codeURL, err := pay.WechatPay(int64(a), user, "", "", os.Getenv(pay.CallbackURL))
 	if err != nil {
 		_ = response.WriteErrorString(http.StatusInternalServerError, fmt.Sprintf("payment error : %v", err))
 		return
