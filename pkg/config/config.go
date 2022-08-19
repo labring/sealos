@@ -52,15 +52,18 @@ type Interface interface {
 
 type Dumper struct {
 	Configs  []v1beta1.Config
+	name     string
 	RootPath string
 }
 
-func NewConfiguration(rootPath string, configs []v1beta1.Config) Interface {
+func NewConfiguration(name, rootPath string, configs []v1beta1.Config) Interface {
 	return &Dumper{
 		RootPath: rootPath,
+		name:     name,
 		Configs:  configs,
 	}
 }
+
 func NewDefaultConfiguration(clusterName string) Interface {
 	return &Dumper{
 		RootPath: constants.NewData(clusterName).RootFSPath(),
@@ -72,13 +75,6 @@ func (c *Dumper) Dump() error {
 		logger.Debug("clusterfile config is empty!")
 		return nil
 	}
-	//if len(c.Configs) == 0 {
-	//	configs, err := decode.Configs(clusterfile)
-	//	if err != nil {
-	//		return fmt.Errorf("failed to dump config %v", err)
-	//	}
-	//	c.Configs = configs
-	//}
 
 	if err := c.WriteFiles(); err != nil {
 		return fmt.Errorf("failed to write config files %v", err)
@@ -87,11 +83,10 @@ func (c *Dumper) Dump() error {
 }
 
 func (c *Dumper) WriteFiles() (err error) {
-	if c.Configs == nil {
-		logger.Debug("empty config found")
-		return nil
-	}
 	for _, config := range c.Configs {
+		if config.Spec.Match != "" && config.Spec.Match != c.name {
+			continue
+		}
 		configData := []byte(config.Spec.Data)
 		configPath := filepath.Join(c.RootPath, config.Spec.Path)
 		//only the YAML format is supported
@@ -129,7 +124,7 @@ func (c *Dumper) WriteFiles() (err error) {
 func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte, error) {
 	var configs [][]byte
 	context, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	if insert {
@@ -146,7 +141,7 @@ func getAppendOrInsertConfigData(path string, data []byte, insert bool) ([]byte,
 func getMergeConfigData(path string, data []byte) ([]byte, error) {
 	var configs [][]byte
 	context, err := os.ReadFile(filepath.Clean(path))
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 	mergeConfigMap := make(map[string]interface{})
@@ -160,6 +155,7 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 		}
+		// todo: should we allow merge into a non-exists file?
 		if len(configMap) == 0 {
 			continue
 		}

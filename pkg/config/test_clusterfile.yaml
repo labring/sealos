@@ -17,7 +17,8 @@ kind: Cluster
 metadata:
   name: my-cluster
 spec:
-  image: registry.cn-qingdao.aliyuncs.com/sealer-app/my-SAAS-all-inone:latest
+  image:
+    - registry.cn-qingdao.aliyuncs.com/sealer-app/my-SAAS-all-inone:latest
   provider: BAREMETAL
 ---
 apiVersion: apps.sealos.io/v1beta1
@@ -27,7 +28,7 @@ metadata:
 spec:
   path: etc/mysql.yaml
   data: |
-     test
+    test
 ---
 apiVersion: apps.sealos.io/v1beta1
 kind: Config

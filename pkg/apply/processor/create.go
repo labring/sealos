@@ -145,7 +145,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 	for _, cManifest := range cluster.Status.Mounts {
 		manifest := cManifest
 		eg.Go(func() error {
-			cfg := config.NewConfiguration(manifest.MountPoint, c.ClusterFile.GetConfigs())
+			cfg := config.NewConfiguration(manifest.ImageName, manifest.MountPoint, c.ClusterFile.GetConfigs())
 			return cfg.Dump()
 		})
 	}
