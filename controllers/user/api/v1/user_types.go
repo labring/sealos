@@ -30,16 +30,28 @@ type UserSpec struct {
 
 	DisplayName string `json:"displayName"`
 }
+type UserPhase string
+
+// These are the valid phases of node.
+const (
+	UserPending UserPhase = "Pending"
+	UserUnknown UserPhase = "Unknown"
+	UserActive  UserPhase = "Active"
+)
 
 // UserStatus defines the observed state of User
 type UserStatus struct {
-	Config string `json:"config"`
+	// Phase is the recently observed lifecycle phase of user
+	//+kubebuilder:default:=UserUnknown
+	Phase      UserPhase `json:"phase,omitempty"`
+	KubeConfig string    `json:"kubeConfig"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:name="DisplayName",type="string",JSONPath=".spec.displayName"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // User is the Schema for the users API

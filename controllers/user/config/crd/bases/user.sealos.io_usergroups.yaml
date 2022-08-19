@@ -12,6 +12,8 @@ spec:
     kind: UserGroup
     listKind: UserGroupList
     plural: usergroups
+    shortNames:
+    - ug
     singular: usergroup
   scope: Cluster
   versions:
@@ -36,26 +38,6 @@ spec:
             type: string
           metadata:
             type: object
-          roleRef:
-            description: RoleRef can only reference a ClusterRole in the global namespace.
-              If the RoleRef cannot be resolved, the Authorizer must return an error.
-            properties:
-              apiGroup:
-                description: APIGroup is the group for the resource being referenced
-                type: string
-              kind:
-                description: Kind is the type of resource being referenced
-                type: string
-              name:
-                description: Name is the name of resource being referenced
-                type: string
-            required:
-            - apiGroup
-            - kind
-            - name
-            type: object
-        required:
-        - roleRef
         type: object
     served: true
     storage: true

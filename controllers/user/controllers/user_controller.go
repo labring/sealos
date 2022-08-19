@@ -18,17 +18,28 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
+	"github.com/labring/endpoints-operator/library/convert"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/helper"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
+
+const userAnnotationOwnerKey = "user.sealos.io/creator"
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -37,6 +48,7 @@ type UserReconciler struct {
 	cache    cache.Cache
 	*runtime.Scheme
 	client.Client
+	CAKeyFile string
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;create;update;patch;delete
@@ -96,5 +108,141 @@ func (r *UserReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schem
 
 func (r *UserReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(4).Info("update reconcile controller user", "request", req)
+	user := &userv1.User{}
+	err := convert.JsonConvert(obj, user)
+	if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	user.Status.Phase = userv1.UserPending
+	pipelines := []func(ctx context.Context, user *userv1.User){
+		r.syncKubeConfig,
+		r.syncOwnerUG,
+		r.syncOwnerUGUserBinding,
+		r.syncOwnerUGNamespaceBinding,
+	}
+
+	for _, fn := range pipelines {
+		fn(ctx, user)
+	}
+	if user.Status.Phase != userv1.UserUnknown {
+		user.Status.Phase = userv1.UserActive
+	}
+	err = r.updateStatus(ctx, req.NamespacedName, user.Status.DeepCopy())
+	if err != nil {
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
+}
+
+func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) {
+	cfg := &helper.Config{
+		CAKeyFile: r.CAKeyFile,
+		User:      user.Name,
+	}
+	if user.Status.KubeConfig == "" {
+		data, err := helper.GenerateKubeConfig(*cfg)
+		if err != nil {
+			user.Status.Phase = userv1.UserUnknown
+			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig %s is error: %v", user.Name, err)
+		}
+		user.Status.KubeConfig = string(data)
+	}
+}
+
+func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) {
+	ugName := fmt.Sprintf("ug-%s", user.Name)
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		ug := &userv1.UserGroup{}
+		ug.Name = ugName
+		var change controllerutil.OperationResult
+		var err error
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ug, func() error {
+			ug.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "unable to create UserGroup")
+		}
+		r.Logger.V(4).Info("create or update UserGroup ", "OperationResult", change)
+		return nil
+	}); err != nil {
+		user.Status.Phase = userv1.UserUnknown
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncOwnerUG", "Sync OwnerUG %s is error: %v", ugName, err)
+	}
+}
+
+func (r *UserReconciler) syncOwnerUGUserBinding(ctx context.Context, user *userv1.User) {
+	uguBindingName := fmt.Sprintf("ugu-%s", user.Name)
+	ugName := fmt.Sprintf("ug-%s", user.Name)
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		ugBinding := &userv1.UserGroupBinding{}
+		ugBinding.Name = uguBindingName
+		var change controllerutil.OperationResult
+		var err error
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ugBinding, func() error {
+			ugBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ugBinding.UserGroupRef = ugName
+			ugBinding.Subject = rbacv1.Subject{
+				Kind:     "User",
+				APIGroup: userv1.GroupVersion.String(),
+				Name:     user.Name,
+			}
+			ugBinding.RoleRef = &rbacv1.RoleRef{
+				APIGroup: rbacv1.SchemeGroupVersion.String(),
+				Kind:     "ClusterRole",
+				Name:     "sealos-user-create-role",
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "unable to create user UserGroupBinding")
+		}
+		r.Logger.V(4).Info("create or update user UserGroupBinding", "OperationResult", change)
+		return nil
+	}); err != nil {
+		user.Status.Phase = userv1.UserUnknown
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncOwnerUGUserBinding", "Sync OwnerUGUserBinding %s is error: %v", uguBindingName, err)
+	}
+}
+func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *userv1.User) {
+	ugnBindingName := fmt.Sprintf("ugn-%s", user.Name)
+	nsName := fmt.Sprintf("ns-%s", user.Name)
+	ugName := fmt.Sprintf("ug-%s", user.Name)
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		ugBinding := &userv1.UserGroupBinding{}
+		ugBinding.Name = ugnBindingName
+		var change controllerutil.OperationResult
+		var err error
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ugBinding, func() error {
+			ugBinding.UserGroupRef = ugName
+			ugBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ugBinding.Subject = rbacv1.Subject{
+				Kind: "Namespace",
+				Name: nsName,
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "unable to create namespace UserGroupBinding")
+		}
+		r.Logger.V(4).Info("create or update namespace UserGroupBinding", "OperationResult", change)
+		return nil
+	}); err != nil {
+		user.Status.Phase = userv1.UserUnknown
+		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncOwnerUGNamespaceBinding", "Sync OwnerUGNamespaceBinding %s is error: %v", ugnBindingName, err)
+	}
+}
+func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserStatus) error {
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		original := &userv1.User{}
+		if err := r.Get(ctx, nn, original); err != nil {
+			return err
+		}
+		original.Status = *status
+		if err := r.Client.Status().Update(ctx, original); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
 }
