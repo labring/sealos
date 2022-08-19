@@ -7,6 +7,7 @@ use (
 	./controllers/terminal
 	./controllers/user
 	./service/auth
+	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
 )
