@@ -155,6 +155,7 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 		}
+		// todo: should we allow merge into a non-exists file?
 		if len(configMap) == 0 {
 			continue
 		}
