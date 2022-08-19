@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -127,38 +126,41 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, terminal *terminalv1.Terminal) error {
-	if err := r.Get(ctx, req.NamespacedName, &certv1.Certificate{}); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		cert, err := createCert(terminal)
-		if err != nil {
-			return err
-		}
+	objectMeta := metav1.ObjectMeta{
+		Name:      terminal.Name,
+		Namespace: terminal.Namespace,
+	}
+	cert := &certv1.Certificate{
+		ObjectMeta: objectMeta,
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, cert, func() error {
+		expectCert := createCert(terminal)
+		cert.Spec.SecretName = expectCert.Spec.SecretName
+		cert.Spec.DNSNames = expectCert.Spec.DNSNames
+		cert.Spec.IssuerRef = expectCert.Spec.IssuerRef
 		if err := controllerutil.SetControllerReference(terminal, cert, r.Scheme); err != nil {
 			return err
 		}
-		err = r.Create(ctx, cert)
-		if err != nil {
-			return err
-		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
-	if err := r.Get(ctx, req.NamespacedName, &networkingv1.Ingress{}); err != nil {
-		if !errors.IsNotFound(err) {
-			return err
-		}
-		ingress, err := createIngress(terminal)
-		if err != nil {
-			return err
-		}
+	ingress := &networkingv1.Ingress{
+		ObjectMeta: objectMeta,
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
+		expectIngress := createIngress(terminal)
+		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
+		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
+		ingress.Spec.Rules = expectIngress.Spec.Rules
+		ingress.Spec.TLS = expectIngress.Spec.TLS
 		if err := controllerutil.SetControllerReference(terminal, ingress, r.Scheme); err != nil {
 			return err
 		}
-		err = r.Create(ctx, ingress)
-		if err != nil {
-			return err
-		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	return nil
