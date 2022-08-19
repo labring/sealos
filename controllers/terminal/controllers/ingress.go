@@ -17,97 +17,87 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
-	"text/template"
-
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	"k8s.io/apimachinery/pkg/util/yaml"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
-const CertTmpl = `
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: {{.ObjectMeta.Name}}
-  namespace: {{.ObjectMeta.Namespace}}
-spec:
-  secretName: {{.ObjectMeta.Name}}-terminal-sealos-io-cert
-  dnsNames:
-    - {{.ObjectMeta.Name}}.cloud.sealos.io
-  issuerRef:
-    name: cluster-issuer-terminal
-    kind: ClusterIssuer
-`
+const ClusterIssuerName = "cluster-issuer-terminal"
 
-const IngressTmpl = `
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    cert-manager.io/issuer: cluster-issuer-terminal
-  name: {{.ObjectMeta.Name}}
-  namespace: {{.ObjectMeta.Namespace}}
-  labels:
-    k8s-app: terminal
-spec:
-  rules:
-    - host: {{.ObjectMeta.Name}}.cloud.sealos.io
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: {{.ObjectMeta.Name}}
-                port:
-                  number: 8080
-  tls:
-    - hosts:
-        - {{.ObjectMeta.Name}}.cloud.sealos.io
-      secretName: {{.ObjectMeta.Name}}-terminal-sealos-io-cert
-
-`
-
-func parseTemplate(templateName string, terminal *terminalv1.Terminal) ([]byte, error) {
-	tmpl, err := template.New("test").Parse(templateName)
-	if err != nil {
-		return nil, err
+func createCert(terminal *terminalv1.Terminal) *certv1.Certificate {
+	objectMeta := metav1.ObjectMeta{
+		Name:      terminal.Name,
+		Namespace: terminal.Namespace,
 	}
-	buf := new(bytes.Buffer)
-	err = tmpl.Execute(buf, terminal)
-	if err != nil {
-		return nil, err
+	secretName := terminal.Name + "-terminal-sealos-io-cert"
+	dnsName := terminal.Name + ".cloud.sealos.io"
+	cert := &certv1.Certificate{
+		ObjectMeta: objectMeta,
+		Spec: certv1.CertificateSpec{
+			SecretName: secretName,
+			DNSNames:   []string{dnsName},
+			IssuerRef: cmmeta.ObjectReference{
+				Name: ClusterIssuerName,
+				Kind: "ClusterIssuer",
+			},
+		},
 	}
-	return buf.Bytes(), nil
+
+	return cert
 }
 
-func createCert(terminal *terminalv1.Terminal) (*certv1.Certificate, error) {
-	data, err := parseTemplate(CertTmpl, terminal)
-	if err != nil {
-		return nil, err
+func createIngress(terminal *terminalv1.Terminal) *networkingv1.Ingress {
+	objectMeta := metav1.ObjectMeta{
+		Name:      terminal.Name,
+		Namespace: terminal.Namespace,
+		Annotations: map[string]string{
+			"cert-manager.io/issuer":                     ClusterIssuerName,
+			"kubernetes.io/ingress.class":                "nginx",
+			"nginx.ingress.kubernetes.io/rewrite-target": "/",
+		},
+		Labels: map[string]string{
+			"k8s-app": "terminal",
+		},
 	}
-	cert := &certv1.Certificate{}
-	err = yaml.Unmarshal(data, cert)
-	if err != nil {
-		return nil, err
-	}
-	return cert, nil
-}
 
-func createIngress(terminal *terminalv1.Terminal) (*networkingv1.Ingress, error) {
-	data, err := parseTemplate(IngressTmpl, terminal)
-	if err != nil {
-		return nil, err
+	host := terminal.Name + ".cloud.sealos.io"
+	pathType := networkingv1.PathTypePrefix
+	paths := []networkingv1.HTTPIngressPath{{
+		PathType: &pathType,
+		Path:     "/",
+		Backend: networkingv1.IngressBackend{
+			Service: &networkingv1.IngressServiceBackend{
+				Name: terminal.Name,
+				Port: networkingv1.ServiceBackendPort{
+					Number: 8080,
+				},
+			},
+		},
+	}}
+	rule := networkingv1.IngressRule{
+		Host: host,
+		IngressRuleValue: networkingv1.IngressRuleValue{
+			HTTP: &networkingv1.HTTPIngressRuleValue{
+				Paths: paths,
+			},
+		},
 	}
-	ingress := &networkingv1.Ingress{}
-	err = yaml.Unmarshal(data, ingress)
-	if err != nil {
-		return nil, err
+
+	secretName := terminal.Name + "-terminal-sealos-io-cert"
+	tls := networkingv1.IngressTLS{
+		Hosts:      []string{host},
+		SecretName: secretName,
 	}
-	return ingress, nil
+
+	ingress := &networkingv1.Ingress{
+		ObjectMeta: objectMeta,
+		Spec: networkingv1.IngressSpec{
+			Rules: []networkingv1.IngressRule{rule},
+			TLS:   []networkingv1.IngressTLS{tls},
+		},
+	}
+	return ingress
 }
