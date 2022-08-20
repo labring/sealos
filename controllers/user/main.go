@@ -53,13 +53,11 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var clusterSigningKeyFile string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.StringVar(&clusterSigningKeyFile, "cluster-signing-key-file", "/etc/kubernetes/pki/ca.key", "Filename containing a PEM-encoded RSA or ECDSA private key used to sign cluster-scoped certificates.")
 
 	opts := zap.Options{
 		Development: true,
@@ -93,7 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.UserReconciler{CAKeyFile: clusterSigningKeyFile}).SetupWithManager(mgr); err != nil {
+	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
 	}

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,10 +26,18 @@ import (
 
 // UserSpec defines the desired state of User
 type UserSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
+	// display name of the user
 	DisplayName string `json:"displayName"`
+
+	// expirationSeconds is the requested duration of validity of the issued
+	// certificate. The certificate signer may issue a certificate with a different
+	// validity duration so a client must check the delta between the notBefore and
+	// and notAfter fields in the issued certificate to determine the actual duration.
+	//
+	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
+	//
+	// +optional
+	CSRExpirationSeconds *int32 `json:"CSRExpirationSeconds,omitempty"`
 }
 type UserPhase string
 
@@ -45,6 +54,36 @@ type UserStatus struct {
 	//+kubebuilder:default:=UserUnknown
 	Phase      UserPhase `json:"phase,omitempty"`
 	KubeConfig string    `json:"kubeConfig"`
+	// The generation observed by the user controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions contains the different condition statuses for this user.
+	Conditions []Condition `json:"conditions,omitempty"`
+}
+
+type ConditionType string
+
+const (
+	Initialized ConditionType = "Initialized"
+	Ready       ConditionType = "Ready"
+)
+
+type Condition struct {
+	Type ConditionType `json:"type" protobuf:"bytes,1,opt,name=type,casttype=ConditionType"`
+	// Status is the status of the condition. One of True, False, Unknown.
+	Status v1.ConditionStatus `json:"status" protobuf:"bytes,2,opt,name=status,casttype=ConditionStatus"`
+	// LastHeartbeatTime is the last time this condition was updated.
+	// +optional
+	LastHeartbeatTime metav1.Time `json:"lastHeartbeatTime,omitempty" protobuf:"bytes,3,opt,name=lastHeartbeatTime"`
+	// LastTransitionTime is the last time the condition changed from one status to another.
+	// +optional
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty" protobuf:"bytes,4,opt,name=lastTransitionTime"`
+	// Reason is a (brief) reason for the condition's last status change.
+	// +optional
+	Reason string `json:"reason,omitempty" protobuf:"bytes,5,opt,name=reason"`
+	// Message is a human-readable message indicating details about the last status change.
+	// +optional
+	Message string `json:"message,omitempty" protobuf:"bytes,6,opt,name=message"`
 }
 
 // +kubebuilder:object:root=true
