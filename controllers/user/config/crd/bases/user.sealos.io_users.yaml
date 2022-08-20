@@ -45,7 +45,17 @@ spec:
           spec:
             description: UserSpec defines the desired state of User
             properties:
+              CSRExpirationSeconds:
+                description: "expirationSeconds is the requested duration of validity
+                  of the issued certificate. The certificate signer may issue a certificate
+                  with a different validity duration so a client must check the delta
+                  between the notBefore and and notAfter fields in the issued certificate
+                  to determine the actual duration. \n The minimum valid value for
+                  expirationSeconds is 600, i.e. 10 minutes."
+                format: int32
+                type: integer
               displayName:
+                description: display name of the user
                 type: string
             required:
             - displayName
@@ -53,8 +63,46 @@ spec:
           status:
             description: UserStatus defines the observed state of User
             properties:
+              conditions:
+                description: Conditions contains the different condition statuses
+                  for this user.
+                items:
+                  properties:
+                    lastHeartbeatTime:
+                      description: LastHeartbeatTime is the last time this condition
+                        was updated.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        changed from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about the last status change.
+                      type: string
+                    reason:
+                      description: Reason is a (brief) reason for the condition's
+                        last status change.
+                      type: string
+                    status:
+                      description: Status is the status of the condition. One of True,
+                        False, Unknown.
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
               kubeConfig:
                 type: string
+              observedGeneration:
+                description: The generation observed by the user controller.
+                format: int64
+                type: integer
               phase:
                 default: UserUnknown
                 description: Phase is the recently observed lifecycle phase of user

@@ -33,23 +33,13 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
 )
 
-type Config struct {
-	CAKeyFile   string // ca key file, default is /etc/kubernetes/pki/ca.key
-	User        string
-	Groups      []string
-	ClusterName string // default is kubernetes
-	DNSNames    []string
-	IPAddresses []net.IP
-}
-
-// TryLoadKeyFromDisk tries to load the key from the disk and validates that it is valid
-func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
+// tryLoadKeyFromDisk tries to load the key from the disk and validates that it is valid
+func tryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	// Parse the private key from a file
 	privKey, err := keyutil.PrivateKeyFromFile(pkiPath)
 	if err != nil {
@@ -70,8 +60,8 @@ func TryLoadKeyFromDisk(pkiPath string) (crypto.Signer, error) {
 	return key, nil
 }
 
-// EncodeCertPEM returns PEM-endcoded certificate data
-func EncodeCertPEM(cert *x509.Certificate) []byte {
+// encodeCertPEM returns PEM-endcoded certificate data
+func encodeCertPEM(cert *x509.Certificate) []byte {
 	block := pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: cert.Raw,
@@ -79,10 +69,11 @@ func EncodeCertPEM(cert *x509.Certificate) []byte {
 	return pem.EncodeToMemory(&block)
 }
 
-func GenerateKubeConfig(conf Config) ([]byte, error) {
-	if conf.ClusterName == "" {
-		conf.ClusterName = "kubernetes"
-	}
+type Cert struct {
+	*Config
+}
+
+func (c *Cert) KubeConfig() (*api.Config, error) {
 	client, err := kubernetes.NewKubernetesClient("", "")
 	if err != nil {
 		return nil, err
@@ -96,11 +87,11 @@ func GenerateKubeConfig(conf Config) ([]byte, error) {
 		return nil, fmt.Errorf("error reading by config:  %s", err.Error())
 	}
 	caCert := certs[0]
-	caKey, err := TryLoadKeyFromDisk(conf.CAKeyFile)
+	caKey, err := tryLoadKeyFromDisk(c.CAKeyFile)
 	if err != nil {
 		return nil, fmt.Errorf("load ca key file failed %s", err)
 	}
-	clientCert, clientKey, err := NewCertAndKey(caCert, caKey, conf.User, conf.Groups, conf.DNSNames, conf.IPAddresses)
+	clientCert, clientKey, err := newCertAndKey(caCert, caKey, c.User, c.Groups, c.DNSNames, c.IPAddresses, c.ExpirationSeconds)
 	if err != nil {
 		return nil, fmt.Errorf("new client key failed %s", err)
 	}
@@ -108,38 +99,32 @@ func GenerateKubeConfig(conf Config) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("encode client key failed %s", err)
 	}
-	encodedClientCert := EncodeCertPEM(clientCert)
-	ctx := fmt.Sprintf("%s@%s", conf.User, conf.ClusterName)
-	config := &api.Config{
+	encodedClientCert := encodeCertPEM(clientCert)
+	ctx := fmt.Sprintf("%s@%s", c.User, c.ClusterName)
+	return &api.Config{
 		Clusters: map[string]*api.Cluster{
-			conf.ClusterName: {
+			c.ClusterName: {
 				Server:                   client.Config().Host,
-				CertificateAuthorityData: EncodeCertPEM(caCert),
+				CertificateAuthorityData: encodeCertPEM(caCert),
 			},
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  conf.ClusterName,
-				AuthInfo: conf.User,
+				Cluster:  c.ClusterName,
+				AuthInfo: c.User,
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{
-			conf.User: {
+			c.User: {
 				ClientCertificateData: encodedClientCert,
 				ClientKeyData:         encodedClientKey,
 			},
 		},
 		CurrentContext: ctx,
-	}
-
-	kubeData, err := clientcmd.Write(*config)
-	if err != nil {
-		return nil, fmt.Errorf("get kubeconfig failed %s", err)
-	}
-	return kubeData, nil
+	}, nil
 }
 
-func NewCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, groups []string, DNSNames []string, IPAddresses []net.IP) (*x509.Certificate, crypto.Signer, error) {
+func newCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, groups []string, DNSNames []string, IPAddresses []net.IP, expiration int32) (*x509.Certificate, crypto.Signer, error) {
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return nil, nil, fmt.Errorf("generate client key error %s", err)
@@ -148,6 +133,8 @@ func NewCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, g
 	if err != nil {
 		return nil, nil, fmt.Errorf("rand serial error %s", err)
 	}
+
+	noAfter := time.Now().Add(time.Second * time.Duration(expiration))
 
 	certTmpl := x509.Certificate{
 		Subject: pkix.Name{
@@ -158,7 +145,7 @@ func NewCertAndKey(caCert *x509.Certificate, caKey crypto.Signer, user string, g
 		IPAddresses:  IPAddresses,
 		SerialNumber: serial,
 		NotBefore:    caCert.NotBefore,
-		NotAfter:     time.Now().AddDate(99, 0, 0),
+		NotAfter:     noAfter,
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 	}
