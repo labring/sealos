@@ -15,7 +15,6 @@ project_name: sealos
 before:
   hooks:
     - make clean
-    - go generate ./...
     - go mod tidy
 builds:
   - id: sealos
