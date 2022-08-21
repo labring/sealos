@@ -1,6 +1,8 @@
 import { createTheme, NextUIProvider } from '@nextui-org/react';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { AppProps } from 'next/app';
+import Layout from '../layout';
+
 import '../styles/globals.css';
 
 const lightTheme = createTheme({
@@ -28,7 +30,9 @@ function SealosCloud({ Component, pageProps }: AppProps) {
       }}
     >
       <NextUIProvider>
-        <Component {...pageProps} />
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
       </NextUIProvider>
     </NextThemesProvider>
   );
