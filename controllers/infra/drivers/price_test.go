@@ -1,21 +1,14 @@
 package drivers
 
 import (
-	"testing"
-
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"testing"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
-func TestApplier_ReconcileInstance(t *testing.T) {
-	driver, err := NewDriver()
-	if err != nil {
-		t.Errorf("new driver failed %v", err)
-	}
-
+func TestPrice_QueryPrice(t *testing.T) {
 	hosts := []v1.Hosts{
 		{
 			Roles:  []string{"master"},
@@ -55,8 +48,7 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 	infra.Spec.Hosts = hosts
 
 	type args struct {
-		infra  *v1.Infra
-		driver Driver
+		infra *v1.Infra
 	}
 	tests := []struct {
 		name    string
@@ -64,19 +56,20 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			"test for apply instance",
+			"test for query infra price/hour",
 			args{
-				infra:  infra,
-				driver: driver,
+				infra: infra,
 			},
 			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			a := NewApplier()
-			if err := a.ReconcileInstance(tt.args.infra, tt.args.driver); (err != nil) != tt.wantErr {
-				t.Errorf("ReconcileInstance() error = %v, wantErr %v", err, tt.wantErr)
+			pReq := NewPrice()
+			_, err := pReq.QueryPrice(tt.args.infra)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("QueryPrice() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 		})
 	}
