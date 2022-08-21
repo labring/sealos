@@ -20,8 +20,6 @@ import (
 	"context"
 	"time"
 
-	"k8s.io/client-go/rest"
-
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,11 +27,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
@@ -289,6 +290,12 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	}); err != nil {
 		return err
 	}
+
+	if terminal.Status.AvailableReplicas != deployment.Status.AvailableReplicas {
+		terminal.Status.AvailableReplicas = deployment.Status.AvailableReplicas
+		return r.Status().Update(ctx, terminal)
+	}
+
 	return nil
 }
 
@@ -335,7 +342,9 @@ func buildLabelsMap(terminal *terminalv1.Terminal) map[string]string {
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
 	r.Config = mgr.GetConfig()
+	owner := &handler.EnqueueRequestForOwner{OwnerType: &terminalv1.Terminal{}, IsController: false}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&terminalv1.Terminal{}).
+		Watches(&source.Kind{Type: &appsv1.Deployment{}}, owner).
 		Complete(r)
 }
