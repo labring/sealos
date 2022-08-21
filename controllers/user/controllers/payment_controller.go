@@ -23,7 +23,7 @@ import (
 
 	"github.com/mdp/qrterminal"
 
-	"github.com/labring/sealos/pkg/pay"
+	"github.com/labring/sealos/controllers/user/controllers/pay"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

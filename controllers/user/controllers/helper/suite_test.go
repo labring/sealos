@@ -18,10 +18,22 @@ package helper
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
+
+	csrv1 "k8s.io/api/certificates/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,6 +46,9 @@ import (
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+var cfg *rest.Config
+var k8sClient client.Client
+var testEnv *envtest.Environment
 
 func TestUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -41,10 +56,44 @@ func TestUtils(t *testing.T) {
 	RunSpecs(t, "run helper suite")
 }
 
+var _ = BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	By("bootstrapping test environment")
+	truePtr := true
+	testEnv = &envtest.Environment{
+		UseExistingCluster:    &truePtr,
+		CRDDirectoryPaths:     []string{filepath.Join("../../", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
+	}
+
+	var err error
+	// cfg is defined in this file globally.
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
+	err = csrv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:scheme
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
+
+}, 60)
+
+var _ = AfterSuite(func() {
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
+
 var _ = Describe("user kubeconfig ", func() {
 	Context("syncReNewConfig test", func() {
 		BeforeEach(func() {
-			client, _ := kubernetes.NewKubernetesClient("", "")
+			clientSet, _ := kubernetes.NewForConfig(cfg)
 			rb := &rbacv1.RoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cuisongliu-rolebinding",
@@ -63,34 +112,58 @@ var _ = Describe("user kubeconfig ", func() {
 					APIGroup: "rbac.authorization.k8s.io",
 				},
 			}
-			_, _ = client.Kubernetes().RbacV1().RoleBindings("default").Create(context.TODO(), rb, metav1.CreateOptions{})
+
+			_, _ = clientSet.RbacV1().RoleBindings("default").Create(context.TODO(), rb, metav1.CreateOptions{})
 
 		})
 		AfterEach(func() {
-			client, _ := kubernetes.NewKubernetesClient("", "")
-			_ = client.Kubernetes().RbacV1().RoleBindings("default").Delete(context.TODO(), "cuisongliu-rolebinding", metav1.DeleteOptions{})
+			clientSet, _ := kubernetes.NewForConfig(cfg)
+			_ = clientSet.RbacV1().RoleBindings("default").Delete(context.TODO(), "cuisongliu-rolebinding", metav1.DeleteOptions{})
 			_ = os.RemoveAll("output")
 		})
 		It("empty csr generate", func() {
 			gen := NewGenerate(&Config{
-				User:        "cuisongliu",
-				DNSNames:    []string{"apiserver.cluster.local"},
-				IPAddresses: nil,
+				User:              "cuisongliu",
+				DNSNames:          []string{"apiserver.cluster.local"},
+				IPAddresses:       nil,
+				ExpirationSeconds: 100000000,
 			})
 			By("start to get kubeconfig")
-			config, err := gen.KubeConfig()
+			config, err := gen.KubeConfig(cfg, k8sClient)
 			Expect(err).To(BeNil())
 			Expect(config).NotTo(BeNil())
+			if info, ok := config.AuthInfos["cuisongliu"]; ok {
+				if info != nil {
+					cert, err := DecodeX509CertificateBytes(info.ClientCertificateData)
+					if err != nil {
+						Expect(err).To(BeNil())
+					}
+					if cert.NotAfter.Before(time.Now()) {
+						config = nil
+						By(fmt.Sprintf("ClientCertificateData %s is expired", "cuisongliu"))
+						return
+					}
+					By(fmt.Sprintf("Cert NotAfter is  %s", cert.NotAfter.String()))
+				}
+			}
+
 			kubeData, err := clientcmd.Write(*config)
 			Expect(err).To(BeNil())
 			Expect(kubeData).NotTo(BeNil())
 			By("start to write kubeconfig")
 			err = os.WriteFile("output", kubeData, 0600)
 			Expect(err).To(BeNil())
-			cli, _ := kubernetes.NewKubernetesClient("output", "")
-			_, err = cli.Kubernetes().CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
+
+			newCfg, err := clientcmd.BuildConfigFromFlags("", "output")
 			Expect(err).To(BeNil())
-			_, err = cli.Kubernetes().CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{})
+			Expect(newCfg).NotTo(BeNil())
+			newCfg.QPS = 1e6
+			newCfg.Burst = 1e6
+			clientSet, err := kubernetes.NewForConfig(newCfg)
+			Expect(err).To(BeNil())
+			_, err = clientSet.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
+			Expect(err).To(BeNil())
+			_, err = clientSet.CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{})
 			errStatus := errors.ReasonForError(err)
 			Expect(err).NotTo(BeNil())
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))

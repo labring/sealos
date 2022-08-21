@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/client-go/rest"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	"github.com/labring/endpoints-operator/library/convert"
@@ -50,6 +52,7 @@ type UserReconciler struct {
 	Logger   logr.Logger
 	Recorder record.EventRecorder
 	cache    cache.Cache
+	config   *rest.Config
 	*runtime.Scheme
 	client.Client
 }
@@ -99,6 +102,7 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
+	r.config = mgr.GetConfig()
 	r.Logger.V(4).Info("init reconcile controller user")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}).
@@ -191,7 +195,7 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "syncReNewConfig %s is error: %v", user.Name, err)
 	}
 	if config == nil {
-		config, err = helper.NewGenerate(cfg).KubeConfig()
+		config, err = helper.NewGenerate(cfg).KubeConfig(r.config, r.Client)
 		if err != nil {
 			r.setConditionError(condition, "SyncKubeConfigError", err)
 			r.Recorder.Eventf(user, v1.EventTypeWarning, "syncKubeConfig", "Sync KubeConfig %s is error: %v", user.Name, err)

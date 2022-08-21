@@ -30,13 +30,15 @@ import (
 	"net"
 	"time"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	csrv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	csrv1client "k8s.io/client-go/kubernetes/typed/certificates/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -83,32 +85,27 @@ type CSR struct {
 	}
 }
 
-func (csr *CSR) KubeConfig() (*api.Config, error) {
+func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Config, error) {
 	csrKey, key, err := csr.newSignedToCsrKey()
 	if err != nil {
 		return nil, err
 	}
-	client, err := kubernetes.NewKubernetesClient("", "")
-	if err != nil {
-		return nil, err
-	}
 	// make sure cadata is loaded into config under incluster mode
-	if err = rest.LoadTLSFiles(client.Config()); err != nil {
+	if err = rest.LoadTLSFiles(config); err != nil {
 		return nil, err
 	}
-	ca := client.Config().CAData
+	ca := config.CAData
 	csr.data.CAKey = ca
 	csr.data.TLSKey = key
 	csr.data.TLSCsr = csrKey
-	//tls.TLSCrt = cert
-	if err = csr.updateCsr(client.Kubernetes().CertificatesV1().CertificateSigningRequests()); err != nil {
+	if err = csr.updateCsr(config, client); err != nil {
 		return nil, err
 	}
 	ctx := fmt.Sprintf("%s@%s", csr.User, csr.ClusterName)
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
 			csr.ClusterName: {
-				Server:                   client.Config().Host,
+				Server:                   config.Host,
 				CertificateAuthorityData: ca,
 			},
 		},
@@ -121,49 +118,62 @@ func (csr *CSR) KubeConfig() (*api.Config, error) {
 		AuthInfos: map[string]*api.AuthInfo{
 			csr.User: {
 				ClientCertificateData: csr.data.TLSCrt,
-				ClientKeyData:         csr.data.TLSKey,
+				ClientKeyData:         key,
 			},
 		},
 		CurrentContext: ctx,
 	}, nil
 }
 
-func (csr *CSR) updateCsr(client csrv1client.CertificateSigningRequestInterface) error {
-	dPolicy := v1.DeletePropagationBackground
+func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 	csrName := fmt.Sprintf("sealos-generater-%s", csr.User)
 	label := map[string]string{
 		"csr-name": csrName,
 	}
-	_ = client.Delete(context.TODO(), csrName, v1.DeleteOptions{PropagationPolicy: &dPolicy})
 	csrResource := &csrv1.CertificateSigningRequest{}
 	csrResource.Name = csrName
-	csrResource.Labels = label
-	csrResource.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
-	csrResource.Spec.ExpirationSeconds = &csr.ExpirationSeconds
-	csrResource.Spec.Groups = []string{"system:authenticated"}
-	csrResource.Spec.Usages = []csrv1.KeyUsage{
-		"digital signature",
-		"key encipherment",
-		"client auth",
-	}
-	csrResource.Spec.Request = csr.data.TLSCsr
-	csrResource, err := client.Create(context.TODO(), csrResource, v1.CreateOptions{})
 
-	if err != nil {
-		return err
-	}
-	csrResource.Status.Conditions = append(csrResource.Status.Conditions, csrv1.CertificateSigningRequestCondition{
-		Type:    csrv1.CertificateApproved,
-		Status:  corev1.ConditionTrue,
-		Reason:  "AutoApproved",
-		Message: "This CSR was approved by user certificate approve.",
+	deleteCSR := csrResource.DeepCopy()
+	_ = cli.Delete(context.TODO(), deleteCSR, client.PropagationPolicy(v1.DeletePropagationBackground))
+
+	change, err := controllerutil.CreateOrUpdate(context.TODO(), cli, csrResource, func() error {
+		csrResource.Labels = label
+		csrResource.Spec.Request = csr.data.TLSCsr
+		csrResource.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
+		csrResource.Spec.ExpirationSeconds = &csr.ExpirationSeconds
+		csrResource.Spec.Groups = []string{"system:authenticated"}
+		csrResource.Spec.Usages = []csrv1.KeyUsage{
+			"digital signature",
+			"key encipherment",
+			"client auth",
+		}
+		return nil
 	})
-
-	_, err = client.UpdateApproval(context.TODO(), csrName, csrResource, v1.UpdateOptions{})
 	if err != nil {
 		return err
 	}
-	w, err := client.Watch(context.TODO(), v1.ListOptions{LabelSelector: "csr-name=" + csrName})
+	if change != controllerutil.OperationResultCreated {
+		return errors.NewBadRequest("create csr failed,must create new csr for new user")
+	}
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	csrResource.Status.Conditions = []csrv1.CertificateSigningRequestCondition{
+		{
+			Type:    csrv1.CertificateApproved,
+			Status:  corev1.ConditionTrue,
+			Reason:  "AutoApproved",
+			Message: "This CSR was approved by user certificate approve.",
+		},
+	}
+	_, err = clientset.CertificatesV1().CertificateSigningRequests().UpdateApproval(context.TODO(), csrName, csrResource, v1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	w, err := clientset.CertificatesV1().CertificateSigningRequests().Watch(context.TODO(), v1.ListOptions{LabelSelector: "csr-name=" + csrName})
 	if err != nil {
 		return err
 	}

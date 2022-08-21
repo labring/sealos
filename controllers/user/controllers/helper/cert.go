@@ -30,9 +30,10 @@ import (
 	"net"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"k8s.io/client-go/rest"
 
-	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
@@ -73,16 +74,12 @@ type Cert struct {
 	*Config
 }
 
-func (c *Cert) KubeConfig() (*api.Config, error) {
-	client, err := kubernetes.NewKubernetesClient("", "")
-	if err != nil {
-		return nil, err
-	}
+func (c *Cert) KubeConfig(config *rest.Config, client client.Client) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
-	if err = rest.LoadTLSFiles(client.Config()); err != nil {
+	if err := rest.LoadTLSFiles(config); err != nil {
 		return nil, err
 	}
-	certs, err := cert.ParseCertsPEM(client.Config().CAData)
+	certs, err := cert.ParseCertsPEM(config.CAData)
 	if err != nil {
 		return nil, fmt.Errorf("error reading by config:  %s", err.Error())
 	}
@@ -104,7 +101,7 @@ func (c *Cert) KubeConfig() (*api.Config, error) {
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
 			c.ClusterName: {
-				Server:                   client.Config().Host,
+				Server:                   config.Host,
 				CertificateAuthorityData: encodeCertPEM(caCert),
 			},
 		},

@@ -21,7 +21,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/labring/sealos/pkg/pay"
+	"github.com/labring/sealos/controllers/user/controllers/pay"
 
 	restful "github.com/emicklei/go-restful/v3"
 	"github.com/go-openapi/spec"
