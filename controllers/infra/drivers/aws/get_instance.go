@@ -19,6 +19,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/labring/sealos/controllers/infra/common"
@@ -106,7 +107,7 @@ The value should be: default/aws-infra-demo
 func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
 	hosts := &v1.Hosts{}
 	nameKey := fmt.Sprintf("tag:%s", common.InfraInstancesLabel)
-	fullName := infra.GetInstancesTag()
+	fullName := infra.GetInstancesAndVolumesTag()
 
 	roleKey := fmt.Sprintf("tag:%s", key)
 
@@ -154,7 +155,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	hostmap := make(map[int]*v1.Hosts)
 
 	nameKey := fmt.Sprintf("tag:%s", common.InfraInstancesLabel)
-	fullName := infra.GetInstancesTag()
+	fullName := infra.GetInstancesAndVolumesTag()
 
 	client := d.Client
 	input := &ec2.DescribeInstancesInput{
@@ -171,8 +172,13 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
 	}
 
+	diskMap, err := d.getVolumes(infra)
+	if err != nil {
+		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 Volume: %v", err)
+	}
 	for _, r := range result.Reservations {
-		for _, i := range r.Instances {
+		for j := range r.Instances {
+			i := r.Instances[j]
 			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
 				continue
 			}
@@ -180,32 +186,120 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 			if err != nil {
 				return nil, fmt.Errorf("aws ecs not found index label: %v", err)
 			}
-			metadata := v1.Metadata{
-				IP: []string{*i.PrivateIpAddress},
-				ID: *i.InstanceId,
+			if infra.Spec.AvailabilityZone == "" {
+				availabilityZone := i.Placement.AvailabilityZone
+				infra.Spec.AvailabilityZone = *availabilityZone
+			}
+			disksID := make([]string, 0)
+			for _, blockDeviceMap := range i.BlockDeviceMappings {
+				vid := *blockDeviceMap.Ebs.VolumeId
+				if _, ok := diskMap[vid]; ok {
+					disksID = append(disksID, vid)
+				}
 			}
 
+			metadata := v1.Metadata{
+				IP:     []string{*i.PrivateIpAddress},
+				ID:     *i.InstanceId,
+				DiskID: disksID,
+			}
 			if h, ok := hostmap[index]; ok {
 				h.Count++
+				err = addDisks(h, diskMap, i)
+				if err != nil {
+					return nil, err
+				}
 				hostmap[index].Metadata = append(hostmap[index].Metadata, metadata)
 				continue
 			}
+			instanceType, imageID := i.InstanceType, i.ImageId
+
 			hostmap[index] = &v1.Hosts{
 				Count:    1,
 				Metadata: []v1.Metadata{metadata},
+				Image:    *imageID,
+				Flavor:   string(instanceType),
 				Index:    index,
+				Disks:    []v1.Disk{},
 			}
-
-			fmt.Printf("got instance id: %v, tags: %v, ip: %v, Eip: %v",
-				i.InstanceId, i.Tags, i.PrivateIpAddress, i.PublicIpAddress)
+			createDisks(hostmap[index], diskMap, i)
+			sortDisksByName(hostmap[index].Disks)
 		}
 	}
 
 	for _, v := range hostmap {
 		hosts = append(hosts, *v)
 	}
-
 	return hosts, nil
+}
+
+func createDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) {
+	for j := range instance.BlockDeviceMappings {
+		volumeID := *instance.BlockDeviceMappings[j].Ebs.VolumeId
+		if v, ok := diskMap[volumeID]; ok {
+			host.Disks = append(host.Disks,
+				v1.Disk{
+					ID:       []string{volumeID},
+					Name:     *instance.BlockDeviceMappings[j].DeviceName,
+					Capacity: v.Capacity,
+					Type:     v.Type,
+				},
+			)
+		}
+	}
+}
+
+func addDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) error {
+	for _, blockDeviceMap := range instance.BlockDeviceMappings {
+		if _, ok := diskMap[*blockDeviceMap.Ebs.VolumeId]; !ok {
+			continue
+		}
+		//search disk index in host by name
+		diskIndex := sort.Search(len(host.Disks), func(i int) bool {
+			return host.Disks[i].Name >= *blockDeviceMap.DeviceName
+		})
+		if diskIndex < 0 || diskIndex >= len(host.Disks) {
+			return fmt.Errorf("get aws disk error, disk not found. disk name: %s, instance id:%s", *blockDeviceMap.DeviceName, *instance.InstanceId)
+		}
+		host.Disks[diskIndex].ID = append(host.Disks[diskIndex].ID, *blockDeviceMap.Ebs.VolumeId)
+	}
+	return nil
+}
+
+func (d Driver) getVolumes(infra *v1.Infra) (map[string]v1.Disk, error) {
+	client := d.Client
+	tagKey := fmt.Sprintf("tag:%s", common.DataVolumeLabel)
+	//roleKey := fmt.Sprintf("tag:%s", roles)
+	nameKey := fmt.Sprintf("tag:%s", common.InfraVolumesLabel)
+	fullName := infra.GetInstancesAndVolumesTag()
+	input := &ec2.DescribeVolumesInput{
+		Filters: []types.Filter{
+			{
+				Name:   &nameKey,
+				Values: []string{fullName},
+			},
+			{
+				Name:   &tagKey,
+				Values: []string{common.TRUELable},
+			},
+		},
+	}
+	result, err := client.DescribeVolumes(context.TODO(), input)
+	if err != nil {
+		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 volumes: %v", err)
+	}
+	diskMap := make(map[string]v1.Disk, len(result.Volumes))
+	for _, v := range result.Volumes {
+		diskMap[*v.VolumeId] = v1.Disk{
+			Capacity: int(*v.Size),
+			Type:     string(v.VolumeType),
+		}
+	}
+	return diskMap, nil
+}
+
+func sortDisksByName(disks v1.NameDisks) {
+	sort.Sort(disks)
 }
 
 func getIndex(i types.Instance) (int, error) {

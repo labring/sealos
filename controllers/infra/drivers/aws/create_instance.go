@@ -78,7 +78,7 @@ func GetInstanceType(hosts *v1.Hosts) types.InstanceType {
 }
 
 func rolesToTags(roles []string) (tags []types.Tag) {
-	t := "true"
+	t := common.TRUELable
 
 	for _, r := range roles {
 		tag := types.Tag{
@@ -102,7 +102,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	tags := rolesToTags(hosts.Roles)
 	// Set label tag
 	labelKey := common.InfraInstancesLabel
-	labelValue := infra.GetInstancesTag()
+	labelValue := infra.GetInstancesAndVolumesTag()
 	tags = append(tags, types.Tag{
 		Key:   &labelKey,
 		Value: &labelValue,
@@ -121,6 +121,14 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		Key:   &nameKey,
 		Value: &nameValue,
 	})
+	volumeTags := rolesToTags(hosts.Roles)
+	rootVolume, value := common.RootVolumeLabel, common.TRUELable
+	volumeTags = append(volumeTags,
+		types.Tag{
+			Key:   &rootVolume,
+			Value: &value,
+		},
+	)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -131,17 +139,38 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				ResourceType: types.ResourceTypeInstance,
 				Tags:         tags,
 			},
+			{
+				ResourceType: types.ResourceTypeVolume,
+				Tags:         volumeTags,
+			},
 		},
+		//BlockDeviceMappings: make([]types.BlockDeviceMapping, len(hosts.Disks)),
 	}
 
+	// assign to BlockDeviceMappings from host.Disk
+	//for i := range input.BlockDeviceMappings {
+	//	name, size, volumeType := hosts.Disks[i].Name, int32(hosts.Disks[i].Capacity), hosts.Disks[i].Type
+	//	input.BlockDeviceMappings[i].DeviceName = &name
+	//	input.BlockDeviceMappings[i].Ebs = &types.EbsBlockDevice{
+	//		VolumeSize: &size,
+	//		VolumeType: types.VolumeType(volumeType),
+	//	}
+	//}
 	result, err := MakeInstance(context.TODO(), client, input)
 	if err != nil {
-		return err
+		return fmt.Errorf("create volume failed: %v", err)
 	}
 	for _, instance := range result.Instances {
-		fmt.Printf("instance id: %v, tags: %v, ip: %v, Eip: %v",
-			instance.InstanceId, instance.Tags, instance.PrivateIpAddress, instance.PublicIpAddress)
+		hosts.Metadata = append(hosts.Metadata, v1.Metadata{
+			ID: *instance.InstanceId,
+		})
 	}
-
+	if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
+		infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
+	}
+	err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
+	if err != nil {
+		return fmt.Errorf("create and attach volumes failed: %v", err)
+	}
 	return nil
 }

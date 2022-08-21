@@ -19,15 +19,29 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 	hosts := []v1.Hosts{
 		{
 			Roles:  []string{"master"},
-			Count:  3,
+			Count:  2,
 			Flavor: string(types.InstanceTypeT2Micro),
 			Image:  "ami-05248307900d52e3a",
+			Disks: []v1.Disk{
+				{
+					Type:     string(types.VolumeTypeGp3),
+					Capacity: 35,
+					Name:     "/dev/sda2",
+				},
+			},
 		},
 		{
 			Roles:  []string{"node"},
-			Count:  3,
+			Count:  2,
 			Flavor: string(types.InstanceTypeT2Micro),
 			Image:  "ami-05248307900d52e3a",
+			Disks: []v1.Disk{
+				{
+					Type:     string(types.VolumeTypeGp2),
+					Capacity: 20,
+					Name:     "/dev/sda2",
+				},
+			},
 		},
 	}
 

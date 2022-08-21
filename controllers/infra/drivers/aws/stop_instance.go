@@ -63,30 +63,49 @@ func StopInstance(c context.Context, api EC2StopInstancesAPI, input *ec2.StopIns
 	return resp, err
 }
 
+func (d Driver) stopInstances(hosts *v1.Hosts) error {
+	client := d.Client
+	instanceID := make([]string, len(hosts.Metadata))
+	for i, metadata := range hosts.Metadata {
+		instanceID[i] = metadata.ID
+	}
+
+	input := &ec2.StopInstancesInput{
+		InstanceIds: instanceID,
+	}
+	_, err := StopInstance(context.TODO(), client, input)
+	if err != nil {
+		return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)
+	}
+	return nil
+}
+
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	client := d.Client
-
+	instanceID := make([]string, hosts.Count)
+	disksID := make([]string, 0)
 	for i := 0; i < hosts.Count; i++ {
 		metadata := hosts.Metadata[i]
-		instanceID := metadata.ID
-		input := &ec2.StopInstancesInput{
-			InstanceIds: []string{
-				instanceID,
-			},
-		}
-		terminateInput := &ec2.TerminateInstancesInput{
-			InstanceIds: []string{instanceID},
-			DryRun:      aws.Bool(false),
-		}
-
-		_, err := StopInstance(context.TODO(), client, input)
-		if err != nil {
-			return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)
-		}
-		_, err = client.TerminateInstances(context.TODO(), terminateInput)
-		if err != nil {
-			return fmt.Errorf("aws terminate instance failed: %s, %v", instanceID, err)
-		}
+		instanceID[i] = metadata.ID
+		disksID = append(disksID, metadata.DiskID...)
+	}
+	input := &ec2.StopInstancesInput{
+		InstanceIds: instanceID,
+	}
+	terminateInput := &ec2.TerminateInstancesInput{
+		InstanceIds: instanceID,
+		DryRun:      aws.Bool(false),
+	}
+	if err := d.DeleteVolume(disksID); err != nil {
+		return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
+	}
+	_, err := StopInstance(context.TODO(), client, input)
+	if err != nil {
+		return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)
+	}
+	_, err = client.TerminateInstances(context.TODO(), terminateInput)
+	if err != nil {
+		return fmt.Errorf("aws terminate instance failed: %s, %v", instanceID, err)
 	}
 
 	return nil
