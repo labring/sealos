@@ -19,4 +19,3 @@ Here are some basic installation requirements:
 ## CPU Architecture  
 
 Architectures released are `amd64` and `arm64`.  
-
