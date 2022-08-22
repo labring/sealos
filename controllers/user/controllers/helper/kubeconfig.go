@@ -23,11 +23,14 @@ import (
 	"net"
 	"time"
 
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Generate interface {
-	KubeConfig() (*api.Config, error)
+	KubeConfig(config *rest.Config, client client.Client) (*api.Config, error)
 }
 
 type Config struct {
