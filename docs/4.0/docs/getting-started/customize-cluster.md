@@ -6,7 +6,6 @@ sidebar_position: 2
 
 1. Run `sealos gen` to generate a Clusterfile, Example:
 
-
 ```shell
 $ sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
   --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
@@ -116,4 +115,7 @@ spec:
 
 3. Run `sealos apply -f Clusterfile` to install the cluster.
 
-**Notes：**You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or `kubeadm config print init-defaults` command to print kubeadm configuration .
+**Notes：**
+
+- You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or `kubeadm config print init-defaults` command to print kubeadm configuration.
+- Experimental usage please check [CLI](<https://www.sealos.io/docs/cli/apply#experimental>)
