@@ -19,16 +19,28 @@ export async function ListPods(
   return kc.makeApiClient(k8s.CoreV1Api).listNamespacedPod(ns);
 }
 
-export async function ReadService(
+export type CRDMeta = {
+  group: string; // group
+  version: string; // version
+  namespace: string; // namespace
+  plural: string; // type
+};
+
+export async function GetCRD(
   kc: k8s.KubeConfig,
-  name: string,
-  ns: string
+  meta: CRDMeta,
+  name: string
 ): Promise<{
   response: http.IncomingMessage;
-  body: k8s.V1Service;
+  body: k8s.V1ResourceQuota;
 }> {
-  // debugger;
-  return kc.makeApiClient(k8s.CoreV1Api).readNamespacedService(name, ns);
+  return kc.makeApiClient(k8s.CustomObjectsApi).getNamespacedCustomObject(
+    meta.group,
+    meta.version,
+    meta.namespace,
+    meta.plural,
+    name // resource name
+  );
 }
 
 export async function ApplyYaml(
@@ -69,8 +81,22 @@ export async function ApplyYaml(
 }
 
 export function CheckIsInCluster(): boolean {
-  if (process.env.KUBERNETES_SERVICE_HOST !== '' && process.env.KUBERNETES_SERVICE_PORT !== '') {
+  if (
+    process.env.KUBERNETES_SERVICE_HOST !== undefined &&
+    process.env.KUBERNETES_SERVICE_HOST !== '' &&
+    process.env.KUBERNETES_SERVICE_PORT !== undefined &&
+    process.env.KUBERNETES_SERVICE_PORT !== ''
+  ) {
     return true;
   }
   return false;
+}
+
+export function ReplaceInCLuster(kubeconfig: string): string {
+  return CheckIsInCluster()
+    ? kubeconfig.replace(
+        'https://apiserver.cluster.local:6443',
+        'https://kubernetes.default.svc.cluster.local:443'
+      )
+    : kubeconfig;
 }

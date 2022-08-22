@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { BadRequestResp, NotFoundResp, JsonResp } from '../response';
-import { CheckIsInCluster, K8sApi, ListPods } from '../../../lib/kubernetes';
+import { CheckIsInCluster, K8sApi, ListPods, ReplaceInCLuster } from '../../../lib/kubernetes';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -12,17 +12,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     return NotFoundResp(resp);
   }
 
-  console.log(kubeconfig);
-
-  const kubeconfigR = kubeconfig;
-  if (CheckIsInCluster()) {
-    const kubeconfigR = kubeconfig.replace(
-      'https://apiserver.cluster.local:6443',
-      'https://kubernetes.default.svc.cluster.local:443'
-    );
-  }
-
+  const kubeconfigR = ReplaceInCLuster(kubeconfig);
   const kc = K8sApi(kubeconfigR);
+
   const res = await ListPods(kc, 'sealos');
   JsonResp(res.body, resp);
 }
