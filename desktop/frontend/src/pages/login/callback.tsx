@@ -2,7 +2,7 @@ import type { NextPage } from 'next';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { fetchGet, fetchPost } from '../../lib/client_api';
+import { FetchGet, FetchPost } from '../../lib/client_api';
 import { setSession } from '../../stores/session';
 import { KubeConfig, OAuthToken, Session, UserInfo } from '../../interfaces/session';
 
@@ -20,13 +20,13 @@ const Callback: NextPage = () => {
     const { code, state } = router.query;
     if (code === undefined || code === '' || state === undefined || state === '') return;
 
-    fetchPost('auth/token', { code: code, state: state })
+    FetchPost('auth/token', { code: code, state: state })
       .then((token) => {
         console.log('token', token);
         const oauth_token = token as OAuthToken;
         if (oauth_token.access_token === '') return;
 
-        fetchGet('auth/userinfo', undefined, {
+        FetchGet('auth/userinfo', undefined, {
           authorization: 'Bearer ' + oauth_token.access_token
         })
           .then((userinfo) => {
@@ -35,7 +35,7 @@ const Callback: NextPage = () => {
             const user_info = userinfo as UserInfo;
             if (user_info.id === '') return;
 
-            fetchGet('auth/kubeconfig', undefined, {
+            FetchGet('auth/kubeconfig', undefined, {
               authorization: 'Bearer ' + oauth_token.access_token
             })
               .then((kubeconfig) => {

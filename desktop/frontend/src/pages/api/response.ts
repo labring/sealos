@@ -33,7 +33,10 @@ const BadRequestResp = (resp?: NextApiResponse) =>
 const NotFoundResp = (resp?: NextApiResponse) =>
   CommonResp({ code: 404, message: 'Method Not Found' }, resp);
 
+const UnprocessableResp = (str: string, resp?: NextApiResponse) =>
+  CommonResp({ code: 404, message: 'Not Found: ' + str }, resp);
+
 const JsonResp = (data: any, resp?: NextApiResponse) =>
   CommonResp({ code: 0, message: 'ok', data: data, statusCode: 200 }, resp);
 
-export { BadRequestResp, NotFoundResp, CommonResp, JsonResp };
+export { BadRequestResp, NotFoundResp, UnprocessableResp, CommonResp, JsonResp };

@@ -8,6 +8,6 @@ spec:
   user: ccl
   token: abc
   apiServer: https://192.168.49.2:8443
-  ttyImage: fanux/fist-tty-tools:v1.0.0
+  ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
   replicas: 1
   keepalived: 11h

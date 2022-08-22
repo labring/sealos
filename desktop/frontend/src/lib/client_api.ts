@@ -32,10 +32,10 @@ async function fetchAPI(query: string = '', variables?: {}, headers?: {}, method
   return json_data.data;
 }
 
-export async function fetchGet(query: string = '', variables?: {}, headers?: {}) {
+export async function FetchGet(query: string = '', variables?: {}, headers?: {}) {
   return fetchAPI(query, variables, headers, 'GET');
 }
 
-export async function fetchPost(query: string = '', variables?: {}, headers?: {}) {
+export async function FetchPost(query: string = '', variables?: {}, headers?: {}) {
   return fetchAPI(query, variables, headers, 'POST');
 }
