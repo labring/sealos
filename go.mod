@@ -251,5 +251,5 @@ replace (
 replace (
 	github.com/labring/image-cri-shim => ./staging/src/github.com/labring/image-cri-shim
 	github.com/labring/lvscare => ./staging/src/github.com/labring/lvscare
-	github.com/labring/sealos => ../sealos
+	github.com/labring/sealos => ./
 )
