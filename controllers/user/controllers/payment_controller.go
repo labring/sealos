@@ -21,9 +21,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/mdp/qrterminal"
+	"github.com/labring/sealos/pkg/pay"
 
-	"github.com/labring/sealos/controllers/user/controllers/pay"
+	"github.com/mdp/qrterminal"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

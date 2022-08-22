@@ -8,12 +8,6 @@ on:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
-  pull_request:
-    branches: [ "*" ]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.yaml"
 env:
   # Common versions
   GO_VERSION: "1.19"
@@ -33,12 +27,18 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Build amd64
+      - name: Build ${{ matrix.module }} amd64
         working-directory: controllers/${{ matrix.module }}
-        run: GOARCH=amd64 make build && mv bin/manager bin/controllers-${{ matrix.module }}-amd64
-      - name: Build arm64
+        run: |
+          GOARCH=amd64 make build
+          mv bin/manager bin/controller-${{ matrix.module }}-amd64
+          chmod +x bin/controller-${{ matrix.module }}-amd64
+      - name: Build ${{ matrix.module }} arm64
         working-directory: controllers/${{ matrix.module }}
-        run: GOARCH=arm64 make build && mv bin/manager bin/controllers-${{ matrix.module }}-arm64
+        run: |
+          GOARCH=arm64 make build 
+          mv bin/manager bin/controller-${{ matrix.module }}-arm64
+          chmod +x bin/controller-${{ matrix.module }}-arm64
       - name: Prepare
         id: prepare
         run: |
@@ -56,14 +56,15 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
 
-      - name: build (and publish) main image
+      - name: build (and publish) ${{ matrix.module }} main image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-controller
         working-directory: controllers/${{ matrix.module }}
         run: |
+          ls -l bin/
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
