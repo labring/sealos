@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # Customize a Cluster
 
 1. Run `sealos gen` to generate a Clusterfile, Example:

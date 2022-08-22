@@ -15,6 +15,7 @@
 package registry
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -280,7 +281,7 @@ func (is *DefaultImageSaver) handleManifest(manifest distribution.ManifestServic
 func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
-		return fmt.Errorf("get blob service error: %v", err)
+		return fmt.Errorf("failed to get blob service: %v", err)
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	numCh := make(chan struct{}, is.maxPullProcs)
@@ -303,7 +304,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 
 			blobList, err := getBlobList(blobListJSON)
 			if err != nil {
-				return fmt.Errorf("get blob list error: %v", err)
+				return fmt.Errorf("failed to get blob list: %v", err)
 			}
 			blobLists = append(blobLists, blobList...)
 			return nil
@@ -315,6 +316,10 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 
 	//pull and save each blob
 	blobStore := repo.Blobs(is.ctx)
+	type localStore interface {
+		Local(context.Context) (distribution.BlobStore, error)
+	}
+	ls, _ := blobStore.(localStore).Local(is.ctx)
 	for _, blob := range blobLists {
 		tmpBlob := blob
 		numCh <- struct{}{}
@@ -332,7 +337,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 			}
 			reader, err := blobStore.Open(is.ctx, tmpBlob)
 			if err != nil {
-				return fmt.Errorf("get blob %s error: %v", tmpBlob, err)
+				return fmt.Errorf("failed to get blob %s: %v", tmpBlob, err)
 			}
 
 			size, err := reader.Seek(0, io.SeekEnd)
@@ -341,7 +346,7 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 			}
 			_, err = reader.Seek(0, io.SeekStart)
 			if err != nil {
-				return fmt.Errorf("seek start error when save blob %s: %v", tmpBlob, err)
+				return fmt.Errorf("failed to seek start when save blob %s: %v", tmpBlob, err)
 			}
 			preader := progress.NewProgressReader(reader, is.progressOut, size, simpleDgst, "Downloading")
 
@@ -351,14 +356,22 @@ func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distri
 				progress.Update(is.progressOut, simpleDgst, "Download complete")
 			}()
 
-			//store to local filesystem
-			content, err := io.ReadAll(preader)
+			// store to local filesystem
+			bf := bufio.NewReader(preader)
+			bw, err := ls.Create(is.ctx)
 			if err != nil {
-				return fmt.Errorf("blob %s content error: %v", tmpBlob, err)
+				return fmt.Errorf("failed to create local blob writer: %v", err)
 			}
-			_, err = blobStore.Put(is.ctx, "", content)
+			if _, err = bf.WriteTo(bw); err != nil {
+				return fmt.Errorf("failed to write blob to service: %v", err)
+			}
+			_, err = bw.Commit(is.ctx, distribution.Descriptor{
+				MediaType: "",
+				Size:      bw.Size(),
+				Digest:    tmpBlob,
+			})
 			if err != nil {
-				return fmt.Errorf("store blob %s to local error: %v", tmpBlob, err)
+				return fmt.Errorf("failed to commit blob %s to local: %v", tmpBlob, err)
 			}
 
 			return nil

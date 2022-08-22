@@ -74,7 +74,8 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	}
 	return applydrivers.NewDefaultApplier(c.cluster, nil)
 }
-func NewApplierFromFile(path string) (applydrivers.Interface, error) {
+
+func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
 	if !filepath.IsAbs(path) {
 		pa, err := os.Getwd()
 		if err != nil {
@@ -82,7 +83,12 @@ func NewApplierFromFile(path string) (applydrivers.Interface, error) {
 		}
 		path = filepath.Join(pa, path)
 	}
-	Clusterfile := clusterfile.NewClusterFile(path)
+
+	Clusterfile := clusterfile.NewClusterFile(path,
+		clusterfile.WithCustomValues(args.Values),
+		clusterfile.WithCustomSets(args.Sets),
+		clusterfile.WithCustomEnvs(args.CustomEnv),
+	)
 	if err := Clusterfile.Process(); err != nil {
 		return nil, err
 	}

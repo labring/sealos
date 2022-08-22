@@ -23,31 +23,15 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// UserGroupSpec defines the desired state of UserGroup
-type UserGroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of UserGroup. Edit usergroup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
-}
-
-// UserGroupStatus defines the observed state of UserGroup
-type UserGroupStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
-
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:scope=Cluster,shortName=ug
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // UserGroup is the Schema for the usergroups API
 type UserGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec   UserGroupSpec   `json:"spec,omitempty"`
-	Status UserGroupStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

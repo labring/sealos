@@ -75,6 +75,12 @@ spec:
             type: object
           status:
             description: TerminalStatus defines the observed state of Terminal
+            properties:
+              availableReplicas:
+                format: int32
+                type: integer
+            required:
+            - availableReplicas
             type: object
         type: object
     served: true

@@ -17,6 +17,8 @@ package kubernetes
 import (
 	"path/filepath"
 
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -44,19 +46,17 @@ type kubernetesClient struct {
 
 // NewKubernetesClient creates a KubernetesClient
 func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
-	var config *rest.Config
-	var err error
-	if config == nil {
-		config, err = rest.InClusterConfig()
-		if err != nil {
-			if kubeconfig == "" {
-				kubeconfig = filepath.Join(homedir.HomeDir(), ".kube", "config")
-			}
-			config, err = clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
-			if err != nil {
-				return nil, err
-			}
+	if kubeconfig == "" || !fileutil.IsExist(kubeconfig) {
+		defaultKubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+		if !fileutil.IsExist(defaultKubeconfig) {
+			kubeconfig = ""
+		} else {
+			kubeconfig = defaultKubeconfig
 		}
+	}
+	config, err := clientcmd.BuildConfigFromFlags(apiserver, kubeconfig)
+	if err != nil {
+		return nil, err
 	}
 	config.QPS = 1e6
 	config.Burst = 1e6

@@ -13,4 +13,49 @@ resources:
   kind: User
   path: github.com/labring/sealos/controllers/user/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: user
+  kind: UserGroupUserBinding
+  path: github.com/labring/sealos/controllers/user/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: user
+  kind: UserGroupNamespaceBinding
+  path: github.com/labring/sealos/controllers/user/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: user
+  kind: UserGroupBinding
+  path: github.com/labring/sealos/controllers/user/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: user
+  kind: Account
+  path: github.com/labring/sealos/controllers/user/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: user
+  kind: Payment
+  path: github.com/labring/sealos/controllers/user/api/v1
+  version: v1
 version: "3"

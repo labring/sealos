@@ -1,0 +1,24 @@
+# permissions for end users to edit actions.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: actions-editor-role
+rules:
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - actions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - actions/status
+  verbs:
+  - get

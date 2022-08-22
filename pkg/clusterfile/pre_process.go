@@ -15,13 +15,20 @@
 package clusterfile
 
 import (
+	"bytes"
 	"errors"
+	"os"
+	"strings"
+
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 
 	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-
 	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type PreProcessor interface {
@@ -34,23 +41,63 @@ func NewPreProcessor(path string) PreProcessor {
 
 func (c *ClusterFile) Process() error {
 	if !fileutil.IsExist(c.path) {
-		return errors.New("the cluster file is not exist, make sure you cluster is install")
+		return errors.New("the cluster file is not exist")
 	}
-	clusterFileData, err := fileutil.ReadAll(c.path)
+	for i := range c.customEnvs {
+		kv := strings.SplitN(c.customEnvs[i], "=", 2)
+		if len(kv) == 2 {
+			os.Setenv(kv[0], kv[1])
+		}
+	}
+	clusterFileData, err := c.loadClusterFile()
 	if err != nil {
 		return err
 	}
-	err = c.DecodeCluster(clusterFileData)
-	if err != nil && err != ErrTypeNotFound {
-		return err
+	logger.Debug("read Clusterfile: %s", string(clusterFileData))
+	return c.decode(clusterFileData)
+}
+
+func (c *ClusterFile) loadClusterFile() ([]byte, error) {
+	body, err := fileutil.ReadAll(c.path)
+	if err != nil {
+		return nil, err
 	}
-	err = c.DecodeConfigs(clusterFileData)
-	if err != nil && err != ErrTypeNotFound {
-		return err
+	mergeValues, err := c.loadRenderValues()
+	if err != nil {
+		return nil, err
 	}
-	err = c.DecodeKubeadmConfig(clusterFileData)
-	if err != nil && err != ErrTypeNotFound {
-		return err
+	data := map[string]interface{}{
+		"Values": mergeValues,
+	}
+	tpl, err := template.Parse(string(body))
+	if err != nil {
+		return nil, err
+	}
+	out := bytes.NewBuffer(nil)
+	if err := tpl.Execute(out, data); err != nil {
+		return nil, err
+	}
+	return out.Bytes(), nil
+}
+
+func (c *ClusterFile) loadRenderValues() (map[string]interface{}, error) {
+	valueOpt := &values.Options{
+		ValueFiles: c.customValues,
+		Values:     c.customSets,
+	}
+	return valueOpt.MergeValues([]getter.Provider{{
+		Schemes: []string{"http", "https"},
+		New:     getter.NewHTTPGetter,
+	}})
+}
+
+func (c *ClusterFile) decode(data []byte) error {
+	for _, fn := range []func([]byte) error{
+		c.DecodeCluster, c.DecodeConfigs, c.DecodeKubeadmConfig,
+	} {
+		if err := fn(data); err != nil && err != ErrTypeNotFound {
+			return err
+		}
 	}
 	return nil
 }

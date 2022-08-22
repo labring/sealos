@@ -11,8 +11,8 @@ spec:
   token: abcdefg
   apiServer: https://192.168.49.2:8443
   keepalived: 5h
-  ttyImage: fanux/fist-tty-tools:v1.0.0
-  replicas: 3 
+  ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
+  replicas: 1
 ```
 
 TerminalSpec
@@ -21,7 +21,7 @@ TerminalSpec
 - keepalived(string) 
 - apiServer(string)
 
-  APIServer address of the cluster. Default to https://apiserver.svc.cluster.local:6443
+  APIServer address of the cluster. Default to "https://kubernetes.default.svc.cluster.local:443"
 
 - ttyImage(string)
 
@@ -33,10 +33,12 @@ TerminalSpec
 
 ## Usage
 1. run `kubectl apply terminal.yaml`
-2. run `kubectl get service serviceName` to get the nodePort that the service expose. The serviceName is same with the terminal name.
-3. Visit http://ip:port
+3. Visit https://terminal-name.cloud.sealos.io
 
 ## Keep terminal alived
 
 Client should regularly update the `lastUpdateTime` in annotations to keep the terminal alived. The Cluster will delete the terminal if client does not update the annotations after the time that specified in `keepalived` filed in TerminalSpec.
 The `lastUpdateTime` follows the [RFC3339 format](https://www.rfc-editor.org/rfc/rfc3339).
+
+## Log
+The log module that terminal controller uses is `"sigs.k8s.io/controller-runtime/pkg/log"`, which is the default log module of kubebuilder.

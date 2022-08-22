@@ -139,8 +139,8 @@ sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 
 ```shell
 sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1  --masters 172.31.37.111
-kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/master:NoSchedule-
-kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/control-plane:NoSchedule-
+kubectl taint no node-role.kubernetes.io/master:NoSchedule-
+kubectl taint no node-role.kubernetes.io/control-plane:NoSchedule-
 sealos run labring/ingress-nginx:4.1.0
 sealos run docker.io/luanshaotong/osm:v0.1.1
 ```

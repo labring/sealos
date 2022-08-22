@@ -8,7 +8,7 @@ rules:
 - apiGroups:
   - user.sealos.io
   resources:
-  - groups
+  - accounts
   verbs:
   - create
   - delete
@@ -20,13 +20,65 @@ rules:
 - apiGroups:
   - user.sealos.io
   resources:
-  - groups/finalizers
+  - accounts/finalizers
   verbs:
   - update
 - apiGroups:
   - user.sealos.io
   resources:
-  - groups/status
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings/status
   verbs:
   - get
   - patch

@@ -15,6 +15,14 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: infra-sample
+  name: infra-apply-test
 spec:
-  # TODO(user): Add fields here
+  hosts:
+  - roles: [master] # required
+    count: 0 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"
+  - roles: [ node ] # required
+    count: 0 # Required
+    flavor: "t2.micro"
+    image: "ami-05248307900d52e3a"

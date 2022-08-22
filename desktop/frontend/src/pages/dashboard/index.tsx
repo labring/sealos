@@ -6,7 +6,9 @@ import Image from 'next/future/image';
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import styles from './dashboard.module.css';
-import { Session, getSession } from '../../store/session';
+import { getSession } from '../../stores/session';
+import type { Session } from '../../interfaces/session';
+import type { IframePage } from '../../interfaces/cloud';
 import { useTheme as useNextTheme } from 'next-themes';
 
 import IconSealOS from '../../assets/icons/sealos.svg';
@@ -22,12 +24,6 @@ interface Props {
   username?: string;
 }
 
-type iframePage = {
-  title: string;
-  url: string;
-  icon: string;
-};
-
 const Dashboard: NextPage<Props> = (props) => {
   const { setTheme } = useNextTheme();
   const { isDark, theme } = useTheme();
@@ -42,33 +38,17 @@ const Dashboard: NextPage<Props> = (props) => {
     }
   }, []);
 
-  const urls: iframePage[] = [
-    {
-      title: 'kubernetes-dashboard-cloud-sealos-io',
-      url: 'https://kubernetes-dashboard.cloud.sealos.io/',
-      icon: '/images/kubernetes.svg'
-    },
-    {
-      title: 'terminal-cloud-sealos-io',
-      url: 'https://terminal.cloud.sealos.io/',
-      icon: '/images/terminal.svg'
-    },
-    {
-      title: 'mysql-cloud-sealos-io',
-      url: '',
-      icon: '/images/mysql.svg'
-    },
-    {
-      title: 'redis-cloud-sealos-io',
-      url: '',
-      icon: '/images/redis.svg'
-    }
-  ];
+  const [urls, setUrls] = useState<IframePage[] | undefined>(undefined);
+  useEffect(() => {
+    fetch('/api/cloud/get_all')
+      .then((res) => res.json())
+      .then((data) => setUrls(data.data));
+  }, []);
 
-  const [currIframe, setCurrIframe] = useState<iframePage | undefined>(undefined);
+  const [currIframe, setCurrIframe] = useState<IframePage | undefined>(undefined);
 
-  const renderBottomDockIcon = (item: iframePage) => (
-    <div key={item.url} className={styles.dockItem}>
+  const renderBottomDockIcon = (item: IframePage) => (
+    <div key={item.title} className={styles.dockItem}>
       <div
         className={clsx(styles.bottomAction, 'bottomAction')}
         onClick={() => setCurrIframe(item)}
@@ -227,7 +207,7 @@ const Dashboard: NextPage<Props> = (props) => {
 
           <div className={styles.dockContainer}>
             <div className={styles.dockContent}>
-              {urls.map((item) => renderBottomDockIcon(item))}
+              {urls !== undefined && urls.map((item) => renderBottomDockIcon(item))}
             </div>
           </div>
         </main>

@@ -25,12 +25,13 @@ import (
 
 const (
 	// CRISocketContainerd is the containerd CRI endpoint
-	CRISocketContainerd = "unix:///var/run/containerd/containerd.sock"
+	CRISocketContainerd = "/var/run/containerd/containerd.sock"
 	// CRISocketCRIO is the cri-o CRI endpoint
-	CRISocketCRIO = "unix:///var/run/crio/crio.sock"
+	CRISocketCRIO = "/var/run/crio/crio.sock"
 	// CRISocketDocker is the cri-dockerd CRI endpoint
-	CRISocketDocker = "unix:///var/run/cri-dockerd.sock"
-
+	CRISocketDocker = "/var/run/cri-dockerd.sock"
+	// CRISocketDockerLower is the cri-dockerd CRI endpoint
+	CRISocketDockerLower = "/var/run/dockershim.sock"
 	// DefaultCRISocket defines the default CRI socket
 	DefaultCRISocket = CRISocketContainerd
 )

@@ -28,6 +28,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 
@@ -118,7 +119,13 @@ func GenerateKubeConfig(username string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	config := &api.Config{
+
+	// make sure cadata is loaded into config under incluster mode
+	if err := rest.LoadTLSFiles(client.Config()); err != nil {
+		return "", err
+	}
+
+	config := api.Config{
 		Clusters: map[string]*api.Cluster{
 			"kubernetes": {
 				Server:                   "https://apiserver.cluster.local:6443",
@@ -139,7 +146,7 @@ func GenerateKubeConfig(username string) (string, error) {
 		CurrentContext: ctx,
 	}
 
-	content, err := clientcmd.Write(*config)
+	content, err := clientcmd.Write(config)
 	if err != nil {
 		return "", fmt.Errorf("write kubeconfig failed %s", err)
 	}
