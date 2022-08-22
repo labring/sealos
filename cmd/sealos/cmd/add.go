@@ -59,9 +59,9 @@ func newAddCmd() *cobra.Command {
 		},
 	}
 	addArgs = &apply.ScaleArgs{}
-	addCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
-	addCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
-	addCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
+	addCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "masters to be added")
+	addCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "nodes to be added")
+	addCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "name of cluster to applied join action")
 	return addCmd
 }
 
