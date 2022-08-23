@@ -30,17 +30,18 @@ import (
 	"net"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/util/retry"
 
 	csrv1 "k8s.io/api/certificates/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd/api"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // newPrivateKey creates an RSA private key
@@ -133,28 +134,49 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 	csrResource := &csrv1.CertificateSigningRequest{}
 	csrResource.Name = csrName
 
-	deleteCSR := csrResource.DeepCopy()
-	_ = cli.Delete(context.TODO(), deleteCSR, client.PropagationPolicy(v1.DeletePropagationBackground))
+	user := &userv1.User{}
+	err := cli.Get(context.TODO(), client.ObjectKey{Name: csr.User}, user)
+	if err == nil {
+		ref := v1.OwnerReference{
+			APIVersion: userv1.GroupVersion.String(),
+			Kind:       "User",
+			UID:        user.GetUID(),
+			Name:       user.GetName(),
+		}
+		csrResource.OwnerReferences = append(csrResource.OwnerReferences, ref)
+		csrName = fmt.Sprintf("%s-%d", csrName, user.Generation)
+		csrResource.Name = csrName
+		label = map[string]string{
+			"csr-name": csrName,
+		}
+	}
 
-	change, err := controllerutil.CreateOrUpdate(context.TODO(), cli, csrResource, func() error {
-		csrResource.Labels = label
-		csrResource.Spec.Request = csr.data.TLSCsr
-		csrResource.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
-		csrResource.Spec.ExpirationSeconds = &csr.ExpirationSeconds
-		csrResource.Spec.Groups = []string{"system:authenticated"}
-		csrResource.Spec.Usages = []csrv1.KeyUsage{
+	if err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		insertCSR := csrResource.DeepCopy()
+		insertCSR.Labels = label
+		insertCSR.ResourceVersion = "0"
+		insertCSR.Spec.Request = csr.data.TLSCsr
+		insertCSR.Spec.SignerName = csrv1.KubeAPIServerClientSignerName
+		insertCSR.Spec.ExpirationSeconds = &csr.ExpirationSeconds
+		insertCSR.Spec.Groups = []string{"system:authenticated"}
+		insertCSR.Spec.Usages = []csrv1.KeyUsage{
 			"digital signature",
 			"key encipherment",
 			"client auth",
 		}
+
+		err = cli.Create(context.TODO(), insertCSR)
+		if err != nil {
+			if !errors.IsAlreadyExists(err) {
+				return err
+			}
+		}
+		csrResource = insertCSR.DeepCopy()
 		return nil
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
-	if change != controllerutil.OperationResultCreated {
-		return errors.NewBadRequest("create csr failed,must create new csr for new user")
-	}
+
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return err

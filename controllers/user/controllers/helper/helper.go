@@ -19,6 +19,7 @@ package helper
 import (
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func IsConditionTrue(conditions []v1.Condition, condition v1.Condition) bool {
@@ -77,4 +78,11 @@ func DeleteCondition(conditions []v1.Condition, conditionType v1.ConditionType) 
 	}
 	conditions = newConditions
 	return conditions
+}
+
+func SetConditionError(condition *v1.Condition, reason string, err error) {
+	condition.LastHeartbeatTime = metav1.Now()
+	condition.Status = corev1.ConditionFalse
+	condition.Reason = reason
+	condition.Message = err.Error()
 }

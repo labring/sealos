@@ -22,6 +22,9 @@ spec:
     - jsonPath: .status.phase
       name: Phase
       type: string
+    - jsonPath: .status.observedCSRExpirationSeconds
+      name: ExpirationSeconds
+      type: integer
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -45,7 +48,8 @@ spec:
           spec:
             description: UserSpec defines the desired state of User
             properties:
-              CSRExpirationSeconds:
+              csrExpirationSeconds:
+                default: 7200
                 description: "expirationSeconds is the requested duration of validity
                   of the issued certificate. The certificate signer may issue a certificate
                   with a different validity duration so a client must check the delta
@@ -99,6 +103,10 @@ spec:
                 type: array
               kubeConfig:
                 type: string
+              observedCSRExpirationSeconds:
+                default: 7200
+                format: int32
+                type: integer
               observedGeneration:
                 description: The generation observed by the user controller.
                 format: int64

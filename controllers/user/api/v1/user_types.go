@@ -37,7 +37,8 @@ type UserSpec struct {
 	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
 	//
 	// +optional
-	CSRExpirationSeconds *int32 `json:"CSRExpirationSeconds,omitempty"`
+	//+kubebuilder:default:=7200
+	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
 }
 type UserPhase string
 
@@ -54,6 +55,8 @@ type UserStatus struct {
 	//+kubebuilder:default:=UserUnknown
 	Phase      UserPhase `json:"phase,omitempty"`
 	KubeConfig string    `json:"kubeConfig"`
+	//+kubebuilder:default:=7200
+	ObservedCSRExpirationSeconds int32 `json:"observedCSRExpirationSeconds,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -91,6 +94,7 @@ type Condition struct {
 // +kubebuilder:resource:scope=Cluster
 // +kubebuilder:printcolumn:name="DisplayName",type="string",JSONPath=".spec.displayName"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="ExpirationSeconds",type="integer",JSONPath=".status.observedCSRExpirationSeconds"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // User is the Schema for the users API
