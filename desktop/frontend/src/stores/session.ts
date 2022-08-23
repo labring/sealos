@@ -1,30 +1,27 @@
-import { Session, OAuthToken, UserInfo } from '../interfaces/session';
+import create from 'zustand';
+import { persist } from 'zustand/middleware';
+import { Session } from '../interfaces/session';
 
-let session: Session | undefined;
-
-export function setSession(ss: Session) {
-  localStorage.setItem('session', JSON.stringify(ss));
-  session = ss;
-}
-export function delSession() {
-  localStorage.removeItem('session');
-  session = undefined;
+interface SessionState {
+  session: Session | null;
+  setSession: (ss: Session) => void;
+  delSession: () => void;
+  isUserLogin: () => boolean;
 }
 
-export function getSession() {
-  if (session === undefined) {
-    const got = localStorage.getItem('session');
-
-    if (got && got !== '') {
-      const got_obj = JSON.parse(got);
-      if (got_obj && got_obj.token !== undefined) {
-        session = got_obj;
-      }
+const useSessionStore = create<SessionState>()(
+  persist(
+    (set, get) => ({
+      session: null,
+      setSession: (ss) => set(() => ({ session: ss })),
+      delSession: () => set(() => ({ session: null })),
+      isUserLogin: () => (get().session === null ? false : true)
+    }),
+    {
+      name: 'session',
+      getStorage: () => localStorage
     }
-  }
-  return session;
-}
+  )
+);
 
-export function isUserLogin() {
-  return session === undefined ? false : true;
-}
+export { useSessionStore };

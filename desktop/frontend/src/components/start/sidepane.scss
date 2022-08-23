@@ -1,0 +1,288 @@
+.bandpane {
+  --bg1: #dae2f2;
+  --bg2: #e6edf8;
+  --bgHvr: rgb(0 0 0 / 5%);
+
+  &.bd-blur {
+    --bg1: rgba(242, 242, 242, 0.9);
+    --bg2: rgba(0, 0, 0, 0.05);
+    --bgHvr: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(20px);
+  }
+
+  position: absolute;
+  bottom: 10px;
+  right: 129px;
+  background: var(--bgHvr);
+  color: var(--dark-txt);
+  overflow: hidden;
+  transition: cubic-bezier(0.62, 0, 0.32, 1) 250ms;
+  z-index: 9999;
+  border-radius: 8px;
+  max-height: fit-content;
+
+  &[data-hide="true"] {
+    opacity: 0;
+    animation: overflow-hider 0s ease-in-out 0.2s forwards;
+    transition: all cubic-bezier(0.62, 0, 0.32, 1) 150ms;
+  }
+
+  .bandContainer {
+    background: var(--bg2);
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 82px;
+
+    div {
+      padding: 12px;
+    }
+  }
+}
+
+body[data-theme="dark"] .bandpane {
+  --bg1: #1c1c1c;
+  --bg2: #242424;
+  --bgHvr: #313131;
+
+  &.bd-blur {
+    --bg1: rgba(36, 36, 36, 0.8);
+    --bg2: rgba(0, 0, 0, 0.2);
+    --bgHvr: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.sidePane {
+  --bg1: #dae2f2;
+  --bg2: #e6edf8;
+  --bg3: #fbfbfb;
+  --bg4: rgb(0 0 0 / 5%);
+  --sliderThumbClr: white;
+
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 360px;
+  border-radius: 0.5rem;
+  color: var(--dark-txt);
+  background: var(--bg1);
+  overflow: hidden;
+  transition: cubic-bezier(0.62, 0, 0.32, 1) 250ms;
+  z-index: 9999;
+  transform: translateX(0);
+
+  &.bd-blur {
+    --bg1: rgb(242 242 242 / 90%);
+    --bg2: rgb(255 255 255 / 20%);
+    backdrop-filter: blur(20px);
+  }
+
+  &[data-hide="true"] {
+    transform: translateY(110%);
+    animation: overflow-hider 0s ease-in-out 150ms forwards;
+    transition: all cubic-bezier(0.62, 0, 0.32, 1) 150ms;
+  }
+
+  .quickSettings {
+    background: var(--bg2);
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    .qkCont {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+
+      .qkGrp {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .qkbtn {
+          width: 6rem;
+          height: 3rem;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-bottom-color: rgba(0, 0, 0, 0.2);
+          background: var(--bg3);
+          border: solid 0.1px rgba(17, 17, 17, 0.1);
+          transition: all 0.1s ease;
+
+          &[data-state="true"] {
+            background: var(--clrPrm);
+          }
+        }
+
+        .qktext {
+          width: max-content;
+          font-size: 0.75em;
+          margin: 0.5rem 0 1.33rem 0;
+        }
+      }
+    }
+  }
+  .sliderCont {
+    width: 100%;
+    display: flex;
+    align-items: center;
+
+    .sliders {
+      width: 100%;
+      height: 4px;
+
+      &[type="range"] {
+        --track-color: linear-gradient(90deg, var(--clrPrm) 100%, #888888 100%);
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      &[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 4px;
+        background: var(--track-color);
+        border-radius: 10px;
+        border: 0;
+      }
+      &[type="range"]::-webkit-slider-thumb {
+        border: 4px solid var(--sliderThumbClr);
+        height: 18px;
+        width: 18px;
+        border-radius: 10px;
+        background: var(--clrPrm);
+        -webkit-appearance: none;
+        margin-top: -8px;
+        transition: all 0.1s;
+
+        &:hover {
+          border: 3px solid var(--sliderThumbClr);
+        }
+        &:active {
+          border: 5px solid var(--sliderThumbClr);
+        }
+      }
+      &[type="range"]:focus::-webkit-slider-runnable-track {
+        background: var(--track-color);
+      }
+      &[type="range"]::-moz-range-track {
+        width: 100%;
+        height: 4px;
+        background: var(--track-color);
+        border-radius: 10px;
+        border: 0;
+      }
+      &[type="range"]::-moz-range-thumb {
+        border: 4px solid var(--sliderThumbClr);
+        height: 18px;
+        width: 18px;
+        border-radius: 10px;
+        background: var(--clrPrm);
+
+        &:hover {
+          border: 3px solid var(--sliderThumbClr);
+        }
+        &:active {
+          border: 5px solid var(--sliderThumbClr);
+        }
+      }
+    }
+  }
+
+  .bottomBar {
+    box-sizing: border-box;
+    border-top: 1px solid var(--bg4);
+    height: 3rem;
+    display: flex;
+    align-items: center;
+
+    .bettery {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+
+      &:hover {
+        background: var(--bg4);
+      }
+    }
+  }
+}
+body[data-theme="dark"] .sidePane {
+  --bg1: #1c1c1c;
+  --bg2: #242424;
+  --bg3: #313131;
+  --bg4: rgb(255 255 255 / 5%);
+  --sliderThumbClr: #454545;
+
+  &.bd-blur {
+    --bg1: rgb(36 36 36 / 85%);
+    --bg2: rgb(255 255 255 / 3.33%);
+  }
+
+  .uicon {
+    filter: invert(1);
+  }
+}
+
+.calnpane {
+  --bg1: #dae2f2;
+  --bg2: #e6edf8;
+  --bgHvr: rgb(0 0 0 / 5%);
+
+  &.bd-blur {
+    --bg1: rgba(242, 242, 242, 0.9);
+    --bg2: rgba(0, 0, 0, 0.05);
+    --bgHvr: rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(20px);
+  }
+
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 21rem;
+  background: var(--bg1);
+  color: var(--dark-txt);
+  overflow: hidden;
+  transition: cubic-bezier(0.62, 0, 0.32, 1) 250ms;
+  z-index: 9999;
+  border-radius: 8px;
+  max-height: 500px;
+
+  &.collapse {
+    max-height: 50px;
+  }
+
+  &[data-hide="true"] {
+    transform: translateX(120%);
+    animation: overflow-hider 0s ease-in-out 0.2s forwards;
+    transition: all cubic-bezier(0.62, 0, 0.32, 1) 150ms;
+  }
+
+  #dycalendar {
+    background: var(--bg2);
+  }
+
+  .topBar {
+    height: 50px;
+    border-bottom: 1px solid var(--comp-txt);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .collapser {
+      background: var(--bg2);
+    }
+  }
+}
+body[data-theme="dark"] .calnpane {
+  --bg1: #1c1c1c;
+  --bg2: #242424;
+  --bgHvr: #313131;
+
+  &.bd-blur {
+    --bg1: rgba(36, 36, 36, 0.8);
+    --bg2: rgba(0, 0, 0, 0.2);
+    --bgHvr: rgba(255, 255, 255, 0.08);
+  }
+}

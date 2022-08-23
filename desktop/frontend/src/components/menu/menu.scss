@@ -1,0 +1,97 @@
+.actmenu {
+	--bg1: rgba(249, 249, 249, 0.9);
+	--bg1a: rgba(248, 248, 248, 0.96);
+	--bg2: rgba(0, 0, 0, 0.08);
+
+	position: absolute;
+	background: var(--bg1);
+	backdrop-filter: saturate(2) blur(20px);
+	z-index: 10000;
+	opacity: 1;
+	pointer-events: all;
+	// border: solid 1px var(--comp-txt);
+	border-radius: 8px;
+	transition: opacity 0.1s ease;
+
+	&[data-hide="true"] {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	&[data-left="false"] .minimenu {
+		left: unset;
+		right: 98%;
+	}
+}
+
+body[data-theme="dark"] .actmenu {
+	--bg1: rgba(34, 36, 47, 0.8);
+	--bg1a: rgba(30, 32, 47, 0.9);
+	--bg2: rgba(255, 255, 255, 0.08);
+}
+
+.minimenu {
+	position: absolute;
+	display: none;
+	top: 0;
+	left: 99%;
+	background: var(--bg1a);
+	z-index: 9999;
+	padding: 4px 0;
+	// border: solid 1px var(--comp-txt);
+	animation: fadein 600ms ease-in-out;
+	// backdrop-filter: saturate(2) blur(20px);
+	border-radius: 8px;
+}
+
+.menuopt {
+	height: 28px;
+	box-sizing: border-box;
+	position: relative;
+	padding: 4px 6px;
+	font-size: 12px;
+	cursor: default;
+	margin: 6px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	font-weight: 500;
+	color: var(--txt-col);
+	// transition: all 0.1s ease;
+
+	&:hover {
+		background: var(--bg2);
+
+		.minimenu {
+			display: block;
+		}
+	}
+
+	.spcont {
+		width: 16px;
+		margin-right: 12px;
+	}
+
+	.micon {
+		position: absolute;
+	}
+
+	.rightIcon {
+		right: 8px;
+	}
+
+	.dotIcon,
+	.checkIcon {
+		right: 8px;
+		color: var(--med-txt);
+	}
+}
+
+.menuhr {
+	position: relative;
+	left: 0;
+	width: 100%;
+	height: 1px;
+	background-color: #ccc5;
+	margin: 4px 0;
+}

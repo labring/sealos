@@ -1,9 +1,232 @@
-html,
+/* causing some problem with images for us */
+/* @tailwind base; */
+
+@tailwind components;
+@tailwind utilities;
+
+*::selection {
+  background: initial;
+}
+
 body {
-  padding: 0;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell,
-    Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  background-color: var(--nextui-colors-background);
-  color: var(--nextui-colors-text);
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  width: 100vw;
+  height: 100vh;
+  user-select: none;
+  overflow: hidden !important;
+}
+
+body:before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  display: block;
+  height: 100%;
+  width: 100%;
+  z-index: 99999999999;
+  background: #ff00003b;
+  pointer-events: none;
+  transition: all 2s ease;
+}
+
+body[data-sepia='true']:before {
+  opacity: 0.8;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, 'Consolas', Courier New, monospace;
+}
+
+.App {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.w-max {
+  width: max-content;
+}
+
+.h-max {
+  height: max-content;
+}
+
+.smoothsc {
+  scroll-behavior: smooth;
+}
+
+.notrans {
+  transition: none !important;
+}
+
+.z9900 {
+  z-index: 9900 !important;
+}
+
+input {
+  border: none;
+  outline: none;
+}
+
+input::selection {
+  background: #0074ff;
+  color: #fefefe;
+}
+
+.redbd {
+  box-sizing: border-box;
+  border: solid 1px red;
+}
+
+.redbd0 {
+  border: solid 1px red;
+}
+
+.blbd {
+  box-sizing: border-box;
+  border: solid 1px blue;
+}
+
+.blbd0 {
+  border: solid 1px blue;
+}
+
+img[data-invert='true'],
+svg[data-invert='true'],
+i[data-invert='true'] {
+  filter: invert(1);
+}
+
+img[data-rounded='true'],
+svg[data-rounded='true'],
+i[data-rounded='true'] {
+  border-radius: 1000px;
+}
+
+img[data-flip='true'],
+svg[data-flip='true'],
+i[data-flip='true'] {
+  transform: scale(-1, 1);
+}
+
+.uicon img {
+  transform-origin: center;
+  transition: 400ms ease-in-out;
+}
+
+.uicon img[data-click='true']:active {
+  transform: scale(0.7);
+  transition: 100ms ease-in-out;
+}
+
+.uicon[data-pr='true']:active img {
+  transform: scale(0.7);
+  transition: 100ms ease-in-out;
+}
+
+.desktop {
+  position: absolute;
+  width: 100vw;
+  height: calc(100vh - 48px);
+  top: 0;
+  overflow: hidden;
+}
+
+.dpShad {
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+}
+.mdShad {
+  box-shadow: 0 0 8px rgba(41, 41, 41, 0.1);
+}
+.ltShad {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}
+
+input {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu',
+    'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue';
+}
+
+.prtclk * {
+  pointer-events: none;
+}
+
+*[data-prtclk='true'] {
+  pointer-events: none !important;
+}
+
+.nopt {
+  pointer-events: none;
+}
+
+.handcr {
+  cursor: pointer;
+}
+
+.none {
+  display: none !important;
+}
+
+.text-xss {
+  font-size: 0.64em;
+}
+
+@keyframes fadein {
+  0% {
+    opacity: 0;
+  }
+
+  99% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes slowfadein {
+  0% {
+    opacity: 0;
+  }
+
+  25% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes overflow-hider {
+  100% {
+    width: 0;
+  }
+}
+
+.hvlight:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 200ms ease-in-out;
+}
+
+.hvdark:hover {
+  background: rgba(0, 0, 0, 0.08);
+  transition: all 200ms ease-in-out;
+}
+
+body[data-theme='dark'] .hvlight:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+a {
+  text-decoration: none;
+  color: #0080e1;
 }

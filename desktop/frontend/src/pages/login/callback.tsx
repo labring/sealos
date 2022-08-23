@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { FetchGet, FetchPost } from '../../lib/client_api';
-import { setSession } from '../../stores/session';
+import { useSessionStore } from '../../stores/session';
 import { KubeConfig, OAuthToken, Session, UserInfo } from '../../interfaces/session';
 
 const Callback: NextPage = () => {
@@ -11,6 +11,7 @@ const Callback: NextPage = () => {
   const [uinfo, setUInfo] = useState<any>(null);
   const [kconfig, setKConfig] = useState<any>(null);
   const [redirect, setRedirect] = useState('');
+  const setSession = useSessionStore((state) => state.setSession);
 
   const router = useRouter();
 
