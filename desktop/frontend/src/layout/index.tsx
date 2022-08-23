@@ -1,17 +1,14 @@
-import Navbar from './navbar';
-import Footer from './footer';
 import { Background } from '@/components/background';
 import styles from './index.module.scss';
+import Taskbar from '@/components/taskbar';
+import DesktopContent from '@/components/desktop_content';
 
 export default function Layout({ children }: any) {
   return (
-    <div className={styles.container}>
+    <div className={styles.desktopContainer}>
       <Background />
-      <div className={styles.content}>
-        <Navbar />
-        {children}
-        <Footer />
-      </div>
+      <DesktopContent />
+      <Taskbar />
     </div>
   );
 }

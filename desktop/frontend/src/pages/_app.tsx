@@ -3,7 +3,7 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { AppProps } from 'next/app';
 import Layout from '../layout';
 
-import '../styles/globals.css';
+import '../styles/globals.scss';
 
 const lightTheme = createTheme({
   type: 'light',

@@ -1,0 +1,13 @@
+.battery {
+  display: flex;
+  position: relative;
+}
+.btFull {
+  overflow: hidden;
+  position: absolute;
+  z-index: 0;
+}
+.charger svg {
+  position: absolute;
+  z-index: 1;
+}

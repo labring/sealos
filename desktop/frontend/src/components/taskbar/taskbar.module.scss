@@ -1,0 +1,159 @@
+.taskbar {
+  --bg1: rgba(243, 243, 243, 0.85);
+  --bg2: rgba(255, 255, 255, 0.67);
+
+  position: absolute;
+  width: 100vw;
+  height: 48px;
+  color: var(--dark-txt);
+  background: var(--bg1);
+  -webkit-backdrop-filter: saturate(3) blur(20px);
+  backdrop-filter: saturate(3) blur(20px);
+  bottom: 0;
+  z-index: 10000;
+}
+
+body[data-theme="dark"] {
+  .taskbar {
+    --bg1: rgba(32, 32, 32, 0.75);
+    --bg2: rgba(255, 255, 255, 0.1);
+  }
+
+  .taskIcon,
+  .searchIcon img {
+    filter: invert(1);
+  }
+}
+
+.taskcont {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.taskright {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: auto;
+  height: 100%;
+  margin-left: 10px;
+  display: flex;
+}
+
+.taskIcon {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 24px;
+
+  svg {
+    color: #303030;
+  }
+}
+
+.taskDate {
+  display: flex;
+  padding: 0 8px;
+  font-size: 11px;
+  flex-direction: column;
+  justify-content: center;
+
+  div {
+    width: 100%;
+    text-align: center;
+    font-weight: 400;
+  }
+}
+
+.tasksCont {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  &[data-side="center"] {
+    align-items: center;
+
+    .widget {
+      position: absolute;
+      left: 8px;
+    }
+  }
+
+  &[data-side="left"] {
+    align-items: flex-start;
+  }
+}
+
+.tsbar {
+  width: auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  transition: all ease-in-out 200ms;
+}
+
+.tsIcon {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  margin: auto 3px;
+  box-sizing: border-box;
+  border-radius: 0;
+  background: rgba(254, 254, 254, 0);
+  transform-origin: center;
+  animation: popintro 800ms ease-in-out;
+  border-radius: 4px;
+
+  &:after {
+    content: "";
+    position: absolute;
+    display: block;
+    bottom: 0;
+    width: 0px;
+    height: 3px;
+    border-radius: 4px;
+    background: #858585;
+    transition: all 0.2s ease-in-out;
+  }
+
+  &[data-open="true"]:after {
+    width: 6px;
+  }
+
+  &[data-active="true"]:after {
+    width: 12px;
+    background: var(--clrPrm);
+  }
+
+  &:hover,
+  &[data-active="true"] {
+    background: var(--bg2);
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+.graybd {
+  border: solid 1px transparent;
+  height: 1rem;
+}
+.graybd:hover {
+  border: solid 1px #a1a1a1;
+  border-width: 0 0 0 2px;
+}
+
+@keyframes popintro {
+  0% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1.125);
+  }
+  70% {
+    transform: scale(0.725);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
