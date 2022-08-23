@@ -69,8 +69,9 @@ spec:
 */
 
 type Metadata struct {
-	IP []string `json:"ips,omitempty"`
-	ID string   `json:"id,omitempty"`
+	IP     []string `json:"ips,omitempty"`
+	ID     string   `json:"id,omitempty"`
+	DiskID []string `json:"diskId,omitempty"`
 }
 
 type Hosts struct {
@@ -108,9 +109,26 @@ func (hosts IndexHosts) Swap(i, j int) {
 }
 
 type Disk struct {
-	Capacity string `json:"capacity,omitempty"`
+	ID       []string `json:"id,omitempty"`
+	Capacity int      `json:"capacity,omitempty"`
 	// ENUM: system/data
 	Type string `json:"type,omitempty"`
+	// Device name
+	Name string `json:"name,omitempty"`
+}
+
+type NameDisks []Disk
+
+func (disks NameDisks) Len() int {
+	return len(disks)
+}
+
+func (disks NameDisks) Less(i, j int) bool {
+	return disks[i].Name < disks[j].Name
+}
+
+func (disks NameDisks) Swap(i, j int) {
+	disks[i], disks[j] = disks[j], disks[i]
 }
 
 // InfraSpec defines the desired state of Infra
@@ -123,6 +141,8 @@ type InfraSpec struct {
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`
 	SSH       v1beta1.SSH `json:"ssh,omitempty"`
 	Hosts     []Hosts     `json:"hosts,omitempty"`
+	// Availability Zone
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
@@ -152,7 +172,7 @@ type InfraList struct {
 	Items           []Infra `json:"items"`
 }
 
-func (i *Infra) GetInstancesTag() string {
+func (i *Infra) GetInstancesAndVolumesTag() string {
 	namespace := i.Namespace
 	if namespace == "" {
 		namespace = resid.DefaultNamespace
