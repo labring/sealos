@@ -89,7 +89,7 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 
 - [贡献指南](./CONTRIBUTING.md)
 - [开发指南](./DEVELOPGUIDE.md)
-- [sealos 3.0（旧版）](https://github.com/labring/sealos/tree/release-v3.3.9#readme) 老版本用户访问这里，4.0 全面掉打老版本，请尽快升级。
+- [sealos 3.0（旧版）](https://github.com/labring/sealos/tree/release-v3.3.9#readme) 老版本用户访问这里，4.0 全面吊打老版本，请尽快升级。
 - [buildah](https://github.com/containers/buildah) 本着不重复造轮子，sealos 4.0 中使用了大量 buildah 的构建能力，使集群镜像完全兼容容器镜像和 docker registry。
 - [sealer](https://github.com/sealerio/sealer) sealos 4.0 中使用了大量 sealer 的能力，使得 Clusterfile 与 sealer 兼容。部分模块中 fork 了 sealer 的代码。
 
