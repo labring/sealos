@@ -44,23 +44,18 @@ Query the Charging status Order, and get it status, if success, add the Amount t
 // namespace create by the user.
 
 type Charge struct {
-	Amount  int64            `json:"balance,omitempty"`
-	Time    metav1.Timestamp `json:"time,omitempty"`
-	Status  string           `json:"status,omitempty"`
-	TradeNO string           `json:"tradeNO,omitempty"`
+	Amount  int64       `json:"balance,omitempty"`
+	Time    metav1.Time `json:"time,omitempty"`
+	Status  string      `json:"status,omitempty"`
+	TradeNO string      `json:"tradeNO,omitempty"`
 }
 
 // AccountSpec defines the desired state of Account
-type AccountSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Account. Edit account_types.go to remove/update
-	Balance int64 `json:"balance,omitempty"`
-}
+type AccountSpec struct{}
 
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
+	Balance int64 `json:"balance,omitempty"`
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	ChargeList []Charge `json:"chargeList,omitempty"`

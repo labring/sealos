@@ -37,26 +37,49 @@ const (
 	AppID                      = "AppID"
 	CallbackURL                = "CallbackURL"
 
+	StatusSuccess    = "SUCCESS"
+	StatusProcessing = "PROCESSING"
+	StatusFail       = "FAILED"
+
 	DefaultCallbackURL = "https://sealos.io/payment/wechat/callback"
 )
 
-// 1 ¥ = amount 100
-func WechatPay(amount int64, user, tradeNO, describe, callback string) (string, error) {
+func NewClient(ctx context.Context, opts ...core.ClientOption) (*core.Client, error) {
 	mchID := os.Getenv(MchID)                                           // 商户号
 	mchCertificateSerialNumber := os.Getenv(MchCertificateSerialNumber) // 商户证书序列号
 	mchAPIv3Key := os.Getenv(MchAPIv3Key)                               // 商户APIv3密钥
-
 	mchPrivateKey, err := utils.LoadPrivateKey(os.Getenv(WechatPrivateKey))
 	if err != nil {
 		log.Print("private key is: ", os.Getenv(WechatPrivateKey))
-		return "", fmt.Errorf("load merchant private key error: %v", err)
+		return nil, fmt.Errorf("load merchant private key error: %v", err)
 	}
+	opts = append(opts, option.WithWechatPayAutoAuthCipher(mchID, mchCertificateSerialNumber, mchPrivateKey, mchAPIv3Key))
+	return core.NewClient(ctx, opts...)
+}
 
+func QueryOrder(orderID string) (string, error) {
 	ctx := context.Background()
-	opts := []core.ClientOption{
-		option.WithWechatPayAutoAuthCipher(mchID, mchCertificateSerialNumber, mchPrivateKey, mchAPIv3Key),
+	client, err := NewClient(context.Background())
+	if err != nil {
+		return "", fmt.Errorf("new wechat pay client err:%s", err)
 	}
-	client, err := core.NewClient(ctx, opts...)
+	svc := native.NativeApiService{Client: client}
+	resp, _, err := svc.QueryOrderByOutTradeNo(ctx,
+		native.QueryOrderByOutTradeNoRequest{
+			Mchid:      core.String(os.Getenv(MchID)),
+			OutTradeNo: core.String(orderID),
+		},
+	)
+	if err != nil {
+		return "", fmt.Errorf("call QueryOrder err:%s", err)
+	}
+	return *resp.TradeState, nil
+}
+
+// 1 ¥ = amount 100
+func WechatPay(amount int64, user, tradeNO, describe, callback string) (string, error) {
+	ctx := context.Background()
+	client, err := NewClient(context.Background())
 	if err != nil {
 		return "", fmt.Errorf("new wechat pay client err:%s", err)
 	}
