@@ -134,10 +134,10 @@ users:
 			user := &v1.User{}
 			user.Name = "cuisongliu"
 			defaultExpirationDuration := int32(100000000)
-			user.Spec.CSRExpirationSeconds = &defaultExpirationDuration
+			user.Spec.CSRExpirationSeconds = defaultExpirationDuration
 			c := &helper.Config{
 				User:              user.Name,
-				ExpirationSeconds: *user.Spec.CSRExpirationSeconds,
+				ExpirationSeconds: user.Spec.CSRExpirationSeconds,
 			}
 
 			config, err := helper.NewGenerate(c).KubeConfig(cfg, k8sClient)

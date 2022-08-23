@@ -6,6 +6,26 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - user.sealos.io
   resources:
   - accounts
