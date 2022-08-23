@@ -96,7 +96,7 @@ func (k *KubeadmRuntime) htpasswd(registry *v1beta1.RegistryConfig) error {
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
-	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, k.getContentData().RootFSRegistryPath(), registry.Data)
+	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, registry.Data, registry.Data, k.getContentData().RootFSRegistryPath())
 	logger.Debug("apply registry ln cmd: %s", lnCmd)
 	err := k.sshCmdAsync(registry.IP, lnCmd)
 	if err != nil {
