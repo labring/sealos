@@ -347,6 +347,15 @@ func getEtcdEndpointsWithHTTPSPrefix(masters []string) string {
 	return strings.Join(tmpSlice, ",")
 }
 
+func (k *KubeadmRuntime) getCRISocket(node string) (string, error) {
+	criSocket, err := k.getRemoteInterface().Socket(node)
+	if err != nil {
+		return "", err
+	}
+	logger.Debug("get nodes [%s] cri socket is [%s]", node, criSocket)
+	return criSocket, nil
+}
+
 //nolint:all
 func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 	k.JoinConfiguration.NodeRegistration.CRISocket = criSocket
@@ -357,11 +366,9 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	cGroupDriver, err := k.getCGroupDriver(k.getMaster0IPAndPort())
-	if err != nil {
+	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
 		return nil, err
 	}
-	k.setCgroupDriver(cGroupDriver)
 	k.setInitAdvertiseAddress(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.APIServer.ExtraArgs == nil {
@@ -372,7 +379,7 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 
-	if err = k.convertKubeadmVersion(); err != nil {
+	if err := k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
 
@@ -442,14 +449,12 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	cGroupDriver, err := k.getCGroupDriver(node)
-	if err != nil {
+	if err := k.setCGroupDriverAndSocket(node); err != nil {
 		return nil, err
 	}
-	k.setCgroupDriver(cGroupDriver)
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
-	if err = k.convertKubeadmVersion(); err != nil {
+	if err := k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
 	return yaml.MarshalYamlConfigs(
@@ -461,15 +466,27 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return nil, err
 	}
-	cGroupDriver, err := k.getCGroupDriver(masterIP)
-	if err != nil {
+	if err := k.setCGroupDriverAndSocket(masterIP); err != nil {
 		return nil, err
 	}
-	k.setCgroupDriver(cGroupDriver)
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
-	if err = k.convertKubeadmVersion(); err != nil {
+	if err := k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
 	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.KubeletConfiguration)
+}
+
+func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
+	cGroupDriver, err := k.getCGroupDriver(node)
+	if err != nil {
+		return err
+	}
+	k.setCgroupDriver(cGroupDriver)
+	criSocket, err := k.getCRISocket(node)
+	if err != nil {
+		return err
+	}
+	k.setCRISocket(criSocket)
+	return nil
 }

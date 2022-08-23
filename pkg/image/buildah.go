@@ -93,11 +93,6 @@ func buildahRegistrySync() error {
 [[registry]]
 prefix = "docker.io/labring"
 location = "docker.io/labring"
-
-[[registry.mirror]]
-prefix = "docker.io/labring"
-location = "registry.cn-qingdao.aliyuncs.com/labring"
-
 `
 	if !fileutil.IsExist(registryPath) {
 		return fileutil.WriteFile(registryPath, []byte(data))

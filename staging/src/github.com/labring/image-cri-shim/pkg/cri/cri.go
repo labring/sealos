@@ -37,7 +37,6 @@ var defaultKnownCRISockets = []string{
 	CRISocketContainerd,
 	CRISocketCRIO,
 	CRISocketDocker,
-	CRISocketDockerLower,
 }
 
 const (
@@ -75,7 +74,7 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config st
 	var toolName string
 	var runtime ContainerRuntime
 
-	if criSocket != CRISocketDocker && criSocket != CRISocketDockerLower {
+	if criSocket != CRISocketDocker {
 		toolName = "crictl"
 		// !!! temporary work around crictl warning:
 		// Using "/var/run/crio/crio.sock" as endpoint is deprecated,
