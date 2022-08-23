@@ -48,8 +48,10 @@ import (
 const userAnnotationOwnerKey = "user.sealos.io/creator"
 const clusterRoleByCreate = "sealos-user-create-role"
 
-//const clusterRoleByManager = "sealos-user-manager-role"
-//const clusterRoleByUser = "sealos-user-user-role"
+const clusterRoleByManager = "sealos-user-manager-role"
+const clusterRoleByUser = "sealos-user-user-role"
+
+//const clusterRoleNamespaceByUser = "cluster-admin"
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {

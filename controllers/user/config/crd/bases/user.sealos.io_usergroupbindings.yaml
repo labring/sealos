@@ -24,6 +24,9 @@ spec:
     - jsonPath: .subject.kind
       name: Kind
       type: string
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
@@ -45,22 +48,56 @@ spec:
           metadata:
             type: object
           roleRef:
+            default: user
             description: RoleRef can only reference a ClusterRole in the global namespace.
-              If the RoleRef cannot be resolved, the Authorizer must return an error.
+            type: string
+          status:
+            description: Status contains the different condition statuses for this
+              user group.
             properties:
-              apiGroup:
-                description: APIGroup is the group for the resource being referenced
+              conditions:
+                description: Conditions contains the different condition statuses
+                  for this user group.
+                items:
+                  properties:
+                    lastHeartbeatTime:
+                      description: LastHeartbeatTime is the last time this condition
+                        was updated.
+                      format: date-time
+                      type: string
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time the condition
+                        changed from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: Message is a human-readable message indicating
+                        details about the last status change.
+                      type: string
+                    reason:
+                      description: Reason is a (brief) reason for the condition's
+                        last status change.
+                      type: string
+                    status:
+                      description: Status is the status of the condition. One of True,
+                        False, Unknown.
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              observedGeneration:
+                description: The generation observed by the user controller.
+                format: int64
+                type: integer
+              phase:
+                default: Unknown
+                description: Phase is the recently observed lifecycle phase of user
+                  group binding
                 type: string
-              kind:
-                description: Kind is the type of resource being referenced
-                type: string
-              name:
-                description: Name is the name of resource being referenced
-                type: string
-            required:
-            - apiGroup
-            - kind
-            - name
             type: object
           subject:
             description: Subject holds references to the objects the role applies
@@ -90,6 +127,8 @@ spec:
             - name
             type: object
           userGroupRef:
+            description: UserGroupRef is the reference to the user group that this
+              binding binds to.
             type: string
         required:
         - userGroupRef

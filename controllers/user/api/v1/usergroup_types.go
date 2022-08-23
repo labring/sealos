@@ -38,8 +38,8 @@ type UserGroup struct {
 
 // UserGroupStatus defines the observed state of UserGroup
 type UserGroupStatus struct {
-	// Phase is the recently observed lifecycle phase of user
-	//+kubebuilder:default:=UserUnknown
+	// Phase is the recently observed lifecycle phase of user group
+	//+kubebuilder:default:=Unknown
 	Phase UserPhase `json:"phase,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
