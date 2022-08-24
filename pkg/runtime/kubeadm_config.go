@@ -51,6 +51,7 @@ type KubeadmConfig struct {
 		ClusterConfiguration interface{}
 		JoinConfiguration    interface{}
 	}
+	ImageKubeVersion string
 }
 
 const (
@@ -81,7 +82,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		err                  error
 	)
 	if kubeadmYamlPath == "" || !file.IsExist(kubeadmYamlPath) {
-		defaultKubeadmConfig, err = LoadKubeadmConfigs(DefaultKubeadmConfig, DecodeCRDFromString)
+		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), DecodeCRDFromString)
 		if err != nil {
 			return err
 		}
