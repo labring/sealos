@@ -66,27 +66,37 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
-      - name: build (and publish) main image
+      - name: build (and publish) lvscare image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f docker/lvscare/Dockerfile \
           .
-      - name: build (and publish) tag image
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:latest \
+          -f docker/lvscare/Dockerfile \
+          .
+      - name: build (and publish) sealos image
         env:
           # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
-          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f docker/lvscare/Dockerfile \
+          -f docker/sealos/Dockerfile \
+          .
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:latest \
+          -f docker/sealos/Dockerfile \
           .
