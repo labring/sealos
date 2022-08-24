@@ -1,0 +1,50 @@
+# Name of this GitHub Actions workflow.
+name: Semgrep
+
+on:
+  # Determine when you want Semgrep to scan your code.
+  # Use as many of the following options as you want.
+  # (Currently Options 1 and 3 are active).
+  #
+  # Option 1: Scan changed files in PRs, only report new findings (existing
+  # findings in the repository are ignored).
+  # To run on specific types of PR states (opened, reopened, etc) or particular
+  # paths or branches, see the following GitHub documentation:
+  # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#pull_request
+  pull_request: {}
+
+  # Option 2: Scan all files on branches, report any findings.
+  # push:
+  #   branches: ["master", "main"]
+
+  # Option 3: Schedule CI job to run at a certain time, using cron syntax.
+  # Note: the asterisk sign * is a special character in YAML so you have to quote this string
+  schedule:
+    - cron: '30 0 1,15 * *' # scheduled for 00:30 UTC on both the 1st and 15th of the month
+
+jobs:
+  semgrep:
+    # User definable name of this GitHub Actions job.
+    name: Scan
+    # Only change the if you are self-hosting. See also:
+    # https://docs.github.com/en/actions/using-jobs/choosing-the-runner-for-a-job#choosing-self-hosted-runners
+    runs-on: ubuntu-latest
+    container:
+      # A Docker image with Semgrep installed. Don't change this.
+      image: returntocorp/semgrep
+    # Skip any PR created by dependabot to avoid permission issues
+    if: (github.actor != 'dependabot[bot]')
+    steps:
+      # Fetch project source with GitHub Actions Checkout.
+      - uses: actions/checkout@v3
+
+      # Run the "semgrep ci" command on the command line of the docker image.
+      - run: semgrep ci
+        env:
+          # Select rules for your scan with one of these two options.
+          # Option 1: Scan with rules set in Semgrep App's rule board
+          # Make a token at semgrep.dev/orgs/-/settings/tokens, and then
+          # save it in your GitHub Secrets.
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+          # Option 2: Set hard-coded rulesets, viewable in logs.
+          # SEMGREP_RULES: p/default # more at semgrep.dev/explore
