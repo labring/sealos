@@ -41,6 +41,7 @@ const (
 	V1130 = "v1.13.0"
 	V1150 = "v1.15.0"
 	V1220 = "v1.22.0"
+	V1250 = "v1.25.0"
 
 	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"
@@ -116,6 +117,7 @@ func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 			return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
 		}
 	}
+	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	if err := k.Merge(k.getDefaultKubeadmConfig()); err != nil {
 		return fmt.Errorf("failed to merge kubeadm config: %v", err)
 	}

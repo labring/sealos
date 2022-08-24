@@ -20,6 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	_default "github.com/labring/sealos/pkg/runtime/defaults"
+	v125 "github.com/labring/sealos/pkg/runtime/defaults/v125"
+	"github.com/labring/sealos/pkg/utils/versionutil"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -55,6 +59,14 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 		logger.Info("set kubernetes v1.19.1 v1.19.2 kube Config")
 	}
 	return nil
+}
+
+func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
+	version := k.ImageKubeVersion
+	if versionutil.Compare(version, V1250) {
+		return v125.DefaultKubeadmConfig
+	}
+	return _default.DefaultKubeadmConfig
 }
 
 func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {

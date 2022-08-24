@@ -21,7 +21,7 @@ import "fmt"
 const (
 	DefaultBashFmt      = "cd %s && bash %s"
 	DefaultCPFmt        = "mkdir -p %s && cp -rf  %s/* %s/"
-	DefaultLnFmt        = "mkdir -p %s && ln -s %s %s"
+	DefaultLnFmt        = "ln -s %s %s"
 	CdAndExecCmd        = "cd %s && %s"
 	renderInit          = "init"
 	renderClean         = "clean"
