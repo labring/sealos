@@ -21,12 +21,17 @@ import (
 	"fmt"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+
+	"github.com/labring/sealos/pkg/constants"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/labring/sealos/pkg/pay"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -55,12 +60,20 @@ type AccountReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := log.FromContext(ctx)
 	payment := &userv1.Payment{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment)
+	if errors.IsNotFound(err) {
+		return ctrl.Result{}, nil
 	}
-	if payment.Spec.UserID == "" || payment.Spec.Amount == 0 || payment.Status.TradeNO == "" {
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to get payment: %v", err)
+	}
+	if payment.Spec.UserID == "" || payment.Spec.Amount == 0 {
 		return ctrl.Result{}, fmt.Errorf("payment is invalid: %v", payment)
+	}
+	if payment.Status.TradeNO == "" {
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Millisecond * 300}, nil
 	}
 	if payment.Status.Status == pay.StatusSuccess {
 		return ctrl.Result{}, nil
@@ -68,22 +81,24 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	account := &userv1.Account{}
 	account.Name = payment.Spec.UserID
-	err := r.Get(ctx, req.NamespacedName, account)
+	account.Namespace = constants.SealosSystemNamespace
+	err = r.Get(ctx, client.ObjectKey{Namespace: constants.SealosSystemNamespace, Name: account.Name}, account)
 	if errors.IsNotFound(err) {
-		account.Name = payment.Spec.UserID
 		account.Status.Balance = 0
 		account.Status.ChargeList = []userv1.Charge{}
+		log.Info("create account", "account", account)
 		if err := r.Create(ctx, account); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("create account failed: %v", err)
 		}
 	} else if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
 	status, err := pay.QueryOrder(payment.Status.TradeNO)
 	if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
+	log.Info(fmt.Sprintf("query order: %v", status))
 	switch status {
 	case pay.StatusSuccess:
 		account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
@@ -94,17 +109,17 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		})
 		account.Status.Balance += payment.Spec.Amount
 		if err := r.Status().Update(ctx, account); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
 		}
 		payment.Status.Status = status
 		if err := r.Status().Update(ctx, payment); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
-	case pay.StatusProcessing:
+	case pay.StatusProcessing, pay.StatusNotPay:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 	case pay.StatusFail:
 		if err := r.Delete(ctx, payment); err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("delete payment failed: %v", err)
 		}
 		return ctrl.Result{}, nil
 	default:
@@ -116,6 +131,14 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	err := r.Create(context.TODO(), &v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: constants.SealosSystemNamespace,
+		},
+	})
+	if err != nil && !errors.IsAlreadyExists(err) {
+		return fmt.Errorf("failed to create system namespace: %v", err)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Account{}).
 		Watches(&source.Kind{Type: &userv1.Payment{}}, &handler.EnqueueRequestForObject{}).

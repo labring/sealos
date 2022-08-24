@@ -39,6 +39,7 @@ const (
 
 	StatusSuccess    = "SUCCESS"
 	StatusProcessing = "PROCESSING"
+	StatusNotPay     = "NOTPAY"
 	StatusFail       = "FAILED"
 
 	DefaultCallbackURL = "https://sealos.io/payment/wechat/callback"
