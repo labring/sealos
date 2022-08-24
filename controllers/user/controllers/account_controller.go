@@ -18,13 +18,21 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	"github.com/labring/sealos/pkg/pay"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 )
 
 // AccountReconciler reconciles a Account object
@@ -47,9 +55,61 @@ type AccountReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	payment := &userv1.Payment{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if payment.Spec.UserID == "" || payment.Spec.Amount == 0 || payment.Status.TradeNO == "" {
+		return ctrl.Result{}, fmt.Errorf("payment is invalid: %v", payment)
+	}
+	if payment.Status.Status == pay.StatusSuccess {
+		return ctrl.Result{}, nil
+	}
 
-	// TODO(user): your logic here
+	account := &userv1.Account{}
+	account.Name = payment.Spec.UserID
+	err := r.Get(ctx, req.NamespacedName, account)
+	if errors.IsNotFound(err) {
+		account.Name = payment.Spec.UserID
+		account.Status.Balance = 0
+		account.Status.ChargeList = []userv1.Charge{}
+		if err := r.Create(ctx, account); err != nil {
+			return ctrl.Result{}, err
+		}
+	} else if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	status, err := pay.QueryOrder(payment.Status.TradeNO)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	switch status {
+	case pay.StatusSuccess:
+		account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
+			Amount:  payment.Spec.Amount,
+			Time:    metav1.Now(),
+			Status:  status,
+			TradeNO: payment.Status.TradeNO,
+		})
+		account.Status.Balance += payment.Spec.Amount
+		if err := r.Status().Update(ctx, account); err != nil {
+			return ctrl.Result{}, err
+		}
+		payment.Status.Status = status
+		if err := r.Status().Update(ctx, payment); err != nil {
+			return ctrl.Result{}, err
+		}
+	case pay.StatusProcessing:
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
+	case pay.StatusFail:
+		if err := r.Delete(ctx, payment); err != nil {
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	default:
+		return ctrl.Result{}, fmt.Errorf("unknown status: %v", status)
+	}
 
 	return ctrl.Result{}, nil
 }
@@ -58,5 +118,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Account{}).
+		Watches(&source.Kind{Type: &userv1.Payment{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
