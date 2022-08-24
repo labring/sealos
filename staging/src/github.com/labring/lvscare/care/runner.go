@@ -154,7 +154,7 @@ func (r *runner) ValidateAndSetDefaults() error {
 	switch r.Mode {
 	case routeMode:
 		if r.options.TargetIP == nil {
-			logger.Warn("Target IP is not valid IP, skipping")
+			logger.Warn("running routeMode and Target IP is not valid IP, skipping")
 			break
 		}
 		r.ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
