@@ -5,7 +5,7 @@ sidebar_position: 1
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 安装
+# sealos 安装
 
 ## 二进制下载
 

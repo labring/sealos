@@ -5,7 +5,7 @@ import TabItem from '@theme/TabItem';
 
 ## 基于 helm 构建 CloudImage
 
-参考： [Building an Example CloudImage](../examples/build-example-cloudimage.md).
+参考： [Building an Example CloudImage](../getting-started/build-example-cloudimage.md).
 
 ## 构建 calico 镜像
 

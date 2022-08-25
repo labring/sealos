@@ -1,17 +1,20 @@
-# 更新集群
+---
+sidebar_position: 3
+---
 
-1. 如果集群已启动，运行 `sealos reset` 重置集群。
+# 自定义安装配置
 
-2. 运行 `sealos gen` 生成一个 Clusterfile。 例如：
+> 运行 `sealos gen` 生成一个 Clusterfile。 例如：
 
 ```shell
-$ sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.0.2,192.168.0.3,192.168.0.4 --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx > Clusterfile
+$ sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+   --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+   --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx > Clusterfile
 ```
 
-3. 将 [calico Clusterfile](https://github.com/labring/sealos/blob/main/applications/calico/Clusterfile) 追加到生成的 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。 最终的 Clusterfile 会像是这样:
+> 将 [calico Clusterfile](https://github.com/labring/sealos/blob/main/applications/calico/Clusterfile) 追加到生成的 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。 最终的 Clusterfile 会像是这样:
 
 <details>
-
 <summary>Clusterfile</summary>
 
 ```yaml
@@ -79,4 +82,6 @@ spec:
 
 </details>
 
-4. 运行 `sealos apply -f Clusterfile` 启动集群。
+运行 `sealos apply -f Clusterfile` 启动集群。
+
+集群运行成功后会把 Clusterfile 保存到 `.sealos/default/Clusterfile` 文件中，可以修改其中字段来重新 apply 对集群进行变更。
