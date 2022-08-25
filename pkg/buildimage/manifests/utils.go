@@ -16,6 +16,7 @@ package manifests
 
 import (
 	"bufio"
+	"io"
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
@@ -28,15 +29,21 @@ import (
 // ParseImages parse image from yaml content
 func ParseImages(body string) ([]string, error) {
 	list := sets.NewString()
-	reader := strings.NewReader(body)
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		l := parseImageRefFromLine(scanner.Text())
+	rd := bufio.NewReader(strings.NewReader(body))
+	for {
+		line, _, err := rd.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+		l := parseImageRefFromLine(string(line))
 		if l != "" {
-			list.Insert(l)
+			list = list.Insert(l)
 		}
 	}
-	return list.List(), scanner.Err()
+	return list.List(), nil
 }
 
 const imageIdentity = "image:"
