@@ -103,6 +103,7 @@ func (r *UserGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *UserGroupReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
+	r.Logger.V(1).Info("delete reconcile controller userGroup", "request", req)
 	return nil
 }
 
@@ -132,6 +133,7 @@ func (r *UserGroupReconciler) Update(ctx context.Context, req ctrl.Request, gvk 
 	}
 	return ctrl.Result{}, nil
 }
+
 func (r *UserGroupReconciler) initStatus(ctx context.Context, ug *userv1.UserGroup) {
 	var initializedCondition = userv1.Condition{
 		Type:               userv1.Initialized,
@@ -221,14 +223,10 @@ func (r *UserGroupReconciler) syncOwnerUGUserBinding(ctx context.Context, ug *us
 			ugBinding.UserGroupRef = ugName
 			ugBinding.Subject = rbacv1.Subject{
 				Kind:     "User",
-				APIGroup: userv1.GroupVersion.String(),
+				APIGroup: userv1.GroupVersion.Group,
 				Name:     userName,
 			}
-			ugBinding.RoleRef = &rbacv1.RoleRef{
-				APIGroup: rbacv1.SchemeGroupVersion.String(),
-				Kind:     "ClusterRole",
-				Name:     clusterRoleByCreate,
-			}
+			ugBinding.RoleRef = userv1.RoleRefTypeUser
 			return nil
 		}); err != nil {
 			return errors.Wrap(err, "unable to create user UserGroupBinding")

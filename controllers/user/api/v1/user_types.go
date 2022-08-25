@@ -52,7 +52,7 @@ const (
 // UserStatus defines the observed state of User
 type UserStatus struct {
 	// Phase is the recently observed lifecycle phase of user
-	//+kubebuilder:default:=UserUnknown
+	//+kubebuilder:default:=Unknown
 	Phase      UserPhase `json:"phase,omitempty"`
 	KubeConfig string    `json:"kubeConfig"`
 	//+kubebuilder:default:=7200

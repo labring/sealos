@@ -83,8 +83,9 @@ spec:
                 format: int64
                 type: integer
               phase:
-                default: UserUnknown
+                default: Unknown
                 description: Phase is the recently observed lifecycle phase of user
+                  group
                 type: string
             type: object
         type: object

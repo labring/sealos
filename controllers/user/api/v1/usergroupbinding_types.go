@@ -29,6 +29,7 @@ import (
 // +kubebuilder:resource:scope=Cluster,shortName=ugbinding
 // +kubebuilder:printcolumn:name="UserGroup",type="string",JSONPath=".userGroupRef"
 // +kubebuilder:printcolumn:name="Kind",type="string",JSONPath=".subject.kind"
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // UserGroupBinding is the Schema for the usergroupbindings API
@@ -41,10 +42,31 @@ type UserGroupBinding struct {
 	Subject v1.Subject `json:"subject"`
 
 	// RoleRef can only reference a ClusterRole in the global namespace.
-	// If the RoleRef cannot be resolved, the Authorizer must return an error.
-	RoleRef *v1.RoleRef `json:"roleRef,omitempty"`
-
+	//+kubebuilder:default:=user
+	RoleRef RoleRefType `json:"roleRef,omitempty"`
+	// UserGroupRef is the reference to the user group that this binding binds to.
 	UserGroupRef string `json:"userGroupRef"`
+	// Status contains the different condition statuses for this user group.
+	Status UserGroupBindingStatus `json:"status,omitempty"`
+}
+
+type RoleRefType string
+
+const (
+	RoleRefTypeManager RoleRefType = "manager"
+	RoleRefTypeUser    RoleRefType = "user"
+)
+
+// UserGroupBindingStatus defines the observed state of UserGroupBinding
+type UserGroupBindingStatus struct {
+	// Phase is the recently observed lifecycle phase of user group binding
+	//+kubebuilder:default:=Unknown
+	Phase UserPhase `json:"phase,omitempty"`
+	// The generation observed by the user controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions contains the different condition statuses for this user group.
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
