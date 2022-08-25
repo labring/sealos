@@ -1,3 +1,5 @@
+If you don't understand the github open source project contribution process at all, it is strongly recommended to read: [first contributions](https://github.com/firstcontributions/first-contributions)
+
 # Contributing to sealos
 
 It is warmly welcomed if you have interest to hack on sealos. First, we encourage this kind of willing very much. And here is a list of contributing guide for you.
