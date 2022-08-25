@@ -24,6 +24,10 @@
 
 [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
 
+## Run a kubernetes cluster
+
+[![asciicast](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC.svg)](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC?speed=3)
+
 ## What is sealos
 
 **sealos is a cloud operating system distribution with Kubernetes as its kernel.**
