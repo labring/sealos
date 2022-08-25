@@ -85,7 +85,7 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 
 然后你就啥都有了。
 
-以上 minio mysql redis 等都是高可用的，跑在 kuberentes 集群之上，而 `labring/mysql-operator:8.0.23-14.1` 这种我们称之为集群镜像，里面包含了启动 mydql 高可用集群的所有依赖。
+以上 minio mysql redis 等都是高可用的，跑在 kubernetes 集群之上，而 `labring/mysql-operator:8.0.23-14.1` 这种我们称之为集群镜像，里面包含了启动 mysql 高可用集群的所有依赖。
 
 ## 其它链接
 
