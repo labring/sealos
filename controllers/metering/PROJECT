@@ -1,0 +1,16 @@
+domain: metering
+layout:
+- go.kubebuilder.io/v3
+projectName: metering
+repo: github.com/labring/sealos
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: metering
+  group: sealos.io
+  kind: Metering
+  path: github.com/labring/sealos/api/v1
+  version: v1
+version: "3"

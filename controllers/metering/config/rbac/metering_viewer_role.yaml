@@ -1,0 +1,20 @@
+# permissions for end users to view meterings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metering-viewer-role
+rules:
+- apiGroups:
+  - sealos.io.metering
+  resources:
+  - meterings
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - sealos.io.metering
+  resources:
+  - meterings/status
+  verbs:
+  - get

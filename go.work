@@ -6,6 +6,7 @@ use (
 	./controllers/infra
 	./controllers/terminal
 	./controllers/user
+	./controllers/metering
 	./service/auth
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
