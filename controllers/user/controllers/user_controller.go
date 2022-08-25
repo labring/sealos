@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"k8s.io/client-go/rest"
 
 	"github.com/go-logr/logr"
@@ -51,7 +54,7 @@ const clusterRoleByCreate = "sealos-user-create-role"
 const clusterRoleByManager = "sealos-user-manager-role"
 const clusterRoleByUser = "sealos-user-user-role"
 
-//const clusterRoleNamespaceByUser = "cluster-admin"
+const roleNamespaceByUser = "cluster-admin"
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -112,8 +115,11 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.cache = mgr.GetCache()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
+	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}).
+		Watches(&source.Kind{Type: &userv1.UserGroup{}}, owner).
+		Watches(&source.Kind{Type: &userv1.UserGroupBinding{}}, owner).
 		Complete(r)
 }
 

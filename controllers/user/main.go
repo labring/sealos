@@ -91,6 +91,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	//TODO ADD Cache
+	//mgr.GetCache().IndexField()
+
 	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
