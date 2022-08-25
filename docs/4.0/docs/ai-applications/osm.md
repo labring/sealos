@@ -3,53 +3,69 @@
 ## Introduction
 ![17359201](https://user-images.githubusercontent.com/14962503/179479809-2fd169b8-d452-4b2a-ad6b-8004389b40a5.jpeg)
 
-路径规划（routing）是业务中常用的一项通用服务，核心是为了解决点到点的距离和时间预估问题。在物流行业，外卖行业以及供应链行业中，应用尤为普遍。路径规划需要基于真实的地图信息，模拟计算两点之间的实际行驶路径，包括距离信息，耗时信息，道路的导航信息。由于受通用交通管制等因素，现实活动物体类型不一样，会有不同的导航路径，常见有：小汽车导航，步行导航，以及自行车导航等，完备的路径规划服务需要支持多种导航类型。
+Routing is a common service commonly used in business. The core is to solve the problem of point-to-point distance and time estimation. 
+In the logistics industry, takeaway industry and supply chain industry, the application is particularly common. 
+Path planning needs to simulate and calculate the actual driving path between two points based on real map information, including distance information, 
+time-consuming information, and road navigation information. Due to factors such as general traffic control, 
+different types of real moving objects will have different navigation paths. Common ones are: car navigation, walking navigation, and bicycle navigation, etc. 
+A complete path planning service needs to support multiple navigation types.
+At present, there are relatively few manufacturers providing path planning services on the market at home and abroad. 
+There are AutoNavi, Baidu in China, and google and here in foreign countries. 
+For small and medium-sized enterprises, the use of the above-mentioned business services usually faces a large cost. 
+For ordinary-scale calls, it costs hundreds of thousands of yuan in call costs each year, and this does not include QPS and RT limits. 
+Usually daily enterprise usage scenarios do not pursue ultra-high navigation accuracy, as long as the planning accuracy rate is greater than 90%, it is acceptable.
 
-目前国内外市面上提供路径规划服务的厂商比较少，国内有高德，百度，国外有 google 和 here。对于中小型企业来说，使用上述商业服务通常面临很大的成本支出。普通规模的调用量而言，每年要花费几十万元的调用成本支出，这还不包括 QPS 和 RT 限制。通常日常企业使用场景并不追求超高导航精度，只要规划准确率大于 90%以上都能接受。
+The route planning service based on openStreetMap is the obvious choice. 
+Using open map data to build route planning services can help companies greatly reduce service costs and reduce the strong dependence of businesses on map service providers. 
+This service is most suitable for scenarios that require high QPS, low RT, and large-scale matrix computing.
 
-基于 openStreetMap 的路径规划服务是不二之选。采用开放性地图数据构建路径规划服务，可以帮助企业大幅降低服务成本，而且能降低业务对地图服务厂商的强依赖。对于需要高 QPS，低 RT，以及大规模矩阵计算的场景下，该服务是最适应不过的。
+### serviceAdvantage
 
-### 服务优势
+#### freeService
 
-#### 服务免费
+1. The SaaS service is completely free and can provide route navigation services throughout China;
+2. NoQPSLimit
+3. noRTRestrictions
 
-1. SaaS 服务完全免费，可提供中国全境的路径导航服务；
-1. 无 QPS 限制；
-1. 无 RT 限制；
+#### supportForPrivateCloudDeployment
 
-#### 支持私有云部署
+Deep integration with sealos can provide one-stop private cloud deployment capabilities;
 
-与 sealos 深度整合，可提供一站式的私有云部署能力；
+#### highPerformance
 
-#### 高性能
+1. The evaluation RT of SaaS service public network call is 50ms, which is much smaller than other service providers;
+2. The average RT of local mirror service calls is about 5ms;
 
-1. SaaS 服务公网调用评估 RT 为 50ms，远小于其他服务厂商；
-1. 本地镜像服务调用平均 RT 在 5ms 左右；
+#### matrixCalculation
 
-#### 矩阵计算
+For planning application scenarios, matrix calculation of distance or time is usually necessary. 
+The OSM-based path planning service provides powerful matrix computing services. 
+After our long-term algorithm optimization for matrix planning, RT is greatly reduced, which can support 10000\10000 large matrix calculations.
 
-对于规划类应用场景，距离或者时间的矩阵计算通常是必须的。基于 OSM 的路径规划服务可提供强大的矩阵计算服务。矩阵规划经过我们长期的算法优化后，RT 大幅降低，可支持 10000\*10000 的超大矩阵计算。
+#### highFrequencyUpdateOfMapData
 
-#### 地图数据高频更新
+For SaaS services, we will update the underlying map data frequently and regularly, and build a new map network every week based on the latest OSM data.
 
-对于 SaaS 服务而言，背后的地图数据我们会高频定期更新，每周会基于最新的 OSM 数据构建新的地图网络。
+#### highMapAccuracy
 
-#### 地图精度高
+Based on China map data, randomly sampled within 500KM, and respectively call the following three services to obtain distance data:
 
-基于中国地图数据，在 500KM 内随机采样，分别调用如下三种服务获取距离数据：
+1. AutoNavi; 
+2. Accurate spherical distance calculation; 
+3. OSM navigation service;
 
-1. 高德导航；
-1. 精确球面距离计算；
-1. OSM 导航服务；
+The following figure shows the distance curves calculated by the three services:
 
-下图为三种服务计算出的距离曲线图：
 ![image](https://user-images.githubusercontent.com/14962503/179479910-f52ecd96-2cf2-4116-ac2f-93daa859f468.png)
 
-可以看出球面直线计算的距离偏差很大，并且距离越大，偏差的距离绝对值越高。而 OSM 导航与高德导航非常接近。为了进一步分析 OSM 导航精确度，我们绘制了误差率曲线：
+It can be seen that the distance calculated by the spherical straight line has a large deviation, and the larger the distance, the higher the absolute value of the deviation. 
+And OSM navigation is very close to AutoNavi. To further analyze the OSM navigation accuracy, we plotted the error rate curve:
 
 ![image](https://user-images.githubusercontent.com/14962503/179479965-301fdc3f-154c-4f45-98c4-c2fefb05268d.png)
 
-可以看出球面距离计算的准确率通常在 15%以上，短距离可以达到 25%。而 OSM 导航可以将准确率控制在 5%以下，距离越大准确率越高。能够满足业务绝大多数的使用场景。
+It can be seen that the accuracy of spherical distance calculation is usually above 15%, and the short distance can reach 25%. 
+The OSM navigation can control the accuracy rate below 5%, and the greater the distance, the higher the accuracy rate. 
+It can meet the vast majority of usage scenarios of the business.
 
 ## Installation
 
@@ -69,28 +85,28 @@ Content-Type：application/json
 
 1. request
 
-| 字段名              | 字段说明                                                                                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| key                 | API 调用秘钥<br />1. 一般用户请填写："91cb09e7-72b7-4094-839e-166bdc279e01"<br />1. 私人定制用户请联系客服获取秘钥<br />                                                 |
-| gisStandardType     | 经纬度的标准类型：<br />1. GCJ02：中国标准，国内大多数地图提供商即采用这一标准，譬如：高德地图；<br />1. WGS84：国际标准，海外地图即采用这一标准，譬如：谷歌地图；<br /> |
-| startPosition       | 始发地经纬度：<br />1. lon：经度<br />1. lat：纬度<br />                                                                                                                 |
-| endPosition         | 目的地经纬度：<br />1. lon：经度<br />1. lat：纬度<br />                                                                                                                 |
-| needRouteDetail     | 是否需要导航描述<br />true：需要<br />false：不需要                                                                                                                      |
-| instructionLangType | 导航描述语言类型：<br />1. 中文<br />1. 日文<br />1. 英文<br />                                                                                                          |
-| drivingType         | 导航类型：<br />car：小汽车<br />motorcycle：摩托车<br />bike：自行车<br />foot：步行                                                                                    |
+|fieldName              | fieldDescription                                                                                                                                                                                                                                           |
+| ------------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| key                 | API call key<br >1. For general users, please fill in: "91cb09e7-72b7-4094-839e-166bdc279e01"<br >1. For private users, please contact customer service to obtain the key<br >                                                                             |
+| gisStandardType     | Standard types of latitude and longitude:<br >1. GCJ02: Chinese standard, which is adopted by most domestic map providers, such as AutoNavi map;<br >1. WGS84: International standard, which is adopted by overseas maps , for example: Google Maps; <br > |
+| startPosition       | Origin latitude and longitude:<br >1. lon: longitude<br >1. lat: latitude<br >                                                                                                                                                                             |
+| endPosition         | Destination latitude and longitude:<br >1. lon: longitude<br >1. lat: latitude<br >                                                                                                                                                                        |
+| needRouteDetail     | Whether navigation description is required<br >true: required<br>false: not required                                                                                                                                                                       |
+| instructionLangType | Type of navigation description language:<br >1. Chinese<br >1. Japanese<br >1. English<br >                                                                                                                                                                |
+| drivingType         | Navigation Type:<br >car: Car<br >motorcycle: Motorcycle<br >bike: Bicycle<br >foot: Walking                                                                                                                                                               |
 
 2. return
 
-| 字段名           | 字段说明                                                                                                                                                                                                                                                        |
+| fieldName           | fieldDescription                                                                                                                                                                                                                                                        |
 | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| success          | 调用是否成功                                                                                                                                                                                                                                                    |
-| errorCode        | 错误码<br />CB00001 : 业务异常，通常是业务逻辑异常导致，请仔细检测您的参数，请不要传入海外地图参数；<br />CB00002: 系统异常，通常是系统错误导致，请联系客服处理<br />CB00003: 无效参数，通常是入参格式不正确，请基于示例检测您的入参<br />CB0004: JSON 解析失败 |
-| errorMsg         | 错误信息                                                                                                                                                                                                                                                        |
-| appendMsg        | 额外错误说明                                                                                                                                                                                                                                                    |
-| distance         | 距离，单位米                                                                                                                                                                                                                                                    |
-| duration         | 时间，单位秒                                                                                                                                                                                                                                                    |
-| wayPointList     | 途经点列表                                                                                                                                                                                                                                                      |
-| instructionInfos | 导航描述列表                                                                                                                                                                                                                                                    |
+| success          | whetherTheCallWasSuccessful |
+| errorCode        |Error code<br >CB00001 : abnormal business, usually caused by abnormal business logic, please check your parameters carefully, please do not import overseas map parameters;<br >CB00002: abnormal system, usually caused by system error, please contact customer service <br >CB00003: Invalid parameter, usually the input parameter format is incorrect, please check your input parameter based on the example<br >CB0004: JSON parsing failed |
+| errorMsg         | errorMessage                                                                                                                                                                                                                                                       |
+| appendMsg        | additionalErrorDescription                                                                                                                                                                                                                                                   |
+| distance         | distanceInMeters                                                                                                                                                                                                                                                   |
+| duration         | timeInSeconds                                                                                                                                                                                                                                                    |
+| wayPointList     | listOfWaypoints                                                                                                                                                                                                                                                      |
+| instructionInfos | navigationDescriptionList                                                                                                                                                                                                                                                    |
 
 ### Examples
 
@@ -437,17 +453,17 @@ Content-Type：application/json
       }
     ],
     "instructionInfos": [
-      "distance: 277m, 继续行驶到 铁心工业园路",
-      "distance: 221m, 右转 到  软件大道",
-      "distance: 844m, 在环岛内，使用2出口出环岛，进入软件大道",
-      "distance: 345m, 右转",
-      "distance: 151m, 保持右行 到  花神庙枢纽",
-      "distance: 965m, 继续行驶到 花神庙枢纽",
-      "distance: 1340m, 保持左行",
-      "distance: 265m, 保持右行",
-      "distance: 2832m, 保持右行",
-      "distance: 152m, 右转",
-      "distance: 0m, 终点到达"
+     "distance: 277m, continue to Tiexin Industrial Park Road", 
+     "distance: 221m, turn right to Software Avenue", 
+     "distance: 844m, inside the roundabout, take Exit 2 to exit the roundabout and enter Software Avenue", 
+     "distance: 345m , turn right", 
+     "distance: 151m, keep right to the flower temple hub", 
+     "distance: 965m, continue to the flower temple hub", 
+     "distance: 1340m, keep left", 
+     "distance: 265m, keep Go right", 
+     "distance: 2832m, keep going right", 
+     "distance: 152m, turn right", 
+     "distance: 0m, end point reached"
     ]
   },
   "errorCode": null,
@@ -458,18 +474,16 @@ Content-Type：application/json
 
 ## Support
 
-### 团队介绍
+### teamIntroduction
 
 ![image](https://user-images.githubusercontent.com/14962503/179480046-c085c528-bf8e-48ea-8a25-00563e40852f.png)
 
-团队网址：[https://www.scienson.com/](https://www.scienson.com/)
+teamURL [https://www.scienson.com/](https://www.scienson.com/)
 
-### 服务说明
+### serviceDescription
 
-1. 私有化部署支持；
-1. 可定制海外任意国家的地图导航服务，欢迎联系我们；
-1. 可提供该服务的 7 \* 24 小时在线答疑
-
-客服微信：
+1. Privatization deployment support; 
+2. Customized map navigation service for any overseas country, welcome to contact us; 
+3. 7 \ 24 hours online Q&A service for this service Customer service WeChat:
 
 ![weixin](https://user-images.githubusercontent.com/14962503/179480093-dc6fcfc4-fb02-4245-9155-6d0b7126a36f.jpg)
