@@ -32,7 +32,10 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 		{
 			name: "error",
 			args: args{
-				args: &ResetArgs{},
+				args: &ResetArgs{
+					Cluster: &Cluster{},
+					SSH:     &SSH{},
+				},
 			},
 			wantErr: true,
 		},
@@ -45,6 +48,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 						Nodes:       "192.158.1.1",
 						ClusterName: "default",
 					},
+					SSH: &SSH{},
 				},
 			},
 			wantErr: true,
@@ -58,6 +62,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 						Nodes:       "192.158.1.2",
 						ClusterName: "default",
 					},
+					SSH: &SSH{},
 				},
 			},
 			wantErr: false,
