@@ -28,6 +28,9 @@ spec:
     - jsonPath: .spec.keepalived
       name: Keepalived
       type: string
+    - jsonPath: .status.domain
+      name: Domain
+      type: string
     - jsonPath: .spec.apiServer
       name: APIServer
       priority: 1
@@ -77,6 +80,15 @@ spec:
             type: object
           status:
             description: TerminalStatus defines the observed state of Terminal
+            properties:
+              availableReplicas:
+                format: int32
+                type: integer
+              domain:
+                type: string
+            required:
+            - availableReplicas
+            - domain
             type: object
         type: object
     served: true
@@ -162,18 +174,6 @@ rules:
   - cert-manager.io
   resources:
   - certificates
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - cert-manager.io
-  resources:
-  - clusterissuers
   verbs:
   - create
   - delete
@@ -395,7 +395,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: tomaito/terminal-controller:v1.1
+        image: tomaito/terminal-controller:v1.2
         livenessProbe:
           httpGet:
             path: /healthz

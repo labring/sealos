@@ -6,6 +6,7 @@ require (
 	github.com/cert-manager/cert-manager v1.9.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0
+	github.com/satori/go.uuid v1.2.0
 	k8s.io/api v0.24.3
 	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.3
