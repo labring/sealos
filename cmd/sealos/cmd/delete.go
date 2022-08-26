@@ -25,8 +25,6 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 )
 
-var deleteArgs apply.ScaleArgs
-
 var exampleDelete = `
 delete nodes:
 	sealos delete --nodes x.x.x.x
@@ -46,6 +44,9 @@ Please note that sealos will delete your master if the --masters parameter is sp
 
 // deleteCmd represents the delete command
 func newDeleteCmd() *cobra.Command {
+	deleteArgs := &apply.ScaleArgs{
+		Cluster: &apply.Cluster{},
+	}
 	var deleteCmd = &cobra.Command{
 		Use:     "delete",
 		Short:   "delete some node",
@@ -55,7 +56,7 @@ func newDeleteCmd() *cobra.Command {
 			if err := processor.ConfirmDeleteNodes(); err != nil {
 				return err
 			}
-			applier, err := apply.NewScaleApplierFromArgs(&deleteArgs, "delete")
+			applier, err := apply.NewScaleApplierFromArgs(deleteArgs, "delete")
 			if err != nil {
 				return err
 			}
@@ -71,9 +72,7 @@ func newDeleteCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	deleteCmd.Flags().StringVarP(&deleteArgs.Masters, "masters", "m", "", "masters to be removed")
-	deleteCmd.Flags().StringVarP(&deleteArgs.Nodes, "nodes", "n", "", "nodes to be removed")
-	deleteCmd.Flags().StringVarP(&deleteArgs.ClusterName, "cluster", "c", "default", "name of cluster to applied remove action")
+	deleteArgs.RegisterFlags(deleteCmd.Flags(), "removed", "remove")
 	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
 	return deleteCmd
 }

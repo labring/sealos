@@ -62,7 +62,7 @@ func newCreateCmd() *cobra.Command {
 			return nil
 		},
 	}
-	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "set custom cluster name")
+	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to be created")
 	return createCmd
 }
 

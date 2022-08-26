@@ -70,9 +70,9 @@ func newExecCmd() *cobra.Command {
 			return nil
 		},
 	}
-	execCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
-	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
-	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
+	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
+	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "run command on nodes with role")
+	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
 	return execCmd
 }
 
