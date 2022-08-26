@@ -1,15 +1,9 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 自定义构建应用镜像
+# 构建 calico 镜像
 
-## 基于 helm 构建 CloudImage
-
-参考： [Building an Example CloudImage](../getting-started/build-example-cloudimage.md).
-
-## 构建 calico 镜像
-
-### 目录结构
+## 目录结构
 
 ```
 .
@@ -25,7 +19,7 @@ import TabItem from '@theme/TabItem';
         └── registry
 ```
 
-### Dockerfile
+## Dockerfile
 
 我们可以将所有内容构建到单个镜像中 (`FROM labring/kubernetes`),或者我们也可以使用 `FROM scratch` 指令从零构建应用镜像。
 
