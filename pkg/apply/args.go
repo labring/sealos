@@ -64,7 +64,7 @@ type RunArgs struct {
 func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
 	arg.Cluster.RegisterFlags(fs, "run with", "run")
 	arg.SSH.RegisterFlags(fs)
-	fs.StringSliceVar(&arg.CustomCMD, "env", []string{}, "environment variables to set during command execution")
+	fs.StringSliceVar(&arg.CustomEnv, "env", []string{}, "environment variables to set during command execution")
 	fs.StringSliceVar(&arg.CustomCMD, "cmd", []string{}, "override CMD directive in images")
 }
 
