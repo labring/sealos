@@ -35,13 +35,15 @@ add to default cluster:
 
 // addCmd represents the delete command
 func newAddCmd() *cobra.Command {
+	addArgs := &apply.ScaleArgs{
+		Cluster: &apply.Cluster{},
+	}
 	var addCmd = &cobra.Command{
 		Use:     "add",
 		Short:   "add some nodes",
 		Args:    cobra.NoArgs,
 		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//return errors.New("add feature no support")
 			applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
 			if err != nil {
 				return err
@@ -58,14 +60,9 @@ func newAddCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	addArgs = &apply.ScaleArgs{}
-	addCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "masters to be added")
-	addCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "nodes to be added")
-	addCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "name of cluster to applied join action")
+	addArgs.RegisterFlags(addCmd.Flags(), "be joined", "join")
 	return addCmd
 }
-
-var addArgs *apply.ScaleArgs
 
 func init() {
 	rootCmd.AddCommand(newAddCmd())

@@ -124,7 +124,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	}
 
 	r.cluster.Spec.Image = imageList
-	if err := PreProcessIPList(&args.Cluster); err != nil {
+	if err := PreProcessIPList(args.Cluster); err != nil {
 		return err
 	}
 
@@ -158,7 +158,7 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 		r.cluster.Spec.SSH.Passwd = args.SSH.Password
 	}
 
-	if err := PreProcessIPList(&args.Cluster); err != nil {
+	if err := PreProcessIPList(args.Cluster); err != nil {
 		return err
 	}
 

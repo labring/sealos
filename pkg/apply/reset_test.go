@@ -40,7 +40,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 			name: "error duplicate",
 			args: args{
 				args: &ResetArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.158.1.1",
 						Nodes:       "192.158.1.1",
 						ClusterName: "default",
@@ -53,7 +53,7 @@ func TestNewApplierFromResetArgs(t *testing.T) {
 			name: "success",
 			args: args{
 				args: &ResetArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.158.1.1",
 						Nodes:       "192.158.1.2",
 						ClusterName: "default",

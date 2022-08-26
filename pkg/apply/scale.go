@@ -73,7 +73,7 @@ func Join(cluster *v2.Cluster, scalingArgs *ScaleArgs) error {
 }
 
 func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
-	if err := PreProcessIPList(&scaleArgs.Cluster); err != nil {
+	if err := PreProcessIPList(scaleArgs.Cluster); err != nil {
 		return err
 	}
 	masters, nodes := scaleArgs.Cluster.Masters, scaleArgs.Cluster.Nodes
@@ -159,7 +159,7 @@ func Delete(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 }
 
 func deleteNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
-	if err := PreProcessIPList(&scaleArgs.Cluster); err != nil {
+	if err := PreProcessIPList(scaleArgs.Cluster); err != nil {
 		return err
 	}
 	masters, nodes := scaleArgs.Cluster.Masters, scaleArgs.Cluster.Nodes

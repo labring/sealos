@@ -22,7 +22,6 @@ import (
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 var contact = `
@@ -63,10 +62,13 @@ create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
-var runArgs apply.RunArgs
-var runSingle bool
 
 func newRunCmd() *cobra.Command {
+	runArgs := &apply.RunArgs{
+		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
+	}
+	var runSingle bool
 	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "simplest way to run your kubernetes HA cluster",
@@ -77,7 +79,7 @@ func newRunCmd() *cobra.Command {
 				addr, _ := iputils.ListLocalHostAddrs()
 				runArgs.Masters = iputils.LocalIP(addr)
 			}
-			applier, err := apply.NewApplierFromArgs(args, &runArgs)
+			applier, err := apply.NewApplierFromArgs(args, runArgs)
 			if err != nil {
 				return err
 			}
@@ -87,18 +89,10 @@ func newRunCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	runCmd.Flags().StringVarP(&runArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
-	runCmd.Flags().StringVarP(&runArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
-	runCmd.Flags().StringVarP(&runArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
-	runCmd.Flags().StringVarP(&runArgs.Password, "passwd", "p", "", "set cloud provider or baremetal server password")
-	runCmd.Flags().Uint16Var(&runArgs.Port, "port", 22, "set the sshd service port number for the server")
-	runCmd.Flags().StringVar(&runArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
-	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
-	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
-	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
+	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
-	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "we also can input an --force flag to run app in this cluster by force")
-	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
+	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false,
+		"we also can input an --force flag to run app in this cluster by force")
 	return runCmd
 }
 

@@ -61,7 +61,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "",
 						ClusterName: "",
@@ -97,7 +97,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.99",
 						Nodes:       "",
 						ClusterName: "",
@@ -133,7 +133,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97-192.168.16.98",
 						Nodes:       "",
 						ClusterName: "",
@@ -169,7 +169,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97",
 						Nodes:       "",
 						ClusterName: "",
@@ -205,7 +205,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97:22",
 						Nodes:       "",
 						ClusterName: "",
@@ -241,7 +241,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97:2222",
 						Nodes:       "",
 						ClusterName: "",
@@ -277,7 +277,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97:22-192.168.16.98:22",
 						Nodes:       "",
 						ClusterName: "",
@@ -314,7 +314,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.1-192.168.16.3",
 						Nodes:       "",
 						ClusterName: "",
@@ -350,7 +350,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.1",
 						Nodes:       "",
 						ClusterName: "",
@@ -386,7 +386,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.1:22",
 						Nodes:       "",
 						ClusterName: "",
@@ -422,7 +422,7 @@ func Test_Delete(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scaleArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.97:1-192.168.16.2:22",
 						Nodes:       "",
 						ClusterName: "",
@@ -480,7 +480,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "",
 						ClusterName: "",
@@ -516,7 +516,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.96",
 						Nodes:       "",
 						ClusterName: "",
@@ -552,7 +552,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.96:2222",
 						Nodes:       "",
 						ClusterName: "",
@@ -588,7 +588,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "192.168.16.90-192.168.16.93",
 						Nodes:       "",
 						ClusterName: "",
@@ -624,7 +624,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "192.168.16.90-192.168.16.93",
 						ClusterName: "",
@@ -660,7 +660,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "192.168.16.90:22-192.168.16.93:22",
 						ClusterName: "",
@@ -696,7 +696,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "192.168.16.90",
 						ClusterName: "",
@@ -732,7 +732,7 @@ func TestJoin(t *testing.T) {
 					Status: v2.ClusterStatus{},
 				},
 				scalingArgs: &ScaleArgs{
-					Cluster: Cluster{
+					Cluster: &Cluster{
 						Masters:     "",
 						Nodes:       "192.168.16.90:22",
 						ClusterName: "",

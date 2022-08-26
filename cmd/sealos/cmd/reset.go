@@ -21,7 +21,6 @@ import (
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 var exampleReset = `
@@ -29,9 +28,12 @@ reset you current cluster:
 	sealos reset --name xxx [--force]
 `
 
-var resetArgs apply.ResetArgs
-
 func newResetCmd() *cobra.Command {
+	resetArgs := &apply.ResetArgs{
+		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
+	}
+
 	var resetCmd = &cobra.Command{
 		Use:     "reset",
 		Short:   "simplest way to reset your cluster",
@@ -42,7 +44,7 @@ func newResetCmd() *cobra.Command {
 			if err := processor.ConfirmDeleteNodes(); err != nil {
 				return err
 			}
-			applier, err := apply.NewApplierFromResetArgs(&resetArgs)
+			applier, err := apply.NewApplierFromResetArgs(resetArgs)
 			if err != nil {
 				return err
 			}
@@ -52,14 +54,7 @@ func newResetCmd() *cobra.Command {
 			logger.Info(contact)
 		},
 	}
-	resetCmd.Flags().StringVarP(&resetArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
-	resetCmd.Flags().StringVarP(&resetArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
-	resetCmd.Flags().StringVarP(&resetArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
-	resetCmd.Flags().StringVarP(&resetArgs.Password, "passwd", "p", "", "set cloud provider or baremetal server password")
-	resetCmd.Flags().Uint16Var(&resetArgs.Port, "port", 22, "set the sshd service port number for the server")
-	resetCmd.Flags().StringVar(&resetArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
-	resetCmd.Flags().StringVar(&resetArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
-	resetCmd.Flags().StringVar(&resetArgs.ClusterName, "name", "default", "set cluster name variables")
+	resetArgs.RegisterFlags(resetCmd.Flags())
 	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
 	return resetCmd
 }
