@@ -217,3 +217,52 @@ jobs:
             sealctl-${{ matrix.arch }}
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
+  container:
+    needs: [ build ]
+    runs-on: ubuntu-latest
+#    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo ::set-output name=tag_name::${TAG}
+
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v2
+        with:
+          version: latest
+
+#      - name: Login to Docker Hub
+#        uses: docker/login-action@v2
+#        with:
+#          registry: ghcr.io
+#          username: ${{ github.repository_owner }}
+#          password: ${{ secrets.GH_TOKEN }}
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: docker/sealos/bin/sealos-amd64
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-arm64
+          path: docker/sealos/bin/sealos-arm64
+      - name: build (and publish) ${{ matrix.module }} main image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
+        run: |
+          cd docker/sealos
+          ls -l
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile.build \
+          .

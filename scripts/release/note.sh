@@ -26,11 +26,6 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
     --passwd your-own-ssh-passwd
 \`\`\`
 
-### amd64 buildah 下载地址
-[下载地址](https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64)
-### arm64 buildah 下载地址
-[下载地址](https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64)
-
 ### Docker images
 
 sealos:
