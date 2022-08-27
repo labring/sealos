@@ -21,6 +21,7 @@ func ModifyVolume(c context.Context, api EC2ModifyVolumeAPI, input *ec2.ModifyVo
 
 // can't modify type when disk being used. can't smaller size when disk being used.
 func (d Driver) modifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
+	// no modification required
 	if curDisk.Capacity == desDisk.Capacity && curDisk.Type == desDisk.Type {
 		return nil
 	}

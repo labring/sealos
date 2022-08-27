@@ -150,6 +150,7 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 	return hosts, nil
 }
 
+// getInstances get all instances for an infra
 func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	var hosts []v1.Hosts
 	hostmap := make(map[int]*v1.Hosts)
@@ -176,6 +177,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	if err != nil {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 Volume: %v", err)
 	}
+
 	for _, r := range result.Reservations {
 		for j := range r.Instances {
 			i := r.Instances[j]
@@ -233,6 +235,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	return hosts, nil
 }
 
+// createDisks assign disk(all mount paths) to host for the first time
 func createDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) {
 	for j := range instance.BlockDeviceMappings {
 		volumeID := *instance.BlockDeviceMappings[j].Ebs.VolumeId
@@ -249,6 +252,7 @@ func createDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Inst
 	}
 }
 
+// addDisks add the mount volumeID to each mount path
 func addDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) error {
 	for _, blockDeviceMap := range instance.BlockDeviceMappings {
 		if _, ok := diskMap[*blockDeviceMap.Ebs.VolumeId]; !ok {
@@ -266,6 +270,7 @@ func addDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instanc
 	return nil
 }
 
+// getVolumes get an infra owned volumes(by dataKey and infra label), return diskMap map[string(id)]v1.Disk.
 func (d Driver) getVolumes(infra *v1.Infra) (map[string]v1.Disk, error) {
 	client := d.Client
 	tagKey := fmt.Sprintf("tag:%s", common.DataVolumeLabel)

@@ -27,6 +27,10 @@ import (
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
+type Price interface {
+	QueryPrice(infra *v1.Infra) (int64, error)
+}
+
 type Driver interface {
 	CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error
 	DeleteInstances(hosts *v1.Hosts) error
@@ -60,4 +64,8 @@ func NewDriver() (Driver, error) {
 		Config: config,
 		Client: client,
 	}, nil
+}
+
+func NewPrice() Price {
+	return &aws.Price{}
 }
