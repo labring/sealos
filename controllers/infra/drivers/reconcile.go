@@ -70,13 +70,14 @@ func sortDisksByName(disks v1.NameDisks) {
 
 func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Driver) error {
 	desired := infra.Spec.Hosts
+	// all roles executed on an infra(group by index)
 	eg, _ := errgroup.WithContext(context.Background())
 	for i := range desired {
 		infra := infra
 		d := desired[i]
 		cur := getHostsByIndex(d.Index, current)
 		eg.Go(func() error {
-			// 0 instance -> create
+			// current 0 instance -> create
 			if cur == nil {
 				// TODO create hosts
 				if err := driver.CreateInstances(&d, infra); err != nil {
@@ -143,11 +144,14 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 
 func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Disk, driver Driver) error {
 	cur := current.Disks
+	// sort disk for cur and des
 	sortDisksByName(v1.NameDisks(des))
 	sortDisksByName(v1.NameDisks(cur))
 	Icur, Ides := 0, 0
+	// compare
 	for Icur < len(cur) && Ides < len(des) {
 		curDisk, desDisk := cur[Icur], des[Ides]
+		// same mount path, two pointers move to right
 		if curDisk.Name == desDisk.Name {
 			if err := driver.ModifyVolume(&curDisk, &desDisk); err != nil {
 				return err
@@ -155,17 +159,20 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 			Icur++
 			Ides++
 		} else if curDisk.Name < desDisk.Name {
+			// cur have but des don't have. delete cur volume and cur pointer move to right
 			if err := driver.DeleteVolume(curDisk.ID); err != nil {
 				return err
 			}
 			Icur++
 		} else {
+			// des have but cur don't have. create des volume and des pointer move to right
 			if err := driver.CreateVolumes(infra, current, []v1.Disk{desDisk}); err != nil {
 				return err
 			}
 			Ides++
 		}
 	}
+	// volume owned by cur is not detected, should be deleted.
 	if Icur != len(cur) {
 		for ; Icur < len(cur); Icur++ {
 			curDisk := cur[Icur]
@@ -174,6 +181,7 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 			}
 		}
 	}
+	// volume owned by des is not detected, should be created.
 	if Ides != len(des) {
 		for ; Ides < len(des); Ides++ {
 			desDisk := des[Ides]
