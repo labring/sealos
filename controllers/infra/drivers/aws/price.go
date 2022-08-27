@@ -7,6 +7,6 @@ type Price struct {
 
 // QueryPrice query infra price/hour
 func (pReq Price) QueryPrice(infra *v1.Infra) (int64, error) {
-	//TODO implement me
+	//TODO implement
 	panic("implement me")
 }
