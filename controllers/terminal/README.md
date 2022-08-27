@@ -33,7 +33,8 @@ TerminalSpec
 
 ## Usage
 1. run `kubectl apply terminal.yaml`
-3. Visit https://terminal-name.cloud.sealos.io
+2. run `kubectl get terminal terminal-name -o template --template={{.status.domain}}` to get terminal address.
+3. visit terminal address.
 
 ## Keep terminal alived
 

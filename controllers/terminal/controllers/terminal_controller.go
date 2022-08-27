@@ -21,6 +21,7 @@ import (
 	"time"
 
 	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	uuid "github.com/satori/go.uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -137,8 +138,11 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, cert, func() error {
 		expectCert := createCert(terminal)
 		cert.Spec.SecretName = expectCert.Spec.SecretName
-		cert.Spec.DNSNames = expectCert.Spec.DNSNames
 		cert.Spec.IssuerRef = expectCert.Spec.IssuerRef
+		if len(cert.Spec.DNSNames) == 0 || cert.Spec.DNSNames[0] == "" {
+			dnsName := uuid.NewV4().String() + DomainSuffix
+			cert.Spec.DNSNames = []string{dnsName}
+		}
 		if err := controllerutil.SetControllerReference(terminal, cert, r.Scheme); err != nil {
 			return err
 		}
@@ -147,11 +151,12 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 		return err
 	}
 
+	host := cert.Spec.DNSNames[0]
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: objectMeta,
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		expectIngress := createIngress(terminal)
+		expectIngress := createIngress(terminal, host)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
@@ -162,6 +167,11 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 		return nil
 	}); err != nil {
 		return err
+	}
+
+	if terminal.Status.Domain != host {
+		terminal.Status.Domain = host
+		return r.Status().Update(ctx, terminal)
 	}
 
 	return nil

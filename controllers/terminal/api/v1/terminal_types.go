@@ -44,13 +44,15 @@ type TerminalSpec struct {
 
 // TerminalStatus defines the observed state of Terminal
 type TerminalStatus struct {
-	AvailableReplicas int32 `json:"availableReplicas"`
+	AvailableReplicas int32  `json:"availableReplicas"`
+	Domain            string `json:"domain"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="User",type=string,JSONPath=".spec.user"
 //+kubebuilder:printcolumn:name="Keepalived",type=string,JSONPath=".spec.keepalived"
+//+kubebuilder:printcolumn:name="Domain",type=string,JSONPath=".status.domain"
 //+kubebuilder:printcolumn:name="APIServer",priority=1,type=string,JSONPath=".spec.apiServer"
 //+kubebuilder:printcolumn:name="LastUpdateTime",priority=1,type=string,JSONPath=".metadata.annotations.lastUpdateTime"
 //+kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
