@@ -34,7 +34,7 @@ func main() {
 	if err := conf.InitConfig(configPath); err != nil {
 		logger.Fatal("Init config failed: %s", err)
 	}
-	logger.Info("Loaded configuration")
+	logger.Info("Loaded configuration completed")
 
 	if err := auth.Init(conf.GlobalConfig.Config); err != nil {
 		logger.Fatal("Init auth pkg failed: %s", err)
