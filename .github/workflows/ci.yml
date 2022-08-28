@@ -20,6 +20,25 @@ on:
       - "**/*.yaml"
 
 jobs:
+  format-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Format Code
+        run: make format
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'chore(fmt): format code'
+          commit_options: '-s'
+
   check-license:
     runs-on: ubuntu-latest
     steps:
