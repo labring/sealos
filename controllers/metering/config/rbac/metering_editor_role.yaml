@@ -1,0 +1,24 @@
+# permissions for end users to edit meterings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: metering-editor-role
+rules:
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meterings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meterings/status
+  verbs:
+  - get
