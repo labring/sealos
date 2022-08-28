@@ -25,8 +25,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
@@ -63,7 +61,7 @@ jobs:
         run: sh ./scripts/resolve-modules.sh
 
   golangci-lint:
-    needs: [ check-license, resolve-modules ]
+    needs: [ format-code, check-license, resolve-modules ]
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -84,7 +82,7 @@ jobs:
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   coverage:
-    needs: [ check-license ]
+    needs: [ format-code, check-license ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
