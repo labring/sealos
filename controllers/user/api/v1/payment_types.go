@@ -42,15 +42,8 @@ type PaymentSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// UserID is the user id who want to recharge
-	// +kubebuilder:validation:MinLength=1
-	// +kubebuilder:validation:Required
-	// +kubebuilder:validation:Pattern=^[a-zA-Z0-9]{1,64}$
-	// +kubebuilder:validation:MaxLength=64
 	UserID string `json:"userID,omitempty"`
 	// Amount is the amount of recharge
-	// +kubebuilder:validation:Minimum=0
-	// +kubebuilder:validation:Maximum=100000000
-	// +kubebuilder:validation:Required
 	Amount int64 `json:"amount,omitempty"`
 }
 

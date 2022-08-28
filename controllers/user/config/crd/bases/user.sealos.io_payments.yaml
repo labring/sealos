@@ -36,21 +36,25 @@ spec:
             description: PaymentSpec defines the desired state of Payment
             properties:
               amount:
+                description: Amount is the amount of recharge
                 format: int64
                 type: integer
               userID:
-                description: Foo is an example field of Payment. Edit payment_types.go
-                  to remove/update
+                description: UserID is the user id who want to recharge
                 type: string
             type: object
           status:
             description: PaymentStatus defines the observed state of Payment
             properties:
               codeURL:
+                description: CodeURL is the codeURL of wechatpay
                 type: string
               status:
+                description: Status is the status of wechatpay, charging, closed,
+                  timeout
                 type: string
               tradeNO:
+                description: TradeNO is the tradeNO of wechatpay
                 type: string
             type: object
         type: object

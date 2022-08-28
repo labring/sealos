@@ -1,39 +1,45 @@
 # Vehicle Routing Problem Service
 
 ## Introduction
+
 ![Picture1](https://user-images.githubusercontent.com/14962503/179478363-172a4764-f644-40d8-8784-2fdb25ace7a2.png)
 
-车辆智能调度问题（Vehicle Routing Problem），在学术上是网络优化问题中的最基本同时也是最具挑战性的问题之一，在物流领域也是最为广泛的应用场景之一，其覆盖了从干线、末端、到仓内的各个环节。对于效率的提升和成本的节省提到重大作用。随着物流行业向智能化发展，作为物流核心智能算法之一的车辆路径规划的应用场景也越来越丰富。
+The Vehicle Routing Problem is academically one of the most basic and most challenging problems in network optimization, 
+and one of the most extensive application scenarios in the field of logistics. The end, to each link in the warehouse. 
+It has a significant role in improving efficiency and saving costs. As the logistics industry develops towards intelligence, 
+the application scenarios of vehicle path planning, which is one of the core intelligent algorithms of logistics, 
+are becoming more and more abundant. The intelligent vehicle scheduling service is independently developed by the scienson algorithm team, 
+which can aim at the optimization of time efficiency and support the solution of various types of path optimization problems. 
+Combined with the super big data computing capability of cloud computing, the service of the distribution plan with the lowest transportation cost can be planned in a short time. 
+Applicable to various types of transportation and distribution business, it can effectively improve operational efficiency, reduce human errors, and reduce transportation costs.
 
-车辆智能调度服务由 scienson 算法团队的独立研发，可以以时效最优为目标，支持多种路径优化问题类型的求解。结合云计算超强的大数据计算能力，在短时间内规划出运输成本最低的配送方案的服务。适用于多种类型的运输配送业务，能够有效提高运营效率，降低人为误差，减少运输成本。
+### Service advantage
 
-### 服务优势
+#### Multi-dimensional input parameters
 
-#### 多维度的输入参数
+Capacity constraints: the load and weight of the vehicle; 
+Time window: the earliest late delivery or pick-up time window of the goods; 
+Duration constraints: the loading and unloading time and operation waiting time of the pickup and delivery; 
+Transportation restrictions: Different models are actually transported speed limit, travel radius, and cost calculation requirements for different transportation modes. 
+Combined with OSM, comprehensively consider the address of each warehouse and delivery point and obtain the current road conditions, etc.; 
+Optimization goals: the least vehicles, the shortest distance or the least cost;
 
-能力约束：车的载方、载重；
+#### Diversified calling methods
 
-时间窗口：货物的最早/晚送货或取货的时间窗口；
+1. It can support free invocation of intelligent scheduling services through SaaS services;
+2. Mirror service can be deployed privately using Sealos;
 
-时长约束：取货/送货的装卸货时间及作业等待时间；
+#### Intuitive display of optimization results
 
-运输限制：不同车型在实际运输中的速度限制，行驶半径，以及满足不同运输模式下成本计算要求。结合 OSM，综合考量每个仓库和送货点的地址并获得当前的路况等；
+1. Visually display the completed dispatch plan, such as the total cost of the dispatch plan, the total number of trains, the total mileage, and the route;
+2. It is convenient and quick to intervene in manual adjustment, and the cost and mileage data after manual intervention can be obtained in real time;
 
-优化目标：最少车辆，最短距离或者是最小成本；
+#### Flexible combination of constraints and goals
 
-#### 多样化的调用方式
-
-1. 可以支持通过 SaaS 服务免费调用智能调度服务；
-1. 可以使用 Sealos 私有化部署镜像服务；
-
-#### 直观的优化结果展示
-
-1. 可视化展示已完成的调度计划，如调度计划的总成本、总车次、总行驶里程、路顺等；
-1. 方便快捷地介入人工调整，实时可得人工干预后的成本、里程数据；
-
-#### 灵活多变的约束和目标组合
-
-我们不仅仅解决一种 VRP 问题，我们解决的是车辆调度等一整类问题。基于客户实际业务场景的不同，算法的约束和目标往往不能完全复用，三笙算法团队提供一对一的个性化定制服务。我们精心设计了强大灵活的算法架构，可以插件化具体约束和目标，从而能够以极低的成本为您提供服务。
+We're not just solving one VRP problem, we're solving a whole class of problems like vehicle scheduling. 
+Based on the different actual business scenarios of customers, the constraints and goals of the algorithms are often not completely reused. 
+The Sansheng algorithm team provides one-to-one personalized customization services. 
+We have carefully designed a robust and flexible algorithmic architecture that can plug-in specific constraints and goals to serve you at a very low cost.
 
 ## Installation
 
@@ -51,76 +57,76 @@ Request Type：POST
 
 Content-Type：application/json
 
-### 调度约束和目标
+### Scheduling constraints and goals
 
-| 类型           | 描述               | 详细说明                                                                           |
+| Type | Description | Details |
 | -------------- | ------------------ | ---------------------------------------------------------------------------------- |
-| 约束           | 车辆容量约束       | 车辆的总重量有限制，即车辆身上承载的总订单货重不能高于车辆总体重量限制             |
-| 约束           | 车辆时间窗约束     | 车辆有特定的工作时间窗，在路径规划中会考虑车辆时间窗，即车辆工作时间必须在时间窗内 |
-| 第一优先级目标 | 未配送的订单数最少 | 尽可能多的完成订单配送，剩余未配送的订单数尽可能的少                               |
-| 第二优先级目标 | 订单超时时间最小   | 调度方案中订单总超时时间最少                                                       |
-| 第三优先级目标 | 运输总耗时最小     | 总体方案耗时最少，耗时为车辆配送开始，到最后一个订单配送完成的消耗时间             |
-| 第四优先级目标 | 车辆总行驶里程最小 | 车辆总体行驶里程最小                                                               |
+| Constraints | Vehicle Capacity Constraints | The total weight of the vehicle is limited, that is, the total order cargo carried on the vehicle cannot be higher than the total vehicle weight limit |
+| Constraints | Vehicle Time Window Constraints | The vehicle has a specific working time window, and the vehicle time window will be considered in the path planning, that is, the vehicle working time must be within the time window |
+| 1st priority goal | Least number of unfulfilled orders | Fulfill as many orders as possible and as few unfulfilled orders as possible |
+| Second priority goal | Minimum order timeout | Minimum order total timeout in scheduling plan |
+| The third priority goal | The total transportation time is the least | The overall plan takes the least time, and the time is the time from the start of vehicle delivery to the completion of the delivery of the last order |
+| Fourth priority goal | Minimum total vehicle mileage | Minimum vehicle total mileage |
 
-当前 API 支持的约束和目标如上表所示。如果您有其他约束和目标要求，请随时联系客服人员，我们将针对您的具体业务提供一对一的定制服务。
+The constraints and targets currently supported by the API are shown in the table above. If you have other constraints and target requirements, please feel free to contact the customer service staff, and we will provide one-to-one customized services for your specific business.
 
 ### Parameters
 
 1. request
 
-| 字段名          |                       | 字段说明                                                                                                                                                                                                                                                                                                                                                                     |
+| Field Name | | Field Description |
 | --------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| key             |                       | API 调用秘钥<br />1. 一般用户请填写："91cb09e7-72b7-4094-839e-166bdc279e01"<br />1. 私人定制用户请联系客服获取秘钥<br />                                                                                                                                                                                                                                                     |
-| depotParam      |                       | 仓库的参数信息                                                                                                                                                                                                                                                                                                                                                               |
-|                 | depotId               | 仓库 ID，类型：字符串                                                                                                                                                                                                                                                                                                                                                        |
-|                 | positionInfo          | 仓库的经纬度信息：<br />1. lon：经度，类型：浮点数<br />1. lat：纬度，类型：浮点数<br />                                                                                                                                                                                                                                                                                     |
-| vehicleParams   |                       | 车辆的参数信息                                                                                                                                                                                                                                                                                                                                                               |
-|                 | plate                 | 车牌号，类型：字符串                                                                                                                                                                                                                                                                                                                                                         |
-|                 | capacity              | 车辆的容量信息：<br /> maxWeight：最大载重 ，格式类型：浮点数<br />容量可以支持多种配置，如需要其他类型支持，请联系客服                                                                                                                                                                                                                                                      |
-|                 | startLocation         | 车辆始发地的经纬度信息：<br />1. lon：经度，类型：浮点数<br />1. lat：纬度，类型：浮点数<br />                                                                                                                                                                                                                                                                               |
-|                 | earliestDeparture     | 最早出发时间，格式类型：浮点数<br />请将时刻转换成统一的数值类型                                                                                                                                                                                                                                                                                                             |
-|                 | timeWindowInfo        | 车辆时间窗信息，表示车辆工作时间段：<br />beginTime：起始时刻，格式类型：浮点数<br />endTime: 结束时刻，格式类型：浮点数                                                                                                                                                                                                                                                     |
-| orderParams     |                       | 订单的参数信息                                                                                                                                                                                                                                                                                                                                                               |
-|                 | orderId               | 订单 ID，格式类型：字符串                                                                                                                                                                                                                                                                                                                                                    |
-|                 | positionInfo          | 订单服务点的经纬度信息：<br />1. lon：经度，类型：浮点数<br />1. lat：纬度，类型：浮点数<br />                                                                                                                                                                                                                                                                               |
-|                 | timeWindowInfo        | 订单的有效服务时间窗，表示服务点的工作时间段：<br />beginTime：起始时刻，格式类型：浮点数<br />endTime: 结束时刻，格式类型：浮点数                                                                                                                                                                                                                                           |
-|                 | serviceTime           | 订单的装卸载或者服务耗时，格式：浮点数                                                                                                                                                                                                                                                                                                                                       |
-|                 | demand                | 订单的需求量<br />weight: 货物重量需求<br />需求量可以支持多种配置，如需要其他类型支持，请联系客服                                                                                                                                                                                                                                                                           |
-| relationParam   |                       | 关系参数，设置距离或者时间矩阵参数，利用该参数用户可以自定义距离和时间矩阵信息。如果该参数不填，则需要依赖 distanceCalculateType 指定距离计算类型。                                                                                                                                                                                                                          |
-|                 | distanceTable         | 距离矩阵，可以设置如下距离关系：<br />1、订单服务点距离信息<br />2、订单与车辆距离信息<br />3、仓库与订单距离信息<br />4、仓库与车辆距离信息<br />距离单位统一为米<br />示例：<br />"distanceTable": {<br /> "order1": {<br /> "order2":5,<br /> "vehicleA":4<br /> }<br />}<br />示例说明：<br />表示订单 order1 与 order2 距离为 5 米，订单 order1 与 vehicleA 距离为 4 米 |
-|                 | durationTable         | 时间矩阵，可以设置如下时间关系：<br />1、订单服务点耗时信息<br />2、订单与车辆耗时信息<br />3、仓库与订单耗时信息<br />4、仓库与车辆耗时信息 <br />时间单位统一为秒<br />"durationTable":{<br /> "order1":{<br /> "order2":5,<br /> "vehicleA":4<br /> }<br /> }<br />示例说明：<br />表示订单 order1 与 order2 耗时为 5 秒，订单 order1 与 vehicleA 耗时为 4 秒             |
-| dvrpConfigParam |                       | 总体全局配置                                                                                                                                                                                                                                                                                                                                                                 |
-|                 | needBackToDepot       | 车辆是否需要返回仓库，默认是 false，如果设置为 true，则计算过程会考虑车辆返回仓库；                                                                                                                                                                                                                                                                                          |
-|                 | globalVelocity        | 全局车辆速度，单位：km/h                                                                                                                                                                                                                                                                                                                                                     |
-|                 | distanceCalculateType | 距离计算类型<br />1. circle ：使用高精度球面距离计算<br />1. euclidean：使用平面欧式距离计算<br />                                                                                                                                                                                                                                                                           |
-|                 | timeType              | 时间格式类型，该字段用于表示设定的时间类型，在返回结果中会以直观的格式化形式输出<br />1. DATE：日期类型<br />1. VALUE：数值类型（默认）<br />                                                                                                                                                                                                                                |
+| key | | API call key1. For general users, please fill in: "91cb09e7-72b7-4094-839e-166bdc279e01"1. For private users, please contact customer service to obtain the key |
+| depotParam      |                       | Parameter information of warehouse                                                                                                                                                                                                                                                                                                                                                              |
+|                 | depotId               | warehouse id, type: string                                                                                                                                                                                                                                                                                                                                                        |
+|                 | positionInfo          | The latitude and longitude information of the warehouse:1. lon: longitude, type: float1. lat: latitude, type: float                                                                                                                                                                                                                                                                                     |
+| vehicleParams   |                       | Parameter information of the vehicle                                                                                                                                                                                                                                                                                                                                                               |
+|                 | plate                 | license plate number, type: string                                                                                                                                                                                                                                                                                                                                                         |
+|                 | capacity              | Vehicle capacity information:  maxWeight: maximum load, format type: floating point number  Capacity can support multiple configurations, if you need other types of support, please contact customer service                                                                                                                                                                                                                                                     |
+|                 | startLocation         | Longitude and latitude information of vehicle origin:1. lon: longitude, type: float1. lat: latitude, type: float                                                                                                                                                                                                                                                                               |
+|                 | earliestDeparture     | Earliest departure time, format type: floating point numberPlease convert the time to a unified numeric type                                                                                                                                                                                                                                                                                                            |
+|                 | timeWindowInfo        | Vehicle time window information, indicating vehicle working time period: beginTime: start time, format type: floating point numberendTime: end time, format type: floating number number                                                                                                                                                                                                                                                     |
+| orderParams     |                       | Parameter information of the order                                                                                                                                                                                                                                                                                                                                                               |
+|                 | orderId               | order id format type string                                                                                                                                                                                                                                                                                                                                                   |
+|                 | positionInfo          | The latitude and longitude information of the order service point:1. lon: longitude, type: float1. lat: latitude, type: float                                                                                                                                                                                                                                                                               |
+|                 | timeWindowInfo        | The effective service time window of the order, indicating the working time period of the service point: beginTime: start time, format type: floating point numberendTime: end time, format type: floating number number                                                                                                                                                                                                                                           |
+|                 | serviceTime           | Loading/unloading or service time of the order, format: floating point number                                                                                                                                                                                                                                                                                                                                      |
+|                 | demand                | Demand of the orderweight: weight demand of the goodsDemand can support various configurations, if you need other types of support, please contact customer service                                                                                                                                                                                                                                                                           |
+| relationParam   |                       | Relationship parameters, set distance or time matrix parameters, users can customize distance and time matrix information using this parameter. If this parameter is not filled, you need to rely on distanceCalculateType to specify the distance calculation type.                                                                                                                                                                                                                          |
+|                 | distanceTable         | Distance matrix, you can set the following distance relationships:1, order service point distance information2, order and vehicle distance information3, warehouse and order distance information4, warehouse and vehicle distance informationThe distance unit is unified as meterExample:"distanceTable": { "order1": { "order2":5, "vehicleA":4 }}Example description: Indicates that the distance between order1 and order2 is 5 meters, and the distance between order1 and vehicleA is 4 meters |
+|                 | durationTable         | Time matrix, you can set the following time relationships:1. Time-consuming information of order service points2. Time-consuming information of orders and vehicles3. Time-consuming information of warehouses and orders4. Time-consuming information of warehouses and vehicles Time-consuming informationThe time unit is unified into seconds"durationTable":{ "order1":{ "order2":5, "vehicleA":4 } }Example description: Indicates that order1 and order2 take 5 seconds, and order1 and vehicleA take 4 seconds             |
+| dvrpConfigParam |                       | Overall global configuration                                                                                                                                                                                                                                                                                                                                                                |
+|                 | needBackToDepot       | Whether the vehicle needs to return to the warehouse, the default is false, if it is set to true, the calculation process will consider the vehicle returning to the warehouse;                                                                                                                                                                                                                                                                                          |
+|                 | globalVelocity        | global vehicle speed unit kmh                                                                                                                                                                                                                                                                                                                                                     |
+|                 | distanceCalculateType | Distance calculation type1. circle: use high precision spherical distance calculation1. euclidean: use plane Euclidean distance calculation                                                                                                                                                                                                                                                                           |
+|                 | timeType              | Time format type, this field is used to represent the set time type, which will be output in an intuitive format in the returned result1. DATE: date type1. VALUE: numeric type (default)                                                                                                                                                                                                                                |
 
 2. return
 
-| 字段名             |              | 字段说明                                                                                                                                                                                                                                |
+| Field Name | | Field Description                                                                                                                                                                                                                               |
 | ------------------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| success            |              | 调用是否成功                                                                                                                                                                                                                            |
-| errorCode          |              | 错误码<br />CB00001 : 业务异常，通常是业务逻辑异常导致，请仔细检测您的参数；<br />CB00002: 系统异常，通常是系统错误导致，请联系客服处理<br />CB00003: 无效参数，通常是入参格式不正确，请基于示例检测您的入参<br />CB0004: JSON 解析失败 |
-| errorMsg           |              | 错误信息                                                                                                                                                                                                                                |
-| appendMsg          |              | 额外错误说明                                                                                                                                                                                                                            |
-| dvrpRouteInfos     |              | 车辆调度的规划路径信息                                                                                                                                                                                                                  |
-| vehicleId          |              | 车辆 ID，类型格式：字符串                                                                                                                                                                                                               |
-| assignedJobList    |              | 路径上配送任务的顺序                                                                                                                                                                                                                    |
-|                    | id           | 任务 ID                                                                                                                                                                                                                                 |
-|                    | jobType      | 任务类型：<br />1. 如果是 DEPOT，则表示为仓库；<br />1. 如果是 ORDER，则表示为订单；<br />                                                                                                                                              |
-|                    | weight       | 重量信息                                                                                                                                                                                                                                |
-|                    | arriveTime   | 达到该任务的时间点                                                                                                                                                                                                                      |
-|                    | deptTime     | 离开该任务的时间点                                                                                                                                                                                                                      |
-|                    | aggrDistance | 车辆的当前累计行驶里程                                                                                                                                                                                                                  |
-|                    | overTime     | 车辆当前超时时间                                                                                                                                                                                                                        |
-| routeDistance      |              | 车辆路径总里程                                                                                                                                                                                                                          |
-| routeTotalWeight   |              | 车辆路径总重量                                                                                                                                                                                                                          |
-| routeTotalOrderNum |              | 车辆路径总订单数                                                                                                                                                                                                                        |
-| routeOverTime      |              | 路径总超时时间                                                                                                                                                                                                                          |
-| unAssignedOrderNum |              | 未分配的订单数量                                                                                                                                                                                                                        |
-| unAssignedJobList  |              | 未分配的任务列表                                                                                                                                                                                                                        |
-| totalOverTime      |              | 总体调度方案的车辆超时时间                                                                                                                                                                                                              |
-| totalDistance      |              | 总体调度方案的车辆总里程                                                                                                                                                                                                                |
+| success            |              | Whether the call was successful                                                                                                                                                                                                                           |
+| errorCode          |              | Error codeCB00001 : Business exception, usually caused by business logic exception, please check your parameters carefully;CB00002: System exception,Usually caused by a system error, please contact customer service to deal with itCB00003: Invalid parameter, usually the input parameter format is incorrect, please check your input parameter based on the exampleCB0004: JSON parsing failed |
+| errorMsg           |              | error message                                                                                                                                                                                                                                |
+| appendMsg          |              | additional error description                                                                                                                                                                                                                            |
+| dvrpRouteInfos     |              | planning route information for vehicle scheduling                                                                                                                                                                                                                  |
+| vehicleId          |              | vehicle id type format string                                                                                                                                                                                                              |
+| assignedJobList    |              | the order of delivery tasks on the route                                                                                                                                                                                                                   |
+|                    | id           | taskID                                                                                                                                                                                                                                 |
+|                    | jobType      | Task type:1. If it is DEPOT, it means warehouse;1. If it is ORDER, it means order;                                                                                                                                              |
+|                    | weight       | weight information                                                                                                                                                                                                                                |
+|                    | arriveTime   | the point in time when the task was reached                                                                                                                                                                                                                     |
+|                    | deptTime     | time to leave the task                                                                                                                                                                                                                     |
+|                    | aggrDistance | the current accumulated mileage of the vehicle                                                                                                                                                                                                                 |
+|                    | overTime     | vehicle s current timeout                                                                                                                                                                                                                        |
+| routeDistance      |              | total vehicle mileage                                                                                                                                                                                                                          |
+| routeTotalWeight   |              | gross vehicle path weight                                                                                                                                                                                                                          |
+| routeTotalOrderNum |              | vehicle routing total orders                                                                                                                                                                                                                        |
+| routeOverTime      |              | total path timeout                                                                                                                                                                                                                          |
+| unAssignedOrderNum |              | unassigned order quantity                                                                                                                                                                                                                       |
+| unAssignedJobList  |              | unassigned task list                                                                                                                                                                                                                        |
+| totalOverTime      |              | vehicle timeout time of overall scheduling scheme                                                                                                                                                                                                              |
+| totalDistance      |              | The total vehicle mileage of the overall dispatch plan                                                                                                                                                                                                               |
 
 ### Examples
 
@@ -487,18 +493,16 @@ Content-Type：application/json
 
 ## Support
 
-### 团队介绍
+### team introduction
 
 ![image](https://user-images.githubusercontent.com/14962503/179480046-c085c528-bf8e-48ea-8a25-00563e40852f.png)
 
-团队网址：[https://www.scienson.com/](https://www.scienson.com/)
+[https://www.scienson.com/](https://www.scienson.com/)
 
-### 服务说明
+### service description
 
-1. 私有化部署支持；
-1. 基于实际业务场景，可提供定制化的业务约束和目标，能够为您提供定制化的调度算法服务，欢迎随时联系我们；
-1. 可提供该服务的 7 \* 24 小时在线答疑
-
-客服微信：
+1. Private deployment support; 
+2. Based on actual business scenarios, it can provide customized business constraints and goals, and can provide you with customized scheduling algorithm services, please feel free to contact us; 
+2. 7 / 24 who can provide this service Hours online Q&A customer service WeChat:
 
 ![weixin](https://user-images.githubusercontent.com/14962503/179480093-dc6fcfc4-fb02-4245-9155-6d0b7126a36f.jpg)
