@@ -30,8 +30,6 @@ const (
 	CRISocketCRIO = "/var/run/crio/crio.sock"
 	// CRISocketDocker is the cri-dockerd CRI endpoint
 	CRISocketDocker = "/var/run/cri-dockerd.sock"
-	// CRISocketDockerLower is the cri-dockerd CRI endpoint
-	CRISocketDockerLower = "/var/run/dockershim.sock"
 	// DefaultCRISocket defines the default CRI socket
 	DefaultCRISocket = CRISocketContainerd
 )
