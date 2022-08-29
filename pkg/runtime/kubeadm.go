@@ -21,6 +21,9 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
+	"k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
+
 	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -32,9 +35,11 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta2"
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm/v1beta3"
+	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
+	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
 )
 
 const (
@@ -385,8 +390,8 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 
 	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
 		&k.conversion.ClusterConfiguration,
-		&k.KubeletConfiguration,
-		&k.KubeProxyConfiguration)
+		&k.conversion.KubeletConfiguration,
+		&k.conversion.KubeProxyConfiguration)
 }
 
 func (k *KubeadmRuntime) convertKubeadmVersion() error {
@@ -406,15 +411,17 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 		if err = v1beta2.Convert_kubeadm_JoinConfiguration_To_v1beta2_JoinConfiguration(&k.JoinConfiguration, &v1beta2JoinConfiguration, nil); err != nil {
 			return err
 		}
-		v1beta2InitConfiguration.APIVersion = KubeadmV1beta2
-		v1beta2ClusterConfiguration.APIVersion = KubeadmV1beta2
-		v1beta2JoinConfiguration.APIVersion = KubeadmV1beta2
+
+		v1beta2InitConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
+		v1beta2ClusterConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
+		v1beta2JoinConfiguration.APIVersion = v1beta2.SchemeGroupVersion.String()
 		v1beta2InitConfiguration.Kind = "InitConfiguration"
 		v1beta2ClusterConfiguration.Kind = "ClusterConfiguration"
 		v1beta2JoinConfiguration.Kind = "JoinConfiguration"
 		k.conversion.InitConfiguration = v1beta2InitConfiguration
 		k.conversion.ClusterConfiguration = v1beta2ClusterConfiguration
 		k.conversion.JoinConfiguration = v1beta2JoinConfiguration
+
 	case KubeadmV1beta3:
 		var v1beta3InitConfiguration v1beta3.InitConfiguration
 		var v1beta3ClusterConfiguration v1beta3.ClusterConfiguration
@@ -428,9 +435,9 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 		if err = v1beta3.Convert_kubeadm_JoinConfiguration_To_v1beta3_JoinConfiguration(&k.JoinConfiguration, &v1beta3JoinConfiguration, nil); err != nil {
 			return err
 		}
-		v1beta3InitConfiguration.APIVersion = KubeadmV1beta3
-		v1beta3ClusterConfiguration.APIVersion = KubeadmV1beta3
-		v1beta3JoinConfiguration.APIVersion = KubeadmV1beta3
+		v1beta3InitConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
+		v1beta3ClusterConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
+		v1beta3JoinConfiguration.APIVersion = v1beta3.SchemeGroupVersion.String()
 		v1beta3InitConfiguration.Kind = "InitConfiguration"
 		v1beta3ClusterConfiguration.Kind = "ClusterConfiguration"
 		v1beta3JoinConfiguration.Kind = "JoinConfiguration"
@@ -438,10 +445,29 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 		k.conversion.ClusterConfiguration = v1beta3ClusterConfiguration
 		k.conversion.JoinConfiguration = v1beta3JoinConfiguration
 	default:
+		k.conversion.JoinConfiguration = k.JoinConfiguration
 		k.conversion.InitConfiguration = k.InitConfiguration
 		k.conversion.ClusterConfiguration = k.ClusterConfiguration
-		k.conversion.JoinConfiguration = k.JoinConfiguration
+
 	}
+
+	{
+		var v1beta1Kubelet kubeletconfigv1beta1.KubeletConfiguration
+		var v1alpha1KubeProxy kubeproxyconfigv1alpha1.KubeProxyConfiguration
+		if err = v1alpha1.Convert_config_KubeProxyConfiguration_To_v1alpha1_KubeProxyConfiguration(&k.KubeProxyConfiguration, &v1alpha1KubeProxy, nil); err != nil {
+			return err
+		}
+		if err = v1beta1.Convert_config_KubeletConfiguration_To_v1beta1_KubeletConfiguration(&k.KubeletConfiguration, &v1beta1Kubelet, nil); err != nil {
+			return err
+		}
+		v1beta1Kubelet.APIVersion = kubeletconfigv1beta1.SchemeGroupVersion.String()
+		v1alpha1KubeProxy.APIVersion = kubeproxyconfigv1alpha1.SchemeGroupVersion.String()
+		v1beta1Kubelet.Kind = "KubeletConfiguration"
+		v1alpha1KubeProxy.Kind = "KubeProxyConfiguration"
+		k.conversion.KubeProxyConfiguration = v1alpha1KubeProxy
+		k.conversion.KubeletConfiguration = v1beta1Kubelet
+	}
+
 	return nil
 }
 
@@ -458,7 +484,7 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
 	return yaml.MarshalYamlConfigs(
-		&k.KubeletConfiguration,
+		&k.conversion.KubeletConfiguration,
 		&k.conversion.JoinConfiguration)
 }
 
@@ -474,7 +500,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	if err := k.convertKubeadmVersion(); err != nil {
 		return nil, errors.Wrap(err, "convert kubeadm version failed")
 	}
-	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.KubeletConfiguration)
+	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.conversion.KubeletConfiguration)
 }
 
 func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {

@@ -22,18 +22,20 @@ import (
 	"path/filepath"
 	"strings"
 
+	"k8s.io/kubelet/config/v1beta1"
+
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/imdario/mergo"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/kube-proxy/config/v1alpha1"
-	"k8s.io/kubelet/config/v1beta1"
-
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	kubelet "k8s.io/kubernetes/pkg/kubelet/apis/config"
+	proxy "k8s.io/kubernetes/pkg/proxy/apis/config"
 )
 
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
@@ -44,12 +46,14 @@ type KubeadmConfig struct {
 	kubeadm.InitConfiguration
 	kubeadm.ClusterConfiguration
 	kubeadm.JoinConfiguration
-	v1alpha1.KubeProxyConfiguration
-	v1beta1.KubeletConfiguration
+	proxy.KubeProxyConfiguration
+	kubelet.KubeletConfiguration
 	conversion struct {
-		InitConfiguration    interface{}
-		ClusterConfiguration interface{}
-		JoinConfiguration    interface{}
+		InitConfiguration      interface{}
+		ClusterConfiguration   interface{}
+		JoinConfiguration      interface{}
+		KubeProxyConfiguration interface{}
+		KubeletConfiguration   interface{}
 	}
 	ImageKubeVersion string
 }
@@ -119,13 +123,13 @@ func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interf
 	if err != nil {
 		return nil, err
 	} else if kubeProxyConfig != nil {
-		kubeadmConfig.KubeProxyConfiguration = *kubeProxyConfig.(*v1alpha1.KubeProxyConfiguration)
+		kubeadmConfig.KubeProxyConfiguration = *kubeProxyConfig.(*proxy.KubeProxyConfiguration)
 	}
 	kubeletConfig, err := decode(arg, KubeletConfiguration)
 	if err != nil {
 		return nil, err
 	} else if kubeletConfig != nil {
-		kubeadmConfig.KubeletConfiguration = *kubeletConfig.(*v1beta1.KubeletConfiguration)
+		kubeadmConfig.KubeletConfiguration = *kubeletConfig.(*kubelet.KubeletConfiguration)
 	}
 	joinConfig, err := decode(arg, JoinConfiguration)
 	if err != nil {
