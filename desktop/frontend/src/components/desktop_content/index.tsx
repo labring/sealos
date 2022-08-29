@@ -1,32 +1,42 @@
-import Setting from 'applications/setting';
 import clsx from 'clsx';
 import React from 'react';
+import useAppStore from 'stores/app';
 import AppIcon from '../app_icon';
-import defaultApps from './deskApps';
+import AppWindow from '../app_window';
 import styles from './index.module.scss';
 
 export default function DesktopContent() {
-  const deskApps = defaultApps;
+  const { apps } = useAppStore((state) => state);
 
   return (
     <div className={styles.desktop}>
       <div className={styles.desktopCont}>
-        {!deskApps.hide &&
-          deskApps.apps.map((app: any, i) => {
+        {
+          !apps.map((appItem: any, i: number) => {
             return (
               <div key={i} className={styles.dskApp} tabIndex={0}>
                 <AppIcon
-                  onClick={app.action}
+                  onClick={appItem.action}
                   className={clsx(styles.dskIcon, 'prtclk')}
-                  src={app.icon}
+                  src={appItem.icon}
                   payload={'full'}
-                  width={Math.round(deskApps.size * 36)}
+                  width={Math.round(appItem.size * 36)}
                 />
-                <div className={styles.appName}>{app.name}</div>
+                <div className={styles.appName}>{appItem.name}</div>
               </div>
             );
-          })}
+          })
+        }
       </div>
+
+      <AppWindow style={{ height: '100vh' }} app={apps[0]}>
+        <iframe
+          src="https://www.sealos.io/docs/category/getting-started"
+          allow="camera;microphone"
+          className="w-full h-full"
+          frameBorder={0}
+        />
+      </AppWindow>
     </div>
   );
 }

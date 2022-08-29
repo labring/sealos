@@ -12,6 +12,7 @@ specifiers:
   clsx: ^1.2.1
   eslint: 8.22.0
   eslint-config-next: 12.2.5
+  immer: ^9.0.15
   next: 12.2.5
   next-themes: ^0.2.0
   postcss: ^8.4.14
@@ -20,16 +21,19 @@ specifiers:
   sass: ^1.54.5
   tailwindcss: ^3.1.2
   typescript: 4.7.4
+  zustand: ^4.1.1
 
 dependencies:
   '@fluentui/react': 8.90.2_76am3hp3mjvgy3cckgdecixdi4
   '@kubernetes/client-node': 0.17.0
   '@nextui-org/react': 1.0.0-beta.9_biqbaboplfbrettd7655fr4n2y
   clsx: 1.2.1
+  immer: 9.0.15
   next: 12.2.5_drkpjgevzdykik2puzxtfkrafi
   next-themes: 0.2.0_3xcjr4wz26biff45sz3jtokgje
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
+  zustand: 4.1.1_immer@9.0.15+react@18.2.0
 
 devDependencies:
   '@svgr/webpack': 6.3.1
@@ -4108,6 +4112,10 @@ packages:
     engines: {node: '>= 4'}
     dev: true
 
+  /immer/9.0.15:
+    resolution: {integrity: sha512-2eB/sswms9AEUSkOm4SbV5Y7Vmt/bKRwByd52jfLkW4OLYeaTP3EEiJ9agqU0O/tq6Dk62Zfj+TJSqfm1rLVGQ==}
+    dev: false
+
   /immutable/4.1.0:
     resolution: {integrity: sha512-oNkuqVTA8jqG1Q6c+UglTOD1xhC1BtjKI7XkCXRkZHrN5m18/XsnUp8Q89GkQO/z+0WjonSvl0FLhDYftp46nQ==}
 
@@ -5553,3 +5561,20 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
+
+  /zustand/4.1.1_immer@9.0.15+react@18.2.0:
+    resolution: {integrity: sha512-h4F3WMqsZgvvaE0n3lThx4MM81Ls9xebjvrABNzf5+jb3/03YjNTSgZXeyrvXDArMeV9untvWXRw1tY+ntPYbA==}
+    engines: {node: '>=12.7.0'}
+    peerDependencies:
+      immer: '>=9.0'
+      react: '>=16.8'
+    peerDependenciesMeta:
+      immer:
+        optional: true
+      react:
+        optional: true
+    dependencies:
+      immer: 9.0.15
+      react: 18.2.0
+      use-sync-external-store: 1.2.0_react@18.2.0
+    dev: false

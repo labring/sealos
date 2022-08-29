@@ -51,9 +51,6 @@
 
     &[data-payload="close"]:hover {
       background: rgba(255, 0, 0, 0.8);
-      img {
-        filter: invert(1);
-      }
     }
   }
 }
@@ -227,11 +224,6 @@
   color: #fefefe;
 }
 
-.actbtns {
-  .uicon img {
-    filter: invert(1);
-  }
-}
 
 .resizecont {
   // height: 100%;

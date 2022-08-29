@@ -1,14 +1,15 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useState } from 'react';
 import Icon from '@/components/icons';
 import styles from './index.module.scss';
 import tabStyles from './tab.module.scss';
 import clsx from 'clsx';
-import defaultApps from '../desktop_content/deskApps';
 
 export default function AppWindow(props: any) {
   const [snap, setSnap] = useState(false);
-  const wnapp = defaultApps.apps[0];
-  console.log(222, wnapp);
+  const wnapp = props.app;
+
+  console.log(123, wnapp);
 
   const openSnap = () => {
     setSnap(true);
@@ -31,7 +32,7 @@ export default function AppWindow(props: any) {
 
   return (
     <div
-      className={clsx('settingsApp', tabStyles.floatTab, tabStyles.dpShad)}
+      className={clsx(tabStyles.floatTab, tabStyles.dpShad, 'lightWindow')}
       data-size={wnapp.size}
       data-max={wnapp.max}
       style={{
@@ -40,17 +41,15 @@ export default function AppWindow(props: any) {
       data-hide={false}
       id={wnapp.icon + 'App'}
     >
-      <div className="window-header">
+      <div className={styles.windowHeader}>
         <div
           className={styles.toolbar}
-          data-float={props.float != null}
-          data-noinvert={props.noinvert != null}
           style={{
             background: props.bg
           }}
         >
           <div
-            className={clsx(styles.topInfo, 'flex flex-grow items-center')}
+            className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}
             data-float={props.float != null}
             onClick={toolClick}
             onMouseDown={() => {
@@ -58,49 +57,53 @@ export default function AppWindow(props: any) {
             }}
             data-op="0"
           >
-            <Icon src={props.icon} width={14} />
-            <div className={(styles.appFullName, 'text-xss')} data-white={props.invert != null}>
-              {props.name}
+            <img src={wnapp.icon} alt="" srcSet="" width={14} />
+            <div
+              className={(styles.appFullName, 'text-xss ml-2')}
+              data-white={props.invert != null}
+            >
+              {wnapp.name}
             </div>
           </div>
-          <div className="actbtns flex items-center">
-            <Icon
-              invert={props.invert}
-              click={props.app}
-              payload="mnmz"
-              pr
-              src="minimize"
-              ui
-              width={12}
-            />
+          <div className={clsx(styles.actbtns, 'flex items-center')}>
+            <div className={styles.uicon}>
+              <Icon
+                invert={props.invert}
+                click={props.app}
+                payload="mnmz"
+                src="minimize"
+                width={12}
+              />
+            </div>
+
             <div
               className={clsx(styles.snapbox, 'h-full')}
               data-hv={snap}
               onMouseOver={openSnap}
               onMouseLeave={closeSnap}
             >
-              <Icon
-                invert={props.invert}
-                click={props.app}
-                ui
-                pr
-                width={12}
-                payload="mxmz"
-                src={props.size == 'full' ? 'maximize' : 'maxmin'}
-              />
+              <div className={styles.uicon}>
+                <Icon
+                  invert={props.invert}
+                  click={props.app}
+                  width={12}
+                  payload="mxmz"
+                  src={props.size == 'full' ? 'maximize' : 'maxmin'}
+                />
+              </div>
               {/* <SnapScreen invert={props.invert} app={props.app} snap={snap} closeSnap={closeSnap} /> */}
               {/* {snap?<SnapScreen app={props.app} closeSnap={closeSnap}/>:null} */}
             </div>
-            <Icon
-              className={styles.closeBtn}
-              invert={props.invert}
-              click={props.app}
-              payload="close"
-              pr
-              src="close"
-              ui
-              width={14}
-            />
+            <div className={styles.uicon}>
+              <Icon
+                className={styles.closeBtn}
+                invert={props.invert}
+                click={props.app}
+                payload="close"
+                src="close"
+                width={14}
+              />
+            </div>
           </div>
         </div>
         <div className={clsx(styles.resizecont, styles.topone)}>
@@ -163,7 +166,11 @@ export default function AppWindow(props: any) {
         </div>
       </div>
 
-      <div className="window-content">{props.children}</div>
+      <div className={clsx(tabStyles.windowScreen, 'flex flex-col')}>
+        <div className="restWindow flex-grow flex flex-col">
+          <div className="flex-grow overflow-hidden">{props.children}</div>
+        </div>
+      </div>
     </div>
   );
 }
