@@ -4,12 +4,16 @@ import Icon from '@/components/icons';
 import styles from './index.module.scss';
 import tabStyles from './tab.module.scss';
 import clsx from 'clsx';
+import useAppStore, { TApp } from 'stores/app';
 
-export default function AppWindow(props: any) {
+export default function AppWindow(props: {
+  style?: React.CSSProperties;
+  app: TApp;
+  children: any;
+}) {
+  const { closeApp } = useAppStore((state) => state);
   const [snap, setSnap] = useState(false);
   const wnapp = props.app;
-
-  console.log(123, wnapp);
 
   const openSnap = () => {
     setSnap(true);
@@ -33,24 +37,17 @@ export default function AppWindow(props: any) {
   return (
     <div
       className={clsx(tabStyles.floatTab, tabStyles.dpShad, 'lightWindow')}
-      data-size={wnapp.size}
-      data-max={wnapp.max}
-      style={{
-        zIndex: wnapp.z
-      }}
-      data-hide={false}
       id={wnapp.icon + 'App'}
     >
       <div className={styles.windowHeader}>
         <div
           className={styles.toolbar}
           style={{
-            background: props.bg
+            background: wnapp.style?.bg || '#fff'
           }}
         >
           <div
             className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}
-            data-float={props.float != null}
             onClick={toolClick}
             onMouseDown={() => {
               console.log('toolDrag');
@@ -58,22 +55,11 @@ export default function AppWindow(props: any) {
             data-op="0"
           >
             <img src={wnapp.icon} alt="" srcSet="" width={14} />
-            <div
-              className={(styles.appFullName, 'text-xss ml-2')}
-              data-white={props.invert != null}
-            >
-              {wnapp.name}
-            </div>
+            <div className={(styles.appFullName, 'text-xss ml-2')}>{wnapp.name}</div>
           </div>
           <div className={clsx(styles.actbtns, 'flex items-center')}>
             <div className={styles.uicon}>
-              <Icon
-                invert={props.invert}
-                click={props.app}
-                payload="mnmz"
-                src="minimize"
-                width={12}
-              />
+              <Icon click={props.app} payload="mnmz" src="minimize" width={12} />
             </div>
 
             <div
@@ -84,25 +70,20 @@ export default function AppWindow(props: any) {
             >
               <div className={styles.uicon}>
                 <Icon
-                  invert={props.invert}
                   click={props.app}
                   width={12}
                   payload="mxmz"
-                  src={props.size == 'full' ? 'maximize' : 'maxmin'}
+                  src={wnapp.size == 'full' ? 'maximize' : 'maxmin'}
                 />
               </div>
-              {/* <SnapScreen invert={props.invert} app={props.app} snap={snap} closeSnap={closeSnap} /> */}
-              {/* {snap?<SnapScreen app={props.app} closeSnap={closeSnap}/>:null} */}
             </div>
-            <div className={styles.uicon}>
-              <Icon
-                className={styles.closeBtn}
-                invert={props.invert}
-                click={props.app}
-                payload="close"
-                src="close"
-                width={14}
-              />
+            <div
+              className={styles.uicon}
+              onClick={() => {
+                closeApp(wnapp.name);
+              }}
+            >
+              <Icon className={styles.closeBtn} src="close" width={14} />
             </div>
           </div>
         </div>
@@ -136,7 +117,6 @@ export default function AppWindow(props: any) {
           <div className="h-full">
             <div
               className={clsx(styles.edgrsz, styles['cursor-w-resize'], styles.hdws)}
-              data-op="1"
               onMouseDown={toolDrag}
               data-vec="0,1"
             ></div>

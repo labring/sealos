@@ -3,13 +3,20 @@ import styles from './index.module.scss';
 import Taskbar from '@/components/taskbar';
 import DesktopContent from '@/components/desktop_content';
 import useAppStore from 'stores/app';
+import Head from 'next/head';
 
 export default function Layout({ children }: any) {
   return (
-    <div className={styles.desktopContainer}>
-      <Background />
-      <DesktopContent />
-      <Taskbar />
-    </div>
+    <>
+      <Head>
+        <title>Sealos Desktop</title>
+        <meta name="description" content="sealos cloud dashboard" />
+      </Head>
+      <div className={styles.desktopContainer}>
+        <Background />
+        <DesktopContent />
+        <Taskbar />
+      </div>
+    </>
   );
 }

@@ -15,13 +15,14 @@
 }
 
 .dskApp {
+  cursor: default;
   margin: 4px;
   height: 84px;
   width: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 0.8em;
+  font-size: 1em;
   transition: all ease-in-out 200ms;
   justify-content: center;
   border: 1px solid transparent;
@@ -295,7 +296,7 @@ body[data-theme="dark"] .startMenu {
 
       .appName {
         color: var(--dark-txt);
-        font-size: 0.8em;
+        font-size: 1.2em;
       }
 
       .timeUsed {
