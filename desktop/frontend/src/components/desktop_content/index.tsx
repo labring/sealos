@@ -1,7 +1,7 @@
 import Setting from 'applications/setting';
 import clsx from 'clsx';
 import React from 'react';
-import SunIcon from '../icons/SunIcon';
+import AppIcon from '../app_icon';
 import defaultApps from './deskApps';
 import styles from './index.module.scss';
 
@@ -12,24 +12,21 @@ export default function DesktopContent() {
     <div className={styles.desktop}>
       <div className={styles.desktopCont}>
         {!deskApps.hide &&
-          deskApps.apps.map((app, i) => {
+          deskApps.apps.map((app: any, i) => {
             return (
               <div key={i} className={styles.dskApp} tabIndex={0}>
-                <SunIcon
-                  click={app.action}
+                <AppIcon
+                  onClick={app.action}
                   className={clsx(styles.dskIcon, 'prtclk')}
                   src={app.icon}
-                  payload={app.payload || 'full'}
-                  pr
+                  payload={'full'}
                   width={Math.round(deskApps.size * 36)}
-                  menu="app"
                 />
                 <div className={styles.appName}>{app.name}</div>
               </div>
             );
           })}
       </div>
-      <Setting />
     </div>
   );
 }

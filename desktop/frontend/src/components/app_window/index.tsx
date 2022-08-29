@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SunIcon from '@/components/icons/SunIcon';
+import Icon from '@/components/icons';
 import styles from './index.module.scss';
 import tabStyles from './tab.module.scss';
 import clsx from 'clsx';
@@ -7,7 +7,7 @@ import defaultApps from '../desktop_content/deskApps';
 
 export default function AppWindow(props: any) {
   const [snap, setSnap] = useState(false);
-  const wnapp = defaultApps.apps.filter((app) => app.name === 'Spotify')[0];
+  const wnapp = defaultApps.apps[0];
   console.log(222, wnapp);
 
   const openSnap = () => {
@@ -35,7 +35,6 @@ export default function AppWindow(props: any) {
       data-size={wnapp.size}
       data-max={wnapp.max}
       style={{
-        ...(wnapp.size == 'cstm' ? wnapp.dim : null),
         zIndex: wnapp.z
       }}
       data-hide={false}
@@ -59,13 +58,13 @@ export default function AppWindow(props: any) {
             }}
             data-op="0"
           >
-            <SunIcon src={props.icon} width={14} />
+            <Icon src={props.icon} width={14} />
             <div className={(styles.appFullName, 'text-xss')} data-white={props.invert != null}>
               {props.name}
             </div>
           </div>
           <div className="actbtns flex items-center">
-            <SunIcon
+            <Icon
               invert={props.invert}
               click={props.app}
               payload="mnmz"
@@ -80,7 +79,7 @@ export default function AppWindow(props: any) {
               onMouseOver={openSnap}
               onMouseLeave={closeSnap}
             >
-              <SunIcon
+              <Icon
                 invert={props.invert}
                 click={props.app}
                 ui
@@ -92,7 +91,7 @@ export default function AppWindow(props: any) {
               {/* <SnapScreen invert={props.invert} app={props.app} snap={snap} closeSnap={closeSnap} /> */}
               {/* {snap?<SnapScreen app={props.app} closeSnap={closeSnap}/>:null} */}
             </div>
-            <SunIcon
+            <Icon
               className={styles.closeBtn}
               invert={props.invert}
               click={props.app}

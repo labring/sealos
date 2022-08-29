@@ -13,18 +13,6 @@
   z-index: 10000;
 }
 
-body[data-theme="dark"] {
-  .taskbar {
-    --bg1: rgba(32, 32, 32, 0.75);
-    --bg2: rgba(255, 255, 255, 0.1);
-  }
-
-  .taskIcon,
-  .searchIcon img {
-    filter: invert(1);
-  }
-}
-
 .taskcont {
   position: relative;
   width: 100%;
