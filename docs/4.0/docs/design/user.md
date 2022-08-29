@@ -1,9 +1,9 @@
-# 用户/用户组管理
+# user group management
 
-作为一个云操作系统，用户管理是最基本的能力，sealos 用户管理吸取 linux 精髓，支持用户/用户组的一个多租户管理系统。
-同样 sealos 用户也可以对接 oauth2 或者 ldap 这些外部系统, 不过需要超级管理员。
+As a cloud operating system, user management is the most basic capability. Sealos user management draws on the essence of Linux and supports a multi-tenant management system for user groups.
+Similarly, sealos users can also connect to external systems such as oauth2 or ldap, but require a super administrator.
 
-## 用户 CRD
+## user crd
 
 ```yaml
 apiVersion: sealos.io/v1
@@ -16,9 +16,9 @@ metadata:
 type: Opaque
 ```
 
-## root 用户
+## root user
 
-超级管理员 root, 在集群安装时创建密码，拥有整个集群的管理权限。
+The super administrator root, which creates a password during cluster installation, has administrative privileges for the entire cluster.
 
 ```yaml
 apiVersion: sealos.io/v1
@@ -31,11 +31,10 @@ metadata:
 type: Opaque
 ```
 
-## 用户与用户组的关系
+## relationship between users and user groups
 
-一个用户可以在多个组中, 一个组中也可有多个用户，是多对多关系
-
-使用 UserGroupBinding 对象绑定二者
+A user can be in multiple groups, and a group can also have multiple users, 
+which is a many-to-many relationship. Use the UserGroupBinding object to bind the two
 
 ```yaml
 kind: UserGroupBinding
@@ -52,18 +51,17 @@ roleRef:
   apiGroup: sealos.io/v1
 ```
 
-## 用户与 namespace 关系
+## user and namespace relationship
 
-一个用户可以创建多个 namespace, 一个 namespace 也可以让多个用户或者用户组访问。
+A user can create multiple namespaces, and a namespace can also be accessed by multiple users or user groups. 
+Use the UserNamespaceBinding object to bind the two. When a user is created, a namespace will be created for the user by default. 
+If the user does not specify ns, all ns created will be in the ns. The quota of the namespace and the processing of the role. 
+Whether ordinary users can create a namespace, it should be possible, but it needs to connect to the metering system and charge for it. 
+sealos is completely designed according to the needs of the public cloud, no matter the size of the enterprise, 
+several times Private cloud is also multi-departmental, and the scenario is more like a public cloud.
 
-使用 UserNamespaceBinding 对象绑定二者
+## userLogin
 
-在用户被创建时会默认为该用户创建一个 namespace, 如果用户不指定 ns 创建的所有 ns 都会在该 ns 中。
-
-主意 namespace 的 quota, 以及 role 的处理.
-
-- 普通用户是否可以创建 namespace, 应该是可以的，但是需要对接计量系统，对其进行收费，sealos 完全按照公有云的需求去设计，企业不论大小，几遍私有云，也是多部门，场景更像公有云。
-
-## 用户登录
-
-登录时对用户的账户密码进行校验，管理员与普通用户拥有相同的用户界面，可以自由切换 namespace, 管理员可以切换任意的 namespace.
+The user's account password is verified when logging in. 
+The administrator has the same user interface as the ordinary user, and can switch namespaces freely, 
+and the administrator can switch any namespace.
