@@ -11,6 +11,8 @@
   backdrop-filter: saturate(3) blur(20px);
   bottom: 0;
   z-index: 10000;
+  display: flex;
+  justify-content: space-between;
 }
 
 .taskcont {
@@ -20,12 +22,8 @@
 }
 
 .taskright {
-  position: absolute;
-  top: 0;
-  right: 0;
   width: auto;
   height: 100%;
-  margin-left: 10px;
   display: flex;
 }
 
@@ -58,20 +56,6 @@
   width: 100%;
   height: 100%;
   display: flex;
-  flex-direction: column;
-
-  &[data-side="center"] {
-    align-items: center;
-
-    .widget {
-      position: absolute;
-      left: 8px;
-    }
-  }
-
-  &[data-side="left"] {
-    align-items: flex-start;
-  }
 }
 
 .tsbar {
@@ -93,6 +77,8 @@
   transform-origin: center;
   animation: popintro 800ms ease-in-out;
   border-radius: 4px;
+  display: grid;
+  place-items: center;
 
   &:after {
     content: "";
