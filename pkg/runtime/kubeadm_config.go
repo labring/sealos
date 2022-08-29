@@ -22,20 +22,18 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/kubelet/config/v1beta1"
-
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/imdario/mergo"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/kube-proxy/config/v1alpha1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 	kubelet "k8s.io/kubernetes/pkg/kubelet/apis/config"
 	proxy "k8s.io/kubernetes/pkg/proxy/apis/config"
+
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
@@ -209,9 +207,9 @@ func typeConversion(kind string) interface{} {
 	case ClusterConfiguration:
 		return &kubeadm.ClusterConfiguration{}
 	case KubeletConfiguration:
-		return &v1beta1.KubeletConfiguration{}
+		return &kubelet.KubeletConfiguration{}
 	case KubeProxyConfiguration:
-		return &v1alpha1.KubeProxyConfiguration{}
+		return &proxy.KubeProxyConfiguration{}
 	}
 	return nil
 }
