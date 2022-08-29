@@ -448,7 +448,6 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 		k.conversion.JoinConfiguration = k.JoinConfiguration
 		k.conversion.InitConfiguration = k.InitConfiguration
 		k.conversion.ClusterConfiguration = k.ClusterConfiguration
-
 	}
 
 	{
