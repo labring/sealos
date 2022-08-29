@@ -35,7 +35,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 
-	v1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

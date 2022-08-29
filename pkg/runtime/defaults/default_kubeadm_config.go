@@ -168,6 +168,11 @@ staticPodPath: /etc/kubernetes/manifests
 streamingConnectionIdleTimeout: 4h0m0s
 syncFrequency: 1m0s
 volumeStatsAggPeriod: 1m0s
+enableServer: true
+registerNode: true
+nodeStatusMaxImages: 50
+enableProfilingHandler: true
+enableSystemLogHandler: true
 ---
 apiVersion: kubeadm.k8s.io/v1beta2
 kind: JoinConfiguration

@@ -25,7 +25,7 @@ import (
 
 const (
 	// CRISocketContainerd is the containerd CRI endpoint
-	CRISocketContainerd = "/var/run/containerd/containerd.sock"
+	CRISocketContainerd = "/run/containerd/containerd.sock"
 	// CRISocketCRIO is the cri-o CRI endpoint
 	CRISocketCRIO = "/var/run/crio/crio.sock"
 	// CRISocketDocker is the cri-dockerd CRI endpoint
