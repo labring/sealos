@@ -19,15 +19,16 @@ import (
 	"os"
 	"sync"
 
+	"google.golang.org/grpc"
+
 	"github.com/labring/image-cri-shim/pkg/server"
-	"github.com/labring/image-cri-shim/pkg/shim/client"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
 	// DisableService is used to mark a socket/service to not be connected.
-	DisableService = client.DontConnect
+	DisableService = server.DontConnect
 )
 
 // Options contains the configurable options of our CRI shim.
@@ -46,17 +47,13 @@ type Shim interface {
 	Start() error
 	// Stop stops the shim.
 	Stop()
-	// Client returns the shim client interface.
-	Client() client.Client
-	// Server returns the shim server interface.
-	Server() server.Server
 }
 
 // shim is the implementation of Shim.
 type shim struct {
 	sync.Mutex               // hmm... do *we* need to be lockable, or the upper layer(s) ?
 	options    Options       // shim options
-	client     client.Client // shim CRI client
+	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
 }
 
@@ -68,11 +65,11 @@ func NewShim(options Options) (Shim, error) {
 		options: options,
 	}
 
-	cltopts := client.Options{
+	cltopts := server.CRIClientOptions{
 		ImageSocket: r.options.ImageSocket,
 		DialNotify:  r.dialNotify,
 	}
-	if r.client, err = client.NewClient(cltopts); err != nil {
+	if r.client, err = server.NewClient(cltopts); err != nil {
 		return nil, shimError("failed to create shim client: %v", err)
 	}
 
@@ -91,16 +88,16 @@ func NewShim(options Options) (Shim, error) {
 
 // Setup prepares the shim to start processing requests.
 func (r *shim) Setup() error {
-	if err := r.client.Connect(client.ConnectOptions{Wait: true}); err != nil {
+	var conn *grpc.ClientConn
+	var err error
+	if conn, err = r.client.Connect(server.ConnectOptions{Wait: true}); err != nil {
 		return shimError("client connection failed: %v", err)
 	}
-
 	if r.options.ImageSocket != DisableService {
-		if err := r.server.RegisterImageService(r); err != nil {
+		if err = r.server.RegisterImageService(conn); err != nil {
 			return shimError("failed to register image service: %v", err)
 		}
 	}
-
 	return nil
 }
 
@@ -117,16 +114,6 @@ func (r *shim) Start() error {
 func (r *shim) Stop() {
 	r.client.Close()
 	r.server.Stop()
-}
-
-// Client returns the shim Client interface.
-func (r *shim) Client() client.Client {
-	return r.client
-}
-
-// Server returns the shim Server interface.
-func (r *shim) Server() server.Server {
-	return r.server
 }
 
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {

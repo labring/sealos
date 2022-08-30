@@ -65,6 +65,7 @@ var rootCmd = &cobra.Command{
 		logger.Info("force: %v", force)
 		server.Debug, _, _ = unstructured.NestedBool(data, "debug")
 		logger.Info("debug: %v", server.Debug)
+		logger.CfgConsoleLogger(server.Debug, false)
 		imageDir, _, _ := unstructured.NestedString(data, "image")
 		logger.Info("image-dir: %v", imageDir)
 		server.Auth, _, _ = unstructured.NestedString(data, "auth")
