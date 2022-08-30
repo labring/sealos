@@ -88,8 +88,8 @@ func ToYalms(bs string) (yamls []string) {
 	return
 }
 
-func MarshalYamlToFile(file string, obj interface{}) error {
-	data, err := yaml.Marshal(obj)
+func MarshalYamlToFile(file string, obj ...interface{}) error {
+	data, err := MarshalYamlConfigs(obj...)
 	if err != nil {
 		return err
 	}

@@ -53,16 +53,19 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	var cluster *v2.Cluster
 	clusterPath := constants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
+		logger.Debug("creating new cluster")
 		cluster = initCluster(args.ClusterName)
 	} else {
-		clusterFile := clusterfile.NewClusterFile(clusterPath)
+		logger.Debug("loading from existing cluster")
+		clusterFile := clusterfile.NewClusterFile(clusterPath,
+			clusterfile.WithCustomConfigFiles(args.CustomConfigFiles))
 		err := clusterFile.Process()
 		if err != nil {
 			return nil, err
 		}
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
-			return applydrivers.NewDefaultApplier(cluster, imageName)
+			return applydrivers.NewDefaultApplier(cluster, imageName, args.CustomConfigFiles...)
 		}
 	}
 	c := &ClusterArgs{
@@ -72,7 +75,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err := c.SetClusterRunArgs(imageName, args); err != nil {
 		return nil, err
 	}
-	return applydrivers.NewDefaultApplier(c.cluster, nil)
+	return applydrivers.NewDefaultApplier(c.cluster, nil, args.CustomConfigFiles...)
 }
 
 func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
@@ -88,6 +91,7 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		clusterfile.WithCustomValues(args.Values),
 		clusterfile.WithCustomSets(args.Sets),
 		clusterfile.WithCustomEnvs(args.CustomEnv),
+		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
 	)
 	if err := Clusterfile.Process(); err != nil {
 		return nil, err
@@ -142,7 +146,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	} else {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
-	logger.Debug("cluster info : %v", r.cluster)
+	logger.Debug("cluster info: %v", r.cluster)
 	return nil
 }
 
@@ -176,7 +180,7 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	} else {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
-	logger.Debug("cluster info : %v", r.cluster)
+	logger.Debug("cluster info: %v", r.cluster)
 	return nil
 }
 

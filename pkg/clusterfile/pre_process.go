@@ -28,7 +28,6 @@ import (
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type PreProcessor interface {
@@ -39,22 +38,26 @@ func NewPreProcessor(path string) PreProcessor {
 	return &ClusterFile{path: path}
 }
 
-func (c *ClusterFile) Process() error {
+func (c *ClusterFile) Process() (err error) {
 	if !fileutil.IsExist(c.path) {
 		return errors.New("the cluster file is not exist")
 	}
-	for i := range c.customEnvs {
-		kv := strings.SplitN(c.customEnvs[i], "=", 2)
-		if len(kv) == 2 {
-			os.Setenv(kv[0], kv[1])
-		}
-	}
-	clusterFileData, err := c.loadClusterFile()
-	if err != nil {
-		return err
-	}
-	logger.Debug("read Clusterfile: %s", string(clusterFileData))
-	return c.decode(clusterFileData)
+	c.once.Do(func() {
+		err = func() error {
+			for i := range c.customEnvs {
+				kv := strings.SplitN(c.customEnvs[i], "=", 2)
+				if len(kv) == 2 {
+					_ = os.Setenv(kv[0], kv[1])
+				}
+			}
+			clusterFileData, err := c.loadClusterFile()
+			if err != nil {
+				return err
+			}
+			return c.decode(clusterFileData)
+		}()
+	})
+	return
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
@@ -76,6 +79,14 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	out := bytes.NewBuffer(nil)
 	if err := tpl.Execute(out, data); err != nil {
 		return nil, err
+	}
+	for i := range c.customConfigFiles {
+		configData, err := fileutil.ReadAll(c.customConfigFiles[i])
+		if err != nil {
+			return nil, err
+		}
+		out.WriteString("\n---\n")
+		out.Write(configData)
 	}
 	return out.Bytes(), nil
 }
