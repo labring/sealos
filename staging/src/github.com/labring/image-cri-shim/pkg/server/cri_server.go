@@ -33,7 +33,8 @@ const (
 
 func (s *server) ListImages(ctx context.Context,
 	req *api.ListImagesRequest) (*api.ListImagesResponse, error) {
-	rsp, err := (*s.imageService).ListImages(ctx, req)
+	logger.Debug("ListImages: %+v", req)
+	rsp, err := s.imageClient.ListImages(ctx, req)
 
 	if err != nil {
 		return nil, err
@@ -44,10 +45,11 @@ func (s *server) ListImages(ctx context.Context,
 
 func (s *server) ImageStatus(ctx context.Context,
 	req *api.ImageStatusRequest) (*api.ImageStatusResponse, error) {
+	logger.Debug("ImageStatus: %+v", req)
 	if req.Image != nil {
 		req.Image.Image = s.replaceImage(req.Image.Image, "ImageStatus")
 	}
-	rsp, err := (*s.imageService).ImageStatus(ctx, req)
+	rsp, err := s.imageClient.ImageStatus(ctx, req)
 
 	if err != nil {
 		return nil, err
@@ -58,11 +60,20 @@ func (s *server) ImageStatus(ctx context.Context,
 
 func (s *server) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
+	if req.Auth == nil {
+		up := strings.Split(Auth, ":")
+		if len(up) == 2 {
+			req.Auth = &api.AuthConfig{
+				Username: up[0],
+				Password: up[1],
+			}
+		}
+	}
+	logger.Debug("PullImage: %+v", req)
 	if req.Image != nil {
 		req.Image.Image = s.replaceImage(req.Image.Image, "PullImage")
 	}
-	rsp, err := (*s.imageService).PullImage(ctx, req)
-
+	rsp, err := s.imageClient.PullImage(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +83,11 @@ func (s *server) PullImage(ctx context.Context,
 
 func (s *server) RemoveImage(ctx context.Context,
 	req *api.RemoveImageRequest) (*api.RemoveImageResponse, error) {
+	logger.Debug("RemoveImage: %+v", req)
 	if req.Image != nil {
 		req.Image.Image = s.replaceImage(req.Image.Image, "RemoveImage")
 	}
-	rsp, err := (*s.imageService).RemoveImage(ctx, req)
+	rsp, err := s.imageClient.RemoveImage(ctx, req)
 
 	if err != nil {
 		return nil, err
@@ -86,7 +98,8 @@ func (s *server) RemoveImage(ctx context.Context,
 
 func (s *server) ImageFsInfo(ctx context.Context,
 	req *api.ImageFsInfoRequest) (*api.ImageFsInfoResponse, error) {
-	rsp, err := (*s.imageService).ImageFsInfo(ctx, req)
+	logger.Debug("ImageFsInfo: %+v", req)
+	rsp, err := s.imageClient.ImageFsInfo(ctx, req)
 
 	if err != nil {
 		return nil, err

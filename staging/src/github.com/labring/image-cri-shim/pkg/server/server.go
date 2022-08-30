@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 	k8sapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -42,7 +43,7 @@ type Options struct {
 }
 
 type Server interface {
-	RegisterImageService(serviceServer k8sapi.ImageServiceServer) error
+	RegisterImageService(conn *grpc.ClientConn) error
 
 	Chown(uid, gid int) error
 
@@ -54,15 +55,16 @@ type Server interface {
 }
 
 type server struct {
-	server       *grpc.Server
-	imageService *k8sapi.ImageServiceServer
-	options      Options
-	listener     net.Listener // socket our gRPC server listens on
+	server        *grpc.Server
+	imageClient   k8sapi.ImageServiceClient
+	imageV1Client k8sv1api.ImageServiceClient
+	options       Options
+	listener      net.Listener // socket our gRPC server listens on
 }
 
 // RegisterImageService registers an image service with the server.
-func (s *server) RegisterImageService(service k8sapi.ImageServiceServer) error {
-	if s.imageService != nil {
+func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
+	if s.imageClient != nil && s.imageV1Client != nil {
 		return serverError("can't register image service, already registered")
 	}
 
@@ -70,8 +72,8 @@ func (s *server) RegisterImageService(service k8sapi.ImageServiceServer) error {
 		return err
 	}
 
-	is := service
-	s.imageService = &is
+	s.imageClient = k8sapi.NewImageServiceClient(conn)
+	s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
 	k8sapi.RegisterImageServiceServer(s.server, s)
 
 	return nil

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 //nolint:staticcheck
-package client
+package server
 
 import (
 	"context"
@@ -26,7 +26,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
-	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	netutil "github.com/labring/sealos/pkg/utils/net"
 )
@@ -34,8 +33,8 @@ import (
 // DialNotifyFn is a function to call after a successful net.Dial[Timeout]().
 type DialNotifyFn func(string, int, int, os.FileMode, error)
 
-// Options contains the configurable options of our CRI client.
-type Options struct {
+// CRIClientOptions contains the configurable options of our CRI client.
+type CRIClientOptions struct {
 	// ImageSocket is the socket path for the CRI image service.
 	ImageSocket string
 	// RuntimeSocket is the socket path for the CRI runtime service.
@@ -55,7 +54,7 @@ type ConnectOptions struct {
 // Client is the interface we expose to our CRI client.
 type Client interface {
 	// Connect tries to connect the client to the specified image and runtime services.
-	Connect(ConnectOptions) error
+	Connect(ConnectOptions) (*grpc.ClientConn, error)
 	// Close closes any existing client connections.
 	Close()
 	// CheckConnection checks if we have (un-Close()'d as opposed to working) connections.
@@ -64,15 +63,11 @@ type Client interface {
 	HasRuntimeService() bool
 	// HasImageService checks if the client is configured with image services.
 	HasImageService() bool
-
-	// We expose full image and runtime client services.
-	api.ImageServiceClient
 }
 
 // client is the implementation of Client.
 type client struct {
-	api.ImageServiceClient
-	options Options          // client options
+	options CRIClientOptions // client options
 	icc     *grpc.ClientConn // our gRPC connection to the image service
 }
 
@@ -82,7 +77,7 @@ const (
 )
 
 // NewClient creates a new client instance.
-func NewClient(options Options) (Client, error) {
+func NewClient(options CRIClientOptions) (Client, error) {
 	if options.ImageSocket == DontConnect && options.RuntimeSocket == DontConnect {
 		return nil, clientError("neither image nor runtime socket specified")
 	}
@@ -95,19 +90,14 @@ func NewClient(options Options) (Client, error) {
 }
 
 // Connect attempts to establish gRPC client connections to the configured services.
-func (c *client) Connect(options ConnectOptions) error {
+func (c *client) Connect(options ConnectOptions) (*grpc.ClientConn, error) {
 	var err error
 
 	kind, socket := "image services", c.options.ImageSocket
 	if c.icc, err = c.connect(kind, socket, options); err != nil {
-		return err
+		return nil, err
 	}
-
-	if c.icc != nil {
-		c.ImageServiceClient = api.NewImageServiceClient(c.icc)
-	}
-
-	return nil
+	return c.icc, nil
 }
 
 // Close any open service connection.
@@ -119,7 +109,7 @@ func (c *client) Close() {
 	c.icc = nil
 }
 
-// Check if the connecton to CRI services is up, try to reconnect if requested.
+// CheckConnection if the connecton to CRI services is up, try to reconnect if requested.
 func (c *client) CheckConnection(options ConnectOptions) error {
 	if c.icc == nil || c.icc.GetState() == connectivity.Ready {
 		return nil
@@ -128,7 +118,7 @@ func (c *client) CheckConnection(options ConnectOptions) error {
 	c.Close()
 
 	if options.Reconnect {
-		if err := c.Connect(ConnectOptions{Wait: false}); err == nil {
+		if _, err := c.Connect(ConnectOptions{Wait: false}); err == nil {
 			return nil
 		}
 	}
