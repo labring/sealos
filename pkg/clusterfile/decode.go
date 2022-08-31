@@ -57,16 +57,19 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 }
 
 func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
-	r := bytes.NewReader(data)
+	keyFunc := func(v interface{}) string {
+		if acc, ok := v.(metav1.ObjectMetaAccessor); ok {
+			return fmt.Sprintf("%s/%s", kind, acc.GetObjectMeta().GetName())
+		}
+		return fmt.Sprintf("%s/unknown", kind)
+	}
+
 	var (
-		i        interface{}
 		clusters []v1beta1.Cluster
 		configs  []v1beta1.Config
-		tmp      = make(map[string]bool)
+		tmp      = make(map[string]int)
 	)
-	keyFunc := func(accessor metav1.ObjectMetaAccessor) string {
-		return fmt.Sprintf("%s/%s", kind, accessor.GetObjectMeta().GetName())
-	}
+	r := bytes.NewReader(data)
 	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
@@ -97,28 +100,31 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("decode cluster failed %v", err)
 			}
-			if k := keyFunc(&cluster); !tmp[k] {
-				tmp[k] = true
+			k := keyFunc(&cluster)
+			if idx, ok := tmp[k]; !ok {
+				tmp[k] = len(tmp)
 				clusters = append(clusters, cluster)
 			} else {
-				logger.Warn("duplicate resource: %s", k)
+				logger.Warn("duplicate resource: %s, replace with new one", k)
+				clusters[idx] = cluster
 			}
-			i = clusters
+			out = clusters
 		case constants.Config:
 			config := v1beta1.Config{}
 			err = yaml.Unmarshal(ext.Raw, &config)
 			if err != nil {
 				return nil, fmt.Errorf("decode config failed %v", err)
 			}
-			if k := keyFunc(&config); !tmp[k] {
-				tmp[k] = true
+			k := keyFunc(&config)
+			if idx, ok := tmp[k]; !ok {
+				tmp[k] = len(tmp)
 				configs = append(configs, config)
 			} else {
-				logger.Warn("duplicate resource: %s", k)
+				logger.Warn("duplicate resource: %s, replace with new one", k)
+				configs[idx] = config
 			}
-			i = configs
+			out = configs
 		}
 	}
-
-	return i, nil
+	return out, nil
 }
