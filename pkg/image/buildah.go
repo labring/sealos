@@ -94,8 +94,5 @@ func buildahRegistrySync() error {
 prefix = "docker.io/labring"
 location = "docker.io/labring"
 `
-	if !fileutil.IsExist(registryPath) {
-		return fileutil.WriteFile(registryPath, []byte(data))
-	}
-	return nil
+	return fileutil.WriteFile(registryPath, []byte(data))
 }
