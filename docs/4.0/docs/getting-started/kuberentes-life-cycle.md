@@ -7,7 +7,8 @@ sidebar_position: 3
 ## Stand alone installation kuberentes
 
 ```shell
-$ sealos run kubernetes:v1.25.0 --single
+# sealos version must >= v4.1.0
+$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.22.1 --single
 ```
 
 ## Cluster installation kubernetes
