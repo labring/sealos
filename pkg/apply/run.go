@@ -116,15 +116,28 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-
-	r.cluster.Spec.Env = args.CustomEnv
-	r.cluster.Spec.Command = args.CustomCMD
-	r.cluster.Spec.SSH.User = args.SSH.User
-	r.cluster.Spec.SSH.Pk = args.SSH.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
-	r.cluster.Spec.SSH.Port = args.SSH.Port
-	if args.SSH.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.SSH.Password
+	if args.fs != nil {
+		if args.fs.Changed("env") {
+			r.cluster.Spec.Env = args.CustomEnv
+		}
+		if args.fs.Changed("cmd") {
+			r.cluster.Spec.Command = args.CustomCMD
+		}
+		if args.fs.Changed("user") {
+			r.cluster.Spec.SSH.User = args.SSH.User
+		}
+		if args.fs.Changed("pk") {
+			r.cluster.Spec.SSH.Pk = args.SSH.Pk
+		}
+		if args.fs.Changed("pk-passwd") {
+			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+		}
+		if args.fs.Changed("port") {
+			r.cluster.Spec.SSH.Port = args.SSH.Port
+		}
+		if args.fs.Changed("password") {
+			r.cluster.Spec.SSH.Passwd = args.SSH.Password
+		}
 	}
 
 	r.cluster.Spec.Image = imageList
@@ -154,12 +167,22 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-	r.cluster.Spec.SSH.User = args.SSH.User
-	r.cluster.Spec.SSH.Pk = args.SSH.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
-	r.cluster.Spec.SSH.Port = args.SSH.Port
-	if args.SSH.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.SSH.Password
+	if args.fs != nil {
+		if args.fs.Changed("user") {
+			r.cluster.Spec.SSH.User = args.SSH.User
+		}
+		if args.fs.Changed("pk") {
+			r.cluster.Spec.SSH.Pk = args.SSH.Pk
+		}
+		if args.fs.Changed("pk-passwd") {
+			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+		}
+		if args.fs.Changed("port") {
+			r.cluster.Spec.SSH.Port = args.SSH.Port
+		}
+		if args.fs.Changed("password") {
+			r.cluster.Spec.SSH.Passwd = args.SSH.Password
+		}
 	}
 
 	if err := PreProcessIPList(args.Cluster); err != nil {
