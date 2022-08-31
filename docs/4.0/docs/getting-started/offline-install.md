@@ -9,8 +9,8 @@ and other steps are the same as the online installation.
 First save the installation package in a networked environment：
 
 ```shell
-$ sealos pull kubernetes:v1.25.0
-$ sealos save -o kubernetes.tar kubernetes:v1.25.0
+$ sealos pull labring/kubernetes:v1.25.0
+$ sealos save -o kubernetes.tar labring/kubernetes:v1.25.0
 ```
 
 Copy kubernetes.tar to the offline environment, and use the load command to import the image:
