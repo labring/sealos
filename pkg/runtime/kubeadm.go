@@ -21,9 +21,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
-	"k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
-
 	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -453,12 +450,14 @@ func (k *KubeadmRuntime) convertKubeadmVersion() error {
 	{
 		var v1beta1Kubelet kubeletconfigv1beta1.KubeletConfiguration
 		var v1alpha1KubeProxy kubeproxyconfigv1alpha1.KubeProxyConfiguration
-		if err = v1alpha1.Convert_config_KubeProxyConfiguration_To_v1alpha1_KubeProxyConfiguration(&k.KubeProxyConfiguration, &v1alpha1KubeProxy, nil); err != nil {
-			return err
-		}
-		if err = v1beta1.Convert_config_KubeletConfiguration_To_v1beta1_KubeletConfiguration(&k.KubeletConfiguration, &v1beta1Kubelet, nil); err != nil {
-			return err
-		}
+		//if err = v1alpha1.Convert_config_KubeProxyConfiguration_To_v1alpha1_KubeProxyConfiguration(&k.KubeProxyConfiguration, &v1alpha1KubeProxy, nil); err != nil {
+		//	return err
+		//}
+		v1beta1Kubelet = k.KubeletConfiguration
+		//if err = v1beta1.Convert_config_KubeletConfiguration_To_v1beta1_KubeletConfiguration(&k.KubeletConfiguration, &v1beta1Kubelet, nil); err != nil {
+		//	return err
+		//}
+		v1alpha1KubeProxy = k.KubeProxyConfiguration
 		v1beta1Kubelet.APIVersion = kubeletconfigv1beta1.SchemeGroupVersion.String()
 		v1alpha1KubeProxy.APIVersion = kubeproxyconfigv1alpha1.SchemeGroupVersion.String()
 		v1beta1Kubelet.Kind = "KubeletConfiguration"

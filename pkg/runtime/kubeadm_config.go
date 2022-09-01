@@ -29,9 +29,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
+	proxy "k8s.io/kube-proxy/config/v1alpha1"
+	kubelet "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
-	kubelet "k8s.io/kubernetes/pkg/kubelet/apis/config"
-	proxy "k8s.io/kubernetes/pkg/proxy/apis/config"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
