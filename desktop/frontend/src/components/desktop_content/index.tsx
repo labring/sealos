@@ -1,29 +1,23 @@
 import AppStore from 'applications/app_store';
 import clsx from 'clsx';
+import { APPTYPE } from 'constants/app_type';
 import React from 'react';
-import { render } from 'react-dom';
 import useAppStore from 'stores/app';
 import AppIcon from '../app_icon';
 import AppWindow from '../app_window';
+import IframApp from './iframe_app';
 import styles from './index.module.scss';
 
 export default function DesktopContent() {
-  const { apps, opendApps, currentApp, openApp } = useAppStore((state) => state);
+  const { installedApps: apps, opendApps, currentApp, openApp } = useAppStore((state) => state);
 
   function renderApp(appItem: any) {
     switch (appItem.type) {
-      case 'app':
+      case APPTYPE.APP:
         return <AppStore />;
 
-      case 'iframe':
-        return (
-          <iframe
-            src={appItem.data.url}
-            allow="camera;microphone"
-            className="w-full h-full"
-            frameBorder={0}
-          />
-        );
+      case APPTYPE.IFRAME:
+        return <IframApp appItem={appItem} />;
 
       default:
         break;

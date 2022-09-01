@@ -3,8 +3,17 @@ import styles from './index.module.scss';
 import Taskbar from '@/components/taskbar';
 import DesktopContent from '@/components/desktop_content';
 import Head from 'next/head';
+import useAppStore from 'stores/app';
+import { useEffect } from 'react';
 
 export default function Layout({ children }: any) {
+  const { init } = useAppStore((state) => state);
+  useEffect(() => {
+    (async () => {
+      await init();
+    })();
+  }, [init]);
+
   return (
     <>
       <Head>
