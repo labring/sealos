@@ -1,4 +1,5 @@
 import { createTheme, NextUIProvider } from '@nextui-org/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import type { AppProps } from 'next/app';
 import Layout from '../layout';
@@ -19,6 +20,8 @@ const darkTheme = createTheme({
   }
 });
 
+const queryClient = new QueryClient();
+
 function SealosCloud({ Component, pageProps }: AppProps) {
   return (
     <NextThemesProvider
@@ -29,11 +32,13 @@ function SealosCloud({ Component, pageProps }: AppProps) {
         dark: darkTheme.className
       }}
     >
-      <NextUIProvider>
-        <Layout>
-          <Component {...pageProps} />
-        </Layout>
-      </NextUIProvider>
+      <QueryClientProvider client={queryClient}>
+        <NextUIProvider>
+          <Layout>
+            <Component {...pageProps} />
+          </Layout>
+        </NextUIProvider>
+      </QueryClientProvider>
     </NextThemesProvider>
   );
 }

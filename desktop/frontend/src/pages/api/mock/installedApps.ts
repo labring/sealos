@@ -1,12 +1,13 @@
 import { TApp } from 'stores/app';
 
-const defaultApps: TApp[] = [
+// 已安装 app
+const installedApps: TApp[] = [
   {
     name: 'App Store',
     icon: '/images/icons/store.png',
     type: 'app',
     data: {
-      url: 'https://www.programiz.com/python-programming/online-compiler/',
+      url: '',
       desc: 'App Store'
     },
     gallery: [
@@ -34,7 +35,7 @@ const defaultApps: TApp[] = [
     icon: 'https://i.imgur.com/VfPj2Il.png',
     type: 'iframe',
     data: {
-      url: 'https://www.sealos.io/docs/category/getting-started',
+      url: '',
 
       desc: 'Sealos Desktop'
     },
@@ -46,4 +47,4 @@ const defaultApps: TApp[] = [
   }
 ];
 
-export default defaultApps;
+export default installedApps;

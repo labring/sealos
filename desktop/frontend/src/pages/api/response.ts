@@ -1,5 +1,17 @@
 import type { NextApiResponse } from 'next';
 
+export enum ResCode {
+  'success'
+}
+
+export enum ResStatusCode {
+  'status_200' = 200
+}
+
+export enum ResMessage {
+  'success' = 'success'
+}
+
 export type Resp = {
   code: number;
   message: string;

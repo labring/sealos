@@ -34,8 +34,7 @@ const defaultApps: TApp[] = [
     icon: 'https://i.imgur.com/VfPj2Il.png',
     type: 'iframe',
     data: {
-      url: 'https://www.sealos.io/docs/category/getting-started',
-
+      url: '',
       desc: 'Sealos Desktop'
     },
     gallery: [
