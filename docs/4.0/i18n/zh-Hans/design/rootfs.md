@@ -1,3 +1,7 @@
+---
+sidebar_position: 3
+---
+
 # Using containerd-rootfs
 
 ```
@@ -56,7 +60,7 @@
     └── audit-policy.yml
 ```
 
-Kubefile 内容, 其它文件内容可以 `sealos pull kubernetes:v1.24.0` 然后在 `/var/lib/sealos` 下面查看：
+Kubefile 内容, 其它文件内容可以 `sealos pull labring/kubernetes:v1.24.0` 然后在 `/var/lib/sealos` 下面查看：
 
 ```dockerfile
 FROM scratch
@@ -79,4 +83,4 @@ ENV registryPassword=passw0rd
 COPY . .
 ```
 
-`sealos build -t kubernetes:v1.24.0 .` 即可
+`sealos build -t labring/kubernetes:v1.24.0 .` 即可
