@@ -24,6 +24,7 @@ const queryClient = new QueryClient();
 
 function SealosCloud({ Component, pageProps }: AppProps) {
   return (
+    // theme provider
     <NextThemesProvider
       defaultTheme="system"
       attribute="class"
@@ -32,8 +33,10 @@ function SealosCloud({ Component, pageProps }: AppProps) {
         dark: darkTheme.className
       }}
     >
+      {/* react-query provider */}
       <QueryClientProvider client={queryClient}>
         <NextUIProvider>
+          {/* common layout */}
           <Layout>
             <Component {...pageProps} />
           </Layout>

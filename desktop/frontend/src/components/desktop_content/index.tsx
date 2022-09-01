@@ -27,6 +27,7 @@ export default function DesktopContent() {
   return (
     <div className={styles.desktop}>
       <div className={styles.desktopCont}>
+        {/* 已安装的应用 */}
         {apps.map((appItem: any, i: number) => {
           return (
             <div
@@ -49,6 +50,7 @@ export default function DesktopContent() {
         })}
       </div>
 
+      {/* 打开的应用窗口 */}
       {opendApps.map((appItem) => {
         return (
           <AppWindow key={appItem.name} style={{ height: '100vh' }} app={appItem}>
