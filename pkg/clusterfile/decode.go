@@ -19,13 +19,14 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func Cluster(filepath string) (clusters []v1beta1.Cluster, err error) {
@@ -56,13 +57,19 @@ func decodeCRD(filepath string, kind string) (out interface{}, err error) {
 }
 
 func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
-	r := bytes.NewReader(data)
+	keyFunc := func(v interface{}) string {
+		if acc, ok := v.(metav1.ObjectMetaAccessor); ok {
+			return fmt.Sprintf("%s/%s", kind, acc.GetObjectMeta().GetName())
+		}
+		return fmt.Sprintf("%s/unknown", kind)
+	}
+
 	var (
-		i        interface{}
 		clusters []v1beta1.Cluster
 		configs  []v1beta1.Config
+		tmp      = make(map[string]int)
 	)
-
+	r := bytes.NewReader(data)
 	d := yaml.NewYAMLOrJSONDecoder(r, 4096)
 
 	for {
@@ -78,6 +85,13 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 		if len(ext.Raw) == 0 || bytes.Equal(ext.Raw, []byte("null")) {
 			continue
 		}
+		typeMeta := runtime.TypeMeta{}
+		if err := yaml.Unmarshal(ext.Raw, &typeMeta); err != nil {
+			return nil, err
+		}
+		if typeMeta.Kind != kind {
+			continue
+		}
 		// ext.Raw
 		switch kind {
 		case constants.Cluster:
@@ -86,22 +100,31 @@ func CRDForBytes(data []byte, kind string) (out interface{}, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("decode cluster failed %v", err)
 			}
-			if cluster.Kind == constants.Cluster {
+			k := keyFunc(&cluster)
+			if idx, ok := tmp[k]; !ok {
+				tmp[k] = len(tmp)
 				clusters = append(clusters, cluster)
+			} else {
+				logger.Warn("duplicate resource: %s, replace with new one", k)
+				clusters[idx] = cluster
 			}
-			i = clusters
+			out = clusters
 		case constants.Config:
 			config := v1beta1.Config{}
 			err = yaml.Unmarshal(ext.Raw, &config)
 			if err != nil {
 				return nil, fmt.Errorf("decode config failed %v", err)
 			}
-			if config.Kind == constants.Config {
+			k := keyFunc(&config)
+			if idx, ok := tmp[k]; !ok {
+				tmp[k] = len(tmp)
 				configs = append(configs, config)
+			} else {
+				logger.Warn("duplicate resource: %s, replace with new one", k)
+				configs[idx] = config
 			}
-			i = configs
+			out = configs
 		}
 	}
-
-	return i, nil
+	return out, nil
 }

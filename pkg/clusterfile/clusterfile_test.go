@@ -25,10 +25,12 @@ import (
 
 func Test_NewClusterFile(t *testing.T) {
 	type args struct {
-		cluster   *v2.Cluster
-		customEnv []string
-		sets      []string
-		values    []string
+		cluster       *v2.Cluster
+		config        v2.Config
+		customEnv     []string
+		sets          []string
+		values        []string
+		customConfigs []string
 	}
 	tests := []struct {
 		name    string
@@ -66,13 +68,27 @@ func Test_NewClusterFile(t *testing.T) {
 					},
 					Status: v2.ClusterStatus{},
 				},
+				config: v2.Config{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Config",
+						APIVersion: "apps.sealos.io/v1beta1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "redis-config",
+					},
+					Spec: v2.ConfigSpec{
+						Path: "etc/redis.yaml",
+						Data: "test\n",
+					},
+				},
 				customEnv: []string{
 					"SSH_PASSWORD=s3cret",
 				},
 				sets: []string{
 					"clusterName=default",
 				},
-				values: []string{"testdata/example.values.yaml"},
+				values:        []string{"testdata/example.values.yaml"},
+				customConfigs: []string{"testdata/config.yaml"},
 			},
 			wantErr: false,
 		},
@@ -82,7 +98,9 @@ func Test_NewClusterFile(t *testing.T) {
 			cf := NewClusterFile("testdata/clusterfile.yaml",
 				WithCustomEnvs(tt.args.customEnv),
 				WithCustomSets(tt.args.sets),
-				WithCustomValues(tt.args.values))
+				WithCustomValues(tt.args.values),
+				WithCustomConfigFiles(tt.args.customConfigs),
+			)
 			err := cf.Process()
 
 			if (err != nil) != tt.wantErr {
@@ -91,6 +109,9 @@ func Test_NewClusterFile(t *testing.T) {
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)
 			if !equal {
 				t.Errorf("rendered clusterfile not equal")
+			}
+			if !reflect.DeepEqual(cf.GetConfigs()[0], tt.args.config) {
+				t.Error("config not equal")
 			}
 		})
 	}
