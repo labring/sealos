@@ -8,8 +8,8 @@ sidebar_position: 2
 
 首先在有网络的环境中 save 安装包：
 ```shell
-$ sealos pull kubernetes:v1.25.0
-$ sealos save -o kubernetes.tar kubernetes:v1.25.0
+$ sealos pull labring/kubernetes:v1.25.0
+$ sealos save -o kubernetes.tar labring/kubernetes:v1.25.0
 ```
 
 拷贝 kubernetes.tar 到离线环境, 使用 load 命令导入镜像即可：

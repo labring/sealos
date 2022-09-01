@@ -1,3 +1,7 @@
+---
+sidebar_position: 5
+---
+
 # user group management
 
 As a cloud operating system, user management is the most basic capability. Sealos user management draws on the essence of Linux and supports a multi-tenant management system for user groups.
