@@ -16,6 +16,7 @@ package clusterfile
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -24,14 +25,16 @@ import (
 var ErrTypeNotFound = errors.New("no corresponding type structure was found")
 
 type ClusterFile struct {
-	path         string
-	customValues []string
-	customSets   []string
-	customEnvs   []string
-	Cluster      *v2.Cluster
-	Configs      []v2.Config
-	KubeConfig   *runtime.KubeadmConfig
+	path              string
+	customConfigFiles []string
+	customValues      []string
+	customSets        []string
+	customEnvs        []string
+	Cluster           *v2.Cluster
+	Configs           []v2.Config
+	KubeConfig        *runtime.KubeadmConfig
 	//Plugins    []v1.Plugin
+	once sync.Once
 }
 
 type Interface interface {
@@ -59,6 +62,12 @@ func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
 }
 
 type OptionFunc func(*ClusterFile)
+
+func WithCustomConfigFiles(files []string) OptionFunc {
+	return func(c *ClusterFile) {
+		c.customConfigFiles = files
+	}
+}
 
 func WithCustomValues(valueFiles []string) OptionFunc {
 	return func(c *ClusterFile) {

@@ -19,9 +19,7 @@ package apply
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"path"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -51,7 +49,7 @@ func TestParseClusterFlagsCorrect(t *testing.T) {
 			if err != nil {
 				t.Errorf("parse flag error: %v", err)
 			}
-			if !reflect.DeepEqual(tt.flags, tt.desired) {
+			if !equal(tt.flags, tt.desired) {
 				t.Errorf("cluster got %+v, want %+v", tt.flags, tt.desired)
 			}
 		})
@@ -79,7 +77,7 @@ func TestParseSSHFlagsCorrect(t *testing.T) {
 			if err != nil {
 				t.Errorf("parse flag error: %v", err)
 			}
-			if !reflect.DeepEqual(tt.flags, tt.desired) {
+			if !equal(tt.flags, tt.desired) {
 				t.Errorf("cluster got %+v, want %+v", tt.flags, tt.desired)
 			}
 		})
@@ -89,8 +87,6 @@ func TestParseSSHFlagsCorrect(t *testing.T) {
 func equal(in, out interface{}) bool {
 	inByte, _ := json.Marshal(&in)
 	outByte, _ := json.Marshal(&out)
-	fmt.Println(string(inByte))
-	fmt.Println(string(outByte))
 	return bytes.Equal(inByte, outByte)
 }
 
@@ -112,10 +108,11 @@ func TestParseRunArgsFlagsCorrect(t *testing.T) {
 				SSH:     &SSH{},
 			},
 			&RunArgs{
-				Cluster:   &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
-				SSH:       &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
-				CustomEnv: []string{"testk=testv"},
-				CustomCMD: []string{"echo test"},
+				Cluster:           &Cluster{Masters: "10.74.22.22:22", Nodes: "10.74.22.44:22", ClusterName: "default"},
+				SSH:               &SSH{User: "root", Password: "s3cret", Port: 2222, Pk: path.Join(constants.GetHomeDir(), ".ssh", "id_rsa")},
+				CustomEnv:         []string{"testk=testv"},
+				CustomCMD:         []string{"echo test"},
+				CustomConfigFiles: []string{},
 			},
 		},
 	}
@@ -147,9 +144,10 @@ func TestParseArgsFlagsCorrect(t *testing.T) {
 			},
 			&Args{},
 			&Args{
-				Values:    []string{"test.yaml"},
-				CustomEnv: []string{"testk=testv"},
-				Sets:      []string{"test.enabled=true"},
+				Values:            []string{"test.yaml"},
+				CustomEnv:         []string{"testk=testv"},
+				Sets:              []string{"test.enabled=true"},
+				CustomConfigFiles: []string{},
 			},
 		},
 	}

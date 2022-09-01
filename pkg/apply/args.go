@@ -57,8 +57,10 @@ func (s *SSH) RegisterFlags(fs *pflag.FlagSet) {
 type RunArgs struct {
 	*Cluster
 	*SSH
-	CustomEnv []string
-	CustomCMD []string
+	CustomEnv         []string
+	CustomCMD         []string
+	CustomConfigFiles []string
+	fs                *pflag.FlagSet
 }
 
 func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
@@ -66,28 +68,34 @@ func (arg *RunArgs) RegisterFlags(fs *pflag.FlagSet) {
 	arg.SSH.RegisterFlags(fs)
 	fs.StringSliceVar(&arg.CustomEnv, "env", []string{}, "environment variables to set during command execution")
 	fs.StringSliceVar(&arg.CustomCMD, "cmd", []string{}, "override CMD directive in images")
+	fs.StringSliceVarP(&arg.CustomConfigFiles, "config-file", "f", []string{}, "path of custom config files, to use to replace the resource")
+	arg.fs = fs
 }
 
 type Args struct {
-	Values    []string
-	Sets      []string
-	CustomEnv []string
+	Values            []string
+	Sets              []string
+	CustomEnv         []string
+	CustomConfigFiles []string
 }
 
 func (arg *Args) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringSliceVar(&arg.Values, "values", []string{}, "values file to apply into Clusterfile")
 	fs.StringSliceVar(&arg.Sets, "set", []string{}, "set values on the command line")
 	fs.StringSliceVar(&arg.CustomEnv, "env", []string{}, "environment variables to set during command execution")
+	fs.StringSliceVar(&arg.CustomConfigFiles, "config-file", []string{}, "path of custom config files, to use to replace the resource")
 }
 
 type ResetArgs struct {
 	*Cluster
 	*SSH
+	fs *pflag.FlagSet
 }
 
 func (arg *ResetArgs) RegisterFlags(fs *pflag.FlagSet) {
 	arg.Cluster.RegisterFlags(fs, "be reset", "reset")
 	arg.SSH.RegisterFlags(fs)
+	arg.fs = fs
 }
 
 type ScaleArgs struct {

@@ -32,18 +32,22 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func NewDefaultApplier(cluster *v2.Cluster, images []string) (Interface, error) {
+func NewDefaultApplier(cluster *v2.Cluster, images []string, configs ...string) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
-	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
-	_ = cFile.Process()
+	var opts []clusterfile.OptionFunc
+	if len(configs) > 0 {
+		opts = append(opts, clusterfile.WithCustomConfigFiles(configs))
+	}
+	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name), opts...)
+	err := cFile.Process()
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
 		ClusterCurrent: cFile.GetCluster(),
 		RunNewImages:   images,
-	}, nil
+	}, err
 }
 
 func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
@@ -79,13 +83,22 @@ func (c *Applier) Apply() error {
 	}
 	c.updateStatus(err)
 	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, c.ClusterDesired)
+	obj := []interface{}{c.ClusterDesired}
+	if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
+		for i := range configs {
+			obj = append(obj, configs[i])
+		}
+	}
+	return yaml.MarshalYamlToFile(clusterPath, obj...)
 }
+
 func (c *Applier) initStatus() {
 	c.ClusterDesired.Status.Phase = v2.ClusterInProcess
 	c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
 }
 
+// todo: atomic updating status after each installation for better reconcile?
+// todo: set up signal handler
 func (c *Applier) updateStatus(err error) {
 	condition := v2.ClusterCondition{
 		Type:              "ApplyClusterSuccess",

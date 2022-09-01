@@ -53,16 +53,19 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	var cluster *v2.Cluster
 	clusterPath := constants.Clusterfile(args.ClusterName)
 	if !fileutil.IsExist(clusterPath) {
+		logger.Debug("creating new cluster")
 		cluster = initCluster(args.ClusterName)
 	} else {
-		clusterFile := clusterfile.NewClusterFile(clusterPath)
+		logger.Debug("loading from existing cluster")
+		clusterFile := clusterfile.NewClusterFile(clusterPath,
+			clusterfile.WithCustomConfigFiles(args.CustomConfigFiles))
 		err := clusterFile.Process()
 		if err != nil {
 			return nil, err
 		}
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
-			return applydrivers.NewDefaultApplier(cluster, imageName)
+			return applydrivers.NewDefaultApplier(cluster, imageName, args.CustomConfigFiles...)
 		}
 	}
 	c := &ClusterArgs{
@@ -72,7 +75,7 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err := c.SetClusterRunArgs(imageName, args); err != nil {
 		return nil, err
 	}
-	return applydrivers.NewDefaultApplier(c.cluster, nil)
+	return applydrivers.NewDefaultApplier(c.cluster, nil, args.CustomConfigFiles...)
 }
 
 func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
@@ -88,6 +91,7 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		clusterfile.WithCustomValues(args.Values),
 		clusterfile.WithCustomSets(args.Sets),
 		clusterfile.WithCustomEnvs(args.CustomEnv),
+		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
 	)
 	if err := Clusterfile.Process(); err != nil {
 		return nil, err
@@ -112,15 +116,28 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-
-	r.cluster.Spec.Env = args.CustomEnv
-	r.cluster.Spec.Command = args.CustomCMD
-	r.cluster.Spec.SSH.User = args.SSH.User
-	r.cluster.Spec.SSH.Pk = args.SSH.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
-	r.cluster.Spec.SSH.Port = args.SSH.Port
-	if args.SSH.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.SSH.Password
+	if args.fs != nil {
+		if args.fs.Changed("env") {
+			r.cluster.Spec.Env = args.CustomEnv
+		}
+		if args.fs.Changed("cmd") {
+			r.cluster.Spec.Command = args.CustomCMD
+		}
+		if args.fs.Changed("user") {
+			r.cluster.Spec.SSH.User = args.SSH.User
+		}
+		if args.fs.Changed("pk") {
+			r.cluster.Spec.SSH.Pk = args.SSH.Pk
+		}
+		if args.fs.Changed("pk-passwd") {
+			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+		}
+		if args.fs.Changed("port") {
+			r.cluster.Spec.SSH.Port = args.SSH.Port
+		}
+		if args.fs.Changed("password") {
+			r.cluster.Spec.SSH.Passwd = args.SSH.Password
+		}
 	}
 
 	r.cluster.Spec.Image = imageList
@@ -142,7 +159,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	} else {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
-	logger.Debug("cluster info : %v", r.cluster)
+	logger.Debug("cluster info: %v", r.cluster)
 	return nil
 }
 
@@ -150,12 +167,22 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-	r.cluster.Spec.SSH.User = args.SSH.User
-	r.cluster.Spec.SSH.Pk = args.SSH.Pk
-	r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
-	r.cluster.Spec.SSH.Port = args.SSH.Port
-	if args.SSH.Password != "" {
-		r.cluster.Spec.SSH.Passwd = args.SSH.Password
+	if args.fs != nil {
+		if args.fs.Changed("user") {
+			r.cluster.Spec.SSH.User = args.SSH.User
+		}
+		if args.fs.Changed("pk") {
+			r.cluster.Spec.SSH.Pk = args.SSH.Pk
+		}
+		if args.fs.Changed("pk-passwd") {
+			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
+		}
+		if args.fs.Changed("port") {
+			r.cluster.Spec.SSH.Port = args.SSH.Port
+		}
+		if args.fs.Changed("password") {
+			r.cluster.Spec.SSH.Passwd = args.SSH.Password
+		}
 	}
 
 	if err := PreProcessIPList(args.Cluster); err != nil {
@@ -176,7 +203,7 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	} else {
 		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
-	logger.Debug("cluster info : %v", r.cluster)
+	logger.Debug("cluster info: %v", r.cluster)
 	return nil
 }
 
