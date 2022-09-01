@@ -1,17 +1,25 @@
 /* eslint-disable @next/next/no-img-element */
-import DeskTopIcon from '@/components/app_icon';
-import allApps from '@/components/desktop_content/allApps';
-import { Avatar } from '@nextui-org/react';
+
+import { Avatar, Loading } from '@nextui-org/react';
+import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import React from 'react';
+import request from 'services/request';
 import styles from './index.module.scss';
 
 export default function AppStore() {
-  const apps = allApps;
+  const { data, isLoading } = useQuery(['allApps'], () => request('/api/mock/getAllApps'));
+  console.log(123, data);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  const apps = data?.data || [];
   return (
-    <div className="wnstore">
-      <div className="storeNav h-full w-20 flex flex-col">
-        <div className="uicon prtclk " data-action="sthome" data-payload="false">
+    <div className="wnstore flex h-full">
+      <div className={clsx(styles.storeNav, 'h-full w-24 flex flex-col')}>
+        <div className={clsx(styles.uicon, 'prtclk')} data-action="sthome" data-payload="false">
           <svg
             aria-hidden="true"
             focusable="false"
@@ -32,7 +40,7 @@ export default function AppStore() {
             />
           </svg>
         </div>
-        <div className="uicon prtclk " data-action="apprib" data-payload="false">
+        <div className={clsx(styles.uicon, 'prtclk')} data-action="apprib" data-payload="false">
           <svg
             aria-hidden="true"
             focusable="false"
@@ -53,7 +61,7 @@ export default function AppStore() {
             />
           </svg>
         </div>
-        <div className="uicon prtclk " data-action="gamerib" data-payload="false">
+        <div className={clsx(styles.uicon, 'prtclk')} data-action="gamerib" data-payload="false">
           <svg
             aria-hidden="true"
             focusable="false"
@@ -74,7 +82,7 @@ export default function AppStore() {
             />
           </svg>
         </div>
-        <div className="uicon prtclk " data-action="movrib" data-payload="false">
+        <div className={clsx(styles.uicon, 'prtclk')} data-action="movrib" data-payload="false">
           <svg
             aria-hidden="true"
             focusable="false"
@@ -95,7 +103,7 @@ export default function AppStore() {
             />
           </svg>
         </div>
-        <div className="uicon prtclk " data-action="page1" data-payload="true">
+        <div className={clsx(styles.uicon, 'prtclk')} data-action="page1" data-payload="true">
           <svg
             aria-hidden="true"
             focusable="false"
@@ -118,27 +126,22 @@ export default function AppStore() {
         </div>
       </div>
 
-      <div className={clsx(styles.pagecont, 'w-full box-border p-12')}>
+      <div className={clsx(styles.pagecont, 'w-full relative box-border p-12 m-12')}>
         <div className="flex">
           <div className={clsx(styles.catbtn, 'handcr')}>All</div>
           <div className={clsx(styles.catbtn, 'handcr')}>Apps</div>
           <div className={clsx(styles.catbtn, 'handcr')}>Games</div>
-          <div className="absolute right-0 mr-4 text-sm">
-            <a
-              href="https://github.com/win11react/store"
-              className={styles.catbtn}
-              target="_blank"
-              rel="noreferrer"
-            >
+          <div className={clsx(styles.catbtn, 'absolute right-0 mr-4')}>
+            <a href="https://github.com/win11react/store" target="_blank" rel="noreferrer">
               Add your own app
             </a>
           </div>
         </div>
 
         <div className={clsx(styles.appscont, 'mt-8')}>
-          {apps.map((item, i) => {
+          {apps.map((item: any, i: number) => {
             return (
-              <div key={i} className={clsx(styles.ribcont, 'p-4 pt-8 ltShad prtclk')}>
+              <div key={i} className={clsx(styles.ribcont, styles.ltShad, 'p-4 pt-8 prtclk')}>
                 <div
                   className={clsx(styles.imageCont, 'prtclk mx-4 mb-6 rounded')}
                   data-back="false"
@@ -152,16 +155,10 @@ export default function AppStore() {
                   />
                 </div>
 
-                <div className="capitalize text-xs font-semibold">{item.name}</div>
-                <div className="capitalize text-xss text-gray-600">{item.type}</div>
-                <div className="flex items-center">
-                  <Avatar
-                    size="lg"
-                    src="https://i.pravatar.cc/150?u=a04258114e29026702d"
-                    color="success"
-                    bordered
-                  />
-
+                <div className="capitalize font-semibold">{item.name}</div>
+                <div className="capitalize  text-gray-600">{item.type}</div>
+                <div className="flex items-center mt-2">
+                  <Avatar size="sm" src="https://i.pravatar.cc/150?u=a04258114e29026702d" />
                   <div className="text-xss">30k</div>
                 </div>
                 <div className="text-xss mt-8">{'Free'}</div>

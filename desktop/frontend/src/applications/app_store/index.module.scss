@@ -1,11 +1,42 @@
 .pagecont {
-  border-radius: 6px;
-  background: #F7F9FC;
-  border: 1px solid var(--page-bd-col);
-  min-height: 100%;
+  background: #f7f9fc;
   overflow: hidden;
 }
 
+.storeNav {
+  .uicon {
+    padding: 18px 0;
+    margin: 0 4px 4px;
+    color: #888888;
+    position: relative;
+    transition: all ease-in-out 100ms;
+    border-radius: 4px;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    &[data-payload='true']::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      left: 0;
+      height: 24px;
+      border-radius: 10px;
+      background: var(--clrPrm);
+    }
+
+    &:hover {
+      background: var(--nav-btn-hov);
+      color: var(--dark-txt);
+    }
+
+    &[data-payload='true'] {
+      background: var(--nav-btn-hov);
+      color: var(--clrPrm);
+    }
+  }
+}
 
 .appscont {
   display: flex;
@@ -20,7 +51,6 @@
     border-radius: 6px;
   }
 }
-
 
 .ribcont {
   background: var(--rib-bg);
@@ -46,16 +76,17 @@
   }
 }
 
+
 .catbtn {
-  font-size: 0.8em;
   padding: 1px 20px;
   padding-bottom: 3px;
   border: solid 1px #ccc;
   border-radius: 100px;
   margin-right: 16px;
   color: var(--txt-col);
+  font-size: 1rem;
 
-  &[value="true"] {
+  &[value='true'] {
     color: var(--clrPrm);
     border-color: var(--clrPrm);
   }
