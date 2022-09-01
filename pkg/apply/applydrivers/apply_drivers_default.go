@@ -42,12 +42,15 @@ func NewDefaultApplier(cluster *v2.Cluster, images []string, configs ...string) 
 	}
 	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name), opts...)
 	err := cFile.Process()
+	if !cluster.CreationTimestamp.IsZero() && err != nil {
+		return nil, err
+	}
 	return &Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    cFile,
 		ClusterCurrent: cFile.GetCluster(),
 		RunNewImages:   images,
-	}, err
+	}, nil
 }
 
 func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
