@@ -31,3 +31,18 @@ All the binaries except `sealos` can be built anywhere since they have `CGO_ENAB
 ## Notes about go workspace
 
 As sealos is using go1.18's workspace feature, once you add a new module, you need to run `go work usr -r .` at root directry to update the workspace synced.
+
+### Create a new CRD and Controller
+Create your CRD directory in pkg "controllers" first.
+
+Cd into your CRD directory
+
+```shell script
+kubebuilder init --domain sealos.io --repo github.com/labring/sealos/controllers/<name>
+```
+
+Then `go work use -r .` at current directory to update the workspace.
+
+```shell script
+kubebuilder create api --group <name> --version v1 --kind <name>
+```
