@@ -19,25 +19,24 @@ package image
 import (
 	"github.com/pkg/errors"
 
-	"github.com/labring/sealos/pkg/utils/exec"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
-func initBuildah() (bool, error) {
+func initBuildah() error {
 	err := buildahPolicySync()
 	if err != nil {
-		return false, errors.New("create policy.json failed")
+		return errors.New("create policy.json failed")
 	}
 	err = buildahStorageSync()
 	if err != nil {
-		return false, errors.New("create storage config failed")
+		return errors.New("create storage config failed")
 	}
 	err = buildahRegistrySync()
 	if err != nil {
-		return false, errors.New("create registry config failed")
+		return errors.New("create registry config failed")
 	}
-	_, ok := exec.CheckCmdIsExist("buildah")
-	return ok, nil
+	//_, ok := exec.CheckCmdIsExist("buildah")
+	return nil
 }
 
 func buildahPolicySync() error {
