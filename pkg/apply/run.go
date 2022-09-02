@@ -117,25 +117,25 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		return fmt.Errorf("cluster name can not be empty")
 	}
 	if args.fs != nil {
-		if args.fs.Changed("env") {
+		if args.fs.Changed("env") || len(r.cluster.Spec.Env) == 0 {
 			r.cluster.Spec.Env = args.CustomEnv
 		}
-		if args.fs.Changed("cmd") {
+		if args.fs.Changed("cmd") || len(r.cluster.Spec.Command) == 0 {
 			r.cluster.Spec.Command = args.CustomCMD
 		}
-		if args.fs.Changed("user") {
+		if args.fs.Changed("user") || r.cluster.Spec.SSH.User == "" {
 			r.cluster.Spec.SSH.User = args.SSH.User
 		}
-		if args.fs.Changed("pk") {
+		if args.fs.Changed("pk") || r.cluster.Spec.SSH.Pk == "" {
 			r.cluster.Spec.SSH.Pk = args.SSH.Pk
 		}
-		if args.fs.Changed("pk-passwd") {
+		if args.fs.Changed("pk-passwd") || r.cluster.Spec.SSH.PkPasswd == "" {
 			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
 		}
-		if args.fs.Changed("port") {
+		if args.fs.Changed("port") || r.cluster.Spec.SSH.Port == 0 {
 			r.cluster.Spec.SSH.Port = args.SSH.Port
 		}
-		if args.fs.Changed("password") {
+		if args.fs.Changed("passwd") || r.cluster.Spec.SSH.Passwd == "" {
 			r.cluster.Spec.SSH.Passwd = args.SSH.Password
 		}
 	}
@@ -168,19 +168,19 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 		return fmt.Errorf("cluster name can not be empty")
 	}
 	if args.fs != nil {
-		if args.fs.Changed("user") {
+		if args.fs.Changed("user") || r.cluster.Spec.SSH.User == "" {
 			r.cluster.Spec.SSH.User = args.SSH.User
 		}
-		if args.fs.Changed("pk") {
+		if args.fs.Changed("pk") || r.cluster.Spec.SSH.Pk == "" {
 			r.cluster.Spec.SSH.Pk = args.SSH.Pk
 		}
-		if args.fs.Changed("pk-passwd") {
+		if args.fs.Changed("pk-passwd") || r.cluster.Spec.SSH.PkPasswd == "" {
 			r.cluster.Spec.SSH.PkPasswd = args.SSH.PkPassword
 		}
-		if args.fs.Changed("port") {
+		if args.fs.Changed("port") || r.cluster.Spec.SSH.Port == 0 {
 			r.cluster.Spec.SSH.Port = args.SSH.Port
 		}
-		if args.fs.Changed("password") {
+		if args.fs.Changed("passwd") || r.cluster.Spec.SSH.Passwd == "" {
 			r.cluster.Spec.SSH.Passwd = args.SSH.Password
 		}
 	}
