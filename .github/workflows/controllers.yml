@@ -64,7 +64,6 @@ jobs:
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-controller
         working-directory: controllers/${{ matrix.module }}
         run: |
-          ls -l bin/
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \

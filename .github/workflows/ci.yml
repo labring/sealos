@@ -253,17 +253,41 @@ jobs:
         with:
           name: sealos-arm64
           path: docker/sealos/bin/sealos-arm64
-      - name: build (and publish) ${{ matrix.module }} main image
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
+      - name: build (and publish)  main sealos image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
+        working-directory: docker/sealos
         run: |
-          cd docker/sealos
-          ls -l bin/ 
-           ls -l bin/sealos-arm64 || true   
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile.build \
           .
+      - name: build (and publish)  main patch image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
+        working-directory: docker/patch
+        run: |
+          echo "FROM scratch
+  ARG TARGETARCH
+  COPY patch-$TARGETARCH.tar /" > Dockerfile  
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile.build \
+          .
+
