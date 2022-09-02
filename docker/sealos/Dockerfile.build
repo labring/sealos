@@ -7,5 +7,5 @@ WORKDIR /root
 
 COPY bin /bin
 
-RUN cp /bin/sealos-$TARGETARCH /usr/bin/sealos && rm -rf /bin
+RUN cp /bin/sealos-$TARGETARCH/sealos /usr/bin/sealos && rm -rf /bin
 
