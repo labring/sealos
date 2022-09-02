@@ -218,7 +218,7 @@ jobs:
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
   container:
-    needs: [ build ]
+    needs: [ docker ]
     runs-on: ubuntu-latest
 #    if: ${{ github.event_name == 'push' }}
     steps:
@@ -273,7 +273,7 @@ jobs:
           --platform linux/amd64,linux/arm64 \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f Dockerfile.build \
+          -f Dockerfile.main \
           .
       - name: build (and publish)  main patch image
         env:
@@ -281,13 +281,10 @@ jobs:
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
         working-directory: docker/patch
         run: |
-          echo "FROM scratch
-  ARG TARGETARCH
-  COPY patch-$TARGETARCH.tar " > Dockerfile  
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f Dockerfile.build \
+          -f Dockerfile.main \
           .
 
