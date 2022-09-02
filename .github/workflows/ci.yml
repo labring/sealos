@@ -283,7 +283,7 @@ jobs:
         run: |
           echo "FROM scratch
   ARG TARGETARCH
-  COPY patch-$TARGETARCH.tar /" > Dockerfile  
+  COPY patch-$TARGETARCH.tar " > Dockerfile  
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
