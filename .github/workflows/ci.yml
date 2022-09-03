@@ -314,12 +314,21 @@ jobs:
           mv buildah $binDIR/
           sudo chmod a+x $binDIR/buildah
           sudo $binDIR/buildah images
+          BEFORE_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}
+          IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.commit_sha }}
           sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
           sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
-          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-amd64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-amd64
-          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-amd64
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-amd64 ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-amd64
           sudo $binDIR/buildah pull oci-archive:patch-arm64.tar
-          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-arm64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-arm64
-          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-arm64
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-arm64 ${IMAGE_NAME}-arm64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-arm64
+          sudo $binDIR/buildah images
+          sudo $binDIR/buildah push ${IMAGE_NAME}-amd64 || true
+          sudo $binDIR/buildah push ${IMAGE_NAME}-arm64 || true
+          sudo $binDIR/buildah manifest create ${IMAGE_NAME}
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
+          sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
           sudo $binDIR/buildah images
 
