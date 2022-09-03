@@ -220,7 +220,7 @@ jobs:
   container:
     needs: [ docker ]
     runs-on: ubuntu-latest
-#    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -236,12 +236,12 @@ jobs:
         with:
           version: latest
 
-#      - name: Login to Docker Hub
-#        uses: docker/login-action@v2
-#        with:
-#          registry: ghcr.io
-#          username: ${{ github.repository_owner }}
-#          password: ${{ secrets.GH_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
@@ -278,7 +278,7 @@ jobs:
   patch-oci:
     needs: [ docker ]
     runs-on: ubuntu-latest
-    #    if: ${{ github.event_name == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -315,8 +315,8 @@ jobs:
           sudo chmod a+x $binDIR/buildah
           sudo $binDIR/buildah images
           BEFORE_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}
-          IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.commit_sha }}
-          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
+          IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}
+          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io"
           sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
           sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-amd64 ${IMAGE_NAME}-amd64
           sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-amd64
@@ -324,8 +324,8 @@ jobs:
           sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-arm64 ${IMAGE_NAME}-arm64
           sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-arm64
           sudo $binDIR/buildah images
-          sudo $binDIR/buildah push ${IMAGE_NAME}-amd64 || true
-          sudo $binDIR/buildah push ${IMAGE_NAME}-arm64 || true
+          sudo $binDIR/buildah push ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah push ${IMAGE_NAME}-arm64
           sudo $binDIR/buildah manifest create ${IMAGE_NAME}
           sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
           sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
