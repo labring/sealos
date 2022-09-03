@@ -306,7 +306,8 @@ jobs:
         run: |
           sudo apt remove buildah -y || true
           readonly binDIR="/tmp/$(whoami)/bin"
-          wget -qO "$binDIR/buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          wget -qO "buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          mv buildah $binDIR/
           sudo chmod a+x $binDIR/buildah
           sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
           sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
