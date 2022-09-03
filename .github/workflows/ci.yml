@@ -275,16 +275,38 @@ jobs:
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile.main \
           .
+
+  patch-oci:
+    needs: [ docker ]
+    runs-on: ubuntu-latest
+    #    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo ::set-output name=tag_name::${TAG}
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
       - name: build (and publish)  main patch image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
         working-directory: docker/patch
         run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --push \
-          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f Dockerfile.main \
-          .
+          wget -qO "buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          sudo buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
+          ls -l
+#          buildah pull oci-archive:
+#          buildah tag ghcr.io/
 
