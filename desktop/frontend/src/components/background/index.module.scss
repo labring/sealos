@@ -1,0 +1,181 @@
+.appwrap {
+  position: relative;
+  z-index: 0;
+}
+
+.background {
+  min-width: 100vw;
+  min-height: 100vh;
+  background-color: var(--wintheme);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  transition: all 0.2s ease;
+}
+
+.bootscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  min-height: 100vh;
+  background-color: #010001;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  cursor: progress;
+}
+
+.lockscreen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 100vw;
+  min-height: 100vh;
+  z-index: 1;
+  background-size: cover;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 1s ease-in-out;
+
+  &[data-unlock="true"] {
+    opacity: 0;
+  }
+
+  &::after {
+    -webkit-backdrop-filter: blur(0);
+    backdrop-filter: blur(0);
+    transition: all 200ms ease-in-out;
+  }
+
+  &[data-blur="true"]::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    -webkit-backdrop-filter: blur(25px);
+    backdrop-filter: blur(25px);
+    background: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.bottomInfo {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+}
+
+.splashScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateY(0);
+  transition: all 200ms ease-in-out;
+
+  &[data-faded="true"] {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-200px);
+  }
+}
+
+.fadeinScreen {
+  position: absolute;
+  top: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(60px);
+  transition: all 400ms ease-in-out;
+  pointer-events: none;
+
+  &[data-faded="false"] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0px);
+  }
+
+  &[data-unlock="true"] {
+    opacity: 0;
+  }
+
+  .signInBtn {
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 13px;
+    padding: 4px 36px 6px;
+    color: #fff;
+    border: 2px solid transparent;
+    border-radius: 4px;
+
+    &:hover {
+      border: 2px solid rgba(255, 255, 255, 0.33);
+    }
+
+    &:active {
+      border: 2px solid transparent;
+      background: rgba(255, 255, 255, 0.33);
+    }
+  }
+}
+
+.lockOpt {
+  margin-top: 10px;
+
+  .uicon {
+    margin: 0 4px;
+    cursor: pointer;
+
+    &[data-payload="true"] {
+      box-sizing: border-box;
+      border: 1px solid #888;
+    }
+  }
+}
+
+.slowfadein {
+  opacity: 1;
+  animation: slowfadein 1s ease-in-out;
+}
+
+// Loader css
+#loader {
+  position: relative;
+  top: 0;
+  left: 0;
+  display: grid;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+// https://docs.microsoft.com/en-us/fluent-ui/web-components/components/progress-ring
+
+.progressRing circle {
+  stroke: white;
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  transform-origin: 50% 50%;
+  transition: all 0.2s ease-in-out 0s;
+  animation: 2s linear 0s infinite normal none running spin-infinite;
+}
+
+@keyframes spin-infinite {
+  0% {
+    stroke-dasharray: 0.01px, 43.97px;
+    transform: rotate(0deg);
+  }
+  50% {
+    stroke-dasharray: 21.99px, 21.99px;
+    transform: rotate(450deg);
+  }
+  100% {
+    stroke-dasharray: 0.01px, 43.97px;
+    transform: rotate(1080deg);
+  }
+}
