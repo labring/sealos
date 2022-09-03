@@ -305,14 +305,15 @@ jobs:
         working-directory: docker/patch
         run: |
           sudo apt remove buildah -y || true
-          wget -qO "/usr/bin/buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
-          sudo chmod a+x /usr/bin/buildah
-          sudo buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
-          sudo buildah pull oci-archive:patch-amd64.tar
-          sudo buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-amd64
-          sudo buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64
-          sudo buildah pull oci-archive:patch-arm64.tar
-          sudo buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-arm64
-          sudo buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64
-          sudo buildah images
+          readonly binDIR="/tmp/$(whoami)/bin"
+          wget -qO "$binDIR/buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          sudo chmod a+x $binDIR/buildah
+          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
+          sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
+          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-amd64
+          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64
+          sudo $binDIR/buildah pull oci-archive:patch-arm64.tar
+          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-arm64
+          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64
+          sudo $binDIR/buildah images
 
