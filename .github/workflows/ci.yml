@@ -217,3 +217,118 @@ jobs:
             sealctl-${{ matrix.arch }}
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
+  container:
+    needs: [ docker ]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo ::set-output name=tag_name::${TAG}
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v2
+        with:
+          version: latest
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: docker/sealos/bin/sealos-amd64
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-arm64
+          path: docker/sealos/bin/sealos-arm64
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
+      - name: build (and publish)  main sealos image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
+        working-directory: docker/sealos
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile.main \
+          .
+
+  patch-oci:
+    needs: [ docker ]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo ::set-output name=tag_name::${TAG}
+          echo ::set-output name=commit_sha::${{ env.GIT_COMMIT_SHORT_SHA }}
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
+      - name: build (and publish)  main patch image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
+        working-directory: docker/patch
+        run: |
+          set -x
+          sudo apt remove buildah -y || true
+          readonly binDIR="/tmp/$(whoami)/bin"
+          wget -qO "buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          mkdir -p $binDIR
+          mv buildah $binDIR/
+          sudo chmod a+x $binDIR/buildah
+          sudo $binDIR/buildah images
+          BEFORE_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}
+          IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}
+          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io"
+          sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-amd64 ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-amd64
+          sudo $binDIR/buildah pull oci-archive:patch-arm64.tar
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-arm64 ${IMAGE_NAME}-arm64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-arm64
+          sudo $binDIR/buildah images
+          sudo $binDIR/buildah push ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah push ${IMAGE_NAME}-arm64
+          sudo $binDIR/buildah manifest create ${IMAGE_NAME}
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
+          sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
+          sudo $binDIR/buildah images
+
