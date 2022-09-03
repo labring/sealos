@@ -230,7 +230,6 @@ jobs:
         run: |
           TAG=dev
           echo ::set-output name=tag_name::${TAG}
-
       - name: set up buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v2
@@ -283,11 +282,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
       - name: Prepare
         id: prepare
         run: |
           TAG=dev
           echo ::set-output name=tag_name::${TAG}
+          echo ::set-output name=commit_sha::${{ env.GIT_COMMIT_SHORT_SHA }}
       - name: Download patch
         uses: actions/download-artifact@v3
         with:
@@ -304,18 +306,20 @@ jobs:
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
         working-directory: docker/patch
         run: |
+          set -x
           sudo apt remove buildah -y || true
           readonly binDIR="/tmp/$(whoami)/bin"
           wget -qO "buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
           mkdir -p $binDIR
           mv buildah $binDIR/
           sudo chmod a+x $binDIR/buildah
+          sudo $binDIR/buildah images
           sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io" || true
           sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
-          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-amd64
-          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-amd64
+          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-amd64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-amd64
+          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-amd64
           sudo $binDIR/buildah pull oci-archive:patch-arm64.tar
-          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-arm64
-          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-arm64
+          sudo $binDIR/buildah tag ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-arm64 ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-arm64
+          sudo $binDIR/buildah rmi ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}-arm64
           sudo $binDIR/buildah images
 
