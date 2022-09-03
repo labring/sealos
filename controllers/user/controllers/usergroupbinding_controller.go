@@ -178,3 +178,19 @@ func (r *UserGroupBindingReconciler) Delete(ctx context.Context, req ctrl.Reques
 func (r *UserGroupBindingReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
 	return NewUserGroupBindingController(ctx, req, r).Update(ctx, req, gvk, obj)
 }
+
+func NewUserGroupBindingController(ctx context.Context, req ctrl.Request, reconcile *UserGroupBindingReconciler) controller.Operator {
+	ugBinding := &userv1.UserGroupBinding{}
+	if err := reconcile.Client.Get(ctx, req.NamespacedName, ugBinding); err != nil {
+		reconcile.Logger.Error(err, "unable to fetch UserGroupBinding")
+		return nil
+	}
+	if ugBinding.Subject.Kind == "User" {
+		return &UserGroupUserBindingController{
+			reconcile,
+		}
+	}
+	return &UserGroupNamespaceBindingController{
+		reconcile,
+	}
+}
