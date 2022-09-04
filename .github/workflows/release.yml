@@ -41,8 +41,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu upx \
-            libbtrfs-dev libgpgme-dev libdevmapper-dev
+          sudo apt install -y gcc-aarch64-linux-gnu upx
 
       - name: set up buildx
         id: buildx
