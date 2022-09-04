@@ -60,7 +60,13 @@ func (s *server) ImageStatus(ctx context.Context,
 
 func (s *server) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
-	if req.Auth == nil {
+	logger.Debug("PullImage begin: %+v", req)
+	defaultImageDomain, _ := splitDockerDomain(req.Image.Image)
+	if req.Image != nil {
+		req.Image.Image = s.replaceImage(req.Image.Image, "PullImage")
+	}
+	replacedImageDomain, _ := splitDockerDomain(req.Image.Image)
+	if req.Auth == nil && replacedImageDomain != defaultImageDomain {
 		up := strings.Split(Auth, ":")
 		if len(up) == 2 {
 			req.Auth = &api.AuthConfig{
@@ -69,10 +75,7 @@ func (s *server) PullImage(ctx context.Context,
 			}
 		}
 	}
-	logger.Debug("PullImage: %+v", req)
-	if req.Image != nil {
-		req.Image.Image = s.replaceImage(req.Image.Image, "PullImage")
-	}
+	logger.Debug("PullImage after: %+v", req)
 	rsp, err := s.imageClient.PullImage(ctx, req)
 	if err != nil {
 		return nil, err
