@@ -2,6 +2,7 @@ package applier
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	cv1 "github.com/labring/sealos/controllers/cluster/api/v1"
@@ -45,15 +46,15 @@ func (a *Applier) ReconcileCluster(infra *v1.Infra, hosts []v1.Hosts, cluster *c
 		return fmt.Errorf("zero master")
 	}
 
-	ssh, err := ssh.NewSSHByCluster(&v1beta1.Cluster{Spec: v1beta1.ClusterSpec{SSH: infra.Spec.SSH}}, true)
+	ssh, err := ssh.NewSSHByCluster(&v1beta1.Cluster{Spec: v1beta1.ClusterSpec{SSH: cluster.Spec.SSH}}, true)
 	if err != nil {
 		return fmt.Errorf("ssh create fail %v", err)
 	}
-	passwd := infra.Spec.SSH.Passwd
+	passwd := cluster.Spec.SSH.Passwd
 	if len(node) == 0 {
 		if len(master) == 1 {
 			// 1 master and zero node
-			if err = scpCluster(ssh, master[0], infra.Spec.SSH, "single"); err != nil {
+			if err = scpCluster(ssh, master[0], cluster.Spec.SSH, "single"); err != nil {
 				return fmt.Errorf("scp cluster single error :%v", err)
 			}
 
@@ -68,7 +69,7 @@ func (a *Applier) ReconcileCluster(infra *v1.Infra, hosts []v1.Hosts, cluster *c
 	sealos := master[0]
 	for i := 1; i < len(master); i++ {
 		ip := master[i]
-		if err = scpCluster(ssh, ip, infra.Spec.SSH, "node"); err != nil {
+		if err = scpCluster(ssh, ip, cluster.Spec.SSH, "node"); err != nil {
 			return fmt.Errorf("scp cluster node error :%v", err)
 		}
 
@@ -77,36 +78,39 @@ func (a *Applier) ReconcileCluster(infra *v1.Infra, hosts []v1.Hosts, cluster *c
 			return fmt.Errorf("execute ssh commend fail:%v", err)
 		}
 	}
+
 	for i := 0; i < len(node); i++ {
 		ip := node[i]
-		if err = scpCluster(ssh, ip, infra.Spec.SSH, "node"); err != nil {
+		if err = scpCluster(ssh, ip, cluster.Spec.SSH, "node"); err != nil {
 			return fmt.Errorf("scp cluster node error :%v", err)
 		}
-
 		err = ssh.CmdAsync(ip, "sudo sh nodeDepl.sh node"+strconv.Itoa(i)+" "+passwd, "")
 		if err != nil {
 			return fmt.Errorf("execute ssh commend fail:%v", err)
 		}
 	}
-	if err = scpCluster(ssh, sealos, infra.Spec.SSH, "master"); err != nil {
+	if err = scpCluster(ssh, sealos, cluster.Spec.SSH, "master"); err != nil {
 		return fmt.Errorf("scp cluster master error :%v", err)
 	}
 	ipMasters, ipNodes := getIPs(master), getIPs(node)
 
-	fmt.Println("sudo sh masterDepl.sh master0 " + passwd + " " + ipMasters + " " + ipNodes)
-	//todo Add images
-	err = ssh.CmdAsync(sealos, "sudo sh masterDepl.sh master0 "+passwd+" "+ipMasters+" "+ipNodes, "")
+	cmd := fmt.Sprintf("sudo sh masterDepl.sh master0 %s %s %s %s", passwd, ipMasters, ipNodes, images)
+	log.Println(cmd)
+	err = ssh.CmdAsync(sealos, cmd, "")
 	if err != nil {
 		return fmt.Errorf("execute ssh commend fail:%v", err)
 	}
-
 	return nil
 }
 
 func getImages(cluster *cv1.Cluster) string {
 	images := ""
-	for _, image := range cluster.Spec.Images {
-		images = images + image + " "
+	for i, image := range cluster.Spec.Images {
+		if i == len(cluster.Spec.Images)-1 {
+			images = images + image
+			break
+		}
+		images = images + image + ","
 	}
 	return images
 }
@@ -124,8 +128,9 @@ func getIPs(ips []string) string {
 }
 func makeClusterSingle(ssh ssh.Interface, ip string, passwd string, role string, images string) error {
 	fileName := role + "Depl.sh"
-	fmt.Println("sudo sh " + fileName + " master " + passwd)
-	err := ssh.CmdAsync(ip, "sudo sh "+fileName+" master "+passwd, "")
+	cmd := fmt.Sprintf("sudo sh %s master %s passwd %s", fileName, passwd, images)
+	log.Println(cmd)
+	err := ssh.CmdAsync(ip, cmd, "")
 	if err != nil {
 		return fmt.Errorf("execute ssh commend fail:%v", err)
 	}
@@ -141,7 +146,7 @@ func scpCluster(ssh ssh.Interface, ip string, mySSH v1beta1.SSH, role string) er
 
 	//todo 改用ssh.Copy()
 	cmd := fmt.Sprintf("scp -i %s %s %s@%s:/home/%s", pk, fileName, user, ip, user)
-	fmt.Println(cmd)
+	log.Println(cmd)
 	if err := exec.Cmd("/bin/bash", "-c", cmd); err != nil {
 		return fmt.Errorf("execute ssh %s error:%v", cmd, err)
 	}

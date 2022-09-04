@@ -129,7 +129,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			Value: &value,
 		},
 	)
-	keyName := "hurz_key"
+	keyName := infra.Spec.SSH.PkName
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),

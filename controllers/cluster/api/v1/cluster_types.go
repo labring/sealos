@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,9 +28,9 @@ import (
 type ClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
-	Infra  string   `json:"infra,omitempty"`
-	Images []string `json:"images,omitempty"`
+	Infra  string      `json:"infra,omitempty"`
+	Images []string    `json:"images,omitempty"`
+	SSH    v1beta1.SSH `json:"ssh,omitempty"`
 }
 
 // ClusterStatus defines the observed state of Cluster
