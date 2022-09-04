@@ -10,10 +10,10 @@ spec:
     pkname: hurz_key
     port: 22
   hosts:
-    - roles: [master] # required
-      count: 1 # Required
-      flavor: "t2.large"
-      image: "ami-05248307900d52e3a"
+  - roles: [master] # required
+    count: 1 # Required
+    flavor: "t2.large"
+    image: "ami-05248307900d52e3a"
 ---
 apiVersion: cluster.sealos.io/v1
 kind: Cluster
