@@ -19,7 +19,7 @@ package v1
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	v1bata1 "github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/kyaml/resid"
@@ -144,7 +144,7 @@ type InfraSpec struct {
 	// RegionIDs is cloud provider regionID list
 	RegionIDs []string    `json:"regionIDs,omitempty"`
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`
-	SSH       v1beta1.SSH `json:"ssh,omitempty"`
+	SSH       v1bata1.SSH `json:"ssh,omitempty"`
 	Hosts     []Hosts     `json:"hosts,omitempty"`
 	// Availability Zone
 	AvailabilityZone string `json:"availabilityZone,omitempty"`

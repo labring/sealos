@@ -17,13 +17,13 @@ kind: Namespace
 metadata:
   labels:
     control-plane: controller-manager
-  name: system
+  name: huruizhe-test
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: controller-manager
-  namespace: system
+  namespace: huruizhe-test
   labels:
     control-plane: controller-manager
 spec:
@@ -52,7 +52,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: docker.io/xiaojie99999/infra:v0.0.1
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
