@@ -44,6 +44,15 @@ jobs:
           sudo apt install -y gcc-aarch64-linux-gnu upx \
             libbtrfs-dev libgpgme-dev libdevmapper-dev
 
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v3
+        with:
+          args: release --rm-dist --release-notes=scripts/release/Note.md
+        env:
+          USERNAME: ${{ github.repository_owner }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+
       - name: set up buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
@@ -56,15 +65,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v3
-        with:
-          args: release --rm-dist --release-notes=scripts/release/Note.md
-        env:
-          USERNAME: ${{ github.repository_owner }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
       - name: build (and publish) lvscare image
         env:
