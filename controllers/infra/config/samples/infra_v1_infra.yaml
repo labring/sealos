@@ -21,8 +21,8 @@ spec:
   - roles: [master] # required
     count: 0 # Required
     flavor: "t2.micro"
-    image: "ami-05248307900d52e3a"
+    image: "ami-08bb4e3ce08ca7ddb"
   - roles: [ node ] # required
     count: 0 # Required
     flavor: "t2.micro"
-    image: "ami-05248307900d52e3a"
+    image: "ami-08bb4e3ce08ca7ddb"

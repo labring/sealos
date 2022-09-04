@@ -1,4 +1,5 @@
 import AppStore from 'applications/app_store';
+import Infra from 'applications/infra';
 import clsx from 'clsx';
 import { APPTYPE } from 'constants/app_type';
 import useAppStore from 'stores/app';
@@ -13,6 +14,9 @@ export default function DesktopContent() {
   function renderApp(appItem: any) {
     switch (appItem.type) {
       case APPTYPE.APP:
+        if(appItem.name === "Infra"){
+          return <Infra />
+        }
         return <AppStore />;
 
       case APPTYPE.IFRAME:

@@ -16,12 +16,8 @@ func TestApplier_ReconcileCluster(t *testing.T) {
 	}
 	hosts := []v1.Hosts{
 		{
-			Roles: []string{"master"},
-			Metadata: []v1.Metadata{
-				{
-					IP: []string{""},
-				},
-			},
+			Roles:    []string{"master"},
+			Metadata: []v1.Metadata{},
 		},
 	}
 	cluster := &cv1.Cluster{

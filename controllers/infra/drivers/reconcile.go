@@ -57,6 +57,9 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		return err
 	}
 
+	if _, err = driver.GetInstances(infra); err != nil {
+		return err
+	}
 	return nil
 }
 

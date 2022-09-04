@@ -47,6 +47,7 @@ type SSH struct {
 	User         string
 	Password     string
 	PkFile       string
+	PkData       string
 	PkPassword   string
 	Timeout      *time.Duration
 	LocalAddress *[]net.Addr
@@ -66,6 +67,7 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 		User:         ssh.User,
 		Password:     ssh.Passwd,
 		PkFile:       ssh.Pk,
+		PkData:       ssh.PkData,
 		PkPassword:   ssh.PkPasswd,
 		LocalAddress: address,
 	}

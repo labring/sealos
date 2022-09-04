@@ -45,7 +45,7 @@ func TestDriver_CreateVolumes(t *testing.T) {
 					Arch:      "",
 					Image:     "ami-05248307900d52e3a",
 					Disks:     nil,
-					Metadata:  []v1.Metadata{{IP: []string{"52.80.216.170"}, ID: "i-066922c9f39e55b6c"}},
+					Metadata:  []v1.Metadata{},
 				},
 			},
 			false,
