@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
+
+	"github.com/google/uuid"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -28,6 +31,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
+
+var mutex sync.Mutex
 
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
 // We use this interface to test the functions using a mocked service.
@@ -39,6 +44,10 @@ type EC2CreateInstanceAPI interface {
 	CreateTags(ctx context.Context,
 		params *ec2.CreateTagsInput,
 		optFns ...func(*ec2.Options)) (*ec2.CreateTagsOutput, error)
+
+	CreateKeyPair(ctx context.Context,
+		params *ec2.CreateKeyPairInput,
+		optFns ...func(*ec2.Options)) (*ec2.CreateKeyPairOutput, error)
 }
 
 // MakeInstance creates an Amazon Elastic Compute Cloud (Amazon EC2) instance.
@@ -69,6 +78,10 @@ func MakeInstance(c context.Context, api EC2CreateInstanceAPI, input *ec2.RunIns
 //	Otherwise, nil and an error from the call to CreateTags.
 func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
 	return api.CreateTags(c, input)
+}
+
+func MakeKeyPair(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPairOutput, error) {
+	return api.CreateKeyPair(c, input)
 }
 
 func GetInstanceType(hosts *v1.Hosts) types.InstanceType {
@@ -129,7 +142,15 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			Value: &value,
 		},
 	)
+	if infra.Spec.SSH.PkName == "" {
+		if err := d.createKeyPair(infra); err != nil {
+			return err
+		}
+	}
 	keyName := infra.Spec.SSH.PkName
+	//todo use ami to search root device name
+	rootDeviceName := "/dev/xvda"
+	rootVolumeSize := int32(40)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -147,7 +168,10 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 		KeyName:          &keyName,
 		SecurityGroupIds: []string{"sg-0476ffedb5ca3f816"},
-		//BlockDeviceMappings: make([]types.BlockDeviceMapping, len(hosts.Disks)),
+		BlockDeviceMappings: []types.BlockDeviceMapping{{
+			DeviceName: &rootDeviceName,
+			Ebs:        &types.EbsBlockDevice{VolumeSize: &rootVolumeSize},
+		}},
 	}
 
 	// assign to BlockDeviceMappings from host.Disk
@@ -175,5 +199,34 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if err != nil {
 		return fmt.Errorf("create and attach volumes failed: %v", err)
 	}
+	return nil
+}
+
+func (d Driver) createKeyPair(infra *v1.Infra) error {
+	mutex.Lock()
+	client := d.Client
+	if infra.Spec.SSH.PkName != "" {
+		mutex.Unlock()
+		return nil
+	}
+	myUUID, err := uuid.NewUUID()
+	if err != nil {
+		mutex.Unlock()
+		return fmt.Errorf("create uuid error:%v", err)
+	}
+	keyName := myUUID.String()
+	input := &ec2.CreateKeyPairInput{
+		KeyName:   &keyName,
+		KeyFormat: types.KeyFormatPem,
+	}
+
+	result, err := MakeKeyPair(context.TODO(), client, input)
+	if err != nil {
+		mutex.Unlock()
+		return fmt.Errorf("create key pair error:%v", err)
+	}
+	infra.Spec.SSH.PkName = *result.KeyName
+	infra.Status.SSHPrivateKey = *result.KeyFingerprint
+	mutex.Unlock()
 	return nil
 }
