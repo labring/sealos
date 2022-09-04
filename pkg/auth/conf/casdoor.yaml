@@ -50,7 +50,7 @@ data:
     initScore = 2000
     logPostOnly = true
     origin =
-
+    staticBaseUrl = ""
 ---
 
 apiVersion: v1
@@ -196,3 +196,44 @@ spec:
   resources:
     requests:
       storage: 5G
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+spec:
+  selector:
+    matchLabels:
+      app: casdoor-local-cdn
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casdoor-local-cdn
+    spec:
+      containers:
+        - image: labring/docker-casbin:main
+          name: docker-casbin
+          ports:
+            - containerPort: 80
+              name: nginx
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+  labels:
+    app: casdoor-local-cdn
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+  selector:
+    app: casdoor-local-cdn
