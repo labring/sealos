@@ -58,7 +58,7 @@ go.build.%:
 
 	@echo "===========> Building binary $(COMMAND) $(VERSION) for $(PLATFORM)"
 	@mkdir -p $(BIN_DIR)/$(PLATFORM)
-	
+
 	@if [ "$(COMMAND)" == "sealos" ]; then \
 		CGO_ENABLED=1; \
 		CC=x86_64-linux-gnu-gcc; \
