@@ -20,8 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -69,7 +69,7 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
 
-      - name: build (and publish) lvscare image
+      - name: Docker build and publish lvscare image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
@@ -86,7 +86,8 @@ jobs:
           -t ${DOCKER_REPO}:latest \
           -f docker/lvscare/Dockerfile \
           .
-      - name: build (and publish) sealos image
+
+      - name: Docker build and publish sealos image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos

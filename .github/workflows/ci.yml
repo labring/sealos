@@ -28,12 +28,15 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Format Code
         run: make format
+
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
@@ -45,10 +48,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Check License
         run: make verify-license
 
@@ -59,6 +66,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Resolve Modules
         id: set-matrix
         run: sh ./scripts/resolve-modules.sh
@@ -71,12 +79,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Install Dependencies
         run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
@@ -90,14 +101,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Install Dependencies
         run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Run Coverage
         run: make coverage
+
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
 
@@ -111,8 +126,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -217,6 +235,7 @@ jobs:
             sealctl-${{ matrix.arch }}
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
+
   container:
     needs: [ docker ]
     runs-on: ubuntu-latest
@@ -230,6 +249,7 @@ jobs:
         run: |
           TAG=dev
           echo ::set-output name=tag_name::${TAG}
+
       - name: set up buildx
         id: buildx
         uses: crazy-max/ghaction-docker-buildx@v2
@@ -242,26 +262,31 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
+
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
           name: sealos-amd64
           path: docker/sealos/bin/sealos-amd64
+
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
           name: sealos-arm64
           path: docker/sealos/bin/sealos-arm64
+
       - name: Download patch
         uses: actions/download-artifact@v3
         with:
           name: patch-image-amd64.tar
           path: docker/patch
+
       - name: Download patch
         uses: actions/download-artifact@v3
         with:
           name: patch-image-arm64.tar
           path: docker/patch
+
       - name: build (and publish)  main sealos image
         env:
           # fork friendly ^^
@@ -282,24 +307,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
+
       - name: Prepare
         id: prepare
         run: |
           TAG=dev
           echo ::set-output name=tag_name::${TAG}
           echo ::set-output name=commit_sha::${{ env.GIT_COMMIT_SHORT_SHA }}
+
       - name: Download patch
         uses: actions/download-artifact@v3
         with:
           name: patch-image-amd64.tar
           path: docker/patch
+
       - name: Download patch
         uses: actions/download-artifact@v3
         with:
           name: patch-image-arm64.tar
           path: docker/patch
+
       - name: build (and publish)  main patch image
         env:
           # fork friendly ^^
@@ -331,4 +361,3 @@ jobs:
           sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
           sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
           sudo $binDIR/buildah images
-
