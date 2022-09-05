@@ -1,4 +1,4 @@
-import { Session, OAuthToken, UserInfo } from '../interfaces/session';
+import { Session } from '../interfaces/session';
 
 let session: Session | undefined;
 

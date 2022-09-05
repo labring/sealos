@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { BadRequestResp, NotFoundResp, JsonResp } from '../response';
-import { CheckIsInCluster, K8sApi, ListPods, ReplaceInCLuster } from '../../../lib/kubernetes';
+import { K8sApi, ListPods, ReplaceInCLuster } from '../../../services/kubernetes';
+import { BadRequestResp, JsonResp, NotFoundResp } from '../response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   if (req.method !== 'GET') {

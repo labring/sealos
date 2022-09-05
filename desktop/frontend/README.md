@@ -5,14 +5,13 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
+pnpm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### 目录说明
+
 ```
 .
 ├── applications // 应用目录
@@ -103,6 +102,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```
 
 ### 项目依赖的库
+
 ```
 {
   "name": "frontend",
@@ -120,9 +120,9 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     "not op_mini all"
   ],
   "dependencies": {
+    // 后续全部使用 FluentUI
     "@fluentui/react": "^8.90.2",
     "@kubernetes/client-node": "^0.17.0",
-    "@nextui-org/react": "^1.0.0-beta.9",  // NextUI ，目前用的通用 UI 库，后续看替换成 FluentUI
     "@tanstack/react-query": "^4.2.3", // 请求处理 hooks https://tanstack.com/query/v4
     "axios": "^0.27.2", // 请求库，可以做拦截等，比较方便
     "clsx": "^1.2.1", // 组合样式
@@ -150,8 +150,10 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```
 
 ### 代码阅读说明
-src/_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
+
+src/\_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
 
 ### 规范
+
 1. 目录名： snake_case
 2. 组件名： PascalCase （ index.tsx 除外 ）

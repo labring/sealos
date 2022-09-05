@@ -1,9 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { Avatar, Loading } from '@nextui-org/react';
+import { Spinner, SpinnerSize } from '@fluentui/react/lib/Spinner';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import React from 'react';
 import request from 'services/request';
 import styles from './index.module.scss';
 
@@ -12,7 +11,7 @@ export default function AppStore() {
   console.log(123, data);
 
   if (isLoading) {
-    return <Loading />;
+    return <Spinner size={SpinnerSize.large} />;
   }
 
   const apps = data?.data || [];
@@ -158,7 +157,11 @@ export default function AppStore() {
                 <div className="capitalize font-semibold">{item.name}</div>
                 <div className="capitalize  text-gray-600">{item.type}</div>
                 <div className="flex items-center mt-2">
-                  <Avatar size="sm" src="https://i.pravatar.cc/150?u=a04258114e29026702d" />
+                  <img
+                    alt="name"
+                    width="20"
+                    src="https://i.pravatar.cc/150?u=a04258114e29026702d"
+                  />
                   <div className="text-xss">30k</div>
                 </div>
                 <div className="text-xss mt-8">{'Free'}</div>
