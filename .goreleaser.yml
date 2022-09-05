@@ -24,7 +24,7 @@ builds:
     main: ./cmd/sealos
     binary: sealos
     hooks:
-      post: upx "{{ .Path }}"
+      post: ./tools/upx "{{ .Path }}"
     goos:
       - linux
     goarch:
@@ -59,7 +59,7 @@ builds:
       - CGO_ENABLED=0
     main: ./cmd/sealctl
     hooks:
-      post: upx "{{ .Path }}"
+      post: ./tools/upx "{{ .Path }}"
     binary: sealctl
     goos:
       - linux
@@ -79,7 +79,7 @@ builds:
       - CGO_ENABLED=0
     main: ./cmd/lvscare
     hooks:
-      post: upx "{{ .Path }}"
+      post: ./tools/upx "{{ .Path }}"
     binary: lvscare
     goos:
       - linux
@@ -99,7 +99,7 @@ builds:
       - CGO_ENABLED=0
     main: ./cmd/image-cri-shim
     hooks:
-      post: upx "{{ .Path }}"
+      post: ./tools/upx "{{ .Path }}"
     binary: image-cri-shim
     goos:
       - linux
