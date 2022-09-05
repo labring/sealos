@@ -144,6 +144,7 @@ jobs:
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
       - name: Compress Binaries
+        if: ${{ matrix.binary != 'sealos' }}
         run: |
           make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 

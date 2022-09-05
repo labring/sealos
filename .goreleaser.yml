@@ -23,8 +23,8 @@ builds:
       - CC=aarch64-linux-gnu-gcc
     main: ./cmd/sealos
     binary: sealos
-    hooks:
-      post: upx "{{ .Path }}"
+    # hooks:
+    #   post: upx "{{ .Path }}"
     goos:
       - linux
     goarch:
