@@ -85,6 +85,7 @@ metadata:
     kubernetes.io/tls-acme: "true"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: nginx-casdoor
   namespace: sealos
 spec:
@@ -99,6 +100,13 @@ spec:
                 name: casdoor
                 port:
                   number: 8000
+          - pathType: Prefix
+            path: /cdn(/|$)(.*)
+            backend:
+              service:
+                name: casdoor-local-cdn
+                port:
+                  number: 80
   tls: # < placing a host in the TLS config will determine what ends up in the cert's subjectAltNames
     - hosts:
         - login.sealos.io
