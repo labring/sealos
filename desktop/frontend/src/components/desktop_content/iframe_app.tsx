@@ -1,8 +1,8 @@
-import React, { useRef, useState } from 'react';
-import useAppStore, { TApp } from 'stores/app';
+import { Spinner, SpinnerSize } from '@fluentui/react/lib/Spinner';
 import { useQuery } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
 import request from 'services/request';
-import { Loading } from '@nextui-org/react';
+import useAppStore, { TApp } from 'stores/app';
 
 export default function IframApp(props: { appItem: TApp }) {
   const { appItem } = props;
@@ -30,9 +30,11 @@ export default function IframApp(props: { appItem: TApp }) {
     <div className="h-full">
       {appItem.data?.url === '' ? (
         <div className="h-full grid content-center">
-          <Loading size="lg">
-            <span className="pt-10!">应用启动中... {time.current} 秒</span>
-          </Loading>
+          <Spinner
+            label={'应用启动中... ' + time.current + ' 秒'}
+            labelPosition="right"
+            size={SpinnerSize.large}
+          />
         </div>
       ) : (
         <iframe

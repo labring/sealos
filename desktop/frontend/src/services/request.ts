@@ -1,5 +1,8 @@
 // http.ts
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
+import { getSession } from '../stores/session';
+import type { ApiResp } from '../interfaces/api';
+import { isApiResp } from '../interfaces/api';
 
 const showStatus = (status: number) => {
   let message = '';
@@ -52,12 +55,21 @@ const request = axios.create({
 // request interceptor
 request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    //获取token，并将其添加至请求头中
-    let token = localStorage.getItem('token');
     let _headers: AxiosRequestHeaders = {};
-    if (token) {
-      _headers.Authorization = `${token}`;
+
+    //获取token，并将其添加至请求头中
+    const session = getSession();
+    if (session?.token.access_token) {
+      const token = session.token.access_token;
+      if (token) {
+        _headers['Authorization'] = `Bearer ${token}`;
+      }
     }
+
+    if (!config.headers || config.headers['Content-Type'] == '') {
+      _headers['Content-Type'] = 'application/json';
+    }
+
     config.headers = _headers;
     return config;
   },
@@ -71,17 +83,25 @@ request.interceptors.request.use(
 // response interceptor
 request.interceptors.response.use(
   (response: AxiosResponse) => {
-    const status = response.status;
-    let msg = '';
-    if (status < 200 || status >= 300) {
-      msg = showStatus(status);
-      if (typeof response.data === 'string') {
-        response.data = { msg };
-      } else {
-        response.data.msg = msg;
-      }
+    const { status, data } = response;
+    if (status < 200 || status >= 300 || !isApiResp(data)) {
+      return Promise.reject(
+        new Error(
+          status + ':' + showStatus(status) + ', ' + typeof data === 'string'
+            ? data
+            : JSON.stringify(data)
+        )
+      );
     }
-    return response.data;
+
+    // UnWrap
+    const apiResp = data as ApiResp;
+    if (apiResp.code !== 200) {
+      return Promise.reject(new Error(apiResp.code + ':' + apiResp.message));
+    }
+
+    response.data = apiResp.data;
+    return response;
   },
   (error) => {
     if (axios.isCancel(error)) {
