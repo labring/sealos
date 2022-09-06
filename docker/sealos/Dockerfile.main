@@ -1,11 +1,9 @@
 FROM alpine:3.16.2
 
 ARG TARGETARCH
+
 ENTRYPOINT ["/usr/bin/sealos"]
 
-WORKDIR /root
+WORKDIR /usr/bin/
 
-COPY bin /bin
-
-RUN cp /bin/sealos-$TARGETARCH/sealos /usr/bin/sealos && rm -rf /bin
-
+COPY /bin/sealos-$TARGETARCH/sealos .
