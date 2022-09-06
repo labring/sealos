@@ -25,6 +25,7 @@ import (
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/buildah/util"
 	"github.com/containers/common/pkg/auth"
 	"github.com/containers/image/v5/manifest"
@@ -97,7 +98,7 @@ func (*Service) Push(image string) error {
 		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
 
-	systemContext, _ := getSystemContext(iopts.TLSVerify)
+	systemContext, _ := parse.SystemContextFromOptions(getPushCmdFlag())
 
 	var manifestType string
 	if iopts.Format != "" {
