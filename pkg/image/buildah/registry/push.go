@@ -99,7 +99,7 @@ func (*Service) Push(image string) error {
 	}
 
 	pushCmdFlag := getPushCmdFlag()
-	pushCmdFlag.Flag("tls-verify").Value.Set("false")
+	_ = pushCmdFlag.Flag("tls-verify").Value.Set("false")
 	pushCmdFlag.Flag("tls-verify").Changed = true
 
 	systemContext, _ := parse.SystemContextFromOptions(pushCmdFlag)

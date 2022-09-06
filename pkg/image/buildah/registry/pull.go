@@ -66,7 +66,7 @@ func (*Service) Pull(images ...string) error {
 	}
 
 	pullCmdFlag := getCmdFlag()
-	pullCmdFlag.Flag("tls-verify").Value.Set("false")
+	_ = pullCmdFlag.Flag("tls-verify").Value.Set("false")
 	pullCmdFlag.Flag("tls-verify").Changed = true
 
 	systemContext, _ := parse.SystemContextFromOptions(pullCmdFlag)
