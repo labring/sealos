@@ -17,6 +17,7 @@ limitations under the License.
 package image
 
 import (
+	"github.com/labring/sealos/pkg/image/binary"
 	buildah_cluster "github.com/labring/sealos/pkg/image/buildah/cluster"
 	buildah_image "github.com/labring/sealos/pkg/image/buildah/image"
 	"github.com/labring/sealos/pkg/image/buildah/registry"
@@ -24,25 +25,22 @@ import (
 )
 
 func NewClusterService() (types.ClusterService, error) {
-	err := initBuildah()
-	if err == nil {
-		return buildah_cluster.NewClusterService()
+	if ok, err := initBuildah(); err == nil && ok {
+		return binary.NewClusterService()
 	}
-	return nil, err
+	return buildah_cluster.NewClusterService()
 }
 
 func NewRegistryService() (types.RegistryService, error) {
-	err := initBuildah()
-	if err == nil {
-		return registry.NewRegistryService()
+	if ok, err := initBuildah(); err == nil && ok {
+		return binary.NewRegistryService()
 	}
-	return nil, err
+	return registry.NewRegistryService()
 }
 
 func NewImageService() (types.ImageService, error) {
-	err := initBuildah()
-	if err == nil {
-		return buildah_image.NewImageService()
+	if ok, err := initBuildah(); err == nil && ok {
+		return binary.NewImageService()
 	}
-	return nil, err
+	return buildah_image.NewImageService()
 }

@@ -62,7 +62,7 @@ type BuildOptions struct {
 func (opts *BuildOptions) String() string {
 	opts.AllPlatforms = false
 	opts.DisableCompression = true
-	opts.Pull = PullTypeIfNewer
+	opts.Pull = PullTypeIfMissing
 	var sb strings.Builder
 	if opts.NoCache {
 		sb.WriteString(" --no-cache ")
