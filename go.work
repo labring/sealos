@@ -4,9 +4,9 @@ use (
 	.
 	./controllers/app
 	./controllers/infra
+	./controllers/metering
 	./controllers/terminal
 	./controllers/user
-	./controllers/metering
 	./service/auth
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
