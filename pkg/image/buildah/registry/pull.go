@@ -65,7 +65,11 @@ func (*Service) Pull(images ...string) error {
 		return err
 	}
 
-	systemContext, _ := parse.SystemContextFromOptions(getCmdFlag())
+	pullCmdFlag := getCmdFlag()
+	pullCmdFlag.Flag("tls-verify").Value.Set("false")
+	pullCmdFlag.Flag("tls-verify").Changed = true
+
+	systemContext, _ := parse.SystemContextFromOptions(pullCmdFlag)
 
 	decConfig, err := getDecryptConfig(opt.decryptionKeys)
 	if err != nil {

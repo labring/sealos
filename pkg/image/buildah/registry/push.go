@@ -98,6 +98,10 @@ func (*Service) Push(image string) error {
 		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
 
+	pushCmdFlag := getPushCmdFlag()
+	pushCmdFlag.Flag("tls-verify").Value.Set("false")
+	pushCmdFlag.Flag("tls-verify").Changed = true
+
 	systemContext, _ := parse.SystemContextFromOptions(getPushCmdFlag())
 
 	var manifestType string
