@@ -21,7 +21,7 @@ export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
   useEffect(() => {
     (async () => {
-      // 初始化，获取用户信息，安装的应用信息等
+      // Initialize, get user information, install application information, etc.
       await init();
     })();
   }, [init]);
