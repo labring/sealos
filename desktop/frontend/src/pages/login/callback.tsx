@@ -3,12 +3,12 @@ import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
 import { OAuthToken, Session, UserInfo } from '../../interfaces/session';
 import request from '../../services/request';
-import { setSession } from '../../stores/session';
+import useSessionStore from 'stores/session';
 
 const Callback: NextPage = () => {
   const [redirect, setRedirect] = useState('');
-
   const router = useRouter();
+  const setSessionProp = useSessionStore((s) => s.setSessionProp);
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -22,29 +22,24 @@ const Callback: NextPage = () => {
         // console.log('token', token);
         const oauth_token = token.data as OAuthToken;
         if (oauth_token.access_token === '') return;
+        setSessionProp('token', oauth_token);
 
         request
           .get(process.env.NEXT_PUBLIC_SERVICE + 'auth/userinfo')
           .then((userinfo) => {
             // console.log('userinfo', userinfo);
-
             const user_info = userinfo.data as UserInfo;
             if (user_info.id === '') return;
+            setSessionProp('user', user_info);
 
             request
               .get(process.env.NEXT_PUBLIC_SERVICE + 'auth/kubeconfig')
               .then((kubeconfig) => {
                 // console.log('kubeconfig', kubeconfig);
-
                 const kube_config = kubeconfig.data as string;
                 if (kube_config === '') return;
 
-                const session: Session = {
-                  token: oauth_token,
-                  user: user_info,
-                  kubeconfig: kube_config
-                };
-                setSession(session);
+                setSessionProp('kubeconfig', kube_config);
 
                 setRedirect('/');
               })
@@ -53,7 +48,7 @@ const Callback: NextPage = () => {
           .catch((err) => console.log(err));
       })
       .catch((err) => console.log(err));
-  }, [router.query, router.isReady]);
+  }, [router, setSessionProp]);
 
   useEffect(() => {
     if (redirect === '') return;
