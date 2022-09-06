@@ -17,24 +17,24 @@ const Callback: NextPage = () => {
     if (code === undefined || code === '' || state === undefined || state === '') return;
 
     request
-      .post('auth/token', { code: code, state: state })
+      .post(process.env.NEXT_PUBLIC_SERVICE + 'auth/token', { code: code, state: state })
       .then((token) => {
-        console.log('token', token);
+        // console.log('token', token);
         const oauth_token = token.data as OAuthToken;
         if (oauth_token.access_token === '') return;
 
         request
-          .get('auth/userinfo')
+          .get(process.env.NEXT_PUBLIC_SERVICE + 'auth/userinfo')
           .then((userinfo) => {
-            console.log('userinfo', userinfo);
+            // console.log('userinfo', userinfo);
 
             const user_info = userinfo.data as UserInfo;
             if (user_info.id === '') return;
 
             request
-              .get('auth/kubeconfig')
+              .get(process.env.NEXT_PUBLIC_SERVICE + 'auth/kubeconfig')
               .then((kubeconfig) => {
-                console.log('kubeconfig', kubeconfig);
+                // console.log('kubeconfig', kubeconfig);
 
                 const kube_config = kubeconfig.data as string;
                 if (kube_config === '') return;
@@ -60,7 +60,7 @@ const Callback: NextPage = () => {
 
     const timer = setTimeout(() => {
       router.replace(redirect);
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [redirect, router]);
 
