@@ -55,6 +55,11 @@ const request = axios.create({
 // request interceptor
 request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
+    // auto append service prefix
+    if (config.url && !config.url?.startsWith('/api/')) {
+      config.url = process.env.NEXT_PUBLIC_SERVICE + config.url;
+    }
+
     let _headers: AxiosRequestHeaders = {};
 
     //获取token，并将其添加至请求头中

@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { K8sApi, ListPods, ReplaceInCLuster } from '../../../services/kubernetes';
+import { K8sApi, ListPods, ReplaceInCLuster } from '../../../services/backend/kubernetes';
 import { BadRequestResp, JsonResp, NotFoundResp } from '../response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {

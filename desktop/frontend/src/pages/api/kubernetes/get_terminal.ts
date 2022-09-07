@@ -1,5 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApplyYaml, CRDMeta, GetCRD, K8sApi, ReplaceInCLuster } from '../../../services/kubernetes';
+import {
+  ApplyYaml,
+  CRDMeta,
+  GetCRD,
+  K8sApi,
+  ReplaceInCLuster
+} from '../../../services/backend/kubernetes';
 import { BadRequestResp, JsonResp, NotFoundResp, UnprocessableResp } from '../response';
 
 const terminal_meta: CRDMeta = {
