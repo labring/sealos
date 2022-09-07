@@ -1,7 +1,8 @@
 import create from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import { Session } from '../interfaces/session';
+import type { Session } from '../interfaces/session';
+import { sessionKey } from '../interfaces/session';
 
 type SessionState = {
   session: Session;
@@ -29,7 +30,7 @@ const useSessionStore = create<SessionState>()(
         },
         isUserLogin: () => get().session?.user?.id !== undefined
       })),
-      { name: 'session' }
+      { name: sessionKey }
     )
   )
 );

@@ -22,3 +22,7 @@ export type Session = {
   user: UserInfo;
   kubeconfig: string | KubeConfig;
 };
+
+const sessionKey = 'session';
+
+export { sessionKey };
