@@ -67,15 +67,16 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		}
 	}
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
-
-	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
-	if err != nil {
-		return errors.Wrap(err, "save images failed in this context")
+	if !options.Offline {
+		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
+		if err != nil {
+			return errors.Wrap(err, "save images failed in this context")
+		}
+		logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
+	} else {
+		logger.Warn("current offline mode, skip pull images")
 	}
-	logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 	options.Tag = imageName
-	//fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
-	cliArgs := strings.Split(options.String(), " ")
 	// start call buildah build
 	output := options.Tag
 	cleanTmpFile := false
@@ -89,8 +90,6 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 	if cleanTmpFile {
 		defer os.Remove(d.buildahBuildOptions.BudResults.Authfile)
 	}
-	// Allow for --pull, --pull=true, --pull=false, --pull=never, --pull=always
-	// --pull-always and --pull-never.  The --pull-never and --pull-always options
 	// will not be documented.
 	pullPolicy := define.PullIfMissing
 	if strings.EqualFold(strings.TrimSpace(iopts.Pull), "true") {
@@ -124,38 +123,6 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		return err
 	}
 	layers := buildahcli.UseLayers()
-	// Nothing provided, we assume the current working directory as build
-	// context
-	if len(cliArgs) == 0 {
-		contextDir, err = os.Getwd()
-		if err != nil {
-			return errors.Wrapf(err, "unable to choose current working directory as build context")
-		}
-	} else {
-		// The context directory could be a URL.  Try to handle that.
-		tempDir, subDir, err := define.TempDirForURL("", "buildah", cliArgs[0])
-		if err != nil {
-			return errors.Wrapf(err, "error prepping temporary context directory")
-		}
-		if tempDir != "" {
-			// We had to download it to a temporary directory.
-			// Delete it later.
-			defer func() {
-				if err = os.RemoveAll(tempDir); err != nil {
-					logger.Error("error removing temporary directory: %v", err)
-				}
-			}()
-			contextDir = filepath.Join(tempDir, subDir)
-		} else {
-			// Nope, it was local.  Use it as is.
-			absDir, err := filepath.Abs(cliArgs[0])
-			if err != nil {
-				return errors.Wrapf(err, "error determining path to directory")
-			}
-			contextDir = absDir
-		}
-	}
-
 	if len(containerfiles) == 0 {
 		// Try to find the Containerfile/Dockerfile within the contextDir
 		containerfile, err := buildahutil.DiscoverContainerfile(contextDir)
@@ -165,7 +132,6 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		containerfiles = append(containerfiles, containerfile)
 		contextDir = filepath.Dir(containerfile)
 	}
-
 	contextDir, err = filepath.EvalSymlinks(contextDir)
 	if err != nil {
 		return errors.Wrapf(err, "error evaluating symlinks in build context path")

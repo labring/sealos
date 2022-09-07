@@ -56,6 +56,7 @@ type BuildOptions struct {
 	Pull               PullType //--pull string[="true"] true  (true,always,never)
 	MaxPullProcs       int      //--max-pull-procs
 	BasicAuth          bool
+	Offline            bool
 	Tag                string
 }
 
