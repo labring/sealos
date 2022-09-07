@@ -44,6 +44,34 @@ const installedApps: TApp[] = [
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'full'
+  },
+  {
+    name: 'Terminal',
+    icon: '/images/terminal.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'Sealos CLoud Terminal'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'full'
+  },
+  {
+    name: 'Kubernetees Dashboard',
+    icon: '/images/kubernetes.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'Sealos Cloud Kubernetes Dashboard'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'full'
   }
 ];
 

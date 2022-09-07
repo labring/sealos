@@ -6,7 +6,7 @@ specifiers:
   '@svgr/webpack': ^6.3.1
   '@tanstack/react-query': ^4.2.3
   '@types/js-yaml': ^4.0.5
-  '@types/node': 18.7.14
+  '@types/node': 18.7.15
   '@types/react': 18.0.18
   '@types/react-dom': 18.0.6
   autoprefixer: ^10.4.7
@@ -43,7 +43,7 @@ dependencies:
 
 devDependencies:
   '@svgr/webpack': 6.3.1
-  '@types/node': 18.7.14
+  '@types/node': 18.7.15
   '@types/react': 18.0.18
   '@types/react-dom': 18.0.6
   autoprefixer: 10.4.8_postcss@8.4.16
@@ -1985,8 +1985,8 @@ packages:
     resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
     dev: false
 
-  /@types/node/18.7.14:
-    resolution: {integrity: sha512-6bbDaETVi8oyIARulOE9qF1/Qdi/23z6emrUh0fNJRUmjznqrixD4MpGDdgOFk5Xb0m2H6Xu42JGdvAxaJR/wA==}
+  /@types/node/18.7.15:
+    resolution: {integrity: sha512-XnjpaI8Bgc3eBag2Aw4t2Uj/49lLBSStHWfqKvIuXD7FIrZyMLWp8KuAFHAqxMZYTF9l08N1ctUn9YNybZJVmQ==}
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
@@ -2011,7 +2011,7 @@ packages:
     resolution: {integrity: sha512-whjk1EDJPcAR2kYHRbFl/lKeeKYTi05A15K9bnLInCVroNDCtXce57xKdI0/rQaA3K+6q0eFyUBPmqfSndUZdQ==}
     dependencies:
       '@types/caseless': 0.12.2
-      '@types/node': 18.7.14
+      '@types/node': 18.7.15
       '@types/tough-cookie': 4.0.2
       form-data: 2.5.1
     dev: false
@@ -2022,14 +2022,14 @@ packages:
   /@types/stream-buffers/3.0.4:
     resolution: {integrity: sha512-qU/K1tb2yUdhXkLIATzsIPwbtX6BpZk0l3dPW6xqWyhfzzM1ECaQ/8faEnu3CNraLiQ9LHyQQPBGp7N9Fbs25w==}
     dependencies:
-      '@types/node': 18.7.14
+      '@types/node': 18.7.15
     dev: false
 
   /@types/tar/4.0.5:
     resolution: {integrity: sha512-cgwPhNEabHaZcYIy5xeMtux2EmYBitfqEceBUi2t5+ETy4dW6kswt6WX4+HqLeiiKOo42EXbGiDmVJ2x+vi37Q==}
     dependencies:
       '@types/minipass': 3.3.5
-      '@types/node': 18.7.14
+      '@types/node': 18.7.15
     dev: false
 
   /@types/tough-cookie/4.0.2:
@@ -2047,7 +2047,7 @@ packages:
   /@types/ws/6.0.4:
     resolution: {integrity: sha512-PpPrX7SZW9re6+Ha8ojZG4Se8AZXgf0GK6zmfqEuCsY49LFDNXO3SByp44X3dFEqtB73lkCDAdUazhAjVPiNwg==}
     dependencies:
-      '@types/node': 18.7.14
+      '@types/node': 18.7.15
     dev: false
 
   /@typescript-eslint/parser/5.34.0_yqf6kl63nyoq5megxukfnom5rm:

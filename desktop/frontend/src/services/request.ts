@@ -1,6 +1,6 @@
 // http.ts
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
-import { getSession } from '../stores/session';
+import useSessionStore from 'stores/session';
 import type { ApiResp } from '../interfaces/api';
 import { isApiResp } from '../interfaces/api';
 
@@ -58,8 +58,8 @@ request.interceptors.request.use(
     let _headers: AxiosRequestHeaders = {};
 
     //获取token，并将其添加至请求头中
-    const session = getSession();
-    if (session?.token.access_token) {
+    const session = useSessionStore.getState().session;
+    if (session?.token?.access_token) {
       const token = session.token.access_token;
       if (token) {
         _headers['Authorization'] = `Bearer ${token}`;
