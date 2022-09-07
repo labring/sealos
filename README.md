@@ -26,7 +26,9 @@
 
 ## Run a kubernetes cluster
 
-[![asciicast](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC.svg)](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC?speed=3)
+[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
+
+
 
 ## What is sealos
 
