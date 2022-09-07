@@ -28,8 +28,6 @@
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
-
-
 ## What is sealos
 
 **sealos is a cloud operating system distribution with Kubernetes as its kernel.**
