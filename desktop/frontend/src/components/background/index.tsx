@@ -6,7 +6,7 @@ export const Background = () => {
     <div
       className={styles.background}
       style={{
-        backgroundImage: `url(https://win11.blueedge.me/img/wallpaper/default/img0.jpg)`
+        backgroundImage: `url(https://raw.githubusercontent.com/blueedgetechno/win11React/master/public/img/wallpaper/dark/img0.jpg)`
       }}
     ></div>
   );
