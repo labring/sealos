@@ -20,15 +20,13 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 )
 
 type ClusterArgs struct {
@@ -50,40 +48,28 @@ func NewClusterFromArgs(imageName []string, args *RunArgs) (*v2.Cluster, error) 
 }
 
 func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
-	var cluster *v2.Cluster
 	clusterPath := constants.Clusterfile(args.ClusterName)
-	if !fileutil.IsExist(clusterPath) {
-		logger.Debug("creating new cluster")
-		cluster = initCluster(args.ClusterName)
-	} else {
-		logger.Debug("loading from existing cluster")
-		clusterFile := clusterfile.NewClusterFile(clusterPath,
-			clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
-			clusterfile.WithCustomEnvs(args.CustomEnv),
-		)
-		err := clusterFile.Process()
-		if err != nil {
-			return nil, err
-		}
-		cluster = clusterFile.GetCluster()
-		if args.Nodes == "" && args.Masters == "" {
-			if args.fs != nil {
-				if args.fs.Changed("env") && len(args.CustomEnv) > 0 {
-					cluster.Spec.Env = args.CustomEnv
-				}
-				// todo: overwrite commands
-			}
-			return applydrivers.NewDefaultApplier(cluster, imageName, args.CustomConfigFiles...)
-		}
-	}
-	c := &ClusterArgs{
-		clusterName: args.ClusterName,
-		cluster:     cluster,
-	}
-	if err := c.SetClusterRunArgs(imageName, args); err != nil {
+	cf := clusterfile.NewClusterFile(clusterPath,
+		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
+		clusterfile.WithCustomEnvs(args.CustomEnv),
+	)
+	err := cf.Process()
+	if err != nil && err != clusterfile.ErrClusterFileNotExists {
 		return nil, err
 	}
-	return applydrivers.NewDefaultApplier(c.cluster, nil, args.CustomConfigFiles...)
+	cluster := cf.GetCluster()
+	if cluster == nil {
+		logger.Debug("creating new cluster")
+		cluster = initCluster(args.ClusterName)
+	}
+	c := &ClusterArgs{
+		clusterName: cluster.Name,
+		cluster:     cluster,
+	}
+	if err = c.SetClusterRunArgs(imageName, args); err != nil {
+		return nil, err
+	}
+	return applydrivers.NewDefaultApplier(c.cluster, cf, imageName)
 }
 
 func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
@@ -124,6 +110,9 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
+	if err := PreProcessIPList(args.Cluster); err != nil {
+		return err
+	}
 	if args.fs != nil {
 		if args.fs.Changed("env") || len(r.cluster.Spec.Env) == 0 {
 			r.cluster.Spec.Env = args.CustomEnv
@@ -148,24 +137,24 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		}
 	}
 
-	r.cluster.Spec.Image = imageList
-	if err := PreProcessIPList(args.Cluster); err != nil {
-		return err
-	}
+	r.cluster.Spec.Image = append(r.cluster.Spec.Image, imageList...)
 
-	if len(args.Cluster.Masters) > 0 {
-		masters := strings2.SplitRemoveEmpty(args.Cluster.Masters, ",")
-		nodes := strings2.SplitRemoveEmpty(args.Cluster.Nodes, ",")
-		r.hosts = []v2.Host{}
-		if len(masters) != 0 {
-			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
+	// set host when cluster is not yet initialized
+	if r.cluster.CreationTimestamp.IsZero() {
+		if len(args.Cluster.Masters) > 0 {
+			masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
+			nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+			r.hosts = []v2.Host{}
+			if len(masters) != 0 {
+				r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
+			}
+			if len(nodes) != 0 {
+				r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
+			}
+			r.cluster.Spec.Hosts = r.hosts
+		} else {
+			return fmt.Errorf("master ip(s) must specified")
 		}
-		if len(nodes) != 0 {
-			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
-		}
-		r.cluster.Spec.Hosts = r.hosts
-	} else {
-		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
@@ -174,6 +163,9 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
+	}
+	if err := PreProcessIPList(args.Cluster); err != nil {
+		return err
 	}
 	if args.fs != nil {
 		if args.fs.Changed("user") || r.cluster.Spec.SSH.User == "" {
@@ -193,13 +185,9 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 		}
 	}
 
-	if err := PreProcessIPList(args.Cluster); err != nil {
-		return err
-	}
-
 	if len(args.Cluster.Masters) > 0 {
-		masters := strings2.SplitRemoveEmpty(args.Cluster.Masters, ",")
-		nodes := strings2.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
+		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
 		if len(masters) != 0 {
 			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
@@ -208,8 +196,6 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
 		}
 		r.cluster.Spec.Hosts = r.hosts
-	} else {
-		return fmt.Errorf("enter true iplist, master ip length more than zero")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
@@ -229,7 +215,7 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], defaultPort)
 	for port, host := range hostMap {
 		host.IPS = removeIPListDuplicatesAndEmpty(host.IPS)
-		if port == master0Port && strings2.InList(v2.Master, roles) {
+		if port == master0Port && stringsutil.InList(v2.Master, roles) {
 			r.hosts = append([]v2.Host{*host}, r.hosts...)
 			continue
 		}

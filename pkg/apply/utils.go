@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -39,26 +39,27 @@ func initCluster(clusterName string) *v2.Cluster {
 }
 
 func PreProcessIPList(joinArgs *Cluster) error {
-	if err := iputils.AssemblyIPList(&joinArgs.Masters); err != nil {
+	masters, err := iputils.ParseIPList(joinArgs.Masters)
+	if err != nil {
 		return err
 	}
-	if err := iputils.AssemblyIPList(&joinArgs.Nodes); err != nil {
+	nodes, err := iputils.ParseIPList(joinArgs.Nodes)
+	if err != nil {
 		return err
 	}
-
-	masters := strings2.SplitRemoveEmpty(joinArgs.Masters, ",")
-	nodes := strings2.SplitRemoveEmpty(joinArgs.Nodes, ",")
-	length := len(masters) + len(nodes)
-	data := sets.NewString(masters...)
-	data.Insert(nodes...)
-	if length != data.Len() {
-		return fmt.Errorf("has duplicate ip in iplist")
+	mset := sets.NewString(masters...)
+	nset := sets.NewString(nodes...)
+	ret := mset.Intersection(nset)
+	if len(ret.List()) > 0 {
+		return fmt.Errorf("has duplicate ip: %v", ret.List())
 	}
+	joinArgs.Masters = strings.Join(masters, ",")
+	joinArgs.Nodes = strings.Join(nodes, ",")
 	return nil
 }
 
 func removeIPListDuplicatesAndEmpty(ipList []string) []string {
-	return strings2.RemoveDuplicate(strings2.RemoveStrSlice(ipList, []string{""}))
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(ipList, []string{""}))
 }
 
 func IsIPList(args string) bool {
