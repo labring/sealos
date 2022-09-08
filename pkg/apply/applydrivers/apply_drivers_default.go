@@ -16,11 +16,7 @@ package applydrivers
 
 import (
 	"fmt"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
+	"os"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,26 +25,29 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/constants"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-func NewDefaultApplier(cluster *v2.Cluster, images []string, configs ...string) (Interface, error) {
+func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []string) (Interface, error) {
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty")
 	}
-	var opts []clusterfile.OptionFunc
-	if len(configs) > 0 {
-		opts = append(opts, clusterfile.WithCustomConfigFiles(configs))
+	if cf == nil {
+		cf = clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	}
-	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name), opts...)
-	err := cFile.Process()
+	err := cf.Process()
 	if !cluster.CreationTimestamp.IsZero() && err != nil {
 		return nil, err
 	}
+
 	return &Applier{
 		ClusterDesired: cluster,
-		ClusterFile:    cFile,
-		ClusterCurrent: cFile.GetCluster(),
+		ClusterFile:    cf,
+		ClusterCurrent: cf.GetCluster(),
 		RunNewImages:   images,
 	}, nil
 }
@@ -86,13 +85,17 @@ func (c *Applier) Apply() error {
 	}
 	c.updateStatus(err)
 	logger.Debug("write cluster file to local storage: %s", clusterPath)
+	return yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+}
+
+func (c *Applier) getWriteBackObjects() []interface{} {
 	obj := []interface{}{c.ClusterDesired}
 	if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
 		for i := range configs {
 			obj = append(obj, configs[i])
 		}
 	}
-	return yaml.MarshalYamlToFile(clusterPath, obj...)
+	return obj
 }
 
 func (c *Applier) initStatus() {
@@ -194,6 +197,15 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 func (c *Applier) Delete() error {
 	t := metav1.Now()
 	c.ClusterDesired.DeletionTimestamp = &t
+	defer func() {
+		cfPath := constants.Clusterfile(c.ClusterDesired.Name)
+		target := fmt.Sprintf("%s.%d", cfPath, t.Unix())
+		logger.Debug("write reset cluster file to local: %s", target)
+		if err := yaml.MarshalYamlToFile(cfPath, c.getWriteBackObjects()...); err != nil {
+			logger.Error("failed to store cluster file: %v", err)
+		}
+		_ = os.Rename(cfPath, target)
+	}()
 	return c.deleteCluster()
 }
 
@@ -208,6 +220,5 @@ func (c *Applier) deleteCluster() error {
 	}
 
 	logger.Info("succeeded in deleting current cluster")
-
 	return nil
 }
