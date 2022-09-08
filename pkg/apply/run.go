@@ -58,13 +58,21 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	} else {
 		logger.Debug("loading from existing cluster")
 		clusterFile := clusterfile.NewClusterFile(clusterPath,
-			clusterfile.WithCustomConfigFiles(args.CustomConfigFiles))
+			clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
+			clusterfile.WithCustomEnvs(args.CustomEnv),
+		)
 		err := clusterFile.Process()
 		if err != nil {
 			return nil, err
 		}
 		cluster = clusterFile.GetCluster()
 		if args.Nodes == "" && args.Masters == "" {
+			if args.fs != nil {
+				if args.fs.Changed("env") && len(args.CustomEnv) > 0 {
+					cluster.Spec.Env = args.CustomEnv
+				}
+				// todo: overwrite commands
+			}
 			return applydrivers.NewDefaultApplier(cluster, imageName, args.CustomConfigFiles...)
 		}
 	}
