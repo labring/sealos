@@ -17,19 +17,41 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+/*
+apiVersion: v1
+kind: Metering
+metadata:
+  name: xxxx
+Spec:
+//可以一次性设置多个角色的资源限制
+    []{
+    	owner fanux //必填,基于role的RBAC
+    	namespace [""," "] //必填，需要统计的namespace
+        resources map[string]resource.Quantity //资源类型，必填
+        timestap string //时间戳，用于记录上次统计时间
+        timeInterval "* * * * *"  //使用cron形式，不设置的话默认是统计每小时/天/月的使用量
+ isSettled true //是否已经结算
+}
+*/
 
 // MeteringSpec defines the desired state of Metering
 type MeteringSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	ResourceQuota `json:"resourceQuota"`
+	Namespaces    []string `json:"namespace"`
+	Owner         string   `json:"owner,omitempty"`
+}
 
-	// Foo is an example field of Metering. Edit metering_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type ResourceQuota struct {
+	Resources    map[corev1.ResourceName]string `json:"resources"`
+	TimeStamp    string                         `json:"timeStamp,omitempty"`
+	TimeInterval string                         `json:"timeInterval,omitempty"` // TODO maybe using cron is better
+	Settled      bool                           `json:"settled,omitempty"`
 }
 
 // MeteringStatus defines the observed state of Metering

@@ -35,10 +35,32 @@ spec:
           spec:
             description: MeteringSpec defines the desired state of Metering
             properties:
-              foo:
-                description: Foo is an example field of Metering. Edit metering_types.go
-                  to remove/update
+              namespace:
+                items:
+                  type: string
+                type: array
+              owner:
                 type: string
+              resourceQuota:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                properties:
+                  resources:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  settled:
+                    type: boolean
+                  timeInterval:
+                    type: string
+                  timeStamp:
+                    type: string
+                required:
+                - resources
+                type: object
+            required:
+            - namespace
+            - resourceQuota
             type: object
           status:
             description: MeteringStatus defines the observed state of Metering
