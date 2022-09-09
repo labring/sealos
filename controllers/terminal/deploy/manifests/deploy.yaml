@@ -395,7 +395,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: tomaito/terminal-controller:v1.2
+        image: ghcr.io/labring/terminal-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz

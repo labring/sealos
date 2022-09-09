@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: tomaito/terminal-controller
-  newTag: v1.2
+  newTag: v1.3
