@@ -17,19 +17,44 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+/*
+apiVersion: v1
+kind: Metering
+metadata:
+  name: xxxx
+Spec:
+    	owner: fanux //必填,基于role的RBAC
+    	namespace: string //必填，需要统计的namespace
+        resources: v1.ResourceList //资源类型，必填
+        BillingListM,BillingListH,BillingListD[]{
+             timestamp: int64 //时间戳
+             timeInterval string //间隔多久，/分钟级/小时级/天级
+             amount float64     // 需要支付的金额
+             isSettled:  true //是否已经结算
+        }
+*/
 
 // MeteringSpec defines the desired state of Metering
 type MeteringSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Resources    v1.ResourceList `json:"resources"`
+	Namespace    string          `json:"namespace"`
+	Owner        string          `json:"owner"` // todo add rbac
+	BillingListM []BillingList   `json:"billingListM,omitempty"`
+	BillingListH []BillingList   `json:"billingListH,omitempty"`
+	BillingListD []BillingList   `json:"billingListD,omitempty"`
+}
 
-	// Foo is an example field of Metering. Edit metering_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type BillingList struct {
+	TimeStamp    int64  `json:"timeStamp,omitempty"`    //时间戳
+	TimeInterval string `json:"timeInterval,omitempty"` //间隔 minute/hour/day
+	Settled      bool   `json:"settled,omitempty"`      //是否结账
+	Amount       int64  `json:"amount,omitempty"`       //所需金额
 }
 
 // MeteringStatus defines the observed state of Metering

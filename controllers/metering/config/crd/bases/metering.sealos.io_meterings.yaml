@@ -35,10 +35,69 @@ spec:
           spec:
             description: MeteringSpec defines the desired state of Metering
             properties:
-              foo:
-                description: Foo is an example field of Metering. Edit metering_types.go
-                  to remove/update
+              billingListD:
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              billingListH:
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              billingListM:
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              namespace:
                 type: string
+              owner:
+                type: string
+              resources:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                type: object
+            required:
+            - namespace
+            - owner
+            - resources
             type: object
           status:
             description: MeteringStatus defines the observed state of Metering
