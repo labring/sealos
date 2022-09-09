@@ -40,7 +40,7 @@ func newApplyCmd() *cobra.Command {
 			return applier.Apply()
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+			logger.Info(getContact())
 		},
 	}
 	applyCmd.Flags().StringVarP(&clusterFile, "Clusterfile", "f", "Clusterfile", "apply a kubernetes cluster")

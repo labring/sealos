@@ -24,23 +24,6 @@ import (
 	"github.com/labring/sealos/pkg/apply/processor"
 )
 
-var contact = `
-      ___           ___           ___           ___       ___           ___
-     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \
-    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \
-   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \
-  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \
- /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
- \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
-  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\
-   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /
-    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /
-     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/
-
-                  Website :https://www.sealos.io/
-                  Address :github.com/labring/sealos
-`
-
 var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
@@ -86,7 +69,7 @@ func newRunCmd() *cobra.Command {
 			return applier.Apply()
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+			logger.Info(getContact())
 		},
 	}
 	runArgs.RegisterFlags(runCmd.Flags())

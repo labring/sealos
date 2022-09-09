@@ -56,8 +56,8 @@ func newAddCmd() *cobra.Command {
 			}
 			return nil
 		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(getContact())
 		},
 	}
 	addArgs.RegisterFlags(addCmd.Flags(), "be joined", "join")

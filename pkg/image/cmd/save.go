@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newSaveCmd() *cobra.Command {
+func NewSaveCmd() *cobra.Command {
 	var archiveName string
 	var saveCmd = &cobra.Command{
 		Use:     "save",
@@ -49,8 +49,4 @@ func newSaveCmd() *cobra.Command {
 	saveCmd.Flags().StringVarP(&archiveName, "output", "o", "", "save image to tar archive file")
 	saveCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("save image transport to tar archive file.(optional value: %s , %s)", types.OCIArchive, types.DockerArchive))
 	return saveCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newSaveCmd())
 }

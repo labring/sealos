@@ -18,17 +18,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/registry"
+
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	img "github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
 	str "github.com/labring/sealos/pkg/utils/strings"
-)
-
-const (
-	legacyDefaultDomain = "index.docker.io"
-	defaultDomain       = "docker.io"
-	officialRepoName    = "library"
 )
 
 func (s *server) ListImages(ctx context.Context,
@@ -61,20 +57,16 @@ func (s *server) ImageStatus(ctx context.Context,
 func (s *server) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
 	logger.Debug("PullImage begin: %+v", req)
-	defaultImageDomain, _ := splitDockerDomain(req.Image.Image)
 	if req.Image != nil {
 		req.Image.Image = s.replaceImage(req.Image.Image, "PullImage")
 	}
-	replacedImageDomain, _ := splitDockerDomain(req.Image.Image)
-	if req.Auth == nil && replacedImageDomain != defaultImageDomain {
-		up := strings.Split(Auth, ":")
-		if len(up) == 2 {
-			req.Auth = &api.AuthConfig{
-				Username: up[0],
-				Password: up[1],
-			}
+	replacedImageDomain, _ := parseImageDomainAndName(req.Image.Image)
+	if req.Auth == nil {
+		if criAuth, ok := s.options.CRIConfigs[replacedImageDomain]; ok {
+			req.Auth = &criAuth
 		}
 	}
+
 	logger.Debug("PullImage after: %+v", req)
 	rsp, err := s.imageClient.PullImage(ctx, req)
 	if err != nil {
@@ -132,26 +124,24 @@ func (s *server) replaceImage(image, action string) (newImage string) {
 		return
 	}
 
-	domain, imageName := splitDockerDomain(image)
-	logger.Info("domain: %s, imageName: %s, action: %s", domain, imageName, action)
-	name, tag := parseImageNameAndTag(imageName)
-	tag = stripTagDigest(tag)
-	newImageName := name + ":" + tag
-
-	// there's no list of image-shims, or image is not found on the list
-	if len(ShimImages) == 0 || (len(ShimImages) != 0 && !str.In(image, ShimImages)) {
-		if img.RegistryHasImage(SealosHub, Base64Auth, name, tag) {
-			newImage = prependRegistry(newImageName)
-		} else {
-			logger.Info("image %s not found in registry, skipping", newImageName)
-			newImage = joinDockerDomain(domain, newImageName)
+	preDomain, preImageAllName := parseImageDomainAndName(image)
+	logger.Debug("preDomain: %s, preImageAllName: %s, action: %s", preDomain, preImageAllName, action)
+	preImageName, preImageTag := parseImageNameAndTag(preImageAllName)
+	logger.Debug("preImageName: %s, preImageTag: %s, action: %s", preImageName, preImageTag, action)
+	for authDomain, auth := range s.options.CRIConfigs {
+		if reg, err := registry.NewRegistryForDomain(authDomain, auth.Username, auth.Password); err == nil {
+			if tags, err := reg.Tags(preImageName); err != nil {
+				logger.Warn("list tag for %s error: %+v", preImageName, err)
+			} else if str.InList(preImageTag, tags) {
+				newImage = joinImageDomainAndName(authDomain, strings.Join([]string{preImageName, preImageTag}, ":"))
+				logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
+				return
+			}
 		}
-	} else if SealosHub != "" && domain != "" {
-		// image found on the list, and there is a private registry and a domain in the original image
-		newImage = prependRegistry(newImageName)
+		newImage = image
+		logger.Debug("image %s not found in registry, skipping", image)
+		logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
 	}
-
-	logger.Info("begin image: %s, after image: %s, action: %s", image, newImage, action)
 	return
 }
 
@@ -163,25 +153,21 @@ func parseImageNameAndTag(imageName string) (name, tag string) {
 		tag = imageSplitted[1]
 	}
 
+	tagSplitted := strings.Split(tag, "@")
+	if len(tagSplitted) > 1 {
+		logger.Debug("stripped digest in tag: %s", tagSplitted[1])
+	}
+	tag = tagSplitted[0]
 	return
 }
 
-// stripTagDigest strips the digest from the tag, and returns the stripped tag.
-func stripTagDigest(tag string) string {
-	tagSplitted := strings.Split(tag, "@")
-	if len(tagSplitted) > 1 {
-		logger.Info("stripped digest in tag: %s", tagSplitted[1])
-	}
-	return tagSplitted[0]
-}
-
-// prependRegistry prepends the private registry to the imageName.
-func prependRegistry(imageName string) string {
-	return getRegistryDomain() + "/" + imageName
-}
-
-// splitDockerDomain splits image into domain and remainder as well as normalizes them.
-func splitDockerDomain(name string) (domain, remainder string) {
+// parseImageDomainAndName splits image into domain and remainder as well as normalizes them.
+func parseImageDomainAndName(name string) (domain, remainder string) {
+	const (
+		legacyDefaultDomain = "index.docker.io"
+		defaultDockerDomain = "docker.io"
+		officialRepoName    = "library"
+	)
 	i := strings.IndexRune(name, '/')
 	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && strings.ToLower(name[:i]) == name[:i]) {
 		domain, remainder = "", name
@@ -189,18 +175,18 @@ func splitDockerDomain(name string) (domain, remainder string) {
 		domain, remainder = name[:i], name[i+1:]
 	}
 	if domain == legacyDefaultDomain || domain == "" {
-		domain = defaultDomain
+		domain = defaultDockerDomain
 	}
-	if domain == defaultDomain && !strings.ContainsRune(remainder, '/') {
+	if domain == defaultDockerDomain && !strings.ContainsRune(remainder, '/') {
 		remainder = officialRepoName + "/" + remainder
 	}
 	return
 }
 
-// joinDockerDomain joins the domain and the remainder, which is sort of the inverse of splitDockerDomain.
-func joinDockerDomain(domain, remainder string) string {
+// joinImageDomainAndName joins the domain and the remainder, which is sort of the inverse of parseImageDomainAndName.
+func joinImageDomainAndName(domain, remainder string) string {
 	if domain == "" {
 		return remainder
 	}
-	return domain + "/" + remainder
+	return strings.Join([]string{domain, remainder}, "/")
 }

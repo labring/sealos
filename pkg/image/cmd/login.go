@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newLoginCmd() *cobra.Command {
+func NewLoginCmd() *cobra.Command {
 	var username, password string
 	var loginCmd = &cobra.Command{
 		Use:     "login",
@@ -50,8 +50,4 @@ func newLoginCmd() *cobra.Command {
 		os.Exit(1)
 	}
 	return loginCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newLoginCmd())
 }

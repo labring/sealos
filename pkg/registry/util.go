@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"strings"
 
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/containers/image/v5/pkg/docker/config"
+
+	"github.com/labring/sealos/pkg/utils/registry"
 
 	"github.com/docker/docker/api/types"
-	"k8s.io/apimachinery/pkg/util/json"
 )
 
 // this package contains some utils to handle docker image name
@@ -95,23 +95,22 @@ func ParseNormalizedNamed(s string) (Named, error) {
 }
 
 func GetAuthInfo() (map[string]types.AuthConfig, error) {
-	authFile := "/run/user/0/containers/auth.json"
-	if !fileutil.IsExist(authFile) {
-		logger.Warn("if you access private registry,you must be 'sealos login' or 'buildah login'")
-	} else {
-		type auths struct {
-			Auths map[string]types.AuthConfig `json:"auths"`
-		}
-		aus := &auths{}
-		data, err := fileutil.ReadAll(authFile)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(data, aus)
-		if err != nil {
-			return nil, err
-		}
-		return aus.Auths, nil
+	creds, err := config.GetAllCredentials(nil)
+	if err != nil {
+		return nil, err
 	}
-	return nil, nil
+	auths := make(map[string]types.AuthConfig, 0)
+
+	for domain, cred := range creds {
+		reg, err := registry.NewRegistryForDomain(domain, cred.Username, cred.Password)
+		if err == nil {
+			auths[domain] = types.AuthConfig{
+				Username:      cred.Username,
+				Password:      cred.Password,
+				ServerAddress: reg.URL,
+				IdentityToken: cred.IdentityToken,
+			}
+		}
+	}
+	return auths, nil
 }

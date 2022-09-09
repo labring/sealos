@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2022 cuisongliu@qq.com.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,29 +14,8 @@
 
 package cmd
 
-import (
-	"github.com/spf13/cobra"
-
-	"github.com/labring/sealos/pkg/image"
-)
-
-func newLogoutCmd() *cobra.Command {
-	var logoutCmd = &cobra.Command{
-		Use:     "logout",
-		Short:   "logout image repository",
-		Example: `sealos logout registry.cn-qingdao.aliyuncs.com`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			registrySvc, err := image.NewRegistryService()
-			if err != nil {
-				return err
-			}
-			return registrySvc.Logout(args[0])
-		},
-	}
-	return logoutCmd
-}
+import "github.com/labring/sealos/pkg/image/cmd"
 
 func init() {
-	rootCmd.AddCommand(newLogoutCmd())
+	cmd.Register(rootCmd, getContact())
 }

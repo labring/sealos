@@ -22,14 +22,14 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-var exampleCreate = `
+func NewCreateCmd() *cobra.Command {
+	var clusterName string
+	var exampleCreate = `
 create a mysql cluster:
 	sealos create mysql:8.0
 with custom cluster name:
 	sealos create mysql:8.0 -c mysql
 `
-
-func newCreateCmd() *cobra.Command {
 	var createCmd = &cobra.Command{
 		Use:     "create",
 		Short:   "create a cluster without running the CMD",
@@ -64,8 +64,4 @@ func newCreateCmd() *cobra.Command {
 	}
 	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to be created")
 	return createCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newCreateCmd())
 }
