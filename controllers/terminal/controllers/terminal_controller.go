@@ -41,6 +41,7 @@ import (
 )
 
 const (
+	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
 	KeepaliveAnnotation = "lastUpdateTime"
 )
@@ -169,8 +170,9 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 		return err
 	}
 
-	if terminal.Status.Domain != host {
-		terminal.Status.Domain = host
+	domain := Protocol + host
+	if terminal.Status.Domain != domain {
+		terminal.Status.Domain = domain
 		return r.Status().Update(ctx, terminal)
 	}
 
