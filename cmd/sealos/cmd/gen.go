@@ -18,10 +18,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var exampleGen = `
@@ -44,21 +47,38 @@ func newGenCmd() *cobra.Command {
 		Cluster: &apply.Cluster{},
 		SSH:     &apply.SSH{},
 	}
+	var out string
 	var genCmd = &cobra.Command{
 		Use:     "gen",
 		Short:   "generate a Clusterfile",
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster, err := apply.NewClusterFromArgs(args, genArgs)
+			objects, err := apply.NewClusterFromArgs(args, genArgs)
 			if err != nil {
 				return err
 			}
-			fmt.Println(cluster.String())
-			return nil
+			data, err := yaml.MarshalYamlConfigs(objects...)
+			if err != nil {
+				return err
+			}
+			var outputWriter io.WriteCloser
+			switch out {
+			case "", "stdout":
+				outputWriter = os.Stdout
+			default:
+				outputWriter, err = os.Create(out)
+			}
+			if err != nil {
+				return err
+			}
+			defer outputWriter.Close()
+			_, err = fmt.Fprintln(outputWriter, string(data))
+			return err
 		},
 	}
 	genArgs.RegisterFlags(genCmd.Flags())
+	genCmd.Flags().StringVarP(&out, "output", "o", "", "print output to named file")
 	return genCmd
 }
 
