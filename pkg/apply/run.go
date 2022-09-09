@@ -23,6 +23,7 @@ import (
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -35,7 +36,7 @@ type ClusterArgs struct {
 	clusterName string
 }
 
-func NewClusterFromArgs(imageName []string, args *RunArgs) (*v2.Cluster, error) {
+func NewClusterFromArgs(imageName []string, args *RunArgs) ([]interface{}, error) {
 	cluster := initCluster(args.ClusterName)
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
@@ -44,7 +45,18 @@ func NewClusterFromArgs(imageName []string, args *RunArgs) (*v2.Cluster, error) 
 	if err := c.SetClusterRunArgs(imageName, args); err != nil {
 		return nil, err
 	}
-	return c.cluster, nil
+	kubeadmcfg := &runtime.KubeadmConfig{}
+	if err := kubeadmcfg.Merge(""); err != nil {
+		return nil, err
+	}
+	// todo: only generate configurations of the corresponding components by passing parameters
+	return []interface{}{c.cluster,
+		kubeadmcfg.InitConfiguration,
+		kubeadmcfg.ClusterConfiguration,
+		kubeadmcfg.JoinConfiguration,
+		kubeadmcfg.KubeProxyConfiguration,
+		kubeadmcfg.KubeletConfiguration,
+	}, nil
 }
 
 func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interface, error) {
