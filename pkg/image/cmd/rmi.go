@@ -20,23 +20,21 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newTagCmd() *cobra.Command {
-	var tagCmd = &cobra.Command{
-		Use:     "tag",
-		Short:   "tag a image as a new one",
-		Example: `sealos tag labring/kubernetes:v1.24.0 oci-kubernetes:v1.24.0`,
-		Args:    cobra.ExactArgs(2),
+func NewRMICmd() *cobra.Command {
+	var force bool
+	var rmiCmd = &cobra.Command{
+		Use:     "rmi",
+		Short:   "remove one or more cloud images",
+		Example: `sealos rmi [-f] labring/kubernetes:v1.24.0`,
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewImageService()
 			if err != nil {
 				return err
 			}
-			return registrySvc.Tag(args[0], args[1])
+			return registrySvc.Remove(force, args...)
 		},
 	}
-	return tagCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newTagCmd())
+	rmiCmd.Flags().BoolVarP(&force, "force", "f", false, "force removal all of the image")
+	return rmiCmd
 }

@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newLoadCmd() *cobra.Command {
+func NewLoadCmd() *cobra.Command {
 	var archiveName string
 	var loadCmd = &cobra.Command{
 		Use:     "load",
@@ -49,8 +49,4 @@ func newLoadCmd() *cobra.Command {
 	loadCmd.Flags().StringVarP(&archiveName, "input", "i", "", "load image from tar archive file")
 	loadCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
 	return loadCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newLoadCmd())
 }

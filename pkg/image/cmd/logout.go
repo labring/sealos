@@ -20,25 +20,19 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newRMICmd() *cobra.Command {
-	var force bool
-	var rmiCmd = &cobra.Command{
-		Use:     "rmi",
-		Short:   "remove one or more cloud images",
-		Example: `sealos rmi [-f] labring/kubernetes:v1.24.0`,
-		Args:    cobra.MinimumNArgs(1),
+func NewLogoutCmd() *cobra.Command {
+	var logoutCmd = &cobra.Command{
+		Use:     "logout",
+		Short:   "logout image repository",
+		Example: `sealos logout registry.cn-qingdao.aliyuncs.com`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registrySvc, err := image.NewImageService()
+			registrySvc, err := image.NewRegistryService()
 			if err != nil {
 				return err
 			}
-			return registrySvc.Remove(force, args...)
+			return registrySvc.Logout(args[0])
 		},
 	}
-	rmiCmd.Flags().BoolVarP(&force, "force", "f", false, "force removal all of the image")
-	return rmiCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newRMICmd())
+	return logoutCmd
 }

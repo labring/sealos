@@ -15,45 +15,24 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
-
-	"github.com/labring/sealos/pkg/constants"
-
-	"github.com/labring/sealos/pkg/version"
-
 	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/image"
 )
 
-var shortPrint bool
-
-func newVersionCmd() *cobra.Command {
-	var versionCmd = &cobra.Command{
-		Use:     "version",
-		Short:   "version",
+func NewPruneCmd() *cobra.Command {
+	var pruneCmd = &cobra.Command{
+		Use:     "prune",
+		Short:   "prune image",
+		Example: `sealos prune`,
 		Args:    cobra.NoArgs,
-		Example: `sealctl version`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			marshalled, err := json.Marshal(version.Get())
+			registrySvc, err := image.NewImageService()
 			if err != nil {
 				return err
 			}
-			if shortPrint {
-				fmt.Println(version.Get().String())
-			} else {
-				fmt.Println(string(marshalled))
-			}
-			return nil
+			return registrySvc.Prune()
 		},
 	}
-	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")
-	return versionCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newVersionCmd())
-}
-
-func getContact() string {
-	return fmt.Sprintf(constants.Contact, version.Get().String())
+	return pruneCmd
 }

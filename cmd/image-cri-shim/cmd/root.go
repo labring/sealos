@@ -17,7 +17,6 @@ limitations under the License.
 package cmd
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"os/signal"
@@ -25,19 +24,15 @@ import (
 
 	"github.com/labring/sealos/pkg/version"
 
-	"github.com/labring/image-cri-shim/pkg/cri"
-	"github.com/labring/image-cri-shim/pkg/server"
 	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-var shimSocket, criSocket string
-var force bool
+var cfg *shim.Config
+var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -47,65 +42,21 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Version: fmt.Sprintf("%s-%s", version.Get().GitVersion, version.Get().GitCommit),
 	Run: func(cmd *cobra.Command, args []string) {
-
-		run(shimSocket, criSocket)
+		run(cfg)
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
-		data, err := yaml.Unmarshal(server.ConfigFile)
+		var err error
+		cfg, err = shim.Unmarshal(cfgFile)
 		if err != nil {
 			return errors.Wrap(err, "image shim config load error")
 		}
-		shimSocket, _, _ = unstructured.NestedString(data, "shim")
-		logger.Info("shim-socket: %s", shimSocket)
-		criSocket, _, _ = unstructured.NestedString(data, "cri")
-		logger.Info("cri-socket: %s", criSocket)
-		server.SealosHub, _, _ = unstructured.NestedString(data, "address")
-		logger.Info("hub-address: %s", server.SealosHub)
-		force, _, _ = unstructured.NestedBool(data, "force")
-		logger.Info("force: %v", force)
-		server.Debug, _, _ = unstructured.NestedBool(data, "debug")
-		logger.Info("debug: %v", server.Debug)
-		logger.CfgConsoleLogger(server.Debug, false)
-		imageDir, _, _ := unstructured.NestedString(data, "image")
-		logger.Info("image-dir: %v", imageDir)
-		server.Auth, _, _ = unstructured.NestedString(data, "auth")
-		if server.Auth != "" {
-			logger.Info("auth: %v", server.Auth)
-			server.Base64Auth = base64.StdEncoding.EncodeToString([]byte(server.Auth))
-			logger.Info("base64 auth: %v", server.Base64Auth)
+
+		if err = cfg.PreProcess(); err != nil {
+			return err
 		}
 
-		if imageDir != "" {
-			server.RunLoad()
-		}
-		if shimSocket == "" {
-			shimSocket = server.SealosShimSock
-		}
-
-		if server.SealosHub == "" {
-			logger.Warn("registry addr is empty")
-		}
-		if criSocket == "" {
-			socket, err := cri.DetectCRISocket()
-			if err != nil {
-				return err
-			}
-			criSocket = socket
-		}
-		if !force {
-			if !isExist(criSocket) {
-				return errors.New("cri is running?")
-			}
-		}
 		return nil
 	},
-}
-
-func isExist(fileName string) bool {
-	if _, err := os.Stat(fileName); err != nil {
-		return os.IsExist(err)
-	}
-	return true
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -118,28 +69,24 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&server.ConfigFile, "file", "f", "", "config file top image shim")
+	rootCmd.Flags().StringVarP(&cfgFile, "file", "f", "", "image shim root config")
 }
 
-func run(socket string, criSocket string) {
-	options := shim.Options{
-		ShimSocket:  socket,
-		ImageSocket: criSocket,
-	}
-	logger.Info("socket info shim: %v ,image: %v, registry: %v", socket, criSocket, server.SealosHub)
-	_shim, err := shim.NewShim(options)
+func run(cfg *shim.Config) {
+	logger.Info("socket info shim: %v ,image: %v, registry: %v", cfg.ShimSocket, cfg.ImageSocket, cfg.Address)
+	imgShim, err := shim.NewShim(cfg)
 	if err != nil {
-		logger.Fatal("failed to new _shim, %s", err)
+		logger.Fatal("failed to new image_shim, %s", err)
 	}
 
-	err = _shim.Setup()
+	err = imgShim.Setup()
 	if err != nil {
-		logger.Fatal("failed to setup image _shim, %s", err)
+		logger.Fatal("failed to setup image_shim, %s", err)
 	}
 
-	err = _shim.Start()
+	err = imgShim.Start()
 	if err != nil {
-		logger.Fatal(fmt.Sprintf("failed to start image _shim, %s", err))
+		logger.Fatal(fmt.Sprintf("failed to start image_shim, %s", err))
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -151,6 +98,6 @@ func run(socket string, criSocket string) {
 		close(stopCh)
 	case <-stopCh:
 	}
-	_ = os.Remove(socket)
-	logger.Info("Shutting down the image _shim")
+	_ = os.Remove(cfg.ShimSocket)
+	logger.Info("shutting down the image_shim")
 }

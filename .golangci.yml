@@ -8,6 +8,8 @@ run:
   # default is true. Enables skipping of directories:
   #   vendor$, third_party$, testdata$, examples$, Godeps$, builtin$
   skip-dirs-use-default: true
+  skip-dirs:
+    - (^|/)fork($|/)
   modules-download-mode: readonly
 
 linters:

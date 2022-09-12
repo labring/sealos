@@ -51,7 +51,7 @@ func newResetCmd() *cobra.Command {
 			return applier.Delete()
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+			logger.Info(getContact())
 		},
 	}
 	resetArgs.RegisterFlags(resetCmd.Flags())
