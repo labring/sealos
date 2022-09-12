@@ -27,14 +27,13 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-var exampleInspect = `
+func NewInspectCmd() *cobra.Command {
+	var exampleInspect = `
   sealos inspect imageName
   sealos inspect -t app applicationName
 `
 
-var inspectType string
-
-func newInspectCmd() *cobra.Command {
+	var inspectType string
 	var inspectCmd = &cobra.Command{
 		Use:     "inspect",
 		Short:   "inspect the configuration of a application or image",
@@ -83,11 +82,6 @@ func newInspectCmd() *cobra.Command {
 			}
 		},
 	}
-
 	inspectCmd.Flags().StringVarP(&inspectType, "type", "t", "image", "look at the item of the specified type (image or app)")
 	return inspectCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newInspectCmd())
 }

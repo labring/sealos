@@ -33,7 +33,6 @@ import (
 	dcontext "github.com/distribution/distribution/v3/context"
 	"github.com/distribution/distribution/v3/reference"
 	"github.com/distribution/distribution/v3/registry/storage"
-	"github.com/distribution/distribution/v3/registry/storage/driver"
 )
 
 // proxyingRegistry fetches content from a remote registry and caches it locally
@@ -46,70 +45,15 @@ type proxyingRegistry struct {
 }
 
 // NewRegistryPullThroughCache creates a registry acting as a pull through cache
-func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Namespace, driver driver.StorageDriver, config configuration.Proxy, basicAuth bool) (distribution.Namespace, error) {
+func NewRegistryPullThroughCache(ctx context.Context, registry distribution.Namespace, config configuration.Proxy) (distribution.Namespace, error) {
 	remoteURL, err := url.Parse(config.RemoteURL)
 	if err != nil {
 		return nil, err
 	}
-
-	// v := storage.NewVacuum(ctx, driver)
-	// s := scheduler.New(ctx, driver, "/scheduler-state.json")
-	// s.OnBlobExpire(func(ref reference.Reference) error {
-	// 	var r reference.Canonical
-	// 	var ok bool
-	// 	if r, ok = ref.(reference.Canonical); !ok {
-	// 		return fmt.Errorf("unexpected reference type : %T", ref)
-	// 	}
-
-	// 	repo, err := registry.Repository(ctx, r)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	blobs := repo.Blobs(ctx)
-
-	// 	// Clear the repository reference and descriptor caches
-	// 	err = blobs.Delete(ctx, r.Digest())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	err = v.RemoveBlob(r.Digest().String())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	return nil
-	// })
-
-	// s.OnManifestExpire(func(ref reference.Reference) error {
-	// 	var r reference.Canonical
-	// 	var ok bool
-	// 	if r, ok = ref.(reference.Canonical); !ok {
-	// 		return fmt.Errorf("unexpected reference type : %T", ref)
-	// 	}
-
-	// 	repo, err := registry.Repository(ctx, r)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	manifests, err := repo.Manifests(ctx)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	err = manifests.Delete(ctx, r.Digest())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	return nil
-	// })
-
-	// err = s.Start()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
+	var basicAuth bool
+	if remoteURL.Scheme == "http" {
+		basicAuth = true
+	}
 	cs, err := configureAuth(config.Username, config.Password, config.RemoteURL, basicAuth)
 	if err != nil {
 		return nil, err

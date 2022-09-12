@@ -72,7 +72,7 @@ COPY --from=aaaa  . .`,
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if data, err := mergeMountPath(tt.args.ociList, "aaaa"); (err != nil) != tt.wantErr {
+			if data, err := mergeMountPath(tt.args.ociList); (err != nil) != tt.wantErr {
 				t.Errorf("mergeMountPath() error = %v, wantErr %v", err, tt.wantErr)
 			} else {
 				if data != tt.wantData {

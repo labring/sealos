@@ -20,23 +20,19 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newPruneCmd() *cobra.Command {
-	var pruneCmd = &cobra.Command{
-		Use:     "prune",
-		Short:   "prune image",
-		Example: `sealos prune`,
+func NewImagesCmd() *cobra.Command {
+	var imagesCmd = &cobra.Command{
+		Use:     "images",
+		Short:   "list cloud image",
+		Example: `sealos images`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registrySvc, err := image.NewImageService()
 			if err != nil {
 				return err
 			}
-			return registrySvc.Prune()
+			return registrySvc.ListImages()
 		},
 	}
-	return pruneCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newPruneCmd())
+	return imagesCmd
 }

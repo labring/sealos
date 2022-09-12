@@ -20,7 +20,7 @@ import (
 	"github.com/labring/sealos/pkg/image"
 )
 
-func newPullCmd() *cobra.Command {
+func NewPullCmd() *cobra.Command {
 	var pullCmd = &cobra.Command{
 		Use:     "pull",
 		Short:   "pull cloud image",
@@ -35,8 +35,4 @@ func newPullCmd() *cobra.Command {
 		},
 	}
 	return pullCmd
-}
-
-func init() {
-	rootCmd.AddCommand(newPullCmd())
 }
