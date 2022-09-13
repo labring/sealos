@@ -67,6 +67,27 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 
+func (d DeleteProcessor) PreProcessImage(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline PreProcessImage in DeleteProcessor.")
+
+	for i, mount := range cluster.Status.Mounts {
+		if mount.Type == v2.AppImage {
+			continue
+		}
+		dirs, _ := fileutil.GetAllSubDirs(mount.MountPoint)
+		if len(dirs) == 0 {
+			clusterManifest, err := d.ClusterManager.Create(mount.Name, mount.ImageName)
+			if err != nil {
+				return err
+			}
+			mount.Name = clusterManifest.Container
+			mount.MountPoint = clusterManifest.MountPoint
+			cluster.Status.Mounts[i] = mount
+		}
+	}
+	return nil
+}
+
 func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
 	return SyncClusterStatus(cluster, d.ClusterManager, d.ImageManager, true)
 }

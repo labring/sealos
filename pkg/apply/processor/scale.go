@@ -81,6 +81,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	todoList = append(todoList,
 		c.DeleteCheck,
 		c.PreProcess,
+		c.PreProcessImage,
 		c.Delete,
 		//c.ApplyCleanPlugin,
 		c.UnMountRootfs,
