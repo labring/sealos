@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 1
+  replicas: 3
   template:
     metadata:
       annotations:
@@ -68,3 +68,19 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: controller-manager-api-service
+  namespace: system
+spec:
+  ports:
+    - name: http
+      port: 8088
+      protocol: TCP
+      targetPort: 8088
+  selector:
+    control-plane: controller-manager

@@ -167,7 +167,17 @@ func (r *UserGroupNamespaceBindingController) syncRoleBinding(ctx context.Contex
 				roleBinding.Name = user.Subject.Name + "-role"
 				roleBinding.Namespace = ugBinding.Subject.Name
 
-				if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
+				if err = r.Get(ctx, client.ObjectKeyFromObject(roleBinding), roleBinding); err != nil {
+					if !apierrors.IsNotFound(err) {
+						return err
+					}
+				}
+				if !roleBinding.CreationTimestamp.IsZero() {
+					r.Logger.V(1).Info("namespace UserGroupBinding roleBinding is created", "OperationResult", change, "user", roleBinding.Name, "namespace", roleBinding.Namespace)
+					return nil
+				}
+
+				if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, user.DeepCopy(), func() error {
 					if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
 						return err
 					}

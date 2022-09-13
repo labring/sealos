@@ -429,11 +429,6 @@ spec:
                   expirationSeconds is 600, i.e. 10 minutes."
                 format: int32
                 type: integer
-              displayName:
-                description: display name of the user
-                type: string
-            required:
-            - displayName
             type: object
           status:
             description: UserStatus defines the observed state of User
@@ -834,6 +829,22 @@ kind: Service
 metadata:
   labels:
     control-plane: controller-manager
+  name: user-controller-manager-api-service
+  namespace: user-system
+spec:
+  ports:
+  - name: http
+    port: 8088
+    protocol: TCP
+    targetPort: 8088
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
   name: user-controller-manager-metrics-service
   namespace: user-system
 spec:
@@ -853,7 +864,7 @@ metadata:
   name: user-controller-manager
   namespace: user-system
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       control-plane: controller-manager

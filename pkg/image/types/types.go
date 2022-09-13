@@ -62,7 +62,9 @@ func (opts *BuildOptions) String() string {
 	opts.AllPlatforms = false
 	opts.DisableCompression = true
 	opts.Pull = PullTypeIfMissing
-	opts.Platform = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	if opts.Platform == "" {
+		opts.Platform = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	}
 	var sb strings.Builder
 	if opts.NoCache {
 		sb.WriteString(" --no-cache ")
