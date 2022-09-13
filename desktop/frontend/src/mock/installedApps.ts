@@ -60,7 +60,7 @@ const installedApps: TApp[] = [
     size: 'full'
   },
   {
-    name: 'Kubernetees Dashboard',
+    name: 'Kubernetes Dashboard',
     icon: '/images/kubernetes.svg',
     type: 'iframe',
     data: {

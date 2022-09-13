@@ -1,12 +1,13 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@fluentui/react': ^8.94.1
+  '@ctrl/golang-template': ^1.4.1
+  '@fluentui/react': ^8.94.2
   '@kubernetes/client-node': ^0.17.0
   '@svgr/webpack': ^6.3.1
   '@tanstack/react-query': ^4.2.3
   '@types/js-yaml': ^4.0.5
-  '@types/node': 18.7.15
+  '@types/node': 18.7.16
   '@types/react': 18.0.18
   '@types/react-dom': 18.0.6
   autoprefixer: ^10.4.7
@@ -21,13 +22,14 @@ specifiers:
   postcss: ^8.4.14
   react: 18.2.0
   react-dom: 18.2.0
-  sass: ^1.54.8
+  sass: ^1.54.9
   tailwindcss: ^3.1.2
   typescript: 4.8.2
   zustand: ^4.1.1
 
 dependencies:
-  '@fluentui/react': 8.94.1_5d4wf3yo6k5smpa3kasqkeetaq
+  '@ctrl/golang-template': 1.4.1
+  '@fluentui/react': 8.94.2_5d4wf3yo6k5smpa3kasqkeetaq
   '@kubernetes/client-node': 0.17.0
   '@tanstack/react-query': 4.2.3_biqbaboplfbrettd7655fr4n2y
   '@types/js-yaml': 4.0.5
@@ -35,7 +37,7 @@ dependencies:
   clsx: 1.2.1
   immer: 9.0.15
   js-yaml: 4.1.0
-  next: 12.2.5_vuxjv6o7qhupugnkyf7vyqsruq
+  next: 12.2.5_wgobgza36qebbzsbfctw2tohpy
   next-themes: 0.2.0_3xcjr4wz26biff45sz3jtokgje
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
@@ -43,14 +45,14 @@ dependencies:
 
 devDependencies:
   '@svgr/webpack': 6.3.1
-  '@types/node': 18.7.15
+  '@types/node': 18.7.16
   '@types/react': 18.0.18
   '@types/react-dom': 18.0.6
   autoprefixer: 10.4.8_postcss@8.4.16
   eslint: 8.23.0
   eslint-config-next: 12.2.5_yqf6kl63nyoq5megxukfnom5rm
   postcss: 8.4.16
-  sass: 1.54.8
+  sass: 1.54.9
   tailwindcss: 3.1.8_postcss@8.4.16
   typescript: 4.8.2
 
@@ -1329,6 +1331,11 @@ packages:
       to-fast-properties: 2.0.0
     dev: true
 
+  /@ctrl/golang-template/1.4.1:
+    resolution: {integrity: sha512-RxJH+DN4bNsdS0WHRf4d6+t1K38wC1L//wLsgI7R0MuYNaX0ZsLit5jhdljC8h9YzKJ0GzEvdY20yFxtuugZxQ==}
+    engines: {node: '>=8.0.0'}
+    dev: false
+
   /@eslint/eslintrc/1.3.1:
     resolution: {integrity: sha512-OhSY22oQQdw3zgPOOwdoj01l/Dzl1Z+xyUP33tkSN+aqyEhymJCcPHyXt+ylW8FSe0TfRC2VG+ROQOapD0aZSQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
@@ -1453,8 +1460,8 @@ packages:
       tslib: 2.4.0
     dev: false
 
-  /@fluentui/react/8.94.1_5d4wf3yo6k5smpa3kasqkeetaq:
-    resolution: {integrity: sha512-c7DZnAvlh7Ay1dFNxBYlb7hfku9MuuGy6juYkSEF0PcicVuT+/TOuNAAphe2tZQfBrw3BSq5cDsP3VZVbYSqwQ==}
+  /@fluentui/react/8.94.2_5d4wf3yo6k5smpa3kasqkeetaq:
+    resolution: {integrity: sha512-G0fiTdq4vGCm+kSQh3hQ2szG/r2wXmRsD/iNq1ZoWSKoyKViP/yFmothhUgkarFbydnWbDzb+iYZQ5+8J8wgTA==}
     peerDependencies:
       '@types/react': '>=16.8.0 <18.0.0'
       '@types/react-dom': '>=16.8.0 <18.0.0'
@@ -1985,8 +1992,8 @@ packages:
     resolution: {integrity: sha512-F0KIgDJfy2nA3zMLmWGKxcH2ZVEtCZXHHdOQs2gSaQ27+lNeEfGxzkIw90aXswATX7AZ33tahPbzy6KAfUreVw==}
     dev: false
 
-  /@types/node/18.7.15:
-    resolution: {integrity: sha512-XnjpaI8Bgc3eBag2Aw4t2Uj/49lLBSStHWfqKvIuXD7FIrZyMLWp8KuAFHAqxMZYTF9l08N1ctUn9YNybZJVmQ==}
+  /@types/node/18.7.16:
+    resolution: {integrity: sha512-EQHhixfu+mkqHMZl1R2Ovuvn47PUw18azMJOTwSZr9/fhzHNGXAJ0ma0dayRVchprpCj0Kc1K1xKoWaATWF1qg==}
 
   /@types/parse-json/4.0.0:
     resolution: {integrity: sha512-//oorEZjL6sbPcKUaCdIGlIUeH26mgzimjBB77G6XRgnDl/L5wOnpyBGRe/Mmf5CVW3PwEBE1NjiMZ/ssFh4wA==}
@@ -2011,7 +2018,7 @@ packages:
     resolution: {integrity: sha512-whjk1EDJPcAR2kYHRbFl/lKeeKYTi05A15K9bnLInCVroNDCtXce57xKdI0/rQaA3K+6q0eFyUBPmqfSndUZdQ==}
     dependencies:
       '@types/caseless': 0.12.2
-      '@types/node': 18.7.15
+      '@types/node': 18.7.16
       '@types/tough-cookie': 4.0.2
       form-data: 2.5.1
     dev: false
@@ -2022,14 +2029,14 @@ packages:
   /@types/stream-buffers/3.0.4:
     resolution: {integrity: sha512-qU/K1tb2yUdhXkLIATzsIPwbtX6BpZk0l3dPW6xqWyhfzzM1ECaQ/8faEnu3CNraLiQ9LHyQQPBGp7N9Fbs25w==}
     dependencies:
-      '@types/node': 18.7.15
+      '@types/node': 18.7.16
     dev: false
 
   /@types/tar/4.0.5:
     resolution: {integrity: sha512-cgwPhNEabHaZcYIy5xeMtux2EmYBitfqEceBUi2t5+ETy4dW6kswt6WX4+HqLeiiKOo42EXbGiDmVJ2x+vi37Q==}
     dependencies:
       '@types/minipass': 3.3.5
-      '@types/node': 18.7.15
+      '@types/node': 18.7.16
     dev: false
 
   /@types/tough-cookie/4.0.2:
@@ -2047,7 +2054,7 @@ packages:
   /@types/ws/6.0.4:
     resolution: {integrity: sha512-PpPrX7SZW9re6+Ha8ojZG4Se8AZXgf0GK6zmfqEuCsY49LFDNXO3SByp44X3dFEqtB73lkCDAdUazhAjVPiNwg==}
     dependencies:
-      '@types/node': 18.7.15
+      '@types/node': 18.7.16
     dev: false
 
   /@typescript-eslint/parser/5.34.0_yqf6kl63nyoq5megxukfnom5rm:
@@ -3799,12 +3806,12 @@ packages:
       react: '*'
       react-dom: '*'
     dependencies:
-      next: 12.2.5_vuxjv6o7qhupugnkyf7vyqsruq
+      next: 12.2.5_wgobgza36qebbzsbfctw2tohpy
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     dev: false
 
-  /next/12.2.5_vuxjv6o7qhupugnkyf7vyqsruq:
+  /next/12.2.5_wgobgza36qebbzsbfctw2tohpy:
     resolution: {integrity: sha512-tBdjqX5XC/oFs/6gxrZhjmiq90YWizUYU6qOWAfat7zJwrwapJ+BYgX2PmiacunXMaRpeVT4vz5MSPSLgNkrpA==}
     engines: {node: '>=12.22.0'}
     hasBin: true
@@ -3828,7 +3835,7 @@ packages:
       postcss: 8.4.14
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
-      sass: 1.54.8
+      sass: 1.54.9
       styled-jsx: 5.0.4_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
     optionalDependencies:
@@ -4349,8 +4356,8 @@ packages:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
     dev: false
 
-  /sass/1.54.8:
-    resolution: {integrity: sha512-ib4JhLRRgbg6QVy6bsv5uJxnJMTS2soVcCp9Y88Extyy13A8vV0G1fAwujOzmNkFQbR3LvedudAMbtuNRPbQww==}
+  /sass/1.54.9:
+    resolution: {integrity: sha512-xb1hjASzEH+0L0WI9oFjqhRi51t/gagWnxLiwUNMltA0Ab6jIDkAacgKiGYKM9Jhy109osM7woEEai6SXeJo5Q==}
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:

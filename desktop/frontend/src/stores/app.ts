@@ -37,7 +37,7 @@ type TOSState = {
   installedApps: TApp[];
 
   // 打开的应用
-  opendApps: TApp[];
+  openedApps: TApp[];
 
   // 当前应用
   currentApp?: TApp;
@@ -59,13 +59,13 @@ const useAppStore = create<TOSState>()(
   devtools(
     immer((set, get) => ({
       installedApps: [],
-      opendApps: [],
+      openedApps: [],
       currentApp: undefined,
 
       // 初始化
       init: async () => {
-        const res = await request('/api/mock/getInstalledApps');
-        console.log(12123, res);
+        const res = await request('/api/desktop/getInstalledApps');
+        console.log('got installed apps', res);
 
         set((state) => {
           state.installedApps = res.data;
@@ -75,7 +75,7 @@ const useAppStore = create<TOSState>()(
       // 关闭应用
       closeApp: (name: string) => {
         set((state) => {
-          state.opendApps = state.opendApps.filter((app) => app.name !== name);
+          state.openedApps = state.openedApps.filter((app) => app.name !== name);
         });
       },
 
@@ -83,7 +83,7 @@ const useAppStore = create<TOSState>()(
       updateAppInfo: (app: TApp) => {
         const _apps = get().installedApps;
         set((state) => {
-          state.opendApps = state.opendApps.map((_app) => {
+          state.openedApps = state.openedApps.map((_app) => {
             if (_app.name === app.name) {
               return app;
             }
@@ -103,7 +103,7 @@ const useAppStore = create<TOSState>()(
       openApp: async (app: TApp) => {
         set((state) => {
           state.currentApp = app;
-          state.opendApps.push(app);
+          state.openedApps.push(app);
         });
       }
     }))

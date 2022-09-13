@@ -7,7 +7,7 @@ import request from 'services/request';
 import styles from './index.module.scss';
 
 export default function AppStore() {
-  const { data, isLoading } = useQuery(['allApps'], () => request('/api/mock/getAllApps'));
+  const { data, isLoading } = useQuery(['allApps'], () => request('/api/desktop/getAllApps'));
   console.log(123, data);
 
   if (isLoading) {

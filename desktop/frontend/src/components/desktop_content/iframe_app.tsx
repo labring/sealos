@@ -1,30 +1,41 @@
 import { Spinner, SpinnerSize } from '@fluentui/react/lib/Spinner';
 import { useQuery } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
-import request from 'services/request';
-import useAppStore, { TApp } from 'stores/app';
+import { BuildInAction } from '../../interfaces/kubernetes';
+import request from '../../services/request';
+import useAppStore, { TApp } from '../../stores/app';
+import useSessionStore from '../../stores/session';
+import { cleanName } from '../../utils/strings';
 
 export default function IframApp(props: { appItem: TApp }) {
   const { appItem } = props;
   const [interVal, setInterVal] = useState(1000);
   const time = useRef(0);
   const { updateAppInfo } = useAppStore((state) => state);
-  useQuery(['user'], () => request.get('/api/mock/getAppInfo'), {
-    refetchInterval: interVal, //轮询时间
-    onSuccess(data: any) {
-      time.current++;
-      if (data?.data.url) {
-        setInterVal(0);
-        updateAppInfo({
-          ...appItem,
-          data: {
-            url: data?.data?.url,
-            desc: ''
-          }
-        });
+  const session = useSessionStore((s) => s.session);
+
+  const request_url =
+    '/api/kubernetes/apply/' + BuildInAction.Start + '/' + cleanName(appItem.name);
+  useQuery(
+    ['user'],
+    () => request.post(request_url, { kubeconfig: session.kubeconfig, user: session.user }),
+    {
+      refetchInterval: interVal, //轮询时间
+      onSuccess(data: any) {
+        time.current++;
+        if (data?.data?.status == 200 && data?.data.iframe_page) {
+          setInterVal(0);
+          updateAppInfo({
+            ...appItem,
+            data: {
+              url: data?.data?.iframe_page,
+              desc: ''
+            }
+          });
+        }
       }
     }
-  });
+  );
 
   return (
     <div className="h-full">
