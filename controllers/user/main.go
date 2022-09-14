@@ -22,6 +22,9 @@ import (
 	"os"
 	"sync"
 
+	"github.com/labring/sealos/controllers/user/apiserver"
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -120,6 +123,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Payment")
 		os.Exit(1)
 	}
+
+	if err = cache.SetupCache(mgr); err != nil {
+		setupLog.Error(err, "unable to cache controller")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -134,7 +142,7 @@ func main() {
 	defer cancel()
 	go func() {
 		setupLog.Info("starting manager")
-		if err := mgr.Start(ctx); err != nil {
+		if err = mgr.Start(ctx); err != nil {
 			setupLog.Error(err, "failed to running manager")
 			os.Exit(1)
 		}
@@ -147,7 +155,10 @@ func main() {
 	}()
 	<-done
 	go func(mgr ctrl.Manager) {
-		//TODO add apiserver
+		if err = apiserver.Step(mgr, ":8088"); err != nil {
+			setupLog.Error(err, "failed to running apiserver")
+			os.Exit(1)
+		}
 	}(mgr)
 
 	var wg sync.WaitGroup

@@ -19,6 +19,8 @@ package controllers
 import (
 	"context"
 
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+
 	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
@@ -172,38 +174,6 @@ func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx conte
 		}
 	}
 }
-func (r *UserGroupUserBindingController) mergeFromNamespace(ctx context.Context, ugBinding *userv1.UserGroupBinding) (users []userv1.UserGroupBinding) {
-	ugUserBindingList := make([]userv1.UserGroupBindingList, 0)
-	var ugUserBinding userv1.UserGroupBindingList
-	if err := r.List(ctx, &ugUserBinding, client.MatchingFields{"userGroupRef": ugBinding.UserGroupRef}); err != nil {
-		r.Logger.Error(err, "list ugUserBinding error from cache", "userGroupRef", ugBinding.UserGroupRef)
-	}
-	ugUserBindingList = append(ugUserBindingList, ugUserBinding)
-	if err := r.List(ctx, &ugUserBinding, client.MatchingFields{"subject.kind": "Namespace"}); err != nil {
-		r.Logger.Error(err, "list ugUserBinding error from cache", "subject.kind", "User")
-	}
-	ugUserBindingList = append(ugUserBindingList, ugUserBinding)
-
-	var newAny helper.Any
-
-	for i, item := range ugUserBindingList {
-		newIAny := helper.NewAny(nil)
-		for _, j := range item.Items {
-			newIAny = newIAny.InsertValue(j.Name, j)
-		}
-		if i == 0 {
-			newAny = newIAny
-		}
-		newAny = newAny.Intersection(newIAny)
-	}
-	values := newAny.ListValue()
-	for _, value := range values {
-		if u, ok := value.(userv1.UserGroupBinding); ok {
-			users = append(users, u)
-		}
-	}
-	return
-}
 
 func (r *UserGroupUserBindingController) syncRoleBinding(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
 	roleBindingConditionType := userv1.ConditionType("UGNamespaceBindingSyncReady")
@@ -215,7 +185,8 @@ func (r *UserGroupUserBindingController) syncRoleBinding(ctx context.Context, ug
 		Reason:             string(userv1.Ready),
 		Message:            "sync ug namespace binding successfully",
 	}
-	namespaces := r.mergeFromNamespace(ctx, ugBinding)
+
+	namespaces := cache.NewCache(r.Client, r.Logger).FetchNamespaceFromUserGroup(ctx, ugBinding.UserGroupRef)
 	defer r.saveCondition(ugBinding, condition)
 	userName := ugBinding.Annotations[userAnnotationOwnerKey]
 
