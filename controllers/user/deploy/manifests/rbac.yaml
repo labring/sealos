@@ -15,9 +15,6 @@ rules:
       - deletecollection
       - patch
       - update
-      - list
-      - get
-      - watch
 ---
 ## 新增、删除用户，管理员只允许移入移除用户
 apiVersion: rbac.authorization.k8s.io/v1
@@ -35,9 +32,6 @@ rules:
       - deletecollection
       - patch
       - update
-      - list
-      - get
-      - watch
   - apiGroups:
       - user.sealos.io
     resources:
@@ -47,14 +41,14 @@ rules:
       - get
       - watch
 ---
-##普通用户创建namespace，只允许创建管理员
+##普通用户创建namespace,usergroup
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: sealos-user-user-role
 rules:
   - apiGroups:
-    - user.sealos.io
+      - user.sealos.io
     resources:
       - 'usergroupbindings'
     verbs:
@@ -63,6 +57,13 @@ rules:
       - deletecollection
       - patch
       - update
-      - list
-      - get
-      - watch
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroups'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update

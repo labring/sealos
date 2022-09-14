@@ -26,9 +26,6 @@ import (
 
 // UserSpec defines the desired state of User
 type UserSpec struct {
-	// display name of the user
-	DisplayName string `json:"displayName"`
-
 	// expirationSeconds is the requested duration of validity of the issued
 	// certificate. The certificate signer may issue a certificate with a different
 	// validity duration so a client must check the delta between the notBefore and
