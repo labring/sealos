@@ -48,9 +48,9 @@ export async function ApplyYaml(
   spec_str: string
 ): Promise<k8s.KubernetesObject[]> {
   const client = k8s.KubernetesObjectApi.makeApiClient(kc);
-  const specs: k8s.KubernetesObject[] = yaml.loadAll(spec_str) as k8s.KubernetesObject[];
+  const specs = yaml.loadAll(spec_str) as k8s.KubernetesObject[];
   const validSpecs = specs.filter((s) => s && s.kind && s.metadata);
-  const created: k8s.KubernetesObject[] = [];
+  const created = [] as k8s.KubernetesObject[];
   for (const spec of validSpecs) {
     // this is to convince the old version of TypeScript that metadata exists even though we already filtered specs
     // without metadata out
@@ -62,7 +62,8 @@ export async function ApplyYaml(
     try {
       // try to get the resource, if it does not exist an error will be thrown and we will end up in the catch
       // block.
-      await client.read(spec);
+      // TODO: temp fix
+      await client.read<k8s.KubernetesObject>(spec as any);
       // we got the resource, so it exists, so patch it
       //
       // Note that this could fail if the spec refers to a custom resource. For custom resources you may need

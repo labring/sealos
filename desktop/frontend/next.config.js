@@ -17,10 +17,8 @@ const nextConfig = {
     return config;
   },
   experimental: {
-    images: {
-      allowFutureImage: true
-    },
     newNextLinkBehavior: true
+    // fallbackNodePolyfills: false
   }
 };
 
