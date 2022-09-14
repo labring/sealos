@@ -128,7 +128,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     "clsx": "^1.2.1", // 组合样式
     "immer": "^9.0.15", // immutable 对象更新比较方便，结合 zustand 使用
     "next": "12.2.5",
-    "next-themes": "^0.2.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "zustand": "^4.1.1" // 状态管理库，简单好用，typescript 支持 https://github.com/pmndrs/zustand

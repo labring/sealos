@@ -15,31 +15,30 @@
   ],
   "dependencies": {
     "@ctrl/golang-template": "^1.4.1",
-    "@fluentui/react": "^8.94.2",
-    "@kubernetes/client-node": "^0.17.0",
-    "@tanstack/react-query": "^4.2.3",
+    "@fluentui/react": "^8.94.4",
+    "@kubernetes/client-node": "0.17.0",
+    "@tanstack/react-query": "^4.2.4",
     "@types/js-yaml": "^4.0.5",
     "axios": "^0.27.2",
     "clsx": "^1.2.1",
     "immer": "^9.0.15",
     "js-yaml": "^4.1.0",
-    "next": "12.2.5",
-    "next-themes": "^0.2.0",
+    "next": "12.3.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "zustand": "^4.1.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^6.3.1",
-    "@types/node": "18.7.16",
-    "@types/react": "18.0.18",
+    "@types/node": "18.7.18",
+    "@types/react": "18.0.20",
     "@types/react-dom": "18.0.6",
-    "autoprefixer": "^10.4.7",
-    "eslint": "8.23.0",
-    "eslint-config-next": "12.2.5",
-    "postcss": "^8.4.14",
+    "autoprefixer": "^10.4.10",
+    "eslint": "8.23.1",
+    "eslint-config-next": "12.3.0",
+    "postcss": "^8.4.16",
     "sass": "^1.54.9",
-    "tailwindcss": "^3.1.2",
-    "typescript": "4.8.2"
+    "tailwindcss": "^3.1.8",
+    "typescript": "4.8.3"
   }
 }
