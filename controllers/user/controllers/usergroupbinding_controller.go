@@ -94,38 +94,11 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
-	if err := r.InstallCache(mgr); err != nil {
-		return err
-	}
 	r.Logger.V(1).Info("init reconcile controller user group binding")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.UserGroupBinding{}).
 		Complete(r)
 }
-
-func (r *UserGroupBindingReconciler) InstallCache(mgr ctrl.Manager) error {
-	ugb := &userv1.UserGroupBinding{}
-	ugRefFunc := func(obj client.Object) []string {
-		return []string{obj.(*userv1.UserGroupBinding).UserGroupRef}
-	}
-	subjectKindFunc := func(obj client.Object) []string {
-		return []string{obj.(*userv1.UserGroupBinding).Subject.Kind}
-	}
-	subjectNameFunc := func(obj client.Object) []string {
-		return []string{obj.(*userv1.UserGroupBinding).Subject.Name}
-	}
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "userGroupRef", ugRefFunc); err != nil {
-		return err
-	}
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "subject.kind", subjectKindFunc); err != nil {
-		return err
-	}
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "subject.name", subjectNameFunc); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r *UserGroupBindingReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupBindingStatus) error {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.UserGroupBinding{}
