@@ -15,6 +15,7 @@ Here are some basic installation requirements:
 - Supports most Linux distributions,eg:Ubuntu CentOS Rocky linux.
 - Support kubernetes version at [dockerhub](https://hub.docker.com/r/labring/kubernetes/tags).
 - Support container runtime is containerd.
+- Use private IP if on public cloud
 
 ## CPU Architecture  
 
