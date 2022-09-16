@@ -20,7 +20,6 @@ import (
 	"context"
 	"time"
 
-	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
 	uuid "github.com/satori/go.uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -43,6 +42,7 @@ import (
 const (
 	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
+	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
 )
 
@@ -60,7 +60,6 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
@@ -129,34 +128,19 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, terminal *terminalv1.Terminal) error {
-	objectMeta := metav1.ObjectMeta{
-		Name:      terminal.Name,
-		Namespace: terminal.Namespace,
-	}
-	cert := &certv1.Certificate{
-		ObjectMeta: objectMeta,
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, cert, func() error {
-		expectCert := createCert(terminal)
-		cert.Spec.SecretName = expectCert.Spec.SecretName
-		cert.Spec.IssuerRef = expectCert.Spec.IssuerRef
-		if len(cert.Spec.DNSNames) == 0 || cert.Spec.DNSNames[0] == "" {
-			dnsName := uuid.NewV4().String() + DomainSuffix
-			cert.Spec.DNSNames = []string{dnsName}
-		}
-		if err := controllerutil.SetControllerReference(terminal, cert, r.Scheme); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	host := cert.Spec.DNSNames[0]
+	var host string
 	ingress := &networkingv1.Ingress{
-		ObjectMeta: objectMeta,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      terminal.Name,
+			Namespace: terminal.Namespace,
+		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
+		if len(ingress.Spec.Rules) != 0 && ingress.Spec.Rules[0].Host != "" {
+			host = ingress.Spec.Rules[0].Host
+		} else {
+			host = uuid.NewV4().String() + DomainSuffix
+		}
 		expectIngress := createIngress(terminal, host)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
@@ -293,6 +277,10 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 			deployment.Spec.Template.Spec.Containers[0].Image = containers[0].Image
 			deployment.Spec.Template.Spec.Containers[0].Ports = containers[0].Ports
 			deployment.Spec.Template.Spec.Containers[0].Env = containers[0].Env
+		}
+
+		if deployment.Spec.Template.Spec.Hostname == "" {
+			deployment.Spec.Template.Spec.Hostname = randString(HostnameLength)
 		}
 
 		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
