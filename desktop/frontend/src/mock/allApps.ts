@@ -30,12 +30,12 @@ const defaultApps: TApp[] = [
     size: 'full'
   },
   {
-    name: 'Sealos',
+    name: 'sealos',
     icon: 'https://i.imgur.com/VfPj2Il.png',
     type: 'iframe',
     data: {
       url: '',
-      desc: 'Sealos Desktop'
+      desc: 'sealos Cloud'
     },
     gallery: [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',

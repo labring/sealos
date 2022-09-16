@@ -15,7 +15,7 @@
   ],
   "dependencies": {
     "@ctrl/golang-template": "^1.4.1",
-    "@fluentui/react": "^8.94.4",
+    "@fluentui/react": "^8.95.1",
     "@kubernetes/client-node": "0.17.0",
     "@tanstack/react-query": "^4.2.4",
     "@types/js-yaml": "^4.0.5",
@@ -33,7 +33,7 @@
     "@types/node": "18.7.18",
     "@types/react": "18.0.20",
     "@types/react-dom": "18.0.6",
-    "autoprefixer": "^10.4.10",
+    "autoprefixer": "^10.4.11",
     "eslint": "8.23.1",
     "eslint-config-next": "12.3.0",
     "postcss": "^8.4.16",
