@@ -21,7 +21,7 @@ Optional:
 ### Apply cert-manager and ingress configs
 Note: currently we are using `acme`+`dns01` to auto create and manage certs.
 
-### Apply `reflector` to sync tls secrets
+### Apply `reflector` to sync tls secrets, Currently we are using `kubernetes-reflector` with pull approach
 1. Install [reflector](https://github.com/emberstack/kubernetes-reflector)
 2. Update `Certificate` to share tls keys to destination namespaces.
 
