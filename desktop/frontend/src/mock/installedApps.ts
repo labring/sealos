@@ -28,7 +28,7 @@ const installedApps: TApp[] = [
   //     'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
   //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
-  //   size: 'maximize'
+  //   size: 'full'
   // },
   // {
   //   name: 'sealos',
@@ -43,7 +43,7 @@ const installedApps: TApp[] = [
   //     'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
   //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
-  //   size: 'maximize'
+  //   size: 'full'
   // },
   {
     name: 'Terminal',
