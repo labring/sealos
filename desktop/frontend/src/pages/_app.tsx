@@ -5,7 +5,7 @@ import '../styles/globals.scss';
 
 const queryClient = new QueryClient();
 
-function SealosCloud({ Component, pageProps }: AppProps) {
+function APP({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <Component {...pageProps} />
@@ -13,4 +13,4 @@ function SealosCloud({ Component, pageProps }: AppProps) {
   );
 }
 
-export default SealosCloud;
+export default APP;

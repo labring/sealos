@@ -2,7 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@ctrl/golang-template': ^1.4.1
-  '@fluentui/react': ^8.94.4
+  '@fluentui/react': ^8.95.1
   '@kubernetes/client-node': 0.17.0
   '@svgr/webpack': ^6.3.1
   '@tanstack/react-query': ^4.2.4
@@ -10,7 +10,7 @@ specifiers:
   '@types/node': 18.7.18
   '@types/react': 18.0.20
   '@types/react-dom': 18.0.6
-  autoprefixer: ^10.4.10
+  autoprefixer: ^10.4.11
   axios: ^0.27.2
   clsx: ^1.2.1
   eslint: 8.23.1
@@ -28,7 +28,7 @@ specifiers:
 
 dependencies:
   '@ctrl/golang-template': 1.4.1
-  '@fluentui/react': 8.94.4_6hrpdt74nuubt2lijsfizev3cu
+  '@fluentui/react': 8.95.1_6hrpdt74nuubt2lijsfizev3cu
   '@kubernetes/client-node': 0.17.0
   '@tanstack/react-query': 4.3.4_biqbaboplfbrettd7655fr4n2y
   '@types/js-yaml': 4.0.5
@@ -46,7 +46,7 @@ devDependencies:
   '@types/node': 18.7.18
   '@types/react': 18.0.20
   '@types/react-dom': 18.0.6
-  autoprefixer: 10.4.10_postcss@8.4.16
+  autoprefixer: 10.4.11_postcss@8.4.16
   eslint: 8.23.1
   eslint-config-next: 12.3.0_irgkl5vooow2ydyo6aokmferha
   postcss: 8.4.16
@@ -1436,8 +1436,8 @@ packages:
       tslib: 2.4.0
     dev: false
 
-  /@fluentui/react-portal-compat-context/9.0.1_w5j4k42lgipnm43s3brx6h3c34:
-    resolution: {integrity: sha512-KhOcXy2tvzNoAqFowkaRGFiLuRuPjzn6i1W30iMkhgsSVKxa/9jxso86Z8R0eZwA+16RNO/Ia2nX1gqfUac9mw==}
+  /@fluentui/react-portal-compat-context/9.0.2_w5j4k42lgipnm43s3brx6h3c34:
+    resolution: {integrity: sha512-dZiXbi01rjs4mTbHOiwSGG8JkUYGNlt+hOJhfGQobzRfFRU8ZMJpsY+8AeIcXfT08vIapjC5ofI5Nscpp0PftQ==}
     peerDependencies:
       '@types/react': '>=16.8.0 <18.0.0'
       react: '>=16.8.0 <18.0.0'
@@ -1459,8 +1459,8 @@ packages:
       tslib: 2.4.0
     dev: false
 
-  /@fluentui/react/8.94.4_6hrpdt74nuubt2lijsfizev3cu:
-    resolution: {integrity: sha512-zT9TscfVqunSbPRXuCOEwZ/MQK3n0baO2xs+TSTJEEh0POlov5BQb5CYLu/YxdVYkWD2EKeMH+O7Kcy4WmWnxg==}
+  /@fluentui/react/8.95.1_6hrpdt74nuubt2lijsfizev3cu:
+    resolution: {integrity: sha512-ptz/jB5GkGqsr3Mq90kqgQsxG+M9n+NChnKpVdLJcHYOkbCuOb9va9YnhiuNXy6G7MXUNTNyk6BIkLuMdfCmgQ==}
     peerDependencies:
       '@types/react': '>=16.8.0 <18.0.0'
       '@types/react-dom': '>=16.8.0 <18.0.0'
@@ -1473,7 +1473,7 @@ packages:
       '@fluentui/merge-styles': 8.5.3
       '@fluentui/react-focus': 8.8.5_w5j4k42lgipnm43s3brx6h3c34
       '@fluentui/react-hooks': 8.6.11_w5j4k42lgipnm43s3brx6h3c34
-      '@fluentui/react-portal-compat-context': 9.0.1_w5j4k42lgipnm43s3brx6h3c34
+      '@fluentui/react-portal-compat-context': 9.0.2_w5j4k42lgipnm43s3brx6h3c34
       '@fluentui/react-window-provider': 2.2.2_w5j4k42lgipnm43s3brx6h3c34
       '@fluentui/set-version': 8.2.2
       '@fluentui/style-utilities': 8.7.12_w5j4k42lgipnm43s3brx6h3c34
@@ -2250,8 +2250,8 @@ packages:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
     dev: false
 
-  /autoprefixer/10.4.10_postcss@8.4.16:
-    resolution: {integrity: sha512-nMaiDARyp1e74c8IeAXkr+BmFKa8By4Zak7tyaNPF09Iu39WFpNXOWrVirmXjKr+5cOyERwvtbMOLYz6iBJYgQ==}
+  /autoprefixer/10.4.11_postcss@8.4.16:
+    resolution: {integrity: sha512-5lHp6DgRodxlBLSkzHOTcufWFflH1ewfy2hvFQyjrblBFlP/0Yh4O/Wrg4ow8WRlN3AAUFFLAQwX8hTptzqVHg==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
     peerDependencies:

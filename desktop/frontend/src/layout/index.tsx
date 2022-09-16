@@ -18,7 +18,7 @@ export default function Layout({ children }: any) {
   return (
     <>
       <Head>
-        <title>Sealos Desktop</title>
+        <title>sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />
       </Head>
       <div className={styles.desktopContainer}>
