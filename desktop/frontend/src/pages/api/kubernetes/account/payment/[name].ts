@@ -1,4 +1,4 @@
-import { HttpError } from '@kubernetes/client-node';
+import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { paymentMeta } from '../../../../../mock/user';
 import {
@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   } catch (err) {
     console.log(err);
 
-    if (err instanceof HttpError) {
+    if (err instanceof k8s.HttpError) {
       return InternalErrorResp(err.body.message, resp);
     }
   }
