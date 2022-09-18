@@ -840,6 +840,19 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-webhook-service
+  namespace: user-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -860,6 +873,47 @@ spec:
         control-plane: controller-manager
     spec:
       containers:
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: ghcr.io/labring/user-controller:dev
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
       - args:
         - --secure-listen-address=0.0.0.0:8443
         - --upstream=http://127.0.0.1:8080/
@@ -883,39 +937,170 @@ spec:
           capabilities:
             drop:
             - ALL
-      - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
-        command:
-        - /manager
-        image: ghcr.io/labring/user-controller:dev
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        name: manager
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
       securityContext:
         runAsNonRoot: true
       serviceAccountName: user-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: user-serving-cert
+  namespace: user-system
+spec:
+  dnsNames:
+  - user-webhook-service.user-system.svc
+  - user-webhook-service.user-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: user-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: user-selfsigned-issuer
+  namespace: user-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: user-system/user-serving-cert
+  name: user-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /mutate-user-sealos-io-v1-user
+  failurePolicy: Fail
+  name: muser.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /mutate-user-sealos-io-v1-usergroup
+  failurePolicy: Fail
+  name: musergroup.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - usergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /mutate-user-sealos-io-v1-usergroupbinding
+  failurePolicy: Fail
+  name: musergroupbinding.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - usergroupbindings
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: user-system/user-serving-cert
+  name: user-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /validate-user-sealos-io-v1-user
+  failurePolicy: Fail
+  name: vuser.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - users
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /validate-user-sealos-io-v1-usergroup
+  failurePolicy: Fail
+  name: vusergroup.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - usergroups
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: user-webhook-service
+      namespace: user-system
+      path: /validate-user-sealos-io-v1-usergroupbinding
+  failurePolicy: Fail
+  name: vusergroupbinding.kb.io
+  rules:
+  - apiGroups:
+    - user.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - usergroupbindings
+  sideEffects: None
