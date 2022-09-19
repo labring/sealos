@@ -8,7 +8,6 @@ import styles from './index.module.scss';
 
 export default function AppStore() {
   const { data, isLoading } = useQuery(['allApps'], () => request('/api/desktop/getAllApps'));
-  console.log(123, data);
 
   if (isLoading) {
     return <Spinner size={SpinnerSize.large} />;

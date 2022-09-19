@@ -6,13 +6,20 @@ import { immer } from 'zustand/middleware/immer';
 export type TAppFront = {
   isShow?: boolean;
   zIndex?: number;
-  size: 'full' | 'small';
+  size: 'maximize' | 'maxmin' | 'minimize';
   style?: {
-    width: number;
-    height: number;
+    width: number | string;
+    height: number | string;
     isFull: boolean;
     bg: string;
   };
+};
+
+const initialFrantState = {
+  isShow: false,
+  zIndex: 1,
+  size: 'maximize',
+  style: {}
 };
 
 export type TApp = {
@@ -51,8 +58,14 @@ type TOSState = {
   // 打开应用
   openApp: (app: TApp) => void;
 
+  // 切换应用
+  switchApp: (app: TApp) => void;
+
   // 更新应用信息
   updateAppInfo: (app: TApp) => void;
+
+  // 当前最前应用
+  maxZIndex: number;
 };
 
 const useAppStore = create<TOSState>()(
@@ -61,6 +74,7 @@ const useAppStore = create<TOSState>()(
       installedApps: [],
       openedApps: [],
       currentApp: undefined,
+      maxZIndex: 0,
 
       // 初始化
       init: async () => {
@@ -68,7 +82,13 @@ const useAppStore = create<TOSState>()(
         console.log('got installed apps', res);
 
         set((state) => {
-          state.installedApps = res.data;
+          state.installedApps = res.data.map((item: TApp) => {
+            return {
+              ...item,
+              ...initialFrantState
+            };
+          });
+          state.maxZIndex = 0;
         });
       },
 
@@ -101,9 +121,42 @@ const useAppStore = create<TOSState>()(
 
       // 打开应用
       openApp: async (app: TApp) => {
+        const zIndex = (get().maxZIndex || 0) + 1;
+        const _app: TApp = JSON.parse(JSON.stringify(app));
+        _app.zIndex = zIndex;
+        _app.isShow = true;
+        _app.size = 'maximize';
+
         set((state) => {
-          state.currentApp = app;
-          state.openedApps.push(app);
+          if (!state.openedApps.find((item) => item.name === _app.name)) {
+            state.openedApps.push(_app);
+          }
+
+          state.currentApp = _app;
+          state.maxZIndex = zIndex;
+        });
+      },
+
+      // switch app
+      switchApp: (app: TApp) => {
+        const zIndex = (get().maxZIndex || 0) + 1;
+        const _app: TApp = JSON.parse(JSON.stringify(app));
+        _app.zIndex = zIndex;
+        _app.isShow = true;
+        if (_app.size === 'minimize') {
+          _app.size = 'maximize';
+        }
+        set((state) => {
+          // repalce app info
+          state.openedApps = state.openedApps.map((item) => {
+            if (item.name === _app.name) {
+              return _app;
+            }
+            return item;
+          });
+
+          state.currentApp = _app;
+          state.maxZIndex = zIndex;
         });
       }
     }))

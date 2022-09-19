@@ -13,7 +13,7 @@ const defaultApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'full'
+    size: 'maximize'
   },
   {
     name: 'Python Compiler',
@@ -27,7 +27,7 @@ const defaultApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'full'
+    size: 'maximize'
   },
   {
     name: 'sealos',
@@ -41,7 +41,7 @@ const defaultApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'full'
+    size: 'maximize'
   }
 ];
 

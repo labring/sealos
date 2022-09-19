@@ -23,7 +23,7 @@ export default function IframApp(props: { appItem: TApp }) {
       refetchInterval: interVal, //轮询时间
       onSuccess(data: any) {
         time.current++;
-        if (data?.data?.status == 200 && data?.data?.iframe_page) {
+        if (data?.data?.status === 200 && data?.data?.iframe_page) {
           let controller = new AbortController();
           setTimeout(() => {
             controller.abort();

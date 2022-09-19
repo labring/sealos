@@ -1,7 +1,7 @@
-import { Background } from '@/components/background';
+import { Background } from 'components/background';
 import styles from './index.module.scss';
-import Taskbar from '@/components/taskbar';
-import DesktopContent from '@/components/desktop_content';
+import Taskbar from 'components/taskbar';
+import DesktopContent from 'components/desktop_content';
 import Head from 'next/head';
 import useAppStore from 'stores/app';
 import { useEffect } from 'react';
