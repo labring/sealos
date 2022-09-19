@@ -1,8 +1,9 @@
-import Icon from '@/components/icons';
-import Battery from '@/components/battery';
+import Icon from 'components/icons';
+import Battery from 'components/battery';
 
 import styles from './taskbar.module.scss';
 import clsx from 'clsx';
+import useAppStore from 'stores/app';
 
 const Taskbar = () => {
   const clickDispatch = (event: any) => {
@@ -15,6 +16,15 @@ const Taskbar = () => {
       // dispatch(action);
     }
   };
+
+  const {
+    installedApps: apps,
+    openedApps,
+    currentApp,
+    openApp,
+    updateAppInfo,
+    switchApp
+  } = useAppStore((state) => state);
 
   return (
     <div className={styles.taskbar}>
@@ -38,6 +48,24 @@ const Taskbar = () => {
         <div className={clsx(styles.tsIcon)}>
           <Icon src="settings" width={24} />
         </div>
+
+        {openedApps.map((item, index) => {
+          return (
+            <div
+              onClick={() => {
+                switchApp(item);
+              }}
+              key={index}
+              className={clsx({
+                [styles.tsIcon]: true,
+                [styles.opened]: true,
+                [styles.actived]: item.name === currentApp?.name
+              })}
+            >
+              <Icon src={item.icon} width={24} ext />
+            </div>
+          );
+        })}
       </div>
 
       <div className={styles.taskright}>

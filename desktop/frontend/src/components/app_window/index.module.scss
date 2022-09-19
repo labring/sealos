@@ -35,6 +35,9 @@
 
 .actbtns {
   height: 100%;
+  z-index: 99;
+  position: absolute;
+  right: 0;
 
   .uicon {
     height: 100%;

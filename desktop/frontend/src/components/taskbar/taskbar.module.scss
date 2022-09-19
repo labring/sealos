@@ -92,17 +92,17 @@
     transition: all 0.2s ease-in-out;
   }
 
-  &[data-open="true"]:after {
+  &.opened:after {
     width: 6px;
   }
 
-  &[data-active="true"]:after {
+  &.actived:after {
     width: 12px;
     background: var(--clrPrm);
   }
 
   &:hover,
-  &[data-active="true"] {
+  &.actived {
     background: var(--bg2);
     transition: all 0.2s ease-in-out;
   }

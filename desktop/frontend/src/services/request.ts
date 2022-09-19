@@ -71,7 +71,7 @@ request.interceptors.request.use(
       }
     }
 
-    if (!config.headers || config.headers['Content-Type'] == '') {
+    if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
 

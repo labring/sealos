@@ -37,12 +37,7 @@ export default function DesktopContent() {
                 openApp(appItem);
               }}
             >
-              <AppIcon
-                className={clsx(styles.dskIcon, 'prtclk')}
-                src={appItem.icon}
-                payload={'full'}
-                width={36}
-              />
+              <AppIcon className={clsx(styles.dskIcon, 'prtclk')} src={appItem.icon} width={36} />
               <div className={styles.appName}>{appItem.name}</div>
             </div>
           );
