@@ -20,15 +20,16 @@ import (
 	"context"
 	"flag"
 	"os"
-	"sync"
-
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -120,6 +121,25 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Payment")
 		os.Exit(1)
 	}
+
+	if err = cache.SetupCache(mgr); err != nil {
+		setupLog.Error(err, "unable to cache controller")
+		os.Exit(1)
+	}
+
+	if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "User")
+		os.Exit(1)
+	}
+	setupLog.Info("add ug and ugb webhooks")
+	if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
+		os.Exit(1)
+	}
+	if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -132,25 +152,9 @@ func main() {
 	}
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
-	go func() {
-		setupLog.Info("starting manager")
-		if err := mgr.Start(ctx); err != nil {
-			setupLog.Error(err, "failed to running manager")
-			os.Exit(1)
-		}
-	}()
-	done := make(chan struct{})
-	go func() {
-		if mgr.GetCache().WaitForCacheSync(context.Background()) {
-			done <- struct{}{}
-		}
-	}()
-	<-done
-	go func(mgr ctrl.Manager) {
-		//TODO add apiserver
-	}(mgr)
-
-	var wg sync.WaitGroup
-	wg.Add(1)
-	wg.Wait()
+	setupLog.Info("starting manager")
+	if err = mgr.Start(ctx); err != nil {
+		setupLog.Error(err, "failed to running manager")
+		os.Exit(1)
+	}
 }

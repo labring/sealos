@@ -48,7 +48,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const userAnnotationOwnerKey = "user.sealos.io/creator"
+var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
+
 const clusterRoleByCreate = "sealos-user-create-role"
 
 const clusterRoleByManager = "sealos-user-manager-role"
