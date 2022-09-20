@@ -26,19 +26,14 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     return BadRequestResp(resp);
   }
 
-  const { kubeconfig, user, namespace } = req.body;
+  const { kubeconfig } = req.body;
   // console.log(req.body);
-  if (kubeconfig === '' || user === undefined || user === null) {
+  if (kubeconfig === '') {
     return UnprocessableResp('kubeconfig or user', resp);
   }
 
   const kubeconfigR = ReplaceInCLuster(kubeconfig);
   const kc = K8sApi(kubeconfigR);
-
-  const kube_user = kc.getUser(user.id);
-  if (kube_user === null || !kube_user.token || kube_user.token === '') {
-    return NotFoundResp(resp);
-  }
 
   // apply action
 
@@ -51,11 +46,11 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   switch (cleanName) {
     case 'kubernetes-dashboard':
       // instant return iframe page
-      const kda = await KubernetesDashboardApplication.doStart(kc, {} as UserInfo);
+      const kda = await KubernetesDashboardApplication.doStart(kc);
       return JsonResp(kda, resp);
     case 'terminal':
       // call apply to start terminal pod
-      const ta = await TerminalApplication.doStart(kc, user as UserInfo);
+      const ta = await TerminalApplication.doStart(kc);
       return JsonResp(ta, resp);
   }
 

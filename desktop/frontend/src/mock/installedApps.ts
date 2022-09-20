@@ -72,6 +72,48 @@ const installedApps: TApp[] = [
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
+  },
+  {
+    name: 'Prometheus',
+    icon: '/images/prometheus.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'From metrics to insight'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
+  },
+  {
+    name: 'Mysql',
+    icon: '/images/mysql.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'mysql operator'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
+  },
+  {
+    name: 'Redis',
+    icon: '/images/redis.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'redis operator'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
   }
 ];
 

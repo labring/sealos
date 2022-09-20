@@ -8,7 +8,7 @@ const KubernetesDashboardApplication: RunApplication = {
   icon: '/images/kubernetes.svg',
   application_type: ApplicationType.IFrame,
   startTemplate: '',
-  doStart: async (kc: k8s.KubeConfig, user: UserInfo): Promise<StartResp> => {
+  doStart: async (kc: k8s.KubeConfig): Promise<StartResp> => {
     return Promise.resolve({
       status: 200,
       application_type: ApplicationType.IFrame,
