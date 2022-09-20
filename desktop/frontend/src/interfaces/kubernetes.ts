@@ -37,5 +37,5 @@ export type ApplicationTemplate = {
 
 // TODO: add more actions and more user customized variables
 export type RunApplication = ApplicationTemplate & {
-  doStart(kc: k8s.KubeConfig, user: UserInfo): Promise<StartResp>;
+  doStart(kc: k8s.KubeConfig): Promise<StartResp>;
 };

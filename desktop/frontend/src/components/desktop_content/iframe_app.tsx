@@ -16,38 +16,34 @@ export default function IframApp(props: { appItem: TApp }) {
 
   const request_url =
     '/api/kubernetes/apply/' + BuildInAction.Start + '/' + cleanName(appItem.name);
-  useQuery(
-    ['user'],
-    () => request.post(request_url, { kubeconfig: session.kubeconfig, user: session.user }),
-    {
-      refetchInterval: interVal, //轮询时间
-      onSuccess(data: any) {
-        time.current++;
-        if (data?.data?.status === 200 && data?.data?.iframe_page) {
-          let controller = new AbortController();
-          setTimeout(() => {
-            controller.abort();
-          }, 5000);
+  useQuery(['user'], () => request.post(request_url, { kubeconfig: session.kubeconfig }), {
+    refetchInterval: interVal, //轮询时间
+    onSuccess(data: any) {
+      time.current++;
+      if (data?.data?.status === 200 && data?.data?.iframe_page) {
+        let controller = new AbortController();
+        setTimeout(() => {
+          controller.abort();
+        }, 5000);
 
-          fetch(data.data.iframe_page, {
-            mode: 'no-cors',
-            signal: controller.signal
+        fetch(data.data.iframe_page, {
+          mode: 'no-cors',
+          signal: controller.signal
+        })
+          .then(() => {
+            setInterVal(0);
+            updateAppInfo({
+              ...appItem,
+              data: {
+                url: data.data.iframe_page,
+                desc: ''
+              }
+            });
           })
-            .then(() => {
-              setInterVal(0);
-              updateAppInfo({
-                ...appItem,
-                data: {
-                  url: data.data.iframe_page,
-                  desc: ''
-                }
-              });
-            })
-            .catch(() => false);
-        }
+          .catch(() => false);
       }
     }
-  );
+  });
 
   return (
     <div className="h-full">

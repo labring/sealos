@@ -1,7 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import { HttpError } from '@kubernetes/client-node';
 import { ApplicationType, RunApplication, StartResp } from '../../interfaces/kubernetes';
-import { UserInfo } from '../../interfaces/session';
 import { ApplyYaml, CRDMeta, GetCRD } from '../../services/backend/kubernetes';
 import { CRDTemplateBuilder } from '../../services/backend/wrapper';
 
@@ -17,12 +16,12 @@ const terminal_crd_template: string = `
 apiVersion: terminal.sealos.io/v1
 kind: Terminal
 metadata:
-  name: terminal-{{ .user.id }}
+  name: terminal-{{ .kube_user.name }}
   namespace: {{ .namespace }}
   annotations:
     lastUpdateTime: {{ .current_time }}
 spec:
-  user: {{ .user.id }}
+  user: {{ .kube_user.name }}
   token: {{ .kube_user.token }}
   apiServer: https://kubernetes.default.svc.cluster.local:443
   ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
@@ -41,8 +40,17 @@ const TerminalApplication: RunApplication = {
   icon: '/images/terminal.svg',
   application_type: ApplicationType.IFrame,
   startTemplate: '',
-  doStart: async (kc: k8s.KubeConfig, user: UserInfo): Promise<StartResp> => {
-    const terminal_name = 'terminal-' + user.id;
+  doStart: async (kc: k8s.KubeConfig): Promise<StartResp> => {
+    const kube_user = kc.getCurrentUser();
+    if (kube_user === null || !kube_user.token || kube_user.token === '') {
+      return Promise.resolve({
+        status: 500,
+        application_type: ApplicationType.IFrame,
+        iframe_page: ''
+      } as StartResp);
+    }
+
+    const terminal_name = 'terminal-' + kube_user.name;
 
     try {
       const terminalDesc = await GetCRD(kc, terminal_meta, terminal_name);
@@ -88,13 +96,11 @@ const TerminalApplication: RunApplication = {
     }
 
     const current_time = new Date().toISOString();
-    const kube_user = kc.getUser(user.id);
     // TODO: fix with user-namespace variable
     const namespace = terminal_meta.namespace;
 
     const terminalCRD = CRDTemplateBuilder(terminal_crd_template, {
       current_time,
-      user,
       namespace,
       kube_user
     });
