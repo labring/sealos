@@ -1,9 +1,12 @@
-import Icon from 'components/icons';
-import Battery from 'components/battery';
-
-import styles from './taskbar.module.scss';
 import clsx from 'clsx';
-import useAppStore from 'stores/app';
+import Battery from 'components/battery';
+import Icon from 'components/icons';
+import { useEffect, useState } from 'react';
+import useAppStore from '../../stores/app';
+import useSessionStore from '../../stores/session';
+import styles from './taskbar.module.scss';
+
+import Sealos from '../../assets/icons/sealos.svg';
 
 const Taskbar = () => {
   const clickDispatch = (event: any) => {
@@ -26,16 +29,26 @@ const Taskbar = () => {
     switchApp
   } = useAppStore((state) => state);
 
+  const session = useSessionStore((s) => s.session);
+  const [avatar, setAvatar] = useState('');
+  useEffect(() => {
+    if (session.user.avatar) {
+      setAvatar(session.user.avatar);
+    }
+  }, [session]);
+
   return (
     <div className={styles.taskbar}>
       <div className="flex items-center">
         <div className={clsx(styles.tsIcon)}>
-          <Icon src="widget" width={24} />
+          {/* <Icon src="widget" width={24} /> */}
+          <img width={24} height={24} src={avatar} alt="" />
         </div>
       </div>
       <div className={styles.tsbar}>
         <div className={clsx(styles.tsIcon)}>
-          <Icon src="home" width={24} />
+          {/* <Icon src="home" width={24} /> */}
+          <Sealos width={24} height={24} alt="" />
         </div>
         <div className={clsx(styles.tsIcon)}>
           <Icon src="github" width={24} />
@@ -72,14 +85,14 @@ const Taskbar = () => {
         <div>
           <Icon width={10} />
         </div>
-        <div
+        {/* <div
           className="prtclk handcr my-1 px-1 hvlight items-center flex rounded"
           onClick={clickDispatch}
           data-action="PANETOGG"
         >
           <Icon className="mr-1" src="wifi" width={16} />
           <Battery />
-        </div>
+        </div> */}
 
         <div
           className={clsx(styles.taskDate, 'm-1 handcr prtclk rounded hvlight')}
