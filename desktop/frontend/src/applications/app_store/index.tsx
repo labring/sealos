@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-import { Spinner, SpinnerSize } from '@fluentui/react/lib/Spinner';
+import { Spinner } from '@fluentui/react-components';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import request from 'services/request';
@@ -10,7 +10,7 @@ export default function AppStore() {
   const { data, isLoading } = useQuery(['allApps'], () => request('/api/desktop/getAllApps'));
 
   if (isLoading) {
-    return <Spinner size={SpinnerSize.large} />;
+    return <Spinner size={'large'} />;
   }
 
   const apps = data?.data || [];

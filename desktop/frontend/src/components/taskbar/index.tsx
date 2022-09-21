@@ -1,5 +1,4 @@
 import clsx from 'clsx';
-import Battery from 'components/battery';
 import Icon from 'components/icons';
 import { useEffect, useState } from 'react';
 import useAppStore from '../../stores/app';
@@ -9,25 +8,7 @@ import styles from './taskbar.module.scss';
 import Sealos from '../../assets/icons/sealos.svg';
 
 const Taskbar = () => {
-  const clickDispatch = (event: any) => {
-    var action = {
-      type: event.target.dataset.action,
-      payload: event.target.dataset.payload
-    };
-
-    if (action.type) {
-      // dispatch(action);
-    }
-  };
-
-  const {
-    installedApps: apps,
-    openedApps,
-    currentApp,
-    openApp,
-    updateAppInfo,
-    switchApp
-  } = useAppStore((state) => state);
+  const { openedApps, currentApp, switchApp, toggleStartMenu } = useAppStore((state) => state);
 
   const session = useSessionStore((s) => s.session);
   const [avatar, setAvatar] = useState('');
@@ -40,9 +21,13 @@ const Taskbar = () => {
   return (
     <div className={styles.taskbar}>
       <div className="flex items-center">
-        <div className={clsx(styles.tsIcon)}>
-          {/* <Icon src="widget" width={24} /> */}
-          <img width={24} height={24} src={avatar} alt="" />
+        <div
+          className={clsx(styles.tsIcon)}
+          onClick={() => {
+            toggleStartMenu();
+          }}
+        >
+          <img width={30} height={30} src={avatar} alt="" className={styles.avatar} />
         </div>
       </div>
       <div className={styles.tsbar}>
@@ -96,7 +81,6 @@ const Taskbar = () => {
 
         <div
           className={clsx(styles.taskDate, 'm-1 handcr prtclk rounded hvlight')}
-          onClick={clickDispatch}
           data-action="CALNTOGG"
         >
           <div>

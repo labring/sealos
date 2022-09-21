@@ -50,22 +50,27 @@ type TOSState = {
   currentApp?: TApp;
 
   // desktop 初始化
-  init: () => void;
+  init(): void;
 
   // 关闭应用
-  closeApp: (name: string) => void;
+  closeApp(name: string): void;
 
   // 打开应用
-  openApp: (app: TApp) => void;
+  openApp(app: TApp): void;
 
   // 切换应用
-  switchApp: (app: TApp) => void;
+  switchApp(app: TApp): void;
 
   // 更新应用信息
-  updateAppInfo: (app: TApp) => void;
+  updateAppInfo(app: TApp): void;
 
   // 当前最前应用
   maxZIndex: number;
+
+  // start menu
+  isHideStartMenu: boolean;
+
+  toggleStartMenu(): void;
 };
 
 const useAppStore = create<TOSState>()(
@@ -75,6 +80,7 @@ const useAppStore = create<TOSState>()(
       openedApps: [],
       currentApp: undefined,
       maxZIndex: 0,
+      isHideStartMenu: true,
 
       // 初始化
       init: async () => {
@@ -101,7 +107,6 @@ const useAppStore = create<TOSState>()(
 
       // 更新应用信息
       updateAppInfo: (app: TApp) => {
-        const _apps = get().installedApps;
         set((state) => {
           state.openedApps = state.openedApps.map((_app) => {
             if (_app.name === app.name) {
@@ -157,6 +162,12 @@ const useAppStore = create<TOSState>()(
 
           state.currentApp = _app;
           state.maxZIndex = zIndex;
+        });
+      },
+
+      toggleStartMenu: () => {
+        set((state) => {
+          state.isHideStartMenu = !state.isHideStartMenu;
         });
       }
     }))

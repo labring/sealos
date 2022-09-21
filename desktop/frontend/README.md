@@ -121,7 +121,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   ],
   "dependencies": {
     // 后续全部使用 FluentUI
-    "@fluentui/react": "^8.90.2",
+    "@fluentui/react-components": "^9.3.1",
     "@kubernetes/client-node": "^0.17.0",
     "@tanstack/react-query": "^4.2.3", // 请求处理 hooks https://tanstack.com/query/v4
     "axios": "^0.27.2", // 请求库，可以做拦截等，比较方便
@@ -156,3 +156,8 @@ src/\_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
 
 1. 目录名： snake_case
 2. 组件名： PascalCase （ index.tsx 除外 ）
+
+
+### 其它
+1. fluent v9 支持 ssr: https://react.fluentui.dev/?path=/docs/concepts-developer-server-side-rendering--page
+2.
