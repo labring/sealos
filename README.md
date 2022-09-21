@@ -30,9 +30,7 @@
 
 ## What is sealos
 
-**sealos is a cloud operating system distribution with Kubernetes as its kernel.**
-
-In the early stages, operatings systems have adopted a layered architecture, which later evolved into kernel architecture like Linux and Windows. With the emergence of container technologies, cloud OS will migrate to a "cloud kernel" architecture with strong cohesion in the future.
+**sealos is a cloud operating system distribution based on kubernetes.**
 
 ![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
 
@@ -41,9 +39,9 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 
 ## This is not win11 but sealos desktop
 
-Use the cloud like a PC desktop:
+Use the cloud like a PC desktop, Freely run and uninstall any distributed applications:
 
-![](https://user-images.githubusercontent.com/8912557/191508020-5673e33a-6515-4ebb-8cf4-579d721c7a66.png)
+![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
 
 ## Core features
 
@@ -69,10 +67,10 @@ Here `kubernetes:v1.24.0` and `calico:v3.24.1` are the cluster images in the reg
 
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
-$ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget  https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz  && \
+    tar -zxvf sealos_4.1.3_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
 # Create a cluster
-$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -93,6 +91,14 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 ```
 
 And now everything is ready.
+
+## Use cri-docker image
+
+```shell
+sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
+     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
 
 ## Links
 
