@@ -45,7 +45,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const userAnnotationOwnerKey = "user.sealos.io/creator"
+const UserAnnotationOwnerKey = "user.sealos.io/creator"
 const clusterRoleByCreate = "sealos-user-create-role"
 
 const clusterRoleByManager = "sealos-user-manager-role"
@@ -268,7 +268,7 @@ func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) {
 			if err = controllerutil.SetControllerReference(user, ug, r.Scheme); err != nil {
 				return err
 			}
-			ug.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ug.Annotations = map[string]string{UserAnnotationOwnerKey: user.Name}
 			return nil
 		}); err != nil {
 			return errors.Wrap(err, "unable to create UserGroup")
@@ -306,7 +306,7 @@ func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *
 				return err
 			}
 			ugBinding.UserGroupRef = ugName
-			ugBinding.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
+			ugBinding.Annotations = map[string]string{UserAnnotationOwnerKey: user.Name}
 			ugBinding.Subject = rbacv1.Subject{
 				Kind: "Namespace",
 				Name: nsName,

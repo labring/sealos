@@ -74,7 +74,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Cont
 		Message:            "sync ug user binding successfully",
 	}
 	defer r.saveCondition(ugBinding, condition)
-	userName := ugBinding.Annotations[userAnnotationOwnerKey]
+	userName := ugBinding.Annotations[UserAnnotationOwnerKey]
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		var change controllerutil.OperationResult
 		var err error
@@ -85,7 +85,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Cont
 			if err = controllerutil.SetControllerReference(ugBinding, clusterRole, r.Scheme); err != nil {
 				return err
 			}
-			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			clusterRole.Annotations = map[string]string{UserAnnotationOwnerKey: userName}
 			clusterRole.Subjects = []rbacv1.Subject{
 				{
 					Kind:     ugBinding.Subject.Kind,
@@ -130,7 +130,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx conte
 		Message:            "sync ug user binding by owner successfully",
 	}
 	defer r.saveCondition(ugBinding, condition)
-	userName := ugBinding.Annotations[userAnnotationOwnerKey]
+	userName := ugBinding.Annotations[UserAnnotationOwnerKey]
 	if userName == ugBinding.Subject.Name {
 		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 			var change controllerutil.OperationResult
@@ -142,7 +142,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx conte
 				if err = controllerutil.SetControllerReference(ugBinding, clusterRole, r.Scheme); err != nil {
 					return err
 				}
-				clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+				clusterRole.Annotations = map[string]string{UserAnnotationOwnerKey: userName}
 				clusterRole.Subjects = []rbacv1.Subject{
 					{
 						Kind:     ugBinding.Subject.Kind,

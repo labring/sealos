@@ -27,44 +27,51 @@ kind: Metering
 metadata:
   name: xxxx
 Spec:
-    	owner: fanux //必填,基于role的RBAC
-    	namespace: string //必填，需要统计的namespace
-        resources: v1.ResourceList //资源类型，必填
-        BillingListM,BillingListH,BillingListD[]{
-             timestamp: int64 //时间戳
-             timeInterval string //间隔多久，/分钟级/小时级/天级
-             amount float64     // 需要支付的金额
-             isSettled:  true //是否已经结算
-        }
+    	owner: fanux string
+    	namespace: string
+        resources: v1.ResourceList // resource type
 */
 
 // MeteringSpec defines the desired state of Metering
+
 type MeteringSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Resources    v1.ResourceList `json:"resources"`
-	Namespace    string          `json:"namespace"`
-	Owner        string          `json:"owner"` // todo add rbac
-	BillingListM []BillingList   `json:"billingListM,omitempty"`
-	BillingListH []BillingList   `json:"billingListH,omitempty"`
-	BillingListD []BillingList   `json:"billingListD,omitempty"`
+	Namespace string          `json:"namespace"`
+	Owner     string          `json:"owner"`
+	Resources v1.ResourceList `json:"resources,omitempty"`
 }
 
+type TimeIntervalType string
+
+const (
+	MINUTE TimeIntervalType = "Minute"
+	HOUR   TimeIntervalType = "Hour"
+	DAY    TimeIntervalType = "Day"
+)
+
 type BillingList struct {
-	TimeStamp    int64  `json:"timeStamp,omitempty"`    //时间戳
-	TimeInterval string `json:"timeInterval,omitempty"` //间隔 minute/hour/day
-	Settled      bool   `json:"settled,omitempty"`      //是否结账
-	Amount       int64  `json:"amount,omitempty"`       //所需金额
+	TimeStamp    int64            `json:"timeStamp,omitempty"`
+	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
+	Settled      bool             `json:"settled,omitempty"`      //is settled
+	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
 }
 
 // MeteringStatus defines the observed state of Metering
+
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	BillingListM     []BillingList `json:"billingListM,omitempty"`
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="owner",type=string,JSONPath=".spec.owner"
+// +kubebuilder:printcolumn:name="totalAmount",type=integer,JSONPath=".status.totalAmount",description=" The last two digits are decimals ,100 = 1$"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Metering is the Schema for the meterings API
 type Metering struct {
