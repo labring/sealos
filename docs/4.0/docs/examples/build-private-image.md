@@ -136,7 +136,7 @@ sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 ## Deploy for test
 
 ```shell
-sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1  --masters 172.31.37.111
+sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1  --masters 172.31.37.111
 kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/master:NoSchedule-
 kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/control-plane:NoSchedule-
 sealos run labring/ingress-nginx:4.1.0
