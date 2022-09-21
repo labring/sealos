@@ -5,6 +5,7 @@ import DesktopContent from 'components/desktop_content';
 import Head from 'next/head';
 import useAppStore from 'stores/app';
 import { useEffect } from 'react';
+import StartMenu from 'components/start_menu';
 
 export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
@@ -25,6 +26,7 @@ export default function Layout({ children }: any) {
         <Background />
         <DesktopContent />
         <Taskbar />
+        <StartMenu />
       </div>
     </>
   );

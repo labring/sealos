@@ -117,6 +117,10 @@
   border-width: 0 0 0 2px;
 }
 
+.avatar {
+  border-radius: 6px;
+}
+
 @keyframes popintro {
   0% {
     transform: scale(0);
