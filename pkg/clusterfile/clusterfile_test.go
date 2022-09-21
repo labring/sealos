@@ -51,7 +51,7 @@ func Test_NewClusterFile(t *testing.T) {
 					Spec: v2.ClusterSpec{
 						Image: v2.ImageList{
 							"dockerhub.tencentcloudcr.com/labring/kubernetes:v1.23.8",
-							"dockerhub.tencentcloudcr.com/labring/calico:v3.22.1",
+							"dockerhub.tencentcloudcr.com/labring/calico:v3.24.1",
 						},
 						SSH: v2.SSH{
 							User:   "root",

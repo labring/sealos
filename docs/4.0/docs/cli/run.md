@@ -19,7 +19,7 @@ $ sealos run labring/oci-kubernetes-calico:1.24.0-amd64  \
 
 ```shell
 $ sealos run labring/kubernetes:v1.24.0 \
-  labring/calico:v3.22.1 \
+  labring/calico:v3.24.1 \
 --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
 --nodes 192.168.64.21,192.168.64.19
 ```
@@ -45,7 +45,7 @@ $ sealos run labring/oci-kubernetes-calico-openebs:1.24.0-amd64  \
 $ sealos run labring/kubernetes:v1.24.0 \
   --masters 192.168.64.2,192.168.64.22,192.168.64.20  \
   --nodes 192.168.64.21,192.168.64.19
-$ sealos run labring/calico:v3.22.1
+$ sealos run labring/calico:v3.24.1
 $ sealos run labring/openebs:3.1.0
 ```
 

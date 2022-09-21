@@ -30,7 +30,7 @@ spec:
         - amd64
   image:
     - labring/kubernetes:v1.24.0
-    - labring/calico:v3.22.1
+    - labring/calico:v3.24.1
   ssh:
     passwd: xxx
     pk: /root/.ssh/id_rsa

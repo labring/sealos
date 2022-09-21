@@ -39,15 +39,11 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 - From now on, think of all your machines as an abstract supercomputer whose operating system is sealos, where Kubernetes serves as the OS kernel.
 - Instead of IaaS, PaaS and SaaS, there will only be cloud OS drivers(CSI, CNI and CRI implementations), cloud OS kernel(Kubernetes) and distributed applications.
 
-## sealos cloud overview
+## This is not win11 but sealos desktop
 
-> Embedded dashboard application
+Use the cloud like a PC desktop:
 
-![](https://user-images.githubusercontent.com/8912557/181175228-ce599b53-340a-4eb2-9a66-0563267a8d2c.png)
-
-> Embedded terminal application
-
-![](https://user-images.githubusercontent.com/8912557/181174718-12aa119e-880e-41d0-b4ba-b60d0c7283b8.png)
+![](https://user-images.githubusercontent.com/8912557/191508020-5673e33a-6515-4ebb-8cf4-579d721c7a66.png)
 
 ## Core features
 
@@ -69,14 +65,14 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 
 > Installing an HA kubernetes cluster with calico as CNI
 
-Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
+Here `kubernetes:v1.24.0` and `calico:v3.24.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
 
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
    && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # Create a cluster
-$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```

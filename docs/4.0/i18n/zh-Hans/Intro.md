@@ -56,14 +56,14 @@
 
 > 安装一个高可用的 kubernetes 集群，并用 calico 作为网络插件
 
-这里的 `kubernetes:v1.24.0` 和 `calico:v3.22.1` 就是存在 registry 里的集群镜像，完全兼容 OCI 标准, 当然聪明同学立马想到是不是可以用 flannel，答案是当然！
+这里的 `kubernetes:v1.24.0` 和 `calico:v3.24.1` 就是存在 registry 里的集群镜像，完全兼容 OCI 标准, 当然聪明同学立马想到是不是可以用 flannel，答案是当然！
 
 ```shell script
 # 下载并安装 sealos, sealos 是个 golang 的二进制工具，直接下载拷贝到 bin 目录即可, release 页面也可下载
 $ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
    && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
-sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
