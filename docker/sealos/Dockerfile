@@ -1,4 +1,4 @@
-FROM alpine:3.16.2
+FROM ubuntu:18.04
 
 ARG TARGETPLATFORM
 
