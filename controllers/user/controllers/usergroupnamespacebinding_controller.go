@@ -19,6 +19,12 @@ package controllers
 import (
 	"context"
 
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+
+	"golang.org/x/sync/errgroup"
+
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -79,6 +85,15 @@ func (r *UserGroupNamespaceBindingController) syncNamespace(ctx context.Context,
 		var err error
 		ns := &v1.Namespace{}
 		ns.Name = ugBinding.Subject.Name
+		if err = r.Get(ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
+			if !apierrors.IsNotFound(err) {
+				return err
+			}
+		}
+		if !ns.CreationTimestamp.IsZero() {
+			r.Logger.V(1).Info("namespace UserGroupBinding namespace is created", "OperationResult", change, "namespace", ns.Name)
+			return nil
+		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
 			if err = controllerutil.SetControllerReference(ugBinding, ns, r.Scheme); err != nil {
 				return err
@@ -106,40 +121,59 @@ func (r *UserGroupNamespaceBindingController) syncRoleBinding(ctx context.Contex
 		Reason:             string(userv1.Ready),
 		Message:            "sync ug namespace binding successfully",
 	}
+	users := cache.NewCache(r.Client, r.Logger).FetchUserFromUserGroup(ctx, ugBinding.UserGroupRef)
 	defer r.saveCondition(ugBinding, condition)
 	userName := ugBinding.Annotations[userAnnotationOwnerKey]
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var change controllerutil.OperationResult
-		var err error
-		roleBinding := &rbacv1.RoleBinding{}
-		roleBinding.Name = ugBinding.UserGroupRef + "-role"
-		roleBinding.Namespace = ugBinding.Subject.Name
 
-		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-			if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
-				return err
-			}
-			roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-			roleBinding.Subjects = []rbacv1.Subject{
-				{
-					Kind:     ugBinding.Subject.Kind,
-					Name:     ugBinding.Subject.Name,
-					APIGroup: rbacv1.SchemeGroupVersion.Group,
-				},
-			}
-			roleBinding.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.SchemeGroupVersion.Group,
-				Kind:     "ClusterRole",
-				Name:     roleNamespaceByUser,
-			}
+	eg, _ := errgroup.WithContext(context.Background())
+	for _, v := range users {
+		user := v
+		eg.Go(func() error {
+			return retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				var change controllerutil.OperationResult
+				var err error
+				roleBinding := &rbacv1.RoleBinding{}
+				roleBinding.Name = user.Subject.Name + "-role"
+				roleBinding.Namespace = ugBinding.Subject.Name
 
-			return nil
-		}); err != nil {
-			return errors.Wrap(err, "unable to create namespace UserGroupBinding roleBinding")
-		}
-		r.Logger.V(1).Info("create or update namespace UserGroupBinding roleBinding", "OperationResult", change)
-		return nil
-	}); err != nil {
+				if err = r.Get(ctx, client.ObjectKeyFromObject(roleBinding), roleBinding); err != nil {
+					if !apierrors.IsNotFound(err) {
+						return err
+					}
+				}
+				if !roleBinding.CreationTimestamp.IsZero() {
+					r.Logger.V(1).Info("namespace UserGroupBinding roleBinding is created", "OperationResult", change, "user", roleBinding.Name, "namespace", roleBinding.Namespace)
+					return nil
+				}
+
+				if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, user.DeepCopy(), func() error {
+					if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
+						return err
+					}
+					roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+					roleBinding.Subjects = []rbacv1.Subject{
+						{
+							Kind:     "User",
+							Name:     user.Subject.Name,
+							APIGroup: rbacv1.SchemeGroupVersion.Group,
+						},
+					}
+					roleBinding.RoleRef = rbacv1.RoleRef{
+						APIGroup: rbacv1.SchemeGroupVersion.Group,
+						Kind:     "ClusterRole",
+						Name:     roleNamespaceByUser,
+					}
+
+					return nil
+				}); err != nil {
+					return errors.Wrap(err, "unable to create namespace UserGroupBinding roleBinding")
+				}
+				r.Logger.V(1).Info("create or update namespace UserGroupBinding roleBinding", "OperationResult", change, "user", user.Subject.Name)
+				return nil
+			})
+		})
+	}
+	if err := eg.Wait(); err != nil {
 		helper.SetConditionError(condition, "SyncUGUserBindingError", err)
 		r.Recorder.Eventf(ugBinding, v1.EventTypeWarning, "syncUGUserBinding", "Sync UGUserBinding roleBinding %s is error: %v", ugBinding.Name, err)
 	}

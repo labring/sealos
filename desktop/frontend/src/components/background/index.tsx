@@ -6,7 +6,7 @@ export const Background = () => {
     <div
       className={styles.background}
       style={{
-        backgroundImage: `url(https://win11.blueedge.me/img/wallpaper/default/img0.jpg)`
+        backgroundImage: `url(https://images4.alphacoders.com/117/1179686.png)`
       }}
     ></div>
   );

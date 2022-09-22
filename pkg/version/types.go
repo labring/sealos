@@ -16,6 +16,8 @@ limitations under the License.
 
 package version
 
+import "fmt"
+
 // Info contains versioning information.
 // TODO: Add []string of api versions supported? It's still unclear
 // how we'll want to distribute that information.
@@ -30,5 +32,5 @@ type Info struct {
 
 // String returns info as a human-friendly version string.
 func (info Info) String() string {
-	return info.GitVersion
+	return fmt.Sprintf("%s-%s", info.GitVersion, info.GitCommit)
 }

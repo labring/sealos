@@ -20,7 +20,7 @@ cat << EOF > Note.md
 wget  https://github.com/${USERNAME:-labring}/sealos/releases/download/${VERSION}/sealos_${VERSION##v}_linux_amd64.tar.gz  && \\
     tar -zxvf sealos_${VERSION##v}_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin
 # 创建一个集群
-sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1 \
     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
     --nodes 192.168.64.21,192.168.64.19 \
     --passwd your-own-ssh-passwd

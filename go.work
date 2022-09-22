@@ -3,6 +3,7 @@ go 1.19
 use (
 	.
 	./controllers/app
+	./controllers/cluster
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal

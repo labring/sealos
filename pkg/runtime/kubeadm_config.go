@@ -22,19 +22,32 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/imdario/mergo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
+	proxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+var scheme = k8sruntime.NewScheme()
+
+func init() {
+	utilruntime.Must(kubeadmv1beta2.AddToScheme(scheme))
+	utilruntime.Must(kubeadmv1beta3.AddToScheme(scheme))
+	utilruntime.Must(kubeletconfig.AddToScheme(scheme))
+	utilruntime.Must(proxyconfig.AddToScheme(scheme))
+}
 
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
 // Using map to overwrite Kubeadm configs
@@ -188,15 +201,19 @@ func DecodeCRDFromString(config string, kind string) (interface{}, error) {
 	return DecodeCRDFromReader(strings.NewReader(config), kind)
 }
 
-func TypeConversion(raw []byte, kind string) (i interface{}, err error) {
-	i = typeConversion(kind)
-	if i == nil {
+func TypeConversion(raw []byte, kind string) (interface{}, error) {
+	obj := typeConversion(kind)
+	if obj == nil {
 		return nil, fmt.Errorf("not found type %s from %s", kind, string(raw))
 	}
-	return i, yaml.Unmarshal(raw, i)
+	if err := yaml.Unmarshal(raw, obj); err != nil {
+		return nil, err
+	}
+	scheme.Default(obj)
+	return obj, nil
 }
 
-func typeConversion(kind string) interface{} {
+func typeConversion(kind string) k8sruntime.Object {
 	switch kind {
 	case Cluster:
 		return &v2.Cluster{}

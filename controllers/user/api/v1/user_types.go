@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,9 +28,6 @@ import (
 
 // UserSpec defines the desired state of User
 type UserSpec struct {
-	// display name of the user
-	DisplayName string `json:"displayName"`
-
 	// expirationSeconds is the requested duration of validity of the issued
 	// certificate. The certificate signer may issue a certificate with a different
 	// validity duration so a client must check the delta between the notBefore and
@@ -117,4 +116,11 @@ type UserList struct {
 
 func init() {
 	SchemeBuilder.Register(&User{}, &UserList{})
+}
+
+func (r *User) validateCSRExpirationSeconds() error {
+	if r.Spec.CSRExpirationSeconds == 0 {
+		return errors.New("CSRExpirationSeconds is not allowed to be 0")
+	}
+	return nil
 }

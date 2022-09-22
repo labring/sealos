@@ -215,8 +215,19 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 				continue
 			}
 			instanceType, imageID := i.InstanceType, i.ImageId
-
+			roles := make([]string, 0)
+			for _, mp := range i.Tags {
+				if *mp.Key == "master" {
+					roles = append(roles, "master")
+					break
+				}
+				if *mp.Key == "node" {
+					roles = append(roles, "node")
+					break
+				}
+			}
 			hostmap[index] = &v1.Hosts{
+				Roles:    roles,
 				Count:    1,
 				Metadata: []v1.Metadata{metadata},
 				Image:    *imageID,

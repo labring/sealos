@@ -4,7 +4,7 @@
  * @type {import('next').NextConfig}
  **/
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
   webpack(config) {
@@ -17,10 +17,8 @@ const nextConfig = {
     return config;
   },
   experimental: {
-    images: {
-      allowFutureImage: true
-    },
     newNextLinkBehavior: true
+    // fallbackNodePolyfills: false
   }
 };
 

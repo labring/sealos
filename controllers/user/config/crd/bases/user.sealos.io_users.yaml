@@ -58,11 +58,6 @@ spec:
                   expirationSeconds is 600, i.e. 10 minutes."
                 format: int32
                 type: integer
-              displayName:
-                description: display name of the user
-                type: string
-            required:
-            - displayName
             type: object
           status:
             description: UserStatus defines the observed state of User

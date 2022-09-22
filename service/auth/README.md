@@ -12,7 +12,7 @@ Users can easily add oauth2 providers to login.
 
 1. A Running `sealos kubernetes` cluster with admin access.  
     ```shell
-    sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters xxx --nodes xxx -p/-pk
+    sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1 --masters xxx --nodes xxx -p/-pk
     ```
 2. Cluster must have `helm` and `openebs` installed as base requirement.
     ```shell

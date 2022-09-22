@@ -3,6 +3,8 @@ package drivers
 import (
 	"testing"
 
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
@@ -18,14 +20,14 @@ func TestDriver_DeleteInstances(t *testing.T) {
 		{
 			"test delete instance",
 			args{hosts: &v1.Hosts{
-				Count: 0,
-				Metadata: []v1.Metadata{
-					{
-						IP: nil,
-						// TODO this test case should get the instance id from create interface.
-						ID: "i-0d72e0c54323d1d67",
-					},
-				},
+				Roles:     []string{"master"},
+				Count:     1,
+				Resources: nil,
+				Flavor:    string(types.InstanceTypeT2Micro),
+				Arch:      "",
+				Image:     "ami-05248307900d52e3a",
+				Disks:     nil,
+				Metadata:  []v1.Metadata{{IP: []string{"52.80.216.170"}, ID: "i-0d46f2376f8bbd138"}},
 			}},
 			false,
 		},

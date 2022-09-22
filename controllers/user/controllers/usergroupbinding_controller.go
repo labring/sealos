@@ -48,6 +48,9 @@ type UserGroupBindingReconciler struct {
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -96,7 +99,6 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&userv1.UserGroupBinding{}).
 		Complete(r)
 }
-
 func (r *UserGroupBindingReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupBindingStatus) error {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.UserGroupBinding{}

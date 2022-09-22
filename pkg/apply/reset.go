@@ -15,46 +15,28 @@
 package apply
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/constants"
 )
 
 func NewApplierFromResetArgs(args *ResetArgs) (applydrivers.Interface, error) {
-	var cluster *v2.Cluster
 	clusterPath := constants.Clusterfile(args.ClusterName)
-	if fileutil.IsExist(clusterPath) {
-		clusterFile := clusterfile.NewClusterFile(clusterPath)
-		err := clusterFile.Process()
-		if err != nil {
-			return nil, err
-		}
-		cluster = clusterFile.GetCluster()
-		if args.Nodes == "" && args.Masters == "" {
-			return applydrivers.NewDefaultApplier(cluster, nil)
-		}
+	cf := clusterfile.NewClusterFile(clusterPath)
+	err := cf.Process()
+	if err != nil && err != clusterfile.ErrClusterFileNotExists {
+		return nil, err
 	}
-	cluster = &v2.Cluster{}
-	cluster.CreationTimestamp = metav1.Now()
-	cluster.Name = args.ClusterName
-	cluster.Kind = "Cluster"
+	cluster := cf.GetCluster()
+	if cluster == nil {
+		cluster = initCluster(args.ClusterName)
+	}
 	c := &ClusterArgs{
-		clusterName: args.ClusterName,
+		clusterName: cluster.Name,
 		cluster:     cluster,
 	}
-	if err := c.SetClusterResetArgs(args); err != nil {
+	if err = c.SetClusterResetArgs(args); err != nil {
 		return nil, err
 	}
-	logger.Debug("write reset cluster file to local storage: %s", clusterPath)
-	if err := yaml.MarshalYamlToFile(clusterPath, cluster); err != nil {
-		return nil, err
-	}
-	return applydrivers.NewDefaultApplier(c.cluster, nil)
+	return applydrivers.NewDefaultApplier(c.cluster, cf, nil)
 }

@@ -1,6 +1,6 @@
 // http.ts
 import axios, { AxiosRequestConfig, AxiosRequestHeaders, AxiosResponse } from 'axios';
-import { getSession } from '../stores/session';
+import useSessionStore from 'stores/session';
 import type { ApiResp } from '../interfaces/api';
 import { isApiResp } from '../interfaces/api';
 
@@ -55,18 +55,23 @@ const request = axios.create({
 // request interceptor
 request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
+    // auto append service prefix
+    if (config.url && !config.url?.startsWith('/api/')) {
+      config.url = process.env.NEXT_PUBLIC_SERVICE + config.url;
+    }
+
     let _headers: AxiosRequestHeaders = {};
 
     //获取token，并将其添加至请求头中
-    const session = getSession();
-    if (session?.token.access_token) {
+    const session = useSessionStore.getState().session;
+    if (session?.token?.access_token) {
       const token = session.token.access_token;
       if (token) {
         _headers['Authorization'] = `Bearer ${token}`;
       }
     }
 
-    if (!config.headers || config.headers['Content-Type'] == '') {
+    if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
     }
 
