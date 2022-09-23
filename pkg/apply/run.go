@@ -16,9 +16,9 @@ package apply
 
 import (
 	"fmt"
+	"github.com/labring/sealos/pkg/ssh"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
@@ -158,12 +158,48 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 			masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 			nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 			r.hosts = []v2.Host{}
-			arch := runtime.GOARCH
-			if len(masters) != 0 {
-				r.setHostWithIpsPort(masters, []string{v2.MASTER, arch})
+
+			clusterSSH := r.cluster.GetSSH()
+			ssh := ssh.SSH{
+				User:     clusterSSH.User,
+				Password: clusterSSH.Passwd,
 			}
-			if len(nodes) != 0 {
-				r.setHostWithIpsPort(nodes, []string{v2.NODE, arch})
+
+			var amd64MasterList []string
+			var arm64MasterList []string
+			var amd64NodeList []string
+			var arm64NodeList []string
+			// masters grouped by architecture
+			for _, master := range masters {
+				cmd, _ := ssh.Cmd(master, "arch")
+				arch := string(cmd)
+				if arch == "x86_64" {
+					amd64MasterList = append(amd64MasterList, master)
+				} else if arch == "aarch64" {
+					arm64MasterList = append(arm64MasterList, master)
+				}
+			}
+			// nodes grouped by architecture
+			for _, node := range nodes {
+				cmd, _ := ssh.Cmd(node, "arch")
+				arch := string(cmd)
+				if arch == "x86_64" {
+					amd64NodeList = append(amd64NodeList, node)
+				} else if arch == "aarch64" {
+					arm64NodeList = append(arm64NodeList, node)
+				}
+			}
+			if len(amd64MasterList) != 0 {
+				r.setHostWithIpsPort(amd64MasterList, []string{v2.MASTER, string(v2.AMD64)})
+			}
+			if len(amd64NodeList) != 0 {
+				r.setHostWithIpsPort(amd64NodeList, []string{v2.NODE, string(v2.AMD64)})
+			}
+			if len(arm64MasterList) != 0 {
+				r.setHostWithIpsPort(arm64MasterList, []string{v2.MASTER, string(v2.ARM64)})
+			}
+			if len(arm64NodeList) != 0 {
+				r.setHostWithIpsPort(arm64NodeList, []string{v2.NODE, string(v2.ARM64)})
 			}
 			r.cluster.Spec.Hosts = r.hosts
 		} else {
