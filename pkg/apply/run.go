@@ -16,10 +16,11 @@ package apply
 
 import (
 	"fmt"
+	"github.com/labring/sealos/pkg/ssh"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -116,6 +117,32 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 	}, nil
 }
 
+func (r *ClusterArgs) SetClusterArch(sshClient ssh.Interface, ips []string) {
+	var amd64IPList []string
+	var arm64IPList []string
+
+	// masters grouped by architecture
+	for _, ip := range ips {
+		cmd, err := sshClient.Cmd(ip, "arch")
+		if err != nil {
+			logger.Error("init cmd failed")
+			return
+		}
+		arch := strings.TrimSpace(string(cmd))
+		if arch == "x86_64" {
+			amd64IPList = append(amd64IPList, ip)
+		} else if arch == "aarch64" {
+			arm64IPList = append(arm64IPList, ip)
+		}
+	}
+	if len(amd64IPList) != 0 {
+		r.setHostWithIpsPort(amd64IPList, []string{v2.MASTER, string(v2.AMD64)})
+	}
+	if len(arm64IPList) != 0 {
+		r.setHostWithIpsPort(arm64IPList, []string{v2.NODE, string(v2.ARM64)})
+	}
+}
+
 func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error {
 	if len(imageList) == 0 {
 		return fmt.Errorf("image can not be empty")
@@ -153,22 +180,30 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	r.cluster.Spec.Image = append(r.cluster.Spec.Image, imageList...)
 
 	// set host when cluster is not yet initialized
-	if r.cluster.CreationTimestamp.IsZero() {
-		if len(args.Cluster.Masters) > 0 {
-			masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
-			nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
-			r.hosts = []v2.Host{}
-			arch := runtime.GOARCH
-			if len(masters) != 0 {
-				r.setHostWithIpsPort(masters, []string{v2.MASTER, arch})
-			}
-			if len(nodes) != 0 {
-				r.setHostWithIpsPort(nodes, []string{v2.NODE, arch})
-			}
-			r.cluster.Spec.Hosts = r.hosts
-		} else {
-			return fmt.Errorf("master ip(s) must specified")
+	if !r.cluster.CreationTimestamp.IsZero() {
+		return fmt.Errorf("cluster has initialized")
+	}
+	if len(args.Cluster.Masters) > 0 {
+		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
+		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		r.hosts = []v2.Host{}
+		// init ssh client
+		clusterSSH := r.cluster.GetSSH()
+
+		v2SSH := &v2.SSH{
+			User:     clusterSSH.User,
+			Passwd:   clusterSSH.Passwd,
+			Pk:       clusterSSH.Pk,
+			PkPasswd: clusterSSH.PkPasswd,
+			Port:     clusterSSH.Port,
 		}
+		sshClient := ssh.NewSSHClient(v2SSH, true)
+
+		r.SetClusterArch(sshClient, masters)
+		r.SetClusterArch(sshClient, nodes)
+		r.cluster.Spec.Hosts = r.hosts
+	} else {
+		return fmt.Errorf("master ip(s) must specified")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
