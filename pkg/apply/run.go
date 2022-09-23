@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
@@ -157,11 +158,12 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 			masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 			nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 			r.hosts = []v2.Host{}
+			arch := runtime.GOARCH
 			if len(masters) != 0 {
-				r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
+				r.setHostWithIpsPort(masters, []string{v2.MASTER, arch})
 			}
 			if len(nodes) != 0 {
-				r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
+				r.setHostWithIpsPort(nodes, []string{v2.NODE, arch})
 			}
 			r.cluster.Spec.Hosts = r.hosts
 		} else {
