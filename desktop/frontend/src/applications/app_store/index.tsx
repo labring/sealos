@@ -148,7 +148,7 @@ export default function AppStore() {
                     width={100}
                     height={100}
                     data-free="false"
-                    src="https://raw.githubusercontent.com/blueedgetechno/win11React/master/public/img/icon/code.png"
+                    src={item?.gallery[0] || "https://raw.githubusercontent.com/blueedgetechno/win11React/master/public/img/icon/code.png"}
                     alt=""
                   />
                 </div>
@@ -159,11 +159,11 @@ export default function AppStore() {
                   <img
                     alt="name"
                     width="20"
-                    src="https://i.pravatar.cc/150?u=a04258114e29026702d"
+                    src={item.icon || 'https://i.pravatar.cc/150?u=a04258114e29026702d'}
                   />
-                  <div className="text-xss">30k</div>
+                  <div className="text-xss pl-8">30k</div>
                 </div>
-                <div className="text-xss mt-8">{'Free'}</div>
+                <div className="text-xss mt-8">{item.size}</div>
               </div>
             );
           })}
