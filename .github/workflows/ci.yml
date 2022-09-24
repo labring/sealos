@@ -86,7 +86,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
@@ -108,7 +108,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Run Coverage
         run: make coverage
