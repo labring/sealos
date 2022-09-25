@@ -63,8 +63,16 @@ func handlerToken(request *restful.Request, response *restful.Response) {
 		_ = hs.RespError(response, err)
 		return
 	}
+	kubeconfig, err := auth.CreateKubeConfig(oauthToken.AccessToken)
+	if err != nil {
+		_ = hs.RespError(response, err)
+		return
+	}
 
-	_ = hs.RespData(response, oauthToken)
+	_ = hs.RespData(response, map[string]interface{}{
+		"token":      oauthToken,
+		"kubeconfig": kubeconfig,
+	})
 }
 
 func handlerUserInfo(request *restful.Request, response *restful.Response) {
