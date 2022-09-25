@@ -232,3 +232,28 @@ type BuildahBuildOptions struct {
 	*cli.FromAndBudResults
 	*cli.NameSpaceResults
 }
+
+func DefaultPlatform() v1.Platform {
+	return v1.Platform{
+		Architecture: runtime.GOARCH,
+		OS:           runtime.GOOS,
+	}
+}
+
+func ParsePlatform(platform string) v1.Platform {
+	platformList := strings.Split(platform, "/")
+	var platformVar v1.Platform
+	if len(platformList) > 2 {
+		platformVar = v1.Platform{
+			Architecture: platformList[1],
+			OS:           platformList[0],
+			Variant:      platformList[2],
+		}
+	} else {
+		platformVar = v1.Platform{
+			Architecture: platformList[1],
+			OS:           platformList[0],
+		}
+	}
+	return platformVar
+}

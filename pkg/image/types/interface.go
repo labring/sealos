@@ -14,10 +14,12 @@
 
 package types
 
+import v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
 type RegistryService interface {
 	Login(domain, username, passwd string) error
 	Logout(domain string) error
-	Pull(images ...string) error
+	Pull(platform v1.Platform, images ...string) error
 	Push(image string) error
 }
 

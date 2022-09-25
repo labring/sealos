@@ -15,6 +15,11 @@
 package cmd
 
 import (
+	"fmt"
+	"runtime"
+
+	"github.com/labring/sealos/pkg/image/types"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -24,6 +29,7 @@ import (
 
 func NewCreateCmd() *cobra.Command {
 	var clusterName string
+	var platform string
 	var exampleCreate = `
 create a mysql cluster:
 	sealos create mysql:8.0
@@ -48,7 +54,7 @@ with custom cluster name:
 				return err
 			}
 
-			err = registrySvc.Pull(imageName)
+			err = registrySvc.Pull(types.ParsePlatform(platform), imageName)
 			if err != nil {
 				return err
 			}
@@ -63,5 +69,6 @@ with custom cluster name:
 		},
 	}
 	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to be created")
+	createCmd.Flags().StringVar(&platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
 	return createCmd
 }

@@ -20,6 +20,10 @@ import (
 	"os"
 	"time"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/image/types"
 
 	"github.com/containers/buildah"
@@ -46,7 +50,7 @@ type pullOptions struct {
 	pullPolicy       string
 }
 
-func (*Service) Pull(images ...string) error {
+func (*Service) Pull(platform v1.Platform, images ...string) error {
 	opt := pullOptions{
 		allTags:          false,
 		authfile:         auth.GetDefaultAuthFile(),
@@ -86,7 +90,10 @@ func (*Service) Pull(images ...string) error {
 	if err != nil {
 		return err
 	}
-
+	systemContext.OSChoice = platform.OS
+	systemContext.ArchitectureChoice = platform.Architecture
+	systemContext.VariantChoice = platform.Variant
+	logger.Info("pull images %v for platform is %s", images, fmt.Sprintf("%s/%s", systemContext.OSChoice, systemContext.ArchitectureChoice))
 	opts := buildah.PullOptions{
 		SignaturePolicyPath: opt.signaturePolicy,
 		Store:               store,
@@ -100,6 +107,7 @@ func (*Service) Pull(images ...string) error {
 		OciDecryptConfig:    decConfig,
 		PullPolicy:          policy,
 	}
+
 	for _, image := range images {
 		imageID, err := buildah.Pull(context.TODO(), image, opts)
 		if err != nil {
