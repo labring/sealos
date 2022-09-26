@@ -118,20 +118,7 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 		return err
 	}
 	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths)
-	platform := strings.Split(options.Platform, "/")
-	var platformVar v1.Platform
-	if len(platform) > 2 {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-			Variant:      platform[2],
-		}
-	} else {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-		}
-	}
+	platformVar := types.ParsePlatform(options.Platform)
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 
 	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)

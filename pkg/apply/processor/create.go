@@ -106,7 +106,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 }
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-	err := c.RegistryManager.Pull(cluster.Spec.Image...)
+	err := c.RegistryManager.Pull(types.DefaultPlatform(), cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
