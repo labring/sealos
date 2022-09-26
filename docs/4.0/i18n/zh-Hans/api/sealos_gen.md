@@ -15,7 +15,7 @@ sealos gen [flags]
 ```
 
 generate a cluster with multi images, specify masters and nodes:
-    sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.24.1 \
+    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
         --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
         --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 

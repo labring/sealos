@@ -29,7 +29,8 @@ spec:
         - node
         - amd64
   image:
-    - labring/kubernetes:v1.24.0
+    - labring/kubernetes:v1.25.0
+    - labring/helm:v3.8.2
     - labring/calico:v3.24.1
   ssh:
     passwd: xxx

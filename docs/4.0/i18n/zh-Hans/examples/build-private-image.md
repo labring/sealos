@@ -138,7 +138,7 @@ sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 ### 一键部署集群
 
 ```shell
-sealos run labring/kubernetes:v1.24.0 labring/calico:v3.24.1  --masters 172.31.37.111
+sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1  --masters 172.31.37.111
 kubectl taint no node-role.kubernetes.io/master:NoSchedule-
 kubectl taint no node-role.kubernetes.io/control-plane:NoSchedule-
 sealos run labring/ingress-nginx:4.1.0
