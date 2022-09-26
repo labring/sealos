@@ -19,7 +19,7 @@ func TestApplier_ReconcileCluster(t *testing.T) {
 			Roles: []string{"master"},
 			Metadata: []v1.Metadata{
 				{
-					IP: []string{"71.136.84.248"},
+					IP: []string{""},
 				},
 			},
 		},

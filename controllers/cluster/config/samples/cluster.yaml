@@ -7,6 +7,7 @@ spec:
     user: root
     passwd: "123456"
     pk: /root/hurz_key.pem
+    pkname: hurz_key
     port: 22
   hosts:
     - roles: [master] # required
@@ -23,6 +24,12 @@ kind: Cluster
 metadata:
   name: my-cluster
 spec:
+  ssh:
+    user: root
+    passwd: "123456"
+    pk: /root/hurz_key.pem
+    pkname: hurz_key
+    port: 22
   infra: infra-apply-test
   images:
     - labring/kubernetes:v1.24.0

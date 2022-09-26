@@ -68,6 +68,11 @@ spec:
        type: system
 */
 
+var ec2p map[string]int64
+
+// ebs unit: CNY cents/GB-month
+var ebs map[string]int64
+
 type Metadata struct {
 	IP     []string `json:"ips,omitempty"`
 	ID     string   `json:"id,omitempty"`
@@ -181,6 +186,48 @@ func (i *Infra) GetInstancesAndVolumesTag() string {
 	return fmt.Sprintf("%s/%s", namespace, i.Name)
 }
 
+// QueryPrice query infra price/hour, unit: CNY cents/hour
+func (i *Infra) QueryPrice() (int64, error) {
+	valueEc2, valueEbs := int64(0), int64(0)
+	for _, j := range i.Spec.Hosts {
+		if _, ok := ec2p[j.Flavor]; !ok {
+			return -1, fmt.Errorf("no ec2 type")
+		}
+		valueEc2 += ec2p[j.Flavor] * int64(j.Count)
+
+		for _, disk := range j.Disks {
+			if _, ok := ebs[disk.Type]; !ok {
+				return -1, fmt.Errorf("no ebs type")
+			}
+			valueEbs += ebs[disk.Type] * int64(disk.Capacity) * int64(j.Count)
+		}
+	}
+	valueEbs = valueEbs / 30 / 24
+	return int64(1.25 * float64(valueEc2+valueEbs)), nil
+}
+
 func init() {
+	ec2p = map[string]int64{
+		"t2.micro":   int64(0),
+		"t2.small":   int64(22),
+		"t2.medium":  int64(43),
+		"t2.large":   int64(86),
+		"t2.xlarge":  int64(170),
+		"t2.2xlarge": int64(340),
+		"t3.medium":  int64(27),
+		"t3.large":   int64(53),
+		"t3.xlarge":  int64(106),
+		"t3.2xlarge": int64(211),
+		"t4g.medium": int64(21),
+		"c5.large":   int64(74),
+		"c5.xlarge":  int64(148),
+		"c5.2xlarge": int64(296),
+		"c6g.large":  int64(59),
+		"c6g.xlarge": int64(118),
+	}
+	ebs = map[string]int64{
+		"gp2": int64(75),
+		"gp3": int64(60),
+	}
 	SchemeBuilder.Register(&Infra{}, &InfraList{})
 }
