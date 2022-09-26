@@ -1,9 +1,16 @@
 // @ts-check
+const runtimeCaching = require('next-pwa/cache');
+
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  runtimeCaching,
+  disable: process.env.NODE_ENV !== 'production'
+});
 
 /**
  * @type {import('next').NextConfig}
  **/
-const nextConfig = {
+const nextConfig = withPWA({
   reactStrictMode: false,
   swcMinify: true,
   output: 'standalone',
@@ -19,7 +26,10 @@ const nextConfig = {
   experimental: {
     newNextLinkBehavior: true
     // fallbackNodePolyfills: false
+  },
+  typescript: {
+    ignoreBuildErrors: true
   }
-};
+});
 
 module.exports = nextConfig;
