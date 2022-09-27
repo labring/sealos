@@ -53,13 +53,13 @@ func GetUserInfo(accessToken string) (*sso.User, error) {
 	return ssoClient.GetUserInfo(accessToken)
 }
 
-func CreateKubeConfig(accessToken string) (string, error) {
+func GetKubeConfig(accessToken string) (string, error) {
 	user, err := ssoClient.GetUserInfo(accessToken)
 	if err != nil {
 		return "", errors.Wrap(err, "Get user info failed")
 	}
 
-	err = utils.CreateKubeConfig(user.ID)
+	err = utils.CreateOrUpdateKubeConfig(user.ID)
 	if err != nil {
 		return "", errors.Wrap(err, "Create kube config failed")
 	}
@@ -73,16 +73,4 @@ func CreateKubeConfig(accessToken string) (string, error) {
 		time.Sleep(50 * time.Millisecond)
 	}
 	return "", errors.Wrap(err, "Create kubeconfig failed")
-}
-
-func GetKubeConfig(accessToken string) (string, error) {
-	user, err := ssoClient.GetUserInfo(accessToken)
-	if err != nil {
-		return "", errors.Wrap(err, "Get user info failed")
-	}
-	kubeconfig, err := utils.GetKubeConfig(user.ID)
-	if err != nil {
-		return "", errors.Wrap(err, "Get kubeconfig failed")
-	}
-	return kubeconfig, nil
 }

@@ -22,6 +22,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -82,7 +83,7 @@ func CreateJWTCertificateAndPrivateKey() (string, string, error) {
 	return string(certPem), string(privateKeyPem), nil
 }
 
-func CreateKubeConfig(uid string) error {
+func CreateOrUpdateKubeConfig(uid string) error {
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return err
@@ -139,5 +140,12 @@ func GetKubeConfig(uid string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return user.Object["status"].(map[string]interface{})["kubeConfig"].(string), nil
+	if user.Object["status"] == nil {
+		return "", fmt.Errorf("status is empty, please wait for a while or check the health of user-controller")
+	}
+	status := user.Object["status"].(map[string]interface{})
+	if kubeConfig, ok := status["kubeConfig"]; ok {
+		return kubeConfig.(string), nil
+	}
+	return "", fmt.Errorf("there is no field named kubeConfig in status")
 }
