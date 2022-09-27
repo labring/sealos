@@ -17,7 +17,7 @@ package api
 import (
 	"errors"
 
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 
 	"github.com/labring/sealos/pkg/auth"
 	hs "github.com/labring/sealos/pkg/utils/httpserver"
@@ -63,16 +63,8 @@ func handlerToken(request *restful.Request, response *restful.Response) {
 		_ = hs.RespError(response, err)
 		return
 	}
-	kubeconfig, err := auth.CreateKubeConfig(oauthToken.AccessToken)
-	if err != nil {
-		_ = hs.RespError(response, err)
-		return
-	}
 
-	_ = hs.RespData(response, map[string]interface{}{
-		"token":      oauthToken,
-		"kubeconfig": kubeconfig,
-	})
+	_ = hs.RespData(response, oauthToken)
 }
 
 func handlerUserInfo(request *restful.Request, response *restful.Response) {
