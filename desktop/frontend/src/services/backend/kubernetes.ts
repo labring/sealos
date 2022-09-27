@@ -1,10 +1,41 @@
 import * as k8s from '@kubernetes/client-node';
-import * as yaml from 'js-yaml';
 import http from 'http';
+import * as yaml from 'js-yaml';
+
+const cluster_name = 'sealos';
 
 export function K8sApi(config: string): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
   kc.loadFromString(config);
+
+  // check in-cluster
+  let cluster = kc.getCluster(cluster_name);
+  if (cluster !== null) {
+    let server: k8s.Cluster;
+
+    if (CheckIsInCluster()) {
+      server = {
+        name: cluster.name,
+        caData: cluster.caData,
+        caFile: cluster.caFile,
+        server: 'https://kubernetes.default.svc.cluster.local:443',
+        skipTLSVerify: cluster.skipTLSVerify
+      };
+    } else {
+      server = {
+        name: cluster.name,
+        caData: cluster.caData,
+        caFile: cluster.caFile,
+        server: 'https://apiserver.cluster.local:6443',
+        skipTLSVerify: cluster.skipTLSVerify
+      };
+    }
+    kc.clusters.forEach((item, i) => {
+      if (item.name == cluster_name) {
+        kc.clusters[i] = server;
+      }
+    });
+  }
 
   return kc;
 }
@@ -94,11 +125,11 @@ export function CheckIsInCluster(): boolean {
   return false;
 }
 
-export function ReplaceInCLuster(kubeconfig: string): string {
-  return CheckIsInCluster()
-    ? kubeconfig.replace(
-        'https://apiserver.cluster.local:6443',
-        'https://kubernetes.default.svc.cluster.local:443'
-      )
-    : kubeconfig;
-}
+// export function ReplaceInCLuster(kubeconfig: string): string {
+//   return CheckIsInCluster()
+//     ? kubeconfig.replace(
+//         'https://apiserver.cluster.local:6443',
+//         'https://kubernetes.default.svc.cluster.local:443'
+//       )
+//     : kubeconfig;
+// }

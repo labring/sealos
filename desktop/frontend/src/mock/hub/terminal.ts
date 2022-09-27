@@ -42,7 +42,14 @@ const TerminalApplication: RunApplication = {
   startTemplate: '',
   doStart: async (kc: k8s.KubeConfig): Promise<StartResp> => {
     const kube_user = kc.getCurrentUser();
-    if (kube_user === null || !kube_user.token || kube_user.token === '') {
+    if (
+      kube_user === null ||
+      ((!kube_user.token || kube_user.token === '') &&
+        (!kube_user.keyData ||
+          kube_user.keyData === '' ||
+          !kube_user.certData ||
+          kube_user.certData === ''))
+    ) {
       return Promise.resolve({
         status: 500,
         application_type: ApplicationType.IFrame,

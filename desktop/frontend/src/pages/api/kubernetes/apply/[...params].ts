@@ -1,8 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { UserInfo } from '../../../../interfaces/session';
 import { KubernetesDashboardApplication } from '../../../../mock/hub/kubernetes_dashboard';
 import { TerminalApplication } from '../../../../mock/hub/terminal';
-import { K8sApi, ReplaceInCLuster } from '../../../../services/backend/kubernetes';
+import { K8sApi } from '../../../../services/backend/kubernetes';
 import {
   BadRequestResp,
   JsonResp,
@@ -32,8 +31,9 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     return UnprocessableResp('kubeconfig or user', resp);
   }
 
-  const kubeconfigR = ReplaceInCLuster(kubeconfig);
-  const kc = K8sApi(kubeconfigR);
+  // const kubeconfigR = ReplaceInCLuster(kubeconfig);
+  // const kc = K8sApi(kubeconfigR);
+  const kc = K8sApi(kubeconfig);
 
   // apply action
 
