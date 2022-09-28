@@ -4,7 +4,7 @@ const paymentMeta: CRDMeta = {
   group: 'user.sealos.io',
   version: 'v1',
   namespace: 'sealos-system',
-  plural: 'accounts'
+  plural: 'payments'
 };
 
 const paymentCRDTemplate: string = `
