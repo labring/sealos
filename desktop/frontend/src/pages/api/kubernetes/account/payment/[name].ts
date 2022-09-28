@@ -1,7 +1,11 @@
 import { HttpError } from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { paymentMeta } from '../../../../../mock/user';
-import { GetCRD, K8sApi } from '../../../../../services/backend/kubernetes';
+import {
+  GetCRD,
+  GetUserDefaultNameSpace,
+  K8sApi
+} from '../../../../../services/backend/kubernetes';
 import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../../../response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
@@ -30,8 +34,11 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     status: string;
   };
 
+  let paymentM = { ...paymentMeta };
+  paymentM.namespace = GetUserDefaultNameSpace(kube_user.name);
+
   try {
-    const paymentDesc = await GetCRD(kc, paymentMeta, name);
+    const paymentDesc = await GetCRD(kc, paymentM, name);
     if (paymentDesc !== null && paymentDesc.body !== null && paymentDesc.body.status !== null) {
       const paymentStatusResp = paymentDesc.body.status as paymentStatus;
       return JsonResp(paymentStatusResp, resp);
@@ -40,7 +47,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     console.log(err);
 
     if (err instanceof HttpError) {
-      return InternalErrorResp(err.body, resp);
+      return InternalErrorResp(err.body.message, resp);
     }
   }
 
