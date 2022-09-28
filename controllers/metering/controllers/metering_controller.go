@@ -21,6 +21,7 @@ package controllers
 
 import (
 	"context"
+
 	"fmt"
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -39,6 +40,7 @@ import (
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -328,6 +330,7 @@ func (r *MeteringReconcile) newResourceQuota(m *meteringv1.Metering) (*corev1.Re
 	//	return nil, err
 	//}
 	return rq, nil
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
