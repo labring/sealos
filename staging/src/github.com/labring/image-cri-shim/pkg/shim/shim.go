@@ -31,14 +31,6 @@ const (
 	DisableService = server.DontConnect
 )
 
-// Options contains the configurable options of our CRI shim.
-type Options struct {
-	// ShimSocket is the socket path for the CRI shim services.
-	ShimSocket string
-	// ImageSocket is the socket path for the (real) CRI image services.
-	ImageSocket string
-}
-
 // Shim is the interface we expose for controlling our CRI shim.
 type Shim interface {
 	// Setup prepares the shim to start processing CRI requests.
@@ -52,21 +44,21 @@ type Shim interface {
 // shim is the implementation of Shim.
 type shim struct {
 	sync.Mutex               // hmm... do *we* need to be lockable, or the upper layer(s) ?
-	options    Options       // shim options
+	cfg        *Config       // shim options
 	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
 }
 
 // NewShim creates a new shim instance.
-func NewShim(options Options) (Shim, error) {
+func NewShim(cfg *Config) (Shim, error) {
 	var err error
 
 	r := &shim{
-		options: options,
+		cfg: cfg,
 	}
 
 	cltopts := server.CRIClientOptions{
-		ImageSocket: r.options.ImageSocket,
+		ImageSocket: cfg.ImageSocket,
 		DialNotify:  r.dialNotify,
 	}
 	if r.client, err = server.NewClient(cltopts); err != nil {
@@ -74,10 +66,11 @@ func NewShim(options Options) (Shim, error) {
 	}
 
 	srvopts := server.Options{
-		Socket: r.options.ShimSocket,
-		User:   -1,
-		Group:  -1,
-		Mode:   0660,
+		Socket:     cfg.ShimSocket,
+		User:       -1,
+		Group:      -1,
+		Mode:       0660,
+		CRIConfigs: cfg.CRIConfigs,
 	}
 	if r.server, err = server.NewServer(srvopts); err != nil {
 		return nil, shimError("failed to create shim server: %v", err)
@@ -93,7 +86,7 @@ func (r *shim) Setup() error {
 	if conn, err = r.client.Connect(server.ConnectOptions{Wait: true}); err != nil {
 		return shimError("client connection failed: %v", err)
 	}
-	if r.options.ImageSocket != DisableService {
+	if r.cfg.ImageSocket != DisableService {
 		if err = r.server.RegisterImageService(conn); err != nil {
 			return shimError("failed to register image service: %v", err)
 		}
@@ -133,6 +126,6 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 }
 
 // shimError creates a formatted shim-specific error.
-func shimError(format string, args ...interface{}) error {
+var shimError = func(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
 }

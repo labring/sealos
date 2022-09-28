@@ -15,6 +15,8 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
@@ -57,9 +59,18 @@ func GetKubeConfig(accessToken string) (string, error) {
 		return "", errors.Wrap(err, "Get user info failed")
 	}
 
-	kubeConfig, err := utils.GenerateKubeConfig(user.ID)
+	err = utils.CreateOrUpdateKubeConfig(user.ID)
 	if err != nil {
-		return "", errors.Wrap(err, "Generate kube config failed")
+		return "", errors.Wrap(err, "Create kube config failed")
 	}
-	return kubeConfig, nil
+	// Wait for user controller to write kubeconfig into status
+	for i := 0; i < 10; i++ {
+		var kubeconfig string
+		kubeconfig, err = utils.GetKubeConfig(user.ID)
+		if kubeconfig != "" {
+			return kubeconfig, nil
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	return "", errors.Wrap(err, "Create kubeconfig failed")
 }

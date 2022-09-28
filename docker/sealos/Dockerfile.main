@@ -1,0 +1,9 @@
+FROM ubuntu:18.04
+
+ARG TARGETARCH
+
+ENTRYPOINT ["/usr/bin/sealos"]
+
+WORKDIR /usr/bin/
+
+COPY /bin/sealos-$TARGETARCH/sealos .

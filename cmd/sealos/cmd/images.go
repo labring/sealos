@@ -1,4 +1,4 @@
-// Copyright © 2021 sealos.
+// Copyright © 2022 cuisongliu@qq.com.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,28 +15,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
-	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/cmd"
 )
 
-func newImagesCmd() *cobra.Command {
-	var imagesCmd = &cobra.Command{
-		Use:     "images",
-		Short:   "list cloud image",
-		Example: `sealos images`,
-		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			registrySvc, err := image.NewImageService()
-			if err != nil {
-				return err
-			}
-			return registrySvc.ListImages()
-		},
-	}
-	return imagesCmd
-}
-
 func init() {
-	rootCmd.AddCommand(newImagesCmd())
+	cmd.Register(rootCmd, getContact())
 }

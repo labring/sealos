@@ -1,0 +1,16 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: cluster
+repo: github.com/labring/sealos
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: cluster
+  kind: Cluster
+  path: github.com/labring/sealos/controllers/cluster/api/v1
+  version: v1
+version: "3"

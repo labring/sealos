@@ -1,0 +1,69 @@
+---
+## 新建管理员,只允许创建管理员
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealos-user-create-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroupbindings'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+---
+## 新增、删除用户，管理员只允许移入移除用户
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealos-user-manager-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroupbindings'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'users'
+    verbs:
+      - list
+      - get
+      - watch
+---
+##普通用户创建namespace,usergroup
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sealos-user-user-role
+rules:
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroupbindings'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update
+  - apiGroups:
+      - user.sealos.io
+    resources:
+      - 'usergroups'
+    verbs:
+      - create
+      - delete
+      - deletecollection
+      - patch
+      - update

@@ -40,6 +40,8 @@ type Options struct {
 	Group int
 	// Mode is the permission mode bits for our gRPC socket.
 	Mode os.FileMode
+	//CRIConfigs is cri config for auth
+	CRIConfigs map[string]k8sapi.AuthConfig
 }
 
 type Server interface {

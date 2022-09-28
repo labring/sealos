@@ -92,9 +92,11 @@ type ClusterStatus struct {
 type SSH struct {
 	User     string `json:"user,omitempty"`
 	Passwd   string `json:"passwd,omitempty"`
+	PkName   string `json:"pkname,omitempty"`
 	Pk       string `json:"pk,omitempty"`
 	PkPasswd string `json:"pkPasswd,omitempty"`
 	Port     uint16 `json:"port,omitempty"`
+	//todo pk-> pkdata,pkname; pkfile临时生成
 }
 
 type Host struct {

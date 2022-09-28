@@ -42,7 +42,7 @@ Then we create a customized values file named `example.values.yaml`
 clusterName: default
 images:
   - dockerhub.tencentcloudcr.com/labring/kubernetes:v1.23.8
-  - dockerhub.tencentcloudcr.com/labring/calico:v3.22.1
+  - dockerhub.tencentcloudcr.com/labring/calico:v3.24.1
 masters:
   - 10.74.16.27:22
   - 10.74.16.140:22

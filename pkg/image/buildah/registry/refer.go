@@ -42,6 +42,7 @@ import (
 	"github.com/containers/storage/pkg/unshare"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 func getDecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
@@ -189,12 +190,12 @@ func newGlobalOptions() *types.GlobalBuildahFlags {
 }
 
 func manifestPush(systemContext *ct.SystemContext, store storage.Store, listImageSpec, destSpec string, opts types.PushOptions) error {
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	runtimeFromStore, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
 	if err != nil {
 		return err
 	}
 
-	manifestList, err := runtime.LookupManifestList(listImageSpec)
+	manifestList, err := runtimeFromStore.LookupManifestList(listImageSpec)
 	if err != nil {
 		return err
 	}
@@ -322,4 +323,68 @@ type loginReply struct {
 	loginOpts auth.LoginOptions
 	getLogin  bool
 	tlsVerify bool
+}
+
+func getCmdFlag() *cobra.Command {
+	var opts pullOptions
+	pullCommand := &cobra.Command{}
+
+	flags := pullCommand.Flags()
+	flags.SetInterspersed(false)
+	flags.BoolVarP(&opts.allTags, "all-tags", "a", false, "download all tagged images in the repository")
+	flags.StringVar(&opts.authfile, "authfile", auth.GetDefaultAuthFile(), "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
+	flags.StringVar(&opts.blobCache, "blob-cache", "", "store copies of pulled image blobs in the specified directory")
+	flags.StringVar(&opts.certDir, "cert-dir", "", "use certificates at the specified path to access the registry")
+	flags.StringVar(&opts.creds, "creds", "", "use `[username[:password]]` for accessing the registry")
+	flags.StringVar(&opts.pullPolicy, "policy", "missing", "missing, always, or never.")
+	flags.BoolVarP(&opts.removeSignatures, "remove-signatures", "", false, "don't copy signatures when pulling image")
+	flags.StringVar(&opts.signaturePolicy, "signature-policy", "", "`pathname` of signature policy file (not usually used)")
+	flags.StringSliceVar(&opts.decryptionKeys, "decryption-key", nil, "key needed to decrypt the image")
+	if err := flags.MarkHidden("signature-policy"); err != nil {
+		panic(fmt.Sprintf("error marking signature-policy as hidden: %v", err))
+	}
+	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "don't output progress information when pulling images")
+	flags.String("os", runtime.GOOS, "prefer `OS` instead of the running OS for choosing images")
+	flags.String("arch", runtime.GOARCH, "prefer `ARCH` instead of the architecture of the machine for choosing images")
+	flags.StringSlice("platform", []string{parse.DefaultPlatform()}, "prefer OS/ARCH instead of the current operating system and architecture for choosing images")
+	flags.String("variant", "", "override the `variant` of the specified image")
+	flags.BoolVar(&opts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	if err := flags.MarkHidden("blob-cache"); err != nil {
+		panic(fmt.Sprintf("error marking blob-cache as hidden: %v", err))
+	}
+	return pullCommand
+}
+
+func getPushCmdFlag() *cobra.Command {
+	var opts types.PushOptions
+	pushCommand := &cobra.Command{}
+
+	flags := pushCommand.Flags()
+	flags.SetInterspersed(false)
+	flags.BoolVar(&opts.All, "all", false, "push all of the images referenced by the manifest list")
+	flags.StringVar(&opts.Authfile, "authfile", auth.GetDefaultAuthFile(), "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
+	flags.StringVar(&opts.BlobCache, "blob-cache", "", "assume image blobs in the specified directory will be available for pushing")
+	flags.StringVar(&opts.CertDir, "cert-dir", "", "use certificates at the specified path to access the registry")
+	flags.StringVar(&opts.Creds, "creds", "", "use `[username[:password]]` for accessing the registry")
+	flags.StringVar(&opts.Digestfile, "digestfile", "", "after copying the image, write the digest of the resulting image to the file")
+	flags.BoolVarP(&opts.DisableCompression, "disable-compression", "D", false, "don't compress layers")
+	flags.StringVarP(&opts.Format, "format", "f", "", "manifest type (oci, v2s1, or v2s2) to use in the destination (default is manifest type of source, with fallbacks)")
+	flags.StringVar(&opts.CompressionFormat, "compression-format", "", "compression format to use")
+	flags.IntVar(&opts.CompressionLevel, "compression-level", 0, "compression level to use")
+	flags.BoolVarP(&opts.Quiet, "quiet", "q", false, "don't output progress information when pushing images")
+	flags.BoolVar(&opts.Rm, "rm", false, "remove the manifest list if push succeeds")
+	flags.BoolVarP(&opts.RemoveSignatures, "remove-signatures", "", false, "don't copy signatures when pushing image")
+	flags.StringVar(&opts.SignBy, "sign-by", "", "sign the image using a GPG key with the specified `FINGERPRINT`")
+	flags.StringVar(&opts.SignaturePolicy, "signature-policy", "", "`pathname` of signature policy file (not usually used)")
+	flags.StringSliceVar(&opts.EncryptionKeys, "encryption-key", nil, "key with the encryption protocol to use needed to encrypt the image (e.g. jwe:/path/to/key.pem)")
+	flags.IntSliceVar(&opts.EncryptLayers, "encrypt-layer", nil, "layers to encrypt, 0-indexed layer indices with support for negative indexing (e.g. 0 is the first layer, -1 is the last layer). If not defined, will encrypt all layers if encryption-key flag is specified")
+
+	if err := flags.MarkHidden("signature-policy"); err != nil {
+		panic(fmt.Sprintf("error marking signature-policy as hidden: %v", err))
+	}
+	flags.BoolVar(&opts.TLSVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	if err := flags.MarkHidden("blob-cache"); err != nil {
+		panic(fmt.Sprintf("error marking blob-cache as hidden: %v", err))
+	}
+	return pushCommand
 }

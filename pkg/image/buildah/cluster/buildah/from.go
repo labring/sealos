@@ -100,10 +100,6 @@ func From(containerName, imageName string) error {
 	//	logger.Warn("ignoring platforms other than %+v: %+v", platforms[0], platforms[1:])
 	//}
 
-	// Allow for --pull, --pull=true, --pull=false, --pull=never, --pull=always
-	// --pull-always and --pull-never.  The --pull-never and --pull-always options
-	// will not be documented.
-	// in sealos default --pull=never
 	pullPolicy := define.PullIfMissing
 	if strings.EqualFold(strings.TrimSpace(iopts.pull), "true") {
 		pullPolicy = define.PullIfNewer

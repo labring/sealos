@@ -58,13 +58,13 @@ data:
   auth.yaml: |-
     addr: :8080
     ssoType: "casdoor"
-    callbackUrl: "cloud.sealos.io/logincallback"
+    callbackUrl: "https://cloud.sealos.io/login/callback"
     oauthProviders:
       - type: "Github"
         clientId: ""
         clientSecret: ""
     kubeconfig: ""
-    ssoEndpoint: "cloud.sealos.io/casdoor"
+    ssoEndpoint: "https://login.sealos.io"
 
 ---
 apiVersion: apps/v1

@@ -69,7 +69,7 @@ func newDeleteCmd() *cobra.Command {
 			return nil
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+			logger.Info(getContact())
 		},
 	}
 	deleteArgs.RegisterFlags(deleteCmd.Flags(), "removed", "remove")

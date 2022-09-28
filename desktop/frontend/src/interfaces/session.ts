@@ -18,7 +18,11 @@ export type KubeConfig = {
 };
 
 export type Session = {
-  readonly token: OAuthToken;
-  readonly user: UserInfo;
+  token: OAuthToken;
+  user: UserInfo;
   kubeconfig: string | KubeConfig;
 };
+
+const sessionKey = 'session';
+
+export { sessionKey };

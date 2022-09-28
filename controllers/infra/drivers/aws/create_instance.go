@@ -129,6 +129,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			Value: &value,
 		},
 	)
+	keyName := infra.Spec.SSH.PkName
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -144,6 +145,8 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				Tags:         volumeTags,
 			},
 		},
+		KeyName:          &keyName,
+		SecurityGroupIds: []string{"sg-0476ffedb5ca3f816"},
 		//BlockDeviceMappings: make([]types.BlockDeviceMapping, len(hosts.Disks)),
 	}
 

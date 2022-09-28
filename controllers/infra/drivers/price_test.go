@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -14,7 +15,7 @@ func TestPrice_QueryPrice(t *testing.T) {
 		{
 			Roles:  []string{"master"},
 			Count:  2,
-			Flavor: string(types.InstanceTypeT2Micro),
+			Flavor: string(types.InstanceTypeT2Medium),
 			Image:  "ami-05248307900d52e3a",
 			Disks: []v1.Disk{
 				{
@@ -27,7 +28,7 @@ func TestPrice_QueryPrice(t *testing.T) {
 		{
 			Roles:  []string{"node"},
 			Count:  2,
-			Flavor: string(types.InstanceTypeT2Micro),
+			Flavor: string(types.InstanceTypeT2Medium),
 			Image:  "ami-05248307900d52e3a",
 			Disks: []v1.Disk{
 				{
@@ -66,12 +67,12 @@ func TestPrice_QueryPrice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			pReq := NewPrice()
-			_, err := pReq.QueryPrice(tt.args.infra)
+			value, err := infra.QueryPrice()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("QueryPrice() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+			fmt.Println("value:", value)
 		})
 	}
 }

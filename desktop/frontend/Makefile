@@ -27,11 +27,11 @@ help: ## Display this help.
 
 .PHONY: build
 build: ## Build desktop-frontend binary.
-	npm run build
+	pnpm run build
 
 .PHONY: run
 run: ## Run a dev service from host.
-	npm run start
+	pnpm run start
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the desktop-frontend.

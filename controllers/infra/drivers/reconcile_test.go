@@ -3,6 +3,8 @@ package drivers
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +21,7 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 	hosts := []v1.Hosts{
 		{
 			Roles:  []string{"master"},
-			Count:  2,
+			Count:  1,
 			Flavor: string(types.InstanceTypeT2Micro),
 			Image:  "ami-05248307900d52e3a",
 			Disks: []v1.Disk{
@@ -32,7 +34,7 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 		},
 		{
 			Roles:  []string{"node"},
-			Count:  2,
+			Count:  0,
 			Flavor: string(types.InstanceTypeT2Micro),
 			Image:  "ami-05248307900d52e3a",
 			Disks: []v1.Disk{
@@ -50,6 +52,11 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "sealos-infra",
 			Namespace: "sealos-infra-ns",
+		},
+		Spec: v1.InfraSpec{
+			SSH: v1beta1.SSH{
+				PkName: "hurz_key",
+			},
 		},
 	}
 	infra.Spec.Hosts = hosts

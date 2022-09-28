@@ -26,28 +26,22 @@
 
 ## Run a kubernetes cluster
 
-[![asciicast](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC.svg)](https://asciinema.org/a/E2DCGEUiXY5wX9jTayHZJ0SrC?speed=3)
+[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
 ## What is sealos
 
-**sealos is a cloud operating system distribution with Kubernetes as its kernel.**
-
-In the early stages, operatings systems have adopted a layered architecture, which later evolved into kernel architecture like Linux and Windows. With the emergence of container technologies, cloud OS will migrate to a "cloud kernel" architecture with strong cohesion in the future.
+**sealos is a cloud operating system distribution based on kubernetes.**
 
 ![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
 
 - From now on, think of all your machines as an abstract supercomputer whose operating system is sealos, where Kubernetes serves as the OS kernel.
 - Instead of IaaS, PaaS and SaaS, there will only be cloud OS drivers(CSI, CNI and CRI implementations), cloud OS kernel(Kubernetes) and distributed applications.
 
-## sealos cloud overview
+## This is not win11 but sealos desktop
 
-> Embedded dashboard application
+Use the cloud like a PC desktop, Freely run and uninstall any distributed applications:
 
-![](https://user-images.githubusercontent.com/8912557/181175228-ce599b53-340a-4eb2-9a66-0563267a8d2c.png)
-
-> Embedded terminal application
-
-![](https://user-images.githubusercontent.com/8912557/181174718-12aa119e-880e-41d0-b4ba-b60d0c7283b8.png)
+![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
 
 ## Core features
 
@@ -69,16 +63,24 @@ In the early stages, operatings systems have adopted a layered architecture, whi
 
 > Installing an HA kubernetes cluster with calico as CNI
 
-Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
+Here `kubernetes:v1.24.0` and `calico:v3.24.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
 
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
-$ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget  https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz  && \
+    tar -zxvf sealos_4.1.3_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
 # Create a cluster
-$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
+
+> Single host
+
+```shell
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
+# remove taint
+$ kubectl taint node --all node-role.kubernetes.io/control-plane-
 ```
 
 > Building a custom cluster image
@@ -97,6 +99,14 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 ```
 
 And now everything is ready.
+
+## Use cri-docker image
+
+```shell
+sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
+     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
 
 ## Links
 

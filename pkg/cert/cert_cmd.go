@@ -32,7 +32,7 @@ func GenerateRegistryCert(registryCertPath string, BaseName string) error {
 		Path:         registryCertPath,
 		BaseName:     BaseName,
 		CommonName:   BaseName,
-		Organization: []string{"sealyun"},
+		Organization: []string{"labring"},
 		Year:         100,
 	}
 	cert, key, err := NewCaCertAndKey(regCertConfig)
