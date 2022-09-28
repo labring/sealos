@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	rbacV1 "k8s.io/api/rbac/v1"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -94,6 +98,11 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
 
+	// add role get account permission
+	if err := r.syncRoleAndRoleBinding(ctx, payment.Spec.UserID, payment.Namespace); err != nil {
+		return ctrl.Result{}, fmt.Errorf("sync role and rolebinding failed: %v", err)
+	}
+
 	status, err := pay.QueryOrder(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
@@ -115,6 +124,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
+		// TODO Delete after a delay of 5 minutes to prevent the front-end get from not getting the payment status
 	case pay.StatusProcessing, pay.StatusNotPay:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 	case pay.StatusFail:
@@ -127,6 +137,51 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
+	role := rbacV1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "userAccountRole-" + name,
+			Namespace: namespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
+		role.Rules = []rbacV1.PolicyRule{
+			{
+				APIGroups: []string{"user.sealos.io"},
+				Resources: []string{"accounts"},
+				Verbs:     []string{"get"},
+			},
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
+	}
+	roleBinding := rbacV1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "userAccountRoleBinding-" + name,
+			Namespace: namespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
+		roleBinding.RoleRef = rbacV1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     role.Name,
+		}
+		roleBinding.Subjects = []rbacV1.Subject{
+			{
+				Kind:      "User",
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+		return nil
+	}); err != nil {
+		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
