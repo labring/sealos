@@ -40,7 +40,7 @@ const (
 Query the Charging status Order, and get it status, if success, add the Amount to Account Balance the set status to closed.
 */
 
-// Account is for user balance, when the balence is 0, the controller will warn the user and clean all
+// Account is for user balance, when the balance is 0, the controller will warn the user and clean all
 // namespace create by the user.
 
 type Charge struct {

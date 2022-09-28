@@ -14,39 +14,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// 找到owner的metering-----之后再说
+// 怎么获得到sealos-system下面的metering totalamount---让用户只读权限或者使用副本
+
 package controllers
 
 import (
-	"bytes"
 	"context"
-	"github.com/Masterminds/sprig"
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
-	"html/template"
-	corev1 "k8s.io/api/core/v1"
-	_ "k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/api/errors"
+
+	"fmt"
+	"github.com/go-logr/logr"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+	"time"
+
+	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	_ "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	_ "sigs.k8s.io/structured-merge-diff/v4/fieldpath"
 )
 
 const (
-	FinalizerName       = "metering.sealos.io/finalizer"
-	KeepaliveAnnotation = "lastUpdateTime"
+	FinalizerName          = "metering.sealos.io/finalizer"
+	UserAnnotationOwnerKey = "user.sealos.io/creator"
+	SealosSystemNamespace  = "sealos-system"
 )
 
-// MeteringReconciler reconciles a Metering object
-type MeteringReconciler struct {
+// MeteringReconcile reconciles a Metering object
+type MeteringReconcile struct {
 	client.Client
 	Scheme *runtime.Scheme
+	logr.Logger
 }
 
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings,verbs=get;list;watch;create;update;patch;delete
@@ -55,7 +63,6 @@ type MeteringReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
 // the Metering object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -63,212 +70,273 @@ type MeteringReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 
-// TODO 使用Resource Quota进行资源配额
-// TODO 计算每个namespace的资源使用量
-// TODO 打印出来使用的资源量
-
-func (r *MeteringReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
-	var quota meteringv1.Metering
-	err := r.Get(ctx, req.NamespacedName, &quota)
-	if err != nil {
-		logger.Error(err, "Failed to get Metering ResourceQuota")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+func DefaultResourceQuota() corev1.ResourceList {
+	return corev1.ResourceList{
+		corev1.ResourceCPU:          resource.MustParse("1"),
+		corev1.ResourceMemory:       resource.MustParse("1Gi"),
+		corev1.ResourceLimitsCPU:    resource.MustParse("1"),
+		corev1.ResourceLimitsMemory: resource.MustParse("1Gi"),
 	}
-	logger.Info("Reconciling", "quota", quota)
+}
 
-	if quota.DeletionTimestamp.IsZero() {
-		if controllerutil.AddFinalizer(&quota, FinalizerName) {
-			if err := r.Update(ctx, &quota); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	} else {
-		if controllerutil.RemoveFinalizer(&quota, FinalizerName) {
-			if err := r.Update(ctx, &quota); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	}
-	//var namespaces corev1.NamespaceList
-	//err = r.List(ctx, &namespaces, &client.ListOptions{})
-	//logger.Info("Reconciling", "namespaces", namespaces)
-	//if err != nil {
-	//	return ctrl.Result{}, err
-	//}
-	//for _, ns := range namespaces.Items {
-	//	err := r.reconcileResourceQuota(ctx, &quota, &ns)
-	//	if err != nil {
-	//		return ctrl.Result{}, err
-	//	}
-	//	logger.Info("Reconciled", "namespace", ns.GetName())
-	//}
+// metering belong to account，resourceQuota belong to metering
 
-	// Check if the ResourceQuota already exists, if not create a new one
-	nodeList := &corev1.NodeList{}
-	err = r.List(ctx, nodeList)
-
-	if err != nil {
-		logger.Error(err, "Failed to list Nodes")
-		return ctrl.Result{}, err
-	}
-
-	nodeCount := len(nodeList.Items)
+func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	r.Logger = log.FromContext(ctx)
+	var metering meteringv1.Metering
 	found := &corev1.ResourceQuota{}
-	err = r.Get(ctx, types.NamespacedName{Name: quota.Name, Namespace: quota.Namespace}, found)
 
+	r.Logger.Info("enter reconcile")
+	r.Logger.Info("req name and namespace: ", "name: ", req.Name, "namespace: ", req.Namespace)
+	// if create a user namespace ,will enter this reconcile
+	if req.Name != SealosSystemNamespace {
+		var ns corev1.Namespace
+		err := r.Get(ctx, req.NamespacedName, &ns)
+		if err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		if _, ok := ns.Annotations[UserAnnotationOwnerKey]; !ok {
+
+			r.Logger.Error(fmt.Errorf("not found owner of namespace name: %v", ns.Name), "")
+			return ctrl.Result{}, nil
+		}
+		owner := ns.Annotations[UserAnnotationOwnerKey]
+		if metering, err = r.createMetering(ctx, owner, ns); err != nil {
+			r.Logger.Error(err, "Failed to get Metering")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		// get or create resourceQuota
+		if found, err = r.syncResourceQuota(ctx, &metering); err != nil {
+			return ctrl.Result{}, err
+		}
+
+	} else {
+		if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Spec.Namespace}, found)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if !r.checkHardMap(found.Spec.Hard, metering.Spec.Resources) {
+			found.Spec.Hard = metering.Spec.Resources
+			err := r.Update(ctx, found)
+			if err != nil {
+				r.Logger.Error(err, err.Error())
+				return ctrl.Result{}, err
+			}
+		}
+		// metering finalizer
+		//if metering.DeletionTimestamp.IsZero() {
+		//	if controllerutil.AddFinalizer(&metering, FinalizerName) == true {
+		//		// delete resource quota
+		//		quota := &corev1.ResourceQuota{}
+		//		err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Spec.Namespace}, quota)
+		//
+		//		if err != nil {
+		//			r.Logger.Error(err, err.Error())
+		//			return ctrl.Result{}, err
+		//		}
+		//		err = r.Delete(ctx, quota)
+		//		if err != nil {
+		//			r.Logger.Error(err, err.Error())
+		//			return ctrl.Result{}, err
+		//		}
+		//
+		//		if err := r.Update(ctx, &metering); err != nil {
+		//			return ctrl.Result{}, err
+		//		}
+		//	}
+		//} else {
+		//	if controllerutil.RemoveFinalizer(&metering, FinalizerName) == true {
+		//		if err := r.Update(ctx, &metering); err != nil {
+		//			return ctrl.Result{}, err
+		//		}
+		//	}
+		//	return ctrl.Result{}, nil
+		//}
+	}
+
+	r.Logger.Info("update BillingList")
+	err := r.updateBillingList(ctx, &metering, nil)
+	if err != nil {
+		r.Logger.Error(err, err.Error())
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, err
+	}
+	// Ensure the deployment size is the same as the spec
+
+	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, nil
+
+}
+
+func (r *MeteringReconcile) createMetering(ctx context.Context, owner string, ns corev1.Namespace) (meteringv1.Metering, error) {
+
+	var metering meteringv1.Metering
+	//r.Logger.Info(client.ObjectKey{Namespace: SealosSystemNamespace, Name: fmt.Sprintf("metering-%v", ns.Name)})
+	err := r.Get(ctx, client.ObjectKey{Namespace: SealosSystemNamespace, Name: fmt.Sprintf("metering-%v", ns.Name)}, &metering)
+	if errors.IsNotFound(err) {
+		r.Logger.Info("creat metering")
+		metering = meteringv1.Metering{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("metering-%v", ns.Name),
+				Namespace: SealosSystemNamespace,
+			},
+			Spec: meteringv1.MeteringSpec{
+				Namespace: ns.Name,
+				Owner:     owner,
+				Resources: DefaultResourceQuota(),
+			},
+			Status: meteringv1.MeteringStatus{
+				TotalAmount:      0,
+				LatestUpdateTime: time.Now().Unix(),
+			},
+		}
+		if err := r.Create(ctx, &metering); err != nil {
+			return meteringv1.Metering{}, fmt.Errorf("create metering failed: %v", err)
+		}
+	} else if err != nil {
+		r.Logger.Error(err, "Failed to get Metering")
+		return meteringv1.Metering{}, client.IgnoreNotFound(err)
+	}
+	return metering, nil
+}
+
+func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, metering *meteringv1.Metering) (*corev1.ResourceQuota, error) {
+	found := &corev1.ResourceQuota{}
+	err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Spec.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new ResourceQuota using nodeCount
-		rq := r.resourcequotaforManagedResourceQuota(&quota, nodeCount)
-		logger.Info("Creating a new ResourceQuota", "ResourceQuota.Namespace", rq.Namespace, "ResourceQuota.Name", rq.Name)
+		rq, err := r.newResourceQuota(metering)
+		if err != nil {
+			r.Logger.Error(err, "Failed to new ResourceQuota")
+			return nil, err
+		}
+		r.Logger.Info("Creating a new ResourceQuota", "ResourceQuota.Namespace", rq.Namespace, "ResourceQuota.Name", rq.Name)
 		err = r.Create(ctx, rq)
 		if err != nil {
-			logger.Error(err, "Failed to create new ResourceQuota", "ResourceQuota.Namespace", rq.Namespace, "ResourceQuota.Name", rq.Name)
-			return ctrl.Result{}, err
+			r.Logger.Error(err, "Failed to create new ResourceQuota", "ResourceQuota.Namespace", rq.Namespace, "ResourceQuota.Name", rq.Name)
+			return nil, err
 		}
 		// ResourceQuota created successfully - return and requeue
-		return ctrl.Result{Requeue: true}, nil
 	} else if err != nil {
-		logger.Error(err, "Failed to get ResourceQuota")
-		return ctrl.Result{}, err
+		r.Logger.Error(err, "Failed to get ResourceQuota")
+		return nil, err
+	}
+	return found, nil
+}
+
+func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *meteringv1.Metering, infra *any) error {
+	// exec r.update will inter reconcile immediately，so should check billing list is Changed
+
+	// check timeInterval is after 1 minute
+	if time.Now().Unix()-metering.Status.LatestUpdateTime >= time.Minute.Milliseconds()/1000 {
+		amount, err := QueryPrice(infra)
+		if err != nil {
+			return err
+		}
+
+		metering.Status.BillingListM = append(metering.Status.BillingListM, NewBillingList(meteringv1.MINUTE, amount))
+		if len(metering.Status.BillingListM) >= 60 {
+			var totalAmountH int64
+			for i := 0; i < 60; i++ {
+				totalAmountH += metering.Status.BillingListM[i].Amount
+			}
+			metering.Status.BillingListM = metering.Status.BillingListM[60:]
+			metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, totalAmountH))
+		}
+
+		if len(metering.Status.BillingListH) >= 24 {
+			var totalAmountD int64
+			for i := 0; i < 24; i++ {
+				totalAmountD += metering.Status.BillingListH[i].Amount
+			}
+			metering.Status.BillingListH = metering.Status.BillingListM[24:]
+			metering.Status.BillingListD = append(metering.Status.BillingListD, NewBillingList(meteringv1.DAY, totalAmountD))
+		}
+		metering.Status.LatestUpdateTime = time.Now().Unix()
+		metering.Status.TotalAmount += amount
+		err = r.Status().Update(ctx, metering)
+		if err != nil {
+			return err
+		}
+
+		account := &userv1.Account{}
+		account.Name = metering.Spec.Owner
+		account.Namespace = SealosSystemNamespace
+		err = r.Get(ctx, client.ObjectKey{Namespace: SealosSystemNamespace, Name: account.Name}, account)
+		if err != nil {
+			r.Logger.Error(err, "get account err", "account", account)
+			return err
+		}
+		//deduct balance
+		account.Status.Balance -= amount
+
+		err = r.Status().Update(ctx, account)
+		if err != nil {
+			return err
+		}
+		r.Logger.Info("扣款成功：", "用户", account.Name, "余额", account.Status.Balance)
+		if account.Status.Balance < 0 {
+			//TODO 报没钱的error
+		}
+
 	}
 
-	// Ensure the deployment size is the same as the spec
-	hard := renderHardLimits(quota.Spec.ResourceQuota, nodeCount)
-	if !reflect.DeepEqual(found.Spec.Hard, hard) {
-		logger.Info("Updating ResourceQuota")
-		found.Spec.Hard = hard
-		err = r.Update(ctx, found)
-		if err != nil {
-			logger.Error(err, "Failed to update ResourceQuota", "ResourceQuota.Namespace", found.Namespace, "ResourceQuota.Name", found.Name)
-			return ctrl.Result{}, err
-		}
-		// Spec updated - return and requeue
-		return ctrl.Result{Requeue: true}, nil
+	return nil
+}
+
+func QueryPrice(infra *any) (int64, error) {
+	return 1, nil
+}
+
+func NewBillingList(TimeInterval meteringv1.TimeIntervalType, amount int64) meteringv1.BillingList {
+	return meteringv1.BillingList{
+		TimeStamp:    time.Now().Unix(),
+		TimeInterval: TimeInterval,
+		Settled:      false,
+		Amount:       amount,
 	}
-	return ctrl.Result{}, nil
+}
+
+func (r *MeteringReconcile) checkHardMap(now, spec corev1.ResourceList) bool {
+	if len(now) != len(spec) {
+		return false
+	}
+	for k, v := range spec {
+		if now[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 // resourcequotaforManagedResourceQuota returns a Resource Quota object
-func (r *MeteringReconciler) resourcequotaforManagedResourceQuota(m *meteringv1.Metering, nodes int) *corev1.ResourceQuota {
-	ls := labelsForResourceQuota(m.Name)
-	hard := renderHardLimits(m.Spec.ResourceQuota, nodes)
+func (r *MeteringReconcile) newResourceQuota(m *meteringv1.Metering) (*corev1.ResourceQuota, error) {
 
 	rq := &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      m.Name,
-			Namespace: m.Namespace,
-			Labels:    ls,
+			Namespace: m.Spec.Namespace,
 		},
 		Spec: corev1.ResourceQuotaSpec{
-			Hard: hard,
+			Hard: m.Spec.Resources,
 		},
 	}
-	// Set resourcequota instance as the owner and controller
-	ctrl.SetControllerReference(m, rq, r.Scheme)
-	return rq
+	//// Set resourcequota instance as the owner and controller
+	//error cross-namespace owner references are disallowed
+	//err := ctrl.SetControllerReference(m, rq, r.Scheme)
+	//if err != nil {
+	//	return nil, err
+	//}
+	return rq, nil
+
 }
-
-// labelsForResourceQuota returns the labels for selecting the resources
-// belonging to the given k8s-resourcequota-autoscaler CR name.
-func labelsForResourceQuota(name string) map[string]string {
-	return map[string]string{"app.kubernetes.io/managed-by": "k8s-resourcequota-autoscaler", "app.kubernetes.io/name": name}
-}
-
-func renderHardLimits(hard meteringv1.ResourceQuota, nodes int) map[corev1.ResourceName]resource.Quantity {
-	m := map[corev1.ResourceName]resource.Quantity{}
-
-	for key, element := range hard.Resources {
-		var tpl bytes.Buffer
-		t := template.Must(template.New("hard").Funcs(sprig.FuncMap()).Parse(element))
-		data := struct {
-			Nodes int
-		}{
-			Nodes: nodes,
-		}
-		if err := t.Execute(&tpl, data); err != nil {
-			return nil
-		}
-
-		m[key], _ = resource.ParseQuantity(tpl.String())
-	}
-	return m
-}
-
-//func (r *MeteringReconciler) reconcileResourceQuota(ctx context.Context, tenantQuota *meteringv1.Metering, ns *corev1.Namespace) error {
-//	logger := log.FromContext(ctx)
-//	var currentQuota corev1.ResourceQuota
-//
-//	err := r.Get(ctx, client.ObjectKey{Namespace: ns.GetName(), Name: constants.ResourceQuotaNameDefault}, &currentQuota)
-//	if client.IgnoreNotFound(err) != nil {
-//		return err
-//	}
-//
-//	tenantLabel := currentQuota.Labels[constants.LabelTenant]
-//	if tenantLabel != "" && tenantLabel != tenantQuota.Name {
-//		return nil
-//	}
-//
-//	hard := make(corev1.ResourceList)
-//	fieldset := &fieldpath.Set{}
-//	for _, managedField := range currentQuota.GetManagedFields() {
-//		if managedField.Manager == constants.ControllerName {
-//			continue
-//		}
-//		fs := &fieldpath.Set{}
-//		err = fs.FromJSON(bytes.NewReader(managedField.FieldsV1.Raw))
-//		if err != nil {
-//			return err
-//		}
-//		fieldset = fieldset.Union(fs)
-//	}
-//
-//	for resourceName := range tenantQuota.Spec.Hard {
-//		if !fieldset.Has(fieldpath.MakePathOrDie("spec", "hard", string(resourceName))) {
-//			hard[resourceName] = resource.MustParse("0")
-//		}
-//	}
-//
-//	quota := applycorev1.ResourceQuota(constants.ResourceQuotaNameDefault, ns.GetName()).
-//		WithLabels(map[string]string{
-//			constants.LabelCreatedBy: constants.CreatedBy,
-//			constants.LabelTenant:    tenantQuota.GetName(),
-//		}).
-//		WithSpec(applycorev1.ResourceQuotaSpec().WithHard(hard))
-//
-//	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(quota)
-//	if err != nil {
-//		return err
-//	}
-//	patch := &unstructured.Unstructured{
-//		Object: obj,
-//	}
-//
-//	currentApplyConfig, err := applycorev1.ExtractResourceQuota(&currentQuota, constants.ControllerName)
-//	if err != nil {
-//		return err
-//	}
-//
-//	if equality.Semantic.DeepEqual(quota, currentApplyConfig) {
-//		return nil
-//	}
-//
-//	logger.Info("Reconciling resource quota", "resource quota", quota)
-//	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
-//		FieldManager: constants.ControllerName,
-//	})
-//	if err != nil {
-//		return err
-//	}
-//
-//	return nil
-//
-//}
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *MeteringReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.Metering{}).
+		Watches(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }

@@ -2,14 +2,9 @@ apiVersion: metering.sealos.io/v1
 kind: Metering
 metadata:
   name: metering-sample
+  namespace: sealos-system
 spec:
-  namespace: ["default"]
-  resourceQuota:
-     resources:
-      requests.cpu: "16"
-      requests.memory: 200Gi
-      limits.cpu: "16"
-      limits.memory: 200Gi
+
 
 
 

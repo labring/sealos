@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -27,41 +27,54 @@ kind: Metering
 metadata:
   name: xxxx
 Spec:
-//可以一次性设置多个角色的资源限制
-    []{
-    	owner fanux //必填,基于role的RBAC
-    	namespace [""," "] //必填，需要统计的namespace
-        resources map[string]resource.Quantity //资源类型，必填
-        timestap string //时间戳，用于记录上次统计时间
-        timeInterval "* * * * *"  //使用cron形式，不设置的话默认是统计每小时/天/月的使用量
- isSettled true //是否已经结算
-}
+
+    	owner: fanux string
+    	namespace: string
+        resources: v1.ResourceList // resource type
+
 */
 
 // MeteringSpec defines the desired state of Metering
+
 type MeteringSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	ResourceQuota `json:"resourceQuota"`
-	Namespaces    []string `json:"namespace"`
-	Owner         string   `json:"owner,omitempty"`
+	Namespace string          `json:"namespace"`
+	Owner     string          `json:"owner"`
+	Resources v1.ResourceList `json:"resources,omitempty"`
 }
 
-type ResourceQuota struct {
-	Resources    map[corev1.ResourceName]string `json:"resources"`
-	TimeStamp    string                         `json:"timeStamp,omitempty"`
-	TimeInterval string                         `json:"timeInterval,omitempty"` // TODO maybe using cron is better
-	Settled      bool                           `json:"settled,omitempty"`
+type TimeIntervalType string
+
+const (
+	MINUTE TimeIntervalType = "Minute"
+	HOUR   TimeIntervalType = "Hour"
+	DAY    TimeIntervalType = "Day"
+)
+
+type BillingList struct {
+	TimeStamp    int64            `json:"timeStamp,omitempty"`
+	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
+	Settled      bool             `json:"settled,omitempty"`      //is settled
+	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
+
 }
 
 // MeteringStatus defines the observed state of Metering
+
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	BillingListM     []BillingList `json:"billingListM,omitempty"`
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="owner",type=string,JSONPath=".spec.owner"
+// +kubebuilder:printcolumn:name="totalAmount",type=integer,JSONPath=".status.totalAmount",description=" The last two digits are decimals ,100 = 1$"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Metering is the Schema for the meterings API
 type Metering struct {
