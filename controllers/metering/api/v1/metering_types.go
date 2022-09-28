@@ -27,9 +27,11 @@ kind: Metering
 metadata:
   name: xxxx
 Spec:
+
     	owner: fanux string
     	namespace: string
         resources: v1.ResourceList // resource type
+
 */
 
 // MeteringSpec defines the desired state of Metering
@@ -53,6 +55,7 @@ type BillingList struct {
 	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
 	Settled      bool             `json:"settled,omitempty"`      //is settled
 	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
+
 }
 
 // MeteringStatus defines the observed state of Metering
