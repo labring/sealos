@@ -126,20 +126,24 @@ func main() {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
+	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+		setupLog.Info("disable all webhooks")
+	} else {
+		if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "User")
+			os.Exit(1)
+		}
+		setupLog.Info("add ug and ugb webhooks")
+		if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
+			os.Exit(1)
+		}
+		if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
+			os.Exit(1)
+		}
+	}
 
-	if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "User")
-		os.Exit(1)
-	}
-	setupLog.Info("add ug and ugb webhooks")
-	if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
-		os.Exit(1)
-	}
-	if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
-		os.Exit(1)
-	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
