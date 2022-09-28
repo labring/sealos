@@ -85,20 +85,26 @@ func (r *UserGroupNamespaceBindingController) syncNamespace(ctx context.Context,
 		var err error
 		ns := &v1.Namespace{}
 		ns.Name = ugBinding.Subject.Name
+		ns.Labels = map[string]string{}
 		if err = r.Get(ctx, client.ObjectKeyFromObject(ns), ns); err != nil {
 			if !apierrors.IsNotFound(err) {
 				return err
 			}
 		}
+		var isCreated bool
 		if !ns.CreationTimestamp.IsZero() {
 			r.Logger.V(1).Info("namespace UserGroupBinding namespace is created", "OperationResult", change, "namespace", ns.Name)
-			return nil
+			isCreated = true
 		}
 		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, ns, func() error {
-			if err = controllerutil.SetControllerReference(ugBinding, ns, r.Scheme); err != nil {
-				return err
+			if !isCreated {
+				if err = controllerutil.SetControllerReference(ugBinding, ns, r.Scheme); err != nil {
+					return err
+				}
 			}
 			ns.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			ns.Labels = helper.SetPodSecurity(ns.Labels)
+
 			return nil
 		}); err != nil {
 			return errors.Wrap(err, "unable to create namespace by UserGroupBinding")
