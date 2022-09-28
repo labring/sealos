@@ -30,6 +30,8 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
+var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
+
 type PreProcessor interface {
 	Process() error
 }
@@ -40,7 +42,7 @@ func NewPreProcessor(path string) PreProcessor {
 
 func (c *ClusterFile) Process() (err error) {
 	if !fileutil.IsExist(c.path) {
-		return errors.New("the cluster file is not exist")
+		return ErrClusterFileNotExists
 	}
 	c.once.Do(func() {
 		err = func() error {

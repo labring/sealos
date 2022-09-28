@@ -39,7 +39,7 @@ spec:
   ...
   image:
   - labring/kubernetes:v1.23.8
-  - labring/calico:v3.22.1
+  - labring/calico:v3.24.1
   - node-local-dns:1.3.2
 ---
 apiVersion: kubeadm.k8s.io/v1beta3

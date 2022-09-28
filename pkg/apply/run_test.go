@@ -15,7 +15,11 @@
 package apply
 
 import (
+	"reflect"
 	"testing"
+
+	"github.com/labring/sealos/pkg/apply/applydrivers"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func Test_NewApplierFromFile(t *testing.T) {
@@ -67,6 +71,148 @@ func Test_NewApplierFromFile(t *testing.T) {
 			t.Log(err)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewApplierFromFile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestClusterArgs_SetClusterRunArgs(t *testing.T) {
+	type fields struct {
+		cluster     *v2.Cluster
+		hosts       []v2.Host
+		clusterName string
+	}
+	type args struct {
+		imageList []string
+		args      *RunArgs
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &ClusterArgs{
+				cluster:     tt.fields.cluster,
+				hosts:       tt.fields.hosts,
+				clusterName: tt.fields.clusterName,
+			}
+			if err := r.SetClusterRunArgs(tt.args.imageList, tt.args.args); (err != nil) != tt.wantErr {
+				t.Errorf("SetClusterRunArgs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestClusterArgs_setHostWithIpsPort(t *testing.T) {
+	type fields struct {
+		cluster     *v2.Cluster
+		hosts       []v2.Host
+		clusterName string
+	}
+	type args struct {
+		ips   []string
+		roles []string
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := &ClusterArgs{
+				cluster:     tt.fields.cluster,
+				hosts:       tt.fields.hosts,
+				clusterName: tt.fields.clusterName,
+			}
+			r.setHostWithIpsPort(tt.args.ips, tt.args.roles)
+		})
+	}
+}
+
+func TestNewApplierFromArgs(t *testing.T) {
+	type args struct {
+		imageName []string
+		args      *RunArgs
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    applydrivers.Interface
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewApplierFromArgs(tt.args.imageName, tt.args.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewApplierFromArgs() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewApplierFromArgs() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewApplierFromFile(t *testing.T) {
+	type args struct {
+		path string
+		args *Args
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    applydrivers.Interface
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewApplierFromFile(tt.args.path, tt.args.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewApplierFromFile() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewApplierFromFile() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewClusterFromArgs(t *testing.T) {
+	type args struct {
+		imageName []string
+		args      *RunArgs
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *v2.Cluster
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewClusterFromArgs(tt.args.imageName, tt.args.args)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewClusterFromArgs() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewClusterFromArgs() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

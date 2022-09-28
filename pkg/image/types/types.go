@@ -18,6 +18,7 @@ package types
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"time"
 
@@ -46,8 +47,6 @@ var DefaultTransport = OCIArchive
 type BuildOptions struct {
 	NoCache            bool     //--no-cache
 	AllPlatforms       bool     //--all-platforms
-	OS                 string   //--os "linux"
-	Arch               string   //--arch "amd64"
 	DisableCompression bool     //--disable-compression default true
 	File               string   //--file -f
 	ForceRemove        bool     //--force-rm
@@ -55,26 +54,23 @@ type BuildOptions struct {
 	Platform           string   //--platform linux/amd64
 	Pull               PullType //--pull string[="true"] true  (true,always,never)
 	MaxPullProcs       int      //--max-pull-procs
-	BasicAuth          bool
+	Offline            bool
 	Tag                string
 }
 
 func (opts *BuildOptions) String() string {
 	opts.AllPlatforms = false
 	opts.DisableCompression = true
-	opts.Pull = PullTypeIfNewer
+	opts.Pull = PullTypeIfMissing
+	if opts.Platform == "" {
+		opts.Platform = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	}
 	var sb strings.Builder
 	if opts.NoCache {
 		sb.WriteString(" --no-cache ")
 	}
 	if opts.AllPlatforms {
 		sb.WriteString(" --all-platforms ")
-	}
-	if len(opts.OS) > 0 {
-		sb.WriteString(fmt.Sprintf(" --os %s ", opts.OS))
-	}
-	if len(opts.Arch) > 0 {
-		sb.WriteString(fmt.Sprintf(" --arch %s ", opts.Arch))
 	}
 	if !opts.DisableCompression {
 		sb.WriteString(" --disable-compression=false ")
@@ -235,4 +231,29 @@ type BuildahBuildOptions struct {
 	*cli.UserNSResults
 	*cli.FromAndBudResults
 	*cli.NameSpaceResults
+}
+
+func DefaultPlatform() v1.Platform {
+	return v1.Platform{
+		Architecture: runtime.GOARCH,
+		OS:           runtime.GOOS,
+	}
+}
+
+func ParsePlatform(platform string) v1.Platform {
+	platformList := strings.Split(platform, "/")
+	var platformVar v1.Platform
+	if len(platformList) > 2 {
+		platformVar = v1.Platform{
+			Architecture: platformList[1],
+			OS:           platformList[0],
+			Variant:      platformList[2],
+		}
+	} else {
+		platformVar = v1.Platform{
+			Architecture: platformList[1],
+			OS:           platformList[0],
+		}
+	}
+	return platformVar
 }

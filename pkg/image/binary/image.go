@@ -117,21 +117,8 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	if err != nil {
 		return err
 	}
-	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths, options.BasicAuth)
-	platform := strings.Split(options.Platform, "/")
-	var platformVar v1.Platform
-	if len(platform) > 2 {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-			Variant:      platform[2],
-		}
-	} else {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-		}
-	}
+	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths)
+	platformVar := types.ParsePlatform(options.Platform)
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 
 	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
@@ -140,7 +127,7 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	}
 	logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 	options.Tag = imageName
-	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
+	cmd := fmt.Sprintf("buildah build --tls-verify=false %s %s", options.String(), contextDir)
 	return exec.Cmd("bash", "-c", cmd)
 }
 

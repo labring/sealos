@@ -20,8 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -41,21 +41,11 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu upx \
+          sudo apt install -y gcc-aarch64-linux-gnu \
             libbtrfs-dev libgpgme-dev libdevmapper-dev
-
-      - name: set up buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          version: latest
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
+          make install.upx
+          sudo cp tools/upx /usr/bin/
+          sudo chmod a+x /usr/bin/upx
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
@@ -66,7 +56,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
-      - name: build (and publish) lvscare image
+      - name: set up buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Docker build and publish lvscare image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
@@ -83,7 +86,8 @@ jobs:
           -t ${DOCKER_REPO}:latest \
           -f docker/lvscare/Dockerfile \
           .
-      - name: build (and publish) sealos image
+
+      - name: Docker build and publish sealos image
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos

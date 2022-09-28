@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"github.com/labring/endpoints-operator/library/convert"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/pkg/errors"
@@ -97,8 +100,10 @@ func (r *UserGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
 	r.Logger.V(1).Info("init reconcile controller user group")
+	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.UserGroup{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.UserGroup{}).
+		Watches(&source.Kind{Type: &userv1.UserGroupBinding{}}, owner).
 		Complete(r)
 }
 

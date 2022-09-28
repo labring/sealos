@@ -26,11 +26,10 @@ import (
 	"math/big"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
@@ -84,72 +83,69 @@ func CreateJWTCertificateAndPrivateKey() (string, string, error) {
 	return string(certPem), string(privateKeyPem), nil
 }
 
-func GenerateKubeConfig(username string) (string, error) {
+func CreateOrUpdateKubeConfig(uid string) error {
+	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
+	if err != nil {
+		return err
+	}
+
+	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "user.sealos.io",
+		Version:  "v1",
+		Resource: "users",
+	})
+	user, err := resource.Get(context.Background(), uid, metav1.GetOptions{})
+	if k8sErrors.IsNotFound(err) {
+		_, err := resource.Create(context.TODO(), &unstructured.Unstructured{Object: map[string]interface{}{
+			"apiVersion": "user.sealos.io/v1",
+			"kind":       "User",
+			"metadata": map[string]interface{}{
+				"name": uid,
+				"labels": map[string]interface{}{
+					"updateTime": time.Now().Format("T2006-01-02T15-04-05"),
+				},
+			},
+			"spec": map[string]interface{}{
+				"csrExpirationSeconds": 1000000000,
+			},
+		}}, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		// To trigger controller reconcile
+		user.Object["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["updateTime"] = time.Now().Format("T2006-01-02T15-04-05")
+		_, err = resource.Update(context.Background(), user, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func GetKubeConfig(uid string) (string, error) {
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return "", err
 	}
-	if _, err = ApplyServiceAccount(client, username); err != nil {
-		return "", err
-	}
-	if _, err = ApplyClusterRoleBinding(client, username); err != nil {
-		return "", err
-	}
-	if _, err = ApplySecret(client, username); err != nil {
-		return "", err
-	}
 
-	var tokenSecret *v1.Secret
-	// Wait for kubernetes to fill token into the secret
-	for i := 0; i < 10; i++ {
-		tokenSecret, err = client.Kubernetes().CoreV1().Secrets("sealos").Get(context.TODO(), fmt.Sprintf("%s-%s", username, "token"), metaV1.GetOptions{})
-		if err != nil {
-			return "", err
-		}
-		if _, filled := tokenSecret.Data["token"]; filled {
-			break
-		}
-		time.Sleep(time.Second)
-	}
-	if _, filled := tokenSecret.Data["token"]; !filled {
-		return "", fmt.Errorf("failed to get token in Secret %s-%s", username, "token")
-	}
-
-	ctx := fmt.Sprintf("%s@%s", username, "kubernetes")
+	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "user.sealos.io",
+		Version:  "v1",
+		Resource: "users",
+	})
+	user, err := resource.Get(context.Background(), uid, metav1.GetOptions{})
 	if err != nil {
 		return "", err
 	}
-
-	// make sure cadata is loaded into config under incluster mode
-	if err := rest.LoadTLSFiles(client.Config()); err != nil {
-		return "", err
+	if user.Object["status"] == nil {
+		return "", fmt.Errorf("status is empty, please wait for a while or check the health of user-controller")
 	}
-
-	config := api.Config{
-		Clusters: map[string]*api.Cluster{
-			"kubernetes": {
-				Server:                   "https://apiserver.cluster.local:6443",
-				CertificateAuthorityData: client.Config().TLSClientConfig.CAData,
-			},
-		},
-		Contexts: map[string]*api.Context{
-			ctx: {
-				Cluster:  "kubernetes",
-				AuthInfo: username,
-			},
-		},
-		AuthInfos: map[string]*api.AuthInfo{
-			username: {
-				Token: string(tokenSecret.Data["token"]),
-			},
-		},
-		CurrentContext: ctx,
+	status := user.Object["status"].(map[string]interface{})
+	if kubeConfig, ok := status["kubeConfig"]; ok {
+		return kubeConfig.(string), nil
 	}
-
-	content, err := clientcmd.Write(config)
-	if err != nil {
-		return "", fmt.Errorf("write kubeconfig failed %s", err)
-	}
-
-	return string(content), nil
+	return "", fmt.Errorf("there is no field named kubeConfig in status")
 }

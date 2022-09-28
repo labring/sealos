@@ -48,6 +48,9 @@ type UserGroupBindingReconciler struct {
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -96,7 +99,6 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&userv1.UserGroupBinding{}).
 		Complete(r)
 }
-
 func (r *UserGroupBindingReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupBindingStatus) error {
 	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.UserGroupBinding{}
@@ -177,4 +179,20 @@ func (r *UserGroupBindingReconciler) Delete(ctx context.Context, req ctrl.Reques
 
 func (r *UserGroupBindingReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
 	return NewUserGroupBindingController(ctx, req, r).Update(ctx, req, gvk, obj)
+}
+
+func NewUserGroupBindingController(ctx context.Context, req ctrl.Request, reconcile *UserGroupBindingReconciler) controller.Operator {
+	ugBinding := &userv1.UserGroupBinding{}
+	if err := reconcile.Client.Get(ctx, req.NamespacedName, ugBinding); err != nil {
+		reconcile.Logger.Error(err, "unable to fetch UserGroupBinding")
+		return nil
+	}
+	if ugBinding.Subject.Kind == "User" {
+		return &UserGroupUserBindingController{
+			reconcile,
+		}
+	}
+	return &UserGroupNamespaceBindingController{
+		reconcile,
+	}
 }

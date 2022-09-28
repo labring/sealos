@@ -22,25 +22,32 @@ import (
 	buildah_image "github.com/labring/sealos/pkg/image/buildah/image"
 	"github.com/labring/sealos/pkg/image/buildah/registry"
 	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func NewClusterService() (types.ClusterService, error) {
 	if ok, err := initBuildah(); err == nil && ok {
+		logger.Debug("setting binary build to cluster service")
 		return binary.NewClusterService()
 	}
+	logger.Debug("setting sdk build to cluster service")
 	return buildah_cluster.NewClusterService()
 }
 
 func NewRegistryService() (types.RegistryService, error) {
 	if ok, err := initBuildah(); err == nil && ok {
+		logger.Debug("setting binary build to registry service")
 		return binary.NewRegistryService()
 	}
+	logger.Debug("setting sdk build to registry service")
 	return registry.NewRegistryService()
 }
 
 func NewImageService() (types.ImageService, error) {
 	if ok, err := initBuildah(); err == nil && ok {
+		logger.Debug("setting binary build to image service")
 		return binary.NewImageService()
 	}
+	logger.Debug("setting sdk build to image service")
 	return buildah_image.NewImageService()
 }

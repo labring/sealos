@@ -14,21 +14,32 @@
     "not op_mini all"
   ],
   "dependencies": {
-    "@kubernetes/client-node": "^0.17.0",
-    "@nextui-org/react": "^1.0.0-beta.9",
+    "@ctrl/golang-template": "^1.4.1",
+    "@fluentui/react-components": "^9.3.1",
+    "@kubernetes/client-node": "0.17.0",
+    "@tanstack/react-query": "^4.3.9",
+    "@types/js-yaml": "^4.0.5",
+    "axios": "^0.27.2",
     "clsx": "^1.2.1",
-    "next": "12.2.5",
-    "next-themes": "^0.2.0",
+    "immer": "^9.0.15",
+    "js-yaml": "^4.1.0",
+    "next": "12.3.1",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "react-draggable": "^4.4.5",
+    "zustand": "^4.1.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^6.3.1",
-    "@types/node": "18.7.9",
-    "@types/react": "18.0.17",
+    "@types/node": "18.7.18",
+    "@types/react": "18.0.20",
     "@types/react-dom": "18.0.6",
-    "eslint": "8.22.0",
-    "eslint-config-next": "12.2.5",
-    "typescript": "4.7.4"
+    "autoprefixer": "^10.4.11",
+    "eslint": "8.23.1",
+    "eslint-config-next": "12.3.1",
+    "postcss": "^8.4.16",
+    "sass": "^1.54.9",
+    "tailwindcss": "^3.1.8",
+    "typescript": "4.8.3"
   }
 }

@@ -13,6 +13,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Run GitHub File Sync
         uses: BetaHuhn/repo-file-sync-action@v1
         with:

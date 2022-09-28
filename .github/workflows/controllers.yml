@@ -17,28 +17,32 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user ]
+        module: [ user, terminal ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Build ${{ matrix.module }} amd64
         working-directory: controllers/${{ matrix.module }}
         run: |
           GOARCH=amd64 make build
           mv bin/manager bin/controller-${{ matrix.module }}-amd64
           chmod +x bin/controller-${{ matrix.module }}-amd64
+
       - name: Build ${{ matrix.module }} arm64
         working-directory: controllers/${{ matrix.module }}
         run: |
-          GOARCH=arm64 make build 
+          GOARCH=arm64 make build
           mv bin/manager bin/controller-${{ matrix.module }}-arm64
           chmod +x bin/controller-${{ matrix.module }}-arm64
+
       - name: Prepare
         id: prepare
         run: |
@@ -64,23 +68,9 @@ jobs:
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-controller
         working-directory: controllers/${{ matrix.module }}
         run: |
-          ls -l bin/
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
           .
-
-#      - name: build (and publish) tag image
-#        env:
-#          # fork friendly ^^
-#          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
-#        run: |
-#          docker buildx build \
-#          --platform linux/amd64,linux/arm64 \
-#          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
-#          --push \
-#          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-#          -f docker/lvscare/Dockerfile \
-#          .

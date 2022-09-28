@@ -21,8 +21,6 @@ builds:
     env:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
-      - CC_FOR_TARGET=gcc-aarch64-linux-gnu
-      - PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig/
     main: ./cmd/sealos
     binary: sealos
     hooks:
@@ -45,9 +43,7 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
-      - -extldflags "-static -fpic"
       - -s -w
-      - -linkmode external
     overrides:
       - goos: linux
         goarch: amd64
@@ -57,8 +53,6 @@ builds:
         env:
           - CGO_ENABLED=1
           - CC=x86_64-linux-gnu-gcc
-          - CC_FOR_TARGET=gcc-x86_64-linux-gnu
-          - PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig/
 
   - id: sealctl
     env:

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.0
+    controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
   name: usergroupbindings.user.sealos.io
 spec:
@@ -126,6 +126,7 @@ spec:
             - kind
             - name
             type: object
+            x-kubernetes-map-type: atomic
           userGroupRef:
             description: UserGroupRef is the reference to the user group that this
               binding binds to.

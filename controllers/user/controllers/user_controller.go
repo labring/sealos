@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
 	"k8s.io/client-go/rest"
 
 	"github.com/go-logr/logr"
@@ -46,12 +49,13 @@ import (
 )
 
 const UserAnnotationOwnerKey = "user.sealos.io/creator"
+
 const clusterRoleByCreate = "sealos-user-create-role"
 
 const clusterRoleByManager = "sealos-user-manager-role"
 const clusterRoleByUser = "sealos-user-user-role"
 
-//const clusterRoleNamespaceByUser = "cluster-admin"
+const roleNamespaceByUser = "cluster-admin"
 
 // UserReconciler reconciles a User object
 type UserReconciler struct {
@@ -68,6 +72,8 @@ type UserReconciler struct {
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users/finalizers,verbs=update
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=certificates.k8s.io,resources=certificatesigningrequests/approval,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=certificates.k8s.io,resources=signers,verbs=approve,resourceNames=kubernetes.io/kube-apiserver-client
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -112,8 +118,11 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.cache = mgr.GetCache()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user")
+	owner := &handler.EnqueueRequestForOwner{OwnerType: &userv1.User{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.User{}).
+		Watches(&source.Kind{Type: &userv1.UserGroup{}}, owner).
+		Watches(&source.Kind{Type: &userv1.UserGroupBinding{}}, owner).
 		Complete(r)
 }
 
