@@ -31,8 +31,6 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     return UnprocessableResp('kubeconfig or user', resp);
   }
 
-  // const kubeconfigR = ReplaceInCLuster(kubeconfig);
-  // const kc = K8sApi(kubeconfigR);
   const kc = K8sApi(kubeconfig);
 
   // apply action

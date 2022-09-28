@@ -125,11 +125,6 @@ export function CheckIsInCluster(): boolean {
   return false;
 }
 
-// export function ReplaceInCLuster(kubeconfig: string): string {
-//   return CheckIsInCluster()
-//     ? kubeconfig.replace(
-//         'https://apiserver.cluster.local:6443',
-//         'https://kubernetes.default.svc.cluster.local:443'
-//       )
-//     : kubeconfig;
-// }
+export function GetUserDefaultNameSpace(user: string): string {
+  return 'ns-' + user;
+}

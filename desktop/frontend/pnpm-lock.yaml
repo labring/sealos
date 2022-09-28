@@ -10,6 +10,7 @@ specifiers:
   '@types/node': 18.7.23
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/uuid': ^8.3.4
   autoprefixer: ^10.4.11
   axios: ^0.27.2
   clsx: ^1.2.1
@@ -26,6 +27,7 @@ specifiers:
   sass: ^1.55.0
   tailwindcss: ^3.1.8
   typescript: 4.8.3
+  uuid: ^9.0.0
   zustand: ^4.1.1
 
 dependencies:
@@ -43,6 +45,7 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-draggable: 4.4.5_biqbaboplfbrettd7655fr4n2y
+  uuid: 9.0.0
   zustand: 4.1.1_immer@9.0.15+react@18.2.0
 
 devDependencies:
@@ -50,6 +53,7 @@ devDependencies:
   '@types/node': 18.7.23
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/uuid': 8.3.4
   autoprefixer: 10.4.12_postcss@8.4.16
   eslint: 8.24.0
   eslint-config-next: 12.3.1_7ilbxdl5iguzcjriqqcg2m5cku
@@ -2783,6 +2787,10 @@ packages:
   /@types/underscore/1.11.4:
     resolution: {integrity: sha512-uO4CD2ELOjw8tasUrAhvnn2W4A0ZECOvMjCivJr4gA9pGgjv+qxKWY9GLTMVEK8ej85BxQOocUyE7hImmSQYcg==}
     dev: false
+
+  /@types/uuid/8.3.4:
+    resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
+    dev: true
 
   /@types/ws/6.0.4:
     resolution: {integrity: sha512-PpPrX7SZW9re6+Ha8ojZG4Se8AZXgf0GK6zmfqEuCsY49LFDNXO3SByp44X3dFEqtB73lkCDAdUazhAjVPiNwg==}
@@ -5991,6 +5999,11 @@ packages:
   /uuid/3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    hasBin: true
+    dev: false
+
+  /uuid/9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
     hasBin: true
     dev: false
 
