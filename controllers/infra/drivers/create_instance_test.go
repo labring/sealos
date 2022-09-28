@@ -29,7 +29,7 @@ func TestDriver_createInstances(t *testing.T) {
 					Resources: nil,
 					Flavor:    string(types.InstanceTypeT2Micro),
 					Arch:      "",
-					Image:     "ami-05248307900d52e3a",
+					Image:     "ami-08bb4e3ce08ca7ddb",
 					Disks:     nil,
 					Metadata:  nil,
 				},
