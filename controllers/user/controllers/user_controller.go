@@ -48,7 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var userAnnotationOwnerKey = userv1.UserAnnotationOwnerKey
+const UserAnnotationOwnerKey = "user.sealos.io/creator"
 
 const UserAnnotationOwnerKey = "user.sealos.io/creator"
 

@@ -211,7 +211,7 @@ func (r *UserGroupReconciler) syncOwnerUGUserBinding(ctx context.Context, ug *us
 	}
 	defer r.saveCondition(ug, condition)
 
-	userName := ug.Annotations[userAnnotationOwnerKey]
+	userName := ug.Annotations[UserAnnotationOwnerKey]
 
 	uguBindingName := fmt.Sprintf("ugu-%s", userName)
 	ugName := fmt.Sprintf("ug-%s", userName)
@@ -224,7 +224,7 @@ func (r *UserGroupReconciler) syncOwnerUGUserBinding(ctx context.Context, ug *us
 			if err = controllerutil.SetControllerReference(ug, ugBinding, r.Scheme); err != nil {
 				return err
 			}
-			ugBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			ugBinding.Annotations = map[string]string{UserAnnotationOwnerKey: userName}
 			ugBinding.UserGroupRef = ugName
 			ugBinding.Subject = rbacv1.Subject{
 				Kind:     "User",

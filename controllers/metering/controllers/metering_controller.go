@@ -38,8 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -101,6 +103,11 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if metering, err = r.createMetering(ctx, owner, ns); err != nil {
 			r.Logger.Error(err, "Failed to get Metering")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+
+		// get or create resourceQuota
+		if err = r.syncResourceQuota(ctx, metering); err != nil {
+			return ctrl.Result{}, err
 		}
 	} else {
 		if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
@@ -203,6 +210,7 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *met
 		// amount is preHour,but billing is perMinute
 		amount /= 60
 		// TODO Billing for resources such as memory and hard disks under namesapce
+
 		metering.Status.BillingListM = append(metering.Status.BillingListM, NewBillingList(meteringv1.MINUTE, amount))
 		if len(metering.Status.BillingListM) >= 60 {
 			var totalAmountH int64
