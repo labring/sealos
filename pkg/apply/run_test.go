@@ -18,10 +18,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/labring/sealos/pkg/apply/applydrivers"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/pkg/apply/applydrivers"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func Test_NewApplierFromFile(t *testing.T) {
