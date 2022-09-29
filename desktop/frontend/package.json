@@ -25,11 +25,12 @@
     "js-yaml": "^4.1.0",
     "next": "12.3.1",
     "next-pwa": "^5.6.0",
+    "qrcode.react": "^3.1.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
-    "zustand": "^4.1.1",
-    "qrcode.react": "^3.1.0"
+    "sealos-desktop-sdk": "^0.1.0",
+    "zustand": "^4.1.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^6.3.1",

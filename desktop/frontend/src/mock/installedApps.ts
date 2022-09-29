@@ -114,6 +114,20 @@ const installedApps: TApp[] = [
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
+  },
+  {
+    name: 'SDK-DEMO',
+    icon: '/images/mysql.svg',
+    type: 'iframe',
+    data: {
+      url: 'http://localhost:3000/demo',
+      desc: 'mysql operator'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
   }
 ];
 

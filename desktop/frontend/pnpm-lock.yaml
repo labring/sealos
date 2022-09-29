@@ -25,6 +25,7 @@ specifiers:
   react-dom: 18.2.0
   react-draggable: ^4.4.5
   sass: ^1.55.0
+  sealos-desktop-sdk: ^0.1.0
   tailwindcss: ^3.1.8
   typescript: 4.8.3
   zustand: ^4.1.1
@@ -45,6 +46,7 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-draggable: 4.4.5_biqbaboplfbrettd7655fr4n2y
+  sealos-desktop-sdk: 0.1.0
   zustand: 4.1.1_immer@9.0.15+react@18.2.0
 
 devDependencies:
@@ -5427,6 +5429,10 @@ packages:
       '@types/json-schema': 7.0.11
       ajv: 6.12.6
       ajv-keywords: 3.5.2_ajv@6.12.6
+    dev: false
+
+  /sealos-desktop-sdk/0.1.0:
+    resolution: {integrity: sha512-ZyBySKyYu49viyBU92xRQnPUeUFNR66fQkG87IsnlwskfCsn5+DgkzmNrSSVTDMItVLlLQGpsel+OgqVUOmlDg==}
     dev: false
 
   /semver/6.3.0:

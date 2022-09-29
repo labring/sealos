@@ -4,7 +4,7 @@ import { APPTYPE } from 'constants/app_type';
 import useAppStore from 'stores/app';
 import AppIcon from '../app_icon';
 import AppWindow from '../app_window';
-import IframApp from './iframe_app';
+import IframeApp from './iframe_app';
 import styles from './index.module.scss';
 
 export default function DesktopContent() {
@@ -16,7 +16,7 @@ export default function DesktopContent() {
         return <AppStore />;
 
       case APPTYPE.IFRAME:
-        return <IframApp appItem={appItem} />;
+        return <IframeApp appItem={appItem} />;
 
       default:
         break;
