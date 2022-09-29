@@ -15,6 +15,14 @@ const nextConfig = withPWA({
   reactStrictMode: false,
   swcMinify: isProduction,
   output: 'standalone',
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.*.com'
+      }
+    ]
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/i,

@@ -11,8 +11,8 @@ const installedApps: TApp[] = [
       desc: 'App Store'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },
@@ -54,8 +54,8 @@ const installedApps: TApp[] = [
       desc: 'sealos CLoud Terminal'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },
@@ -68,8 +68,8 @@ const installedApps: TApp[] = [
       desc: 'sealos Cloud Kubernetes Dashboard'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },
@@ -96,8 +96,8 @@ const installedApps: TApp[] = [
       desc: 'From metrics to insight'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },
@@ -110,8 +110,8 @@ const installedApps: TApp[] = [
       desc: 'mysql operator'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },
@@ -124,8 +124,8 @@ const installedApps: TApp[] = [
       desc: 'redis operator'
     },
     gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
     size: 'maximize'
   },

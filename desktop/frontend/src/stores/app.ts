@@ -1,3 +1,4 @@
+import { current } from 'immer';
 import request from 'services/request';
 import create from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -7,15 +8,17 @@ export type TAppFront = {
   isShow?: boolean;
   zIndex?: number;
   size: 'maximize' | 'maxmin' | 'minimize';
-  style?: {
-    width: number | string;
-    height: number | string;
-    isFull: boolean;
-    bg: string;
-  };
+  style?:
+    | {
+        width: number | string;
+        height: number | string;
+        isFull: boolean;
+        bg: string;
+      }
+    | {};
 };
 
-const initialFrantState = {
+const initialFrantState: TAppFront = {
   isShow: false,
   zIndex: 1,
   size: 'maximize',
@@ -33,6 +36,7 @@ export type TApp = {
   data: {
     url: string;
     desc: string;
+    [key: string]: string;
   };
   // 应用截图
   gallery: string[];
@@ -43,14 +47,22 @@ type TOSState = {
   // 已安装的应用
   installedApps: TApp[];
 
+  // 所有app store中的应用
+  allApps: TApp[];
+
   // 打开的应用
   openedApps: TApp[];
 
   // 当前应用
   currentApp?: TApp;
 
+  // 应用详情
+
   // desktop 初始化
   init(): void;
+
+  // 获取store中的apps
+  getAllApps(): void;
 
   // 关闭应用
   closeApp(name: string): void;
@@ -64,6 +76,10 @@ type TOSState = {
   // 更新应用信息
   updateAppInfo(app: TApp): void;
 
+  // 安装应用
+  installApp(app: TApp): void;
+  // 打开应用
+  openApp(app: TApp): void;
   // 当前最前应用
   maxZIndex: number;
 
@@ -81,11 +97,11 @@ const useAppStore = create<TOSState>()(
       currentApp: undefined,
       maxZIndex: 0,
       isHideStartMenu: true,
+      allApps: [],
 
       // 初始化
       init: async () => {
         const res = await request('/api/desktop/getInstalledApps');
-        console.log('got installed apps', res);
 
         set((state) => {
           state.installedApps = res.data.map((item: TApp) => {
@@ -105,6 +121,23 @@ const useAppStore = create<TOSState>()(
         });
       },
 
+      // 添加应用
+      installApp: (app: TApp) => {
+        set((state) => {
+          state.installedApps = [...state.installedApps, { ...app, ...initialFrantState }];
+        });
+      },
+
+      // 获取所有应用
+
+      getAllApps: async () => {
+        const res = await request('/api/desktop/getAllApps');
+
+        set((state) => {
+          state.allApps = res?.data || [];
+        });
+        return res;
+      },
       // 更新应用信息
       updateAppInfo: (app: TApp) => {
         set((state) => {

@@ -1,8 +1,36 @@
+.storeNav {
+  .uicon {
+    padding: 18px 0;
+    margin: 0 4px 4px;
+    color: #888888;
+    position: relative;
+    transition: all ease-in-out 100ms;
+    border-radius: 4px;
+  }
+}
 .pagecont {
   background: #f7f9fc;
   overflow: hidden;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
 }
-
+.pageScroll {
+  overflow-y: overlay;
+}
+.pageWrapper {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.restWindow {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  flex-grow: 1;
+  scroll-behavior: smooth;
+}
 .storeNav {
   .uicon {
     padding: 18px 0;
@@ -75,7 +103,6 @@
     color: #006ff0;
   }
 }
-
 
 .catbtn {
   padding: 1px 20px;
