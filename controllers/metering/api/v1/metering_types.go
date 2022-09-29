@@ -17,29 +17,61 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+/*
+apiVersion: v1
+kind: Metering
+metadata:
+  name: xxxx
+Spec:
+    	owner: fanux
+    	namespace: string
+        resources: v1.ResourceList // resource type
+*/
 
 // MeteringSpec defines the desired state of Metering
-type MeteringSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Metering. Edit metering_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type MeteringSpec struct {
+	Namespace string          `json:"namespace"`
+	Owner     string          `json:"owner"`
+	Resources v1.ResourceList `json:"resources,omitempty"`
+}
+
+type TimeIntervalType string
+
+const (
+	MINUTE TimeIntervalType = "Minute"
+	HOUR   TimeIntervalType = "Hour"
+	DAY    TimeIntervalType = "Day"
+)
+
+type BillingList struct {
+	TimeStamp    int64            `json:"timeStamp,omitempty"`
+	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
+	Settled      bool             `json:"settled,omitempty"`      //is settled
+	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
 }
 
 // MeteringStatus defines the observed state of Metering
+
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	BillingListM     []BillingList `json:"billingListM,omitempty"`
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="owner",type=string,JSONPath=".spec.owner"
+// +kubebuilder:printcolumn:name="totalAmount",type=integer,JSONPath=".status.totalAmount",description=" The last two digits are decimals ,100 = 1¥"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Metering is the Schema for the meterings API
 type Metering struct {
