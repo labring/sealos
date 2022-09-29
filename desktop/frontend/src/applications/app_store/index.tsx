@@ -148,7 +148,10 @@ export default function AppStore() {
                     width={100}
                     height={100}
                     data-free="false"
-                    src={item?.gallery[0] || "https://raw.githubusercontent.com/blueedgetechno/win11React/master/public/img/icon/code.png"}
+                    src={
+                      item?.gallery[0] ||
+                      'https://raw.githubusercontent.com/blueedgetechno/win11React/master/public/img/icon/code.png'
+                    }
                     alt=""
                   />
                 </div>

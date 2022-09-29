@@ -29,8 +29,9 @@
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
     "uuid": "^9.0.0",
-    "zustand": "^4.1.1",
-    "qrcode.react": "^3.1.0"
+    "qrcode.react": "^3.1.0",
+    "sealos-desktop-sdk": "^0.1.0",
+    "zustand": "^4.1.1"
   },
   "devDependencies": {
     "@svgr/webpack": "^6.3.1",
