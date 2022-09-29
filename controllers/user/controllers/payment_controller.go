@@ -63,6 +63,13 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if p.Status.TradeNO != "" {
 		return ctrl.Result{}, nil
 	}
+	if p.Status.Status == "" {
+		p.Status.Status = "Created"
+		if err := r.Status().Update(ctx, p); err != nil {
+			log.Error(err, "update payment failed: %v", *p)
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
 	tradeNO := pay.GetRandomString(32)
 	codeURL, err := pay.WechatPay(p.Spec.Amount, p.Spec.UserID, tradeNO, "", os.Getenv(pay.CallbackURL))
 	if err != nil {
