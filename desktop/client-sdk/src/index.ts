@@ -1,36 +1,43 @@
+import { API_NAME } from "./constant";
+
 class ClientSDK {
   private commonConfig = {
     appKey: "",
     appName: "",
-    origin: "",
+    clientOrigin: "",
   };
+
+  private masterOrigin = window?.top?.origin || "*";
 
   constructor(config) {
     this.commonConfig = {
       appKey: config.appKey,
       appName: config.appName,
-      origin: "",
+      clientOrigin: "",
     };
   }
 
-  connect(): Promise<{ connect: boolean }> {
-    this.commonConfig.origin = window.location.origin;
+  connect(): Promise<{ connected: boolean }> {
+    this.commonConfig.clientOrigin = window.location.origin;
     window.top?.postMessage(
       {
-        apiName: "system.connect",
+        apiName: API_NAME.SYSTEM_CONNECT,
         ...this.commonConfig,
         data: {
           location: window.location.href.toString(),
         },
       },
-      "*"
+      this.masterOrigin
     );
 
     return new Promise((resolve) => {
       window.addEventListener("message", (e) => {
-        if (e.data.apiName === "system.connect") {
+        if (
+          e.origin === this.masterOrigin &&
+          e.data.apiName === API_NAME.SYSTEM_CONNECT
+        ) {
           resolve({
-            connect: true,
+            connected: true,
           });
         }
       });
@@ -53,16 +60,19 @@ class ClientSDK {
   }> {
     window.top?.postMessage(
       {
-        apiName: "user.getInfo",
+        apiName: API_NAME.USER_GETINFO,
         ...this.commonConfig,
         data: {},
       },
-      "*"
+      this.masterOrigin
     );
 
     return new Promise((resolve) => {
       window.addEventListener("message", (e) => {
-        if (e.data.apiName === "user.getInfo") {
+        if (
+          e.origin === this.masterOrigin &&
+          e.data.apiName === API_NAME.USER_GETINFO
+        ) {
           resolve(e.data.data);
         }
       });

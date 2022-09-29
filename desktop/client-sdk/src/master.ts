@@ -1,9 +1,11 @@
+import { API_NAME } from "./constant";
+
 const isIFrame = (input: HTMLElement | null): input is HTMLIFrameElement =>
   input !== null && input.tagName === "IFRAME";
 
 type TChild = {
   [key: string]: {
-    origin: string;
+    clientOrigin: string;
     location: string;
   };
 };
@@ -17,7 +19,7 @@ class MasterSDK {
 
   init() {
     window.addEventListener("message", ({ data }) => {
-      const { apiName, appName, appKey, origin } = data || {};
+      const { apiName, appName, appKey, clientOrigin } = data || {};
       if (!apiName) {
         return;
       }
@@ -25,14 +27,14 @@ class MasterSDK {
       let dom = window.document.getElementById("app-window-" + appName);
 
       switch (data.apiName) {
-        case "init":
+        case API_NAME.MASTER_INT:
           break;
 
-        case "system.connect":
+        case API_NAME.SYSTEM_CONNECT:
           const { location } = data.data;
           this.childList.push({
             [appKey]: {
-              origin,
+              clientOrigin: clientOrigin,
               location,
             },
           });
@@ -42,20 +44,20 @@ class MasterSDK {
               {
                 apiName,
               },
-              origin
+              clientOrigin
             );
           }
 
           break;
 
-        case "user.getInfo":
+        case API_NAME.USER_GETINFO:
           if (isIFrame(dom) && dom.contentWindow) {
             dom?.contentWindow.postMessage(
               {
-                apiName: "user.getInfo",
+                apiName: API_NAME.USER_GETINFO,
                 data: this.session,
               },
-              origin
+              clientOrigin
             );
           }
           break;

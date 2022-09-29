@@ -10,6 +10,7 @@ specifiers:
   '@types/node': 18.7.23
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/uuid': ^8.3.4
   autoprefixer: ^10.4.12
   axios: ^0.27.2
   clsx: ^1.2.1
@@ -25,9 +26,10 @@ specifiers:
   react-dom: 18.2.0
   react-draggable: ^4.4.5
   sass: ^1.55.0
-  sealos-desktop-sdk: ^0.1.0
+  sealos-desktop-sdk: ^0.1.4
   tailwindcss: ^3.1.8
   typescript: 4.8.3
+  uuid: ^9.0.0
   zustand: ^4.1.1
 
 dependencies:
@@ -46,7 +48,8 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-draggable: 4.4.5_biqbaboplfbrettd7655fr4n2y
-  sealos-desktop-sdk: 0.1.0
+  sealos-desktop-sdk: 0.1.4
+  uuid: 9.0.0
   zustand: 4.1.1_immer@9.0.15+react@18.2.0
 
 devDependencies:
@@ -54,6 +57,7 @@ devDependencies:
   '@types/node': 18.7.23
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
+  '@types/uuid': 8.3.4
   autoprefixer: 10.4.12_postcss@8.4.16
   eslint: 8.24.0
   eslint-config-next: 12.3.1_7ilbxdl5iguzcjriqqcg2m5cku
@@ -2735,6 +2739,10 @@ packages:
   /@types/trusted-types/2.0.2:
     resolution: {integrity: sha512-F5DIZ36YVLE+PN+Zwws4kJogq47hNgX3Nx6WyDJ3kcplxyke3XIzB8uK5n/Lpm1HBsbGzd6nmGehL8cPekP+Tg==}
     dev: false
+
+  /@types/uuid/8.3.4:
+    resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
+    dev: true
 
   /@typescript-eslint/parser/5.38.1_7ilbxdl5iguzcjriqqcg2m5cku:
     resolution: {integrity: sha512-LDqxZBVFFQnQRz9rUZJhLmox+Ep5kdUmLatLQnCRR6523YV+XhRjfYzStQ4MheFA8kMAfUlclHSbu+RKdRwQKw==}
@@ -5431,8 +5439,8 @@ packages:
       ajv-keywords: 3.5.2_ajv@6.12.6
     dev: false
 
-  /sealos-desktop-sdk/0.1.0:
-    resolution: {integrity: sha512-ZyBySKyYu49viyBU92xRQnPUeUFNR66fQkG87IsnlwskfCsn5+DgkzmNrSSVTDMItVLlLQGpsel+OgqVUOmlDg==}
+  /sealos-desktop-sdk/0.1.4:
+    resolution: {integrity: sha512-jeT3FUcDkSvkPx+eXl+q65V9l3K44FJZ61Y3yDUruAMVvnQC6XawU8lNQv5YnOpJJychR0LB0Xd7TDad+Y1YWA==}
     dev: false
 
   /semver/6.3.0:
@@ -5950,6 +5958,11 @@ packages:
   /uuid/3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
+    hasBin: true
+    dev: false
+
+  /uuid/9.0.0:
+    resolution: {integrity: sha512-MXcSTerfPa4uqyzStbRoTgt5XIe3x5+42+q1sDuy3R5MDk66URdLMOZe5aPX/SQd+kuYAh0FdP/pO28IkQyTeg==}
     hasBin: true
     dev: false
 

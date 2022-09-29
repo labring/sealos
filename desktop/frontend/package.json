@@ -30,7 +30,7 @@
     "react-draggable": "^4.4.5",
     "uuid": "^9.0.0",
     "qrcode.react": "^3.1.0",
-    "sealos-desktop-sdk": "^0.1.0",
+    "sealos-desktop-sdk": "^0.1.4",
     "zustand": "^4.1.1"
   },
   "devDependencies": {
