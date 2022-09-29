@@ -20,6 +20,8 @@ import (
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/spf13/pflag"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func Test_NewApplierFromFile(t *testing.T) {
@@ -84,7 +86,7 @@ func TestClusterArgs_SetClusterRunArgs(t *testing.T) {
 	}
 	type args struct {
 		imageList []string
-		args      *RunArgs
+		runArgs   *RunArgs
 	}
 	tests := []struct {
 		name    string
@@ -93,6 +95,43 @@ func TestClusterArgs_SetClusterRunArgs(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		{
+			name: "success",
+			fields: fields{
+				cluster: &v2.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						CreationTimestamp: metav1.Time{},
+					},
+					Spec: v2.ClusterSpec{
+						SSH: v2.SSH{},
+					},
+				},
+				hosts:       []v2.Host{},
+				clusterName: "default",
+			},
+			args: args{
+				imageList: []string{
+					"registry.cn-hangzhou.aliyuncs.com/sealyun/kube-apiserver:v1.19.9",
+					"registry.cn-hangzhou.aliyuncs.com/sealyun/kube-scheduler:v1.19.9",
+				},
+				runArgs: &RunArgs{
+					Cluster: &Cluster{
+						Masters:     "192.168.1.2",
+						Nodes:       "192.168.1.3",
+						ClusterName: "default",
+					},
+					SSH: &SSH{},
+					CustomEnv: []string{
+						"SSH_PASSWORD=s3cret",
+					},
+					CustomCMD: []string{
+						"echo hello",
+					},
+					fs: pflag.NewFlagSet("test", pflag.ExitOnError),
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -101,7 +140,7 @@ func TestClusterArgs_SetClusterRunArgs(t *testing.T) {
 				hosts:       tt.fields.hosts,
 				clusterName: tt.fields.clusterName,
 			}
-			if err := r.SetClusterRunArgs(tt.args.imageList, tt.args.args); (err != nil) != tt.wantErr {
+			if err := r.SetClusterRunArgs(tt.args.imageList, tt.args.runArgs); (err != nil) != tt.wantErr {
 				t.Errorf("SetClusterRunArgs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
