@@ -28,6 +28,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
+    "uuid": "^9.0.0",
     "zustand": "^4.1.1"
   },
   "devDependencies": {
@@ -35,6 +36,7 @@
     "@types/node": "18.7.23",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
+    "@types/uuid": "^8.3.4",
     "autoprefixer": "^10.4.11",
     "eslint": "8.24.0",
     "eslint-config-next": "12.3.1",

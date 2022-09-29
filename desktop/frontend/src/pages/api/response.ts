@@ -48,6 +48,8 @@ const UnprocessableResp = (str: string, resp?: NextApiResponse) =>
   CommonResp({ code: 404, message: 'Not Found: ' + str }, resp);
 const MethodNotAllowedResp = (str: string, resp?: NextApiResponse) =>
   CommonResp({ code: 405, message: 'Method Not Allowed: ' + str }, resp);
+const InternalErrorResp = (str: string, resp?: NextApiResponse) =>
+  CommonResp({ code: 500, message: 'Internal Server Error: ' + str }, resp);
 
 const JsonResp = (data: any, resp?: NextApiResponse) =>
   CommonResp({ code: 200, message: 'ok', data: data, statusCode: 200 }, resp);
@@ -57,6 +59,7 @@ export {
   NotFoundResp,
   UnprocessableResp,
   MethodNotAllowedResp,
+  InternalErrorResp,
   CommonResp,
   JsonResp
 };
