@@ -1,6 +1,16 @@
+const isIFrame = (input: HTMLElement | null): input is HTMLIFrameElement =>
+  input !== null && input.tagName === "IFRAME";
+
+type TChild = {
+  [key: string]: {
+    origin: string;
+    location: string;
+  };
+};
 class MasterSDK {
-  childList = [];
-  session = {};
+  private readonly childList: TChild[] = [];
+  private readonly session = {};
+
   constructor(session) {
     this.session = session;
   }
@@ -26,23 +36,29 @@ class MasterSDK {
               location,
             },
           });
-          dom?.contentWindow.postMessage(
-            {
-              apiName,
-            },
-            origin
-          );
+
+          if (isIFrame(dom) && dom.contentWindow) {
+            dom?.contentWindow.postMessage(
+              {
+                apiName,
+              },
+              origin
+            );
+          }
 
           break;
 
         case "user.getInfo":
-          dom?.contentWindow.postMessage(
-            {
-              apiName: "user.getInfo",
-              data: this.session,
-            },
-            origin
-          );
+          if (isIFrame(dom) && dom.contentWindow) {
+            dom?.contentWindow.postMessage(
+              {
+                apiName: "user.getInfo",
+                data: this.session,
+              },
+              origin
+            );
+          }
+          break;
 
         default:
           break;

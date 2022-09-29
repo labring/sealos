@@ -1,5 +1,15 @@
 ## Sealos Desktop SDK
 
+### 安装
+```shell
+npm i sealos-desktop-sdk
+```
+
+### 使用 Client 端
+```javascript
+import ClientSDK from 'sealos-desktop-sdk';
+```
+
 ### 初始化
 
 ```javascript
@@ -9,7 +19,7 @@ const sdk = new ClientSDK({
 });
 ```
 
-### system 相关 api
+### sdk 相关 api
 ####  connect
 ```javascript
 const isConnect = await sdk.connect();
@@ -20,3 +30,13 @@ const isConnect = await sdk.connect();
 ```javascript
 const userInfo = await sdk.getUserInfo();
 ```
+
+
+// TODO 系统相关 api
+### 打开 app
+
+### 关闭 app
+
+### 安装 app
+
+### 切换 app
