@@ -1,15 +1,9 @@
 class ClientSDK {
-  commonConfig = {
+  private commonConfig = {
     appKey: "",
     appName: "",
     origin: "",
   };
-
-  iframeUrl = "";
-
-  isConnected = false;
-
-  _instance;
 
   constructor(config) {
     this.commonConfig = {
@@ -19,7 +13,7 @@ class ClientSDK {
     };
   }
 
-  connect() {
+  connect(): Promise<{ connect: boolean }> {
     this.commonConfig.origin = window.location.origin;
     window.top?.postMessage(
       {
@@ -43,7 +37,20 @@ class ClientSDK {
     });
   }
 
-  getUserInfo() {
+  getUserInfo(): Promise<{
+    user: {
+      id: string;
+      name: string;
+      avatar: string;
+    };
+    kubeconfig: string;
+    token: {
+      access_token: string;
+      expiry: string;
+      token_type: string;
+      refresh_token: string;
+    };
+  }> {
     window.top?.postMessage(
       {
         apiName: "user.getInfo",

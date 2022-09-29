@@ -1,8 +1,10 @@
 {
   "name": "sealos-desktop-sdk",
-  "version": "0.1.0",
+  "version": "0.1.4",
   "description": "sealos desktop sdk",
-  "main": "client",
+  "main": "index.js",
+  "module": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup --config"
@@ -16,8 +18,5 @@
     "rollup-plugin-dts": "^4.2.2",
     "rollup-plugin-esbuild": "^4.10.1",
     "typescript": "^4.8.4"
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }
