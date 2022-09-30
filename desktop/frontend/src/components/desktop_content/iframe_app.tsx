@@ -9,23 +9,23 @@ import { cleanName } from '../../utils/strings';
 
 export default function IframApp(props: { appItem: TApp }) {
   const { appItem } = props;
-  const [interVal, setInterVal] = useState(appItem.data.url === '' ? 1000 : 0);
   const time = useRef(0);
   const session = useSessionStore((s) => s.session);
 
-  const [url, setUrl] = useState(appItem.data.url);
+  const [url, setUrl] = useState(appItem.data?.url || '');
 
   const request_url =
     '/api/kubernetes/apply/' + BuildInAction.Start + '/' + cleanName(appItem.name);
 
-  let controller = new AbortController();
   useQuery(
-    ['app-info-' + appItem.name],
+    ['app-info', appItem.name],
     () => request.post(request_url, { kubeconfig: session.kubeconfig }),
     {
-      refetchInterval: interVal, //轮询时间
+      refetchInterval: url === '' ? 1000 : false, //轮询时间
+      enabled: url === '', // 只有 url 为 '' 的时候需要请求
       onSuccess(data: any) {
         time.current++;
+        let controller = new AbortController();
         if (data?.data?.status === 200 && data?.data?.iframe_page) {
           setTimeout(() => {
             controller.abort();
@@ -36,7 +36,6 @@ export default function IframApp(props: { appItem: TApp }) {
             signal: controller.signal
           })
             .then(() => {
-              setInterVal(0);
               setUrl(data.data.iframe_page);
             })
             .catch(() => false);

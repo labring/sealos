@@ -1,10 +1,11 @@
 // @ts-check
 const runtimeCaching = require('next-pwa/cache');
+const isProduction = process.env.NODE_ENV === 'production';
 
 const withPWA = require('next-pwa')({
   dest: 'public',
   runtimeCaching,
-  disable: process.env.NODE_ENV !== 'production'
+  disable: !isProduction
 });
 
 /**
@@ -12,7 +13,7 @@ const withPWA = require('next-pwa')({
  **/
 const nextConfig = withPWA({
   reactStrictMode: false,
-  swcMinify: true,
+  swcMinify: isProduction,
   output: 'standalone',
   webpack(config) {
     config.module.rules.push({

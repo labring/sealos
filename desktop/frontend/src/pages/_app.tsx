@@ -11,7 +11,15 @@ import type { AppProps } from 'next/app';
 
 import '../styles/globals.scss';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      cacheTime: 0
+    }
+  }
+});
 
 type EnhancedAppProps = AppProps & { renderer?: GriffelRenderer };
 
