@@ -143,15 +143,16 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	role := rbacV1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRole-" + name,
-			Namespace: namespace,
+			Namespace: constants.SealosSystemNamespace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
 		role.Rules = []rbacV1.PolicyRule{
 			{
-				APIGroups: []string{"user.sealos.io"},
-				Resources: []string{"accounts"},
-				Verbs:     []string{"get"},
+				APIGroups:     []string{"user.sealos.io"},
+				Resources:     []string{"accounts"},
+				Verbs:         []string{"get", "watch", "list"},
+				ResourceNames: []string{name},
 			},
 		}
 		return nil
@@ -161,7 +162,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRoleBinding-" + name,
-			Namespace: namespace,
+			Namespace: constants.SealosSystemNamespace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
@@ -172,11 +173,12 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 		}
 		roleBinding.Subjects = []rbacV1.Subject{
 			{
-				Kind:      "User",
-				Name:      name,
-				Namespace: namespace,
+				Kind:     "User",
+				Name:     name,
+				APIGroup: "rbac.authorization.k8s.io",
 			},
 		}
+
 		return nil
 	}); err != nil {
 		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
