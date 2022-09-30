@@ -5,5 +5,5 @@ export const formatTime = (time: number, format = 'YYYY-MM-DD HH:mm:ss') => {
 };
 
 export const formatMoney = (money: number) => {
-  return money.toFixed(2);
+  return (money / 100).toFixed(2);
 };

@@ -58,7 +58,7 @@ export default function StartMenu() {
             <div className="mt-6 mb-6 flex flex-1 w-full items-center justify-center">
               <span className="">余额：</span>
               <span className="mr-4 text-4xl text-orange-500 ">
-                ￥{formatMoney(amount?.data?.data?.amount || 0)}
+                ￥{formatMoney(amount?.data?.data?.balance || 0)}
               </span>
 
               <ChargeButton />
