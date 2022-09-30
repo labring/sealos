@@ -8,7 +8,7 @@ sidebar_position: 3
 
 ```shell
 # sealos version must >= v4.1.0
-$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.22.1 --single
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 ```
 
 ## Cluster installation kubernetes
