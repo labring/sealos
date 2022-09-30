@@ -127,10 +127,12 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	}
 	if args.fs != nil {
 		if args.fs.Changed("env") || len(r.cluster.Spec.Env) == 0 {
-			r.cluster.Spec.Env = args.CustomEnv
+			r.cluster.Spec.Env = make([]string, len(args.CustomEnv))
+			copy(r.cluster.Spec.Env, args.CustomEnv)
 		}
 		if args.fs.Changed("cmd") || len(r.cluster.Spec.Command) == 0 {
-			r.cluster.Spec.Command = args.CustomCMD
+			r.cluster.Spec.Command = make([]string, len(args.CustomCMD))
+			copy(r.cluster.Spec.Command, args.CustomCMD)
 		}
 		if args.fs.Changed("user") || r.cluster.Spec.SSH.User == "" {
 			r.cluster.Spec.SSH.User = args.SSH.User
