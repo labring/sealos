@@ -16,7 +16,7 @@
   "dependencies": {
     "@ctrl/golang-template": "^1.4.1",
     "@fluentui/react-components": "^9.3.2",
-    "@kubernetes/client-node": "0.17.0",
+    "@kubernetes/client-node": "0.17.1",
     "@tanstack/react-query": "^4.6.1",
     "@types/js-yaml": "^4.0.5",
     "axios": "^0.27.2",
@@ -29,6 +29,8 @@
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
     "uuid": "^9.0.0",
+    "qrcode.react": "^3.1.0",
+    "sealos-desktop-sdk": "^0.1.4",
     "zustand": "^4.1.1"
   },
   "devDependencies": {
@@ -37,9 +39,10 @@
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
     "@types/uuid": "^8.3.4",
-    "autoprefixer": "^10.4.11",
+    "autoprefixer": "^10.4.12",
     "eslint": "8.24.0",
     "eslint-config-next": "12.3.1",
+    "next-pwa": "^5.6.0",
     "postcss": "^8.4.16",
     "sass": "^1.55.0",
     "tailwindcss": "^3.1.8",

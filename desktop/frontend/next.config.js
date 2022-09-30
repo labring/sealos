@@ -23,6 +23,9 @@ const nextConfig = withPWA({
 
     return config;
   },
+  images: {
+    domains: ['avatars.githubusercontent.com']
+  },
   experimental: {
     newNextLinkBehavior: true
     // fallbackNodePolyfills: false

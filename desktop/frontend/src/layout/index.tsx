@@ -7,14 +7,28 @@ import useAppStore from 'stores/app';
 import { useEffect } from 'react';
 import StartMenu from 'components/start_menu';
 
+import MasterSDK from 'sealos-desktop-sdk/master';
+import useSessionStore from 'stores/session';
+
 export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
+  const session = useSessionStore((s) => s.session);
+
+  const sdk = new MasterSDK(session);
+
   useEffect(() => {
     (async () => {
       // Initialize, get user information, install application information, etc.
       await init();
     })();
   }, [init]);
+
+  useEffect(() => {
+    if (!window) {
+      return;
+    }
+    sdk.init();
+  }, []);
 
   return (
     <>
