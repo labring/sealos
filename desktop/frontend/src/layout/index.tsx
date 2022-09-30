@@ -14,8 +14,6 @@ export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
   const session = useSessionStore((s) => s.session);
 
-  const sdk = new MasterSDK(session);
-
   useEffect(() => {
     (async () => {
       // Initialize, get user information, install application information, etc.
@@ -27,6 +25,7 @@ export default function Layout({ children }: any) {
     if (!window) {
       return;
     }
+    const sdk = new MasterSDK(session);
     sdk.init();
   }, []);
 

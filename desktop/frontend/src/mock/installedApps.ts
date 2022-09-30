@@ -120,7 +120,7 @@ const installedApps: TApp[] = [
     icon: '/images/mysql.svg',
     type: 'iframe',
     data: {
-      url: 'https://www.erp321.com/',
+      url: 'http://localhost:3000/demo',
       desc: 'mysql operator'
     },
     gallery: [

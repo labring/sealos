@@ -14,7 +14,7 @@
   top: 12px;
   left: 12px;
   bottom: 60px; // tabbar height + 12px
-  width: 760px;
+  width: 560px;
   max-width: 50vw;
   border-radius: 8px;
   overflow: hidden;
@@ -37,6 +37,7 @@
     flex-direction: column;
     overflow-x: hidden;
     padding: 24px;
+    padding-top: 20%;
   }
 
   .accountsTop {
@@ -45,7 +46,7 @@
   }
 
   .avatar {
-    border-radius: 20px;
+    border-radius: 100px;
   }
 }
 

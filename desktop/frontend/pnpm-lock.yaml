@@ -14,6 +14,7 @@ specifiers:
   autoprefixer: ^10.4.12
   axios: ^0.27.2
   clsx: ^1.2.1
+  dayjs: ^1.11.5
   eslint: 8.24.0
   eslint-config-next: 12.3.1
   immer: ^9.0.15
@@ -40,6 +41,7 @@ dependencies:
   '@types/js-yaml': 4.0.5
   axios: 0.27.2
   clsx: 1.2.1
+  dayjs: 1.11.5
   immer: 9.0.15
   js-yaml: 4.1.0
   next: 12.3.1_2mygebwfgdyopr3fy2qddu2eli
@@ -3345,6 +3347,10 @@ packages:
     engines: {node: '>=0.10'}
     dependencies:
       assert-plus: 1.0.0
+    dev: false
+
+  /dayjs/1.11.5:
+    resolution: {integrity: sha512-CAdX5Q3YW3Gclyo5Vpqkgpj8fSdLQcRuzfX6mC6Phy0nfJ0eGYOeS7m4mt2plDWLAtA4TqTakvbboHvUxfe4iA==}
     dev: false
 
   /debug/2.6.9:

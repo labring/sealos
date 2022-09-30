@@ -40,3 +40,7 @@ const userInfo = await sdk.getUserInfo();
 ### 安装 app
 
 ### 切换 app
+
+
+// TODO
+master 接收数据

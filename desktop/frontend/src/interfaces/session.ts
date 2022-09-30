@@ -11,6 +11,7 @@ export type UserInfo = {
   readonly avatar: string;
 };
 
+// TODO: 这里的类型定义有问题，需要修复
 export type KubeConfig = {
   readonly id: string;
   readonly name: string;
@@ -20,7 +21,7 @@ export type KubeConfig = {
 export type Session = {
   token: OAuthToken;
   user: UserInfo;
-  kubeconfig: string | KubeConfig;
+  kubeconfig: string;
 };
 
 const sessionKey = 'session';
