@@ -10,12 +10,15 @@ import { formatMoney, formatTime } from 'utils/format';
 import ChargeButton from './charge_button';
 import { Divider, Link } from '@fluentui/react-components';
 import download from 'utils/downloadFIle';
+import { useRouter } from 'next/router';
 
 export default function StartMenu() {
   const { isHideStartMenu, toggleStartMenu } = useAppStore((s) => s);
 
-  const session = useSessionStore((s) => s.session);
+  const { session, delSession } = useSessionStore((s) => s);
   const user = session?.user || {};
+
+  const router = useRouter();
 
   const amount = useQuery(
     ['user-amount'],
@@ -24,6 +27,12 @@ export default function StartMenu() {
       enabled: !isHideStartMenu
     }
   );
+
+  const logout = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    delSession();
+    router.reload();
+  };
 
   return (
     <>
@@ -49,20 +58,25 @@ export default function StartMenu() {
             <div className="mt-6 mb-6 flex flex-1 w-full items-center justify-center">
               <span className="">余额：</span>
               <span className="mr-4 text-4xl text-orange-500 ">
-                ￥{formatMoney(amount?.data?.data?.amount || 0)}
+                ￥{formatMoney(amount?.data?.data?.balance || 0)}
               </span>
 
               <ChargeButton />
             </div>
 
-            <Link
-              onClick={(e) => {
-                e.preventDefault();
-                download('kubeconfig.yaml', session.kubeconfig);
-              }}
-            >
-              下载 kubeconfig.yaml
-            </Link>
+            <div className="mb-6 flex flex-1 w-full items-center justify-center">
+              <Link
+                onClick={(e) => {
+                  e.preventDefault();
+                  download('kubeconfig.yaml', session.kubeconfig);
+                }}
+              >
+                下载 kubeconfig.yaml
+              </Link>
+              <div className="mx-6">
+                <Link onClick={logout}>退出登录</Link>
+              </div>
+            </div>
           </div>
         </div>
       </div>

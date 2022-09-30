@@ -5,7 +5,7 @@ specifiers:
   '@fluentui/react-components': ^9.3.2
   '@kubernetes/client-node': 0.17.1
   '@svgr/webpack': ^6.3.1
-  '@tanstack/react-query': ^4.6.1
+  '@tanstack/react-query': ^4.8.0
   '@types/js-yaml': ^4.0.5
   '@types/node': 18.7.23
   '@types/react': 18.0.21
@@ -21,7 +21,7 @@ specifiers:
   js-yaml: ^4.1.0
   next: 12.3.1
   next-pwa: ^5.6.0
-  postcss: ^8.4.16
+  postcss: ^8.4.17
   qrcode.react: ^3.1.0
   react: 18.2.0
   react-dom: 18.2.0
@@ -29,7 +29,7 @@ specifiers:
   sass: ^1.55.0
   sealos-desktop-sdk: ^0.1.4
   tailwindcss: ^3.1.8
-  typescript: 4.8.3
+  typescript: 4.8.4
   uuid: ^9.0.0
   zustand: ^4.1.1
 
@@ -37,7 +37,7 @@ dependencies:
   '@ctrl/golang-template': 1.4.1
   '@fluentui/react-components': 9.3.2_5uumaiclxbdbzaqafclbf6maf4
   '@kubernetes/client-node': 0.17.1
-  '@tanstack/react-query': 4.7.1_biqbaboplfbrettd7655fr4n2y
+  '@tanstack/react-query': 4.8.0_biqbaboplfbrettd7655fr4n2y
   '@types/js-yaml': 4.0.5
   axios: 0.27.2
   clsx: 1.2.1
@@ -60,13 +60,13 @@ devDependencies:
   '@types/react': 18.0.21
   '@types/react-dom': 18.0.6
   '@types/uuid': 8.3.4
-  autoprefixer: 10.4.12_postcss@8.4.16
+  autoprefixer: 10.4.12_postcss@8.4.17
   eslint: 8.24.0
-  eslint-config-next: 12.3.1_7ilbxdl5iguzcjriqqcg2m5cku
-  postcss: 8.4.16
+  eslint-config-next: 12.3.1_ypn2ylkkyfa5i233caldtndbqa
+  postcss: 8.4.17
   sass: 1.55.0
-  tailwindcss: 3.1.8
-  typescript: 4.8.3
+  tailwindcss: 3.1.8_postcss@8.4.17
+  typescript: 4.8.4
 
 packages:
 
@@ -1313,7 +1313,7 @@ packages:
     dependencies:
       '@fluentui/react-aria': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-shared-contexts': 9.0.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
@@ -1336,7 +1336,7 @@ packages:
     dependencies:
       '@fluentui/react-avatar': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-button': 9.1.2_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
       '@griffel/react': 1.3.1_react@18.2.0
@@ -1377,7 +1377,7 @@ packages:
     dependencies:
       '@fluentui/react-badge': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-popover': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-shared-contexts': 9.0.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
@@ -1400,7 +1400,7 @@ packages:
       react: '>=16.8.0 <18.0.0'
       react-dom: '>=16.8.0 <18.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
       '@griffel/react': 1.3.1_react@18.2.0
@@ -1421,7 +1421,7 @@ packages:
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
@@ -1460,7 +1460,7 @@ packages:
       react: '>=16.8.0 <18.0.0'
       react-dom: '>=16.8.0 <18.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-label': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
@@ -1484,7 +1484,7 @@ packages:
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-portal': 9.0.5_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-positioning': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
@@ -1578,7 +1578,7 @@ packages:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-portal': 9.0.5_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-shared-contexts': 9.0.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
@@ -1623,7 +1623,7 @@ packages:
       '@fluentui/react-checkbox': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-combobox': 9.0.0-beta.10_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-input': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-label': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-radio': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
@@ -1644,9 +1644,10 @@ packages:
       - scheduler
     dev: false
 
-  /@fluentui/react-icons/2.0.182_react@18.2.0:
+  /@fluentui/react-icons/2.0.182_64pbjyrkb7qqmjnv4llgegiuum:
     resolution: {integrity: sha512-tqWTFbXb4sKBwYIW95MveCcPebCP9EK1oQ71owSD/cb6Oev11mOfFYHOKG+xIjPXGf+JZR4tJT37nsP3vjUQag==}
     peerDependencies:
+      '@griffel/react': ^1.0.0
       react: '>=16.8.0 <18.0.0'
     dependencies:
       '@griffel/react': 1.3.1_react@18.2.0
@@ -1740,7 +1741,7 @@ packages:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-portal': 9.0.5_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-positioning': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-shared-contexts': 9.0.1_5uumaiclxbdbzaqafclbf6maf4
@@ -1872,7 +1873,7 @@ packages:
       scheduler: ^0.19.0 || ^0.20.0
     dependencies:
       '@fluentui/react-context-selector': 9.0.3_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-label': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
@@ -1893,7 +1894,7 @@ packages:
       react: '>=16.8.0 <18.0.0'
       react-dom: '>=16.8.0 <18.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
       '@griffel/react': 1.3.1_react@18.2.0
@@ -1948,7 +1949,7 @@ packages:
       react-dom: '>=16.8.0 <18.0.0'
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-input': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
@@ -1987,7 +1988,7 @@ packages:
       react: '>=16.8.0 <18.0.0'
       react-dom: '>=16.8.0 <18.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-label': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
@@ -2010,7 +2011,7 @@ packages:
     dependencies:
       '@fluentui/react-aria': 9.2.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-checkbox': 9.0.6_5uumaiclxbdbzaqafclbf6maf4
-      '@fluentui/react-icons': 2.0.182_react@18.2.0
+      '@fluentui/react-icons': 2.0.182_64pbjyrkb7qqmjnv4llgegiuum
       '@fluentui/react-tabster': 9.1.1_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-theme': 9.1.0_5uumaiclxbdbzaqafclbf6maf4
       '@fluentui/react-utilities': 9.1.0_iapumuv4e6jcjznwuxpf4tt22e
@@ -2653,12 +2654,12 @@ packages:
       tslib: 2.4.0
     dev: false
 
-  /@tanstack/query-core/4.7.1:
-    resolution: {integrity: sha512-BzFI4KdiklxfUUgNiO6E4XsSwaX5NscuIhP7aqWbS8Hqik1KohfvO+SXpftSZHOyzm0+XpycRsip/QEs3Hx3AA==}
+  /@tanstack/query-core/4.8.0:
+    resolution: {integrity: sha512-PVcSqAWboFA86eNgtHTOjfHjBkNuFGAM6kPH82p1ibx1R76f7EjedZ+LZi4ZnW4ppoSl/+hUtCgWsiNQ2ViLTw==}
     dev: false
 
-  /@tanstack/react-query/4.7.1_biqbaboplfbrettd7655fr4n2y:
-    resolution: {integrity: sha512-/3PBXuvdlvUbSv5eqgkda4VAN14t+rpDop9LnZmEmIMW8ARrbW7Rt6PYTya33JGaeo6XoztRzEH8TaY5S+neNQ==}
+  /@tanstack/react-query/4.8.0_biqbaboplfbrettd7655fr4n2y:
+    resolution: {integrity: sha512-e3QzL/S8XeA5MYqOUUABet4oZDBc1MbeUIo32r0cxEDoDJS+9oqx0az9AbBxacZ7SjM/Fy4u/eXQFBjsKGFQ6A==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
@@ -2669,7 +2670,7 @@ packages:
       react-native:
         optional: true
     dependencies:
-      '@tanstack/query-core': 4.7.1
+      '@tanstack/query-core': 4.8.0
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
@@ -2746,7 +2747,7 @@ packages:
     resolution: {integrity: sha512-c/I8ZRb51j+pYGAu5CrFMRxqZ2ke4y2grEBO5AUjgSkSk+qT2Ea+OdWElz/OiMf5MNpn2b17kuVBwZLQJXzihw==}
     dev: true
 
-  /@typescript-eslint/parser/5.38.1_7ilbxdl5iguzcjriqqcg2m5cku:
+  /@typescript-eslint/parser/5.38.1_ypn2ylkkyfa5i233caldtndbqa:
     resolution: {integrity: sha512-LDqxZBVFFQnQRz9rUZJhLmox+Ep5kdUmLatLQnCRR6523YV+XhRjfYzStQ4MheFA8kMAfUlclHSbu+RKdRwQKw==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2758,10 +2759,10 @@ packages:
     dependencies:
       '@typescript-eslint/scope-manager': 5.38.1
       '@typescript-eslint/types': 5.38.1
-      '@typescript-eslint/typescript-estree': 5.38.1_typescript@4.8.3
+      '@typescript-eslint/typescript-estree': 5.38.1_typescript@4.8.4
       debug: 4.3.4
       eslint: 8.24.0
-      typescript: 4.8.3
+      typescript: 4.8.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2779,7 +2780,7 @@ packages:
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dev: true
 
-  /@typescript-eslint/typescript-estree/5.38.1_typescript@4.8.3:
+  /@typescript-eslint/typescript-estree/5.38.1_typescript@4.8.4:
     resolution: {integrity: sha512-99b5e/Enoe8fKMLdSuwrfH/C0EIbpUWmeEKHmQlGZb8msY33qn1KlkFww0z26o5Omx7EVjzVDCWEfrfCDHfE7g==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     peerDependencies:
@@ -2794,8 +2795,8 @@ packages:
       globby: 11.1.0
       is-glob: 4.0.3
       semver: 7.3.7
-      tsutils: 3.21.0_typescript@4.8.3
-      typescript: 4.8.3
+      tsutils: 3.21.0_typescript@4.8.4
+      typescript: 4.8.4
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2979,7 +2980,7 @@ packages:
     engines: {node: '>= 4.0.0'}
     dev: false
 
-  /autoprefixer/10.4.12_postcss@8.4.16:
+  /autoprefixer/10.4.12_postcss@8.4.17:
     resolution: {integrity: sha512-WrCGV9/b97Pa+jtwf5UGaRjgQIg7OK3D06GnoYoZNcG1Xb8Gt3EfuKjlhh9i/VtT16g6PYjZ69jdJ2g8FxSC4Q==}
     engines: {node: ^10 || ^12 || >=14}
     hasBin: true
@@ -2991,7 +2992,7 @@ packages:
       fraction.js: 4.2.0
       normalize-range: 0.1.2
       picocolors: 1.0.0
-      postcss: 8.4.16
+      postcss: 8.4.17
       postcss-value-parser: 4.2.0
     dev: true
 
@@ -3586,7 +3587,7 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /eslint-config-next/12.3.1_7ilbxdl5iguzcjriqqcg2m5cku:
+  /eslint-config-next/12.3.1_ypn2ylkkyfa5i233caldtndbqa:
     resolution: {integrity: sha512-EN/xwKPU6jz1G0Qi6Bd/BqMnHLyRAL0VsaQaWA7F3KkjAgZHi4f1uL1JKGWNxdQpHTW/sdGONBd0bzxUka/DJg==}
     peerDependencies:
       eslint: ^7.23.0 || ^8.0.0
@@ -3597,7 +3598,7 @@ packages:
     dependencies:
       '@next/eslint-plugin-next': 12.3.1
       '@rushstack/eslint-patch': 1.2.0
-      '@typescript-eslint/parser': 5.38.1_7ilbxdl5iguzcjriqqcg2m5cku
+      '@typescript-eslint/parser': 5.38.1_ypn2ylkkyfa5i233caldtndbqa
       eslint: 8.24.0
       eslint-import-resolver-node: 0.3.6
       eslint-import-resolver-typescript: 2.7.1_dg2pe6kqkrddxbf2funb723kue
@@ -3605,7 +3606,7 @@ packages:
       eslint-plugin-jsx-a11y: 6.6.1_eslint@8.24.0
       eslint-plugin-react: 7.31.8_eslint@8.24.0
       eslint-plugin-react-hooks: 4.6.0_eslint@8.24.0
-      typescript: 4.8.3
+      typescript: 4.8.4
     transitivePeerDependencies:
       - eslint-import-resolver-webpack
       - supports-color
@@ -3659,7 +3660,7 @@ packages:
       eslint-import-resolver-webpack:
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.38.1_7ilbxdl5iguzcjriqqcg2m5cku
+      '@typescript-eslint/parser': 5.38.1_ypn2ylkkyfa5i233caldtndbqa
       debug: 3.2.7
       eslint: 8.24.0
       eslint-import-resolver-node: 0.3.6
@@ -3678,7 +3679,7 @@ packages:
       '@typescript-eslint/parser':
         optional: true
     dependencies:
-      '@typescript-eslint/parser': 5.38.1_7ilbxdl5iguzcjriqqcg2m5cku
+      '@typescript-eslint/parser': 5.38.1_ypn2ylkkyfa5i233caldtndbqa
       array-includes: 3.1.5
       array.prototype.flat: 1.3.0
       debug: 2.6.9
@@ -5056,29 +5057,29 @@ packages:
       find-up: 4.1.0
     dev: false
 
-  /postcss-import/14.1.0_postcss@8.4.16:
+  /postcss-import/14.1.0_postcss@8.4.17:
     resolution: {integrity: sha512-flwI+Vgm4SElObFVPpTIT7SU7R3qk2L7PyduMcokiaVKuWv9d/U+Gm/QAd8NDLuykTWTkcrjOeD2Pp1rMeBTGw==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       postcss: ^8.0.0
     dependencies:
-      postcss: 8.4.16
+      postcss: 8.4.17
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.1
     dev: true
 
-  /postcss-js/4.0.0_postcss@8.4.16:
+  /postcss-js/4.0.0_postcss@8.4.17:
     resolution: {integrity: sha512-77QESFBwgX4irogGVPgQ5s07vLvFqWr228qZY+w6lW599cRlK/HmnlivnnVUxkjHnCu4J16PDMHcH+e+2HbvTQ==}
     engines: {node: ^12 || ^14 || >= 16}
     peerDependencies:
       postcss: ^8.3.3
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.4.16
+      postcss: 8.4.17
     dev: true
 
-  /postcss-load-config/3.1.4_postcss@8.4.16:
+  /postcss-load-config/3.1.4_postcss@8.4.17:
     resolution: {integrity: sha512-6DiM4E7v4coTE4uzA8U//WhtPwyhiim3eyjEMFCnUpzbrkK9wJHgKDT2mR+HbtSrd/NubVaYTOpSpjUl8NQeRg==}
     engines: {node: '>= 10'}
     peerDependencies:
@@ -5091,17 +5092,17 @@ packages:
         optional: true
     dependencies:
       lilconfig: 2.0.6
-      postcss: 8.4.16
+      postcss: 8.4.17
       yaml: 1.10.2
     dev: true
 
-  /postcss-nested/5.0.6_postcss@8.4.16:
+  /postcss-nested/5.0.6_postcss@8.4.17:
     resolution: {integrity: sha512-rKqm2Fk0KbA8Vt3AdGN0FB9OBOMDVajMG6ZCf/GoHgdxUJ4sBFp0A/uMIRm+MJUdo33YXEtjqIz8u7DAp8B7DA==}
     engines: {node: '>=12.0'}
     peerDependencies:
       postcss: ^8.2.14
     dependencies:
-      postcss: 8.4.16
+      postcss: 8.4.17
       postcss-selector-parser: 6.0.10
     dev: true
 
@@ -5126,8 +5127,8 @@ packages:
       source-map-js: 1.0.2
     dev: false
 
-  /postcss/8.4.16:
-    resolution: {integrity: sha512-ipHE1XBvKzm5xI7hiHCZJCSugxvsdq2mPnsq5+UF+VHCjiBvtDrlxJfMBToWaP9D5XlgNmcFGqoHmUn0EYEaRQ==}
+  /postcss/8.4.17:
+    resolution: {integrity: sha512-UNxNOLQydcOFi41yHNMcKRZ39NeXlr8AxGuZJsdub8vIb12fHzcq37DTU/QtbI6WLxNg2gF9Z+8qtRwTj1UI1Q==}
     engines: {node: ^10 || ^12 || >=14}
     dependencies:
       nanoid: 3.3.4
@@ -5694,10 +5695,12 @@ packages:
       tslib: 2.4.0
     dev: false
 
-  /tailwindcss/3.1.8:
+  /tailwindcss/3.1.8_postcss@8.4.17:
     resolution: {integrity: sha512-YSneUCZSFDYMwk+TGq8qYFdCA3yfBRdBlS7txSq0LUmzyeqRe3a8fBQzbz9M3WS/iFT4BNf/nmw9mEzrnSaC0g==}
     engines: {node: '>=12.13.0'}
     hasBin: true
+    peerDependencies:
+      postcss: ^8.0.9
     dependencies:
       arg: 5.0.2
       chokidar: 3.5.3
@@ -5712,11 +5715,11 @@ packages:
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.0.0
-      postcss: 8.4.16
-      postcss-import: 14.1.0_postcss@8.4.16
-      postcss-js: 4.0.0_postcss@8.4.16
-      postcss-load-config: 3.1.4_postcss@8.4.16
-      postcss-nested: 5.0.6_postcss@8.4.16
+      postcss: 8.4.17
+      postcss-import: 14.1.0_postcss@8.4.17
+      postcss-js: 4.0.0_postcss@8.4.17
+      postcss-load-config: 3.1.4_postcss@8.4.17
+      postcss-nested: 5.0.6_postcss@8.4.17
       postcss-selector-parser: 6.0.10
       postcss-value-parser: 4.2.0
       quick-lru: 5.1.1
@@ -5843,14 +5846,14 @@ packages:
     resolution: {integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==}
     dev: false
 
-  /tsutils/3.21.0_typescript@4.8.3:
+  /tsutils/3.21.0_typescript@4.8.4:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
     engines: {node: '>= 6'}
     peerDependencies:
       typescript: '>=2.8.0 || >= 3.2.0-dev || >= 3.3.0-dev || >= 3.4.0-dev || >= 3.5.0-dev || >= 3.6.0-dev || >= 3.6.0-beta || >= 3.7.0-dev || >= 3.7.0-beta'
     dependencies:
       tslib: 1.14.1
-      typescript: 4.8.3
+      typescript: 4.8.4
     dev: true
 
   /tunnel-agent/0.6.0:
@@ -5880,8 +5883,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /typescript/4.8.3:
-    resolution: {integrity: sha512-goMHfm00nWPa8UvR/CPSvykqf6dVV8x/dp0c5mFTMTIu0u0FlGWRioyy7Nn0PGAdHxpJZnuO/ut+PpQ8UiHAig==}
+  /typescript/4.8.4:
+    resolution: {integrity: sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==}
     engines: {node: '>=4.2.0'}
     hasBin: true
     dev: true

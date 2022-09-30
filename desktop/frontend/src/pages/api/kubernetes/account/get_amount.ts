@@ -1,4 +1,4 @@
-import { HttpError } from '@kubernetes/client-node';
+import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { CRDMeta, GetCRD, K8sApi } from '../../../../services/backend/kubernetes';
 import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../../response';
@@ -24,37 +24,26 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   }
 
   const account_meta: CRDMeta = {
-    group: 'account.sealos.io',
+    group: 'user.sealos.io',
     version: 'v1',
     namespace: 'sealos-system',
     plural: 'accounts'
   };
 
   type accountStatus = {
-    amount: number;
-  };
-
-  type amountResp = {
-    status: number;
-    amount: number;
+    balance: number;
   };
 
   try {
     const accountDesc = await GetCRD(kc, account_meta, user.name);
     if (accountDesc !== null && accountDesc.body !== null && accountDesc.body.status !== null) {
       const accountStatus = accountDesc.body.status as accountStatus;
-      return JsonResp(
-        {
-          status: 200,
-          amount: accountStatus.amount
-        } as amountResp,
-        resp
-      );
+      return JsonResp(accountStatus, resp);
     }
   } catch (err) {
     console.log(err);
 
-    if (err instanceof HttpError) {
+    if (err instanceof k8s.HttpError) {
       return InternalErrorResp(err.body.message, resp);
     }
   }

@@ -1,5 +1,4 @@
 import * as k8s from '@kubernetes/client-node';
-import { HttpError } from '@kubernetes/client-node';
 import { ApplicationType, RunApplication, StartResp } from '../../interfaces/kubernetes';
 import { ApplyYaml, CRDMeta, GetCRD } from '../../services/backend/kubernetes';
 import { CRDTemplateBuilder } from '../../services/backend/wrapper';
@@ -84,7 +83,7 @@ const TerminalApplication: RunApplication = {
     } catch (err) {
       // console.log(err);
 
-      if (err instanceof HttpError) {
+      if (err instanceof k8s.HttpError) {
         // if code == 404, we can run apply
         if (err.body.code !== 404) {
           return Promise.resolve({
