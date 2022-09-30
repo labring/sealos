@@ -1,6 +1,11 @@
 import * as k8s from '@kubernetes/client-node';
 import { ApplicationType, RunApplication, StartResp } from '../../interfaces/kubernetes';
-import { ApplyYaml, CRDMeta, GetCRD } from '../../services/backend/kubernetes';
+import {
+  ApplyYaml,
+  CRDMeta,
+  GetCRD,
+  GetUserDefaultNameSpace
+} from '../../services/backend/kubernetes';
 import { CRDTemplateBuilder } from '../../services/backend/wrapper';
 
 const terminal_meta: CRDMeta = {
@@ -85,7 +90,7 @@ const TerminalApplication: RunApplication = {
 
       if (err instanceof k8s.HttpError) {
         // if code == 404, we can run apply
-        if (err.body.code !== 404) {
+        if (err.body.code !== 404 && err.body.code !== 403) {
           return Promise.resolve({
             status: err.body.code,
             application_type: ApplicationType.IFrame,
@@ -102,8 +107,7 @@ const TerminalApplication: RunApplication = {
     }
 
     const current_time = new Date().toISOString();
-    // TODO: fix with user-namespace variable
-    const namespace = terminal_meta.namespace;
+    const namespace = GetUserDefaultNameSpace(kube_user.name);
 
     const terminalCRD = CRDTemplateBuilder(terminal_crd_template, {
       current_time,
