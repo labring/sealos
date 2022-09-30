@@ -24,6 +24,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -43,6 +44,7 @@ const (
 	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
 	HostnameLength      = 8
+	TerminalNamespace   = "terminal-app"
 	KeepaliveAnnotation = "lastUpdateTime"
 )
 
@@ -61,6 +63,8 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -78,45 +82,71 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.AddFinalizer(terminal, FinalizerName) {
-			if err := r.Update(ctx, terminal); err != nil {
+	terminalApp := &terminalv1.Terminal{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      req.Name,
+			Namespace: TerminalNamespace,
+		},
+	}
+	if req.Namespace != TerminalNamespace {
+		if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
+			if controllerutil.AddFinalizer(terminal, FinalizerName) {
+				if err := r.Update(ctx, terminal); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		} else {
+			// delete terminal-app
+			if err := r.Delete(ctx, terminalApp); err != nil {
 				return ctrl.Result{}, err
 			}
+			if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
+				if err := r.Update(ctx, terminal); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+			return ctrl.Result{}, nil
 		}
-	} else {
-		if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
-			if err := r.Update(ctx, terminal); err != nil {
+
+		if err := r.fillDefaultValue(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if isExpired(terminal) {
+			if err := r.Delete(ctx, terminal); err != nil {
 				return ctrl.Result{}, err
 			}
+			logger.Info("delete expired terminal success")
+			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, nil
 	}
 
-	if err := r.fillDefaultValue(ctx, terminal); err != nil {
+	// crate a terminal in terminal-app ns
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, terminalApp, func() error {
+		terminalApp.Spec = terminal.Spec
+		return nil
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if isExpired(terminal) {
-		if err := r.Delete(ctx, terminal); err != nil {
-			return ctrl.Result{}, err
-		}
-		logger.Info("delete expired terminal success")
-		return ctrl.Result{}, nil
+	if err := r.syncRoleBinding(ctx, terminalApp); err != nil {
+		logger.Error(err, "create Role and RoleBinding failed")
+		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create Role and RoleBinding failed", "%v", err)
+		return ctrl.Result{}, err
 	}
 
-	if err := r.syncDeployment(ctx, terminal); err != nil {
+	if err := r.syncDeployment(ctx, terminalApp); err != nil {
 		logger.Error(err, "create deployment failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
 		return ctrl.Result{}, err
 	}
-	if err := r.syncService(ctx, terminal); err != nil {
+	if err := r.syncService(ctx, terminalApp); err != nil {
 		logger.Error(err, "create service failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create service failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncIngress(ctx, req, terminal); err != nil {
+	if err := r.syncIngress(ctx, terminalApp); err != nil {
 		logger.Error(err, "create ingress failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create ingress failed", "%v", err)
 		return ctrl.Result{}, err
@@ -127,7 +157,62 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, terminal *terminalv1.Terminal) error {
+func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *terminalv1.Terminal) error {
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "terminalAppRole-" + terminal.Spec.User,
+			Namespace: TerminalNamespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
+		role.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{"terminal.sealos.io"},
+				Resources:     []string{"terminals"},
+				Verbs:         []string{"get", "watch", "list"},
+				ResourceNames: []string{terminal.Name},
+			},
+		}
+		if err := controllerutil.SetControllerReference(terminal, role, r.Scheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "terminalAppRoleBinding-" + terminal.Spec.User,
+			Namespace: TerminalNamespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     role.Name,
+		}
+		roleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind:     "User",
+				Name:     terminal.Spec.User,
+				APIGroup: "rbac.authorization.k8s.io",
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(terminal, roleBinding, r.Scheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal) error {
 	var host string
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{

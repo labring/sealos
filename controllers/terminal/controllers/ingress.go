@@ -33,8 +33,10 @@ func createIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ing
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
 		Annotations: map[string]string{
-			"kubernetes.io/ingress.class":                "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target": "/",
+			"kubernetes.io/ingress.class":                    "nginx",
+			"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+			"nginx.ingress.kubernetes.io/proxy-send-timeout": "86400",
+			"nginx.ingress.kubernetes.io/proxy-read-timeout": "86400",
 		},
 		Labels: map[string]string{
 			"k8s-app": "terminal",
