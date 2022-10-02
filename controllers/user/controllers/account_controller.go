@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	rbacV1 "k8s.io/api/rbac/v1"
@@ -48,6 +50,7 @@ import (
 type AccountReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -64,7 +67,7 @@ type AccountReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	logger := log.FromContext(ctx)
 	payment := &userv1.Payment{}
 	err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment)
 	if errors.IsNotFound(err) {
@@ -90,7 +93,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if errors.IsNotFound(err) {
 		account.Status.Balance = 0
 		account.Status.ChargeList = []userv1.Charge{}
-		log.Info("create account", "account", account)
+		logger.Info("create account", "account", account)
 		if err := r.Create(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("create account failed: %v", err)
 		}
@@ -107,7 +110,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	log.Info(fmt.Sprintf("query order: %v", status))
+	logger.V(1).Info("query order status: %s", status)
 	switch status {
 	case pay.StatusSuccess:
 		account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
@@ -188,6 +191,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Logger.V(1).Info("init reconcile controller account")
 	err := r.Create(context.TODO(), &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: constants.SealosSystemNamespace,
