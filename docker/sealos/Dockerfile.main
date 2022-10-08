@@ -6,4 +6,4 @@ ENTRYPOINT ["/usr/bin/sealos"]
 
 WORKDIR /usr/bin/
 
-COPY /bin/sealos-$TARGETARCH/sealos .
+COPY --chmod=0755 /bin/sealos-$TARGETARCH/sealos .
