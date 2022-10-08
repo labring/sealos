@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/logr"
+
 	"github.com/labring/sealos/pkg/pay"
 
 	"github.com/mdp/qrterminal"
@@ -37,6 +39,7 @@ import (
 type PaymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=payments,verbs=get;list;watch;create;update;patch;delete
@@ -90,6 +93,7 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Logger.V(1).Info("init reconcile controller payment")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Payment{}).
 		Complete(r)
