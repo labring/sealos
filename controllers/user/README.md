@@ -483,3 +483,26 @@ spec:
     userID: 51d368d3-06c7-42c5-97b1-c1f0d0c8636e
     amount: 1
 ```
+
+payment need some env,add secret is a good choice,inject into the env of the Pod.
+Note: The content in secret needs to be converted to base 64, don't convert the double quotes into it.
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paymentSecret
+type: Opaque
+data:
+  USER_NAME: xxxx
+  PASSWORD: xxxx
+```
+
+example of set the secret env of the crd
+file path :config/manager/manager.yaml
+```yaml
+image: controller:latest
+envFrom:
+- secretRef:
+  name: payment-secret
+imagePullPolicy: IfNotPresent
+```

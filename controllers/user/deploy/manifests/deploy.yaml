@@ -897,6 +897,9 @@ spec:
         - --leader-elect
         command:
         - /manager
+        envFrom:
+        - secretRef:
+            name: payment-secret
         image: ghcr.io/labring/user-controller:dev
         imagePullPolicy: IfNotPresent
         livenessProbe:
