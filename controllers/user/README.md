@@ -483,3 +483,15 @@ spec:
     userID: 51d368d3-06c7-42c5-97b1-c1f0d0c8636e
     amount: 1
 ```
+
+payment need some env,add secret is a good choice
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: paymentSecret
+type: Opaque
+data:
+  USER_NAME: xxxx
+  PASSWORD: xxxx
+```

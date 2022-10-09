@@ -43,6 +43,7 @@ const (
 	StatusFail       = "FAILED"
 
 	DefaultCallbackURL = "https://sealos.io/payment/wechat/callback"
+	PaymentSecretName  = "payment-secret"
 )
 
 func NewClient(ctx context.Context, opts ...core.ClientOption) (*core.Client, error) {

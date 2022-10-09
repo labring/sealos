@@ -18,16 +18,18 @@ package controllers
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"time"
 
 	"github.com/go-logr/logr"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/labring/sealos/pkg/pay"
 
 	"github.com/mdp/qrterminal"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -56,11 +58,16 @@ type PaymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
+	r.Logger = log.FromContext(ctx)
+	// The configuration information of the payment is obtained in the environment variable
+	if err := r.syncPaymentEnv(); err != nil {
+		r.Logger.Error(err, "get payment env failed")
+		return ctrl.Result{}, err
+	}
 
 	p := &userv1.Payment{}
 	if err := r.Get(ctx, req.NamespacedName, p); err != nil {
-		log.Error(err, "get payment failed")
+		r.Logger.Error(err, "get payment failed")
 		return ctrl.Result{}, err
 	}
 	if p.Status.TradeNO != "" {
@@ -69,26 +76,83 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if p.Status.Status == "" {
 		p.Status.Status = "Created"
 		if err := r.Status().Update(ctx, p); err != nil {
-			log.Error(err, "update payment failed: %v", *p)
+			r.Logger.Error(err, "update payment failed: %v", *p)
 			return ctrl.Result{Requeue: true}, err
 		}
 	}
 	tradeNO := pay.GetRandomString(32)
 	codeURL, err := pay.WechatPay(p.Spec.Amount, p.Spec.UserID, tradeNO, "", os.Getenv(pay.CallbackURL))
 	if err != nil {
-		log.Error(err, "get codeURL failed")
+		r.Logger.Error(err, "get codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
 	}
 	p.Status.CodeURL = codeURL
 	p.Status.TradeNO = tradeNO
 
 	if err := r.Status().Update(ctx, p); err != nil {
-		log.Error(err, "update payment failed: %v", *p)
+		r.Logger.Error(err, "update payment failed: %v", *p)
 		return ctrl.Result{}, err
 	}
 
 	qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
 	return ctrl.Result{}, nil
+}
+
+func (r *PaymentReconciler) syncPaymentEnv() error {
+	if appid := os.Getenv(pay.AppID); appid == "" {
+		paySecret := &v1.Secret{}
+		err := r.Get(context.Background(), client.ObjectKey{Namespace: "sealos", Name: pay.PaymentSecretName}, paySecret)
+		if err != nil {
+			r.Logger.Error(err, "get payment secret failed")
+			return err
+		}
+
+		payAPPID, err := base64.StdEncoding.DecodeString(string(paySecret.Data[pay.AppID]))
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(pay.AppID, string(payAPPID))
+		if err != nil {
+			return err
+		}
+		r.Logger.V(1).Info("get payment secret success", "data", string(payAPPID))
+
+		payMchID, err := base64.StdEncoding.DecodeString(string(paySecret.Data[pay.MchID]))
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(pay.MchID, string(payMchID))
+		if err != nil {
+			return err
+		}
+
+		payMchAPIv3Key, err := base64.StdEncoding.DecodeString(string(paySecret.Data[pay.MchAPIv3Key]))
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(pay.MchAPIv3Key, string(payMchAPIv3Key))
+		if err != nil {
+			return err
+		}
+
+		payMchCertificateSerialNumber, err := base64.StdEncoding.DecodeString(string(paySecret.Data[pay.MchCertificateSerialNumber]))
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(pay.MchCertificateSerialNumber, string(payMchCertificateSerialNumber))
+		if err != nil {
+			return err
+		}
+		payWechatPrivateKey, err := base64.StdEncoding.DecodeString(string(paySecret.Data[pay.WechatPrivateKey]))
+		if err != nil {
+			return err
+		}
+		err = os.Setenv(pay.WechatPrivateKey, string(payWechatPrivateKey))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
