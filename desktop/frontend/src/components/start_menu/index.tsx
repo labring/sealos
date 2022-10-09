@@ -1,28 +1,31 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
 import styles from './index.module.scss';
-import Image from 'next/image';
 
 import { useQuery } from '@tanstack/react-query';
 import request from 'services/request';
-import { formatMoney, formatTime } from 'utils/format';
+import { formatMoney } from 'utils/format';
 import ChargeButton from './charge_button';
 import { Divider, Link } from '@fluentui/react-components';
 import download from 'utils/downloadFIle';
 import { useRouter } from 'next/router';
+import useLocalSession from 'hooks/useLocalSession';
 
 export default function StartMenu() {
   const { isHideStartMenu, toggleStartMenu } = useAppStore((s) => s);
 
-  const { session, delSession } = useSessionStore((s) => s);
-  const user = session?.user || {};
+  const { delSession } = useSessionStore((s) => s);
+
+  const { localSession } = useLocalSession();
 
   const router = useRouter();
 
   const amount = useQuery(
     ['user-amount'],
-    () => request.post('/api/kubernetes/account/get_amount', { kubeconfig: session.kubeconfig }),
+    () =>
+      request.post('/api/kubernetes/account/get_amount', { kubeconfig: localSession.kubeconfig }),
     {
       enabled: !isHideStartMenu
     }
@@ -46,12 +49,16 @@ export default function StartMenu() {
       <div className={styles.widPaneCont} data-hide={isHideStartMenu}>
         <div className={styles.widPane + ' ltShad'}>
           <div className="flex flex-col items-center">
-            <Image src={user?.avatar} alt="" width={90} height={90} className={styles.avatar} />
+            <img
+              src={localSession?.user?.avatar || ''}
+              alt=""
+              width={90}
+              height={90}
+              className={styles.avatar}
+            />
 
-            <p className="text-3xl mb-4 mt-4">{user?.name}</p>
+            <div className="text-3xl mb-4 mt-4">{localSession?.user?.name}</div>
 
-            <p className="text-slate-800 mb-4">角色：管理员</p>
-            <p className="text-slate-700">上次登录：{formatTime(new Date().getTime())}</p>
             <div className="mt-4 w-full">
               <Divider appearance="brand"></Divider>
             </div>
@@ -68,7 +75,7 @@ export default function StartMenu() {
               <Link
                 onClick={(e) => {
                   e.preventDefault();
-                  download('kubeconfig.yaml', session.kubeconfig);
+                  download('kubeconfig.yaml', localSession?.kubeconfig.toString());
                 }}
               >
                 下载 kubeconfig.yaml

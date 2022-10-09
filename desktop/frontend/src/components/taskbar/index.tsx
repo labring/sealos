@@ -1,22 +1,16 @@
+/* eslint-disable @next/next/no-img-element */
 import clsx from 'clsx';
 import Icon from 'components/icons';
-import { useEffect, useState } from 'react';
 import useAppStore from '../../stores/app';
-import useSessionStore from '../../stores/session';
 import styles from './taskbar.module.scss';
 
 import Sealos from '../../assets/icons/sealos.svg';
+import useLocalSession from 'hooks/useLocalSession';
 
 const Taskbar = () => {
   const { openedApps, currentApp, switchApp, toggleStartMenu } = useAppStore((state) => state);
 
-  const session = useSessionStore((s) => s.session);
-  const [avatar, setAvatar] = useState('');
-  useEffect(() => {
-    if (session.user.avatar) {
-      setAvatar(session.user.avatar);
-    }
-  }, [session]);
+  const { localSession } = useLocalSession();
 
   return (
     <div className={styles.taskbar}>
@@ -27,7 +21,13 @@ const Taskbar = () => {
             toggleStartMenu();
           }}
         >
-          <img width={30} height={30} src={avatar} alt="" className={styles.avatar} />
+          <img
+            width={30}
+            height={30}
+            src={localSession?.user?.avatar}
+            alt=""
+            className={styles.avatar}
+          />
         </div>
       </div>
       <div className={styles.tsbar}>
