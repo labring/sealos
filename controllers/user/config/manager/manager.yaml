@@ -39,6 +39,9 @@ spec:
         args:
         - --leader-elect
         image: controller:latest
+        envFrom:
+          - secretRef:
+              name: payment-secret
         imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
