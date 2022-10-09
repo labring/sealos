@@ -23,10 +23,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/passwd"
 	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/passwd"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -40,6 +39,7 @@ import (
 	"github.com/docker/docker/pkg/streamformatter"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
@@ -108,8 +108,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
-				logger.Warn("save domain %s image %s error: %v", tmpnameds[0].domain, tmpnameds[0].FullName(), err)
-				return nil
+				return errors.WithMessagef(err, "save domain %s image %s", tmpnameds[0].domain, tmpnameds[0].FullName())
 			}
 			outImages = append(outImages, tmpnameds[0].FullName())
 			return nil
