@@ -48,6 +48,11 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+RUN sed -i 's/https/http/' /etc/apk/repositories
+RUN apk add curl \
+  && apk add ca-certificates \
+  && update-ca-certificates
+
 # You only need to copy next.config.js if you are NOT using the default configuration
 # COPY --from=builder /app/next.config.js ./
 COPY --from=builder /app/public ./public

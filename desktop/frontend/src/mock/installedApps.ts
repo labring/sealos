@@ -74,6 +74,20 @@ const installedApps: TApp[] = [
     size: 'maximize'
   },
   {
+    name: 'Kuboard',
+    icon: '/images/kuboard.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'sealos Cloud Kuboard'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
+  },
+  {
     name: 'Prometheus',
     icon: '/images/prometheus.svg',
     type: 'iframe',

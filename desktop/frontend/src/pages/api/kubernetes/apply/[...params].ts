@@ -1,9 +1,11 @@
+import { KubernetesDashboardApplication } from 'mock/hub/kubernetes_dashboard';
+import { KuBoardApplication } from 'mock/hub/kuboard';
+import { TerminalApplication } from 'mock/hub/terminal';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { KubernetesDashboardApplication } from '../../../../mock/hub/kubernetes_dashboard';
-import { TerminalApplication } from '../../../../mock/hub/terminal';
-import { K8sApi } from '../../../../services/backend/kubernetes';
+import { K8sApi } from 'services/backend/kubernetes';
 import {
   BadRequestResp,
+  InternalErrorResp,
   JsonResp,
   MethodNotAllowedResp,
   NotFoundResp,
@@ -41,15 +43,23 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   }
 
   const cleanName = name.replace(/ /g, '-').toLowerCase();
-  switch (cleanName) {
-    case 'kubernetes-dashboard':
-      // instant return iframe page
-      const kda = await KubernetesDashboardApplication.doStart(kc);
-      return JsonResp(kda, resp);
-    case 'terminal':
-      // call apply to start terminal pod
-      const ta = await TerminalApplication.doStart(kc);
-      return JsonResp(ta, resp);
+  try {
+    switch (cleanName) {
+      case 'kubernetes-dashboard':
+        // instant return iframe page
+        const kda = await KubernetesDashboardApplication.doStart(kc);
+        return JsonResp(kda, resp);
+      case 'terminal':
+        // call apply to start terminal pod
+        const ta = await TerminalApplication.doStart(kc);
+        return JsonResp(ta, resp);
+      case 'kuboard':
+        // call apply to start terminal pod
+        const kb = await KuBoardApplication.doStart(kc);
+        return JsonResp(kb, resp);
+    }
+  } catch (err) {
+    return InternalErrorResp(String(err), resp);
   }
 
   return NotFoundResp(resp);
