@@ -933,7 +933,7 @@ spec:
         - secretRef:
             name: payment-secret
         image: ghcr.io/labring/user-controller:dev
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
