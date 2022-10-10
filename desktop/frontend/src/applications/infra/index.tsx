@@ -1,4 +1,4 @@
-import { Label,SpinButton,SpinButtonProps, RadioGroup,Radio, RadioGroupProps,Checkbox } from '@fluentui/react-components';
+import { Label,SpinButton,SpinButtonProps, RadioGroup,Radio,Checkbox } from '@fluentui/react-components';
 import axios from 'axios';
 import type { NextPage } from 'next';
 import * as React from 'react';
@@ -16,18 +16,24 @@ const Infra: NextPage = () => {
   const session = useSessionStore((s) => s.session);
   
   function handleClick() {
-    axios.post("/api/infra/aws",{
-      "masterType":{masterType},
-      "masterCount":{masterCount},
-      "nodeType":{nodeType},
-      "nodeCount":{nodeCount},
-      "image1":{image1},
-      "image2":{image2},
+    axios.post("/api/infra/awsapply",{
+      "masterType":masterType,
+      "masterCount":masterCount,
+      "nodeType":nodeType,
+      "nodeCount":nodeCount,
+      "images":{image1,image2},
       "kubeconfig": session.kubeconfig
     }).then((res) => {
       console.log(res.data)
     })
-
+  }
+  function handleGetClick() {
+    axios.post("/api/infra/awsget",{
+      "infra_name": "huruizhe-3",
+      "kubeconfig": session.kubeconfig
+    }).then((res) => {
+      console.log(res.data)
+    })
   }
   const onMasterCountChange: SpinButtonProps['onChange'] =(_ev, data) => {
     if (data.value !== undefined) {
@@ -108,7 +114,10 @@ const Infra: NextPage = () => {
       <a href="#" onClick={handleClick}>
         Start
       </a>
-
+      <p />
+      <a href="#" onClick={handleGetClick}>
+        Get
+      </a>
       <p>
         cluster.yaml:
         <br />
