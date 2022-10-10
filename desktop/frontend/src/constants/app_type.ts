@@ -1,4 +1,4 @@
-export const APPTYPE = {
-  APP: 'app',
-  IFRAME: 'iframe'
-};
+export enum APPTYPE {
+  APP = 'app',
+  IFRAME = 'iframe'
+}

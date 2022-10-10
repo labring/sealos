@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './highlight.scss';
 html {
   font-size: 12px;
-
 }
 
 body {
@@ -43,8 +43,6 @@ body[data-theme='dark'] {
   --base_bg-rgb: 32 32 32;
 
   --fakeMica: #202020 radial-gradient(#1a1f35 25%, #202020 100%) no-repeat fixed;
-
-
 }
 
 body::-webkit-scrollbar {

@@ -15,6 +15,8 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 ```
 .
 ├── applications // 应用目录
+│   ├── app_icon // 桌面应用图标
+│   │   └── index.tsx
 │   ├── app_store // app store
 │   │   ├── index.module.scss
 │   │   └── index.tsx
@@ -31,8 +33,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │       ├── sun.svg
 │       └── x.svg
 ├── components // desktop 通用业务组件
-│   ├── app_icon // 桌面应用图标
-│   │   └── index.tsx
 │   ├── app_window // 桌面窗口组件
 │   │   ├── index.module.scss
 │   │   ├── index.tsx
@@ -49,7 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 │   │   ├── index.tsx
 │   │   └── pinnedTabs.ts // 底部 dock 展示应用
 │   ├── icons
-│   │   └── index.tsx // 普通 Icon
+│   │   └── index.tsx //  普通 Icon
 │   └── taskbar // 底部 taskTop
 │       ├── indexIcon
 │       └── taskbar.module.scss

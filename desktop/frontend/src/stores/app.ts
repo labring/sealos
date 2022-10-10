@@ -1,3 +1,4 @@
+import { current } from 'immer';
 import request from 'services/request';
 import create from 'zustand';
 import { devtools } from 'zustand/middleware';
@@ -7,15 +8,17 @@ export type TAppFront = {
   isShow?: boolean;
   zIndex?: number;
   size: 'maximize' | 'maxmin' | 'minimize';
-  style?: {
-    width: number | string;
-    height: number | string;
-    isFull: boolean;
-    bg: string;
-  };
+  style?:
+    | {
+        width: number | string;
+        height: number | string;
+        isFull: boolean;
+        bg: string;
+      }
+    | {};
 };
 
-const initialFrantState = {
+const initialFrantState: TAppFront = {
   isShow: false,
   zIndex: 1,
   size: 'maximize',
@@ -23,48 +26,53 @@ const initialFrantState = {
 };
 
 export type TApp = {
-  // 应用名称
+  // app name
   name: string;
-  // 应用 icon
+  // app icon
   icon: string;
-  // 应用类型, app： 内置应用，iframe：外部应用
+  // app type, app： build-in app，iframe：external app
   type: 'app' | 'iframe';
-  // 应用信息
+  // app info
   data: {
     url: string;
     desc: string;
+    [key: string]: string;
   };
-  // 应用截图
+  // app gallery
   gallery: string[];
   extra?: {};
 } & TAppFront;
 
 type TOSState = {
-  // 已安装的应用
   installedApps: TApp[];
 
-  // 打开的应用
+  // all apps in app store
+  allApps: TApp[];
+
   openedApps: TApp[];
 
-  // 当前应用
   currentApp?: TApp;
 
-  // desktop 初始化
+  // init desktop
   init(): void;
 
-  // 关闭应用
+  // get all apps of the app store
+  getAllApps(): void;
+
+  // close the current app
   closeApp(name: string): void;
 
-  // 打开应用
+  // open the app
   openApp(app: TApp): void;
 
-  // 切换应用
+  // switch the app
   switchApp(app: TApp): void;
 
-  // 更新应用信息
   updateAppInfo(app: TApp): void;
 
-  // 当前最前应用
+  installApp(app: TApp): void;
+
+  // the closet app to the user
   maxZIndex: number;
 
   // start menu
@@ -81,11 +89,10 @@ const useAppStore = create<TOSState>()(
       currentApp: undefined,
       maxZIndex: 0,
       isHideStartMenu: true,
+      allApps: [],
 
-      // 初始化
       init: async () => {
         const res = await request('/api/desktop/getInstalledApps');
-        console.log('got installed apps', res);
 
         set((state) => {
           state.installedApps = res.data.map((item: TApp) => {
@@ -98,14 +105,26 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // 关闭应用
       closeApp: (name: string) => {
         set((state) => {
           state.openedApps = state.openedApps.filter((app) => app.name !== name);
         });
       },
 
-      // 更新应用信息
+      installApp: (app: TApp) => {
+        set((state) => {
+          state.installedApps = [...state.installedApps, { ...app, ...initialFrantState }];
+        });
+      },
+
+      getAllApps: async () => {
+        const res = await request('/api/desktop/getAllApps');
+
+        set((state) => {
+          state.allApps = res?.data || [];
+        });
+        return res;
+      },
       updateAppInfo: (app: TApp) => {
         set((state) => {
           state.openedApps = state.openedApps.map((_app) => {
@@ -124,7 +143,6 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // 打开应用
       openApp: async (app: TApp) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));
@@ -142,7 +160,6 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // switch app
       switchApp: (app: TApp) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));
