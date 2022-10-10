@@ -21,7 +21,10 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"os"
 	"time"
+
+	rbacV1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,13 +37,15 @@ type Generate interface {
 }
 
 type Config struct {
-	CAKeyFile         string
-	User              string
-	Groups            []string
-	ClusterName       string // default is kubernetes
-	ExpirationSeconds int32
-	DNSNames          []string
-	IPAddresses       []net.IP
+	ServiceAccount          bool
+	ServiceAccountNamespace string
+	CAKeyFile               string
+	User                    string
+	Groups                  []string
+	ClusterName             string // default is kubernetes
+	ExpirationSeconds       int32
+	DNSNames                []string
+	IPAddresses             []net.IP
 }
 
 func NewGenerate(config *Config) Generate {
@@ -52,6 +57,14 @@ func NewGenerate(config *Config) Generate {
 	}
 	if config.CAKeyFile != "" {
 		return &Cert{
+			Config: config,
+		}
+	}
+	if config.ServiceAccount {
+		if config.ServiceAccountNamespace == "" {
+			config.ServiceAccountNamespace = "default"
+		}
+		return &ServiceAccount{
 			Config: config,
 		}
 	}
@@ -96,4 +109,31 @@ func DecodeX509CertificateBytes(certBytes []byte) (*x509.Certificate, error) {
 	}
 
 	return certs[0], nil
+}
+
+func GetKubernetesHost(config *rest.Config) string {
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	if len(host) == 0 || len(port) == 0 {
+		return config.Host
+	}
+	return "https://" + net.JoinHostPort(host, port)
+}
+
+func GetUsersSubject(user string) []rbacV1.Subject {
+	defaultNamespace := os.Getenv("NAMESPACE_NAME")
+	if defaultNamespace == "" {
+		defaultNamespace = "default"
+	}
+	return []rbacV1.Subject{
+		{
+			Kind:     "User",
+			Name:     user,
+			APIGroup: rbacV1.SchemeGroupVersion.Group,
+		},
+		{
+			Kind:      "ServiceAccount",
+			Name:      user,
+			Namespace: defaultNamespace,
+		},
+	}
 }

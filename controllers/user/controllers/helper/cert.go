@@ -101,7 +101,7 @@ func (c *Cert) KubeConfig(config *rest.Config, client client.Client) (*api.Confi
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
 			c.ClusterName: {
-				Server:                   config.Host,
+				Server:                   GetKubernetesHost(config),
 				CertificateAuthorityData: encodeCertPEM(caCert),
 			},
 		},

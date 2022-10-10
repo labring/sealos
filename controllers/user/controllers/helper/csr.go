@@ -106,7 +106,7 @@ func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Conf
 	return &api.Config{
 		Clusters: map[string]*api.Cluster{
 			csr.ClusterName: {
-				Server:                   config.Host,
+				Server:                   GetKubernetesHost(config),
 				CertificateAuthorityData: ca,
 			},
 		},

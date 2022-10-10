@@ -149,13 +149,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx conte
 					return err
 				}
 				clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-				clusterRole.Subjects = []rbacv1.Subject{
-					{
-						Kind:     ugBinding.Subject.Kind,
-						Name:     ugBinding.Subject.Name,
-						APIGroup: rbacv1.SchemeGroupVersion.Group,
-					},
-				}
+				clusterRole.Subjects = helper.GetUsersSubject(ugBinding.Subject.Name)
 				clusterRole.RoleRef = rbacv1.RoleRef{
 					APIGroup: rbacv1.SchemeGroupVersion.Group,
 					Kind:     "ClusterRole",
@@ -214,13 +208,7 @@ func (r *UserGroupUserBindingController) syncRoleBinding(ctx context.Context, ug
 						return err
 					}
 					roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-					roleBinding.Subjects = []rbacv1.Subject{
-						{
-							Kind:     "User",
-							Name:     ugBinding.Subject.Name,
-							APIGroup: rbacv1.SchemeGroupVersion.Group,
-						},
-					}
+					roleBinding.Subjects = helper.GetUsersSubject(ugBinding.Subject.Name)
 					roleBinding.RoleRef = rbacv1.RoleRef{
 						APIGroup: rbacv1.SchemeGroupVersion.Group,
 						Kind:     "ClusterRole",

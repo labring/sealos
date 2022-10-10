@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -183,8 +184,10 @@ func (r *UserReconciler) saveCondition(user *userv1.User, condition *userv1.Cond
 
 func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) {
 	cfg := &helper.Config{
-		User:              user.Name,
-		ExpirationSeconds: user.Spec.CSRExpirationSeconds,
+		User:                    user.Name,
+		ExpirationSeconds:       user.Spec.CSRExpirationSeconds,
+		ServiceAccount:          true,
+		ServiceAccountNamespace: os.Getenv("NAMESPACE_NAME"),
 	}
 	userConditionType := userv1.ConditionType("KubeConfigSyncReady")
 	condition := &userv1.Condition{
@@ -240,6 +243,15 @@ func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
 		}
 		if info, ok := config.AuthInfos[user.Name]; ok {
 			if info != nil {
+				if info.ClientCertificateData == nil {
+					return config, event, err
+				}
+				if info.Token == "" {
+					config = nil
+					ev := fmt.Sprintf("User %s Token is empty", user.Name)
+					event = &ev
+					return config, event, err
+				}
 				cert, err := helper.DecodeX509CertificateBytes(info.ClientCertificateData)
 				if err != nil {
 					return nil, nil, err

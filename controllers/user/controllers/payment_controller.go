@@ -92,6 +92,8 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "payment_controller"
+	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller payment")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Payment{}).

@@ -105,6 +105,11 @@ var _ = Describe("user kubeconfig ", func() {
 						Namespace: "default",
 						APIGroup:  "rbac.authorization.k8s.io",
 					},
+					{
+						Kind:      "ServiceAccount",
+						Name:      "cuisongliu",
+						Namespace: "user-system",
+					},
 				},
 				RoleRef: rbacv1.RoleRef{
 					Kind:     "ClusterRole",
@@ -113,7 +118,8 @@ var _ = Describe("user kubeconfig ", func() {
 				},
 			}
 
-			_, _ = clientSet.RbacV1().RoleBindings("default").Create(context.TODO(), rb, metav1.CreateOptions{})
+			_, err := clientSet.RbacV1().RoleBindings("default").Create(context.TODO(), rb, metav1.CreateOptions{})
+			Expect(err).NotTo(HaveOccurred())
 
 		})
 		AfterEach(func() {
@@ -147,6 +153,39 @@ var _ = Describe("user kubeconfig ", func() {
 				}
 			}
 
+			kubeData, err := clientcmd.Write(*config)
+			Expect(err).To(BeNil())
+			Expect(kubeData).NotTo(BeNil())
+			By("start to write kubeconfig")
+			err = os.WriteFile("output", kubeData, 0600)
+			Expect(err).To(BeNil())
+
+			newCfg, err := clientcmd.BuildConfigFromFlags("", "output")
+			Expect(err).To(BeNil())
+			Expect(newCfg).NotTo(BeNil())
+			newCfg.QPS = 1e6
+			newCfg.Burst = 1e6
+			clientSet, err := kubernetes.NewForConfig(newCfg)
+			Expect(err).To(BeNil())
+			_, err = clientSet.CoreV1().Pods("default").List(context.TODO(), metav1.ListOptions{})
+			Expect(err).To(BeNil())
+			_, err = clientSet.CoreV1().Pods("kube-system").List(context.TODO(), metav1.ListOptions{})
+			errStatus := errors.ReasonForError(err)
+			Expect(err).NotTo(BeNil())
+			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
+		})
+		It("token generate", func() {
+			gen := NewGenerate(&Config{
+				User:              "cuisongliu",
+				DNSNames:          []string{"apiserver.cluster.local"},
+				IPAddresses:       nil,
+				ExpirationSeconds: 100000000,
+				ServiceAccount:    true,
+			})
+			By("start to get kubeconfig")
+			config, err := gen.KubeConfig(cfg, k8sClient)
+			Expect(err).To(BeNil())
+			Expect(config).NotTo(BeNil())
 			kubeData, err := clientcmd.Write(*config)
 			Expect(err).To(BeNil())
 			Expect(kubeData).NotTo(BeNil())
