@@ -23,7 +23,7 @@ Since we collaborate project sealos in a distributed way, we appreciate **WELL-W
 
 To make the issue details as standard as possible, we setup an [ISSUE TEMPLATE](https://github.com/labring/sealos/tree/main/.github/ISSUE_TEMPLATE) for issue reporters. You can find three kinds of issue templates there: question, bug report and feature request. Please **BE SURE** to follow the instructions to fill fields in template.
 
-There are lot of cases when you could open an issue:
+There are a lot of cases when you could open an issue:
 
 - bug report
 - feature request
@@ -36,7 +36,7 @@ There are lot of cases when you could open an issue:
 - any questions on project
 - and so on
 
-Also we must remind that when filing a new issue, please remember to remove the sensitive data from your post. Sensitive data could be password, secret key, network locations, private business data and so on.
+Also, we must remind that when filing a new issue, please remember to remove the sensitive data from your post. Sensitive data could be password, secret key, network locations, private business data and so on.
 
 ## Code and doc contribution
 
