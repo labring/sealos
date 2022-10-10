@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/controllers/user/controllers/helper"
+
 	"github.com/go-logr/logr"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -174,13 +176,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 			Kind:     "Role",
 			Name:     role.Name,
 		}
-		roleBinding.Subjects = []rbacV1.Subject{
-			{
-				Kind:     "User",
-				Name:     name,
-				APIGroup: "rbac.authorization.k8s.io",
-			},
-		}
+		roleBinding.Subjects = helper.GetUsersSubject(name)
 
 		return nil
 	}); err != nil {
@@ -191,6 +187,8 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "account_controller"
+	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
 	err := r.Create(context.TODO(), &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{

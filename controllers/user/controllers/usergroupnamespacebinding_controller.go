@@ -157,13 +157,7 @@ func (r *UserGroupNamespaceBindingController) syncRoleBinding(ctx context.Contex
 						return err
 					}
 					roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-					roleBinding.Subjects = []rbacv1.Subject{
-						{
-							Kind:     "User",
-							Name:     user.Subject.Name,
-							APIGroup: rbacv1.SchemeGroupVersion.Group,
-						},
-					}
+					roleBinding.Subjects = helper.GetUsersSubject(user.Subject.Name)
 					roleBinding.RoleRef = rbacv1.RoleRef{
 						APIGroup: rbacv1.SchemeGroupVersion.Group,
 						Kind:     "ClusterRole",
