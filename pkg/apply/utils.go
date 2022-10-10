@@ -63,15 +63,21 @@ func removeIPListDuplicatesAndEmpty(ipList []string) []string {
 }
 
 func IsIPList(args string) bool {
-	ipList := strings.Split(args, ",")
+	return validateIPList(args) == nil
+}
 
-	for _, i := range ipList {
+func validateIPList(s string) error {
+	list := strings.Split(s, ",")
+	for _, i := range list {
 		if !strings.Contains(i, ":") {
-			return net.ParseIP(i) != nil
+			if net.ParseIP(i) == nil {
+				return fmt.Errorf("invalid IP %s", i)
+			}
+			continue
 		}
 		if _, err := net.ResolveTCPAddr("tcp", i); err != nil {
-			return false
+			return fmt.Errorf("invalid TCP address %s", i)
 		}
 	}
-	return true
+	return nil
 }

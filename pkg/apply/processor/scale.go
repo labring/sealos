@@ -62,6 +62,7 @@ func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
 
 	return nil
 }
+
 func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	if c.IsScaleUp {
@@ -96,6 +97,7 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 	}
 	return c.Runtime.DeleteNodes(c.NodesToDelete)
 }
+
 func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Join in ScaleProcessor.")
 	err := c.Runtime.JoinMasters(c.MastersToJoin)
@@ -106,7 +108,10 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+	if len(c.MastersToJoin) > 0 {
+		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+	}
+	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), c.NodesToJoin)
 }
 
 func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
@@ -160,7 +165,13 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	if c.IsScaleUp {
 		clusterPath := constants.Clusterfile(cluster.Name)
-		if err = yaml.MarshalYamlToFile(clusterPath, cluster); err != nil {
+		obj := []interface{}{cluster}
+		if configs := c.ClusterFile.GetConfigs(); len(configs) > 0 {
+			for i := range configs {
+				obj = append(obj, configs[i])
+			}
+		}
+		if err = yaml.MarshalYamlToFile(clusterPath, obj...); err != nil {
 			return err
 		}
 	}
