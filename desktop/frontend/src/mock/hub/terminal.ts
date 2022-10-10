@@ -86,7 +86,8 @@ const TerminalApplication: RunApplication = {
 
       if (err instanceof k8s.HttpError) {
         // if code == 404, we can run apply
-        if (err.body.code !== 404 && err.body.code !== 403) {
+        if (err.body.code !== 404) {
+          // if (err.body.code !== 404 && err.body.code !== 403) {
           return Promise.reject('http ' + err.body.code + ', ' + err.body.message);
         }
         // else continue run

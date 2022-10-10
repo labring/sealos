@@ -2,14 +2,11 @@ import * as k8s from '@kubernetes/client-node';
 import http from 'http';
 import * as yaml from 'js-yaml';
 
-const cluster_name = 'sealos';
-
 export function K8sApi(config: string): k8s.KubeConfig {
   const kc = new k8s.KubeConfig();
   kc.loadFromString(config);
 
-  // check in-cluster
-  let cluster = kc.getCluster(cluster_name);
+  const cluster = kc.getCurrentCluster();
   if (cluster !== null) {
     let server: k8s.Cluster;
 
@@ -33,11 +30,13 @@ export function K8sApi(config: string): k8s.KubeConfig {
       };
     }
     kc.clusters.forEach((item, i) => {
-      if (item.name == cluster_name) {
+      if (item.name === cluster.name) {
         kc.clusters[i] = server;
       }
     });
   }
+
+  // console.log(kc);
 
   return kc;
 }
