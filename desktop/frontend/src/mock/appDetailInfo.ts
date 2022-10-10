@@ -8,7 +8,7 @@ const appDetailInfo: TAppDetail = {
   },
   versions: ['latest', 'v.8.0', 'v.5.6'],
   installGuide: ['sealos pull myseq:latest', 'sealos run mysql latest'],
-  // 当前版本readme.md文档内容
+  // the current version of readme
   currentReadme: `
   # A demo of \`react-markdown\`
 

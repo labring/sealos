@@ -26,61 +26,53 @@ const initialFrantState: TAppFront = {
 };
 
 export type TApp = {
-  // 应用名称
+  // app name
   name: string;
-  // 应用 icon
+  // app icon
   icon: string;
-  // 应用类型, app： 内置应用，iframe：外部应用
+  // app type, app： build-in app，iframe：external app
   type: 'app' | 'iframe';
-  // 应用信息
+  // app info
   data: {
     url: string;
     desc: string;
     [key: string]: string;
   };
-  // 应用截图
+  // app gallery
   gallery: string[];
   extra?: {};
 } & TAppFront;
 
 type TOSState = {
-  // 已安装的应用
   installedApps: TApp[];
 
-  // 所有app store中的应用
+  // all apps in app store
   allApps: TApp[];
 
-  // 打开的应用
   openedApps: TApp[];
 
-  // 当前应用
   currentApp?: TApp;
 
-  // 应用详情
-
-  // desktop 初始化
+  // init desktop
   init(): void;
 
-  // 获取store中的apps
+  // get all apps of the app store
   getAllApps(): void;
 
-  // 关闭应用
+  // close the current app
   closeApp(name: string): void;
 
-  // 打开应用
+  // open the app
   openApp(app: TApp): void;
 
-  // 切换应用
+  // switch the app
   switchApp(app: TApp): void;
 
-  // 更新应用信息
   updateAppInfo(app: TApp): void;
 
-  // 安装应用
   installApp(app: TApp): void;
-  // 打开应用
-  openApp(app: TApp): void;
-  // 当前最前应用
+
+  // the closet app to the user
   maxZIndex: number;
 
   // start menu
@@ -99,7 +91,6 @@ const useAppStore = create<TOSState>()(
       isHideStartMenu: true,
       allApps: [],
 
-      // 初始化
       init: async () => {
         const res = await request('/api/desktop/getInstalledApps');
 
@@ -114,21 +105,17 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // 关闭应用
       closeApp: (name: string) => {
         set((state) => {
           state.openedApps = state.openedApps.filter((app) => app.name !== name);
         });
       },
 
-      // 添加应用
       installApp: (app: TApp) => {
         set((state) => {
           state.installedApps = [...state.installedApps, { ...app, ...initialFrantState }];
         });
       },
-
-      // 获取所有应用
 
       getAllApps: async () => {
         const res = await request('/api/desktop/getAllApps');
@@ -138,7 +125,6 @@ const useAppStore = create<TOSState>()(
         });
         return res;
       },
-      // 更新应用信息
       updateAppInfo: (app: TApp) => {
         set((state) => {
           state.openedApps = state.openedApps.map((_app) => {
@@ -157,7 +143,6 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // 打开应用
       openApp: async (app: TApp) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));
@@ -175,7 +160,6 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      // switch app
       switchApp: (app: TApp) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));

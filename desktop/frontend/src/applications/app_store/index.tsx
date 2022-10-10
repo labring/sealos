@@ -7,9 +7,9 @@ import { useQuery } from '@tanstack/react-query';
 import useAppStore, { TApp } from 'stores/app';
 import Icon from 'components/icons'
 import styles from './index.module.scss';
-import DownLoadPage from './DownLoadPage'
-import DetailPage from './Detail'
-import FrontPage from './FrontPage'
+import DownLoadPage from './download_page'
+import DetailPage from './detail_page'
+import FrontPage from './front_page'
 
 
 export default function AppStore() {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import useAppStore, { TApp } from 'stores/app';
-import styles from './FrontPage.module.scss'
+import styles from './front_page.module.scss'
 import clsx from 'clsx'
 import Icon from 'components/icons'
 

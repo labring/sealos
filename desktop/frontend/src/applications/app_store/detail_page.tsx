@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import useAppStore, { TApp } from 'stores/app';
 import request from 'services/request';
-import ReactMarkdown from 'react-markdown'
-import rehypeHighlight from 'rehype-highlight'
 import { Spinner, Button, Popover, PopoverSurface, PopoverProps } from '@fluentui/react-components';
 import Icon from 'components/icons'
-import styles from './Detail.module.scss'
+import Markdown from 'components/markdown'
+import styles from './detail.module.scss'
 import clsx from 'clsx';
 import { useQuery } from '@tanstack/react-query';
 
@@ -167,9 +166,9 @@ const DetailPage = ({ app }: { app: TApp }) => {
 						</PopoverSurface>
 					</Popover>
 					<div className={clsx(styles.highlight, 'mt-8, p-5')}>
-						<ReactMarkdown
-							rehypePlugins={[rehypeHighlight]}
-						>{currentReadme ?? ''}</ReactMarkdown>
+						<Markdown
+							text={currentReadme ?? ""}
+						/>
 					</div>
 				</div>
 				<div className={clsx(styles.detailversions, "flex flex-col mt-8")}>
