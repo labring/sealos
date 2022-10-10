@@ -112,7 +112,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	logger.V(1).Info("query order status: %s", status)
+	logger.V(1).Info("query order status", "status", status)
 	switch status {
 	case pay.StatusSuccess:
 		account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{

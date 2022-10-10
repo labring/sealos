@@ -114,22 +114,21 @@ func (sac *ServiceAccount) fetchToken(config *rest.Config) (string, error) {
 }
 
 func (sac *ServiceAccount) generatorKubeConfig(cfg *rest.Config, token string) (*api.Config, error) {
-	ctx := fmt.Sprintf("%s@%s", sac.User, "kubernetes")
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(cfg); err != nil {
 		return nil, err
 	}
-
+	ctx := fmt.Sprintf("%s@%s", sac.User, sac.ClusterName)
 	config := &api.Config{
 		Clusters: map[string]*api.Cluster{
-			"kubernetes": {
+			sac.ClusterName: {
 				Server:                   GetKubernetesHost(cfg),
 				CertificateAuthorityData: cfg.TLSClientConfig.CAData,
 			},
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  "kubernetes",
+				Cluster:  sac.ClusterName,
 				AuthInfo: sac.User,
 			},
 		},
