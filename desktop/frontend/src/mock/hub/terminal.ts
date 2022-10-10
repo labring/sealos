@@ -1,12 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
-import { ApplicationType, RunApplication, StartResp } from '../../interfaces/kubernetes';
+import { ApplicationType, RunApplication, StartResp } from 'interfaces/kubernetes';
 import {
   ApplyYaml,
   CRDMeta,
   GetCRD,
   GetUserDefaultNameSpace
 } from '../../services/backend/kubernetes';
-import { CRDTemplateBuilder } from '../../services/backend/wrapper';
+import { CRDTemplateBuilder } from 'services/backend/wrapper';
 
 const terminal_meta: CRDMeta = {
   group: 'terminal.sealos.io',
@@ -54,11 +54,7 @@ const TerminalApplication: RunApplication = {
           !kube_user.certData ||
           kube_user.certData === ''))
     ) {
-      return Promise.resolve({
-        status: 500,
-        application_type: ApplicationType.IFrame,
-        iframe_page: ''
-      } as StartResp);
+      return Promise.reject('kube_user get failed');
     }
 
     const terminal_name = 'terminal-' + kube_user.name;
@@ -91,18 +87,17 @@ const TerminalApplication: RunApplication = {
       if (err instanceof k8s.HttpError) {
         // if code == 404, we can run apply
         if (err.body.code !== 404 && err.body.code !== 403) {
-          return Promise.resolve({
-            status: err.body.code,
-            application_type: ApplicationType.IFrame,
-            iframe_page: ''
-          } as StartResp);
+          return Promise.reject('http ' + err.body.code + ', ' + err.body.message);
         }
+        // else continue run
       } else {
-        return Promise.resolve({
-          status: 500,
-          application_type: ApplicationType.IFrame,
-          iframe_page: ''
-        } as StartResp);
+        if (typeof err === 'string') {
+          return Promise.reject(err);
+        }
+        if (err instanceof Error) {
+          return Promise.reject(err.message);
+        }
+        return Promise.reject(err);
       }
     }
 

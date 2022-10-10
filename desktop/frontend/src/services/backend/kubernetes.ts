@@ -13,12 +13,14 @@ export function K8sApi(config: string): k8s.KubeConfig {
   if (cluster !== null) {
     let server: k8s.Cluster;
 
-    if (CheckIsInCluster()) {
+    const [inCluster, hosts] = CheckIsInCluster();
+    if (inCluster && hosts !== '') {
       server = {
         name: cluster.name,
         caData: cluster.caData,
         caFile: cluster.caFile,
-        server: 'https://kubernetes.default.svc.cluster.local:443',
+        // server: 'https://kubernetes.default.svc.cluster.local:443',
+        server: hosts,
         skipTLSVerify: cluster.skipTLSVerify
       };
     } else {
@@ -113,16 +115,19 @@ export async function ApplyYaml(
   return created;
 }
 
-export function CheckIsInCluster(): boolean {
+export function CheckIsInCluster(): [boolean, string] {
   if (
     process.env.KUBERNETES_SERVICE_HOST !== undefined &&
     process.env.KUBERNETES_SERVICE_HOST !== '' &&
     process.env.KUBERNETES_SERVICE_PORT !== undefined &&
     process.env.KUBERNETES_SERVICE_PORT !== ''
   ) {
-    return true;
+    return [
+      true,
+      'https://' + process.env.KUBERNETES_SERVICE_HOST + ':' + process.env.KUBERNETES_SERVICE_PORT
+    ];
   }
-  return false;
+  return [false, ''];
 }
 
 export function GetUserDefaultNameSpace(user: string): string {
