@@ -93,7 +93,7 @@ func (*Service) Pull(platform v1.Platform, images ...string) error {
 	systemContext.OSChoice = platform.OS
 	systemContext.ArchitectureChoice = platform.Architecture
 	systemContext.VariantChoice = platform.Variant
-	logger.Info("pull images %v for platform is %s", images, fmt.Sprintf("%s/%s", systemContext.OSChoice, systemContext.ArchitectureChoice))
+	logger.Info("pulling images %v for platform %s", images, fmt.Sprintf("%s/%s", systemContext.OSChoice, systemContext.ArchitectureChoice))
 	opts := buildah.PullOptions{
 		SignaturePolicyPath: opt.signaturePolicy,
 		Store:               store,

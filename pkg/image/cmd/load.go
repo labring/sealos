@@ -33,11 +33,12 @@ func NewLoadCmd() *cobra.Command {
 		Example: `sealos load -i kubernetes.tar`,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registrySvc, err := image.NewImageService()
+			imageSvc, err := image.NewImageService()
 			if err != nil {
 				return err
 			}
-			return registrySvc.Load(archiveName)
+			_, err = imageSvc.Load(archiveName)
+			return err
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !strings.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
