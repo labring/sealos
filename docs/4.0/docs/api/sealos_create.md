@@ -17,7 +17,7 @@ sealos create [flags]
 create a mysql cluster:
 	sealos create mysql:8.0
 with custom cluster name:
-	sealos create mysql:8.0 -c mysql
+	sealos create mysql:8.0 -c mysql:8.0
 
 ```
 
