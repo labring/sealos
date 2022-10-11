@@ -70,6 +70,12 @@ type AccountReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+	//It should not stop the normal process for the failure to delete the payment
+	// delete payments that exist for more than 5 minutes
+	if err := r.DeletePayment(ctx); err != nil {
+		r.Logger.Error(err, "delete payment failed")
+	}
+
 	payment := &userv1.Payment{}
 	err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment)
 	if errors.IsNotFound(err) {
@@ -129,7 +135,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.Status().Update(ctx, payment); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
-		// TODO Delete after a delay of 5 minutes to prevent the front-end get from not getting the payment status
+
 	case pay.StatusProcessing, pay.StatusNotPay:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 	case pay.StatusFail:
@@ -181,6 +187,24 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 		return nil
 	}); err != nil {
 		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
+	}
+	return nil
+}
+
+// DeletePayment delete payments that exist for more than 5 minutes
+func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
+	payments := &userv1.PaymentList{}
+	err := r.List(ctx, payments)
+	if err != nil {
+		return err
+	}
+	for _, payment := range payments.Items {
+		if time.Since(payment.CreationTimestamp.Time) > time.Minute*5 {
+			err = r.Delete(ctx, &payment)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
