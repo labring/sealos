@@ -19,9 +19,7 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
   name: kuboard
-  namespace: kuboard # must be this namespace
-  labels:
-    k8s-app: kuboard
+  namespace: kuboard-v2
 spec:
   rules:
     - host: kuboard.cloud.sealos.io
@@ -31,7 +29,7 @@ spec:
             path: /
             backend:
               service:
-                name: kuboard-v3
+                name: kuboard
                 port:
                   number: 80
   tls:

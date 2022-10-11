@@ -82,7 +82,7 @@ const FrontPage = () => {
 									<img
 										className="mx-1 py-1 mb-2 rounded"
 										width={120}
-										width={120}
+										height={120}
 										src={x.icon}
 									/>
 									<div className="capitalize text-xs font-semibold">{x.name}</div>
