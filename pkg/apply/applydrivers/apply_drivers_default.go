@@ -54,7 +54,7 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 
 func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
-		return nil, fmt.Errorf("cluster name cannot be empty")
+		cluster.Name = current.Name
 	}
 	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
 	return &Applier{
@@ -174,13 +174,13 @@ func (c *Applier) installApp(images []string) error {
 }
 
 func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
+	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
+		logger.Info("no nodes that need to be scaled")
+		return nil
+	}
 	logger.Info("start to scale this cluster")
 	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
 	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
-		logger.Info("succeeded in scaling this cluster: no change nodes")
-		return nil
-	}
 	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
 	if err != nil {
 		return err

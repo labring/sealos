@@ -52,7 +52,7 @@ func newAddCmd() *cobra.Command {
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addArgs.Nodes == "" && addArgs.Masters == "" {
-				return errors.New("node and master not empty in same time")
+				return errors.New("nodes and masters can't both be empty")
 			}
 			return nil
 		},
