@@ -74,3 +74,27 @@ jobs:
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
           .
+
+  build-on-cluster-image:
+    needs:
+      - controlls-build
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Build user-controller image
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: 148
+          repository: labring/cluster-image
+          body: |
+            /imagebuild_apps user-controller dev
+          token: "${{ secrets.GH_TOKEN }}"
+      - name: Build user-controller image
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: 140
+          repository: labring/cluster-image
+          body: |
+            /imagebuild_apps terminal-controller dev
+          token: "${{ secrets.GH_TOKEN }}"
