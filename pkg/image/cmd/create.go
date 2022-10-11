@@ -34,7 +34,7 @@ func NewCreateCmd() *cobra.Command {
 create a mysql cluster:
 	sealos create mysql:8.0
 with custom cluster name:
-	sealos create mysql:8.0 -c mysql
+	sealos create mysql:8.0 -c mysql:8.0
 `
 	var createCmd = &cobra.Command{
 		Use:     "create",
@@ -58,7 +58,9 @@ with custom cluster name:
 			if err != nil {
 				return err
 			}
-
+			if clusterName == "" || clusterName == "default" {
+				clusterName = imageName
+			}
 			manifest, err := clusterSvc.Create(imageName, clusterName)
 			if err != nil {
 				return err
