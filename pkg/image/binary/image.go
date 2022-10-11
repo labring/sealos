@@ -56,11 +56,18 @@ func (d *ImageService) Save(imageName, archiveName string) error {
 	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s %s:%s:%s", imageName, types.DefaultTransport, archiveName, imageName))
 }
 
-func (d *ImageService) Load(archiveName string) error {
+func (d *ImageService) Load(archiveName string) (string, error) {
 	if !fileutil.IsExist(archiveName) {
-		return errors.New("archive file is not exist")
+		return "", errors.New("archive file is not exist")
 	}
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull %s:%s", types.DefaultTransport, archiveName))
+	output, err := exec.Output("bash", "-c", fmt.Sprintf("buildah pull %s:%s", types.DefaultTransport, archiveName))
+	if err != nil {
+		return "", err
+	}
+	l := len(output)
+	id := string(output[l-65 : l-1])
+	logger.Info("load image %s", id)
+	return id, nil
 }
 
 func (d *ImageService) Remove(force bool, images ...string) error {

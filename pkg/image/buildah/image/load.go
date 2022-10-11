@@ -32,12 +32,12 @@ import (
 	labring_types "github.com/labring/sealos/pkg/image/types"
 )
 
-func (d *Service) Load(archiveName string) error {
+func (d *Service) Load(archiveName string) (string, error) {
 	if err := buildahcli.VerifyFlagsArgsOrder([]string{archiveName}); err != nil {
-		return err
+		return "", err
 	}
 	if err := auth.CheckAuthFile(d.pullOpts.Authfile); err != nil {
-		return err
+		return "", err
 	}
 
 	store := *d.store
@@ -50,12 +50,12 @@ func (d *Service) Load(archiveName string) error {
 	}
 	decConfig, err := getDecryptConfig(d.pullOpts.DecryptionKeys)
 	if err != nil {
-		return errors.Wrapf(err, "unable to obtain decrypt config")
+		return "", errors.Wrapf(err, "unable to obtain decrypt config")
 	}
 
 	policy, ok := define.PolicyMap[d.pullOpts.PullPolicy]
 	if !ok {
-		return fmt.Errorf("unsupported pull policy %q", d.pullOpts.PullPolicy)
+		return "", fmt.Errorf("unsupported pull policy %q", d.pullOpts.PullPolicy)
 	}
 	options := buildah.PullOptions{
 		SignaturePolicyPath: d.pullOpts.SignaturePolicy,
@@ -75,10 +75,10 @@ func (d *Service) Load(archiveName string) error {
 	}
 	id, err := buildah.Pull(getContext(), fmt.Sprintf("%s:%s", labring_types.DefaultTransport, archiveName), options)
 	if err != nil {
-		return err
+		return "", err
 	}
-	fmt.Printf("%s\n", id)
-	return nil
+	logger.Info("load image %s", id)
+	return id, nil
 }
 
 func newPullOptions() *labring_types.PullOptions {

@@ -26,7 +26,7 @@ type RegistryService interface {
 type ImageService interface {
 	Tag(src, dst string) error
 	Save(imageName, archiveName string) error
-	Load(archiveName string) error
+	Load(archiveName string) (string, error)
 	Remove(force bool, images ...string) error
 	Inspect(images ...string) (ImageListOCIV1, error) //oci image
 	Build(options *BuildOptions, contextDir, imageName string) error

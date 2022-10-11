@@ -15,10 +15,16 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
 
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
@@ -62,11 +68,23 @@ func newRunCmd() *cobra.Command {
 				addr, _ := iputils.ListLocalHostAddrs()
 				runArgs.Masters = iputils.LocalIP(addr)
 			}
-			applier, err := apply.NewApplierFromArgs(args, runArgs)
+
+			images, err := args2Images(args)
+			if err != nil {
+				return err
+			}
+
+			applier, err := apply.NewApplierFromArgs(images, runArgs)
 			if err != nil {
 				return err
 			}
 			return applier.Apply()
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if !strings2.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
+				return fmt.Errorf("transport parameters must be %s or %s", types.OCIArchive, types.DockerArchive)
+			}
+			return nil
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info(getContact())
@@ -76,9 +94,30 @@ func newRunCmd() *cobra.Command {
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false,
 		"we also can input an --force flag to run app in this cluster by force")
+	runCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
 	return runCmd
 }
 
 func init() {
 	rootCmd.AddCommand(newRunCmd())
+}
+
+func args2Images(args []string) ([]string, error) {
+	var images []string
+	imageSvc, err := image.NewImageService()
+	if err != nil {
+		return images, err
+	}
+	for _, arg := range args {
+		if strings.HasSuffix(arg, ".tar") || strings.HasSuffix(arg, ".gz") {
+			id, err := imageSvc.Load(arg)
+			if err != nil {
+				return images, err
+			}
+			images = append(images, id)
+		} else {
+			images = append(images, arg)
+		}
+	}
+	return images, nil
 }

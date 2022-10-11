@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -27,17 +28,27 @@ import (
 
 func NewSaveCmd() *cobra.Command {
 	var archiveName string
+	var platform string
 	var saveCmd = &cobra.Command{
 		Use:     "save",
 		Short:   "save cloud image to a tar file",
 		Example: `sealos save -o kubernetes.tar labring/kubernetes:v1.24.0`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			registrySvc, err := image.NewImageService()
+			registrySvc, err := image.NewRegistryService()
 			if err != nil {
 				return err
 			}
-			return registrySvc.Save(args[0], archiveName)
+			err = registrySvc.Pull(types.ParsePlatform(platform), args[0])
+			if err != nil {
+				return err
+			}
+
+			imageSvc, err := image.NewImageService()
+			if err != nil {
+				return err
+			}
+			return imageSvc.Save(args[0], archiveName)
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if !strings.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
@@ -48,5 +59,6 @@ func NewSaveCmd() *cobra.Command {
 	}
 	saveCmd.Flags().StringVarP(&archiveName, "output", "o", "", "save image to tar archive file")
 	saveCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("save image transport to tar archive file.(optional value: %s , %s)", types.OCIArchive, types.DockerArchive))
+	saveCmd.Flags().StringVarP(&platform, "platform", "p", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
 	return saveCmd
 }
