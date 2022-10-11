@@ -76,6 +76,8 @@ jobs:
           .
 
   build-on-cluster-image:
+    needs:
+      - controlls-build
     runs-on: ubuntu-latest
     permissions:
       issues: write
