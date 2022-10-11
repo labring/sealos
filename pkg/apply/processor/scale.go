@@ -95,7 +95,13 @@ func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	return c.Runtime.DeleteNodes(c.NodesToDelete)
+	if err = c.Runtime.DeleteNodes(c.NodesToDelete); err != nil {
+		return err
+	}
+	if len(c.MastersToDelete) > 0 {
+		return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList())
+	}
+	return nil
 }
 
 func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
