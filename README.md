@@ -75,6 +75,9 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
+* Supported kubernetes versions: [240+ kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [kubernetes use cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
+* Other distributed [applications images](https://hub.docker.com/u/labring)
+
 > Single host
 
 ```shell
