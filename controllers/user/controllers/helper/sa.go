@@ -128,8 +128,9 @@ func (sac *ServiceAccount) generatorKubeConfig(cfg *rest.Config, token string) (
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  sac.ClusterName,
-				AuthInfo: sac.User,
+				Cluster:   sac.ClusterName,
+				AuthInfo:  sac.User,
+				Namespace: GetUsersNamespace(sac.User),
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{

@@ -18,8 +18,10 @@ package controllers
 
 import (
 	"context"
+	"sort"
 
 	"github.com/labring/sealos/controllers/user/controllers/cache"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"golang.org/x/sync/errgroup"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -57,6 +59,7 @@ func (r *UserGroupUserBindingController) Update(ctx context.Context, req ctrl.Re
 	}
 	pipelines := []func(ctx context.Context, ugBinding *userv1.UserGroupBinding){
 		r.initStatus,
+		r.syncClusterRoleGenerate,
 		r.syncClusterRoleBindingByOwner,
 		r.syncClusterRoleBinding,
 		r.syncRoleBinding,
@@ -67,6 +70,88 @@ func (r *UserGroupUserBindingController) Update(ctx context.Context, req ctrl.Re
 		return ctrl.Result{Requeue: true}, err
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *UserGroupUserBindingController) syncClusterRoleGenerate(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
+	clusterRoleBindingConditionType := userv1.ConditionType("UGUserRoleSyncReady")
+	condition := &userv1.Condition{
+		Type:               clusterRoleBindingConditionType,
+		Status:             v1.ConditionTrue,
+		LastTransitionTime: metav1.Now(),
+		LastHeartbeatTime:  metav1.Now(),
+		Reason:             string(userv1.Ready),
+		Message:            "sync ug user role successfully",
+	}
+	defer r.saveCondition(ugBinding, condition)
+	userName := ugBinding.Annotations[userAnnotationOwnerKey]
+	namespaces := cache.NewCache(r.Client, r.Logger).FetchNamespaceFromUserGroup(ctx, ugBinding.UserGroupRef)
+	namespaceSet := sets.NewString()
+	for _, namespace := range namespaces {
+		namespaceSet.Insert(namespace.Subject.Name)
+	}
+	namespaceList := namespaceSet.List()
+	sort.Strings(namespaceList)
+
+	roleBindingName := ugBinding.Name + "-by-generate"
+
+	r.Logger.V(1).Info("create generate cluster role")
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		clusterRole := &rbacv1.ClusterRole{}
+		clusterRole.Name = roleBindingName
+
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, clusterRole, func() error {
+			if err = controllerutil.SetControllerReference(ugBinding, clusterRole, r.Scheme); err != nil {
+				return err
+			}
+			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			clusterRole.Rules = []rbacv1.PolicyRule{
+				{
+					Verbs:         []string{"get", "watch", "list"},
+					APIGroups:     []string{""},
+					Resources:     []string{"namespaces"},
+					ResourceNames: namespaceList,
+				},
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "unable to create user UserGroupBinding generate clusterRole")
+		}
+		r.Logger.V(1).Info("create or update user UserGroupBinding generate clusterRole", "OperationResult", change)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(condition, "SyncUGUserRoleError", err)
+		r.Recorder.Eventf(ugBinding, v1.EventTypeWarning, "syncUGUserBinding", "Sync UGUserBinding generate clusterRole %s is error: %v", ugBinding.Name, err)
+	}
+	r.Logger.V(1).Info("create generate cluster role binding")
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		var change controllerutil.OperationResult
+		var err error
+		clusterRole := &rbacv1.ClusterRoleBinding{}
+		clusterRole.Name = roleBindingName
+
+		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, clusterRole, func() error {
+			if err = controllerutil.SetControllerReference(ugBinding, clusterRole, r.Scheme); err != nil {
+				return err
+			}
+			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
+			clusterRole.Subjects = helper.GetUsersSubject(ugBinding.Subject.Name)
+			clusterRole.RoleRef = rbacv1.RoleRef{
+				APIGroup: rbacv1.SchemeGroupVersion.Group,
+				Kind:     "ClusterRole",
+				Name:     roleBindingName,
+			}
+			return nil
+		}); err != nil {
+			return errors.Wrap(err, "unable to create user UserGroupBinding generate clusterRoleBinding")
+		}
+		r.Logger.V(1).Info("create or update user UserGroupBinding generate clusterRoleBinding", "OperationResult", change)
+		return nil
+	}); err != nil {
+		helper.SetConditionError(condition, "SyncUGUserRoleError", err)
+		r.Recorder.Eventf(ugBinding, v1.EventTypeWarning, "syncUGUserBinding", "Sync UGUserBinding generate clusterRoleBinding %s is error: %v", ugBinding.Name, err)
+	}
 }
 
 func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
@@ -92,13 +177,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Cont
 				return err
 			}
 			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
-			clusterRole.Subjects = []rbacv1.Subject{
-				{
-					Kind:     ugBinding.Subject.Kind,
-					Name:     ugBinding.Subject.Name,
-					APIGroup: rbacv1.SchemeGroupVersion.Group,
-				},
-			}
+			clusterRole.Subjects = helper.GetUsersSubject(ugBinding.Subject.Name)
 			switch ugBinding.RoleRef {
 			case userv1.RoleRefTypeUser:
 				clusterRole.RoleRef = rbacv1.RoleRef{
@@ -125,6 +204,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Cont
 		r.Recorder.Eventf(ugBinding, v1.EventTypeWarning, "syncUGUserBinding", "Sync UGUserBinding clusterRoleBinding %s is error: %v", ugBinding.Name, err)
 	}
 }
+
 func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
 	clusterRoleBindingConditionType := userv1.ConditionType("UGUserBindingSyncReadyByOwner")
 	condition := &userv1.Condition{
@@ -199,13 +279,16 @@ func (r *UserGroupUserBindingController) syncRoleBinding(ctx context.Context, ug
 						return err
 					}
 				}
+				var created bool
 				if !roleBinding.CreationTimestamp.IsZero() {
 					r.Logger.V(1).Info("namespace UserGroupBinding roleBinding is created", "OperationResult", change, "user", ugBinding.Subject.Name, "namespace", namespace.Name)
-					return nil
+					created = true
 				}
 				if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-					if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
-						return err
+					if !created {
+						if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
+							return err
+						}
 					}
 					roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
 					roleBinding.Subjects = helper.GetUsersSubject(ugBinding.Subject.Name)

@@ -147,14 +147,17 @@ func (r *UserGroupNamespaceBindingController) syncRoleBinding(ctx context.Contex
 						return err
 					}
 				}
+				var created bool
 				if !roleBinding.CreationTimestamp.IsZero() {
 					r.Logger.V(1).Info("namespace UserGroupBinding roleBinding is created", "OperationResult", change, "user", roleBinding.Name, "namespace", roleBinding.Namespace)
-					return nil
+					created = true
 				}
 
 				if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, user.DeepCopy(), func() error {
-					if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
-						return err
+					if !created {
+						if err = controllerutil.SetControllerReference(ugBinding, roleBinding, r.Scheme); err != nil {
+							return err
+						}
 					}
 					roleBinding.Annotations = map[string]string{userAnnotationOwnerKey: userName}
 					roleBinding.Subjects = helper.GetUsersSubject(user.Subject.Name)
