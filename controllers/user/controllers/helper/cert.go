@@ -107,8 +107,9 @@ func (c *Cert) KubeConfig(config *rest.Config, client client.Client) (*api.Confi
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  c.ClusterName,
-				AuthInfo: c.User,
+				Cluster:   c.ClusterName,
+				AuthInfo:  c.User,
+				Namespace: GetUsersNamespace(c.User),
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{

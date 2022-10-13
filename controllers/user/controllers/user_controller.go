@@ -241,15 +241,23 @@ func syncReNewConfig(user *userv1.User) (*api.Config, *string, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+		for _, ctx := range config.Contexts {
+			if ctx.Namespace == "" {
+				config = nil
+				ev := fmt.Sprintf("User %s Namespace is empty", user.Name)
+				event = &ev
+				return config, event, err
+			}
+		}
 		if info, ok := config.AuthInfos[user.Name]; ok {
 			if info != nil {
-				if info.ClientCertificateData == nil {
-					return config, event, err
-				}
 				if info.Token == "" {
 					config = nil
 					ev := fmt.Sprintf("User %s Token is empty", user.Name)
 					event = &ev
+					return config, event, err
+				}
+				if info.ClientCertificateData == nil {
 					return config, event, err
 				}
 				cert, err := helper.DecodeX509CertificateBytes(info.ClientCertificateData)

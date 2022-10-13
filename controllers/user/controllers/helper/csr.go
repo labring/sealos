@@ -112,8 +112,9 @@ func (csr *CSR) KubeConfig(config *rest.Config, client client.Client) (*api.Conf
 		},
 		Contexts: map[string]*api.Context{
 			ctx: {
-				Cluster:  csr.ClusterName,
-				AuthInfo: csr.User,
+				Cluster:   csr.ClusterName,
+				AuthInfo:  csr.User,
+				Namespace: GetUsersNamespace(csr.User),
 			},
 		},
 		AuthInfos: map[string]*api.AuthInfo{

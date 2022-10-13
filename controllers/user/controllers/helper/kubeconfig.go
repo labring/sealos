@@ -126,14 +126,13 @@ func GetUsersSubject(user string) []rbacV1.Subject {
 	}
 	return []rbacV1.Subject{
 		{
-			Kind:     "User",
-			Name:     user,
-			APIGroup: rbacV1.SchemeGroupVersion.Group,
-		},
-		{
 			Kind:      "ServiceAccount",
 			Name:      user,
 			Namespace: defaultNamespace,
 		},
 	}
+}
+
+func GetUsersNamespace(user string) string {
+	return fmt.Sprintf("ns-%s", user)
 }
