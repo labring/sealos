@@ -4941,6 +4941,12 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: tigera-operator
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: quay.io/tigera/operator:v1.17.4
           imagePullPolicy: IfNotPresent
           command:

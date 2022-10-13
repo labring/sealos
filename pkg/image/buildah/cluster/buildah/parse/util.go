@@ -48,11 +48,13 @@ func LookupImage(ctx *types.SystemContext, store storage.Store, image string) (*
 // ExportFromReader reads bytes from given reader and exports to external tar, directory or stdout.
 func ExportFromReader(input io.Reader, opts define.BuildOutputOption) error {
 	var err error
+	var path string
 	if !filepath.IsAbs(opts.Path) {
-		opts.Path, err = filepath.Abs(opts.Path)
+		path, err = filepath.Abs(opts.Path)
 		if err != nil {
 			return err
 		}
+		opts.Path = path
 	}
 	if opts.IsDir {
 		// In order to keep this feature as close as possible to

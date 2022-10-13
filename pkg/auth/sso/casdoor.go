@@ -149,15 +149,18 @@ func (c *CasdoorClient) GetUserInfo(accessToken string) (*User, error) {
 }
 
 func (c *CasdoorClient) newCasdoorInitData() (*CasdoorInitData, error) {
-	var err error
-	c.ClientID, err = utils.RandomHexStr(10)
+	clientID, err := utils.RandomHexStr(10)
 	if err != nil {
 		return nil, errors.Wrap(err, "Generate Casdoor client ID failed")
 	}
-	c.ClientSecret, err = utils.RandomHexStr(20)
+	c.ClientID = clientID
+
+	clientSecret, err := utils.RandomHexStr(20)
 	if err != nil {
 		return nil, errors.Wrap(err, "Generate Casdoor client secret failed")
 	}
+	c.ClientSecret = clientSecret
+
 	// Generate jwt certificate and private key
 	certificate, privateKey, err := utils.CreateJWTCertificateAndPrivateKey()
 	if err != nil {

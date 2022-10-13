@@ -86,6 +86,12 @@ spec:
     spec:
       containers:
         - name: casdoor-server
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: casbin/casdoor:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -144,8 +150,14 @@ spec:
         app: mysql
     spec:
       containers:
-        - image: mysql:8.0.25
-          name: mysql
+        - name: mysql
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: mysql:8.0.25
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
@@ -216,8 +228,14 @@ spec:
         app: casdoor-local-cdn
     spec:
       containers:
-        - image: labring/docker-casbin:main
-          name: docker-casbin
+        - name: docker-casbin
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: labring/docker-casbin:main
           ports:
             - containerPort: 80
               name: nginx
