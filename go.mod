@@ -27,6 +27,7 @@ require (
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0
 	github.com/opencontainers/go-digest v1.0.1-0.20220411205349-bde1400a84be
