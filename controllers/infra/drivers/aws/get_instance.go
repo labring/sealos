@@ -19,8 +19,10 @@ package aws
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -137,7 +139,7 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 			}
 			hosts.Count++
 			metadata := v1.Metadata{
-				IP: []string{*i.PrivateIpAddress},
+				IP: []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: *i.PrivateIpAddress}, {IPType: common.IPTypePublic, IPValue: *i.PublicIpAddress}},
 				ID: *i.InstanceId,
 			}
 			hosts.Metadata = append(hosts.Metadata, metadata)
@@ -168,7 +170,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 		},
 	}
 
-	result, err := GetInstances(context.TODO(), client, input)
+	result, err := retryGetInstance(common.TryTimes, common.TrySleepTime, client, input)
 	if err != nil {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
 	}
@@ -181,7 +183,7 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 	for _, r := range result.Reservations {
 		for j := range r.Instances {
 			i := r.Instances[j]
-			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown {
+			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown || i.State.Name == types.InstanceStateNameStopping || i.State.Name == types.InstanceStateNameStopped {
 				continue
 			}
 			index, err := getIndex(i)
@@ -199,9 +201,8 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 					disksID = append(disksID, vid)
 				}
 			}
-
 			metadata := v1.Metadata{
-				IP:     []string{*i.PrivateIpAddress},
+				IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: *i.PrivateIpAddress}, {IPType: common.IPTypePublic, IPValue: *i.PublicIpAddress}},
 				ID:     *i.InstanceId,
 				DiskID: disksID,
 			}
@@ -325,4 +326,33 @@ func getIndex(i types.Instance) (int, error) {
 		}
 	}
 	return -1, fmt.Errorf("not found index tag: %v", i.Tags)
+}
+
+func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+retry:
+	for i := 0; i < tryTimes; i++ {
+		result, _ := GetInstances(context.TODO(), client, inputGetInstance)
+		for _, r := range result.Reservations {
+			if !instancesPublicIPAddressIsReady(r.Instances) {
+				if i == tryTimes-1 {
+					break retry
+				}
+				time.Sleep(trySleepTime * time.Duration(math.Pow(2, float64(i))))
+				continue retry
+			}
+		}
+		return result, nil
+	}
+	return nil, fmt.Errorf("retry get instance action timeout: no public ip")
+}
+
+func instancesPublicIPAddressIsReady(instances []types.Instance) bool {
+	for j := range instances {
+		if *instances[j].State.Code == 0 || *instances[j].State.Code == 16 {
+			if instances[j].PublicIpAddress == nil {
+				return false
+			}
+		}
+	}
+	return true
 }

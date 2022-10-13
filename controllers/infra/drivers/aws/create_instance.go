@@ -226,7 +226,8 @@ func (d Driver) createKeyPair(infra *v1.Infra) error {
 		return fmt.Errorf("create key pair error:%v", err)
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
-	infra.Status.SSHPrivateKey = *result.KeyFingerprint
+	infra.Spec.SSH.PkData = *result.KeyMaterial
+
 	mutex.Unlock()
 	return nil
 }

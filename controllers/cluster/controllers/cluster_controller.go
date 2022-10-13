@@ -44,6 +44,7 @@ type ClusterReconciler struct {
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -78,6 +79,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err != nil {
 		logger.Error("get instances error: %v", err)
 		return ctrl.Result{}, err
+	}
+
+	if cluster.Spec.SSH.PkData == "" {
+		cluster.Spec.SSH.PkData = infra.Spec.SSH.PkData
 	}
 
 	err = r.applier.ReconcileCluster(infra, hosts, cluster)

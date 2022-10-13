@@ -22,8 +22,6 @@ import (
 
 	"k8s.io/client-go/tools/record"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/controllers/infra/drivers"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,7 +59,6 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	infra := &infrav1.Infra{}
 
 	if err := r.Get(context.TODO(), req.NamespacedName, infra); err != nil {
-		logger.Debug("ignore not found infra error: %v", err)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -70,6 +67,12 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
 		return ctrl.Result{}, err
 	}
+
+	if err = r.Update(ctx, infra); err != nil {
+		r.recorder.Eventf(infra, "Error", "infra update failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+
 	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
 
 	return ctrl.Result{}, nil

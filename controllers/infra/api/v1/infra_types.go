@@ -19,7 +19,7 @@ package v1
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	v1bata1 "github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/kyaml/resid"
@@ -73,10 +73,16 @@ var ec2p map[string]int64
 // ebs unit: CNY cents/GB-month
 var ebs map[string]int64
 
+type IPAddress struct {
+	IPType  string `json:"ipType,omitempty"`
+	IPValue string `json:"ipValue,omitempty"`
+}
+
 type Metadata struct {
-	IP     []string `json:"ips,omitempty"`
-	ID     string   `json:"id,omitempty"`
-	DiskID []string `json:"diskId,omitempty"`
+	// 0 private , 1 public
+	IP     []IPAddress `json:"ipaddress,omitempty"`
+	ID     string      `json:"id,omitempty"`
+	DiskID []string    `json:"diskId,omitempty"`
 }
 
 type Hosts struct {
@@ -144,7 +150,7 @@ type InfraSpec struct {
 	// RegionIDs is cloud provider regionID list
 	RegionIDs []string    `json:"regionIDs,omitempty"`
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`
-	SSH       v1beta1.SSH `json:"ssh,omitempty"`
+	SSH       v1bata1.SSH `json:"ssh,omitempty"`
 	Hosts     []Hosts     `json:"hosts,omitempty"`
 	// Availability Zone
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
@@ -155,8 +161,6 @@ type InfraStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	//important: sshPrivateKey
-	SSHPrivateKey string
 }
 
 //+kubebuilder:object:root=true
@@ -211,7 +215,7 @@ func (i *Infra) QueryPrice() (int64, error) {
 
 func init() {
 	ec2p = map[string]int64{
-		"t2.micro":   int64(0),
+		"t2.micro":   int64(10),
 		"t2.small":   int64(22),
 		"t2.medium":  int64(43),
 		"t2.large":   int64(86),

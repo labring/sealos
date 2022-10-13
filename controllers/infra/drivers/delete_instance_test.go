@@ -27,7 +27,7 @@ func TestDriver_DeleteInstances(t *testing.T) {
 				Arch:      "",
 				Image:     "ami-05248307900d52e3a",
 				Disks:     nil,
-				Metadata:  []v1.Metadata{{IP: []string{"52.80.216.170"}, ID: "i-0d46f2376f8bbd138"}},
+				Metadata:  []v1.Metadata{},
 			}},
 			false,
 		},

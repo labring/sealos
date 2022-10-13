@@ -32,7 +32,7 @@ import (
 
 // SSH connection operation
 func (s *SSH) connect(host string) (*ssh.Client, error) {
-	auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkPassword)
+	auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkData, s.PkPassword)
 	config := ssh.Config{
 		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
 	}
@@ -81,7 +81,13 @@ func (s *SSH) Connect(host string) (*ssh.Client, *ssh.Session, error) {
 	return client, session, nil
 }
 
-func (s *SSH) sshAuthMethod(password, pkFile, pkPasswd string) (auth []ssh.AuthMethod) {
+func (s *SSH) sshAuthMethod(password, pkFile, pkData, pkPasswd string) (auth []ssh.AuthMethod) {
+	if pkData != "" {
+		am, err := s.sshPrivateKeyDataMethod(pkData, pkPasswd)
+		if err == nil {
+			auth = append(auth, am)
+		}
+	}
 	if fileExist(pkFile) {
 		am, err := s.sshPrivateKeyMethod(pkFile, pkPasswd)
 		if err == nil {
@@ -110,6 +116,28 @@ func (s *SSH) sshPrivateKeyMethod(pkFile, pkPassword string) (am ssh.AuthMethod,
 	} else {
 		bufPwd := []byte(pkPassword)
 		pk, err = ssh.ParsePrivateKeyWithPassphrase(pkData, bufPwd)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return ssh.PublicKeys(pk), nil
+}
+
+// Authentication with a private key,private key has password and no password to verify in this
+func (s *SSH) sshPrivateKeyDataMethod(pkData, pkPassword string) (am ssh.AuthMethod, err error) {
+	if err != nil {
+		return nil, err
+	}
+
+	var pk ssh.Signer
+	if pkPassword == "" {
+		pk, err = ssh.ParsePrivateKey([]byte(pkData))
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		bufPwd := []byte(pkPassword)
+		pk, err = ssh.ParsePrivateKeyWithPassphrase([]byte(pkData), bufPwd)
 		if err != nil {
 			return nil, err
 		}
