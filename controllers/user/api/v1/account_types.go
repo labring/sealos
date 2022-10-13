@@ -63,6 +63,7 @@ type AccountStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:printcolumn:name="balance",type=integer,JSONPath=".status.balance",description="user's balance"
 
 // Account is the Schema for the accounts API
 type Account struct {

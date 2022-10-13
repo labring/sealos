@@ -118,6 +118,8 @@ spec:
                     type: string
                   pkPasswd:
                     type: string
+                  pkname:
+                    type: string
                   port:
                     type: integer
                   user:

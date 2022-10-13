@@ -1,5 +1,3 @@
-configMap
-```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -28,12 +26,3 @@ data:
       price: 1
       unit: G
       describe: cost per gigabyte of storage per minute（price:100 = 1¥）
-```
-
-add configmap in config/manager/manager.yaml
-```yaml
-  image: controller:latest
-  envFrom:
-    - configMapRef:
-        name: price-list
-```

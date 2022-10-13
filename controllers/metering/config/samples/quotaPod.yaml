@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-test
+spec:
+  containers:
+    - name: pod-test
+      image: ubuntu
+      securityContext:
+        runAsNonRoot: true
+        allowPrivilegeEscalation: false
+      command: ["/bin/sh"]
+      args: ["-c", "while true; do echo hello; sleep 10;done"]
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "1"
+        limits:
+          memory: "1Gi"
+          cpu: "1"

@@ -32,6 +32,10 @@ spec:
         args:
         - --leader-elect
         image: controller:latest
+        envFrom:
+          - configMapRef:
+              name: price-list
+        imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

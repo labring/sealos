@@ -1,12 +1,9 @@
 /*
 Copyright 2022.
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,15 +16,16 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	"time"
+
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 
@@ -35,10 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -58,6 +54,12 @@ type MeteringReconcile struct {
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resource-quotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=user.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=user.sealos.io,resources=accounts/status,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -74,16 +76,16 @@ func DefaultResourceQuota() corev1.ResourceList {
 		corev1.ResourceMemory:       resource.MustParse("1Gi"),
 		corev1.ResourceLimitsCPU:    resource.MustParse("1"),
 		corev1.ResourceLimitsMemory: resource.MustParse("1Gi"),
+		//For all PVCs, the total demand for storage resources cannot exceed this value
+		corev1.ResourceRequestsStorage: resource.MustParse("10Gi"),
+		//Local ephemeral storage
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("10Gi"),
 	}
 }
-
-// metering belong to account，resourceQuota belong to metering
 
 func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger = log.FromContext(ctx)
 	var metering meteringv1.Metering
-	r.Logger.Info("enter reconcile", "name: ", req.Name, "namespace: ", req.Namespace)
-
 	// if create a user namespace ,will enter this reconcile
 	if req.Name != SealosSystemNamespace {
 		var ns corev1.Namespace
@@ -100,7 +102,6 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			r.Logger.Error(err, "Failed to get Metering")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-
 		// get or create resourceQuota
 		if err = r.syncResourceQuota(ctx, metering); err != nil {
 			return ctrl.Result{}, err
@@ -109,29 +110,29 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-		//// metering finalizer
-		//if metering.DeletionTimestamp.IsZero() {
-		//	if controllerutil.AddFinalizer(&metering, FinalizerName) == true {
-		//		//TODO delete resource quota
-		//		if err := r.Update(ctx, &metering); err != nil {
-		//			return ctrl.Result{}, err
-		//		}
-		//	}
-		//} else {
-		//	if controllerutil.RemoveFinalizer(&metering, FinalizerName) == true {
-		//		if err := r.Update(ctx, &metering); err != nil {
-		//			return ctrl.Result{}, err
-		//		}
-		//	}
-		//	return ctrl.Result{}, nil
-		//}
+		// metering finalizer
+		if metering.DeletionTimestamp.IsZero() {
+			if controllerutil.AddFinalizer(&metering, FinalizerName) {
+				//TODO delete resource quota
+				if err := r.Update(ctx, &metering); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		} else {
+			if controllerutil.RemoveFinalizer(&metering, FinalizerName) {
+				if err := r.Update(ctx, &metering); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+			return ctrl.Result{}, nil
+		}
 	}
 	// get or create resourceQuota
 	if err := r.syncResourceQuota(ctx, metering); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	r.Logger.Info("update BillingList")
+	r.Logger.V(1).Info("update BillingList", "ns", req.NamespacedName)
 	err := r.updateBillingList(ctx, &metering)
 	if err != nil {
 		r.Logger.Error(err, err.Error())
@@ -140,7 +141,6 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// Ensure the deployment size is the same as the spec
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, nil
 }
-
 func (r *MeteringReconcile) createMetering(ctx context.Context, owner string, ns corev1.Namespace) (meteringv1.Metering, error) {
 	var metering meteringv1.Metering
 	err := r.Get(ctx, client.ObjectKey{Namespace: SealosSystemNamespace, Name: fmt.Sprintf("metering-%v", ns.Name)}, &metering)
@@ -170,7 +170,6 @@ func (r *MeteringReconcile) createMetering(ctx context.Context, owner string, ns
 	}
 	return metering, nil
 }
-
 func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, metering meteringv1.Metering) error {
 	quota := &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
@@ -178,6 +177,7 @@ func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, metering mete
 			Namespace: metering.Spec.Namespace,
 		},
 	}
+
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, quota, func() error {
 		quota.Spec.Hard = metering.Spec.Resources
 		return nil
@@ -186,28 +186,16 @@ func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, metering mete
 	}
 	return nil
 }
-
 func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *meteringv1.Metering) error {
 	// check timeInterval is after 1 minute
 	if time.Now().Unix()-metering.Status.LatestUpdateTime >= time.Minute.Milliseconds()/1000 {
-		infraList := &infrav1.InfraList{}
-		err := r.List(ctx, infraList)
+		// cost price need to pay
+		amount, err := r.CalculateCost(ctx, metering)
 		if err != nil {
-			return err
+			r.Logger.Error(err, "Failed to calculate cost")
+			//return err
 		}
-		var amount int64
-		for _, infra := range infraList.Items {
-			count, err := infra.QueryPrice()
-			r.Logger.Info("get infra :", "name: ", infra.Name, "namespace: ", infra.Namespace, "price: ", count)
-			if err != nil {
-				return err
-			}
-			amount += count
-		}
-		// amount is preHour,but billing is perMinute
-		amount /= 60
-		// TODO Billing for resources such as memory and hard disks under namesapce
-
+		r.Logger.Info("calculate total cost", "amount", amount)
 		metering.Status.BillingListM = append(metering.Status.BillingListM, NewBillingList(meteringv1.MINUTE, amount))
 		if len(metering.Status.BillingListM) >= 60 {
 			var totalAmountH int64
@@ -217,7 +205,6 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *met
 			metering.Status.BillingListM = metering.Status.BillingListM[60:]
 			metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, totalAmountH))
 		}
-
 		if len(metering.Status.BillingListH) >= 24 {
 			var totalAmountD int64
 			for i := 0; i < 24; i++ {
@@ -232,7 +219,6 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *met
 		if err != nil {
 			return err
 		}
-
 		account := &userv1.Account{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      metering.Spec.Owner,
@@ -246,17 +232,18 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *met
 		}
 		//deduct balance
 		account.Status.Balance -= amount
-
 		err = r.Status().Update(ctx, account)
 		if err != nil {
 			return err
 		}
 		r.Logger.Info("DebitSuccess ,", "user:", account.Name, "balance", account.Status.Balance)
-		//TODO reportNoMoneyError
-		//if account.Status.Balance < 0 {
-		//}
-	}
 
+		if account.Status.Balance > 0 && account.Status.Balance < 1000 {
+			r.Logger.Info("your balance is not enough", "balance", account.Status.Balance)
+		} else if account.Status.Balance < 0 {
+			r.Logger.Info("Your account is in arrears", "balance", account.Status.Balance)
+		}
+	}
 	return nil
 }
 

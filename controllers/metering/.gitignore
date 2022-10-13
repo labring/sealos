@@ -24,3 +24,4 @@ testbin/*
 *.swo
 *~
 *DS_Store
+build.sh
