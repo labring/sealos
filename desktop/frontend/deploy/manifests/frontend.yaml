@@ -77,6 +77,12 @@ spec:
       serviceAccountName: desktop-frontend
       containers:
         - name: desktop-frontend
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: fanux/frontend:latest
           imagePullPolicy: Always
           volumeMounts:

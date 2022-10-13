@@ -77,11 +77,11 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	var err error
-	r.driver, err = drivers.NewDriver()
+	driver, err := drivers.NewDriver()
 	if err != nil {
 		return fmt.Errorf("infra controller new driver failed: %v", err)
 	}
+	r.driver = driver
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("salos-infra-controller")
 

@@ -45,6 +45,7 @@ spec:
         imagePullPolicy: IfNotPresent
         name: manager
         securityContext:
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:

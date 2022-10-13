@@ -55,6 +55,7 @@ spec:
         image: controller:latest
         name: manager
         securityContext:
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
