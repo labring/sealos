@@ -430,42 +430,6 @@ func Test_Delete(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "delete invalid ip",
-			args: args{
-				cluster: &v2.Cluster{
-					TypeMeta:   metav1.TypeMeta{},
-					ObjectMeta: metav1.ObjectMeta{},
-					Spec: v2.ClusterSpec{
-						Image: nil,
-						SSH: v2.SSH{
-							User:   "root",
-							Passwd: "Fanux#123",
-							Port:   22,
-						},
-						Hosts: []v2.Host{
-							{
-								IPS:   []string{"192.168.16.99:22", "192.168.16.98:22", "192.168.16.97:22"},
-								Roles: []string{v2.MASTER},
-							},
-							{
-								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
-							},
-						},
-					},
-					Status: v2.ClusterStatus{},
-				},
-				scaleArgs: &ScaleArgs{
-					Cluster: &Cluster{
-						Masters:     "xxx:xx",
-						Nodes:       "",
-						ClusterName: "",
-					},
-				},
-			},
-			wantErr: true,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
