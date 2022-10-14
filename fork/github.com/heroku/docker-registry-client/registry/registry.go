@@ -34,8 +34,8 @@ func New(registryURL, username, password string, logFunc LogfCallback) (*Registr
  * SSL certificate verification.
  */
 func NewInsecure(registryURL, username, password string, logFunc LogfCallback) (*Registry, error) {
-	// nosemgrep
 	transport := &http.Transport{
+		// nosemgrep
 		TLSClientConfig: &tls.Config{
 			// TODO: Why?
 			InsecureSkipVerify: true, //nolint:gosec

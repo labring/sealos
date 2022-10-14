@@ -7,4 +7,5 @@ RUN --mount=target=/build tar xf /build/dist/sealos_*_$(echo ${TARGETPLATFORM} |
 
 # nosemgrep: dockerfile.security.missing-user.missing-user
 ENTRYPOINT ["/usr/bin/sealos"]
+# nosemgrep: dockerfile.security.missing-user.missing-user
 CMD ["--help"]

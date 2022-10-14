@@ -223,6 +223,7 @@ func (runtime *ContainerdRuntime) RemoveContainers(containers []string) error {
 			// don't stop on errors, try to remove as many containers as possible
 			errs = append(errs, errors.Wrapf(err, "failed to stop running pod %s: output: %s, error", container, string(out)))
 		} else {
+			// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 			out, err = runtime.exec.Command("crictl", "-r", runtime.criSocket, "rmp", container).CombinedOutput()
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "failed to remove running container %s: output: %s, error", container, string(out)))
@@ -242,6 +243,7 @@ func (runtime *DockerRuntime) RemoveContainers(containers []string) error {
 			// don't stop on errors, try to remove as many containers as possible
 			errs = append(errs, errors.Wrapf(err, "failed to stop running container %s: output: %s, error", container, string(out)))
 		} else {
+			// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 			out, err = runtime.exec.Command("docker", "rm", "--volumes", container).CombinedOutput()
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "failed to remove running container %s: output: %s, error", container, string(out)))

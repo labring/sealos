@@ -2,8 +2,7 @@ FROM gcr.io/distroless/static:nonroot
 ARG TARGETARCH
 
 WORKDIR /
-RUN useradd -u 1337 terminal
-USER terminal
+USER 65532:65532
 
 COPY bin/controller-terminal-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]
