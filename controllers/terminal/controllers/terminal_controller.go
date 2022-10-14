@@ -195,9 +195,9 @@ func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *term
 		}
 		roleBinding.Subjects = []rbacv1.Subject{
 			{
-				Kind:     "User",
-				Name:     terminal.Spec.User,
-				APIGroup: "rbac.authorization.k8s.io",
+				Kind:      "ServiceAccount",
+				Name:      terminal.Spec.User,
+				Namespace: "user-system",
 			},
 		}
 
@@ -324,7 +324,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	envs = []corev1.EnvVar{
 		{Name: "APISERVER", Value: terminal.Spec.APIServer},
 		{Name: "USER_TOKEN", Value: terminal.Spec.Token},
-		{Name: "NAMESPACE", Value: terminal.Namespace},
+		{Name: "NAMESPACE", Value: terminal.Spec.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
 	}
 
@@ -388,6 +388,11 @@ func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *ter
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
 		terminal.Spec.APIServer = r.Config.Host
+		hasUpdate = true
+	}
+
+	if terminal.Spec.Namespace == "" {
+		terminal.Spec.Namespace = terminal.Namespace
 		hasUpdate = true
 	}
 
