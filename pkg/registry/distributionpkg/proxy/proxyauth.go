@@ -124,6 +124,7 @@ func ping(manager challenge.Manager, endpoint string) error {
 
 // #nosec
 func newClientSkipVerify() *http.Client {
+	// nosemgrep
 	return &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{

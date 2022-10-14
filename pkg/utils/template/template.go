@@ -18,7 +18,7 @@ package template
 
 import (
 	"bytes"
-	"text/template"
+	"html/template"
 )
 
 func FromContent(templateContent string, param interface{}) (string, error) {

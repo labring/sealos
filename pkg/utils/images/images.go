@@ -18,7 +18,6 @@ package images
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
@@ -47,12 +46,6 @@ func LoadImages(imageDir string) ([]string, error) {
 	}
 	imageList = str.RemoveDuplicate(imageList)
 	return imageList, nil
-}
-
-func RunBashCmd(cmd string) (string, error) {
-	logger.Info("cmd for bash in host: %s", cmd)
-	result, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput() // #nosec
-	return string(result), err
 }
 
 // crictl images -q

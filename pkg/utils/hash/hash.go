@@ -15,7 +15,7 @@
 package hash
 
 import (
-	"crypto/md5" // #nosec
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"hash"
@@ -28,41 +28,35 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-func MD5(body []byte) string {
-	bytes := md5.Sum(body) // #nosec
+func Digest(body []byte) string {
+	bytes := sha256.Sum256(body)
 	return hex.EncodeToString(bytes[:])
 }
 
-// FileMD5 count file md5
-func FileMD5(path string) string {
+// FileDigest generates the sha256 digest of a file.
+func FileDigest(path string) string {
 	file, err := os.Open(filepath.Clean(path))
 	if err != nil {
-		logger.Error("get file md5 failed %v", err)
+		logger.Error("get file digest failed %v", err)
 		return ""
 	}
 
-	m := md5.New() // #nosec
-	if _, err := io.Copy(m, file); err != nil {
-		logger.Error("get file md5 failed %v", err)
+	h := sha256.New()
+	if _, err := io.Copy(h, file); err != nil {
+		logger.Error("get file digest failed %v", err)
 		return ""
 	}
 
-	fileMd5 := fmt.Sprintf("%x", m.Sum(nil))
-	return fileMd5
+	fileDigest := fmt.Sprintf("%x", h.Sum(nil))
+	return fileDigest
 }
 
 // ToString gen hash string base on actual values of the nested objects.
 func ToString(obj interface{}) string {
-	hasher := md5.New()
+	hasher := sha256.New()
 	DeepHashObject(hasher, obj)
 	return hex.EncodeToString(hasher.Sum(nil)[0:])
 }
-
-//func Hash(data interface{}) string {
-//	dataByte, _ := json.Marshal(data)
-//	sum := sha256.Sum256(dataByte)
-//	return fmt.Sprintf("%x", sum)
-//}
 
 // DeepHashObject writes specified object to hash using the spew library
 // which follows pointers and prints actual values of the nested objects

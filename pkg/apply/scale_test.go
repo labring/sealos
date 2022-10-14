@@ -24,7 +24,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-func Test_Delete(t *testing.T) {
+func TestDelete(t *testing.T) {
 	type args struct {
 		cluster   *v2.Cluster
 		scaleArgs *ScaleArgs
@@ -286,7 +286,6 @@ func Test_Delete(t *testing.T) {
 			},
 			wantErr: true,
 		},
-
 		{
 			name: "delete range",
 			args: args{
@@ -436,7 +435,7 @@ func Test_Delete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Delete(tt.args.cluster, tt.args.scaleArgs)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("deleteNodes() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("print des cluster hosts: %v", tt.args.cluster.Spec.Hosts)
 		})
@@ -748,6 +747,49 @@ func TestJoin(t *testing.T) {
 				t.Errorf("Join() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			t.Logf("print des cluster hosts: %v", tt.args.cluster.Spec.Hosts)
+		})
+	}
+}
+
+func TestNewScaleApplierFromArgs(t *testing.T) {
+	tests := []struct {
+		name    string
+		op      string
+		args    *ScaleArgs
+		wantErr bool
+	}{
+		{
+			name: "add empty",
+			op:   "add",
+			args: &ScaleArgs{
+				Cluster: &Cluster{
+					Masters:     "",
+					Nodes:       "",
+					ClusterName: "",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "delete master0",
+			op:   "delete",
+			args: &ScaleArgs{
+				Cluster: &Cluster{
+					Masters:     "192.168.1.1",
+					Nodes:       "",
+					ClusterName: "",
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewScaleApplierFromArgs(tt.args, tt.op)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewScaleApplierFromArgs() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			// t.Logf("print des cluster hosts: %v", tt.args.cluster.Spec.Hosts)
 		})
 	}
 }

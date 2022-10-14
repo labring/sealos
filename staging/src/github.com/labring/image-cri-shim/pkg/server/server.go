@@ -136,6 +136,7 @@ func (s *server) createGrpcServer() error {
 		}
 	}
 
+	// nosemgrep: go.grpc.security.grpc-server-insecure-connection.grpc-server-insecure-connection
 	s.server = grpc.NewServer()
 
 	return nil

@@ -23,18 +23,18 @@ import (
 	"testing"
 )
 
-const fileContent = "content"
+// const fileContent = "content"
 
-type fileDef struct {
-	name    string
-	content string
-}
+// type fileDef struct {
+// 	name    string
+// 	content string
+// }
 
-type dirDef struct {
-	path   string
-	files  []fileDef
-	subDir []dirDef
-}
+// type dirDef struct {
+// 	path   string
+// 	files  []fileDef
+// 	subDir []dirDef
+// }
 
 func TestTarWithoutRootDir(t *testing.T) {
 	arch := NewArchive(false, false)
@@ -51,6 +51,9 @@ func TestTarWithRootDir(t *testing.T) {
 		t.Error(err)
 	}
 	tmp, err := os.Create("/var/lib/sealos/tmp/aaa.gzip")
+	if err != nil {
+		t.Error(err)
+	}
 	//tmp, err := os.CreateTemp("/tmp", "tar")
 	_, err = io.Copy(tmp, reader)
 	if err != nil {

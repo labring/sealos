@@ -336,6 +336,7 @@ func decompress(src io.Reader, dst string, options Options) (int64, error) {
 						logger.Fatal("failed to close file")
 					}
 				}()
+				// nosemgrep: go.lang.security.decompression_bomb.potential-dos-via-decompression-bomb
 				if _, inErr = io.Copy(fileToWrite, tr); inErr != nil {
 					return inErr
 				}

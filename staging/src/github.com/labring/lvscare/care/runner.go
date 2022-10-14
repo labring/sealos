@@ -151,19 +151,24 @@ func (r *runner) ValidateAndSetDefaults() error {
 		return err
 	}
 
+	var ruler Ruler
 	switch r.Mode {
 	case routeMode:
 		if r.options.TargetIP == nil {
 			logger.Warn("running routeMode and Target IP is not valid IP, skipping")
 			break
 		}
-		r.ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
+		ruler, err = newRouteImpl(virtualIP, r.options.TargetIP.String())
 	case linkMode:
-		r.ruler, err = newIptablesImpl(r.options.IfaceName, r.options.MasqueradeBit, r.options.VirtualServer)
+		ruler, err = newIptablesImpl(r.options.IfaceName, r.options.MasqueradeBit, r.options.VirtualServer)
 	case "":
 		// do nothing, disable ruler
 	default:
 		return fmt.Errorf("not yet support mode %s", r.Mode)
 	}
+	if err == nil {
+		r.ruler = ruler
+	}
+
 	return err
 }

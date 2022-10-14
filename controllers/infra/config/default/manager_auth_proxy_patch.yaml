@@ -25,6 +25,7 @@ spec:
       containers:
       - name: kube-rbac-proxy
         securityContext:
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:

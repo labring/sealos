@@ -18,6 +18,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/registry"
 
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
@@ -114,7 +115,7 @@ func (s *server) replaceImage(image, action string) (newImage string) {
 	// so we'd better tag "sealer.hub/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
 	//for image id]
 	newImage = image
-	images, err := img.RunBashCmd("crictl images -q")
+	images, err := exec.RunBashCmd("crictl images -q")
 	if err != nil {
 		logger.Warn("error executing `crictl images -q`: %s", err.Error())
 		return

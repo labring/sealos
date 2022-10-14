@@ -1,9 +1,8 @@
 FROM ubuntu:18.04
-
 ARG TARGETARCH
-
-ENTRYPOINT ["/usr/bin/sealos"]
 
 WORKDIR /usr/bin/
 
 COPY --chmod=0755 /bin/sealos-$TARGETARCH/sealos .
+# nosemgrep: dockerfile.security.missing-user.missing-user
+ENTRYPOINT ["/usr/bin/sealos"]

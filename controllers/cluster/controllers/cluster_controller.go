@@ -96,11 +96,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	var err error
-	r.driver, err = drivers.NewDriver()
+	driver, err := drivers.NewDriver()
 	if err != nil {
 		return fmt.Errorf("cluster controller new driver failed: %v", err)
 	}
+	r.driver = driver
 	r.applier = applier.NewApplier()
 
 	return ctrl.NewControllerManagedBy(mgr).

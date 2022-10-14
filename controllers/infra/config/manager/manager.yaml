@@ -55,6 +55,7 @@ spec:
         image: docker.io/xiaojie99999/infra:v0.0.1
         name: manager
         securityContext:
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:

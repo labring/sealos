@@ -16,8 +16,8 @@ package checker
 
 import (
 	"context"
+	"html/template"
 	"os"
-	"text/template"
 	"time"
 
 	"github.com/labring/sealos/pkg/constants"

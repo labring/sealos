@@ -4688,7 +4688,7 @@ spec:
     - 'downwardAPI'
     # Assume that persistentVolumes set up by the cluster admin are safe to use.
     - 'persistentVolumeClaim'
-  hostNetwork: true
+  hostNetwork: true # nosemgrep: yaml.kubernetes.security.hostnetwork-pod.hostnetwork-pod
   hostPorts:
     - min: 0
       max: 65535
@@ -4936,11 +4936,17 @@ spec:
         - effect: NoSchedule
           operator: Exists
       serviceAccountName: tigera-operator
-      hostNetwork: true
+      hostNetwork: true # nosemgrep: yaml.kubernetes.security.hostnetwork-pod.hostnetwork-pod
       # This must be set when hostNetwork is true or else the cluster services won't resolve
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: tigera-operator
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: quay.io/tigera/operator:v1.17.4
           imagePullPolicy: IfNotPresent
           command:

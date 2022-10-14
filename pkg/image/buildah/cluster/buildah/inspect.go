@@ -15,9 +15,9 @@ package buildah
 
 import (
 	"fmt"
+	"html/template"
 	"os"
 	"regexp"
-	"text/template"
 
 	"github.com/containers/buildah"
 	"github.com/pkg/errors"
