@@ -35,14 +35,14 @@
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
     "react-markdown": "^8.0.3",
-    "rehype-highlight": "^5.0.2",
+    "rehype-highlight": "^6.0.0",
     "sealos-desktop-sdk": "^0.1.4",
     "uuid": "^9.0.0",
     "zustand": "^4.1.2"
   },
   "devDependencies": {
     "@svgr/webpack": "^6.4.0",
-    "@types/node": "18.8.3",
+    "@types/node": "18.8.5",
     "@types/react": "18.0.21",
     "@types/react-dom": "18.0.6",
     "@types/uuid": "^8.3.4",
@@ -50,7 +50,7 @@
     "eslint": "8.25.0",
     "eslint-config-next": "12.3.1",
     "next-pwa": "^5.6.0",
-    "postcss": "^8.4.17",
+    "postcss": "^8.4.18",
     "sass": "^1.55.0",
     "tailwindcss": "^3.1.8",
     "typescript": "4.8.4"

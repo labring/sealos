@@ -1,4 +1,4 @@
-import { TAppDetail } from 'stores/app';
+import { TAppDetail } from 'applications/app_store/detail_page';
 const appDetailInfo: TAppDetail = {
   currentVersionInfo: {
     version: 'latest',
