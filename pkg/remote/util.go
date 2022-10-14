@@ -19,7 +19,7 @@ package remote
 import (
 	"bytes"
 	"fmt"
-	"text/template"
+	"html/template"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"

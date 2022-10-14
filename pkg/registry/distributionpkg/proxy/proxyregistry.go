@@ -107,6 +107,7 @@ func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named
 	tryClient := &http.Client{Transport: tr}
 	_, err := tryClient.Get(pr.remoteURL.String())
 	if err != nil && strings.Contains(err.Error(), certUnknown) {
+		// nosemgrep
 		tr = transport.NewTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 			authorizer)
 	}

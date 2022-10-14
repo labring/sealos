@@ -15,7 +15,7 @@
 package template
 
 import (
-	"text/template"
+	"html/template"
 )
 
 var defaultTpl *template.Template
