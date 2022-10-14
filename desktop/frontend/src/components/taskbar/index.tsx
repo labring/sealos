@@ -6,6 +6,7 @@ import styles from './taskbar.module.scss';
 
 import Sealos from '../../assets/icons/sealos.svg';
 import useLocalSession from 'hooks/useLocalSession';
+import TimeZone from './time_zone';
 
 const Taskbar = () => {
   const { openedApps, currentApp, switchApp, toggleStartMenu } = useAppStore((state) => state);
@@ -22,8 +23,8 @@ const Taskbar = () => {
           }}
         >
           <img
-            width={30}
-            height={30}
+            width={36}
+            height={36}
             src={localSession?.user?.avatar}
             alt=""
             className={styles.avatar}
@@ -39,13 +40,13 @@ const Taskbar = () => {
           <Icon src="github" width={24} />
         </div>
 
-        <div className={clsx(styles.tsIcon)}>
+        {/* <div className={clsx(styles.tsIcon)}>
           <Icon src="search" width={24} />
-        </div>
+        </div> */}
 
-        <div className={clsx(styles.tsIcon)}>
+        {/* <div className={clsx(styles.tsIcon)}>
           <Icon src="settings" width={24} />
-        </div>
+        </div> */}
 
         {openedApps.map((item, index) => {
           return (
@@ -78,25 +79,8 @@ const Taskbar = () => {
           <Icon className="mr-1" src="wifi" width={16} />
           <Battery />
         </div> */}
+        <TimeZone />
 
-        <div
-          className={clsx(styles.taskDate, 'm-1 handcr prtclk rounded hvlight')}
-          data-action="CALNTOGG"
-        >
-          <div>
-            {new Date().toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: 'numeric'
-            })}
-          </div>
-          <div>
-            {new Date().toLocaleDateString('en-US', {
-              year: '2-digit',
-              month: '2-digit',
-              day: 'numeric'
-            })}
-          </div>
-        </div>
         <Icon className={clsx(styles.graybd, 'my-4')} width={6} />
       </div>
     </div>

@@ -85,7 +85,36 @@ const useAppStore = create<TOSState>()(
   devtools(
     immer((set, get) => ({
       installedApps: [],
-      openedApps: [],
+      openedApps: [
+        {
+          name: 'Sealos',
+          icon: '/images/icons/home.png',
+          type: 'iframe',
+          data: {
+            url: 'https://www.sealos.io/',
+            desc: 'sealos'
+          },
+          gallery: [
+            'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+            'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+          ],
+          size: 'maximize'
+        },
+        {
+          name: 'Git',
+          icon: '/images/icons/github.png',
+          type: 'iframe',
+          data: {
+            url: 'https://github.com/labring/sealos',
+            desc: 'sealos github star'
+          },
+          gallery: [
+            'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+            'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+          ],
+          size: 'maximize'
+        }
+      ],
       currentApp: undefined,
       maxZIndex: 0,
       isHideStartMenu: true,

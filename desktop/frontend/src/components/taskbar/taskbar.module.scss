@@ -3,15 +3,19 @@
   --bg2: rgba(255, 255, 255, 0.67);
 
   position: absolute;
-  width: 100vw;
   height: 48px;
   color: var(--dark-txt);
   background: var(--bg1);
-  -webkit-backdrop-filter: saturate(3) blur(20px);
-  backdrop-filter: saturate(3) blur(20px);
-  bottom: 0;
+  bottom: 6px;
+  right: 0;
+  left: 0;
   z-index: 10000;
   display: flex;
+  border-radius: 20px;
+  margin: 0 12px ;
+  // width: 800px;
+  // margin: 0 auto;
+  padding: 0px 6px;
   justify-content: space-between;
 }
 
@@ -118,7 +122,7 @@
 }
 
 .avatar {
-  border-radius: 6px;
+  border-radius: 30px;
 }
 
 @keyframes popintro {
