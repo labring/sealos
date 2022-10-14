@@ -1,25 +1,31 @@
-## sealos build
+## sealos merge
 
-build an cloud image from a Kubefile
+merge multiple images into one
+
+### Synopsis
+
+sealos merge image1:latest image2:latest -i image3:latest
 
 ```
-sealos build [flags] PATH
+sealos merge [flags]
 ```
 
 ### Examples
 
 ```
-sealos build -t labring/kubernetes:v1.24.0 .
+
+merge images:
+	sealos merge kubernetes:v1.19.9 mysql:5.7.0 redis:6.0.0 -i new:0.1.0
+
 ```
 
 ### Options
 
 ```
-  -h, --help                 help for build
-  -f, --kubefile string      kubefile filepath (default "Kubefile")
+  -h, --help                 help for merge
+  -i, --image string         image new name
   -m, --max-pull-procs int   maximum number of goroutines for pulling (default 5)
       --platform string      set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm) (default "linux/amd64")
-  -t, --tag string           tagged name to apply to the built image
 ```
 
 ### Options inherited from parent commands
