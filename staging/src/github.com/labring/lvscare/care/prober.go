@@ -72,6 +72,7 @@ func (p *httpProber) ValidateAndSetDefaults() error {
 
 func (p *httpProber) Probe(host, port string) error {
 	if p.client == nil {
+		// nosemgrep
 		p.client = &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: p.InsecureSkipVerify},

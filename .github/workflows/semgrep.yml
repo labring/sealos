@@ -6,10 +6,7 @@ on:
   pull_request: {}
   # Scan mainline branches and report all findings:
   push:
-    branches: ["master", "main"]
-  # Schedule the CI job (this method uses cron syntax):
-  schedule:
-    - cron: '30 0 1,15 * *' # Scheduled for 00:30 UTC on both the 1st and 15th of the month
+    branches: ["main"]
 
 jobs:
   semgrep:

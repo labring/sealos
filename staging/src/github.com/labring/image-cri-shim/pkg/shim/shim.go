@@ -51,8 +51,6 @@ type shim struct {
 
 // NewShim creates a new shim instance.
 func NewShim(cfg *Config) (Shim, error) {
-	var err error
-
 	r := &shim{
 		cfg: cfg,
 	}
@@ -61,9 +59,11 @@ func NewShim(cfg *Config) (Shim, error) {
 		ImageSocket: cfg.ImageSocket,
 		DialNotify:  r.dialNotify,
 	}
-	if r.client, err = server.NewClient(cltopts); err != nil {
+	clt, err := server.NewClient(cltopts)
+	if err != nil {
 		return nil, shimError("failed to create shim client: %v", err)
 	}
+	r.client = clt
 
 	srvopts := server.Options{
 		Socket:     cfg.ShimSocket,
@@ -72,9 +72,11 @@ func NewShim(cfg *Config) (Shim, error) {
 		Mode:       0660,
 		CRIConfigs: cfg.CRIConfigs,
 	}
-	if r.server, err = server.NewServer(srvopts); err != nil {
+	srv, err := server.NewServer(srvopts)
+	if err != nil {
 		return nil, shimError("failed to create shim server: %v", err)
 	}
+	r.server = srv
 
 	return r, nil
 }

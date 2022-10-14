@@ -322,7 +322,7 @@ func splitHostPort(hostport string) (string, uint16, error) {
 	if err != nil {
 		return "", 0, err
 	}
-	p, err := strconv.Atoi(port)
+	p, err := strconv.ParseUint(port, 10, 16)
 	if err != nil {
 		return "", 0, err
 	}

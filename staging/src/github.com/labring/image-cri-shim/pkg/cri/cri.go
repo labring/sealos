@@ -107,6 +107,7 @@ func (runtime *DockerRuntime) IsDocker() bool {
 
 // IsRunning checks if runtime is running
 func (runtime *ContainerdRuntime) IsRunning() error {
+	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "info").CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
 	}
@@ -115,6 +116,7 @@ func (runtime *ContainerdRuntime) IsRunning() error {
 
 // IsRunning checks if runtime is running
 func (runtime *DockerRuntime) IsRunning() error {
+	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err := runtime.exec.Command("docker", "info").CombinedOutput(); err != nil {
 		return errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
 	}
@@ -127,6 +129,7 @@ func (runtime *DockerRuntime) CGroupDriver() (string, error) {
 	}
 	var err error
 	var out []byte
+	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	if out, err = runtime.exec.Command("docker", "info", "--format", "{{.CgroupDriver}}").CombinedOutput(); err != nil {
 		return "", errors.Wrapf(err, "container runtime is not running: output: %s, error", string(out))
 	}
@@ -194,6 +197,7 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 
 // ListKubeContainers lists running k8s CRI pods
 func (runtime *ContainerdRuntime) ListKubeContainers() ([]string, error) {
+	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 	out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "pods", "-q").CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrapf(err, "output: %s, error", string(out))
@@ -213,6 +217,7 @@ func (runtime *DockerRuntime) ListKubeContainers() ([]string, error) {
 func (runtime *ContainerdRuntime) RemoveContainers(containers []string) error {
 	errs := []error{}
 	for _, container := range containers {
+		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 		out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "stopp", container).CombinedOutput()
 		if err != nil {
 			// don't stop on errors, try to remove as many containers as possible
@@ -231,6 +236,7 @@ func (runtime *ContainerdRuntime) RemoveContainers(containers []string) error {
 func (runtime *DockerRuntime) RemoveContainers(containers []string) error {
 	errs := []error{}
 	for _, container := range containers {
+		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
 		out, err := runtime.exec.Command("docker", "stop", container).CombinedOutput()
 		if err != nil {
 			// don't stop on errors, try to remove as many containers as possible

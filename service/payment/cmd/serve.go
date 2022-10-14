@@ -41,7 +41,7 @@ func serve() {
 	http.Handle("/apidocs/", http.StripPrefix("/apidocs/", http.FileServer(http.Dir("/Users/emicklei/Projects/swagger-ui/dist"))))
 
 	log.Printf("start listening on localhost:8071")
-	log.Fatal(http.ListenAndServe(":8071", nil))
+	log.Fatal(http.ListenAndServe(":8071", nil)) // nosemgrep: go.lang.security.audit.net.use-tls.use-tls
 }
 
 func init() {

@@ -91,12 +91,14 @@ func NewClient(options CRIClientOptions) (Client, error) {
 
 // Connect attempts to establish gRPC client connections to the configured services.
 func (c *client) Connect(options ConnectOptions) (*grpc.ClientConn, error) {
-	var err error
-
 	kind, socket := "image services", c.options.ImageSocket
-	if c.icc, err = c.connect(kind, socket, options); err != nil {
+
+	icc, err := c.connect(kind, socket, options)
+	if err != nil {
 		return nil, err
 	}
+	c.icc = icc
+
 	return c.icc, nil
 }
 

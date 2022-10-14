@@ -86,6 +86,12 @@ spec:
       serviceAccountName: service-auth
       containers:
         - name: service-auth
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: fanux/auth:latest
           imagePullPolicy: Always
           # image: centos
