@@ -33,13 +33,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func (s *SSH) RemoteMd5Sum(host, remoteFilePath string) string {
-	cmd := fmt.Sprintf("md5sum %s | cut -d\" \" -f1", remoteFilePath)
-	remoteMD5, err := s.CmdToString(host, cmd, "")
+func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
+	cmd := fmt.Sprintf("sha256sum %s | cut -d\" \" -f1", remoteFilePath)
+	remoteHash, err := s.CmdToString(host, cmd, "")
 	if err != nil {
-		logger.Error("count remote md5 failed %s %s %v", host, remoteFilePath, err)
+		logger.Error("calculate remote sha256 sum failed %s %s %v", host, remoteFilePath, err)
 	}
-	return remoteMD5
+	return remoteHash
 }
 
 // CmdToString is in host exec cmd and replace to spilt str
@@ -160,13 +160,13 @@ func (s *SSH) copyLocalDirToRemote(host string, sftpClient *sftp.Client, localPa
 // solve the sesion
 func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localPath, remotePath string) error {
 	var (
-		srcMd5, dstMd5 string
+		srcHash, dstHash string
 	)
-	srcMd5 = hash.FileMD5(localPath)
+	srcHash = hash.FileDigest(localPath)
 	if s.remoteFileExist(host, remotePath) {
-		dstMd5 = s.RemoteMd5Sum(host, remotePath)
-		if srcMd5 == dstMd5 {
-			logger.Debug("remote dst %s already exists and is the latest version , skip copying process", remotePath)
+		dstHash = s.RemoteSha256Sum(host, remotePath)
+		if srcHash == dstHash {
+			logger.Debug("remote dst %s already exists and is the latest version, skip copying process", remotePath)
 			return nil
 		}
 	}
@@ -201,9 +201,10 @@ func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localP
 	if err != nil {
 		return err
 	}
-	dstMd5 = s.RemoteMd5Sum(host, remotePath)
-	if srcMd5 != dstMd5 {
-		return fmt.Errorf("[ssh][%s] validate md5sum failed %s != %s", host, srcMd5, dstMd5)
+
+	dstHash = s.RemoteSha256Sum(host, remotePath)
+	if srcHash != dstHash {
+		return fmt.Errorf("[ssh][%s] validate sha256 sum failed %s != %s", host, srcHash, dstHash)
 	}
 	return nil
 }
