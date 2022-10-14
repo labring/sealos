@@ -458,7 +458,7 @@ func Test_Delete(t *testing.T) {
 				},
 				scaleArgs: &ScaleArgs{
 					Cluster: &Cluster{
-						Masters:     "xxx",
+						Masters:     "xxx:xx",
 						Nodes:       "",
 						ClusterName: "",
 					},
