@@ -40,6 +40,8 @@ type TerminalSpec struct {
 	Keepalived string `json:"keepalived"`
 	//+kubebuilder:validation:Optional
 	APIServer string `json:"apiServer"`
+	//+kubebuilder:validation:Optional
+	Namespace string `json:"namespace"`
 }
 
 // TerminalStatus defines the observed state of Terminal

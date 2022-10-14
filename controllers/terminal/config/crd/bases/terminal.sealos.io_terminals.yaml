@@ -60,6 +60,8 @@ spec:
                 type: string
               keepalived:
                 type: string
+              namespace:
+                type: string
               replicas:
                 format: int32
                 type: integer
