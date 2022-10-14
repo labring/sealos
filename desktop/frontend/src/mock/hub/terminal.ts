@@ -59,35 +59,59 @@ const TerminalApplication: RunApplication = {
 
     const terminal_name = 'terminal-' + kube_user.name;
 
-    try {
-      const terminalDesc = await GetCRD(kc, terminal_meta, terminal_name);
-      if (
-        terminalDesc !== null &&
-        terminalDesc.body !== null &&
-        terminalDesc.body.status !== null
-      ) {
-        const terminalStatus = terminalDesc.body.status as terminalStatus;
-        if (terminalStatus.availableReplicas > 0) {
-          // temporarily add domain scheme
-          let domain = terminalStatus.domain || '';
-          if (!domain.startsWith('https://')) {
-            domain = 'https://' + domain;
-          }
+    const namespace = GetUserDefaultNameSpace(kube_user.name);
 
-          return Promise.resolve({
-            status: 200,
-            application_type: ApplicationType.IFrame,
-            iframe_page: domain
-          } as StartResp);
+    // first get user namespace crd
+    let terminal_meta_user = { ...terminal_meta };
+    terminal_meta_user.namespace = namespace;
+
+    try {
+      const terminalUserDesc = await GetCRD(kc, terminal_meta_user, terminal_name);
+      if (terminalUserDesc !== null && terminalUserDesc.body !== null) {
+        // then get real namespace crd
+        try {
+          const terminalDesc = await GetCRD(kc, terminal_meta, terminal_name);
+          if (
+            terminalDesc !== null &&
+            terminalDesc.body !== null &&
+            terminalDesc.body.status !== null
+          ) {
+            const terminalStatus = terminalDesc.body.status as terminalStatus;
+            if (terminalStatus.availableReplicas > 0) {
+              // temporarily add domain scheme
+              let domain = terminalStatus.domain || '';
+              if (!domain.startsWith('https://')) {
+                domain = 'https://' + domain;
+              }
+
+              return Promise.resolve({
+                status: 200,
+                application_type: ApplicationType.IFrame,
+                iframe_page: domain
+              } as StartResp);
+            }
+          }
+        } catch (err) {
+          // console.log(err);
+
+          if (err instanceof k8s.HttpError) {
+            return Promise.reject('http ' + err.body.code + ', ' + err.body.message);
+          } else {
+            if (typeof err === 'string') {
+              return Promise.reject(err);
+            }
+            if (err instanceof Error) {
+              return Promise.reject(err.message);
+            }
+            return Promise.reject(err);
+          }
         }
       }
     } catch (err) {
-      // console.log(err);
-
+      // this is user namespace error, error check
       if (err instanceof k8s.HttpError) {
         // if code == 404, we can run apply
         if (err.body.code !== 404) {
-          // if (err.body.code !== 404 && err.body.code !== 403) {
           return Promise.reject('http ' + err.body.code + ', ' + err.body.message);
         }
         // else continue run
@@ -103,7 +127,6 @@ const TerminalApplication: RunApplication = {
     }
 
     const current_time = new Date().toISOString();
-    const namespace = GetUserDefaultNameSpace(kube_user.name);
 
     const terminalCRD = CRDTemplateBuilder(terminal_crd_template, {
       current_time,
