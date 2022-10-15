@@ -200,6 +200,7 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 	if err != nil {
 		return err
 	}
+	start := time.Now()
 	for {
 		select {
 		case <-time.After(time.Second * 10):
@@ -209,6 +210,8 @@ func (csr *CSR) updateCsr(config *rest.Config, cli client.Client) error {
 				certificateSigningRequest := event.Object.(*csrv1.CertificateSigningRequest)
 				if certificateSigningRequest.Status.Certificate != nil {
 					csr.data.TLSCrt = certificateSigningRequest.Status.Certificate
+					dis := time.Since(start).Milliseconds()
+					defaultLog.Info("The csr is ready", "using Milliseconds", dis)
 					return nil
 				}
 			}
