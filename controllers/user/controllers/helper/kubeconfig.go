@@ -24,6 +24,8 @@ import (
 	"os"
 	"time"
 
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	rbacV1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/client-go/rest"
@@ -31,6 +33,8 @@ import (
 
 	"k8s.io/client-go/tools/clientcmd/api"
 )
+
+var defaultLog = ctrl.Log.WithName("kubeconfig")
 
 type Generate interface {
 	KubeConfig(config *rest.Config, client client.Client) (*api.Config, error)

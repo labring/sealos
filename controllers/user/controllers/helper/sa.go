@@ -97,6 +97,7 @@ func (sac *ServiceAccount) fetchToken(config *rest.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	start := time.Now()
 	for {
 		select {
 		case <-time.After(time.Second * 10):
@@ -106,6 +107,8 @@ func (sac *ServiceAccount) fetchToken(config *rest.Config) (string, error) {
 				secret := event.Object.(*v1.Secret)
 				secretName := sac.getSecretName()
 				if secret.Name == secretName && secret.Data != nil && secret.Data[v1.ServiceAccountTokenKey] != nil {
+					dis := time.Since(start).Milliseconds()
+					defaultLog.Info("The serviceAccount secret is ready.", "secretName", secretName, "using Milliseconds", dis)
 					return string(secret.Data[v1.ServiceAccountTokenKey]), nil
 				}
 			}
