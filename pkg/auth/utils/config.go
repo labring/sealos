@@ -26,6 +26,8 @@ import (
 	"math/big"
 	"time"
 
+	"k8s.io/apimachinery/pkg/watch"
+
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -125,7 +127,7 @@ func CreateOrUpdateKubeConfig(uid string) error {
 	return nil
 }
 
-func GetKubeConfig(uid string) (string, error) {
+func GetKubeConfig(uid string, timeout int) (string, error) {
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return "", err
@@ -136,16 +138,24 @@ func GetKubeConfig(uid string) (string, error) {
 		Version:  "v1",
 		Resource: "users",
 	})
-	user, err := resource.Get(context.Background(), uid, metav1.GetOptions{})
+	w, err := resource.Watch(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		return "", err
 	}
-	if user.Object["status"] == nil {
-		return "", fmt.Errorf("status is empty, please wait for a while or check the health of user-controller")
+
+	for {
+		select {
+		case <-time.After(time.Duration(timeout) * time.Second):
+			return "", fmt.Errorf("status is empty, please wait for a while or check the health of user-controller")
+		case event := <-w.ResultChan():
+			if event.Type == watch.Modified || event.Type == watch.Added {
+				status := event.Object.(*unstructured.Unstructured).Object["status"]
+				if status != nil {
+					if kubeConfig, ok := status.(map[string]interface{})["kubeConfig"]; ok {
+						return kubeConfig.(string), nil
+					}
+				}
+			}
+		}
 	}
-	status := user.Object["status"].(map[string]interface{})
-	if kubeConfig, ok := status["kubeConfig"]; ok {
-		return kubeConfig.(string), nil
-	}
-	return "", fmt.Errorf("there is no field named kubeConfig in status")
 }
