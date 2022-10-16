@@ -116,6 +116,12 @@ spec:
           terminationMessagePolicy: File
       containers:
         - name:  redisinsight #Container name (DNS_LABEL, unique)
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           #@note: bug with latest image at 2022-1016. fix see: https://github.com/RedisInsight/RedisInsight/issues/1055
           image: redislabs/redisinsight:hotfix-sentinel-probe #repo/image
           imagePullPolicy: IfNotPresent #Always pull image

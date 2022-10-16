@@ -119,6 +119,12 @@ spec:
     spec:
       containers:
         - name: pgadmin
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: dpage/pgadmin4:latest
           imagePullPolicy: IfNotPresent
           env:
