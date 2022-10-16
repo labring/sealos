@@ -1,3 +1,6 @@
+.appWrap {
+  background: var(--fakeMica);
+}
 .storeNav {
   .uicon {
     padding: 18px 0;
@@ -71,17 +74,18 @@
   flex-wrap: wrap;
 
   .ribcont {
-    background: var(--rib2-bg);
+    background: #fff;
     margin-right: 1em;
     margin-bottom: 2em;
     width: auto;
+    height: 264px;
     cursor: pointer;
     border-radius: 6px;
   }
 }
 
 .ribcont {
-  background: var(--rib-bg);
+  background: #fff;
   margin: auto 6px;
   height: auto;
   width: 120px;

@@ -4,7 +4,6 @@ import Icon from 'components/icons';
 import useAppStore from '../../stores/app';
 import styles from './taskbar.module.scss';
 
-import Sealos from '../../assets/icons/sealos.svg';
 import useLocalSession from 'hooks/useLocalSession';
 import TimeZone from './time_zone';
 
@@ -32,14 +31,6 @@ const Taskbar = () => {
         </div>
       </div>
       <div className={styles.tsbar}>
-        <div className={clsx(styles.tsIcon)}>
-          {/* <Icon src="home" width={24} /> */}
-          <Sealos width={24} height={24} alt="" />
-        </div>
-        <div className={clsx(styles.tsIcon)}>
-          <Icon src="github" width={24} />
-        </div>
-
         {/* <div className={clsx(styles.tsIcon)}>
           <Icon src="search" width={24} />
         </div> */}

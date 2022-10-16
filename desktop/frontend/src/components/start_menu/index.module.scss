@@ -4,15 +4,15 @@
 }
 
 .widPaneCont {
-  --bg1: rgba(234, 234, 234, 0.65);
+  --bg1: rgba(0, 0, 0, 0.45);
 
   position: absolute;
   left: 12px;
-  bottom: 70px; // tabbar height + 12px
+  bottom: 80px; // tabbar height + 12px
   height: 600px;
   width: 460px;
   max-width: 50vw;
-  border-radius: 8px;
+  border-radius: 30px;
   overflow: hidden;
   transform: translateX(0);
   backdrop-filter: blur(5px);
@@ -33,7 +33,7 @@
     flex-direction: column;
     overflow-x: hidden;
     padding: 24px;
-    padding-top: 20%;
+    padding-top: 80px;
   }
 
   .accountsTop {
@@ -53,4 +53,10 @@
   top: 0;
   bottom: 0;
   z-index: 9998;
+}
+
+.balanceCard {
+  background: #000;
+  padding: 20px;
+  border-radius: 20px;
 }

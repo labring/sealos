@@ -1,4 +1,5 @@
 export enum APPTYPE {
   APP = 'app',
-  IFRAME = 'iframe'
+  IFRAME = 'iframe',
+  LINK = 'link'
 }

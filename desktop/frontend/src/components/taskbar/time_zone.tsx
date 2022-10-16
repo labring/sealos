@@ -4,14 +4,14 @@ import { formatTime } from 'utils/format';
 import styles from './taskbar.module.scss';
 
 export default function TimeZone() {
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState('');
   useEffect(() => {
-    // const timer = setInterval(() => {
-    //   setTime(new Date());
-    // }, 1000);
+    const timer = setInterval(() => {
+      setTime(new Date().toString());
+    }, 1000);
 
     return () => {
-      // clearInterval(timer);
+      clearInterval(timer);
     };
   }, []);
 
@@ -20,14 +20,8 @@ export default function TimeZone() {
       className={clsx(styles.taskDate, 'm-1 handcr prtclk rounded hvlight')}
       data-action="CALNTOGG"
     >
-      <div>{formatTime(time, 'HH:mm:ss')}</div>
-      <div>
-        {time.toLocaleDateString('en-US', {
-          year: '2-digit',
-          month: '2-digit',
-          day: 'numeric'
-        })}
-      </div>
+      <div className="text-2xl">{formatTime(time, 'HH:mm')}</div>
+      <div className="text-lg">{formatTime(time, 'YYYY年MM月DD日')}</div>
     </div>
   );
 }

@@ -57,13 +57,15 @@ export default function ChargeButton() {
       }}
     >
       <DialogTrigger>
-        <Link
-          onClick={() => {
+        <a
+          style={{ fontSize: 18, color: '#ccc' }}
+          onClick={(e) => {
+            e?.preventDefault();
             toggleStartMenu();
           }}
         >
           立即充值
-        </Link>
+        </a>
       </DialogTrigger>
       <DialogSurface>
         <DialogBody>
@@ -88,7 +90,7 @@ export default function ChargeButton() {
                   className="!ml-4"
                   onClick={() => {
                     createPaymentRes.mutate({
-                      amount: chargeAmount,
+                      amount: chargeAmount * 100,
                       kubeconfig: session.kubeconfig
                     });
                   }}

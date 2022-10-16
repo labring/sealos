@@ -1,6 +1,4 @@
-import { TApp } from 'stores/app';
-
-const defaultApps: TApp[] = [
+const defaultApps = [
   {
     name: 'Mysql',
     icon: 'https://cloud.sealos.io/images/mysql.svg',

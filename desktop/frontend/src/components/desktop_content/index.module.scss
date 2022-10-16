@@ -1,7 +1,7 @@
 .desktop {
   position: absolute;
   width: 100vw;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 80px);
   top: 0;
   overflow: hidden;
 }
@@ -22,7 +22,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 1em;
+  font-size: 12px;
   transition: all ease-in-out 200ms;
   justify-content: center;
   border: 1px solid transparent;
@@ -40,6 +40,7 @@
   .appName {
     text-align: center;
     color: #fafafa;
+    line-height: 16px;
     margin-top: 4px;
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
   }

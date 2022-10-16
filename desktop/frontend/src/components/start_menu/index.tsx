@@ -12,6 +12,7 @@ import { Divider, Link } from '@fluentui/react-components';
 import download from 'utils/downloadFIle';
 import { useRouter } from 'next/router';
 import useLocalSession from 'hooks/useLocalSession';
+import clsx from 'clsx';
 
 export default function StartMenu() {
   const { isHideStartMenu, toggleStartMenu } = useAppStore((s) => s);
@@ -48,7 +49,7 @@ export default function StartMenu() {
       ></div>
       <div className={styles.widPaneCont} data-hide={isHideStartMenu}>
         <div className={styles.widPane + ' ltShad'}>
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center text-white">
             <img
               src={localSession?.user?.avatar || ''}
               alt=""
@@ -59,16 +60,15 @@ export default function StartMenu() {
 
             <div className="text-3xl mb-4 mt-4">{localSession?.user?.name}</div>
 
-            <div className="mt-4 w-full">
-              <Divider appearance="brand"></Divider>
-            </div>
-            <div className="mt-6 mb-6 flex flex-1 w-full items-center justify-center">
-              <span className="">余额：</span>
-              <span className="mr-4 text-4xl text-orange-500 ">
-                ￥{formatMoney(amount?.data?.data?.balance || 0)}
-              </span>
+            <div className={clsx(styles.balanceCard, 'mt-6 mb-6 w-full')}>
+              <span className="text-2xl pl-4 ">余额</span>
+              <div className="flex justify-between items-center">
+                <div className="mt-4 mb-4 text-6xl ">
+                  ￥{formatMoney(amount?.data?.data?.balance || 0)}
+                </div>
 
-              <ChargeButton />
+                <ChargeButton />
+              </div>
             </div>
 
             <div className="mb-6 flex flex-1 w-full items-center justify-center">
@@ -80,8 +80,10 @@ export default function StartMenu() {
               >
                 下载 kubeconfig.yaml
               </Link>
-              <div className="mx-6">
-                <Link onClick={logout}>退出登录</Link>
+              <div className="mx-6 absolute right-2 top-8">
+                <a href="#" className="text-white" onClick={logout}>
+                  退出帐号
+                </a>
               </div>
             </div>
           </div>
