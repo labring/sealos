@@ -22,6 +22,22 @@ export default function AppStore() {
   if (isLoading) {
     return <Spinner size={'large'} />;
   }
+  const toTab = (x: string) => {
+    if (x) {
+      setPage(0);
+      setTimeout(() => {
+        var target = document.getElementById(x);
+        if (target) {
+          const tsof = target!.parentNode!.parentNode!.scrollTop,
+            trof = target.offsetTop;
+
+          if (Math.abs(tsof - trof) > window.innerHeight * 0.1) {
+            target!.parentNode!.parentNode!.scrollTop = target.offsetTop;
+          }
+        }
+      }, 200);
+    }
+  };
 
   const action = ({ page, appIdentifier }: { page: string; appIdentifier?: string }) => {
     switch (page) {
@@ -37,6 +53,26 @@ export default function AppStore() {
         break;
       default:
         break;
+    }
+  };
+  const frontScroll = (e: React.MouseEvent<HTMLElement>) => {
+    if (page == 0) {
+      let tabs = ['sthome', 'apprib', 'gamerib', 'movrib'],
+        mntab = 'sthome',
+        mndis = window.innerHeight;
+
+      tabs.forEach((x) => {
+        const target = document.getElementById(x);
+        if (target) {
+          const tsof = target!.parentNode!.parentNode!.scrollTop;
+          const trof = target.offsetTop;
+
+          if (Math.abs(tsof - trof) < mndis) {
+            mntab = x;
+            mndis = Math.abs(tsof - trof);
+          }
+        }
+      });
     }
   };
 
@@ -77,7 +113,7 @@ export default function AppStore() {
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         {page === 0 ? <FrontPage /> : null}
         {page === 1 ? <DownLoadPage action={action} apps={(apps.length && apps) || apps} /> : null}
-        {page === 2 ? <DetailPage action={action} app={opapp} /> : null}
+        {page === 2 ? <DetailPage app={opapp} /> : null}
       </div>
     </div>
   );

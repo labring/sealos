@@ -24,13 +24,7 @@ export type TAppDetail = {
   currentReadme: string;
 };
 
-const DetailPage = ({
-  action,
-  app
-}: {
-  action: (param: { page: string; appIdentifier?: string }) => void;
-  app: TApp;
-}) => {
+const DetailPage = ({ app }: { app: TApp }) => {
   const { installedApps, installApp, openApp } = useAppStore(
     ({ installedApps, installApp, openApp }) => ({ installedApps, installApp, openApp })
   );
@@ -97,17 +91,7 @@ const DetailPage = ({
     return <Spinner size={'large'} />;
   }
   return (
-    <div className={clsx(styles.detailpage, ' w-full flex p-12 pt-6 mt-8')}>
-      <div className="absolute text-3xl">
-        <Icon
-          fafa="faArrowLeft"
-          onClick={() => {
-            action({ page: 'page1' });
-          }}
-        >
-          back
-        </Icon>
-      </div>
+    <div className={clsx(styles.detailpage, ' w-full absolute top-0 flex')}>
       <div className={styles.detailcont}>
         <img alt="" className="rounded" width={100} height={100} src={app.icon} />
         <div className="flex flex-col items-center text-center relative">
