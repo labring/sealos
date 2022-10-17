@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { Session } from '../interfaces/session';
 import { sessionKey } from '../interfaces/session';
+const yaml = require('js-yaml');
 
 type SessionState = {
   session: Session;
@@ -11,6 +12,7 @@ type SessionState = {
   getSession: () => Session;
   delSession: () => void;
   isUserLogin: () => boolean;
+  getKubeconfigToken: () => string;
 };
 
 const useSessionStore = create<SessionState>()(
@@ -28,7 +30,14 @@ const useSessionStore = create<SessionState>()(
         delSession: () => {
           set({ session: undefined });
         },
-        isUserLogin: () => get().session?.user?.id !== undefined
+        isUserLogin: () => get().session?.user?.id !== undefined,
+        getKubeconfigToken: () => {
+          if (get().session?.kubeconfig === '') {
+            return '';
+          }
+          const doc = yaml.load(get().session.kubeconfig);
+          return doc?.users[0]?.user?.token;
+        }
       })),
       { name: sessionKey }
     )
