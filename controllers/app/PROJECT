@@ -19,7 +19,7 @@ resources:
   controller: true
   domain: sealos.io
   group: app
-  kind: Actions
+  kind: AppAction
   path: github.com/labring/sealos/controllers/app/api/v1
   version: v1
 version: "3"

@@ -3,4 +3,10 @@ kind: App
 metadata:
   name: app-sample
 spec:
-  # TODO(user): Add fields here
+  imgInfo:
+    name: labring/mysql-operator
+    tag: latest
+  namespace: user.namespace
+  resources:
+    cpu: 500m
+    memory: 1Gi

@@ -1,0 +1,12 @@
+apiVersion: app.sealos.io/v1
+kind: AppAction
+metadata:
+  labels:
+    app.kubernetes.io/name: appaction
+    app.kubernetes.io/instance: appaction-sample
+    app.kubernetes.io/part-of: app
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: app
+  name: appaction-sample
+spec:
+  # TODO(user): Add fields here

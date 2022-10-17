@@ -24,29 +24,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 )
 
-// ActionsReconciler reconciles a Actions object
-type ActionsReconciler struct {
+// OrganizationReconciler reconciles a Organization object
+type OrganizationReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the Actions object against the actual cluster state, and then
+// the Organization object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
+func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
@@ -55,8 +55,8 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ActionsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *OrganizationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appv1.Actions{}).
+		For(&imagehubv1.Organization{}).
 		Complete(r)
 }

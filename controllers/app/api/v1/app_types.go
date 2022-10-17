@@ -17,16 +17,24 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type UIEndPoint struct {
-	Name  string `json:"name,omitempty"`
-	Theme string `json:"theme,omitempty"`
-	URL   string `json:"url,omitempty"`
+type AppStatusStr string
+
+const (
+	AppInstalled AppStatusStr = "installed"
+	AppRunning   AppStatusStr = "running"
+)
+
+// ImageInfo define image info that app need to use
+type ImageInfo struct {
+	Name string `json:"name"`
+	Tag  string `json:"tag"`
 }
 
 // AppSpec defines the desired state of App
@@ -34,24 +42,24 @@ type AppSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of App. Edit app_types.go to remove/update
-	UIEndPoints []*UIEndPoint `json:"uiendpoints,omitempty"`
-	// The application logo url
-	Logo string `json:"logo,omitempty"`
-	// Applications info, key value
-	Info map[string]string `json:"info,omitempty"`
-	// Applications markdown docs
-	Docs string `json:"docs,omitempty"`
-	// Actions name list, the actions will in the application same namespace
-	Actions []string `json:"actions,omitempty"`
-	Workdir string   `json:"workdir,omitempty"`
-	Image   string   `json:"image,omitempty"`
+	// ImageInfo define image info that app need to use
+	//+kubebuilder:validation:Required
+	ImgInfo ImageInfo `json:"imgInfo"`
+
+	// Namespace is where app install in
+	// todo add requied and default namesapace as user's namespace
+	Namespace string `json:"namespace"`
+
+	// todo add requied and default resource conf
+	Resources v1.ResourceList `json:"resources,omitempty"`
 }
 
 // AppStatus defines the observed state of App
 type AppStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	// todo add webhooks/reconcile to change app status
+	Status AppStatusStr `json:"status"`
 }
 
 //+kubebuilder:object:root=true

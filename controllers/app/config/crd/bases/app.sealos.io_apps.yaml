@@ -35,13 +35,44 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              foo:
-                description: Foo is an example field of App. Edit app_types.go to
-                  remove/update
+              imgInfo:
+                description: ImageInfo define image info that app need to use
+                properties:
+                  name:
+                    type: string
+                  tag:
+                    type: string
+                required:
+                - name
+                - tag
+                type: object
+              namespace:
+                description: Namespace is where app install in todo add requied and
+                  default namesapace as user's namespace
                 type: string
+              resources:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: todo add requied and default resource conf
+                type: object
+            required:
+            - imgInfo
+            - namespace
             type: object
           status:
             description: AppStatus defines the observed state of App
+            properties:
+              status:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file todo add webhooks/reconcile to change app status'
+                type: string
+            required:
+            - status
             type: object
         type: object
     served: true

@@ -23,23 +23,17 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ActionsSpec defines the desired state of Actions
-type ActionsSpec struct {
+// AppActionSpec defines the desired state of AppAction
+type AppActionSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Application name, actions will bind to an application
-	AppName string `json:"appName,omitempty"`
-	// Alias will show it on dashboard. like DELETE UPDATE MIGRATE...
-	Alias string `json:"alias,omitempty"`
-	// Args, the actions input args, like oss backup address...
-	Args map[string]string `json:"args,omitempty"`
-	// Actions exec command, support render some args and downward API, like application name, service name ...
-	CMD string `json:"cmd,omitempty"`
+	// Foo is an example field of AppAction. Edit appaction_types.go to remove/update
+	Foo string `json:"foo,omitempty"`
 }
 
-// ActionsStatus defines the observed state of Actions
-type ActionsStatus struct {
+// AppActionStatus defines the observed state of AppAction
+type AppActionStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
@@ -47,24 +41,24 @@ type ActionsStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
-// Actions is the Schema for the actions API
-type Actions struct {
+// AppAction is the Schema for the appactions API
+type AppAction struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ActionsSpec   `json:"spec,omitempty"`
-	Status ActionsStatus `json:"status,omitempty"`
+	Spec   AppActionSpec   `json:"spec,omitempty"`
+	Status AppActionStatus `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 
-// ActionsList contains a list of Actions
-type ActionsList struct {
+// AppActionList contains a list of AppAction
+type AppActionList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Actions `json:"items"`
+	Items           []AppAction `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Actions{}, &ActionsList{})
+	SchemeBuilder.Register(&AppAction{}, &AppActionList{})
 }
