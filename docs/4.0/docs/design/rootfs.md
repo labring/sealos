@@ -60,6 +60,8 @@ sidebar_position: 3
     └── audit-policy.yml
 ```
 
+Content of Kubefile(You can checkout the rest of the files by `sealos pull labring/kubernetes:v1.24.0` and then check `/var/lib/sealos`):
+
 ```dockerfile
 FROM scratch
 MAINTAINER sealyun
@@ -81,11 +83,9 @@ ENV registryPassword=passw0rd
 COPY .. .
 ```
 
-image-cri-shim can replace image to registry addr
+`sealos build -t labring/kubernetes:v1.24.0 .` is all that is needed.
 
-- offline
-  if offline module,you need add imageList file in dir `images/shim`
-  example ImageList file is :
-  `ghcr.io/sealyun/lvscare:v1.1.3-beta.2 k8s.gcr.io/kube-apiserver:v1.24.0 k8s.gcr.io/kube-controller-manager:v1.24.0 k8s.gcr.io/kube-scheduler:v1.24.0 k8s.gcr.io/kube-proxy:v1.24.0 k8s.gcr.io/pause:3.5 k8s.gcr.io/etcd:3.5.0-0 k8s.gcr.io/coredns/coredns:v1.8.4`
-  shim found image in imageList ,the `k8s.gcr.io/kube-apiserver:v1.24.0` replace to `sealos.hub:5000/kube-apiserver:v1.24.0`
+image-cri-shim can replace the registry address of images.
+
 - online (default module)
+- offline: You need to add imageList file in `images/shim`. Example imageList file: `ghcr.io/sealyun/lvscare:v1.1.3-beta.2 k8s.gcr.io/kube-apiserver:v1.24.0 k8s.gcr.io/kube-controller-manager:v1.24.0 k8s.gcr.io/kube-scheduler:v1.24.0 k8s.gcr.io/kube-proxy:v1.24.0 k8s.gcr.io/pause:3.5 k8s.gcr.io/etcd:3.5.0-0 k8s.gcr.io/coredns/coredns:v1.8.4`. image-cri-shim finds image in the imageList, and replace the `k8s.gcr.io/kube-apiserver:v1.24.0` with `sealos.hub:5000/kube-apiserver:v1.24.0`.

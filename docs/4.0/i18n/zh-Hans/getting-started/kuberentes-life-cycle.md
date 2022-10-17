@@ -1,17 +1,17 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# kubernetes 生命周期管理
+# Kubernetes 生命周期管理
 
-## 单机安装 kuberentes
+## 单机安装 Kuberentes
 
 ```shell
 # sealos version must >= v4.1.0
 $ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.22.1 --single
 ```
 
-## 集群安装 kuberentes
+## 集群安装 Kuberentes
 
 ```shell
 $ sealos run kubernetes:v1.25.0 labring/calico:v3.24.1 \

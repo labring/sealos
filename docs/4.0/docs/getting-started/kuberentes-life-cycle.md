@@ -1,17 +1,17 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # Kubernetes life cycle management
 
-## Stand alone installation kuberentes
+## Stand alone installation Kuberentes
 
 ```shell
 # sealos version must >= v4.1.0
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 ```
 
-## Cluster installation kubernetes
+## Cluster installation Kubernetes
 
 ```shell
 $ sealos run kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
@@ -43,7 +43,7 @@ Such highly available mysql redis, etc. are all available, so you don't need to 
 
 ## Add node
 
-add node :
+add node:
 ```shell
 $ sealos add --nodes 192.168.64.21,192.168.64.19 
 ```
@@ -55,7 +55,7 @@ $ sealos add --masters 192.168.64.21,192.168.64.19
 
 ## Delete node
 
-delete node :
+delete node:
 ```shell
 $ sealos delete --nodes 192.168.64.21,192.168.64.19 
 ```
@@ -65,7 +65,7 @@ delete master:
 $ sealos delete --masters 192.168.64.21,192.168.64.19  
 ```
 
-## clean up the cluster
+## Clean up the cluster
 
 ```shell
 $ sealos reset

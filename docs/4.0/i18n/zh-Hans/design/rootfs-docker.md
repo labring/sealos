@@ -97,30 +97,30 @@ ENV registryPassword=passw0rd
 COPY . .
 ```
 
-`sealos build -t docker.io/labring/kubernetes-docker:v1.23.10 .` 即可
+`sealos build -t docker.io/labring/kubernetes-docker:v1.23.10 .` 即可。
 
 - 支持环境变量渲染
-  - criData 默认值  /var/lib/docker
-  - criDockerdData 默认值 /var/lib/cri-dockerd
-  - registryData 默认值  /var/lib/registry
-  - registryConfig 默认值 /etc/registry
-  - registryDomain 默认值 sealos.hub
-  - registryPort 默认值 5000
-  - registryUsername 默认值 admin
-  - registryPassword 默认值 passw0rd
+  - criData 默认值 `/var/lib/docker`
+  - criDockerdData 默认值 `/var/lib/cri-dockerd`
+  - registryData 默认值 `/var/lib/registry`
+  - registryConfig 默认值 `/etc/registry`
+  - registryDomain 默认值 `sealos.hub`
+  - registryPort 默认值 `5000`
+  - registryUsername 默认值 `admin`
+  - registryPassword 默认值 `passw0rd`
 
 - sealos 版本支持最低 4.1.0+
 
-#### 如何解决docker的问题
+#### 如何解决 Docker 的问题
 
-- 其实k8s一直兼容的cri的接口,为了用户使用兼容了docker的接口
-- 1.24开始k8s移除了dockershim的实现,这无疑是一个正确的选择
-- image-cri-shim为了解决私有化镜像的问题使用cri实现了镜像模块,为了统一化docker镜像引入cri-dockerd统一使用cri对接docker
-- kubelet的container模块对接cri-dockerd,而镜像模块统一对接image-cri-shim
-- crictl的配置与kubelet一致,由于kubeadm images pull 需要使用crictl pull 镜像而且没有认证所以这里需要调整image-cri-shim去通过cri认证docker
+- 其实 K8s 一直兼容的 CRI 的接口,为了用户使用兼容了 Docker 的接口
+- 1.24 开始 K8s 移除了 dockershim 的实现,这无疑是一个正确的选择
+- image-cri-shim 为了解决私有化镜像的问题使用 CRI 实现了镜像模块,为了统一化 Docker 镜像引入 cri-dockerd 统一使用 CRI 对接 Docker
+- kubelet 的 container 模块对接 cri-dockerd,而镜像模块统一对接 image-cri-shim
+- crictl 的配置与 kubelet 一致,由于 `kubeadm images pull` 需要使用 crictl 拉取镜像而且没有认证所以这里需要调整 image-cri-shim 去通过 CRI 认证 Docker
 
-#### 如何使用docker镜像
+#### 如何使用 Docker 镜像
 
 ```shell
-  sealos run docker.io/labring/kubernetes-docker:v1.23.10 --single
+sealos run docker.io/labring/kubernetes-docker:v1.23.10 --single
 ```

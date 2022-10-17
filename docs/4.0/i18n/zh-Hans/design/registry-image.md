@@ -24,13 +24,13 @@ sidebar_position: 1
 
 ### Save 过程
 
-1. 把之前在 Build 过程中缓存容器镜像的动作后置到 Save 命令中，此时去解析 manifests 目录，chart 目录以及 imageList，然后把容器镜像单独放到 registry 目录.
-2. 把集群镜像也保存到 registry 目录中.
-3. Save 的产物就是 registry 目录和一些配置信息的打包.
+1. 把之前在 Build 过程中缓存容器镜像的动作后置到 Save 命令中，此时去解析 manifests 目录，chart 目录以及 imageList，然后把容器镜像单独放到 registry 目录
+2. 把集群镜像也保存到 registry 目录中
+3. Save 的产物就是 registry 目录和一些配置信息的打包
 
 ### Run 过程
 
-1. registry module 根据 registry 的配置拉起 registry.
+1. registry module 根据 registry 的配置拉起 registry
 2. 根据 CloudImage Name 在所有节点拉取集群镜像
 3. 启动 k8s 和 guest
 4. kubelet 自动拉起其它镜像
@@ -38,4 +38,4 @@ sidebar_position: 1
 
 ### 加速方案
 
-在此方案基础上就可以直接制作 containerd+nydus 的 runtime 镜像，直接使用 nydus 的能力，同时提升集群镜像与容器镜像的分发速度
+在此方案基础上就可以直接制作 containerd+nydus 的 runtime 镜像，直接使用 nydus 的能力，同时提升集群镜像与容器镜像的分发速度。

@@ -54,8 +54,8 @@ $ sealos run labring/openebs:3.1.0
 
 ## Override application CMD
 
-`--cmd` will override the cmd in Kubefile(Dockerfile)
+`--cmd` will override the `CMD` in Kubefile(Dockerfile):
 
-```shell script
+```shell
 sealos run labring/mysql-operator:8.0.23-14.1 --cmd "kubectl apply -f ."
 ```

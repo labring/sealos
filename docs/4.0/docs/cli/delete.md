@@ -3,8 +3,8 @@ import TabItem from '@theme/TabItem';
 
 # Delete Kubernetes masters or nodes
 
-<Tabs groupId="imageNum">
-  <TabItem value="single" label="Node" default>
+<Tabs groupId="delete_type">
+  <TabItem value="delete_node" label="Node" default>
 
 ```shell
 $ sealos delete --nodes x.x.x.x
@@ -12,7 +12,7 @@ $ sealos delete --nodes x.x.x.x
 
   </TabItem>
 
-  <TabItem value="multiple" label="Master" default>
+  <TabItem value="delete_master" label="Master" default>
 
 ```shell
 $ sealos delete --masters x.x.x.x
@@ -20,7 +20,7 @@ $ sealos delete --masters x.x.x.x
 
   </TabItem>
 
-  <TabItem value="both" label="Node && Master" default>
+  <TabItem value="delete_both" label="Node && Master" default>
 
 ```shell
 $ sealos delete --masters x.x.x.x --nodes x.x.x.x

@@ -54,12 +54,12 @@ sudo yum install sealos
 
 ## Install from Source
 
-#### prerequisites
+### Prerequisites
 1. `git`  
 2. `golang` 1.19+  
 3. `libgpgme-dev libbtrfs-dev libdevmapper-dev`
 
-\# add `:arm64` when under the the `arm64` environment
+Add `:arm64` when under the the `arm64` environment.
 
 ### Build
 

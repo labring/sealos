@@ -97,30 +97,30 @@ ENV registryPassword=passw0rd
 COPY . .
 ```
 
-`sealos build -t kubernetes-docker:v1.23.10 .` 
+`sealos build -t kubernetes-docker:v1.23.10 .` is all that is needed.
 
 - Support environment variable rendering
-  - criData Defaults  /var/lib/docker
-  - criDockerdData Defaults /var/lib/cri-dockerd
-  - registryData Defaults  /var/lib/registry
-  - registryConfig Defaults /etc/registry
-  - registryDomain Defaults sealos.hub
-  - registryPort Defaults 5000
-  - registryUsername Defaults admin
-  - registryPassword Defaults passw0rd
+  - criData Defaults `/var/lib/docker`
+  - criDockerdData Defaults `/var/lib/cri-dockerd`
+  - registryData Defaults `/var/lib/registry`
+  - registryConfig Defaults `/etc/registry`
+  - registryDomain Defaults `sealos.hub`
+  - registryPort Defaults `5000`
+  - registryUsername Defaults `admin`
+  - registryPassword Defaults `passw0rd`
 
 - sealos Minimum supported version 4.1.0+
 
-#### How to solve problems with docker
+#### How to solve problems with Docker
 
 - In fact, kubernetes has always been compatible with the cri interface, in order for users to use the docker-compatible interface.
 - Since 1.24, kubernetes has removed the implementation of dockershim, which is undoubtedly a correct choice.
 - In order to solve the problem of privatized docker or containerd images, image-cri-shim uses cri to implement the image module. In order to unify docker images, cri-dockerd is introduced to use cri to connect to docker.
 - The container module of kubelet is connected to cri-dockerd, and the image module is unified to image-cri-shim.
-- The configuration of crictl is the same as kubelet. Since kubeadm images pull needs to use crictl pull image and there is no authentication, it is necessary to adjust image-cri-shim that pass cri authentication to docker.
+- The configuration of crictl is the same as kubelet. Since kubeadm images pull needs to use crictl to pull the image and there is no authentication, it is necessary to adjust image-cri-shim that pass cri authentication to docker.
 
-#### How to use docker images
+#### How to use Docker images
 
 ```shell
-  sealos run docker.io/labring/kubernetes-docker:v1.23.10 --single
+sealos run docker.io/labring/kubernetes-docker:v1.23.10 --single
 ```
