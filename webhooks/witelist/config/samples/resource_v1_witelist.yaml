@@ -1,0 +1,6 @@
+apiVersion: resource.sealos.io/v1
+kind: WiteList
+metadata:
+  name: witelist-sample
+spec:
+  # TODO(user): Add fields here

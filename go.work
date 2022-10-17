@@ -7,6 +7,7 @@ use (
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
+	./webhooks/witelist
 	./controllers/user
 	./service/auth
 	./service/payment

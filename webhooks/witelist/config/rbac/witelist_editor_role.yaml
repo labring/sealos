@@ -1,0 +1,24 @@
+# permissions for end users to edit witelists.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: witelist-editor-role
+rules:
+- apiGroups:
+  - resource.sealos.io
+  resources:
+  - witelists
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - resource.sealos.io
+  resources:
+  - witelists/status
+  verbs:
+  - get

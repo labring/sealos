@@ -154,21 +154,22 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	r.cluster.Spec.Image = append(r.cluster.Spec.Image, imageList...)
 
 	// set host when cluster is not yet initialized
-	if r.cluster.CreationTimestamp.IsZero() {
-		if len(args.Cluster.Masters) > 0 {
-			masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
-			nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
-			r.hosts = []v2.Host{}
-			if len(masters) != 0 {
-				r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
-			}
-			if len(nodes) != 0 {
-				r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
-			}
-			r.cluster.Spec.Hosts = r.hosts
-		} else {
-			return fmt.Errorf("master ip(s) must specified")
+	if !r.cluster.CreationTimestamp.IsZero() {
+		return nil
+	}
+	if len(args.Cluster.Masters) > 0 {
+		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
+		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		r.hosts = []v2.Host{}
+		if len(masters) != 0 {
+			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
 		}
+		if len(nodes) != 0 {
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
+		}
+		r.cluster.Spec.Hosts = r.hosts
+	} else {
+		return fmt.Errorf("master ip(s) must specified")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
