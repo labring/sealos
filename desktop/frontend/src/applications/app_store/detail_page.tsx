@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React, { useState, useEffect } from 'react';
 import useAppStore, { TApp } from 'stores/app';
 import request from 'services/request';
@@ -23,7 +24,13 @@ export type TAppDetail = {
   currentReadme: string;
 };
 
-const DetailPage = ({ app }: { app: TApp }) => {
+const DetailPage = ({
+  action,
+  app
+}: {
+  action: (param: { page: string; appIdentifier?: string }) => void;
+  app: TApp;
+}) => {
   const { installedApps, installApp, openApp } = useAppStore(
     ({ installedApps, installApp, openApp }) => ({ installedApps, installApp, openApp })
   );
@@ -90,9 +97,19 @@ const DetailPage = ({ app }: { app: TApp }) => {
     return <Spinner size={'large'} />;
   }
   return (
-    <div className={clsx(styles.detailpage, ' w-full absolute top-0 flex')}>
+    <div className={clsx(styles.detailpage, ' w-full flex p-12 pt-6 mt-8')}>
+      <div className="absolute text-3xl">
+        <Icon
+          fafa="faArrowLeft"
+          onClick={() => {
+            action({ page: 'page1' });
+          }}
+        >
+          back
+        </Icon>
+      </div>
       <div className={styles.detailcont}>
-        <img className="rounded" width={100} height={100} src={app.icon} />
+        <img alt="" className="rounded" width={100} height={100} src={app.icon} />
         <div className="flex flex-col items-center text-center relative">
           <div className="text-2xl font-semibold mt-6">{app.name}</div>
           <div className="text-xs text-blue-500">Community</div>
@@ -141,7 +158,6 @@ const DetailPage = ({ app }: { app: TApp }) => {
           </div>
 
           <div
-            aria-expanded={`${open}`}
             ref={setTarget}
             className={clsx(
               styles.codebg,

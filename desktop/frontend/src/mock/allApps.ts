@@ -8,9 +8,10 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Percona XtraDB Cluster (PXC) is an open-source enterprise MySQL solution that helps you to ensure data availability for your applications while improving security and simplifying the development of new applications in the most demanding public, private, and hybrid cloud environments',
-      feat: "Easy deployment with no single point of failure\n" +
-          "Load balancing and proxy service with either HAProxy or ProxySQL\n" +
-          "Scheduled and manual backups"
+      feat:
+        'Easy deployment with no single point of failure\n' +
+        'Load balancing and proxy service with either HAProxy or ProxySQL\n' +
+        'Scheduled and manual backups'
     }
   },
   {
@@ -22,7 +23,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Redis Operator creates/configures/manages redis-failovers atop Kubernetes.',
-      feat: "In order to create Redis failovers inside a Kubernetes cluster, the operator has to be deployed. It can be done with deployment or with the provided Helm chart."
+      feat: 'In order to create Redis failovers inside a Kubernetes cluster, the operator has to be deployed. It can be done with deployment or with the provided Helm chart.'
     }
   },
   {
@@ -34,13 +35,14 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'This repository collects Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus Operator.',
-      feat: "The Prometheus Operator\n" +
-          "Highly available Prometheus\n" +
-          "Highly available Alertmanager\n" +
-          "Prometheus node-exporter\n" +
-          "Prometheus Adapter for Kubernetes Metrics APIs\n" +
-          "kube-state-metrics\n" +
-          "Grafana"
+      feat:
+        'The Prometheus Operator\n' +
+        'Highly available Prometheus\n' +
+        'Highly available Alertmanager\n' +
+        'Prometheus node-exporter\n' +
+        'Prometheus Adapter for Kubernetes Metrics APIs\n' +
+        'kube-state-metrics\n' +
+        'Grafana'
     }
   },
   {
@@ -52,7 +54,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'kubernetes dashboad',
-      feat: "kubernetes dashboard"
+      feat: 'kubernetes dashboard'
     }
   },
   {
@@ -64,23 +66,13 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Ingress controller for Kubernetes using NGINX as a reverse proxy and load balancer',
-      feat: "To use, add ingressClassName: nginx spec field or the kubernetes.io/ingress.class: nginx annotation to your Ingress resources.\n" +
-          "\n" +
-          "This chart bootstraps an ingress-nginx deployment on a  cluster using the  package manager."
+      feat:
+        'To use, add ingressClassName: nginx spec field or the kubernetes.io/ingress.class: nginx annotation to your Ingress resources.\n' +
+        '\n' +
+        'This chart bootstraps an ingress-nginx deployment on a  cluster using the  package manager.'
     }
   },
-  {
-    name: '',
-    icon: '',
-    type: 'app',
-    size: 'maximize',
-    gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
-    data: {
-      url: 'https://github1s.com/blueedgetechno/win11React',
-      desc: '',
-      feat: ""
-    }
-  },
+
   {
     name: 'argo-cd',
     icon: 'https://artifacthub.io/image/21c68f0c-1e74-4ef8-9b58-06e34ed961c3@1x',
@@ -90,55 +82,55 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'A Helm chart for Argo CD, a declarative, GitOps continuous delivery tool for Kubernetes',
-      feat: "This is a community maintained chart. This chart installs , a declarative, GitOps continuous delivery tool for Kubernetes."
+      feat: 'This is a community maintained chart. This chart installs , a declarative, GitOps continuous delivery tool for Kubernetes.'
     }
   },
   {
     name: 'Harbor',
-    icon: 'https://artifacthub.io/packages/helm/harbor/harbor',
+    icon: 'https://artifacthub.io/image/93376a3e-0c15-4dfd-b747-5f11576321fb@2x',
     type: 'app',
     size: 'maximize',
     gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'An open source trusted cloud native registry that stores, signs, and scans content',
-      feat: "This repository, including the issues, focuses on deploying Harbor chart via helm. For functionality issues or Harbor questions, please open issues on "
+      feat: 'This repository, including the issues, focuses on deploying Harbor chart via helm. For functionality issues or Harbor questions, please open issues on '
     }
   },
   {
     name: 'Cilium',
-    icon: 'https://artifacthub.io/packages/helm/cilium/cilium',
+    icon: 'https://artifacthub.io/image/2ae85972-bf12-41a5-afb2-9b1147b2aa56@2x',
     type: 'app',
     size: 'maximize',
     gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'eBPF-based Networking, Security, and Observability',
-      feat: "Cilium is open source software for providing and transparently securing network connectivity and loadbalancing between application workloads such as application containers or processes. Cilium operates at Layer 3/4 to provide traditional networking and security services as well as Layer 7 to protect and secure use of modern application protocols such as HTTP, gRPC and Kafka."
+      feat: 'Cilium is open source software for providing and transparently securing network connectivity and loadbalancing between application workloads such as application containers or processes. Cilium operates at Layer 3/4 to provide traditional networking and security services as well as Layer 7 to protect and secure use of modern application protocols such as HTTP, gRPC and Kafka.'
     }
   },
   {
     name: 'pgsql',
-    icon: 'https://artifacthub.io/packages/helm/runix/pgadmin4',
+    icon: 'https://artifacthub.io/image/61ef8ba4-4c21-438e-a0a2-e35628f1e193@2x',
     type: 'app',
     size: 'maximize',
     gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'pgAdmin4 is a web based administration tool for PostgreSQL database',
-      feat: " is the leading Open Source management tool for Postgres, the world’s most advanced Open Source database. pgAdmin4 is designed to meet the needs of both novice and experienced Postgres users alike, providing a powerful graphical interface that simplifies the creation, maintenance and use of database objects."
+      feat: ' is the leading Open Source management tool for Postgres, the world’s most advanced Open Source database. pgAdmin4 is designed to meet the needs of both novice and experienced Postgres users alike, providing a powerful graphical interface that simplifies the creation, maintenance and use of database objects.'
     }
   },
   {
     name: 'Nginx-ingress',
-    icon: 'https://artifacthub.io/packages/helm/nginx/nginx-ingress',
+    icon: 'https://artifacthub.io/image/62c16f84-a100-4147-9577-4b1133ce2ab4@2x',
     type: 'app',
     size: 'maximize',
     gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'NGINX Ingress Controller',
-      feat: "This chart deploys the NGINX Ingress Controller in your Kubernetes cluster."
+      feat: 'This chart deploys the NGINX Ingress Controller in your Kubernetes cluster.'
     }
   },
   {
@@ -150,7 +142,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Gitea Helm chart for Kubernetes',
-      feat: " is a community managed lightweight code hosting solution written in Go. It is published under the MIT license."
+      feat: ' is a community managed lightweight code hosting solution written in Go. It is published under the MIT license.'
     }
   },
   {
@@ -162,7 +154,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'A Jaeger Helm chart for Kubernetes',
-      feat: "This chart adds all components required to run Jaeger as described in the  GitHub page for a production-like deployment. The chart default will deploy a new Cassandra cluster (using the ), but also supports using an existing Cassandra cluster, deploying a new ElasticSearch cluster (using the ), or connecting to an existing ElasticSearch cluster. Once the storage backend is available, the chart will deploy jaeger-agent as a DaemonSet and deploy the jaeger-collector and jaeger-query components as Deployments."
+      feat: 'This chart adds all components required to run Jaeger as described in the  GitHub page for a production-like deployment. The chart default will deploy a new Cassandra cluster (using the ), but also supports using an existing Cassandra cluster, deploying a new ElasticSearch cluster (using the ), or connecting to an existing ElasticSearch cluster. Once the storage backend is available, the chart will deploy jaeger-agent as a DaemonSet and deploy the jaeger-collector and jaeger-query components as Deployments.'
     }
   },
   {
@@ -174,11 +166,12 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Kubernetes Native Policy Management',
-      feat: "Manage policies as Kubernetes resources (no new language required.)\n" +
-          "Validate, mutate, and generate resource configurations.\n" +
-          "Select resources based on labels and wildcards.\n" +
-          "View policy enforcement as events.\n" +
-          "Scan existing resources for violations."
+      feat:
+        'Manage policies as Kubernetes resources (no new language required.)\n' +
+        'Validate, mutate, and generate resource configurations.\n' +
+        'Select resources based on labels and wildcards.\n' +
+        'View policy enforcement as events.\n' +
+        'Scan existing resources for violations.'
     }
   },
   {
@@ -190,21 +183,10 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'The easy, open source way for everyone in your company to ask questions and learn from data.',
-      feat: "This chart bootstraps a  deployment on a  cluster using the  package manager."
+      feat: 'This chart bootstraps a  deployment on a  cluster using the  package manager.'
     }
   },
-  {
-    name: '',
-    icon: '',
-    type: 'app',
-    size: 'maximize',
-    gallery: ['https://code.visualstudio.com/assets/home/home-screenshot-win.png'],
-    data: {
-      url: 'https://github1s.com/blueedgetechno/win11React',
-      desc: '',
-      feat: ""
-    }
-  },
+
   {
     name: 'minio',
     icon: 'https://artifacthub.io/image/af140541-e229-486c-a807-eaf06b76b032@1x',
@@ -214,7 +196,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'High Performance, Kubernetes Native Object Storage',
-      feat: "This helm chart is in code freeze i.e we will only update MinIO releases occastionally by bumping up the version. For latest features you are advised to start using our ."
+      feat: 'This helm chart is in code freeze i.e we will only update MinIO releases occastionally by bumping up the version. For latest features you are advised to start using our .'
     }
   },
   {
@@ -226,7 +208,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'OpenID Connect (OIDC) identity and OAuth 2.0 provider with pluggable connectors.',
-      feat: "OpenID Connect (OIDC) identity and OAuth 2.0 provider with pluggable connectors."
+      feat: 'OpenID Connect (OIDC) identity and OAuth 2.0 provider with pluggable connectors.'
     }
   },
   {
@@ -238,7 +220,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Containerized Attached Storage for Kubernetes',
-      feat: " helps Developers and Platform SREs easily deploy Kubernetes Stateful Workloads that require fast and highly reliable container attached storage. OpenEBS can be deployed on any Kubernetes cluster - either in cloud, on-premise (virtual or bare metal) or developer laptop (minikube)."
+      feat: ' helps Developers and Platform SREs easily deploy Kubernetes Stateful Workloads that require fast and highly reliable container attached storage. OpenEBS can be deployed on any Kubernetes cluster - either in cloud, on-premise (virtual or bare metal) or developer laptop (minikube).'
     }
   },
   {
@@ -250,7 +232,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'A Helm chart for the NATS.io High Speed Cloud Native Distributed Communications Technology.',
-      feat: " is a simple, secure and performant communications system for digital systems, services and devices. NATS is part of the Cloud Native Computing Foundation (). NATS has over , and its server can run on-premise, in the cloud, at the edge, and even on a Raspberry Pi. NATS can secure and simplify design and operation of modern distributed systems."
+      feat: ' is a simple, secure and performant communications system for digital systems, services and devices. NATS is part of the Cloud Native Computing Foundation (). NATS has over , and its server can run on-premise, in the cloud, at the edge, and even on a Raspberry Pi. NATS can secure and simplify design and operation of modern distributed systems.'
     }
   },
   {
@@ -262,7 +244,7 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'Run Elasticsearch, Kibana, APM Server, Beats, Enterprise Search, Elastic Agent and Elastic Maps Server on Kubernetes and OpenShift',
-      feat: "Elastic Cloud on Kubernetes (ECK) is the official operator by Elastic for automating the deployment, provisioning, management, and orchestration of Elasticsearch, Kibana, APM Server, Beats, Enterprise Search, Elastic Agent and Elastic Maps Server on Kubernetes."
+      feat: 'Elastic Cloud on Kubernetes (ECK) is the official operator by Elastic for automating the deployment, provisioning, management, and orchestration of Elasticsearch, Kibana, APM Server, Beats, Enterprise Search, Elastic Agent and Elastic Maps Server on Kubernetes.'
     }
   },
   {
@@ -274,11 +256,12 @@ const defaultApps = [
     data: {
       url: 'https://github1s.com/blueedgetechno/win11React',
       desc: 'The Linkerd-Viz extension contains observability and visualization components for Linkerd.',
-      feat: "You can run Linkerd on any Kubernetes 1.21+ cluster in a matter of seconds. See the  for how.\n" +
-          "\n" +
-          "For more comprehensive documentation, start with the ."
+      feat:
+        'You can run Linkerd on any Kubernetes 1.21+ cluster in a matter of seconds. See the  for how.\n' +
+        '\n' +
+        'For more comprehensive documentation, start with the .'
     }
-  },
+  }
 ];
 
 export default defaultApps;
