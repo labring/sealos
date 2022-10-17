@@ -16,7 +16,7 @@ const Taskbar = () => {
     <div className={styles.taskbar}>
       <div className="flex items-center">
         <div
-          className={clsx(styles.tsIcon)}
+          className="ml-2"
           onClick={() => {
             toggleStartMenu();
           }}

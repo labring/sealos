@@ -1,5 +1,5 @@
 .taskbar {
-  --bg1: rgba(255,255,255, .1);
+  --bg1: rgba(255, 255, 255, .3);
   --bg2: rgba(255, 255, 255, 0.67);
 
   position: absolute;
@@ -118,6 +118,10 @@
 
 .avatar {
   border-radius: 100%;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 

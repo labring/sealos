@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Button, Input, Link, Spinner, Text } from '@fluentui/react-components';
 import { QRCodeSVG } from 'qrcode.react';
 
-import {
-  Dialog,
-  DialogBody,
-  DialogTitle,
-  DialogSurface,
-  DialogTrigger,
-  DialogContent
-} from '@fluentui/react-dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import request from 'services/request';
 
 import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent
+} from '@fluentui/react-components/unstable';
 
 export default function ChargeButton() {
   const session = useSessionStore((s) => s.session);
@@ -57,15 +57,14 @@ export default function ChargeButton() {
       }}
     >
       <DialogTrigger>
-        <a
-          style={{ fontSize: 18, color: '#ccc' }}
+        <span
+          style={{ fontSize: 18, color: '#000' }}
           onClick={(e) => {
-            e?.preventDefault();
             toggleStartMenu();
           }}
         >
           立即充值
-        </a>
+        </span>
       </DialogTrigger>
       <DialogSurface>
         <DialogBody>

@@ -4,8 +4,7 @@
 }
 
 .widPaneCont {
-  --bg1: rgba(0, 0, 0, 0.45);
-
+  --bg1: rgba(255,255,255,.6);
   position: absolute;
   left: 12px;
   bottom: 80px; // tabbar height + 12px
@@ -56,7 +55,7 @@
 }
 
 .balanceCard {
-  background: #000;
+  background: rgba(255,255,255,.4);
   padding: 20px;
   border-radius: 20px;
 }
