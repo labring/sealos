@@ -1,0 +1,16 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: image
+repo: github.com/labring/sealos/controllers/image
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: image
+  kind: Image
+  path: github.com/labring/sealos/controllers/image/api/v1
+  version: v1
+version: "3"

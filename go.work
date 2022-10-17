@@ -12,4 +12,5 @@ use (
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
+	controllers/image
 )

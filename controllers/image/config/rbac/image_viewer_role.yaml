@@ -1,0 +1,27 @@
+# permissions for end users to view images.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: image-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: image
+    app.kubernetes.io/part-of: image
+    app.kubernetes.io/managed-by: kustomize
+  name: image-viewer-role
+rules:
+- apiGroups:
+  - image.sealos.io
+  resources:
+  - images
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - image.sealos.io
+  resources:
+  - images/status
+  verbs:
+  - get

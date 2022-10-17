@@ -1,0 +1,13 @@
+apiVersion: image.sealos.io/v1
+kind: Image
+metadata:
+  labels:
+    app.kubernetes.io/name: image
+    app.kubernetes.io/instance: image-sample
+    app.kubernetes.io/part-of: image
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: image
+  name: image-sample
+spec:
+  name: "nginx"
+  icon: "default-icon"

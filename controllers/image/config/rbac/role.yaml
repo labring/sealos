@@ -1,0 +1,33 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - image.sealos.io
+  resources:
+  - images
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - image.sealos.io
+  resources:
+  - images/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - image.sealos.io
+  resources:
+  - images/status
+  verbs:
+  - get
+  - patch
+  - update
