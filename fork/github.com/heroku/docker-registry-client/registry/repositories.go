@@ -5,11 +5,14 @@ type repositoriesResponse struct {
 }
 
 func (registry *Registry) Repositories() ([]string, error) {
-	url := registry.url("/v2/_catalog")
+	url := "/v2/_catalog?n=50"
+
 	repos := make([]string, 0, 10)
 	var err error //We create this here, otherwise url will be rescoped with :=
 	var response repositoriesResponse
+	//var last string
 	for {
+		url = registry.URL + url
 		registry.Logf("registry.repositories url=%s", url)
 		url, err = registry.getPaginatedJSON(url, &response)
 		switch err {

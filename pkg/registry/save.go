@@ -57,7 +57,7 @@ const (
 	manifestOCIIndex = "application/vnd.oci.image.index.v1+json"
 )
 
-func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
+func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
 	//init a pipe for display pull message
 	reader, writer := io.Pipe()
 	defer func() {
@@ -177,7 +177,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	return proxyRegistry, nil
 }
 
-func (is *DefaultImageSaver) save(nameds []Named, platform v1.Platform, registry distribution.Namespace) error {
+func (is *DefaultImage) save(nameds []Named, platform v1.Platform, registry distribution.Namespace) error {
 	repo, err := is.getRepository(nameds[0], registry)
 	if err != nil {
 		return err
@@ -196,7 +196,7 @@ func (is *DefaultImageSaver) save(nameds []Named, platform v1.Platform, registry
 	return nil
 }
 
-func (is *DefaultImageSaver) getRepository(named Named, registry distribution.Namespace) (distribution.Repository, error) {
+func (is *DefaultImage) getRepository(named Named, registry distribution.Namespace) (distribution.Repository, error) {
 	repoName, err := reference.WithName(named.Repo())
 	if err != nil {
 		return nil, fmt.Errorf("get repository name error: %v", err)
@@ -208,7 +208,7 @@ func (is *DefaultImageSaver) getRepository(named Named, registry distribution.Na
 	return repo, nil
 }
 
-func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
+func (is *DefaultImage) saveManifestAndGetDigest(nameds []Named, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return nil, fmt.Errorf("get manifest service error: %v", err)
@@ -243,7 +243,7 @@ func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distr
 	return imageDigests, nil
 }
 
-func (is *DefaultImageSaver) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
+func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
 	mani, err := manifest.Get(is.ctx, imagedigest, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return digest.Digest(""), fmt.Errorf("get image manifest error: %v", err)
@@ -277,7 +277,7 @@ func (is *DefaultImageSaver) handleManifest(manifest distribution.ManifestServic
 	}
 }
 
-func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
+func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return fmt.Errorf("failed to get blob service: %v", err)

@@ -30,7 +30,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func NewPullCmd(registryPullRegistryDir, registryPullArch string, registryPullMaxPullProcs int, cmdType string) *cobra.Command {
+func NewSaveCmd(registryPullRegistryDir, registryPullArch string, registryPullMaxPullProcs int, cmdType string) *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		if !file.IsExist(registryPullRegistryDir) {
 			_ = os.MkdirAll(registryPullRegistryDir, 0755)
@@ -47,7 +47,7 @@ func NewPullCmd(registryPullRegistryDir, registryPullArch string, registryPullMa
 		var auth map[string]types.AuthConfig
 		var registryImagePullRaw = &cobra.Command{
 			Use:   "raw",
-			Short: "registry images manager pull to local dir by raw type",
+			Short: "registry images manager save to local dir by raw type",
 			Args:  cobra.ExactArgs(1),
 			Run: func(cmd *cobra.Command, args []string) {
 				var (
