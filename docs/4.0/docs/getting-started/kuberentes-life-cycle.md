@@ -14,7 +14,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 ## Cluster installation Kubernetes
 
 ```shell
-$ sealos run kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -26,7 +26,7 @@ Parameter Description:
 | --masters | 192.168.0.2 | kubernetes master node address list |
 | --nodes | 192.168.0.3 | kubernetes node node address list |
 | --ssh-passwd | [your-ssh-passwd] | ssh login password |
-|image | kubernetes:v1.25.0 | kubernetes image |
+|image | labring/kubernetes:v1.25.0 | kubernetes image |
 
 Execute the above command directly on a clean server without any extra effort to start a highly available kubernetes cluster.
 
