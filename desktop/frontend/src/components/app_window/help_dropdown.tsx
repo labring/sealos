@@ -23,7 +23,9 @@ export default function HelpDropDown() {
           <MenuItem
             onClick={() => {
               window.navigator.clipboard.writeText(getKubeconfigToken());
-              alert('复制成功');
+              setTimeout(() => {
+                alert('复制成功');
+              }, 100);
             }}
           >
             复制 Token
