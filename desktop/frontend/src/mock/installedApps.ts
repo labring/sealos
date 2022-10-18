@@ -3,8 +3,22 @@ import { TApp } from 'stores/app';
 // 已安装 app
 const installedApps: TApp[] = [
   {
+    name: 'Sealos Document',
+    icon: '/images/sealos.svg',
+    type: 'iframe',
+    data: {
+      url: 'https://www.sealos.io/docs/Intro',
+      desc: 'Sealos Documents'
+    },
+    gallery: [
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
+  },
+  {
     name: 'App Store',
-    icon: '/images/icons/store.png',
+    icon: '/images/icons/app_store.png',
     type: 'app',
     data: {
       url: '',
@@ -143,20 +157,20 @@ const installedApps: TApp[] = [
     ],
     size: 'maximize'
   },
-  {
-    name: 'SDK-DEMO',
-    icon: '/images/mysql.svg',
-    type: 'iframe',
-    data: {
-      url: 'http://localhost:3000/demo',
-      desc: 'mysql operator'
-    },
-    gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
-    size: 'maximize'
-  },
+  // {
+  //   name: 'SDK-DEMO',
+  //   icon: '/images/mysql.svg',
+  //   type: 'iframe',
+  //   data: {
+  //     url: 'http://localhost:3000/demo',
+  //     desc: 'mysql operator'
+  //   },
+  //   gallery: [
+  //     'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   size: 'maximize'
+  // },
   {
     name: 'Infra',
     icon: '/images/infra.svg',

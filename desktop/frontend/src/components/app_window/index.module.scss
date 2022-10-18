@@ -52,7 +52,7 @@
       background: rgba(136, 136, 136, 0.2);
     }
 
-    &[data-payload="close"]:hover {
+    &[data-type="close"]:hover {
       background: rgba(255, 0, 0, 0.8);
     }
   }
@@ -60,6 +60,8 @@
 
 .closeBtn {
   border-radius: 0 6px 0 0;
+
+
 }
 
 .snapbox {

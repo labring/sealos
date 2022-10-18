@@ -1,3 +1,4 @@
+import { APPTYPE } from 'constants/app_type';
 import { current } from 'immer';
 import request from 'services/request';
 import create from 'zustand';
@@ -31,7 +32,7 @@ export type TApp = {
   // app icon
   icon: string;
   // app type, app： build-in app，iframe：external app
-  type: 'app' | 'iframe';
+  type: APPTYPE;
   // app info
   data: {
     url: string;
@@ -50,6 +51,9 @@ type TOSState = {
   allApps: TApp[];
 
   openedApps: TApp[];
+
+  // pinned Dock's app
+  pinnedApps: TApp[];
 
   currentApp?: TApp;
 
@@ -86,6 +90,7 @@ const useAppStore = create<TOSState>()(
     immer((set, get) => ({
       installedApps: [],
       openedApps: [],
+      pinnedApps: [],
       currentApp: undefined,
       maxZIndex: 0,
       isHideStartMenu: true,
@@ -146,6 +151,10 @@ const useAppStore = create<TOSState>()(
       openApp: async (app: TApp) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));
+        if (_app.type === APPTYPE.LINK) {
+          window.open(_app.data.url, '_blank');
+          return;
+        }
         _app.zIndex = zIndex;
         _app.isShow = true;
         _app.size = 'maximize';

@@ -1,17 +1,19 @@
 .taskbar {
-  --bg1: rgba(243, 243, 243, 0.85);
+  --bg1: rgba(255, 255, 255, .3);
   --bg2: rgba(255, 255, 255, 0.67);
 
   position: absolute;
-  width: 100vw;
-  height: 48px;
-  color: var(--dark-txt);
+  height: 60px;
+  color: #fff;
   background: var(--bg1);
-  -webkit-backdrop-filter: saturate(3) blur(20px);
-  backdrop-filter: saturate(3) blur(20px);
-  bottom: 0;
+  bottom: 12px;
+  right: 0;
+  left: 0;
   z-index: 10000;
   display: flex;
+  padding: 0px 6px;
+  margin: 0 12px;
+  border-radius: 30px;
   justify-content: space-between;
 }
 
@@ -47,7 +49,7 @@
 
   div {
     width: 100%;
-    text-align: center;
+    text-align: right;
     font-weight: 400;
   }
 }
@@ -63,7 +65,6 @@
   height: 100%;
   display: flex;
   align-items: center;
-  transition: all ease-in-out 200ms;
 }
 
 .tsIcon {
@@ -75,7 +76,6 @@
   border-radius: 0;
   background: rgba(254, 254, 254, 0);
   transform-origin: center;
-  animation: popintro 800ms ease-in-out;
   border-radius: 4px;
   display: grid;
   place-items: center;
@@ -89,7 +89,6 @@
     height: 3px;
     border-radius: 4px;
     background: #858585;
-    transition: all 0.2s ease-in-out;
   }
 
   &.opened:after {
@@ -103,7 +102,7 @@
 
   &:hover,
   &.actived {
-    background: var(--bg2);
+    background: #fff;
     transition: all 0.2s ease-in-out;
   }
 }
@@ -118,20 +117,11 @@
 }
 
 .avatar {
-  border-radius: 6px;
+  border-radius: 100%;
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
-@keyframes popintro {
-  0% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1.125);
-  }
-  70% {
-    transform: scale(0.725);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+
