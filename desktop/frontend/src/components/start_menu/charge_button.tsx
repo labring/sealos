@@ -14,7 +14,7 @@ import {
   DialogBody,
   DialogTitle,
   DialogContent
-} from '@fluentui/react-components/unstable';
+} from '@fluentui/react-components';
 
 export default function ChargeButton() {
   const session = useSessionStore((s) => s.session);
