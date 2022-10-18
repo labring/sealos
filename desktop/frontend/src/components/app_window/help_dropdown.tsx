@@ -1,7 +1,10 @@
 import { Menu, MenuItem, MenuList, MenuPopover, MenuTrigger } from '@fluentui/react-components';
 import React from 'react';
+import useSessionStore from 'stores/session';
 
 export default function HelpDropDown() {
+  const getKubeconfigToken = useSessionStore((s) => s.getKubeconfigToken);
+
   return (
     <Menu>
       <MenuTrigger>
@@ -17,7 +20,14 @@ export default function HelpDropDown() {
 
       <MenuPopover>
         <MenuList>
-          <MenuItem>复制 Token</MenuItem>
+          <MenuItem
+            onClick={() => {
+              window.navigator.clipboard.writeText(getKubeconfigToken());
+              alert('复制成功');
+            }}
+          >
+            复制 Token
+          </MenuItem>
         </MenuList>
       </MenuPopover>
     </Menu>

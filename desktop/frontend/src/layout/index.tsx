@@ -27,7 +27,7 @@ export default function Layout({ children }: any) {
     }
     const sdk = new MasterSDK(session);
     sdk.init();
-  }, []);
+  }, [session]);
 
   return (
     <>

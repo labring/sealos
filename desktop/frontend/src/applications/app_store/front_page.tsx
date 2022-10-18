@@ -89,7 +89,13 @@ const FrontPage = () => {
               const stars = 5;
               return (
                 <div key={i} className={clsx(styles.ribcont, 'ribcont rounded my-auto p-2 pb-2')}>
-                  <img className="mx-1 py-1 mb-2 rounded" width={120} height={120} src={x.icon} />
+                  <img
+                    alt=""
+                    className="mx-1 py-1 mb-2 rounded"
+                    width={120}
+                    height={120}
+                    src={x.icon}
+                  />
                   <div className="capitalize text-xs font-semibold">{x.name}</div>
                   <div className="flex mt-2 items-center">
                     <Icon className={clsx(styles.bluestar)} fafa="faStar" width={6} />
@@ -133,7 +139,13 @@ const FrontPage = () => {
               var stars = 3;
               return (
                 <div key={i} className={clsx(styles.ribcont, ' rounded my-auto p-2 pb-2')}>
-                  <img className="mx-1 py-1 mb-2 rounded" width={120} height={120} src={x.icon} />
+                  <img
+                    alt=""
+                    className="mx-1 py-1 mb-2 rounded"
+                    width={120}
+                    height={120}
+                    src={x.icon}
+                  />
                   <div className="capitalize text-xs font-semibold">{x.name}</div>
                   <div className="flex mt-2 items-center">
                     <Icon className={clsx(styles.bluestar)} fafa="faStar" width={6} />
