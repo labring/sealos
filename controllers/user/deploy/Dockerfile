@@ -1,7 +1,6 @@
 FROM scratch
 
-RUN useradd -u 1337 user
-USER user
+USER 65532:65532
 
 COPY manifests ./user-controller
 COPY registry ./registry
