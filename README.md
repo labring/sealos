@@ -24,13 +24,13 @@
 
 [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
 
-## Run a kubernetes cluster
+## Run a Kubernetes cluster
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
 ## What is sealos
 
-**sealos is a cloud operating system distribution based on kubernetes.**
+**sealos is a cloud operating system distribution based on Kubernetes.**
 
 ![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
 
@@ -51,17 +51,17 @@ Use the cloud like a PC desktop, Freely run and uninstall any distributed applic
   - [x] Clean the cluster, backup and auto recovering, etc.
 - Download and use OCI-compatible distributed applications
   - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
-- Customize you own distributed applications
+- Customize your own distributed applications
   - [x] Using Dockerfile to build distributed applications images, saving all dependencies.
   - [x] Push distributed applications images to Docker Hub.
   - [x] Combine multiple applications to build your own cloud platform.
 - Sealos cloud
   - [x] Run any distributed applications
-  - [x] Have a full public cloud capability，and run it anywhere
+  - [x] Have a full public cloud capability, and run it anywhere
 
 ## Quickstart
 
-> Installing an HA kubernetes cluster with calico as CNI
+> Installing an HA Kubernetes cluster with calico as CNI
 
 Here `kubernetes:v1.24.0` and `calico:v3.24.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
 
@@ -75,7 +75,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
-* Supported kubernetes versions: [240+ kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [kubernetes use cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
+* Supported Kubernetes versions: [240+ Kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [Kubernetes use cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
 * Other distributed [applications images](https://hub.docker.com/u/labring)
 
 > Single host
