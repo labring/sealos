@@ -50,7 +50,7 @@ spec:
 status: {}
 ```
 
-</detail>
+</details>
 
 2. 将 [calico Clusterfile](https://github.com/labring/sealos/blob/main/applications/calico/Clusterfile) 追加到生成的 Clusterfile 后，然后更新集群配置。例如，要修改 pods 的 CIDR 范围，就可以修改 `networking.podSubnet` 和 `spec.data.spec.calicoNetwork.ipPools.cidr` 字段。最终的 Clusterfile 会像是这样:
 

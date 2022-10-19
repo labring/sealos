@@ -51,7 +51,7 @@ spec:
 status: {}
 ```
 
-</detail>
+</details>
 
 2. Then you can Append `kubeadm Configuration` or `application configuration` to Clusterfile.For example, if you want to change the CIDR range of pods, you should change the `networking.podSubnet` and `spec.data.spec.calicoNetwork.ipPools.cidr` fields. The final Clusterfile will be like this:
 
