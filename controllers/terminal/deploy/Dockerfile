@@ -1,7 +1,6 @@
 FROM scratch
 
-RUN useradd -u 1337 terminal
-USER terminal
+USER 65532:65532
 
 COPY manifests ./terminal-controller
 CMD ["kubectl apply -f terminal-controller/deploy.yaml"]
