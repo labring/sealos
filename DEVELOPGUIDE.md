@@ -4,6 +4,15 @@ sealos only support linux now, you need a linux server to test it.
 
 Some tools can be very handy to help you start a virtual machine such as [multipass](https://multipass.run/)
 
+## Install golang
+
+```shell
+wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
+tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+go version
+```
+
 ## Build the project
 
 ```shell script
@@ -46,3 +55,9 @@ Then `go work use -r .` at current directory to update the workspace.
 ```shell script
 kubebuilder create api --group <name> --version v1 --kind <name>
 ```
+
+## FAQ
+
+1. clone code slow, your can use ghproxy: `git clone https://ghproxy.com/https://github.com/labring/sealos`
+2. build download package slow, you can use goproxy: `go env -w GOPROXY=https://goproxy.cn,direct && make build`
+3. `cgo: C compiler "x86_64-linux-gnu-gcc" not found: exec: "x86_64-linux-gnu-gcc": executable file not found in $PATH` you need install gnu-gcc, like: `apt-get install build-essential` or `yum -y install gcc-c++-x86_64-linux-gnu`
