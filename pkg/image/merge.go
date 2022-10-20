@@ -63,7 +63,7 @@ func Merge(newImageName string, images []string, buildOptions *types.BuildOption
 			continue
 		}
 		eg.Go(func() error {
-			err = registrySvc.Pull(types.DefaultPlatform(), imageName)
+			err = registrySvc.Pull(types.DefaultPlatform(), "missing", imageName)
 			if err != nil {
 				return err
 			}

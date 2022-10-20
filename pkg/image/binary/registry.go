@@ -36,12 +36,12 @@ func (*RegistryService) Login(domain, username, passwd string) error {
 func (*RegistryService) Logout(domain string) error {
 	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah logout %s", domain))
 }
-func (*RegistryService) Pull(platform v1.Platform, images ...string) error {
+func (*RegistryService) Pull(platform v1.Platform, policy string, images ...string) error {
 	platformCmd := fmt.Sprintf(" --platform %s", fmt.Sprintf("%s/%s", platform.OS, platform.Architecture))
 	logger.Info("pull images %v for platform is %s", images, fmt.Sprintf("%s/%s", platform.OS, platform.Architecture))
 
 	for _, image := range images {
-		if err := exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull --tls-verify=false %s %s", platformCmd, image)); err != nil {
+		if err := exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull --tls-verify=false --policy=%s %s %s", policy, platformCmd, image)); err != nil {
 			return err
 		}
 	}

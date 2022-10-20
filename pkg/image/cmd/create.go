@@ -30,6 +30,7 @@ import (
 func NewCreateCmd() *cobra.Command {
 	var clusterName string
 	var platform string
+	var policy string
 	var exampleCreate = `
 create a mysql cluster:
 	sealos create mysql:8.0
@@ -54,7 +55,7 @@ with custom cluster name:
 				return err
 			}
 
-			err = registrySvc.Pull(types.ParsePlatform(platform), imageName)
+			err = registrySvc.Pull(types.ParsePlatform(platform), policy, imageName)
 			if err != nil {
 				return err
 			}
@@ -70,5 +71,6 @@ with custom cluster name:
 	}
 	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to be created")
 	createCmd.Flags().StringVar(&platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
+	createCmd.Flags().StringVar(&policy, "policy", "missing", "missing, always, never, ifnewer")
 	return createCmd
 }

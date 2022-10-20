@@ -27,6 +27,7 @@ import (
 
 func NewPullCmd() *cobra.Command {
 	var platform string
+	var policy string
 	var pullCmd = &cobra.Command{
 		Use:     "pull",
 		Short:   "pull cloud image",
@@ -37,9 +38,10 @@ func NewPullCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return registrySvc.Pull(types.ParsePlatform(platform), args[0])
+			return registrySvc.Pull(types.ParsePlatform(platform), policy, args[0])
 		},
 	}
 	pullCmd.Flags().StringVar(&platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
+	pullCmd.Flags().StringVar(&policy, "policy", "ifnewer", "missing, always, never, ifnewer")
 	return pullCmd
 }

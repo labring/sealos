@@ -50,7 +50,7 @@ type pullOptions struct {
 	pullPolicy       string
 }
 
-func (*Service) Pull(platform v1.Platform, images ...string) error {
+func (*Service) Pull(platform v1.Platform, policy string, images ...string) error {
 	opt := pullOptions{
 		allTags:          false,
 		authfile:         auth.GetDefaultAuthFile(),
@@ -62,7 +62,7 @@ func (*Service) Pull(platform v1.Platform, images ...string) error {
 		removeSignatures: false,
 		tlsVerify:        false,
 		decryptionKeys:   nil,
-		pullPolicy:       "missing",
+		pullPolicy:       policy, //missing, always, never, ifnewer
 	}
 
 	if err := auth.CheckAuthFile(opt.authfile); err != nil {
@@ -80,7 +80,7 @@ func (*Service) Pull(platform v1.Platform, images ...string) error {
 		return errors.Wrapf(err, "unable to obtain decrypt config")
 	}
 
-	policy, ok := define.PolicyMap[opt.pullPolicy]
+	pullPolicy, ok := define.PolicyMap[opt.pullPolicy]
 	if !ok {
 		return fmt.Errorf("unsupported pull policy %q", "missing")
 	}
@@ -105,7 +105,7 @@ func (*Service) Pull(platform v1.Platform, images ...string) error {
 		MaxRetries:          3,
 		RetryDelay:          2 * time.Second,
 		OciDecryptConfig:    decConfig,
-		PullPolicy:          policy,
+		PullPolicy:          pullPolicy,
 	}
 
 	for _, image := range images {
