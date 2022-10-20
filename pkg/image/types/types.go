@@ -42,6 +42,8 @@ const (
 	DockerArchive string = "docker-archive"
 )
 
+const PullPolicy = "missing" // processor  create, install
+
 var DefaultTransport = OCIArchive
 
 type BuildOptions struct {
