@@ -50,7 +50,7 @@ merge images:
 	mergeCmd.Flags().StringVarP(&newImageName, "image", "i", "", "image new name")
 	mergeCmd.Flags().StringVar(&options.Platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
 	mergeCmd.Flags().IntVarP(&options.MaxPullProcs, "max-pull-procs", "m", 5, "maximum number of goroutines for pulling")
-	mergeCmd.Flags().StringVar(&policy, "policy", "missing", "missing, always, never, ifnewer")
+	mergeCmd.Flags().StringVar(&policy, "policy", types.PullPolicyMissing, "missing, always, never, ifnewer")
 	if err := mergeCmd.MarkFlagRequired("image"); err != nil {
 		logger.Error("failed to init flag image: %v", err)
 	}

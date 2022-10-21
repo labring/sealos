@@ -42,7 +42,12 @@ const (
 	DockerArchive string = "docker-archive"
 )
 
-const PullPolicy = "missing" // processor  create, install
+const (
+	PullPolicyMissing = "missing" // processor  create, install, command merge, create, save
+	PullPloicyAlways  = "always"
+	PullPloicyNever   = "never"
+	PullPloicyIfnewer = "ifnewer" // command pull
+)
 
 var DefaultTransport = OCIArchive
 

@@ -42,6 +42,6 @@ func NewPullCmd() *cobra.Command {
 		},
 	}
 	pullCmd.Flags().StringVar(&platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
-	pullCmd.Flags().StringVar(&policy, "policy", "ifnewer", "missing, always, never, ifnewer")
+	pullCmd.Flags().StringVar(&policy, "policy", types.PullPloicyIfnewer, "missing, always, never, ifnewer")
 	return pullCmd
 }

@@ -71,6 +71,6 @@ with custom cluster name:
 	}
 	createCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to be created")
 	createCmd.Flags().StringVar(&platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
-	createCmd.Flags().StringVar(&policy, "policy", "missing", "missing, always, never, ifnewer")
+	createCmd.Flags().StringVar(&policy, "policy", types.PullPolicyMissing, "missing, always, never, ifnewer")
 	return createCmd
 }

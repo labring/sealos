@@ -61,6 +61,6 @@ func NewSaveCmd() *cobra.Command {
 	saveCmd.Flags().StringVarP(&archiveName, "output", "o", "", "save image to tar archive file")
 	saveCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("save image transport to tar archive file.(optional value: %s , %s)", types.OCIArchive, types.DockerArchive))
 	saveCmd.Flags().StringVarP(&platform, "platform", "p", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
-	saveCmd.Flags().StringVar(&policy, "policy", "missing", "missing, always, never, ifnewer")
+	saveCmd.Flags().StringVar(&policy, "policy", types.PullPolicyMissing, "missing, always, never, ifnewer")
 	return saveCmd
 }
