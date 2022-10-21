@@ -142,6 +142,6 @@ sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
 
 **Join us: [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 
-## License
+<!-- ## License -->
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large)
+<!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->
