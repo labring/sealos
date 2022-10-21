@@ -206,12 +206,12 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 		r.hosts = []v2.Host{}
-		if len(masters) != 0 {
-			r.setHostWithIpsPort(masters, []string{v2.MASTER, string(v2.AMD64)})
-		}
-		if len(nodes) != 0 {
-			r.setHostWithIpsPort(nodes, []string{v2.NODE, string(v2.AMD64)})
-		}
+
+		clusterSSH := r.cluster.GetSSH()
+		sshClient := ssh.NewSSHClient(&clusterSSH, true)
+
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		r.cluster.Spec.Hosts = r.hosts
 	}
 	logger.Debug("cluster info: %v", r.cluster)
