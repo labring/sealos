@@ -12,19 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Namespace
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  name: sealos
-  annotations:
-  labels:
-    name: sealos
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sealos-system
-  annotations:
-  labels:
-    name: sealos-system
+  name: wildcard-apisix-sealos-io
+  namespace: sealos-system
+spec:
+  secretName: wildcard-apisix-sealos-io-cert
+  renewBefore: 240h
+  dnsNames:
+  - 'apisix.sealos.io'
+  - '*.apisix.sealos.io'
+  issuerRef:
+    name: cluster-issuer-apisix
+    kind: ClusterIssuer
