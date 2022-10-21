@@ -8,13 +8,13 @@ sidebar_position: 4
 
 ```shell
 # sealos version must >= v4.1.0
-$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.22.1 --single
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 ```
 
 ## 集群安装 Kuberentes
 
 ```shell
-$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.24.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -28,7 +28,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.24.1 \
 | --ssh-passwd | [your-ssh-passwd] | ssh 登录密码 |
 |image | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
 
-干净的服务器上直接执行上面命令，不要做任何多余劲操作即可起动一个高可用的 kubernetes 集群。
+在干净的服务器上直接执行上面命令，不要做任何多余操作即可启动一个高可用的 kubernetes 集群。
 
 ## 安装各种分布式应用
 
