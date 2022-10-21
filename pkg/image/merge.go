@@ -36,7 +36,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/rand"
 )
 
-func Merge(newImageName string, images []string, buildOptions *types.BuildOptions) error {
+func Merge(newImageName string, images []string, buildOptions *types.BuildOptions, policy string) error {
 	registrySvc, err := NewRegistryService()
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func Merge(newImageName string, images []string, buildOptions *types.BuildOption
 			continue
 		}
 		eg.Go(func() error {
-			err = registrySvc.Pull(types.DefaultPlatform(), imageName)
+			err = registrySvc.Pull(types.DefaultPlatform(), policy, imageName)
 			if err != nil {
 				return err
 			}

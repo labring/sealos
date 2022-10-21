@@ -29,6 +29,7 @@ import (
 func NewMergeCmd() *cobra.Command {
 	var options types.BuildOptions
 	var newImageName string
+	var policy string
 	var mergeCmd = &cobra.Command{
 		Use:   "merge",
 		Short: "merge multiple images into one",
@@ -39,7 +40,7 @@ merge images:
 `,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return image.Merge(newImageName, args, &options)
+			return image.Merge(newImageName, args, &options, policy)
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info("images %s is merged to %s", strings.Join(args, ","), newImageName)
@@ -49,7 +50,7 @@ merge images:
 	mergeCmd.Flags().StringVarP(&newImageName, "image", "i", "", "image new name")
 	mergeCmd.Flags().StringVar(&options.Platform, "platform", fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH), "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example linux/arm)")
 	mergeCmd.Flags().IntVarP(&options.MaxPullProcs, "max-pull-procs", "m", 5, "maximum number of goroutines for pulling")
-
+	mergeCmd.Flags().StringVar(&policy, "policy", types.PullPolicyMissing, "missing, always, never, ifnewer")
 	if err := mergeCmd.MarkFlagRequired("image"); err != nil {
 		logger.Error("failed to init flag image: %v", err)
 	}

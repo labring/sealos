@@ -101,7 +101,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err = SyncClusterStatus(current, c.ClusterManager, c.ImageManager, false); err != nil {
 		return err
 	}
-	err = c.RegistryManager.Pull(types.DefaultPlatform(), c.NewImages...)
+	err = c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, c.NewImages...)
 	if err != nil {
 		return err
 	}
