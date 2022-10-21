@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -127,9 +128,12 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 			}
 		}
 		if len(addrs) > 0 {
+			clusterSSH := cluster.GetSSH()
+			sshClient := ssh.NewSSHClient(&clusterSSH, true)
+
 			return &v2.Host{
 				IPS:   addrs,
-				Roles: []string{role, string(v2.AMD64)},
+				Roles: []string{role, GetHostArch(sshClient, addrs[0])},
 			}, nil
 		}
 		return nil, nil
