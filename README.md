@@ -43,6 +43,27 @@ Use the cloud like a PC desktop, Freely run and uninstall any distributed applic
 
 ![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
 
+Some Screen Shots of `sealos`:
+
+<table>
+  <tr>
+      <td width="50%" align="center"><b>redis on sealos cloud(1)</b></td>
+      <td width="50%" align="center"><b>redis on sealos cloud(2)</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
+  </tr>
+  <tr>
+      <td width="50%" align="center"><b>pgsql on sealos cloud(1)</b></td>
+      <td width="50%" align="center"><b>pgsql on sealos cloud(2)</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196185833-1b5c7a35-32e8-4f75-a52f-8b089ccbe8a4.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186330-cf526d0a-46b1-4938-842c-c7a90d79f97e.png"/></td>
+  </tr>
+</table>
+
 ## Core features
 
 - Manage clusters lifecycle

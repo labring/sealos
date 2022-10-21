@@ -26,6 +26,11 @@
 
 [Docs](https://sealos.io) | [简体中文](https://www.sealos.io/zh-Hans/)
 
+## 部署 kubernetes cluster
+
+[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
+
+
 ## sealos 是什么
 
 **sealos 是以 kubernetes 为内核的云操作系统发行版**
@@ -36,6 +41,34 @@
 
 - 从现在开始，把你数据中心所有机器想象成一台"抽象"的超级计算机，sealos 就是用来管理这台超级计算机的操作系统，kubernetes 就是这个操作系统的内核！
 - 云计算从此刻起再无 IaaS PaaS SaaS 之分，只有云操作系统驱动(CSI CNI CRI 实现) 云操作系统内核(kubernetes) 和 分布式应用组成
+
+
+## sealos 桌面
+
+云端使用电脑，而无需安装任何分布式应用
+
+![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
+
+可以通过下面的屏幕截图进一步了解`sealos`的应用:
+
+<table>
+  <tr>
+      <td width="50%" align="center"><b>redis on sealos cloud(1)</b></td>
+      <td width="50%" align="center"><b>redis on sealos cloud(2)</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
+  </tr>
+  <tr>
+      <td width="50%" align="center"><b>pgsql on sealos cloud(1)</b></td>
+      <td width="50%" align="center"><b>pgsql on sealos cloud(2)</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196185833-1b5c7a35-32e8-4f75-a52f-8b089ccbe8a4.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186330-cf526d0a-46b1-4938-842c-c7a90d79f97e.png"/></td>
+  </tr>
+</table>
 
 ## 核心特性
 
@@ -49,8 +82,9 @@
   - [x] 用 Dockerfile 构建分布式应用镜像，保存所有的依赖
   - [x] 发布分布式应用镜像到 Docker Hub
   - [x] 融合多个应用构建专属的云平台
-- sealos desktop
-  - [ ] 像使用 win11 一样使用云 (2022.9 惊艳上线)
+- Sealos cloud
+  - [x] 支持运行分布式应用程序
+  - [x] 拥有完整的公共云功能，可以畅意运行
 
 ## 快速开始
 
@@ -68,14 +102,18 @@ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
-使用 docker 作为 runtime:
+
+* 已支持的 kubernetes 版本列表: [240+ kubernetes 版本](https://hub.docker.com/r/labring/kubernetes/tags)、 [kubernetes 使用 cri-docker](https://hub.docker.com/r/labring/kubernetes-docker/tags)
+* 其他分布式 [应用镜像](https://hub.docker.com/u/labring)
+
+> 运行单个主机
+
 ```shell
-sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
+# remove taint
+$ kubectl taint node --all node-role.kubernetes.io/control-plane-
 ```
 
-* 已支持的 kubernetes 版本列表: [kuberentes 使用 containerd 运行时](https://hub.docker.com/r/labring/kubernetes/tags) [kubernetes 使用 cri-docker](https://hub.docker.com/r/labring/kubernetes-docker/tags)
 
 > 构建一个自定义集群镜像
 
@@ -92,9 +130,15 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
    labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # 喜欢的话可以把它们写一起
 ```
 
-然后你就啥都有了。
+然后一切准备就绪。
 
-以上 minio mysql redis 等都是高可用的，跑在 kubernetes 集群之上，而 `labring/mysql-operator:8.0.23-14.1` 这种我们称之为集群镜像，里面包含了启动 mysql 高可用集群的所有依赖。
+## 使用 cri-docker 镜像
+
+```shell
+sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
+     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
 
 ## 其它链接
 
