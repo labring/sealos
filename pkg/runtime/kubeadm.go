@@ -223,9 +223,10 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 			if err != nil {
 				return err
 			}
-			now := time.Now().Unix()
-			ex := t.Expires.Time.Unix()
-			if ex < now {
+			now := time.Now()
+			sub := t.Expires.Time.Sub(now)
+			//only get 3min token
+			if sub <= 180 {
 				err = k.writeTokenFile()
 				if err != nil {
 					return err
