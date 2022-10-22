@@ -30,7 +30,7 @@ func newTokenCmd() *cobra.Command {
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
-			t, err := runtime.Default()
+			t, err := runtime.Generator()
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)
