@@ -123,6 +123,10 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		return err
 	}
 	layers := buildahcli.UseLayers()
+	contextDir, err = GetContextDir(options)
+	if err != nil {
+		return err
+	}
 	if len(containerfiles) == 0 {
 		// Try to find the Containerfile/Dockerfile within the contextDir
 		containerfile, err := buildahutil.DiscoverContainerfile(contextDir)
