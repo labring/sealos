@@ -109,7 +109,7 @@ $ kubectl taint node --all node-role.kubernetes.io/control-plane-
 
 > Building a custom cluster image
 
-See [Building an Example CloudImage](https://www.sealos.io/docs/examples/build-example-cloudimage).
+See [Building an Example CloudImage](https://www.sealos.io/docs/getting-started/build-example-cloudimage).
 
 > Storage, message queue, database, etc.
 
