@@ -168,7 +168,9 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
 		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
-		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		if len(nodes) > 0 {
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		}
 		r.cluster.Spec.Hosts = r.hosts
 	} else {
 		return fmt.Errorf("master ip(s) must specified")
@@ -211,7 +213,9 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 		sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
 		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
-		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		if len(nodes) > 0 {
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		}
 		r.cluster.Spec.Hosts = r.hosts
 	}
 	logger.Debug("cluster info: %v", r.cluster)
