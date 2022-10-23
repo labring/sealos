@@ -503,15 +503,15 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 }
 
 func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
-	cGroupDriver, err := k.getCGroupDriver(node)
-	if err != nil {
-		return err
-	}
-	k.setCgroupDriver(cGroupDriver)
 	criSocket, err := k.getCRISocket(node)
 	if err != nil {
 		return err
 	}
 	k.setCRISocket(criSocket)
+	cGroupDriver, err := k.getCGroupDriver(node)
+	if err != nil {
+		return err
+	}
+	k.setCgroupDriver(cGroupDriver)
 	return nil
 }

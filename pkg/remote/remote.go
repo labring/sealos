@@ -33,7 +33,6 @@ type Interface interface {
 	IPVSClean(ip, vip string) error
 	StaticPod(ip, vip, name, image string, masters []string) error
 	Token(ip string) (string, error)
-	IsDocker(ip string) (string, error)
 	CGroup(ip string) (string, error)
 	Socket(ip string) (string, error)
 	Cert(ip string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error
@@ -44,7 +43,6 @@ const (
 	deleteHostsCommandFmt = "hosts delete  --domain %s"
 	hostnameCommandFmt    = "hostname"
 	tokenCommandFmt       = "token"
-	isDockerCommandFmt    = "cri is-docker"
 	cGroupCommandFmt      = "cri cgroup-driver --short"
 	socketCommandFmt      = "cri socket"
 )
@@ -118,10 +116,6 @@ func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error 
 
 func (s *remote) Token(ip string) (string, error) {
 	return bashToString(s.clusterName, s.sshInterface, ip, tokenCommandFmt)
-}
-
-func (s *remote) IsDocker(ip string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, isDockerCommandFmt)
 }
 func (s *remote) CGroup(ip string) (string, error) {
 	return bashToString(s.clusterName, s.sshInterface, ip, cGroupCommandFmt)
