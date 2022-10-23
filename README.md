@@ -136,6 +136,7 @@ sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
 
 - [Contribution Guidelines](./CONTRIBUTING.md)
 - [Development Guide](./DEVELOPGUIDE.md)
+- [SealosAction](https://github.com/marketplace/actions/auto-install-k8s-using-sealos)
 - [sealos 3.0(older version)](https://github.com/labring/sealos/tree/release-v3.3.9#readme) For older version users. Note that sealos 4.0 includes significant improvements, so please upgrade ASAP.
 - [buildah](https://github.com/containers/buildah) Capabilities of buildah is widely used in sealos 4.0 to make cluster images compatible with container images and docker registry.
 - [sealer](https://github.com/sealerio/sealer) Capabilities of sealer is widely used in sealos 4.0 to make Clusterfile compatible with sealer, some module forked sealer source code.
