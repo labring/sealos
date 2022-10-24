@@ -42,7 +42,8 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt install -y gcc-aarch64-linux-gnu \
-            libbtrfs-dev libgpgme-dev libdevmapper-dev
+            libbtrfs-dev libgpgme-dev libdevmapper-dev \
+            libbtrfs-dev:arm64 libgpgme-dev:arm64 libdevmapper-dev:arm64
           make install.upx
           sudo cp tools/upx /usr/bin/
           sudo chmod a+x /usr/bin/upx
