@@ -101,8 +101,6 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
    cd sealos
    git fetch upstream
    git checkout main
-   git rebase upstream/main
-   git push	# default origin, update your forked repository
    ```
 
    Create a new branch:
@@ -112,36 +110,47 @@ To put forward a PR, we assume you have registered a GitHub ID. Then you could f
    ```
 
    Make any change on the `new-branch` then build and test your codes.
-
-1. **Push your branch** to your forked repository, try not to generate multiple commit message within a pr.
-
+1. **Commit your changes** to your local branch, lint before committing and commit with sign-off
    ```shell
+   git rebase upstream/main
    golangci-lint run -c .golangci.yml # lint
-   git add -A
-   git commit -a -s -m "message for your changes" # -a is git add ., -s adds a Signed-off-by trailer
-   git rebase -i	<commit-id> # do this if your pr has multiple commits
-   git push # push to your forked repository after rebase done, if it's first time push, run git push --set-upstream origin <new-branch>
+   git add -A  # add changes to staging
+   git commit -s -m "message for your changes" # -s adds a Signed-off-by trailer
    ```
 
-   If you don't want to use `git rebase -i`, you can use `git commit -s --amend && git push -f`
+1. **Push your branch** to your forked repository, it is recommended to have only one commit for a PR.
 
-   If you develop multiple features in same branch, you should rebase the main branch:
+   ```shell
+   # sync up with upstream
+   git fetch upstream main
+   git rebase upstream/main
+
+   git rebase -i	<commit-id> # rebase with interactive mode to squash your commits into a single one
+   git push # push to the remote repository, if it's a first time push, run git push --set-upstream origin <new-branch>
+   ```
+
+   You can also use `git commit -s --amend && git push -f` to update modifications on the previous commit.
+
+   If you have developed multiple features in the same branch, you should create PR separately by rebasing to the main branch between each push:
 
    ```shell
    # create new branch, for example git checkout -b feature/infra
    git checkout -b <new branch>
    # update some code, feature1
    git add -A
-   git commit -m -s "init infra"
+   git commit -m -s "feature one"
    git push # if it's first time push, run git push --set-upstream origin <new-branch>
    # then create pull request, and merge
    # update some new feature, feature2, rebase main branch first.
-   git rebase upstream/main
-   git commit -m -s "init infra"
+   git rebase upstream/main # rebase the current branch to upstream/main branch
+   git add -A
+   git commit -m -s "feature two"
    # then create pull request, and merge
    ```
 
 1. **File a pull request** to labring/sealos:master
+
+   It is recommended to review your changes before filing a pull request. Check if your code doesn't conflict with the main branch and no redundant code is included.
 
 ### Branch Definition
 
