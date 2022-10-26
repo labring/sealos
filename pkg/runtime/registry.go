@@ -33,7 +33,7 @@ import (
 func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
-		IP:       defaultRegistry,
+		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
 		Port:     "5000",
 		Username: constants.DefaultRegistryUsername,
