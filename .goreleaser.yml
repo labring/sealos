@@ -140,6 +140,81 @@ release:
 #    name: sealos
   prerelease: auto
 
+dockers:
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}//lvscare:{{ .Tag }}-amd64
+    dockerfile: docker/lvscare/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - lvscare
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}//lvscare:{{ .Tag }}-arm64
+    dockerfile: docker/lvscare/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=lvscare
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+    dockerfile: docker/sealos/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/amd64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+  - use: buildx
+    ids:
+      - sealos
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+    dockerfile: docker/sealos/Dockerfile.release
+    build_flag_templates:
+      - --pull
+      - --platform=linux/arm64
+      - --label=io.sealos.image.created={{.Date}}
+      - --label=io.sealos.image.title=sealos
+      - --label=io.sealos.image.revision={{.ShortCommit}}
+      - --label=io.sealos.image.version={{.Tag }}
+      - --label=io.sealos.image.auth={{ .Env.USERNAME }}
+docker_manifests:
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}-arm64
+  - name_template: ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}
+    image_templates:
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-amd64
+      - ghcr.io/{{ .Env.USERNAME }}/sealos:{{ .Tag }}-arm64
+
 nfpms:
   - id: packages
     builds:
@@ -167,20 +242,3 @@ checksum:
 
 snapshot:
   name_template: "{{ .Tag }}-next"
-
-changelog:
-  use: github
-  sort: asc
-  groups:
-    - title: Features
-      regexp: "^.*feat[(\\w)]*:+.*$"
-      order: 0
-    - title: "Bug fixes"
-      regexp: "^.*fix[(\\w)]*:+.*$"
-      order: 1
-    - title: Others
-      order: 999
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
