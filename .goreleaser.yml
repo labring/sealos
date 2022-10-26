@@ -68,6 +68,13 @@ builds:
       - amd64
     flags:
       - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
@@ -88,6 +95,13 @@ builds:
       - amd64
     flags:
       - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
@@ -108,6 +122,13 @@ builds:
       - amd64
     flags:
       - -trimpath
+    tags:
+      - containers_image_openpgp
+      - netgo
+      - exclude_graphdriver_devicemapper
+      - static
+      - osusergo
+      - exclude_graphdriver_btrfs
     ldflags:
       - -X github.com/labring/sealos/pkg/version.gitVersion={{.Version}}
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
