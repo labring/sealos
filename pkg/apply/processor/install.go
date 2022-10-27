@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -178,7 +180,9 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return nil
 	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+		hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	}
 	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err

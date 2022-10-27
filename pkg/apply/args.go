@@ -28,14 +28,12 @@ import (
 type Cluster struct {
 	Masters     string
 	Nodes       string
-	Registry    string
 	ClusterName string
 }
 
 func (c *Cluster) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
 	fs.StringVar(&c.Masters, "masters", "", fmt.Sprintf("masters to %s", verb))
 	fs.StringVar(&c.Nodes, "nodes", "", fmt.Sprintf("nodes to %s", verb))
-	fs.StringVar(&c.Registry, "registry", "", fmt.Sprintf("registry to %s", verb))
 	fs.StringVar(&c.ClusterName, "cluster", "default", fmt.Sprintf("name of cluster to applied %s action", action))
 }
 

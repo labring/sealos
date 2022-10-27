@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -155,7 +157,9 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+		hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	}
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
