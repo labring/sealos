@@ -45,7 +45,7 @@ create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --registry 192.168.0.8:28 --passwd xxx
   
-  Use the first master node as the registry for the cluster (omit the --registry param)
+  Use the first master node as the registry for the cluster (omit the --registry option)
     sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 

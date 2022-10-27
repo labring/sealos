@@ -39,8 +39,6 @@ const (
 	PkiEtcdDirName                   = "etcd"
 	ScriptsDirName                   = "scripts"
 	StaticsDirName                   = "statics"
-	OptDirName                       = "opt"
-	CriDirName                       = "cri"
 )
 
 func LogPath() string {
@@ -57,15 +55,11 @@ type Data interface {
 	RootFSStaticsPath() string
 	RootFSScriptsPath() string
 	RootFSRegistryPath() string
-	RootFSCriPath() string
-	RootFSOptPath() string
-	RootFSImagesPath() string
 
 	PkiPath() string
 	PkiEtcdPath() string
 	AdminFile() string
 	EtcPath() string
-	ScriptsPath() string
 	TmpPath() string
 
 	RootFSCharsPath() string
@@ -91,19 +85,6 @@ func (d *data) RootFSEtcPath() string {
 func (d *data) RootFSRegistryPath() string {
 	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
-
-func (d *data) RootFSCriPath() string {
-	return filepath.Join(d.RootFSPath(), CriDirName)
-}
-
-func (d *data) RootFSOptPath() string {
-	return filepath.Join(d.RootFSPath(), OptDirName)
-}
-
-func (d *data) RootFSImagesPath() string {
-	return filepath.Join(d.RootFSPath(), ImagesDirName)
-}
-
 func (d *data) RootFSCharsPath() string {
 	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }
@@ -115,11 +96,6 @@ func (d *data) RootFSManifestsPath() string {
 func (d *data) EtcPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
 }
-
-func (d *data) ScriptsPath() string {
-	return filepath.Join(ClusterDir(d.clusterName), ScriptsDirName)
-}
-
 func (d *data) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }

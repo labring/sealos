@@ -16,7 +16,6 @@ package runtime
 
 import (
 	"fmt"
-	"net"
 	"path"
 
 	"github.com/pkg/errors"
@@ -93,41 +92,6 @@ func (k *KubeadmRuntime) htpasswd(registry *v1beta1.RegistryConfig) error {
 	htpasswdDetEtcPath := path.Join(k.getContentData().RootFSEtcPath(), "registry_htpasswd")
 	return k.sshCopy(registry.IP, htpasswdEtcPath, htpasswdDetEtcPath)
 }
-
-func (k *KubeadmRuntime) copyRegistryFiles(registry *v1beta1.RegistryConfig) error {
-	scriptPath := k.getContentData().RootFSScriptsPath()
-	cfgPath := k.getContentData().RootFSEtcPath()
-	criPath := k.getContentData().RootFSCriPath()
-	optPath := k.getContentData().RootFSOptPath()
-	imagesPath := k.getContentData().RootFSImagesPath()
-	registryPath := k.getContentData().RootFSRegistryPath()
-	logger.Debug("copying scripts, ip %s, srcPath %s, dstPath %s", registry.IP, scriptPath, scriptPath)
-	if err := k.sshCopy(registry.IP, scriptPath, scriptPath); err != nil {
-		return err
-	}
-	logger.Debug("copying registry config files, ip %s, srcPath %s, dstPath %s", registry.IP, cfgPath, cfgPath)
-	if err := k.sshCopy(registry.IP, cfgPath, cfgPath); err != nil {
-		return err
-	}
-	logger.Debug("copying cri files, ip %s, srcPath %s, dstPath %s", registry.IP, criPath, criPath)
-	if err := k.sshCopy(registry.IP, criPath, criPath); err != nil {
-		return err
-	}
-	logger.Debug("copying opt files, ip %s, srcPath %s, dstPath %s", registry.IP, optPath, optPath)
-	if err := k.sshCopy(registry.IP, optPath, optPath); err != nil {
-		return err
-	}
-	logger.Debug("copying images files, ip %s, srcPath %s, dstPath %s", registry.IP, imagesPath, imagesPath)
-	if err := k.sshCopy(registry.IP, imagesPath, imagesPath); err != nil {
-		return err
-	}
-	logger.Debug("copying images files, ip %s, srcPath %s, dstPath %s", registry.IP, registryPath, registryPath)
-	if err := k.sshCopy(registry.IP, registryPath, registryPath); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
@@ -140,16 +104,6 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 	err = k.htpasswd(registry)
 	if err != nil {
 		return fmt.Errorf("generator registry htpasswd failed %v", err)
-	}
-	address, err := iputils.ListLocalHostAddrs()
-	if err != nil {
-		logger.Warn("failed to get local address, %v", err)
-		address = &[]net.Addr{&net.IPNet{IP: net.ParseIP(k.getMaster0IP())}}
-	}
-	if !iputils.IsLocalIP(registry.IP, address) {
-		if err = k.copyRegistryFiles(registry); err != nil {
-			return fmt.Errorf("copy registry scripts and configs failed: %v", err)
-		}
 	}
 	err = k.execInitRegistry(registry.IP)
 	if err != nil {

@@ -175,8 +175,8 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		if len(registries) == 0 {
 			roles = []string{v2.MASTER, v2.REGISTRY, GetHostArch(sshClient, masters[0])}
 		} else {
-			roles = []string{v2.MASTER, string(v2.AMD64)}
-			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, masters[0])})
+			roles = []string{v2.MASTER, GetHostArch(sshClient, masters[0])}
+			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, registries[0])})
 		}
 		r.setHostWithIpsPort(masters, roles)
 		if len(nodes) > 0 {
@@ -232,7 +232,7 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 			roles = []string{v2.MASTER, v2.REGISTRY, GetHostArch(sshClient, masters[0])}
 		} else {
 			roles = []string{v2.MASTER, GetHostArch(sshClient, masters[0])}
-			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, masters[0])})
+			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, registries[0])})
 		}
 		r.setHostWithIpsPort(masters, roles)
 		if len(nodes) > 0 {
