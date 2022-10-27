@@ -36,7 +36,7 @@ create cluster to your baremetal server, appoint the iplist:
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
   multi image:
     sealos run labring/kubernetes:v1.24.0 calico:v3.24.1 \
-        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19 192.168.64.18
+        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22)：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
