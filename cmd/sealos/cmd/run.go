@@ -33,20 +33,20 @@ import (
 var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --registry 192.168.0.8 --passwd xxx
+		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
   multi image:
     sealos run labring/kubernetes:v1.24.0 calico:v3.24.1 \
-        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19 --registry 192.168.64.18
+        --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19 192.168.64.18
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22)：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --registry 192.168.0.8 --port 24 --passwd xxx
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
   Different InfraSSH port numbers exist：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
-	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --registry 192.168.0.8:28 --passwd xxx
+	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
   
-  Use the first master node as the registry for the cluster (omit the --registry option)
-    sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+  Use an independent node as the registry node of the cluster (other than the first master node)
+    sealos run -e REGISTRY_HOST=192.168.0.8 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 
   Single kubernetes cluster：
@@ -54,7 +54,7 @@ create cluster to your baremetal server, appoint the iplist:
 
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --registry 192.168.0.7 --passwd xxx
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
 
 func newRunCmd() *cobra.Command {
@@ -66,7 +66,7 @@ func newRunCmd() *cobra.Command {
 	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "simplest way to run your kubernetes HA cluster",
-		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg] --registry [arg]`,
+		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if runSingle {

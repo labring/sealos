@@ -34,7 +34,7 @@ import (
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
 	k.registryOnce.Do(func() {
-		k.Registry = k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
+		k.Registry = GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
 	})
 	return k.Registry
 }

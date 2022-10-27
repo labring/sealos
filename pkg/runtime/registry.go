@@ -23,6 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -30,7 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
+func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:       defaultRegistry,
@@ -41,7 +42,7 @@ func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta
 		Data:     constants.DefaultRegistryData,
 	}
 	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
-	out, _ := k.getSSHInterface().Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
+	out, _ := sshInterface.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
 	logger.Debug("image shim data info: %s", string(out))
 	registryConfig, err := yaml.UnmarshalData(out)
 	if err != nil {
