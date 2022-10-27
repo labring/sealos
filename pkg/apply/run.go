@@ -162,12 +162,23 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if len(args.Cluster.Masters) > 0 {
 		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		registries := stringsutil.SplitRemoveEmpty(args.Cluster.Registry, ",")
+		if len(registries) > 1 {
+			return fmt.Errorf("registry of multi nodes is not supported yet")
+		}
 		r.hosts = []v2.Host{}
 
 		clusterSSH := r.cluster.GetSSH()
 		sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		var roles []string
+		if len(registries) == 0 {
+			roles = []string{v2.MASTER, v2.REGISTRY, GetHostArch(sshClient, masters[0])}
+		} else {
+			roles = []string{v2.MASTER, GetHostArch(sshClient, masters[0])}
+			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, registries[0])})
+		}
+		r.setHostWithIpsPort(masters, roles)
 		if len(nodes) > 0 {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		}
@@ -207,12 +218,23 @@ func (r *ClusterArgs) SetClusterResetArgs(args *ResetArgs) error {
 	if len(args.Cluster.Masters) > 0 {
 		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+		registries := stringsutil.SplitRemoveEmpty(args.Cluster.Registry, ",")
+		if len(registries) > 1 {
+			return fmt.Errorf("registry of multi nodes is not supported yet")
+		}
 		r.hosts = []v2.Host{}
 
 		clusterSSH := r.cluster.GetSSH()
 		sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		var roles []string
+		if len(registries) == 0 {
+			roles = []string{v2.MASTER, v2.REGISTRY, GetHostArch(sshClient, masters[0])}
+		} else {
+			roles = []string{v2.MASTER, GetHostArch(sshClient, masters[0])}
+			r.setHostWithIpsPort(registries, []string{v2.REGISTRY, GetHostArch(sshClient, registries[0])})
+		}
+		r.setHostWithIpsPort(masters, roles)
 		if len(nodes) > 0 {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		}

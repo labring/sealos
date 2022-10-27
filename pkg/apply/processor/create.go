@@ -63,17 +63,17 @@ func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
 func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
-		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
+		// c.GetPhasePluginFunc(plugin.PhaseOriginally),
 		c.Check,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
-		//c.GetPhasePluginFunc(plugin.PhasePreInit),
+		// c.GetPhasePluginFunc(plugin.PhasePreInit),
 		c.Init,
 		c.Join,
-		//c.GetPhasePluginFunc(plugin.PhasePreGuest),
+		// c.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
-		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
+		// c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
 }
@@ -155,6 +155,7 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err

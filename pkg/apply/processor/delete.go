@@ -46,7 +46,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 	if err != nil {
 		return err
 	}
-	//TODO if error is exec net process ???
+	// TODO if error is exec net process ???
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
 			logger.Warn("failed to exec delete process, %s", err.Error())
@@ -81,6 +81,7 @@ func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
 
 func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	if cluster.Status.Mounts == nil {
 		logger.Warn("delete process unmount rootfs skip is cluster not mount any rootfs")
 		return nil

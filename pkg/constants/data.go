@@ -85,7 +85,6 @@ func (d *data) RootFSEtcPath() string {
 func (d *data) RootFSRegistryPath() string {
 	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
-
 func (d *data) RootFSCharsPath() string {
 	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }

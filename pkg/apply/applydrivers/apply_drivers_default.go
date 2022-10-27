@@ -127,21 +127,21 @@ func (c *Applier) updateStatus(err error) {
 }
 
 func (c *Applier) reconcileCluster() error {
-	//sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
+	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired)
 	if err := c.installApp(c.RunNewImages); err != nil {
 		return err
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	//if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
+	// if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
 	//	return c.upgrade()
-	//}
+	// }
 	return c.scaleCluster(mj, md, nj, nd)
 }
 
 func (c *Applier) initCluster() error {
-	logger.Info("Start to create a new cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList())
+	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
 	createProcessor, err := processor.NewCreateProcessor(c.ClusterFile)
 	if err != nil {
 		return err
