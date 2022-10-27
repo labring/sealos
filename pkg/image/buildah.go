@@ -17,7 +17,12 @@ limitations under the License.
 package image
 
 import (
+	"sync"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/utils/exec"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -37,7 +42,41 @@ func initBuildah() (bool, error) {
 		return false, errors.New("create registry config failed")
 	}
 	_, ok := exec.CheckCmdIsExist("buildah")
+	if ok {
+		return checkBuildahVersion()
+	}
 	return ok, nil
+}
+
+var buildahOnce sync.Once
+var onceBuildahVersion BuildahVersion
+
+func checkBuildahVersion() (bool, error) {
+	buildahOnce.Do(func() {
+		versionJSON, _ := exec.RunBashCmd("buildah version")
+		var bVersion BuildahVersion
+		_ = json.Unmarshal([]byte(versionJSON), &bVersion)
+		logger.Debug("buildah version: %+v", bVersion)
+		onceBuildahVersion = bVersion
+	})
+	if onceBuildahVersion.GitCommit == "bc5080cc" {
+		return true, nil
+	}
+	return false, errors.New("System's buildah is not match sealos buildah requirements, please uninstall system's buildah, and retry")
+}
+
+type BuildahVersion struct {
+	Version       string `json:"version"`       //1.25.0-dev
+	GoVersion     string `json:"goVersion"`     //go1.16.9
+	ImageSpec     string `json:"imageSpec"`     //1.0.2-dev
+	RuntimeSpec   string `json:"runtimeSpec"`   //1.0.2-dev
+	CniSpec       string `json:"cniSpec"`       //1.0.0
+	LibcniVersion string `json:"libcniVersion"` //v1.0.1
+	ImageVersion  string `json:"imageVersion"`  //5.20.0
+	GitCommit     string `json:"gitCommit"`     //bc5080cc
+	Built         string `json:"built"`         //Fri Apr  1 17:38:55 2022
+	OsArch        string `json:"osArch"`        //linux/arm64
+	BuildPlatform string `json:"buildPlatform"` //linux/arm64/v8
 }
 
 func buildahPolicySync() error {
