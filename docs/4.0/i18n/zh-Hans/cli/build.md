@@ -61,7 +61,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 1. `CalicoImageList` is docker image list file.
 2. `cni` contains kubectl apply config files.
 3. `registry` is the registry data directory.
-4. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` builds the oci image.
+4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64   -f Kubefile .` builds the oci image.
 5. `manifests` parse yaml images to docker image list.
 
 ## Build calico image
@@ -104,7 +104,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 </Tabs>
 
 1. `cni` contains kubectl apply config files
-2. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` builds the oci image.
+2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .` builds the oci image.
 
 ## Build openebs image
 
@@ -146,7 +146,7 @@ CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
 </Tabs>
 
 1. `cni` contains kubectl apply config files
-2. `buildah build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` builds the oci image.
+2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64  -f Kubefile .` builds the oci image.
 
 :::tip
 You'll need to add calico cmd to openebs cmd layer, because dockerfile overrides the old layer.
@@ -154,9 +154,22 @@ You'll need to add calico cmd to openebs cmd layer, because dockerfile overrides
 
 ## Build multi-architecture images
 
+### Download buildah for x86_64 platform
 ```shell
-$ buildah build -t $prefix/oci-kubernetes:$version-amd64 --arch amd64 --os linux -f Kubefile  .
-$ buildah build -t $prefix/oci-kubernetes:$version-arm64 --arch arm64 --os linux -f Kubefile  .
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+### Download buildah for aarch64 platform
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+
+### Cross-platform build image
+
+```shell
+$ sealos build -t $prefix/oci-kubernetes:$version-amd64 --platform linux/amd64  -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-arm64 --platform linux/arm64  -f Kubefile  .
 
 $ buildah login --username $username --password $password $domain
 $ buildah push $prefix/oci-kubernetes:$version-amd64
