@@ -54,7 +54,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 1. `CalicoImageList`: Docker image list file.
 2. `cni`: Configuration files for `kubectl apply`.
 3. `registry`: Directory storing container registry data.
-4. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .`: Build OCI image.
+4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64 -f Kubefile .`: Build OCI image.
 5. `manifests`: Parse images in yaml files to Docker image list.
 
 ## Build Calico image
@@ -97,7 +97,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 </Tabs>
 
 1. `cni`: Configuration files for `kubectl apply`.
-2. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .`: Build OCI image.
+2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`: Build OCI image.
 
 ## Build OpenEBS image
 
@@ -139,7 +139,7 @@ CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
 </Tabs>
 
 1. `cni`: Configuration files for `kubectl apply`.
-2. `buildah build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .`: Build OCI image.
+2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`: Build OCI image.
 
 ::: Suggestions
 
@@ -148,10 +148,22 @@ You need to add Calico CMD to OpenEBS CMD layer, as Dockerfile will overwrite th
 :::
 
 ## Build cross-platform images
+### Download buildah for x86_64 platform
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+### Download buildah for aarch64 platform
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+
+### Cross-platform build image
 
 ```shell
-$ buildah build -t $prefix/oci-kubernetes:$version-amd64 --arch amd64 --os linux -f Kubefile  .
-$ buildah build -t $prefix/oci-kubernetes:$version-arm64 --arch arm64 --os linux -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-amd64 --platform linux/amd64   -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-arm64 --platform linux/arm64   -f Kubefile  .
 
 $ buildah login --username $username --password $password $domain
 $ buildah push $prefix/oci-kubernetes:$version-amd64
