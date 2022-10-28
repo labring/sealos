@@ -3,7 +3,7 @@ name: Build Service Auth Docker Image
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "add-auth-image" ]
     paths:
       - "service/auth/**"
       - "pkg/auth/**"
