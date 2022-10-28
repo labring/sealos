@@ -1,13 +1,13 @@
-name: Controllers
+name: Build Service Auth Docker Image 
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "main", "add-auth-image" ]
+    branches: [ "main" ]
     paths:
       - "service/auth/**"
       - "pkg/auth/**"
-      - ".github/workflows/build_docker_image_service_auth.yml"
+      - ".github/workflows/build_service_auth.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:
