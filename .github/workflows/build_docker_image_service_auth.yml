@@ -1,0 +1,73 @@
+name: Controllers
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main", "add-auth-image" ]
+    paths:
+      - "service/auth/**"
+      - "pkg/auth/**"
+      - ".github/workflows/build_docker_image_service_auth.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+env:
+  # Common versions
+  GO_VERSION: "1.19"
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build - amd64
+        working-directory: service/auth
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o service-auth-amd64 main.go
+          chmod +x service-auth-amd64
+
+      - name: Build - arm64
+        working-directory: service/auth
+        run: |
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags "-s -w" -o service-auth-arm64 main.go
+          chmod +x service-auth-arm64
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo ::set-output name=tag_name::${TAG}
+
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v2
+        with:
+          version: latest
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: build (and publish) image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-service-auth
+        working-directory: service/auth
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile \
+          .
