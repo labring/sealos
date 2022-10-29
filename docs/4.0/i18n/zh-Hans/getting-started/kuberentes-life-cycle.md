@@ -26,7 +26,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 | --masters |  192.168.0.2 | kubernetes master 节点地址列表 |
 | --nodes | 192.168.0.3 | kubernetes node 节点地址列表 |
 | --ssh-passwd | [your-ssh-passwd] | ssh 登录密码 |
-|image | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
+|kubernetes | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
 
 在干净的服务器上直接执行上面命令，不要做任何多余操作即可启动一个高可用的 kubernetes 集群。
 
@@ -43,24 +43,24 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 
 ## 增加节点
 
-增加 node 节点:
+增加 node 节点：
 ```shell
 $ sealos add --nodes 192.168.64.21,192.168.64.19 
 ```
 
-增加 master 节点:
+增加 master 节点：
 ```shell
 $ sealos add --masters 192.168.64.21,192.168.64.19 
 ```
 
 ## 删除节点
 
-删除 node 节点:
+删除 node 节点：
 ```shell
 $ sealos delete --nodes 192.168.64.21,192.168.64.19 
 ```
 
-删除 master 节点:
+删除 master 节点：
 ```shell
 $ sealos delete --masters 192.168.64.21,192.168.64.19  
 ```

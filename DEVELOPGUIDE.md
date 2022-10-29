@@ -8,15 +8,18 @@ Some tools can be very handy to help you start a virtual machine such as [multip
 
 ```shell
 wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
-tar -C /usr/local -xzf go1.19.2.linux-amd64.tar.gz
-export PATH=$PATH:/usr/local/go/bin
-go version
+tar -C /usr/local -zxvf go1.19.2.linux-amd64.tar.gz
+cat >> /etc/profile <<EOF
+# set go path
+export PATH=\$PATH:/usr/local/go/bin
+EOF
+source /etc/profile  && go version
 ```
 
 ## Build the project
 
 ```shell script
-git clone https://github.com/labring/sealos
+git clone https://github.com/labring/sealos.git
 cd sealos
 make build
 ```
