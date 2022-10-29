@@ -16,9 +16,8 @@
 
 FROM ubuntu:latest
 WORKDIR /
-COPY bin/manager .
-
+ARG TARGETARCH
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 USER 65532:65532
-
+COPY bin/controller-infra-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]

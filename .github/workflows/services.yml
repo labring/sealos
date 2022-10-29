@@ -1,12 +1,13 @@
-name: Build Controllers image
+name: Build Services image
+
 
 on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
     paths-ignore:
-      - "controllers/**"
-      - ".github/workflows/controllers.yml"
+      - "service/**"
+      - ".github/workflows/services.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:
@@ -18,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal , metering, infra, cluster, app]
+        module: [ auth, payment ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -31,18 +32,18 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Build ${{ matrix.module }} amd64
-        working-directory: controllers/${{ matrix.module }}
+        working-directory: service/${{ matrix.module }}
         run: |
           GOARCH=amd64 make build
-          mv bin/manager bin/controller-${{ matrix.module }}-amd64
-          chmod +x bin/controller-${{ matrix.module }}-amd64
+          mv bin/manager bin/service-${{ matrix.module }}-amd64
+          chmod +x bin/service-${{ matrix.module }}-amd64
 
       - name: Build ${{ matrix.module }} arm64
-        working-directory: controllers/${{ matrix.module }}
+        working-directory: service/${{ matrix.module }}
         run: |
           GOARCH=arm64 make build
-          mv bin/manager bin/controller-${{ matrix.module }}-arm64
-          chmod +x bin/controller-${{ matrix.module }}-arm64
+          mv bin/manager bin/service-${{ matrix.module }}-arm64
+          chmod +x bin/service-${{ matrix.module }}-arm64
 
       - name: Prepare
         id: prepare
@@ -66,8 +67,8 @@ jobs:
       - name: build (and publish) ${{ matrix.module }} main image
         env:
           # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-controller
-        working-directory: controllers/${{ matrix.module }}
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-webhook
+        working-directory: service/${{ matrix.module }}
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
@@ -82,15 +83,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal , metering, infra, cluster, app ]
+        module: [ auth, payment ]
     permissions:
       issues: write
     steps:
-      - name: Build ${{ matrix.module }}-controller image
+      - name: Build ${{ matrix.module }}-webhook image
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: 140
           repository: labring/cluster-image
           body: |
-            /imagebuild_apps sealos-${{ matrix.module }}-controller dev
+            /imagebuild_apps sealos-${{ matrix.module }}-service dev
           token: "${{ secrets.GH_TOKEN }}"

@@ -26,7 +26,7 @@ RUN apk add curl \
     && update-ca-certificates
 
 WORKDIR /
-COPY service-auth-$TARGETARCH /service-auth
 USER 65532:65532
 
-ENTRYPOINT ["/service-auth", "-config", "/auth.yaml"]
+COPY bin/service-auth-$TARGETARCH /manager
+ENTRYPOINT ["/manager", "-config", "/auth.yaml"]
