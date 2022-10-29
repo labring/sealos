@@ -40,6 +40,7 @@ import (
 )
 
 var ForceOverride bool
+var Prompt bool
 
 type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
@@ -52,7 +53,7 @@ type InstallProcessor struct {
 }
 
 func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
-	if ForceOverride {
+	if ForceOverride && Prompt {
 		prompt := "are you sure to override these app?"
 		cancel := "you have canceled to override these apps !"
 		pass, err := confirm.Confirm(prompt, cancel)
