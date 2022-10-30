@@ -75,9 +75,9 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	// created a datapack, set codes to running
-	if pack.GetCodes() == imagehubv1.NOTRUN {
+	if pack.Codes == imagehubv1.NOTRUN {
 		r.Logger.Info("switch codes to running")
-		pack.Status.Codes = imagehubv1.RUNNING
+		pack.Codes = imagehubv1.RUNNING
 		err := r.Update(ctx, pack)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -130,7 +130,7 @@ func (r *DataPackReconciler) spec2Status(ctx context.Context, pack *imagehubv1.D
 		var data imagehubv1.Data
 		fd, err := r.genFulldata(ctx, name)
 		if err != nil {
-			//_ = r.switchCodes(ctx, pack, imagehubv1.RUNNING)
+			pack.Codes = imagehubv1.ERROR
 			r.Logger.Error(err, "error in gen fulldata", "name: ", name)
 			return err
 		}
@@ -149,14 +149,14 @@ func (r *DataPackReconciler) spec2Status(ctx context.Context, pack *imagehubv1.D
 			data = i.ToData()
 		default:
 			// finished a datapack, set codes to error and update status
-			pack.Status.Codes = imagehubv1.ERROR
+			pack.Codes = imagehubv1.ERROR
 			return fmt.Errorf("error data pack type")
 		}
 		datas[name] = data
 	}
 	// finished a datapack, set codes to ok and update status
 	r.Logger.Info("switch codes to ok")
-	pack.Status.Codes = imagehubv1.OK
+	pack.Codes = imagehubv1.OK
 	pack.Status.Datas = datas
 	return nil
 }

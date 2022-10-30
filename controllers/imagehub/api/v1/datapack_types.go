@@ -173,7 +173,7 @@ type DataPackSpec struct {
 type DataPackStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Codes Codes `json:"codes,omitempty"`
+	//Codes Codes `json:"codes,omitempty"`
 	Datas Datas `json:"datas,omitempty"`
 }
 
@@ -186,11 +186,8 @@ type DataPack struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   DataPackSpec   `json:"spec,omitempty"`
+	Codes  Codes          `json:"codes,omitempty"`
 	Status DataPackStatus `json:"status,omitempty"`
-}
-
-func (d *DataPack) GetCodes() Codes {
-	return d.Status.Codes
 }
 
 //+kubebuilder:object:root=true
