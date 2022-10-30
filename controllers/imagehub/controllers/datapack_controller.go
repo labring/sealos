@@ -76,6 +76,7 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	// created a datapack, set codes to running
 	if pack.GetCodes() == imagehubv1.NOTRUN {
+		r.Logger.Info("switch codes to running")
 		pack.Status.Codes = imagehubv1.RUNNING
 		err := r.Status().Update(ctx, pack)
 		if err != nil {
@@ -99,6 +100,7 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	// finished a datapack, set codes to ok
+	r.Logger.Info("switch codes to ok")
 	pack.Status.Codes = imagehubv1.OK
 	err := r.Status().Update(ctx, pack)
 	if err != nil {
