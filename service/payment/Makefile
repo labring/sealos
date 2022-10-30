@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?=  ghcr.io/labring/auth-service:dev
+IMG ?=  ghcr.io/labring/payment-service:dev
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -14,8 +14,6 @@ PLATFORMS ?= linux_arm64 linux_amd64
 GOOS=linux
 CGO_ENABLED=0
 GOARCH=$(shell go env GOARCH)
-
-GO_BUILD_FLAGS=-trimpath -ldflags "-s -w"
 
 .PHONY: all
 all: build
@@ -45,11 +43,11 @@ clean:
 
 .PHONY: build
 build: clean ## Build service-auth binary.
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build  -o bin/manager main.go
 
 .PHONY: run
 run: ## Run a dev service from host.
-	go run ./main.go -conf ./conf/auth.yml
+	go run main.go recharge --user fanux --amount 1
 
 .PHONY: docker-build
 docker-build: ## Build docker image with the service-auth.
