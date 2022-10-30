@@ -189,6 +189,10 @@ type DataPack struct {
 	Status DataPackStatus `json:"status,omitempty"`
 }
 
+func (d *DataPack) GetCodes() Codes {
+	return d.Status.Codes
+}
+
 //+kubebuilder:object:root=true
 
 // DataPackList contains a list of DataPack

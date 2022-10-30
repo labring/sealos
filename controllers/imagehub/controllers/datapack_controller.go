@@ -64,12 +64,23 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// check datapack
 	r.Logger.Info("check isExpired", "time", pack.Spec.ExpireTime)
 	if r.isExpired(pack) {
 		if err := r.Delete(ctx, pack); err != nil {
 			return ctrl.Result{}, err
 		}
 		r.Logger.Info("delete expired datapack success")
+		return ctrl.Result{}, nil
+	}
+
+	// created a datapack, set codes to running
+	if pack.CreationTimestamp.IsZero() {
+		pack.Status.Codes = imagehubv1.RUNNING
+		err := r.Status().Update(ctx, pack)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, nil
 	}
 
@@ -86,6 +97,14 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 			return ctrl.Result{}, err
 		}
 	}
+
+	// finished a datapack, set codes to ok
+	pack.Status.Codes = imagehubv1.OK
+	err := r.Status().Update(ctx, pack)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	return ctrl.Result{RequeueAfter: DataPackRequeueDuration}, nil
 }
 
