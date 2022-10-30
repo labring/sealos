@@ -14,6 +14,6 @@ type Codes int
 const (
 	NOTRUN  Codes = 0
 	OK      Codes = 1
-	RUNNING Codes = 2
+	PENDING Codes = 2
 	ERROR   Codes = 3
 )
