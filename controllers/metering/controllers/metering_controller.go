@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -42,10 +43,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+var SealosSystemNamespace string
+
+func init() {
+	SealosSystemNamespace = os.Getenv("SEALOS_SYSTEM_NAMESPACE")
+}
+
 const (
 	FinalizerName          = "metering.sealos.io/finalizer"
 	UserAnnotationOwnerKey = "user.sealos.io/creator"
-	SealosSystemNamespace  = "sealos-system"
 )
 
 // MeteringReconcile reconciles a Metering object
