@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal , metering, infra, cluster, app ]
+        module: [ user, terminal ]
     permissions:
       issues: write
     steps:

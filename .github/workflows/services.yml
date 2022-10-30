@@ -77,21 +77,21 @@ jobs:
           -f Dockerfile \
           .
 
-  build-on-cluster-image:
-    needs:
-      - image-build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [ auth, payment ]
-    permissions:
-      issues: write
-    steps:
-      - name: Build ${{ matrix.module }}-webhook image
-        uses: peter-evans/create-or-update-comment@v1
-        with:
-          issue-number: 140
-          repository: labring/cluster-image
-          body: |
-            /imagebuild_apps sealos-${{ matrix.module }}-service dev
-          token: "${{ secrets.GH_TOKEN }}"
+#  build-on-cluster-image:
+#    needs:
+#      - image-build
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        module: [ auth, payment ]
+#    permissions:
+#      issues: write
+#    steps:
+#      - name: Build ${{ matrix.module }}-webhook image
+#        uses: peter-evans/create-or-update-comment@v1
+#        with:
+#          issue-number: 140
+#          repository: labring/cluster-image
+#          body: |
+#            /imagebuild_apps sealos-${{ matrix.module }}-service dev
+#          token: "${{ secrets.GH_TOKEN }}"
