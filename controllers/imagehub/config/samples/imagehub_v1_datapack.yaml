@@ -1,0 +1,12 @@
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  labels:
+    app.kubernetes.io/name: datapack
+    app.kubernetes.io/instance: datapack-sample
+    app.kubernetes.io/part-of: imagehub
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: imagehub
+  name: datapack-sample
+spec:
+  # TODO(user): Add fields here

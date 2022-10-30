@@ -1,0 +1,26 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Image
+metadata:
+  name: labring.cert-manager.v1.8.0
+  namespace: sealos-imagehub
+spec:
+  name: labring/cert-manager:v1.8.0
+  detail:
+    url: https://cert-manager.io/
+    keywords: [ storage ]
+    description: Cloud native certificate management. X.509 certificate management for Kubernetes and OpenShift
+    icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+    authorIcon: authorIcon
+    docs: docs
+    ID: Unkonw
+    arch: Unkonw
+---
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapack-detail-sample
+  namespace: sealos-imagehub
+spec:
+  type: detail
+  names:
+    - labring/cert-manager:v1.8.0
