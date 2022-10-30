@@ -125,7 +125,6 @@ func (r *DataPackReconciler) init(ctx context.Context, pack *imagehubv1.DataPack
 func (r *DataPackReconciler) spec2Status(ctx context.Context, pack *imagehubv1.DataPack) error {
 	r.Logger.Info("enter spec2Status")
 	datas := imagehubv1.Datas{}
-	time.Sleep(time.Minute)
 	for _, name := range pack.Spec.Names {
 		var data imagehubv1.Data
 		fd, err := r.genFulldata(ctx, name)
