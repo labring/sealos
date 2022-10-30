@@ -99,7 +99,7 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		}
 	}
 
-	// finished a datapack, set codes to ok
+	// finished a datapack, set codes to ok and update status
 	r.Logger.Info("switch codes to ok")
 	pack.Status.Codes = imagehubv1.OK
 	err := r.Status().Update(ctx, pack)
@@ -157,8 +157,7 @@ func (r *DataPackReconciler) spec2Status(ctx context.Context, pack *imagehubv1.D
 	}
 
 	pack.Status.Datas = datas
-	// todo switch codes to ok
-	return r.Client.Status().Update(ctx, pack)
+	return nil
 }
 
 // todo add org info and edit this!
