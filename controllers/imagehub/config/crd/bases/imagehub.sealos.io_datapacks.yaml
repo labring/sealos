@@ -25,8 +25,6 @@ spec:
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
-          codes:
-            type: integer
           kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
@@ -53,8 +51,13 @@ spec:
                 type: string
             type: object
           status:
-            description: DataPackStatus defines the observed state of DataPack
+            description: Codes  Codes          `json:"codes,omitempty"`
             properties:
+              codes:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: integer
               datas:
                 additionalProperties:
                   description: Data defines all data needs to return
@@ -103,10 +106,10 @@ spec:
                         type: object
                       type: array
                   type: object
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file Codes Codes `json:"codes,omitempty"`'
+                description: Datas in datapack status
                 type: object
+            required:
+            - codes
             type: object
         type: object
     served: true

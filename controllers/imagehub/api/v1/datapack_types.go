@@ -173,7 +173,7 @@ type DataPackSpec struct {
 type DataPackStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Codes Codes `json:"codes,omitempty"`
+	Codes Codes `json:"codes"`
 	Datas Datas `json:"datas,omitempty"`
 }
 
