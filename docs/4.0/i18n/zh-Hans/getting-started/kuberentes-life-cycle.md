@@ -1,20 +1,20 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# kubernetes 生命周期管理
+# Kubernetes 生命周期管理
 
-## 单机安装 kuberentes
+## 单机安装 Kuberentes
 
 ```shell
 # sealos version must >= v4.1.0
-$ sealos run labring/kubernetes:v1.25.0 labring/calico:v3.22.1 --single
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 ```
 
-## 集群安装 kuberentes
+## 集群安装 Kuberentes
 
 ```shell
-$ sealos run kubernetes:v1.25.0 labring/calico:v3.24.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
@@ -26,9 +26,9 @@ $ sealos run kubernetes:v1.25.0 labring/calico:v3.24.1 \
 | --masters |  192.168.0.2 | kubernetes master 节点地址列表 |
 | --nodes | 192.168.0.3 | kubernetes node 节点地址列表 |
 | --ssh-passwd | [your-ssh-passwd] | ssh 登录密码 |
-|image | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
+|kubernetes | labring/kubernetes:v1.25.0 | kubernetes 镜像 |
 
-干净的服务器上直接执行上面命令，不要做任何多余劲操作即可起动一个高可用的 kubernetes 集群。
+在干净的服务器上直接执行上面命令，不要做任何多余操作即可启动一个高可用的 kubernetes 集群。
 
 ## 安装各种分布式应用
 
@@ -43,24 +43,24 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 
 ## 增加节点
 
-增加 node 节点:
+增加 node 节点：
 ```shell
 $ sealos add --nodes 192.168.64.21,192.168.64.19 
 ```
 
-增加 master 节点:
+增加 master 节点：
 ```shell
 $ sealos add --masters 192.168.64.21,192.168.64.19 
 ```
 
 ## 删除节点
 
-删除 node 节点:
+删除 node 节点：
 ```shell
 $ sealos delete --nodes 192.168.64.21,192.168.64.19 
 ```
 
-删除 master 节点:
+删除 master 节点：
 ```shell
 $ sealos delete --masters 192.168.64.21,192.168.64.19  
 ```

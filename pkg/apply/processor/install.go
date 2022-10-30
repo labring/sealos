@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -38,6 +40,7 @@ import (
 )
 
 var ForceOverride bool
+var Prompt bool
 
 type InstallProcessor struct {
 	ClusterFile     clusterfile.Interface
@@ -50,7 +53,7 @@ type InstallProcessor struct {
 }
 
 func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
-	if ForceOverride {
+	if ForceOverride && Prompt {
 		prompt := "are you sure to override these app?"
 		cancel := "you have canceled to override these apps !"
 		pass, err := confirm.Confirm(prompt, cancel)
@@ -84,10 +87,10 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
-		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
+		// i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
 		c.PostProcess,
-		//i.GetPhasePluginFunc(plugin.PhasePostInstall),
+		// i.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
 }
@@ -101,7 +104,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err = SyncClusterStatus(current, c.ClusterManager, c.ImageManager, false); err != nil {
 		return err
 	}
-	err = c.RegistryManager.Pull(types.DefaultPlatform(), c.NewImages...)
+	err = c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, c.NewImages...)
 	if err != nil {
 		return err
 	}
@@ -123,7 +126,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)
 		if mount == nil {
-			//create
+			// create
 			mount = &v2.MountImage{
 				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
 				ImageName: img,
@@ -178,6 +181,9 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return nil
 	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+		hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	}
 	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err

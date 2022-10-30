@@ -1,5 +1,8 @@
+import { resetIdsForTests } from '@fluentui/react-components';
 import { KubernetesDashboardApplication } from 'mock/hub/kubernetes_dashboard';
 import { KuBoardApplication } from 'mock/hub/kuboard';
+import { PostgresAdminApplication } from 'mock/hub/pgadmin';
+import { RedisInsightApplication } from 'mock/hub/redisinsight';
 import { TerminalApplication } from 'mock/hub/terminal';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { K8sApi } from 'services/backend/kubernetes';
@@ -57,6 +60,14 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         // call apply to start terminal pod
         const kb = await KuBoardApplication.doStart(kc);
         return JsonResp(kb, resp);
+      case 'redis':
+        // call apply to start redis insight pod
+        const ri = await RedisInsightApplication.doStart(kc);
+        return JsonResp(ri, resp);
+      case 'postgres':
+        // call apply to start postgres admin pod
+        const pga = await PostgresAdminApplication.doStart(kc);
+        return JsonResp(pga, resp);
     }
   } catch (err) {
     return InternalErrorResp(String(err), resp);

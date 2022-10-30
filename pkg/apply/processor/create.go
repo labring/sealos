@@ -19,6 +19,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/utils/strings"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
@@ -63,17 +65,17 @@ func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
 func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
-		//c.GetPhasePluginFunc(plugin.PhaseOriginally),
+		// c.GetPhasePluginFunc(plugin.PhaseOriginally),
 		c.Check,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
-		//c.GetPhasePluginFunc(plugin.PhasePreInit),
+		// c.GetPhasePluginFunc(plugin.PhasePreInit),
 		c.Init,
 		c.Join,
-		//c.GetPhasePluginFunc(plugin.PhasePreGuest),
+		// c.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
-		//c.GetPhasePluginFunc(plugin.PhasePostInstall),
+		// c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
 }
@@ -106,7 +108,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 }
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-	err := c.RegistryManager.Pull(types.DefaultPlatform(), cluster.Spec.Image...)
+	err := c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
@@ -155,6 +157,9 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+		hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	}
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err

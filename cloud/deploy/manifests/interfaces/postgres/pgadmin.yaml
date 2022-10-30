@@ -58,13 +58,13 @@ metadata:
   name: pgadmin-service
   namespace: pgadmin-service
 spec:
- ports:
- - protocol: TCP
-   port: 80
-   targetPort: http
- selector:
-   app: pgadmin
- type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: http
+  selector:
+    app: pgadmin
+  type: ClusterIP
 
 ---
 apiVersion: storage.k8s.io/v1
@@ -128,28 +128,28 @@ spec:
           image: dpage/pgadmin4:latest
           imagePullPolicy: IfNotPresent
           env:
-          - name: PGADMIN_DEFAULT_EMAIL
-            value: user@domain.com
-          - name: PGADMIN_DEFAULT_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: pgadmin
-                key: pgadmin-password
+            - name: PGADMIN_DEFAULT_EMAIL
+              value: user@domain.com
+            - name: PGADMIN_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgadmin
+                  key: pgadmin-password
           ports:
-          - name: http
-            containerPort: 80
-            protocol: TCP
+            - name: http
+              containerPort: 80
+              protocol: TCP
           volumeMounts:
-          - name: pgadmin-config
-            mountPath: /pgadmin4/servers.json
-            subPath: servers.json
-            readOnly: true
-          - name: pgadmin-data
-            mountPath: /var/lib/pgadmin
+            - name: pgadmin-config
+              mountPath: /pgadmin4/servers.json
+              subPath: servers.json
+              readOnly: true
+            - name: pgadmin-data
+              mountPath: /var/lib/pgadmin
       volumes:
-      - name: pgadmin-config
-        configMap:
-          name: pgadmin-config
-      - name: pgadmin-data
-        persistentVolumeClaim:
-          claimName: pgadmin-data-pv-claim
+        - name: pgadmin-config
+          configMap:
+            name: pgadmin-config
+        - name: pgadmin-data
+          persistentVolumeClaim:
+            claimName: pgadmin-data-pv-claim

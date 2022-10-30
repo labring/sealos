@@ -105,9 +105,9 @@ spec:
           image: busybox
           command:
             - /bin/sh
-            - '-c'
+            - "-c"
             - |
-                            chown -R 1001 /db
+              chown -R 1001 /db
           resources: {}
           volumeMounts:
             - name: db
@@ -115,7 +115,7 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
       containers:
-        - name:  redisinsight #Container name (DNS_LABEL, unique)
+        - name: redisinsight #Container name (DNS_LABEL, unique)
           securityContext:
             runAsNonRoot: true
             allowPrivilegeEscalation: false
@@ -126,11 +126,11 @@ spec:
           image: redislabs/redisinsight:hotfix-sentinel-probe #repo/image
           imagePullPolicy: IfNotPresent #Always pull image
           volumeMounts:
-          - name: db #Pod volumes to mount into the container's filesystem. Cannot be updated.
-            mountPath: /db
+            - name: db #Pod volumes to mount into the container's filesystem. Cannot be updated.
+              mountPath: /db
           ports:
-          - containerPort: 8001 #exposed container port and protocol
-            protocol: TCP
+            - containerPort: 8001 #exposed container port and protocol
+              protocol: TCP
           env:
-          - name: RITRUSTEDORIGINS
-            value: "https://redisinsight.cloud.sealos.io"
+            - name: RITRUSTEDORIGINS
+              value: "https://redisinsight.cloud.sealos.io"

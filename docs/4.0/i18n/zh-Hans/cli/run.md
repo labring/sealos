@@ -54,8 +54,8 @@ $ sealos run labring/openebs:3.1.0
 
 ## 覆盖应用命令
 
-`--cmd` 可以覆盖 Kubefile(Dockerfile) 里面的命令
+`--cmd` 可以覆盖 Kubefile(Dockerfile) 里面的 `CMD` 命令：
 
-```shell script
+```shell
 sealos run labring/mysql-operator:8.0.23-14.1 --cmd "kubectl apply -f ."
 ```

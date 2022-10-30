@@ -15,10 +15,9 @@
 # Build the manager binary
 
 FROM ubuntu:latest
+ARG TARGETARCH
 WORKDIR /
-COPY bin/manager .
-
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 USER 65532:65532
-
+COPY bin/controller-cluster-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]

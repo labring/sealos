@@ -2,7 +2,7 @@ import AppStore from 'applications/app_store';
 import Infra from 'applications/infra';
 import clsx from 'clsx';
 import { APPTYPE } from 'constants/app_type';
-import useAppStore from 'stores/app';
+import useAppStore, { TApp } from 'stores/app';
 import AppIcon from '../app_icon';
 import AppWindow from '../app_window';
 import IframeApp from './iframe_app';
@@ -11,11 +11,11 @@ import styles from './index.module.scss';
 export default function DesktopContent() {
   const { installedApps: apps, openedApps, currentApp, openApp } = useAppStore((state) => state);
 
-  function renderApp(appItem: any) {
+  function renderApp(appItem: TApp) {
     switch (appItem.type) {
       case APPTYPE.APP:
-        if(appItem.name === "Infra"){
-          return <Infra />
+        if (appItem.name === 'Infra') {
+          return <Infra />;
         }
         return <AppStore />;
 

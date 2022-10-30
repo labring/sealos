@@ -1,23 +1,24 @@
-name: Controllers
+name: Build Controllers image
 
 on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
     paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - "**/*.yaml"
+      - "controllers/**"
+      - ".github/workflows/controllers.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
 env:
   # Common versions
   GO_VERSION: "1.19"
 
 jobs:
-  controlls-build:
+  image-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal ]
+        module: [ user, terminal , metering, infra, cluster, app]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -77,24 +78,19 @@ jobs:
 
   build-on-cluster-image:
     needs:
-      - controlls-build
+      - image-build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ user, terminal ]
     permissions:
       issues: write
     steps:
-      - name: Build user-controller image
-        uses: peter-evans/create-or-update-comment@v1
-        with:
-          issue-number: 148
-          repository: labring/cluster-image
-          body: |
-            /imagebuild_apps user-controller dev
-          token: "${{ secrets.GH_TOKEN }}"
-      - name: Build user-controller image
+      - name: Build ${{ matrix.module }}-controller image
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: 140
           repository: labring/cluster-image
           body: |
-            /imagebuild_apps terminal-controller dev
+            /imagebuild_apps sealos-${{ matrix.module }}-controller dev
           token: "${{ secrets.GH_TOKEN }}"

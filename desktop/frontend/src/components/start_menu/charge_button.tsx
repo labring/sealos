@@ -2,19 +2,19 @@ import React, { useState } from 'react';
 import { Button, Input, Link, Spinner, Text } from '@fluentui/react-components';
 import { QRCodeSVG } from 'qrcode.react';
 
-import {
-  Dialog,
-  DialogBody,
-  DialogTitle,
-  DialogSurface,
-  DialogTrigger,
-  DialogContent
-} from '@fluentui/react-dialog';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import request from 'services/request';
 
 import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
+import {
+  Dialog,
+  DialogTrigger,
+  DialogSurface,
+  DialogBody,
+  DialogTitle,
+  DialogContent
+} from '@fluentui/react-components';
 
 export default function ChargeButton() {
   const session = useSessionStore((s) => s.session);
@@ -57,13 +57,14 @@ export default function ChargeButton() {
       }}
     >
       <DialogTrigger>
-        <Link
-          onClick={() => {
+        <span
+          style={{ fontSize: 18, color: '#000' }}
+          onClick={(e) => {
             toggleStartMenu();
           }}
         >
           立即充值
-        </Link>
+        </span>
       </DialogTrigger>
       <DialogSurface>
         <DialogBody>
@@ -88,7 +89,7 @@ export default function ChargeButton() {
                   className="!ml-4"
                   onClick={() => {
                     createPaymentRes.mutate({
-                      amount: chargeAmount,
+                      amount: chargeAmount * 100,
                       kubeconfig: session.kubeconfig
                     });
                   }}

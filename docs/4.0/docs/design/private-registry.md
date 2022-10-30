@@ -19,7 +19,7 @@ $ systemctl status image-cri-shim.service
 The sealos private registry runs on the first node of the cluster，The first node of the cluster is where you run the create cluster command, you can see this container with the following command.
 
 ```shell
-root@node01:~# nerdctl ps
+$ nerdctl ps
 CONTAINER ID    IMAGE                               COMMAND                   CREATED         STATUS    PORTS    NAMES
 eb772a8cc788    docker.io/library/registry:2.7.1    "/entrypoint.sh /etc…"    22 hours ago    Up                 sealos-registry 
 ```
@@ -51,10 +51,11 @@ docker login 192.168.1.10:5000 -u admin -p passw0rd
 
 ## Push and pull images
 
-Push image example.
+Push image example:
+
 ```shell
-root@ubuntu:~# sealos tag quay.io/skopeo/stable 192.168.72.50:5000/skopeo/stable
-root@ubuntu:~# sealos push 192.168.72.50:5000/skopeo/stable
+$ sealos tag quay.io/skopeo/stable 192.168.72.50:5000/skopeo/stable
+$ sealos push 192.168.72.50:5000/skopeo/stable
 Using default tag: latest
 The push refers to repository [192.168.72.50:5000/skopeo/stable]
 a98b3d943f46: Pushed 
@@ -66,13 +67,13 @@ c550c8e0f355: Pushed
 latest: digest: sha256:238efd85942755fbd28d4d23d1f8dedd99e9eec20777e946f132633b826a9295 size: 1570
 ```
 
-Pull image example.
+Pull image example:
 
 ```shell
 sealos pull 192.168.72.50:5000/skopeo/stable
 ```
 
-Or use the `docker pull` command.
+Or use the `docker pull` command:
 
 ```shell
 docker pull 192.168.72.50:5000/skopeo/stable

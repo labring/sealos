@@ -23,6 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -30,10 +31,10 @@ import (
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
-func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
+func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
 	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
-		IP:       defaultRegistry,
+		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
 		Port:     "5000",
 		Username: constants.DefaultRegistryUsername,
@@ -41,7 +42,7 @@ func (k *KubeadmRuntime) GetRegistryInfo(rootfs, defaultRegistry string) *v1beta
 		Data:     constants.DefaultRegistryData,
 	}
 	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
-	out, _ := k.getSSHInterface().Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
+	out, _ := sshInterface.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
 	logger.Debug("image shim data info: %s", string(out))
 	registryConfig, err := yaml.UnmarshalData(out)
 	if err != nil {
@@ -83,7 +84,7 @@ func (k *KubeadmRuntime) htpasswd(registry *v1beta1.RegistryConfig) error {
 		logger.Warn("registry username and password is empty")
 		return nil
 	}
-	logger.Debug("get htpasswd  data: username %s, password %s", registry.Username, registry.Password)
+	logger.Debug("get htpasswd  data: ip %s, username %s, password %s", registry.IP, registry.Username, registry.Password)
 	data := passwd.Htpasswd(registry.Username, registry.Password)
 	logger.Debug("write htpasswd etc file: %s,data: %s", htpasswdEtcPath, data)
 	if err := file.WriteFile(htpasswdEtcPath, []byte(data)); err != nil {
@@ -92,7 +93,6 @@ func (k *KubeadmRuntime) htpasswd(registry *v1beta1.RegistryConfig) error {
 	htpasswdDetEtcPath := path.Join(k.getContentData().RootFSEtcPath(), "registry_htpasswd")
 	return k.sshCopy(registry.IP, htpasswdEtcPath, htpasswdDetEtcPath)
 }
-
 func (k *KubeadmRuntime) ApplyRegistry() error {
 	logger.Info("start to apply registry")
 	registry := k.getRegistry()
@@ -115,8 +115,8 @@ func (k *KubeadmRuntime) ApplyRegistry() error {
 }
 
 func (k *KubeadmRuntime) DeleteRegistry() error {
-	logger.Info("delete registry in master0...")
-	ip := k.getMaster0IPAndPort()
+	ip := k.getRegistryIPAndPort()
+	logger.Info("delete registry in %s...", ip)
 	if err := k.execCleanRegistry(ip); err != nil {
 		return fmt.Errorf("exec clean-registry.sh failed %v", err)
 	}

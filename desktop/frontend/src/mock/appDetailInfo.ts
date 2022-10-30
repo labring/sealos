@@ -7,7 +7,7 @@ const appDetailInfo: TAppDetail = {
     memory: '148.69MB'
   },
   versions: ['latest', 'v.8.0', 'v.5.6'],
-  installGuide: ['sealos pull myseq:latest', 'sealos run mysql latest'],
+  installGuide: ['sealos pull mysql:latest', 'sealos run mysql latest'],
   // the current version of readme
   currentReadme: `
   # A demo of \`react-markdown\`

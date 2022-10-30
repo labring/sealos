@@ -1,7 +1,7 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 构建 calico 镜像
+# 构建 Calico 镜像
 
 ## 目录结构
 
@@ -37,7 +37,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
   <TabItem value="application" label="Application images">
 
-该镜像不包含  kubernetes , 所以应该在已有 Kubernetes 集群中运行。
+该镜像不包含 Kubernetes , 所以应该在已有 Kubernetes 集群中运行。
 
 ```dockerfile
 FROM scratch
@@ -51,13 +51,13 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
 </Tabs>
 
-1. `CalicoImageList` ：docker镜像列表文件。
-2. `cni` ：包含 `kubectl apply` 命令要执行的配置文件。
-3. `registry` ：registry 镜像仓库数据保存目录。
-4. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
-5. `manifests` ：将 yaml 文件中的镜像解析到 docker 镜像列表中。
+1. `CalicoImageList`：Docker 镜像列表文件。
+2. `cni`：包含 `kubectl apply` 命令要执行的配置文件。
+3. `registry`：registry 镜像仓库数据保存目录。
+4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64 --os linux -f Kubefile .`：构建 OCI 镜像。
+5. `manifests`：将 yaml 文件中的镜像解析到 Docker 镜像列表中。
 
-## 构建 calico 镜像
+## 构建 Calico 镜像
 
 ### 目录结构
 
@@ -74,7 +74,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 <Tabs groupId="imageNum">
   <TabItem value="single" label="All in one" default>
 
-该镜像包含 kubernetes 和 calico。
+该镜像包含 Kubernetes 和 Calico。
 
 ```dockerfile
 FROM labring/kubernetes:v1.24.0-amd64
@@ -85,7 +85,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
   <TabItem value="multiple" label="Application images">
 
-该镜像仅包含 calico。
+该镜像仅包含 Calico。
 
 ```dockerfile
 FROM scratch
@@ -96,10 +96,10 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
 </Tabs>
 
-1. `cni`： 包含 `kubectl apply` 命令要执行的配置文件。
-2. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
+1. `cni`：包含 `kubectl apply` 命令要执行的配置文件。
+2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .`：构建 OCI 镜像。
 
-## 构建 openebs 镜像
+## 构建 OpenEBS 镜像
 
 ### 目录结构
 
@@ -139,18 +139,32 @@ CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
 </Tabs>
 
 1. `cni` ： 包含 `kubectl apply` 命令要执行的配置文件。
-2. `buildah build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
+2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64 -f Kubefile .` ：构建 OCI 镜像。
 
 ::: 建议
 
-您需要将calico cmd添加到openebs cmd层，因为dockerfile会覆盖旧层。
+您需要将 Calico CMD 添加到 OpenEBS CMD 层，因为 Dockerfile 会覆盖旧层。
+
 :::
 
 ## 构建跨平台镜像
 
+### 下载 x86_64 架构的buildah
 ```shell
-$ buildah build -t $prefix/oci-kubernetes:$version-amd64 --arch amd64 --os linux -f Kubefile  .
-$ buildah build -t $prefix/oci-kubernetes:$version-arm64 --arch arm64 --os linux -f Kubefile  .
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+### 下载 aarch64 构架的buildah
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+
+### 多架构构建镜像
+
+```shell
+$ sealos build -t $prefix/oci-kubernetes:$version-amd64 --platform linux/amd64 -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-arm64 --platform linux/arm64 -f Kubefile  .
 
 $ buildah login --username $username --password $password $domain
 $ buildah push $prefix/oci-kubernetes:$version-amd64

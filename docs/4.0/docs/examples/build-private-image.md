@@ -8,7 +8,7 @@
 
 Install helm v3.9.
 
-### Login private registry
+### Login to private registry
 
 Make sure sealos have permissions to pull docker image from registry:
 
@@ -95,7 +95,7 @@ spec:
                   number: 80
 ```
 
-Render replicas of the service
+Render replicas of the service:
 
 ```yaml title="values.yaml"
 osm:
@@ -117,7 +117,7 @@ cat images/shim/osm
 registry.cn-hangzhou.aliyuncs.com/scienson/avatarsplver-osm:2022-07-11-21-05
 ```
 
-### Modify dockerfile
+### Modify Dockerfile
 
 ```dockerfile
 FROM scratch
@@ -127,7 +127,7 @@ CMD ["helm install osm scienson-osm-0.1.1.tgz --namespace osm --create-namespace
 
 ![image](https://user-images.githubusercontent.com/14962503/179480360-87b813a6-de85-4829-a801-3cd82cd8f604.png)
 
-### Build cluster image
+### Build image
 
 ```shell
 sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
@@ -137,8 +137,8 @@ sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 
 ```shell
 sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1  --masters 172.31.37.111
-kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/master:NoSchedule-
-kubectl taint no ip-172-31-37-111.cn-northwest-1.compute.internal node-role.kubernetes.io/control-plane:NoSchedule-
+kubectl taint no node-role.kubernetes.io/master:NoSchedule-
+kubectl taint no node-role.kubernetes.io/control-plane:NoSchedule-
 sealos run labring/ingress-nginx:4.1.0
 sealos run docker.io/luanshaotong/osm:v0.1.1
 ```
@@ -148,6 +148,8 @@ If the installation failed, you may need to clean the cluster and reinstall.
 ## Appendix
 
 ### Clean cluster
+
+You may need to clean the cluster before reinstall.
 
 ```shell
 sealos reset

@@ -12,7 +12,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### 目录说明
 
-```
+```c
 .
 ├── applications // 应用目录
 │   ├── app_icon // 桌面应用图标
@@ -101,9 +101,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     └── globals.scss
 ```
 
+
+
 ### 项目依赖的库
 
-```
+```json
 {
   "name": "frontend",
   "version": "0.1.0",
@@ -148,9 +150,13 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 }
 ```
 
+
+
 ### 代码阅读说明
 
 src/\_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
+
+
 
 ### 规范
 
@@ -158,6 +164,7 @@ src/\_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
 2. 组件名： PascalCase （ index.tsx 除外 ）
 
 
+
 ### 其它
+
 1. fluent v9 支持 ssr: https://react.fluentui.dev/?path=/docs/concepts-developer-server-side-rendering--page
-2.

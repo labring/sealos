@@ -1,7 +1,6 @@
 
-SERVICE_NAME=service-auth
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):latest
+IMG ?=  ghcr.io/labring/auth-service:dev
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -46,7 +45,7 @@ clean:
 
 .PHONY: build
 build: clean ## Build service-auth binary.
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(ARCH) go build $(GO_BUILD_FLAGS) -o $(SERVICE_NAME) main.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) go build $(GO_BUILD_FLAGS) -o bin/manager main.go
 
 .PHONY: run
 run: ## Run a dev service from host.

@@ -19,8 +19,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
@@ -271,4 +274,45 @@ func formattedSize(size int64) string {
 		count++
 	}
 	return fmt.Sprintf("%.3g %s", formattedSize, suffixes[count])
+}
+
+func GetContextDir(options *labring_types.BuildOptions) (string, error) {
+	//fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
+	cliArgs := strings.Split(options.String(), " ")
+	// Nothing provided, we assume the current working directory as build
+	// context
+	var contextDir string
+	var err error
+	if len(cliArgs) == 0 {
+		contextDir, err = os.Getwd()
+		if err != nil {
+			err = errors.Wrapf(err, "unable to choose current working directory as build context")
+		}
+		return contextDir, err
+	}
+	// The context directory could be a URL.  Try to handle that.
+	tempDir, subDir, err := define.TempDirForURL("", "buildah", cliArgs[0])
+	if err != nil {
+		err = errors.Wrapf(err, "error prepping temporary context directory")
+		return contextDir, err
+	}
+	if tempDir != "" {
+		// We had to download it to a temporary directory.
+		// Delete it later.
+		defer func() {
+			if err = os.RemoveAll(tempDir); err != nil {
+				logger.Error("error removing temporary directory: %v", err)
+			}
+		}()
+		contextDir = filepath.Join(tempDir, subDir)
+	} else {
+		// Nope, it was local.  Use it as is.
+		absDir, err := filepath.Abs(cliArgs[0])
+		if err != nil {
+			err = errors.Wrapf(err, "error determining path to directory")
+			return contextDir, err
+		}
+		contextDir = absDir
+	}
+	return contextDir, err
 }

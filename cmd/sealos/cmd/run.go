@@ -44,6 +44,11 @@ create cluster to your baremetal server, appoint the iplist:
   Different InfraSSH port numbers exist：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+  
+  Use an independent node as the registry node of the cluster (other than the first master node)
+    sealos run -e REGISTRY_HOST=192.168.0.8 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+
   Single kubernetes cluster：
 	sealos run labring/kubernetes:v1.24.0 --single
 
@@ -94,6 +99,8 @@ func newRunCmd() *cobra.Command {
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false,
 		"we also can input an --force flag to run app in this cluster by force")
+	runCmd.Flags().BoolVar(&processor.Prompt, "prompt", true,
+		"command-line prompt mode")
 	runCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
 	return runCmd
 }

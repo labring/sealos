@@ -7,6 +7,19 @@ html {
   font-size: 12px;
 }
 
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.5);
+  background-clip: padding-box;
+  border: 6px solid transparent;
+  border-radius: 14px;
+}
+
 body {
   --dark-txt: #000;
   --alt-txt: #fff;
@@ -68,21 +81,7 @@ body[data-theme='dark'] .edgeBrowser {
   }
 }
 
-.wnstore {
-  --nav-btn-hov: #ffffff;
-  --page-bg: #f4f4f4;
-  --page-bg: rgb(255 255 255 / 50%);
-  --page-bd-col: #e2e2e2;
-  --rib-bg: #ffffffb8;
-  --rib2-bg: #fdfdfd;
-  --rib2-bg: #ffffff;
 
-  background: var(--fakeMica);
-
-  .win11Scroll {
-    overflow-y: overlay;
-  }
-}
 
 body[data-theme='dark'] .wnstore {
   --nav-btn-hov: #454545;

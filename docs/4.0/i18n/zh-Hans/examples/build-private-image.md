@@ -1,12 +1,14 @@
 # 使用私有镜像构建一个完整应用服务
 
-## helm 安装
+## 构建服务镜像
+
+### helm 安装
 
 [https://github.com/helm/helm/releases](https://github.com/helm/helm/releases)
 
 安装 helm v3.9（需要代理）。
 
-## 登陆镜像仓库
+### 登陆镜像仓库
 
 这一步是为了打包时拉得到镜像：
 
@@ -14,7 +16,7 @@
 sealos login registry.cn-hangzhou.aliyuncs.com -u username -p password
 ```
 
-## 修改 helm chart
+### 修改 helm chart
 
 下载 helm chart 模板：
 
@@ -102,7 +104,7 @@ osm:
   replicaCount: 1
 ```
 
-## 打包 helm chart
+### 打包 helm chart
 
 ```shell
 helm package .
@@ -110,14 +112,14 @@ helm package .
 
 ![image](https://user-images.githubusercontent.com/14962503/179480436-aa3fcf60-a89c-4f84-bb92-c5762f64d91a.png)
 
-## 修改 image list
+### 修改 image list
 
 ```shell
 cat images/shim/osm
 registry.cn-hangzhou.aliyuncs.com/scienson/avatarsplver-osm:2022-07-11-21-05
 ```
 
-## 修改 dockerfile
+### 修改 Dockerfile
 
 ```dockerfile
 FROM scratch
@@ -127,15 +129,13 @@ CMD ["helm install osm scienson-osm-0.1.1.tgz --namespace osm --create-namespace
 
 ![image](https://user-images.githubusercontent.com/14962503/179480360-87b813a6-de85-4829-a801-3cd82cd8f604.png)
 
-## build 镜像
+### 构建镜像
 
 ```shell
 sealos build -f Dockerfile -t docker.io/luanshaotong/osm:v0.1.1 .
 ```
 
 ## 测试部署
-
-### 一键部署集群
 
 ```shell
 sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1  --masters 172.31.37.111

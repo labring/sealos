@@ -34,9 +34,9 @@ import (
 
 // defaultKnownCRISockets holds the set of known CRI endpoints
 var defaultKnownCRISockets = []string{
+	CRISocketDocker,
 	CRISocketContainerd,
 	CRISocketCRIO,
-	CRISocketDocker,
 }
 
 const (

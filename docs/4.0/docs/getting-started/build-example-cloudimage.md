@@ -1,8 +1,8 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 ---
 
-# build an ingress cluster image
+# Build an ingress cluster image
 
 Here is how to build an nginx-ingress cluster image with helm.
 
@@ -14,18 +14,18 @@ $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 $ helm pull ingress-nginx/ingress-nginx
 ```
 
-then you can find the download chart：
+Then you can find the download chart：
 
 ```shell
 $ ls
 ingress-nginx-4.1.0.tgz
 ```
 
-## add image list
+## Add image list
 
 sealos will download the images in the image list and cache them in the registry directory.
 
-the directory must be of the form `images/shim/[your image list filename]`：
+The directory must be of the form `images/shim/[your image list filename]`：
 
 ```shell
 $ cat images/shim/nginxImages
@@ -61,7 +61,7 @@ $ sealos login docker.io
 $ sealos push docker.io/fanux/ingress-nginx:v1.2.0
 ```
 
-## run cluster image
+## Run cluster image
 
 ```shell
 $ sealos run docker.io/fanux/ingress-nginx:v1.2.0

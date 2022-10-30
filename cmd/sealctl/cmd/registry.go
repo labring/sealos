@@ -35,20 +35,24 @@ func newRegistryImageCmd() *cobra.Command {
 		Use:   "registry",
 		Short: "registry images manager",
 	}
-	registryImageCmd.AddCommand(newRegistryImagePullCmd())
+
+	registryImageCmd.AddCommand(cmd.NewRegistryListCmd())
+	registryImageCmd.AddCommand(cmd.NewRegistryImageCmd())
+	registryImageCmd.AddCommand(cmd.NewRegistryPruneCmd())
+	registryImageCmd.AddCommand(newRegistryImageSaveCmd())
 	return registryImageCmd
 }
 
-func newRegistryImagePullCmd() *cobra.Command {
+func newRegistryImageSaveCmd() *cobra.Command {
 	var registryImagePullCmd = &cobra.Command{
-		Use:   "pull",
-		Short: "registry images manager pull to local dir",
+		Use:   "save",
+		Short: "save registry images to local registry dir",
 	}
 	registryImagePullCmd.PersistentFlags().StringVar(&registryPullArch, "arch", runtime.GOARCH, "pull images arch")
 	registryImagePullCmd.PersistentFlags().StringVar(&registryPullRegistryDir, "data-dir", "/var/lib/registry", "registry data dir path")
 	registryImagePullCmd.PersistentFlags().IntVar(&registryPullMaxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
-	registryImagePullCmd.AddCommand(cmd.NewPullCmd(registryPullRegistryDir, registryPullArch, registryPullMaxPullProcs, "default"))
-	registryImagePullCmd.AddCommand(cmd.NewPullCmd(registryPullRegistryDir, registryPullArch, registryPullMaxPullProcs, "raw"))
+	registryImagePullCmd.AddCommand(cmd.NewSaveCmd(registryPullRegistryDir, registryPullArch, registryPullMaxPullProcs, "default"))
+	registryImagePullCmd.AddCommand(cmd.NewSaveCmd(registryPullRegistryDir, registryPullArch, registryPullMaxPullProcs, "raw"))
 	return registryImagePullCmd
 }
 
