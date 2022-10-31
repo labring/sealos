@@ -23,6 +23,6 @@ spec:
     flavor: "t2.micro"
     image: "ami-08bb4e3ce08ca7ddb"
   - roles: [ node ] # required
-    count: 1 # Required
+    count: 2 # Required
     flavor: "t2.micro"
     image: "ami-08bb4e3ce08ca7ddb"

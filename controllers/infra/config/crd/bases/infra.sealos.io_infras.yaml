@@ -141,6 +141,8 @@ spec:
           status:
             description: InfraStatus defines the observed state of Infra
             properties:
+              availabilityZone:
+                type: string
               connections:
                 type: string
               createTime:

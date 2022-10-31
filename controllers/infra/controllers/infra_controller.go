@@ -78,7 +78,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	var cstZone = time.FixedZone("CST", 8*3600)
 	infra.Status.CreateTime = time.Now().In(cstZone).Format("2006-01-02 15:04:05")
 	infra.Status.RegionIDs = infra.Spec.RegionIDs
-	infra.Status.ZoneIDs = infra.Spec.ZoneIDs
+	infra.Status.AvailabilityZone = infra.Spec.AvailabilityZone
 	infra.Status.Connections = ""
 OuterLoop:
 	for _, v := range infra.Status.Hosts {
