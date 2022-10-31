@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service-manager
+  namespace: system
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      containers:
+      - name: manager
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: service-config
+          mountPath: /auth.yaml
+          subPath: auth.yaml
+      volumes:
+      - name: service-config
+        configMap:
+          name: service-config
