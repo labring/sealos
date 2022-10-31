@@ -55,7 +55,37 @@ run: ## Run a dev service from host.
 docker-build: ## Build docker image with the service-auth.
 	sudo docker build -t $(IMG) .
 
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+
 ##@ Deployment
+## Tool Versions
+KUSTOMIZE_VERSION ?= v3.8.7
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	test -s $(LOCALBIN)/kustomize || { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
+
+.PHONY: deploy
+deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd kustomize/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build kustomize/default | kubectl apply -f -
+
+.PHONY: deploy
+pre-deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd kustomize/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build -e SERVICE_NAME=webhook-service -e SERVICE_NAMESPACE=system kustomize/default  > deploy/manifests/deploy.yaml.tmpl
+
+.PHONY: undeploy
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build kustomize/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
 
 .PHONY: docker-push
 docker-push:  ## Push docker image.
