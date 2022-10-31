@@ -182,12 +182,12 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	var (
 		renderEtc       = path.Join(mountDir, constants.EtcDirName)
-		renderChart     = path.Join(mountDir, constants.ChartsDirName)
+		renderScripts   = path.Join(mountDir, constants.ScriptsDirName)
 		renderManifests = path.Join(mountDir, constants.ManifestsDirName)
 	)
 
 	for _, ip := range ipList {
-		for _, dir := range []string{renderEtc, renderChart, renderManifests} {
+		for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
 			logger.Debug("render env dir: %s", dir)
 			if file.IsExist(dir) {
 				err := p.RenderAll(ip, dir)
