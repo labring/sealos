@@ -18,6 +18,7 @@ package v1
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
 
 	v1bata1 "github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -160,7 +161,14 @@ type InfraSpec struct {
 type InfraStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
+	ID          types.UID   `json:"id,omitempty"`
+	Name        string      `json:"name,omitempty"`
+	RegionIDs   []string    `json:"regionIDs,omitempty"`
+	ZoneIDs     []string    `json:"zoneIDs,omitempty"`
+	SSH         v1bata1.SSH `json:"ssh,omitempty"`
+	Hosts       []Hosts     `json:"hosts,omitempty"`
+	CreateTime  string      `json:"createTime,omitempty"`
+	Connections string      `json:"connections,omitempty"` //master0 ip:port
 }
 
 //+kubebuilder:object:root=true

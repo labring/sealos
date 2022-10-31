@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"k8s.io/client-go/tools/record"
 
@@ -57,24 +58,50 @@ type InfraReconciler struct {
 func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 	infra := &infrav1.Infra{}
-
 	if err := r.Get(context.TODO(), req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
 	err := r.applier.ReconcileInstance(infra, r.driver)
 	if err != nil {
 		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
 		return ctrl.Result{}, err
 	}
+	Hosts, err := r.driver.GetInstances(infra)
+	if err != nil {
+		r.recorder.Eventf(infra, "Error", "get infra hosts failed", "%v", err)
+		return ctrl.Result{}, err
+	}
 
+	//status
+	infra.Status.Hosts = Hosts
+	infra.Status.SSH = infra.Spec.SSH
+	var cstZone = time.FixedZone("CST", 8*3600) // 东八
+	infra.Status.CreateTime = time.Now().In(cstZone).Format("2006-01-02 15:04:05")
+	fmt.Println(infra.Status.CreateTime)
+	infra.Status.RegionIDs = infra.Spec.RegionIDs
+	infra.Status.ZoneIDs = infra.Spec.ZoneIDs
+	infra.Status.Connections = ""
+OuterLoop:
+	for _, v := range infra.Status.Hosts {
+		for _, role := range v.Roles {
+			if role == "master" && len(v.Metadata) > 0 {
+				infra.Status.Connections = v.Metadata[0].IP[1].IPValue + ":22"
+				break OuterLoop
+			}
+		}
+	}
+	infra.Status.Name = infra.Name
+	infra.Status.ID = infra.UID
+	if err = r.Status().Update(ctx, infra); err != nil {
+		r.recorder.Eventf(infra, "Error", "infra status update failed", "%v", err)
+		return ctrl.Result{}, err
+	}
 	if err = r.Update(ctx, infra); err != nil {
 		r.recorder.Eventf(infra, "Error", "infra update failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
 	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
-
 	return ctrl.Result{}, nil
 }
 
