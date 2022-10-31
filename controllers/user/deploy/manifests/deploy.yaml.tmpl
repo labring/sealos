@@ -944,6 +944,8 @@ spec:
         command:
         - /manager
         env:
+        - name: CallbackURL
+          value: '{{ .PaymentCallbackURL }}'
         - name: NAMESPACE_NAME
           valueFrom:
             fieldRef:

@@ -66,7 +66,7 @@ jobs:
       - name: build (and publish) ${{ matrix.module }} main image
         env:
           # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-controller
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller
         working-directory: controllers/${{ matrix.module }}
         run: |
           docker buildx build \

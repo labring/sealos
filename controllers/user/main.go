@@ -21,6 +21,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/labring/sealos/pkg/pay"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -114,12 +116,15 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
 	}
-	if err = (&controllers.PaymentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Payment")
-		os.Exit(1)
+	if os.Getenv(pay.CallbackURL) != "" {
+		if err = (&controllers.PaymentReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Payment")
+			os.Exit(1)
+		}
+		setupLog.Info("Payment controller is enabled")
 	}
 
 	//if err = (&controllers.UserExpirationReconciler{

@@ -66,7 +66,7 @@ jobs:
       - name: build (and publish) ${{ matrix.module }} main image
         env:
           # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/${{ matrix.module }}-webhook
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
         working-directory: webhooks/${{ matrix.module }}
         run: |
           docker buildx build \
