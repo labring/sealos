@@ -47,6 +47,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err != nil {
 		return fmt.Errorf("get all instances failed: %v", err)
 	}
+
 	// sort current hosts
 	sortHostsByIndex(v1.IndexHosts(hosts))
 	// merge current hosts list using index
@@ -56,7 +57,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
 		return err
 	}
-
+	infra.Status.Hosts = hosts
 	if _, err = driver.GetInstances(infra); err != nil {
 		return err
 	}
@@ -80,6 +81,13 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 		d := desired[i]
 		cur := getHostsByIndex(d.Index, current)
 		eg.Go(func() error {
+			if cur == nil || d.Count > cur.Count {
+				if infra.Status.SSH.PkName == "" {
+					if err := driver.CreateKeyPair(infra); err != nil {
+						return err
+					}
+				}
+			}
 			// current 0 instance -> create
 			if cur == nil {
 				// TODO create hosts

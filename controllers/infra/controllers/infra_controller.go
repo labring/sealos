@@ -20,11 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/client-go/tools/record"
-
 	"github.com/labring/sealos/controllers/infra/drivers"
-
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -40,6 +38,10 @@ type InfraReconciler struct {
 	applier  drivers.Reconcile
 	recorder record.EventRecorder
 }
+
+const (
+	ConnectionPort = "22"
+)
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;update;patch
@@ -67,14 +69,31 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
 		return ctrl.Result{}, err
 	}
-
+	tmp := infra.Spec.AvailabilityZone
+	//status
+	infra.Status.Connections = ""
+	ConnectionsFlag := false
+	for _, v := range infra.Status.Hosts {
+		for _, role := range v.Roles {
+			if role == "master" && len(v.Metadata) > 0 {
+				infra.Status.Connections = v.Metadata[0].IP[1].IPValue + ":" + ConnectionPort
+				ConnectionsFlag = true
+			}
+		}
+		if ConnectionsFlag {
+			break
+		}
+	}
+	if err = r.Status().Update(ctx, infra); err != nil {
+		r.recorder.Eventf(infra, "Error", "infra status update failed", "%v", err)
+		return ctrl.Result{}, err
+	}
+	infra.Spec.AvailabilityZone = tmp
 	if err = r.Update(ctx, infra); err != nil {
 		r.recorder.Eventf(infra, "Error", "infra update failed", "%v", err)
 		return ctrl.Result{}, err
 	}
-
 	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
-
 	return ctrl.Result{}, nil
 }
 
