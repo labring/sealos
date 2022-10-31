@@ -75,6 +75,18 @@ export async function GetCRD(
   );
 }
 
+export async function ListCRD(
+  kc: k8s.KubeConfig,
+  meta: CRDMeta
+): Promise<{
+  response: http.IncomingMessage;
+  body: object;
+}> {
+  return kc
+    .makeApiClient(k8s.CustomObjectsApi)
+    .listNamespacedCustomObject(meta.group, meta.version, meta.namespace, meta.plural);
+}
+
 export async function ApplyYaml(
   kc: k8s.KubeConfig,
   spec_str: string
