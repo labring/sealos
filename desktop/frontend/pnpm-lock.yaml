@@ -3,6 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@ctrl/golang-template': ^1.4.1
   '@fluentui/react-components': ^9.6.1
+  '@fluentui/react-icons': ^2.0.185
   '@fortawesome/fontawesome-svg-core': ^6.2.0
   '@fortawesome/free-regular-svg-icons': ^6.2.0
   '@fortawesome/free-solid-svg-icons': ^6.2.0
@@ -31,7 +32,7 @@ specifiers:
   react-dom: 18.2.0
   react-draggable: ^4.4.5
   react-markdown: ^8.0.3
-  rehype-highlight: ^6.0.0
+  react-syntax-highlighter: ^15.5.0
   sass: ^1.55.0
   sealos-desktop-sdk: ^0.1.4
   tailwindcss: ^3.2.1
@@ -43,6 +44,7 @@ specifiers:
 dependencies:
   '@ctrl/golang-template': 1.4.1
   '@fluentui/react-components': 9.6.1_so3vmsiv37ilpeotgzti7vh2w4
+  '@fluentui/react-icons': 2.0.185_react@18.2.0
   '@fortawesome/fontawesome-svg-core': 6.2.0
   '@fortawesome/free-regular-svg-icons': 6.2.0
   '@fortawesome/free-solid-svg-icons': 6.2.0
@@ -61,7 +63,7 @@ dependencies:
   react-dom: 18.2.0_react@18.2.0
   react-draggable: 4.4.5_biqbaboplfbrettd7655fr4n2y
   react-markdown: 8.0.3_i2izv7j3km4zzxbpzq2d4xtojy
-  rehype-highlight: 6.0.0
+  react-syntax-highlighter: 15.5.0_react@18.2.0
   sealos-desktop-sdk: 0.1.4
   ts-md5: 1.3.1
   uuid: 9.0.0
@@ -2362,7 +2364,7 @@ packages:
     dependencies:
       '@fluentui/react-aria': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-shared-contexts': 9.0.2_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -2385,7 +2387,7 @@ packages:
     dependencies:
       '@fluentui/react-avatar': 9.2.4_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-button': 9.1.6_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-utilities': 9.1.2_i2izv7j3km4zzxbpzq2d4xtojy
       '@griffel/react': 1.4.1_react@18.2.0
@@ -2426,7 +2428,7 @@ packages:
     dependencies:
       '@fluentui/react-badge': 9.0.10_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-popover': 9.2.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-shared-contexts': 9.0.2_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
@@ -2449,7 +2451,7 @@ packages:
       react: '>=16.8.0 <19.0.0'
       react-dom: '>=16.8.0 <19.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-utilities': 9.1.2_i2izv7j3km4zzxbpzq2d4xtojy
       '@griffel/react': 1.4.1_react@18.2.0
@@ -2470,7 +2472,7 @@ packages:
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-utilities': 9.1.2_i2izv7j3km4zzxbpzq2d4xtojy
@@ -2509,7 +2511,7 @@ packages:
       react: '>=16.8.0 <19.0.0'
       react-dom: '>=16.8.0 <19.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-label': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -2533,7 +2535,7 @@ packages:
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-portal': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-positioning': 9.2.2_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -2630,7 +2632,7 @@ packages:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-portal': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-shared-contexts': 9.0.2_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
@@ -2675,7 +2677,7 @@ packages:
       '@fluentui/react-checkbox': 9.0.10_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-combobox': 9.0.0-beta.13_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-input': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-label': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-progress': 9.0.0-alpha.3_so3vmsiv37ilpeotgzti7vh2w4
@@ -2697,10 +2699,9 @@ packages:
       - scheduler
     dev: false
 
-  /@fluentui/react-icons/2.0.185_yku4rg54zrzji2kzt4dhdj22s4:
+  /@fluentui/react-icons/2.0.185_react@18.2.0:
     resolution: {integrity: sha512-IDqGAhijL1v7M22sNQRM7HnVe6+T4bX6cgcdOjybw1KP9Gc46iGTBhGKT8V2jQkR+qYJF1doiHwVFryYgZ4F9w==}
     peerDependencies:
-      '@griffel/react': ^1.0.0
       react: '>=16.8.0 <18.0.0'
     dependencies:
       '@griffel/react': 1.4.1_react@18.2.0
@@ -2794,7 +2795,7 @@ packages:
       '@fluentui/keyboard-keys': 9.0.0
       '@fluentui/react-aria': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-portal': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-positioning': 9.2.2_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-shared-contexts': 9.0.2_so3vmsiv37ilpeotgzti7vh2w4
@@ -2967,7 +2968,7 @@ packages:
       scheduler: ^0.19.0 || ^0.20.0
     dependencies:
       '@fluentui/react-context-selector': 9.0.5_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-label': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -2988,7 +2989,7 @@ packages:
       react: '>=16.8.0 <19.0.0'
       react-dom: '>=16.8.0 <19.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-utilities': 9.1.2_i2izv7j3km4zzxbpzq2d4xtojy
       '@griffel/react': 1.4.1_react@18.2.0
@@ -3043,7 +3044,7 @@ packages:
       react-dom: '>=16.8.0 <19.0.0'
     dependencies:
       '@fluentui/keyboard-keys': 9.0.0
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-input': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-utilities': 9.1.2_i2izv7j3km4zzxbpzq2d4xtojy
@@ -3082,7 +3083,7 @@ packages:
       react: '>=16.8.0 <19.0.0'
       react-dom: '>=16.8.0 <19.0.0'
     dependencies:
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-label': 9.0.8_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -3106,7 +3107,7 @@ packages:
       '@fluentui/react-aria': 9.2.3_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-avatar': 9.2.4_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-checkbox': 9.0.10_so3vmsiv37ilpeotgzti7vh2w4
-      '@fluentui/react-icons': 2.0.185_yku4rg54zrzji2kzt4dhdj22s4
+      '@fluentui/react-icons': 2.0.185_react@18.2.0
       '@fluentui/react-radio': 9.0.9_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-tabster': 9.2.0_so3vmsiv37ilpeotgzti7vh2w4
       '@fluentui/react-theme': 9.1.1_so3vmsiv37ilpeotgzti7vh2w4
@@ -3486,6 +3487,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -3495,6 +3497,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -3504,6 +3507,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
     requiresBuild: true
     dev: false
     optional: true
@@ -3513,6 +3517,7 @@ packages:
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
     requiresBuild: true
     dev: false
     optional: true
@@ -4387,8 +4392,20 @@ packages:
       ansi-styles: 4.3.0
       supports-color: 7.2.0
 
+  /character-entities-legacy/1.1.4:
+    resolution: {integrity: sha512-3Xnr+7ZFS1uxeiUDvV02wQ+QDbc55o97tIV5zHScSPJpcLm/r0DFPcoY3tYRp+VZukxuMeKgXYmsXQHO05zQeA==}
+    dev: false
+
+  /character-entities/1.2.4:
+    resolution: {integrity: sha512-iBMyeEHxfVnIakwOuDXpVkc54HijNgCyQB2w0VfGQThle6NXn50zU6V/u+LDhxHcDUPojn6Kpga3PTAD8W1bQw==}
+    dev: false
+
   /character-entities/2.0.2:
     resolution: {integrity: sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ==}
+    dev: false
+
+  /character-reference-invalid/1.1.4:
+    resolution: {integrity: sha512-mKKUkUbhPpQlCOfIuZkvSEgktjPFIsZKRRbC6KWVEMvlzblj3i3asQv5ODsrwt0N3pHAEvjP8KTQPHkp0+6jOg==}
     dev: false
 
   /chokidar/3.5.3:
@@ -4450,6 +4467,10 @@ packages:
     engines: {node: '>= 0.8'}
     dependencies:
       delayed-stream: 1.0.0
+    dev: false
+
+  /comma-separated-tokens/1.0.8:
+    resolution: {integrity: sha512-GHuDRO12Sypu2cV70d1dkA2EUmXHgntrzbpvOB+Qy+49ypNfGgFQIC2fhhXbnyrJRynDCAARsT7Ou0M6hirpfw==}
     dev: false
 
   /comma-separated-tokens/2.0.2:
@@ -5149,8 +5170,8 @@ packages:
     dependencies:
       reusify: 1.0.4
 
-  /fault/2.0.1:
-    resolution: {integrity: sha512-WtySTkS4OKev5JtpHXnib4Gxiurzh5NCGvWrFaZ34m6JehfTUhKZvn9njTfw48t6JumVQOmrKqpmGcdwxnhqBQ==}
+  /fault/1.0.4:
+    resolution: {integrity: sha512-CJ0HCB5tL5fYTEA7ToAq5+kTwd++Borf1/bifxd9iT70QcXr4MRrO3Llf8Ifs70q+SJcGHFtnIE/Nw6giCtECA==}
     dependencies:
       format: 0.2.2
     dev: false
@@ -5448,28 +5469,26 @@ packages:
     dependencies:
       function-bind: 1.1.1
 
-  /hast-util-is-element/2.1.2:
-    resolution: {integrity: sha512-thjnlGAnwP8ef/GSO1Q8BfVk2gundnc2peGQqEg2kUt/IqesiGg/5mSwN2fE7nLzy61pg88NG6xV+UrGOrx9EA==}
-    dependencies:
-      '@types/hast': 2.3.4
-      '@types/unist': 2.0.6
-    dev: false
-
-  /hast-util-to-text/3.1.1:
-    resolution: {integrity: sha512-7S3mOBxACy8syL45hCn3J7rHqYaXkxRfsX6LXEU5Shz4nt4GxdjtMUtG+T6G/ZLUHd7kslFAf14kAN71bz30xA==}
-    dependencies:
-      '@types/hast': 2.3.4
-      hast-util-is-element: 2.1.2
-      unist-util-find-after: 4.0.0
+  /hast-util-parse-selector/2.2.5:
+    resolution: {integrity: sha512-7j6mrk/qqkSehsM92wQjdIgWM2/BW61u/53G6xmC8i1OmEdKLHbk419QKQUjz6LglWsfqoiHmyMRkP1BGjecNQ==}
     dev: false
 
   /hast-util-whitespace/2.0.0:
     resolution: {integrity: sha512-Pkw+xBHuV6xFeJprJe2BBEoDV+AvQySaz3pPDRUs5PNZEMQjpXJJueqrpcHIXxnWTcAGi/UOCgVShlkY6kLoqg==}
     dev: false
 
-  /highlight.js/11.6.0:
-    resolution: {integrity: sha512-ig1eqDzJaB0pqEvlPVIpSSyMaO92bH1N2rJpLMN/nX396wTpDA4Eq0uK+7I/2XG17pFaaKE0kjV/XPeGt7Evjw==}
-    engines: {node: '>=12.0.0'}
+  /hastscript/6.0.0:
+    resolution: {integrity: sha512-nDM6bvd7lIqDUiYEiu5Sl/+6ReP0BMk/2f4U/Rooccxkj0P5nm+acM5PrGJ/t5I8qPGiqZSE6hVAwZEdZIvP4w==}
+    dependencies:
+      '@types/hast': 2.3.4
+      comma-separated-tokens: 1.0.8
+      hast-util-parse-selector: 2.2.5
+      property-information: 5.6.0
+      space-separated-tokens: 1.1.5
+    dev: false
+
+  /highlight.js/10.7.3:
+    resolution: {integrity: sha512-tzcUFauisWKNHaRkN4Wjl/ZA07gENAjFl3J/c480dprkGTg5EQstgaNFqBfUqCq54kZRIEcreTsAgF/m2quD7A==}
     dev: false
 
   /http-signature/1.2.0:
@@ -5540,6 +5559,17 @@ packages:
     engines: {node: '>= 0.10'}
     dev: false
 
+  /is-alphabetical/1.0.4:
+    resolution: {integrity: sha512-DwzsA04LQ10FHTZuL0/grVDk4rFoVH1pjAToYwBrHSxcrBIGQuXrQMtD5U1b0U2XVgKZCTLLP8u2Qxqhy3l2Vg==}
+    dev: false
+
+  /is-alphanumerical/1.0.4:
+    resolution: {integrity: sha512-UzoZUr+XfVz3t3v4KyGEniVL9BDRoQtY7tOyrRybkVNjDFWyo1yhXNGrrBTQxp3ib9BLAWs7k2YKBQsFRkZG9A==}
+    dependencies:
+      is-alphabetical: 1.0.4
+      is-decimal: 1.0.4
+    dev: false
+
   /is-arrayish/0.2.1:
     resolution: {integrity: sha512-zz06S8t0ozoDXMG+ube26zeCTNXcKIPJZJi8hBrF4idCLms4CG9QtK7qBl1boi5ODzFpjswb5JPmHCbMpjaYzg==}
     dev: true
@@ -5582,6 +5612,10 @@ packages:
     dependencies:
       has-tostringtag: 1.0.0
 
+  /is-decimal/1.0.4:
+    resolution: {integrity: sha512-RGdriMmQQvZ2aqaQq3awNA6dCGtKpiDFcOzrTWrDAT2MiWrKQVPmxLGHl7Y2nNu6led0kEyoX0enY0qXYsv9zw==}
+    dev: false
+
   /is-extglob/2.1.1:
     resolution: {integrity: sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==}
     engines: {node: '>=0.10.0'}
@@ -5591,6 +5625,10 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       is-extglob: 2.1.1
+
+  /is-hexadecimal/1.0.4:
+    resolution: {integrity: sha512-gyPJuv83bHMpocVYoqof5VDiZveEoGoFL8m3BXNb2VW8Xs+rz9kqO8LOQ5DH6EsuvilT1ApazU0pyl+ytbPtlw==}
+    dev: false
 
   /is-module/1.0.0:
     resolution: {integrity: sha512-51ypPSPCoTEIN9dy5Oy+h4pShgJmPCygKfyRCISBI+JoWT/2oJvK8QPxmwv7b/p239jXrm9M1mlQbyKJ5A152g==}
@@ -5918,12 +5956,11 @@ packages:
     dependencies:
       js-tokens: 4.0.0
 
-  /lowlight/2.7.0:
-    resolution: {integrity: sha512-RRdrHalFfjpxL91ITTX7KhJYH3QmX5bW9Uie2D2E5GPIR3XBYDYhScBjE291ewFZkStz/k2PN9KC+8deNLiI3Q==}
+  /lowlight/1.20.0:
+    resolution: {integrity: sha512-8Ktj+prEb1RoCPkEOrPMYUN/nCggB7qAWe3a7OpMjWQkh3l2RD5wKRQ+o8Q8YuI9RG/xs95waaI/E6ym/7NsTw==}
     dependencies:
-      '@types/hast': 2.3.4
-      fault: 2.0.1
-      highlight.js: 11.6.0
+      fault: 1.0.4
+      highlight.js: 10.7.3
     dev: false
 
   /lru-cache/6.0.0:
@@ -6512,6 +6549,17 @@ packages:
       callsites: 3.1.0
     dev: true
 
+  /parse-entities/2.0.0:
+    resolution: {integrity: sha512-kkywGpCcRYhqQIchaWqZ875wzpS/bMKhz5HnN3p7wveJTkTtyAB/AlnS0f8DFSqYW1T82t6yEAkEcB+A1I3MbQ==}
+    dependencies:
+      character-entities: 1.2.4
+      character-entities-legacy: 1.1.4
+      character-reference-invalid: 1.1.4
+      is-alphanumerical: 1.0.4
+      is-decimal: 1.0.4
+      is-hexadecimal: 1.0.4
+    dev: false
+
   /parse-json/5.2.0:
     resolution: {integrity: sha512-ayCKvm/phCGxOkYRSCM82iDwct8/EonSEgCSxWxD7ve6jHggsFl4fZVQBPRNgQoKiuV/odhFrGzQXZwbifC8Rg==}
     engines: {node: '>=8'}
@@ -6673,12 +6721,28 @@ packages:
     engines: {node: '>=6'}
     dev: false
 
+  /prismjs/1.27.0:
+    resolution: {integrity: sha512-t13BGPUlFDR7wRB5kQDG4jjl7XeuH6jbJGt11JHPL96qwsEHNX2+68tFXqc1/k+/jALsbSWJKUOT/hcYAZ5LkA==}
+    engines: {node: '>=6'}
+    dev: false
+
+  /prismjs/1.29.0:
+    resolution: {integrity: sha512-Kx/1w86q/epKcmte75LNrEoT+lX8pBpavuAbvJWRXar7Hz8jrtF+e3vY751p0R8H9HdArwaCTNDDzHg/ScJK1Q==}
+    engines: {node: '>=6'}
+    dev: false
+
   /prop-types/15.8.1:
     resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
     dependencies:
       loose-envify: 1.4.0
       object-assign: 4.1.1
       react-is: 16.13.1
+
+  /property-information/5.6.0:
+    resolution: {integrity: sha512-YUHSPk+A30YPv+0Qf8i9Mbfe/C0hdPXk1s1jPVToV8pk8BQtpw10ct89Eo7OWkutrwqvT0eicAxlOg3dOAu8JA==}
+    dependencies:
+      xtend: 4.0.2
+    dev: false
 
   /property-information/6.1.1:
     resolution: {integrity: sha512-hrzC564QIl0r0vy4l6MvRLhafmUowhO/O3KgVSoXIbbA2Sz4j8HGpJc6T2cubRVwMwpdiG/vKGfhT4IixmKN9w==}
@@ -6779,6 +6843,19 @@ packages:
       - supports-color
     dev: false
 
+  /react-syntax-highlighter/15.5.0_react@18.2.0:
+    resolution: {integrity: sha512-+zq2myprEnQmH5yw6Gqc8lD55QHnpKaU8TOcFeC/Lg/MQSs8UknEA0JC4nTZGFAXC2J2Hyj/ijJ7NlabyPi2gg==}
+    peerDependencies:
+      react: '>= 0.14.0'
+    dependencies:
+      '@babel/runtime': 7.19.4
+      highlight.js: 10.7.3
+      lowlight: 1.20.0
+      prismjs: 1.29.0
+      react: 18.2.0
+      refractor: 3.6.0
+    dev: false
+
   /react/18.2.0:
     resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}
     engines: {node: '>=0.10.0'}
@@ -6803,6 +6880,14 @@ packages:
     engines: {node: '>= 0.10'}
     dependencies:
       resolve: 1.22.1
+    dev: false
+
+  /refractor/3.6.0:
+    resolution: {integrity: sha512-MY9W41IOWxxk31o+YvFCNyNzdkc9M20NoZK5vq6jkv4I/uh2zkWcfudj0Q1fovjUQJrNewS9NMzeTtqPf+n5EA==}
+    dependencies:
+      hastscript: 6.0.0
+      parse-entities: 2.0.0
+      prismjs: 1.27.0
     dev: false
 
   /regenerate-unicode-properties/10.1.0:
@@ -6854,16 +6939,6 @@ packages:
     hasBin: true
     dependencies:
       jsesc: 0.5.0
-
-  /rehype-highlight/6.0.0:
-    resolution: {integrity: sha512-q7UtlFicLhetp7K48ZgZiJgchYscMma7XjzX7t23bqEJF8m6/s+viXQEe4oHjrATTIZpX7RG8CKD7BlNZoh9gw==}
-    dependencies:
-      '@types/hast': 2.3.4
-      hast-util-to-text: 3.1.1
-      lowlight: 2.7.0
-      unified: 10.1.2
-      unist-util-visit: 4.1.1
-    dev: false
 
   /remark-parse/10.0.1:
     resolution: {integrity: sha512-1fUyHr2jLsVOkhbvPRBJ5zTKZZyD6yZzYaWCS6BPBdQ8vEMBCH+9zNCDA6tET/zHCi/jLqjCWtlJZUPk+DbnFw==}
@@ -7136,6 +7211,10 @@ packages:
 
   /sourcemap-codec/1.4.8:
     resolution: {integrity: sha512-9NykojV5Uih4lgo5So5dtw+f0JgJX30KCNI8gwhz2J9A15wD0Ml6tjHKwf6fTSa6fAdVBdZeNOs9eJ71qCk8vA==}
+    dev: false
+
+  /space-separated-tokens/1.1.5:
+    resolution: {integrity: sha512-q/JSVd1Lptzhf5bkYm4ob4iWPjx0KiRe3sRFBNrVqbJkFaBm5vbbowy1mymoPNLRa52+oadOhJ+K49wsSeSjTA==}
     dev: false
 
   /space-separated-tokens/2.0.1:
@@ -7569,13 +7648,6 @@ packages:
       '@types/unist': 2.0.6
     dev: false
 
-  /unist-util-find-after/4.0.0:
-    resolution: {integrity: sha512-gfpsxKQde7atVF30n5Gff2fQhAc4/HTOV4CvkXpTg9wRfQhZWdXitpyXHWB6YcYgnsxLx+4gGHeVjCTAAp9sjw==}
-    dependencies:
-      '@types/unist': 2.0.6
-      unist-util-is: 5.1.1
-    dev: false
-
   /unist-util-generated/2.0.0:
     resolution: {integrity: sha512-TiWE6DVtVe7Ye2QxOVW9kqybs6cZexNwTwSMVgkfjEReqy/xwGpAXb99OxktoWwmL+Z+Epb0Dn8/GNDYP1wnUw==}
     dev: false
@@ -7916,7 +7988,6 @@ packages:
   /xtend/4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
-    dev: true
 
   /yallist/4.0.0:
     resolution: {integrity: sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==}

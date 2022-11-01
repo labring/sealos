@@ -1,0 +1,25 @@
+.head {
+  height: 24px;
+  line-height: 24px;
+  display: flex;
+  align-items: center;
+  .dot {
+    width: 15px;
+    height: 15px;
+    background: #3981f5;
+    box-shadow: 2px 2px 0px #c5dbff;
+    border-radius: 50%;
+    display: inline-block;
+  }
+}
+
+.selectType {
+  min-width: 120px !important;
+  width: 120px;
+  margin-right: 12px;
+}
+
+.selectTypeCount {
+  min-width: 120px !important;
+  width: 120px;
+}

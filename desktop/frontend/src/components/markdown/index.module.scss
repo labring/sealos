@@ -1,0 +1,19 @@
+.copyMark {
+  position: relative;
+  .copyMarkBtn {
+    display: none;
+  }
+}
+.copyMark:hover {
+  .copyMarkBtn {
+    display: block;
+  }
+}
+.copyMarkBtn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  cursor: pointer;
+  --tw-text-opacity: 1;
+  color: rgba(107, 114, 128, var(--tw-text-opacity));
+}
