@@ -40,6 +40,8 @@ spec:
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
         env:
+          - name: CallbackURL
+            value: "{{ .PaymentCallbackURL }}"
           - name: NAMESPACE_NAME
             valueFrom:
               fieldRef:
