@@ -67,14 +67,14 @@ func (d *Service) Build(options *types.BuildOptions, contextDir, imageName strin
 		}
 	}
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
-	if !options.Offline {
+	if options.SaveImage {
 		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
 		if err != nil {
 			return errors.Wrap(err, "save images failed in this context")
 		}
 		logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 	} else {
-		logger.Warn("current offline mode, skip pull images")
+		logger.Warn("current saveImage=false, skip pull images")
 	}
 	options.Tag = imageName
 	// start call buildah build
