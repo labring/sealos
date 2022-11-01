@@ -71,6 +71,9 @@ jobs:
         run: |
           docker buildx build \
           --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos-${{ matrix.module }}-controller container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
           --push \
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
