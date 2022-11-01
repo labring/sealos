@@ -97,10 +97,7 @@ func newRunCmd() *cobra.Command {
 	}
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
-	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false,
-		"we also can input an --force flag to run app in this cluster by force")
-	runCmd.Flags().BoolVar(&processor.Prompt, "prompt", true,
-		"command-line prompt mode")
+	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
 	runCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
 	return runCmd
 }
