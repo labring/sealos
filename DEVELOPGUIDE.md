@@ -59,6 +59,73 @@ Then `go work use -r .` at current directory to update the workspace.
 kubebuilder create api --group <name> --version v1 --kind <name>
 ```
 
+## Using sealos image ci
+
+### How to build container image
+1. fix makefile build step
+    ```makefile
+   .PHONY: build
+    build:## Build manager binary.
+    CGO_ENABLED=0 go build -o bin/manager main.go
+    ```
+2. build amd64 bin and arm64 bin
+    - amd64 bin
+   ```
+   GOARCH=amd64 make build
+   mv bin/manager bin/controller-${{ matrix.module }}-amd64
+   chmod +x bin/controller-${{ matrix.module }}-amd64
+   ```
+    - arm64 bin
+   ```
+   GOARCH=arm64 make build
+   mv bin/manager bin/controller-${{ matrix.module }}-arm64
+   chmod +x bin/controller-${{ matrix.module }}-arm64
+   ```
+3. fix dockerfile
+   ```dockerfile
+   FROM gcr.io/distroless/static:nonroot
+   ARG TARGETARCH
+   
+   WORKDIR /
+   USER 65532:65532
+   
+   COPY bin/controller-${{ matrix.module }}-$TARGETARCH /manager
+   ENTRYPOINT ["/manager"]
+   ```
+   tips: .dockerignore not add bin dir
+4. docker buildx
+   ```shell
+   docker buildx build \
+      --platform linux/amd64,linux/arm64 \
+      --push \
+      -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+      -f Dockerfile \
+      .
+   ```
+
+### How to build sealos clusterimage
+
+1. add makefile pre-deploy
+   ```makefile
+   .PHONY: deploy
+   pre-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+   cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+   $(KUSTOMIZE) build -e SERVICE_NAME=webhook-service -e SERVICE_NAMESPACE=system config/default  > deploy/manifests/deploy.yaml.tmpl
+   ```
+2. mkdir deploy/manifests
+3. touch deploy/Kubefile
+4. write Kubefile
+   ```dockerfile
+    FROM scratch
+    USER 65532:65532
+    COPY manifests ./manifests/xxxx
+    COPY registry ./registry
+    CMD ["kubectl apply -f manifests/xxx"]
+   ```
+5. commit pr to cluster-image
+   code:  https://github.com/labring/cluster-image/blob/main/applications/sealos-app-controller/dev/init.sh
+
+
 ## FAQ
 
 1. clone code slow, your can use ghproxy: `git clone https://ghproxy.com/https://github.com/labring/sealos`

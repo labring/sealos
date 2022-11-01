@@ -323,7 +323,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/cluster-controller:dev
+        image: ghcr.io/labring/sealos-cluster-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz

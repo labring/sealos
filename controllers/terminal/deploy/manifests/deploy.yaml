@@ -399,18 +399,18 @@ spec:
             cpu: 5m
             memory: 64Mi
         securityContext:
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
+          runAsNonRoot: true
       - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/terminal-controller:dev
+        image: ghcr.io/labring/sealos-terminal-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz
@@ -432,11 +432,11 @@ spec:
             cpu: 10m
             memory: 64Mi
         securityContext:
-          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
             - ALL
+          runAsNonRoot: true
       securityContext:
         runAsNonRoot: true
       serviceAccountName: terminal-controller-manager

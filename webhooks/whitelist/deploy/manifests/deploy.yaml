@@ -303,7 +303,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/whitelist-webhook:dev
+        image: ghcr.io/labring/sealos-whitelist-webhook:dev
         livenessProbe:
           httpGet:
             path: /healthz
