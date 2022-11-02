@@ -24,9 +24,11 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/client-go/kubernetes"
-
 	csrv1 "k8s.io/api/certificates/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -34,9 +36,6 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
 
 	. "github.com/onsi/ginkgo"
@@ -176,11 +175,12 @@ var _ = Describe("user kubeconfig ", func() {
 		})
 		It("token generate", func() {
 			gen := NewGenerate(&Config{
-				User:              "cuisongliu",
-				DNSNames:          []string{"apiserver.cluster.local"},
-				IPAddresses:       nil,
-				ExpirationSeconds: 100000000,
-				ServiceAccount:    true,
+				User:                    "cuisongliu",
+				DNSNames:                []string{"apiserver.cluster.local"},
+				IPAddresses:             nil,
+				ExpirationSeconds:       100000000,
+				ServiceAccount:          true,
+				ServiceAccountNamespace: "test",
 			})
 			By("start to get kubeconfig")
 			config, err := gen.KubeConfig(cfg, k8sClient)
@@ -206,6 +206,23 @@ var _ = Describe("user kubeconfig ", func() {
 			errStatus := errors.ReasonForError(err)
 			Expect(err).NotTo(BeNil())
 			Expect(errStatus).To(Equal(metav1.StatusReasonForbidden))
+		})
+		It("webhook generate", func() {
+
+			gen := NewGenerate(&Config{
+				Webhook:    true,
+				WebhookURL: "https://192.168.64.1:6443",
+			})
+			By("start to get kubeconfig")
+			config, err := gen.KubeConfig(cfg, k8sClient)
+			Expect(err).To(BeNil())
+			Expect(config).NotTo(BeNil())
+			kubeData, err := clientcmd.Write(*config)
+			Expect(err).To(BeNil())
+			Expect(kubeData).NotTo(BeNil())
+			By("start to write kubeconfig")
+			err = os.WriteFile("output-webhook", kubeData, 0600)
+			Expect(err).To(BeNil())
 		})
 	})
 })

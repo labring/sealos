@@ -56,7 +56,7 @@ func (sac *ServiceAccount) applyServiceAccount(config *rest.Config, client clien
 	sa := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sac.User,
-			Namespace: "user-system",
+			Namespace: sac.ServiceAccountNamespace,
 		},
 	}
 	_, err := controllerutil.CreateOrUpdate(context.TODO(), client, sa, func() error {

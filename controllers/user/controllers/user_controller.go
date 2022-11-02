@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -189,7 +188,7 @@ func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) 
 		User:                    user.Name,
 		ExpirationSeconds:       user.Spec.CSRExpirationSeconds,
 		ServiceAccount:          true,
-		ServiceAccountNamespace: os.Getenv("NAMESPACE_NAME"),
+		ServiceAccountNamespace: helper.GetDefaultNamespace(),
 	}
 	userConditionType := userv1.ConditionType("KubeConfigSyncReady")
 	condition := &userv1.Condition{

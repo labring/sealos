@@ -43,13 +43,16 @@ type Generate interface {
 type Config struct {
 	ServiceAccount          bool
 	ServiceAccountNamespace string
-	CAKeyFile               string
-	User                    string
-	Groups                  []string
-	ClusterName             string // default is kubernetes
-	ExpirationSeconds       int32
-	DNSNames                []string
-	IPAddresses             []net.IP
+
+	CAKeyFile         string
+	User              string
+	Groups            []string
+	ClusterName       string // default is kubernetes
+	ExpirationSeconds int32
+	DNSNames          []string
+	IPAddresses       []net.IP
+	Webhook           bool
+	WebhookURL        string
 }
 
 func NewGenerate(config *Config) Generate {
@@ -69,6 +72,11 @@ func NewGenerate(config *Config) Generate {
 			config.ServiceAccountNamespace = "default"
 		}
 		return &ServiceAccount{
+			Config: config,
+		}
+	}
+	if config.Webhook {
+		return &Webhook{
 			Config: config,
 		}
 	}
@@ -123,8 +131,12 @@ func GetKubernetesHost(config *rest.Config) string {
 	return "https://" + net.JoinHostPort(host, port)
 }
 
+func GetDefaultNamespace() string {
+	return os.Getenv("NAMESPACE_NAME")
+}
+
 func GetUsersSubject(user string) []rbacV1.Subject {
-	defaultNamespace := os.Getenv("NAMESPACE_NAME")
+	defaultNamespace := GetDefaultNamespace()
 	if defaultNamespace == "" {
 		defaultNamespace = "default"
 	}

@@ -18,8 +18,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
-const SealosSystemNamespace = "sealos-system"
-
 const (
 	LvsCareStaticPodName     = "kube-sealos-lvscare"
 	YamlFileSuffix           = "yaml"
