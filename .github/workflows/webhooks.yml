@@ -48,7 +48,7 @@ jobs:
         id: prepare
         run: |
           TAG=dev
-          echo ::set-output name=tag_name::${TAG}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
       - name: set up buildx
         id: buildx
