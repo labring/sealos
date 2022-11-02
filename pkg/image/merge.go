@@ -102,7 +102,7 @@ func Merge(newImageName string, images []string, buildOptions *types.BuildOption
 		return err
 	}
 	buildOptions.File = path.Join(mergeDir, "Kubefile")
-	buildOptions.Offline = true
+	buildOptions.SaveImage = false
 	buildOptions.Tag = newImageName
 	logger.Debug("buildOptions file: %s", buildOptions.File)
 	logger.Debug("buildOptions tag: %s", newImageName)

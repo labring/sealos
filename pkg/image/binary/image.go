@@ -127,12 +127,15 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths)
 	platformVar := types.ParsePlatform(options.Platform)
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
-
-	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
-	if err != nil {
-		return errors.Wrap(err, "save images failed in this context")
+	if options.SaveImage {
+		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
+		if err != nil {
+			return errors.Wrap(err, "save images failed in this context")
+		}
+		logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
+	} else {
+		logger.Warn("current saveImage=false, skip pull images")
 	}
-	logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 	options.Tag = imageName
 	cmd := fmt.Sprintf("buildah build --tls-verify=false %s %s", options.String(), contextDir)
 	return exec.Cmd("bash", "-c", cmd)
