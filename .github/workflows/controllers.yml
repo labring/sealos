@@ -91,6 +91,7 @@ jobs:
     steps:
       - name: Build ${{ matrix.module }}-controller image
         uses: peter-evans/create-or-update-comment@v1
+        if: github.repository == 'labring/sealos'
         with:
           issue-number: 140
           repository: labring/cluster-image

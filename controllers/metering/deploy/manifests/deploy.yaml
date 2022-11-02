@@ -367,7 +367,13 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/metering-controller:dev
+        env:
+        - name: SEALOS_SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: ghcr.io/labring/sealos-metering-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz

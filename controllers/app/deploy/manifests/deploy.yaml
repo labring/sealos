@@ -401,7 +401,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: ghcr.io/labring/app-controller:dev
+        image: ghcr.io/labring/sealos-app-controller:dev
         livenessProbe:
           httpGet:
             path: /healthz
