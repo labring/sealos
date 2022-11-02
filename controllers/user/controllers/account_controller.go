@@ -29,10 +29,6 @@ import (
 
 	rbacV1 "k8s.io/api/rbac/v1"
 
-	v1 "k8s.io/api/core/v1"
-
-	"github.com/labring/sealos/pkg/constants"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -96,8 +92,8 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	account := &userv1.Account{}
 	account.Name = payment.Spec.UserID
-	account.Namespace = constants.SealosSystemNamespace
-	err = r.Get(ctx, client.ObjectKey{Namespace: constants.SealosSystemNamespace, Name: account.Name}, account)
+	account.Namespace = helper.GetDefaultNamespace()
+	err = r.Get(ctx, client.ObjectKey{Namespace: helper.GetDefaultNamespace(), Name: account.Name}, account)
 	if errors.IsNotFound(err) {
 		account.Status.Balance = 0
 		account.Status.ChargeList = []userv1.Charge{}
@@ -154,7 +150,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	role := rbacV1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRole-" + name,
-			Namespace: constants.SealosSystemNamespace,
+			Namespace: helper.GetDefaultNamespace(),
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
@@ -173,7 +169,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRoleBinding-" + name,
-			Namespace: constants.SealosSystemNamespace,
+			Namespace: helper.GetDefaultNamespace(),
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
@@ -214,14 +210,6 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "account_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
-	err := r.Create(context.TODO(), &v1.Namespace{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: constants.SealosSystemNamespace,
-		},
-	})
-	if err != nil && !errors.IsAlreadyExists(err) {
-		return fmt.Errorf("failed to create system namespace: %v", err)
-	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Account{}).
 		Watches(&source.Kind{Type: &userv1.Payment{}}, &handler.EnqueueRequestForObject{}).
