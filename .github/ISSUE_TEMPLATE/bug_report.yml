@@ -5,8 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for reporting an issue. Before you open the bug report please review the following troubleshooting guide:
-          - [Troubleshoot sealos install Issues](https://www.sealyun.com/docs/Intro)
+        Thank you for reporting an issue. 
 
         Please fill in as much of the following form as you're able.
   - type: input
@@ -25,8 +24,6 @@ body:
         2. With this config...
         3. Run '...'
         4. See error...
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: What is the expected behavior?
@@ -35,8 +32,6 @@ body:
     attributes:
       label: What do you see instead?
       description: If possible please provide textual output instead of screenshots.
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: Operating environment
