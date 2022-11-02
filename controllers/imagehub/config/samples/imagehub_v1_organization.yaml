@@ -1,0 +1,12 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  labels:
+    app.kubernetes.io/name: organization
+    app.kubernetes.io/instance: organization-sample
+    app.kubernetes.io/part-of: imagehub
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: imagehub
+  name: organization-sample
+spec:
+  # TODO(user): Add fields here

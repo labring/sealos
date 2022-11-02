@@ -1,0 +1,27 @@
+# permissions for end users to view repositories.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: repository-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: imagehub
+    app.kubernetes.io/part-of: imagehub
+    app.kubernetes.io/managed-by: kustomize
+  name: repository-viewer-role
+rules:
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - repositories
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - repositories/status
+  verbs:
+  - get
