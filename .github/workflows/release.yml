@@ -29,7 +29,7 @@ jobs:
         id: prepare
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          echo ::set-output name=tag_name::${TAG}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
       - name: Note
         id: Note

@@ -248,7 +248,7 @@ jobs:
         id: prepare
         run: |
           TAG=dev
-          echo ::set-output name=tag_name::${TAG}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
       - name: set up buildx
         id: buildx
@@ -318,8 +318,8 @@ jobs:
         id: prepare
         run: |
           TAG=dev
-          echo ::set-output name=tag_name::${TAG}
-          echo ::set-output name=commit_sha::${{ env.GIT_COMMIT_SHORT_SHA }}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo commit_sha=${{ env.GIT_COMMIT_SHORT_SHA }} >> $GITHUB_OUTPUT
 
       - name: Download patch
         uses: actions/download-artifact@v3
