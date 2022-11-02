@@ -8,24 +8,13 @@ body:
       value: |
         Thank you for suggesting an idea to improve Sealos.
         Please fill in as much of the following form as you're able.
-  - type: input
-    attributes:
-      label: Sealos Version
-      description: What Sealos Version
-      placeholder: eg. v4.1.3
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: What is the problem this feature will solve?
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: If you have solution，please describe it
       description: Describe the requests. If you already have something in mind... PRs are welcome!
-    validations:
-      required: true
   - type: textarea
     attributes:
       label: What alternatives have you considered?
