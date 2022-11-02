@@ -126,8 +126,11 @@ func (c *Applier) updateStatus(err error) {
 func (c *Applier) reconcileCluster() error {
 	//sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired)
-	if err := c.installApp(c.RunNewImages); err != nil {
-		return err
+	logger.Debug("run new images: %+v", c.RunNewImages)
+	if len(c.RunNewImages) != 0 {
+		if err := c.installApp(c.RunNewImages); err != nil {
+			return err
+		}
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())

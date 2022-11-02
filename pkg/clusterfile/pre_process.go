@@ -20,6 +20,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 
@@ -69,17 +71,24 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug("loadClusterFile loadRenderValues: %+v", mergeValues)
 	data := map[string]interface{}{
 		"Values": mergeValues,
 	}
-	tpl, err := template.Parse(string(body))
-	if err != nil {
-		return nil, err
-	}
+	logger.Debug("loadClusterFile body: %+v", string(body))
 	out := bytes.NewBuffer(nil)
-	if err := tpl.Execute(out, data); err != nil {
-		return nil, err
+	tpl, isOk, err := template.TryParse(string(body))
+	if isOk {
+		if err != nil {
+			return nil, err
+		}
+		if err := tpl.Execute(out, data); err != nil {
+			return nil, err
+		}
+	} else {
+		out.Write(body)
 	}
+
 	for i := range c.customConfigFiles {
 		configData, err := fileutil.ReadAll(c.customConfigFiles[i])
 		if err != nil {
