@@ -27,8 +27,10 @@ func init() {
 		Funcs(funcMap())
 }
 
-func Parse(text string) (*template.Template, error) {
-	return defaultTpl.Parse(text)
+func TryParse(text string) (*template.Template, bool, error) {
+	tmp, err := defaultTpl.Parse(text)
+	isFailed := err != nil && err.Error() == "html/template: cannot Parse after Execute"
+	return tmp, !isFailed, err
 }
 
 func ParseFiles(filenames ...string) (*template.Template, error) {
