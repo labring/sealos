@@ -21,8 +21,9 @@ import (
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
-	"github.com/labring/sealos/controllers/metering/controllers"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	"github.com/labring/sealos/controllers/metering/controllers"
 
 	"os"
 
@@ -90,8 +91,43 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Metering")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
+	if err = (&controllers.MeteringQuotaReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MeteringQuota")
+		os.Exit(1)
+	}
 
+	if err = (&controllers.InitMeteringReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "InitMetering")
+		os.Exit(1)
+	}
+	if err = (&controllers.ExtensionResourcesPriceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ExtensionResourcesPrice")
+		os.Exit(1)
+	}
+	if err = (&controllers.DeductionReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Deduction")
+		os.Exit(1)
+	}
+	if err = (&controllers.PodResourcePriceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PodResourcePrice")
+		os.Exit(1)
+	}
+	//+kubebuilder:scaffold:builder
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
 		os.Exit(1)

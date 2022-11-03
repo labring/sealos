@@ -1,6 +1,15 @@
 apiVersion: metering.sealos.io/v1
 kind: Metering
 metadata:
-  name: metering-sample
+  name: metering-ns-98810202-1d00-48a3-9d93-b7714b2ca7d4
+  namespace: sealos-system
 spec:
-  # TODO(user): Add fields here
+  namespace: ns-98810202-1d00-48a3-9d93-b7714b2ca7d4
+  owner: 98810202-1d00-48a3-9d93-b7714b2ca7d4
+  resources:
+    cpu: "1"
+    limits.cpu: "1"
+    limits.ephemeral-storage: 10Gi
+    limits.memory: 1Gi
+    memory: 1Gi
+    requests.storage: 10Gi

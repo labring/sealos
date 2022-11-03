@@ -83,7 +83,7 @@ require (
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/labring/sealos v0.0.0-00010101000000-000000000000 // indirect
+	github.com/labring/sealos v0.0.0-00010101000000-000000000000
 	github.com/labring/sealos/controllers/infra v0.0.0-20220929042419-816b6dfe507a
 	github.com/labring/sealos/controllers/user v0.0.0-20220929042419-816b6dfe507a
 	k8s.io/api v0.24.3

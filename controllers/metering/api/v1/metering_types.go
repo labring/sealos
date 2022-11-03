@@ -18,6 +18,7 @@ package v1
 
 import (
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,19 +26,33 @@ import (
 apiVersion: v1
 kind: Metering
 metadata:
-  name: xxxx
+  name: metering-nsName
+  namespace:sealos-system
 Spec:
-    	owner: fanux
-    	namespace: string
-        resources: v1.ResourceList // resource type
+    	owner: yyj //not require,create ns will auto create metering
+    	namespace: ns-ownerName  //not require,create ns will auto create metering
+        resources:  //require
+		- name: cpu
+		unit: 1000m
+		price: 1    // 100 = 1¥
+		- name: memory
+		unit: 1G
+		price: 1    // 100 = 1¥
+		- name:traffic
+		unit: 100M
+		price:1    //  100 = 1¥
 */
 
-// MeteringSpec defines the desired state of Metering
-
 type MeteringSpec struct {
-	Namespace string          `json:"namespace"`
-	Owner     string          `json:"owner"`
-	Resources v1.ResourceList `json:"resources,omitempty"`
+	Owner        string `json:"owner,omitempty"`
+	Namespace    string `json:"namespace,omitempty"`
+	TimeInterval int    `json:"timeInterval"`
+}
+
+type ResourcePrice struct {
+	Unit     *resource.Quantity `json:"unit"`
+	Price    int64              `json:"price"` // 100 = 1¥
+	Describe string             `json:"describe,omitempty"`
 }
 
 type TimeIntervalType string
@@ -60,11 +75,12 @@ type BillingList struct {
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	BillingListM     []BillingList `json:"billingListM,omitempty"`
-	BillingListH     []BillingList `json:"billingListH,omitempty"`
-	BillingListD     []BillingList `json:"billingListD,omitempty"`
-	TotalAmount      int64         `json:"totalAmount,omitempty"`
-	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
+	BillingListM     []BillingList                     `json:"billingListM,omitempty"`
+	BillingListH     []BillingList                     `json:"billingListH,omitempty"`
+	BillingListD     []BillingList                     `json:"billingListD,omitempty"`
+	TotalAmount      int64                             `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64                             `json:"latestUpdateTime,omitempty"`
+	Resources        map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -1,0 +1,24 @@
+# permissions for end users to edit meteringquota.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: meteringquota-editor-role
+rules:
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meteringquota
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meteringquota/status
+  verbs:
+  - get

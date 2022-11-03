@@ -1,0 +1,6 @@
+apiVersion: metering.sealos.io/v1
+kind: Deduction
+metadata:
+  name: deduction-sample
+spec:
+  # TODO(user): Add fields here

@@ -49,18 +49,10 @@ spec:
                 type: string
               owner:
                 type: string
-              resources:
-                additionalProperties:
-                  anyOf:
-                  - type: integer
-                  - type: string
-                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                  x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
-                type: object
+              timeInterval:
+                type: integer
             required:
-            - namespace
-            - owner
+            - timeInterval
             type: object
           status:
             properties:
@@ -115,6 +107,25 @@ spec:
               latestUpdateTime:
                 format: int64
                 type: integer
+              resources:
+                additionalProperties:
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
+                type: object
               totalAmount:
                 format: int64
                 type: integer

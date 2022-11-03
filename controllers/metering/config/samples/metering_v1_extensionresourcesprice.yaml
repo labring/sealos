@@ -1,0 +1,6 @@
+apiVersion: metering.sealos.io/v1
+kind: ExtensionResourcesPrice
+metadata:
+  name: extensionresourcesprice-sample
+spec:
+  # TODO(user): Add fields here

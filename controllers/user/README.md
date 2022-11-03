@@ -493,8 +493,11 @@ metadata:
   name: paymentSecret
 type: Opaque
 data:
-  USER_NAME: xxxx
-  PASSWORD: xxxx
+  AppID: xxx
+  MchAPIv3Key: xxxx
+  MchCertificateSerialNumber: xxx
+  MchID: xxx
+  WechatPrivateKey: xxxx
 ```
 
 example of set the secret env of the crd

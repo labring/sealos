@@ -15,4 +15,5 @@ bin
 tools
 coverage.out
 tmp
-desktop/.DS_Store
+
+*.DS_Store

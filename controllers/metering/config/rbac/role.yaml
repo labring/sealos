@@ -6,6 +6,170 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resource-quotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - deductions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - deductions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - deductions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourcesprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourcesprices/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourcesprices/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - initmeterings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - initmeterings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - initmeterings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meteringquotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meteringquotas/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - meteringquotas/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - metering.sealos.io
   resources:
   - meterings
@@ -31,3 +195,53 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresourceprices/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresourceprices/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

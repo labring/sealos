@@ -1,0 +1,20 @@
+# permissions for end users to view podresourceprices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podresourceprice-viewer-role
+rules:
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresourceprices
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresourceprices/status
+  verbs:
+  - get
