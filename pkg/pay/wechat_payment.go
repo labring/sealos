@@ -35,14 +35,12 @@ const (
 	MchCertificateSerialNumber = "MchCertificateSerialNumber"
 	MchAPIv3Key                = "MchAPIv3Key"
 	AppID                      = "AppID"
-	CallbackURL                = "CallbackURL"
+	NotifyCallbackURL          = "NotifyCallbackURL"
 
 	StatusSuccess    = "SUCCESS"
 	StatusProcessing = "PROCESSING"
 	StatusNotPay     = "NOTPAY"
 	StatusFail       = "FAILED"
-
-	DefaultCallbackURL = "https://sealos.io/payment/wechat/callback"
 )
 
 func NewClient(ctx context.Context, opts ...core.ClientOption) (*core.Client, error) {
@@ -90,9 +88,6 @@ func WechatPay(amount int64, user, tradeNO, describe, callback string) (string, 
 	}
 	if tradeNO == "" {
 		return "", fmt.Errorf("generate tradeNO failed")
-	}
-	if callback == "" {
-		callback = DefaultCallbackURL
 	}
 	if describe == "" {
 		describe = "sealos cloud recharge"

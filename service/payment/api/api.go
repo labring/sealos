@@ -72,7 +72,7 @@ func (u Payment) getCodeURL(request *restful.Request, response *restful.Response
 		return
 	}
 
-	codeURL, err := pay.WechatPay(int64(a), user, "", "", os.Getenv(pay.CallbackURL))
+	codeURL, err := pay.WechatPay(int64(a), user, "", "", os.Getenv(pay.NotifyCallbackURL))
 	if err != nil {
 		_ = response.WriteErrorString(http.StatusInternalServerError, fmt.Sprintf("payment error : %v", err))
 		return

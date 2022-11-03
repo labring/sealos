@@ -1,0 +1,259 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/approval
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - certificates.k8s.io
+  resourceNames:
+  - kubernetes.io/kube-apiserver-client
+  resources:
+  - signers
+  verbs:
+  - approve
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - secrets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accounts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - payments/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroupbindings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroups
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroups/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - usergroups/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - users/status
+  verbs:
+  - get
+  - patch
+  - update

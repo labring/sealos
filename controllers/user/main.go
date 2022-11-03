@@ -116,7 +116,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
 	}
-	if os.Getenv(pay.CallbackURL) != "" {
+	if os.Getenv(pay.AppID) != "" {
 		if err = (&controllers.PaymentReconciler{
 			Client: mgr.GetClient(),
 			Scheme: mgr.GetScheme(),

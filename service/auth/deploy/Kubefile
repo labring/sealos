@@ -7,4 +7,4 @@ ENV clientIDEnv=""
 ENV clientSecretEnv=""
 ENV kubeconfigEnv=""
 ENV ssoEndpointEnv="https://login.sealos.io"
-CMD ["kubectl apply -f auth-service/deploy.yaml"]
+CMD ["kubectl apply -f manifests/auth-service/deploy.yaml"]

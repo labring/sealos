@@ -1,0 +1,4 @@
+apiVersion: user.sealos.io/v1
+kind: UserGroup
+metadata:
+  name: usergroup-sample
