@@ -410,6 +410,9 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: USER_NAMESPACE
+          value: user-system
         image: ghcr.io/labring/sealos-terminal-controller:dev
         livenessProbe:
           httpGet:

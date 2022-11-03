@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -18,4 +19,8 @@ func randString(n int) string {
 		b[i] = letterBytes[rand.Int63()%int64(len(letterBytes))]
 	}
 	return string(b)
+}
+
+func GetDefaultUserNamespace() string {
+	return os.Getenv("USER_NAMESPACE")
 }
