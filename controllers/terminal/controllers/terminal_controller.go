@@ -197,7 +197,7 @@ func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *term
 			{
 				Kind:      "ServiceAccount",
 				Name:      terminal.Spec.User,
-				Namespace: "user-system",
+				Namespace: GetDefaultUserNamespace(),
 			},
 		}
 
