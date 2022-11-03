@@ -16,15 +16,10 @@ package utils
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/hex"
-	"encoding/pem"
 	"fmt"
-	"math/big"
 	"time"
+
+	"k8s.io/apimachinery/pkg/fields"
 
 	"k8s.io/apimachinery/pkg/watch"
 
@@ -37,55 +32,10 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 )
 
-func RandomHexStr(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(b), nil
-}
-
-func CreateJWTCertificateAndPrivateKey() (string, string, error) {
-	// Generate RSA key.
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Encode private key to PKCS#1 ASN.1 PEM.
-	privateKeyPem := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(key),
-		},
-	)
-
-	tml := x509.Certificate{
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().AddDate(99, 0, 0),
-		// you have to generate a different serial number each execution
-		SerialNumber: big.NewInt(123456),
-		Subject: pkix.Name{
-			CommonName:   "Sealos Desktop Cert",
-			Organization: []string{"Sealos"},
-		},
-		BasicConstraintsValid: true,
-	}
-	cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &key.PublicKey, key)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Generate a pem block with the certificate
-	certPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
-	})
-
-	return string(certPem), string(privateKeyPem), nil
-}
-
 func CreateOrUpdateKubeConfig(uid string) error {
+	if conf.GlobalConfig.MockK8s {
+		return nil
+	}
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return err
@@ -128,6 +78,9 @@ func CreateOrUpdateKubeConfig(uid string) error {
 }
 
 func GetKubeConfig(uid string, timeout int) (string, error) {
+	if conf.GlobalConfig.MockK8s {
+		return "This is mock data.", nil
+	}
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return "", err
@@ -138,7 +91,10 @@ func GetKubeConfig(uid string, timeout int) (string, error) {
 		Version:  "v1",
 		Resource: "users",
 	})
-	w, err := resource.Watch(context.Background(), metav1.ListOptions{})
+	fieldSelector, _ := fields.ParseSelector("metadata.name=" + uid)
+	w, err := resource.Watch(context.Background(), metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
+	})
 	if err != nil {
 		return "", err
 	}
