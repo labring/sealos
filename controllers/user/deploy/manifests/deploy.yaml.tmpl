@@ -951,9 +951,6 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        envFrom:
-        - secretRef:
-            name: payment-secret
         image: ghcr.io/labring/sealos-user-controller:dev
         imagePullPolicy: Always
         livenessProbe:
