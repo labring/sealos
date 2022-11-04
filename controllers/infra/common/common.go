@@ -8,7 +8,7 @@ const (
 	InfraVolumesLabel   = "infra.sealos.io/volumes/label"
 	IPTypePublic        = "public"
 	IPTypePrivate       = "private"
-	DataVolumeLabel     = "Data"
+	DataVolumeLabel     = "DataBase"
 	RootVolumeLabel     = "Root"
 	TryTimes            = 8
 	TrySleepTime        = time.Second

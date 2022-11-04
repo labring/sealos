@@ -32,7 +32,7 @@ type ReposiyorySpec struct {
 
 	//+kubebuilder:validation:Required
 	Name      RepoName `json:"name"` // e.g: "libring/mysql"
-	Tags      TagsData `json:"tags,omitempty"`
+	Tags      TagList  `json:"tags,omitempty"`
 	LatestTag TagData  `json:"latestTag"`
 }
 
@@ -60,14 +60,14 @@ func (n *RepoName) GetRepo() string {
 
 type RepoInfo ReposiyorySpec
 
-type TagsData []TagData
+type TagList []TagData
 
 // RepositoryStatus defines the observed state of Repository
 type RepositoryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Name      RepoName `json:"name,omitempty"` // e.g: "libring/mysql"
-	Tags      TagsData `json:"tags,omitempty"`
+	Tags      TagList  `json:"tags,omitempty"`
 	LatestTag TagData  `json:"latestTag,omitempty"`
 }
 

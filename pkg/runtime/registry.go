@@ -74,7 +74,7 @@ func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string)
 		Password: password,
 		Data:     data,
 	}
-	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", rConfig.IP, rConfig.Domain, rConfig.Data)
+	logger.Debug("show registry info, IP: %s, Domain: %s, DataBase: %s", rConfig.IP, rConfig.Domain, rConfig.Data)
 	return rConfig
 }
 

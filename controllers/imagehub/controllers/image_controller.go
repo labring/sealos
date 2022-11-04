@@ -23,6 +23,7 @@ import (
 	rt "runtime"
 	"sort"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/go-logr/logr"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 )
 
@@ -39,6 +39,8 @@ type ImageReconciler struct {
 	client.Client
 	logr.Logger
 	Scheme *runtime.Scheme
+
+	DataBase
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
@@ -60,44 +62,72 @@ func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	r.Logger.Info("enter reconcile", "name: ", req.Name, "namespace: ", req.Namespace)
 
 	// get image
-	var img imagehubv1.Image
-	if err := r.Get(ctx, req.NamespacedName, &img); err != nil {
+	var img *imagehubv1.Image
+	if err := r.Get(ctx, req.NamespacedName, img); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// start a pipeline
-	r.Logger.Info("start image pipeline", "image name:", img.Spec.Name)
-	pipeline := []func(context.Context, *imagehubv1.Image) error{
-		r.init,
-		//r.spec2Status,
-		r.syncRepo,
-	}
-	for _, fn := range pipeline {
-		err := fn(ctx, &img)
-		if err != nil {
-			r.Logger.Info("error in pipeline", "error func:", rt.FuncForPC(reflect.ValueOf(fn).Pointer()).Name())
-			return ctrl.Result{}, err
+	if img.DeletionTimestamp.IsZero() {
+		if !controllerutil.ContainsFinalizer(img, imagehubv1.ImgFinalizerName) {
+			controllerutil.AddFinalizer(img, imagehubv1.ImgFinalizerName)
+			if err := r.Update(ctx, img); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+	} else {
+		// start a pipeline
+		r.Logger.Info("start image pipeline", "image name:", img.Spec.Name)
+		pipeline := []func(context.Context, *imagehubv1.Image) error{
+			// handle finalizer
+			r.preDelete,
+			// init map and etc
+			r.init,
+			// sync to repo crd
+			r.syncRepo,
+		}
+		for _, fn := range pipeline {
+			err := fn(ctx, img)
+			if err != nil {
+				r.Logger.Info("error in pipeline", "error func:", rt.FuncForPC(reflect.ValueOf(fn).Pointer()).Name())
+				return ctrl.Result{}, err
+			}
 		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
-// init check spec info input
+func (r *ImageReconciler) preDelete(ctx context.Context, img *imagehubv1.Image) error {
+	if controllerutil.ContainsFinalizer(img, imagehubv1.ImgFinalizerName) {
+		// our finalizer is present, so lets handle any external dependency
+		if err := r.deleteExternalResources(ctx, img); err != nil {
+			// if fail to delete the external dependency here, return with error
+			// so that it can be retried
+			r.Logger.Error(err, "delete image, finalizer predelete error")
+			return err
+		}
+		// remove our finalizer from the list and update it.
+		controllerutil.RemoveFinalizer(img, imagehubv1.ImgFinalizerName)
+		if err := r.Update(ctx, img); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// init check spec info input and init data etc...
 func (r *ImageReconciler) init(ctx context.Context, img *imagehubv1.Image) error {
 	if !img.Spec.Name.IsLegal() {
 		r.Logger.Info("error in init", "name: ", img.Spec.Name)
 		return fmt.Errorf("image name illegal")
 	}
+
+	r.DataBase = DataBase{
+		Client: r.Client,
+		Logger: r.Logger,
+	}
 	return nil
 }
-
-// spec2Status use spec to gen status
-// name: labring/mysql:v8.0.31
-//func (r *ImageReconciler) spec2Status(ctx context.Context, img *imagehubv1.Image) error {
-//	// check if spec has its baseinfo
-//	return nil
-//}
 
 // todo sync image to repo
 func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) error {
@@ -114,8 +144,9 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) e
 				LatestTag: td,
 			}
 		}
-		// update repo
-		if checkTag(td, repo.Spec.Tags) {
+
+		// update repo, check repo tag list, and update latest tag
+		if !isTagExistInTagList(td, repo.Spec.Tags) {
 			repo.Spec.Tags = append(repo.Spec.Tags, td)
 		}
 
@@ -123,22 +154,60 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) e
 			return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
 		})
 
-		if repo.Spec.LatestTag.CTime.Before(&img.CreationTimestamp) {
-			repo.Spec.LatestTag = td
-		}
+		repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
 		return nil
 	}); err != nil {
 		return fmt.Errorf("sync repo failed: %v", err)
 	}
 	return nil
 }
-func checkTag(tag imagehubv1.TagData, tags []imagehubv1.TagData) bool {
+
+func isTagExistInTagList(tag imagehubv1.TagData, tags []imagehubv1.TagData) bool {
 	for _, p := range tags {
 		if p.Name == tag.Name {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
+}
+
+// deleteExternalResources image delete will updata and get repo tag list and delete repo if repo's tag list is null
+func (r *ImageReconciler) deleteExternalResources(ctx context.Context, img *imagehubv1.Image) error {
+	repo, err := r.getRepo(ctx, img.Spec.Name.ToRepoName())
+	if err != nil {
+		return err
+	}
+
+	spec := imagehubv1.ReposiyorySpec{
+		Tags: imagehubv1.TagList{},
+		LatestTag: imagehubv1.TagData{
+			Name:  "",
+			CTime: metav1.Time{},
+		},
+	}
+
+	for _, t := range repo.Spec.Tags {
+		if t.Name == img.Spec.Name.GetTag() {
+			continue
+		}
+		spec.Tags = append(spec.Tags, t)
+	}
+
+	// change spec and update
+	repo.Spec = spec
+
+	// if repo has no tags, delete it
+	if len(repo.Spec.Tags) == 0 {
+		return r.Delete(ctx, &repo)
+	}
+
+	// resort tag list, update latestTag
+	sort.Slice(repo.Spec.Tags, func(i, j int) bool {
+		return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
+	})
+	repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
+
+	return r.Update(ctx, &repo)
 }
 
 // SetupWithManager sets up the controller with the Manager.

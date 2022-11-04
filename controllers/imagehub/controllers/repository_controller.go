@@ -22,6 +22,7 @@ import (
 	"reflect"
 	rt "runtime"
 
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -29,7 +30,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/go-logr/logr"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 )
 
@@ -38,6 +38,8 @@ type RepositoryReconciler struct {
 	client.Client
 	logr.Logger
 	Scheme *runtime.Scheme
+
+	DataBase
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
@@ -88,6 +90,11 @@ func (r *RepositoryReconciler) init(ctx context.Context, repo *imagehubv1.Reposi
 		r.Logger.Info("error in init", "name: ", repo.Spec.Name)
 		return fmt.Errorf("image name illegal")
 	}
+
+	r.DataBase = DataBase{
+		Client: r.Client,
+		Logger: r.Logger,
+	}
 	return nil
 }
 
@@ -96,7 +103,7 @@ func (r *RepositoryReconciler) init(ctx context.Context, repo *imagehubv1.Reposi
 //	return nil
 //}
 
-// todo sync image to repo
+// todo sync repo to org
 func (r *RepositoryReconciler) syncOrg(ctx context.Context, repo *imagehubv1.Repository) error {
 	org := &imagehubv1.Organization{ObjectMeta: metav1.ObjectMeta{Name: repo.Spec.Name.GetOrg(), Namespace: repo.Namespace}}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, org, func() error {

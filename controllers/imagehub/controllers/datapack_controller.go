@@ -23,12 +23,12 @@ import (
 	rt "runtime"
 	"time"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/go-logr/logr"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 )
 
@@ -39,6 +39,8 @@ type DataPackReconciler struct {
 	client.Client
 	logr.Logger
 	Scheme *runtime.Scheme
+
+	DataBase
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
@@ -119,8 +121,14 @@ func (r *DataPackReconciler) init(ctx context.Context, pack *imagehubv1.DataPack
 			return fmt.Errorf("image name illegal")
 		}
 	}
+
 	if pack.Status.Datas == nil {
 		pack.Status.Datas = map[imagehubv1.ImageName]imagehubv1.Data{}
+	}
+
+	r.DataBase = DataBase{
+		Client: r.Client,
+		Logger: r.Logger,
 	}
 	return nil
 }
@@ -161,70 +169,6 @@ func (r *DataPackReconciler) spec2Status(ctx context.Context, pack *imagehubv1.D
 	pack.Status.Codes = imagehubv1.OK
 	pack.Status.Datas = datas
 	return nil
-}
-
-// todo add org info and edit this!
-func (r *DataPackReconciler) getOrgInfo(ctx context.Context, name imagehubv1.OrgName) (imagehubv1.OrgInfo, error) {
-	return imagehubv1.OrgInfo{}, nil
-}
-
-func (r *DataPackReconciler) getRepoInfo(ctx context.Context, name imagehubv1.RepoName) (imagehubv1.RepoInfo, error) {
-	r.Logger.Info("getRepoInfo", "name", name)
-	repos := &imagehubv1.RepositoryList{}
-	if err := r.List(ctx, repos, client.MatchingLabels{
-		imagehubv1.SealosOrgLable:  name.GetOrg(),
-		imagehubv1.SealosRepoLabel: name.GetRepo(),
-	}); err != nil {
-		return imagehubv1.RepoInfo{}, client.IgnoreNotFound(err)
-	}
-	if len(repos.Items) == 0 {
-		r.Logger.Info("not found repo name", "name", name)
-		return imagehubv1.RepoInfo{}, fmt.Errorf("error not found repo name")
-	}
-	// if not only one repo was selected, should raise an error?
-	return imagehubv1.RepoInfo(repos.Items[0].Spec), nil
-}
-
-func (r *DataPackReconciler) getImageInfo(ctx context.Context, name imagehubv1.ImageName) (imagehubv1.ImageInfo, error) {
-	r.Logger.Info("getImageInfo", "name", name)
-	images := &imagehubv1.ImageList{}
-	if err := r.List(ctx, images, client.MatchingLabels{
-		imagehubv1.SealosOrgLable:  name.GetOrg(),
-		imagehubv1.SealosRepoLabel: name.GetRepo(),
-		imagehubv1.SealosTagLabel:  name.GetTag(),
-	}); err != nil {
-		return imagehubv1.ImageInfo{}, client.IgnoreNotFound(err)
-	}
-	if len(images.Items) == 0 {
-		r.Logger.Info("not found image name", "name", name)
-		return imagehubv1.ImageInfo{}, fmt.Errorf("error not found image name")
-	}
-	// if not only one repo was selected, should raise an error?
-	return imagehubv1.ImageInfo(images.Items[0].Spec), nil
-}
-
-func (r *DataPackReconciler) genFulldata(ctx context.Context, n imagehubv1.ImageName) (imagehubv1.FullData, error) {
-	fd := imagehubv1.FullData{}
-
-	orgInfo, err := r.getOrgInfo(ctx, n.ToOrgName())
-	if err != nil {
-		return imagehubv1.FullData{}, err
-	}
-	fd.OrgInfo = orgInfo
-
-	repoInfo, err := r.getRepoInfo(ctx, n.ToRepoName())
-	if err != nil {
-		return imagehubv1.FullData{}, err
-	}
-	fd.RepoInfo = repoInfo
-
-	imgInfo, err := r.getImageInfo(ctx, n)
-	if err != nil {
-		return imagehubv1.FullData{}, err
-	}
-	fd.ImageInfo = imgInfo
-
-	return fd, nil
 }
 
 func (r *DataPackReconciler) isExpired(pack *imagehubv1.DataPack) bool {

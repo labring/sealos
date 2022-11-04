@@ -59,7 +59,7 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 	eg, _ := errgroup.WithContext(context.Background())
 
 	for _, v := range host.Metadata {
-		//Volume_tag: [role:true,Data:true,name:namespace+name]
+		//Volume_tag: [role:true,DataBase:true,name:namespace+name]
 		tags := rolesToTags(host.Roles)
 		nameKey, fullName := common.InfraVolumesLabel, infra.GetInstancesAndVolumesTag()
 		dataLable, value := common.DataVolumeLabel, common.TRUELable
