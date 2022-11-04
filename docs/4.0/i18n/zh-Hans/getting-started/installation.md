@@ -48,7 +48,7 @@ baseurl=https://yum.fury.io/labring/
 enabled=1
 gpgcheck=0
 EOF
-sudo yum update
+sudo yum clean all
 sudo yum install sealos
 ```
 
