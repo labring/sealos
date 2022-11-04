@@ -1,4 +1,4 @@
-import { resetIdsForTests } from '@fluentui/react-components';
+import { AFFiNEApplication } from 'mock/hub/affine';
 import { KubernetesDashboardApplication } from 'mock/hub/kubernetes_dashboard';
 import { KuBoardApplication } from 'mock/hub/kuboard';
 import { PostgresAdminApplication } from 'mock/hub/pgadmin';
@@ -68,6 +68,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         // call apply to start postgres admin pod
         const pga = await PostgresAdminApplication.doStart(kc);
         return JsonResp(pga, resp);
+      case 'affine':
+        // call apply to start postgres admin pod
+        const aa = await AFFiNEApplication.doStart(kc);
+        return JsonResp(aa, resp);
     }
   } catch (err) {
     return InternalErrorResp(String(err), resp);
