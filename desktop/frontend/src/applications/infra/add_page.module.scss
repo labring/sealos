@@ -1,0 +1,60 @@
+.nav {
+  width: 200px;
+  color: #616161;
+  height: 64px;
+  line-height: 64px;
+  display: flex;
+  align-items: center;
+  margin-left: 30px;
+}
+
+.head {
+  height: 24px;
+  line-height: 24px;
+  display: flex;
+  align-items: center;
+  .dot {
+    width: 15px;
+    height: 15px;
+    background: #3981f5;
+    box-shadow: 2px 2px 0px #c5dbff;
+    border-radius: 50%;
+    display: inline-block;
+  }
+}
+
+.inputName {
+  width: 250px;
+}
+
+.moneyItem {
+  font-family: 'Segoe UI';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  .money {
+    color: rgba(255, 161, 83, 1);
+    font-weight: 600;
+  }
+}
+
+.pageScroll {
+  overflow-y: overlay;
+}
+
+.pageWrapper {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: row;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+
+.restWindow {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  flex-grow: 1;
+  scroll-behavior: smooth;
+}
