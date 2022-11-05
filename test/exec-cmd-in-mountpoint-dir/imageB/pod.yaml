@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-second-demo
+  labels:
+    app: my-second-demo
+spec:
+  containers:
+    - name: my-second-demo
+      image: hellodm/my-first-demo:v1.0
+      ports:
+        - containerPort: 80
+      resources:
+        requests:
+          cpu: 0.1
+          memory: 32Mi
+        limits:
+          cpu: 0.5
+          memory: 32Mi

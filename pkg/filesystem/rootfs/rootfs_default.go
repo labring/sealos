@@ -154,7 +154,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		endEg.Go(func() error {
 			if appFlag && img.Type == v2.AppImage {
 				logger.Debug("send  app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, img.ImageName, img.Type)
-				err = CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), true, ip, img.MountPoint, target)
+				err = CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), true, ip, img.MountPoint, constants.GetAppWorkDir(cluster.Name, img.Name))
 				if err != nil {
 					return fmt.Errorf("copy container %s app rootfs failed %v", img.Name, err)
 				}
