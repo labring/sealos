@@ -125,6 +125,37 @@ kubebuilder create api --group <name> --version v1 --kind <name>
 5. commit pr to cluster-image
    code:  https://github.com/labring/cluster-image/blob/main/applications/sealos-app-controller/dev/init.sh
 
+## Example: how to build sealos on macOS(ARM64) using multipass
+
+1. luanch vm and mount sealos source code:
+```shell
+multipass launch \
+   --mount /Users/fanux/work/src/github.com/labring/sealos:/go/src/github.com/labring/sealos \
+   --name sealos-dev --cpus 2 --mem 4G --disk 40G
+```
+convert the source code DIR(/Users/fanux/work/src/github.com/labring/sealos) to your own.
+2. exec into the vm
+```shell
+multipass exec sealos-dev bash
+sudo su
+```
+3. install golang
+```shell
+apt-get install build-essential
+apt install make
+wget https://go.dev/dl/go1.19.3.linux-arm64.tar.gz
+tar -C /usr/local -zxvf go1.19.3.linux-arm64.tar.gz
+cat >> /etc/profile <<EOF
+# set go path
+export PATH=\$PATH:/usr/local/go/bin
+EOF
+source /etc/profile  && go version
+```
+4. Build the source code
+```shell
+go env -w GOPROXY=https://goproxy.cn,direct && make build
+# OR make build
+```
 
 ## FAQ
 
