@@ -1,0 +1,8 @@
+apiVersion: user.sealos.io/v1
+kind: Payment
+metadata:
+  name: payment-sample
+spec:
+  # TODO(user): Add fields here
+  userID: fanux
+  amount: 1

@@ -412,7 +412,7 @@ spec:
         - /manager
         env:
         - name: USER_NAMESPACE
-          value: user-system
+          value: {{ .USER_NAMESPACE }}
         image: ghcr.io/labring/sealos-terminal-controller:dev
         livenessProbe:
           httpGet:
