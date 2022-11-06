@@ -21,7 +21,7 @@ source /etc/profile  && go version
 ```shell script
 git clone https://github.com/labring/sealos.git
 cd sealos
-make build
+make build BINS=sealos
 ```
 
 You can scp the bin file to your linux host.

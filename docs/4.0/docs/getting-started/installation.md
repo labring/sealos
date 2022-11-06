@@ -67,6 +67,6 @@ Add `:arm64` when under the the `arm64` environment.
 # git clone the repo
 git clone https://github.com/labring/sealos.git
 # just make it
-make build
+make build BINS=sealos
 ```
 
