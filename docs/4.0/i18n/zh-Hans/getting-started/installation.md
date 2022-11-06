@@ -67,6 +67,6 @@ sudo yum install sealos
 # git clone the repo
 git clone https://github.com/labring/sealos.git
 # just make it
-make build
+make build BINS=sealos
 ```
 
