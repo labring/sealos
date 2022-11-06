@@ -15,19 +15,15 @@
 package conf
 
 var GlobalConfig Config
-var Namespace = "sealos"
 
 type Config struct {
-	SSOType        string     `yaml:"ssoType"`
-	CallbackURL    string     `yaml:"callbackUrl"`
-	OAuthProviders []Provider `yaml:"oauthProviders"`
+	SSOType     string `yaml:"ssoType"`
+	CallbackURL string `yaml:"callbackUrl"`
 	// Empty if in InCluster mode
 	Kubeconfig  string `yaml:"kubeconfig"`
 	SSOEndpoint string `yaml:"ssoEndpoint"`
-}
+	MockK8s     bool   `yaml:"mockK8s"`
 
-type Provider struct {
-	Type         string `yaml:"type"`
-	ClientID     string `yaml:"clientId"`
-	ClientSecret string `yaml:"clientSecret"`
+	// For Casdoor, other SSOs may not need this.
+	InitDataPath string `yaml:"initDataPath"`
 }
