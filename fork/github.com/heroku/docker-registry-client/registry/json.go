@@ -3,8 +3,10 @@ package registry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -43,6 +45,10 @@ func getNextLink(resp *http.Response) (string, error) {
 	for _, link := range resp.Header[http.CanonicalHeaderKey("Link")] {
 		parts := nextLinkRE.FindStringSubmatch(link)
 		if parts != nil {
+			// support 2.7+ distribution
+			if strings.HasPrefix(parts[1], "/") {
+				return fmt.Sprintf("%s://%s%s", resp.Request.URL.Scheme, resp.Request.URL.Host, parts[1]), nil
+			}
 			return parts[1], nil
 		}
 	}
