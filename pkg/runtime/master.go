@@ -41,6 +41,11 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
+	// fix issue https://github.com/labring/sealos/issues/1621
+	err = k.sshCmdAsync(k.getMaster0IPAndPort(), "sed -i \"/update_etc_hosts/c \\ - ['update_etc_hosts', 'once-per-instance']\" /etc/cloud/cloud.cfg && touch /var/lib/cloud/instance/sem/config_update_etc_hosts")
+	if err != nil {
+		return fmt.Errorf("set /etc/cloud/cloud.cfg failed %v", err)
+	}
 
 	cmdInit := k.Command(k.getKubeVersion(), InitMaster)
 	if cmdInit == "" {

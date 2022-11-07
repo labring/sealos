@@ -7,12 +7,14 @@ Some tools can be very handy to help you start a virtual machine such as [multip
 ## Install golang
 
 ```shell
-wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
-tar -C /usr/local -zxvf go1.19.2.linux-amd64.tar.gz
+ARCH=amd64
+wget https://go.dev/dl/go1.19.2.linux-$ARCH.tar.gz
+tar -C /usr/local -zxvf go1.19.2.linux-$ARCH.tar.gz
 cat >> /etc/profile <<EOF
 # set go path
 export PATH=\$PATH:/usr/local/go/bin
 EOF
+go env -w GOPROXY="https://goproxy.io,direct"
 source /etc/profile  && go version
 ```
 
@@ -21,7 +23,10 @@ source /etc/profile  && go version
 ```shell script
 git clone https://github.com/labring/sealos.git
 cd sealos
+go mod tidy 
+apt install gcc make
 make build BINS=sealos
+mv ./bin/linux_$ARCH/sealos /usr/local/bin
 ```
 
 You can scp the bin file to your linux host.
