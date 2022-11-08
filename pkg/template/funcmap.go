@@ -23,9 +23,9 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net"
 	"strings"
+	"text/template"
 
 	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/sprig/v3"

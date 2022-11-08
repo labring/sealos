@@ -17,8 +17,8 @@ package checker
 import (
 	"context"
 	"fmt"
-	"html/template"
 	"os"
+	"text/template"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"

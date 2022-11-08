@@ -18,7 +18,7 @@ package remote
 
 import (
 	"fmt"
-	"html/template"
+	"text/template"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
 

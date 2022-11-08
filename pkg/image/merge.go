@@ -20,10 +20,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"os"
 	"path"
 	"strings"
+	"text/template"
 
 	"golang.org/x/sync/errgroup"
 
