@@ -14,8 +14,9 @@
 
 package template
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
-	"html/template"
+	"text/template"
 )
 
 var defaultTpl *template.Template
@@ -29,7 +30,7 @@ func init() {
 
 func TryParse(text string) (*template.Template, bool, error) {
 	tmp, err := defaultTpl.Parse(text)
-	isFailed := err != nil && err.Error() == "html/template: cannot Parse after Execute"
+	isFailed := err != nil && err.Error() == "text/template: cannot Parse after Execute"
 	return tmp, !isFailed, err
 }
 

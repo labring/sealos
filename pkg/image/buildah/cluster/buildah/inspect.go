@@ -13,11 +13,12 @@
 // limitations under the License.
 package buildah
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"regexp"
+	"text/template"
 
 	"github.com/containers/buildah"
 	"github.com/pkg/errors"

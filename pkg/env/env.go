@@ -14,12 +14,13 @@
 
 package env
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"fmt"
-	"html/template"
 	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"github.com/labring/sealos/pkg/utils/maps"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"

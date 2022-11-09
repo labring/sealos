@@ -16,14 +16,15 @@ limitations under the License.
 
 package image
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"os"
 	"path"
 	"strings"
+	"text/template"
 
 	"golang.org/x/sync/errgroup"
 

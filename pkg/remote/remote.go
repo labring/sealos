@@ -16,9 +16,10 @@ limitations under the License.
 
 package remote
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"fmt"
-	"html/template"
+	"text/template"
 
 	"github.com/labring/sealos/pkg/utils/iputils"
 

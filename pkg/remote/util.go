@@ -16,10 +16,11 @@ limitations under the License.
 
 package remote
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"bytes"
 	"fmt"
-	"html/template"
+	"text/template"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
