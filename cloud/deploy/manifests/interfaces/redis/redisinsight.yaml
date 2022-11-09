@@ -48,7 +48,7 @@ kind: StorageClass
 metadata:
   name: redisinsight-pv
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "false"
     openebs.io/cas-type: local
     cas.openebs.io/config: |
       - name: StorageType
