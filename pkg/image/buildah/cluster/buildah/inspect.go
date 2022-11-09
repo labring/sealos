@@ -13,6 +13,7 @@
 // limitations under the License.
 package buildah
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"fmt"
 	"os"

@@ -14,6 +14,7 @@
 
 package template
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"text/template"
 )

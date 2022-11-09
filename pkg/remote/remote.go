@@ -16,6 +16,7 @@ limitations under the License.
 
 package remote
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"fmt"
 	"text/template"
