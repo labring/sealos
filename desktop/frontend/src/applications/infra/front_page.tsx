@@ -1,13 +1,11 @@
 import { Add16Filled, MoreHorizontal24Regular, Navigation20Filled } from '@fluentui/react-icons';
-import { Spinner } from '@fluentui/react-components';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
-import styles from './front_page.module.scss';
 import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
-import { clearInterval } from 'timers';
+import styles from './front_page.module.scss';
 
 interface Cluster {
   apiVersion: string;
