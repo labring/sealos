@@ -7,12 +7,20 @@ import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import styles from './front_page.module.scss';
 
-interface Cluster {
+interface InfraInfo {
   apiVersion: string;
   kind: string;
   metadata: { creationTimestamp: string; uid: string; name: string };
   spec: any;
-  status: { connections: string; ssh: any; currStatus: string };
+  status: { connections: string; ssh: any; status: string };
+}
+
+interface ClusterInfo {
+  apiVersion: string;
+  kind: string;
+  metadata: { creationTimestamp: string; uid: string; name: string };
+  spec: { images: []; infra: string; ssh: any };
+  status: { status: string };
 }
 
 interface FrontPageComponent {
@@ -21,27 +29,68 @@ interface FrontPageComponent {
   toAddPage: (name: string) => void;
 }
 
+interface StatusComponent {
+  infraStatus: string;
+  clusterStatus: string;
+}
+
+const StatusComponent = ({ infraStatus, clusterStatus }: StatusComponent) => {
+  const [status, setStatus] = useState('Pending');
+  const colorStatus: any = {
+    Pending: ['Pending', '创建中'],
+    Running: ['Running', '运行中'],
+    Start: ['Start', '启动中']
+  };
+
+  useEffect(() => {
+    if (infraStatus === 'Pending') {
+      setStatus('Pending');
+    }
+    if (infraStatus === 'Running' && clusterStatus === 'Running') {
+      setStatus('Running');
+    }
+    if (infraStatus === 'Running' && clusterStatus === 'Pending') {
+      setStatus('Start');
+    }
+    if (infraStatus === 'Running' && clusterStatus === undefined) {
+      setStatus('Start');
+    }
+  }, [infraStatus, clusterStatus]);
+
+  return (
+    <div className={styles.status}>
+      <div className={styles[`${colorStatus[status][0]}`]}></div>
+      <div className={styles.right}>{colorStatus[status][1]}</div>
+    </div>
+  );
+};
+
 function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
   const [listItems, setListItems] = useState([]);
+  const [AllCluster, setAllCluster] = useState([] as any);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
 
   useEffect(() => {
     const getAwsAll = async () => {
-      // let timer: any = null;
       const res = await request.post('/api/infra/awsGetAll', { kubeconfig });
+      // console.log(res, 'infra');
       if (res?.data?.items) {
         setListItems(res.data.items);
-        // res.data.items.forEach((item: Cluster) => {
-        //   if (item?.status?.currStatus !== 'created') {
-        //     if (timer) {
-        //       return;
-        //     }
-        //     timer = setTimeout(getAwsAll, 3000);
-        //   }
-        // });
       }
     };
     getAwsAll();
+  }, [kubeconfig]);
+
+  useEffect(() => {
+    const getClusters = async () => {
+      const res = await request.post('/api/infra/getAllCluster', {
+        kubeconfig
+      });
+      if (res?.data?.items) {
+        setAllCluster(res.data.items);
+      }
+    };
+    getClusters();
   }, [kubeconfig]);
 
   return (
@@ -60,7 +109,7 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         {listItems.length > 0 && (
           <div className="space-y-6 w-full absolute box-border p-14 pt-6 mt-8">
-            {listItems?.map((item: Cluster) => {
+            {listItems?.map((item: InfraInfo, index) => {
               return (
                 <div
                   className={clsx(styles.frontItem)}
@@ -74,11 +123,18 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
                     height={40}
                   />
                   <div className="ml-10">
-                    <span className={styles.title}>{item?.metadata?.name}</span>
+                    <div className="flex">
+                      <span className={styles.title}>{item?.metadata?.name}</span>
+                      <StatusComponent
+                        infraStatus={item?.status?.status}
+                        clusterStatus={AllCluster[index]?.status?.status}
+                      />
+                    </div>
                     <div className="text-gray-500 text-xl pt-2 space-x-6">
                       <span>ID: {item?.metadata?.uid ?? '------'} </span>
-                      <span>createTime: {formatTime(item?.metadata?.creationTimestamp)}</span>
-                      <span>status: {item?.status?.currStatus ?? 'creating'}</span>
+                      <span>
+                        {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm')}
+                      </span>
                     </div>
                   </div>
                   <div className={styles.right}>

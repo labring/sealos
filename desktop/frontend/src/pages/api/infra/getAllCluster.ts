@@ -1,31 +1,32 @@
-import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import * as k8s from '@kubernetes/client-node';
 import {
   CRDMeta,
-  K8sApi,
   ListCRD,
+  K8sApi,
   GetUserDefaultNameSpace
 } from '../../../services/backend/kubernetes';
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const config = req.body.kubeconfig;
+  const cluster_name = req.body.clusterName;
   const kc = K8sApi(config);
   const kube_user = kc.getCurrentUser();
   if (kube_user === null) {
     return res.status(404);
   }
-  const infra_meta: CRDMeta = {
-    group: 'infra.sealos.io',
+  const cluster_meta: CRDMeta = {
+    group: 'cluster.sealos.io',
     version: 'v1',
     namespace: GetUserDefaultNameSpace(kube_user.name),
-    // namespace: 'infra-system',
-    plural: 'infras'
+    // namespace: 'cluster-system',
+    plural: 'clusters'
   };
 
   try {
-    const listCrd = await ListCRD(kc, infra_meta);
-    JsonResp(listCrd.body, res);
+    const clusterDesc = await ListCRD(kc, cluster_meta);
+    JsonResp(clusterDesc.body, res);
   } catch (err) {
     if (err instanceof k8s.HttpError) {
       console.log(err.body.message);

@@ -23,8 +23,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(400);
     return;
   }
-  // const namespace = GetUserDefaultNameSpace(kube_user.name);
-  const namespace = 'infra-system';
+  const namespace = GetUserDefaultNameSpace(kube_user.name);
+  // const namespace = 'infra-system';
   const infraCRD = CRDTemplateBuilder(infraCRDTemplate, {
     infraName,
     namespace,

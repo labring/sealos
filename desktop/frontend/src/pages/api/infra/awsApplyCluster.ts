@@ -14,8 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(400);
     return;
   }
-  // const namespace = GetUserDefaultNameSpace(kube_user.name);
-  const namespace = 'infra-system';
+  const namespace = GetUserDefaultNameSpace(kube_user.name);
+  // const namespace = 'infra-system';
   const image1 = req.body.images.image1;
   const image2 = req.body.images.image2;
   const clusterCRD = CRDTemplateBuilder(clusterCRDTemplate, {

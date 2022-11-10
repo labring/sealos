@@ -5,7 +5,6 @@ import MarkDown from 'components/markdown';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
@@ -28,7 +27,7 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
   let [masterDisk, setMasterDisk] = useState(16);
   let [nodeDisk, setNodeDisk] = useState(16);
   let [InfraPrice, setInfraPrice] = useState(0);
-  let [clusterName, setClusterName] = useState(uuidv4());
+  let [clusterName, setClusterName] = useState('');
   const [YamlTemplate, setYamlTemplate] = useState('');
   var [masterDiskType, setMasterDiskType] = useState('');
   var [nodeDiskType, setNodeDiskType] = useState('');
@@ -41,16 +40,16 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
     }
   };
 
-  async function handleClick() {
+  function handleClick() {
     if (edit_name) {
-      ApplyInfra();
+      applyInfra();
     } else {
-      ApplyInfra();
-      ApplyCluster();
+      applyInfra();
+      applyCluster();
     }
   }
 
-  const ApplyInfra = async () => {
+  const applyInfra = async () => {
     const res = await request.post('/api/infra/awsApply', {
       infraName,
       masterType: masterType,
@@ -66,7 +65,7 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
     goFrontPage();
   };
 
-  const ApplyCluster = async () => {
+  const applyCluster = async () => {
     const clusterRes = await request.post('/api/infra/awsApplyCluster', {
       infraName,
       clusterName,
@@ -132,11 +131,11 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
           let masterInfo = res.data?.spec?.hosts[0];
           let nodeInfo = res.data?.spec?.hosts[1];
           setInfraName(name);
+          setClusterName(name);
           setMasterType(masterInfo.flavor);
           setMasterCountValue(masterInfo.count);
           setMasterDiskType(masterInfo.disks[0].type);
           setMasterDisk(masterInfo.disks[0].capacity);
-
           setNodeType(nodeInfo.flavor);
           setNodeCountValue(nodeInfo.count);
           setNodeDiskType(nodeInfo.disks[0].type);
@@ -167,7 +166,10 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
                   className={styles.inputName}
                   value={infraName}
                   placeholder="请输入集群名称"
-                  onChange={(e) => setInfraName(e.target.value)}
+                  onChange={(e) => {
+                    setInfraName(e.target.value);
+                    setClusterName(e.target.value);
+                  }}
                   disabled={edit_name ? true : false}
                 ></Input>
               </div>
@@ -201,7 +203,6 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
               <div className={styles.moneyItem}>
                 ￥ <span className={styles.money}> {InfraPrice} </span> /小时
               </div>
-
               <Button shape="square" appearance="primary" onClick={handleClick}>
                 {edit_name ? '立即修改' : '立即创建'}
               </Button>
