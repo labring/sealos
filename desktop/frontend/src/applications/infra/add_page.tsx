@@ -2,74 +2,56 @@ import { Button, Input } from '@fluentui/react-components';
 import { ArrowLeft24Regular } from '@fluentui/react-icons';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
 import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
+import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
-// import kubeconfig from './kubeconfig';
-// import { CRDTemplateBuilder } from 'services/backend/wrapper';
 
-const AddPage = ({ action }: { action: (page: number) => void }) => {
+interface AddPageComponent {
+  edit_name: string; //edit tag important
+  action: (page: number) => void;
+  toDetailByName: (name: string) => void;
+}
+
+const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   var [masterType, setMasterType] = useState('');
   var [nodeType, setNodeType] = useState('');
-  const [imageOption1, setImageOption1] = useState(true);
-  const [imageOption2, setImageOption2] = useState(true);
   var [image1, setImage1] = useState('labring/kubernetes:v1.24.0');
-  var [image2, setImage2] = useState('labring/calico:v3.24.1');
+  var [image2, setImage2] = useState('labring/calico:v3.22.1');
   var [masterCount, setMasterCountValue] = useState('1');
   var [nodeCount, setNodeCountValue] = useState('1');
-  const session = useSessionStore((s) => s.session);
   const [infraName, setInfraName] = useState('');
   let [masterDisk, setMasterDisk] = useState(16);
   let [nodeDisk, setNodeDisk] = useState(16);
-  let [amountMoney, setAmountMoney] = useState(19.9);
+  let [InfraPrice, setInfraPrice] = useState(0);
   let [clusterName, setClusterName] = useState(uuidv4());
-  const textContent = ` 
-\`\`\`yaml
-apiVersion: infra.sealos.io/v1
-kind: Infra
-metadata:
-  name: ${infraName}
-spec:
-  hosts:
-  - roles: [master] 
-    count: ${masterCount}
-    flavor: ${masterType}
-    image: "ami-05248307900d52e3a"
-    disks:
-    - capacity: ${masterDisk}
-      type: "gp3"
-      name: "/dev/sda2"
-  - roles: [ node ] 
-    count: ${nodeCount} 
-    flavor: ${nodeType}
-    image: "ami-05248307900d52e3a"
-    disks:
-    - capacity: ${nodeDisk}
-      type: "gp2"
-      name: "/dev/sda2"
----
-apiVersion: cluster.sealos.io/v1
-kind: Cluster
-metadata:
-  name: ${clusterName}
-spec:
-  infra: ${infraName}
-  images:
-  - labring/kubernetes:v1.24.0
-  - labring/calico:v3.22.1
-\`\`\`
-`;
+  const [YamlTemplate, setYamlTemplate] = useState('');
+  var [masterDiskType, setMasterDiskType] = useState('');
+  var [nodeDiskType, setNodeDiskType] = useState('');
 
   const goFrontPage = () => {
-    action(1);
+    if (edit_name) {
+      toDetailByName(edit_name);
+    } else {
+      action(1);
+    }
   };
 
   async function handleClick() {
-    const res = await request.post('/api/infra/awsapply', {
+    if (edit_name) {
+      ApplyInfra();
+    } else {
+      ApplyInfra();
+      ApplyCluster();
+    }
+  }
+
+  const ApplyInfra = async () => {
+    const res = await request.post('/api/infra/awsApply', {
       infraName,
       masterType: masterType,
       masterCount: masterCount,
@@ -82,33 +64,115 @@ spec:
       nodeDisk
     });
     goFrontPage();
-  }
+  };
+
+  const ApplyCluster = async () => {
+    const clusterRes = await request.post('/api/infra/awsApplyCluster', {
+      infraName,
+      clusterName,
+      kubeconfig: kubeconfig,
+      images: { image1, image2 }
+    });
+  };
+
+  useEffect(() => {
+    setYamlTemplate(
+      generateTemplate(
+        infraName,
+        masterCount,
+        masterType,
+        masterDisk,
+        nodeCount,
+        nodeType,
+        nodeDisk,
+        clusterName,
+        masterDiskType,
+        nodeDiskType,
+        image1,
+        image2
+      )
+    );
+    const getPrice = async () => {
+      const res = await request.post('/api/infra/awsGetPrice', {
+        masterType,
+        masterCount,
+        masterDisk,
+        nodeType,
+        nodeCount,
+        nodeDisk,
+        masterDiskType,
+        nodeDiskType
+      });
+      if (res?.data?.sumPrice) {
+        setInfraPrice(res.data.sumPrice);
+      }
+    };
+    getPrice();
+  }, [
+    infraName,
+    masterCount,
+    masterType,
+    masterDisk,
+    nodeCount,
+    nodeType,
+    nodeDisk,
+    clusterName,
+    masterDiskType,
+    nodeDiskType,
+    image1,
+    image2
+  ]);
+
+  useEffect(() => {
+    if (edit_name) {
+      const getAws = async () => {
+        const res = await request.post('/api/infra/awsGet', { kubeconfig, infraName: edit_name });
+        if (res?.data?.metadata) {
+          let { name } = res.data.metadata;
+          let masterInfo = res.data?.spec?.hosts[0];
+          let nodeInfo = res.data?.spec?.hosts[1];
+          setInfraName(name);
+          setMasterType(masterInfo.flavor);
+          setMasterCountValue(masterInfo.count);
+          setMasterDiskType(masterInfo.disks[0].type);
+          setMasterDisk(masterInfo.disks[0].capacity);
+
+          setNodeType(nodeInfo.flavor);
+          setNodeCountValue(nodeInfo.count);
+          setNodeDiskType(nodeInfo.disks[0].type);
+          setNodeDisk(nodeInfo.disks[0].capacity);
+        }
+      };
+      getAws();
+    }
+  }, [edit_name, kubeconfig]);
 
   return (
     <div className="flex h-full flex-col grow">
       <div className={styles.nav} onClick={goFrontPage}>
         <ArrowLeft24Regular />
-        <span className="cursor-pointer pl-2"> 返回列表 </span>
+        <span className="cursor-pointer pl-2"> {edit_name ? '返回详情' : '返回列表'} </span>
       </div>
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         <div className="flex justify-center space-x-12  w-full absolute box-border p-14 pt-0 ">
-          <div className={clsx('space-y-6 ')}>
+          <div className={clsx('space-y-6')}>
             <div>
               <div className={styles.head}>
                 <div className={styles.dot}></div>
-                <span className="pl-3">基础信息</span>
+                <span className={styles.info}>基础信息</span>
               </div>
-              <div className="px-6 mt-7 ">
-                <span className="w-24 inline-block ">集群名字 </span>
+              <div className="pl-8 mt-8 ">
+                <span className={styles.cloudlabel}>集群名字 </span>
                 <Input
                   className={styles.inputName}
                   value={infraName}
                   placeholder="请输入集群名称"
                   onChange={(e) => setInfraName(e.target.value)}
+                  disabled={edit_name ? true : false}
                 ></Input>
               </div>
-              <div className="px-6 mt-5">
-                <span className="w-24 inline-block"> 可用区 </span>
+              <div className="px-8 mt-6">
+                <span className={styles.cloudlabel}> 可用区 </span>
               </div>
             </div>
             <SelectNodeComponent
@@ -119,6 +183,8 @@ spec:
               setNodeCountValue={setMasterCountValue}
               nodeDisk={masterDisk}
               setNodeDisk={setMasterDisk}
+              DiskType={masterDiskType}
+              setDiskType={setMasterDiskType}
             />
             <SelectNodeComponent
               type="Node"
@@ -128,18 +194,21 @@ spec:
               setNodeCountValue={setNodeCountValue}
               nodeDisk={nodeDisk}
               setNodeDisk={setNodeDisk}
+              DiskType={nodeDiskType}
+              setDiskType={setNodeDiskType}
             />
             <div className="flex items-center space-x-8 justify-end mr-10">
               <div className={styles.moneyItem}>
-                ￥ <span className={styles.money}> {amountMoney} </span> /月
+                ￥ <span className={styles.money}> {InfraPrice} </span> /小时
               </div>
+
               <Button shape="square" appearance="primary" onClick={handleClick}>
-                立即创建
+                {edit_name ? '立即修改' : '立即创建'}
               </Button>
             </div>
           </div>
           <div className={clsx(styles.markdown)}>
-            <MarkDown text={textContent}></MarkDown>
+            <MarkDown text={YamlTemplate}></MarkDown>
           </div>
         </div>
       </div>

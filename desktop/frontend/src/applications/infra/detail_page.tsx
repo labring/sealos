@@ -7,16 +7,14 @@ import {
   TableHeaderCell,
   TableRow
 } from '@fluentui/react-components/unstable';
-import { Add16Filled, ArrowLeft24Regular, Delete24Regular } from '@fluentui/react-icons';
+import { Add16Filled, ArrowLeft16Regular, Delete24Regular } from '@fluentui/react-icons';
 import clsx from 'clsx';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
-import styles from './detail_page.module.scss';
-import { TableHeaders } from './infra_share';
-// import kubeconfig from './kubeconfig';
-import { formatTime } from 'utils/format';
 import useSessionStore from 'stores/session';
+import { formatTime } from 'utils/format';
+import styles from './detail_page.module.scss';
+import { ConvertKeyToLabel } from './infra_share';
 
 interface infraStatus {
   connections: string;
@@ -27,13 +25,20 @@ interface infraStatus {
     pkname: string;
   };
 }
+
 interface metaData {
   creationTimestamp: string;
   name: string;
   uid: string;
 }
 
-function DetailPage({ action, infraName }: { action: (page: number) => void; infraName: string }) {
+interface DetailPageComponent {
+  infraName: string;
+  action: (page: number) => void;
+  toEditByName: (name: string) => void;
+}
+
+function DetailPage({ action, infraName, toEditByName }: DetailPageComponent) {
   let [infraItem, setInfraItem] = useState<infraStatus>({
     connections: '',
     hosts: [],
@@ -67,7 +72,7 @@ function DetailPage({ action, infraName }: { action: (page: number) => void; inf
 
   useEffect(() => {
     const getAws = async () => {
-      const res = await request.post('/api/infra/awsget', { kubeconfig, infraName });
+      const res = await request.post('/api/infra/awsGet', { kubeconfig, infraName });
       if (res?.data?.metadata) {
         setInfraItem(res.data.status);
         setMetaItem(res.data.metadata);
@@ -77,82 +82,81 @@ function DetailPage({ action, infraName }: { action: (page: number) => void; inf
   }, [infraName, kubeconfig]);
 
   return (
-    <div className={clsx(styles.wrap, 'flex flex-col h-full grow')}>
-      <div className={clsx('flex pl-10 pt-4 items-center')} onClick={goFrontPage}>
-        <ArrowLeft24Regular />
-        <span className="cursor-pointer pl-2"> 返回列表 </span>
+    <div className={clsx(styles.detail_page, 'relative')}>
+      <div className={clsx(styles.left_info)}>
+        <div className={styles.infratitle}> {metaItem?.name} </div>
+        <div className={clsx(styles.infra_info, 'space-y-6')}>
+          <span>id: {metaItem?.uid} </span>
+          <span>createTime: {formatTime(metaItem?.creationTimestamp)}</span>
+          <span>connections: {infraItem?.connections} </span>
+        </div>
+        <button className={styles.releaseBtn} color="#DE5462">
+          释放集群
+        </button>
       </div>
-      <div className={clsx(styles.concard, 'flex mt-16 items-center mx-16 h-48  ')}>
-        <div className="pl-10">
-          <Image src="/images/infraicon/infra_cluster.png" alt="infra" width={46} height={46} />
-        </div>
-        <div className="pl-8 grow">
-          <div className={styles.infratitle}> {metaItem?.name} </div>
-          <div className={clsx(styles.infracontent, 'pt-7 flex space-x-8 flex-wrap')}>
-            <span>id: {metaItem?.uid} </span>
-            <span>createTime: {formatTime(metaItem?.creationTimestamp)}</span>
+      <div className={clsx(styles.right_info)}>
+        <div className={clsx(styles.nav)} onClick={goFrontPage}>
+          <div className={clsx(styles.nav_back, 'cursor-pointer')}>
+            <ArrowLeft16Regular />
+            <span className="pl-2"> 返回列表 </span>
           </div>
-        </div>
-        <div>
-          <button className={styles.releaseBtn} color="#DE5462">
-            释放集群
-          </button>
-        </div>
-      </div>
-      <div className={clsx(styles.pageWrapperScroll, styles.concard)}>
-        <div className="space-y-6 w-full absolute ">
-          <div className={clsx(styles.node_info)}>
-            <span className={clsx(styles.node_title)}>节点信息</span>
-            <button className={clsx(styles.node_btn)}>
-              <span>
-                <Add16Filled color="#3981F5;" />{' '}
-              </span>
-              <span> 增加节点 </span>
-            </button>
-          </div>
-          <Table className={clsx(styles.table_detail, 'table-auto')}>
-            <TableHeader>
-              <TableRow>
-                {TableHeaders.map((item) => (
-                  <TableHeaderCell key={item.key}>{item.label}</TableHeaderCell>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {infraItem?.hosts.map((host: any) => {
-                return host.metadata.map((meta: any) => {
-                  return (
-                    <TableRow key={meta.id}>
-                      <TableCell> {meta.id} </TableCell>
-                      <TableCell> {host.roles[0]}</TableCell>
-                      <TableCell> {host.flavor} </TableCell>
-                      <TableCell className={clsx(styles.net)}>
-                        <span className="block">内网: {meta.ipaddress[0].ipValue} </span>
-                        <span> 公网: {meta.ipaddress[1].ipValue}</span>
-                      </TableCell>
-                      <TableCell
-                        ref={setTarget}
-                        className={clsx(styles.copyssh)}
-                        onClick={() => copySSH()}
-                      >
-                        复制
-                      </TableCell>
-                      <TableCell>
-                        <Delete24Regular color="#DE5462" />
-                      </TableCell>
-                    </TableRow>
-                  );
-                });
-              })}
-            </TableBody>
-          </Table>
-          <Popover
-            positioning={{ target }}
-            open={open}
-            onOpenChange={(e, data) => setOpen(data.open)}
+          <div
+            className={clsx(styles.nav_btn, 'cursor-pointer')}
+            onClick={() => toEditByName(infraName)}
           >
-            <PopoverSurface>copied!</PopoverSurface>
-          </Popover>
+            <Add16Filled color="#3981F5" /> <span className={styles.nav_btn_label}> 增加节点 </span>
+          </div>
+        </div>
+        <div className={clsx(styles.node_card)}>
+          <div className={clsx(styles.node_title)}>节点信息</div>
+          <div className={clsx(styles.pageWrapperScroll, 'grow')}>
+            <Table className={clsx(styles.table_detail, 'table-auto absolute ')}>
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell className={styles.table_title_id}>ID</TableHeaderCell>
+                  <TableHeaderCell className="w-20">角色</TableHeaderCell>
+                  <TableHeaderCell className="w-20">规格</TableHeaderCell>
+                  <TableHeaderCell className={styles.table_title_ip}>IP</TableHeaderCell>
+                  <TableHeaderCell className="w-20">ssh密码</TableHeaderCell>
+                  <TableHeaderCell className="w-20">操作</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {infraItem?.hosts?.map((host: any) => {
+                  return host?.metadata.map((meta: any) => {
+                    return (
+                      <TableRow key={meta.id}>
+                        <TableCell> {meta.id} </TableCell>
+                        <TableCell> {host.roles[0]}</TableCell>
+                        <TableCell> {ConvertKeyToLabel(host.flavor)} </TableCell>
+                        <TableCell className={clsx(styles.net)}>
+                          <>内网: {meta.ipaddress[0].ipValue} </>
+                          <>公网: {meta.ipaddress[1].ipValue}</>
+                        </TableCell>
+                        <TableCell
+                          ref={setTarget}
+                          className={clsx(styles.copyssh)}
+                          onClick={() => copySSH()}
+                        >
+                          复制
+                        </TableCell>
+                        <TableCell>
+                          <Delete24Regular color="#DE5462" />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })}
+              </TableBody>
+            </Table>
+            <Popover
+              positioning={{ target }}
+              open={open}
+              onOpenChange={(e, data) => setOpen(data.open)}
+            >
+              <PopoverSurface>copied!</PopoverSurface>
+            </Popover>
+          </div>
         </div>
       </div>
     </div>

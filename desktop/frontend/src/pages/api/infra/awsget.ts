@@ -19,10 +19,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const infra_meta: CRDMeta = {
     group: 'infra.sealos.io',
     version: 'v1',
-    namespace: GetUserDefaultNameSpace(kube_user.name),
-    // namespace: 'default',
+    // namespace: GetUserDefaultNameSpace(kube_user.name),
+    namespace: 'infra-system',
     plural: 'infras'
   };
+
   try {
     const infraDesc = await GetCRD(kc, infra_meta, infra_name);
     JsonResp(infraDesc.body, res);

@@ -1,11 +1,6 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import {
-  CRDMeta,
-  K8sApi,
-  ListCRD,
-  GetUserDefaultNameSpace
-} from '../../../services/backend/kubernetes';
+import { CRDMeta, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,10 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const infra_meta: CRDMeta = {
     group: 'infra.sealos.io',
     version: 'v1',
-    namespace: GetUserDefaultNameSpace(kube_user.name),
-    // namespace: 'default',
+    // namespace: GetUserDefaultNameSpace(kube_user.name),
+    namespace: 'infra-system',
     plural: 'infras'
   };
+
   try {
     const listCrd = await ListCRD(kc, infra_meta);
     JsonResp(listCrd.body, res);

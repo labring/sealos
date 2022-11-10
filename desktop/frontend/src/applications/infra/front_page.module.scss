@@ -24,39 +24,40 @@
 }
 
 .btn {
-  width: 100px;
-  height: 36px;
+  width: 86px;
+  height: 30px;
+  background: #3981f5;
+  border-radius: 5px;
+  margin-left: auto;
+  font-family: 'FZHei-B01S';
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 13px;
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-
-  background: #46abff;
-  color: #ffffff;
-  font-size: 14px;
-  border-radius: 15px;
-  line-height: 36px;
-  margin-left: auto;
-}
-
-.btn:hover {
-  box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2);
-}
-
-.btn:active {
-  box-shadow: 2px 2px 2px 1px rgba(0, 0, 0, 0.2) inset;
 }
 
 .frontItem {
   display: flex;
-  height: 80px;
+  height: 96px;
   background-color: #ffffff;
   align-items: center;
-  padding: 12px;
-  // margin-top: 25px;
+  padding: 0 18px;
   box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.25);
   border-radius: 5px;
   .right {
     margin-left: auto;
+  }
+  .title {
+    font-family: 'FZHei-B01S';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 22.6723px;
+    line-height: 26px;
+    color: #000000;
   }
 }
 

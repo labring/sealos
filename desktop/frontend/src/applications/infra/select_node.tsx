@@ -1,6 +1,7 @@
 import { Input, Slider } from '@fluentui/react-components';
 import { Dropdown, Option } from '@fluentui/react-components/unstable';
-import { SelectNodes } from './infra_share';
+import clsx from 'clsx';
+import { SelectDisks, SelectNodes } from './infra_share';
 import styles from './select_node.module.scss';
 
 interface SelectNodeComponent {
@@ -11,6 +12,8 @@ interface SelectNodeComponent {
   setNodeCountValue: (msg: string) => void;
   nodeDisk: number;
   setNodeDisk: (msg: number) => void;
+  DiskType: string;
+  setDiskType: (msg: string) => void;
 }
 
 const SelectNodeComponent = (props: SelectNodeComponent) => {
@@ -21,17 +24,35 @@ const SelectNodeComponent = (props: SelectNodeComponent) => {
     }
   };
 
+  const onSelectDiskType = (label: string | undefined) => {
+    if (label) {
+      let item = SelectDisks.find((item) => item.label === label);
+      props.setDiskType(item?.key as string);
+    }
+  };
+
+  const onDefaultNodeType = (key: string): string[] => {
+    let item = SelectNodes.find((item) => item.key === key);
+    return [item?.label as string];
+  };
+
+  const onDefaultDiskType = (key: string): string[] => {
+    let item = SelectDisks.find((item) => item.key === key);
+    return [item?.label as string];
+  };
+
   return (
     <div>
       <div className={styles.head}>
         <div className={styles.dot}></div>
-        <span className="pl-3">{props.type} 节点</span>
+        <span className={styles.info}>{props.type} 节点</span>
       </div>
-      <div className="px-6 mt-5">
-        <span className="w-24 inline-block">机器</span>
+      <div className="pl-8 mt-6">
+        <span className={styles.cloudlabel}>机器</span>
         <Dropdown
           className={styles.selectType}
           placeholder="请选择类型"
+          selectedOptions={onDefaultNodeType(props.nodeType)}
           onOptionSelect={(e, data) => onSelectNode(data.optionValue)}
         >
           {SelectNodes.map((item) => (
@@ -45,12 +66,23 @@ const SelectNodeComponent = (props: SelectNodeComponent) => {
           onChange={(e, data) => props.setNodeCountValue(data.value)}
         ></Input>
       </div>
-      <div className="px-6 mt-5 flex  items-center">
-        <span className="w-24 inline-block">硬盘</span>
+      <div className="pl-8 mt-6 flex items-center">
+        <span className={styles.cloudlabel}>硬盘</span>
+        <Dropdown
+          className={styles.selectType}
+          placeholder="请选择类型"
+          selectedOptions={onDefaultDiskType(props.DiskType)}
+          onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}
+        >
+          {SelectDisks.map((item) => (
+            <Option key={item.key}>{item.label}</Option>
+          ))}
+        </Dropdown>
         <Slider
+          className={clsx(styles.selectTypeCount)}
           min={0}
-          max={256}
-          className="w-72 mr-4"
+          max={128}
+          // className="w-72 mr-4"
           value={props.nodeDisk}
           onChange={(e, data) => props.setNodeDisk(data.value)}
         />

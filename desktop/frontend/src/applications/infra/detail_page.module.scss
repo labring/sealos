@@ -1,38 +1,114 @@
-.wrap {
-  background: linear-gradient(0deg, #f0f2f8, #f0f2f8), #f8f8f8;
-}
+.detail_page {
+  display: flex;
+  height: 100%;
 
-.concard {
-  background: #fcfdff;
-  border: 1px solid #e7e7e7;
-  border-radius: 2px;
-}
+  .left_info {
+    flex-basis: 280px;
+    background: #f0f3f7;
+    padding-top: 40px;
+    padding-left: 46px;
+    padding-right: 74px;
 
-.infratitle {
-  font-family: 'Source Han Sans CN';
-  font-style: normal;
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 36px;
-  color: #585d7a;
-}
+    .infratitle {
+      width: 160px;
+      height: 34px;
+      font-family: 'PingFang SC';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 24px;
+      line-height: 34px;
+      color: #585d7a;
+    }
 
-.infracontent {
-  font-family: 'FZHei-B01S';
-  font-style: normal;
-  font-weight: 400;
-  font-size: 12px;
-  color: #545454;
-}
+    .infra_info {
+      font-family: 'FZHei-B01S';
+      font-style: normal;
+      font-weight: 400;
+      font-size: 12px;
+      color: #61677d;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: relative;
+    }
 
-.releaseBtn {
-  margin-top: 50px;
-  padding-top: 10px;
-  padding-right: 30px;
-  color: #de5462;
-  &:hover {
-    text-decoration-line: underline;
-    text-underline-offset: 4px;
+    .releaseBtn {
+      position: absolute;
+      color: #de5462;
+      bottom: 30px;
+      left: 170px;
+      &:hover {
+        text-decoration-line: underline;
+        text-underline-offset: 4px;
+      }
+    }
+  }
+
+  .right_info {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 44px;
+      padding-left: 18px;
+      padding-right: 50px;
+
+      .nav_back {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: 'FZHei-B01S';
+        font-style: normal;
+        font-weight: 400;
+        height: 14px;
+        line-height: 14px;
+        color: #686868;
+      }
+
+      .nav_btn {
+        box-sizing: border-box;
+        width: 90px;
+        height: 26px;
+        border: 1px solid #3981f5;
+        border-radius: 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .nav_btn_label {
+          height: 16px;
+          font-family: 'FZHei-B01S';
+          font-style: normal;
+          font-weight: 400;
+          line-height: 16px;
+          color: #3981f5;
+          padding-left: 4px;
+        }
+      }
+    }
+
+    .node_card {
+      margin: 16px 50px 20px 30px;
+      border: 1px solid #e1e2e3;
+      border-radius: 2px;
+      display: flex;
+      flex-grow: 1;
+      flex-direction: column;
+
+      .node_title {
+        font-family: 'PingFang SC';
+        font-style: normal;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 22px;
+        color: #61677d;
+        padding-top: 10px;
+        padding-left: 20px;
+      }
+    }
   }
 }
 
@@ -46,44 +122,7 @@
   box-sizing: border-box;
   flex-grow: 1;
   scroll-behavior: smooth;
-  margin: 18px 48px;
-}
-
-.node_info {
-  display: flex;
-  justify-content: space-between;
-  .node_title {
-    margin-top: 18px;
-    margin-left: 35px;
-
-    font-family: 'Source Han Sans CN';
-    font-style: normal;
-    font-weight: 700;
-    font-size: 16px;
-    line-height: 24px;
-    color: #61677d;
-  }
-  .node_btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 16px;
-    margin-right: 30px;
-    width: 100px;
-    height: 28px;
-    line-height: 25px;
-    border: 1px solid #3981f5;
-    border-radius: 5px;
-    color: #3981f5;
-    span {
-      font-family: 'FZHei-B01S';
-      font-style: normal;
-      font-weight: 400;
-      font-size: 12px;
-      line-height: 13px;
-      color: #3981f5;
-    }
-  }
+  margin-top: 10px;
 }
 
 .copyssh {
@@ -99,9 +138,7 @@
 }
 
 .table_detail {
-  thead {
-    background: #f0f2f8;
-  }
+  padding-top: 10px;
   thead tr th button {
     justify-content: center;
     flex-grow: 1;
@@ -114,11 +151,27 @@
     line-height: 13px;
     color: #a1a8ae;
   }
+
   tbody tr {
-    height: 52px;
+    font-family: 'FZHei-B01S';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 10px;
+    line-height: 11px;
+    text-transform: capitalize;
+    color: #545454;
+    height: 50px;
     border-bottom-width: 1px;
     td {
       text-align: center;
     }
+  }
+
+  tbody tr:nth-last-child(1) {
+    border-bottom-width: 0px;
+  }
+
+  .table_title_id {
+    width: 160px;
   }
 }

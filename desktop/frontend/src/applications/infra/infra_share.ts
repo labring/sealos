@@ -22,4 +22,79 @@ const SelectNodes = [
   }
 ];
 
-export { TableHeaders, SelectNodes };
+const SelectDisks = [
+  {
+    label: 'gp3',
+    key: 'gp3'
+  },
+  {
+    label: 'gp2',
+    key: 'gp2'
+  }
+];
+
+const generateTemplate = (
+  infraName: string,
+  masterCount: string,
+  masterType: string,
+  masterDisk: number,
+  nodeCount: string,
+  nodeType: string,
+  nodeDisk: number,
+  clusterName: string,
+  masterDiskType: string,
+  nodeDiskType: string,
+  image1: string,
+  image2: string
+) => {
+  const text = ` 
+\`\`\`yaml
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: ${infraName}
+spec:
+  hosts:
+  - roles: [master] 
+    count: ${masterCount}
+    flavor: ${masterType}
+    image: "ami-0d66b970b9f16f1f5"
+    disks:
+    - capacity: ${masterDisk}
+      type: ${masterDiskType}
+      name: "/dev/sda2"
+  - roles: [ node ] 
+    count: ${nodeCount} 
+    flavor: ${nodeType}
+    image: "ami-0d66b970b9f16f1f5"
+    disks:
+    - capacity: ${nodeDisk}
+      type: ${nodeDiskType}
+      name: "/dev/sda2"
+---
+apiVersion: cluster.sealos.io/v1
+kind: Cluster
+metadata:
+  name: ${clusterName}
+spec:
+  infra: ${infraName}
+  ssh:
+    user: ec2-user
+    passwd: "123456"
+    pk: /root/hurz_key.pem
+    pkname: hurz_key
+    port: 22
+  images:
+    - ${image1}
+    - ${image2}
+\`\`\`
+`;
+  return text;
+};
+
+const ConvertKeyToLabel = (key: string) => {
+  const item = SelectNodes.find((item) => item.key === key);
+  return item?.label;
+};
+
+export { TableHeaders, SelectNodes, SelectDisks, generateTemplate, ConvertKeyToLabel };
