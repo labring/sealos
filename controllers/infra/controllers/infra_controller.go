@@ -64,6 +64,13 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if infra.Status.Status == "" {
+		infra.Status.Status = infrav1.Pending.String()
+		if err := r.Status().Update(ctx, infra); err != nil {
+			r.recorder.Eventf(infra, "Error", "infra CurrStatus update failed", "%v", err)
+			return ctrl.Result{}, err
+		}
+	}
 	err := r.applier.ReconcileInstance(infra, r.driver)
 	if err != nil {
 		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
@@ -84,6 +91,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			break
 		}
 	}
+	infra.Status.Status = infrav1.Running.String()
 	if err = r.Status().Update(ctx, infra); err != nil {
 		r.recorder.Eventf(infra, "Error", "infra status update failed", "%v", err)
 		return ctrl.Result{}, err

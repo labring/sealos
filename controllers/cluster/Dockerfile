@@ -14,10 +14,12 @@
 
 # Build the manager binary
 
-FROM ubuntu:latest
+#FROM gcr.dockerproxy.com/distroless/static:nonroot
+#production
+FROM gcr.io/distroless/static:nonroot
 ARG TARGETARCH
 WORKDIR /
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+#RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 USER 65532:65532
 COPY bin/controller-cluster-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]
