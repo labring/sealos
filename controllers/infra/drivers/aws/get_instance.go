@@ -331,7 +331,10 @@ func getIndex(i types.Instance) (int, error) {
 func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
 retry:
 	for i := 0; i < tryTimes; i++ {
-		result, _ := GetInstances(context.TODO(), client, inputGetInstance)
+		result, err := GetInstances(context.TODO(), client, inputGetInstance)
+		if err != nil {
+			return nil, fmt.Errorf("get an error while getInstances: %v", err)
+		}
 		for _, r := range result.Reservations {
 			if !instancesPublicIPAddressIsReady(r.Instances) {
 				if i == tryTimes-1 {

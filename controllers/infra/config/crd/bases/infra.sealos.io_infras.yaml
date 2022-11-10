@@ -236,6 +236,8 @@ spec:
                   user:
                     type: string
                 type: object
+              status:
+                type: string
             type: object
         type: object
     served: true

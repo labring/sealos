@@ -37,6 +37,31 @@ type ClusterSpec struct {
 type ClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Status string `json:"status,omitempty"`
+}
+type Status int
+
+const (
+	Pending Status = iota
+	Running
+	Succeeded
+	Failed
+	Unknown
+)
+
+func (s Status) String() string {
+	switch s {
+	case Pending:
+		return "Pending"
+	case Running:
+		return "Running"
+	case Succeeded:
+		return "Succeeded"
+	case Failed:
+		return "Failed"
+	default:
+		return "Unknown"
+	}
 }
 
 //+kubebuilder:object:root=true
