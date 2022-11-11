@@ -98,6 +98,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		SSHInterface: sshClient,
 		IP:           cluster.GetMaster0IPAndPort(),
 	}
+	cper := &copier{target, sshClient}
 	for _, IP := range ipList {
 		ip := IP
 		eg.Go(func() error {
@@ -107,7 +108,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 				fileEg.Go(func() error {
 					if mountInfo.Type == v2.RootfsImage {
 						logger.Debug("send rootfs mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-						err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), false, ip, mountInfo.MountPoint, target)
+						err := cper.CopyFiles(ip, mountInfo.MountPoint, target, iputils.GetHostIP(ip) == cluster.GetRegistryIP())
 						if err != nil {
 							return fmt.Errorf("copy container %s rootfs failed %v", mountInfo.Name, err)
 						}
@@ -121,7 +122,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 			for _, mountInfo := range f.mounts {
 				if mountInfo.Type == v2.PatchImage {
 					logger.Debug("send addons mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), false, ip, mountInfo.MountPoint, target)
+					err := cper.CopyFiles(ip, mountInfo.MountPoint, target, iputils.GetHostIP(ip) == cluster.GetRegistryIP())
 					if err != nil {
 						return fmt.Errorf("copy container %s rootfs failed %v", mountInfo.Name, err)
 					}
@@ -154,7 +155,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		endEg.Go(func() error {
 			if appFlag && mountInfo.Type == v2.AppImage {
 				logger.Debug("send  app mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-				err = CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), true, ip, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name))
+				err = cper.CopyFiles(ip, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), iputils.GetHostIP(ip) == cluster.GetRegistryIP())
 				if err != nil {
 					return fmt.Errorf("copy container %s app rootfs failed %v", mountInfo.Name, err)
 				}
@@ -164,6 +165,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	}
 	return endEg.Wait()
 }
+
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
 	clusterRootfsDir := constants.NewData(f.getClusterName(cluster)).Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
@@ -199,20 +201,26 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	}
 	return nil
 }
-func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target string) error {
-	logger.Debug("copyFiles isRegistry: %v,isApp: %v,ip: %v,src: %v,target: %v", isRegistry, isApp, ip, src, target)
+
+type copier struct {
+	root string
+	ssh  ssh.Interface
+}
+
+func (c *copier) CopyFiles(ip, src, target string, isRegistry bool) error {
+	logger.Debug("copyFiles isRegistry: %v, ip: %v, src: %v, target: %v", isRegistry, ip, src, target)
 	files, err := os.ReadDir(src)
 	if err != nil {
-		return fmt.Errorf("failed to copy files %s", err)
-	}
-	if isRegistry || isApp {
-		return sshEntry.Copy(ip, src, target)
+		return fmt.Errorf("failed to read dir entries %s", err)
 	}
 	for _, f := range files {
 		if f.Name() == constants.RegistryDirName {
-			continue
+			if !isRegistry {
+				continue
+			}
+			target = c.root
 		}
-		err = sshEntry.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
+		err = c.ssh.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
 		if err != nil {
 			return fmt.Errorf("failed to copy sub files %v", err)
 		}
