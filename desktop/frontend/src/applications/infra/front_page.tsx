@@ -1,4 +1,9 @@
-import { Add16Filled, MoreHorizontal24Regular, Navigation20Filled } from '@fluentui/react-icons';
+import {
+  Add16Filled,
+  MoreHorizontal24Regular,
+  Navigation20Filled,
+  ArrowClockwise20Regular
+} from '@fluentui/react-icons';
 import clsx from 'clsx';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -7,32 +12,31 @@ import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import styles from './front_page.module.scss';
 
-interface InfraInfo {
+type InfraInfo = {
   apiVersion: string;
   kind: string;
   metadata: { creationTimestamp: string; uid: string; name: string };
   spec: any;
   status: { connections: string; ssh: any; status: string };
-}
+};
 
-interface ClusterInfo {
+type ClusterInfo = {
   apiVersion: string;
   kind: string;
   metadata: { creationTimestamp: string; uid: string; name: string };
   spec: { images: []; infra: string; ssh: any };
   status: { status: string };
-}
+};
 
-interface FrontPageComponent {
-  action: (page: number) => void;
-  toDetailByName: (name: string) => void;
-  toAddPage: (name: string) => void;
-}
+type FrontPageComponent = {
+  toDetailPageByName: (name: string) => void;
+  toAddPage: () => void;
+};
 
-interface StatusComponent {
+type StatusComponent = {
   infraStatus: string;
   clusterStatus: string;
-}
+};
 
 const StatusComponent = ({ infraStatus, clusterStatus }: StatusComponent) => {
   const [status, setStatus] = useState('Pending');
@@ -65,23 +69,21 @@ const StatusComponent = ({ infraStatus, clusterStatus }: StatusComponent) => {
   );
 };
 
-function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
+function FrontPage({ toDetailPageByName, toAddPage }: FrontPageComponent) {
   const [listItems, setListItems] = useState([]);
-  const [AllCluster, setAllCluster] = useState([] as any);
+  const [allCluster, setAllCluster] = useState([] as any);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
+  const [refresh, setRefresh] = useState(true);
 
   useEffect(() => {
     const getAwsAll = async () => {
       const res = await request.post('/api/infra/awsGetAll', { kubeconfig });
-      // console.log(res, 'infra');
+      console.log(res, 'infra');
       if (res?.data?.items) {
         setListItems(res.data.items);
       }
     };
-    getAwsAll();
-  }, [kubeconfig]);
 
-  useEffect(() => {
     const getClusters = async () => {
       const res = await request.post('/api/infra/getAllCluster', {
         kubeconfig
@@ -90,8 +92,10 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
         setAllCluster(res.data.items);
       }
     };
+
+    getAwsAll();
     getClusters();
-  }, [kubeconfig]);
+  }, [kubeconfig, refresh]);
 
   return (
     <div className={clsx(styles.appWrap, 'flex h-full flex-col grow')}>
@@ -101,7 +105,15 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
       <div className="flex px-16 mt-12 justify-items-center items-center">
         <Navigation20Filled color="#616161" />
         <span className={styles.menu}>我的集群</span>
-        <button className={clsx(styles.btn)} onClick={() => toAddPage('')}>
+        <div
+          className="ml-auto pr-4 cursor-pointer"
+          onClick={() => {
+            setRefresh((pre) => !pre);
+          }}
+        >
+          <ArrowClockwise20Regular />
+        </div>
+        <button className={clsx(styles.btn)} onClick={() => toAddPage()}>
           <Add16Filled color="#FFFFFF" />
           <span> 创建集群</span>
         </button>
@@ -114,7 +126,7 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
                 <div
                   className={clsx(styles.frontItem)}
                   key={item?.metadata?.uid}
-                  onClick={() => toDetailByName(item?.metadata?.name)}
+                  onClick={() => toDetailPageByName(item?.metadata?.name)}
                 >
                   <Image
                     src="/images/infraicon/infra_cluster.png"
@@ -127,7 +139,7 @@ function FrontPage({ action, toDetailByName, toAddPage }: FrontPageComponent) {
                       <span className={styles.title}>{item?.metadata?.name}</span>
                       <StatusComponent
                         infraStatus={item?.status?.status}
-                        clusterStatus={AllCluster[index]?.status?.status}
+                        clusterStatus={allCluster[index]?.status?.status}
                       />
                     </div>
                     <div className="text-gray-500 text-xl pt-2 space-x-6">

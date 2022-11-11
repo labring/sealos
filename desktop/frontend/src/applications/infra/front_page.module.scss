@@ -13,11 +13,6 @@
   margin-left: 5px;
   width: 64px;
   height: 18px;
-  left: 77px;
-  top: 208px;
-  font-family: 'FZHei-B01S';
-  font-style: normal;
-  font-weight: 400;
   font-size: 14px;
   line-height: 18px;
   color: #686868;
@@ -28,10 +23,7 @@
   height: 30px;
   background: #3981f5;
   border-radius: 5px;
-  margin-left: auto;
-  font-family: 'FZHei-B01S';
-  font-style: normal;
-  font-weight: 400;
+  // margin-left: auto;
   font-size: 12px;
   line-height: 13px;
   color: #ffffff;
@@ -54,10 +46,8 @@
   }
 
   .title {
-    font-family: 'FZHei-B01S';
-    font-style: normal;
     font-weight: 400;
-    font-size: 22.6723px;
+    font-size: 22px;
     line-height: 26px;
     color: #000000;
   }
@@ -89,34 +79,31 @@
   justify-content: center;
   padding-left: 16px;
 
-  & .Pending {
+  .Pending {
     width: 10px;
     height: 10px;
     background: #ec6a5e;
     border-radius: 50%;
   }
 
-  & .Running {
+  .Running {
     width: 10px;
     height: 10px;
     background: #61c554;
     border-radius: 50%;
   }
 
-  & .Start {
+  .Start {
     width: 10px;
     height: 10px;
     background: #f4be4f;
     border-radius: 50%;
   }
 
-  & .right {
+  .right {
     margin-left: 6px;
     width: 48px;
     height: 18px;
-    font-family: 'FZHei-B01S';
-    font-style: normal;
-    font-weight: 400;
     font-size: 16px;
     line-height: 18px;
     color: #686868;

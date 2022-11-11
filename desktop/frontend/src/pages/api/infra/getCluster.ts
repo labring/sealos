@@ -9,12 +9,11 @@ import {
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const config = req.body.kubeconfig;
-  const cluster_name = req.body.clusterName;
-  const kc = K8sApi(config);
+  const { kubeconfig, clusterName } = req.body;
+  const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
   if (kube_user === null) {
-    return res.status(404);
+    return res.status(400);
   }
   const cluster_meta: CRDMeta = {
     group: 'cluster.sealos.io',
@@ -25,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    const clusterDesc = await GetCRD(kc, cluster_meta, cluster_name);
+    const clusterDesc = await GetCRD(kc, cluster_meta, clusterName);
     JsonResp(clusterDesc.body, res);
   } catch (err) {
     if (err instanceof k8s.HttpError) {

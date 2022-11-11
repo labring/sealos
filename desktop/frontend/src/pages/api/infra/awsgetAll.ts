@@ -9,11 +9,11 @@ import {
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const config = req.body.kubeconfig;
-  const kc = K8sApi(config);
+  const { kubeconfig } = req.body;
+  const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
   if (kube_user === null) {
-    return res.status(404);
+    return res.status(400);
   }
   const infra_meta: CRDMeta = {
     group: 'infra.sealos.io',

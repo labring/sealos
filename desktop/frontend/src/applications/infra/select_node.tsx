@@ -12,7 +12,7 @@ interface SelectNodeComponent {
   setNodeCountValue: (msg: string) => void;
   nodeDisk: number;
   setNodeDisk: (msg: number) => void;
-  DiskType: string;
+  diskType: string;
   setDiskType: (msg: string) => void;
 }
 
@@ -48,7 +48,7 @@ const SelectNodeComponent = (props: SelectNodeComponent) => {
         <span className={styles.info}>{props.type} 节点</span>
       </div>
       <div className="pl-8 mt-6">
-        <span className={styles.cloudlabel}>机器</span>
+        <span className={styles.cloudLabel}>机器</span>
         <Dropdown
           className={styles.selectType}
           placeholder="请选择类型"
@@ -67,11 +67,11 @@ const SelectNodeComponent = (props: SelectNodeComponent) => {
         ></Input>
       </div>
       <div className="pl-8 mt-6 flex items-center">
-        <span className={styles.cloudlabel}>硬盘</span>
+        <span className={styles.cloudLabel}>硬盘</span>
         <Dropdown
           className={styles.selectType}
           placeholder="请选择类型"
-          selectedOptions={onDefaultDiskType(props.DiskType)}
+          selectedOptions={onDefaultDiskType(props.diskType)}
           onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}
         >
           {SelectDisks.map((item) => (

@@ -16,7 +16,7 @@ import { formatTime } from 'utils/format';
 import styles from './detail_page.module.scss';
 import { ConvertKeyToLabel } from './infra_share';
 
-interface infraStatus {
+type infraStatus = {
   connections: string;
   hosts: any;
   availabilityZone: string;
@@ -24,21 +24,21 @@ interface infraStatus {
     pkdata: string;
     pkname: string;
   };
-}
+};
 
-interface metaData {
+type MetaData = {
   creationTimestamp: string;
   name: string;
   uid: string;
-}
+};
 
-interface DetailPageComponent {
+type DetailPageComponent = {
   infraName: string;
-  action: (page: number) => void;
-  toEditByName: (name: string) => void;
-}
+  backFront: () => void;
+  toEditPageByName: (name: string) => void;
+};
 
-function DetailPage({ action, infraName, toEditByName }: DetailPageComponent) {
+function DetailPage({ infraName, toEditPageByName, backFront }: DetailPageComponent) {
   let [infraItem, setInfraItem] = useState<infraStatus>({
     connections: '',
     hosts: [],
@@ -48,14 +48,10 @@ function DetailPage({ action, infraName, toEditByName }: DetailPageComponent) {
       pkname: ''
     }
   });
-  let [metaItem, setMetaItem] = useState<metaData>({ name: '', creationTimestamp: '', uid: '' });
+  let [metaItem, setMetaItem] = useState<MetaData>({ name: '', creationTimestamp: '', uid: '' });
   const [open, setOpen] = useState(false);
   const [target, setTarget] = useState<HTMLElement | null>(null);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-
-  const goFrontPage = () => {
-    action(1);
-  };
 
   const copySSH = () => {
     let timer: number;
@@ -82,10 +78,10 @@ function DetailPage({ action, infraName, toEditByName }: DetailPageComponent) {
   }, [infraName, kubeconfig]);
 
   return (
-    <div className={clsx(styles.detail_page, 'relative')}>
-      <div className={clsx(styles.left_info)}>
-        <div className={styles.infratitle}> {metaItem?.name} </div>
-        <div className={clsx(styles.infra_info, 'space-y-6')}>
+    <div className={clsx(styles.detailPage, 'relative')}>
+      <div className={clsx(styles.leftInfo)}>
+        <div className={styles.infraTitle}> {metaItem?.name} </div>
+        <div className={clsx(styles.infraInfo, 'space-y-6')}>
           <span>id: {metaItem?.uid} </span>
           <span>createTime: {formatTime(metaItem?.creationTimestamp)}</span>
           <span>connections: {infraItem?.connections} </span>
@@ -94,29 +90,31 @@ function DetailPage({ action, infraName, toEditByName }: DetailPageComponent) {
           释放集群
         </button>
       </div>
-      <div className={clsx(styles.right_info)}>
-        <div className={clsx(styles.nav)} onClick={goFrontPage}>
-          <div className={clsx(styles.nav_back, 'cursor-pointer')}>
+      <div className={clsx(styles.rightInfo)}>
+        <div className={clsx(styles.nav)}>
+          <div className={clsx(styles.navBack, 'cursor-pointer')} onClick={backFront}>
             <ArrowLeft16Regular />
             <span className="pl-2"> 返回列表 </span>
           </div>
           <div
-            className={clsx(styles.nav_btn, 'cursor-pointer')}
-            onClick={() => toEditByName(infraName)}
+            className={clsx(styles.navBtn, 'cursor-pointer')}
+            onClick={() => {
+              toEditPageByName(infraName);
+            }}
           >
-            <Add16Filled color="#3981F5" /> <span className={styles.nav_btn_label}> 增加节点 </span>
+            <Add16Filled color="#3981F5" /> <span className={styles.navBtnLabel}> 增加节点 </span>
           </div>
         </div>
-        <div className={clsx(styles.node_card)}>
-          <div className={clsx(styles.node_title)}>节点信息</div>
+        <div className={clsx(styles.nodeCard)}>
+          <div className={clsx(styles.nodeTitle)}>节点信息</div>
           <div className={clsx(styles.pageWrapperScroll, 'grow')}>
-            <Table className={clsx(styles.table_detail, 'table-auto absolute ')}>
+            <Table className={clsx(styles.tableDetail, 'table-auto absolute ')}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell className={styles.table_title_id}>ID</TableHeaderCell>
+                  <TableHeaderCell className={styles.tableTitleId}>ID</TableHeaderCell>
                   <TableHeaderCell className="w-20">角色</TableHeaderCell>
                   <TableHeaderCell className="w-20">规格</TableHeaderCell>
-                  <TableHeaderCell className={styles.table_title_ip}>IP</TableHeaderCell>
+                  <TableHeaderCell className={styles.tableTitleIp}>IP</TableHeaderCell>
                   <TableHeaderCell className="w-20">ssh密码</TableHeaderCell>
                   <TableHeaderCell className="w-20">操作</TableHeaderCell>
                 </TableRow>

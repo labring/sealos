@@ -9,39 +9,39 @@ import styles from './add_page.module.scss';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
 
-interface AddPageComponent {
-  edit_name: string; //edit tag important
-  action: (page: number) => void;
-  toDetailByName: (name: string) => void;
-}
+type AddPageComponent = {
+  editName: string; //edit tag important
+  backEdtail: (name: string) => void;
+  backFront: () => void;
+};
 
-const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
+const AddPage = ({ editName, backEdtail, backFront }: AddPageComponent) => {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-  var [masterType, setMasterType] = useState('');
-  var [nodeType, setNodeType] = useState('');
-  var [image1, setImage1] = useState('labring/kubernetes:v1.24.0');
-  var [image2, setImage2] = useState('labring/calico:v3.22.1');
-  var [masterCount, setMasterCountValue] = useState('1');
-  var [nodeCount, setNodeCountValue] = useState('1');
-  const [infraName, setInfraName] = useState('');
+  let [masterType, setMasterType] = useState('');
+  let [nodeType, setNodeType] = useState('');
+  let [image1, setImage1] = useState('labring/kubernetes:v1.24.0');
+  let [image2, setImage2] = useState('labring/calico:v3.22.1');
+  let [masterCount, setMasterCountValue] = useState('1');
+  let [nodeCount, setNodeCountValue] = useState('1');
+  let [infraName, setInfraName] = useState('');
   let [masterDisk, setMasterDisk] = useState(16);
   let [nodeDisk, setNodeDisk] = useState(16);
-  let [InfraPrice, setInfraPrice] = useState(0);
+  let [infraPrice, setInfraPrice] = useState(0);
   let [clusterName, setClusterName] = useState('');
-  const [YamlTemplate, setYamlTemplate] = useState('');
-  var [masterDiskType, setMasterDiskType] = useState('');
-  var [nodeDiskType, setNodeDiskType] = useState('');
+  let [yamlTemplate, setYamlTemplate] = useState('');
+  let [masterDiskType, setMasterDiskType] = useState('');
+  let [nodeDiskType, setNodeDiskType] = useState('');
 
   const goFrontPage = () => {
-    if (edit_name) {
-      toDetailByName(edit_name);
+    if (editName) {
+      backEdtail(editName);
     } else {
-      action(1);
+      backFront();
     }
   };
 
   function handleClick() {
-    if (edit_name) {
+    if (editName) {
       applyInfra();
     } else {
       applyInfra();
@@ -123,9 +123,9 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
   ]);
 
   useEffect(() => {
-    if (edit_name) {
+    if (editName) {
       const getAws = async () => {
-        const res = await request.post('/api/infra/awsGet', { kubeconfig, infraName: edit_name });
+        const res = await request.post('/api/infra/awsGet', { kubeconfig, infraName: editName });
         if (res?.data?.metadata) {
           let { name } = res.data.metadata;
           let masterInfo = res.data?.spec?.hosts[0];
@@ -144,13 +144,13 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
       };
       getAws();
     }
-  }, [edit_name, kubeconfig]);
+  }, [editName, kubeconfig]);
 
   return (
     <div className="flex h-full flex-col grow">
       <div className={styles.nav} onClick={goFrontPage}>
         <ArrowLeft24Regular />
-        <span className="cursor-pointer pl-2"> {edit_name ? '返回详情' : '返回列表'} </span>
+        <span className="cursor-pointer pl-2"> {editName ? '返回详情' : '返回列表'} </span>
       </div>
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         <div className="flex justify-center space-x-12  w-full absolute box-border p-14 pt-0 ">
@@ -170,7 +170,7 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
                     setInfraName(e.target.value);
                     setClusterName(e.target.value);
                   }}
-                  disabled={edit_name ? true : false}
+                  disabled={editName ? true : false}
                 ></Input>
               </div>
               <div className="px-8 mt-6">
@@ -185,7 +185,7 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
               setNodeCountValue={setMasterCountValue}
               nodeDisk={masterDisk}
               setNodeDisk={setMasterDisk}
-              DiskType={masterDiskType}
+              diskType={masterDiskType}
               setDiskType={setMasterDiskType}
             />
             <SelectNodeComponent
@@ -196,20 +196,20 @@ const AddPage = ({ action, edit_name, toDetailByName }: AddPageComponent) => {
               setNodeCountValue={setNodeCountValue}
               nodeDisk={nodeDisk}
               setNodeDisk={setNodeDisk}
-              DiskType={nodeDiskType}
+              diskType={nodeDiskType}
               setDiskType={setNodeDiskType}
             />
             <div className="flex items-center space-x-8 justify-end mr-10">
               <div className={styles.moneyItem}>
-                ￥ <span className={styles.money}> {InfraPrice} </span> /小时
+                ￥ <span className={styles.money}> {infraPrice} </span> /小时
               </div>
               <Button shape="square" appearance="primary" onClick={handleClick}>
-                {edit_name ? '立即修改' : '立即创建'}
+                {editName ? '立即修改' : '立即创建'}
               </Button>
             </div>
           </div>
           <div className={clsx(styles.markdown)}>
-            <MarkDown text={YamlTemplate}></MarkDown>
+            <MarkDown text={yamlTemplate}></MarkDown>
           </div>
         </div>
       </div>

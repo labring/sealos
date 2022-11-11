@@ -4,40 +4,49 @@ import DetailPage from './detail_page';
 import FrontPage from './front_page';
 function Infra() {
   const [page, setPage] = useState(1);
-  const [infraName, setName] = useState('');
-  const [editName, setEditName] = useState('');
+  const [infraName, setInfraName] = useState('');
 
-  const action = (page: number) => {
-    setPage(page);
+  const toAddPage = () => {
+    setPage(2);
+    setInfraName('');
   };
 
-  const toDetailByName = (name: string) => {
+  const toDetailPageByName = (name: string) => {
     setPage(3);
-    setName(name);
+    setInfraName(name);
   };
 
-  const toEditByName = (name: string) => {
+  const toEditPageByName = (name: string) => {
     setPage(2);
-    setEditName(name);
+    setInfraName(name);
   };
 
-  const toAddPage = (name: string) => {
-    setPage(2);
-    setEditName('');
+  const backFront = () => {
+    setPage(1);
+    setInfraName('');
+  };
+
+  const backEdtail = (name: string) => {
+    setPage(3);
+    setInfraName(name);
   };
 
   return (
     <>
       {page === 1 ? (
-        <FrontPage action={action} toDetailByName={toDetailByName} toAddPage={toAddPage} />
+        <FrontPage toAddPage={toAddPage} toDetailPageByName={toDetailPageByName} />
       ) : null}
 
       {page === 2 ? (
-        <AddPage action={action} edit_name={editName} toDetailByName={toDetailByName} />
+        <AddPage editName={infraName} backFront={backFront} backEdtail={backEdtail} />
       ) : null}
 
       {page === 3 ? (
-        <DetailPage action={action} infraName={infraName} toEditByName={toEditByName} />
+        <DetailPage
+          infraName={infraName}
+          toEditPageByName={toEditPageByName}
+          backFront={backFront}
+        />
       ) : null}
     </>
   );
