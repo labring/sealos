@@ -1,7 +1,7 @@
 # APP-Manager 核心需求流程与设计思路
 
 ## 关键名词:
-1. `clusterFile`+`actions` 集群镜像
+1. `clusterFile`+`actions` sealos镜像
     * mysql image `readme`
     * 自定义的actions https://www.notion.so/App-actions-566fa79ad5ef42a390e899a4b9089485
 2. `operator` 第三方维护,不做修改
@@ -25,11 +25,11 @@
 
 #### GUI下(sealos cloud image-hub web interface)
 
-可以修改readme和tag信息
+仅查看信息与数据
 
 *TODO: Demo案例*
 
-*TODO: Image Hub* (管理中心. 实际image的blob可以继续放在docker.io/或者阿里云镜像)
+*TODO: Image Hub* (管理中心. 实际image的blob存放在独立的镜像代理仓库中: `hub.saelos.io`)
 
 ### 设计模式综述
 
@@ -96,11 +96,11 @@ spec:
 CLI模式下面,用户其实可以直接与operator打交道,实际provider就成为简单的提供actions的注入与管理
 ```bash
 sealos run labring/pgsql-provider:latest #安装provider-会内部安装operator
-sealos apply -f pgsql.yaml #启动一个pgsql的集群
+kubectl apply -f pgsql.yaml #启动一个pgsql的集群
 
 kubectl get pgsql -n ns-xxxx #查看当前启动的集群信息
 
-sealos delete -f pgsql.yaml #删除一个pgsql的集群
+kubectl delete -f pgsql.yaml #删除一个pgsql的集群
 
 #更新一个pgsql的集群 How to?
 sealos actions update pgsql --env=http://pgsql.ns-xxx.cluster.local --version=latest
@@ -154,7 +154,7 @@ sealos actions update affine --version=latest #自定义actions,如果有的话
 3. 用户进入 `AFFiNE` 详情页
 4. 用户安装 `AFFiNE`
     1. `AppManager`系统安装`AFFiNE`
-    2. `AppManager`系统把`AFFiNE`的图标安装到用户界面上
+    2. `AppManager`系统把`AFFiNE`的图标安装到用户界面上(此模式下应用的pod会在安装的时候启动起来)
         1. 记录用户已安装的应用数据
         2. 管理已安装应用的启动状态(GUI层面)
 5. 用户双击 `AFFiNE` 图标
@@ -190,7 +190,7 @@ flowchart LR
         1. 记录用户已安装的应用数据
         2. 管理已安装应用的启动状态(GUI层面)
 5. 用户双击 `kubernetes-dashboard` 图标
-    1. 启动`kubernetes-dashboard`应用
+    1. 启动`kubernetes-dashboard`应用 (当前模式下,只是打开一个url, 指向了后台的唯一进程)
 
 这种模式下, 其实应用一直在后台全局的运行, `AppManager`就是单纯的负责吧图标/页面相关数据装载到用户的空间就好
 
