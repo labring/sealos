@@ -23,19 +23,18 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/ssh"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/runtime"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type defaultRootfs struct {
@@ -45,8 +44,8 @@ type defaultRootfs struct {
 	mounts []v2.MountImage
 }
 
-func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag, appFlag bool) error {
-	return f.mountRootfs(cluster, hosts, initFlag, appFlag)
+func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
+	return f.mountRootfs(cluster, hosts)
 }
 
 func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -61,9 +60,10 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 	return ssh.NewSSHClient(&cluster.Spec.SSH, true)
 }
 
-func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag, appFlag bool) error {
+func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
-	eg, _ := errgroup.WithContext(context.Background())
+	ctx := context.Background()
+	eg, _ := errgroup.WithContext(ctx)
 	envProcessor := env.NewEnvProcessor(cluster, f.mounts)
 	for _, mount := range f.mounts {
 		src := mount
@@ -92,23 +92,25 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	if err := eg.Wait(); err != nil {
 		return err
 	}
-	check := constants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
+
 	sshClient := f.getSSH(cluster)
-	shim := runtime.ImageShim{
-		SSHInterface: sshClient,
-		IP:           cluster.GetMaster0IPAndPort(),
+	registries := sets.NewString(cluster.GetRegistryIPList()...)
+	isRegistry := func(s string) bool {
+		return registries.Has(s)
 	}
 	cper := &copier{target, sshClient}
-	for _, IP := range ipList {
-		ip := IP
+
+	for idx := range ipList {
+		ip := ipList[idx]
 		eg.Go(func() error {
-			fileEg, _ := errgroup.WithContext(context.Background())
+			fileEg, _ := errgroup.WithContext(ctx)
 			for _, mount := range f.mounts {
 				mountInfo := mount
 				fileEg.Go(func() error {
-					if mountInfo.Type == v2.RootfsImage {
-						logger.Debug("send rootfs mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-						err := cper.CopyFiles(ip, mountInfo.MountPoint, target, iputils.GetHostIP(ip) == cluster.GetRegistryIP())
+					switch mountInfo.Type {
+					case v2.RootfsImage, v2.PatchImage:
+						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mountInfo.ImageName, mountInfo.Type)
+						err := cper.CopyFiles(ip, mountInfo.MountPoint, target, isRegistry(iputils.GetHostIP(ip)))
 						if err != nil {
 							return fmt.Errorf("copy container %s rootfs failed %v", mountInfo.Name, err)
 						}
@@ -116,31 +118,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 					return nil
 				})
 			}
-			if err := fileEg.Wait(); err != nil {
-				return err
-			}
-			for _, mountInfo := range f.mounts {
-				if mountInfo.Type == v2.PatchImage {
-					logger.Debug("send addons mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-					err := cper.CopyFiles(ip, mountInfo.MountPoint, target, iputils.GetHostIP(ip) == cluster.GetRegistryIP())
-					if err != nil {
-						return fmt.Errorf("copy container %s rootfs failed %v", mountInfo.Name, err)
-					}
-				}
-			}
-			if initFlag {
-				checkBash := check.CheckBash()
-				if checkBash == "" {
-					return nil
-				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), shim.ApplyCMD(target)); err != nil {
-					return err
-				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
-					return err
-				}
-			}
-			return nil
+			return fileEg.Wait()
 		})
 	}
 	err := eg.Wait()
@@ -148,19 +126,26 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		return err
 	}
 
-	endEg, _ := errgroup.WithContext(context.Background())
-	for _, mount := range f.mounts {
-		ip := cluster.GetMaster0IPAndPort()
-		mountInfo := mount
+	endEg, _ := errgroup.WithContext(ctx)
+	regList := registries.List()
+	for idx := range f.mounts {
+		mountInfo := f.mounts[idx]
 		endEg.Go(func() error {
-			if appFlag && mountInfo.Type == v2.AppImage {
-				logger.Debug("send  app mount images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, mountInfo.ImageName, mountInfo.Type)
-				err = cper.CopyFiles(ip, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), iputils.GetHostIP(ip) == cluster.GetRegistryIP())
-				if err != nil {
-					return fmt.Errorf("copy container %s app rootfs failed %v", mountInfo.Name, err)
-				}
+			endEgg, _ := errgroup.WithContext(ctx)
+			for idj := range regList {
+				ip := regList[idj]
+				endEgg.Go(func() error {
+					if mountInfo.Type == v2.AppImage {
+						logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", ip, mountInfo.ImageName, mountInfo.Type)
+						err = cper.CopyFiles(ip, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), true)
+						if err != nil {
+							return fmt.Errorf("copy container %s app rootfs failed %v", mountInfo.Name, err)
+						}
+					}
+					return nil
+				})
 			}
-			return nil
+			return endEgg.Wait()
 		})
 	}
 	return endEg.Wait()

@@ -51,6 +51,18 @@ func (c *Cluster) GetRegistryIP() string {
 	return c.GetMaster0IP()
 }
 
+func (c *Cluster) GetRegistryIPAndPortList() []string {
+	ret := c.GetIPSByRole(REGISTRY)
+	if len(ret) == 0 {
+		ret = []string{c.GetRegistryIPAndPort()}
+	}
+	return ret
+}
+
+func (c *Cluster) GetRegistryIPList() []string {
+	return iputils.GetHostIPs(c.GetRegistryIPAndPortList())
+}
+
 func (c *Cluster) GetNodeIPAndPortList() []string {
 	return c.GetIPSByRole(NODE)
 }

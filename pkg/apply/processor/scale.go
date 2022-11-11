@@ -18,21 +18,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type ScaleProcessor struct {
@@ -72,6 +72,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 			c.PreProcessImage,
 			c.RunConfig,
 			c.MountRootfs,
+			c.Bootstrap,
 			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
 			c.Join,
 			//s.GetPhasePluginFunc(plugin.PhasePostJoin),
@@ -233,7 +234,20 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, true, false)
+	return fs.MountRootfs(cluster, hosts)
+}
+
+func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
+	bs := bootstrap.New(cluster)
+	if err := bs.Preflight(hosts...); err != nil {
+		return err
+	}
+	if err := bs.Init(hosts...); err != nil {
+		return err
+	}
+	return bs.ApplyExternalDeps(hosts...)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

@@ -23,6 +23,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/remote"
@@ -34,7 +35,7 @@ import (
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
 	k.registryOnce.Do(func() {
-		k.Registry = GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
+		k.Registry = bootstrap.GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
 	})
 	return k.Registry
 }
