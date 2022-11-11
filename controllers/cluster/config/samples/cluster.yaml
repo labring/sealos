@@ -4,7 +4,7 @@ metadata:
   name: infra-apply-test
 spec:
   ssh:
-    user: root
+    user: ec2-user
     passwd: "123456"
     pk: /root/hurz_key.pem
     pkname: hurz_key
@@ -25,7 +25,7 @@ metadata:
   name: my-cluster
 spec:
   ssh:
-    user: root
+    user: ec2-user
     passwd: "123456"
     pk: /root/hurz_key.pem
     pkname: hurz_key

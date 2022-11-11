@@ -57,10 +57,11 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
 		return err
 	}
-	infra.Status.Hosts = hosts
-	if _, err = driver.GetInstances(infra); err != nil {
+	currHosts, err := driver.GetInstances(infra)
+	if err != nil {
 		return err
 	}
+	infra.Status.Hosts = currHosts
 	return nil
 }
 

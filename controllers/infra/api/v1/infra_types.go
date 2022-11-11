@@ -163,6 +163,31 @@ type InfraStatus struct {
 	SSH         v1bata1.SSH `json:"ssh,omitempty"`
 	Hosts       []Hosts     `json:"hosts,omitempty"`
 	Connections string      `json:"connections,omitempty"` // master0 ip:port
+	Status      string      `json:"status,omitempty"`
+}
+type Status int
+
+const (
+	Pending Status = iota
+	Running
+	Succeeded
+	Failed
+	Unknown
+)
+
+func (s Status) String() string {
+	switch s {
+	case Pending:
+		return "Pending"
+	case Running:
+		return "Running"
+	case Succeeded:
+		return "Succeeded"
+	case Failed:
+		return "Failed"
+	default:
+		return "Unknown"
+	}
 }
 
 //+kubebuilder:object:root=true

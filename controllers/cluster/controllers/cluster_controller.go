@@ -63,7 +63,13 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		logger.Debug("ignore not found cluster error: %v", err)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
+	if cluster.Status.Status == "" {
+		cluster.Status.Status = v1.Pending.String()
+		if err := r.Status().Update(ctx, cluster); err != nil {
+			logger.Error(cluster, "Error", "cluster CurrStatus update failed", "%v", err)
+			return ctrl.Result{}, err
+		}
+	}
 	infra := &infrav1.Infra{}
 	infra.Name = cluster.Spec.Infra
 	infra.Namespace = cluster.Namespace
@@ -73,7 +79,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		logger.Debug("ignore not found cluster error: %v", err)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
 	hosts, err := r.driver.GetInstances(infra)
 
 	if err != nil {
@@ -82,15 +87,18 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if cluster.Spec.SSH.PkData == "" {
-		cluster.Spec.SSH.PkData = infra.Spec.SSH.PkData
+		cluster.Spec.SSH.PkData = infra.Status.SSH.PkData
 	}
-
 	err = r.applier.ReconcileCluster(infra, hosts, cluster)
 	if err != nil {
 		logger.Error("reconcile cluster error: %v", err)
 		return ctrl.Result{}, err
 	}
-
+	cluster.Status.Status = v1.Running.String()
+	if err = r.Status().Update(ctx, cluster); err != nil {
+		logger.Error("sealos update  status failed", err)
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
