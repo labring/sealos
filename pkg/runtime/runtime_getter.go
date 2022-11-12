@@ -166,12 +166,7 @@ func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
 func (k *KubeadmRuntime) execClean(ip string) error {
 	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanBash()))
 }
-func (k *KubeadmRuntime) execInitRegistry(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().InitRegistryBash()))
-}
-func (k *KubeadmRuntime) execCleanRegistry(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanRegistryBash()))
-}
+
 func (k *KubeadmRuntime) execAuth(ip string) error {
 	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().AuthBash()))
 }
