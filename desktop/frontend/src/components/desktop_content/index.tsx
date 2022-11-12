@@ -14,7 +14,7 @@ export default function DesktopContent() {
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
       case APPTYPE.APP:
-        if (appItem.name === 'Infra') {
+        if (appItem.name === 'sealos cloud provider') {
           return <Infra />;
         }
         return <AppStore />;

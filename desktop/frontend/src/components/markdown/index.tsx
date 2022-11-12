@@ -1,9 +1,9 @@
-import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs, vs2015 } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import styles from './index.module.scss';
 
-const MarkDown = ({ text }: { text: string }) => {
+const MarkDown = ({ text, themeDark }: { text: string; themeDark?: boolean }) => {
   const copyContent = () => {
     navigator.clipboard.writeText(text);
   };
@@ -16,7 +16,7 @@ const MarkDown = ({ text }: { text: string }) => {
             return !inline && match ? (
               <SyntaxHighlighter
                 showLineNumbers={true}
-                // style={darkMode ? them.dark : them.light}
+                style={themeDark ? vs2015 : vs}
                 language={match[1]}
                 PreTag="div"
                 {...props}

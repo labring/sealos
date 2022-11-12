@@ -84,7 +84,7 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-          image: fanux/frontend:latest
+          image: zhujingyang/desktop-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: desktop-frontend-volume

@@ -1,23 +1,71 @@
 import { Input, Slider } from '@fluentui/react-components';
 import { Dropdown, Option } from '@fluentui/react-components/unstable';
-import { SelectNodes } from './infra_share';
+import clsx from 'clsx';
+import { SELECT_DISKS, SELECT_NODES } from './infra_share';
 import styles from './select_node.module.scss';
 
-interface SelectNodeComponent {
+type SelectNodeComponent = {
   type: string;
   nodeType: string;
-  setNodeType: (msg: string) => void;
   nodeCount: string;
-  setNodeCountValue: (msg: string) => void;
   nodeDisk: number;
-  setNodeDisk: (msg: number) => void;
-}
+  diskType: string;
+  dispatchInfraForm: (action: any) => void;
+};
 
-const SelectNodeComponent = (props: SelectNodeComponent) => {
-  const onSelectNode = (label: string | undefined) => {
-    if (label) {
-      let item = SelectNodes.find((item) => item.label === label);
-      props.setNodeType(item?.key as string);
+const SelectNodeComponent = ({
+  type,
+  nodeType,
+  nodeCount,
+  nodeDisk,
+  diskType,
+  dispatchInfraForm
+}: SelectNodeComponent) => {
+  const onSelectNodeType = (label: string | undefined) => {
+    let item = SELECT_NODES.find((item) => item.label === label);
+    if (type === 'Master') {
+      dispatchInfraForm({ payload: { masterType: item?.key } });
+    }
+    if (type === 'Node') {
+      dispatchInfraForm({ payload: { nodeType: item?.key } });
+    }
+  };
+
+  const onSelectDiskType = (label: string | undefined) => {
+    let item = SELECT_DISKS.find((item) => item.label === label);
+    if (type === 'Master') {
+      dispatchInfraForm({ payload: { masterDiskType: item?.key } });
+    }
+    if (type === 'Node') {
+      dispatchInfraForm({ payload: { nodeDiskType: item?.key } });
+    }
+  };
+
+  const onDefaultNodeType = (key: string): string[] => {
+    let item = SELECT_NODES.find((item) => item.key === key);
+    return [item?.label as string];
+  };
+
+  const onDefaultDiskType = (key: string): string[] => {
+    let item = SELECT_DISKS.find((item) => item.key === key);
+    return [item?.label as string];
+  };
+
+  const setNodeCountValue = (value: string) => {
+    if (type === 'Master') {
+      dispatchInfraForm({ payload: { masterCount: value } });
+    }
+    if (type === 'Node') {
+      dispatchInfraForm({ payload: { nodeCount: value } });
+    }
+  };
+
+  const setNodeDiskValue = (value: number) => {
+    if (type === 'Master') {
+      dispatchInfraForm({ payload: { masterDisk: value } });
+    }
+    if (type === 'Node') {
+      dispatchInfraForm({ payload: { nodeDisk: value } });
     }
   };
 
@@ -25,36 +73,48 @@ const SelectNodeComponent = (props: SelectNodeComponent) => {
     <div>
       <div className={styles.head}>
         <div className={styles.dot}></div>
-        <span className="pl-3">{props.type} 节点</span>
+        <span className={styles.info}>{type} 节点</span>
       </div>
-      <div className="px-6 mt-5">
-        <span className="w-24 inline-block">机器</span>
+      <div className="pl-8 mt-6">
+        <span className={styles.cloudLabel}>机器</span>
         <Dropdown
           className={styles.selectType}
           placeholder="请选择类型"
-          onOptionSelect={(e, data) => onSelectNode(data.optionValue)}
+          selectedOptions={onDefaultNodeType(nodeType)}
+          onOptionSelect={(e, data) => onSelectNodeType(data.optionValue)}
         >
-          {SelectNodes.map((item) => (
+          {SELECT_NODES.map((item) => (
             <Option key={item.key}>{item.label}</Option>
           ))}
         </Dropdown>
         <Input
           className={styles.selectTypeCount}
-          value={props.nodeCount}
+          value={nodeCount}
           contentAfter={'台'}
-          onChange={(e, data) => props.setNodeCountValue(data.value)}
+          onChange={(e, data) => setNodeCountValue(data.value)}
         ></Input>
       </div>
-      <div className="px-6 mt-5 flex  items-center">
-        <span className="w-24 inline-block">硬盘</span>
+      <div className="pl-8 mt-6 flex items-center">
+        <span className={styles.cloudLabel}>硬盘</span>
+        <Dropdown
+          className={styles.selectType}
+          placeholder="请选择类型"
+          selectedOptions={onDefaultDiskType(diskType)}
+          onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}
+        >
+          {SELECT_DISKS.map((item) => (
+            <Option key={item.key}>{item.label}</Option>
+          ))}
+        </Dropdown>
         <Slider
+          className={clsx(styles.selectTypeCount)}
           min={0}
-          max={256}
-          className="w-72 mr-4"
-          value={props.nodeDisk}
-          onChange={(e, data) => props.setNodeDisk(data.value)}
+          max={128}
+          // className="w-72 mr-4"
+          value={nodeDisk}
+          onChange={(e, data) => setNodeDiskValue(data.value)}
         />
-        <span> {props.nodeDisk}G </span>
+        <span> {nodeDisk}G </span>
       </div>
     </div>
   );
