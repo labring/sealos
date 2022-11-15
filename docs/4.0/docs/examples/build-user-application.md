@@ -179,3 +179,33 @@ And
 ```kubectl apply -f redis-client.yaml```
 
 After the pod is running,```kubectl logs redis-test```
+
+
+```
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+  name: rfs-redisfailover
+  labels:
+    k8s-app: rfs-redisfailover
+spec:
+  rules:
+    - host: redis-ingress.cloud.sealos.io
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: rfs-redisfailover
+                port:
+                  number: 26379
+  tls:
+    - hosts:
+        - rfs-redisfailover.cloud.sealos.io
+      secretName: wildcard-cloud-sealos-io-cert
+```
