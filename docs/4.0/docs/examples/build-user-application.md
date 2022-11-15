@@ -1,6 +1,6 @@
 
 # Build-User-Application
-This document uses Redis and Postgres databases as examples to teach us how to quickly build distributed applications on sealos
+This document uses Redis and Postgres databases as examples to teach us how to quickly run distributed applications on sealos
 
 ## Prerequisites
 * Login in https://cloud.sealos.io/
