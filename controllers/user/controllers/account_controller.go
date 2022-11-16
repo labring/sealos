@@ -25,10 +25,6 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	rbacV1 "k8s.io/api/rbac/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -93,21 +89,8 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	account := &userv1.Account{}
 	account.Name = payment.Spec.UserID
 	account.Namespace = helper.GetDefaultNamespace()
-	err = r.Get(ctx, client.ObjectKey{Namespace: helper.GetDefaultNamespace(), Name: account.Name}, account)
-	if errors.IsNotFound(err) {
-		account.Status.Balance = 0
-		account.Status.ChargeList = []userv1.Charge{}
-		logger.Info("create account", "account", account)
-		if err := r.Create(ctx, account); err != nil {
-			return ctrl.Result{}, fmt.Errorf("create account failed: %v", err)
-		}
-	} else if err != nil {
+	if err = r.Get(ctx, client.ObjectKey{Namespace: helper.GetDefaultNamespace(), Name: account.Name}, account); err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
-	}
-
-	// add role get account permission
-	if err := r.syncRoleAndRoleBinding(ctx, payment.Spec.UserID, payment.Namespace); err != nil {
-		return ctrl.Result{}, fmt.Errorf("sync role and rolebinding failed: %v", err)
 	}
 
 	status, err := pay.QueryOrder(payment.Status.TradeNO)
@@ -144,47 +127,6 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
-	role := rbacV1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "userAccountRole-" + name,
-			Namespace: helper.GetDefaultNamespace(),
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
-		role.Rules = []rbacV1.PolicyRule{
-			{
-				APIGroups:     []string{"user.sealos.io"},
-				Resources:     []string{"accounts"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{name},
-			},
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("create role failed: %v,username: %v,namespace: %v", err, name, namespace)
-	}
-	roleBinding := rbacV1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "userAccountRoleBinding-" + name,
-			Namespace: helper.GetDefaultNamespace(),
-		},
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
-		roleBinding.RoleRef = rbacV1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     role.Name,
-		}
-		roleBinding.Subjects = helper.GetUsersSubject(name)
-
-		return nil
-	}); err != nil {
-		return fmt.Errorf("create roleBinding failed: %v,rolename: %v,username: %v,ns: %v", err, role.Name, name, namespace)
-	}
-	return nil
 }
 
 // DeletePayment delete payments that exist for more than 5 minutes
