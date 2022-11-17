@@ -27,7 +27,18 @@ const (
 	KubeletConf    = "kubelet.conf"
 )
 
-func (k *KubeadmRuntime) UpdateCert() error {
+func (k *KubeadmRuntime) UpdateCert(certs []string) error {
+	return k.updateCert(certs)
+}
+
+func (k *KubeadmRuntime) UpdateCertByInit() error {
+	return k.updateCert([]string{})
+}
+
+func (k *KubeadmRuntime) updateCert(certs []string) error {
+	if len(certs) != 0 {
+		k.setCertSANS(append(k.getCertSANS(), certs...))
+	}
 	logger.Info("start to generate cert and kubeConfig...")
 	if err := k.sshCmdAsync(k.getMaster0IPAndPort(), "rm -rf /etc/kubernetes/admin.conf"); err != nil {
 		return err

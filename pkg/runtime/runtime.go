@@ -44,7 +44,7 @@ type Config struct {
 func (k *KubeadmRuntime) Init() error {
 	pipeline := []func() error{
 		k.ConfigInitKubeadmToMaster0,
-		k.UpdateCert,
+		k.UpdateCertByInit,
 		k.CopyStaticFilesToMasters,
 		k.InitMaster0,
 	}
@@ -60,6 +60,7 @@ type Interface interface {
 	JoinMasters(newMastersIPList []string) error
 	DeleteMasters(mastersIPList []string) error
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
+	UpdateCert(certs []string) error
 }
 
 func (k *KubeadmRuntime) Reset() error {
@@ -112,7 +113,7 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 	if logger.IsDebugMode() {
 		k.vlog = 6
 	}
-	k.setCertSANS()
+	k.setCertSANS([]string{})
 	return k, nil
 }
 
