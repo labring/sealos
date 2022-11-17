@@ -44,9 +44,9 @@ const (
 
 const (
 	PullPolicyMissing = "missing" // processor  create, install, command merge, create, save
-	PullPloicyAlways  = "always"
-	PullPloicyNever   = "never"
-	PullPloicyIfnewer = "ifnewer" // command pull
+	PullPolicyAlways  = "always"
+	PullPolicyNever   = "never"
+	PullPolicyIfnewer = "ifnewer" // command pull
 )
 
 var DefaultTransport = OCIArchive
