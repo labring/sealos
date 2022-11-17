@@ -76,10 +76,9 @@ kubectl get infra infra-apply-test  -oyaml
 
 ### 在本地使用 sealos cloud provider
 
+只需要下载用户的 kubeconfig 到本地，放到 ～/.kube/config 文件即可
+![img_4.png](img_4.png)
 
-## 部署教程
-
-## 开发教程
-
-## 源码解析
-
+然后通过本地的 kubectl 命令即可通过 api 操作 sealos cloud, sealos cloud api 完全遵循 CRD 设计。
+意味着可以把 kubeconfig 文件拷贝到任何 CI/CD 系统中与 sealos cloud 自动进行交互，自动部署等。
+其他操作与在 cloud terminal 中的操作相同。
