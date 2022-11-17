@@ -238,11 +238,12 @@ For a complete list of the docs synchronization mappings, see [sync_docs.yml](ht
 Please obey the following rules to better format the docs, which would greatly improve the reading experience.
 
 1. Please do not use Chinese punctuations in English docs, and vice versa.
-1. Please use upper case letters where applicable, like the first letter of sentences / headings, etc.
-1. Please specify a language for each Markdown code blocks, unless there's no associated languages.
-1. Please insert a whitespace between Chinese and English words.
-1. Please use the correct case for technical terms, such as using HTTP instead of http, MySQL rather than mysql, Kubernetes instead of kubernetes, etc.
-1. Please check if there's any typos in the docs before submitting PRs.
+2. Please use upper case letters where applicable, like the first letter of sentences / headings, etc.
+3. Please specify a language for each Markdown code blocks, unless there's no associated languages.
+4. Please insert a whitespace between Chinese and English words.
+5. Please use the correct case for technical terms, such as using HTTP instead of http, MySQL rather than mysql, Kubernetes instead of kubernetes, etc.
+6. Please check if there's any typos in the docs before submitting PRs.
+7. please name the file with to connect words, such as `install-kubernetes.md` instead of `install kubernetes.md`.
 
 You can also check out the [Docusaurus docs](https://docusaurus.io/docs/markdown-features) to write docs with richer feature.
 
