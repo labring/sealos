@@ -49,8 +49,8 @@ metadata:
 spec:
   infra: {{ .infraName}}
   ssh:
-    user: ec2-user
-    passwd: "123456"
+    user: {{.userName}}
+    passwd: {{.userPassword}}
     pk: /root/hurz_key.pem
     pkname: hurz_key
     port: 22

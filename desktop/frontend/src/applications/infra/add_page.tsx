@@ -9,6 +9,7 @@ import styles from './add_page.module.scss';
 import { PageType, useScpContext } from './index';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
+import { v4 as uuidv4 } from 'uuid';
 
 const AddPage = () => {
   const { infraName, toPage } = useScpContext();
@@ -28,7 +29,9 @@ const AddPage = () => {
     nodeType: '',
     nodeCount: 1,
     nodeDisk: 16,
-    nodeDiskType: ''
+    nodeDiskType: '',
+    userName: 'root', //暂定
+    userPassword: uuidv4()
   };
   const infraReducer = (state: any, action: any) => {
     return { ...state, ...action.payload };
@@ -71,6 +74,7 @@ const AddPage = () => {
         });
       };
       infraUpdate();
+      goFrontPage();
     } else {
       applyInfra();
       applyCluster();

@@ -78,6 +78,7 @@ function FrontPage() {
     const res = await request.post('/api/infra/getAllCluster', { kubeconfig });
     return res;
   });
+  // console.log(scpLists, clusterLists, 'frontpage');
 
   return (
     <div className={clsx(styles.appWrap, 'flex h-full flex-col grow')}>
@@ -100,7 +101,7 @@ function FrontPage() {
           <span> 创建集群</span>
         </button>
       </div>
-      <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
+      <div className={clsx(styles.pageWrapperScroll)}>
         {scpLists?.data?.items?.length > 0 && (
           <div className="space-y-6 w-full absolute box-border p-14 pt-6 mt-8">
             {scpLists?.data?.items?.map((item: InfraInfo, index: number) => {

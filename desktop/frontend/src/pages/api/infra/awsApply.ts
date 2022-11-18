@@ -24,7 +24,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
   const namespace = GetUserDefaultNameSpace(kube_user.name);
-  // const namespace = 'infra-system';
   const infraCRD = CRDTemplateBuilder(infraCRDTemplate, {
     infraName,
     namespace,
