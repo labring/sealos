@@ -2,144 +2,182 @@ import { Button, Input } from '@fluentui/react-components';
 import { ArrowLeft24Regular } from '@fluentui/react-icons';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
-import { useState } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
+import { PageType, useScpContext } from './index';
+import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
-// import kubeconfig from './kubeconfig';
-// import { CRDTemplateBuilder } from 'services/backend/wrapper';
 
-const AddPage = ({ action }: { action: (page: number) => void }) => {
+const AddPage = () => {
+  const { infraName, toPage } = useScpContext();
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-  var [masterType, setMasterType] = useState('');
-  var [nodeType, setNodeType] = useState('');
-  const [imageOption1, setImageOption1] = useState(true);
-  const [imageOption2, setImageOption2] = useState(true);
-  var [image1, setImage1] = useState('labring/kubernetes:v1.24.0');
-  var [image2, setImage2] = useState('labring/calico:v3.24.1');
-  var [masterCount, setMasterCountValue] = useState('1');
-  var [nodeCount, setNodeCountValue] = useState('1');
-  const session = useSessionStore((s) => s.session);
-  const [infraName, setInfraName] = useState('');
-  let [masterDisk, setMasterDisk] = useState(16);
-  let [nodeDisk, setNodeDisk] = useState(16);
-  let [amountMoney, setAmountMoney] = useState(19.9);
-  let [clusterName, setClusterName] = useState(uuidv4());
-  const textContent = ` 
-\`\`\`yaml
-apiVersion: infra.sealos.io/v1
-kind: Infra
-metadata:
-  name: ${infraName}
-spec:
-  hosts:
-  - roles: [master] 
-    count: ${masterCount}
-    flavor: ${masterType}
-    image: "ami-05248307900d52e3a"
-    disks:
-    - capacity: ${masterDisk}
-      type: "gp3"
-      name: "/dev/sda2"
-  - roles: [ node ] 
-    count: ${nodeCount} 
-    flavor: ${nodeType}
-    image: "ami-05248307900d52e3a"
-    disks:
-    - capacity: ${nodeDisk}
-      type: "gp2"
-      name: "/dev/sda2"
----
-apiVersion: cluster.sealos.io/v1
-kind: Cluster
-metadata:
-  name: ${clusterName}
-spec:
-  infra: ${infraName}
-  images:
-  - labring/kubernetes:v1.24.0
-  - labring/calico:v3.22.1
-\`\`\`
-`;
-
-  const goFrontPage = () => {
-    action(1);
+  const [image1, setImage1] = useState('labring/kubernetes:v1.24.0');
+  const [image2, setImage2] = useState('labring/calico:v3.22.1');
+  const [yamlTemplate, setYamlTemplate] = useState('');
+  const [scpPrice, setScpPrice] = useState(0);
+  const oldInfraForm = useRef(null as any);
+  const initInfra = {
+    infraName: '',
+    clusterName: '',
+    masterType: '',
+    masterCount: 1,
+    masterDisk: 16,
+    masterDiskType: '',
+    nodeType: '',
+    nodeCount: 1,
+    nodeDisk: 16,
+    nodeDiskType: ''
   };
+  const infraReducer = (state: any, action: any) => {
+    return { ...state, ...action.payload };
+  };
+  const [infraForm, dispatchInfraForm] = useReducer(infraReducer, initInfra);
 
-  async function handleClick() {
-    const res = await request.post('/api/infra/awsapply', {
-      infraName,
-      masterType: masterType,
-      masterCount: masterCount,
-      nodeType: nodeType,
-      nodeCount: nodeCount,
+  const applyInfra = async () => {
+    const res = await request.post('/api/infra/awsApply', {
+      ...infraForm,
       images: { image1, image2 },
-      kubeconfig: kubeconfig,
-      clusterName,
-      masterDisk,
-      nodeDisk
+      kubeconfig
     });
     goFrontPage();
+  };
+
+  const applyCluster = async () => {
+    const clusterRes = await request.post('/api/infra/awsApplyCluster', {
+      ...infraForm,
+      kubeconfig,
+      images: { image1, image2 }
+    });
+  };
+
+  const goFrontPage = () => {
+    if (infraName) {
+      toPage(PageType.DetailPage, infraName);
+    } else {
+      toPage(PageType.FrontPage, '');
+    }
+  };
+
+  function handleBtnClick() {
+    if (infraName) {
+      const infraUpdate = async () => {
+        const res = await request.post('/api/infra/awsUpdate', {
+          ...infraForm,
+          kubeconfig,
+          images: { image1, image2 },
+          oldInfraForm: oldInfraForm.current
+        });
+      };
+      infraUpdate();
+    } else {
+      applyInfra();
+      applyCluster();
+    }
   }
+
+  useEffect(() => {
+    setYamlTemplate(generateTemplate({ image1, image2, ...infraForm }));
+    const getPrice = async () => {
+      const res = await request.post('/api/infra/awsGetPrice', infraForm);
+      if (res?.data?.sumPrice) {
+        setScpPrice(res.data.sumPrice);
+      }
+    };
+    getPrice();
+  }, [image1, image2, infraForm]);
+
+  useEffect(() => {
+    if (infraName) {
+      const getAws = async () => {
+        const res = await request.post('/api/infra/awsGet', {
+          kubeconfig,
+          infraName
+        });
+        if (res?.data?.metadata) {
+          let { name } = res.data.metadata;
+          let masterInfo = res.data?.spec?.hosts[0];
+          let nodeInfo = res.data?.spec?.hosts[1];
+          const payload = {
+            infraName: name,
+            clusterName: name,
+            masterType: masterInfo.flavor,
+            masterCount: masterInfo.count,
+            masterDisk: masterInfo.disks[0].capacity,
+            masterDiskType: masterInfo.disks[0].type,
+            nodeType: nodeInfo.flavor,
+            nodeCount: nodeInfo.count,
+            nodeDisk: nodeInfo.disks[0].capacity,
+            nodeDiskType: nodeInfo.disks[0].type
+          };
+          oldInfraForm.current = payload;
+          dispatchInfraForm({ payload });
+        }
+      };
+      getAws();
+    }
+  }, [infraName, kubeconfig]);
 
   return (
     <div className="flex h-full flex-col grow">
       <div className={styles.nav} onClick={goFrontPage}>
         <ArrowLeft24Regular />
-        <span className="cursor-pointer pl-2"> 返回列表 </span>
+        <span className="cursor-pointer pl-2"> {infraName ? '返回详情' : '返回列表'} </span>
       </div>
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         <div className="flex justify-center space-x-12  w-full absolute box-border p-14 pt-0 ">
-          <div className={clsx('space-y-6 ')}>
+          <div className={clsx('space-y-6')}>
             <div>
               <div className={styles.head}>
                 <div className={styles.dot}></div>
-                <span className="pl-3">基础信息</span>
+                <span className={styles.info}>基础信息</span>
               </div>
-              <div className="px-6 mt-7 ">
-                <span className="w-24 inline-block ">集群名字 </span>
+              <div className="pl-8 mt-8 ">
+                <span className={styles.cloudlabel}>集群名字 </span>
                 <Input
                   className={styles.inputName}
-                  value={infraName}
+                  value={infraForm.infraName}
                   placeholder="请输入集群名称"
-                  onChange={(e) => setInfraName(e.target.value)}
+                  onChange={(e, data) =>
+                    dispatchInfraForm({
+                      payload: { infraName: data.value, clusterName: data.value }
+                    })
+                  }
+                  disabled={infraName ? true : false}
                 ></Input>
               </div>
-              <div className="px-6 mt-5">
-                <span className="w-24 inline-block"> 可用区 </span>
+              <div className="px-8 mt-6">
+                <span className={styles.cloudlabel}> 可用区 </span>
               </div>
             </div>
             <SelectNodeComponent
               type="Master"
-              nodeType={masterType}
-              setNodeType={setMasterType}
-              nodeCount={masterCount}
-              setNodeCountValue={setMasterCountValue}
-              nodeDisk={masterDisk}
-              setNodeDisk={setMasterDisk}
+              nodeType={infraForm.masterType}
+              nodeCount={infraForm.masterCount}
+              diskType={infraForm.masterDiskType}
+              nodeDisk={infraForm.masterDisk}
+              dispatchInfraForm={dispatchInfraForm}
             />
             <SelectNodeComponent
               type="Node"
-              nodeType={nodeType}
-              setNodeType={setNodeType}
-              nodeCount={nodeCount}
-              setNodeCountValue={setNodeCountValue}
-              nodeDisk={nodeDisk}
-              setNodeDisk={setNodeDisk}
+              nodeType={infraForm.nodeType}
+              nodeCount={infraForm.nodeCount}
+              diskType={infraForm.nodeDiskType}
+              nodeDisk={infraForm.nodeDisk}
+              dispatchInfraForm={dispatchInfraForm}
             />
             <div className="flex items-center space-x-8 justify-end mr-10">
               <div className={styles.moneyItem}>
-                ￥ <span className={styles.money}> {amountMoney} </span> /月
+                ￥ <span className={styles.money}> {scpPrice} </span> /小时
               </div>
-              <Button shape="square" appearance="primary" onClick={handleClick}>
-                立即创建
+              <Button shape="square" appearance="primary" onClick={handleBtnClick}>
+                {infraName ? '立即修改' : '立即创建'}
               </Button>
             </div>
           </div>
           <div className={clsx(styles.markdown)}>
-            <MarkDown text={textContent}></MarkDown>
+            <MarkDown text={yamlTemplate}></MarkDown>
           </div>
         </div>
       </div>

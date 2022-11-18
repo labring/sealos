@@ -1,27 +1,41 @@
-import { useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import AddPage from './add_page';
 import DetailPage from './detail_page';
 import FrontPage from './front_page';
+
+export enum PageType {
+  FrontPage,
+  AddPage,
+  DetailPage
+}
+
+type ScpStore = {
+  infraName: string;
+  toPage: (pageId: PageType, infraName: string) => void;
+};
+
+const ScpPageContext = createContext({} as ScpStore);
+
 function Infra() {
-  const [page, setPage] = useState(1);
-  const [infraName, setName] = useState('');
-
-  const action = (page: number) => {
-    setPage(page);
-  };
-
-  const toDetailByName = (name: string) => {
-    setPage(3);
-    setName(name);
+  const [pageId, setPageId] = useState(PageType.FrontPage);
+  const [infraName, setInfraName] = useState('');
+  const toPage = function (pageId: PageType, infraName: string) {
+    setPageId(pageId);
+    setInfraName(infraName);
   };
 
   return (
-    <>
-      {page === 1 ? <FrontPage action={action} toDetailByName={toDetailByName} /> : null}
-      {page === 2 ? <AddPage action={action} /> : null}
-      {page === 3 ? <DetailPage action={action} infraName={infraName} /> : null}
-    </>
+    <ScpPageContext.Provider value={{ infraName, toPage } as any}>
+      {pageId === PageType.FrontPage ? <FrontPage /> : null}
+
+      {pageId === PageType.AddPage ? <AddPage /> : null}
+
+      {pageId === PageType.DetailPage ? <DetailPage /> : null}
+    </ScpPageContext.Provider>
   );
 }
 
+export function useScpContext() {
+  return useContext(ScpPageContext);
+}
 export default Infra;

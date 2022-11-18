@@ -172,8 +172,8 @@ const installedApps: TApp[] = [
   //   size: 'maximize'
   // },
   {
-    name: 'Infra',
-    icon: '/images/infra.svg',
+    name: 'sealos cloud provider',
+    icon: '/images/infraicon/scp.png',
     type: 'app',
     data: {
       url: '',
