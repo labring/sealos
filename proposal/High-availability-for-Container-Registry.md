@@ -11,18 +11,9 @@ Currently the only single point in the cluster is the builtin container registry
 a) If no roles are specified, `sealos` will behave as before, aka, this PR does not change all the default behavior of sealos
 b) If we choose some nodes to run as registry, `bootstrap` process will run registry in those hosts before cluster initialization, `run` process will also distribute `registry` dir to those hosts.
 
-2. Refactored the `filesystem` module and move the system initialization operation to `bootstrap` module, now the `filesystem` module can focus on mounting and unmounting the application image. BTW, should the filesystem interface changed to
+2. Refactored the `filesystem` module and move the system initialization operation to `bootstrap` module, now the `filesystem` module can focus on mounting and unmounting the application image.
 
-```go
-type Interface interface {
-    MountRootfs(hosts []string) error
-    UnMountRootfs(hosts []string) error
-}
-```
-
-IMHO, `v2.Cluster` should be a member variable for the implementation, not as a parameter.
-
-And the `bootstrap` interface is designed as follows
+The `bootstrap` interface is designed as follows
 
 ```go
 type Interface interface {
@@ -30,10 +21,35 @@ type Interface interface {
     Preflight(hosts ...string) error
     // Init do actual system initialization, cri
     Init(hosts ...string) error
+    // Register deps to run util ApplyDeps is called
+    RegisterDeps(deps ...Dependency)
     // ApplyExternalDeps run task to apply external dependencies
-    ApplyExternalDeps(hosts ...string) error
+    ApplyDeps(hosts ...string) error
     // Reset undo bootstrap process
-    Reset() error
+    Reset(hosts ...string) error
+}
+```
+
+The `Dependency` interface is a interface that can be registered as external dep, the builtin implementation is `registryApplier` which install/uninstall container registry.
+
+```go
+type Dependency interface {
+    Name() string
+    Filter(Context, string) bool
+    Apply(Context, string) error
+    Undo(Context, string) error
+}
+```
+
+The `Context` interface can be used as arg for function `Dependency.Filter`/`Dependency.Apply`/`Dependency.Undo`.
+
+```go
+type Context interface {
+    GetBash() constants.Bash
+    GetCluster() *v2.Cluster
+    GetData() constants.Data
+    GetExecer() ssh.Interface
+    GetShellWrapper() shellWrapper
 }
 ```
 

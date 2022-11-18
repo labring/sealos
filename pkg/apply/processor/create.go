@@ -176,7 +176,7 @@ func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
 	if err := bs.Init(hosts...); err != nil {
 		return err
 	}
-	return bs.ApplyExternalDeps(hosts...)
+	return bs.ApplyDeps(hosts...)
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {

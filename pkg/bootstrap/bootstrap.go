@@ -16,149 +16,90 @@ package bootstrap
 
 import (
 	"context"
-	"fmt"
-	"path"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/util/sets"
 
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/passwd"
-	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Interface interface {
 	Preflight(hosts ...string) error
 	Init(hosts ...string) error
-	ApplyExternalDeps(hosts ...string) error
-	Reset() error
+	RegisterDeps(deps ...Dependency)
+	ApplyDeps(hosts ...string) error
+	Reset(hosts ...string) error
 }
 
 type realBootstrap struct {
-	cluster      *v2.Cluster
-	execer       ssh.Interface
-	bash         constants.Bash
-	data         constants.Data
-	is           *ImageShim
-	shellWrapper shellWrapper
+	ctx  Context
+	is   *ImageShim
+	deps []Dependency
 }
 
 type shellWrapper func(string, string) string
 
 func New(cluster *v2.Cluster) Interface {
-	execer := ssh.NewSSHClient(&cluster.Spec.SSH, true)
-	envProcessor := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
-	return &realBootstrap{
-		cluster: cluster,
-		execer:  execer,
-		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels()),
-		data:    constants.NewData(cluster.GetName()),
-		is:      NewImageShimHelper(execer, cluster.GetRegistryIPList()[0]),
-		shellWrapper: func(host, s string) string {
-			return envProcessor.WrapperShell(host, s)
-		},
+	ctx := NewContextFrom(cluster)
+	bs := &realBootstrap{
+		ctx:  ctx,
+		is:   NewImageShimHelper(ctx.GetExecer(), cluster.GetRegistryIP()),
+		deps: make([]Dependency, 0),
 	}
+	// register builtin deps
+	bs.RegisterDeps(&registryApplier{})
+	return bs
 }
 
 func (bs *realBootstrap) Preflight(hosts ...string) error {
-	shimCmd := bs.is.ApplyCMD(bs.data.RootFSPath())
+	shimCmd := bs.is.ApplyCMD(bs.ctx.GetData().RootFSPath())
 	return runParallel(hosts, func(host string) error {
-		cmds := []string{bs.shellWrapper(host, bs.bash.CheckBash()), shimCmd}
-		return bs.execer.CmdAsync(host, cmds...)
+		cmds := []string{bs.ctx.GetShellWrapper()(host, bs.ctx.GetBash().CheckBash()), shimCmd}
+		return bs.ctx.GetExecer().CmdAsync(host, cmds...)
 	})
 }
 
 func (bs *realBootstrap) Init(hosts ...string) error {
 	return runParallel(hosts, func(host string) error {
-		cmds := []string{bs.shellWrapper(host, bs.bash.InitBash())}
-		return bs.execer.CmdAsync(host, cmds...)
+		cmds := []string{bs.ctx.GetShellWrapper()(host, bs.ctx.GetBash().InitBash())}
+		return bs.ctx.GetExecer().CmdAsync(host, cmds...)
 	})
 }
 
-func (bs *realBootstrap) ApplyExternalDeps(hosts ...string) error {
-	registries := sets.NewString(bs.cluster.GetRegistryIPAndPortList()...)
-	isRegistry := func(s string) bool {
-		logger.Debug(registries.List(), s)
-		return registries.Has(s)
-	}
+func (bs *realBootstrap) ApplyDeps(hosts ...string) error {
 	return runParallel(hosts, func(host string) error {
-		if !isRegistry(host) {
-			return nil
+		for i := range bs.deps {
+			dep := bs.deps[i]
+			if !dep.Filter(bs.ctx, host) {
+				return nil
+			}
+			logger.Debug("apply dep %s on host %s", dep.Name(), host)
+			if err := dep.Apply(bs.ctx, host); err != nil {
+				return err
+			}
 		}
-		return bs.applyRegistry(host)
+		return nil
 	})
 }
 
-func (bs *realBootstrap) Reset() error {
-	registries := bs.cluster.GetRegistryIPList()
-	return runParallel(registries, func(host string) error {
-		return bs.execer.CmdAsync(host, bs.shellWrapper(host, bs.bash.CleanRegistryBash()))
+func (bs *realBootstrap) RegisterDeps(deps ...Dependency) {
+	bs.deps = append(bs.deps, deps...)
+}
+
+func (bs *realBootstrap) Reset(hosts ...string) error {
+	return runParallel(hosts, func(host string) error {
+		for i := range bs.deps {
+			dep := bs.deps[i]
+			if !dep.Filter(bs.ctx, host) {
+				return nil
+			}
+			logger.Debug("undo dep %s on host %s", dep.Name(), host)
+			if err := dep.Undo(bs.ctx, host); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
-}
-
-func (bs *realBootstrap) applyRegistry(host string) error {
-	// OR for each host?
-	rc := GetRegistryInfo(bs.execer, bs.data.RootFSPath(), bs.cluster.GetRegistryIPAndPort())
-	lnCmd := fmt.Sprintf(constants.DefaultLnFmt, bs.data.RootFSRegistryPath(), rc.Data)
-	logger.Debug("make soft link: %s", lnCmd)
-	if err := bs.execer.CmdAsync(host, lnCmd); err != nil {
-		return fmt.Errorf("failed to make link: %v", err)
-	}
-	htpasswdPath, err := bs.configLocalHtpasswd(rc)
-	if err != nil {
-		return err
-	}
-	if len(htpasswdPath) > 0 {
-		if err = bs.execer.Copy(host, htpasswdPath, path.Join(bs.data.RootFSEtcPath(), "registry_htpasswd")); err != nil {
-			return err
-		}
-	}
-	return bs.execer.CmdAsync(host, bs.shellWrapper(host, bs.bash.InitRegistryBash()))
-}
-
-func (bs *realBootstrap) configLocalHtpasswd(rc *v2.RegistryConfig) (string, error) {
-	if rc.Username == "" || rc.Password == "" {
-		logger.Warn("registry username or password is empty")
-		return "", nil
-	}
-	mk := newHtpasswdMaker(bs.data.EtcPath())
-	return mk.Make(rc.Username, rc.Password)
-}
-
-type htpasswdMaker struct {
-	path string
-	err  error
-	once sync.Once
-}
-
-func (m *htpasswdMaker) Make(u, p string) (string, error) {
-	m.once.Do(func() {
-		if u == "" || p == "" {
-			return
-		}
-		pwd := passwd.Htpasswd(u, p)
-		if err := file.WriteFile(m.path, []byte(pwd)); err != nil {
-			m.err = fmt.Errorf("failed to make htpasswd: %v", err)
-		}
-	})
-	return m.path, m.err
-}
-
-var htpasswdMakers = map[string]*htpasswdMaker{}
-
-func newHtpasswdMaker(root string) *htpasswdMaker {
-	fp := path.Join(root, "registry_htpasswd")
-	if v, ok := htpasswdMakers[fp]; ok {
-		return v
-	}
-	m := &htpasswdMaker{path: fp}
-	htpasswdMakers[fp] = m
-	return m
 }
 
 func runParallel(hosts []string, fn func(string) error) error {
