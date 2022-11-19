@@ -48,7 +48,7 @@ $ sealos build -f Dockerfile -t docker.io/fanux/ingress-nginx:v1.2.0 .
 ```
 
 sealos 在构建的时候会自动添加镜像列表中的镜像依赖到集群镜像中，通过神奇的方式保存了里面依赖的 Docker 镜像。
-并且在到别的环境中运行的时候更神奇的自动检测集群中想是否的 Docker 镜像，有的话自动下载，没有的话才会去 k8s.gcr.io 下载。
+并且在到别的环境中运行的时候更神奇的自动检测集群中是否有 Docker 镜像，有的话自动下载，没有的话才会去 k8s.gcr.io 下载。
 用户无需修改 helm chart 中的 docker 镜像地址，这里用到了镜像缓存代理的黑科技。
 
 ## 推送到镜像 registry
