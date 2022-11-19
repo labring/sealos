@@ -53,22 +53,14 @@
   }
 }
 
-.pageScroll {
-  overflow-y: overlay;
-}
-
-.pageWrapper {
+.pageWrapperScroll {
   display: flex;
   flex-grow: 1;
   flex-direction: column;
   overflow-x: hidden;
   overflow-y: scroll;
-}
-
-.restWindow {
   position: relative;
   box-sizing: border-box;
-  width: 100%;
   flex-grow: 1;
   scroll-behavior: smooth;
 }
@@ -79,25 +71,22 @@
   justify-content: center;
   padding-left: 16px;
 
-  .Pending {
+  @mixin base_status($bg_color) {
     width: 10px;
     height: 10px;
-    background: #ec6a5e;
+    background: $bg_color;
     border-radius: 50%;
+  }
+  .Pending {
+    @include base_status(#ec6a5e);
   }
 
   .Running {
-    width: 10px;
-    height: 10px;
-    background: #61c554;
-    border-radius: 50%;
+    @include base_status(#61c554);
   }
 
   .Start {
-    width: 10px;
-    height: 10px;
-    background: #f4be4f;
-    border-radius: 50%;
+    @include base_status(#f4be4f);
   }
 
   .right {

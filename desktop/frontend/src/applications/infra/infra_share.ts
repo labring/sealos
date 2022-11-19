@@ -66,8 +66,7 @@ metadata:
 spec:
   infra: ${infraForm.infraName}
   ssh:
-    user: ec2-user
-    passwd: "123456"
+    user: ${infraForm.userName}
     pk: /root/hurz_key.pem
     pkname: hurz_key
     port: 22

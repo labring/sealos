@@ -36,7 +36,11 @@ function DetailPage() {
     request.post('/api/infra/awsGet', { kubeconfig, infraName })
   );
 
-  const copySSH = () => {
+  const { data: clusterInfo } = useQuery(['getCluster', infraName], () =>
+    request.post('/api/infra/getCluster', { kubeconfig, clusterName: infraName })
+  );
+
+  const copyContext = (copyContext: string) => {
     let timer: number;
     setOpen((s) => {
       if (!open) {
@@ -46,10 +50,11 @@ function DetailPage() {
       }
       return !s;
     });
-    navigator.clipboard.writeText(scpInfo?.data?.status?.ssh?.pkdata);
+    navigator.clipboard.writeText(copyContext);
   };
 
   const deleteInfra = async () => {
+    const result = await request.post('/api/infra/awsDeleteCluster', { infraName, kubeconfig });
     const res = await request.post('/api/infra/awsDelete', { infraName, kubeconfig });
     toPage(PageType.FrontPage, '');
   };
@@ -63,6 +68,17 @@ function DetailPage() {
           <span> time: {formatTime(scpInfo?.data?.metadata?.creationTimestamp)}</span>
           <span>kuberentes:v1.24.0</span>
           <span>connections: {scpInfo?.data?.status?.connections} </span>
+          <span>user: {clusterInfo?.data.spec.ssh.user} </span>
+          <div>
+            password:
+            <span
+              ref={setTarget}
+              className={clsx(styles.copyssh)}
+              onClick={() => copyContext(clusterInfo?.data.spec.ssh.passwd)}
+            >
+              复制密码
+            </span>
+          </div>
         </div>
         <button className={styles.releaseBtn} color="#DE5462" onClick={() => deleteInfra()}>
           释放集群
@@ -96,7 +112,7 @@ function DetailPage() {
                   <TableHeaderCell className="w-20">角色</TableHeaderCell>
                   <TableHeaderCell className="w-20">规格</TableHeaderCell>
                   <TableHeaderCell className={styles.tableTitleIp}>IP</TableHeaderCell>
-                  <TableHeaderCell className="w-20">ssh密码</TableHeaderCell>
+                  <TableHeaderCell className="w-20">ssh密钥</TableHeaderCell>
                   <TableHeaderCell className="w-20">操作</TableHeaderCell>
                 </TableRow>
               </TableHeader>
@@ -115,7 +131,7 @@ function DetailPage() {
                         <TableCell
                           ref={setTarget}
                           className={clsx(styles.copyssh)}
-                          onClick={() => copySSH()}
+                          onClick={() => copyContext(scpInfo?.data.status.ssh.pkdata)}
                         >
                           复制
                         </TableCell>

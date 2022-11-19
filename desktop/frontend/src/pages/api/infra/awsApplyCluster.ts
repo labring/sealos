@@ -7,7 +7,7 @@ import { CRDTemplateBuilder } from '../../../services/backend/wrapper';
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { infraName, kubeconfig, clusterName } = req.body;
+  const { infraName, kubeconfig, clusterName, userName, userPassword } = req.body;
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
   if (kube_user === null) {
@@ -15,7 +15,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
   const namespace = GetUserDefaultNameSpace(kube_user.name);
-  // const namespace = 'infra-system';
   const image1 = req.body.images.image1;
   const image2 = req.body.images.image2;
   const clusterCRD = CRDTemplateBuilder(clusterCRDTemplate, {
@@ -23,7 +22,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     namespace,
     infraName,
     image1,
-    image2
+    image2,
+    userName,
+    userPassword
   });
 
   try {

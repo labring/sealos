@@ -1,3 +1,5 @@
+$color-btn-blue: #3981f5;
+
 .detailPage {
   display: flex;
   height: 100%;
@@ -62,7 +64,7 @@
         box-sizing: border-box;
         width: 90px;
         height: 26px;
-        border: 1px solid #3981f5;
+        border: 1px solid $color-btn-blue;
         border-radius: 5px;
         display: flex;
         justify-content: center;
@@ -71,7 +73,7 @@
         .navBtnLabel {
           height: 16px;
           line-height: 16px;
-          color: #3981f5;
+          color: $color-btn-blue;
           padding-left: 4px;
         }
       }
@@ -113,7 +115,7 @@
   font-size: 10px;
   line-height: 11px;
   text-decoration-line: underline;
-  color: #3981f5;
+  color: $color-btn-blue;
   text-underline-offset: 4px;
   cursor: pointer;
 }

@@ -20,15 +20,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    const clusterRes = await kc.makeApiClient(k8s.CustomObjectsApi).deleteClusterCustomObject(
+    const result = await kc.makeApiClient(k8s.CustomObjectsApi).deleteNamespacedCustomObject(
       meta.group,
       meta.version,
+      meta.namespace,
       meta.plural,
-      // infraName // cluster name
-      'zjy-3'
+      infraName // cluster name
     );
 
-    JsonResp(clusterRes, res);
+    JsonResp(result, res);
   } catch (err) {
     if (err instanceof k8s.HttpError) {
       console.log(err.body.message);
