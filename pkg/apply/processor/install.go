@@ -18,6 +18,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/confirm"
@@ -40,29 +43,33 @@ import (
 var ForceOverride bool
 
 type InstallProcessor struct {
-	ClusterFile     clusterfile.Interface
-	ImageManager    types.ImageService
-	ClusterManager  types.ClusterService
-	RegistryManager types.RegistryService
-	Guest           guest.Interface
-	NewMounts       []v2.MountImage
-	NewImages       []string
+	ClusterFile      clusterfile.Interface
+	ImageManager     types.ImageService
+	ClusterManager   types.ClusterService
+	RegistryManager  types.RegistryService
+	Guest            guest.Interface
+	NewMounts        []v2.MountImage
+	NewImages        []string
+	imagesToOverride []string
 }
 
 func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
-	if ForceOverride {
-		prompt := "are you sure to override these app?"
-		cancel := "you have canceled to override these apps !"
-		pass, err := confirm.Confirm(prompt, cancel)
-		if err != nil {
-			return err
-		}
-		if !pass {
-			return errors.New(cancel)
-		}
+	if ForceOverride || len(c.imagesToOverride) == 0 {
+		return nil
+	}
+
+	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
+	cancel := "you have canceled to override these apps!"
+	pass, err := confirm.Confirm(prompt, cancel)
+	if err != nil {
+		return err
+	}
+	if !pass {
+		return errors.New(cancel)
 	}
 	return nil
 }
+
 func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
@@ -77,22 +84,24 @@ func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 
 	return nil
 }
+
 func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
+		c.SyncStatusAndCheck,
 		c.ConfirmOverrideApps,
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
-		//i.GetPhasePluginFunc(plugin.PhasePreGuest),
+		// i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
 		c.PostProcess,
-		//i.GetPhasePluginFunc(plugin.PhasePostInstall),
+		// i.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
 	return todoList, nil
 }
 
-func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
+func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
@@ -101,8 +110,17 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err = SyncClusterStatus(current, c.ClusterManager, c.ImageManager, false); err != nil {
 		return err
 	}
-	err = c.RegistryManager.Pull(c.NewImages...)
-	if err != nil {
+	imageList := sets.NewString(current.Spec.Image...)
+	for _, img := range c.NewImages {
+		if imageList.Has(img) {
+			c.imagesToOverride = append(c.imagesToOverride, img)
+		}
+	}
+	return nil
+}
+
+func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
+	if err := c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, c.NewImages...); err != nil {
 		return err
 	}
 	ociList, err := c.ImageManager.Inspect(c.NewImages...)
@@ -123,16 +141,16 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	for _, img := range c.NewImages {
 		mount := cluster.FindImage(img)
 		if mount == nil {
-			//create
+			// create
 			mount = &v2.MountImage{
 				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
 				ImageName: img,
 			}
 			cluster.Spec.Image = append(cluster.Spec.Image, img)
+		} else if !ForceOverride {
+			continue
 		} else {
-			if !ForceOverride {
-				mount = nil
-			}
+			logger.Debug("trying to override app %s", img)
 		}
 		if mount != nil {
 			manifest, err := c.ClusterManager.Create(mount.Name, img)
@@ -149,9 +167,10 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	return nil
 }
-func (c *InstallProcessor) PostProcess(cluster *v2.Cluster) error {
+
+func (c *InstallProcessor) PostProcess(*v2.Cluster) error {
 	if len(c.NewMounts) == 0 {
-		logger.Info("succeeded install app in this cluster: no change apps")
+		logger.Info("no apps has been changed")
 	} else {
 		logger.Info("succeeded install app in this cluster")
 	}
@@ -178,6 +197,9 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return nil
 	}
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	if stringsutil.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
+		hosts = append(hosts, cluster.GetRegistryIPAndPort())
+	}
 	fs, err := filesystem.NewRootfsMounter(c.NewMounts)
 	if err != nil {
 		return err

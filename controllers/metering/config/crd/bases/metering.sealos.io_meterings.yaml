@@ -1,0 +1,132 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: meterings.metering.sealos.io
+spec:
+  group: metering.sealos.io
+  names:
+    kind: Metering
+    listKind: MeteringList
+    plural: meterings
+    singular: metering
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.owner
+      name: owner
+      type: string
+    - description: ' The last two digits are decimals ,100 = 1¥'
+      jsonPath: .status.totalAmount
+      name: totalAmount
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Metering is the Schema for the meterings API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              namespace:
+                type: string
+              owner:
+                type: string
+              resources:
+                additionalProperties:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                  x-kubernetes-int-or-string: true
+                description: ResourceList is a set of (resource name, quantity) pairs.
+                type: object
+            required:
+            - namespace
+            - owner
+            type: object
+          status:
+            properties:
+              billingListD:
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              billingListH:
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              billingListM:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                items:
+                  properties:
+                    amount:
+                      format: int64
+                      type: integer
+                    settled:
+                      type: boolean
+                    timeInterval:
+                      type: string
+                    timeStamp:
+                      format: int64
+                      type: integer
+                  type: object
+                type: array
+              latestUpdateTime:
+                format: int64
+                type: integer
+              totalAmount:
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

@@ -56,11 +56,18 @@ func (d *ImageService) Save(imageName, archiveName string) error {
 	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah push %s %s:%s:%s", imageName, types.DefaultTransport, archiveName, imageName))
 }
 
-func (d *ImageService) Load(archiveName string) error {
+func (d *ImageService) Load(archiveName string) (string, error) {
 	if !fileutil.IsExist(archiveName) {
-		return errors.New("archive file is not exist")
+		return "", errors.New("archive file is not exist")
 	}
-	return exec.Cmd("bash", "-c", fmt.Sprintf("buildah pull %s:%s", types.DefaultTransport, archiveName))
+	output, err := exec.Output("bash", "-c", fmt.Sprintf("buildah pull %s:%s", types.DefaultTransport, archiveName))
+	if err != nil {
+		return "", err
+	}
+	l := len(output)
+	id := string(output[l-65 : l-1])
+	logger.Info("load image %s", id)
+	return id, nil
 }
 
 func (d *ImageService) Remove(force bool, images ...string) error {
@@ -117,30 +124,20 @@ func (d *ImageService) Build(options *types.BuildOptions, contextDir, imageName 
 	if err != nil {
 		return err
 	}
-	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths, options.BasicAuth)
-	platform := strings.Split(options.Platform, "/")
-	var platformVar v1.Platform
-	if len(platform) > 2 {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-			Variant:      platform[2],
-		}
-	} else {
-		platformVar = v1.Platform{
-			Architecture: platform[1],
-			OS:           platform[0],
-		}
-	}
+	is := registry.NewImageSaver(context.Background(), options.MaxPullProcs, auths)
+	platformVar := types.ParsePlatform(options.Platform)
 	logger.Info("pull images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
-
-	images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
-	if err != nil {
-		return errors.Wrap(err, "save images failed in this context")
+	if options.SaveImage {
+		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), platformVar)
+		if err != nil {
+			return errors.Wrap(err, "save images failed in this context")
+		}
+		logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
+	} else {
+		logger.Warn("current saveImage=false, skip pull images")
 	}
-	logger.Info("output images %v for platform is %s", images, strings.Join([]string{platformVar.OS, platformVar.Architecture}, "/"))
 	options.Tag = imageName
-	cmd := fmt.Sprintf("buildah build %s %s", options.String(), contextDir)
+	cmd := fmt.Sprintf("buildah build --tls-verify=false %s %s", options.String(), contextDir)
 	return exec.Cmd("bash", "-c", cmd)
 }
 

@@ -23,33 +23,43 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-// SaveImage can save a list of images of the specified platform
-type Save interface {
+// Registry can save a list of images of the specified platform
+type Registry interface {
 	// SaveImages is not concurrently safe
 	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)
+	ListRegistry()
+	ListImages(registryName, search string)
+	RmiImage(registryName, imageName string) error
 }
 
-type DefaultImageSaver struct {
+type DefaultImage struct {
 	ctx            context.Context
 	domainToImages map[string][]Named
 	progressOut    progress.Output
 	maxPullProcs   int
-	basicAuth      bool
 	auths          map[string]types.AuthConfig
 }
 
-func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig, basicAuth bool) Save {
+func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types.AuthConfig) Registry {
 	if ctx == nil {
 		ctx = context.Background()
 	}
 	if auths == nil {
 		auths = make(map[string]types.AuthConfig)
 	}
-	return &DefaultImageSaver{
+	return &DefaultImage{
 		ctx:            ctx,
 		domainToImages: make(map[string][]Named),
 		maxPullProcs:   maxPullProcs,
-		basicAuth:      basicAuth,
 		auths:          auths,
+	}
+}
+
+func NewImage(auths map[string]types.AuthConfig) Registry {
+	if auths == nil {
+		auths = make(map[string]types.AuthConfig)
+	}
+	return &DefaultImage{
+		auths: auths,
 	}
 }

@@ -1,0 +1,127 @@
+.taskbar {
+  --bg1: rgba(255, 255, 255, .3);
+  --bg2: rgba(255, 255, 255, 0.67);
+
+  position: absolute;
+  height: 60px;
+  color: #fff;
+  background: var(--bg1);
+  bottom: 12px;
+  right: 0;
+  left: 0;
+  z-index: 10000;
+  display: flex;
+  padding: 0px 6px;
+  margin: 0 12px;
+  border-radius: 30px;
+  justify-content: space-between;
+}
+
+.taskcont {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.taskright {
+  width: auto;
+  height: 100%;
+  display: flex;
+}
+
+.taskIcon {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 24px;
+
+  svg {
+    color: #303030;
+  }
+}
+
+.taskDate {
+  display: flex;
+  padding: 0 8px;
+  font-size: 11px;
+  flex-direction: column;
+  justify-content: center;
+
+  div {
+    width: 100%;
+    text-align: right;
+    font-weight: 400;
+  }
+}
+
+.tasksCont {
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.tsbar {
+  width: auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.tsIcon {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  margin: auto 3px;
+  box-sizing: border-box;
+  border-radius: 0;
+  background: rgba(254, 254, 254, 0);
+  transform-origin: center;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+
+  &:after {
+    content: "";
+    position: absolute;
+    display: block;
+    bottom: 0;
+    width: 0px;
+    height: 3px;
+    border-radius: 4px;
+    background: #858585;
+  }
+
+  &.opened:after {
+    width: 6px;
+  }
+
+  &.actived:after {
+    width: 12px;
+    background: var(--clrPrm);
+  }
+
+  &:hover,
+  &.actived {
+    background: #fff;
+    transition: all 0.2s ease-in-out;
+  }
+}
+
+.graybd {
+  border: solid 1px transparent;
+  height: 1rem;
+}
+.graybd:hover {
+  border: solid 1px #a1a1a1;
+  border-width: 0 0 0 2px;
+}
+
+.avatar {
+  border-radius: 100%;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+

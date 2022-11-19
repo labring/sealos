@@ -1,0 +1,47 @@
+.frontCont {
+  // height: 360px;
+  border-radius: 8px;
+}
+.ribcont {
+  background: var(--rib-bg);
+  margin: auto 6px;
+  height: auto;
+  width: 120px;
+  transform-origin: center;
+  transition: all ease-in-out 200ms;
+  color: var(--dark-txt);
+
+  &:hover {
+    transform: scale(1.06);
+    transform: translateY(-4px);
+  }
+
+  .uicon {
+    color: #aaa;
+    margin-right: 2px;
+  }
+
+  .bluestar {
+    color: #006ff0;
+  }
+}
+.amzApps {
+  background: #670cd7;
+  background: -webkit-linear-gradient(48deg, #522f8b 0%, rgba(113, 35, 133, 1) 100%);
+  background: -o-linear-gradient(48deg, #522f8b 0%, rgba(113, 35, 133, 1) 100%);
+  background: linear-gradient(138deg, #522f8b 0%, rgba(113, 35, 133, 1) 100%);
+}
+
+.amzGames {
+  background: #214458;
+  background: -webkit-linear-gradient(47deg, #214458 0%, #098793 100%);
+  background: -o-linear-gradient(47deg, #214458 0%, #098793 100%);
+  background: linear-gradient(137deg, #214458 0%, #098793 100%);
+}
+
+.amzMovies {
+  background: #217558;
+  background: -webkit-linear-gradient(47deg, #217558 0%, #0fa345 100%);
+  background: -o-linear-gradient(47deg, #217558 0%, #0fa345 100%);
+  background: linear-gradient(137deg, #217558 0%, #0fa345 100%);
+}

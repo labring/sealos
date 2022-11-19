@@ -20,8 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Go
-        uses: actions/setup-go@v3
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -29,7 +29,7 @@ jobs:
         id: prepare
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          echo ::set-output name=tag_name::${TAG}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
       - name: Note
         id: Note
@@ -41,14 +41,12 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu upx \
-            libbtrfs-dev libgpgme-dev libdevmapper-dev
-
-      - name: set up buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v1
-        with:
-          version: latest
+          sudo apt install -y gcc-aarch64-linux-gnu \
+            libbtrfs-dev libgpgme-dev libdevmapper-dev \
+            qemu-user-static binfmt-support
+          make install.upx
+          sudo cp tools/upx /usr/bin/
+          sudo chmod a+x /usr/bin/upx
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -66,27 +64,3 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
-      - name: build (and publish) main image
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
-          --push \
-          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f docker/lvscare/Dockerfile \
-          .
-      - name: build (and publish) tag image
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/lvscare
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --build-arg VERSION=${{ steps.prepare.outputs.tag_name }} \
-          --push \
-          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f docker/lvscare/Dockerfile \
-          .

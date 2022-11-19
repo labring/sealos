@@ -21,8 +21,10 @@ import (
 	"net"
 	"strings"
 
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
+	"github.com/labring/sealos/pkg/utils/logger"
+	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -39,38 +41,64 @@ func initCluster(clusterName string) *v2.Cluster {
 }
 
 func PreProcessIPList(joinArgs *Cluster) error {
-	if err := iputils.AssemblyIPList(&joinArgs.Masters); err != nil {
+	masters, err := iputils.ParseIPList(joinArgs.Masters)
+	if err != nil {
 		return err
 	}
-	if err := iputils.AssemblyIPList(&joinArgs.Nodes); err != nil {
+	nodes, err := iputils.ParseIPList(joinArgs.Nodes)
+	if err != nil {
 		return err
 	}
-
-	masters := strings2.SplitRemoveEmpty(joinArgs.Masters, ",")
-	nodes := strings2.SplitRemoveEmpty(joinArgs.Nodes, ",")
-	length := len(masters) + len(nodes)
-	data := sets.NewString(masters...)
-	data.Insert(nodes...)
-	if length != data.Len() {
-		return fmt.Errorf("has duplicate ip in iplist")
+	mset := sets.NewString(masters...)
+	nset := sets.NewString(nodes...)
+	ret := mset.Intersection(nset)
+	if len(ret.List()) > 0 {
+		return fmt.Errorf("has duplicate ip: %v", ret.List())
 	}
+	joinArgs.Masters = strings.Join(masters, ",")
+	joinArgs.Nodes = strings.Join(nodes, ",")
 	return nil
 }
 
 func removeIPListDuplicatesAndEmpty(ipList []string) []string {
-	return strings2.RemoveDuplicate(strings2.RemoveStrSlice(ipList, []string{""}))
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(ipList, []string{""}))
 }
 
 func IsIPList(args string) bool {
-	ipList := strings.Split(args, ",")
+	return validateIPList(args) == nil
+}
 
-	for _, i := range ipList {
+func validateIPList(s string) error {
+	list := strings.Split(s, ",")
+	for _, i := range list {
 		if !strings.Contains(i, ":") {
-			return net.ParseIP(i) != nil
+			if net.ParseIP(i) == nil {
+				return fmt.Errorf("invalid IP %s", i)
+			}
+			continue
 		}
 		if _, err := net.ResolveTCPAddr("tcp", i); err != nil {
-			return false
+			return fmt.Errorf("invalid TCP address %s", i)
 		}
 	}
-	return true
+	return nil
+}
+
+// GetHostArch returns the host architecture of the given ip using SSH.
+// Note that hosts of the same type(master/node) must have the same architecture,
+// so we only need to check the first host of the given type.
+func GetHostArch(sshClient ssh.Interface, ip string) string {
+	var arch = string(v2.AMD64)
+
+	cmd, err := sshClient.Cmd(ip, "arch")
+	if err != nil {
+		logger.Error("get host arch failed: %v, defaults to amd64", err)
+		return arch
+	}
+	cmdStr := strings.TrimSpace(string(cmd))
+	if cmdStr != "x86_64" {
+		arch = string(v2.ARM64)
+	}
+
+	return arch
 }

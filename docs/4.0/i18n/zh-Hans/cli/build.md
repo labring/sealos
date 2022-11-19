@@ -1,15 +1,15 @@
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-# 自定义构建应用镜像
+# Customize applications image
 
-## 基于 helm 构建 CloudImage
+## Build a CloudImage from helm
 
-参考： [Building an Example CloudImage](../examples/build-example-cloudimage.md).
+See [Building an Example CloudImage](../getting-started/build-example-cloudimage.md).
 
-## 构建 calico 镜像
+## Build calico image
 
-### 目录结构
+### Directory structure
 
 ```
 .
@@ -27,7 +27,8 @@ import TabItem from '@theme/TabItem';
 
 ### Dockerfile
 
-我们可以将所有内容构建到单个镜像中 (`FROM labring/kubernetes`),或者我们也可以使用 `FROM scratch` 指令从零构建应用镜像。
+We can build everything into a single image (`FROM labring/kubernetes`),
+or we can build applications images where `FROM scratch` is used.
 
 <Tabs groupId="imageNum">
   <TabItem value="single" label="Single image" default>
@@ -43,7 +44,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
   <TabItem value="application" label="Application images">
 
-该镜像不包含  kubernetes , 所以应该在已有 Kubernetes 集群中运行。
+This image will not contains kubernetes, should run it on an already exist cluster.
 
 ```dockerfile
 FROM scratch
@@ -57,15 +58,15 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
 </Tabs>
 
-1. `CalicoImageList` ：docker镜像列表文件。
-2. `cni` ：包含 `kubectl apply` 命令要执行的配置文件。
-3. `registry` ：registry 镜像仓库数据保存目录。
-4. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
-5. `manifests` ：将 yaml 文件中的镜像解析到 docker 镜像列表中。
+1. `CalicoImageList` is docker image list file.
+2. `cni` contains kubectl apply config files.
+3. `registry` is the registry data directory.
+4. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64   -f Kubefile .` builds the oci image.
+5. `manifests` parse yaml images to docker image list.
 
-## 构建 calico 镜像
+## Build calico image
 
-### 目录结构
+### Directory structure
 
 ```
 .
@@ -79,8 +80,8 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
 
 <Tabs groupId="imageNum">
   <TabItem value="single" label="All in one" default>
-
-该镜像包含 kubernetes 和 calico。
+  
+This image contains kubernetes and calico.
 
 ```dockerfile
 FROM labring/kubernetes:v1.24.0-amd64
@@ -91,7 +92,7 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
   <TabItem value="multiple" label="Application images">
 
-该镜像仅包含 calico。
+Only has calico images
 
 ```dockerfile
 FROM scratch
@@ -102,12 +103,12 @@ CMD ["kubectl apply -f cni/tigera-operator.yaml","kubectl apply -f cni/custom-re
   </TabItem>
 </Tabs>
 
-1. `cni`： 包含 `kubectl apply` 命令要执行的配置文件。
-2. `buildah build -t kubernetes-calico:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
+1. `cni` contains kubectl apply config files
+2. `sealos build -t kubernetes-calico:1.24.0-amd64 --platform linux/amd64  -f Kubefile .` builds the oci image.
 
-## 构建 openebs 镜像
+## Build openebs image
 
-### 目录结构
+### Directory structure
 
 ```
 .
@@ -144,19 +145,31 @@ CMD ["kubectl apply -f manifests/openebs-operator.yaml"]
   </TabItem>
 </Tabs>
 
-1. `cni` ： 包含 `kubectl apply` 命令要执行的配置文件。
-2. `buildah build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --arch amd64 --os linux -f Kubefile .` ：构建 OCI 镜像。
+1. `cni` contains kubectl apply config files
+2. `sealos build -t labring/kubernetes-calico-openebs:1.24.0-amd64 --platform linux/amd64  -f Kubefile .` builds the oci image.
 
-::: 建议
-
-您需要将calico cmd添加到openebs cmd层，因为dockerfile会覆盖旧层。
+:::tip
+You'll need to add calico cmd to openebs cmd layer, because dockerfile overrides the old layer.
 :::
 
-## 构建跨平台镜像
+## Build multi-architecture images
+
+### Download buildah for x86_64 platform
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+### Download buildah for aarch64 platform
+```shell
+wget -qO "buildah" https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.arm64  && \
+  chmod a+x buildah && mv buildah /usr/bin
+```
+
+### Cross-platform build image
 
 ```shell
-$ buildah build -t $prefix/oci-kubernetes:$version-amd64 --arch amd64 --os linux -f Kubefile  .
-$ buildah build -t $prefix/oci-kubernetes:$version-arm64 --arch arm64 --os linux -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-amd64 --platform linux/amd64  -f Kubefile  .
+$ sealos build -t $prefix/oci-kubernetes:$version-arm64 --platform linux/arm64  -f Kubefile  .
 
 $ buildah login --username $username --password $password $domain
 $ buildah push $prefix/oci-kubernetes:$version-amd64

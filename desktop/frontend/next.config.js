@@ -1,12 +1,28 @@
 // @ts-check
+const runtimeCaching = require('next-pwa/cache');
+const isProduction = process.env.NODE_ENV === 'production';
+
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  runtimeCaching,
+  disable: !isProduction
+});
 
 /**
  * @type {import('next').NextConfig}
  **/
-const nextConfig = {
-  reactStrictMode: true,
-  swcMinify: true,
+const nextConfig = withPWA({
+  reactStrictMode: false,
+  swcMinify: isProduction,
   output: 'standalone',
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.*.com'
+      }
+    ]
+  },
   webpack(config) {
     config.module.rules.push({
       test: /\.svg$/i,
@@ -16,12 +32,16 @@ const nextConfig = {
 
     return config;
   },
+  images: {
+    domains: ['avatars.githubusercontent.com']
+  },
   experimental: {
-    images: {
-      allowFutureImage: true
-    },
     newNextLinkBehavior: true
+    // fallbackNodePolyfills: false
+  },
+  typescript: {
+    ignoreBuildErrors: true
   }
-};
+});
 
 module.exports = nextConfig;

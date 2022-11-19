@@ -16,10 +16,6 @@ limitations under the License.
 
 package v1beta1
 
-import (
-	"github.com/labring/sealos/pkg/constants"
-)
-
 const (
 	DefaultUserRoot = "root"
 )
@@ -43,9 +39,4 @@ type Protocol string
 const (
 	ProtocolTCP Protocol = "tcp"
 	ProtocolUDP Protocol = "udp"
-)
-
-var (
-	DefaultConfigPath = constants.GetHomeDir() + "/.sealos"
-	DefaultPKFile     = constants.GetHomeDir() + "/.ssh/id_rsa"
 )

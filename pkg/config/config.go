@@ -20,13 +20,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/imdario/mergo"
+	"sigs.k8s.io/yaml"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/maps"
-
-	"sigs.k8s.io/yaml"
 )
 
 /*
@@ -155,11 +155,12 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal config: %v", err)
 		}
-		// todo: should we allow merge into a non-exists file?
-		if len(configMap) == 0 {
-			continue
+		if err := mergo.Merge(&configMap, &mergeConfigMap,
+			mergo.WithOverwriteWithEmptyValue, mergo.WithOverrideEmptySlice,
+			mergo.WithAppendSlice, mergo.WithTypeCheck, mergo.WithSliceDeepCopy,
+		); err != nil {
+			return nil, fmt.Errorf("merge: %v", err)
 		}
-		maps.DeepMerge(&configMap, &mergeConfigMap)
 
 		cfg, err := yaml.Marshal(&configMap)
 		if err != nil {

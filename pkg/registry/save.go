@@ -23,10 +23,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/passwd"
 	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/labring/sealos/pkg/passwd"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -40,6 +39,7 @@ import (
 	"github.com/docker/docker/pkg/streamformatter"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
@@ -57,7 +57,7 @@ const (
 	manifestOCIIndex = "application/vnd.oci.image.index.v1+json"
 )
 
-func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
+func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
 	//init a pipe for display pull message
 	reader, writer := io.Pipe()
 	defer func() {
@@ -96,7 +96,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 			if auth.ServerAddress == "" {
 				auth.ServerAddress = tmpnameds[0].domain
 			}
-			registry, err := NewProxyRegistry(is.ctx, dir, auth, is.basicAuth)
+			registry, err := NewProxyRegistry(is.ctx, dir, auth)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
@@ -108,8 +108,7 @@ func (is *DefaultImageSaver) SaveImages(images []string, dir string, platform v1
 
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
-				logger.Warn("save domain %s image %s error: %v", tmpnameds[0].domain, tmpnameds[0].FullName(), err)
-				return nil
+				return errors.WithMessagef(err, "save domain %s image %s", tmpnameds[0].domain, tmpnameds[0].FullName())
 			}
 			outImages = append(outImages, tmpnameds[0].FullName())
 			return nil
@@ -147,7 +146,7 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	}
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig, basicAuth bool) (distribution.Namespace, error) {
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
@@ -166,11 +165,11 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 		return nil, fmt.Errorf("create local registry error: %v", err)
 	}
 
-	proxyRegistry, err := proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy, basicAuth)
+	proxyRegistry, err := proxy.NewRegistryPullThroughCache(ctx, registry, config.Proxy)
 	if err != nil { // try http
 		logger.Warn("https error: %v, sealos try to use http", err)
 		config.Proxy.RemoteURL = strings.Replace(config.Proxy.RemoteURL, HTTPS, HTTP, 1)
-		proxyRegistry, err = proxy.NewRegistryPullThroughCache(ctx, registry, driver, config.Proxy, basicAuth)
+		proxyRegistry, err = proxy.NewRegistryPullThroughCache(ctx, registry, config.Proxy)
 		if err != nil {
 			return nil, fmt.Errorf("create proxy registry error: %v", err)
 		}
@@ -178,7 +177,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	return proxyRegistry, nil
 }
 
-func (is *DefaultImageSaver) save(nameds []Named, platform v1.Platform, registry distribution.Namespace) error {
+func (is *DefaultImage) save(nameds []Named, platform v1.Platform, registry distribution.Namespace) error {
 	repo, err := is.getRepository(nameds[0], registry)
 	if err != nil {
 		return err
@@ -197,7 +196,7 @@ func (is *DefaultImageSaver) save(nameds []Named, platform v1.Platform, registry
 	return nil
 }
 
-func (is *DefaultImageSaver) getRepository(named Named, registry distribution.Namespace) (distribution.Repository, error) {
+func (is *DefaultImage) getRepository(named Named, registry distribution.Namespace) (distribution.Repository, error) {
 	repoName, err := reference.WithName(named.Repo())
 	if err != nil {
 		return nil, fmt.Errorf("get repository name error: %v", err)
@@ -209,7 +208,7 @@ func (is *DefaultImageSaver) getRepository(named Named, registry distribution.Na
 	return repo, nil
 }
 
-func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
+func (is *DefaultImage) saveManifestAndGetDigest(nameds []Named, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return nil, fmt.Errorf("get manifest service error: %v", err)
@@ -244,7 +243,7 @@ func (is *DefaultImageSaver) saveManifestAndGetDigest(nameds []Named, repo distr
 	return imageDigests, nil
 }
 
-func (is *DefaultImageSaver) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
+func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, imagedigest digest.Digest, platform v1.Platform) (digest.Digest, error) {
 	mani, err := manifest.Get(is.ctx, imagedigest, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return digest.Digest(""), fmt.Errorf("get image manifest error: %v", err)
@@ -278,7 +277,7 @@ func (is *DefaultImageSaver) handleManifest(manifest distribution.ManifestServic
 	}
 }
 
-func (is *DefaultImageSaver) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
+func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distribution.Repository) error {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return fmt.Errorf("failed to get blob service: %v", err)

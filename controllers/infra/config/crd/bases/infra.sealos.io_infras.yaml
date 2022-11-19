@@ -35,6 +35,9 @@ spec:
           spec:
             description: InfraSpec defines the desired state of Infra
             properties:
+              availabilityZone:
+                description: Availability Zone
+                type: string
               hosts:
                 items:
                   properties:
@@ -48,6 +51,13 @@ spec:
                       items:
                         properties:
                           capacity:
+                            type: integer
+                          id:
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: Device name
                             type: string
                           type:
                             description: 'ENUM: system/data'
@@ -67,11 +77,21 @@ spec:
                     metadata:
                       items:
                         properties:
-                          id:
-                            type: string
-                          ips:
+                          diskId:
                             items:
                               type: string
+                            type: array
+                          id:
+                            type: string
+                          ipaddress:
+                            description: 0 private , 1 public
+                            items:
+                              properties:
+                                ipType:
+                                  type: string
+                                ipValue:
+                                  type: string
+                              type: object
                             type: array
                         type: object
                       type: array
@@ -104,6 +124,10 @@ spec:
                     type: string
                   pkPasswd:
                     type: string
+                  pkdata:
+                    type: string
+                  pkname:
+                    type: string
                   port:
                     type: integer
                   user:
@@ -116,6 +140,104 @@ spec:
             type: object
           status:
             description: InfraStatus defines the observed state of Infra
+            properties:
+              connections:
+                type: string
+              hosts:
+                items:
+                  properties:
+                    arch:
+                      description: 'ENUM: amd64/arm64 (NOTE: the default value is
+                        amd64)'
+                      type: string
+                    count:
+                      type: integer
+                    disks:
+                      items:
+                        properties:
+                          capacity:
+                            type: integer
+                          id:
+                            items:
+                              type: string
+                            type: array
+                          name:
+                            description: Device name
+                            type: string
+                          type:
+                            description: 'ENUM: system/data'
+                            type: string
+                        type: object
+                      type: array
+                    flavor:
+                      description: ecs.t5-lc1m2.large
+                      type: string
+                    image:
+                      description: 'ENUM: ubuntu:20.04, centos:7.2 and so on.'
+                      type: string
+                    index:
+                      description: Find the mapping between expected hosts and actual
+                        hosts
+                      type: integer
+                    metadata:
+                      items:
+                        properties:
+                          diskId:
+                            items:
+                              type: string
+                            type: array
+                          id:
+                            type: string
+                          ipaddress:
+                            description: 0 private , 1 public
+                            items:
+                              properties:
+                                ipType:
+                                  type: string
+                                ipValue:
+                                  type: string
+                              type: object
+                            type: array
+                        type: object
+                      type: array
+                    resources:
+                      additionalProperties:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                        x-kubernetes-int-or-string: true
+                      description: 'key values resources. cpu: 2 memory: 4 other resources
+                        like GPU'
+                      type: object
+                    roles:
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                type: array
+              ssh:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                properties:
+                  passwd:
+                    type: string
+                  pk:
+                    type: string
+                  pkPasswd:
+                    type: string
+                  pkdata:
+                    type: string
+                  pkname:
+                    type: string
+                  port:
+                    type: integer
+                  user:
+                    type: string
+                type: object
+              status:
+                type: string
             type: object
         type: object
     served: true

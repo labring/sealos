@@ -1,0 +1,505 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: infra-system
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.0
+  creationTimestamp: null
+  name: infras.infra.sealos.io
+spec:
+  group: infra.sealos.io
+  names:
+    kind: Infra
+    listKind: InfraList
+    plural: infras
+    singular: infra
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: Infra is the Schema for the infras API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: InfraSpec defines the desired state of Infra
+              properties:
+                availabilityZone:
+                  description: Availability Zone
+                  type: string
+                hosts:
+                  items:
+                    properties:
+                      arch:
+                        description: 'ENUM: amd64/arm64 (NOTE: the default value is
+                        amd64)'
+                        type: string
+                      count:
+                        type: integer
+                      disks:
+                        items:
+                          properties:
+                            capacity:
+                              type: integer
+                            id:
+                              items:
+                                type: string
+                              type: array
+                            name:
+                              description: Device name
+                              type: string
+                            type:
+                              description: 'ENUM: system/data'
+                              type: string
+                          type: object
+                        type: array
+                      flavor:
+                        description: ecs.t5-lc1m2.large
+                        type: string
+                      image:
+                        description: 'ENUM: ubuntu:20.04, centos:7.2 and so on.'
+                        type: string
+                      index:
+                        description: Find the mapping between expected hosts and actual
+                          hosts
+                        type: integer
+                      metadata:
+                        items:
+                          properties:
+                            diskId:
+                              items:
+                                type: string
+                              type: array
+                            id:
+                              type: string
+                            ipaddress:
+                              description: 0 private , 1 public
+                              items:
+                                properties:
+                                  ipType:
+                                    type: string
+                                  ipValue:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                      resources:
+                        additionalProperties:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'key values resources. cpu: 2 memory: 4 other resources
+                        like GPU'
+                        type: object
+                      roles:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  type: array
+                regionIDs:
+                  description: RegionIDs is cloud provider regionID list
+                  items:
+                    type: string
+                  type: array
+                ssh:
+                  properties:
+                    passwd:
+                      type: string
+                    pk:
+                      type: string
+                    pkPasswd:
+                      type: string
+                    pkdata:
+                      type: string
+                    pkname:
+                      type: string
+                    port:
+                      type: integer
+                    user:
+                      type: string
+                  type: object
+                zoneIDs:
+                  items:
+                    type: string
+                  type: array
+              type: object
+            status:
+              description: InfraStatus defines the observed state of Infra
+              properties:
+                connections:
+                  type: string
+                hosts:
+                  items:
+                    properties:
+                      arch:
+                        description: 'ENUM: amd64/arm64 (NOTE: the default value is
+                        amd64)'
+                        type: string
+                      count:
+                        type: integer
+                      disks:
+                        items:
+                          properties:
+                            capacity:
+                              type: integer
+                            id:
+                              items:
+                                type: string
+                              type: array
+                            name:
+                              description: Device name
+                              type: string
+                            type:
+                              description: 'ENUM: system/data'
+                              type: string
+                          type: object
+                        type: array
+                      flavor:
+                        description: ecs.t5-lc1m2.large
+                        type: string
+                      image:
+                        description: 'ENUM: ubuntu:20.04, centos:7.2 and so on.'
+                        type: string
+                      index:
+                        description: Find the mapping between expected hosts and actual
+                          hosts
+                        type: integer
+                      metadata:
+                        items:
+                          properties:
+                            diskId:
+                              items:
+                                type: string
+                              type: array
+                            id:
+                              type: string
+                            ipaddress:
+                              description: 0 private , 1 public
+                              items:
+                                properties:
+                                  ipType:
+                                    type: string
+                                  ipValue:
+                                    type: string
+                                type: object
+                              type: array
+                          type: object
+                        type: array
+                      resources:
+                        additionalProperties:
+                          anyOf:
+                            - type: integer
+                            - type: string
+                          pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                          x-kubernetes-int-or-string: true
+                        description: 'key values resources. cpu: 2 memory: 4 other resources
+                        like GPU'
+                        type: object
+                      roles:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                  type: array
+                ssh:
+                  description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                  properties:
+                    passwd:
+                      type: string
+                    pk:
+                      type: string
+                    pkPasswd:
+                      type: string
+                    pkdata:
+                      type: string
+                    pkname:
+                      type: string
+                    port:
+                      type: integer
+                    user:
+                      type: string
+                  type: object
+                status:
+                  type: string
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: infra-controller-manager
+  namespace: infra-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: infra-leader-election-role
+  namespace: infra-system
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - coordination.k8s.io
+  resources:
+  - leases
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - update
+  - patch
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: infra-manager-role
+rules:
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/status
+  verbs:
+  - get
+  - patch
+  - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: infra-metrics-reader
+rules:
+- nonResourceURLs:
+  - /metrics
+  verbs:
+  - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: infra-proxy-role
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+- apiGroups:
+  - authorization.k8s.io
+  resources:
+  - subjectaccessreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: infra-leader-election-rolebinding
+  namespace: infra-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: infra-leader-election-role
+subjects:
+- kind: ServiceAccount
+  name: infra-controller-manager
+  namespace: infra-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: infra-manager-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: infra-manager-role
+subjects:
+- kind: ServiceAccount
+  name: infra-controller-manager
+  namespace: infra-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: infra-proxy-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: infra-proxy-role
+subjects:
+- kind: ServiceAccount
+  name: infra-controller-manager
+  namespace: infra-system
+---
+apiVersion: v1
+data:
+  controller_manager_config.yaml: "# Copyright © 2022 sealos.\r\n#\r\n# Licensed under the Apache License, Version 2.0 (the \"License\");\r\n# you may not use this file except in compliance with the License.\r\n# You may obtain a copy of the License at\r\n#\r\n#     http://www.apache.org/licenses/LICENSE-2.0\r\n#\r\n# Unless required by applicable law or agreed to in writing, software\r\n# distributed under the License is distributed on an \"AS IS\" BASIS,\r\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\r\n# See the License for the specific language governing permissions and\r\n# limitations under the License.\r\n\r\napiVersion: controller-runtime.sigs.k8s.io/v1alpha1\r\nkind: ControllerManagerConfig\r\nhealth:\r\n  healthProbeBindAddress: :8081\r\nmetrics:\r\n  bindAddress: 127.0.0.1:8080\r\nwebhook:\r\n  port: 9443\r\nleaderElection:\r\n  leaderElect: true\r\n  resourceName: a63686c3.sealos.io\r\n# leaderElectionReleaseOnCancel defines if the leader should step down volume\r\n# when the Manager ends. This requires the binary to immediately end when the\r\n# Manager is stopped, otherwise, this setting is unsafe. Setting this significantly\r\n# speeds up voluntary leader transitions as the new leader don't have to wait\r\n# LeaseDuration time first.\r\n# In the default scaffold provided, the program ends immediately after\r\n# the manager stops, so would be fine to enable this option. However,\r\n# if you are doing or is intended to do any operation such as perform cleanups\r\n# after the manager stops then its usage might be unsafe.\r\n# leaderElectionReleaseOnCancel: true"
+kind: ConfigMap
+metadata:
+  name: infra-manager-config
+  namespace: infra-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: infra-controller-manager-metrics-service
+  namespace: infra-system
+spec:
+  ports:
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: https
+  selector:
+    control-plane: controller-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: infra-controller-manager
+  namespace: infra-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: controller-manager
+    spec:
+      containers:
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.12.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+      - args:
+        - --health-probe-bind-address=:8081
+        - --metrics-bind-address=127.0.0.1:8080
+        - --leader-elect
+        command:
+        - /manager
+        image: docker.io/wuxueming/infra:1.7
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: infra-controller-manager
+      terminationGracePeriodSeconds: 10

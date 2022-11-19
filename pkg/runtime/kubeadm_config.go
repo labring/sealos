@@ -22,19 +22,32 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/imdario/mergo"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/kube-proxy/config/v1alpha1"
-	"k8s.io/kubelet/config/v1beta1"
+	proxy "k8s.io/kube-proxy/config/v1alpha1"
+	kubelet "k8s.io/kubelet/config/v1beta1"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
+	kubeadmv1beta2 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta2"
+	kubeadmv1beta3 "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta3"
+	kubeletconfig "k8s.io/kubernetes/pkg/kubelet/apis/config/v1beta1"
+	proxyconfig "k8s.io/kubernetes/pkg/proxy/apis/config/v1alpha1"
 
-	"github.com/labring/sealos/pkg/runtime/apis/kubeadm"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+var scheme = k8sruntime.NewScheme()
+
+func init() {
+	utilruntime.Must(kubeadmv1beta2.AddToScheme(scheme))
+	utilruntime.Must(kubeadmv1beta3.AddToScheme(scheme))
+	utilruntime.Must(kubeletconfig.AddToScheme(scheme))
+	utilruntime.Must(proxyconfig.AddToScheme(scheme))
+}
 
 // https://github.com/kubernetes/kubernetes/blob/master/cmd/kubeadm/app/apis/kubeadm/v1beta2/types.go
 // Using map to overwrite Kubeadm configs
@@ -44,13 +57,16 @@ type KubeadmConfig struct {
 	kubeadm.InitConfiguration
 	kubeadm.ClusterConfiguration
 	kubeadm.JoinConfiguration
-	v1alpha1.KubeProxyConfiguration
-	v1beta1.KubeletConfiguration
+	proxy.KubeProxyConfiguration
+	kubelet.KubeletConfiguration
 	conversion struct {
-		InitConfiguration    interface{}
-		ClusterConfiguration interface{}
-		JoinConfiguration    interface{}
+		InitConfiguration      interface{}
+		ClusterConfiguration   interface{}
+		JoinConfiguration      interface{}
+		KubeProxyConfiguration interface{}
+		KubeletConfiguration   interface{}
 	}
+	ImageKubeVersion string
 }
 
 const (
@@ -81,7 +97,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		err                  error
 	)
 	if kubeadmYamlPath == "" || !file.IsExist(kubeadmYamlPath) {
-		defaultKubeadmConfig, err = LoadKubeadmConfigs(DefaultKubeadmConfig, DecodeCRDFromString)
+		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), DecodeCRDFromString)
 		if err != nil {
 			return err
 		}
@@ -118,13 +134,13 @@ func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interf
 	if err != nil {
 		return nil, err
 	} else if kubeProxyConfig != nil {
-		kubeadmConfig.KubeProxyConfiguration = *kubeProxyConfig.(*v1alpha1.KubeProxyConfiguration)
+		kubeadmConfig.KubeProxyConfiguration = *kubeProxyConfig.(*proxy.KubeProxyConfiguration)
 	}
 	kubeletConfig, err := decode(arg, KubeletConfiguration)
 	if err != nil {
 		return nil, err
 	} else if kubeletConfig != nil {
-		kubeadmConfig.KubeletConfiguration = *kubeletConfig.(*v1beta1.KubeletConfiguration)
+		kubeadmConfig.KubeletConfiguration = *kubeletConfig.(*kubelet.KubeletConfiguration)
 	}
 	joinConfig, err := decode(arg, JoinConfiguration)
 	if err != nil {
@@ -185,15 +201,19 @@ func DecodeCRDFromString(config string, kind string) (interface{}, error) {
 	return DecodeCRDFromReader(strings.NewReader(config), kind)
 }
 
-func TypeConversion(raw []byte, kind string) (i interface{}, err error) {
-	i = typeConversion(kind)
-	if i == nil {
+func TypeConversion(raw []byte, kind string) (interface{}, error) {
+	obj := typeConversion(kind)
+	if obj == nil {
 		return nil, fmt.Errorf("not found type %s from %s", kind, string(raw))
 	}
-	return i, yaml.Unmarshal(raw, i)
+	if err := yaml.Unmarshal(raw, obj); err != nil {
+		return nil, err
+	}
+	scheme.Default(obj)
+	return obj, nil
 }
 
-func typeConversion(kind string) interface{} {
+func typeConversion(kind string) k8sruntime.Object {
 	switch kind {
 	case Cluster:
 		return &v2.Cluster{}
@@ -204,9 +224,9 @@ func typeConversion(kind string) interface{} {
 	case ClusterConfiguration:
 		return &kubeadm.ClusterConfiguration{}
 	case KubeletConfiguration:
-		return &v1beta1.KubeletConfiguration{}
+		return &kubelet.KubeletConfiguration{}
 	case KubeProxyConfiguration:
-		return &v1alpha1.KubeProxyConfiguration{}
+		return &proxy.KubeProxyConfiguration{}
 	}
 	return nil
 }

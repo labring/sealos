@@ -11,14 +11,14 @@ export type UserInfo = {
   readonly avatar: string;
 };
 
-export type KubeConfig = {
-  readonly id: string;
-  readonly name: string;
-  readonly avatar: string;
-};
+export type KubeConfig = string;
 
 export type Session = {
-  readonly token: OAuthToken;
-  readonly user: UserInfo;
-  kubeconfig: string | KubeConfig;
+  token?: OAuthToken;
+  user: UserInfo;
+  kubeconfig: KubeConfig;
 };
+
+const sessionKey = 'session';
+
+export { sessionKey };

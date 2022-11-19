@@ -20,15 +20,42 @@ on:
       - "**/*.yaml"
 
 jobs:
+  format-code:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Format Code
+        run: make format
+
+      - name: Commit Changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: 'chore(fmt): format code'
+          commit_options: '-s'
+
   check-license:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Check License
         run: make verify-license
 
@@ -39,24 +66,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Resolve Modules
         id: set-matrix
         run: sh ./scripts/resolve-modules.sh
 
   golangci-lint:
-    needs: [ check-license, resolve-modules ]
+    needs: [ format-code, check-license, resolve-modules ]
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:
@@ -65,19 +96,23 @@ jobs:
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   coverage:
-    needs: [ check-license ]
+    needs: [ format-code, check-license ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Install Dependencies
-        run: sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Run Coverage
         run: make coverage
+
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v3
 
@@ -91,8 +126,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
-        uses: actions/setup-go@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
 
@@ -197,3 +235,132 @@ jobs:
             sealctl-${{ matrix.arch }}
             image-cri-shim-${{ matrix.arch }}
           failOnError: false
+
+  container:
+    needs: [ docker ]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v2
+        with:
+          version: latest
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: docker/sealos/bin/sealos-amd64
+
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-arm64
+          path: docker/sealos/bin/sealos-arm64
+
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
+
+      - name: build (and publish)  main sealos image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
+        working-directory: docker/sealos
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos  container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile.main \
+          .
+
+  patch-oci:
+    needs: [ docker ]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo commit_sha=${{ env.GIT_COMMIT_SHORT_SHA }} >> $GITHUB_OUTPUT
+
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: docker/patch
+
+      - name: Download patch
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: docker/patch
+
+      - name: build (and publish)  main patch image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-patch
+        working-directory: docker/patch
+        run: |
+          set -x
+          sudo apt remove buildah -y || true
+          readonly binDIR="/tmp/$(whoami)/bin"
+          wget -qO "buildah" "https://github.com/labring/cluster-image/releases/download/depend/buildah.linux.amd64"
+          mkdir -p $binDIR
+          mv buildah $binDIR/
+          sudo chmod a+x $binDIR/buildah
+          sudo $binDIR/buildah images
+          BEFORE_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}
+          IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}
+          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io"
+          sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-amd64 ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-amd64
+          sudo $binDIR/buildah pull oci-archive:patch-arm64.tar
+          sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-arm64 ${IMAGE_NAME}-arm64
+          sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-arm64
+          sudo $binDIR/buildah images
+          sudo $binDIR/buildah push ${IMAGE_NAME}-amd64
+          sudo $binDIR/buildah push ${IMAGE_NAME}-arm64
+          sudo $binDIR/buildah manifest create ${IMAGE_NAME}
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
+          sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
+          sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
+          sudo $binDIR/buildah images

@@ -1,0 +1,16 @@
+resources:
+- manager.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- files:
+  - auth.yaml
+  name: service-config
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+images:
+- name: service
+  newName: ghcr.io/labring/sealos-auth-service
+  newTag: dev

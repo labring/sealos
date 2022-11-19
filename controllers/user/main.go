@@ -21,13 +21,17 @@ import (
 	"flag"
 	"os"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
-	// to ensure that exec-entrypoint and run can make use of them.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"github.com/labring/sealos/pkg/pay"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
+	// to ensure that exec-entrypoint and run can make use of them.
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -90,7 +94,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 	if err = (&controllers.UserReconciler{}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "User")
 		os.Exit(1)
@@ -113,13 +116,47 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
 	}
-	if err = (&controllers.PaymentReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Payment")
+	if os.Getenv(pay.AppID) != "" {
+		if err = (&controllers.PaymentReconciler{
+			Client: mgr.GetClient(),
+			Scheme: mgr.GetScheme(),
+		}).SetupWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create controller", "controller", "Payment")
+			os.Exit(1)
+		}
+		setupLog.Info("Payment controller is enabled")
+	}
+
+	//if err = (&controllers.UserExpirationReconciler{
+	//	Client: mgr.GetClient(),
+	//	Scheme: mgr.GetScheme(),
+	//}).SetupWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create controller", "controller", "Secret")
+	//	os.Exit(1)
+	//}
+
+	if err = cache.SetupCache(mgr); err != nil {
+		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
+	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+		setupLog.Info("disable all webhooks")
+	} else {
+		if err = (&userv1.User{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "User")
+			os.Exit(1)
+		}
+		setupLog.Info("add ug and ugb webhooks")
+		if err = (&userv1.UserGroup{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroup")
+			os.Exit(1)
+		}
+		if err = (&userv1.UserGroupBinding{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "UserGroupBinding")
+			os.Exit(1)
+		}
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -133,8 +170,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
+	if err = mgr.Start(ctx); err != nil {
+		setupLog.Error(err, "failed to running manager")
 		os.Exit(1)
 	}
 }

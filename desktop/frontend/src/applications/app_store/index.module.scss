@@ -1,0 +1,134 @@
+.appWrap {
+  background: var(--fakeMica);
+}
+.storeNav {
+  .uicon {
+    padding: 18px 0;
+    margin: 0 4px 4px;
+    color: #888888;
+    position: relative;
+    transition: all ease-in-out 100ms;
+    border-radius: 4px;
+  }
+}
+.pagecont {
+  background: #f7f9fc;
+  overflow: hidden;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+}
+.pageScroll {
+  overflow-y: overlay;
+}
+.pageWrapper {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+}
+.restWindow {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  flex-grow: 1;
+  scroll-behavior: smooth;
+}
+.storeNav {
+  .uicon {
+    padding: 18px 0;
+    margin: 0 4px 4px;
+    color: #888888;
+    position: relative;
+    transition: all ease-in-out 100ms;
+    border-radius: 4px;
+
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    &[data-payload='true']::after {
+      content: '';
+      position: absolute;
+      width: 3px;
+      left: 0;
+      height: 24px;
+      border-radius: 10px;
+      background: var(--clrPrm);
+    }
+
+    &:hover {
+      background: var(--nav-btn-hov);
+      color: var(--dark-txt);
+    }
+
+    &[data-payload='true'] {
+      background: var(--nav-btn-hov);
+      color: var(--clrPrm);
+    }
+  }
+}
+
+.appscont {
+  display: flex;
+  flex-wrap: wrap;
+
+  .ribcont {
+    background: #fff;
+    margin-right: 1em;
+    margin-bottom: 2em;
+    width: auto;
+    height: 264px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+
+  .imageCont {
+    height: 100px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.ribcont {
+  background: #fff;
+  margin: auto 6px;
+  height: auto;
+  width: 120px;
+  transform-origin: center;
+  transition: all ease-in-out 200ms;
+  color: var(--dark-txt);
+
+  &:hover {
+    transform: scale(1.06);
+    transform: translateY(-4px);
+  }
+
+  .uicon {
+    color: #aaa;
+    margin-right: 2px;
+  }
+
+  .bluestar {
+    color: #006ff0;
+  }
+}
+
+.catbtn {
+  padding: 1px 20px;
+  padding-bottom: 3px;
+  border: solid 1px #ccc;
+  border-radius: 100px;
+  margin-right: 16px;
+  color: var(--txt-col);
+  font-size: 1rem;
+
+  &[value='true'] {
+    color: var(--clrPrm);
+    border-color: var(--clrPrm);
+  }
+}
+
+.ltShad {
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+}

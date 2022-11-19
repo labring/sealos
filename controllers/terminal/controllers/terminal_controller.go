@@ -20,10 +20,11 @@ import (
 	"context"
 	"time"
 
-	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
+	uuid "github.com/satori/go.uuid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -40,7 +41,10 @@ import (
 )
 
 const (
+	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
+	HostnameLength      = 8
+	TerminalNamespace   = "terminal-app"
 	KeepaliveAnnotation = "lastUpdateTime"
 )
 
@@ -58,8 +62,9 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=cert-manager.io,resources=certificates,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -77,45 +82,71 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
-		if controllerutil.AddFinalizer(terminal, FinalizerName) {
-			if err := r.Update(ctx, terminal); err != nil {
+	terminalApp := &terminalv1.Terminal{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      req.Name,
+			Namespace: TerminalNamespace,
+		},
+	}
+	if req.Namespace != TerminalNamespace {
+		if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
+			if controllerutil.AddFinalizer(terminal, FinalizerName) {
+				if err := r.Update(ctx, terminal); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		} else {
+			// delete terminal-app
+			if err := r.Delete(ctx, terminalApp); err != nil {
 				return ctrl.Result{}, err
 			}
+			if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
+				if err := r.Update(ctx, terminal); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+			return ctrl.Result{}, nil
 		}
-	} else {
-		if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
-			if err := r.Update(ctx, terminal); err != nil {
+
+		if err := r.fillDefaultValue(ctx, terminal); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		if isExpired(terminal) {
+			if err := r.Delete(ctx, terminal); err != nil {
 				return ctrl.Result{}, err
 			}
+			logger.Info("delete expired terminal success")
+			return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, nil
 	}
 
-	if err := r.fillDefaultValue(ctx, terminal); err != nil {
+	// crate a terminal in terminal-app ns
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, terminalApp, func() error {
+		terminalApp.Spec = terminal.Spec
+		return nil
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	if isExpired(terminal) {
-		if err := r.Delete(ctx, terminal); err != nil {
-			return ctrl.Result{}, err
-		}
-		logger.Info("delete expired terminal success")
-		return ctrl.Result{}, nil
+	if err := r.syncRoleBinding(ctx, terminalApp); err != nil {
+		logger.Error(err, "create Role and RoleBinding failed")
+		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create Role and RoleBinding failed", "%v", err)
+		return ctrl.Result{}, err
 	}
 
-	if err := r.syncDeployment(ctx, terminal); err != nil {
+	if err := r.syncDeployment(ctx, terminalApp); err != nil {
 		logger.Error(err, "create deployment failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
 		return ctrl.Result{}, err
 	}
-	if err := r.syncService(ctx, terminal); err != nil {
+	if err := r.syncService(ctx, terminalApp); err != nil {
 		logger.Error(err, "create service failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create service failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncIngress(ctx, req, terminal); err != nil {
+	if err := r.syncIngress(ctx, terminalApp); err != nil {
 		logger.Error(err, "create ingress failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create ingress failed", "%v", err)
 		return ctrl.Result{}, err
@@ -126,20 +157,23 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, terminal *terminalv1.Terminal) error {
-	objectMeta := metav1.ObjectMeta{
-		Name:      terminal.Name,
-		Namespace: terminal.Namespace,
+func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *terminalv1.Terminal) error {
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "terminalAppRole-" + terminal.Spec.User,
+			Namespace: TerminalNamespace,
+		},
 	}
-	cert := &certv1.Certificate{
-		ObjectMeta: objectMeta,
-	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, cert, func() error {
-		expectCert := createCert(terminal)
-		cert.Spec.SecretName = expectCert.Spec.SecretName
-		cert.Spec.DNSNames = expectCert.Spec.DNSNames
-		cert.Spec.IssuerRef = expectCert.Spec.IssuerRef
-		if err := controllerutil.SetControllerReference(terminal, cert, r.Scheme); err != nil {
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
+		role.Rules = []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{"terminal.sealos.io"},
+				Resources:     []string{"terminals"},
+				Verbs:         []string{"get", "watch", "list"},
+				ResourceNames: []string{terminal.Name},
+			},
+		}
+		if err := controllerutil.SetControllerReference(terminal, role, r.Scheme); err != nil {
 			return err
 		}
 		return nil
@@ -147,11 +181,52 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 		return err
 	}
 
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "terminalAppRoleBinding-" + terminal.Spec.User,
+			Namespace: TerminalNamespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
+		roleBinding.RoleRef = rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "Role",
+			Name:     role.Name,
+		}
+		roleBinding.Subjects = []rbacv1.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      terminal.Spec.User,
+				Namespace: GetDefaultUserNamespace(),
+			},
+		}
+
+		if err := controllerutil.SetControllerReference(terminal, roleBinding, r.Scheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal) error {
+	var host string
 	ingress := &networkingv1.Ingress{
-		ObjectMeta: objectMeta,
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      terminal.Name,
+			Namespace: terminal.Namespace,
+		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		expectIngress := createIngress(terminal)
+		if len(ingress.Spec.Rules) != 0 && ingress.Spec.Rules[0].Host != "" {
+			host = ingress.Spec.Rules[0].Host
+		} else {
+			host = uuid.NewV4().String() + DomainSuffix
+		}
+		expectIngress := createIngress(terminal, host)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
@@ -162,6 +237,12 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, req ctrl.Request, 
 		return nil
 	}); err != nil {
 		return err
+	}
+
+	domain := Protocol + host
+	if terminal.Status.Domain != domain {
+		terminal.Status.Domain = domain
+		return r.Status().Update(ctx, terminal)
 	}
 
 	return nil
@@ -243,7 +324,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	envs = []corev1.EnvVar{
 		{Name: "APISERVER", Value: terminal.Spec.APIServer},
 		{Name: "USER_TOKEN", Value: terminal.Spec.Token},
-		{Name: "NAMESPACE", Value: terminal.Namespace},
+		{Name: "NAMESPACE", Value: terminal.Spec.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
 	}
 
@@ -283,6 +364,10 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 			deployment.Spec.Template.Spec.Containers[0].Env = containers[0].Env
 		}
 
+		if deployment.Spec.Template.Spec.Hostname == "" {
+			deployment.Spec.Template.Spec.Hostname = randString(HostnameLength)
+		}
+
 		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
 			return err
 		}
@@ -303,6 +388,11 @@ func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *ter
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
 		terminal.Spec.APIServer = r.Config.Host
+		hasUpdate = true
+	}
+
+	if terminal.Spec.Namespace == "" {
+		terminal.Spec.Namespace = terminal.Namespace
 		hasUpdate = true
 	}
 

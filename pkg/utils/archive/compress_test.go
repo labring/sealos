@@ -20,91 +20,21 @@ import (
 	"io"
 	"os"
 	"path"
-	"path/filepath"
 	"testing"
 )
 
-const basePath = "/tmp"
+// const fileContent = "content"
 
-const fileContent = "content"
+// type fileDef struct {
+// 	name    string
+// 	content string
+// }
 
-type fileDef struct {
-	name    string
-	content string
-}
-
-type dirDef struct {
-	path   string
-	files  []fileDef
-	subDir []dirDef
-}
-
-var filesToCreate = []dirDef{
-	{
-		path: "testDirA",
-		files: []fileDef{
-			{
-				name:    "testFileA",
-				content: fileContent,
-			},
-			{
-				name:    "testFileB",
-				content: fileContent,
-			},
-		},
-		subDir: []dirDef{
-			{
-				path: "testDirC",
-				files: []fileDef{
-					{
-						name:    "testFileA",
-						content: fileContent,
-					},
-					{
-						name:    "testFileB",
-						content: fileContent,
-					},
-				},
-			},
-		},
-	},
-	{
-		path: "testDirB",
-		files: []fileDef{
-			{
-				name:    "testFileA",
-				content: fileContent,
-			},
-			{
-				name:    "testFileB",
-				content: fileContent,
-			},
-		},
-	},
-}
-
-func makeDir(root string, d dirDef) error {
-	currentDir := filepath.Join(root, d.path)
-	err := os.MkdirAll(currentDir, 0755)
-	if err != nil {
-		return err
-	}
-
-	for _, file := range d.files {
-		_, err = os.Create(filepath.Join(currentDir, file.name))
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, sub := range d.subDir {
-		err = makeDir(currentDir, sub)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// type dirDef struct {
+// 	path   string
+// 	files  []fileDef
+// 	subDir []dirDef
+// }
 
 func TestTarWithoutRootDir(t *testing.T) {
 	arch := NewArchive(false, false)
@@ -121,6 +51,9 @@ func TestTarWithRootDir(t *testing.T) {
 		t.Error(err)
 	}
 	tmp, err := os.Create("/var/lib/sealos/tmp/aaa.gzip")
+	if err != nil {
+		t.Error(err)
+	}
 	//tmp, err := os.CreateTemp("/tmp", "tar")
 	_, err = io.Copy(tmp, reader)
 	if err != nil {

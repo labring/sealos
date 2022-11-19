@@ -26,12 +26,26 @@ import (
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster,shortName=ug
+// +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // UserGroup is the Schema for the usergroups API
 type UserGroup struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
+	Status            UserGroupStatus `json:"status,omitempty"`
+}
+
+// UserGroupStatus defines the observed state of UserGroup
+type UserGroupStatus struct {
+	// Phase is the recently observed lifecycle phase of user group
+	//+kubebuilder:default:=Unknown
+	Phase UserPhase `json:"phase,omitempty"`
+	// The generation observed by the user controller.
+	// +optional
+	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+	// Conditions contains the different condition statuses for this user group.
+	Conditions []Condition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -1,20 +1,22 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Customize a Cluster
 
 1. Run `sealos gen` to generate a Clusterfile, Example:
 
-
 ```shell
-$ sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+$ sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
   --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
   --nodes 192.168.0.5,192.168.0.6,192.168.0.7 \
   --passwd xxx > Clusterfile
 ```
 
 The generated Clusterfile like this:
+
+<details>
+<summary>Clusterfile</summary>
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -40,7 +42,7 @@ spec:
     - amd64
   image:
   - labring/kubernetes:v1.24.0
-  - labring/calico:v3.22.1
+  - labring/calico:v3.24.1
   ssh:
     passwd: xxx
     pk: /root/.ssh/id_rsa
@@ -49,7 +51,12 @@ spec:
 status: {}
 ```
 
+</details>
+
 2. Then you can Append `kubeadm Configuration` or `application configuration` to Clusterfile.For example, if you want to change the CIDR range of pods, you should change the `networking.podSubnet` and `spec.data.spec.calicoNetwork.ipPools.cidr` fields. The final Clusterfile will be like this:
+
+<details>
+<summary>Clusterfile</summary>
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -74,8 +81,9 @@ spec:
         - node
         - amd64
   image:
-    - labring/kubernetes:v1.24.0
-    - labring/calico:v3.22.1
+    - labring/kubernetes:v1.25.0
+    - labring/helm:v3.8.2
+    - labring/calico:v3.24.1
   ssh:
     passwd: xxx
     pk: /root/.ssh/id_rsa
@@ -114,6 +122,11 @@ spec:
           interface: "eth.*|en.*"
 ```
 
-3. Run `sealos apply -f Clusterfile` to install the cluster.
+</details>
 
-**Notes：**You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or `kubeadm config print init-defaults` command to print kubeadm configuration .
+3. Run `sealos apply -f Clusterfile` to install the cluster. After the cluster is installed, Clusterfile will be saved in the `.sealos/default/Clusterfile` directory. You can modify the Clusterfile to customize the cluster.
+
+**Notes：**
+
+- You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or `kubeadm config print init-defaults` command to print kubeadm configuration.
+- Experimental usage please check [CLI](https://www.sealos.io/docs/cli/apply#experimental)

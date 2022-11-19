@@ -21,11 +21,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/mdp/qrterminal"
+	"github.com/go-logr/logr"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/labring/sealos/pkg/pay"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/mdp/qrterminal"
+
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,6 +39,7 @@ import (
 type PaymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	Logger logr.Logger
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=payments,verbs=get;list;watch;create;update;patch;delete
@@ -53,27 +56,33 @@ type PaymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-
+	r.Logger = log.FromContext(ctx)
 	p := &userv1.Payment{}
 	if err := r.Get(ctx, req.NamespacedName, p); err != nil {
-		log.Error(err, "get payment failed")
-		return ctrl.Result{}, err
+		r.Logger.Error(err, "get payment failed")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	if p.Status.TradeNO != "" {
 		return ctrl.Result{}, nil
 	}
+	if p.Status.Status == "" {
+		p.Status.Status = "Created"
+		if err := r.Status().Update(ctx, p); err != nil {
+			r.Logger.Error(err, "update payment failed: %v", *p)
+			return ctrl.Result{Requeue: true}, err
+		}
+	}
 	tradeNO := pay.GetRandomString(32)
-	codeURL, err := pay.WechatPay(p.Spec.Amount, p.Spec.UserID, tradeNO, "", os.Getenv(pay.CallbackURL))
+	codeURL, err := pay.WechatPay(p.Spec.Amount, p.Spec.UserID, tradeNO, "", "")
 	if err != nil {
-		log.Error(err, "get codeURL failed")
+		r.Logger.Error(err, "get codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err
 	}
 	p.Status.CodeURL = codeURL
 	p.Status.TradeNO = tradeNO
 
 	if err := r.Status().Update(ctx, p); err != nil {
-		log.Error(err, "update payment failed: %v", *p)
+		r.Logger.Error(err, "update payment failed: %v", *p)
 		return ctrl.Result{}, err
 	}
 
@@ -83,6 +92,9 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PaymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "payment_controller"
+	r.Logger = ctrl.Log.WithName(controllerName)
+	r.Logger.V(1).Info("init reconcile controller payment")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Payment{}).
 		Complete(r)

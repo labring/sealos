@@ -1,0 +1,154 @@
+$color-btn-blue: #3981f5;
+
+.detailPage {
+  display: flex;
+  height: 100%;
+
+  .leftInfo {
+    flex-basis: 280px;
+    background: #f0f3f7;
+    padding-top: 40px;
+    padding-left: 46px;
+    padding-right: 74px;
+
+    .infraTitle {
+      width: 160px;
+      height: 34px;
+      font-size: 24px;
+      line-height: 34px;
+      color: #585d7a;
+    }
+
+    .infraInfo {
+      color: #61677d;
+      display: flex;
+      flex-direction: column;
+      padding-top: 20px;
+      position: relative;
+    }
+
+    .releaseBtn {
+      position: absolute;
+      color: #de5462;
+      bottom: 30px;
+      left: 170px;
+      &:hover {
+        text-decoration-line: underline;
+        text-underline-offset: 4px;
+      }
+    }
+  }
+
+  .rightInfo {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 44px;
+      padding-left: 18px;
+      padding-right: 50px;
+
+      .navBack {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 14px;
+        line-height: 14px;
+        color: #686868;
+      }
+
+      .navBtn {
+        box-sizing: border-box;
+        width: 90px;
+        height: 26px;
+        border: 1px solid $color-btn-blue;
+        border-radius: 5px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .navBtnLabel {
+          height: 16px;
+          line-height: 16px;
+          color: $color-btn-blue;
+          padding-left: 4px;
+        }
+      }
+    }
+
+    .nodeCard {
+      margin: 16px 50px 20px 30px;
+      border: 1px solid #e1e2e3;
+      border-radius: 2px;
+      display: flex;
+      flex-grow: 1;
+      flex-direction: column;
+
+      .nodeTitle {
+        font-size: 16px;
+        line-height: 22px;
+        color: #61677d;
+        padding-top: 10px;
+        padding-left: 20px;
+      }
+    }
+  }
+}
+
+.pageWrapperScroll {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  flex-grow: 1;
+  scroll-behavior: smooth;
+  margin-top: 10px;
+}
+
+.copyssh {
+  font-size: 10px;
+  line-height: 11px;
+  text-decoration-line: underline;
+  color: $color-btn-blue;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+.tableDetail {
+  padding-top: 10px;
+  thead tr th button {
+    justify-content: center;
+    flex-grow: 1;
+    text-align: center;
+    height: 30px;
+    font-size: 12px;
+    line-height: 13px;
+    color: #a1a8ae;
+  }
+
+  tbody tr {
+    font-size: 10px;
+    line-height: 11px;
+    text-transform: capitalize;
+    color: #545454;
+    height: 50px;
+    border-bottom-width: 1px;
+    td {
+      text-align: center;
+    }
+  }
+
+  tbody tr:nth-last-child(1) {
+    border-bottom-width: 0px;
+  }
+
+  .tableTitleId {
+    width: 160px;
+  }
+}

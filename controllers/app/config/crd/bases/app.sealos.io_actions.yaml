@@ -1,0 +1,61 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: actions.app.sealos.io
+spec:
+  group: app.sealos.io
+  names:
+    kind: Actions
+    listKind: ActionsList
+    plural: actions
+    singular: actions
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Actions is the Schema for the actions API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ActionsSpec defines the desired state of Actions
+            properties:
+              alias:
+                description: Alias will show it on dashboard. like DELETE UPDATE MIGRATE...
+                type: string
+              appName:
+                description: Application name, actions will bind to an application
+                type: string
+              args:
+                additionalProperties:
+                  type: string
+                description: Args, the actions input args, like oss backup address...
+                type: object
+              cmd:
+                description: Actions exec command, support render some args and downward
+                  API, like application name, service name ...
+                type: string
+            type: object
+          status:
+            description: ActionsStatus defines the observed state of Actions
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

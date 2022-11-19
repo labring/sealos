@@ -30,10 +30,20 @@ import (
 type Driver interface {
 	CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error
 	DeleteInstances(hosts *v1.Hosts) error
+	StopInstances(hosts *v1.Hosts) error
+	ModifyInstances(curHosts *v1.Hosts, desHosts *v1.Hosts) error
 	DeleteInstanceByID(instanceID string, infra *v1.Infra) error
 	GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error)
 	// get infra all current hosts
 	GetInstances(infra *v1.Infra) ([]v1.Hosts, error)
+	// Volumes operation
+	// Create and Attach
+	CreateVolumes(infra *v1.Infra, host *v1.Hosts, disks []v1.Disk) error
+	// Delete and Detach
+	DeleteVolume(disksID []string) error
+	// Modify
+	ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error
+	CreateKeyPair(infra *v1.Infra) error
 }
 
 type Reconcile interface {

@@ -1,0 +1,59 @@
+name: 🐞 Sealos Bug report
+description: Create a report to help us improve
+title: 'BUG: brief description of the bug'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue. 
+
+        Please fill in as much of the following form as you're able.
+  - type: input
+    attributes:
+      label: Sealos Version
+      description: Sealos Version of your installtion
+      placeholder: eg. v4.1.3
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How to reproduce the bug?
+      description: Enter details about your bug.
+      placeholder: |
+        1. In this environment...
+        2. With this config...
+        3. Run '...'
+        4. See error...
+  - type: textarea
+    attributes:
+      label: What is the expected behavior?
+      description: If possible please provide textual output instead of screenshots.
+  - type: textarea
+    attributes:
+      label: What do you see instead?
+      description: If possible please provide textual output instead of screenshots.
+  - type: textarea
+    attributes:
+      label: Operating environment
+      description: |
+        examples:
+          - **Sealos version**: eg. v4.1.3
+          - **Docker version**:   eg. v20.10.7
+          - **Kubernetes version**: eg. v1.25.0
+          - **Operating system**: eg. centos7
+          - **Runtime environment**:  eg. physical machine (100G memory, 10 core cpu, 10T storage), virtual machine (virbox, 10G memory, 2 core cpu, 100G storage), cloud(aws, 10G memory, 2 core cpu, 100G storage)
+          - **Cluster size**: eg 3 master, 3 node
+          - **Additional information**: istio, dashboard ...
+      value: |
+          - Sealos version:
+          - Docker version:
+          - Kubernetes version:
+          - Operating system:
+          - Runtime environment:
+          - Cluster size:
+          - Additional information:
+      render: markdown
+  - type: textarea
+    attributes:
+      label: Additional information
+      description: Tell us anything else you think we should know.

@@ -26,6 +26,7 @@ import (
 
 func Cmd(name string, args ...string) error {
 	logger.Debug("cmd for pipe in host: ", fmt.Sprintf("%s %s", name, strings.Join(args, " ")))
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	cmd := exec.Command(name, args[:]...) // #nosec
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
@@ -74,18 +75,21 @@ func Cmd(name string, args ...string) error {
 //}
 
 func Output(name string, args ...string) ([]byte, error) {
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	cmd := exec.Command(name, args[:]...) // #nosec
 	return cmd.CombinedOutput()
 }
 
 func RunSimpleCmd(cmd string) (string, error) {
 	logger.Debug("cmd for sh in host: ", cmd)
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	result, err := exec.Command("/bin/sh", "-c", cmd).CombinedOutput() // #nosec
 	return string(result), err
 }
 
 func RunBashCmd(cmd string) (string, error) {
 	logger.Debug("cmd for bash in host: ", cmd)
+	// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 	result, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput() // #nosec
 	return string(result), err
 }

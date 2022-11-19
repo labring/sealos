@@ -35,7 +35,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
 
-	v1 "github.com/labring/sealos/pkg/runtime/apis/bootstraptoken/v1"
+	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -50,7 +50,7 @@ type Token struct {
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Default() (*Token, error) {
+func Generator() (*Token, error) {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		key, _ := CreateCertificateKey()
@@ -58,7 +58,7 @@ func Default() (*Token, error) {
 		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
 		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
 		tokens := ListToken()
-		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s"
+		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s --ttl 2h"
 		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
 		afterTokens := ListToken()
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())

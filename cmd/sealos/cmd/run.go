@@ -15,39 +15,27 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/spf13/cobra"
 
+	"github.com/labring/sealos/pkg/image"
+	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
-
-var contact = `
-      ___           ___           ___           ___       ___           ___
-     /\  \         /\  \         /\  \         /\__\     /\  \         /\  \
-    /::\  \       /::\  \       /::\  \       /:/  /    /::\  \       /::\  \
-   /:/\ \  \     /:/\:\  \     /:/\:\  \     /:/  /    /:/\:\  \     /:/\ \  \
-  _\:\~\ \  \   /::\~\:\  \   /::\~\:\  \   /:/  /    /:/  \:\  \   _\:\~\ \  \
- /\ \:\ \ \__\ /:/\:\ \:\__\ /:/\:\ \:\__\ /:/__/    /:/__/ \:\__\ /\ \:\ \ \__\
- \:\ \:\ \/__/ \:\~\:\ \/__/ \/__\:\/:/  / \:\  \    \:\  \ /:/  / \:\ \:\ \/__/
-  \:\ \:\__\    \:\ \:\__\        \::/  /   \:\  \    \:\  /:/  /   \:\ \:\__\
-   \:\/:/  /     \:\ \/__/        /:/  /     \:\  \    \:\/:/  /     \:\/:/  /
-    \::/  /       \:\__\         /:/  /       \:\__\    \::/  /       \::/  /
-     \/__/         \/__/         \/__/         \/__/     \/__/         \/__/
-
-                  Website :https://www.sealos.io/
-                  Address :github.com/labring/sealos
-`
 
 var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
   multi image:
-    sealos run labring/kubernetes:v1.24.0 calico:v3.22.1 \
+    sealos run labring/kubernetes:v1.24.0 calico:v3.24.1 \
         --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
   All servers use the same InfraSSH port (default port: 22)：
@@ -56,6 +44,11 @@ create cluster to your baremetal server, appoint the iplist:
   Different InfraSSH port numbers exist：
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+  
+  Use an independent node as the registry node of the cluster (other than the first master node)
+    sealos run -e REGISTRY_HOST=192.168.0.8 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+
   Single kubernetes cluster：
 	sealos run labring/kubernetes:v1.24.0 --single
 
@@ -63,10 +56,13 @@ create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 `
-var runArgs apply.RunArgs
-var runSingle bool
 
 func newRunCmd() *cobra.Command {
+	runArgs := &apply.RunArgs{
+		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
+	}
+	var runSingle bool
 	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "simplest way to run your kubernetes HA cluster",
@@ -77,31 +73,55 @@ func newRunCmd() *cobra.Command {
 				addr, _ := iputils.ListLocalHostAddrs()
 				runArgs.Masters = iputils.LocalIP(addr)
 			}
-			applier, err := apply.NewApplierFromArgs(args, &runArgs)
+
+			images, err := args2Images(args)
+			if err != nil {
+				return err
+			}
+
+			applier, err := apply.NewApplierFromArgs(images, runArgs)
 			if err != nil {
 				return err
 			}
 			return applier.Apply()
 		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if !strings2.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
+				return fmt.Errorf("transport parameters must be %s or %s", types.OCIArchive, types.DockerArchive)
+			}
+			return nil
+		},
 		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+			logger.Info(getContact())
 		},
 	}
-	runCmd.Flags().StringVarP(&runArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
-	runCmd.Flags().StringVarP(&runArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
-	runCmd.Flags().StringVarP(&runArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
-	runCmd.Flags().StringVarP(&runArgs.Password, "passwd", "p", "", "set cloud provider or baremetal server password")
-	runCmd.Flags().Uint16Var(&runArgs.Port, "port", 22, "set the sshd service port number for the server")
-	runCmd.Flags().StringVar(&runArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
-	runCmd.Flags().StringVar(&runArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
-	runCmd.Flags().StringSliceVar(&runArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
-	runCmd.Flags().StringSliceVarP(&runArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
+	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
-	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "we also can input an --force flag to run app in this cluster by force")
-	runCmd.Flags().StringVar(&runArgs.ClusterName, "name", "default", "set cluster name variables")
+	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
+	runCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
 	return runCmd
 }
 
 func init() {
 	rootCmd.AddCommand(newRunCmd())
+}
+
+func args2Images(args []string) ([]string, error) {
+	var images []string
+	imageSvc, err := image.NewImageService()
+	if err != nil {
+		return images, err
+	}
+	for _, arg := range args {
+		if strings.HasSuffix(arg, ".tar") || strings.HasSuffix(arg, ".gz") {
+			id, err := imageSvc.Load(arg)
+			if err != nil {
+				return images, err
+			}
+			images = append(images, id)
+		} else {
+			images = append(images, arg)
+		}
+	}
+	return images, nil
 }

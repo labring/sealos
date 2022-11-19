@@ -67,7 +67,7 @@ $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sea
 2. Create the cluster
 
 ```shell
-$ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.22.1   --masters 192.168.64.2 -p <password>
+$ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.24.1   --masters 192.168.64.2 -p <password>
 ```
 
 ![](/img/ai-applications/sealos4-run-k8s.png)

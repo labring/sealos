@@ -49,7 +49,10 @@ func ParseChartImages(chartPath string) ([]string, error) {
 		c := Chart{
 			Path: chartPath + "/" + subChartPath,
 		}
-		images, _ := c.GetImages()
+		images, err := c.GetImages()
+		if err != nil {
+			return nil, err
+		}
 		if len(images) > 0 {
 			allImages = allImages.Insert(images...)
 		}

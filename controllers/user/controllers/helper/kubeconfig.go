@@ -21,16 +21,29 @@ import (
 	"encoding/pem"
 	"fmt"
 	"net"
+	"os"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	rbacV1 "k8s.io/api/rbac/v1"
+
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+var defaultLog = ctrl.Log.WithName("kubeconfig")
+
 type Generate interface {
-	KubeConfig() (*api.Config, error)
+	KubeConfig(config *rest.Config, client client.Client) (*api.Config, error)
 }
 
 type Config struct {
+	ServiceAccount          bool
+	ServiceAccountNamespace string
+
 	CAKeyFile         string
 	User              string
 	Groups            []string
@@ -38,6 +51,8 @@ type Config struct {
 	ExpirationSeconds int32
 	DNSNames          []string
 	IPAddresses       []net.IP
+	Webhook           bool
+	WebhookURL        string
 }
 
 func NewGenerate(config *Config) Generate {
@@ -49,6 +64,19 @@ func NewGenerate(config *Config) Generate {
 	}
 	if config.CAKeyFile != "" {
 		return &Cert{
+			Config: config,
+		}
+	}
+	if config.ServiceAccount {
+		if config.ServiceAccountNamespace == "" {
+			config.ServiceAccountNamespace = "default"
+		}
+		return &ServiceAccount{
+			Config: config,
+		}
+	}
+	if config.Webhook {
+		return &Webhook{
 			Config: config,
 		}
 	}
@@ -93,4 +121,34 @@ func DecodeX509CertificateBytes(certBytes []byte) (*x509.Certificate, error) {
 	}
 
 	return certs[0], nil
+}
+
+func GetKubernetesHost(config *rest.Config) string {
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	if len(host) == 0 || len(port) == 0 {
+		return config.Host
+	}
+	return "https://" + net.JoinHostPort(host, port)
+}
+
+func GetDefaultNamespace() string {
+	return os.Getenv("NAMESPACE_NAME")
+}
+
+func GetUsersSubject(user string) []rbacV1.Subject {
+	defaultNamespace := GetDefaultNamespace()
+	if defaultNamespace == "" {
+		defaultNamespace = "default"
+	}
+	return []rbacV1.Subject{
+		{
+			Kind:      "ServiceAccount",
+			Name:      user,
+			Namespace: defaultNamespace,
+		},
+	}
+}
+
+func GetUsersNamespace(user string) string {
+	return fmt.Sprintf("ns-%s", user)
 }

@@ -19,24 +19,17 @@ import (
 	"os"
 	"sync"
 
+	"google.golang.org/grpc"
+
 	"github.com/labring/image-cri-shim/pkg/server"
-	"github.com/labring/image-cri-shim/pkg/shim/client"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
 	// DisableService is used to mark a socket/service to not be connected.
-	DisableService = client.DontConnect
+	DisableService = server.DontConnect
 )
-
-// Options contains the configurable options of our CRI shim.
-type Options struct {
-	// ShimSocket is the socket path for the CRI shim services.
-	ShimSocket string
-	// ImageSocket is the socket path for the (real) CRI image services.
-	ImageSocket string
-}
 
 // Shim is the interface we expose for controlling our CRI shim.
 type Shim interface {
@@ -46,61 +39,60 @@ type Shim interface {
 	Start() error
 	// Stop stops the shim.
 	Stop()
-	// Client returns the shim client interface.
-	Client() client.Client
-	// Server returns the shim server interface.
-	Server() server.Server
 }
 
 // shim is the implementation of Shim.
 type shim struct {
 	sync.Mutex               // hmm... do *we* need to be lockable, or the upper layer(s) ?
-	options    Options       // shim options
-	client     client.Client // shim CRI client
+	cfg        *Config       // shim options
+	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
 }
 
 // NewShim creates a new shim instance.
-func NewShim(options Options) (Shim, error) {
-	var err error
-
+func NewShim(cfg *Config) (Shim, error) {
 	r := &shim{
-		options: options,
+		cfg: cfg,
 	}
 
-	cltopts := client.Options{
-		ImageSocket: r.options.ImageSocket,
+	cltopts := server.CRIClientOptions{
+		ImageSocket: cfg.ImageSocket,
 		DialNotify:  r.dialNotify,
 	}
-	if r.client, err = client.NewClient(cltopts); err != nil {
+	clt, err := server.NewClient(cltopts)
+	if err != nil {
 		return nil, shimError("failed to create shim client: %v", err)
 	}
+	r.client = clt
 
 	srvopts := server.Options{
-		Socket: r.options.ShimSocket,
-		User:   -1,
-		Group:  -1,
-		Mode:   0660,
+		Socket:     cfg.ShimSocket,
+		User:       -1,
+		Group:      -1,
+		Mode:       0660,
+		CRIConfigs: cfg.CRIConfigs,
 	}
-	if r.server, err = server.NewServer(srvopts); err != nil {
+	srv, err := server.NewServer(srvopts)
+	if err != nil {
 		return nil, shimError("failed to create shim server: %v", err)
 	}
+	r.server = srv
 
 	return r, nil
 }
 
 // Setup prepares the shim to start processing requests.
 func (r *shim) Setup() error {
-	if err := r.client.Connect(client.ConnectOptions{Wait: true}); err != nil {
+	var conn *grpc.ClientConn
+	var err error
+	if conn, err = r.client.Connect(server.ConnectOptions{Wait: true}); err != nil {
 		return shimError("client connection failed: %v", err)
 	}
-
-	if r.options.ImageSocket != DisableService {
-		if err := r.server.RegisterImageService(r); err != nil {
+	if r.cfg.ImageSocket != DisableService {
+		if err = r.server.RegisterImageService(conn); err != nil {
 			return shimError("failed to register image service: %v", err)
 		}
 	}
-
 	return nil
 }
 
@@ -117,16 +109,6 @@ func (r *shim) Start() error {
 func (r *shim) Stop() {
 	r.client.Close()
 	r.server.Stop()
-}
-
-// Client returns the shim Client interface.
-func (r *shim) Client() client.Client {
-	return r.client
-}
-
-// Server returns the shim Server interface.
-func (r *shim) Server() server.Server {
-	return r.server
 }
 
 func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err error) {
@@ -146,6 +128,6 @@ func (r *shim) dialNotify(socket string, uid int, gid int, mode os.FileMode, err
 }
 
 // shimError creates a formatted shim-specific error.
-func shimError(format string, args ...interface{}) error {
+var shimError = func(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/shim: "+format, args...)
 }

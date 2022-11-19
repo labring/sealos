@@ -4,9 +4,46 @@
 $ sealos apply -f Clusterfile
 ```
 
-## Experimental
+Example Clusterfile:
 
-`Clusterfile` can also be written using go-template syntax(just like [helm](https://helm.sh/)! but some template functions are missing, like `include`/`tpl`/`require`/`lookup`). for example, we create a file named `Clusterfile.yaml`
+```yaml
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  name: default
+spec:
+  # 服务器 IP 地址列表和角色
+  hosts:
+    - ips:
+        - 192.168.0.2:22
+        - 192.168.0.3:22
+        - 192.168.0.4:22
+      roles:
+        - master
+        - amd64
+    - ips:
+        - 192.168.0.5:22
+        - 192.168.0.6:22
+        - 192.168.0.7:22
+      roles:
+        - node
+        - amd64
+  image:
+    - labring/kubernetes:v1.25.0
+    - labring/helm:v3.8.2
+    - labring/calico:v3.24.1
+  ssh:
+    passwd: xxx
+    pk: /root/.ssh/id_rsa
+    port: 22
+    user: root
+```
+
+We can edit `.sealos/default/Clusterfile` and re-run `sealos apply Clusterfile` to add or delete nodes.
+
+## Using templates (Experimental)
+
+Clusterfile can also be written using go-template syntax(Just like [Helm](https://helm.sh/)! but some template functions are missing, like `include`/`tpl`/`require`/`lookup`). For example, we create a file named `Clusterfile.yaml`: 
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -36,13 +73,13 @@ networking:
   podSubnet: {{ default "100.64.0.0/17" .Values.networking.podSubnet }}
 ```
 
-Then we create a customized values file named `example.values.yaml`
+Then we create a customized values file named `example.values.yaml`:
 
 ```yaml
 clusterName: default
 images:
   - dockerhub.tencentcloudcr.com/labring/kubernetes:v1.23.8
-  - dockerhub.tencentcloudcr.com/labring/calico:v3.22.1
+  - dockerhub.tencentcloudcr.com/labring/calico:v3.24.1
 masters:
   - 10.74.16.27:22
   - 10.74.16.140:22
@@ -59,7 +96,7 @@ networking:
   podSubnet: 100.64.0.0/17
 ```
 
-Now we can apply a new cluster with command
+Now we can apply a new cluster with command:
 
 ```shell
 $ sealos apply -f Clusterfile.yaml --values example.values.yaml --set clusterName=testlocal --env SSH_PASSWORD=s3cret 

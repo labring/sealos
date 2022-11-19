@@ -41,6 +41,7 @@ spec:
         image: controller:latest
         name: manager
         securityContext:
+          runAsNonRoot: true
           allowPrivilegeEscalation: false
           capabilities:
             drop:
@@ -66,5 +67,8 @@ spec:
           requests:
             cpu: 10m
             memory: 64Mi
+        env:
+          - name: USER_NAMESPACE
+            value: "user-system"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10

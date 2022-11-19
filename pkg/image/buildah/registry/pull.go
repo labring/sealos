@@ -20,10 +20,15 @@ import (
 	"os"
 	"time"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/labring/sealos/pkg/image/types"
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	"github.com/pkg/errors"
 )
@@ -45,7 +50,7 @@ type pullOptions struct {
 	pullPolicy       string
 }
 
-func (*Service) Pull(images ...string) error {
+func (*Service) Pull(platform v1.Platform, policy string, images ...string) error {
 	opt := pullOptions{
 		allTags:          false,
 		authfile:         auth.GetDefaultAuthFile(),
@@ -57,21 +62,25 @@ func (*Service) Pull(images ...string) error {
 		removeSignatures: false,
 		tlsVerify:        false,
 		decryptionKeys:   nil,
-		pullPolicy:       "missing",
+		pullPolicy:       policy, //missing, always, never, ifnewer
 	}
 
 	if err := auth.CheckAuthFile(opt.authfile); err != nil {
 		return err
 	}
 
-	systemContext, _ := getSystemContext(opt.tlsVerify)
+	pullCmdFlag := getCmdFlag()
+	_ = pullCmdFlag.Flag("tls-verify").Value.Set("false")
+	pullCmdFlag.Flag("tls-verify").Changed = true
+
+	systemContext, _ := parse.SystemContextFromOptions(pullCmdFlag)
 
 	decConfig, err := getDecryptConfig(opt.decryptionKeys)
 	if err != nil {
 		return errors.Wrapf(err, "unable to obtain decrypt config")
 	}
 
-	policy, ok := define.PolicyMap[opt.pullPolicy]
+	pullPolicy, ok := define.PolicyMap[opt.pullPolicy]
 	if !ok {
 		return fmt.Errorf("unsupported pull policy %q", "missing")
 	}
@@ -81,7 +90,10 @@ func (*Service) Pull(images ...string) error {
 	if err != nil {
 		return err
 	}
-
+	systemContext.OSChoice = platform.OS
+	systemContext.ArchitectureChoice = platform.Architecture
+	systemContext.VariantChoice = platform.Variant
+	logger.Info("pulling images %v for platform %s", images, fmt.Sprintf("%s/%s", systemContext.OSChoice, systemContext.ArchitectureChoice))
 	opts := buildah.PullOptions{
 		SignaturePolicyPath: opt.signaturePolicy,
 		Store:               store,
@@ -93,8 +105,9 @@ func (*Service) Pull(images ...string) error {
 		MaxRetries:          3,
 		RetryDelay:          2 * time.Second,
 		OciDecryptConfig:    decConfig,
-		PullPolicy:          policy,
+		PullPolicy:          pullPolicy,
 	}
+
 	for _, image := range images {
 		imageID, err := buildah.Pull(context.TODO(), image, opts)
 		if err != nil {

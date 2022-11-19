@@ -14,17 +14,19 @@
 
 package types
 
+import v1 "github.com/opencontainers/image-spec/specs-go/v1"
+
 type RegistryService interface {
 	Login(domain, username, passwd string) error
 	Logout(domain string) error
-	Pull(images ...string) error
+	Pull(platform v1.Platform, policy string, images ...string) error
 	Push(image string) error
 }
 
 type ImageService interface {
 	Tag(src, dst string) error
 	Save(imageName, archiveName string) error
-	Load(archiveName string) error
+	Load(archiveName string) (string, error)
 	Remove(force bool, images ...string) error
 	Inspect(images ...string) (ImageListOCIV1, error) //oci image
 	Build(options *BuildOptions, contextDir, imageName string) error

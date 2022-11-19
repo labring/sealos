@@ -12,5 +12,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: tomaito/terminal-controller
-  newTag: v1.0
+  newName: ghcr.io/labring/sealos-terminal-controller
+  newTag: dev

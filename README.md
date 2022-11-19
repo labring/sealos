@@ -24,26 +24,45 @@
 
 [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
 
+## Run a Kubernetes cluster
+
+[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
+
 ## What is sealos
 
-**sealos is a cloud operating system distribution with Kubernetes as its kernel.**
-
-In the early stages, operatings systems have adopted a layered architecture, which later evolved into kernel architecture like Linux and Windows. With the emergence of container technologies, cloud OS will migrate to a "cloud kernel" architecture with strong cohesion in the future.
+**sealos is a cloud operating system distribution based on Kubernetes.**
 
 ![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
 
 - From now on, think of all your machines as an abstract supercomputer whose operating system is sealos, where Kubernetes serves as the OS kernel.
 - Instead of IaaS, PaaS and SaaS, there will only be cloud OS drivers(CSI, CNI and CRI implementations), cloud OS kernel(Kubernetes) and distributed applications.
 
-## sealos cloud overview
+## This is not win11 but sealos desktop
 
-> Embedded dashboard application
+Use the cloud like a PC desktop, Freely run and uninstall any distributed applications:
 
-![](https://user-images.githubusercontent.com/8912557/181175228-ce599b53-340a-4eb2-9a66-0563267a8d2c.png)
+![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
 
-> Embedded terminal application
+Some Screen Shots of `sealos`:
 
-![](https://user-images.githubusercontent.com/8912557/181174718-12aa119e-880e-41d0-b4ba-b60d0c7283b8.png)
+<table>
+  <tr>
+      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
+      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
+  </tr>
+  <tr>
+      <td width="50%" align="center"><b>pgsql on sealos cloud</b></td>
+      <td width="50%" align="center"><b>pgsql on sealos cloud</b></td>
+  </tr>
+  <tr>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196185833-1b5c7a35-32e8-4f75-a52f-8b089ccbe8a4.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/196186330-cf526d0a-46b1-4938-842c-c7a90d79f97e.png"/></td>
+  </tr>
+</table>
 
 ## Core features
 
@@ -53,33 +72,44 @@ In the early stages, operatings systems have adopted a layered architecture, whi
   - [x] Clean the cluster, backup and auto recovering, etc.
 - Download and use OCI-compatible distributed applications
   - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
-- Customize you own distributed applications
+- Customize your own distributed applications
   - [x] Using Dockerfile to build distributed applications images, saving all dependencies.
   - [x] Push distributed applications images to Docker Hub.
   - [x] Combine multiple applications to build your own cloud platform.
 - Sealos cloud
   - [x] Run any distributed applications
-  - [x] Have a full public cloud capability，and run it anywhere
+  - [x] Have a full public cloud capability, and run it anywhere
 
 ## Quickstart
 
-> Installing an HA kubernetes cluster with calico as CNI
+> Installing an HA Kubernetes cluster with calico as CNI
 
-Here `kubernetes:v1.24.0` and `calico:v3.22.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
+Here `kubernetes:v1.24.0` and `calico:v3.24.1` are the cluster images in the registry which are fully compatible with OCI standard. Wonder if we can use flannel instead? Of course!
 
 ```shell script
 # Download and install sealos. sealos is a golang binary so you can just download and copy to bin. You may also download it from release page.
-$ wget https://github.com/labring/sealos/releases/download/v4.0.0/sealos_4.0.0_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.0.0_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget  https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz  && \
+    tar -zxvf sealos_4.1.3_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
 # Create a cluster
-$ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
 
+* Supported Kubernetes versions: [240+ Kubernetes versions](https://hub.docker.com/r/labring/kubernetes/tags) [Kubernetes use cri-docker runtime](https://hub.docker.com/r/labring/kubernetes-docker/tags)
+* Other distributed [applications images](https://hub.docker.com/u/labring)
+
+> Single host
+
+```shell
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
+# remove taint
+$ kubectl taint node --all node-role.kubernetes.io/control-plane-
+```
+
 > Building a custom cluster image
 
-See [Building an Example CloudImage](https://www.sealos.io/docs/examples/build-example-cloudimage).
+See [Building an Example CloudImage](https://www.sealos.io/docs/getting-started/build-example-cloudimage).
 
 > Storage, message queue, database, etc.
 
@@ -94,16 +124,25 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 
 And now everything is ready.
 
+## Use cri-docker image
+
+```shell
+sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
+     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+```
+
 ## Links
 
 - [Contribution Guidelines](./CONTRIBUTING.md)
 - [Development Guide](./DEVELOPGUIDE.md)
+- [sealosAction](https://github.com/marketplace/actions/auto-install-k8s-using-sealos)
 - [sealos 3.0(older version)](https://github.com/labring/sealos/tree/release-v3.3.9#readme) For older version users. Note that sealos 4.0 includes significant improvements, so please upgrade ASAP.
 - [buildah](https://github.com/containers/buildah) Capabilities of buildah is widely used in sealos 4.0 to make cluster images compatible with container images and docker registry.
 - [sealer](https://github.com/sealerio/sealer) Capabilities of sealer is widely used in sealos 4.0 to make Clusterfile compatible with sealer, some module forked sealer source code.
 
 **Join us: [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 
-## License
+<!-- ## License -->
 
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large)
+<!-- [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large) -->

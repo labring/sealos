@@ -6,40 +6,40 @@ repo: github.com/labring/sealos/controllers/user
 resources:
 - api:
     crdVersion: v1
-    namespaced: true
   controller: true
   domain: sealos.io
   group: user
   kind: User
   path: github.com/labring/sealos/controllers/user/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
-    namespaced: true
   controller: true
   domain: sealos.io
   group: user
-  kind: UserGroupUserBinding
+  kind: UserGroup
   path: github.com/labring/sealos/controllers/user/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: sealos.io
-  group: user
-  kind: UserGroupNamespaceBinding
-  path: github.com/labring/sealos/controllers/user/api/v1
-  version: v1
-- api:
-    crdVersion: v1
-    namespaced: true
   controller: true
   domain: sealos.io
   group: user
   kind: UserGroupBinding
   path: github.com/labring/sealos/controllers/user/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true

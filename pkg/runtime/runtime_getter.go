@@ -34,7 +34,7 @@ import (
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
 	k.registryOnce.Do(func() {
-		k.Registry = k.GetRegistryInfo(k.getContentData().RootFSPath(), k.getMaster0IPAndPort())
+		k.Registry = GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
 	})
 	return k.Registry
 }
@@ -82,6 +82,10 @@ func (k *KubeadmRuntime) getNodeIPAndPortList() []string {
 
 func (k *KubeadmRuntime) getMaster0IPAndPort() string {
 	return k.Cluster.GetMaster0IPAndPort()
+}
+
+func (k *KubeadmRuntime) getRegistryIPAndPort() string {
+	return k.Cluster.GetRegistryIPAndPort()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
@@ -139,7 +143,7 @@ func (k *KubeadmRuntime) execToken(ip string) (string, error) {
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
 	hostname, err := k.getRemoteInterface().Hostname(ip)
-	//tips: if hostname is upper,kubelet init master0 is not allowed to modify node
+	// tips: if hostname is upper,kubelet init master0 is not allowed to modify node
 	return strings.ToLower(hostname), err
 }
 func (k *KubeadmRuntime) execHostsAppend(ip, host, domain string) error {

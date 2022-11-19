@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IMAGE=localhost:5000/labring/lvscare:$GIT_COMMIT_SHORT_SHA-$ARCH
-PATCH=docker.io/labring/patch:$GIT_COMMIT_SHORT_SHA-$ARCH
+PATCH=ghcr.io/labring/sealos-merge-patch:$GIT_COMMIT_SHORT_SHA-$ARCH
 PATCH_DIR=docker/patch
 SEALOS=sudo sealos
 

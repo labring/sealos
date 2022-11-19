@@ -1,0 +1,101 @@
+name: Build Services image
+
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths-ignore:
+      - "service/**"
+      - ".github/workflows/services.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+env:
+  # Common versions
+  GO_VERSION: "1.19"
+
+jobs:
+  image-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ auth ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build ${{ matrix.module }} amd64
+        working-directory: service/${{ matrix.module }}
+        run: |
+          GOARCH=amd64 make build
+          mv bin/manager bin/service-${{ matrix.module }}-amd64
+          chmod +x bin/service-${{ matrix.module }}-amd64
+
+      - name: Build ${{ matrix.module }} arm64
+        working-directory: service/${{ matrix.module }}
+        run: |
+          GOARCH=arm64 make build
+          mv bin/manager bin/service-${{ matrix.module }}-arm64
+          chmod +x bin/service-${{ matrix.module }}-arm64
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+
+      - name: set up buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v2
+        with:
+          version: latest
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_TOKEN }}
+
+      - name: build (and publish) ${{ matrix.module }} main image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
+        working-directory: service/${{ matrix.module }}
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos-${{ matrix.module }}-service container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
+          --push \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile \
+          .
+
+  build-on-cluster-image:
+    needs:
+      - image-build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ auth ]
+    permissions:
+      issues: write
+    steps:
+      - name: Build ${{ matrix.module }}-service image
+        uses: peter-evans/create-or-update-comment@v1
+        if: github.repository == 'labring/sealos'
+        with:
+          issue-number: 140
+          repository: labring/cluster-image
+          body: |
+            /imagebuild_apps sealos-${{ matrix.module }}-service dev
+          token: "${{ secrets.GH_TOKEN }}"

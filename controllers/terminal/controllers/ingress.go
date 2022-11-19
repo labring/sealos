@@ -17,53 +17,32 @@ limitations under the License.
 package controllers
 
 import (
-	certv1 "github.com/cert-manager/cert-manager/pkg/apis/certmanager/v1"
-	cmmeta "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	terminalv1 "github.com/labring/sealos/controllers/terminal/api/v1"
 )
 
-const ClusterIssuerName = "cluster-issuer-terminal"
+const (
+	SecretName   = "wildcard-cloud-sealos-io-cert"
+	DomainSuffix = ".cloud.sealos.io"
+)
 
-func createCert(terminal *terminalv1.Terminal) *certv1.Certificate {
-	objectMeta := metav1.ObjectMeta{
-		Name:      terminal.Name,
-		Namespace: terminal.Namespace,
-	}
-	secretName := terminal.Name + "-terminal-sealos-io-cert"
-	dnsName := terminal.Name + ".cloud.sealos.io"
-	cert := &certv1.Certificate{
-		ObjectMeta: objectMeta,
-		Spec: certv1.CertificateSpec{
-			SecretName: secretName,
-			DNSNames:   []string{dnsName},
-			IssuerRef: cmmeta.ObjectReference{
-				Name: ClusterIssuerName,
-				Kind: "ClusterIssuer",
-			},
-		},
-	}
-
-	return cert
-}
-
-func createIngress(terminal *terminalv1.Terminal) *networkingv1.Ingress {
+func createIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
 		Annotations: map[string]string{
-			"cert-manager.io/issuer":                     ClusterIssuerName,
-			"kubernetes.io/ingress.class":                "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target": "/",
+			"kubernetes.io/ingress.class":                    "nginx",
+			"nginx.ingress.kubernetes.io/rewrite-target":     "/",
+			"nginx.ingress.kubernetes.io/proxy-send-timeout": "86400",
+			"nginx.ingress.kubernetes.io/proxy-read-timeout": "86400",
 		},
 		Labels: map[string]string{
 			"k8s-app": "terminal",
 		},
 	}
 
-	host := terminal.Name + ".cloud.sealos.io"
 	pathType := networkingv1.PathTypePrefix
 	paths := []networkingv1.HTTPIngressPath{{
 		PathType: &pathType,
@@ -86,10 +65,9 @@ func createIngress(terminal *terminalv1.Terminal) *networkingv1.Ingress {
 		},
 	}
 
-	secretName := terminal.Name + "-terminal-sealos-io-cert"
 	tls := networkingv1.IngressTLS{
 		Hosts:      []string{host},
-		SecretName: secretName,
+		SecretName: SecretName,
 	}
 
 	ingress := &networkingv1.Ingress{

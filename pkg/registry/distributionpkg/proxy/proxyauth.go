@@ -126,6 +126,7 @@ func ping(manager challenge.Manager, endpoint string) error {
 func newClientSkipVerify() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
+			// nosemgrep
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
 			},

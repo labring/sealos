@@ -74,6 +74,7 @@ func (p *httpProber) Probe(host, port string) error {
 	if p.client == nil {
 		p.client = &http.Client{
 			Transport: &http.Transport{
+				// nosemgrep
 				TLSClientConfig: &tls.Config{InsecureSkipVerify: p.InsecureSkipVerify},
 			},
 		}

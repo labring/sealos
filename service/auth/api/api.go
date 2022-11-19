@@ -17,7 +17,7 @@ package api
 import (
 	"errors"
 
-	restful "github.com/emicklei/go-restful/v3"
+	"github.com/emicklei/go-restful/v3"
 
 	"github.com/labring/sealos/pkg/auth"
 	hs "github.com/labring/sealos/pkg/utils/httpserver"

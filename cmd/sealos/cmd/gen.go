@@ -18,16 +18,18 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var exampleGen = `
 generate a cluster with multi images, specify masters and nodes:
-    sealos gen labring/kubernetes:v1.24.0 labring/calico:v3.22.1 \
+    sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
         --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
         --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
 
@@ -39,33 +41,44 @@ specify server InfraSSH port:
     sealos gen labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
         --nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
 `
-var genArgs apply.RunArgs
 
 func newGenCmd() *cobra.Command {
+	genArgs := &apply.RunArgs{
+		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
+	}
+	var out string
 	var genCmd = &cobra.Command{
 		Use:     "gen",
 		Short:   "generate a Clusterfile",
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cluster, err := apply.NewClusterFromArgs(args, &genArgs)
+			objects, err := apply.NewClusterFromArgs(args, genArgs)
 			if err != nil {
 				return err
 			}
-			fmt.Println(cluster.String())
-			return nil
+			data, err := yaml.MarshalYamlConfigs(objects...)
+			if err != nil {
+				return err
+			}
+			var outputWriter io.WriteCloser
+			switch out {
+			case "", "stdout":
+				outputWriter = os.Stdout
+			default:
+				outputWriter, err = os.Create(out)
+			}
+			if err != nil {
+				return err
+			}
+			defer outputWriter.Close()
+			_, err = fmt.Fprintln(outputWriter, string(data))
+			return err
 		},
 	}
-	genCmd.Flags().StringVarP(&genArgs.Masters, "masters", "m", "", "set Count or IPList to masters")
-	genCmd.Flags().StringVarP(&genArgs.Nodes, "nodes", "n", "", "set Count or IPList to nodes")
-	genCmd.Flags().StringVarP(&genArgs.User, "user", "u", v1beta1.DefaultUserRoot, "set baremetal server username")
-	genCmd.Flags().StringVarP(&genArgs.Password, "passwd", "p", "", "set cloud provider or baremetal server password")
-	genCmd.Flags().Uint16Var(&genArgs.Port, "port", 22, "set the sshd service port number for the server")
-	genCmd.Flags().StringVar(&genArgs.Pk, "pk", v1beta1.DefaultPKFile, "set baremetal server private key")
-	genCmd.Flags().StringVar(&genArgs.PkPassword, "pk-passwd", "", "set baremetal server private key password")
-	genCmd.Flags().StringSliceVar(&genArgs.CustomCMD, "cmd", []string{}, "set cmd for image cmd instruction")
-	genCmd.Flags().StringSliceVarP(&genArgs.CustomEnv, "env", "e", []string{}, "set custom environment variables")
-	genCmd.Flags().StringVar(&genArgs.ClusterName, "name", "default", "set cluster name variables")
+	genArgs.RegisterFlags(genCmd.Flags())
+	genCmd.Flags().StringVarP(&out, "output", "o", "", "print output to named file")
 	return genCmd
 }
 

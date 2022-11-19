@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: auth-service
+    control-plane: service-manager
+  name: auth-service-system
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app: auth-service
+  name: auth-service-manager
+  namespace: auth-service-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  labels:
+    app: auth-service
+  name: auth-service-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: auth-service-manager
+  namespace: auth-service-system
+---
+apiVersion: v1
+data:
+  auth.yaml: |
+    addr: :8080
+    ssoType: "casdoor"
+    callbackUrl: "{{ .callbackUrlEnv }}"
+    oauthProviders:
+      - type: "Github"
+        clientId: "{{ .clientIDEnv }}"
+        clientSecret: "{{ .clientSecretEnv }}"
+    kubeconfig: "{{ .kubeconfigEnv }}"
+    ssoEndpoint: "{{ .ssoEndpointEnv }}"
+kind: ConfigMap
+metadata:
+  labels:
+    app: auth-service
+  name: auth-service-config
+  namespace: auth-service-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: auth-service
+    control-plane: service-manager
+  name: auth-service-manager
+  namespace: auth-service-system
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: auth-service
+    control-plane: service-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auth-service
+    control-plane: service-manager
+  name: auth-service-manager
+  namespace: auth-service-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+      control-plane: service-manager
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        app: auth-service
+        control-plane: service-manager
+    spec:
+      containers:
+      - command:
+        - /manager
+        image: ghcr.io/labring/sealos-auth-service:dev
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          tcpSocket:
+            port: 8080
+        name: manager
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          tcpSocket:
+            port: 8080
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 10m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: true
+        volumeMounts:
+        - mountPath: /auth.yaml
+          name: service-config
+          subPath: auth.yaml
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: auth-service-manager
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - configMap:
+          name: auth-service-config
+        name: service-config

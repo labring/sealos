@@ -65,10 +65,12 @@ func (hbu *httpBlobUpload) ReadFrom(r io.Reader) (n int64, err error) {
 	}
 
 	hbu.uuid = resp.Header.Get("Docker-Upload-UUID")
-	hbu.location, err = sanitizeLocation(resp.Header.Get("Location"), hbu.location)
+	location, err := sanitizeLocation(resp.Header.Get("Location"), hbu.location)
 	if err != nil {
 		return 0, err
 	}
+	hbu.location = location
+
 	rng := resp.Header.Get("Range")
 	var start, end int64
 	if n, err := fmt.Sscanf(rng, "%d-%d", &start, &end); err != nil {
@@ -100,10 +102,12 @@ func (hbu *httpBlobUpload) Write(p []byte) (n int, err error) {
 	}
 
 	hbu.uuid = resp.Header.Get("Docker-Upload-UUID")
-	hbu.location, err = sanitizeLocation(resp.Header.Get("Location"), hbu.location)
+	location, err := sanitizeLocation(resp.Header.Get("Location"), hbu.location)
 	if err != nil {
 		return 0, err
 	}
+	hbu.location = location
+
 	rng := resp.Header.Get("Range")
 	var start, end int
 	if n, err := fmt.Sscanf(rng, "%d-%d", &start, &end); err != nil {

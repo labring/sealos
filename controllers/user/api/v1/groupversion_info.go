@@ -20,6 +20,9 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
@@ -34,3 +37,39 @@ var (
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
 )
+
+const (
+	UserAnnotationOwnerKey   = "user.sealos.io/creator"
+	UserAnnotationDisplayKey = "user.sealos.io/display-name"
+)
+
+const (
+	UgNameLabelKey        = "user.sealos.io/usergroup.name"
+	UgRoleLabelKey        = "user.sealos.io/usergroup.role"
+	UgBindingKindLabelKey = "user.sealos.io/usergroupbinding.kind"
+	UgBindingNameLabelKey = "user.sealos.io/usergroupbinding.name"
+)
+
+func validateAnnotationKeyNotEmpty(meta metav1.ObjectMeta, key string) error {
+	if meta.Annotations[key] == "" {
+		return fmt.Errorf("annotation %s not allow empty", key)
+	}
+	return nil
+}
+
+func validateLabelKeyNotEmpty(meta metav1.ObjectMeta, key string) error {
+	if meta.Labels[key] == "" {
+		return fmt.Errorf("label %s not allow empty", key)
+	}
+	return nil
+}
+
+func initAnnotationAndLabels(meta metav1.ObjectMeta) metav1.ObjectMeta {
+	if meta.Annotations == nil {
+		meta.Annotations = make(map[string]string, 0)
+	}
+	if meta.Labels == nil {
+		meta.Labels = make(map[string]string, 0)
+	}
+	return meta
+}

@@ -47,6 +47,10 @@ func (c *Cluster) GetNodeIPList() []string {
 	return iputils.GetHostIPs(c.GetIPSByRole(NODE))
 }
 
+func (c *Cluster) GetRegistryIP() string {
+	return c.GetMaster0IP()
+}
+
 func (c *Cluster) GetNodeIPAndPortList() []string {
 	return c.GetIPSByRole(NODE)
 }
@@ -69,6 +73,10 @@ func (c *Cluster) GetMaster0IPAndPort() string {
 		return ""
 	}
 	return c.Spec.Hosts[0].IPS[0]
+}
+
+func (c *Cluster) GetRegistryIPAndPort() string {
+	return c.GetMaster0IPAndPort()
 }
 
 func (c *Cluster) GetMaster0IPAPIServer() string {

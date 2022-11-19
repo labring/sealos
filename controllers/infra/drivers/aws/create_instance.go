@@ -20,6 +20,9 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
+
+	"github.com/google/uuid"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -28,6 +31,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 )
+
+var mutex sync.Mutex
 
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
 // We use this interface to test the functions using a mocked service.
@@ -39,6 +44,10 @@ type EC2CreateInstanceAPI interface {
 	CreateTags(ctx context.Context,
 		params *ec2.CreateTagsInput,
 		optFns ...func(*ec2.Options)) (*ec2.CreateTagsOutput, error)
+
+	CreateKeyPair(ctx context.Context,
+		params *ec2.CreateKeyPairInput,
+		optFns ...func(*ec2.Options)) (*ec2.CreateKeyPairOutput, error)
 }
 
 // MakeInstance creates an Amazon Elastic Compute Cloud (Amazon EC2) instance.
@@ -71,6 +80,10 @@ func MakeTags(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateTags
 	return api.CreateTags(c, input)
 }
 
+func MakeKeyPair(c context.Context, api EC2CreateInstanceAPI, input *ec2.CreateKeyPairInput) (*ec2.CreateKeyPairOutput, error) {
+	return api.CreateKeyPair(c, input)
+}
+
 func GetInstanceType(hosts *v1.Hosts) types.InstanceType {
 	// TODO search instance type by CPU and memory
 
@@ -78,7 +91,7 @@ func GetInstanceType(hosts *v1.Hosts) types.InstanceType {
 }
 
 func rolesToTags(roles []string) (tags []types.Tag) {
-	t := "true"
+	t := common.TRUELable
 
 	for _, r := range roles {
 		tag := types.Tag{
@@ -102,7 +115,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	tags := rolesToTags(hosts.Roles)
 	// Set label tag
 	labelKey := common.InfraInstancesLabel
-	labelValue := infra.GetInstancesTag()
+	labelValue := infra.GetInstancesAndVolumesTag()
 	tags = append(tags, types.Tag{
 		Key:   &labelKey,
 		Value: &labelValue,
@@ -121,6 +134,18 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		Key:   &nameKey,
 		Value: &nameValue,
 	})
+	volumeTags := rolesToTags(hosts.Roles)
+	rootVolume, value := common.RootVolumeLabel, common.TRUELable
+	volumeTags = append(volumeTags,
+		types.Tag{
+			Key:   &rootVolume,
+			Value: &value,
+		},
+	)
+	keyName := infra.Status.SSH.PkName
+	//todo use ami to search root device name
+	rootDeviceName := "/dev/xvda"
+	rootVolumeSize := int32(40)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -131,17 +156,72 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				ResourceType: types.ResourceTypeInstance,
 				Tags:         tags,
 			},
+			{
+				ResourceType: types.ResourceTypeVolume,
+				Tags:         volumeTags,
+			},
 		},
+		KeyName:          &keyName,
+		SecurityGroupIds: []string{"sg-0476ffedb5ca3f816"},
+		BlockDeviceMappings: []types.BlockDeviceMapping{{
+			DeviceName: &rootDeviceName,
+			Ebs:        &types.EbsBlockDevice{VolumeSize: &rootVolumeSize},
+		}},
 	}
 
+	// assign to BlockDeviceMappings from host.Disk
+	//for i := range input.BlockDeviceMappings {
+	//	name, size, volumeType := hosts.Disks[i].Name, int32(hosts.Disks[i].Capacity), hosts.Disks[i].Type
+	//	input.BlockDeviceMappings[i].DeviceName = &name
+	//	input.BlockDeviceMappings[i].Ebs = &types.EbsBlockDevice{
+	//		VolumeSize: &size,
+	//		VolumeType: types.VolumeType(volumeType),
+	//	}
+	//}
 	result, err := MakeInstance(context.TODO(), client, input)
 	if err != nil {
-		return err
+		return fmt.Errorf("create volume failed: %v", err)
 	}
 	for _, instance := range result.Instances {
-		fmt.Printf("instance id: %v, tags: %v, ip: %v, Eip: %v",
-			instance.InstanceId, instance.Tags, instance.PrivateIpAddress, instance.PublicIpAddress)
+		hosts.Metadata = append(hosts.Metadata, v1.Metadata{
+			ID: *instance.InstanceId,
+		})
+	}
+	if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
+		infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
+	}
+	err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
+	if err != nil {
+		return fmt.Errorf("create and attach volumes failed: %v", err)
+	}
+	return nil
+}
+
+func (d Driver) CreateKeyPair(infra *v1.Infra) error {
+	mutex.Lock()
+	client := d.Client
+	if infra.Status.SSH.PkName != "" {
+		mutex.Unlock()
+		return nil
+	}
+	myUUID, err := uuid.NewUUID()
+	if err != nil {
+		mutex.Unlock()
+		return fmt.Errorf("create uuid error:%v", err)
+	}
+	keyName := myUUID.String()
+	input := &ec2.CreateKeyPairInput{
+		KeyName:   &keyName,
+		KeyFormat: types.KeyFormatPem,
 	}
 
+	result, err := MakeKeyPair(context.TODO(), client, input)
+	if err != nil {
+		mutex.Unlock()
+		return fmt.Errorf("create key pair error:%v", err)
+	}
+	infra.Status.SSH.PkName = *result.KeyName
+	infra.Status.SSH.PkData = *result.KeyMaterial
+	mutex.Unlock()
 	return nil
 }

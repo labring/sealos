@@ -17,14 +17,20 @@ limitations under the License.
 package guest
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/labring/sealos/pkg/constants"
 
 	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func TestDefault_getGuestCmd(t *testing.T) {
+	shell := func(cName, containerName, cmd string) string {
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cName, containerName), cmd)
+	}
 	type fields struct {
 		imageService types.ImageService
 	}
@@ -53,7 +59,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"IFACE=cccc bash ovn-install.sh"},
+			want: []string{shell("", "", "IFACE=cccc bash ovn-install.sh")},
 		},
 
 		{
@@ -70,7 +76,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"IFACE=\"eth.*|en.*\" bash ovn-install.sh"},
+			want: []string{shell("", "", "IFACE=\"eth.*|en.*\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-env-override",
@@ -86,7 +92,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"IFACE=\"default\" bash ovn-install.sh"},
+			want: []string{shell("", "", "IFACE=\"default\" bash ovn-install.sh")},
 		},
 		{
 			name:   "default-cmd-override",
@@ -102,7 +108,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"IFACE=\"default\" sh ovn-install.sh"},
+			want: []string{shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 		{
 			name:   "default-entrypoint-cmd-override",
@@ -118,7 +124,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 					},
 				},
 			},
-			want: []string{"AA=default", "IFACE=\"default\" sh ovn-install.sh"},
+			want: []string{shell("", "", "AA=default"), shell("", "", "IFACE=\"default\" sh ovn-install.sh")},
 		},
 	}
 	for _, tt := range tests {

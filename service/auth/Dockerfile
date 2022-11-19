@@ -18,13 +18,15 @@
 # FROM gcr.io/distroless/static:nonroot
 FROM alpine:latest
 
+ARG TARGETARCH
+
 RUN sed -i 's/https/http/' /etc/apk/repositories
 RUN apk add curl \
     && apk add ca-certificates \
     && update-ca-certificates
 
 WORKDIR /
-COPY /service-auth .
 USER 65532:65532
 
-ENTRYPOINT ["/service-auth", "-config", "/auth.yaml"]
+COPY bin/service-auth-$TARGETARCH /manager
+ENTRYPOINT ["/manager", "-config", "/auth.yaml"]

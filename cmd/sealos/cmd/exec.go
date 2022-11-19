@@ -35,7 +35,7 @@ exec to default cluster: default
 specify the cluster name(If there is only one cluster in the $HOME/.sealos directory, it should be applied. ):
     sealos exec -c my-cluster "cat /etc/hosts"
 set role label to exec cmd:
-    sealos exec -c my-cluster -r master,slave,node1 "cat /etc/hosts"
+    sealos exec -c my-cluster -r master,node "cat /etc/hosts"
 set ips to exec cmd:
     sealos exec -c my-cluster --ips 172.16.1.38 "cat /etc/hosts"
 `
@@ -70,9 +70,9 @@ func newExecCmd() *cobra.Command {
 			return nil
 		},
 	}
-	execCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "submit one cluster name")
-	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "set role label to roles")
-	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "ssh ips list on node")
+	execCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
+	execCmd.Flags().StringVarP(&roles, "roles", "r", "", "run command on nodes with role")
+	execCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "run command on nodes with ip address")
 	return execCmd
 }
 

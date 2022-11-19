@@ -57,9 +57,14 @@ func GetKubeConfig(accessToken string) (string, error) {
 		return "", errors.Wrap(err, "Get user info failed")
 	}
 
-	kubeConfig, err := utils.GenerateKubeConfig(user.ID)
+	err = utils.CreateOrUpdateKubeConfig(user.ID)
 	if err != nil {
-		return "", errors.Wrap(err, "Generate kube config failed")
+		return "", errors.Wrap(err, "Create kube config failed")
+	}
+	// Wait for user controller to write kubeconfig into status
+	kubeConfig, err := utils.GetKubeConfig(user.ID, 10)
+	if err != nil {
+		return "", errors.Wrap(err, "Create kubeconfig failed")
 	}
 	return kubeConfig, nil
 }

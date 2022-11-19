@@ -41,16 +41,20 @@ type PaymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Payment. Edit payment_types.go to remove/update
+	// UserID is the user id who want to recharge
 	UserID string `json:"userID,omitempty"`
-	Amount int64  `json:"amount,omitempty"`
+	// Amount is the amount of recharge
+	Amount int64 `json:"amount,omitempty"`
 }
 
 // PaymentStatus defines the observed state of Payment
 type PaymentStatus struct {
+	// TradeNO is the tradeNO of wechatpay
 	TradeNO string `json:"tradeNO,omitempty"`
+	// CodeURL is the codeURL of wechatpay
 	CodeURL string `json:"codeURL,omitempty"`
-	Status  string `json:"status,omitempty"`
+	// Status is the status of wechatpay, charging, closed, timeout
+	Status string `json:"status,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -19,7 +19,7 @@ package v1
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	v1bata1 "github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/kustomize/kyaml/resid"
@@ -68,9 +68,21 @@ spec:
        type: system
 */
 
+var ec2p map[string]int64
+
+// ebs unit: CNY cents/GB-month
+var ebs map[string]int64
+
+type IPAddress struct {
+	IPType  string `json:"ipType,omitempty"`
+	IPValue string `json:"ipValue,omitempty"`
+}
+
 type Metadata struct {
-	IP []string `json:"ips,omitempty"`
-	ID string   `json:"id,omitempty"`
+	// 0 private , 1 public
+	IP     []IPAddress `json:"ipaddress,omitempty"`
+	ID     string      `json:"id,omitempty"`
+	DiskID []string    `json:"diskId,omitempty"`
 }
 
 type Hosts struct {
@@ -108,9 +120,26 @@ func (hosts IndexHosts) Swap(i, j int) {
 }
 
 type Disk struct {
-	Capacity string `json:"capacity,omitempty"`
+	ID       []string `json:"id,omitempty"`
+	Capacity int      `json:"capacity,omitempty"`
 	// ENUM: system/data
 	Type string `json:"type,omitempty"`
+	// Device name
+	Name string `json:"name,omitempty"`
+}
+
+type NameDisks []Disk
+
+func (disks NameDisks) Len() int {
+	return len(disks)
+}
+
+func (disks NameDisks) Less(i, j int) bool {
+	return disks[i].Name < disks[j].Name
+}
+
+func (disks NameDisks) Swap(i, j int) {
+	disks[i], disks[j] = disks[j], disks[i]
 }
 
 // InfraSpec defines the desired state of Infra
@@ -121,14 +150,44 @@ type InfraSpec struct {
 	// RegionIDs is cloud provider regionID list
 	RegionIDs []string    `json:"regionIDs,omitempty"`
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`
-	SSH       v1beta1.SSH `json:"ssh,omitempty"`
+	SSH       v1bata1.SSH `json:"ssh,omitempty"`
 	Hosts     []Hosts     `json:"hosts,omitempty"`
+	// Availability Zone
+	AvailabilityZone string `json:"availabilityZone,omitempty"`
 }
 
 // InfraStatus defines the observed state of Infra
 type InfraStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	SSH         v1bata1.SSH `json:"ssh,omitempty"`
+	Hosts       []Hosts     `json:"hosts,omitempty"`
+	Connections string      `json:"connections,omitempty"` // master0 ip:port
+	Status      string      `json:"status,omitempty"`
+}
+type Status int
+
+const (
+	Pending Status = iota
+	Running
+	Succeeded
+	Failed
+	Unknown
+)
+
+func (s Status) String() string {
+	switch s {
+	case Pending:
+		return "Pending"
+	case Running:
+		return "Running"
+	case Succeeded:
+		return "Succeeded"
+	case Failed:
+		return "Failed"
+	default:
+		return "Unknown"
+	}
 }
 
 //+kubebuilder:object:root=true
@@ -152,7 +211,7 @@ type InfraList struct {
 	Items           []Infra `json:"items"`
 }
 
-func (i *Infra) GetInstancesTag() string {
+func (i *Infra) GetInstancesAndVolumesTag() string {
 	namespace := i.Namespace
 	if namespace == "" {
 		namespace = resid.DefaultNamespace
@@ -161,6 +220,48 @@ func (i *Infra) GetInstancesTag() string {
 	return fmt.Sprintf("%s/%s", namespace, i.Name)
 }
 
+// QueryPrice query infra price/hour, unit: CNY cents/hour
+func (i *Infra) QueryPrice() (int64, error) {
+	valueEc2, valueEbs := int64(0), int64(0)
+	for _, j := range i.Spec.Hosts {
+		if _, ok := ec2p[j.Flavor]; !ok {
+			return -1, fmt.Errorf("no ec2 type")
+		}
+		valueEc2 += ec2p[j.Flavor] * int64(j.Count)
+
+		for _, disk := range j.Disks {
+			if _, ok := ebs[disk.Type]; !ok {
+				return -1, fmt.Errorf("no ebs type")
+			}
+			valueEbs += ebs[disk.Type] * int64(disk.Capacity) * int64(j.Count)
+		}
+	}
+	valueEbs = valueEbs / 30 / 24
+	return int64(1.25 * float64(valueEc2+valueEbs)), nil
+}
+
 func init() {
+	ec2p = map[string]int64{
+		"t2.micro":   int64(10),
+		"t2.small":   int64(22),
+		"t2.medium":  int64(43),
+		"t2.large":   int64(86),
+		"t2.xlarge":  int64(170),
+		"t2.2xlarge": int64(340),
+		"t3.medium":  int64(27),
+		"t3.large":   int64(53),
+		"t3.xlarge":  int64(106),
+		"t3.2xlarge": int64(211),
+		"t4g.medium": int64(21),
+		"c5.large":   int64(74),
+		"c5.xlarge":  int64(148),
+		"c5.2xlarge": int64(296),
+		"c6g.large":  int64(59),
+		"c6g.xlarge": int64(118),
+	}
+	ebs = map[string]int64{
+		"gp2": int64(75),
+		"gp3": int64(60),
+	}
 	SchemeBuilder.Register(&Infra{}, &InfraList{})
 }

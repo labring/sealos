@@ -16,140 +16,102 @@ package utils
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/hex"
-	"encoding/pem"
 	"fmt"
-	"math/big"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
-	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/apimachinery/pkg/fields"
+
+	"k8s.io/apimachinery/pkg/watch"
+
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 )
 
-func RandomHexStr(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
+func CreateOrUpdateKubeConfig(uid string) error {
+	if conf.GlobalConfig.MockK8s {
+		return nil
 	}
-	return hex.EncodeToString(b), nil
-}
-
-func CreateJWTCertificateAndPrivateKey() (string, string, error) {
-	// Generate RSA key.
-	key, err := rsa.GenerateKey(rand.Reader, 4096)
+	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
-		return "", "", err
+		return err
 	}
 
-	// Encode private key to PKCS#1 ASN.1 PEM.
-	privateKeyPem := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: x509.MarshalPKCS1PrivateKey(key),
-		},
-	)
-
-	tml := x509.Certificate{
-		NotBefore: time.Now(),
-		NotAfter:  time.Now().AddDate(99, 0, 0),
-		// you have to generate a different serial number each execution
-		SerialNumber: big.NewInt(123456),
-		Subject: pkix.Name{
-			CommonName:   "Sealos Desktop Cert",
-			Organization: []string{"Sealos"},
-		},
-		BasicConstraintsValid: true,
-	}
-	cert, err := x509.CreateCertificate(rand.Reader, &tml, &tml, &key.PublicKey, key)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Generate a pem block with the certificate
-	certPem := pem.EncodeToMemory(&pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: cert,
+	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "user.sealos.io",
+		Version:  "v1",
+		Resource: "users",
 	})
-
-	return string(certPem), string(privateKeyPem), nil
+	user, err := resource.Get(context.Background(), uid, metav1.GetOptions{})
+	if k8sErrors.IsNotFound(err) {
+		_, err := resource.Create(context.TODO(), &unstructured.Unstructured{Object: map[string]interface{}{
+			"apiVersion": "user.sealos.io/v1",
+			"kind":       "User",
+			"metadata": map[string]interface{}{
+				"name": uid,
+				"labels": map[string]interface{}{
+					"updateTime": time.Now().Format("T2006-01-02T15-04-05"),
+				},
+			},
+			"spec": map[string]interface{}{
+				"csrExpirationSeconds": 1000000000,
+			},
+		}}, metav1.CreateOptions{})
+		if err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	} else {
+		// To trigger controller reconcile
+		user.Object["metadata"].(map[string]interface{})["labels"].(map[string]interface{})["updateTime"] = time.Now().Format("T2006-01-02T15-04-05")
+		_, err = resource.Update(context.Background(), user, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func GenerateKubeConfig(username string) (string, error) {
+func GetKubeConfig(uid string, timeout int) (string, error) {
+	if conf.GlobalConfig.MockK8s {
+		return "This is mock data.", nil
+	}
 	client, err := kubernetes.NewKubernetesClient(conf.GlobalConfig.Kubeconfig, "")
 	if err != nil {
 		return "", err
 	}
-	if _, err = ApplyServiceAccount(client, username); err != nil {
-		return "", err
-	}
-	if _, err = ApplyClusterRoleBinding(client, username); err != nil {
-		return "", err
-	}
-	if _, err = ApplySecret(client, username); err != nil {
-		return "", err
-	}
 
-	var tokenSecret *v1.Secret
-	// Wait for kubernetes to fill token into the secret
-	for i := 0; i < 10; i++ {
-		tokenSecret, err = client.Kubernetes().CoreV1().Secrets("sealos").Get(context.TODO(), fmt.Sprintf("%s-%s", username, "token"), metaV1.GetOptions{})
-		if err != nil {
-			return "", err
-		}
-		if _, filled := tokenSecret.Data["token"]; filled {
-			break
-		}
-		time.Sleep(time.Second)
-	}
-	if _, filled := tokenSecret.Data["token"]; !filled {
-		return "", fmt.Errorf("failed to get token in Secret %s-%s", username, "token")
-	}
-
-	ctx := fmt.Sprintf("%s@%s", username, "kubernetes")
+	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "user.sealos.io",
+		Version:  "v1",
+		Resource: "users",
+	})
+	fieldSelector, _ := fields.ParseSelector("metadata.name=" + uid)
+	w, err := resource.Watch(context.Background(), metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
+	})
 	if err != nil {
 		return "", err
 	}
 
-	// make sure cadata is loaded into config under incluster mode
-	if err := rest.LoadTLSFiles(client.Config()); err != nil {
-		return "", err
+	for {
+		select {
+		case <-time.After(time.Duration(timeout) * time.Second):
+			return "", fmt.Errorf("status is empty, please wait for a while or check the health of user-controller")
+		case event := <-w.ResultChan():
+			if event.Type == watch.Modified || event.Type == watch.Added {
+				status := event.Object.(*unstructured.Unstructured).Object["status"]
+				if status != nil {
+					if kubeConfig, ok := status.(map[string]interface{})["kubeConfig"]; ok {
+						return kubeConfig.(string), nil
+					}
+				}
+			}
+		}
 	}
-
-	config := api.Config{
-		Clusters: map[string]*api.Cluster{
-			"kubernetes": {
-				Server:                   "https://apiserver.cluster.local:6443",
-				CertificateAuthorityData: client.Config().TLSClientConfig.CAData,
-			},
-		},
-		Contexts: map[string]*api.Context{
-			ctx: {
-				Cluster:  "kubernetes",
-				AuthInfo: username,
-			},
-		},
-		AuthInfos: map[string]*api.AuthInfo{
-			username: {
-				Token: string(tokenSecret.Data["token"]),
-			},
-		},
-		CurrentContext: ctx,
-	}
-
-	content, err := clientcmd.Write(config)
-	if err != nil {
-		return "", fmt.Errorf("write kubeconfig failed %s", err)
-	}
-
-	return string(content), nil
 }

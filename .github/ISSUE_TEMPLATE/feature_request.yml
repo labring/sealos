@@ -1,0 +1,20 @@
+name: "\U0001F680 Sealos feature request"
+description: Suggest an idea for this project
+labels: ["feature-request"]
+title: 'Feature: brief description of the feature'
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting an idea to improve Sealos.
+        Please fill in as much of the following form as you're able.
+  - type: textarea
+    attributes:
+      label: What is the problem this feature will solve?
+  - type: textarea
+    attributes:
+      label: If you have solution，please describe it
+      description: Describe the requests. If you already have something in mind... PRs are welcome!
+  - type: textarea
+    attributes:
+      label: What alternatives have you considered?

@@ -20,6 +20,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
 
@@ -28,8 +30,9 @@ import (
 	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+var ErrClusterFileNotExists = errors.New("the cluster file is not exist")
 
 type PreProcessor interface {
 	Process() error
@@ -39,22 +42,26 @@ func NewPreProcessor(path string) PreProcessor {
 	return &ClusterFile{path: path}
 }
 
-func (c *ClusterFile) Process() error {
+func (c *ClusterFile) Process() (err error) {
 	if !fileutil.IsExist(c.path) {
-		return errors.New("the cluster file is not exist")
+		return ErrClusterFileNotExists
 	}
-	for i := range c.customEnvs {
-		kv := strings.SplitN(c.customEnvs[i], "=", 2)
-		if len(kv) == 2 {
-			os.Setenv(kv[0], kv[1])
-		}
-	}
-	clusterFileData, err := c.loadClusterFile()
-	if err != nil {
-		return err
-	}
-	logger.Debug("read Clusterfile: %s", string(clusterFileData))
-	return c.decode(clusterFileData)
+	c.once.Do(func() {
+		err = func() error {
+			for i := range c.customEnvs {
+				kv := strings.SplitN(c.customEnvs[i], "=", 2)
+				if len(kv) == 2 {
+					_ = os.Setenv(kv[0], kv[1])
+				}
+			}
+			clusterFileData, err := c.loadClusterFile()
+			if err != nil {
+				return err
+			}
+			return c.decode(clusterFileData)
+		}()
+	})
+	return
 }
 
 func (c *ClusterFile) loadClusterFile() ([]byte, error) {
@@ -66,16 +73,31 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	logger.Debug("loadClusterFile loadRenderValues: %+v", mergeValues)
 	data := map[string]interface{}{
 		"Values": mergeValues,
 	}
-	tpl, err := template.Parse(string(body))
-	if err != nil {
-		return nil, err
-	}
+	logger.Debug("loadClusterFile body: %+v", string(body))
 	out := bytes.NewBuffer(nil)
-	if err := tpl.Execute(out, data); err != nil {
-		return nil, err
+	tpl, isOk, err := template.TryParse(string(body))
+	if isOk {
+		if err != nil {
+			return nil, err
+		}
+		if err := tpl.Execute(out, data); err != nil {
+			return nil, err
+		}
+	} else {
+		out.Write(body)
+	}
+
+	for i := range c.customConfigFiles {
+		configData, err := fileutil.ReadAll(c.customConfigFiles[i])
+		if err != nil {
+			return nil, err
+		}
+		out.WriteString("\n---\n")
+		out.Write(configData)
 	}
 	return out.Bytes(), nil
 }

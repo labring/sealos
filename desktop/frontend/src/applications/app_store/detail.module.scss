@@ -1,0 +1,154 @@
+.detailpage {
+  display: flex;
+  min-height: 80%;
+  background: #f7f9fc;
+  border: 1px solid #e2e2e2;
+  border-radius: 6px;
+}
+
+.detailcont {
+  width: 320px;
+  margin-right: 8px;
+  padding-top: 4em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.growcont {
+  width: auto;
+  width: calc(100% - 300px);
+  margin-right: 8px;
+}
+
+.detailcont,
+.briefcont {
+  border-radius: 6px;
+  background: var(--rib2-bg);
+  border: 1px solid var(--page-bd-col);
+  color: var(--txt-col);
+}
+
+.instbtn {
+  font-size: 0.8em;
+  padding: 4px 36px;
+  padding-bottom: 6px;
+  background: #0067c0;
+  border-radius: 4px;
+  color: #eee;
+}
+
+.instbtn:hover {
+  background: #0157a2;
+}
+
+.instbtn:active,
+.instbtn:focus-visible {
+  background: #03549b;
+}
+
+.descnt {
+  display: grid;
+  place-items: center;
+  width: 80%;
+  margin-top: 60px;
+  text-align: justify;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.briefcont {
+  width: 100%;
+  margin-bottom: 8px;
+
+  pre {
+    font-family: inherit;
+    width: 100%;
+    white-space: pre-wrap;
+  }
+
+  & > div {
+    padding: 0 16px;
+    padding-bottom: 6px;
+  }
+
+  & > div:nth-child(1) {
+    border: 0 solid var(--comp-txt);
+    border-bottom-width: 1px;
+  }
+
+  .bg-orange-200 {
+    --bg-opacity: 0.8;
+  }
+}
+
+.reviewtxt {
+  color: var(--med-txt);
+}
+
+.downbar {
+  width: 120px;
+  border-radius: 8px;
+  background: #bfcef2;
+  overflow: hidden;
+  position: relative;
+  padding: 4px 0;
+}
+
+.downbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -40%;
+  padding: 4px 0;
+  width: 40%;
+  border-radius: 8px;
+  background: #0069ff;
+  animation: downanim 1s linear infinite;
+}
+
+@keyframes downanim {
+  from {
+    left: -40%;
+  }
+
+  to {
+    left: 100%;
+  }
+}
+
+.detailinfo {
+  width: 80%;
+  .infobrief {
+    .briefinstall {
+      background-color: #2da44e;
+    }
+  }
+}
+.detailversions {
+  .selected {
+    background-color: #238636;
+  }
+}
+
+.highlight {
+  background-color: #fff;
+  border-radius: 6px;
+  pre {
+    background: #1d1f21;
+    color: #f8f8f2;
+    white-space: pre;
+    overflow: auto;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 3px;
+  }
+}
+.codebg {
+  background: #1d1f21;
+  color: #f8f8f2;
+}

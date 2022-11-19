@@ -92,6 +92,8 @@ type ClusterStatus struct {
 type SSH struct {
 	User     string `json:"user,omitempty"`
 	Passwd   string `json:"passwd,omitempty"`
+	PkName   string `json:"pkname,omitempty"`
+	PkData   string `json:"pkdata,omitempty"`
 	Pk       string `json:"pk,omitempty"`
 	PkPasswd string `json:"pkPasswd,omitempty"`
 	Port     uint16 `json:"port,omitempty"`

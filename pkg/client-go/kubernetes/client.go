@@ -61,18 +61,25 @@ func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
 	config.QPS = 1e6
 	config.Burst = 1e6
 	var k kubernetesClient
-	k.k8s, err = kubernetes.NewForConfig(config)
+
+	k8s, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	k.discoveryClient, err = discovery.NewDiscoveryClientForConfig(config)
+	k.k8s = k8s
+
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
 	if err != nil {
 		return nil, err
 	}
-	k.k8sDynamic, err = dynamic.NewForConfig(config)
+	k.discoveryClient = discoveryClient
+
+	k8sDynamic, err := dynamic.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
+	k.k8sDynamic = k8sDynamic
+
 	k.config = config
 	return &k, nil
 }

@@ -93,11 +93,68 @@ func TestPreProcessIPList(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "node cidr",
+			args: args{
+				joinArgs: &Cluster{
+					Masters:     "",
+					Nodes:       "192.168.1.1/28",
+					ClusterName: "",
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := PreProcessIPList(tt.args.joinArgs); (err != nil) != tt.wantErr {
 				t.Errorf("PreProcessIPList() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestIsIPList(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want bool
+	}{
+		{
+			name: "single",
+			args: "192.168.1.1",
+			want: true,
+		},
+		{
+			name: "multi",
+			args: "192.168.1.2",
+			want: true,
+		},
+		{
+			name: "single with port",
+			args: "192.168.1.1:22",
+			want: true,
+		},
+		{
+			name: "multi with port",
+			args: "192.168.1.1:22,192.168.1.2:22",
+			want: true,
+		},
+		{
+			name: "invalid",
+			args: "xxxx",
+			want: false,
+		},
+		{
+			name: "invalid with port",
+			args: "xxxx:xx",
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if ok := IsIPList(tt.args); ok != tt.want {
+				t.Errorf("IsIPList() = %v, want %v", ok, tt.want)
 			}
 		})
 	}

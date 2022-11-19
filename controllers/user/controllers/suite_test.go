@@ -18,7 +18,16 @@ package controllers
 
 import (
 	"fmt"
+	"path/filepath"
 	"testing"
+
+	csrv1 "k8s.io/api/certificates/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/envtest"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	v1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
@@ -31,12 +40,49 @@ import (
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
 // http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
+var cfg *rest.Config
+var k8sClient client.Client
+var testEnv *envtest.Environment
 
 func TestControllers(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecs(t, "run controllers suite")
 }
+
+var _ = BeforeSuite(func() {
+	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	By("bootstrapping test environment")
+	truePtr := true
+	testEnv = &envtest.Environment{
+		UseExistingCluster:    &truePtr,
+		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		ErrorIfCRDPathMissing: true,
+	}
+
+	var err error
+	// cfg is defined in this file globally.
+	cfg, err = testEnv.Start()
+	Expect(err).NotTo(HaveOccurred())
+	Expect(cfg).NotTo(BeNil())
+
+	err = csrv1.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	//+kubebuilder:scaffold:scheme
+
+	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	Expect(err).NotTo(HaveOccurred())
+	Expect(k8sClient).NotTo(BeNil())
+
+}, 60)
+
+var _ = AfterSuite(func() {
+	By("tearing down the test environment")
+	err := testEnv.Stop()
+	Expect(err).NotTo(HaveOccurred())
+})
 
 var _ = Describe("user kubeconfig ", func() {
 	Context("syncReNewConfig test", func() {
@@ -88,13 +134,16 @@ users:
 			user := &v1.User{}
 			user.Name = "cuisongliu"
 			defaultExpirationDuration := int32(100000000)
-			user.Spec.CSRExpirationSeconds = &defaultExpirationDuration
-			cfg := &helper.Config{
+			user.Spec.CSRExpirationSeconds = defaultExpirationDuration
+			c := &helper.Config{
 				User:              user.Name,
-				ExpirationSeconds: *user.Spec.CSRExpirationSeconds,
+				ExpirationSeconds: user.Spec.CSRExpirationSeconds,
 			}
-			config, _ := helper.NewGenerate(cfg).KubeConfig()
-			kubeData, _ := clientcmd.Write(*config)
+
+			config, err := helper.NewGenerate(c).KubeConfig(cfg, k8sClient)
+			Expect(err).To(BeNil())
+			kubeData, err := clientcmd.Write(*config)
+			Expect(err).To(BeNil())
 			user.Status.KubeConfig = string(kubeData)
 			newCfg, event, err := syncReNewConfig(user)
 			Expect(err).To(BeNil())

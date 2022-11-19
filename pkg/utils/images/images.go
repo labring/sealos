@@ -18,15 +18,12 @@ package images
 
 import (
 	"fmt"
-	"os/exec"
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
 	str "github.com/labring/sealos/pkg/utils/strings"
 )
@@ -49,12 +46,6 @@ func LoadImages(imageDir string) ([]string, error) {
 	}
 	imageList = str.RemoveDuplicate(imageList)
 	return imageList, nil
-}
-
-func RunBashCmd(cmd string) (string, error) {
-	logger.Info("cmd for bash in host: %s", cmd)
-	result, err := exec.Command("/bin/bash", "-c", cmd).CombinedOutput() // #nosec
-	return string(result), err
 }
 
 // crictl images -q
@@ -137,29 +128,4 @@ func normalizeTaggedDigestedNamed(named reference.Named) (reference.Named, error
 // prefix the specified name with "localhost/".
 func toLocalImageName(name string) string {
 	return "localhost/" + strings.TrimLeft(name, "/")
-}
-
-// RegistryHasImage returns if the registry has the image.
-func RegistryHasImage(registryAddress, registryBase64Auth, imageName, imageTag string) bool {
-	type RegistryData struct {
-		Name string   `json:"name"`
-		Tags []string `json:"tags"`
-	}
-	var registry RegistryData
-	logger.Info("address: %s, base64: %s, imageName: %s", registryAddress, registryBase64Auth, imageName)
-	logger.Info("pre image name: %s, pre image tag: %s", imageName, imageTag)
-	data, _ := http.Request(fmt.Sprintf("%s/v2/%s/tags/list", registryAddress, imageName), map[string]string{"Authorization": "Basic " + registryBase64Auth})
-	if data != "" {
-		logger.Info("data: %s", data)
-		err := json.Unmarshal([]byte(data), &registry)
-		if err != nil {
-			logger.Warn("convert registry data error")
-			return false
-		}
-	}
-	if str.In(imageTag, registry.Tags) {
-		logger.Info("imageTag found in registry.Tags")
-		return true
-	}
-	return false
 }

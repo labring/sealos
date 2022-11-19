@@ -35,6 +35,13 @@ func (d Driver) DeleteInstances(hosts *v1.Hosts) error {
 	return d.deleteInstances(hosts)
 }
 
+func (d Driver) StopInstances(hosts *v1.Hosts) error {
+	return d.stopInstances(hosts)
+}
+
+func (d Driver) ModifyInstances(curHosts *v1.Hosts, desHosts *v1.Hosts) error {
+	return d.modifyInstances(curHosts, desHosts)
+}
 func (d Driver) DeleteInstanceByID(instanceID string, infra *v1.Infra) error {
 	//TODO implement me
 	panic("implement me")
@@ -46,4 +53,16 @@ func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 
 func (d Driver) GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
 	return d.getInstancesByLabel(key, value, infra)
+}
+
+func (d Driver) CreateVolumes(infra *v1.Infra, host *v1.Hosts, disks []v1.Disk) error {
+	return d.createAndAttachVolumes(infra, host, disks)
+}
+
+func (d Driver) DeleteVolume(disksID []string) error {
+	return d.detachAndDeleteVolumeByID(disksID)
+}
+
+func (d Driver) ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
+	return d.modifyVolume(curDisk, desDisk)
 }

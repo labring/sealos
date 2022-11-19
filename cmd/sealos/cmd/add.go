@@ -35,13 +35,15 @@ add to default cluster:
 
 // addCmd represents the delete command
 func newAddCmd() *cobra.Command {
+	addArgs := &apply.ScaleArgs{
+		Cluster: &apply.Cluster{},
+	}
 	var addCmd = &cobra.Command{
 		Use:     "add",
 		Short:   "add some nodes",
 		Args:    cobra.NoArgs,
 		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			//return errors.New("add feature no support")
 			applier, err := apply.NewScaleApplierFromArgs(addArgs, "add")
 			if err != nil {
 				return err
@@ -50,22 +52,17 @@ func newAddCmd() *cobra.Command {
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if addArgs.Nodes == "" && addArgs.Masters == "" {
-				return errors.New("node and master not empty in same time")
+				return errors.New("nodes and masters can't both be empty")
 			}
 			return nil
 		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			logger.Info(contact)
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			logger.Info(getContact())
 		},
 	}
-	addArgs = &apply.ScaleArgs{}
-	addCmd.Flags().StringVarP(&addArgs.Masters, "masters", "m", "", "reduce Count or IPList to masters")
-	addCmd.Flags().StringVarP(&addArgs.Nodes, "nodes", "n", "", "reduce Count or IPList to nodes")
-	addCmd.Flags().StringVarP(&addArgs.ClusterName, "cluster", "c", "default", "delete a kubernetes cluster with cluster name")
+	addArgs.RegisterFlags(addCmd.Flags(), "be joined", "join")
 	return addCmd
 }
-
-var addArgs *apply.ScaleArgs
 
 func init() {
 	rootCmd.AddCommand(newAddCmd())

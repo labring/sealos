@@ -1,37 +1,42 @@
-import { createTheme, NextUIProvider } from '@nextui-org/react';
-import { ThemeProvider as NextThemesProvider } from 'next-themes';
+import {
+  createDOMRenderer,
+  FluentProvider,
+  GriffelRenderer,
+  RendererProvider,
+  SSRProvider,
+  webLightTheme
+} from '@fluentui/react-components';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
-import '../styles/globals.css';
 
-const lightTheme = createTheme({
-  type: 'light',
-  theme: {
-    colors: {} // optional
+import '../styles/globals.scss';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: false,
+      cacheTime: 0
+    }
   }
 });
 
-const darkTheme = createTheme({
-  type: 'dark',
-  theme: {
-    colors: {} // optional
-  }
-});
+type EnhancedAppProps = AppProps & { renderer?: GriffelRenderer };
 
-function SealosCloud({ Component, pageProps }: AppProps) {
+function APP({ Component, pageProps, renderer }: EnhancedAppProps) {
   return (
-    <NextThemesProvider
-      defaultTheme="system"
-      attribute="class"
-      value={{
-        light: lightTheme.className,
-        dark: darkTheme.className
-      }}
-    >
-      <NextUIProvider>
-        <Component {...pageProps} />
-      </NextUIProvider>
-    </NextThemesProvider>
+    // 👇 Accepts a renderer from <Document /> or creates a default one
+    //    Also triggers rehydration a client
+    <RendererProvider renderer={renderer || createDOMRenderer()}>
+      <SSRProvider>
+        <FluentProvider theme={webLightTheme}>
+          <QueryClientProvider client={queryClient}>
+            <Component {...pageProps} />
+          </QueryClientProvider>
+        </FluentProvider>
+      </SSRProvider>
+    </RendererProvider>
   );
 }
 
-export default SealosCloud;
+export default APP;

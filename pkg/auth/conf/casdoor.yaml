@@ -50,7 +50,7 @@ data:
     initScore = 2000
     logPostOnly = true
     origin =
-
+    staticBaseUrl = ""
 ---
 
 apiVersion: v1
@@ -86,6 +86,12 @@ spec:
     spec:
       containers:
         - name: casdoor-server
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
           image: casbin/casdoor:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
@@ -144,8 +150,14 @@ spec:
         app: mysql
     spec:
       containers:
-        - image: mysql:8.0.25
-          name: mysql
+        - name: mysql
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: bitnami/mysql:8.0.31
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
@@ -157,7 +169,7 @@ spec:
               name: mysql
           volumeMounts:
             - name: mysql-persistent-storage
-              mountPath: /var/lib/mysql
+              mountPath: /bitnami/mysql/data
       volumes:
         - name: mysql-persistent-storage
           persistentVolumeClaim:
@@ -170,7 +182,7 @@ kind: StorageClass
 metadata:
   name: service-auth-storage-class
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "false"
     openebs.io/cas-type: local
     cas.openebs.io/config: |
       - name: StorageType
@@ -196,3 +208,51 @@ spec:
   resources:
     requests:
       storage: 5G
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+spec:
+  selector:
+    matchLabels:
+      app: casdoor-local-cdn
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: casdoor-local-cdn
+    spec:
+      containers:
+        - name: docker-casbin
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - "ALL"
+          image: labring/docker-casbin:main
+          ports:
+            - containerPort: 8080
+              name: nginx
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: casdoor-local-cdn
+  namespace: sealos
+  labels:
+    app: casdoor-local-cdn
+spec:
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+  selector:
+    app: casdoor-local-cdn

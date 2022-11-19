@@ -17,6 +17,8 @@ limitations under the License.
 package v1
 
 import (
+	"errors"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,9 +28,6 @@ import (
 
 // UserSpec defines the desired state of User
 type UserSpec struct {
-	// display name of the user
-	DisplayName string `json:"displayName"`
-
 	// expirationSeconds is the requested duration of validity of the issued
 	// certificate. The certificate signer may issue a certificate with a different
 	// validity duration so a client must check the delta between the notBefore and
@@ -37,7 +36,8 @@ type UserSpec struct {
 	// The minimum valid value for expirationSeconds is 600, i.e. 10 minutes.
 	//
 	// +optional
-	CSRExpirationSeconds *int32 `json:"CSRExpirationSeconds,omitempty"`
+	//+kubebuilder:default:=7200
+	CSRExpirationSeconds int32 `json:"csrExpirationSeconds,omitempty"`
 }
 type UserPhase string
 
@@ -51,9 +51,11 @@ const (
 // UserStatus defines the observed state of User
 type UserStatus struct {
 	// Phase is the recently observed lifecycle phase of user
-	//+kubebuilder:default:=UserUnknown
+	//+kubebuilder:default:=Unknown
 	Phase      UserPhase `json:"phase,omitempty"`
 	KubeConfig string    `json:"kubeConfig"`
+	//+kubebuilder:default:=7200
+	ObservedCSRExpirationSeconds int32 `json:"observedCSRExpirationSeconds,omitempty"`
 	// The generation observed by the user controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
@@ -89,8 +91,8 @@ type Condition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:scope=Cluster
-// +kubebuilder:printcolumn:name="DisplayName",type="string",JSONPath=".spec.displayName"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
+// +kubebuilder:printcolumn:name="ExpirationSeconds",type="integer",JSONPath=".status.observedCSRExpirationSeconds"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // User is the Schema for the users API
@@ -113,4 +115,11 @@ type UserList struct {
 
 func init() {
 	SchemeBuilder.Register(&User{}, &UserList{})
+}
+
+func (r *User) validateCSRExpirationSeconds() error {
+	if r.Spec.CSRExpirationSeconds == 0 {
+		return errors.New("CSRExpirationSeconds is not allowed to be 0")
+	}
+	return nil
 }

@@ -26,7 +26,7 @@ const (
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
-	DefaultKubeadmTokenFileName      = "kubeadm-token.yaml"
+	DefaultKubeadmTokenFileName      = "kubeadm-token.json"
 	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
 	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"
@@ -46,6 +46,10 @@ func LogPath() string {
 }
 func DataPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "data")
+}
+
+func GetAppWorkDir(clusterName, applicationName string) string {
+	return filepath.Join(DataPath(), clusterName, "applications", applicationName, "workdir")
 }
 
 type Data interface {
@@ -85,7 +89,6 @@ func (d *data) RootFSEtcPath() string {
 func (d *data) RootFSRegistryPath() string {
 	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
-
 func (d *data) RootFSCharsPath() string {
 	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }

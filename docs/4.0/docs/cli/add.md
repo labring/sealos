@@ -12,7 +12,7 @@ $ sealos add --nodes x.x.x.x
 
   </TabItem>
 
-  <TabItem value="add_default_cluster" label="Default cluster" default>
+  <TabItem value="add_master" label="Master" default>
 
 ```shell
 $ sealos add --masters x.x.x.x --nodes x.x.x.x
