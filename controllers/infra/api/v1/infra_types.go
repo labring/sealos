@@ -160,10 +160,7 @@ type InfraSpec struct {
 type InfraStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	SSH         v1bata1.SSH `json:"ssh,omitempty"`
-	Hosts       []Hosts     `json:"hosts,omitempty"`
-	Connections string      `json:"connections,omitempty"` // master0 ip:port
-	Status      string      `json:"status,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 type Status int
 

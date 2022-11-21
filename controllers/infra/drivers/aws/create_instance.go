@@ -142,7 +142,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			Value: &value,
 		},
 	)
-	keyName := infra.Status.SSH.PkName
+	keyName := infra.Spec.SSH.PkName
 	//todo use ami to search root device name
 	rootDeviceName := "/dev/xvda"
 	rootVolumeSize := int32(40)
@@ -200,7 +200,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	mutex.Lock()
 	client := d.Client
-	if infra.Status.SSH.PkName != "" {
+	if infra.Spec.SSH.PkName != "" {
 		mutex.Unlock()
 		return nil
 	}
@@ -220,8 +220,8 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 		mutex.Unlock()
 		return fmt.Errorf("create key pair error:%v", err)
 	}
-	infra.Status.SSH.PkName = *result.KeyName
-	infra.Status.SSH.PkData = *result.KeyMaterial
+	infra.Spec.SSH.PkName = *result.KeyName
+	infra.Spec.SSH.PkData = *result.KeyMaterial
 	mutex.Unlock()
 	return nil
 }

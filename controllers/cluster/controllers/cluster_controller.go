@@ -87,7 +87,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if cluster.Spec.SSH.PkData == "" {
-		cluster.Spec.SSH.PkData = infra.Status.SSH.PkData
+		cluster.Spec.SSH.PkData = infra.Spec.SSH.PkData
 	}
 	err = r.applier.ReconcileCluster(infra, hosts, cluster)
 	if err != nil {
