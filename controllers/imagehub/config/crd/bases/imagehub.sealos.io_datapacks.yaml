@@ -12,8 +12,10 @@ spec:
     kind: DataPack
     listKind: DataPackList
     plural: datapacks
+    shortNames:
+    - dp
     singular: datapack
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -96,6 +98,7 @@ spec:
                       items:
                         properties:
                           creatTime:
+                            description: todo inspect image and get time
                             format: date-time
                             type: string
                           name:

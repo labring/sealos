@@ -12,8 +12,10 @@ spec:
     kind: Organization
     listKind: OrganizationList
     plural: organizations
+    shortNames:
+    - org
     singular: organization
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -35,6 +37,15 @@ spec:
           spec:
             description: OrganizationSpec defines the desired state of Organization
             properties:
+              creator:
+                description: Creator is the user who first create this org update
+                  manager
+                type: string
+              manager:
+                description: Manager can update org and org's repo/image
+                items:
+                  type: string
+                type: array
               name:
                 maxLength: 1024
                 type: string
@@ -42,8 +53,6 @@ spec:
                 items:
                   type: string
                 type: array
-            required:
-            - name
             type: object
           status:
             description: OrganizationStatus defines the observed state of Organization

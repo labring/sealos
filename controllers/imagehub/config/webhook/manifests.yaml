@@ -31,6 +31,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-imagehub-sealos-io-v1-organization
+  failurePolicy: Fail
+  name: morganization.kb.io
+  rules:
+  - apiGroups:
+    - imagehub.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - organizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-imagehub-sealos-io-v1-repository
   failurePolicy: Fail
   name: mrepository.kb.io
@@ -71,6 +91,26 @@ webhooks:
     - UPDATE
     resources:
     - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-imagehub-sealos-io-v1-organization
+  failurePolicy: Fail
+  name: vorganization.kb.io
+  rules:
+  - apiGroups:
+    - imagehub.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - organizations
   sideEffects: None
 - admissionReviewVersions:
   - v1
