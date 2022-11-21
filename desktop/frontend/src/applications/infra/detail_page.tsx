@@ -1,4 +1,4 @@
-import { Popover, PopoverSurface } from '@fluentui/react-components';
+import { Popover, PopoverSurface, PositioningImperativeRef } from '@fluentui/react-components';
 import {
   Table,
   TableBody,
@@ -7,17 +7,10 @@ import {
   TableHeaderCell,
   TableRow
 } from '@fluentui/react-components/unstable';
-import {
-  Add16Filled,
-  ArrowLeft16Regular,
-  Delete16Regular,
-  Person16Filled,
-  Clock16Filled,
-  EyeOff16Filled
-} from '@fluentui/react-icons';
+import { Add16Filled, ArrowLeft16Regular, Delete16Regular } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
@@ -26,18 +19,20 @@ import { PageType, useScpContext } from './index';
 import { ConvertKeyToLabel } from './infra_share';
 import Image from 'next/image';
 
+const SvgIcon = ({ src }: { src: string }) => {
+  return <Image className="inline-block mr-2" src={src} alt="id" width={16} height={16} />;
+};
+
 function DetailPage() {
   const { infraName, toPage } = useScpContext();
   const [open, setOpen] = useState(false);
-  const [target, setTarget] = useState<HTMLElement | null>(null);
+  const sshRef = useRef(null);
+  const ipCopyRef = useRef(null);
+  const positioningRef = useRef<PositioningImperativeRef>(null);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
 
   const { data: scpInfo, status } = useQuery(['awsGet', infraName], () =>
     request.post('/api/infra/awsGet', { kubeconfig, infraName })
-  );
-
-  const { data: clusterInfo } = useQuery(['getCluster', infraName], () =>
-    request.post('/api/infra/getCluster', { kubeconfig, clusterName: infraName })
   );
 
   const copyContext = (copyContext: string) => {
@@ -64,20 +59,33 @@ function DetailPage() {
       <div className={clsx(styles.leftInfo)}>
         <div className={styles.infraTitle}> {scpInfo?.data?.metadata?.name} </div>
         <div className={clsx(styles.infraInfo, 'space-y-6')}>
-          <span>id: {scpInfo?.data?.metadata?.uid}</span>
-          <span> time: {formatTime(scpInfo?.data?.metadata?.creationTimestamp)}</span>
-          <span>kuberentes:v1.24.0</span>
-          <span>connections: {scpInfo?.data?.status?.connections} </span>
-          <span>user: {clusterInfo?.data.spec.ssh.user} </span>
-          <div>
-            password:
-            <span
-              ref={setTarget}
-              className={clsx(styles.copyssh)}
-              onClick={() => copyContext(clusterInfo?.data.spec.ssh.passwd)}
-            >
-              复制密码
-            </span>
+          <span>
+            <SvgIcon src="/images/infraicon/scp_id.svg" />
+            {scpInfo?.data?.metadata?.uid}
+          </span>
+          <span>
+            <SvgIcon src="/images/infraicon/scp_clock.svg" />
+            {formatTime(scpInfo?.data?.metadata?.creationTimestamp, 'YYYY/MM/DD mm:ss')}
+          </span>
+          <span>
+            <SvgIcon src="/images/infraicon/scp_image.svg" />
+            kuberentes:v1.24.0
+          </span>
+          <span>
+            <SvgIcon src="/images/infraicon/scp_user.svg" />
+            {scpInfo?.data.spec.ssh.user ? scpInfo.data.spec.ssh.user : 'root'}
+          </span>
+          <div
+            className="cursor-pointer"
+            ref={sshRef}
+            onClick={() => {
+              positioningRef.current?.setTarget(sshRef.current as any);
+              copyContext(scpInfo?.data.spec.ssh.pkData);
+            }}
+          >
+            <SvgIcon src="/images/infraicon/scp_ssh.svg" />
+            <span className="mr-2">ssh 密钥</span>
+            <SvgIcon src="/images/infraicon/scp_ssh_copy.svg" />
           </div>
         </div>
         <button className={styles.releaseBtn} color="#DE5462" onClick={() => deleteInfra()}>
@@ -108,35 +116,72 @@ function DetailPage() {
             <Table className={clsx(styles.tableDetail, 'table-auto absolute ')}>
               <TableHeader>
                 <TableRow>
-                  <TableHeaderCell className={styles.tableTitleId}>ID</TableHeaderCell>
-                  <TableHeaderCell className="w-20">角色</TableHeaderCell>
-                  <TableHeaderCell className="w-20">规格</TableHeaderCell>
-                  <TableHeaderCell className={styles.tableTitleIp}>IP</TableHeaderCell>
-                  <TableHeaderCell className="w-20">ssh密钥</TableHeaderCell>
-                  <TableHeaderCell className="w-20">操作</TableHeaderCell>
+                  <TableHeaderCell className="w-20">
+                    <span className={styles.tableHead1px} />
+                    节点
+                  </TableHeaderCell>
+                  <TableHeaderCell className="w-32">
+                    <span className={styles.tableHead1px} />
+                    ID
+                  </TableHeaderCell>
+                  <TableHeaderCell className="w-16">
+                    <span className={styles.tableHead1px} />
+                    规格
+                  </TableHeaderCell>
+                  <TableHeaderCell className="w-64">
+                    <span className={styles.tableHead1px} />
+                    <span ref={ipCopyRef}>IP内网-公网</span>
+                  </TableHeaderCell>
+                  <TableHeaderCell className="w-16">
+                    <span className={styles.tableHead1px} />
+                    操作
+                  </TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {scpInfo?.data?.status?.hosts?.map((host: any) => {
+                {scpInfo?.data?.spec?.hosts?.map((host: any) => {
                   return host?.metadata.map((meta: any) => {
                     return (
                       <TableRow key={meta.id}>
+                        <TableCell>
+                          {host.roles[0] === 'master' && (
+                            <SvgIcon src="/images/infraicon/scp_master.svg" />
+                          )}
+                          {host.roles[0] === 'node' && (
+                            <SvgIcon src="/images/infraicon/scp_node.svg" />
+                          )}
+                          {host.roles[0] === 'master' ? 'Master' : 'Node'}
+                        </TableCell>
                         <TableCell> {meta.id} </TableCell>
-                        <TableCell> {host.roles[0]}</TableCell>
                         <TableCell> {ConvertKeyToLabel(host.flavor)} </TableCell>
                         <TableCell className={clsx(styles.net)}>
-                          <>内网: {meta.ipaddress[0].ipValue} </>
-                          <>公网: {meta.ipaddress[1].ipValue}</>
-                        </TableCell>
-                        <TableCell
-                          ref={setTarget}
-                          className={clsx(styles.copyssh)}
-                          onClick={() => copyContext(scpInfo?.data.status.ssh.pkdata)}
-                        >
-                          复制
+                          <span className="w-24 inline-block mr-1">
+                            {meta.ipaddress[0].ipValue}
+                          </span>
+                          <span
+                            className="cursor-pointer"
+                            onClick={() => {
+                              positioningRef.current?.setTarget(ipCopyRef.current as any);
+                              copyContext(meta.ipaddress[0].ipValue);
+                            }}
+                          >
+                            <SvgIcon src="/images/infraicon/scp_ip_copy.svg" />
+                          </span>
+                          <span className="w-24  inline-block mr-1">
+                            {meta.ipaddress[1].ipValue}
+                          </span>
+                          <span
+                            className="cursor-pointer"
+                            onClick={() => {
+                              positioningRef.current?.setTarget(ipCopyRef.current as any);
+                              copyContext(meta.ipaddress[1].ipValue);
+                            }}
+                          >
+                            <SvgIcon src="/images/infraicon/scp_ip_copy.svg" />
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <Delete16Regular color="#DE5462" />
+                          <SvgIcon src="/images/infraicon/scp_delete.svg" />
                         </TableCell>
                       </TableRow>
                     );
@@ -144,16 +189,16 @@ function DetailPage() {
                 })}
               </TableBody>
             </Table>
-            <Popover
-              positioning={{ target }}
-              open={open}
-              onOpenChange={(e, data) => setOpen(data.open)}
-            >
-              <PopoverSurface>copied!</PopoverSurface>
-            </Popover>
           </div>
         </div>
       </div>
+      <Popover
+        positioning={{ positioningRef }}
+        open={open}
+        onOpenChange={(e, data) => setOpen(data.open)}
+      >
+        <PopoverSurface>copied!</PopoverSurface>
+      </Popover>
     </div>
   );
 }
