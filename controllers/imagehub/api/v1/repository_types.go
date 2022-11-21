@@ -32,7 +32,7 @@ type ReposiyorySpec struct {
 
 	//+kubebuilder:validation:Required
 	Name      RepoName `json:"name"` // e.g: "libring/mysql"
-	Tags      TagsData `json:"tags,omitempty"`
+	Tags      TagList  `json:"tags,omitempty"`
 	LatestTag TagData  `json:"latestTag"`
 }
 
@@ -40,40 +40,44 @@ type RepoName string
 
 // IsLegal check name is legal
 // name.eg: labring/mysql:v8.0.31
-func (n *RepoName) IsLegal() bool {
-	return len(strings.Split(string(*n), "/")) == 2
+func (n RepoName) IsLegal() bool {
+	return len(strings.Split(string(n), "/")) == 2
 }
 
-func (n *RepoName) GetOrg() string {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n RepoName) GetOrg() string {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return str[0]
 }
 
-func (n *RepoName) GetRepo() string {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n RepoName) GetRepo() string {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return str[1]
 }
 
+func (n RepoName) ToMetaName() string {
+	return n.GetOrg() + "." + n.GetRepo()
+}
+
 type RepoInfo ReposiyorySpec
 
-type TagsData []TagData
+type TagList []TagData
 
 // RepositoryStatus defines the observed state of Repository
 type RepositoryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Name      RepoName `json:"name,omitempty"` // e.g: "libring/mysql"
-	Tags      TagsData `json:"tags,omitempty"`
+	Tags      TagList  `json:"tags,omitempty"`
 	LatestTag TagData  `json:"latestTag,omitempty"`
 }
 
-//+kubebuilder:shortName=repo
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster,shortName=repo
 
 // Repository is the Schema for the repositories API
 type Repository struct {

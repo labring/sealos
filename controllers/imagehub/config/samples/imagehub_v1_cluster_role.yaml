@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  # "namespace" 被忽略，因为 ClusterRoles 不受名字空间限制
+  name: manager.orgname.imagehub.sealos.io
+rules:
+  - apiGroups: ["imagehub.sealos.io"]
+    # 在 HTTP 层面，用来访问 Secret 资源的名称为 "secrets"
+    resources: [""]
+    verbs: ["get","list","watch","create","update","patch","delete"]
+  - apiGroups: [ "imagehub.sealos.io" ]
+    # 在 HTTP 层面，用来访问 Secret 资源的名称为 "secrets"
+    resources: [ "" ]
+    verbs: [ "get","list","watch","create","update","patch","delete" ]
+  - apiGroups: [ "imagehub.sealos.io" ]
+    # 在 HTTP 层面，用来访问 Secret 资源的名称为 "secrets"
+    resources: [ "" ]
+    verbs: [ "get","list","watch","create","update","patch","delete" ]
+---

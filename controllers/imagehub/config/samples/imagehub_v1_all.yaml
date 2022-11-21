@@ -2,7 +2,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.openebs.v1.9.0
-  namespace: sealos-imagehub
 spec:
   name: labring/openebs:v1.9.0
   detail:
@@ -139,7 +138,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.helm.v3.8.2
-  namespace: sealos-imagehub
 spec:
   name: labring/helm:v3.8.2
   detail:
@@ -229,7 +227,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.cert-manager.v1.8.0
-  namespace: sealos-imagehub
 spec:
   name: labring/cert-manager:v1.8.0
   detail:
@@ -358,7 +355,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.rook.v1.9.8
-  namespace: sealos-imagehub
 spec:
   name: labring/rook:v1.9.8
   detail:
@@ -472,7 +468,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.mysql-operator.8.0.23-14.1
-  namespace: sealos-imagehub
 spec:
   name: labring/mysql-operator:8.0.23-14.1
   detail:
@@ -584,7 +579,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.clickhouse.0.18.4
-  namespace: sealos-imagehub
 spec:
   name: labring/clickhouse:0.18.4
   detail:
@@ -621,7 +615,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.redis-operator.3.1.4
-  namespace: sealos-imagehub
 spec:
   name: labring/redis-operator:3.1.4
   detail:
@@ -995,7 +988,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.kube-prometheus-stack.v0.56.0
-  namespace: sealos-imagehub
 spec:
   name: labring/kube-prometheus-stack:v0.56.0
   detail:
@@ -1047,7 +1039,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.metrics-server.v0.6.1
-  namespace: sealos-imagehub
 spec:
   name: labring/metrics-server:v0.6.1
   detail:
@@ -1244,7 +1235,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
   name: labring.redis-exporter.latest
-  namespace: sealos-imagehub
 spec:
   name: labring/redis-exporter:latest
   detail:

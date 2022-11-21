@@ -1,8 +1,7 @@
 apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
-  name: labring.cert-manager.v1.8.0
-  namespace: sealos-imagehub
+  name: labring.cert.manager.v1.8.0
 spec:
   name: labring/cert-manager:v1.8.0
   detail:
@@ -14,13 +13,13 @@ spec:
     docs: docs
     ID: Unkonw
     arch: Unkonw
----
-apiVersion: imagehub.sealos.io/v1
-kind: DataPack
-metadata:
-  name: datapack-detail-sample
-  namespace: sealos-imagehub
-spec:
-  type: detail
-  names:
-    - labring/cert-manager:v1.8.0
+#---
+#apiVersion: imagehub.sealos.io/v1
+#kind: DataPack
+#metadata:
+#  name: datapack-detail-sample
+#  namespace: sealos-imagehub
+#spec:
+#  type: detail
+#  names:
+#    - labring/cert-manager:v1.8.0
