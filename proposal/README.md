@@ -42,6 +42,7 @@ After the proposal is accepted, implementation work proceeds goes on.
 2. [1660-cloud-init](https://github.com/labring/sealos/issues/1660)
 3. [1873-gateway](https://github.com/labring/sealos/issues/1873)
 4. [1902-image-app-hub](https://github.com/labring/sealos/issues/1902)
+5. [2122-hub.sealos.io](https://github.com/labring/sealos/issues/2122)
 
 ### Help
 
