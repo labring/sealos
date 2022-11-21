@@ -33,8 +33,8 @@ func (a *Applier) ReconcileCluster(infra *v1.Infra, hosts []v1.Hosts, cluster *c
 	node := make([]IP, 0)
 	images := getImages(cluster)
 
-	for i := range infra.Status.Hosts {
-		if i >= len(hosts) || infra.Status.Hosts[i].Count != hosts[i].Count {
+	for i := range infra.Spec.Hosts {
+		if i >= len(hosts) || infra.Spec.Hosts[i].Count != hosts[i].Count {
 			return fmt.Errorf("there is no expected number of instances")
 		}
 		if getRoleMaster(hosts[i].Roles) {
