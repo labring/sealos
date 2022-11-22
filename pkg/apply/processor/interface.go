@@ -15,12 +15,15 @@
 package processor
 
 import (
+	"context"
 	"path"
 
 	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/filesystem/registry"
 	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -127,4 +130,11 @@ func ConfirmDeleteNodes() error {
 		}
 	}
 	return nil
+}
+
+func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
+	registries := cluster.GetRegistryIPAndPortList()
+	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
+	mirror := registry.New(constants.NewData(cluster.GetName()).RootFSPath(), sshClient, mounts)
+	return mirror.MirrorTo(context.Background(), registries...)
 }

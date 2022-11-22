@@ -69,6 +69,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
+		c.MirrorRegistry,
 		c.Bootstrap,
 		// c.GetPhasePluginFunc(plugin.PhasePreInit),
 		c.Init,
@@ -164,6 +165,11 @@ func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return err
 	}
 	return fs.MountRootfs(cluster, hosts)
+}
+
+func (c *CreateProcessor) MirrorRegistry(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MirrorRegistry in CreateProcessor.")
+	return MirrorRegistry(cluster, cluster.Status.Mounts)
 }
 
 func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {

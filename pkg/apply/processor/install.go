@@ -91,6 +91,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
+		c.MirrorRegistry,
 		// i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
 		c.PostProcess,
@@ -200,6 +201,11 @@ func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return err
 	}
 	return fs.MountRootfs(cluster, hosts)
+}
+
+func (c *InstallProcessor) MirrorRegistry(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MirrorRegistry in InstallProcessor.")
+	return MirrorRegistry(cluster, c.NewMounts)
 }
 
 func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {

@@ -19,13 +19,11 @@ package rootfs
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/fs"
 	"path"
-	"path/filepath"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
@@ -33,7 +31,6 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -94,31 +91,27 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	}
 
 	sshClient := f.getSSH(cluster)
-	registries := sets.NewString(cluster.GetRegistryIPList()...)
-	isRegistry := func(s string) bool {
-		return registries.Has(s)
-	}
-	cper := &copier{target, sshClient}
+	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
 
 	for idx := range ipList {
 		ip := ipList[idx]
 		eg.Go(func() error {
-			fileEg, _ := errgroup.WithContext(ctx)
-			for _, mount := range f.mounts {
-				mountInfo := mount
-				fileEg.Go(func() error {
-					switch mountInfo.Type {
+			egg, _ := errgroup.WithContext(ctx)
+			for idj := range f.mounts {
+				mount := f.mounts[idj]
+				egg.Go(func() error {
+					switch mount.Type {
 					case v2.RootfsImage, v2.PatchImage:
-						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mountInfo.ImageName, mountInfo.Type)
-						err := cper.CopyFiles(ip, mountInfo.MountPoint, target, isRegistry(iputils.GetHostIP(ip)))
+						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
+						err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
 						if err != nil {
-							return fmt.Errorf("copy container %s rootfs failed %v", mountInfo.Name, err)
+							return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
 						}
 					}
 					return nil
 				})
 			}
-			return fileEg.Wait()
+			return egg.Wait()
 		})
 	}
 	err := eg.Wait()
@@ -127,25 +120,18 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 	}
 
 	endEg, _ := errgroup.WithContext(ctx)
-	regList := registries.List()
+	master0 := cluster.GetMaster0IPAndPort()
 	for idx := range f.mounts {
 		mountInfo := f.mounts[idx]
 		endEg.Go(func() error {
-			endEgg, _ := errgroup.WithContext(ctx)
-			for idj := range regList {
-				ip := regList[idj]
-				endEgg.Go(func() error {
-					if mountInfo.Type == v2.AppImage {
-						logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", ip, mountInfo.ImageName, mountInfo.Type)
-						err = cper.CopyFiles(ip, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), true)
-						if err != nil {
-							return fmt.Errorf("copy container %s app rootfs failed %v", mountInfo.Name, err)
-						}
-					}
-					return nil
-				})
+			if mountInfo.Type == v2.AppImage {
+				logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", master0, mountInfo.ImageName, mountInfo.Type)
+				err = ssh.CopyDir(sshClient, master0, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), notRegistryDirFilter)
+				if err != nil {
+					return fmt.Errorf("failed to copy %s %s: %v", mountInfo.Type, mountInfo.Name, err)
+				}
 			}
-			return endEgg.Wait()
+			return nil
 		})
 	}
 	return endEg.Wait()
@@ -182,32 +168,6 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 					return err
 				}
 			}
-		}
-	}
-	return nil
-}
-
-type copier struct {
-	root string
-	ssh  ssh.Interface
-}
-
-func (c *copier) CopyFiles(ip, src, target string, isRegistry bool) error {
-	logger.Debug("copyFiles isRegistry: %v, ip: %v, src: %v, target: %v", isRegistry, ip, src, target)
-	files, err := os.ReadDir(src)
-	if err != nil {
-		return fmt.Errorf("failed to read dir entries %s", err)
-	}
-	for _, f := range files {
-		if f.Name() == constants.RegistryDirName {
-			if !isRegistry {
-				continue
-			}
-			target = c.root
-		}
-		err = c.ssh.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
-		if err != nil {
-			return fmt.Errorf("failed to copy sub files %v", err)
 		}
 	}
 	return nil

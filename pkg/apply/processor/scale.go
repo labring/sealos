@@ -184,7 +184,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to init runtime: %v", err)
 	}
 	c.Runtime = runTime
 
@@ -237,8 +237,13 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	return fs.MountRootfs(cluster, hosts)
 }
 
+func (c *ScaleProcessor) MirrorRegistry(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MirrorRegistry in ScaleProcessor.")
+	return MirrorRegistry(cluster, cluster.Status.Mounts)
+}
+
 func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
-	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
+	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	bs := bootstrap.New(cluster)
 	if err := bs.Preflight(hosts...); err != nil {
