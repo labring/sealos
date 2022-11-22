@@ -157,6 +157,7 @@ func parseImageNameAndTag(imageName string) (name, tag string) {
 	nameSplitted := strings.Split(name, "@")
 	if len(nameSplitted) > 1 {
 		name = nameSplitted[0]
+		tag = "latest"
 		logger.Debug("stripped digest in name: %s", nameSplitted[1])
 	}
 	logger.Info("actual imageName: %s:%s", name, tag)
