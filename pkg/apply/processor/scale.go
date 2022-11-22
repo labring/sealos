@@ -247,7 +247,7 @@ func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	if err := bs.Init(hosts...); err != nil {
 		return err
 	}
-	return bs.ApplyDeps(hosts...)
+	return bs.ApplyAddons(hosts...)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

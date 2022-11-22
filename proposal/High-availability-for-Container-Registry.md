@@ -21,19 +21,19 @@ type Interface interface {
     Preflight(hosts ...string) error
     // Init do actual system initialization, cri
     Init(hosts ...string) error
-    // Register deps to run util ApplyDeps is called
-    RegisterDeps(deps ...Dependency)
-    // ApplyExternalDeps run task to apply external dependencies
-    ApplyDeps(hosts ...string) error
+    // Register applier to each Phase
+    RegisterApplier(Phase, ...Applier) error
+    // ApplyAddons run task to apply addons
+    ApplyAddons(hosts ...string) error
     // Reset undo bootstrap process
     Reset(hosts ...string) error
 }
 ```
 
-The `Dependency` interface is a interface that can be registered as external dep, the builtin implementation is `registryApplier` which install/uninstall container registry.
+`Applier` is a interface that can be registered as hook at different phases
 
 ```go
-type Dependency interface {
+type Applier interface {
     Name() string
     Filter(Context, string) bool
     Apply(Context, string) error
@@ -41,7 +41,13 @@ type Dependency interface {
 }
 ```
 
-The `Context` interface can be used as arg for function `Dependency.Filter`/`Dependency.Apply`/`Dependency.Undo`.
+the builtin implementations are:
+
+- `defaultChecker` which do preflight checks
+- `defaultInitializer` which do actual initializations
+- `registryApplier` which install/uninstall container registry.
+
+The `Context` interface can be used as arg for function `Applier.Filter`/`Applier.Apply`/`Applier.Undo`.
 
 ```go
 type Context interface {

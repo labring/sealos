@@ -28,7 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type Dependency interface {
+type Applier interface {
 	Name() string
 	Filter(Context, string) bool
 	Apply(Context, string) error
@@ -38,7 +38,7 @@ type Dependency interface {
 type registryApplier struct {
 }
 
-func (*registryApplier) Name() string { return "registry" }
+func (*registryApplier) Name() string { return "registry addon applier" }
 
 func (*registryApplier) Filter(ctx Context, host string) bool {
 	registries := sets.NewString(ctx.GetCluster().GetRegistryIPAndPortList()...)
