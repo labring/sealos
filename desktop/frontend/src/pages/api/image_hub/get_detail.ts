@@ -1,25 +1,24 @@
 import * as k8s from '@kubernetes/client-node';
 import { DataPackType, ImageHubDataPackCRDTemplate, ImageHubDataPackMeta } from 'mock/imagehub';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { ApplyYaml, GetCRD, K8sApi } from 'services/backend/kubernetes';
+import { ApplyYaml, GetClusterObject, K8sApi } from 'services/backend/kubernetes';
 import { CRDTemplateBuilder } from 'services/backend/wrapper';
 import { hashAny } from 'utils/strings';
 import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../response';
 
-export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return BadRequestResp(resp);
-  }
+type DataPackDesc = {
+  codes: number;
+  datas: any;
+};
 
+export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   const { kubeconfig, image_name } = req.body;
-  // console.log(req.body);
+
   if (kubeconfig === '' || image_name === '') {
     return UnprocessableResp('kubeconfig or user empty', resp);
   }
 
   const kc = K8sApi(kubeconfig);
-
-  // get user account payment amount
 
   const user = kc.getCurrentUser();
   if (user === null) {
@@ -27,50 +26,37 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   }
 
   const pack_type = DataPackType.DETAIL;
-  // get images hash for name
   const pack_name = hashAny(image_name, pack_type);
 
-  type dataStatus = {
-    name: string;
-  };
-
   try {
-    const dataDesc = await GetCRD(kc, ImageHubDataPackMeta, pack_name);
+    const dataDesc = await GetClusterObject(kc, ImageHubDataPackMeta, pack_name);
     if (dataDesc !== null && dataDesc.body !== null && dataDesc.body.status !== null) {
-      const dataStatus = dataDesc.body.status as dataStatus;
-      return JsonResp(dataStatus, resp);
+      const datapackDesc = dataDesc.body.status as DataPackDesc;
+      if (datapackDesc.codes === 1) {
+        let result = [];
+        for (const key in datapackDesc.datas) {
+          result.push(datapackDesc.datas[key]);
+        }
+
+        return JsonResp({ items: result, code: 200 }, resp);
+      }
+      return JsonResp(datapackDesc, resp);
     }
   } catch (err) {
-    console.log(err);
-
-    if (err instanceof k8s.HttpError) {
-      if (err.body.code !== 404) {
-        // 非404, 返回错误
-        return InternalErrorResp(err.body.message, resp);
-      }
-      // 其他情况可以继续
-    } else {
-      return InternalErrorResp(String(err), resp);
-    }
+    // console.log(err);
   }
 
-  // apply crd 然后返回让前端等待
-  const namespace = ImageHubDataPackMeta.namespace;
   const images = [image_name];
   const datapackCRD = CRDTemplateBuilder(ImageHubDataPackCRDTemplate, {
     pack_name,
-    namespace,
     pack_type,
     images
   });
 
   try {
-    const res = await ApplyYaml(kc, datapackCRD);
-    console.log(res);
-    JsonResp({}, resp);
+    const result = await ApplyYaml(kc, datapackCRD);
+    return JsonResp({ ...result, code: 201 }, resp);
   } catch (err) {
     return InternalErrorResp(String(err), resp);
   }
-
-  return InternalErrorResp('get data failed', resp);
 }

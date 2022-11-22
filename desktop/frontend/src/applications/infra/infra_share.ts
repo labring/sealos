@@ -81,4 +81,15 @@ const ConvertKeyToLabel = (key: string) => {
   return item?.label;
 };
 
-export { TABLE_HEADERS, SELECT_NODES, SELECT_DISKS, generateTemplate, ConvertKeyToLabel };
+function conversionPrice(price: number, reserve: number) {
+  return price.toFixed(reserve);
+}
+
+export {
+  TABLE_HEADERS,
+  SELECT_NODES,
+  SELECT_DISKS,
+  generateTemplate,
+  ConvertKeyToLabel,
+  conversionPrice
+};

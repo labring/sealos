@@ -1,0 +1,33 @@
+.label {
+  width: 124px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid transparent;
+}
+
+.active {
+  color: rgba(35, 155, 242, 1);
+  border: 1px solid rgba(35, 155, 242, 1);
+}
+
+.xLabels {
+  display: flex;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 6px 16px;
+}
+
+.xActive {
+  color: rgba(35, 155, 242, 1);
+}
+
+.appLabels {
+  background: rgba(35, 155, 242, 0.15);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #239bf2;
+}

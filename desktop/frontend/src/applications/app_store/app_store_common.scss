@@ -1,0 +1,36 @@
+$theme-color-white: #ffffff;
+$theme-color-blue: rgba(35, 155, 242, 1);
+$small-radius: 12px;
+
+.pageWrapperScroll {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+.hiddenScrollWrap {
+  overflow-x: scroll;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.backgroundWrap {
+  background-image: url('/images/appstore/appstore_background.png');
+  background-size: cover;
+}
+
+.baseCard {
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #ffffff;
+  border-radius: 16px;
+}

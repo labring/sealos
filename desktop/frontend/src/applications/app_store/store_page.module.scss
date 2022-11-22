@@ -1,0 +1,36 @@
+@import './app_store_common.scss';
+
+$tag-bg-color: #f3f2f1;
+$des-text-color: #605e5c;
+
+.appInfo {
+  display: flex;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+  height: 160px;
+
+  .appDesc {
+    flex-grow: 1;
+    flex-basis: 580px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    &Text {
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      color: $des-text-color;
+      font-size: 12px;
+    }
+  }
+
+  .border1px {
+    border: 0.5px solid $des-text-color;
+    height: 24px;
+    position: relative;
+    top: 26px;
+    margin-right: 10px;
+  }
+}
