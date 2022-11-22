@@ -198,15 +198,14 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 }
 
 func (d Driver) CreateKeyPair(infra *v1.Infra) error {
-	mutex.Lock()
-	client := d.Client
 	if infra.Spec.SSH.PkName != "" {
-		mutex.Unlock()
 		return nil
 	}
+	mutex.Lock()
+	defer mutex.Unlock()
+	client := d.Client
 	myUUID, err := uuid.NewUUID()
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create uuid error:%v", err)
 	}
 	keyName := myUUID.String()
@@ -217,11 +216,9 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 
 	result, err := MakeKeyPair(context.TODO(), client, input)
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create key pair error:%v", err)
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
-	mutex.Unlock()
 	return nil
 }

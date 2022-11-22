@@ -77,18 +77,13 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 	desired := infra.Spec.Hosts
 	// all roles executed on an infra(group by index)
 	eg, _ := errgroup.WithContext(context.Background())
+	if err := driver.CreateKeyPair(infra); err != nil {
+		return err
+	}
 	for i := range desired {
-		infra := infra
 		d := desired[i]
 		cur := getHostsByIndex(d.Index, current)
 		eg.Go(func() error {
-			if cur == nil || d.Count > cur.Count {
-				if infra.Spec.SSH.PkName == "" {
-					if err := driver.CreateKeyPair(infra); err != nil {
-						return err
-					}
-				}
-			}
 			// current 0 instance -> create
 			if cur == nil {
 				// TODO create hosts
