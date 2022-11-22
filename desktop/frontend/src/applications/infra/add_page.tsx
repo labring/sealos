@@ -22,14 +22,14 @@ const AddPage = () => {
   const initInfra = {
     infraName: '',
     clusterName: '',
-    masterType: '',
+    masterType: 't2.medium',
     masterCount: 1,
     masterDisk: 16,
-    masterDiskType: '',
-    nodeType: '',
+    masterDiskType: 'gp3',
+    nodeType: 't2.medium',
     nodeCount: 1,
     nodeDisk: 16,
-    nodeDiskType: '',
+    nodeDiskType: 'gp3',
     userName: 'root', //暂定
     userPassword: uuidv4()
   };
@@ -151,9 +151,9 @@ const AddPage = () => {
                   disabled={infraName ? true : false}
                 ></Input>
               </div>
-              <div className="px-8 mt-6">
+              {/* <div className="px-8 mt-6">
                 <span className={styles.cloudlabel}> 可用区 </span>
-              </div>
+              </div> */}
             </div>
             <SelectNodeComponent
               type="Master"

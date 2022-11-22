@@ -60,7 +60,7 @@ function FrontPage() {
     ['getAwsAll'],
     async () => {
       const res = await request.post('/api/infra/awsGetAll', { kubeconfig });
-      let allReady = res.data.items.every((item: InfraInfo) => {
+      let allReady = res.data.items?.every((item: InfraInfo) => {
         return item.status.status === 'Running';
       });
       if (allReady) {
