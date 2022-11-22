@@ -19,10 +19,11 @@ package registry
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-	"golang.org/x/sync/errgroup"
 )
 
 type Interface interface {
