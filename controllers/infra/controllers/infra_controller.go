@@ -99,7 +99,7 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.driver = driver
 	r.applier = &drivers.Applier{}
-	r.recorder = mgr.GetEventRecorderFor("salos-infra-controller")
+	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}).

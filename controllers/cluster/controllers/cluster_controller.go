@@ -19,26 +19,46 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
+
+	infracommon "github.com/labring/sealos/controllers/infra/common"
+
+	"github.com/labring/sealos/pkg/ssh"
+
+	"sigs.k8s.io/yaml"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
+	"k8s.io/kubernetes/pkg/apis/core"
+
+	"k8s.io/client-go/tools/record"
 
 	"github.com/labring/sealos/controllers/cluster/applier"
 
+	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/drivers"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+)
 
-	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
+const (
+	defaultUser          = "root"
+	defaultSealosVersion = "4.1.3"
+)
+const (
+	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
+	downloadSealosCmd   = `wget  https://github.com/labring/sealos/releases/download/%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 )
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
-	driver  drivers.Driver
-	applier applier.Reconcile
-	Scheme  *runtime.Scheme
+	driver   drivers.Driver
+	applier  applier.Reconcile
+	Scheme   *runtime.Scheme
+	recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -56,39 +76,126 @@ type ClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 	cluster := &v1.Cluster{}
-
 	if err := r.Get(ctx, req.NamespacedName, cluster); err != nil {
-		logger.Debug("ignore not found cluster error: %v", err)
+		r.recorder.Event(cluster, core.EventTypeWarning, "GetCluster", err.Error())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
 	infra := &infrav1.Infra{}
 	infra.Name = cluster.Spec.Infra
 	infra.Namespace = cluster.Namespace
-
 	key := client.ObjectKey{Namespace: infra.Namespace, Name: infra.Name}
 	if err := r.Get(ctx, key, infra); err != nil {
-		logger.Debug("ignore not found cluster error: %v", err)
+		r.recorder.Event(cluster, core.EventTypeWarning, "GetInfra", err.Error())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	hosts, err := r.driver.GetInstances(infra)
 
+	clusterfile, err := generateClusterfile(infra, cluster)
 	if err != nil {
-		logger.Error("get instances error: %v", err)
-		return ctrl.Result{}, err
+		r.recorder.Event(cluster, core.EventTypeWarning, "GenerateClusterfile", err.Error())
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
+	}
+	if err := applyClusterfile(infra, clusterfile, getSealosVersion(cluster)); err != nil {
+		r.recorder.Event(cluster, core.EventTypeWarning, "ApplyClusterfile", err.Error())
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
-	if cluster.Spec.SSH.PkData == "" {
-		cluster.Spec.SSH.PkData = infra.Spec.SSH.PkData
-	}
-	err = r.applier.ReconcileCluster(infra, hosts, cluster)
-	if err != nil {
-		logger.Error("reconcile cluster error: %v", err)
+	// update cluster status
+	cluster.Status.Status = infrav1.Running.String()
+	if err := r.Status().Update(ctx, cluster); err != nil {
+		r.recorder.Event(cluster, core.EventTypeWarning, "UpdateClusterStatus", err.Error())
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
+}
+
+// Get private ip from metadata
+func getPrivateIP(meta infrav1.Metadata) string {
+	for _, ip := range meta.IP {
+		if ip.IPType == infracommon.IPTypePrivate {
+			return ip.IPValue
+		}
+	}
+	return ""
+}
+
+// Generate Clusterfile by infra and cluster
+func generateClusterfile(infra *infrav1.Infra, cluster *v1.Cluster) (string, error) {
+	cluster.Spec.SSH = infra.Spec.SSH
+	cluster.Spec.SSH.User = defaultUser
+
+	for _, host := range infra.Spec.Hosts {
+		for _, meta := range host.Metadata {
+			privateIP := getPrivateIP(meta)
+			if privateIP == "" {
+				continue
+			}
+
+			cluster.Spec.Hosts = append(cluster.Spec.Hosts, v1beta1.Host{
+				IPS:   []string{privateIP},
+				Roles: host.Roles,
+			})
+		}
+	}
+
+	// convert cluster to yaml
+	clusterfile, err := yaml.Marshal(cluster)
+	if err != nil {
+		return "", fmt.Errorf("marshal cluster [%s] to yaml failed: %v", cluster.Name, err)
+	}
+
+	return string(clusterfile), nil
+}
+
+// Get master0 public ip from infra
+func getMaster0PublicIP(infra *infrav1.Infra) string {
+	for _, host := range infra.Spec.Hosts {
+		for _, meta := range host.Metadata {
+			for _, ip := range meta.IP {
+				if ip.IPType == infracommon.IPTypePublic && host.Roles[0] == v1beta1.MASTER {
+					return ip.IPValue
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// get sealos version from cluster
+func getSealosVersion(cluster *v1.Cluster) string {
+	if v, ok := cluster.Annotations["sealos.io/sealos/version"]; ok && v != "" {
+		return v
+	}
+	return defaultSealosVersion
+}
+
+// Apply clusterfile on infra
+func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) error {
+	s := &v1beta1.SSH{
+		User:   infra.Spec.SSH.User,
+		PkData: infra.Spec.SSH.PkData,
+	}
+	c := ssh.NewSSHClient(s, false)
+	EIP := getMaster0PublicIP(infra)
+	if EIP == "" {
+		return fmt.Errorf("get master0 public ip failed")
+	}
+
+	if err := ssh.WaitSSHReady(c, 5, EIP); err != nil {
+		return fmt.Errorf("wait ssh ready failed: %v", err)
+	}
+
+	createClusterfile := fmt.Sprintf("echo '%s' > /root/Clusterfile", clusterfile)
+	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion, sealosVersion, sealosVersion)
+
+	cmds := []string{createClusterfile, downloadSealos, applyClusterfileCmd}
+	if err := c.CmdAsync(EIP, cmds...); err != nil {
+		return fmt.Errorf("write clusterfile to remote failed: %v", err)
+	}
+
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -99,6 +206,7 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.driver = driver
 	r.applier = applier.NewApplier()
+	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Cluster{}).

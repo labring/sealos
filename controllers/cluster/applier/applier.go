@@ -28,7 +28,6 @@ type IP struct {
 }
 
 func (a *Applier) ReconcileCluster(infra *v1.Infra, hosts []v1.Hosts, cluster *cv1.Cluster) error {
-	//todo 在job中去做，能够实现fmt打印导出到前端
 	master := make([]IP, 0)
 	node := make([]IP, 0)
 	images := getImages(cluster)
