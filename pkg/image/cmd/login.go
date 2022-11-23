@@ -15,23 +15,67 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/spf13/cobra"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 
 	"github.com/labring/sealos/pkg/image"
+	"github.com/spf13/cobra"
 )
 
+const DefaultKubeConfigDir = ".sealos/sealos.io"
+const DefaultRegistry = "hub.sealos.io"
+
 func NewLoginCmd() *cobra.Command {
-	var username, password string
+	var username, password, kubeconfig string
 	var loginCmd = &cobra.Command{
 		Use:     "login",
 		Short:   "login image repository",
-		Example: `sealos login registry.cn-qingdao.aliyuncs.com -u [username] -p [password]`,
-		Args:    cobra.ExactArgs(1),
+		Example: `sealos login registry.cn-qingdao.aliyuncs.com -u [username] -p [password] -k [kubeconfig]`,
+		Args:    cobra.RangeArgs(0, 1),
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				args = append(args, DefaultRegistry)
+			}
+
+			if args[0] == DefaultRegistry {
+				if username != "" {
+					return fmt.Errorf("the hub.sealos.io registry can only be logged in by kubeconfig")
+				}
+			}
+
+			// login by kubeconfig
+			if kubeconfig != "" {
+				sealoskubeconfdir := fmt.Sprintf("%s/%s", os.Getenv("HOME"), DefaultKubeConfigDir)
+				err := fileutil.MkDirs(sealoskubeconfdir)
+				if err != nil {
+					return err
+				}
+
+				sealoskubeconfpath := fmt.Sprintf("%s/%s", sealoskubeconfdir, "config")
+
+				// copy kubeconfig to ${HOME}/.sealos/sealos.io/config
+				err = fileutil.Copy(kubeconfig, sealoskubeconfpath)
+				if err != nil {
+					return err
+				}
+
+				// set user/password
+				if passwordb, err := fileutil.ReadAll(sealoskubeconfpath); err != nil {
+					return err
+				} else {
+					// username is usless
+					username = "user"
+					password = string(passwordb)
+				}
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				args = append(args, DefaultRegistry)
+			}
 			registrySvc, err := image.NewRegistryService()
 			if err != nil {
 				return err
@@ -41,13 +85,9 @@ func NewLoginCmd() *cobra.Command {
 	}
 	loginCmd.Flags().StringVarP(&username, "username", "u", "", "user name for login registry")
 	loginCmd.Flags().StringVarP(&password, "passwd", "p", "", "password for login registry")
-	if err := loginCmd.MarkFlagRequired("username"); err != nil {
-		logger.Error("failed to init flag: %v", err)
-		os.Exit(1)
-	}
-	if err := loginCmd.MarkFlagRequired("passwd"); err != nil {
-		logger.Error("failed to init flag: %v", err)
-		os.Exit(1)
-	}
+	loginCmd.Flags().StringVarP(&kubeconfig, "kubeconfig", "k", "", "kubeconfig file path for login registry")
+
+	loginCmd.MarkFlagsRequiredTogether("username", "passwd")
+	loginCmd.MarkFlagsMutuallyExclusive("username", "kubeconfig")
 	return loginCmd
 }

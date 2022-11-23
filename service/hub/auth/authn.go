@@ -1,0 +1,54 @@
+package auth
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/cesanta/glog"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/service/hub/api"
+)
+
+func init() {
+	glog.Info("authn plugin init function called")
+}
+
+type SealosAuthn struct {
+	api.Authenticator
+}
+
+func (a SealosAuthn) Authenticate(user string, password api.PasswordString) (bool, api.Labels, error) {
+	glog.Info("Authenticate for user:", user)
+	// todo replace server ip to env $(SERVER)
+
+	// create client
+	client, err := kubernetes.NewKubernetesClientByConfigString(string(password))
+	if err != nil {
+		glog.Error("NewKubernetesClientByConfigString error")
+		return false, api.Labels{}, nil
+	}
+	// check client by ping apiserver
+	// or get organizations?
+	res, err := client.Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw(context.Background())
+	if err != nil {
+		glog.Error("Authenticate false, ping apiserver error")
+		return false, api.Labels{}, err
+	}
+	if string(res) != "ok" {
+		glog.Error("Authenticate false, apiserver response not ok")
+		return false, api.Labels{}, fmt.Errorf("ErrorNotOk : response != 'ok' : %s\n", res)
+	}
+	glog.Info("Authenticate true")
+	return true, api.Labels{}, nil
+}
+
+func (a SealosAuthn) Stop() {
+}
+
+func (a SealosAuthn) Name() string {
+	return "authn.hub.sealos.io"
+}
+
+func NewSealosAuthn() SealosAuthn {
+	return SealosAuthn{}
+}
