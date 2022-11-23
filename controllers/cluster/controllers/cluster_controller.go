@@ -45,7 +45,7 @@ import (
 
 const (
 	defaultUser          = "root"
-	defaultSealosVersion = "4.1.3"
+	defaultSealosVersion = "4.1.4-rc1"
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
