@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2022 labring/sealos.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	infracommon "github.com/labring/sealos/controllers/infra/common"
 
 	"github.com/labring/sealos/pkg/ssh"
@@ -32,8 +34,6 @@ import (
 	"k8s.io/kubernetes/pkg/apis/core"
 
 	"k8s.io/client-go/tools/record"
-
-	"github.com/labring/sealos/controllers/cluster/applier"
 
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -49,14 +49,13 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
-	downloadSealosCmd   = `wget  https://github.com/labring/sealos/releases/download/%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
+	downloadSealosCmd   = `sealos version || wget  https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 )
 
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
 	driver   drivers.Driver
-	applier  applier.Reconcile
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
 }
@@ -96,6 +95,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.recorder.Event(cluster, core.EventTypeWarning, "GenerateClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
+	fmt.Println(clusterfile)
 	if err := applyClusterfile(infra, clusterfile, getSealosVersion(cluster)); err != nil {
 		r.recorder.Event(cluster, core.EventTypeWarning, "ApplyClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
@@ -123,8 +123,10 @@ func getPrivateIP(meta infrav1.Metadata) string {
 
 // Generate Clusterfile by infra and cluster
 func generateClusterfile(infra *infrav1.Infra, cluster *v1.Cluster) (string, error) {
-	cluster.Spec.SSH = infra.Spec.SSH
-	cluster.Spec.SSH.User = defaultUser
+	new := cluster.DeepCopy()
+	new.CreationTimestamp = metav1.Time{}
+	new.Spec.SSH = infra.Spec.SSH
+	new.Spec.SSH.User = defaultUser
 
 	for _, host := range infra.Spec.Hosts {
 		for _, meta := range host.Metadata {
@@ -133,7 +135,7 @@ func generateClusterfile(infra *infrav1.Infra, cluster *v1.Cluster) (string, err
 				continue
 			}
 
-			cluster.Spec.Hosts = append(cluster.Spec.Hosts, v1beta1.Host{
+			new.Spec.Hosts = append(new.Spec.Hosts, v1beta1.Host{
 				IPS:   []string{privateIP},
 				Roles: host.Roles,
 			})
@@ -141,9 +143,9 @@ func generateClusterfile(infra *infrav1.Infra, cluster *v1.Cluster) (string, err
 	}
 
 	// convert cluster to yaml
-	clusterfile, err := yaml.Marshal(cluster)
+	clusterfile, err := yaml.Marshal(new)
 	if err != nil {
-		return "", fmt.Errorf("marshal cluster [%s] to yaml failed: %v", cluster.Name, err)
+		return "", fmt.Errorf("marshal cluster [%s] to yaml failed: %v", new.Name, err)
 	}
 
 	return string(clusterfile), nil
@@ -177,7 +179,7 @@ func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) e
 		User:   infra.Spec.SSH.User,
 		PkData: infra.Spec.SSH.PkData,
 	}
-	c := ssh.NewSSHClient(s, false)
+	c := ssh.NewSSHClient(s, true)
 	EIP := getMaster0PublicIP(infra)
 	if EIP == "" {
 		return fmt.Errorf("get master0 public ip failed")
@@ -205,7 +207,6 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return fmt.Errorf("cluster controller new driver failed: %v", err)
 	}
 	r.driver = driver
-	r.applier = applier.NewApplier()
 	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).

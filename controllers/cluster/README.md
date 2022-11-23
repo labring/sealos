@@ -76,6 +76,11 @@ make manifests
 
 More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
 
+## Cluster operator specify the sealos version
+
+Using the annotations: "sealos.io/sealos/version"
+Example: "sealos.io/sealos/version=4.1.3"
+
 ## License
 
 Copyright 2022.
