@@ -210,6 +210,7 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	if infra.Spec.SSH.PkName != "" {
 		return nil
 	}
+
 	mutex.Lock()
 	defer mutex.Unlock()
 	client := d.Client
