@@ -10,6 +10,7 @@ import { PageType, useScpContext } from './index';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
 import { v4 as uuidv4 } from 'uuid';
+import Image from 'next/image';
 
 const AddPage = () => {
   const { infraName, toPage } = useScpContext();
@@ -125,13 +126,19 @@ const AddPage = () => {
 
   return (
     <div className="flex h-full flex-col grow">
-      <div className={styles.nav} onClick={goFrontPage}>
-        <ArrowLeft24Regular />
-        <span className="cursor-pointer pl-2"> {infraName ? '返回详情' : '返回列表'} </span>
+      <div className={clsx(styles.nav, 'cursor-pointer')} onClick={goFrontPage}>
+        <Image
+          className="inline-block mr-2"
+          src="/images/infraicon/scp_back.svg"
+          alt="id"
+          width={8}
+          height={16}
+        />
+        <span className=" pl-2"> {infraName ? '返回详情' : '返回列表'} </span>
       </div>
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
         <div className="flex justify-center space-x-12  w-full absolute box-border p-14 pt-0 ">
-          <div className={clsx('space-y-6')}>
+          <div>
             <div>
               <div className={styles.head}>
                 <div className={styles.dot}></div>
@@ -155,29 +162,33 @@ const AddPage = () => {
                 <span className={styles.cloudlabel}> 可用区 </span>
               </div> */}
             </div>
-            <SelectNodeComponent
-              type="Master"
-              nodeType={infraForm.masterType}
-              nodeCount={infraForm.masterCount}
-              diskType={infraForm.masterDiskType}
-              nodeDisk={infraForm.masterDisk}
-              dispatchInfraForm={dispatchInfraForm}
-            />
-            <SelectNodeComponent
-              type="Node"
-              nodeType={infraForm.nodeType}
-              nodeCount={infraForm.nodeCount}
-              diskType={infraForm.nodeDiskType}
-              nodeDisk={infraForm.nodeDisk}
-              dispatchInfraForm={dispatchInfraForm}
-            />
-            <div className="flex items-center space-x-8 justify-end mr-10">
+            <div className="mt-10">
+              <SelectNodeComponent
+                type="Master"
+                nodeType={infraForm.masterType}
+                nodeCount={infraForm.masterCount}
+                diskType={infraForm.masterDiskType}
+                nodeDisk={infraForm.masterDisk}
+                dispatchInfraForm={dispatchInfraForm}
+              />
+            </div>
+            <div className="mt-10">
+              <SelectNodeComponent
+                type="Node"
+                nodeType={infraForm.nodeType}
+                nodeCount={infraForm.nodeCount}
+                diskType={infraForm.nodeDiskType}
+                nodeDisk={infraForm.nodeDisk}
+                dispatchInfraForm={dispatchInfraForm}
+              />
+            </div>
+            <div className="flex mt-28  items-center space-x-8 justify-end  ">
               <div className={styles.moneyItem}>
                 ￥ <span className={styles.money}> {scpPrice} </span> /小时
               </div>
-              <Button shape="square" appearance="primary" onClick={handleBtnClick}>
+              <button className={styles.confirmBtn} onClick={handleBtnClick}>
                 {infraName ? '立即修改' : '立即创建'}
-              </Button>
+              </button>
             </div>
           </div>
           <div className={clsx(styles.markdown)}>

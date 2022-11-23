@@ -69,6 +69,15 @@ const SelectNodeComponent = ({
     }
   };
 
+  const onChangeDiskValue = (data: any) => {
+    const val = parseInt(data.value);
+    if (!isNaN(val)) {
+      setNodeDiskValue(val);
+    } else {
+      setNodeDiskValue(0);
+    }
+  };
+
   return (
     <div>
       <div className={styles.head}>
@@ -96,8 +105,21 @@ const SelectNodeComponent = ({
       </div>
       <div className="pl-8 mt-6 flex items-center">
         <span className={styles.cloudLabel}>硬盘</span>
+        <Slider
+          className={clsx(styles.selectTypeCount)}
+          min={0}
+          max={128}
+          value={nodeDisk}
+          onChange={(e, data) => setNodeDiskValue(data.value)}
+        />
+        <Input
+          className={styles.diskCount}
+          value={nodeDisk.toString()}
+          contentAfter={'G'}
+          onChange={(e, data) => onChangeDiskValue(data)}
+        ></Input>
         <Dropdown
-          className={styles.selectType}
+          className={clsx(styles.selectDiskType)}
           placeholder="请选择类型"
           selectedOptions={onDefaultDiskType(diskType)}
           onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}
@@ -106,15 +128,6 @@ const SelectNodeComponent = ({
             <Option key={item.key}>{item.label}</Option>
           ))}
         </Dropdown>
-        <Slider
-          className={clsx(styles.selectTypeCount)}
-          min={0}
-          max={128}
-          // className="w-72 mr-4"
-          value={nodeDisk}
-          onChange={(e, data) => setNodeDiskValue(data.value)}
-        />
-        <span> {nodeDisk}G </span>
       </div>
     </div>
   );
