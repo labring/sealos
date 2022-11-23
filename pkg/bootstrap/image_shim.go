@@ -14,33 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package bootstrap
 
 import (
 	"fmt"
 	"path"
 
-	"github.com/labring/sealos/pkg/ssh"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
-
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 var defaultRootDirectory = "/var/lib/image-cri-shim"
 
 type ImageShim struct {
-	SSHInterface ssh.Interface
-	IP           string
+	sshInterface ssh.Interface
+	host         string
 }
 
 // GetInfo default dir is /var/lib/image-cri-shim
 func (is *ImageShim) GetInfo(rootfs string) string {
 	const imageCustomConfig = "image-cri-shim.yaml"
 	etcPath := path.Join(rootfs, constants.EtcDirName, imageCustomConfig)
-	data, _ := is.SSHInterface.Cmd(is.IP, fmt.Sprintf("cat %s", etcPath))
+	data, _ := is.sshInterface.Cmd(is.host, fmt.Sprintf("cat %s", etcPath))
 	logger.Debug("image shim data info: %s", string(data))
 	shimConfig, err := yaml.UnmarshalData(data)
 	if err != nil {
@@ -59,4 +58,8 @@ func (is *ImageShim) ApplyCMD(rootfs string) string {
 
 func (is *ImageShim) DeleteCMD(rootfs string) string {
 	return fmt.Sprintf("rm -rf %s", is.GetInfo(rootfs))
+}
+
+func NewImageShimHelper(execer ssh.Interface, host string) *ImageShim {
+	return &ImageShim{execer, host}
 }

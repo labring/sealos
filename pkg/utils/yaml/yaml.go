@@ -124,3 +124,8 @@ func Matcher(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
 	return ext == ".yaml" || ext == ".yml"
 }
+
+func ShowStructYaml(s interface{}) {
+	data, _ := yaml.Marshal(s)
+	println(string(data))
+}

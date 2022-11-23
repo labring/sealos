@@ -18,6 +18,7 @@ package aws
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"sync"
@@ -33,6 +34,11 @@ import (
 )
 
 var mutex sync.Mutex
+
+var userData = `#!/bin/bash
+sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
+sudo sed -i 's/#PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
+`
 
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
 // We use this interface to test the functions using a mocked service.
@@ -142,10 +148,12 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			Value: &value,
 		},
 	)
-	keyName := infra.Status.SSH.PkName
+	keyName := infra.Spec.SSH.PkName
 	//todo use ami to search root device name
 	rootDeviceName := "/dev/xvda"
 	rootVolumeSize := int32(40)
+	// encode userdata to base64
+	userData := base64.StdEncoding.EncodeToString([]byte(userData))
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -167,6 +175,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			DeviceName: &rootDeviceName,
 			Ebs:        &types.EbsBlockDevice{VolumeSize: &rootVolumeSize},
 		}},
+		UserData: &userData,
 	}
 
 	// assign to BlockDeviceMappings from host.Disk
@@ -198,15 +207,15 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 }
 
 func (d Driver) CreateKeyPair(infra *v1.Infra) error {
-	mutex.Lock()
-	client := d.Client
-	if infra.Status.SSH.PkName != "" {
-		mutex.Unlock()
+	if infra.Spec.SSH.PkName != "" {
 		return nil
 	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	client := d.Client
 	myUUID, err := uuid.NewUUID()
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create uuid error:%v", err)
 	}
 	keyName := myUUID.String()
@@ -217,11 +226,9 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 
 	result, err := MakeKeyPair(context.TODO(), client, input)
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create key pair error:%v", err)
 	}
-	infra.Status.SSH.PkName = *result.KeyName
-	infra.Status.SSH.PkData = *result.KeyMaterial
-	mutex.Unlock()
+	infra.Spec.SSH.PkName = *result.KeyName
+	infra.Spec.SSH.PkData = *result.KeyMaterial
 	return nil
 }

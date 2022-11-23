@@ -23,6 +23,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/remote"
@@ -34,7 +35,7 @@ import (
 
 func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
 	k.registryOnce.Do(func() {
-		k.Registry = GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
+		k.Registry = bootstrap.GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
 	})
 	return k.Registry
 }
@@ -165,12 +166,7 @@ func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
 func (k *KubeadmRuntime) execClean(ip string) error {
 	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanBash()))
 }
-func (k *KubeadmRuntime) execInitRegistry(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().InitRegistryBash()))
-}
-func (k *KubeadmRuntime) execCleanRegistry(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().CleanRegistryBash()))
-}
+
 func (k *KubeadmRuntime) execAuth(ip string) error {
 	return k.getSSHInterface().CmdAsync(ip, k.getENVInterface().WrapperShell(ip, k.getScriptsBash().AuthBash()))
 }

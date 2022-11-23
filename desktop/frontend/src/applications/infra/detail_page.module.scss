@@ -123,12 +123,9 @@ $color-btn-blue: #3981f5;
 .tableDetail {
   padding-top: 10px;
   thead tr th button {
-    justify-content: center;
-    flex-grow: 1;
-    text-align: center;
     height: 30px;
     font-size: 12px;
-    line-height: 13px;
+    line-height: 30px;
     color: #a1a8ae;
   }
 
@@ -139,16 +136,15 @@ $color-btn-blue: #3981f5;
     color: #545454;
     height: 50px;
     border-bottom-width: 1px;
-    td {
-      text-align: center;
-    }
   }
 
   tbody tr:nth-last-child(1) {
     border-bottom-width: 0px;
   }
+}
 
-  .tableTitleId {
-    width: 160px;
-  }
+.tableHead1px {
+  border: 0.5px solid #a19f9d;
+  height: 11px;
+  position: relative;
 }

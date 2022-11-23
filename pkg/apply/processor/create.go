@@ -19,25 +19,23 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/rand"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/sets"
 
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/guest"
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type CreateProcessor struct {
@@ -62,6 +60,7 @@ func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
 
 	return nil
 }
+
 func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
@@ -70,6 +69,8 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.PreProcess,
 		c.RunConfig,
 		c.MountRootfs,
+		c.MirrorRegistry,
+		c.Bootstrap,
 		// c.GetPhasePluginFunc(plugin.PhasePreInit),
 		c.Init,
 		c.Join,
@@ -79,15 +80,16 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 	)
 	return todoList, nil
 }
+
 func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Check in CreateProcessor.")
 	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
+
 func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 	ociList, err := c.ImageManager.Inspect(cluster.Spec.Image...)
 	if err != nil {
@@ -106,6 +108,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 	}
 	return nil
 }
+
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
 	err := c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, cluster.Spec.Image...)
@@ -157,14 +160,29 @@ func (c *CreateProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *CreateProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in CreateProcessor.")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
-	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
-		hosts = append(hosts, cluster.GetRegistryIPAndPort())
-	}
 	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
 	if err != nil {
 		return err
 	}
-	return fs.MountRootfs(cluster, hosts, true, cluster.HasAppImage())
+	return fs.MountRootfs(cluster, hosts)
+}
+
+func (c *CreateProcessor) MirrorRegistry(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MirrorRegistry in CreateProcessor.")
+	return MirrorRegistry(cluster, cluster.Status.Mounts)
+}
+
+func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
+	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	bs := bootstrap.New(cluster)
+	if err := bs.Preflight(hosts...); err != nil {
+		return err
+	}
+	if err := bs.Init(hosts...); err != nil {
+		return err
+	}
+	return bs.ApplyAddons(hosts...)
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {

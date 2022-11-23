@@ -26,19 +26,23 @@ import (
 func (c *Cluster) GetSSH() SSH {
 	return c.Spec.SSH
 }
+
 func (c *Cluster) SetSSH(ssh SSH) {
 	c.Spec.SSH = ssh
 }
+
 func (c *Cluster) GetHosts() []Host {
 	return c.Spec.Hosts
 }
+
 func (c *Cluster) SetHosts(hosts []Host) {
 	c.Spec.Hosts = hosts
 }
 
 func (c *Cluster) GetMasterIPList() []string {
-	return iputils.GetHostIPs(c.GetIPSByRole(MASTER))
+	return iputils.GetHostIPs(c.GetMasterIPAndPortList())
 }
+
 func (c *Cluster) GetMasterIPAndPortList() []string {
 	return c.GetIPSByRole(MASTER)
 }
@@ -47,12 +51,28 @@ func (c *Cluster) GetNodeIPList() []string {
 	return iputils.GetHostIPs(c.GetIPSByRole(NODE))
 }
 
-func (c *Cluster) GetRegistryIP() string {
-	return c.GetMaster0IP()
-}
-
 func (c *Cluster) GetNodeIPAndPortList() []string {
 	return c.GetIPSByRole(NODE)
+}
+
+func (c *Cluster) GetRegistryIP() string {
+	return iputils.GetHostIP(c.GetRegistryIPAndPort())
+}
+
+func (c *Cluster) GetRegistryIPAndPort() string {
+	return c.GetRegistryIPAndPortList()[0]
+}
+
+func (c *Cluster) GetRegistryIPList() []string {
+	return iputils.GetHostIPs(c.GetRegistryIPAndPortList())
+}
+
+func (c *Cluster) GetRegistryIPAndPortList() []string {
+	ret := c.GetIPSByRole(REGISTRY)
+	if len(ret) == 0 {
+		ret = []string{c.GetMaster0IPAndPort()}
+	}
+	return ret
 }
 
 func (c *Cluster) GetMaster0IP() string {
@@ -73,10 +93,6 @@ func (c *Cluster) GetMaster0IPAndPort() string {
 		return ""
 	}
 	return c.Spec.Hosts[0].IPS[0]
-}
-
-func (c *Cluster) GetRegistryIPAndPort() string {
-	return c.GetMaster0IPAndPort()
 }
 
 func (c *Cluster) GetMaster0IPAPIServer() string {
@@ -129,6 +145,7 @@ func (c *Cluster) FindImage(targetImage string) *MountImage {
 	}
 	return image
 }
+
 func (c *Cluster) SetMountImage(targetMount *MountImage) {
 	tgMount := targetMount.DeepCopy()
 	if c.Status.Mounts != nil {
@@ -188,6 +205,7 @@ func (c *Cluster) GetAppImage(defaultImageName, defaultMount string) *MountImage
 	}
 	return image
 }
+
 func (c *Cluster) HasAppImage() bool {
 	if c.Status.Mounts != nil {
 		for _, img := range c.Status.Mounts {
