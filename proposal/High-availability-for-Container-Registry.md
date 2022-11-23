@@ -59,6 +59,11 @@ type Context interface {
 }
 ```
 
+## Limitations
+
+- `registry` node must be one of the nodes in the cluster, can't use external registry yet.
+- since **currently only supports apparently specifying a set of host in the `Clusterfile`**, registry doesn't support scaling after cluster initialized.
+
 ## Features not yet implemented
 
 - registry role flag in `sealos run`/`sealos add`/`sealos remove` command
