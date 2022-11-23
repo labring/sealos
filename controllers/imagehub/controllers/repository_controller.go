@@ -138,7 +138,7 @@ func (r *RepositoryReconciler) syncOrg(ctx context.Context, repo *imagehubv1.Rep
 			// create org
 			if org.CreationTimestamp.IsZero() {
 				org.Spec = imagehubv1.OrganizationSpec{
-					Name:  repo.Spec.Name.GetOrg(),
+					Name:  imagehubv1.OrgName(repo.Spec.Name.GetOrg()),
 					Repos: []imagehubv1.RepoName{},
 				}
 			}
@@ -189,7 +189,7 @@ func (r *RepositoryReconciler) deleteOrgRepoList(ctx context.Context, repo *imag
 			// create org
 			if org.CreationTimestamp.IsZero() {
 				org.Spec = imagehubv1.OrganizationSpec{
-					Name:  repo.Spec.Name.GetOrg(),
+					Name:  imagehubv1.OrgName(repo.Spec.Name.GetOrg()),
 					Repos: []imagehubv1.RepoName{},
 				}
 			}

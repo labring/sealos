@@ -130,6 +130,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.OrgCRBReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Orgrolebinding")
+		os.Exit(1)
+	}
+	if err = (&controllers.ImagesyncrepoReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Imagesyncrepo")
+		os.Exit(1)
+	}
+	if err = (&controllers.ReposyncorgReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Reposyncorg")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

@@ -49,4 +49,19 @@ resources:
   kind: DataPack
   path: github.com/labring/sealos/controllers/imagehub/api/v1
   version: v1
+- controller: true
+  domain: sealos.io
+  group: imagehub
+  kind: OrgCRB
+  version: v1
+- controller: true
+  domain: sealos.io
+  group: imagehub
+  kind: Imagesyncrepo
+  version: v1
+- controller: true
+  domain: sealos.io
+  group: imagehub
+  kind: Reposyncorg
+  version: v1
 version: "3"

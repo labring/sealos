@@ -55,10 +55,10 @@ func (r *DataHelper) getOrgInfoByOrgName(ctx context.Context, name imagehubv1.Or
 	return imagehubv1.OrgInfo{}, nil
 }
 
-//func (r *DataHelper) getRepoListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.RepositoryList, error) {
-//	res := &imagehubv1.RepositoryList{}
-//	return listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier)
-//}
+func (r *DataHelper) getRepoListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.RepositoryList, error) {
+	res := &imagehubv1.RepositoryList{}
+	return listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier)
+}
 
 func (r *DataHelper) getRepoByRepoName(ctx context.Context, name imagehubv1.RepoName) (imagehubv1.Repository, error) {
 	res := &imagehubv1.RepositoryList{}
@@ -77,10 +77,10 @@ func (r *DataHelper) getRepoInfoByRepoName(ctx context.Context, name imagehubv1.
 	return imagehubv1.RepoInfo(repo.Spec), nil
 }
 
-//func (r *DataHelper) getImageListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.ImageList, error) {
-//	res := &imagehubv1.ImageList{}
-//	return listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier)
-//}
+func (r *DataHelper) getImageListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.ImageList, error) {
+	res := &imagehubv1.ImageList{}
+	return listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier)
+}
 
 func (r *DataHelper) getImageListByRepoName(ctx context.Context, name imagehubv1.RepoName) (*imagehubv1.ImageList, error) {
 	res := &imagehubv1.ImageList{}

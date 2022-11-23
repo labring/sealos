@@ -30,14 +30,14 @@ type OrganizationSpec struct {
 
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MaxLength=1024
-	Name  string     `json:"name,omitempty"` //e.g: "libring"
+	Name  OrgName    `json:"name,omitempty"` //e.g: "libring"
 	Repos []RepoName `json:"repos,omitempty"`
 
 	// Creator is the user who first create this org
 	// update manager
 	Creator string `json:"creator,omitempty"`
 	// Manager can update org and org's repo/image
-	Manager []string `json:"manager,omitempty"`
+	Manager []string `json:"manager,omitempty"` //service account name?
 }
 
 type OrgName string
