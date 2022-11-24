@@ -28,8 +28,6 @@ type OrganizationSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	//+kubebuilder:validation:Required
-	//+kubebuilder:validation:MaxLength=1024
 	Name  OrgName    `json:"name,omitempty"` //e.g: "libring"
 	Repos []RepoName `json:"repos,omitempty"`
 
