@@ -138,7 +138,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 	//orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule, repoRule, imageRule)
 	orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule)
 
-	if _, err := controllerutil.CreateOrPatch(ctx, r.Client, orgMgrRole, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, orgMgrRole, func() error {
 		if err := controllerutil.SetControllerReference(org, orgMgrRole, r.Scheme); err != nil {
 			return err
 		}
@@ -168,7 +168,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 		Subjects: sub,
 	}
 
-	if _, err := controllerutil.CreateOrPatch(ctx, r.Client, crb, func() error {
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, crb, func() error {
 		if err := controllerutil.SetControllerReference(org, crb, r.Scheme); err != nil {
 			return err
 		}
@@ -176,6 +176,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 	}); err != nil {
 		return ctrl.Result{}, nil
 	}
+	r.Logger.Info("create  ClusterRole and ClusterRoleBinding for ", "org:", org.Name)
 
 	return ctrl.Result{}, nil
 }

@@ -1,7 +1,17 @@
 apiVersion: v1
+kind: Secret
+metadata:
+  name: sa-labring-secret
+  annotations:
+    kubernetes.io/service-account.name: labring
+type: kubernetes.io/service-account-token
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: labring
+secrets:
+  - name: sa-labring-secret
 ---
 apiVersion: imagehub.sealos.io/v1
 kind: Organization
