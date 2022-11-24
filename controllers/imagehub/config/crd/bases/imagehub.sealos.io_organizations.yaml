@@ -47,7 +47,6 @@ spec:
                   type: string
                 type: array
               name:
-                maxLength: 1024
                 type: string
               repos:
                 items:

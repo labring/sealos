@@ -60,6 +60,32 @@ rules:
 - apiGroups:
   - imagehub.sealos.io
   resources:
+  - imagesyncrepoes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - imagesyncrepoes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - imagesyncrepoes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
   - organizations
   verbs:
   - create
@@ -79,6 +105,32 @@ rules:
   - imagehub.sealos.io
   resources:
   - organizations/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - orgrolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - orgrolebindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - orgrolebindings/status
   verbs:
   - get
   - patch
@@ -109,3 +161,53 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - reposyncorgs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - reposyncorgs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - reposyncorgs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
