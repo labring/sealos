@@ -16,4 +16,5 @@ tools
 coverage.out
 tmp
 
-*.DS_Store
+**/.DS_Store
+

@@ -1,10 +1,10 @@
 apiVersion: metering.sealos.io/v1
 kind: PodResourcePrice
 metadata:
-  name: sealos-pod-controller
+  name: podresourceprice-sample
   namespace: metering-system
 spec:
-  owner: "pod controller"
+  resourceName: pod
   interval: 60
   resources:
     cpu:

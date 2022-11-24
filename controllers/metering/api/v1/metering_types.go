@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -44,9 +44,10 @@ Spec:
 */
 
 type MeteringSpec struct {
-	Owner        string `json:"owner,omitempty"`
-	Namespace    string `json:"namespace,omitempty"`
-	TimeInterval int    `json:"timeInterval"`
+	Owner        string                                `json:"owner,omitempty"`
+	Namespace    string                                `json:"namespace,omitempty"`
+	TimeInterval int                                   `json:"timeInterval"`
+	Resources    map[corev1.ResourceName]ResourcePrice `json:"resources,omitempty"`
 }
 
 type ResourcePrice struct {
@@ -75,12 +76,11 @@ type BillingList struct {
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	BillingListM     []BillingList                     `json:"billingListM,omitempty"`
-	BillingListH     []BillingList                     `json:"billingListH,omitempty"`
-	BillingListD     []BillingList                     `json:"billingListD,omitempty"`
-	TotalAmount      int64                             `json:"totalAmount,omitempty"`
-	LatestUpdateTime int64                             `json:"latestUpdateTime,omitempty"`
-	Resources        map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+	BillingListM     []BillingList `json:"billingListM,omitempty"`
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -109,4 +109,26 @@ type MeteringList struct {
 
 func init() {
 	SchemeBuilder.Register(&Metering{}, &MeteringList{})
+}
+
+type ResourceMsg struct {
+	ResourceName corev1.ResourceName
+	Amount       float64
+	Used         *resource.Quantity
+	Unit         *resource.Quantity
+}
+
+func DefaultResourceQuota() corev1.ResourceList {
+	return corev1.ResourceList{
+		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
+		corev1.ResourceLimitsCPU: resource.MustParse("1000"),
+		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
+		corev1.ResourceLimitsMemory: resource.MustParse("1000Gi"),
+		//For all PVCs, the total demand for storage resources cannot exceed this value
+		corev1.ResourceRequestsStorage: resource.MustParse("1000Gi"),
+		//"limit.storage": resource.MustParse("100Gi"),
+		//Local ephemeral storage
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("1000Gi"),
+		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
+	}
 }

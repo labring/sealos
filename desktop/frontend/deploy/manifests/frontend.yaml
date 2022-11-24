@@ -79,11 +79,12 @@ spec:
         - name: desktop-frontend
           securityContext:
             runAsNonRoot: true
+            runAsUser: 1001
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - "ALL"
-          image: fanux/frontend:latest
+          image: zhujingyang/desktop-frontend:latest
           imagePullPolicy: Always
           volumeMounts:
             - name: desktop-frontend-volume

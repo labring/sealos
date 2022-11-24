@@ -172,12 +172,26 @@ const installedApps: TApp[] = [
   //   size: 'maximize'
   // },
   {
-    name: 'Infra',
-    icon: '/images/infra.svg',
+    name: 'sealos cloud provider',
+    icon: '/images/infraicon/scp.png',
     type: 'app',
     data: {
       url: '',
       desc: 'infra operator'
+    },
+    gallery: [
+      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    size: 'maximize'
+  },
+  {
+    name: 'AFFiNE',
+    icon: '/images/affine.svg',
+    type: 'iframe',
+    data: {
+      url: '',
+      desc: 'AFFiNE operator'
     },
     gallery: [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',

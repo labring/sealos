@@ -19,10 +19,10 @@ metadata:
 spec:
   hosts:
   - roles: [master] # required
-    count: 0 # Required
-    flavor: "t2.micro"
-    image: "ami-08bb4e3ce08ca7ddb"
+    count: 1 # Required
+    flavor: "t2.large"
+    image: "ami-0d66b970b9f16f1f5"
   - roles: [ node ] # required
-    count: 0 # Required
-    flavor: "t2.micro"
-    image: "ami-08bb4e3ce08ca7ddb"
+    count: 1 # Required
+    flavor: "t2.medium"
+    image: "ami-0d66b970b9f16f1f5"

@@ -33,7 +33,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	}
 
 	setHostsIndex(infra)
-
 	if !infra.DeletionTimestamp.IsZero() {
 		logger.Debug("remove all hosts")
 		for _, hosts := range infra.Spec.Hosts {
@@ -47,6 +46,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err != nil {
 		return fmt.Errorf("get all instances failed: %v", err)
 	}
+
 	// sort current hosts
 	sortHostsByIndex(v1.IndexHosts(hosts))
 	// merge current hosts list using index
@@ -56,10 +56,12 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
 		return err
 	}
-
-	if _, err = driver.GetInstances(infra); err != nil {
+	currHosts, err := driver.GetInstances(infra)
+	if err != nil {
 		return err
 	}
+	infra.Spec.Hosts = currHosts
+
 	return nil
 }
 
@@ -75,8 +77,10 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 	desired := infra.Spec.Hosts
 	// all roles executed on an infra(group by index)
 	eg, _ := errgroup.WithContext(context.Background())
+	if err := driver.CreateKeyPair(infra); err != nil {
+		return err
+	}
 	for i := range desired {
-		infra := infra
 		d := desired[i]
 		cur := getHostsByIndex(d.Index, current)
 		eg.Go(func() error {

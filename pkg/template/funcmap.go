@@ -18,14 +18,15 @@ limitations under the License.
 
 package template
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net"
 	"strings"
+	"text/template"
 
 	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/sprig/v3"

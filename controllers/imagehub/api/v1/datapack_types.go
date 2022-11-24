@@ -43,13 +43,13 @@ type Data struct {
 	AuthorIcon string   `json:"authorIcon,omitempty"`
 	Keywords   []string `json:"keywords,omitempty"`
 	// detail
-	Tags        TagsData `json:"tags,omitempty"`
-	URL         string   `json:"URL,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Docs        string   `json:"docs,omitempty"`
-	ID          string   `json:"ID,omitempty"`
-	Size        int64    `json:"size,omitempty"`
-	Arch        string   `json:"arch,omitempty"`
+	Tags        TagList `json:"tags,omitempty"`
+	URL         string  `json:"URL,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Docs        string  `json:"docs,omitempty"`
+	ID          string  `json:"ID,omitempty"`
+	Size        int64   `json:"size,omitempty"`
+	Arch        string  `json:"arch,omitempty"`
 }
 
 // Datas in datapack status
@@ -117,7 +117,7 @@ type ImageDetailData struct {
 	ID          string    `json:"ID,omitempty"`
 	Size        int64     `json:"size,omitempty"`
 	Arch        string    `json:"arch,omitempty"`
-	Tags        TagsData  `json:"tags,omitempty"`
+	Tags        TagList   `json:"tags,omitempty"`
 }
 
 func (i *ImageDetailData) New(fd *FullData) {
@@ -179,6 +179,7 @@ type DataPackStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster,shortName=dp
 
 // DataPack is the Schema for the datapacks API
 type DataPack struct {

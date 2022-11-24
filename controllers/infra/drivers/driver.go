@@ -43,6 +43,7 @@ type Driver interface {
 	DeleteVolume(disksID []string) error
 	// Modify
 	ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error
+	CreateKeyPair(infra *v1.Infra) error
 }
 
 type Reconcile interface {

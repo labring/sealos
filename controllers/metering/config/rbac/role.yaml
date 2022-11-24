@@ -32,18 +32,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - resource-quotas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - resourcequotas
   verbs:
   - create
@@ -113,32 +101,6 @@ rules:
   - metering.sealos.io
   resources:
   - extensionresourcesprices/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings/status
   verbs:
   - get
   - patch

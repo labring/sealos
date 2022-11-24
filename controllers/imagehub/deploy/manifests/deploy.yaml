@@ -34,8 +34,10 @@ spec:
     kind: DataPack
     listKind: DataPackList
     plural: datapacks
+    shortNames:
+    - dp
     singular: datapack
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -118,6 +120,7 @@ spec:
                       items:
                         properties:
                           creatTime:
+                            description: todo inspect image and get time
                             format: date-time
                             type: string
                           name:
@@ -168,8 +171,10 @@ spec:
     kind: Image
     listKind: ImageList
     plural: images
+    shortNames:
+    - img
     singular: image
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -220,8 +225,8 @@ spec:
                 type: object
               name:
                 type: string
-            required:
-            - name
+              user:
+                type: string
             type: object
           status:
             description: ImageStatus defines the observed state of Image
@@ -261,8 +266,10 @@ spec:
     kind: Organization
     listKind: OrganizationList
     plural: organizations
+    shortNames:
+    - org
     singular: organization
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -284,6 +291,15 @@ spec:
           spec:
             description: OrganizationSpec defines the desired state of Organization
             properties:
+              creator:
+                description: Creator is the user who first create this org update
+                  manager
+                type: string
+              manager:
+                description: Manager can update org and org's repo/image
+                items:
+                  type: string
+                type: array
               name:
                 maxLength: 1024
                 type: string
@@ -291,8 +307,6 @@ spec:
                 items:
                   type: string
                 type: array
-            required:
-            - name
             type: object
           status:
             description: OrganizationStatus defines the observed state of Organization
@@ -332,8 +346,10 @@ spec:
     kind: Repository
     listKind: RepositoryList
     plural: repositories
+    shortNames:
+    - repo
     singular: repository
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -359,6 +375,7 @@ spec:
               latestTag:
                 properties:
                   creatTime:
+                    description: todo inspect image and get time
                     format: date-time
                     type: string
                   name:
@@ -373,6 +390,7 @@ spec:
                 items:
                   properties:
                     creatTime:
+                      description: todo inspect image and get time
                       format: date-time
                       type: string
                     name:
@@ -392,6 +410,7 @@ spec:
               latestTag:
                 properties:
                   creatTime:
+                    description: todo inspect image and get time
                     format: date-time
                     type: string
                   name:
@@ -409,6 +428,7 @@ spec:
                 items:
                   properties:
                     creatTime:
+                      description: todo inspect image and get time
                       format: date-time
                       type: string
                     name:
@@ -938,6 +958,26 @@ webhooks:
     service:
       name: imagehub-webhook-service
       namespace: imagehub-system
+      path: /mutate-imagehub-sealos-io-v1-organization
+  failurePolicy: Fail
+  name: morganization.kb.io
+  rules:
+  - apiGroups:
+    - imagehub.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - organizations
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: imagehub-webhook-service
+      namespace: imagehub-system
       path: /mutate-imagehub-sealos-io-v1-repository
   failurePolicy: Fail
   name: mrepository.kb.io
@@ -986,6 +1026,26 @@ webhooks:
     - UPDATE
     resources:
     - images
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: imagehub-webhook-service
+      namespace: imagehub-system
+      path: /validate-imagehub-sealos-io-v1-organization
+  failurePolicy: Fail
+  name: vorganization.kb.io
+  rules:
+  - apiGroups:
+    - imagehub.sealos.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - organizations
   sideEffects: None
 - admissionReviewVersions:
   - v1

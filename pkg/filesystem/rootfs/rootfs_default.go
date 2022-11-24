@@ -19,34 +19,30 @@ package rootfs
 import (
 	"context"
 	"fmt"
-	"os"
+	"io/fs"
 	"path"
-	"path/filepath"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/utils/exec"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type defaultRootfs struct {
 	// clusterService image.ClusterService
 	// imgList types.ImageListOCIV1
 	// cluster types.ClusterManifestList
-	images []v2.MountImage
+	mounts []v2.MountImage
 }
 
-func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string, initFlag, appFlag bool) error {
-	return f.mountRootfs(cluster, hosts, initFlag, appFlag)
+func (f *defaultRootfs) MountRootfs(cluster *v2.Cluster, hosts []string) error {
+	return f.mountRootfs(cluster, hosts)
 }
 
 func (f *defaultRootfs) UnMountRootfs(cluster *v2.Cluster, hosts []string) error {
@@ -61,12 +57,13 @@ func (f *defaultRootfs) getSSH(cluster *v2.Cluster) ssh.Interface {
 	return ssh.NewSSHClient(&cluster.Spec.SSH, true)
 }
 
-func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFlag, appFlag bool) error {
+func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error {
 	target := constants.NewData(f.getClusterName(cluster)).RootFSPath()
-	eg, _ := errgroup.WithContext(context.Background())
-	envProcessor := env.NewEnvProcessor(cluster, f.images)
-	for _, cInfo := range f.images {
-		src := cInfo
+	ctx := context.Background()
+	eg, _ := errgroup.WithContext(ctx)
+	envProcessor := env.NewEnvProcessor(cluster, f.mounts)
+	for _, mount := range f.mounts {
+		src := mount
 		eg.Go(func() error {
 			if !file.IsExist(src.MountPoint) {
 				logger.Debug("Image %s not exist,render env continue", src.ImageName)
@@ -92,54 +89,29 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	if err := eg.Wait(); err != nil {
 		return err
 	}
-	check := constants.NewBash(f.getClusterName(cluster), cluster.GetImageLabels())
+
 	sshClient := f.getSSH(cluster)
-	shim := runtime.ImageShim{
-		SSHInterface: sshClient,
-		IP:           cluster.GetMaster0IPAndPort(),
-	}
-	for _, IP := range ipList {
-		ip := IP
+	notRegistryDirFilter := func(entry fs.DirEntry) bool { return !constants.IsRegistryDir(entry) }
+
+	for idx := range ipList {
+		ip := ipList[idx]
 		eg.Go(func() error {
-			fileEg, _ := errgroup.WithContext(context.Background())
-			for _, cInfo := range f.images {
-				img := cInfo
-				fileEg.Go(func() error {
-					if img.Type == v2.RootfsImage {
-						logger.Debug("send rootfs images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, img.ImageName, img.Type)
-						err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), false, ip, img.MountPoint, target)
+			egg, _ := errgroup.WithContext(ctx)
+			for idj := range f.mounts {
+				mount := f.mounts[idj]
+				egg.Go(func() error {
+					switch mount.Type {
+					case v2.RootfsImage, v2.PatchImage:
+						logger.Debug("send mount image, ip: %s, image name: %s, image type: %s", ip, mount.ImageName, mount.Type)
+						err := ssh.CopyDir(sshClient, ip, mount.MountPoint, target, notRegistryDirFilter)
 						if err != nil {
-							return fmt.Errorf("copy container %s rootfs failed %v", img.Name, err)
+							return fmt.Errorf("failed to copy %s %s: %v", mount.Type, mount.Name, err)
 						}
 					}
 					return nil
 				})
 			}
-			if err := fileEg.Wait(); err != nil {
-				return err
-			}
-			for _, cInfo := range f.images {
-				if cInfo.Type == v2.PatchImage {
-					logger.Debug("send addons images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, cInfo.ImageName, cInfo.Type)
-					err := CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), false, ip, cInfo.MountPoint, target)
-					if err != nil {
-						return fmt.Errorf("copy container %s rootfs failed %v", cInfo.Name, err)
-					}
-				}
-			}
-			if initFlag {
-				checkBash := check.CheckBash()
-				if checkBash == "" {
-					return nil
-				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.CheckBash()), shim.ApplyCMD(target)); err != nil {
-					return err
-				}
-				if err := f.getSSH(cluster).CmdAsync(ip, envProcessor.WrapperShell(ip, check.InitBash())); err != nil {
-					return err
-				}
-			}
-			return nil
+			return egg.Wait()
 		})
 	}
 	err := eg.Wait()
@@ -147,16 +119,16 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 		return err
 	}
 
-	endEg, _ := errgroup.WithContext(context.Background())
-	for _, cInfo := range f.images {
-		ip := cluster.GetMaster0IPAndPort()
-		img := cInfo
+	endEg, _ := errgroup.WithContext(ctx)
+	master0 := cluster.GetMaster0IPAndPort()
+	for idx := range f.mounts {
+		mountInfo := f.mounts[idx]
 		endEg.Go(func() error {
-			if appFlag && img.Type == v2.AppImage {
-				logger.Debug("send  app images ,ip: %s , init flag: %v, app flag: %v,image name: %s, image type: %s", ip, initFlag, appFlag, img.ImageName, img.Type)
-				err = CopyFiles(sshClient, iputils.GetHostIP(ip) == cluster.GetRegistryIP(), true, ip, img.MountPoint, target)
+			if mountInfo.Type == v2.AppImage {
+				logger.Debug("send app mount images, ip: %s, image name: %s, image type: %s", master0, mountInfo.ImageName, mountInfo.Type)
+				err = ssh.CopyDir(sshClient, master0, mountInfo.MountPoint, constants.GetAppWorkDir(cluster.Name, mountInfo.Name), notRegistryDirFilter)
 				if err != nil {
-					return fmt.Errorf("copy container %s app rootfs failed %v", img.Name, err)
+					return fmt.Errorf("failed to copy %s %s: %v", mountInfo.Type, mountInfo.Name, err)
 				}
 			}
 			return nil
@@ -164,6 +136,7 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string, initFl
 	}
 	return endEg.Wait()
 }
+
 func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) error {
 	clusterRootfsDir := constants.NewData(f.getClusterName(cluster)).Homedir()
 	rmRootfs := fmt.Sprintf("rm -rf %s", clusterRootfsDir)
@@ -199,27 +172,7 @@ func renderENV(mountDir string, ipList []string, p env.Interface) error {
 	}
 	return nil
 }
-func CopyFiles(sshEntry ssh.Interface, isRegistry, isApp bool, ip, src, target string) error {
-	logger.Debug("copyFiles isRegistry: %v,isApp: %v,ip: %v,src: %v,target: %v", isRegistry, isApp, ip, src, target)
-	files, err := os.ReadDir(src)
-	if err != nil {
-		return fmt.Errorf("failed to copy files %s", err)
-	}
-	if isRegistry || isApp {
-		return sshEntry.Copy(ip, src, target)
-	}
-	for _, f := range files {
-		if f.Name() == constants.RegistryDirName {
-			continue
-		}
-		err = sshEntry.Copy(ip, filepath.Join(src, f.Name()), filepath.Join(target, f.Name()))
-		if err != nil {
-			return fmt.Errorf("failed to copy sub files %v", err)
-		}
-	}
-	return nil
-}
 
-func NewDefaultRootfs(images []v2.MountImage) (Interface, error) {
-	return &defaultRootfs{images: images}, nil
+func NewDefaultRootfs(mounts []v2.MountImage) (Interface, error) {
+	return &defaultRootfs{mounts: mounts}, nil
 }

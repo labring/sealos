@@ -19,9 +19,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/labring/sealos/pkg/ssh"
 
-	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
@@ -55,7 +56,6 @@ func NewGuestManager() (Interface, error) {
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
-	clusterRootfs := runtime.GetConstantData(cluster.Name).RootFSPath()
 	envInterface := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
 	guestCMD := d.getGuestCmd(envs, cluster, mounts)
@@ -77,40 +77,37 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 		}()
 	}
 	sshInterface := ssh.NewSSHClient(&cluster.Spec.SSH, true)
-
-	for _, value := range guestCMD {
-		if value == "" {
-			continue
-		}
-		logger.Info("guest cmd is %s", value)
-		if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), fmt.Sprintf(constants.CdAndExecCmd, clusterRootfs, value)); err != nil {
-			return err
-		}
+	logger.Debug("start to exec guest commands")
+	if err := sshInterface.CmdAsync(cluster.GetMaster0IPAndPort(), guestCMD...); err != nil {
+		return err
 	}
+	logger.Debug("finish to exec guest commands: %v", guestCMD)
 	return nil
 }
 
 func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mounts []v2.MountImage) []string {
 	command := make([]string, 0)
 	overrideCmd := cluster.Spec.Command
-
+	workCmd := func(applicationName, cmd string) string {
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cluster.Name, applicationName), cmd)
+	}
 	for idx, i := range mounts {
 		mergeENV := maps.MergeMap(i.Env, envs)
 		mapping := expansion.MappingFuncFor(mergeENV)
 		for _, cmd := range i.Entrypoint {
-			command = append(command, expansion.Expand(cmd, mapping))
+			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
 		}
 
 		// if --cmd is specified, only the CMD of the first MountImage will be overridden
 		if idx == 0 && len(overrideCmd) > 0 {
 			for _, cmd := range overrideCmd {
-				command = append(command, expansion.Expand(cmd, mapping))
+				command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
 			}
 			continue
 		}
 
 		for _, cmd := range i.Cmd {
-			command = append(command, expansion.Expand(cmd, mapping))
+			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
 		}
 	}
 

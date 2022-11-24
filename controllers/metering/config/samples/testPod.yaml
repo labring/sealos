@@ -3,10 +3,14 @@ kind: Pod
 metadata:
   name: nginx
   namespace: test3
+
 spec:
   containers:
     - name: nginx
       image: nginx:1.14.2
+      securityContext:
+        allowPrivilegeEscalation: false
+        runAsNonRoot: true
       resources:
         requests:
           cpu: 1000m
@@ -18,3 +22,36 @@ spec:
           ephemeral-storage: 10Gi
       ports:
         - containerPort: 80
+  volumes:
+    - name: task-pv-storage
+      persistentVolumeClaim:
+        claimName: task-pv-claim
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: task-pv-volume
+  namespace: test3
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: task-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

@@ -20,16 +20,15 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/client-go/tools/record"
-
-	"github.com/labring/sealos/controllers/infra/drivers"
-
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
+	"k8s.io/kubernetes/pkg/apis/core"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
+	"github.com/labring/sealos/controllers/infra/drivers"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // InfraReconciler reconciles a Infra object
@@ -55,25 +54,39 @@ type InfraReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
 	infra := &infrav1.Infra{}
 
-	if err := r.Get(context.TODO(), req.NamespacedName, infra); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	err := r.applier.ReconcileInstance(infra, r.driver)
+	if infra.Status.Status == "" {
+		infra.Status.Status = infrav1.Pending.String()
+		r.recorder.Eventf(infra, core.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
+		if err := r.Status().Update(ctx, infra); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
+		r.recorder.Eventf(infra, core.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
+		return r.applier.ReconcileInstance(infra, r.driver)
+	})
 	if err != nil {
-		r.recorder.Eventf(infra, "Error", "reconcile infra failed", "%v", err)
-		return ctrl.Result{}, err
+		r.recorder.Eventf(infra, core.EventTypeWarning, "update infra failed", "%v", err)
+		return ctrl.Result{}, fmt.Errorf("update infra spec failed: %v", err)
 	}
-
-	if err = r.Update(ctx, infra); err != nil {
-		r.recorder.Eventf(infra, "Error", "infra update failed", "%v", err)
-		return ctrl.Result{}, err
+	if res == controllerutil.OperationResultUpdated {
+		if infra.Status.Status == infrav1.Running.String() {
+			return ctrl.Result{}, nil
+		}
+		infra.Status.Status = infrav1.Running.String()
+		if err = r.Status().Update(ctx, infra); err != nil {
+			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status update failed", "%v", err)
+			return ctrl.Result{}, err
+		}
+		r.recorder.Eventf(infra, core.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 	}
-
-	r.recorder.Eventf(infra, "Normal", "Created", "create infra success: %s", infra.Name)
 
 	return ctrl.Result{}, nil
 }
@@ -86,7 +99,7 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.driver = driver
 	r.applier = &drivers.Applier{}
-	r.recorder = mgr.GetEventRecorderFor("salos-infra-controller")
+	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}).

@@ -21,8 +21,9 @@ const (
 )
 
 var (
-	MASTER = "master"
-	NODE   = "node"
+	MASTER   = "master"
+	NODE     = "node"
+	REGISTRY = "registry"
 )
 
 type Provider string

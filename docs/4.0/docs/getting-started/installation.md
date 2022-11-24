@@ -48,7 +48,7 @@ baseurl=https://yum.fury.io/labring/
 enabled=1
 gpgcheck=0
 EOF
-sudo yum update
+sudo yum clean all
 sudo yum install sealos
 ```
 
@@ -67,6 +67,6 @@ Add `:arm64` when under the the `arm64` environment.
 # git clone the repo
 git clone https://github.com/labring/sealos.git
 # just make it
-make build
+make build BINS=sealos
 ```
 

@@ -74,6 +74,8 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if cluster == nil {
 		logger.Debug("creating new cluster")
 		cluster = initCluster(args.ClusterName)
+	} else {
+		cluster = cluster.DeepCopy()
 	}
 	c := &ClusterArgs{
 		clusterName: cluster.Name,

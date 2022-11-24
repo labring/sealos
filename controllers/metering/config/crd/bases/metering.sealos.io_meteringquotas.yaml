@@ -34,9 +34,6 @@ spec:
             type: object
           spec:
             description: MeteringQuotaSpec defines the desired state of MeteringQuota
-            type: object
-          status:
-            description: MeteringQuotaStatus defines the observed state of MeteringQuota
             properties:
               resources:
                 additionalProperties:
@@ -54,6 +51,9 @@ spec:
                   - used
                   type: object
                 type: object
+            type: object
+          status:
+            description: MeteringQuotaStatus defines the observed state of MeteringQuota
             type: object
         type: object
     served: true

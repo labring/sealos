@@ -101,8 +101,6 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
     └── globals.scss
 ```
 
-
-
 ### 项目依赖的库
 
 ```json
@@ -111,16 +109,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",  // 本地开发
+    "dev": "next dev", // 本地开发
     "build": "next build", // 构建
     "start": "next start",
     "lint": "next lint"
   },
-  "browserslist": [
-    "defaults",
-    "not ie 11",
-    "not op_mini all"
-  ],
+  "browserslist": ["defaults", "not ie 11", "not op_mini all"],
   "dependencies": {
     // 后续全部使用 FluentUI
     "@fluentui/react-components": "^9.3.1",
@@ -150,21 +144,40 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 }
 ```
 
-
-
 ### 代码阅读说明
 
 src/\_app.tsx -> src/layout/index.tsx -> src/components/desktop_content.tsx
-
-
 
 ### 规范
 
 1. 目录名： snake_case
 2. 组件名： PascalCase （ index.tsx 除外 ）
 
-
-
 ### 其它
 
 1. fluent v9 支持 ssr: https://react.fluentui.dev/?path=/docs/concepts-developer-server-side-rendering--page
+
+2. 使用 vscode 进行单步调试
+
+   创建`.vscode/launch.json`文件,内容如下:
+
+   ```json
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "Next.js: debug",
+         "type": "node-terminal",
+         "request": "launch",
+         "command": "pnpm run dev",
+         "serverReadyAction": {
+           "pattern": "started server on .+, url: (https?://.+)",
+           "uriFormat": "%s",
+           "action": "openExternally"
+         }
+       }
+     ]
+   }
+   ```
+
+   然后即可点击 vscode 的调试按钮进行调试,同时增加断点

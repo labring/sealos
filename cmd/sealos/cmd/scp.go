@@ -36,7 +36,7 @@ copy file to default cluster: default
 specify the cluster name(If there is only one cluster in the $HOME/.sealos directory, it should be applied. ):
     sealos scp -c my-cluster "/root/aa.txt" "/root/dd.txt"
 set role label to copy file:
-    sealos scp -c my-cluster -r master,slave,node1 "cat /etc/hosts"
+    sealos scp -c my-cluster -r master,node "cat /etc/hosts"
 set ips to copy file:
     sealos scp -c my-cluster --ips 172.16.1.38  "/root/aa.txt" "/root/dd.txt"
 `

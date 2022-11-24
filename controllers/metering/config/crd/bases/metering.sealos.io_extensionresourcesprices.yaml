@@ -37,7 +37,7 @@ spec:
             description: ExtensionResourcesPriceSpec defines the desired state of
               ExtensionResourcesPrice
             properties:
-              owner:
+              resourceName:
                 type: string
               resources:
                 additionalProperties:

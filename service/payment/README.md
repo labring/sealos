@@ -8,9 +8,8 @@ Set those envs, then start the server `go run main.go`
 	MchCertificateSerialNumber = "MchCertificateSerialNumber"
 	MchAPIv3Key                = "MchAPIv3Key"
 	AppID                      = "AppID"
-	CallbackURL                = "CallbackURL"
+	NotifyCallbackURL          = "CallbackURL"
 
-	DefaultCallbackURL = "https://sealos.io/payment/wechat/callback"
 ```
 
 # Get payment code-url

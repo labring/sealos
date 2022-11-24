@@ -36,9 +36,10 @@ spec:
             description: PodResourcePriceSpec defines the desired state of PodResourcePrice
             properties:
               interval:
-                description: update used resources every Interval minutes
+                default: 60
+                minimum: 1
                 type: integer
-              owner:
+              resourceName:
                 type: string
               resources:
                 additionalProperties:

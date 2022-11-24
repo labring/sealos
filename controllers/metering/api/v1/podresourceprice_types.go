@@ -21,14 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // PodResourcePriceSpec defines the desired state of PodResourcePrice
 type PodResourcePriceSpec struct {
-	Owner     string                            `json:"owner,omitempty"`
-	Resources map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+	ResourceName string                            `json:"resourceName,omitempty"`
+	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
 	// update used resources every Interval minutes
+
+	//+kubebuilder:default=60
+	//+kubebuilder:validation:Minimum=1
 	Interval int `json:"interval,omitempty"`
 }
 

@@ -37,8 +37,8 @@ Spec:
 
 // ExtensionResourcesPriceSpec defines the desired state of ExtensionResourcesPrice
 type ExtensionResourcesPriceSpec struct {
-	Owner     string                            `json:"owner,omitempty"`
-	Resources map[v1.ResourceName]ResourcePrice `json:"resources"`
+	ResourceName string                            `json:"resourceName,omitempty"`
+	Resources    map[v1.ResourceName]ResourcePrice `json:"resources"`
 }
 
 // ExtensionResourcesPriceStatus defines the observed state of ExtensionResourcesPrice

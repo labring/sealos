@@ -75,6 +75,9 @@ func (registry *Registry) ManifestDigest(repository, reference string) (digest.D
 	registry.Logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
 
 	resp, err := registry.Client.Head(url)
+	//req, _ := http.NewRequest("HEAD", url, nil)
+	//req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
+	//resp, err := registry.Client.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -123,4 +126,42 @@ func (registry *Registry) PutManifest(repository, reference string, manifest dis
 		defer resp.Body.Close()
 	}
 	return err
+}
+
+func (registry *Registry) MountBlob(repository string, digest digest.Digest, fromRepository string) error {
+	url := registry.url("/v2/%s/blobs/uploads/?mount=%s&from=%s", repository, digest, fromRepository)
+	registry.Logf("registry.blob.mount url=%s repository=%s mount=%s from=%s", url, repository, digest, fromRepository)
+
+	req, err := http.NewRequest("POST", url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := registry.Client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (registry *Registry) ManifestDigestV2(repository, reference string) (digest.Digest, error) {
+	url := registry.url("/v2/%s/manifests/%s", repository, reference)
+	registry.Logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
+
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", schema2.MediaTypeManifest)
+	resp, err := registry.Client.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return "", err
+	}
+	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))
 }

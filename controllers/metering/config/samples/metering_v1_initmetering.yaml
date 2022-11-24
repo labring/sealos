@@ -1,6 +1,0 @@
-apiVersion: metering.sealos.io/v1
-kind: InitMetering
-metadata:
-  name: initmetering-sample
-spec:
-  # TODO(user): Add fields here

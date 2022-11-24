@@ -24,4 +24,4 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
-*DS_Store
+**/.DS_Store

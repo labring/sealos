@@ -14,10 +14,11 @@
 
 package checker
 
+// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"context"
-	"html/template"
 	"os"
+	"text/template"
 	"time"
 
 	"github.com/labring/sealos/pkg/constants"

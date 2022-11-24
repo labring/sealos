@@ -16,7 +16,7 @@ kind: StorageClass
 metadata:
   name: hippo-ha-pgha1-pv
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "false"
     openebs.io/cas-type: local
     cas.openebs.io/config: |
       - name: StorageType
@@ -33,7 +33,7 @@ kind: StorageClass
 metadata:
   name: hippo-ha-repo-pv
   annotations:
-    storageclass.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "false"
     openebs.io/cas-type: local
     cas.openebs.io/config: |
       - name: StorageType

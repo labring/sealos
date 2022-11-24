@@ -13,11 +13,13 @@
 # limitations under the License.
 
 # Build the manager binary
-
-FROM ubuntu:latest
+#dev
+#FROM gcr.dockerproxy.com/distroless/static:nonroot
+#production
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 ARG TARGETARCH
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
+#RUN apt update && apt install apt-utils && apt install -y --no-install-recommends ca-certificates
 USER 65532:65532
 COPY bin/controller-infra-$TARGETARCH /manager
 ENTRYPOINT ["/manager"]

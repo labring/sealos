@@ -24,11 +24,11 @@ import (
 
 // MeteringQuotaSpec defines the desired state of MeteringQuota
 type MeteringQuotaSpec struct {
+	Resources map[v1.ResourceName]ResourceUsed `json:"resources,omitempty"`
 }
 
 // MeteringQuotaStatus defines the observed state of MeteringQuota
 type MeteringQuotaStatus struct {
-	Resources map[v1.ResourceName]ResourceUsed `json:"resources,omitempty"`
 }
 
 type ResourceUsed struct {

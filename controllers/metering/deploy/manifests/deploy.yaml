@@ -140,57 +140,6 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: initmeterings.metering.sealos.io
-spec:
-  group: metering.sealos.io
-  names:
-    kind: InitMetering
-    listKind: InitMeteringList
-    plural: initmeterings
-    singular: initmetering
-  scope: Namespaced
-  versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: InitMetering is the Schema for the initmeterings API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: InitMeteringSpec defines the desired state of InitMetering
-            type: object
-          status:
-            description: InitMeteringStatus defines the observed state of InitMetering
-            type: object
-        type: object
-    served: true
-    storage: true
-    subresources:
-      status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []
----
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
-  creationTimestamp: null
   name: meteringquotas.metering.sealos.io
 spec:
   group: metering.sealos.io
@@ -220,9 +169,6 @@ spec:
             type: object
           spec:
             description: MeteringQuotaSpec defines the desired state of MeteringQuota
-            type: object
-          status:
-            description: MeteringQuotaStatus defines the observed state of MeteringQuota
             properties:
               resources:
                 additionalProperties:
@@ -240,6 +186,9 @@ spec:
                   - used
                   type: object
                 type: object
+            type: object
+          status:
+            description: MeteringQuotaStatus defines the observed state of MeteringQuota
             type: object
         type: object
     served: true
@@ -303,6 +252,25 @@ spec:
                 type: string
               owner:
                 type: string
+              resources:
+                additionalProperties:
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
+                type: object
               timeInterval:
                 type: integer
             required:
@@ -361,25 +329,6 @@ spec:
               latestUpdateTime:
                 format: int64
                 type: integer
-              resources:
-                additionalProperties:
-                  properties:
-                    describe:
-                      type: string
-                    price:
-                      format: int64
-                      type: integer
-                    unit:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                  required:
-                  - price
-                  - unit
-                  type: object
-                type: object
               totalAmount:
                 format: int64
                 type: integer
@@ -433,7 +382,8 @@ spec:
             description: PodResourcePriceSpec defines the desired state of PodResourcePrice
             properties:
               interval:
-                description: update used resources every Interval minutes
+                default: 60
+                minimum: 1
                 type: integer
               owner:
                 type: string
@@ -553,18 +503,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - resource-quotas
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
   - resourcequotas
   verbs:
   - create
@@ -634,32 +572,6 @@ rules:
   - metering.sealos.io
   resources:
   - extensionresourcesprices/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - initmeterings/status
   verbs:
   - get
   - patch

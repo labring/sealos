@@ -1,4 +1,3 @@
-
 # Image URL to use all building/pushing image targets
 IMG ?=  ghcr.io/labring/sealos-auth-service:dev
 
@@ -74,12 +73,12 @@ $(KUSTOMIZE): $(LOCALBIN)
 
 .PHONY: deploy
 deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd kustomize/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd kustomize/manager && $(KUSTOMIZE) edit set image service=${IMG}
 	$(KUSTOMIZE) build kustomize/default | kubectl apply -f -
 
 .PHONY: deploy
 pre-deploy: kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd kustomize/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	cd kustomize/manager && $(KUSTOMIZE) edit set image service=${IMG}
 	$(KUSTOMIZE) build -e SERVICE_NAME=webhook-service -e SERVICE_NAMESPACE=system kustomize/default  > deploy/manifests/deploy.yaml.tmpl
 
 .PHONY: undeploy

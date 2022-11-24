@@ -16,7 +16,10 @@ limitations under the License.
 
 package constants
 
-import "path/filepath"
+import (
+	"io/fs"
+	"path/filepath"
+)
 
 var (
 	DefaultClusterRootfsDir = "/var/lib/sealos"
@@ -46,6 +49,14 @@ func LogPath() string {
 }
 func DataPath() string {
 	return filepath.Join(DefaultClusterRootfsDir, "data")
+}
+
+func GetAppWorkDir(clusterName, applicationName string) string {
+	return filepath.Join(DataPath(), clusterName, "applications", applicationName, "workdir")
+}
+
+func IsRegistryDir(entry fs.DirEntry) bool {
+	return entry.IsDir() && entry.Name() == RegistryDirName
 }
 
 type Data interface {

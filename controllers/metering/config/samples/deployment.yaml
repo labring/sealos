@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: default
+
+spec:
+  image: gcr.io/google-samples/kubernetes-bootcamp:v1

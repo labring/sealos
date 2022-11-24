@@ -98,14 +98,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "MeteringQuota")
 		os.Exit(1)
 	}
-
-	if err = (&controllers.InitMeteringReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "InitMetering")
-		os.Exit(1)
-	}
 	if err = (&controllers.ExtensionResourcesPriceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

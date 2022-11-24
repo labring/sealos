@@ -18,13 +18,18 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"github.com/go-logr/logr"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"time"
 
+	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 )
 
 const (
@@ -35,20 +40,63 @@ const (
 type MeteringQuotaReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	logr.Logger
 }
 
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meteringquotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meteringquotas/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meteringquotas/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=metering.sealos.io,resources=extensionresourcesprices,verbs=get;list;watch;create;update;patch;delete
 
 func (r *MeteringQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	ns := corev1.Namespace{}
+	err := r.Get(ctx, req.NamespacedName, &ns)
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// check this ns is user namespace
+	if _, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]; !ok {
+		r.Logger.Info(fmt.Sprintf("not found owner of namespace name: %v", ns.Name))
+		return ctrl.Result{}, nil
+	}
+
+	totalResourcePrice, err := GetAllExtensionResources(ctx, r.Client)
+	if err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	if err = r.syncMeteringQuota(ctx, ns, totalResourcePrice); err != nil {
+		r.Logger.Error(err, "syncMeteringQuota error")
+		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, client.IgnoreNotFound(err)
+	}
+
 	return ctrl.Result{}, nil
+}
+
+func (r *MeteringQuotaReconciler) syncMeteringQuota(ctx context.Context, ns corev1.Namespace, totalResourcePrice map[corev1.ResourceName]meteringv1.ResourcePrice) error {
+	meteringQuota := meteringv1.MeteringQuota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      MeteringQuotaPrefix + ns.Name,
+			Namespace: ns.Name,
+		},
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &meteringQuota, func() error {
+		meteringQuota.Spec.Resources = ResourcePrice2MeteringQuota(totalResourcePrice)
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MeteringQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "metering-quota-controller"
+	r.Logger = ctrl.Log.WithName(controllerName)
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&meteringv1.MeteringQuota{}).
+		For(&corev1.Namespace{}).
 		Complete(r)
 }
