@@ -117,24 +117,11 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "DataPack")
 		os.Exit(1)
 	}
-	if err = (&imagehubv1.Image{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Image")
-		os.Exit(1)
-	}
-	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
-		os.Exit(1)
-	}
-	if err = (&imagehubv1.Organization{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Organization")
-		os.Exit(1)
-	}
-
 	if err = (&controllers.OrgCRBReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Orgrolebinding")
+		setupLog.Error(err, "unable to create controller", "controller", "OrgClusterRoleBinding")
 		os.Exit(1)
 	}
 	if err = (&controllers.ImagesyncrepoReconciler{
@@ -149,6 +136,19 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Reposyncorg")
+		os.Exit(1)
+	}
+
+	if err = (&imagehubv1.Image{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Image")
+		os.Exit(1)
+	}
+	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
+		os.Exit(1)
+	}
+	if err = (&imagehubv1.Organization{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Organization")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
