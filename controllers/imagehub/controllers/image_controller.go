@@ -61,6 +61,7 @@ type ImageReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for image")
+	r.Logger.V(1).Info("yyyyyyyy")
 
 	// get image
 	img := &imagehubv1.Image{}
