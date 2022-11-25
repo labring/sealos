@@ -63,7 +63,7 @@ type OrgCRBReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *OrgCRBReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start reconcile for image")
+	r.Logger.V(1).Info("start reconcile for org")
 
 	org := &imagehubv1.Organization{}
 	ctr := controller.Controller{
@@ -144,7 +144,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 		}
 		return nil
 	}); err != nil {
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 
 	// create cluster role binding
