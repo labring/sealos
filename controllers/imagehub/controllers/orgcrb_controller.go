@@ -174,7 +174,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 		}
 		return nil
 	}); err != nil {
-		return ctrl.Result{}, nil
+		return ctrl.Result{}, err
 	}
 	r.Logger.Info("create  ClusterRole and ClusterRoleBinding for ", "org:", org.Name)
 
