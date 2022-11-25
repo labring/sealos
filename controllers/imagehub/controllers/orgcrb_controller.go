@@ -138,12 +138,14 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 	//orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule, repoRule, imageRule)
 	orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule)
 
+	r.Logger.V(2).Info("CreateOrUpdate", "clusterrole", orgMgrRole.Name)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, orgMgrRole, func() error {
 		if err := controllerutil.SetControllerReference(org, orgMgrRole, r.Scheme); err != nil {
 			return err
 		}
 		return nil
 	}); err != nil {
+		r.Logger.Error(err, "err in CreateOrUpdate clusterrole", "clusterrole", orgMgrRole.Name)
 		return ctrl.Result{}, err
 	}
 
@@ -168,12 +170,14 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 		Subjects: sub,
 	}
 
+	r.Logger.V(2).Info("CreateOrUpdate", "clusterrolebinding", crb.Name)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, crb, func() error {
 		if err := controllerutil.SetControllerReference(org, crb, r.Scheme); err != nil {
 			return err
 		}
 		return nil
 	}); err != nil {
+		r.Logger.Error(err, "err in CreateOrUpdate clusterrolebinding", "clusterrolebinding", crb.Name)
 		return ctrl.Result{}, err
 	}
 	r.Logger.Info("create  ClusterRole and ClusterRoleBinding for ", "org:", org.Name)
