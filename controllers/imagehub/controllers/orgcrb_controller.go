@@ -89,7 +89,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 	org := &imagehubv1.Organization{}
 	err := convert.JsonConvert(obj, org)
 	if err != nil {
-		r.Logger.V(2).Info("error in image json convert", "json", obj)
+		r.Logger.V(1).Info("error in image json convert", "json", obj)
 		return ctrl.Result{Requeue: true}, err
 	}
 	orgMgrRole := &rbacv1.ClusterRole{
@@ -138,7 +138,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 	//orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule, repoRule, imageRule)
 	orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule)
 
-	r.Logger.V(2).Info("CreateOrUpdate", "clusterrole", orgMgrRole.Name)
+	r.Logger.V(1).Info("CreateOrUpdate", "clusterrole", orgMgrRole.Name)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, orgMgrRole, func() error {
 		if err := controllerutil.SetControllerReference(org, orgMgrRole, r.Scheme); err != nil {
 			return err
@@ -170,7 +170,7 @@ func (r *OrgCRBReconciler) Update(ctx context.Context, req ctrl.Request, gvk sch
 		Subjects: sub,
 	}
 
-	r.Logger.V(2).Info("CreateOrUpdate", "clusterrolebinding", crb.Name)
+	r.Logger.V(1).Info("CreateOrUpdate", "clusterrolebinding", crb.Name)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, crb, func() error {
 		if err := controllerutil.SetControllerReference(org, crb, r.Scheme); err != nil {
 			return err
