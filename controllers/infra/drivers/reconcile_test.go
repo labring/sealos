@@ -3,6 +3,8 @@ package drivers
 import (
 	"testing"
 
+	"github.com/labring/sealos/pkg/utils/yaml"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
@@ -85,6 +87,48 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 			if err := a.ReconcileInstance(tt.args.infra, tt.args.driver); (err != nil) != tt.wantErr {
 				t.Errorf("ReconcileInstance() error = %v, wantErr %v", err, tt.wantErr)
 			}
+		})
+	}
+}
+
+func Test_setHostsIndex(t *testing.T) {
+	infra := &v1.Infra{
+		Spec: v1.InfraSpec{
+			SSH: v1beta1.SSH{},
+			Hosts: []v1.Hosts{
+				{
+					Roles: []string{"master"},
+					Count: 1,
+				},
+				{
+					Roles: []string{"master"},
+					Count: 1,
+				},
+				{
+					Roles: []string{"master"},
+					Count: 1,
+				},
+			},
+		},
+	}
+	type args struct {
+		infra *v1.Infra
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			"test set index",
+			args{
+				infra: infra,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			setHostsIndex(tt.args.infra)
+			yaml.ShowStructYaml(infra)
 		})
 	}
 }

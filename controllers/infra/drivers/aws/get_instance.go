@@ -19,10 +19,11 @@ package aws
 import (
 	"context"
 	"fmt"
-	"math"
-	"sort"
 	"strconv"
-	"time"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/labring/sealos/controllers/infra/common"
 
@@ -153,37 +154,36 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 }
 
 // getInstances get all instances for an infra
-func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
+func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([]v1.Hosts, error) {
 	var hosts []v1.Hosts
 	hostmap := make(map[int]*v1.Hosts)
-
-	nameKey := fmt.Sprintf("tag:%s", common.InfraInstancesLabel)
-	fullName := infra.GetInstancesAndVolumesTag()
+	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
+	statusName := "instance-state-name"
 
 	client := d.Client
 	input := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
-				Name:   &nameKey,
-				Values: []string{fullName},
+				Name:   &uidKey,
+				Values: []string{string(infra.UID)},
+			},
+			{
+				Name:   &statusName,
+				Values: []string{string(status)},
 			},
 		},
 	}
 
-	result, err := retryGetInstance(common.TryTimes, common.TrySleepTime, client, input)
+	result, err := GetInstances(context.TODO(), client, input)
 	if err != nil {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
-	}
-
-	diskMap, err := d.getVolumes(infra)
-	if err != nil {
-		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 Volume: %v", err)
 	}
 
 	for _, r := range result.Reservations {
 		for j := range r.Instances {
 			i := r.Instances[j]
-			if i.State.Name == types.InstanceStateNameTerminated || i.State.Name == types.InstanceStateNameShuttingDown || i.State.Name == types.InstanceStateNameStopping || i.State.Name == types.InstanceStateNameStopped {
+			if i.State.Name != types.InstanceStateNameRunning {
+				logger.Warn("instance is not running, skip it", "instance", i.InstanceId)
 				continue
 			}
 			index, err := getIndex(i)
@@ -194,41 +194,24 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 				availabilityZone := i.Placement.AvailabilityZone
 				infra.Spec.AvailabilityZone = *availabilityZone
 			}
-			disksID := make([]string, 0)
-			for _, blockDeviceMap := range i.BlockDeviceMappings {
-				vid := *blockDeviceMap.Ebs.VolumeId
-				if _, ok := diskMap[vid]; ok {
-					disksID = append(disksID, vid)
-				}
-			}
 			metadata := v1.Metadata{
 				IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: *i.PrivateIpAddress}, {IPType: common.IPTypePublic, IPValue: *i.PublicIpAddress}},
 				ID:     *i.InstanceId,
-				DiskID: disksID,
+				Status: string(i.State.Name),
+			}
+			// append diskID to metadata
+			for _, blockDeviceMap := range i.BlockDeviceMappings {
+				vid := *blockDeviceMap.Ebs.VolumeId
+				metadata.DiskID = append(metadata.DiskID, vid)
 			}
 			if h, ok := hostmap[index]; ok {
 				h.Count++
-				err = addDisks(h, diskMap, i)
-				if err != nil {
-					return nil, err
-				}
 				hostmap[index].Metadata = append(hostmap[index].Metadata, metadata)
 				continue
 			}
 			instanceType, imageID := i.InstanceType, i.ImageId
-			roles := make([]string, 0)
-			for _, mp := range i.Tags {
-				if *mp.Key == "master" {
-					roles = append(roles, "master")
-					break
-				}
-				if *mp.Key == "node" {
-					roles = append(roles, "node")
-					break
-				}
-			}
+
 			hostmap[index] = &v1.Hosts{
-				Roles:    roles,
 				Count:    1,
 				Metadata: []v1.Metadata{metadata},
 				Image:    *imageID,
@@ -236,8 +219,16 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 				Index:    index,
 				Disks:    []v1.Disk{},
 			}
-			createDisks(hostmap[index], diskMap, i)
-			sortDisksByName(hostmap[index].Disks)
+			for _, mp := range i.Tags {
+				if *mp.Key == v1beta1.MASTER {
+					hostmap[index].Roles = append(hostmap[index].Roles, v1beta1.MASTER)
+					break
+				}
+				if *mp.Key == v1beta1.NODE {
+					hostmap[index].Roles = append(hostmap[index].Roles, v1beta1.NODE)
+					break
+				}
+			}
 		}
 	}
 
@@ -248,76 +239,76 @@ func (d Driver) getInstances(infra *v1.Infra) ([]v1.Hosts, error) {
 }
 
 // createDisks assign disk(all mount paths) to host for the first time
-func createDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) {
-	for j := range instance.BlockDeviceMappings {
-		volumeID := *instance.BlockDeviceMappings[j].Ebs.VolumeId
-		if v, ok := diskMap[volumeID]; ok {
-			host.Disks = append(host.Disks,
-				v1.Disk{
-					ID:       []string{volumeID},
-					Name:     *instance.BlockDeviceMappings[j].DeviceName,
-					Capacity: v.Capacity,
-					Type:     v.Type,
-				},
-			)
-		}
-	}
-}
+//func setDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) {
+//	for j := range instance.BlockDeviceMappings {
+//		volumeID := *instance.BlockDeviceMappings[j].Ebs.VolumeId
+//		if v, ok := diskMap[volumeID]; ok {
+//			host.Disks = append(host.Disks,
+//				v1.Disk{
+//					// ID:       []string{volumeID},
+//					Name:     *instance.BlockDeviceMappings[j].DeviceName,
+//					Capacity: v.Capacity,
+//					Type:     v.Type,
+//				},
+//			)
+//		}
+//	}
+//}
 
 // addDisks add the mount volumeID to each mount path
-func addDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) error {
-	for _, blockDeviceMap := range instance.BlockDeviceMappings {
-		if _, ok := diskMap[*blockDeviceMap.Ebs.VolumeId]; !ok {
-			continue
-		}
-		//search disk index in host by name
-		diskIndex := sort.Search(len(host.Disks), func(i int) bool {
-			return host.Disks[i].Name >= *blockDeviceMap.DeviceName
-		})
-		if diskIndex < 0 || diskIndex >= len(host.Disks) {
-			return fmt.Errorf("get aws disk error, disk not found. disk name: %s, instance id:%s", *blockDeviceMap.DeviceName, *instance.InstanceId)
-		}
-		host.Disks[diskIndex].ID = append(host.Disks[diskIndex].ID, *blockDeviceMap.Ebs.VolumeId)
-	}
-	return nil
-}
+//func addDisks(host *v1.Hosts, diskMap map[string]v1.Disk, instance types.Instance) error {
+//	for _, blockDeviceMap := range instance.BlockDeviceMappings {
+//		if _, ok := diskMap[*blockDeviceMap.Ebs.VolumeId]; !ok {
+//			continue
+//		}
+//		//search disk index in host by name
+//		diskIndex := sort.Search(len(host.Disks), func(i int) bool {
+//			return host.Disks[i].Name >= *blockDeviceMap.DeviceName
+//		})
+//		if diskIndex < 0 || diskIndex >= len(host.Disks) {
+//			return fmt.Errorf("get aws disk error, disk not found. disk name: %s, instance id:%s", *blockDeviceMap.DeviceName, *instance.InstanceId)
+//		}
+//		// host.Disks[diskIndex].ID = append(host.Disks[diskIndex].ID, *blockDeviceMap.Ebs.VolumeId)
+//	}
+//	return nil
+//}
 
 // getVolumes get an infra owned volumes(by dataKey and infra label), return diskMap map[string(id)]v1.Disk.
-func (d Driver) getVolumes(infra *v1.Infra) (map[string]v1.Disk, error) {
-	client := d.Client
-	tagKey := fmt.Sprintf("tag:%s", common.DataVolumeLabel)
-	//roleKey := fmt.Sprintf("tag:%s", roles)
-	nameKey := fmt.Sprintf("tag:%s", common.InfraVolumesLabel)
-	fullName := infra.GetInstancesAndVolumesTag()
-	input := &ec2.DescribeVolumesInput{
-		Filters: []types.Filter{
-			{
-				Name:   &nameKey,
-				Values: []string{fullName},
-			},
-			{
-				Name:   &tagKey,
-				Values: []string{common.TRUELable},
-			},
-		},
-	}
-	result, err := client.DescribeVolumes(context.TODO(), input)
-	if err != nil {
-		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 volumes: %v", err)
-	}
-	diskMap := make(map[string]v1.Disk, len(result.Volumes))
-	for _, v := range result.Volumes {
-		diskMap[*v.VolumeId] = v1.Disk{
-			Capacity: int(*v.Size),
-			Type:     string(v.VolumeType),
-		}
-	}
-	return diskMap, nil
-}
+//func (d Driver) getVolumes(infra *v1.Infra) (map[string]v1.Disk, error) {
+//	client := d.Client
+//	tagKey := fmt.Sprintf("tag:%s", common.DataVolumeLabel)
+//	//roleKey := fmt.Sprintf("tag:%s", roles)
+//	nameKey := fmt.Sprintf("tag:%s", common.InfraVolumesLabel)
+//	fullName := infra.GetInstancesAndVolumesTag()
+//	input := &ec2.DescribeVolumesInput{
+//		Filters: []types.Filter{
+//			{
+//				Name:   &nameKey,
+//				Values: []string{fullName},
+//			},
+//			{
+//				Name:   &tagKey,
+//				Values: []string{common.TRUELable},
+//			},
+//		},
+//	}
+//	result, err := client.DescribeVolumes(context.TODO(), input)
+//	if err != nil {
+//		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 volumes: %v", err)
+//	}
+//	diskMap := make(map[string]v1.Disk, len(result.Volumes))
+//	for _, v := range result.Volumes {
+//		diskMap[*v.VolumeId] = v1.Disk{
+//			Capacity: int(*v.Size),
+//			Type:     string(v.VolumeType),
+//		}
+//	}
+//	return diskMap, nil
+//}
 
-func sortDisksByName(disks v1.NameDisks) {
-	sort.Sort(disks)
-}
+//func sortDisksByName(disks v1.NameDisks) {
+//	sort.Sort(disks)
+//}
 
 func getIndex(i types.Instance) (int, error) {
 	for _, tag := range i.Tags {
@@ -328,34 +319,34 @@ func getIndex(i types.Instance) (int, error) {
 	return -1, fmt.Errorf("not found index tag: %v", i.Tags)
 }
 
-func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
-retry:
-	for i := 0; i < tryTimes; i++ {
-		result, err := GetInstances(context.TODO(), client, inputGetInstance)
-		if err != nil {
-			return nil, fmt.Errorf("get an error while getInstances: %v", err)
-		}
-		for _, r := range result.Reservations {
-			if !instancesPublicIPAddressIsReady(r.Instances) {
-				if i == tryTimes-1 {
-					break retry
-				}
-				time.Sleep(trySleepTime * time.Duration(math.Pow(2, float64(i))))
-				continue retry
-			}
-		}
-		return result, nil
-	}
-	return nil, fmt.Errorf("retry get instance action timeout: no public ip")
-}
+//func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
+//retry:
+//	for i := 0; i < tryTimes; i++ {
+//		result, err := GetInstances(context.TODO(), client, inputGetInstance)
+//		if err != nil {
+//			return nil, fmt.Errorf("get an error while getInstances: %v", err)
+//		}
+//		for _, r := range result.Reservations {
+//			if !instancesPublicIPAddressIsReady(r.Instances) {
+//				if i == tryTimes-1 {
+//					break retry
+//				}
+//				time.Sleep(trySleepTime * time.Duration(math.Pow(2, float64(i))))
+//				continue retry
+//			}
+//		}
+//		return result, nil
+//	}
+//	return nil, fmt.Errorf("retry get instance action timeout: no public ip")
+//}
 
-func instancesPublicIPAddressIsReady(instances []types.Instance) bool {
-	for j := range instances {
-		if *instances[j].State.Code == 0 || *instances[j].State.Code == 16 {
-			if instances[j].PublicIpAddress == nil {
-				return false
-			}
-		}
-	}
-	return true
-}
+//func instancesPublicIPAddressIsReady(instances []types.Instance) bool {
+//	for j := range instances {
+//		if *instances[j].State.Code == 0 || *instances[j].State.Code == 16 {
+//			if instances[j].PublicIpAddress == nil {
+//				return false
+//			}
+//		}
+//	}
+//	return true
+//}

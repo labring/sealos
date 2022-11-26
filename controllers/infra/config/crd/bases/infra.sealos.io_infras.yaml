@@ -52,10 +52,6 @@ spec:
                         properties:
                           capacity:
                             type: integer
-                          id:
-                            items:
-                              type: string
-                            type: array
                           name:
                             description: Device name
                             type: string
@@ -93,6 +89,8 @@ spec:
                                   type: string
                               type: object
                             type: array
+                          status:
+                            type: string
                         type: object
                       type: array
                     resources:

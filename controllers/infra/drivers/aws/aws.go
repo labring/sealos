@@ -19,6 +19,7 @@ package aws
 import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
@@ -27,8 +28,8 @@ type Driver struct {
 	Client *ec2.Client
 }
 
-func (d Driver) GetInstances(infra *v1.Infra) ([]v1.Hosts, error) {
-	return d.getInstances(infra)
+func (d Driver) GetInstances(infra *v1.Infra, status types.InstanceStateName) ([]v1.Hosts, error) {
+	return d.getInstances(infra, status)
 }
 
 func (d Driver) DeleteInstances(hosts *v1.Hosts) error {
