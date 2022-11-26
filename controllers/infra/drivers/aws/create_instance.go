@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -110,21 +111,22 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 	return tags
 }
 
-func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
-	client := d.Client
-	var count = int32(hosts.Count)
-	if count == 0 {
-		return nil
-	}
+// get tags
+func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	// Tag name and tag value
 	// Set role tag
 	tags := rolesToTags(hosts.Roles)
 	// Set label tag
 	labelKey := common.InfraInstancesLabel
 	labelValue := infra.GetInstancesAndVolumesTag()
+	uidKey := common.InfraInstancesUUID
+	uidValue := string(infra.GetUID())
 	tags = append(tags, types.Tag{
 		Key:   &labelKey,
 		Value: &labelValue,
+	}, types.Tag{
+		Key:   &uidKey,
+		Value: &uidValue,
 	})
 	// Set index tag
 	indexKey := common.InfraInstancesIndex
@@ -140,6 +142,46 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		Key:   &nameKey,
 		Value: &nameValue,
 	})
+	return tags
+}
+
+// set blockDeviceMappings from hosts
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts) []types.BlockDeviceMapping {
+	rootDeviceName := "/dev/xvda"
+	rootVolumeSize := int32(40)
+
+	if len(hosts.Disks) == 0 {
+		return []types.BlockDeviceMapping{
+			{
+				DeviceName: &rootDeviceName,
+				Ebs: &types.EbsBlockDevice{
+					VolumeSize: &rootVolumeSize,
+				},
+			},
+		}
+	}
+
+	var blockDeviceMappings []types.BlockDeviceMapping
+	for _, v := range hosts.Disks {
+		size := int32(v.Capacity)
+		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
+			DeviceName: &v.Name,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &size,
+				VolumeType: types.VolumeType(v.Type),
+			},
+		})
+	}
+	return blockDeviceMappings
+}
+
+func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
+	client := d.Client
+	var count = int32(hosts.Count)
+	if count == 0 {
+		return nil
+	}
+	tags := d.GetTags(hosts, infra)
 	volumeTags := rolesToTags(hosts.Roles)
 	rootVolume, value := common.RootVolumeLabel, common.TRUELable
 	volumeTags = append(volumeTags,
@@ -150,10 +192,10 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	)
 	keyName := infra.Spec.SSH.PkName
 	//todo use ami to search root device name
-	rootDeviceName := "/dev/xvda"
-	rootVolumeSize := int32(40)
 	// encode userdata to base64
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
+	// set other dataDisks, and read name and size from hosts
+	dataDisks := d.GetBlockDeviceMappings(hosts)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -169,13 +211,10 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				Tags:         volumeTags,
 			},
 		},
-		KeyName:          &keyName,
-		SecurityGroupIds: []string{"sg-0476ffedb5ca3f816"},
-		BlockDeviceMappings: []types.BlockDeviceMapping{{
-			DeviceName: &rootDeviceName,
-			Ebs:        &types.EbsBlockDevice{VolumeSize: &rootVolumeSize},
-		}},
-		UserData: &userData,
+		KeyName:             &keyName,
+		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
+		BlockDeviceMappings: dataDisks,
+		UserData:            &userData,
 	}
 
 	// assign to BlockDeviceMappings from host.Disk
@@ -191,19 +230,33 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if err != nil {
 		return fmt.Errorf("create volume failed: %v", err)
 	}
-	for _, instance := range result.Instances {
-		hosts.Metadata = append(hosts.Metadata, v1.Metadata{
-			ID: *instance.InstanceId,
-		})
+
+	if err := d.WaitInstanceRunning(result.Instances); err != nil {
+		return fmt.Errorf("create instance and wait instance running failed: %v", err)
 	}
+
 	if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
 		infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
 	}
-	err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
-	if err != nil {
-		return fmt.Errorf("create and attach volumes failed: %v", err)
-	}
+	//err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
+	//if err != nil {
+	//	return fmt.Errorf("create and attach volumes failed: %v", err)
+	//}
 	return nil
+}
+
+// retry for wait instance running
+func (d Driver) WaitInstanceRunning(instances []types.Instance) error {
+	client := d.Client
+	var instanceIds []string
+	for _, v := range instances {
+		instanceIds = append(instanceIds, *v.InstanceId)
+	}
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: instanceIds,
+	}
+	waiter := ec2.NewInstanceRunningWaiter(client)
+	return waiter.Wait(context.TODO(), input, time.Second*180)
 }
 
 func (d Driver) CreateKeyPair(infra *v1.Infra) error {

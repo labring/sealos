@@ -83,6 +83,7 @@ type Metadata struct {
 	IP     []IPAddress `json:"ipaddress,omitempty"`
 	ID     string      `json:"id,omitempty"`
 	DiskID []string    `json:"diskId,omitempty"`
+	Status string      `json:"status,omitempty"`
 }
 
 type Hosts struct {
@@ -112,7 +113,7 @@ func (hosts IndexHosts) Len() int {
 }
 
 func (hosts IndexHosts) Less(i, j int) bool {
-	return hosts[i].Index < hosts[j].Index
+	return hosts[i].Index > hosts[j].Index
 }
 
 func (hosts IndexHosts) Swap(i, j int) {
@@ -120,8 +121,7 @@ func (hosts IndexHosts) Swap(i, j int) {
 }
 
 type Disk struct {
-	ID       []string `json:"id,omitempty"`
-	Capacity int      `json:"capacity,omitempty"`
+	Capacity int `json:"capacity,omitempty"`
 	// ENUM: system/data
 	Type string `json:"type,omitempty"`
 	// Device name
