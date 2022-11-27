@@ -105,6 +105,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 # remove taint
 $ kubectl taint node --all node-role.kubernetes.io/control-plane-
+$ kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 ```
 
 > Building a custom cluster image
