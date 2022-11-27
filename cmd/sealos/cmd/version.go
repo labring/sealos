@@ -30,7 +30,7 @@ var shortPrint bool
 func newVersionCmd() *cobra.Command {
 	var versionCmd = &cobra.Command{
 		Use:     "version",
-		Short:   "version",
+		Short:   "Print version info",
 		Args:    cobra.NoArgs,
 		Example: `sealos version`,
 		RunE: func(cmd *cobra.Command, args []string) error {

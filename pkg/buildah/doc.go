@@ -1,4 +1,4 @@
-// Copyright © 2022 cuisongliu@qq.com.
+// Copyright © 2022 sealos.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package buildah
 
-import (
-	"github.com/labring/sealos/pkg/buildah"
-)
-
-func init() {
-	buildah.RegisterRootCommand(rootCmd)
-}
+// Most of codes are COPIED from github.com/containers/buildah

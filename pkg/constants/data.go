@@ -17,13 +17,28 @@ limitations under the License.
 package constants
 
 import (
+	"fmt"
 	"io/fs"
 	"path/filepath"
+
+	"github.com/containers/storage/pkg/homedir"
+	"github.com/containers/storage/pkg/unshare"
 )
 
-var (
-	DefaultClusterRootfsDir = "/var/lib/sealos"
+const (
+	AppName        = "sealos"
+	DefaultRootDir = "/var/lib"
 )
+
+var DefaultClusterRootfsDir string
+
+func init() {
+	if unshare.IsRootless() {
+		DefaultClusterRootfsDir = filepath.Join(homedir.Get(), fmt.Sprintf(".%s", AppName))
+	} else {
+		DefaultClusterRootfsDir = filepath.Join(DefaultRootDir, AppName)
+	}
+}
 
 const (
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
