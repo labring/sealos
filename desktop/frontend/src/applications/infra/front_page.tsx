@@ -1,5 +1,5 @@
 import {
-  Add16Filled,
+  Add20Filled,
   ArrowClockwise20Regular,
   MoreHorizontal24Regular,
   Navigation20Filled
@@ -85,7 +85,7 @@ function FrontPage() {
       <div className={clsx(styles.head, 'px-16')}>
         <Image src="/images/infraicon/infra_title.png" alt="infra" width={374} height={50} />
       </div>
-      <div className="flex px-16 mt-12 justify-items-center items-center">
+      <div className="flex px-16 pr-20 mt-12 justify-items-center items-center">
         <Navigation20Filled color="#616161" />
         <span className={styles.menu}>我的集群</span>
         <div
@@ -97,13 +97,13 @@ function FrontPage() {
           <ArrowClockwise20Regular />
         </div>
         <button className={clsx(styles.btn)} onClick={() => toPage(PageType.AddPage, '')}>
-          <Add16Filled color="#FFFFFF" />
-          <span> 创建集群</span>
+          <Add20Filled color="#FFFFFF" />
+          <span className="pl-2"> 创建集群</span>
         </button>
       </div>
       <div className={clsx(styles.pageWrapperScroll)}>
         {scpLists?.data?.items?.length > 0 && (
-          <div className="space-y-6 w-full absolute box-border p-14 pt-6 mt-8">
+          <div className="space-y-6 w-full absolute box-border p-14 px-16 pt-6 mt-8">
             {scpLists?.data?.items?.map((item: InfraInfo, index: number) => {
               return (
                 <div

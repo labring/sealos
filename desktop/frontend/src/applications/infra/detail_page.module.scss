@@ -5,22 +5,22 @@ $color-btn-blue: #3981f5;
   height: 100%;
 
   .leftInfo {
-    flex-basis: 280px;
-    background: #f0f3f7;
+    flex-basis: 256px;
+    background-color: #e3f2fd80;
     padding-top: 40px;
     padding-left: 46px;
-    padding-right: 74px;
 
     .infraTitle {
       width: 160px;
       height: 34px;
       font-size: 24px;
       line-height: 34px;
-      color: #585d7a;
+      font-weight: 500;
+      color: #323130;
     }
 
     .infraInfo {
-      color: #61677d;
+      color: #605e5c;
       display: flex;
       flex-direction: column;
       padding-top: 20px;
@@ -28,15 +28,24 @@ $color-btn-blue: #3981f5;
     }
 
     .releaseBtn {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      background: #e5719b;
+      border-radius: 2px;
+      width: 198px;
+      height: 32px;
+      color: #ffffff;
       position: absolute;
-      color: #de5462;
-      bottom: 30px;
-      left: 170px;
-      &:hover {
-        text-decoration-line: underline;
-        text-underline-offset: 4px;
-      }
+      bottom: 26px;
     }
+  }
+
+  .detailTitle {
+    color: #605e5c;
+    font-weight: 600;
+    font-size: 16px;
   }
 
   .rightInfo {
@@ -46,54 +55,18 @@ $color-btn-blue: #3981f5;
 
     .nav {
       display: flex;
-      justify-content: space-between;
-      margin-top: 44px;
-      padding-left: 18px;
-      padding-right: 50px;
-
-      .navBack {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 14px;
-        line-height: 14px;
-        color: #686868;
-      }
-
-      .navBtn {
-        box-sizing: border-box;
-        width: 90px;
-        height: 26px;
-        border: 1px solid $color-btn-blue;
-        border-radius: 5px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        .navBtnLabel {
-          height: 16px;
-          line-height: 16px;
-          color: $color-btn-blue;
-          padding-left: 4px;
-        }
-      }
+      height: 20px;
+      margin-top: 16px;
+      margin-left: 36px;
     }
 
     .nodeCard {
-      margin: 16px 50px 20px 30px;
+      margin: 16px 30px 20px 30px;
       border: 1px solid #e1e2e3;
       border-radius: 2px;
       display: flex;
       flex-grow: 1;
       flex-direction: column;
-
-      .nodeTitle {
-        font-size: 16px;
-        line-height: 22px;
-        color: #61677d;
-        padding-top: 10px;
-        padding-left: 20px;
-      }
     }
   }
 }
@@ -108,7 +81,6 @@ $color-btn-blue: #3981f5;
   box-sizing: border-box;
   flex-grow: 1;
   scroll-behavior: smooth;
-  margin-top: 10px;
 }
 
 .copyssh {
@@ -121,30 +93,48 @@ $color-btn-blue: #3981f5;
 }
 
 .tableDetail {
-  padding-top: 10px;
-  thead tr th button {
-    height: 30px;
-    font-size: 12px;
-    line-height: 30px;
-    color: #a1a8ae;
+  thead tr th {
+    color: #605e5c;
+    font-weight: 600;
+    font-size: 14px;
   }
 
   tbody tr {
+    border: none;
     font-size: 10px;
-    line-height: 11px;
-    text-transform: capitalize;
-    color: #545454;
-    height: 50px;
-    border-bottom-width: 1px;
-  }
-
-  tbody tr:nth-last-child(1) {
-    border-bottom-width: 0px;
+    color: #605e5c;
   }
 }
 
-.tableHead1px {
-  border: 0.5px solid #a19f9d;
-  height: 11px;
-  position: relative;
+// .tableHead1px {
+//   border: 0.5px solid #a19f9d;
+//   height: 11px;
+//   position: relative;
+// }
+
+.commonBlueBtn {
+  background: #007fee;
+  border-radius: 2px;
+  border: 1px solid #007fee;
+  color: #ffffff;
+}
+
+.changeBtn {
+  width: 96px;
+  height: 32px;
+  @extend .commonBlueBtn;
+}
+
+.confirmBtn {
+  @extend .commonBlueBtn;
+  height: 32px;
+  width: 96px;
+  padding: 5px 12px;
+}
+
+.cancelBtn {
+  height: 32px;
+  width: 96px;
+  padding: 5px 12px;
+  border: 1px solid #d1d1d1;
 }

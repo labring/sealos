@@ -8,6 +8,7 @@ import useAppStore, { TApp } from 'stores/app';
 import Draggable from 'react-draggable';
 import { Dropdown } from '@fluentui/react-components/unstable';
 import HelpDropDown from './help_dropdown';
+import HelpDocs from './help_docs';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
@@ -67,9 +68,9 @@ export default function AppWindow(props: {
           >
             <div className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}>
               <img src={wnapp.icon} alt={wnapp.name} width={14} />
-              <div className={(styles.appFullName, 'text-xss ml-2')}>{wnapp.name}</div>
-
-              <HelpDropDown />
+              <div className={clsx('ml-2 ', wnapp.menu?.nameColor)}>{wnapp.name}</div>
+              {wnapp.menu?.helpDropDown && <HelpDropDown />}
+              {wnapp.menu?.helpDocs && <HelpDocs />}
             </div>
 
             <div className={clsx(styles.actbtns, 'flex items-center')}>

@@ -20,14 +20,14 @@
 }
 
 .selectType {
-  min-width: 120px !important;
-  width: 120px;
+  min-width: 168px !important;
+  width: 168px;
   margin-right: 12px;
 }
 
 .selectTypeCount {
-  min-width: 120px !important;
-  width: 120px;
+  min-width: 168px !important;
+  width: 168px;
 }
 
 .cloudLabel {
@@ -38,4 +38,16 @@
   line-height: 20px;
   color: #201f1e;
   margin-right: 16px;
+}
+
+.selectDiskType {
+  min-width: 80px !important;
+  width: 80px;
+}
+
+.diskCount {
+  min-width: 80px !important;
+  width: 80px;
+  margin-right: 12px;
+  margin-left: 12px;
 }

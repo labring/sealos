@@ -54,7 +54,7 @@ spec:
     pk: /root/hurz_key.pem
     pkname: hurz_key
     port: 22
-  images: 
+  image: 
     - {{ .image1}}
     - {{ .image2}} 
 `;

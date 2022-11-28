@@ -1,11 +1,12 @@
 import { TApp } from 'stores/app';
+import { APPTYPE } from 'constants/app_type';
 
 // 已安装 app
 const installedApps: TApp[] = [
   {
     name: 'Sealos Document',
     icon: '/images/sealos.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: 'https://www.sealos.io/docs/Intro',
       desc: 'Sealos Documents'
@@ -14,12 +15,17 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   {
     name: 'App Store',
     icon: '/images/icons/app_store.png',
-    type: 'app',
+    type: APPTYPE.APP,
     data: {
       url: '',
       desc: 'App Store'
@@ -28,7 +34,12 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   // {
   //   name: 'Python Compiler',
@@ -62,7 +73,7 @@ const installedApps: TApp[] = [
   {
     name: 'Terminal',
     icon: '/images/terminal.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'sealos CLoud Terminal'
@@ -71,12 +82,17 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   {
     name: 'Kubernetes Dashboard',
     icon: '/images/kubernetes.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'sealos Cloud Kubernetes Dashboard'
@@ -85,12 +101,17 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   {
     name: 'Kuboard',
     icon: '/images/kuboard.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'sealos Cloud Kuboard'
@@ -99,12 +120,17 @@ const installedApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   // {
   //   name: 'Prometheus',
   //   icon: '/images/prometheus.svg',
-  //   type: 'iframe',
+  //   type: APPTYPE.IFRAME,
   //   data: {
   //     url: '',
   //     desc: 'From metrics to insight'
@@ -118,7 +144,7 @@ const installedApps: TApp[] = [
   // {
   //   name: 'Mysql',
   //   icon: '/images/mysql.svg',
-  //   type: 'iframe',
+  //   type: APPTYPE.IFRAME,
   //   data: {
   //     url: '',
   //     desc: 'mysql operator'
@@ -132,7 +158,7 @@ const installedApps: TApp[] = [
   {
     name: 'Redis',
     icon: '/images/redis.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'redis operator'
@@ -141,12 +167,17 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   {
     name: 'Postgres',
     icon: '/images/pgadmin.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'postgres operator'
@@ -155,12 +186,17 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   },
   // {
   //   name: 'SDK-DEMO',
   //   icon: '/images/mysql.svg',
-  //   type: 'iframe',
+  //   type: APPTYPE.IFRAME,
   //   data: {
   //     url: 'http://localhost:3000/demo',
   //     desc: 'mysql operator'
@@ -174,7 +210,7 @@ const installedApps: TApp[] = [
   {
     name: 'sealos cloud provider',
     icon: '/images/infraicon/scp.png',
-    type: 'app',
+    type: APPTYPE.APP,
     data: {
       url: '',
       desc: 'infra operator'
@@ -183,12 +219,17 @@ const installedApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-blue-400',
+      helpDropDown: false,
+      helpDocs: true
+    }
   },
   {
     name: 'AFFiNE',
     icon: '/images/affine.svg',
-    type: 'iframe',
+    type: APPTYPE.IFRAME,
     data: {
       url: '',
       desc: 'AFFiNE operator'
@@ -197,7 +238,12 @@ const installedApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize'
+    size: 'maximize',
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: true,
+      helpDocs: false
+    }
   }
 ];
 
