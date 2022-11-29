@@ -17,13 +17,16 @@ limitations under the License.
 package v1
 
 import (
-	"strings"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strings"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+type ActionName string
+type Template string
+type CMD string
 
 type TagData struct {
 	Name string `json:"name"`
@@ -88,18 +91,29 @@ func (n ImageName) GetMateName() string {
 	return strings.ReplaceAll(strings.ReplaceAll(string(n), "/", "."), ":", ".")
 }
 
+type AppActions struct {
+	// TODO: support more action.yaml types ,now just support yaml.
+	ActionType string `json:"actionType,omitempty"`
+	// action.yaml --> template
+	Actions map[ActionName]Template `json:"actions,omitempty"`
+	// action.yaml --> cmd
+	CMD map[ActionName]CMD `json:"cmd,omitempty"`
+}
+
 // ImageDetailInfo TODO: add limits for ImageDetailInfo
 type ImageDetailInfo struct {
-	URL         string   `json:"url,omitempty"`
-	Keywords    []string `json:"keywords,omitempty"`
-	Description string   `json:"description,omitempty"`
-	Icon        string   `json:"icon,omitempty"`
-	AuthorIcon  string   `json:"authorIcon,omitempty"`
-	Docs        string   `json:"docs,omitempty"`
-	ID          string   `json:"ID,omitempty"`
-	Arch        string   `json:"arch,omitempty"`
-	Rating      int      `json:"rating,omitempty"`
-	Size        int64    `json:"size,omitempty"`
+	URL         string     `json:"url,omitempty"`
+	Keywords    []string   `json:"keywords,omitempty"`
+	Description string     `json:"description,omitempty"`
+	Icon        string     `json:"icon,omitempty"`
+	AuthorIcon  string     `json:"authorIcon,omitempty"`
+	Docs        string     `json:"docs,omitempty"`
+	ID          string     `json:"ID,omitempty"`
+	Arch        string     `json:"arch,omitempty"`
+	Rating      int        `json:"rating,omitempty"`
+	Size        int64      `json:"size,omitempty"`
+	UIURL       string     `json:"uiurl,omitempty"`
+	AppActions  AppActions `json:"appActions,omitempty"`
 }
 
 // ImageSpec defines the desired state of Image

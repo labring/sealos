@@ -42,6 +42,23 @@ spec:
                 properties:
                   ID:
                     type: string
+                  appActions:
+                    properties:
+                      actionType:
+                        description: 'TODO: support more action.yaml types ,now just
+                          support yaml.'
+                        type: string
+                      actions:
+                        additionalProperties:
+                          type: string
+                        description: action.yaml --> template
+                        type: object
+                      cmd:
+                        additionalProperties:
+                          type: string
+                        description: action.yaml --> cmd
+                        type: object
+                    type: object
                   arch:
                     type: string
                   authorIcon:
@@ -61,6 +78,8 @@ spec:
                   size:
                     format: int64
                     type: integer
+                  uiurl:
+                    type: string
                   url:
                     type: string
                 type: object

@@ -1,0 +1,20 @@
+# permissions for end users to view apps.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: app-viewer-role
+rules:
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - apps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - apps/status
+  verbs:
+  - get

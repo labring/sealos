@@ -1,0 +1,25 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: app
+repo: github.com/labring/sealos/controllers/app
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: app
+  kind: App
+  path: github.com/labring/sealos/controllers/app/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: app
+  kind: Actions
+  path: github.com/labring/sealos/controllers/app/api/v1
+  version: v1
+version: "3"
