@@ -217,8 +217,9 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				Image:    *imageID,
 				Flavor:   string(instanceType),
 				Index:    index,
-				Disks:    []v1.Disk{},
+				Disks:    infra.Spec.Hosts[index].Disks, // TODO: get disks from instance
 			}
+
 			for _, mp := range i.Tags {
 				if *mp.Key == v1beta1.MASTER {
 					hostmap[index].Roles = append(hostmap[index].Roles, v1beta1.MASTER)

@@ -49,7 +49,7 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
-	downloadSealosCmd   = `sealos version || wget  https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
+	downloadSealosCmd   = `sealos version || wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -90,12 +90,15 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if infra.Status.Status != infrav1.Running.String() {
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
+	}
+
 	clusterfile, err := generateClusterfile(infra, cluster)
 	if err != nil {
 		r.recorder.Event(cluster, core.EventTypeWarning, "GenerateClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
-	fmt.Println(clusterfile)
 	if err := applyClusterfile(infra, clusterfile, getSealosVersion(cluster)); err != nil {
 		r.recorder.Event(cluster, core.EventTypeWarning, "ApplyClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err

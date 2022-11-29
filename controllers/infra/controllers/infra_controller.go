@@ -60,6 +60,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if infra.Status.Status == infrav1.Pending.String() {
+		return ctrl.Result{}, nil
+	}
+
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, core.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
