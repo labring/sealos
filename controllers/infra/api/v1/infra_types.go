@@ -113,7 +113,7 @@ func (hosts IndexHosts) Len() int {
 }
 
 func (hosts IndexHosts) Less(i, j int) bool {
-	return hosts[i].Index > hosts[j].Index
+	return hosts[i].Index < hosts[j].Index
 }
 
 func (hosts IndexHosts) Swap(i, j int) {

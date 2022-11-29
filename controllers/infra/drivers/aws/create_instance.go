@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/google/uuid"
 
 	"github.com/labring/sealos/controllers/infra/common"
@@ -283,5 +285,6 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
+	logger.Info("create key pair success", "keyName", *result.KeyName)
 	return nil
 }
