@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths-ignore:
+    paths:
       - "service/**"
-      - ".github/workflows/services.yml"
+      - "!.github/workflows/services.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:
