@@ -6,6 +6,7 @@ import (
 
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/buildah/util"
 	"github.com/spf13/cobra"
 
@@ -59,8 +60,11 @@ func newBuildCommand() *cobra.Command {
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
 	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
 	if err != nil {
-		logger.Error("failed to setup From and Build flags: %v", err)
-		os.Exit(1)
+		logger.Fatal("failed to setup From and Build flags: %v", err)
+	}
+	// set as default, otherwise parse.PlatformsFromOptions will get empty list
+	if err := fromAndBudFlags.Set("platform", parse.DefaultPlatform()); err != nil {
+		logger.Fatal(err)
 	}
 
 	sopts.RegisterFlags(flags)
@@ -91,6 +95,7 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 			os.RemoveAll(f)
 		}
 	}()
+
 	platforms, err := parsePlatforms(c)
 	if err != nil {
 		return err
