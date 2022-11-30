@@ -43,3 +43,19 @@ spec:
           # @see: https://github.com/cert-manager/cert-manager/issues/3432
           groupName: acme.mycompany.com
           solverName: godaddy
+
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-apisix-sealos-io
+  namespace: sealos-system
+spec:
+  secretName: wildcard-apisix-sealos-io-cert
+  renewBefore: 240h
+  dnsNames:
+  - 'apisix.sealos.io'
+  - '*.apisix.sealos.io'
+  issuerRef:
+    name: cluster-issuer-apisix
+    kind: ClusterIssuer
