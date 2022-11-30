@@ -1,16 +1,16 @@
-import { Button, Input } from '@fluentui/react-components';
-import { ArrowLeft24Regular } from '@fluentui/react-icons';
+import { Input } from '@fluentui/react-components';
+import { InputField } from '@fluentui/react-components/unstable';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
+import Image from 'next/image';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
+import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
 import { PageType, useScpContext } from './index';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
-import { v4 as uuidv4 } from 'uuid';
-import Image from 'next/image';
 
 const AddPage = () => {
   const { infraName, toPage } = useScpContext();
@@ -19,6 +19,7 @@ const AddPage = () => {
   const [image2, setImage2] = useState('labring/calico:v3.22.1');
   const [yamlTemplate, setYamlTemplate] = useState('');
   const [scpPrice, setScpPrice] = useState(0);
+  const [inputNameErr, setInputNameErr] = useState(false);
   const oldInfraForm = useRef(null as any);
   const initInfra = {
     infraName: '',
@@ -144,19 +145,29 @@ const AddPage = () => {
                 <div className={styles.dot}></div>
                 <span className={styles.info}>基础信息</span>
               </div>
-              <div className="pl-8 mt-8 ">
-                <span className={styles.cloudlabel}>集群名字 </span>
-                <Input
-                  className={styles.inputName}
+              <div></div>
+              <div className="pl-8 mt-8  flex items-center">
+                <div className={clsx(styles.cloudlabel, inputNameErr ? 'mb-6' : '')}>集群名字 </div>
+                <InputField
+                  className={clsx(styles.inputName)}
                   value={infraForm.infraName}
                   placeholder="请输入集群名称"
-                  onChange={(e, data) =>
-                    dispatchInfraForm({
+                  validationState={inputNameErr ? 'error' : 'success'}
+                  validationMessage={inputNameErr ? '不能输入中文名称' : undefined}
+                  onChange={(e, data) => {
+                    if (/[\u4E00-\u9FA5]/g.test(data.value)) {
+                      setInputNameErr(true);
+                    } else {
+                      setInputNameErr(false);
+                    }
+
+                    return dispatchInfraForm({
                       payload: { infraName: data.value, clusterName: data.value }
-                    })
-                  }
+                    });
+                  }}
                   disabled={infraName ? true : false}
-                ></Input>
+                />
+                {/* <div className={styles.errMsg}>不能输入中文</div> */}
               </div>
               {/* <div className="px-8 mt-6">
                 <span className={styles.cloudlabel}> 可用区 </span>

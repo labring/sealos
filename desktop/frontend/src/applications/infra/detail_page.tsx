@@ -1,12 +1,10 @@
 import {
-  Button,
   Dialog,
   DialogActions,
   DialogBody,
   DialogContent,
   DialogSurface,
   DialogTitle,
-  DialogTrigger,
   Popover,
   PopoverSurface,
   PositioningImperativeRef
@@ -19,18 +17,18 @@ import {
   TableHeaderCell,
   TableRow
 } from '@fluentui/react-components/unstable';
-import { Add16Filled, ArrowLeft16Regular, Delete16Regular } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
+import Image from 'next/image';
 import { useRef, useState } from 'react';
 import request from 'services/request';
+import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import styles from './detail_page.module.scss';
 import { PageType, useScpContext } from './index';
 import { ConvertKeyToLabel } from './infra_share';
-import Image from 'next/image';
-import useAppStore, { TApp } from 'stores/app';
+import StatusComponent from './scp_status';
 
 const SvgIcon = ({ src, width = 16 }: { src: string; width?: number }) => {
   return <Image className="inline-block mr-2" src={src} alt="id" width={width} height={16} />;
@@ -40,6 +38,7 @@ function DetailPage() {
   const { infraName, toPage } = useScpContext();
   const [open, setOpen] = useState(false);
   const sshRef = useRef(null);
+  const copyIdRef = useRef(null);
   const inIpRef = useRef(null);
   const outIpRef = useRef(null);
   const [deDialog, setDeDialog] = useState(false);
@@ -47,10 +46,16 @@ function DetailPage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const { currentApp, openedApps } = useAppStore();
   const curApp = openedApps.find((item) => item.name === currentApp?.name);
-
   const { data: scpInfo, status } = useQuery(['awsGet', infraName], () =>
     request.post('/api/infra/awsGet', { kubeconfig, infraName })
   );
+  const { data: clusterInfo } = useQuery(['awsGetCluster', infraName], () =>
+    request.post('/api/infra/getCluster', { kubeconfig, clusterName: infraName })
+  );
+  const nameLen = scpInfo?.data?.metadata?.name.length;
+  const infraStatus = scpInfo?.data?.status?.status || 'Pending';
+  const clusterStatus = clusterInfo?.data?.status?.status || 'Pending';
+  // console.log(scpInfo, clusterInfo, 'detail');
 
   const copyContext = (copyContext: string) => {
     let timer: number;
@@ -75,28 +80,41 @@ function DetailPage() {
   return (
     <div className={clsx(styles.detailPage, 'relative')}>
       <div className={clsx(styles.leftInfo)}>
-        <div className={styles.infraTitle}> {scpInfo?.data?.metadata?.name} </div>
-        <div className={clsx(styles.infraInfo, 'space-y-6')}>
-          <div className="flex">
-            <div className="mr-2">
-              <SvgIcon src="/images/infraicon/scp_id.svg" />
-            </div>
-            {scpInfo?.data?.metadata?.uid}
+        <div className={clsx(styles.infraTitle, 'flex items-center')}>
+          <span className="w-40 truncate">{scpInfo?.data?.metadata?.name}</span>
+          <StatusComponent infraStatus={infraStatus} clusterStatus={clusterStatus} desc={false} />
+        </div>
+        {nameLen > 10 && <div className={styles.hiddenName}>{scpInfo?.data?.metadata?.name} </div>}
+        <div className={clsx(styles.infraInfo, nameLen > 10 ? styles.hiddenInfo : '')}>
+          <div
+            className={clsx(styles.scpId, 'flex cursor-pointer')}
+            ref={copyIdRef}
+            onClick={() => {
+              positioningRef.current?.setTarget(copyIdRef.current as any);
+              copyContext(scpInfo?.data?.metadata?.uid);
+            }}
+          >
+            <SvgIcon src="/images/infraicon/scp_id.svg" />
+            <span className="w-24 truncate">{scpInfo?.data?.metadata?.uid}</span>
+            <span className="ml-2">
+              <SvgIcon src="/images/infraicon/scp_ssh_copy.svg" width={10} />
+            </span>
+            <div className={styles.hiddenId}>{scpInfo?.data?.metadata?.uid}</div>
           </div>
-          <span>
+          <span className={clsx(styles.hiddenTime, 'mt-4')}>
             <SvgIcon src="/images/infraicon/scp_clock.svg" />
             {formatTime(scpInfo?.data?.metadata?.creationTimestamp, 'YYYY/MM/DD mm:ss')}
           </span>
-          <span>
+          <span className="mt-4">
             <SvgIcon src="/images/infraicon/scp_image.svg" />
             kuberentes:v1.24.0
           </span>
-          <span>
+          <span className="mt-4">
             <SvgIcon src="/images/infraicon/scp_user.svg" />
             {scpInfo?.data?.spec?.ssh?.user ? scpInfo.data.spec.ssh.user : 'root'}
           </span>
           <div
-            className="cursor-pointer"
+            className="cursor-pointer mt-4"
             ref={sshRef}
             onClick={() => {
               positioningRef.current?.setTarget(sshRef.current as any);
@@ -109,7 +127,7 @@ function DetailPage() {
           </div>
         </div>
         <button className={styles.releaseBtn} onClick={() => setDeDialog(true)}>
-          释放集群
+          释放
         </button>
       </div>
       <div className={clsx(styles.rightInfo)}>
@@ -137,19 +155,19 @@ function DetailPage() {
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell>节点</TableHeaderCell>
-                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-32' : '')}>
+                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-36' : '')}>
                     状态
                   </TableHeaderCell>
-                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-32' : '')}>
+                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-28' : '')}>
                     ID
                   </TableHeaderCell>
-                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-20' : '')}>
+                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-16' : '')}>
                     规格
                   </TableHeaderCell>
-                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-36' : '')}>
+                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-44' : '')}>
                     <span ref={inIpRef}>内网</span>
                   </TableHeaderCell>
-                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-36' : '')}>
+                  <TableHeaderCell className={clsx(curApp?.size === 'maxmin' ? 'w-44' : '')}>
                     <span ref={outIpRef}> 公网 </span>
                   </TableHeaderCell>
                 </TableRow>
@@ -169,13 +187,17 @@ function DetailPage() {
                           <span>{host.roles[0] === 'master' ? 'Master' : 'Node'} </span>
                         </TableCell>
                         <TableCell>
-                          <SvgIcon src="/images/infraicon/scp_status_run.svg" />
-                          running
+                          <SvgIcon
+                            src={'/images/infraicon/scp_status_' + `${meta?.status}` + '.svg'}
+                          ></SvgIcon>
+                          {meta?.status}
                         </TableCell>
                         <TableCell className="break-all">{meta.id}</TableCell>
                         <TableCell> {ConvertKeyToLabel(host.flavor)} </TableCell>
                         <TableCell>
-                          <span className="w-24 inline-block">{meta.ipaddress[0].ipValue}</span>
+                          <span className="w-32 inline-block  break-all">
+                            {meta.ipaddress[0].ipValue}
+                          </span>
                           <span
                             className="cursor-pointer pl-1"
                             onClick={() => {
@@ -187,7 +209,7 @@ function DetailPage() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="w-24 inline-block break-all">
+                          <span className="w-32 inline-block break-all">
                             {meta.ipaddress[1].ipValue}
                           </span>
                           <span

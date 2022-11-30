@@ -1,4 +1,4 @@
-$color-btn-blue: #3981f5;
+$color-btn-blue: #007fee;
 
 .detailPage {
   display: flex;
@@ -83,15 +83,6 @@ $color-btn-blue: #3981f5;
   scroll-behavior: smooth;
 }
 
-.copyssh {
-  font-size: 10px;
-  line-height: 11px;
-  text-decoration-line: underline;
-  color: $color-btn-blue;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
 .tableDetail {
   thead tr th {
     color: #605e5c;
@@ -106,23 +97,22 @@ $color-btn-blue: #3981f5;
   }
 }
 
-// .tableHead1px {
-//   border: 0.5px solid #a19f9d;
-//   height: 11px;
-//   position: relative;
-// }
-
 .commonBlueBtn {
-  background: #007fee;
+  background: $color-btn-blue;
   border-radius: 2px;
-  border: 1px solid #007fee;
+  border: 1px solid $color-btn-blue;
   color: #ffffff;
 }
 
 .changeBtn {
   width: 96px;
   height: 32px;
-  @extend .commonBlueBtn;
+  border: 1px solid $color-btn-blue;
+  border-radius: 2px;
+  color: $color-btn-blue;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .confirmBtn {
@@ -137,4 +127,42 @@ $color-btn-blue: #3981f5;
   width: 96px;
   padding: 5px 12px;
   border: 1px solid #d1d1d1;
+}
+
+.hiddenId {
+  display: none;
+  position: absolute;
+  top: 44px;
+  width: 300px;
+  height: 32px;
+  background: #ffffff;
+  border-radius: 2px;
+  font-size: 12px;
+  padding: 8px;
+}
+
+.scpId:hover .hiddenId {
+  display: block;
+}
+
+.scpId:hover + .hiddenTime {
+  margin-top: 46px;
+}
+
+.hiddenName {
+  display: none;
+  top: 80px;
+  position: absolute;
+  background: #ffffff;
+  color: #323130;
+  font-size: 14px;
+  padding: 6px;
+}
+
+.infraTitle:hover + .hiddenName {
+  display: block;
+}
+
+.infraTitle:hover ~ .hiddenInfo {
+  margin-top: 36px;
 }

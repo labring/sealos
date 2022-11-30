@@ -1,6 +1,11 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CRDMeta, GetUserDefaultNameSpace, K8sApi } from '../../../services/backend/kubernetes';
+import {
+  CRDMeta,
+  DeleteCRD,
+  GetUserDefaultNameSpace,
+  K8sApi
+} from '../../../services/backend/kubernetes';
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -20,14 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    const result = await kc.makeApiClient(k8s.CustomObjectsApi).deleteNamespacedCustomObject(
-      meta.group,
-      meta.version,
-      meta.namespace,
-      meta.plural,
-      infraName // infra name
-    );
-
+    const result = await DeleteCRD(kc, meta, infraName);
     JsonResp(result, res);
   } catch (err) {
     if (err instanceof k8s.HttpError) {

@@ -68,7 +68,9 @@ export default function AppWindow(props: {
           >
             <div className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}>
               <img src={wnapp.icon} alt={wnapp.name} width={14} />
-              <div className={clsx('ml-2 ', wnapp.menu?.nameColor)}>{wnapp.name}</div>
+              <div className={clsx('ml-2')} style={{ color: wnapp.menu?.nameColor }}>
+                {wnapp.name}
+              </div>
               {wnapp.menu?.helpDropDown && <HelpDropDown />}
               {wnapp.menu?.helpDocs && <HelpDocs />}
             </div>
