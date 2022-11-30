@@ -38,6 +38,10 @@ import (
 
 var mutex sync.Mutex
 
+// system disk name must be /dev/xvda
+var rootDeviceName = "/dev/xvda"
+var rootVolumeSize = int32(40)
+
 var userData = `#!/bin/bash
 sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
 sudo sed -i 's/#PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
@@ -149,21 +153,17 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 
 // set blockDeviceMappings from hosts
 func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts) []types.BlockDeviceMapping {
-	rootDeviceName := "/dev/xvda"
-	rootVolumeSize := int32(40)
-
-	if len(hosts.Disks) == 0 {
-		return []types.BlockDeviceMapping{
-			{
-				DeviceName: &rootDeviceName,
-				Ebs: &types.EbsBlockDevice{
-					VolumeSize: &rootVolumeSize,
-				},
+	var blockDeviceMappings []types.BlockDeviceMapping
+	// add system disk if not exists
+	if len(hosts.Disks) == 0 || hosts.Disks[0].Name != rootDeviceName {
+		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
+			DeviceName: &rootDeviceName,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &rootVolumeSize,
 			},
-		}
+		})
 	}
 
-	var blockDeviceMappings []types.BlockDeviceMapping
 	for _, v := range hosts.Disks {
 		size := int32(v.Capacity)
 		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
