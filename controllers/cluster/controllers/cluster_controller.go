@@ -193,6 +193,7 @@ func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) e
 	}
 
 	createClusterfile := fmt.Sprintf("echo '%s' > /root/Clusterfile", clusterfile)
+	fmt.Println(clusterfile)
 	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion, sealosVersion, sealosVersion)
 
 	cmds := []string{createClusterfile, downloadSealos, applyClusterfileCmd}
