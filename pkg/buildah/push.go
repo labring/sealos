@@ -3,7 +3,6 @@ package buildah
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -107,7 +106,7 @@ func newPushCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s push imageID docker://registry.example.com/repository:tag
   %[1]s push imageID docker-daemon:image:tagi
-  %[1]s push imageID oci:/path/to/layout:image:tag`, rootCmdName),
+  %[1]s push imageID oci:/path/to/layout:image:tag`, rootCmd.Name()),
 	}
 	pushCommand.SetUsageTemplate(UsageTemplate())
 
@@ -139,7 +138,7 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 			return fmt.Errorf(`invalid image name "%s"`, args[0])
 		}
 	default:
-		return errors.New("Only two arguments are necessary to push: source and destination")
+		return errors.New("only two arguments are necessary to push: source and destination")
 	}
 
 	compress := define.Gzip
@@ -244,7 +243,7 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 	logger.Debug("Successfully pushed %s with digest %s", transports.ImageName(dest), digest.String())
 
 	if iopts.digestfile != "" {
-		if err = ioutil.WriteFile(iopts.digestfile, []byte(digest.String()), 0644); err != nil {
+		if err = os.WriteFile(iopts.digestfile, []byte(digest.String()), 0644); err != nil {
 			return util.GetFailureCause(err, fmt.Errorf("failed to write digest to file %q: %w", iopts.digestfile, err))
 		}
 	}

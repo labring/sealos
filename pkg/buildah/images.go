@@ -13,6 +13,8 @@ import (
 	"github.com/containers/buildah/pkg/formats"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/libimage"
+	"github.com/containers/image/v5/types"
+	"github.com/containers/storage"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -106,7 +108,7 @@ func newImagesCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s images --all
   %[1]s images [imageName]
-  %[1]s images --format '{{.ID}} {{.Name}} {{.Size}} {{.CreatedAtRaw}}'`, rootCmdName),
+  %[1]s images --format '{{.ID}} {{.Name}} {{.Size}} {{.CreatedAtRaw}}'`, rootCmd.Name()),
 	}
 	imagesCommand.SetUsageTemplate(UsageTemplate())
 
@@ -124,8 +126,11 @@ func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 			return err
 		}
 		if len(args) > 1 {
-			return errors.New("'buildah images' requires at most 1 argument")
+			return fmt.Errorf("'%s images' requires at most 1 argument", rootCmd.Name())
 		}
+	}
+	if iopts.quiet && iopts.format != "" {
+		return errors.New("quiet and format are mutually exclusive")
 	}
 
 	store, err := getStore(c)
@@ -136,28 +141,10 @@ func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+
+	images, err := readImages(store, systemContext, args, iopts)
 	if err != nil {
 		return err
-	}
-
-	ctx := context.Background()
-
-	options := &libimage.ListImagesOptions{}
-	if len(iopts.filter) > 0 {
-		options.Filters = iopts.filter
-	}
-	if !iopts.all {
-		options.Filters = append(options.Filters, "intermediate=false")
-	}
-
-	images, err := runtime.ListImages(ctx, args, options)
-	if err != nil {
-		return err
-	}
-
-	if iopts.quiet && iopts.format != "" {
-		return errors.New("quiet and format are mutually exclusive")
 	}
 
 	opts := imageOptions{
@@ -176,6 +163,25 @@ func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 	}
 
 	return formatImages(images, opts)
+}
+
+func readImages(store storage.Store, systemContext *types.SystemContext, names []string, iopts *imageResults) ([]*libimage.Image, error) {
+	runtime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: systemContext})
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+
+	options := &libimage.ListImagesOptions{}
+	if len(iopts.filter) > 0 {
+		options.Filters = iopts.filter
+	}
+	if !iopts.all {
+		options.Filters = append(options.Filters, "intermediate=false")
+	}
+
+	return runtime.ListImages(ctx, names, options)
 }
 
 func outputHeader(opts imageOptions) string {

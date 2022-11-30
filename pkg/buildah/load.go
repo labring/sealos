@@ -8,11 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	OCIArchive    string = "oci-archive"
-	DockerArchive string = "docker-archive"
-)
-
 func newLoadCommand() *cobra.Command {
 	var (
 		opts        = newDefaultPullOptions()
@@ -25,7 +20,7 @@ func newLoadCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return pullCmd(cmd, []string{fmt.Sprintf("%s:%s", DockerArchive, archiveName)}, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s load -i kubernetes.tar`, rootCmdName),
+		Example: fmt.Sprintf(`%[1]s load -i kubernetes.tar`, rootCmd.Name()),
 	}
 	loadCommand.SetUsageTemplate(UsageTemplate())
 	fs := loadCommand.Flags()

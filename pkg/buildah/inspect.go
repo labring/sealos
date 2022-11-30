@@ -55,7 +55,7 @@ func newInspectCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s inspect containerID
   %[1]s inspect --type image imageID
-  %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmdName),
+  %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmd.Name()),
 	}
 	inspectCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(inspectCommand.Flags())
@@ -124,7 +124,7 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 		}
 		t, err := template.New("format").Parse(format)
 		if err != nil {
-			return fmt.Errorf("Template parsing error: %w", err)
+			return fmt.Errorf("template parsing error: %w", err)
 		}
 		if err = t.Execute(os.Stdout, out); err != nil {
 			return err

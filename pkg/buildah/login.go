@@ -48,7 +48,7 @@ func newLoginCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return loginCmd(cmd, args, &opts)
 		},
-		Example: fmt.Sprintf(`%s login quay.io`, rootCmdName),
+		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.Name()),
 	}
 	loginCommand.SetUsageTemplate(UsageTemplate())
 

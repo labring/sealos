@@ -21,6 +21,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage"
 	"github.com/sirupsen/logrus"
@@ -105,8 +106,6 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 
 var (
 	globalFlagResults globalFlags
-	exitCode          int
-	rootCmdName       = "buildah"
 	rootCmd           *cobra.Command
 )
 
@@ -122,29 +121,32 @@ func markFlagsHidden(fs *pflag.FlagSet, names ...string) error {
 func subCommands() []*cobra.Command {
 	return []*cobra.Command{
 		newBuildCommand(),
+		newContainersCommand(),
+		newFromCommand(),
 		newImagesCommand(),
 		newInspectCommand(),
 		newLoadCommand(),
 		newLoginCommand(),
 		newLogoutCommand(),
 		newManifestCommand(),
+		newMountCommand(),
 		newPullCommand(),
 		newPushCommand(),
 		newRMCommand(),
 		newRMICommand(),
 		newSaveCommand(),
 		newTagCommand(),
+		newUmountCommand(),
 	}
 }
 
 func RegisterRootCommand(cmd *cobra.Command) {
+	os.Setenv("TMPDIR", parse.GetTempDir())
 	rootCmd = cmd
-	rootCmdName = cmd.Name()
-
+	cmd.SilenceUsage = true
 	if err := RegisterGlobalFlags(cmd.PersistentFlags()); err != nil {
 		logger.Fatal(err)
 	}
-	cmd.SilenceUsage = true
 	wrapPrePersistentRun(cmd)
 	wrapPostPersistentRun(cmd)
 	cmd.AddCommand(subCommands()...)

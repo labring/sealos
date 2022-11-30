@@ -17,10 +17,9 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var exampleReset = `

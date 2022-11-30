@@ -12,6 +12,8 @@ import (
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
+	"github.com/containers/image/v5/types"
+	"github.com/containers/storage"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -20,19 +22,21 @@ import (
 )
 
 type pullOptions struct {
-	allTags          bool
-	authfile         string
-	blobCache        string
-	certDir          string
-	creds            string
-	signaturePolicy  string
-	quiet            bool
-	removeSignatures bool
-	tlsVerify        bool
-	decryptionKeys   []string
-	pullPolicy       string
-	retry            int
-	retryDelay       time.Duration
+	allTags           bool
+	authfile          string
+	blobCache         string
+	certDir           string
+	creds             string
+	signaturePolicy   string
+	quiet             bool
+	removeSignatures  bool
+	tlsVerify         bool
+	decryptionKeys    []string
+	pullPolicy        string
+	os, arch, variant string
+	platform          []string
+	retry             int
+	retryDelay        time.Duration
 }
 
 func (opts *pullOptions) HiddenFlags() []string {
@@ -46,6 +50,9 @@ func newDefaultPullOptions() *pullOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		pullPolicy: "missing",
 		tlsVerify:  true,
+		os:         runtime.GOOS,
+		arch:       runtime.GOARCH,
+		platform:   []string{parse.DefaultPlatform()},
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
 	}
@@ -63,10 +70,10 @@ func (opts *pullOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
 	fs.StringSliceVar(&opts.decryptionKeys, "decryption-key", opts.decryptionKeys, "key needed to decrypt the image")
 	fs.BoolVarP(&opts.quiet, "quiet", "q", false, "don't output progress information when pulling images")
-	fs.String("os", runtime.GOOS, "prefer `OS` instead of the running OS for choosing images")
-	fs.String("arch", runtime.GOARCH, "prefer `ARCH` instead of the architecture of the machine for choosing images")
-	fs.StringSlice("platform", []string{parse.DefaultPlatform()}, "prefer OS/ARCH instead of the current operating system and architecture for choosing images")
-	fs.String("variant", "", "override the `variant` of the specified image")
+	fs.StringVar(&opts.os, "os", opts.os, "prefer `OS` instead of the running OS for choosing images")
+	fs.StringVar(&opts.arch, "arch", opts.arch, "prefer `ARCH` instead of the architecture of the machine for choosing images")
+	fs.StringSliceVar(&opts.platform, "platform", opts.platform, "prefer OS/ARCH instead of the current operating system and architecture for choosing images")
+	fs.StringVar(&opts.variant, "variant", "", "override the `variant` of the specified image")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.IntVar(&opts.retry, "retry", opts.retry, "number of times to retry in case of failure when performing pull")
 	fs.DurationVar(&opts.retryDelay, "retry-delay", opts.retryDelay, "delay between retries in case of pull failures")
@@ -91,7 +98,7 @@ func newPullCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s pull imagename
   %[1]s pull docker-daemon:imagename:imagetag
-  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmdName),
+  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmd.Name()),
 	}
 	pullCommand.SetUsageTemplate(UsageTemplate())
 
@@ -108,9 +115,6 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	}
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
-	}
-	if err := auth.CheckAuthFile(iopts.authfile); err != nil {
-		return err
 	}
 
 	systemContext, err := parse.SystemContextFromOptions(c)
@@ -129,15 +133,27 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err != nil {
 		return err
 	}
+	ids, err := doPull(store, systemContext, []string{args[0]}, iopts)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%s\n", ids[0])
+	return nil
+}
+
+func doPull(store storage.Store, systemContext *types.SystemContext, imageNames []string, iopts *pullOptions) ([]string, error) {
+	if err := auth.CheckAuthFile(iopts.authfile); err != nil {
+		return nil, err
+	}
 
 	decConfig, err := util.DecryptConfig(iopts.decryptionKeys)
 	if err != nil {
-		return fmt.Errorf("unable to obtain decryption config: %w", err)
+		return nil, fmt.Errorf("unable to obtain decryption config: %w", err)
 	}
 
 	policy, ok := define.PolicyMap[iopts.pullPolicy]
 	if !ok {
-		return fmt.Errorf("unsupported pull policy %q", iopts.pullPolicy)
+		return nil, fmt.Errorf("unsupported pull policy %q", iopts.pullPolicy)
 	}
 	options := buildah.PullOptions{
 		SignaturePolicyPath: iopts.signaturePolicy,
@@ -156,11 +172,13 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if iopts.quiet {
 		options.ReportWriter = nil // Turns off logging output
 	}
-
-	id, err := buildah.Pull(getContext(), args[0], options)
-	if err != nil {
-		return err
+	var ids []string
+	for _, imageName := range imageNames {
+		id, err := buildah.Pull(getContext(), imageName, options)
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
 	}
-	fmt.Printf("%s\n", id)
-	return nil
+	return ids, nil
 }

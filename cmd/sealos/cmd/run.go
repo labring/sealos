@@ -20,8 +20,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -86,8 +85,8 @@ func newRunCmd() *cobra.Command {
 			return applier.Apply()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !strings2.In(types.DefaultTransport, []string{types.OCIArchive, types.DockerArchive}) {
-				return fmt.Errorf("transport parameters must be %s or %s", types.OCIArchive, types.DockerArchive)
+			if !strings2.In(buildah.DefaultTransport, []string{buildah.OCIArchive, buildah.DockerArchive}) {
+				return fmt.Errorf("transport parameters must be %s or %s", buildah.OCIArchive, buildah.DockerArchive)
 			}
 			return nil
 		},
@@ -98,7 +97,8 @@ func newRunCmd() *cobra.Command {
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
-	runCmd.Flags().StringVarP(&types.DefaultTransport, "transport", "t", types.OCIArchive, fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", types.OCIArchive, types.DockerArchive))
+	runCmd.Flags().StringVarP(&buildah.DefaultTransport, "transport", "t", buildah.OCIArchive,
+		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))
 	return runCmd
 }
 
@@ -108,13 +108,13 @@ func init() {
 
 func args2Images(args []string) ([]string, error) {
 	var images []string
-	imageSvc, err := image.NewImageService()
+	bder, err := buildah.New("")
 	if err != nil {
 		return images, err
 	}
 	for _, arg := range args {
 		if strings.HasSuffix(arg, ".tar") || strings.HasSuffix(arg, ".gz") {
-			id, err := imageSvc.Load(arg)
+			id, err := bder.Load(arg)
 			if err != nil {
 				return images, err
 			}

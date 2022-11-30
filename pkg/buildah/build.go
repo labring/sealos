@@ -45,7 +45,7 @@ func newBuildCommand() *cobra.Command {
 		Args: cobra.MaximumNArgs(1),
 		Example: fmt.Sprintf(`%[1]s build
   %[1]s bud -f Kubefile.simple .
-  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmdName),
+  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmd.Name()),
 	}
 	buildCommand.SetUsageTemplate(UsageTemplate())
 
@@ -86,6 +86,11 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 	if err != nil {
 		return err
 	}
+	defer func() {
+		for _, f := range removeAll {
+			os.RemoveAll(f)
+		}
+	}()
 	platforms, err := parsePlatforms(c)
 	if err != nil {
 		return err
@@ -93,11 +98,6 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 	if err = runSaveImages(options.ContextDirectory, platforms, &sopts); err != nil {
 		return err
 	}
-	defer func() {
-		for _, f := range removeAll {
-			os.RemoveAll(f)
-		}
-	}()
 	if globalFlagResults.DefaultMountsFile != "" {
 		options.DefaultMountsFilePath = globalFlagResults.DefaultMountsFile
 	}

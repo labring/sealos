@@ -19,7 +19,7 @@ func newTagCommand() *cobra.Command {
 		RunE:  tagCmd,
 
 		Example: fmt.Sprintf(`%[1]s tag imageName firstNewName
-  %[1]s tag imageName firstNewName SecondNewName`, rootCmdName),
+  %[1]s tag imageName firstNewName SecondNewName`, rootCmd.Name()),
 		Args: cobra.MinimumNArgs(2),
 	}
 	tagCommand.SetUsageTemplate(UsageTemplate())

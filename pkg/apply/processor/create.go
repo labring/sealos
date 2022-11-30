@@ -23,14 +23,13 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/bootstrap"
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/guest"
-	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -39,12 +38,10 @@ import (
 )
 
 type CreateProcessor struct {
-	ClusterFile     clusterfile.Interface
-	ImageManager    types.ImageService
-	ClusterManager  types.ClusterService
-	RegistryManager types.RegistryService
-	Runtime         runtime.Interface
-	Guest           guest.Interface
+	ClusterFile clusterfile.Interface
+	Buildah     buildah.Interface
+	Runtime     runtime.Interface
+	Guest       guest.Interface
 }
 
 func (c *CreateProcessor) Execute(cluster *v2.Cluster) error {
@@ -91,12 +88,12 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 }
 
 func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
-	ociList, err := c.ImageManager.Inspect(cluster.Spec.Image...)
-	if err != nil {
-		return err
-	}
 	imageTypes := sets.NewString()
-	for _, oci := range ociList {
+	for _, image := range cluster.Spec.Image {
+		oci, err := c.Buildah.InspectImage(image)
+		if err != nil {
+			return err
+		}
 		if oci.Config.Labels != nil {
 			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
 		} else {
@@ -111,7 +108,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-	err := c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, cluster.Spec.Image...)
+	err := c.Buildah.Pull(buildah.DefaultPlatform(), "missing", cluster.Spec.Image...)
 	if err != nil {
 		return err
 	}
@@ -119,21 +116,21 @@ func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 		return err
 	}
 	for _, img := range cluster.Spec.Image {
-		clusterManifest, err := c.ClusterManager.Create(fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)), img)
+		bderInfo, err := c.Buildah.Create(rand.Generator(8), img)
 		if err != nil {
 			return err
 		}
 		mount := &v2.MountImage{
-			Name:       clusterManifest.Container,
+			Name:       bderInfo.Container,
 			ImageName:  img,
-			MountPoint: clusterManifest.MountPoint,
+			MountPoint: bderInfo.MountPoint,
 		}
-		if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+		if err = OCIToImageMount(mount, c.Buildah); err != nil {
 			return err
 		}
 		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 	}
-	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager, false); err != nil {
+	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
 		return err
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
@@ -212,32 +209,19 @@ func (c *CreateProcessor) RunGuest(cluster *v2.Cluster) error {
 	return c.Guest.Apply(cluster, cluster.Status.Mounts)
 }
 
-func NewCreateProcessor(clusterFile clusterfile.Interface) (Interface, error) {
-	imgSvc, err := image.NewImageService()
+func NewCreateProcessor(name string, clusterFile clusterfile.Interface) (Interface, error) {
+	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err
 	}
-
-	clusterSvc, err := image.NewClusterService()
-	if err != nil {
-		return nil, err
-	}
-
-	registrySvc, err := image.NewRegistryService()
-	if err != nil {
-		return nil, err
-	}
-
 	gs, err := guest.NewGuestManager()
 	if err != nil {
 		return nil, err
 	}
 
 	return &CreateProcessor{
-		ClusterFile:     clusterFile,
-		ImageManager:    imgSvc,
-		ClusterManager:  clusterSvc,
-		RegistryManager: registrySvc,
-		Guest:           gs,
+		ClusterFile: clusterFile,
+		Buildah:     bder,
+		Guest:       gs,
 	}, nil
 }

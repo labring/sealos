@@ -20,31 +20,26 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/sync/errgroup"
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/labring/sealos/pkg/buildah"
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/filesystem"
+	"github.com/labring/sealos/pkg/guest"
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/clusterfile"
-	"github.com/labring/sealos/pkg/config"
-	"github.com/labring/sealos/pkg/filesystem"
-	"github.com/labring/sealos/pkg/guest"
-	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/image/types"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 var ForceOverride bool
 
 type InstallProcessor struct {
 	ClusterFile      clusterfile.Interface
-	ImageManager     types.ImageService
-	ClusterManager   types.ClusterService
-	RegistryManager  types.RegistryService
+	Buildah          buildah.Interface
 	Guest            guest.Interface
 	NewMounts        []v2.MountImage
 	NewImages        []string
@@ -106,7 +101,7 @@ func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 		return err
 	}
 	current := c.ClusterFile.GetCluster()
-	if err = SyncClusterStatus(current, c.ClusterManager, c.ImageManager, false); err != nil {
+	if err = SyncClusterStatus(current, c.Buildah, false); err != nil {
 		return err
 	}
 	imageList := sets.NewString(current.Spec.Image...)
@@ -119,15 +114,15 @@ func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
-	if err := c.RegistryManager.Pull(types.DefaultPlatform(), types.PullPolicyMissing, c.NewImages...); err != nil {
-		return err
-	}
-	ociList, err := c.ImageManager.Inspect(c.NewImages...)
-	if err != nil {
+	if err := c.Buildah.Pull(buildah.DefaultPlatform(), "missing", c.NewImages...); err != nil {
 		return err
 	}
 	imageTypes := sets.NewString()
-	for _, oci := range ociList {
+	for _, image := range c.NewImages {
+		oci, err := c.Buildah.InspectImage(image)
+		if err != nil {
+			return err
+		}
 		if oci.Config.Labels != nil {
 			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
 		} else {
@@ -145,19 +140,19 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
 				ImageName: img,
 			}
-			cluster.Spec.Image = append(cluster.Spec.Image, img)
+			cluster.Spec.Image = replaceOrInsert(cluster.Spec.Image, img)
 		} else if !ForceOverride {
 			continue
 		} else {
 			logger.Debug("trying to override app %s", img)
 		}
 		if mount != nil {
-			manifest, err := c.ClusterManager.Create(mount.Name, img)
+			manifest, err := c.Buildah.Create(mount.Name, img)
 			if err != nil {
 				return err
 			}
 			mount.MountPoint = manifest.MountPoint
-			if err = OCIToImageMount(mount, c.ImageManager); err != nil {
+			if err = OCIToImageMount(mount, c.Buildah); err != nil {
 				return err
 			}
 			cluster.SetMountImage(mount)
@@ -165,6 +160,17 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		}
 	}
 	return nil
+}
+
+func replaceOrInsert(ss []string, s string) []string {
+	var ret []string
+	for i := range ss {
+		if ss[i] != s {
+			ret = append(ret, ss[i])
+		}
+	}
+	ret = append(ret, s)
+	return ret
 }
 
 func (c *InstallProcessor) PostProcess(*v2.Cluster) error {
@@ -216,17 +222,7 @@ func (c *InstallProcessor) RunGuest(cluster *v2.Cluster) error {
 }
 
 func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (Interface, error) {
-	imgSvc, err := image.NewImageService()
-	if err != nil {
-		return nil, err
-	}
-
-	clusterSvc, err := image.NewClusterService()
-	if err != nil {
-		return nil, err
-	}
-
-	registrySvc, err := image.NewRegistryService()
+	bder, err := buildah.New(clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err
 	}
@@ -237,11 +233,9 @@ func NewInstallProcessor(clusterFile clusterfile.Interface, images []string) (In
 	}
 
 	return &InstallProcessor{
-		ClusterFile:     clusterFile,
-		ImageManager:    imgSvc,
-		ClusterManager:  clusterSvc,
-		RegistryManager: registrySvc,
-		Guest:           gs,
-		NewImages:       images,
+		ClusterFile: clusterFile,
+		Buildah:     bder,
+		Guest:       gs,
+		NewImages:   images,
 	}, nil
 }

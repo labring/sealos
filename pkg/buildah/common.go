@@ -5,24 +5,23 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"time"
 
+	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
 	"github.com/containers/common/pkg/umask"
-	"github.com/containers/image/v5/image"
-	"github.com/containers/image/v5/manifest"
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 var (
 	// configuration, including customizations made in containers.conf
 	needToShutdownStore = false
 )
+
+var DefaultPlatform = platforms.DefaultSpec
 
 func flagChanged(c *cobra.Command, name string) bool {
 	if fs := c.Flag(name); fs != nil && fs.Changed {
@@ -106,7 +105,8 @@ func getStore(c *cobra.Command) (storage.Store, error) {
 	if store != nil {
 		is.Transport.SetStore(store)
 	}
-	needToShutdownStore = true
+	// Do we really need to shutdown store before exit?
+	// needToShutdownStore = true
 	return store, err
 }
 
@@ -162,55 +162,9 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 	return builder, nil
 }
 
-func getDateAndDigestAndSize(ctx context.Context, sys *types.SystemContext, store storage.Store, storeImage storage.Image) (time.Time, string, int64, error) {
-	created := time.Time{}
-	is.Transport.SetStore(store)
-	storeRef, err := is.Transport.ParseStoreReference(store, storeImage.ID)
-	if err != nil {
-		return created, "", -1, err
-	}
-	img, err := storeRef.NewImageSource(ctx, nil)
-	if err != nil {
-		return created, "", -1, err
-	}
-	defer img.Close()
-	imgSize, sizeErr := store.ImageSize(storeImage.ID)
-	if sizeErr != nil {
-		imgSize = -1
-	}
-	manifestBytes, _, manifestErr := img.GetManifest(ctx, nil)
-	manifestDigest := ""
-	if manifestErr == nil && len(manifestBytes) > 0 {
-		mDigest, err := manifest.Digest(manifestBytes)
-		manifestErr = err
-		if manifestErr == nil {
-			manifestDigest = mDigest.String()
-		}
-	}
-	inspectable, inspectableErr := image.FromUnparsedImage(ctx, sys, image.UnparsedInstance(img, nil))
-	if inspectableErr == nil {
-		inspectInfo, inspectErr := inspectable.Inspect(ctx)
-		if inspectErr == nil && inspectInfo != nil && inspectInfo.Created != nil {
-			created = *inspectInfo.Created
-		}
-	}
-	if sizeErr != nil {
-		err = sizeErr
-	} else if manifestErr != nil {
-		err = manifestErr
-	}
-	return created, manifestDigest, imgSize, err
-}
-
 // getContext returns a context.TODO
 func getContext() context.Context {
 	return context.TODO()
-}
-
-func getUserFlags() pflag.FlagSet {
-	fs := pflag.FlagSet{}
-	fs.String("user", "", "`user[:group]` to run the command as")
-	return fs
 }
 
 func defaultFormat() string {

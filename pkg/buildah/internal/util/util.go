@@ -17,6 +17,7 @@ package util
 import (
 	"fmt"
 
+	"github.com/containers/buildah/define"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
 	"github.com/pkg/errors"
@@ -53,4 +54,16 @@ func EncryptConfig(encryptionKeys []string, encryptLayers []int) (*encconfig.Enc
 		encConfig = cc.EncryptConfig
 	}
 	return encConfig, encLayers, nil
+}
+
+// GetFormat translates format string into either docker or OCI format constant
+func GetFormat(format string) (string, error) {
+	switch format {
+	case define.OCI:
+		return define.OCIv1ImageManifest, nil
+	case define.DOCKER:
+		return define.Dockerv2ImageManifest, nil
+	default:
+		return "", fmt.Errorf("unrecognized image type %q", format)
+	}
 }

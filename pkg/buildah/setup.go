@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage/pkg/homedir"
@@ -80,7 +81,7 @@ func writeFileIfNotExists(filename string, data []byte) error {
 }
 
 func MaybeReexecUsingUserNamespace() error {
-	if !unshare.IsRootless() {
+	if !unshare.IsRootless() || strings.ToLower(os.Getenv("DISABLE_AUTO_ROOTLESS")) == "true" {
 		return nil
 	}
 	if _, present := os.LookupEnv("BUILDAH_ISOLATION"); !present {
