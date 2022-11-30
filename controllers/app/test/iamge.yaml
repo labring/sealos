@@ -1,0 +1,23 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Image
+metadata:
+  name: labring.mysql.v8.0.26
+  namespace: sealos-imagehub
+spec:
+  name: labring/mysql:v8.0.26
+  detail:
+    url: www.mysql.com
+    keywords: [ mysql, database, operator ]
+    description: MySQL is the world's most popular open source database.
+    icon: MySQL icon
+    docs: MySQL docs
+    ID: MySQL ID
+    arch: MySQL arch
+    uiurl:
+    appActions:
+      install:
+        actionType: kubectl
+      uninstall:
+        actionType: kubectl
+      update:
+        actionType: kubectl

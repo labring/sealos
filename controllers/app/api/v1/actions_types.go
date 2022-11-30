@@ -24,7 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 const (
-	KubectlAction string = "KubectlAction"
+	KubectlAction string = "kubectl"
 )
 
 // ActionsSpec defines the desired state of Actions
