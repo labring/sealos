@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Namespace
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
 metadata:
-  name: sealos
+  name: default-storage-class
   annotations:
-  labels:
-    name: sealos
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: sealos-system
-  annotations:
-  labels:
-    name: sealos-system
+    storageclass.kubernetes.io/is-default-class: "true"
+    openebs.io/cas-type: local
+    cas.openebs.io/config: |
+      - name: StorageType
+        value: hostpath
+      - name: BasePath
+        value: /mnt/data_pv
+provisioner: openebs.io/local
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
