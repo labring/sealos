@@ -24,13 +24,12 @@ func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 	glog.Info("Authorize for req: ", ai.Name)
 	// todo replace server ip to env $(SERVER)
 
-	var repo imagehubv1.RepoName
-	repo = imagehubv1.RepoName(ai.Name)
+	repo := imagehubv1.RepoName(ai.Name)
 
 	var res []string
 	client, err := kubernetes.NewKubernetesClientByConfigString(ai.Kubeconfig)
 	if err != nil {
-		return res, api.NoMatch
+		return res, api.ErrNoMatch
 	}
 	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
 		Group:    "imagehub.sealos.io",
@@ -40,13 +39,13 @@ func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 	unstructOrg, err := resource.Get(context.Background(), repo.GetOrg(), metav1.GetOptions{})
 	if err != nil {
 		glog.Infof("error when Authorize req: %s for user %s, get org cr from apiserver error", repo, ai.Account)
-		return res, api.NoMatch
+		return res, api.ErrNoMatch
 	}
 	org := imagehubv1.Organization{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructOrg.UnstructuredContent(), &org)
 	if err != nil {
 		glog.Infof("error when unstruct organization")
-		return res, api.NoMatch
+		return res, api.ErrNoMatch
 	}
 	// if org have repo, user can pull it.
 	for _, r := range org.Spec.Repos {

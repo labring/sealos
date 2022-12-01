@@ -15,7 +15,7 @@ type Authorizer interface {
 	// Authorize performs authorization given the request information.
 	// It returns a set of authorized actions (of the set requested), which can be empty/nil.
 	// Error should only be reported if request could not be serviced, not if it should be denied.
-	// A special NoMatch error is returned if the authorizer could not reach a decision,
+	// A special ErrNoMatch error is returned if the authorizer could not reach a decision,
 	// e.g. none of the rules matched.
 	// Implementations must be goroutine-safe.
 	Authorize(ai *AuthRequestInfo) ([]string, error)

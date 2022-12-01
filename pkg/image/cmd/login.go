@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/labring/sealos/pkg/image"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/spf13/cobra"
 )
@@ -35,7 +36,7 @@ func NewLoginCmd() *cobra.Command {
 		Short:   "login image repository",
 		Example: `sealos login registry.cn-qingdao.aliyuncs.com -u [username] -p [password] -k [kubeconfig]`,
 		Args:    cobra.RangeArgs(0, 1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
 			if len(args) == 0 {
 				args = append(args, DefaultRegistry)
 			}
@@ -49,7 +50,7 @@ func NewLoginCmd() *cobra.Command {
 			// login by kubeconfig
 			if kubeconfig != "" {
 				sealoskubeconfdir := fmt.Sprintf("%s/%s", os.Getenv("HOME"), DefaultKubeConfigDir)
-				err := fileutil.MkDirs(sealoskubeconfdir)
+				err = fileutil.MkDirs(sealoskubeconfdir)
 				if err != nil {
 					return err
 				}
@@ -69,6 +70,9 @@ func NewLoginCmd() *cobra.Command {
 				}
 				// username is current context kubeconfig user id
 				username, err = GetCurrentUserFromKubeConfig(sealoskubeconfpath)
+				if err != nil {
+					return err
+				}
 				password = string(passwordb)
 			}
 			return nil

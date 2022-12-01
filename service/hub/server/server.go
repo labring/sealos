@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 
 	"github.com/cesanta/glog"
@@ -185,9 +184,9 @@ func (as *AuthServer) Authenticate(ar *AuthRequest) (bool, api.Labels, error) {
 	result, labels, err := as.authenticators.Authenticate(ar.Account, ar.Password)
 	glog.V(2).Infof("Authn %s -> %t, %+v, %v", ar.Account, result, labels, err)
 	if err != nil {
-		if err == api.NoMatch {
+		if err == api.ErrNoMatch {
 			return false, nil, err
-		} else if err == api.WrongPass {
+		} else if err == api.ErrWrongPass {
 			glog.Warningf("Failed authentication with %s: %s", err, ar.Account)
 			return false, nil, nil
 		}
@@ -202,7 +201,7 @@ func (as *AuthServer) authorizeScope(ai *api.AuthRequestInfo) ([]string, error) 
 	result, err := as.authorizers.Authorize(ai)
 	glog.V(2).Infof("Authz  %s -> %s, %s", *ai, result, err)
 	if err != nil {
-		if err == api.NoMatch {
+		if err == api.ErrNoMatch {
 			return nil, nil
 		}
 		err = fmt.Errorf("authz # returned error: %s", err)
@@ -310,9 +309,8 @@ func (as *AuthServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (as *AuthServer) doIndex(rw http.ResponseWriter, req *http.Request) {
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-	t, _ := template.New("").Parse("{{.}}")
-	s := fmt.Sprintf("<h1>%s</h1>\n", as.config.Token.Issuer)
-	_ = t.Execute(rw, s)
+	// nosemgrep go.lang.security.audit.xss.no-fprintf-to-responsewriter.no-fprintf-to-responsewriter
+	fmt.Fprintf(rw, "<h1>%s</h1>\n", as.config.Token.Issuer)
 }
 
 func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
@@ -346,6 +344,7 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		// Authentication-only request ("docker login"), pass through.
+		glog.Info("no scopes")
 	}
 	tk, err := as.CreateToken(ar, ares)
 	if err != nil {
@@ -361,9 +360,8 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	result, _ := json.Marshal(&map[string]string{"access_token": tk, "token": tk})
 	glog.V(3).Infof("%s", result)
 	rw.Header().Set("Content-Type", "application/json")
-	t, _ := template.New("").Parse("{{.}}")
-	s := fmt.Sprintf("%s\n", result)
-	_ = t.Execute(rw, s)
+	// nosemgrep go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter
+	_, _ = rw.Write(result)
 }
 
 func (as *AuthServer) Stop() {

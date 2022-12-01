@@ -8,9 +8,9 @@ type Labels map[string][]string
 type Authenticator interface {
 	// Authenticate Given a username and a password (plain text), responds with the result or an error.
 	// Error should only be reported if request could not be serviced, not if it should be denied.
-	// A special NoMatch error is returned if the authorizer could not reach a decision,
+	// A special ErrNoMatch error is returned if the authorizer could not reach a decision,
 	// e.g. none of the rules matched.
-	// Another special WrongPass error is returned if the authorizer failed to authenticate.
+	// Another special ErrWrongPass error is returned if the authorizer failed to authenticate.
 	// Implementations must be goroutine-safe.
 	Authenticate(user string, password PasswordString) (bool, Labels, error)
 
@@ -23,8 +23,8 @@ type Authenticator interface {
 	Name() string
 }
 
-var NoMatch = errors.New("did not match any rule")
-var WrongPass = errors.New("wrong password for user")
+var ErrNoMatch = errors.New("did not match any rule")
+var ErrWrongPass = errors.New("wrong password for user")
 
 type PasswordString string
 

@@ -131,7 +131,7 @@ func (rs *RestartableServer) WatchConfig() {
 		case ev := <-w.Events:
 			if ev.Op == fsnotify.Remove {
 				glog.Warningf("Config file disappeared, serving continues")
-				w.Remove(rs.configFile)
+				_ = w.Remove(rs.configFile)
 				watching, needRestart = false, false
 			} else if ev.Op == fsnotify.Write {
 				needRestart = true

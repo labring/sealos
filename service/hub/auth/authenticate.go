@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/cesanta/glog"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
@@ -25,18 +24,18 @@ func (a SealosAuthenticate) Authenticate(user string, password api.PasswordStrin
 	client, err := kubernetes.NewKubernetesClientByConfigString(string(password))
 	if err != nil {
 		glog.Error("NewKubernetesClientByConfigString error")
-		return false, api.Labels{}, nil
+		return false, api.Labels{}, api.ErrWrongPass
 	}
 	// check client by ping apiserver
 	// or get organizations?
 	res, err := client.Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw(context.Background())
 	if err != nil {
 		glog.Error("Authenticate false, ping apiserver error")
-		return false, api.Labels{}, err
+		return false, api.Labels{}, api.ErrWrongPass
 	}
 	if string(res) != "ok" {
 		glog.Error("Authenticate false, apiserver response not ok")
-		return false, api.Labels{}, fmt.Errorf("ErrorNotOk : response != 'ok' : %s\n", res)
+		return false, api.Labels{}, api.ErrWrongPass
 	}
 	glog.Info("Authenticate true")
 	return true, api.Labels{}, nil

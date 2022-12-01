@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -18,6 +17,7 @@ type Config struct {
 	Token  TokenConfig  `yaml:"token"`
 }
 
+// nolint:revive
 type ServerConfig struct {
 	ListenAddress string            `yaml:"addr,omitempty"`
 	PathPrefix    string            `yaml:"path_prefix,omitempty"`
@@ -82,7 +82,7 @@ func loadCertAndKey(certFile string, keyFile string) (pk libtrust.PublicKey, prk
 }
 
 func LoadConfig(fileName string) (*Config, error) {
-	contents, err := ioutil.ReadFile(fileName)
+	contents, err := os.ReadFile(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("could not read %s: %s", fileName, err)
 	}
