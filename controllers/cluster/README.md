@@ -1,11 +1,11 @@
-# cluster
-// TODO(user): Add simple overview of use/purpose
+# Cluster operator
+Cluster Operator works along with infra operator, cluster will create and manage kubernetes+sealos clusters at spec infra custom resources.
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Cluster Operator is used to download and install sealos cluster under spec infra machines, and will manage future updates for it.
 
 ## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
+You’ll need a Kubernetes cluster to run against.  
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
 ### Running on the cluster
@@ -40,9 +40,6 @@ UnDeploy the controller to the cluster:
 ```sh
 make undeploy
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
@@ -79,7 +76,21 @@ More information can be found via the [Kubebuilder Documentation](https://book.k
 ## Cluster operator specify the sealos version
 
 Using the annotations: "sealos.io/sealos/version"
+
 Example: "sealos.io/sealos/version=4.1.3"
+
+## Cluster operator local build multi-arch docker image
+
+Using `docker buildx` to build multi-arch images for local testing and deployment.
+
+```bash
+make build-multi-arch
+sudo make docker-buildx-push
+```
+
+@see: 
+> https://yeasy.gitbook.io/docker_practice/buildx/multi-arch-images
+> https://developer.arm.com/documentation/102475/0100/Multi-architecture-images
 
 ## License
 

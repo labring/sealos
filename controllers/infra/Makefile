@@ -82,6 +82,10 @@ docker-build: test ## Build docker image with the manager.
 docker-push: ## Push docker image with the manager.
 	docker push ${IMG}
 
+.PHONY: docker-buildx-push
+docker-buildx-push: ## Push docker image with the manager using buildx.
+	docker buildx build --platform linux/arm64,linux/amd64 -t ${IMG} . --push
+
 ##@ Deployment
 
 ifndef ignore-not-found
