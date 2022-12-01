@@ -192,7 +192,7 @@ func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) e
 		return fmt.Errorf("wait ssh ready failed: %v", err)
 	}
 
-	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF 
+	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF
 %s
 EOF`, clusterfile)
 	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion, sealosVersion, sealosVersion)
