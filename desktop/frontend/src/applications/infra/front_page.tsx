@@ -1,9 +1,4 @@
-import {
-  Add20Filled,
-  ArrowClockwise20Regular,
-  MoreHorizontal24Regular,
-  Navigation20Filled
-} from '@fluentui/react-icons';
+import { MoreHorizontal24Regular, Navigation20Filled } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Image from 'next/image';
@@ -12,7 +7,8 @@ import request from 'services/request';
 import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import styles from './front_page.module.scss';
-import { useScpContext, PageType } from './index';
+import { PageType, useScpContext } from './index';
+import StatusComponent from './scp_status';
 
 type InfraInfo = {
   apiVersion: string;
@@ -20,35 +16,6 @@ type InfraInfo = {
   metadata: { creationTimestamp: string; uid: string; name: string };
   spec: any;
   status: { connections: string; ssh: any; status: string };
-};
-
-type StatusComponent = {
-  infraStatus: string;
-  clusterStatus: string;
-};
-
-const StatusComponent = ({ infraStatus, clusterStatus }: StatusComponent) => {
-  let status = 'Pending';
-  const colorStatus: any = {
-    Pending: { value: 'Pending', title: '创建中' },
-    Running: { value: 'Running', title: '运行中' },
-    Start: { value: 'Start', title: '启动中' }
-  };
-
-  if (infraStatus === 'Running') {
-    status = 'Start';
-  }
-
-  if (infraStatus === 'Running' && clusterStatus === 'Running') {
-    status = 'Running';
-  }
-
-  return (
-    <div className={styles.status}>
-      <div className={styles[`${colorStatus[status].value}`]}></div>
-      <div className={styles.right}>{colorStatus[status].title}</div>
-    </div>
-  );
 };
 
 function FrontPage() {
@@ -69,7 +36,7 @@ function FrontPage() {
       return res;
     },
     {
-      refetchInterval: scpStatus === 'Pending' ? 15 * 1000 : false, //轮询时间
+      refetchInterval: scpStatus === 'Pending' ? 10 * 1000 : false, //轮询时间
       enabled: scpStatus === 'Pending' // 只有 url 为 '' 的时候需要请求
     }
   );
@@ -88,17 +55,11 @@ function FrontPage() {
       <div className="flex px-16 pr-20 mt-12 justify-items-center items-center">
         <Navigation20Filled color="#616161" />
         <span className={styles.menu}>我的集群</span>
-        <div
-          className="ml-auto pr-4 cursor-pointer"
-          onClick={() => {
-            setScpStatus('Pending');
-          }}
+        <button
+          className={clsx(styles.btn, 'ml-auto ')}
+          onClick={() => toPage(PageType.AddPage, '')}
         >
-          <ArrowClockwise20Regular />
-        </div>
-        <button className={clsx(styles.btn)} onClick={() => toPage(PageType.AddPage, '')}>
-          <Add20Filled color="#FFFFFF" />
-          <span className="pl-2"> 创建集群</span>
+          创建集群
         </button>
       </div>
       <div className={clsx(styles.pageWrapperScroll)}>

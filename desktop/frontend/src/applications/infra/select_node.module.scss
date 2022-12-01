@@ -20,14 +20,24 @@
 }
 
 .selectType {
-  min-width: 168px !important;
+  min-width: 120px !important;
   width: 168px;
   margin-right: 12px;
 }
 
+.selectTypeMin {
+  @extend .selectType;
+  width: 130px;
+}
+
 .selectTypeCount {
-  min-width: 168px !important;
+  min-width: 120px !important;
   width: 168px;
+}
+
+.selectTypeCountMin {
+  @extend .selectTypeCount;
+  width: 132px;
 }
 
 .cloudLabel {
@@ -41,13 +51,31 @@
 }
 
 .selectDiskType {
-  min-width: 80px !important;
+  min-width: 40px !important;
   width: 80px;
 }
 
+.selectDiskTypeMin {
+  @extend .selectDiskType;
+  width: 60px;
+}
+
 .diskCount {
-  min-width: 80px !important;
+  min-width: 20px !important;
   width: 80px;
   margin-right: 12px;
   margin-left: 12px;
+}
+
+.diskCountMin {
+  @extend .diskCount;
+  width: 60px;
+}
+
+.sliderCount {
+  width: 168px;
+}
+
+.sliderCountMin {
+  width: 130px;
 }
