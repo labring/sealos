@@ -16,11 +16,11 @@ func init() {
 	glog.Info("authz plugin init function called")
 }
 
-type SealosAuthz struct {
+type SealosAuthorize struct {
 	api.Authorizer
 }
 
-func (a SealosAuthz) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
+func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 	glog.Info("Authorize for req: ", ai.Name)
 	// todo replace server ip to env $(SERVER)
 
@@ -59,7 +59,7 @@ func (a SealosAuthz) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 	// if org manager have user, user can push it.
 	for _, r := range org.Spec.Manager {
 		if r == ai.Account {
-			res = append(res, "push")
+			res = append(res, "pull", "push")
 			break
 		}
 	}
@@ -68,13 +68,13 @@ func (a SealosAuthz) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 	return res, nil
 }
 
-func (a SealosAuthz) Stop() {
+func (a SealosAuthorize) Stop() {
 }
 
-func (a SealosAuthz) Name() string {
+func (a SealosAuthorize) Name() string {
 	return "authz.hub.sealos.io"
 }
 
-func NewSealosAuthz() SealosAuthz {
-	return SealosAuthz{}
+func NewSealosAuthz() SealosAuthorize {
+	return SealosAuthorize{}
 }

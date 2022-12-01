@@ -13,11 +13,11 @@ func init() {
 	glog.Info("authn plugin init function called")
 }
 
-type SealosAuthn struct {
+type SealosAuthenticate struct {
 	api.Authenticator
 }
 
-func (a SealosAuthn) Authenticate(user string, password api.PasswordString) (bool, api.Labels, error) {
+func (a SealosAuthenticate) Authenticate(user string, password api.PasswordString) (bool, api.Labels, error) {
 	glog.Info("Authenticate for user:", user)
 	// todo replace server ip to env $(SERVER)
 
@@ -42,13 +42,13 @@ func (a SealosAuthn) Authenticate(user string, password api.PasswordString) (boo
 	return true, api.Labels{}, nil
 }
 
-func (a SealosAuthn) Stop() {
+func (a SealosAuthenticate) Stop() {
 }
 
-func (a SealosAuthn) Name() string {
+func (a SealosAuthenticate) Name() string {
 	return "authn.hub.sealos.io"
 }
 
-func NewSealosAuthn() SealosAuthn {
-	return SealosAuthn{}
+func NewSealosAuthn() SealosAuthenticate {
+	return SealosAuthenticate{}
 }

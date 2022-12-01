@@ -18,9 +18,10 @@ import (
 	"fmt"
 	"os"
 
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-
 	"github.com/labring/sealos/pkg/image"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"k8s.io/client-go/tools/clientcmd"
+
 	"github.com/spf13/cobra"
 )
 
@@ -61,14 +62,14 @@ func NewLoginCmd() *cobra.Command {
 					return err
 				}
 
+				var passwordb []byte
 				// set user/password
-				if passwordb, err := fileutil.ReadAll(sealoskubeconfpath); err != nil {
+				if passwordb, err = fileutil.ReadAll(sealoskubeconfpath); err != nil {
 					return err
-				} else {
-					// username is usless
-					username = "user"
-					password = string(passwordb)
 				}
+				// username is current context kubeconfig user id
+				username, err = GetCurrentUserFromKubeConfig(sealoskubeconfpath)
+				password = string(passwordb)
 			}
 			return nil
 		},
@@ -90,4 +91,16 @@ func NewLoginCmd() *cobra.Command {
 	loginCmd.MarkFlagsRequiredTogether("username", "passwd")
 	loginCmd.MarkFlagsMutuallyExclusive("username", "kubeconfig")
 	return loginCmd
+}
+
+func GetCurrentUserFromKubeConfig(filename string) (userid string, err error) {
+	config, err := clientcmd.LoadFromFile(filename)
+	if err != nil {
+		return "", err
+	}
+	expectedCtx, exists := config.Contexts[config.CurrentContext]
+	if !exists {
+		return "", fmt.Errorf("failed to find current context %s", config.CurrentContext)
+	}
+	return expectedCtx.AuthInfo, nil
 }
