@@ -1,20 +1,21 @@
 package app_image
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
-	"k8s.io/apimachinery/pkg/api/meta"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery"
-	"k8s.io/client-go/discovery/cached/memory"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 	"math/rand"
@@ -39,6 +40,7 @@ type ImageCRDBuilder struct {
 	clustername string
 	content     *Content
 }
+
 type Content struct {
 	README         string
 	ActionTemplate map[string]string
@@ -90,7 +92,6 @@ func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	icb.clustername = clusterName
 	return manifest.MountPoint, nil
 }
-
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 	icb.content = &Content{}
 	if !file.IsExist(MountPoint + AppPath) {
@@ -156,13 +157,36 @@ func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 }
 
 func (icb *ImageCRDBuilder) AppContentApply() error {
-
-	gvk := icb.content.AppConfig.GroupVersionKind()
-	_, err := GetGVRdyClient(&gvk, DefaultNamespace)
-	if err != nil {
-		panic(fmt.Errorf("failed to get dr: %v", err))
+	var kubeconfig *string
+	if home := homedir.HomeDir(); home != "" {
+		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
 	}
-
+	flag.Parse()
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+		return err
+	}
+	dynamicClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+	gvr := schema.GroupVersionResource{Version: "v1", Resource: "Images"}
+	dyclient := dynamicClient.Resource(gvr).Namespace("default")
+	utd := unstructured.Unstructured{}
+	utd.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(icb.content.AppConfig)
+	if err != nil {
+		return err
+	}
+	if _, err := dyclient.Create(context.TODO(), &utd, metav1.CreateOptions{}); err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return errors.Wrap(err, "unable to create secret")
+		}
+		if _, err := dyclient.Update(context.TODO(), &utd, metav1.UpdateOptions{}); err != nil {
+			return errors.Wrap(err, "unable to update secret")
+		}
+	}
 	return nil
 }
 
@@ -190,7 +214,6 @@ func FileReadUtil(filePath string) ([]byte, error) {
 	}
 	filesize := fileinfo.Size()
 	buffer := make([]byte, filesize)
-
 	_, err = file.Read(buffer)
 	if err != nil {
 		fmt.Println(err)
@@ -205,53 +228,11 @@ func (icb *ImageCRDBuilder) ConfigParse(c []byte) error {
 		return err
 	}
 	icb.content.AppConfig = config
+	for k, v := range icb.content.ActionTemplate {
+		config.Spec.DetailInfo.AppActions.Actions[imagev1.ActionName(k)] = imagev1.Template(string(v))
+	}
+	for k, v := range icb.content.ActionCMD {
+		config.Spec.DetailInfo.AppActions.CMD[imagev1.ActionName(k)] = imagev1.CMD(string(v))
+	}
 	return nil
-}
-
-type Config struct {
-	Type string `yaml:"type"`
-	Url  string `yaml:"url"`
-}
-
-func GetK8sConfig() (config *rest.Config, err error) {
-	var kubeconfig *string
-	if home := homedir.HomeDir(); home != "" {
-		kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
-	} else {
-		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
-	}
-	flag.Parse()
-	config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
-func GetGVRdyClient(gvk *schema.GroupVersionKind, namespace string) (dr dynamic.ResourceInterface, err error) {
-	config, err := GetK8sConfig()
-	if err != nil {
-
-		return
-	}
-	discoveryClient, err := discovery.NewDiscoveryClientForConfig(config)
-	if err != nil {
-		return
-	}
-	mapperGVRGVK := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(discoveryClient))
-	resourceMapper, err := mapperGVRGVK.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-
-		return
-	}
-	dynamicClient, err := dynamic.NewForConfig(config)
-	if err != nil {
-		return
-	}
-	if resourceMapper.Scope.Name() == meta.RESTScopeNameNamespace {
-		dr = dynamicClient.Resource(resourceMapper.Resource).Namespace(namespace)
-	} else {
-		dr = dynamicClient.Resource(resourceMapper.Resource)
-	}
-	return
 }

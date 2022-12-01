@@ -1,15 +1,16 @@
 apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
-  name: minimalcluster
+  name: acidd-minimal-cluster1231414
 spec:
+  teamId: "acidd"
   volume:
     size: 300Mi
   numberOfInstances: 2
   users:
     zalando:  # database owner
-    - superuser
-    - createdb
+      - superuser
+      - createdb
     foo_user: []  # role for application foo
   databases:
     foo: zalando  # dbname: owner
