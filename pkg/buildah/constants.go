@@ -14,6 +14,10 @@
 
 package buildah
 
+import (
+	"github.com/containers/buildah/define"
+)
+
 const (
 	OCIArchive    string = "oci-archive"
 	DockerArchive string = "docker-archive"
@@ -23,4 +27,11 @@ var DefaultTransport = DockerArchive
 
 const (
 	DisableAutoRootless = "DISABLE_AUTO_ROOTLESS"
+)
+
+const (
+	PullIfMissing = define.PullIfMissing
+	PullAlways    = define.PullAlways
+	PullIfNewer   = define.PullIfNewer
+	PullNever     = define.PullNever
 )

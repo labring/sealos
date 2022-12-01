@@ -58,6 +58,7 @@ func (c *ClusterFile) Process() (err error) {
 			if err != nil {
 				return err
 			}
+			logger.Debug("rendered Clusterfile: %+v", string(clusterFileData))
 			return c.decode(clusterFileData)
 		}()
 	})
@@ -77,7 +78,6 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 	data := map[string]interface{}{
 		"Values": mergeValues,
 	}
-	logger.Debug("loadClusterFile body: %+v", string(body))
 	out := bytes.NewBuffer(nil)
 	tpl, isOk, err := template.TryParse(string(body))
 	if isOk {

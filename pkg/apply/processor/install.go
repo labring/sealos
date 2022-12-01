@@ -114,7 +114,7 @@ func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
-	if err := c.Buildah.Pull(buildah.DefaultPlatform(), "missing", c.NewImages...); err != nil {
+	if err := c.Buildah.Pull(buildah.DefaultPlatform(), buildah.PullIfMissing.String(), c.NewImages...); err != nil {
 		return err
 	}
 	imageTypes := sets.NewString()
@@ -137,7 +137,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if mount == nil {
 			// create
 			mount = &v2.MountImage{
-				Name:      fmt.Sprintf("%s-%s", cluster.Name, rand.Generator(8)),
+				Name:      rand.Generator(8),
 				ImageName: img,
 			}
 			cluster.Spec.Image = replaceOrInsert(cluster.Spec.Image, img)
