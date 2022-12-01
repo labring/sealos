@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     group: 'cluster.sealos.io',
     version: 'v1',
     namespace: GetUserDefaultNameSpace(kube_user.name),
-    // namespace: 'cluster-system',
     plural: 'clusters'
   };
 
