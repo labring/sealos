@@ -1,52 +1,8 @@
-$color-btn-blue: #3981f5;
+$color-btn-blue: #007fee;
 
 .detailPage {
   display: flex;
   height: 100%;
-
-  .leftInfo {
-    flex-basis: 256px;
-    background-color: #e3f2fd80;
-    padding-top: 40px;
-    padding-left: 46px;
-
-    .infraTitle {
-      width: 160px;
-      height: 34px;
-      font-size: 24px;
-      line-height: 34px;
-      font-weight: 500;
-      color: #323130;
-    }
-
-    .infraInfo {
-      color: #605e5c;
-      display: flex;
-      flex-direction: column;
-      padding-top: 20px;
-      position: relative;
-    }
-
-    .releaseBtn {
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      align-items: center;
-      background: #e5719b;
-      border-radius: 2px;
-      width: 198px;
-      height: 32px;
-      color: #ffffff;
-      position: absolute;
-      bottom: 26px;
-    }
-  }
-
-  .detailTitle {
-    color: #605e5c;
-    font-weight: 600;
-    font-size: 16px;
-  }
 
   .rightInfo {
     display: flex;
@@ -83,15 +39,6 @@ $color-btn-blue: #3981f5;
   scroll-behavior: smooth;
 }
 
-.copyssh {
-  font-size: 10px;
-  line-height: 11px;
-  text-decoration-line: underline;
-  color: $color-btn-blue;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
 .tableDetail {
   thead tr th {
     color: #605e5c;
@@ -106,23 +53,22 @@ $color-btn-blue: #3981f5;
   }
 }
 
-// .tableHead1px {
-//   border: 0.5px solid #a19f9d;
-//   height: 11px;
-//   position: relative;
-// }
-
 .commonBlueBtn {
-  background: #007fee;
+  background: $color-btn-blue;
   border-radius: 2px;
-  border: 1px solid #007fee;
+  border: 1px solid $color-btn-blue;
   color: #ffffff;
 }
 
 .changeBtn {
   width: 96px;
   height: 32px;
-  @extend .commonBlueBtn;
+  border: 1px solid $color-btn-blue;
+  border-radius: 2px;
+  color: $color-btn-blue;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .confirmBtn {
@@ -137,4 +83,100 @@ $color-btn-blue: #3981f5;
   width: 96px;
   padding: 5px 12px;
   border: 1px solid #d1d1d1;
+}
+
+.hiddenId {
+  display: none;
+  position: absolute;
+  top: 50px;
+  width: 300px;
+  height: 32px;
+  background: #ffffff;
+  border-radius: 2px;
+  font-size: 12px;
+  padding: 8px;
+}
+.scpId:hover {
+  padding-bottom: 30px;
+}
+
+.scpId:hover .hiddenId {
+  display: block;
+}
+
+.scpId:hover + .hiddenTime {
+  margin-top: 30px;
+}
+
+.infraTitle {
+  font-size: 24px;
+  line-height: 34px;
+  font-weight: 500;
+  color: #323130;
+}
+
+.hiddenName {
+  display: none;
+  background: #ffffff;
+  position: absolute;
+  top: 80px;
+  color: #323130;
+  font-size: 14px;
+  padding: 0px 20px;
+}
+
+.infraTitle:hover {
+  padding-bottom: 48px;
+}
+
+.infraTitle:hover .hiddenName {
+  display: block;
+}
+
+// Details on the left
+.leftInfo {
+  flex-basis: 256px;
+  background-color: #e3f2fd80;
+  padding-top: 40px;
+  padding-left: 46px;
+}
+
+.leftInfoMin {
+  flex-basis: 216px;
+  background-color: #e3f2fd80;
+  padding-left: 20px;
+  padding-top: 30px;
+}
+
+.infraInfo {
+  color: #605e5c;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+  position: relative;
+}
+
+.detailTitle {
+  color: #605e5c;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.releaseBtn {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  background: #e5719b;
+  border-radius: 2px;
+  width: 198px;
+  height: 32px;
+  color: #ffffff;
+  position: absolute;
+  bottom: 26px;
+}
+
+.releaseBtnMin {
+  @extend .releaseBtn;
+  width: 168px;
 }

@@ -1,16 +1,16 @@
-import { Button, Input } from '@fluentui/react-components';
-import { ArrowLeft24Regular } from '@fluentui/react-icons';
+import { InputField } from '@fluentui/react-components/unstable';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
+import Image from 'next/image';
 import { useEffect, useReducer, useRef, useState } from 'react';
 import request from 'services/request';
+import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
+import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
 import { PageType, useScpContext } from './index';
 import { generateTemplate } from './infra_share';
 import SelectNodeComponent from './select_node';
-import { v4 as uuidv4 } from 'uuid';
-import Image from 'next/image';
 
 const AddPage = () => {
   const { infraName, toPage } = useScpContext();
@@ -19,7 +19,10 @@ const AddPage = () => {
   const [image2, setImage2] = useState('labring/calico:v3.22.1');
   const [yamlTemplate, setYamlTemplate] = useState('');
   const [scpPrice, setScpPrice] = useState(0);
+  const [inputNameErr, setInputNameErr] = useState(false);
   const oldInfraForm = useRef(null as any);
+  const { currentApp, openedApps } = useAppStore();
+  const curApp = openedApps.find((item) => item.name === currentApp?.name);
   const initInfra = {
     infraName: '',
     clusterName: '',
@@ -137,30 +140,37 @@ const AddPage = () => {
         <span className=" pl-2"> {infraName ? '返回详情' : '返回列表'} </span>
       </div>
       <div className={clsx(styles.restWindow, styles.pageScroll, styles.pageWrapper)}>
-        <div className="flex justify-center space-x-12  w-full absolute box-border p-14 pt-0 ">
+        <div className="flex justify-center  w-full absolute box-border p-14 pt-0 ">
           <div>
             <div>
               <div className={styles.head}>
                 <div className={styles.dot}></div>
                 <span className={styles.info}>基础信息</span>
               </div>
-              <div className="pl-8 mt-8 ">
-                <span className={styles.cloudlabel}>集群名字 </span>
-                <Input
-                  className={styles.inputName}
+              <div className="pl-8 mt-8  flex items-center">
+                <div className={clsx(styles.cloudlabel, inputNameErr ? 'mb-6' : '')}>集群名字 </div>
+                <InputField
+                  className={clsx(
+                    curApp?.size === 'maxmin' ? styles.inputNameMin : styles.inputName
+                  )}
                   value={infraForm.infraName}
                   placeholder="请输入集群名称"
-                  onChange={(e, data) =>
-                    dispatchInfraForm({
+                  validationState={inputNameErr ? 'error' : 'success'}
+                  validationMessage={inputNameErr ? '不能输入中文名称' : undefined}
+                  onChange={(e, data) => {
+                    if (/[\u4E00-\u9FA5]/g.test(data.value)) {
+                      setInputNameErr(true);
+                    } else {
+                      setInputNameErr(false);
+                    }
+
+                    return dispatchInfraForm({
                       payload: { infraName: data.value, clusterName: data.value }
-                    })
-                  }
+                    });
+                  }}
                   disabled={infraName ? true : false}
-                ></Input>
+                />
               </div>
-              {/* <div className="px-8 mt-6">
-                <span className={styles.cloudlabel}> 可用区 </span>
-              </div> */}
             </div>
             <div className="mt-10">
               <SelectNodeComponent
@@ -191,7 +201,7 @@ const AddPage = () => {
               </button>
             </div>
           </div>
-          <div className={clsx(styles.markdown)}>
+          <div className={clsx(styles.markdown, 'ml-6')}>
             <MarkDown text={yamlTemplate}></MarkDown>
           </div>
         </div>

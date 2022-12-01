@@ -12,7 +12,6 @@ apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
   name: {{ .infraName }}
-  namespace: {{ .namespace }}
 spec:
   hosts: 
   - roles: [ master ]
@@ -21,7 +20,7 @@ spec:
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: {{.masterDisk}}
-      type: "gp3"
+      type: {{.masterDiskType}}
       name: "/dev/sda2"
   - roles: [ node ]
     count: {{ .nodeCount }}
@@ -29,7 +28,7 @@ spec:
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: {{.nodeDisk}}
-      type: "gp2"
+      type: {{.nodeDiskType}}
       name: "/dev/sda2"
 `;
 
@@ -45,15 +44,8 @@ apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
   name: {{ .clusterName }}
-  namespace: {{ .namespace }}
 spec:
   infra: {{ .infraName}}
-  ssh:
-    user: {{.userName}}
-    passwd: {{.userPassword}}
-    pk: /root/hurz_key.pem
-    pkname: hurz_key
-    port: 22
   image: 
     - {{ .image1}}
     - {{ .image2}} 

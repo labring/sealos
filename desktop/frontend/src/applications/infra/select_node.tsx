@@ -1,6 +1,7 @@
 import { Input, Slider } from '@fluentui/react-components';
 import { Dropdown, Option } from '@fluentui/react-components/unstable';
 import clsx from 'clsx';
+import useAppStore from 'stores/app';
 import { SELECT_DISKS, SELECT_NODES } from './infra_share';
 import styles from './select_node.module.scss';
 
@@ -21,6 +22,9 @@ const SelectNodeComponent = ({
   diskType,
   dispatchInfraForm
 }: SelectNodeComponent) => {
+  const { currentApp, openedApps } = useAppStore();
+  const curApp = openedApps.find((item) => item.name === currentApp?.name);
+
   const onSelectNodeType = (label: string | undefined) => {
     let item = SELECT_NODES.find((item) => item.label === label);
     if (type === 'Master') {
@@ -87,7 +91,7 @@ const SelectNodeComponent = ({
       <div className="pl-8 mt-6">
         <span className={styles.cloudLabel}>机器</span>
         <Dropdown
-          className={styles.selectType}
+          className={clsx(curApp?.size === 'maxmin' ? styles.selectTypeMin : styles.selectType)}
           placeholder="请选择类型"
           selectedOptions={onDefaultNodeType(nodeType)}
           onOptionSelect={(e, data) => onSelectNodeType(data.optionValue)}
@@ -97,7 +101,9 @@ const SelectNodeComponent = ({
           ))}
         </Dropdown>
         <Input
-          className={styles.selectTypeCount}
+          className={clsx(
+            curApp?.size === 'maxmin' ? styles.selectTypeCountMin : styles.selectTypeCount
+          )}
           value={nodeCount}
           contentAfter={'台'}
           onChange={(e, data) => setNodeCountValue(data.value)}
@@ -106,20 +112,22 @@ const SelectNodeComponent = ({
       <div className="pl-8 mt-6 flex items-center">
         <span className={styles.cloudLabel}>硬盘</span>
         <Slider
-          className={clsx(styles.selectTypeCount)}
+          className={clsx(curApp?.size === 'maxmin' ? styles.sliderCountMin : styles.sliderCount)}
           min={0}
           max={128}
           value={nodeDisk}
           onChange={(e, data) => setNodeDiskValue(data.value)}
         />
         <Input
-          className={styles.diskCount}
+          className={clsx(curApp?.size === 'maxmin' ? styles.diskCountMin : styles.diskCount)}
           value={nodeDisk.toString()}
           contentAfter={'G'}
           onChange={(e, data) => onChangeDiskValue(data)}
         ></Input>
         <Dropdown
-          className={clsx(styles.selectDiskType)}
+          className={clsx(
+            curApp?.size === 'maxmin' ? styles.selectDiskTypeMin : styles.selectDiskType
+          )}
           placeholder="请选择类型"
           selectedOptions={onDefaultDiskType(diskType)}
           onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}

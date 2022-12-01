@@ -221,7 +221,7 @@ const installedApps: TApp[] = [
     ],
     size: 'maximize',
     menu: {
-      nameColor: 'text-blue-400',
+      nameColor: '#0073D7',
       helpDropDown: false,
       helpDocs: true
     }
