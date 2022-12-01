@@ -1,3 +1,17 @@
+// Copyright © 2022 buildah.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://github.com/containers/buildah/blob/main/LICENSE
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
@@ -14,6 +28,8 @@ import (
 	"github.com/containers/storage"
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (
@@ -28,6 +44,17 @@ func flagChanged(c *cobra.Command, name string) bool {
 		return true
 	}
 	return false
+}
+
+func bailOnError(err error, format string, a ...interface{}) { // nolint: golint,goprintffuncname
+	if err != nil {
+		if format != "" {
+			logger.Error("%s: %v", fmt.Sprintf(format, a...), err)
+		} else {
+			logger.Error("%v", err)
+		}
+		os.Exit(1)
+	}
 }
 
 func getStore(c *cobra.Command) (storage.Store, error) {
@@ -112,7 +139,7 @@ func getStore(c *cobra.Command) (storage.Store, error) {
 
 // setXDGRuntimeDir sets XDG_RUNTIME_DIR when if it is unset under rootless
 func setXDGRuntimeDir() error {
-	if unshare.IsRootless() && os.Getenv("XDG_RUNTIME_DIR") == "" {
+	if IsRootless() && os.Getenv("XDG_RUNTIME_DIR") == "" {
 		runtimeDir, err := storage.GetRootlessRuntimeDir(unshare.GetRootlessUID())
 		if err != nil {
 			return err

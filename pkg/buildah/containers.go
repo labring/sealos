@@ -1,3 +1,17 @@
+// Copyright © 2022 buildah.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://github.com/containers/buildah/blob/main/LICENSE
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
@@ -23,7 +37,7 @@ var containersHeader = map[string]string{
 	"ImageName":     "IMAGE NAME",
 }
 
-type JsonContainer struct {
+type JSONContainer struct {
 	ID            string `json:"id"`
 	Builder       bool   `json:"builder"`
 	ImageID       string `json:"imageid"`
@@ -141,7 +155,7 @@ func containersCmd(c *cobra.Command, args []string, iopts *containersResults) er
 	return outputContainers(store, opts, params)
 }
 
-func readContainers(store storage.Store, opts containerOptions, params *containerFilterParams) ([]containerOutputParams, []JsonContainer, error) {
+func readContainers(store storage.Store, opts containerOptions, params *containerFilterParams) ([]containerOutputParams, []JSONContainer, error) {
 	seenImages := make(map[string]string)
 	imageNameForID := func(id string) string {
 		if id == "" {
@@ -164,7 +178,7 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 	}
 	var (
 		containerOutput []containerOutputParams
-		JSONContainers  []JsonContainer
+		JSONContainers  []JSONContainer
 	)
 	if !opts.all {
 		// only output containers created by buildah
@@ -174,7 +188,7 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 				continue
 			}
 			if opts.json {
-				JSONContainers = append(JSONContainers, JsonContainer{ID: builder.ContainerID,
+				JSONContainers = append(JSONContainers, JSONContainer{ID: builder.ContainerID,
 					Builder:       true,
 					ImageID:       builder.FromImageID,
 					ImageName:     image,
@@ -214,7 +228,7 @@ func readContainers(store storage.Store, opts containerOptions, params *containe
 				continue
 			}
 			if opts.json {
-				JSONContainers = append(JSONContainers, JsonContainer{ID: container.ID,
+				JSONContainers = append(JSONContainers, JSONContainer{ID: container.ID,
 					Builder:       ours,
 					ImageID:       container.ImageID,
 					ImageName:     imageNameForID(container.ImageID),

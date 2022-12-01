@@ -1,3 +1,17 @@
+// Copyright © 2022 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
@@ -26,11 +40,11 @@ var (
 
 func init() {
 	var err error
-	DefaultConfigFile, err = types.DefaultConfigFile(unshare.IsRootless())
+	DefaultConfigFile, err = types.DefaultConfigFile(IsRootless())
 	if err != nil {
 		logger.Fatal(err)
 	}
-	if unshare.IsRootless() {
+	if IsRootless() {
 		configHome, err := homedir.GetConfigHome()
 		if err != nil {
 			logger.Fatal(err)
@@ -64,6 +78,11 @@ prefix = "docker.io/labring"
 location = "docker.io/labring"
 `
 
+const defaultStorageConf = `[storage]
+driver = "overlay"
+runroot = "/run/containers/storage"
+graphroot = "/var/lib/containers/storage"`
+
 func SetupContainerPolicy() error {
 	return writeFileIfNotExists(DefaultSignaturePolicyPath, []byte(defaultPolicy))
 }
@@ -72,16 +91,31 @@ func SetupRegistriesFile() error {
 	return writeFileIfNotExists(DefaultRegistriesFilePath, []byte(defaultRegistries))
 }
 
+func SetupStorageConfigFile() error {
+	if IsRootless() {
+		return nil
+	}
+	return writeFileIfNotExists(DefaultConfigFile, []byte(defaultStorageConf))
+}
+
 func writeFileIfNotExists(filename string, data []byte) error {
 	_, err := os.Stat(filename)
 	if os.IsNotExist(err) {
+		logger.Debug("create new buildah config %s cause it's not exist", filename)
 		err = file.WriteFile(filename, data)
 	}
 	return err
 }
 
+func IsRootless() bool {
+	if v, ok := os.LookupEnv(DisableAutoRootless); ok && strings.ToLower(v) == "true" {
+		return false
+	}
+	return unshare.IsRootless()
+}
+
 func MaybeReexecUsingUserNamespace() error {
-	if !unshare.IsRootless() || strings.ToLower(os.Getenv("DISABLE_AUTO_ROOTLESS")) == "true" {
+	if !IsRootless() {
 		return nil
 	}
 	if _, present := os.LookupEnv("BUILDAH_ISOLATION"); !present {
@@ -101,6 +135,7 @@ var defaultSetters = []Setter{
 	MaybeReexecUsingUserNamespace,
 	SetupContainerPolicy,
 	SetupRegistriesFile,
+	SetupStorageConfigFile,
 }
 
 func TrySetupWithDefaults(setters ...Setter) error {

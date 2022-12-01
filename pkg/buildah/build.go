@@ -1,3 +1,17 @@
+// Copyright © 2022 buildah.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://github.com/containers/buildah/blob/main/LICENSE
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
@@ -59,13 +73,11 @@ func newBuildCommand() *cobra.Command {
 
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
 	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
-	if err != nil {
-		logger.Fatal("failed to setup From and Build flags: %v", err)
-	}
+	bailOnError(err, "failed to setup From and Build flags")
+
 	// set as default, otherwise parse.PlatformsFromOptions will get empty list
-	if err := fromAndBudFlags.Set("platform", parse.DefaultPlatform()); err != nil {
-		logger.Fatal(err)
-	}
+	err = fromAndBudFlags.Set("platform", parse.DefaultPlatform())
+	bailOnError(err, "failed to set default platform flag")
 
 	sopts.RegisterFlags(flags)
 	flags.AddFlagSet(&buildFlags)

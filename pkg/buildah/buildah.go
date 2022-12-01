@@ -107,6 +107,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
+	postRunHooks      []func() error
 )
 
 func markFlagsHidden(fs *pflag.FlagSet, names ...string) error {
@@ -144,12 +145,18 @@ func RegisterRootCommand(cmd *cobra.Command) {
 	os.Setenv("TMPDIR", parse.GetTempDir())
 	rootCmd = cmd
 	cmd.SilenceUsage = true
-	if err := RegisterGlobalFlags(cmd.PersistentFlags()); err != nil {
-		logger.Fatal(err)
-	}
+	err := RegisterGlobalFlags(cmd.PersistentFlags())
+	bailOnError(err, "failed to register global flags")
 	wrapPrePersistentRun(cmd)
 	wrapPostPersistentRun(cmd)
 	cmd.AddCommand(subCommands()...)
+}
+
+func RegisterPostRun(fn func() error) {
+	if rootCmd == nil {
+		logger.Fatal("Must not register post run function before RegisterRootCommand")
+	}
+	postRunHooks = append(postRunHooks, fn)
 }
 
 func wrapPrePersistentRun(cmd *cobra.Command) {
@@ -250,11 +257,18 @@ func after(cmd *cobra.Command) error {
 			logger.Fatal("could not write memory profile %s: %v", globalFlagResults.MemoryProfile, err)
 		}
 	}
+	for i := range postRunHooks {
+		if err := postRunHooks[i](); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func init() {
-	defaultSetters = append(defaultSetters, maybeSetupLogrusLogger, maybeSetupProfiler)
+	original := defaultSetters
+	defaultSetters = []Setter{maybeSetupLogrusLogger, maybeSetupProfiler}
+	defaultSetters = append(defaultSetters, original...)
 }
 
 func maybeSetupLogrusLogger() (err error) {
@@ -270,10 +284,11 @@ func maybeSetupLogrusLogger() (err error) {
 
 func maybeSetupProfiler() (err error) {
 	if globalFlagResults.CPUProfile != "" {
-		globalFlagResults.cpuProfileFile, err = os.Create(globalFlagResults.CPUProfile)
+		cpuProfileFile, err := os.Create(globalFlagResults.CPUProfile)
 		if err != nil {
 			return fmt.Errorf("could not create CPU profile %s: %v", globalFlagResults.CPUProfile, err)
 		}
+		globalFlagResults.cpuProfileFile = cpuProfileFile
 		if err = pprof.StartCPUProfile(globalFlagResults.cpuProfileFile); err != nil {
 			return fmt.Errorf("error starting CPU profiling: %v", err)
 		}

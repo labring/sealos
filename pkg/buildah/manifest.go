@@ -1,3 +1,17 @@
+// Copyright © 2022 buildah.
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://github.com/containers/buildah/blob/main/LICENSE
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
@@ -22,11 +36,12 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/hashicorp/go-multierror"
-	"github.com/labring/sealos/pkg/utils/logger"
 	digest "github.com/opencontainers/go-digest"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type manifestCreateOpts struct {
@@ -136,7 +151,8 @@ func newManifestCommand() *cobra.Command {
 		Args: cobra.MinimumNArgs(1),
 	}
 	manifestCreateCommand.SetUsageTemplate(UsageTemplate())
-	manifestCreateOpts.RegisterFlags(manifestCreateCommand.Flags())
+	err := manifestCreateOpts.RegisterFlags(manifestCreateCommand.Flags())
+	bailOnError(err, "failed to register manifest create option flags")
 	manifestCommand.AddCommand(manifestCreateCommand)
 
 	manifestAddCommand := &cobra.Command{
@@ -151,7 +167,8 @@ func newManifestCommand() *cobra.Command {
 		Args: cobra.MinimumNArgs(2),
 	}
 	manifestAddCommand.SetUsageTemplate(UsageTemplate())
-	manifestCreateOpts.RegisterFlags(manifestAddCommand.Flags())
+	err = manifestAddOpts.RegisterFlags(manifestAddCommand.Flags())
+	bailOnError(err, "failed to register manifest add option flags")
 	manifestCommand.AddCommand(manifestAddCommand)
 
 	manifestRemoveCommand := &cobra.Command{
@@ -191,7 +208,8 @@ func newManifestCommand() *cobra.Command {
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestAnnotateCommand.SetUsageTemplate(UsageTemplate())
-	manifestAnnotateOpts.RegisterFlags(manifestAnnotateCommand.Flags())
+	err = manifestAnnotateOpts.RegisterFlags(manifestAnnotateCommand.Flags())
+	bailOnError(err, "failed to register manifest annotate option flags")
 	manifestCommand.AddCommand(manifestAnnotateCommand)
 
 	manifestInspectCommand := &cobra.Command{
@@ -233,7 +251,8 @@ func newManifestCommand() *cobra.Command {
 	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	_ = markFlagsHidden(fs, "signature-policy", "insecure")
+	err = markFlagsHidden(fs, "signature-policy", "insecure")
+	bailOnError(err, "")
 	manifestCommand.AddCommand(manifestPushCommand)
 
 	manifestRmCommand := &cobra.Command{
@@ -275,9 +294,8 @@ func manifestExistsCmd(c *cobra.Command, args []string) error {
 	if err != nil {
 		if errors.Is(err, storage.ErrImageUnknown) {
 			return err
-		} else {
-			return err
 		}
+		return err
 	}
 	return nil
 }
