@@ -35,8 +35,7 @@ func newResetCmd() *cobra.Command {
 
 	var resetCmd = &cobra.Command{
 		Use:     "reset",
-		Short:   "simplest way to reset your cluster",
-		Long:    `sealos reset --name [arg]`,
+		Short:   "Reset all, everything in the cluster",
 		Example: exampleReset,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

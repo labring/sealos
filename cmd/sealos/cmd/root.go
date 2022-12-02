@@ -34,7 +34,7 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "sealos",
-	Short: "simplest tool for installing kubernetes tools.",
+	Short: "sealos is a Kubernetes distribution, a unified OS to manage cloud native applications.",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },

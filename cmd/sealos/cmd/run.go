@@ -64,7 +64,7 @@ func newRunCmd() *cobra.Command {
 	var runSingle bool
 	var runCmd = &cobra.Command{
 		Use:     "run",
-		Short:   "simplest way to run your kubernetes HA cluster",
+		Short:   "Run cloud native applications with ease, with or without a existing cluster",
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {

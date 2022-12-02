@@ -140,7 +140,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 				Name:      rand.Generator(8),
 				ImageName: img,
 			}
-			cluster.Spec.Image = replaceOrInsert(cluster.Spec.Image, img)
+			cluster.Spec.Image = merge(cluster.Spec.Image, img)
 		} else if !ForceOverride {
 			continue
 		} else {
@@ -162,7 +162,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	return nil
 }
 
-func replaceOrInsert(ss []string, s string) []string {
+func merge(ss []string, s string) []string {
 	var ret []string
 	for i := range ss {
 		if ss[i] != s {
