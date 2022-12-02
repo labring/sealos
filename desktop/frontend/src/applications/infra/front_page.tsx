@@ -89,7 +89,7 @@ function FrontPage() {
                     <div className="text-gray-500 text-xl pt-2 space-x-6">
                       <span>ID: {item?.metadata?.uid ?? '------'} </span>
                       <span>
-                        {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm')}
+                        {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm:ss')}
                       </span>
                     </div>
                   </div>
