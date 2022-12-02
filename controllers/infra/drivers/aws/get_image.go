@@ -47,5 +47,8 @@ func (d Driver) getImageRootDeviceNameByID(amiId string) (rootDeviceName string,
 	if len(result.Images) == 0 {
 		return "", fmt.Errorf("not find this image: %s", amiId)
 	}
+	if *result.Images[0].RootDeviceName == "" {
+		return "", fmt.Errorf("this image: %s doesn't has a valid root device name", amiId)
+	}
 	return *result.Images[0].RootDeviceName, nil
 }
