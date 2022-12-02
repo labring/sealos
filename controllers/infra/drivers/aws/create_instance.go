@@ -38,8 +38,6 @@ import (
 
 var mutex sync.Mutex
 
-// system disk name must be /dev/xvda
-var rootDeviceName = "/dev/xvda"
 var rootVolumeSize = int32(40)
 
 var userData = `#!/bin/bash
@@ -152,7 +150,7 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 }
 
 // set blockDeviceMappings from hosts
-func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts) []types.BlockDeviceMapping {
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) []types.BlockDeviceMapping {
 	var blockDeviceMappings []types.BlockDeviceMapping
 	// add system disk if not exists
 	if len(hosts.Disks) == 0 || hosts.Disks[0].Name != rootDeviceName {
@@ -193,11 +191,17 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 	)
 	keyName := infra.Spec.SSH.PkName
-	//todo use ami to search root device name
+	// todo use ami to search root device name
+
 	// encode userdata to base64
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
-	// set other dataDisks, and read name and size from hosts
-	dataDisks := d.GetBlockDeviceMappings(hosts)
+	// set bdms, and read name and size from hosts
+
+	rootDeviceName, err := d.getImageRootDeviceNameById(hosts.Image)
+	if err != nil {
+		return err
+	}
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -215,7 +219,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 		KeyName:             &keyName,
 		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
-		BlockDeviceMappings: dataDisks,
+		BlockDeviceMappings: bdms,
 		UserData:            &userData,
 	}
 
