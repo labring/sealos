@@ -1,0 +1,9 @@
+server:
+  addr: ":5001"
+  net: "tcp"
+  path_prefix: ""
+  certificate: "/server.crt"
+  key: "/server.key"
+token:
+  issuer: "registry-token-issuer"  # Must match issuer in the Registry config.
+  expiration: 3600

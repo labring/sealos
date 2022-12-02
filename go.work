@@ -10,6 +10,7 @@ use (
 	./controllers/user
 	./controllers/imagehub
 	./service/auth
+	./service/hub
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare

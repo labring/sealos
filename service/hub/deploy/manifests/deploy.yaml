@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: hub-auth
+    control-plane: service-manager
+  name: hub-auth-system
+---
+apiVersion: v1
+data:
+  config.yml: |
+    server:
+        addr: ":5001"
+        net: "tcp"
+        path_prefix: ""
+        certificate: "/certs/server.crt"
+        key: "/certs/server.key"
+    token:
+      issuer: "registry-token-issuer"
+      expiration: 3600
+kind: ConfigMap
+metadata:
+  labels:
+    app: hub-auth
+  name: hub-auth-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hub-auth-certs
+type: kubernetes.io/tls
+data:
+  tls.crt: |
+    MIIDrTCCApWgAwIBAgIUHZ/22WXDrrSFvU/2EK4eEAhvFoAwDQYJKoZIhvcNAQELBQAwZjELMAkGA1UEBhMCQ04xETAPBgNVBAgMCFpoZWppYW5nMREwDwYDVQQHDAhIYW5nemhvdTEPMA0GA1UECgwGU2VhbG9zMQ8wDQYDVQQLDAZTZWFsb3MxDzANBgNVBAMMBlNlYWxvczAeFw0yMjExMTcxNDQ0NDVaFw0zMjExMTQxNDQ0NDVaMGYxCzAJBgNVBAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA8GA1UEBwwISGFuZ3pob3UxDzANBgNVBAoMBlNlYWxvczEPMA0GA1UECwwGU2VhbG9zMQ8wDQYDVQQDDAZTZWFsb3MwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDjScq6y0dJPWuEoZZy5rxqZnTmZ7Td/XVnz4od4dBZTIp2shvHVCFYQT6G6LeAosaYYAN8LK6POwDhhI77uIAZ314OIiwxqbahVlfj0A9Girjx7voQbEMbj5Xf9qn2rpF+E3mJ0RHd4vR7Kz6kKvpTAeIhGbfhPHKtJR/LZx7MZItxNNnjCHzIuh3X7XPSZBj6UBDW/PuK66cRmeRm/79tgyIVtg4AwU2C6xgR4LslAjTtUfArfJLPksbOdD7j7sxBTAlVVCNwEWDJwb47uu2cqYTX7R8LIDsFi4m3Ebu9PkvEImTdczM2JBYg2T3/ew2Yi164pc/ZpNupP3vbxPmHAgMBAAGjUzBRMB0GA1UdDgQWBBQ27v66CeOVvagV078H2hsD4ICW3jAfBgNVHSMEGDAWgBQ27v66CeOVvagV078H2hsD4ICW3jAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQCNQAxV0bn6ib6YMGKdva7j9fanTqLX2YMeX8XRTBONqqukCcMqXDO/L086osF3/uvgMZeizzm4fymOZrQe60Zk1jllqJXo74xUrdlebTBP0CSK+pL+oX2YGS7hWeBUVEsmnjdz0abrmZ+NG52wRhdQJ7woOXOdgntA1NkBCsT0ndRmIUEP0u66j4de0Hovy7DGs6ULWNUtnxdRQG8aWhXY84Xkfk4l4xfJEnZsXF92fD6ceGQMBbUH9LYUbUYlSP6ZtRnXv9XwmX5/iArhEreeS9PEgw5vbLx+KDhiy32Pb1NKPebyH3mabnic2gZc/eRzU7CPii9XmUnP4SBbyGZI
+  tls.key: |
+    MIIEpAIBAAKCAQEA40nKustHST1rhKGWcua8amZ05me03f11Z8+KHeHQWUyKdrIbx1QhWEE+hui3gKLGmGADfCyujzsA4YSO+7iAGd9eDiIsMam2oVZX49APRoq48e76EGxDG4+V3/ap9q6RfhN5idER3eL0eys+pCr6UwHiIRm34TxyrSUfy2cezGSLcTTZ4wh8yLod1+1z0mQY+lAQ1vz7iuunEZnkZv+/bYMiFbYOAMFNgusYEeC7JQI07VHwK3ySz5LGznQ+4+7MQUwJVVQjcBFgycG+O7rtnKmE1+0fCyA7BYuJtxG7vT5LxCJk3XMzNiQWINk9/3sNmIteuKXP2aTbqT9728T5hwIDAQABAoIBAGr+esvSE527pxiJhKxUSBACaTdpTHBP92vF/Cuy+ISBDpFvqLn9tbC5DfkuJewNNFXYpOtYkVflm7WN1E1U/iCv0LPwjENYtBtg7QDWGcrIVOW27Mq8XB7mSdRjZoE0jlL+UfF5lOKSCyrMIbHgdXSL52pTlAcYkJdHaZ8zzQDD1KsIzrZeuRAdPXaRrT3tX15HHqAx1AXMcvTF3QFz8Jnnc9yJ9qwCZ/0tstLNn64TMS/OMQPNylXNkwXvOR9iA47ClsPNLX9wMLuBtt0Yx9z31kNSrwfeywvltrWrz0X/mr7jMXXoJlz4UoZxKNsi+HBA95Aljb+6GaPR0TDh5tkCgYEA/WUpP5NxgpdW6Z7cocU8G4yJZnjesD9EceTsHLj0vfTn/C+o/mb7gKxAoXRsgrFMhZEHOxAIKhZoJkHPG492ZNfhXTRrYo3IEKhRMEQh0JGQHy0oXn5FgpI8CyG739QfxB2vG+NhFVL67ZdHJM+J+yPR5l2nF90kTr9rJIU/8KsCgYEA5Z/tary+4wjh+ap23KjSFC9Ht0sSHoXb/jUC73Uk+DY/NW62HQCIpw+5o+jNzzhMJkdHPYrKN42UARVgafciRZD65ygrnadufqSko0DDmWpDN4VWQxSkufi12DkO0hzCJqSiMuMJ9SbXaUFKNfZMGqcIFh+Wyaq8RIoTXS6lspUCgYEAwg2PqjVzL0xQ7faQBn8yifJ1YvlbqOO6ufJTc6edHkAIzNN++tzI7IB9umeblfbLoFoxjGS5q+me9vVc80FJrO66kxNKzZ3Awij0jB8ROlXPZmDB0qOm/diZjPjXlRExBpKpAJWASsFSk1NP03vwslh7LY05Iohjfr8PAVfeYKMCgYBGo5FE8bWDYFssE/2m2iRuYzEbuPNlAmbv59z0T0RFO2LsjBdoCp7/Tb4dJ2QQ6E+8wtaunwCgYGR0hN/5GTao0fXtoJTyVeyO9xVSx3ykuGTfMpyb3EDkmRdP4hWmG4S6oJDpOKD6kq1XyucKfK9iz5mUPLmFZomuSA+27b+5lQKBgQCoBrSAPZcXb17BkpnXIFSQmpuswZTpTOf6ylRsbTpWPRg34KeFOz+dYKlb/Svb/jhkIjSgD/smDCklOs0UxXyWq5NzJuUKuapTUXR5ZwISxtgV8S2CjTrBGDwQbKZbvcF8Au94stP3gAux+qHVehX/nuOENo4y3zTNbboQJhDpdA==
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-auth
+  labels:
+    app: hub-auth
+spec:
+  selector:
+    matchLabels:
+      app: hub-auth
+  replicas: 3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hub-auth
+    spec:
+      volumes:
+        - name: config-vol
+          configMap:
+            name: hub-auth-config
+        - name: cert-vol
+          secret:
+            secretName: hub-auth-certs
+            items:
+              - key: tls.crt
+                path: server.crt
+              - key: tls.key
+                path: server.key
+      containers:
+        - name: hub-auth-server
+          image: labring/sealos-hub-auth:dev
+          ports:
+            - containerPort: 5001
+          args:
+          - /config/config.yml
+          command:
+            - /manager
+          securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsNonRoot: true
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config-vol
+              mountPath: /config
+            - name: cert-vol
+              mountPath: /certs
+              readOnly: true
+---
