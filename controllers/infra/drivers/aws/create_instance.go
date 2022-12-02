@@ -197,7 +197,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
 	// set bdms, and read name and size from hosts
 
-	rootDeviceName, err := d.getImageRootDeviceNameById(hosts.Image)
+	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
 	if err != nil {
 		return err
 	}

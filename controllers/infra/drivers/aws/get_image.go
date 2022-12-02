@@ -2,8 +2,8 @@ package aws
 
 import (
 	"context"
-	"errors"
 	"fmt"
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 )
 
@@ -30,8 +30,8 @@ func GetImages(c context.Context, api EC2DescribeAMIAPI, input *ec2.DescribeImag
 	return api.DescribeImages(c, input)
 }
 
-// getImageRootDeviceNameById get images root device name from image api
-func (d Driver) getImageRootDeviceNameById(amiId string) (rootDeviceName string, err error) {
+// getImageRootDeviceNameByID get images root device name from image api
+func (d Driver) getImageRootDeviceNameByID(amiId string) (rootDeviceName string, err error) {
 
 	client := d.Client
 	input := &ec2.DescribeImagesInput{
@@ -45,7 +45,7 @@ func (d Driver) getImageRootDeviceNameById(amiId string) (rootDeviceName string,
 		return "", err
 	}
 	if len(result.Images) == 0 {
-		return "", errors.New(fmt.Sprintf("not find this image: %s", amiId))
+		return "", fmt.Errorf("not find this image: %s", amiId)
 	}
 	return *result.Images[0].RootDeviceName, nil
 }
