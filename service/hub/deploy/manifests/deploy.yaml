@@ -1,0 +1,63 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: hub-auth
+    control-plane: service-manager
+  name: hub-auth-system
+---
+apiVersion: v1
+data:
+  config.yml: |
+    server:
+        addr: ":5001"
+        net: "tcp"
+        path_prefix: ""
+        certificate: "/server.crt"
+        key: "/server.key"
+    token:
+      issuer: "registry-token-issuer"
+      expiration: 3600
+kind: ConfigMap
+metadata:
+  labels:
+    app: hub-auth
+  name: hub-auth-config
+  namespace: hub-auth-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-auth
+  labels:
+    app: hub-auth
+spec:
+  selector:
+    matchLabels:
+      app: hub-auth
+  replicas: 3
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hub-auth
+    spec:
+      containers:
+        - name:
+          image: labring/sealos-hub-auth:dev
+          ports:
+            - containerPort: 5001
+        - volumeMounts:
+          - mountPath: /config.yml
+            name: service-config
+            subPath: auth.yaml
+      volumes:
+        - name: config-vol
+          configMap:
+            name: hub-auth-config
+            namespace: hub-auth-system
+            items:
+              - key: log_level
+                path: log_level
+---

@@ -1,5 +1,5 @@
 server:
-  addr: ":35001"
+  addr: ":5001"
   net: "tcp"
   path_prefix: ""
   certificate: "/server.crt"

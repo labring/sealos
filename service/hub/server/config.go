@@ -90,6 +90,10 @@ func LoadConfig(fileName string) (*Config, error) {
 	if err = yaml.Unmarshal(contents, c); err != nil {
 		return nil, fmt.Errorf("could not parse config: %s", err)
 	}
+	// set default ListenAddress
+	if c.Server.ListenAddress == "" {
+		c.Server.ListenAddress = ":5001"
+	}
 	if err = validate(c); err != nil {
 		return nil, fmt.Errorf("invalid config: %s", err)
 	}
