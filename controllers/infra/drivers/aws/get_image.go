@@ -30,7 +30,7 @@ func GetImages(c context.Context, api EC2DescribeAMIAPI, input *ec2.DescribeImag
 	return api.DescribeImages(c, input)
 }
 
-// getInstances get all instances for an infra
+// getImageRootDeviceNameById get images root device name from image api
 func (d Driver) getImageRootDeviceNameById(amiId string) (rootDeviceName string, err error) {
 
 	client := d.Client
