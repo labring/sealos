@@ -31,12 +31,12 @@ func GetImages(c context.Context, api EC2DescribeAMIAPI, input *ec2.DescribeImag
 }
 
 // getImageRootDeviceNameByID get images root device name from image api
-func (d Driver) getImageRootDeviceNameByID(amiId string) (rootDeviceName string, err error) {
+func (d Driver) getImageRootDeviceNameByID(amiID string) (rootDeviceName string, err error) {
 
 	client := d.Client
 	input := &ec2.DescribeImagesInput{
 		ImageIds: []string{
-			amiId,
+			amiID,
 		},
 	}
 
@@ -45,10 +45,10 @@ func (d Driver) getImageRootDeviceNameByID(amiId string) (rootDeviceName string,
 		return "", err
 	}
 	if len(result.Images) == 0 {
-		return "", fmt.Errorf("not find this image: %s", amiId)
+		return "", fmt.Errorf("not find this image: %s", amiID)
 	}
 	if *result.Images[0].RootDeviceName == "" {
-		return "", fmt.Errorf("this image: %s doesn't has a valid root device name", amiId)
+		return "", fmt.Errorf("this image: %s doesn't has a valid root device name", amiID)
 	}
 	return *result.Images[0].RootDeviceName, nil
 }
