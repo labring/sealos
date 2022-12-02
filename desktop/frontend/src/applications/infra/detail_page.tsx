@@ -105,7 +105,7 @@ function DetailPage() {
           </div>
           <span className={clsx(styles.hiddenTime, 'mt-4')}>
             <SvgIcon src="/images/infraicon/scp_clock.svg" />
-            {formatTime(scpInfo?.data?.metadata?.creationTimestamp, 'YYYY/MM/DD mm:ss')}
+            {formatTime(scpInfo?.data?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm:ss')}
           </span>
           <span className="mt-4">
             <SvgIcon src="/images/infraicon/scp_image.svg" />
