@@ -314,6 +314,7 @@ github.com/kulti/thelper v0.4.0 h1:2Nx7XbdbE/BYZeoip2mURKUdtHQRuy6Ug+wR7K9ywNM=
 github.com/kunwardeep/paralleltest v1.0.3 h1:UdKIkImEAXjR1chUWLn+PNXqWUGs//7tzMeWuP7NhmI=
 github.com/kylelemons/godebug v1.1.0 h1:RPNrshWIDI6G2gRW9EHilWtl7Z6Sb1BR0xunSBf0SNc=
 github.com/kyoh86/exportloopref v0.1.8 h1:5Ry/at+eFdkX9Vsdw3qU4YkvGtzuVfzT4X7S77LoN/M=
+github.com/labring/endpoints-operator/library v0.0.0-20221201063058-fa2d5a457d1d/go.mod h1:yYszaNC8F3plDtz/NfQpwP3Wil9YXsAId9j94t75iDk=
 github.com/labring/sealos/controllers/user v0.0.0-20220927023209-6b59e6e8ad65/go.mod h1:yIFX+s1/JrG+5rKGIz8JQ3RJtqeHdhnsXNrX7xWOEeg=
 github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 h1:SOEGU9fKiNWd/HOJuq6+3iTQz8KNCLtVX6idSoTLdUw=
 github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 h1:P6pPBnrTSX3DEVR4fDembhRWSsG5rVo6hYhAB/ADZrk=
