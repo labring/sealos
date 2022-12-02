@@ -18,11 +18,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/constants"
+	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/version"
-
-	"github.com/spf13/cobra"
 )
 
 var shortPrint bool
@@ -52,8 +50,4 @@ func newVersionCmd() *cobra.Command {
 
 func init() {
 	rootCmd.AddCommand(newVersionCmd())
-}
-
-func getContact() string {
-	return fmt.Sprintf(constants.Contact, version.Get().String())
 }

@@ -66,16 +66,16 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 		src := mount
 		eg.Go(func() error {
 			if !file.IsExist(src.MountPoint) {
-				logger.Debug("Image %s not exist,render env continue", src.ImageName)
+				logger.Debug("Image %s not exist, render env continue", src.ImageName)
 				return nil
 			}
 			err := renderENV(src.MountPoint, ipList, envProcessor)
 			if err != nil {
-				return errors.Wrap(err, "render env to rootfs failed")
+				return errors.Wrap(err, "failed to render env")
 			}
 			dirs, err := file.StatDir(src.MountPoint, true)
 			if err != nil {
-				return errors.Wrap(err, "get rootfs files failed")
+				return errors.Wrap(err, "failed to stat files")
 			}
 			if len(dirs) != 0 {
 				_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
