@@ -49,7 +49,7 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
-	downloadSealosCmd   = `sealos version || wget  https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
+	downloadSealosCmd   = `sealos version || wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -87,7 +87,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	key := client.ObjectKey{Namespace: infra.Namespace, Name: infra.Name}
 	if err := r.Get(ctx, key, infra); err != nil {
 		r.recorder.Event(cluster, core.EventTypeWarning, "GetInfra", err.Error())
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
+	}
+
+	if infra.Status.Status != infrav1.Running.String() {
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
 	clusterfile, err := generateClusterfile(infra, cluster)
@@ -95,7 +99,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.recorder.Event(cluster, core.EventTypeWarning, "GenerateClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
-	fmt.Println(clusterfile)
 	if err := applyClusterfile(infra, clusterfile, getSealosVersion(cluster)); err != nil {
 		r.recorder.Event(cluster, core.EventTypeWarning, "ApplyClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
@@ -189,7 +192,9 @@ func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) e
 		return fmt.Errorf("wait ssh ready failed: %v", err)
 	}
 
-	createClusterfile := fmt.Sprintf("echo '%s' > /root/Clusterfile", clusterfile)
+	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF
+%s
+EOF`, clusterfile)
 	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion, sealosVersion, sealosVersion)
 
 	cmds := []string{createClusterfile, downloadSealos, applyClusterfileCmd}

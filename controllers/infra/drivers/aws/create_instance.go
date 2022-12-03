@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/google/uuid"
 
 	"github.com/labring/sealos/controllers/infra/common"
@@ -35,6 +37,8 @@ import (
 )
 
 var mutex sync.Mutex
+
+var rootVolumeSize = int32(40)
 
 var userData = `#!/bin/bash
 sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
@@ -146,22 +150,18 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 }
 
 // set blockDeviceMappings from hosts
-func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts) []types.BlockDeviceMapping {
-	rootDeviceName := "/dev/xvda"
-	rootVolumeSize := int32(40)
-
-	if len(hosts.Disks) == 0 {
-		return []types.BlockDeviceMapping{
-			{
-				DeviceName: &rootDeviceName,
-				Ebs: &types.EbsBlockDevice{
-					VolumeSize: &rootVolumeSize,
-				},
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) []types.BlockDeviceMapping {
+	var blockDeviceMappings []types.BlockDeviceMapping
+	// add system disk if not exists
+	if len(hosts.Disks) == 0 || hosts.Disks[0].Name != rootDeviceName {
+		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
+			DeviceName: &rootDeviceName,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &rootVolumeSize,
 			},
-		}
+		})
 	}
 
-	var blockDeviceMappings []types.BlockDeviceMapping
 	for _, v := range hosts.Disks {
 		size := int32(v.Capacity)
 		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
@@ -191,11 +191,17 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 	)
 	keyName := infra.Spec.SSH.PkName
-	//todo use ami to search root device name
+	// todo use ami to search root device name
+
 	// encode userdata to base64
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
-	// set other dataDisks, and read name and size from hosts
-	dataDisks := d.GetBlockDeviceMappings(hosts)
+	// set bdms, and read name and size from hosts
+
+	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
+	if err != nil {
+		return err
+	}
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -213,7 +219,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 		KeyName:             &keyName,
 		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
-		BlockDeviceMappings: dataDisks,
+		BlockDeviceMappings: bdms,
 		UserData:            &userData,
 	}
 
@@ -283,5 +289,6 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
+	logger.Info("create key pair success", "keyName", *result.KeyName)
 	return nil
 }

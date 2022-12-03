@@ -17,11 +17,10 @@ package cmd
 import (
 	"errors"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const exampleAdd = `
@@ -40,7 +39,7 @@ func newAddCmd() *cobra.Command {
 	}
 	var addCmd = &cobra.Command{
 		Use:     "add",
-		Short:   "add some nodes",
+		Short:   "Add nodes into cluster",
 		Args:    cobra.NoArgs,
 		Example: exampleAdd,
 		RunE: func(cmd *cobra.Command, args []string) error {

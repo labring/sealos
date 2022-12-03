@@ -19,23 +19,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
+
+	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
-
+	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/ssh"
-
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
-
-	"github.com/pkg/errors"
-	"k8s.io/client-go/util/homedir"
-
-	"github.com/labring/sealos/fork/golang/expansion"
-	"github.com/labring/sealos/pkg/env"
-	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/image/types"
-	"github.com/labring/sealos/pkg/runtime"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Interface interface {
@@ -44,15 +38,10 @@ type Interface interface {
 }
 
 type Default struct {
-	imageService types.ImageService
 }
 
 func NewGuestManager() (Interface, error) {
-	is, err := image.NewImageService()
-	if err != nil {
-		return nil, err
-	}
-	return &Default{imageService: is}, nil
+	return &Default{}, nil
 }
 
 func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
@@ -60,7 +49,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	envs := envInterface.WrapperEnv(cluster.GetMaster0IP()) //clusterfile
 	guestCMD := d.getGuestCmd(envs, cluster, mounts)
 
-	kubeConfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
+	kubeConfig := filepath.Join(constants.GetHomeDir(), ".kube", "config")
 	if !fileutil.IsExist(kubeConfig) {
 		adminFile := runtime.GetConstantData(cluster.Name).AdminFile()
 		data, err := fileutil.ReadAll(adminFile)

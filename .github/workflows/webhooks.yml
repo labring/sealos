@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths-ignore:
+    paths:
       - "webhooks/**"
-      - ".github/workflows/webhooks.yml"
+      - "!.github/workflows/webhooks.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:

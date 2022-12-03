@@ -105,6 +105,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 # remove taint
 $ kubectl taint node --all node-role.kubernetes.io/control-plane-
+$ kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 ```
 
 > Building a custom cluster image
@@ -139,7 +140,6 @@ sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
 - [sealosAction](https://github.com/marketplace/actions/auto-install-k8s-using-sealos)
 - [sealos 3.0(older version)](https://github.com/labring/sealos/tree/release-v3.3.9#readme) For older version users. Note that sealos 4.0 includes significant improvements, so please upgrade ASAP.
 - [buildah](https://github.com/containers/buildah) Capabilities of buildah is widely used in sealos 4.0 to make cluster images compatible with container images and docker registry.
-- [sealer](https://github.com/sealerio/sealer) Capabilities of sealer is widely used in sealos 4.0 to make Clusterfile compatible with sealer, some module forked sealer source code.
 
 **Join us: [Telegram](https://t.me/cloudnativer), QQ Group(98488045), Wechat：fangnux**
 

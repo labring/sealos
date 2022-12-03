@@ -28,8 +28,12 @@ func CopyDir(sshClient Interface, host, src, dest string, filter func(fs.DirEntr
 	if err != nil {
 		return fmt.Errorf("failed to read dir entries %s", err)
 	}
+	// Copy empty dir anyway
+	if len(entries) == 0 {
+		return sshClient.Copy(host, src, dest)
+	}
 	for _, f := range entries {
-		if filter(f) {
+		if filter == nil || filter(f) {
 			err = sshClient.Copy(host, filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()))
 			if err != nil {
 				return fmt.Errorf("failed to copy entry %v", err)

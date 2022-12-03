@@ -19,9 +19,9 @@ package cmd
 import (
 	"runtime"
 
-	"github.com/labring/sealos/pkg/registry/cmd"
-
 	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/registry/cmd"
 )
 
 var (

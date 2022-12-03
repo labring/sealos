@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"k8s.io/kubernetes/pkg/apis/core"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -60,6 +61,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if infra.Status.Status == infrav1.Pending.String() {
+		return ctrl.Result{}, nil
+	}
+
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, core.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
@@ -74,7 +79,8 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	})
 	if err != nil {
 		r.recorder.Eventf(infra, core.EventTypeWarning, "update infra failed", "%v", err)
-		return ctrl.Result{}, fmt.Errorf("update infra spec failed: %v", err)
+		// requeue after 30 seconds
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
 	if res == controllerutil.OperationResultUpdated {
 		if infra.Status.Status == infrav1.Running.String() {

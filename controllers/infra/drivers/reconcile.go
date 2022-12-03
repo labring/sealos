@@ -63,6 +63,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		return fmt.Errorf("set current instances info failed: %v", err)
 	}
 	infra.Spec.Hosts = cur
+	sortHostsByIndex(v1.IndexHosts(infra.Spec.Hosts))
 	return nil
 }
 

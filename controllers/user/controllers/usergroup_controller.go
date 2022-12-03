@@ -23,7 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/labring/endpoints-operator/library/convert"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -35,7 +34,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 
@@ -52,6 +50,7 @@ type UserGroupReconciler struct {
 	cache    cache.Cache
 	*runtime.Scheme
 	client.Client
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroups,verbs=get;list;watch;create;update;patch;delete
@@ -70,21 +69,21 @@ type UserGroupReconciler struct {
 func (r *UserGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for user groups")
 	userGroup := &userv1.UserGroup{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   userv1.GroupVersion.Group,
-			Version: userv1.GroupVersion.Version,
-			Kind:    "UserGroup",
-		},
-		FinalizerName: "sealos.io/user.group.finalizers",
+	if err := r.Get(ctx, req.NamespacedName, userGroup); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	userGroup.APIVersion = ctr.Gvk.GroupVersion().String()
-	userGroup.Kind = ctr.Gvk.Kind
-	return ctr.Run(ctx, req, userGroup)
+
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, userGroup, controller.DefaultFunc); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, userGroup); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.doReconcile(ctx, userGroup)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -97,6 +96,9 @@ func (r *UserGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.group.finalizers")
+	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
 	r.Logger.V(1).Info("init reconcile controller user group")
@@ -107,18 +109,13 @@ func (r *UserGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserGroupReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller userGroup", "request", req)
-	return nil
-}
-
-func (r *UserGroupReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller user group", "request", req)
-	ug := &userv1.UserGroup{}
-	err := convert.JsonConvert(obj, ug)
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+func (r *UserGroupReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	r.Logger.V(1).Info("update reconcile controller user group", "request", client.ObjectKeyFromObject(obj))
+	ug, ok := obj.(*userv1.UserGroup)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert UserGroup is error")
 	}
+
 	pipelines := []func(ctx context.Context, ug *userv1.UserGroup){
 		r.initStatus,
 		r.syncOwnerUGUserBinding,
@@ -131,7 +128,7 @@ func (r *UserGroupReconciler) Update(ctx context.Context, req ctrl.Request, gvk 
 	if ug.Status.Phase != userv1.UserUnknown {
 		ug.Status.Phase = userv1.UserActive
 	}
-	err = r.updateStatus(ctx, req.NamespacedName, ug.Status.DeepCopy())
+	err := r.updateStatus(ctx, client.ObjectKeyFromObject(obj), ug.Status.DeepCopy())
 	if err != nil {
 		r.Recorder.Eventf(ug, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", ug.Name, err)
 		return ctrl.Result{}, err

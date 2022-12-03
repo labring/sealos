@@ -65,12 +65,7 @@ metadata:
   name: ${infraForm.clusterName}
 spec:
   infra: ${infraForm.infraName}
-  ssh:
-    user: ${infraForm.userName}
-    pk: /root/hurz_key.pem
-    pkname: hurz_key
-    port: 22
-  images:
+  image:
     - ${infraForm.image1}
     - ${infraForm.image2}
 \`\`\`

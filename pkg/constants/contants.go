@@ -15,7 +15,7 @@
 package constants
 
 import (
-	"github.com/mitchellh/go-homedir"
+	"github.com/containers/storage/pkg/homedir"
 )
 
 const (
@@ -40,11 +40,7 @@ const (
 )
 
 func GetHomeDir() string {
-	home, err := homedir.Dir()
-	if err != nil {
-		return "/root"
-	}
-	return home
+	return homedir.Get()
 }
 
 var Contact = `

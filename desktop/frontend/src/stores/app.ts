@@ -42,6 +42,12 @@ export type TApp = {
   // app gallery
   gallery: string[];
   extra?: {};
+  // app top info
+  menu?: {
+    nameColor: string;
+    helpDropDown: boolean;
+    helpDocs: boolean;
+  };
 } & TAppFront;
 
 type TOSState = {
