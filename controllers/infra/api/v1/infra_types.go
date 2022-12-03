@@ -87,8 +87,12 @@ type Metadata struct {
 }
 
 type Hosts struct {
+	// +kubebuilder:validation:Required
 	Roles []string `json:"roles,omitempty"`
-	Count int      `json:"count,omitempty"`
+
+	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Minimum:=0
+	Count int `json:"count,omitempty"`
 	// key values resources.
 	// cpu: 2
 	// memory: 4
@@ -97,9 +101,15 @@ type Hosts struct {
 	// ecs.t5-lc1m2.large
 	Flavor string `json:"flavor,omitempty"`
 	// ENUM: amd64/arm64 (NOTE: the default value is amd64)
+	// +kubebuilder:default:=amd64
+	// +kubebuilder:validation:Enum=amd64;arm64
 	Arch string `json:"arch,omitempty"`
 	// ENUM: ubuntu:20.04, centos:7.2 and so on.
-	Image    string     `json:"image,omitempty"`
+	Image string `json:"image,omitempty"`
+
+	// max support 10 disks .
+	// +kubebuilder:validation:MaxItems:=10
+	// +kubebuilder:validation:Optional
 	Disks    []Disk     `json:"disks,omitempty"`
 	Metadata []Metadata `json:"metadata,omitempty"`
 	// Find the mapping between expected hosts and actual hosts
@@ -123,8 +133,12 @@ func (hosts IndexHosts) Swap(i, j int) {
 type Disk struct {
 	Capacity int `json:"capacity,omitempty"`
 	// ENUM: standard/io1/io2/gp2/gp3/sc1/st1
+	// +kubebuilder:validation:Enum=standard;io1;io2;gp2;gp3;sc1;st1
 	VolumeType string `json:"volumeType,omitempty"`
-	// ENUM: system/data
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=root;data
+	// +kubebuilder:default:=data
+	// Disk Type , default is data disk. allowed value is `root|data`
 	Type string `json:"type,omitempty"`
 	Name string `json:"name,omitempty"`
 }
@@ -152,7 +166,8 @@ type InfraSpec struct {
 	RegionIDs []string    `json:"regionIDs,omitempty"`
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`
 	SSH       v1bata1.SSH `json:"ssh,omitempty"`
-	Hosts     []Hosts     `json:"hosts,omitempty"`
+	// +kubebuilder:validation:Required
+	Hosts []Hosts `json:"hosts,omitempty"`
 	// Availability Zone
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 }
