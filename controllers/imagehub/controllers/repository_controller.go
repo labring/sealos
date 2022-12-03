@@ -32,8 +32,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RepositoryReconciler reconciles a Reposiotry object
@@ -232,9 +230,7 @@ func (r *RepositoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Scheme = mgr.GetScheme()
 	r.db = &DataHelper{r.Client, r.Logger}
 	r.Logger.V(1).Info("init reconcile controller repo")
-	owner := &handler.EnqueueRequestForOwner{OwnerType: &imagehubv1.Image{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Repository{}).
-		Watches(&source.Kind{Type: &imagehubv1.Image{}}, owner).
 		Complete(r)
 }

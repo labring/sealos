@@ -110,19 +110,25 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	fd := imagehubv1.FullData{}
 
 	orgInfo, err := r.getOrgInfoByOrgName(ctx, n.ToOrgName())
-	if err != nil {
+	if err == ErrNoMatch {
+		r.Logger.V(2).Info("getOrgInfoByOrgName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.OrgInfo = orgInfo
 
 	repoInfo, err := r.getRepoInfoByRepoName(ctx, n.ToRepoName())
-	if err != nil {
+	if err == ErrNoMatch {
+		r.Logger.V(2).Info("getRepoInfoByRepoName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.RepoInfo = repoInfo
 
 	imgInfo, err := r.getImageInfoByImageName(ctx, n)
-	if err != nil {
+	if err == ErrNoMatch {
+		r.Logger.V(2).Info("getImageInfoByImageName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.ImageInfo = imgInfo

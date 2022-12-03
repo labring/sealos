@@ -18,12 +18,12 @@ package controllers
 
 import (
 	"context"
+	"errors"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,10 +33,10 @@ import (
 type OrganizationReconciler struct {
 	client.Client
 	logr.Logger
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
-
-	db *DataHelper
+	Scheme    *runtime.Scheme
+	Recorder  record.EventRecorder
+	finalizer *controller.Finalizer
+	db        *DataHelper
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
@@ -56,51 +56,48 @@ type OrganizationReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger.V(1).Info("start reconcile for image")
-
-	// get image
+	r.Logger.V(1).Info("start reconcile for Organization")
 	org := &imagehubv1.Organization{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   imagehubv1.GroupVersion.Group,
-			Version: imagehubv1.GroupVersion.Version,
-			Kind:    "Organization",
-		},
-		FinalizerName: imagehubv1.OrgFinalizerName,
+	if err := r.Get(ctx, req.NamespacedName, org); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	org.APIVersion = ctr.Gvk.GroupVersion().String()
-	org.Kind = ctr.Gvk.Kind
 
-	return ctr.Run(ctx, req, org)
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, org, r.doFinalizer); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, org); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.doReconcile(ctx, org)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-func (r *OrganizationReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
+func (r *OrganizationReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
-
-func (r *OrganizationReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
+func (r *OrganizationReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *OrganizationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "OrgController"
-
-	r.Logger = ctrl.Log.WithName(controllerName)
-	r.Scheme = mgr.GetScheme()
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
 	}
+	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, imagehubv1.OrgFinalizerName)
+	}
+	r.Scheme = mgr.GetScheme()
 	r.db = &DataHelper{r.Client, r.Logger}
-
-	r.Logger.V(1).Info("init reconcile controller org")
+	r.Logger.V(1).Info("init reconcile controller Organization")
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Organization{}).

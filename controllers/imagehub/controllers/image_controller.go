@@ -103,6 +103,7 @@ func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) er
 	repo, err := r.db.getRepoByRepoName(ctx, img.Spec.Name.ToRepoName())
 	if err == ErrNoMatch {
 		r.Logger.V(2).Info("image reconcile getRepoByRepoName, not found repo by lable", "err:", err.Error())
+		return nil
 	} else if err != nil {
 		return err
 	}
