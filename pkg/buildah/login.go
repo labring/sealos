@@ -69,8 +69,9 @@ func newLoginCommand() *cobra.Command {
 		Long:  loginDescription,
 
 		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
-			// login by kubeconfig
-			if opts.kubeconfig != "" {
+			if opts.kubeconfig == "" {
+				return
+			} else {
 				// set user/password
 				var passwordb []byte
 				if passwordb, err = fileutil.ReadAll(opts.kubeconfig); err != nil {
