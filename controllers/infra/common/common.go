@@ -15,3 +15,5 @@ const (
 	TrySleepTime        = time.Second
 	TRUELable           = "true"
 )
+
+var DefaultRootVolumeSize = int32(40)
