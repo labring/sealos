@@ -17,6 +17,7 @@ package buildah
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/containers/buildah/pkg/parse"
@@ -27,9 +28,6 @@ import (
 
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
-
-const DefaultKubeConfigDir = ".sealos/sealos.io"
-const DefaultRegistry = "hub.sealos.io"
 
 type loginReply struct {
 	loginOpts  auth.LoginOptions
@@ -70,44 +68,39 @@ func newLoginCommand() *cobra.Command {
 		Long:  loginDescription,
 
 		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
-			if len(args) == 0 {
-				args = append(args, DefaultRegistry)
-			}
-
-			if args[0] == DefaultRegistry {
-				if opts.loginOpts.Username != "" {
-					return fmt.Errorf("the hub.sealos.io registry can only be logged in by kubeconfig")
-				}
-			}
-
 			// login by kubeconfig
 			if opts.kubeconfig != "" {
-				sealoskubeconfdir := fmt.Sprintf("%s/%s", os.Getenv("HOME"), DefaultKubeConfigDir)
-				err = fileutil.MkDirs(sealoskubeconfdir)
-				if err != nil {
-					return err
-				}
-
-				sealoskubeconfpath := fmt.Sprintf("%s/%s", sealoskubeconfdir, "config")
-
-				// copy kubeconfig to ${HOME}/.sealos/sealos.io/config
-				err = fileutil.Copy(opts.kubeconfig, sealoskubeconfpath)
-				if err != nil {
-					return err
-				}
-
 				// set user/password
 				var passwordb []byte
-				if passwordb, err = fileutil.ReadAll(sealoskubeconfpath); err != nil {
+				if passwordb, err = fileutil.ReadAll(opts.kubeconfig); err != nil {
 					return err
 				}
 				// username is current context kubeconfig user id
-				username, err := GetCurrentUserFromKubeConfig(sealoskubeconfpath)
+				username, err := GetCurrentUserFromKubeConfig(opts.kubeconfig)
 				if err != nil {
 					return err
 				}
 				opts.loginOpts.Username = username
 				opts.loginOpts.Password = string(passwordb)
+
+				// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
+				registryUrl, err := url.Parse(args[0])
+				if err != nil {
+					return err
+				}
+				if registryUrl == nil {
+					return errors.New("registry url is not legal")
+				}
+				sealosKubeConfdir := fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME"), ".sealos", registryUrl.Host, username)
+				err = fileutil.MkDirs(sealosKubeConfdir)
+				if err != nil {
+					return err
+				}
+				sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
+				err = fileutil.Copy(opts.kubeconfig, sealosKubeconfPath)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		},
@@ -128,8 +121,7 @@ func loginCmd(c *cobra.Command, args []string, iopts *loginReply) error {
 		return errors.New("too many arguments, login takes only 1 argument")
 	}
 	if len(args) == 0 {
-		args = append(args, DefaultRegistry)
-		fmt.Println("login to default registry: hub.sealos.io.")
+		return errors.New("please specify a registry to login to")
 	}
 
 	if err := setXDGRuntimeDir(); err != nil {
