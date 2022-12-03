@@ -117,7 +117,7 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 func checkHasSystemDisk(hosts *v1.Hosts) bool {
 	var hasSystemDisk = false
 	for _, v := range hosts.Disks {
-		if strings.EqualFold(v.Name, common.RootVolumeLabel) {
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) {
 			hasSystemDisk = true
 		}
 	}
@@ -185,7 +185,7 @@ func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) [
 	dataDiskIndex := 0
 	for _, v := range hosts.Disks {
 		var deviceName string
-		if strings.EqualFold(v.Name, common.RootVolumeLabel) && !systemAdded {
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) && !systemAdded {
 			deviceName = rootDeviceName
 			systemAdded = true
 		} else {
@@ -199,10 +199,8 @@ func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) [
 			DeviceName: &deviceName,
 			Ebs: &types.EbsBlockDevice{
 				VolumeSize: &size,
+				VolumeType: types.VolumeType(v.VolumeType),
 			},
-		}
-		if deviceName != rootDeviceName {
-			bdm.Ebs.VolumeType = types.VolumeType(v.Type)
 		}
 		blockDeviceMappings = append(blockDeviceMappings, bdm)
 	}

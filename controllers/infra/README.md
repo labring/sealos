@@ -133,23 +133,23 @@ spec:
       flavor: t2.medium
       image: "ami-0d66b970b9f16f1f5"
       disks:
-        - capacity: 28
-          type: standard
-          name: "root"
-        - capacity: 26
-          type: gp3
-          name: "data"
+        - capacity: 23
+          volumeType: standard
+          type: "root"
+        - capacity: 21
+          volumeType: gp3
+          type: "data"
     - roles: [ node ]
       count: 1
       flavor: t2.medium
       image: "ami-0d66b970b9f16f1f5"
       disks:
-        - capacity: 16
-          type: gp3
-          name: "root"
-        - capacity: 12
-          type: gp3
-          name: "data"
+        - capacity: 11
+          volumeType: gp3
+          type: "root"
+        - capacity: 13
+          volumeType: gp3
+          type: "data"
 ```
 
 ```shell

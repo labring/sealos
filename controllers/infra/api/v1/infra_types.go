@@ -123,8 +123,9 @@ func (hosts IndexHosts) Swap(i, j int) {
 type Disk struct {
 	Capacity int `json:"capacity,omitempty"`
 	// ENUM: standard/io1/io2/gp2/gp3/sc1/st1
-	Type string `json:"type,omitempty"`
+	VolumeType string `json:"volumeType,omitempty"`
 	// ENUM: system/data
+	Type string `json:"type,omitempty"`
 	Name string `json:"name,omitempty"`
 }
 

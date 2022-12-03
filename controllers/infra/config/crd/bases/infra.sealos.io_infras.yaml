@@ -53,10 +53,12 @@ spec:
                           capacity:
                             type: integer
                           name:
-                            description: Device name
                             type: string
                           type:
                             description: 'ENUM: system/data'
+                            type: string
+                          volumeType:
+                            description: 'ENUM: standard/io1/io2/gp2/gp3/sc1/st1'
                             type: string
                         type: object
                       type: array
