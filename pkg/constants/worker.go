@@ -23,7 +23,7 @@ const (
 )
 
 func Workdir() string {
-	return filepath.Join(GetHomeDir(), ".sealos")
+	return DefaultRuntimeRootDir
 }
 
 func ClusterDir(clusterName string) string {

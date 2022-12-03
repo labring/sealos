@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/labring/endpoints-operator/library v0.0.0-20220802173749-ea7ca9c8d154
+	github.com/labring/endpoints-operator/library v0.0.0-20221201063058-fa2d5a457d1d
 	github.com/mdp/qrterminal v1.0.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0

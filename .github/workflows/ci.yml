@@ -7,13 +7,13 @@ env:
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
   pull_request:
-    branches: [ "*" ]
+    branches: ["*"]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -40,8 +40,8 @@ jobs:
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: 'chore(fmt): format code'
-          commit_options: '-s'
+          commit_message: "chore(fmt): format code"
+          commit_options: "-s"
 
   check-license:
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
         run: sh ./scripts/resolve-modules.sh
 
   golangci-lint:
-    needs: [ format-code, check-license, resolve-modules ]
+    needs: [format-code, check-license, resolve-modules]
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -96,7 +96,7 @@ jobs:
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   coverage:
-    needs: [ format-code, check-license ]
+    needs: [format-code, check-license]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -117,12 +117,12 @@ jobs:
         uses: codecov/codecov-action@v3
 
   build:
-    needs: [ golangci-lint, coverage ]
+    needs: [golangci-lint, coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        binary: [ sealos, sealctl, lvscare, image-cri-shim ]
-        arch: [ arm64, amd64 ]
+        binary: [sealos, sealctl, lvscare, image-cri-shim]
+        arch: [arm64, amd64]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -135,7 +135,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Install Dependencies
-        if: ${{ matrix.binary == 'sealos' && matrix.arch == 'arm64' }}
+        if: ${{ (matrix.binary == 'sealos' || matrix.binary == 'sealctl') && matrix.arch == 'arm64' }}
         run: |
           sudo apt install -y gcc-aarch64-linux-gnu
 
@@ -154,7 +154,7 @@ jobs:
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
 
   docker:
-    needs: [ build ]
+    needs: [build]
     runs-on: ubuntu-latest
     services:
       registry:
@@ -163,7 +163,7 @@ jobs:
           - 5000:5000
     strategy:
       matrix:
-        arch: [ arm64, amd64 ]
+        arch: [arm64, amd64]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -237,7 +237,7 @@ jobs:
           failOnError: false
 
   container:
-    needs: [ docker ]
+    needs: [docker]
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
     steps:
@@ -304,7 +304,7 @@ jobs:
           .
 
   patch-oci:
-    needs: [ docker ]
+    needs: [docker]
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'push' }}
     steps:

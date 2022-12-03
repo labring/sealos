@@ -68,10 +68,10 @@ spec:
        type: system
 */
 
-var ec2p map[string]int64
+var ec2NorthPrice map[string]float64
 
 // ebs unit: CNY cents/GB-month
-var ebs map[string]int64
+var ebs map[string]float64
 
 type IPAddress struct {
 	IPType  string `json:"ipType,omitempty"`
@@ -235,46 +235,47 @@ func (i *Infra) GetInstancesAndVolumesTag() string {
 
 // QueryPrice query infra price/hour, unit: CNY cents/hour
 func (i *Infra) QueryPrice() (int64, error) {
-	valueEc2, valueEbs := int64(0), int64(0)
+	valueEc2, valueEbs := float64(0), float64(0)
 	for _, j := range i.Spec.Hosts {
-		if _, ok := ec2p[j.Flavor]; !ok {
+		if _, ok := ec2NorthPrice[j.Flavor]; !ok {
 			return -1, fmt.Errorf("no ec2 type")
 		}
-		valueEc2 += ec2p[j.Flavor] * int64(j.Count)
+		valueEc2 += ec2NorthPrice[j.Flavor] * float64(j.Count)
 
 		for _, disk := range j.Disks {
 			if _, ok := ebs[disk.Type]; !ok {
 				return -1, fmt.Errorf("no ebs type")
 			}
-			valueEbs += ebs[disk.Type] * int64(disk.Capacity) * int64(j.Count)
+			valueEbs += ebs[disk.Type] * float64(disk.Capacity) * float64(j.Count)
 		}
 	}
 	valueEbs = valueEbs / 30 / 24
-	return int64(1.25 * float64(valueEc2+valueEbs)), nil
+	return int64(valueEc2 + valueEbs), nil
 }
 
 func init() {
-	ec2p = map[string]int64{
-		"t2.micro":   int64(10),
-		"t2.small":   int64(22),
-		"t2.medium":  int64(43),
-		"t2.large":   int64(86),
-		"t2.xlarge":  int64(170),
-		"t2.2xlarge": int64(340),
-		"t3.medium":  int64(27),
-		"t3.large":   int64(53),
-		"t3.xlarge":  int64(106),
-		"t3.2xlarge": int64(211),
-		"t4g.medium": int64(21),
-		"c5.large":   int64(74),
-		"c5.xlarge":  int64(148),
-		"c5.2xlarge": int64(296),
-		"c6g.large":  int64(59),
-		"c6g.xlarge": int64(118),
+	//the ec2 price is in cn-north-1
+	ec2NorthPrice = map[string]float64{
+		"t2.micro":   10.6,
+		"t2.small":   21.3,
+		"t2.medium":  42.6,
+		"t2.large":   85.1,
+		"t2.xlarge":  169.6,
+		"t2.2xlarge": 340.4,
+		"t3.medium":  26.29,
+		"t3.large":   52.6,
+		"t3.xlarge":  105.15,
+		"t3.2xlarge": 210.3,
+		"t4g.medium": 20.3,
+		"c5.large":   73.9,
+		"c5.xlarge":  147.9,
+		"c5.2xlarge": 295.7,
+		"c6g.large":  58.6,
+		"c6g.xlarge": 117.2,
 	}
-	ebs = map[string]int64{
-		"gp2": int64(75),
-		"gp3": int64(60),
+	ebs = map[string]float64{
+		"gp2": 74.6,
+		"gp3": 59.68,
 	}
 	SchemeBuilder.Register(&Infra{}, &InfraList{})
 }

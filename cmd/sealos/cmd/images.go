@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/labring/sealos/pkg/image/cmd"
+	"github.com/labring/sealos/pkg/buildah"
 )
 
 func init() {
-	cmd.Register(rootCmd, getContact())
+	buildah.RegisterRootCommand(rootCmd)
 }

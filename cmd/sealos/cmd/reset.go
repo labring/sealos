@@ -17,10 +17,9 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var exampleReset = `
@@ -36,8 +35,7 @@ func newResetCmd() *cobra.Command {
 
 	var resetCmd = &cobra.Command{
 		Use:     "reset",
-		Short:   "simplest way to reset your cluster",
-		Long:    `sealos reset --name [arg]`,
+		Short:   "Reset all, everything in the cluster",
 		Example: exampleReset,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -22,15 +22,16 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/sftp"
+	"github.com/schollz/progressbar/v3"
+	"golang.org/x/crypto/ssh"
+
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/progress"
-
-	"github.com/pkg/sftp"
-	"github.com/schollz/progressbar/v3"
-	"golang.org/x/crypto/ssh"
 )
 
 func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
@@ -71,7 +72,7 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if iputils.IsLocalIP(host, s.LocalAddress) {
+	if iputils.IsLocalIP(host, s.LocalAddress) && !buildah.IsRootless() {
 		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}

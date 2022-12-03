@@ -28,12 +28,13 @@ import (
 var (
 	debug          bool
 	clusterRootDir string
+	runtimeRootDir string
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "sealos",
-	Short: "simplest way install kubernetes tools.",
+	Short: "sealos is a Kubernetes distribution, a unified OS to manage cloud native applications.",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -50,16 +51,19 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(onBootOnDie)
-
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().StringVar(&clusterRootDir, "cluster-root", constants.DefaultClusterRootfsDir, "cluster root directory")
+	fs := rootCmd.PersistentFlags()
+	fs.BoolVar(&debug, "debug", false, "enable debug logger")
+	fs.StringVar(&clusterRootDir, "cluster-root", constants.DefaultClusterRootFsDir, "cluster root directory for remote")
+	_ = fs.MarkHidden("cluster-root")
+	fs.StringVar(&runtimeRootDir, "sealos-root", constants.DefaultRuntimeRootDir, "root directory for sealos actions")
+	_ = fs.MarkHidden("sealos-root")
 }
 
 func onBootOnDie() {
-	constants.DefaultClusterRootfsDir = clusterRootDir
+	constants.DefaultClusterRootFsDir = clusterRootDir
+	constants.DefaultRuntimeRootDir = runtimeRootDir
 	var rootDirs = []string{
 		constants.LogPath(),
-		constants.DataPath(),
 		constants.Workdir(),
 	}
 	if err := file.MkDirs(rootDirs...); err != nil {
