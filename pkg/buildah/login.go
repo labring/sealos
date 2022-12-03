@@ -68,43 +68,45 @@ func newLoginCommand() *cobra.Command {
 		Short: "Login to a container registry",
 		Long:  loginDescription,
 
-		PreRunE: func(cmd *cobra.Command, args []string) (err error) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if opts.kubeconfig == "" {
-				return
-			} else {
-				// set user/password
-				var passwordb []byte
-				if passwordb, err = fileutil.ReadAll(opts.kubeconfig); err != nil {
-					return err
-				}
-				// username is current context kubeconfig user id
-				username, err := GetCurrentUserFromKubeConfig(opts.kubeconfig)
-				if err != nil {
-					return err
-				}
-				opts.loginOpts.Username = username
-				opts.loginOpts.Password = string(passwordb)
-
-				// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
-				registryHost, err := replaceURLByHostPort(args[0])
-				if err != nil {
-					return err
-				}
-				sealosKubeConfdir := fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME"), ".sealos", registryHost, username)
-				err = fileutil.MkDirs(sealosKubeConfdir)
-				if err != nil {
-					return err
-				}
-				sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
-				err = fileutil.Copy(opts.kubeconfig, sealosKubeconfPath)
-				if err != nil {
-					return err
-				}
+				return nil
 			}
+			// username is current context kubeconfig user id
+			username, err := GetCurrentUserFromKubeConfig(opts.kubeconfig)
+			if err != nil {
+				return err
+			}
+			// set user/password
+			passwordb, err := fileutil.ReadAll(opts.kubeconfig)
+			if err != nil {
+				return err
+			}
+			opts.loginOpts.Username = username
+			opts.loginOpts.Password = string(passwordb)
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return loginCmd(cmd, args, &opts)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.kubeconfig == "" {
+				return nil
+			}
+			// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
+			registryHost, err := replaceURLByHostPort(args[0])
+			if err != nil {
+				return err
+			}
+			sealosKubeConfdir := fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME"), ".sealos", registryHost, opts.loginOpts.Username)
+			if err := fileutil.MkDirs(sealosKubeConfdir); err != nil {
+				return err
+			}
+			sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
+			if err := fileutil.Copy(opts.kubeconfig, sealosKubeconfPath); err != nil {
+				return err
+			}
+			return nil
 		},
 		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.Name()),
 	}
