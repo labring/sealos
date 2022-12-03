@@ -25,14 +25,13 @@ type EC2DescribeAMIAPI interface {
 // Output:
 //
 //	If success, a DescribeImagesOutput object containing the result of the service call and nil.
-//	Otherwise, nil and an error from the call to DescribeInstances.
+//	Otherwise, nil and an error from the call to DescribeImages.
 func GetImages(c context.Context, api EC2DescribeAMIAPI, input *ec2.DescribeImagesInput) (*ec2.DescribeImagesOutput, error) {
 	return api.DescribeImages(c, input)
 }
 
 // getImageRootDeviceNameByID get images root device name from image api
 func (d Driver) getImageRootDeviceNameByID(amiID string) (rootDeviceName string, err error) {
-
 	client := d.Client
 	input := &ec2.DescribeImagesInput{
 		ImageIds: []string{
