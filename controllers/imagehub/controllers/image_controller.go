@@ -101,8 +101,9 @@ func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) er
 	}
 	// todo try to delete image in hub.sealos.io registry
 	repo, err := r.db.getRepoByRepoName(ctx, img.Spec.Name.ToRepoName())
-	if err != nil {
-		r.Logger.V(2).Info("error in image getRepoByRepoName, not found repo by lable", "err:", err.Error())
+	if err == ErrNoMatch {
+		r.Logger.V(2).Info("image reconcile getRepoByRepoName, not found repo by lable", "err:", err.Error())
+	} else if err != nil {
 		return err
 	}
 
@@ -116,15 +117,13 @@ func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) er
 	repo.Spec = spec
 
 	// if repo has no tags, delete it and return
-	if len(repo.Spec.Tags) == 0 {
-		return r.Client.Delete(ctx, &repo)
+	if len(repo.Spec.Tags) != 0 {
+		// resort tag list, update latestTag
+		sort.Slice(repo.Spec.Tags, func(i, j int) bool {
+			return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
+		})
+		repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
 	}
-
-	// resort tag list, update latestTag
-	sort.Slice(repo.Spec.Tags, func(i, j int) bool {
-		return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
-	})
-	repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
 
 	return r.Client.Update(ctx, &repo)
 }
@@ -154,7 +153,6 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) {
 					LatestTag: td,
 				}
 			}
-
 			// set repo owns img
 			err := controllerutil.SetControllerReference(repo, img, r.Scheme)
 			if err != nil {
@@ -202,7 +200,7 @@ func (r *ImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
 	if r.finalizer == nil {
-		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.group.finalizers")
+		r.finalizer = controller.NewFinalizer(r.Client, imagehubv1.ImgFinalizerName)
 	}
 	r.Scheme = mgr.GetScheme()
 	r.db = &DataHelper{r.Client, r.Logger}

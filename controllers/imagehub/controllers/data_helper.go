@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/go-logr/logr"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
@@ -13,6 +13,8 @@ type DataHelper struct {
 	client.Client
 	logr.Logger
 }
+
+var ErrNoMatch = errors.New("NoMatch")
 
 type MatchingLabelsModifier func(name any, labels client.MatchingLabels)
 
@@ -64,7 +66,7 @@ func (r *DataHelper) getRepoByRepoName(ctx context.Context, name imagehubv1.Repo
 	res := &imagehubv1.RepositoryList{}
 	lst, err := listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier, repoModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Repository{}, fmt.Errorf("no matching repo name:%s", name)
+		return imagehubv1.Repository{}, ErrNoMatch
 	}
 	return lst.Items[0], err
 }
@@ -91,7 +93,7 @@ func (r *DataHelper) getImageByImageName(ctx context.Context, name imagehubv1.Im
 	res := &imagehubv1.ImageList{}
 	lst, err := listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier, tagModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Image{}, fmt.Errorf("no matching image name:%s", name)
+		return imagehubv1.Image{}, ErrNoMatch
 	}
 	return lst.Items[0], err
 }

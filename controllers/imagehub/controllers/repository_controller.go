@@ -22,27 +22,28 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
-	"github.com/labring/endpoints-operator/library/convert"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RepositoryReconciler reconciles a Reposiotry object
 type RepositoryReconciler struct {
 	client.Client
 	logr.Logger
-	db       *DataHelper
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	db        *DataHelper
+	finalizer *controller.Finalizer
+	Scheme    *runtime.Scheme
+	Recorder  record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
@@ -62,36 +63,30 @@ type RepositoryReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *RepositoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for repo")
-
-	// get repo
 	repo := &imagehubv1.Repository{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   imagehubv1.GroupVersion.Group,
-			Version: imagehubv1.GroupVersion.Version,
-			Kind:    "Repository",
-		},
-		FinalizerName: imagehubv1.RepoFinalizerName,
+	if err := r.Get(ctx, req.NamespacedName, repo); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	repo.APIVersion = ctr.Gvk.GroupVersion().String()
-	repo.Kind = ctr.Gvk.Kind
 
-	return ctr.Run(ctx, req, repo)
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, repo, r.doFinalizer); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, repo); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.doReconcile(ctx, repo)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-func (r *RepositoryReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller repo", "request", req)
-	repo := &imagehubv1.Repository{}
-	err := convert.JsonConvert(obj, repo)
-	if err != nil {
-		r.Logger.V(2).Info("error in repo json convert", "json", obj)
-		return ctrl.Result{Requeue: true}, err
+func (r *RepositoryReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	r.Logger.V(1).Info("delete reconcile controller repo", "request", client.ObjectKeyFromObject(obj))
+	repo, ok := obj.(*imagehubv1.Repository)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert Repository is error")
 	}
-
 	pipelines := []func(ctx context.Context, repo *imagehubv1.Repository){
 		r.syncOrg,
 		r.syncImg,
@@ -102,24 +97,18 @@ func (r *RepositoryReconciler) Update(ctx context.Context, req ctrl.Request, gvk
 	return ctrl.Result{}, r.Client.Update(ctx, repo)
 }
 
-func (r *RepositoryReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller image", "request", req)
-	// get repo from obj
-	repo := &imagehubv1.Repository{}
-	err := convert.JsonConvert(obj, repo)
-	if err != nil {
-		r.Logger.V(2).Info("error in repo json convert", "json", obj)
-		return err
+func (r *RepositoryReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
+	r.Logger.V(1).Info("delete reconcile controller Repository", "request", client.ObjectKeyFromObject(obj))
+	repo, ok := obj.(*imagehubv1.Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
 	}
-
 	pipelines := []func(ctx context.Context, repo *imagehubv1.Repository){
 		r.deleteOrgRepoList,
-		r.deleteImage,
 	}
 	for _, fn := range pipelines {
 		fn(ctx, repo)
 	}
-
 	return nil
 }
 
@@ -141,6 +130,11 @@ func (r *RepositoryReconciler) syncOrg(ctx context.Context, repo *imagehubv1.Rep
 					Name:  repo.Spec.Name.GetOrg(),
 					Repos: []imagehubv1.RepoName{},
 				}
+			}
+			// set org owns repo
+			err := controllerutil.SetControllerReference(org, repo, r.Scheme)
+			if err != nil {
+				return err
 			}
 
 			// update org
@@ -213,27 +207,6 @@ func (r *RepositoryReconciler) deleteOrgRepoList(ctx context.Context, repo *imag
 	}
 }
 
-// deleteImage will delete images match repo lable
-func (r *RepositoryReconciler) deleteImage(ctx context.Context, repo *imagehubv1.Repository) {
-	imageList, err := r.db.getImageListByRepoName(ctx, repo.Spec.Name)
-	if err != nil {
-		r.Logger.Error(err, "error in repo reconcile deleteImage")
-		return
-	}
-
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		for _, img := range imageList.Items {
-			if err := r.Client.Delete(ctx, &img); err != nil {
-				return client.IgnoreNotFound(err)
-			}
-		}
-		return nil
-	}); err != nil {
-		r.Logger.Info("error when sync images")
-		return
-	}
-}
-
 func isRepoExistInOrgList(repo imagehubv1.RepoName, repos []imagehubv1.RepoName) bool {
 	for _, name := range repos {
 		if name == repo {
@@ -246,20 +219,22 @@ func isRepoExistInOrgList(repo imagehubv1.RepoName, repos []imagehubv1.RepoName)
 // SetupWithManager sets up the controller with the Manager.
 func (r *RepositoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "RepoController"
-
-	r.Logger = ctrl.Log.WithName(controllerName)
-	r.Scheme = mgr.GetScheme()
 	if r.Client == nil {
 		r.Client = mgr.GetClient()
 	}
+	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, imagehubv1.RepoFinalizerName)
+	}
+	r.Scheme = mgr.GetScheme()
 	r.db = &DataHelper{r.Client, r.Logger}
-
 	r.Logger.V(1).Info("init reconcile controller repo")
-
+	owner := &handler.EnqueueRequestForOwner{OwnerType: &imagehubv1.Image{}, IsController: true}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Repository{}).
+		Watches(&source.Kind{Type: &imagehubv1.Image{}}, owner).
 		Complete(r)
 }
