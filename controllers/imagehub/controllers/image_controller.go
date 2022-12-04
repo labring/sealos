@@ -123,7 +123,7 @@ func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) er
 		sort.Slice(repo.Status.Tags, func(i, j int) bool {
 			return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 		})
-		repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
+		repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
 	}
 
 	return r.Status().Update(ctx, &repo)
@@ -168,7 +168,7 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) {
 				return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 			})
 
-			repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
+			repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
 			return nil
 		}); err != nil {
 			return errors.Wrap(err, "unable to create repo when add image")

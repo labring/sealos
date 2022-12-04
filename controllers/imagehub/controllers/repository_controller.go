@@ -148,7 +148,7 @@ func (r *RepositoryReconciler) syncImg(ctx context.Context, repo *imagehubv1.Rep
 	sort.Slice(repo.Status.Tags, func(i, j int) bool {
 		return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 	})
-	repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
+	repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
 	err := r.Status().Update(ctx, repo)
 	if err != nil {
 		r.Logger.V(1).Info("repo status update error")

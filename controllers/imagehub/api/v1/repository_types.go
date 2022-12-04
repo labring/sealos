@@ -70,7 +70,7 @@ type RepositoryStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	Name      RepoName `json:"name,omitempty"` // e.g: "libring/mysql"
 	Tags      TagList  `json:"tags,omitempty"`
-	LatestTag TagData  `json:"latestTag,omitempty"`
+	LatestTag *TagData `json:"latestTag,omitempty"`
 }
 
 //+kubebuilder:object:root=true
