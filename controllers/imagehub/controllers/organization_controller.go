@@ -133,6 +133,9 @@ func (r *OrganizationReconciler) syncClusterroleBinding(ctx context.Context, org
 		Name:      org.Spec.Creator,
 		Namespace: "default",
 	})
+	if len(sub) == 0 {
+		return
+	}
 	crb := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "OrgManagerClusterRoleBinding-" + org.Name,
