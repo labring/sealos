@@ -108,25 +108,25 @@ func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) er
 		return err
 	}
 
-	// update repo spec
-	spec := imagehubv1.ReposiyorySpec{}
-	for _, t := range repo.Spec.Tags {
+	// update repo status
+	status := imagehubv1.RepositoryStatus{}
+	for _, t := range repo.Status.Tags {
 		if t.Name != img.Spec.Name.GetTag() {
-			spec.Tags = append(spec.Tags, t)
+			status.Tags = append(status.Tags, t)
 		}
 	}
-	repo.Spec = spec
+	repo.Status = status
 
 	// if repo has no tags, delete it and return
-	if len(repo.Spec.Tags) != 0 {
+	if len(repo.Status.Tags) != 0 {
 		// resort tag list, update latestTag
-		sort.Slice(repo.Spec.Tags, func(i, j int) bool {
-			return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
+		sort.Slice(repo.Status.Tags, func(i, j int) bool {
+			return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 		})
-		repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
+		repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
 	}
 
-	return r.Client.Update(ctx, &repo)
+	return r.Status().Update(ctx, &repo)
 }
 
 // syncRepo add image info to repo
@@ -148,10 +148,8 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) {
 			}
 			// create repo
 			if repo.CreationTimestamp.IsZero() {
-				repo.Spec = imagehubv1.ReposiyorySpec{
-					Name:      img.Spec.Name.ToRepoName(),
-					Tags:      imagehubv1.TagList{td},
-					LatestTag: td,
+				repo.Spec = imagehubv1.RepositorySpec{
+					Name: img.Spec.Name.ToRepoName(),
 				}
 			}
 			// set repo owns img
@@ -160,16 +158,17 @@ func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) {
 				return err
 			}
 
+			repo.Status.Name = repo.Spec.Name
 			// update repo, check repo tag list, and update latest tag
-			if !isTagExistInTagList(td, repo.Spec.Tags) {
-				repo.Spec.Tags = append(repo.Spec.Tags, td)
+			if !isTagExistInTagList(td, repo.Status.Tags) {
+				repo.Status.Tags = append(repo.Status.Tags, td)
 			}
 
-			sort.Slice(repo.Spec.Tags, func(i, j int) bool {
-				return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
+			sort.Slice(repo.Status.Tags, func(i, j int) bool {
+				return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 			})
 
-			repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
+			repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
 			return nil
 		}); err != nil {
 			return errors.Wrap(err, "unable to create repo when add image")

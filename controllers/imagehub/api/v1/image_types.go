@@ -110,8 +110,6 @@ type ImageSpec struct {
 	//+kubebuilder:validation:Required
 	Name       ImageName       `json:"name,omitempty"`
 	DetailInfo ImageDetailInfo `json:"detail,omitempty"`
-	//
-	User string `json:"user,omitempty"`
 }
 
 type ImageInfo ImageSpec

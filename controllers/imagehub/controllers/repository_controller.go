@@ -24,11 +24,9 @@ import (
 	"github.com/labring/endpoints-operator/library/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -47,6 +45,7 @@ type RepositoryReconciler struct {
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/finalizers,verbs=update
 
@@ -117,36 +116,21 @@ func (r *RepositoryReconciler) syncOrg(ctx context.Context, repo *imagehubv1.Rep
 			Name: repo.Spec.Name.GetOrg(),
 		},
 	}
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var change controllerutil.OperationResult
-		var err error
-
-		if _, err = controllerutil.CreateOrUpdate(ctx, r.Client, org, func() error {
-			// create org
-			if org.CreationTimestamp.IsZero() {
-				org.Spec = imagehubv1.OrganizationSpec{
-					Name:  repo.Spec.Name.GetOrg(),
-					Repos: []imagehubv1.RepoName{},
-				}
-			}
-			// set org owns repo
-			err := controllerutil.SetControllerReference(org, repo, r.Scheme)
-			if err != nil {
-				return err
-			}
-
-			// update org
-			if !isRepoExistInOrgList(repo.Spec.Name, org.Spec.Repos) {
-				org.Spec.Repos = append(org.Spec.Repos, repo.Spec.Name)
-			}
-			return nil
-		}); err != nil {
-			return errors.Wrap(err, "unable to create org when add repo")
-		}
-		r.Logger.V(1).Info("create or update org", "OperationResult", change)
-		return nil
-	}); err != nil {
-		r.Recorder.Eventf(repo, v1.EventTypeWarning, "syncOrg", "Sync Org %s is error: %v", org, err)
+	if err := r.Get(ctx, client.ObjectKeyFromObject(org), org); client.IgnoreNotFound(err) != nil {
+		r.Logger.V(1).Info("Get org error")
+		return
+	}
+	if err := controllerutil.SetControllerReference(org, repo, r.Scheme); err != nil {
+		r.Logger.V(1).Info("repo SetControllerReference")
+		return
+	}
+	org.Status.Name = org.Spec.Name
+	// update org status
+	if !isRepoExistInOrgList(repo.Spec.Name, org.Status.Repos) {
+		org.Status.Repos = append(org.Status.Repos, repo.Spec.Name)
+	}
+	if err := r.Status().Update(ctx, org); err != nil {
+		r.Logger.V(1).Info("org status update error")
 	}
 }
 
@@ -160,48 +144,38 @@ func (r *RepositoryReconciler) syncImg(ctx context.Context, repo *imagehubv1.Rep
 			CTime: img.CreationTimestamp,
 		})
 	}
-	repo.Spec.Tags = tagList
-	sort.Slice(repo.Spec.Tags, func(i, j int) bool {
-		return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
+	repo.Status.Tags = tagList
+	sort.Slice(repo.Status.Tags, func(i, j int) bool {
+		return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 	})
-	repo.Spec.LatestTag = repo.Spec.Tags[len(repo.Spec.Tags)-1]
+	repo.Status.LatestTag = repo.Status.Tags[len(repo.Status.Tags)-1]
+	err := r.Status().Update(ctx, repo)
+	if err != nil {
+		r.Logger.V(1).Info("repo status update error")
+	}
 }
 
 func (r *RepositoryReconciler) deleteOrgRepoList(ctx context.Context, repo *imagehubv1.Repository) {
+	// todo try to delete image in hub.sealos.io registry
 	org := &imagehubv1.Organization{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: repo.Spec.Name.GetOrg(),
 		},
 	}
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var change controllerutil.OperationResult
-		var err error
-
-		if _, err = controllerutil.CreateOrUpdate(ctx, r.Client, org, func() error {
-			// create org
-			if org.CreationTimestamp.IsZero() {
-				org.Spec = imagehubv1.OrganizationSpec{
-					Name:  repo.Spec.Name.GetOrg(),
-					Repos: []imagehubv1.RepoName{},
-				}
-			}
-
-			// update org repo list
-			var res []imagehubv1.RepoName
-			for _, re := range org.Spec.Repos {
-				if re != repo.Spec.Name {
-					res = append(res, re)
-				}
-			}
-			org.Spec.Repos = res
-			return nil
-		}); err != nil {
-			return errors.Wrap(err, "unable to delete org repo list when delete repo")
+	if err := r.Get(ctx, client.ObjectKeyFromObject(org), org); client.IgnoreNotFound(err) != nil {
+		r.Logger.V(1).Info("Get org error")
+		return
+	}
+	// update org repo list
+	var res []imagehubv1.RepoName
+	for _, re := range org.Status.Repos {
+		if re != repo.Spec.Name {
+			res = append(res, re)
 		}
-		r.Logger.V(1).Info("create or update org", "OperationResult", change)
-		return nil
-	}); err != nil {
-		r.Recorder.Eventf(repo, v1.EventTypeWarning, "deleteOrgRepoList", "delete OrgRepo List %s is error: %v", org, err)
+	}
+	org.Status.Repos = res
+	if err := r.Status().Update(ctx, org); err != nil {
+		r.Logger.V(1).Info("org status update error")
 	}
 }
 

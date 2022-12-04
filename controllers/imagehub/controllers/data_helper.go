@@ -76,7 +76,7 @@ func (r *DataHelper) getRepoInfoByRepoName(ctx context.Context, name imagehubv1.
 	if err != nil {
 		return imagehubv1.RepoInfo{}, err
 	}
-	return imagehubv1.RepoInfo(repo.Spec), nil
+	return imagehubv1.RepoInfo(repo.Status), nil
 }
 
 //func (r *DataHelper) getImageListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.ImageList, error) {
