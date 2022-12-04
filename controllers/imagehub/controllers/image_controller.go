@@ -18,17 +18,14 @@ package controllers
 
 import (
 	"context"
-	"sort"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -45,9 +42,10 @@ type ImageReconciler struct {
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -84,109 +82,35 @@ func (r *ImageReconciler) doReconcile(ctx context.Context, obj client.Object) (c
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert Image is error")
 	}
-	pipelines := []func(ctx context.Context, img *imagehubv1.Image){
-		r.syncRepo,
+	// create repo and SetControllerReference.
+	repo := &imagehubv1.Repository{}
+	repo.Name = img.Spec.Name.ToRepoName().ToMetaName()
+	err := r.Get(ctx, client.ObjectKeyFromObject(repo), repo)
+	if err != nil && apierrors.IsNotFound(err) {
+		repo.Spec.Name = img.Spec.Name.ToRepoName()
+		if err := r.Create(ctx, repo); err != nil {
+			r.Logger.Error(err, "error in create")
+		}
+	} else if err != nil {
+		return ctrl.Result{}, err
 	}
-	for _, fn := range pipelines {
-		fn(ctx, img)
+	update, err := controllerutil.CreateOrUpdate(ctx, r.Client, img, func() error {
+		if err := controllerutil.SetControllerReference(repo, img, r.Scheme); err != nil {
+			r.Logger.Error(err, "error in SetControllerReference")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		r.Logger.Error(err, "image reconcile update repo error")
+		return ctrl.Result{Requeue: true}, err
 	}
-	return ctrl.Result{}, r.Client.Update(ctx, img)
+	r.Logger.V(1).Info("image reconcile update image:", "changes", update)
+	return ctrl.Result{}, nil
 }
 
 func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller image", "request", client.ObjectKeyFromObject(obj))
-	img, ok := obj.(*imagehubv1.Image)
-	if !ok {
-		return errors.New("obj convert Image is error")
-	}
-	// todo try to delete image in hub.sealos.io registry
-	repo, err := r.db.getRepoByRepoName(ctx, img.Spec.Name.ToRepoName())
-	if err == ErrNoMatch {
-		r.Logger.V(2).Info("image reconcile getRepoByRepoName, not found repo by lable", "err:", err.Error())
-		return nil
-	} else if err != nil {
-		return err
-	}
-
-	// update repo status
-	status := imagehubv1.RepositoryStatus{}
-	for _, t := range repo.Status.Tags {
-		if t.Name != img.Spec.Name.GetTag() {
-			status.Tags = append(status.Tags, t)
-		}
-	}
-	repo.Status = status
-
-	// if repo has no tags, delete it and return
-	if len(repo.Status.Tags) != 0 {
-		// resort tag list, update latestTag
-		sort.Slice(repo.Status.Tags, func(i, j int) bool {
-			return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
-		})
-		repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
-	}
-
-	return r.Status().Update(ctx, &repo)
-}
-
-// syncRepo add image info to repo
-func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) {
-	repo := &imagehubv1.Repository{
-		ObjectMeta: metav1.ObjectMeta{
-			// todo obj Name cloud be conflict
-			Name: img.Spec.Name.ToRepoName().ToMetaName(),
-		},
-	}
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		var change controllerutil.OperationResult
-		var err error
-
-		if change, err = controllerutil.CreateOrUpdate(ctx, r.Client, repo, func() error {
-			td := imagehubv1.TagData{
-				Name:  img.Spec.Name.GetTag(),
-				CTime: img.CreationTimestamp,
-			}
-			// create repo
-			if repo.CreationTimestamp.IsZero() {
-				repo.Spec = imagehubv1.RepositorySpec{
-					Name: img.Spec.Name.ToRepoName(),
-				}
-			}
-			// set repo owns img
-			err := controllerutil.SetControllerReference(repo, img, r.Scheme)
-			if err != nil {
-				return err
-			}
-
-			repo.Status.Name = repo.Spec.Name
-			// update repo, check repo tag list, and update latest tag
-			if !isTagExistInTagList(td, repo.Status.Tags) {
-				repo.Status.Tags = append(repo.Status.Tags, td)
-			}
-
-			sort.Slice(repo.Status.Tags, func(i, j int) bool {
-				return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
-			})
-
-			repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
-			return nil
-		}); err != nil {
-			return errors.Wrap(err, "unable to create repo when add image")
-		}
-		r.Logger.V(1).Info("create or update repo", "OperationResult", change)
-		return nil
-	}); err != nil {
-		r.Recorder.Eventf(img, v1.EventTypeWarning, "syncRepo", "Sync Repo %s is error: %v", repo, err)
-	}
-}
-
-func isTagExistInTagList(tag imagehubv1.TagData, tags []imagehubv1.TagData) bool {
-	for _, p := range tags {
-		if p.Name == tag.Name {
-			return true
-		}
-	}
-	return false
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

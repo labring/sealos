@@ -24,7 +24,6 @@ import (
 	"github.com/labring/endpoints-operator/library/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,10 +43,10 @@ type RepositoryReconciler struct {
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -84,59 +83,30 @@ func (r *RepositoryReconciler) doReconcile(ctx context.Context, obj client.Objec
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert Repository is error")
 	}
-	pipelines := []func(ctx context.Context, repo *imagehubv1.Repository){
-		r.syncOrg,
-		r.syncImg,
-	}
-	for _, fn := range pipelines {
-		fn(ctx, repo)
-	}
-	return ctrl.Result{}, r.Client.Update(ctx, repo)
-}
 
-func (r *RepositoryReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller Repository", "request", client.ObjectKeyFromObject(obj))
-	repo, ok := obj.(*imagehubv1.Repository)
-	if !ok {
-		return errors.New("obj convert Repository is error")
+	// get org and SetControllerReference.
+	org := &imagehubv1.Organization{}
+	org.Name = repo.Spec.Name.GetOrg()
+	if err := r.Get(ctx, client.ObjectKeyFromObject(org), org); err != nil {
+		return ctrl.Result{}, err
 	}
-	pipelines := []func(ctx context.Context, repo *imagehubv1.Repository){
-		r.deleteOrgRepoList,
-	}
-	for _, fn := range pipelines {
-		fn(ctx, repo)
-	}
-	return nil
-}
 
-// todo sync repo to org
-func (r *RepositoryReconciler) syncOrg(ctx context.Context, repo *imagehubv1.Repository) {
-	org := &imagehubv1.Organization{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: repo.Spec.Name.GetOrg(),
-		},
+	update, err := controllerutil.CreateOrUpdate(ctx, r.Client, repo, func() error {
+		if err := controllerutil.SetControllerReference(org, repo, r.Scheme); err != nil {
+			r.Logger.Error(err, "error in repo SetControllerReference")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		r.Logger.Error(err, "repo reconcile update repo error")
+		return ctrl.Result{Requeue: true}, err
 	}
-	if err := r.Get(ctx, client.ObjectKeyFromObject(org), org); client.IgnoreNotFound(err) != nil {
-		r.Logger.V(1).Info("Get org error")
-		return
-	}
-	if err := controllerutil.SetControllerReference(org, repo, r.Scheme); err != nil {
-		r.Logger.V(1).Info("repo SetControllerReference")
-		return
-	}
-	org.Status.Name = org.Spec.Name
-	// update org status
-	if !isRepoExistInOrgList(repo.Spec.Name, org.Status.Repos) {
-		org.Status.Repos = append(org.Status.Repos, repo.Spec.Name)
-	}
-	if err := r.Status().Update(ctx, org); err != nil {
-		r.Logger.V(1).Info("org status update error")
-	}
-}
+	r.Logger.V(1).Info("repo reconcile update repo:", "changes", update)
 
-// syncImg will get images that match repo, and will sync them to repo
-func (r *RepositoryReconciler) syncImg(ctx context.Context, repo *imagehubv1.Repository) {
+	// update status
 	imgList, _ := r.db.getImageListByRepoName(ctx, repo.Spec.Name)
+	r.Logger.Info("getImageListByRepoName", "imgList Len:", len(imgList.Items))
 	tagList := imagehubv1.TagList{}
 	for _, img := range imgList.Items {
 		tagList = append(tagList, imagehubv1.TagData{
@@ -148,44 +118,26 @@ func (r *RepositoryReconciler) syncImg(ctx context.Context, repo *imagehubv1.Rep
 	sort.Slice(repo.Status.Tags, func(i, j int) bool {
 		return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 	})
-	repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
-	err := r.Status().Update(ctx, repo)
-	if err != nil {
-		r.Logger.V(1).Info("repo status update error")
+	if len(repo.Status.Tags) != 0 {
+		repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
 	}
+
+	latestrepo := &imagehubv1.Repository{}
+	if err := r.Get(ctx, client.ObjectKeyFromObject(repo), latestrepo); err != nil {
+		r.Logger.Error(err, "error in get repo")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	latestrepo.Status = repo.Status
+	r.Logger.Info("Repo status: ", "tagList:", repo.Status)
+	if err := r.Status().Update(ctx, repo); err != nil {
+		r.Logger.Error(err, "error in repo update status")
+		return ctrl.Result{Requeue: true}, err
+	}
+	return ctrl.Result{}, nil
 }
 
-func (r *RepositoryReconciler) deleteOrgRepoList(ctx context.Context, repo *imagehubv1.Repository) {
-	// todo try to delete image in hub.sealos.io registry
-	org := &imagehubv1.Organization{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: repo.Spec.Name.GetOrg(),
-		},
-	}
-	if err := r.Get(ctx, client.ObjectKeyFromObject(org), org); client.IgnoreNotFound(err) != nil {
-		r.Logger.V(1).Info("Get org error")
-		return
-	}
-	// update org repo list
-	var res []imagehubv1.RepoName
-	for _, re := range org.Status.Repos {
-		if re != repo.Spec.Name {
-			res = append(res, re)
-		}
-	}
-	org.Status.Repos = res
-	if err := r.Status().Update(ctx, org); err != nil {
-		r.Logger.V(1).Info("org status update error")
-	}
-}
-
-func isRepoExistInOrgList(repo imagehubv1.RepoName, repos []imagehubv1.RepoName) bool {
-	for _, name := range repos {
-		if name == repo {
-			return true
-		}
-	}
-	return false
+func (r *RepositoryReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -206,5 +158,6 @@ func (r *RepositoryReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger.V(1).Info("init reconcile controller repo")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Repository{}).
+		Owns(&imagehubv1.Image{}).
 		Complete(r)
 }

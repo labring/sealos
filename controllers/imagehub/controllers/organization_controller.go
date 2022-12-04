@@ -92,6 +92,24 @@ func (r *OrganizationReconciler) doReconcile(ctx context.Context, obj client.Obj
 	for _, fn := range pipelines {
 		fn(ctx, org)
 	}
+
+	// update status
+	repoList, _ := r.db.getRepoListByOrgName(ctx, imagehubv1.OrgName(org.Spec.Name))
+	var repoNames []imagehubv1.RepoName
+	for _, i := range repoList.Items {
+		repoNames = append(repoNames, i.Spec.Name)
+	}
+	org.Status.Repos = repoNames
+
+	latestorg := &imagehubv1.Organization{}
+	if err := r.Get(ctx, client.ObjectKeyFromObject(org), latestorg); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	latestorg.Status = org.Status
+	if err := r.Status().Update(ctx, latestorg); err != nil {
+		r.Logger.Error(err, "error in org update status", "org: ", org)
+		return ctrl.Result{Requeue: true}, err
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -183,5 +201,6 @@ func (r *OrganizationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Organization{}).
+		Owns(&imagehubv1.Repository{}).
 		Complete(r)
 }
