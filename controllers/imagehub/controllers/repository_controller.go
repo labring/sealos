@@ -80,7 +80,7 @@ func (r *RepositoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 }
 
 func (r *RepositoryReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("delete reconcile controller repo", "request", client.ObjectKeyFromObject(obj))
+	r.Logger.V(1).Info("update reconcile controller repo", "request", client.ObjectKeyFromObject(obj))
 	repo, ok := obj.(*imagehubv1.Repository)
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert Repository is error")

@@ -23,10 +23,13 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // OrganizationReconciler reconciles a Organization object
@@ -43,6 +46,8 @@ type OrganizationReconciler struct {
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles,verbs=create;delete;get;list;patch;update;watch
+//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=organizations/finalizers,verbs=update
 
@@ -76,8 +81,82 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 }
 
 func (r *OrganizationReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	r.Logger.V(1).Info("update reconcile controller org", "request", client.ObjectKeyFromObject(obj))
+	org, ok := obj.(*imagehubv1.Organization)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert Organization is error")
+	}
+	pipelines := []func(ctx context.Context, org *imagehubv1.Organization){
+		r.syncClusterroleBinding,
+	}
+	for _, fn := range pipelines {
+		fn(ctx, org)
+	}
 	return ctrl.Result{}, nil
 }
+
+func (r *OrganizationReconciler) syncClusterroleBinding(ctx context.Context, org *imagehubv1.Organization) {
+	orgMgrRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "OrgManagerClusterRole-" + org.Name,
+		},
+	}
+	// add orgMgrRule
+	orgMgrRule := rbacv1.PolicyRule{
+		Verbs:         []string{rbacv1.VerbAll},
+		APIGroups:     []string{"imagehub.sealos.io"},
+		Resources:     []string{"organizations"},
+		ResourceNames: []string{org.Name},
+	}
+	orgMgrRole.Rules = append(orgMgrRole.Rules, orgMgrRule)
+	r.Logger.V(1).Info("CreateOrUpdate", "clusterrole", orgMgrRole.Name)
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, orgMgrRole, func() error {
+		if err := controllerutil.SetControllerReference(org, orgMgrRole, r.Scheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		r.Logger.Error(err, "err in CreateOrUpdate clusterrole", "clusterrole", orgMgrRole.Name)
+		return
+	}
+	// create cluster role binding
+	var sub []rbacv1.Subject
+	for _, user := range org.Spec.Manager {
+		sub = append(sub, rbacv1.Subject{
+			Kind:      "ServiceAccount",
+			Name:      user,
+			Namespace: "default",
+		})
+	}
+	sub = append(sub, rbacv1.Subject{
+		Kind:      "ServiceAccount",
+		Name:      org.Spec.Creator,
+		Namespace: "default",
+	})
+	crb := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "OrgManagerClusterRoleBinding-" + org.Name,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     "ClusterRole",
+			Name:     orgMgrRole.Name,
+		},
+		Subjects: sub,
+	}
+	r.Logger.V(1).Info("CreateOrUpdate", "clusterrolebinding", crb.Name)
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, crb, func() error {
+		if err := controllerutil.SetControllerReference(org, crb, r.Scheme); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		r.Logger.Error(err, "err in CreateOrUpdate clusterrolebinding", "clusterrolebinding", crb.Name)
+		return
+	}
+	r.Logger.Info("create ClusterRole and ClusterRoleBinding for ", "org:", org.Name)
+}
+
 func (r *OrganizationReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
 }
