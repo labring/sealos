@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"net/url"
 	"os"
-	"strings"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
@@ -94,7 +93,7 @@ func newLoginCommand() *cobra.Command {
 				return nil
 			}
 			// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
-			registryHost, err := replaceURLByHostPort(args[0])
+			registryHost, _, err := parseRawURL(args[0])
 			if err != nil {
 				return err
 			}
@@ -150,16 +149,20 @@ func GetCurrentUserFromKubeConfig(filename string) (userid string, err error) {
 	return expectedCtx.AuthInfo, nil
 }
 
-// If the specified string starts with http{s} it is replaced with it's
-// host[:port] parts; everything else is stripped. Otherwise, the string is
-// returned as is.
-func replaceURLByHostPort(repository string) (string, error) {
-	if !strings.HasPrefix(repository, "https://") && !strings.HasPrefix(repository, "http://") {
-		return repository, nil
+func parseRawURL(rawurl string) (domain string, scheme string, err error) {
+	u, err := url.ParseRequestURI(rawurl)
+	if err != nil || u.Host == "" {
+		u, repErr := url.ParseRequestURI("https://" + rawurl)
+		if repErr != nil {
+			fmt.Printf("Could not parse raw url: %s, error: %v", rawurl, err)
+			return
+		}
+		domain = u.Host
+		err = nil
+		return
 	}
-	u, err := url.Parse(repository)
-	if err != nil {
-		return "", fmt.Errorf("trimming http{s} prefix: %v", err)
-	}
-	return u.Host, nil
+
+	domain = u.Host
+	scheme = u.Scheme
+	return
 }
