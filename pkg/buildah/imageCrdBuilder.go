@@ -1,11 +1,10 @@
-package app_image
+package buildah
 
 import (
 	"context"
 	"flag"
 	"fmt"
 	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
-	"github.com/labring/sealos/pkg/image"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/pkg/errors"
@@ -94,22 +93,23 @@ func (icb *ImageCRDBuilder) Run() error {
 func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	clusterName := icb.imagename + strconv.Itoa(rnd.Int())
-
-	clusterSvc, err := image.NewClusterService()
+	fmt.Println(clusterName)
+	realImpl, err := New("")
 	if err != nil {
 		return "", err
 	}
 
-	manifest, err := clusterSvc.Create(clusterName, icb.imagename)
+	builderInfo, err := realImpl.Create(clusterName, icb.imagename)
+	fmt.Println(builderInfo.MountPoint)
 	if err != nil {
 		return "", err
 	}
-	logger.Info("Mount point: %s", manifest.MountPoint)
-	if iseist := file.IsExist(manifest.MountPoint); !iseist {
+	logger.Info("Mount point: %s", builderInfo.MountPoint)
+	if iseist := file.IsExist(builderInfo.MountPoint); !iseist {
 		return "", fmt.Errorf("MountPoint not Exist")
 	}
 	icb.clustername = clusterName
-	return manifest.MountPoint, nil
+	return builderInfo.MountPoint, nil
 }
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 	if !file.IsExist(filepath.Join(MountPoint, AppPath)) {
@@ -200,13 +200,11 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 }
 
 func (icb *ImageCRDBuilder) DeleteContainer() error {
-	force := true
-	registrySvc, err := image.NewImageService()
+	realImpl, err := New("")
 	if err != nil {
 		return err
 	}
-	return registrySvc.Remove(force, icb.imagename)
-	return nil
+	return realImpl.Delete(icb.imagename)
 }
 
 func FileReadUtil(filePath string) ([]byte, error) {
