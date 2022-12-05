@@ -49,6 +49,7 @@ func newCreateCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			args = []string{shell}
+			// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Env = unshare.RootlessEnv()
 			cmd.Stdin = os.Stdin
