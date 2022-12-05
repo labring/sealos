@@ -71,7 +71,7 @@ func (impl *realImpl) Pull(pf v1.Platform, pullPolicy string, imageNames ...stri
 	if err != nil {
 		return err
 	}
-	logger.Info("images %s are pulled", strings.Join(ids, ", "))
+	logger.Debug("images %s are pulled", strings.Join(ids, ", "))
 	return nil
 }
 
