@@ -21,11 +21,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"golang.org/x/sync/errgroup"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Exec struct {

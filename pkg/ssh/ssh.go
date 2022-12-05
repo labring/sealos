@@ -22,6 +22,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -43,14 +45,17 @@ type Interface interface {
 }
 
 type SSH struct {
-	isStdout     bool
-	User         string
-	Password     string
-	PkFile       string
-	PkData       string
-	PkPassword   string
-	Timeout      *time.Duration
-	LocalAddress *[]net.Addr
+	isStdout   bool
+	User       string
+	Password   string
+	PkFile     string
+	PkData     string
+	PkPassword string
+	Timeout    time.Duration
+
+	// private properties
+	localAddress *[]net.Addr
+	clientConfig *ssh.ClientConfig
 }
 
 func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
@@ -69,7 +74,7 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 		PkFile:       ssh.Pk,
 		PkData:       ssh.PkData,
 		PkPassword:   ssh.PkPasswd,
-		LocalAddress: address,
+		localAddress: address,
 	}
 }
 
@@ -78,12 +83,7 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
 
-	err := WaitSSHReady(sshClient, 6, ipList...)
-	if err != nil {
-		return nil, err
-	}
-
-	return sshClient, nil
+	return sshClient, WaitSSHReady(sshClient, 6, ipList...)
 }
 
 type Client struct {
