@@ -19,36 +19,42 @@ import (
 	"net"
 	"os"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/ssh"
+
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"golang.org/x/crypto/ssh"
 )
+
+func (s *SSH) getClientConfig() *ssh.ClientConfig {
+	if s.clientConfig == nil {
+		auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkData, s.PkPassword)
+		config := ssh.Config{
+			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
+		}
+		defaultTimeout := time.Duration(15) * time.Second
+		if s.Timeout <= 0 {
+			s.Timeout = defaultTimeout
+		}
+		s.clientConfig = &ssh.ClientConfig{
+			User:    s.User,
+			Auth:    auth,
+			Timeout: s.Timeout,
+			Config:  config,
+			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+				return nil
+			},
+		}
+	}
+	return s.clientConfig
+}
 
 // SSH connection operation
 func (s *SSH) connect(host string) (*ssh.Client, error) {
-	auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkData, s.PkPassword)
-	config := ssh.Config{
-		Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
-	}
-	DefaultTimeout := time.Duration(15) * time.Second
-	if s.Timeout == nil {
-		s.Timeout = &DefaultTimeout
-	}
-	clientConfig := &ssh.ClientConfig{
-		User:    s.User,
-		Auth:    auth,
-		Timeout: *s.Timeout,
-		Config:  config,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
-		},
-	}
+	clientConfig := s.getClientConfig()
 	ip, port := iputils.GetSSHHostIPAndPort(host)
 	addr := s.addrReformat(ip, port)
 	return ssh.Dial("tcp", addr, clientConfig)
@@ -83,74 +89,41 @@ func (s *SSH) Connect(host string) (*ssh.Client, *ssh.Session, error) {
 
 func (s *SSH) sshAuthMethod(password, pkFile, pkData, pkPasswd string) (auth []ssh.AuthMethod) {
 	if pkData != "" {
-		am, err := s.sshPrivateKeyDataMethod(pkData, pkPasswd)
+		signer, err := parsePrivateKey([]byte(pkData), []byte(pkPasswd))
 		if err == nil {
-			auth = append(auth, am)
+			auth = append(auth, ssh.PublicKeys(signer))
 		}
 	}
 	if fileExist(pkFile) {
-		am, err := s.sshPrivateKeyMethod(pkFile, pkPasswd)
+		signer, err := parsePrivateKeyFile(pkFile, pkPasswd)
 		if err == nil {
-			auth = append(auth, am)
+			auth = append(auth, ssh.PublicKeys(signer))
 		}
 	}
 	if password != "" {
-		auth = append(auth, s.sshPasswordMethod(password))
+		auth = append(auth, ssh.Password(password))
 	}
 	return auth
 }
 
-// Authentication with a private key,private key has password and no password to verify in this
-func (s *SSH) sshPrivateKeyMethod(pkFile, pkPassword string) (am ssh.AuthMethod, err error) {
-	pkData, err := os.ReadFile(filepath.Clean(pkFile))
-	if err != nil {
-		return nil, err
+func parsePrivateKey(pemBytes []byte, password []byte) (ssh.Signer, error) {
+	if len(password) == 0 {
+		return ssh.ParsePrivateKey(pemBytes)
 	}
-
-	var pk ssh.Signer
-	if pkPassword == "" {
-		pk, err = ssh.ParsePrivateKey(pkData)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		bufPwd := []byte(pkPassword)
-		pk, err = ssh.ParsePrivateKeyWithPassphrase(pkData, bufPwd)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ssh.PublicKeys(pk), nil
+	return ssh.ParsePrivateKeyWithPassphrase(pemBytes, password)
 }
 
-// Authentication with a private key,private key has password and no password to verify in this
-func (s *SSH) sshPrivateKeyDataMethod(pkData, pkPassword string) (am ssh.AuthMethod, err error) {
+func parsePrivateKeyFile(filename string, password string) (ssh.Signer, error) {
+	pemBytes, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read private key file %v", err)
 	}
-
-	var pk ssh.Signer
-	if pkPassword == "" {
-		pk, err = ssh.ParsePrivateKey([]byte(pkData))
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		bufPwd := []byte(pkPassword)
-		pk, err = ssh.ParsePrivateKeyWithPassphrase([]byte(pkData), bufPwd)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return ssh.PublicKeys(pk), nil
+	return parsePrivateKey(pemBytes, []byte(password))
 }
 
 func fileExist(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil || os.IsExist(err)
-}
-func (s *SSH) sshPasswordMethod(password string) ssh.AuthMethod {
-	return ssh.Password(password)
 }
 
 func (s *SSH) addrReformat(host, port string) string {
