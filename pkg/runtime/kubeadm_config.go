@@ -43,15 +43,15 @@ import (
 var scheme = k8sruntime.NewScheme()
 
 func init() {
-	utilruntime.Must(kubeadmv1beta2.AddToScheme(scheme))
-	utilruntime.Must(kubeadmv1beta3.AddToScheme(scheme))
-	utilruntime.Must(kubeletconfig.AddToScheme(scheme))
-	utilruntime.Must(proxyconfig.AddToScheme(scheme))
-	// register override functions
+	// override functions must registered before AddToScheme
 	kubelet.SchemeBuilder.Register(func(s *k8sruntime.Scheme) error {
 		s.AddTypeDefaultingFunc(&kubelet.KubeletConfiguration{}, overrideKubeletDefaults)
 		return nil
 	})
+	utilruntime.Must(kubeadmv1beta2.AddToScheme(scheme))
+	utilruntime.Must(kubeadmv1beta3.AddToScheme(scheme))
+	utilruntime.Must(kubeletconfig.AddToScheme(scheme))
+	utilruntime.Must(proxyconfig.AddToScheme(scheme))
 }
 
 func overrideKubeletDefaults(obj interface{}) {
