@@ -180,6 +180,14 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 	gvk := icb.Content.AppConfig.GroupVersionKind()
 	dyclient, _ := GetGVRdyClient(&gvk, "default")
 	if _, err := dyclient.Create(context.TODO(), &utd, metav1.CreateOptions{}); err != nil {
+		if utd.GetResourceVersion() == "" {
+			objGET, err := dyclient.Get(context.TODO(), utd.GetName(), metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrap(err, "unable to get obj")
+			}
+			fmt.Println(objGET.GetResourceVersion())
+			utd.SetResourceVersion(objGET.GetResourceVersion())
+		}
 		fmt.Println("dyclient.Create err")
 		if !apierrors.IsAlreadyExists(err) {
 			return errors.Wrap(err, "unable to create secret")
@@ -247,6 +255,7 @@ func (icb *ImageCRDBuilder) TemplateCmdParse() error {
 		}
 		icb.Content.AppConfig.Spec.DetailInfo.AppActions.CMD[imagev1.ActionName(k)] = imagev1.CMD(v)
 	}
+
 	return nil
 }
 
