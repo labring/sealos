@@ -1,9 +1,0 @@
-apiVersion: app.sealos.io/v1
-kind: Actions
-metadata:
-  name: mysqlinstall2
-spec:
-  appName: labring.mysql.v8.0.25
-  actionName: install
-  args:
-    size: 399Mi

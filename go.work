@@ -4,14 +4,15 @@ use (
 	.
 	./controllers/app
 	./controllers/cluster
+	./controllers/imagehub
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
 	./controllers/user
-	./controllers/imagehub
 	./service/auth
 	./service/payment
 	./staging/src/github.com/labring/image-cri-shim
 	./staging/src/github.com/labring/lvscare
 	./webhooks/whitelist
 )
+
