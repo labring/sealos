@@ -93,7 +93,7 @@ func newLoginCommand() *cobra.Command {
 				return nil
 			}
 			// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
-			registryHost, _, err := parseRawURL(args[0])
+			registryHost, err := parseRawURL(args[0])
 			if err != nil {
 				return err
 			}
@@ -102,6 +102,7 @@ func newLoginCommand() *cobra.Command {
 				return err
 			}
 			sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
+			// copy file, will overwrite the original file
 			if err := fileutil.Copy(opts.kubeconfig, sealosKubeconfPath); err != nil {
 				return err
 			}
@@ -149,7 +150,7 @@ func GetCurrentUserFromKubeConfig(filename string) (userid string, err error) {
 	return expectedCtx.AuthInfo, nil
 }
 
-func parseRawURL(rawurl string) (domain string, scheme string, err error) {
+func parseRawURL(rawurl string) (domain string, err error) {
 	u, err := url.ParseRequestURI(rawurl)
 	if err != nil || u.Host == "" {
 		u, repErr := url.ParseRequestURI("https://" + rawurl)
@@ -161,8 +162,6 @@ func parseRawURL(rawurl string) (domain string, scheme string, err error) {
 		err = nil
 		return
 	}
-
 	domain = u.Host
-	scheme = u.Scheme
 	return
 }
