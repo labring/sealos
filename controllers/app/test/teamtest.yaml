@@ -1,9 +1,8 @@
 apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
-  name: abc-minimal-cluster
+  name: minimalcluster
 spec:
-  teamId: "abc"
   volume:
     size: 300Mi
   numberOfInstances: 2
