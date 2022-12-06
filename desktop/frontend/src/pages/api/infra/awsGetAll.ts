@@ -19,7 +19,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     group: 'infra.sealos.io',
     version: 'v1',
     namespace: GetUserDefaultNameSpace(kube_user.name),
-    // namespace: 'infra-system',
     plural: 'infras'
   };
 

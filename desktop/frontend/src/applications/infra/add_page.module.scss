@@ -48,18 +48,7 @@
   }
 }
 
-.cloudlabel {
-  width: 60px;
-  text-align: right;
-  display: inline-block;
-  font-size: 14px;
-  line-height: 20px;
-  color: #201f1e;
-  margin-right: 16px;
-}
-
-.inputName {
-  width: 350px;
+.inputName span {
   width: 350px;
 }
 
@@ -103,4 +92,18 @@
   flex-basis: 450px;
   border: 1px solid #e1e2e3;
   border-radius: 2px;
+}
+
+.confirmBtn {
+  background: #007fee;
+  border-radius: 2px;
+  border: 1px solid #007fee;
+  color: #ffffff;
+  height: 32px;
+  width: 96px;
+  padding: 5px 12px;
+}
+
+.inputNameMin span {
+  width: 274px;
 }

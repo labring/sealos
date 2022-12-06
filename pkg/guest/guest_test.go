@@ -23,7 +23,6 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 
-	"github.com/labring/sealos/pkg/image/types"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -32,7 +31,6 @@ func TestDefault_getGuestCmd(t *testing.T) {
 		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cName, containerName), cmd)
 	}
 	type fields struct {
-		imageService types.ImageService
 	}
 	type args struct {
 		envs    map[string]string
@@ -129,9 +127,7 @@ func TestDefault_getGuestCmd(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &Default{
-				imageService: tt.fields.imageService,
-			}
+			d := &Default{}
 			if got := d.getGuestCmd(tt.args.envs, tt.args.cluster, tt.args.mounts); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getGuestCmd() = %v, want %v", got, tt.want)
 			}

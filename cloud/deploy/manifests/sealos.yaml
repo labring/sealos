@@ -19,3 +19,12 @@ metadata:
   annotations:
   labels:
     name: sealos
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sealos-system
+  annotations:
+  labels:
+    name: sealos-system

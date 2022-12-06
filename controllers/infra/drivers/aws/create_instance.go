@@ -21,8 +21,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/google/uuid"
 
@@ -111,6 +114,26 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 	return tags
 }
 
+func checkHasSystemDisk(hosts *v1.Hosts) bool {
+	var hasSystemDisk = false
+	for _, v := range hosts.Disks {
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) {
+			hasSystemDisk = true
+		}
+	}
+	return hasSystemDisk
+}
+
+// generateDataDiskDeviceName according https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html#available-ec2-device-names
+func generateDataDiskDeviceName(index int) (string, error) {
+	var deviceSuffix = "bcdefghijklmnop"
+	if index > len(deviceSuffix)-1 || index < 0 {
+		return "", fmt.Errorf("device index is wrong that aws can't support, please check")
+	}
+	var deviceName = fmt.Sprintf("/dev/sd%s", string(deviceSuffix[index]))
+	return deviceName, nil
+}
+
 // get tags
 func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	// Tag name and tag value
@@ -145,33 +168,43 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	return tags
 }
 
-// set blockDeviceMappings from hosts
-func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts) []types.BlockDeviceMapping {
-	rootDeviceName := "/dev/xvda"
-	rootVolumeSize := int32(40)
-
-	if len(hosts.Disks) == 0 {
-		return []types.BlockDeviceMapping{
-			{
-				DeviceName: &rootDeviceName,
-				Ebs: &types.EbsBlockDevice{
-					VolumeSize: &rootVolumeSize,
-				},
-			},
-		}
-	}
-
+// GetBlockDeviceMappings generate blockDeviceMappings from hosts
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) []types.BlockDeviceMapping {
 	var blockDeviceMappings []types.BlockDeviceMapping
-	for _, v := range hosts.Disks {
-		size := int32(v.Capacity)
+	hasSystem := checkHasSystemDisk(hosts)
+	// if not specify a system disk, we add a default
+	if !hasSystem {
 		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
-			DeviceName: &v.Name,
+			DeviceName: &rootDeviceName,
 			Ebs: &types.EbsBlockDevice{
-				VolumeSize: &size,
-				VolumeType: types.VolumeType(v.Type),
+				VolumeSize: &common.DefaultRootVolumeSize,
 			},
 		})
 	}
+	systemAdded := false
+	dataDiskIndex := 0
+	for _, v := range hosts.Disks {
+		var deviceName string
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) && !systemAdded {
+			deviceName = rootDeviceName
+			systemAdded = true
+		} else {
+			// should limit dataDiskNumbers here in crd check to avoid index error.
+			deviceName, _ = generateDataDiskDeviceName(dataDiskIndex)
+			dataDiskIndex++
+		}
+
+		size := int32(v.Capacity)
+		bdm := types.BlockDeviceMapping{
+			DeviceName: &deviceName,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &size,
+				VolumeType: types.VolumeType(v.VolumeType),
+			},
+		}
+		blockDeviceMappings = append(blockDeviceMappings, bdm)
+	}
+
 	return blockDeviceMappings
 }
 
@@ -191,11 +224,17 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 	)
 	keyName := infra.Spec.SSH.PkName
-	//todo use ami to search root device name
+	// todo use ami to search root device name
+
 	// encode userdata to base64
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
-	// set other dataDisks, and read name and size from hosts
-	dataDisks := d.GetBlockDeviceMappings(hosts)
+	// set bdms, and read name and size from hosts
+
+	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
+	if err != nil {
+		return err
+	}
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -213,7 +252,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 		KeyName:             &keyName,
 		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
-		BlockDeviceMappings: dataDisks,
+		BlockDeviceMappings: bdms,
 		UserData:            &userData,
 	}
 
@@ -283,5 +322,6 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
+	logger.Info("create key pair success", "keyName", *result.KeyName)
 	return nil
 }

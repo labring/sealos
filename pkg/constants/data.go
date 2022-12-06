@@ -17,12 +17,24 @@ limitations under the License.
 package constants
 
 import (
+	"fmt"
 	"io/fs"
+	"os"
+	"path"
 	"path/filepath"
+	"strings"
+
+	"github.com/containers/storage/pkg/homedir"
+)
+
+const (
+	defaultDataRoot = "/var/lib"
+	AppName         = "sealos"
 )
 
 var (
-	DefaultClusterRootfsDir = "/var/lib/sealos"
+	DefaultClusterRootFsDir = path.Join(defaultDataRoot, AppName)
+	DefaultRuntimeRootDir   = GetRuntimeRootDir(AppName)
 )
 
 const (
@@ -44,11 +56,19 @@ const (
 	StaticsDirName                   = "statics"
 )
 
-func LogPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "logs")
+func GetRuntimeRootDir(name string) string {
+	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {
+		return v
+	}
+	return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
 }
+
+func LogPath() string {
+	return filepath.Join(DefaultRuntimeRootDir, "logs")
+}
+
 func DataPath() string {
-	return filepath.Join(DefaultClusterRootfsDir, "data")
+	return filepath.Join(DefaultClusterRootFsDir, "data")
 }
 
 func GetAppWorkDir(clusterName, applicationName string) string {
@@ -96,6 +116,7 @@ func (d *data) RootFSEtcPath() string {
 func (d *data) RootFSRegistryPath() string {
 	return filepath.Join(d.RootFSPath(), RegistryDirName)
 }
+
 func (d *data) RootFSCharsPath() string {
 	return filepath.Join(d.RootFSPath(), ChartsDirName)
 }
@@ -107,6 +128,7 @@ func (d *data) RootFSManifestsPath() string {
 func (d *data) EtcPath() string {
 	return filepath.Join(ClusterDir(d.clusterName), EtcDirName)
 }
+
 func (d *data) AdminFile() string {
 	return filepath.Join(d.EtcPath(), "admin.conf")
 }
@@ -120,7 +142,7 @@ func (d *data) PkiEtcdPath() string {
 }
 
 func (d *data) TmpPath() string {
-	return filepath.Join(d.Homedir(), "tmp")
+	return filepath.Join(ClusterDir(d.clusterName), "tmp")
 }
 
 func (d *data) RootFSPath() string {
@@ -132,7 +154,7 @@ func (d *data) RootFSStaticsPath() string {
 }
 
 func (d *data) Homedir() string {
-	return filepath.Join(DefaultClusterRootfsDir, "data", d.clusterName)
+	return filepath.Join(DefaultClusterRootFsDir, "data", d.clusterName)
 }
 
 func NewData(clusterName string) Data {

@@ -35,6 +35,12 @@ type Applier interface {
 	Undo(Context, string) error
 }
 
+var (
+	defaultCheckers     []Applier
+	defaultInitializers []Applier
+	defaultAddons       []Applier
+)
+
 type registryApplier struct {
 }
 
@@ -106,4 +112,8 @@ func newHtpasswdMaker(root string) *htpasswdMaker {
 
 func (*registryApplier) Undo(ctx Context, host string) error {
 	return ctx.GetExecer().CmdAsync(host, ctx.GetShellWrapper()(host, ctx.GetBash().CleanRegistryBash()))
+}
+
+func init() {
+	defaultAddons = append(defaultAddons, &registryApplier{})
 }

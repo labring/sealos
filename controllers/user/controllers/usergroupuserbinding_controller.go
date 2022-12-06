@@ -35,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,18 +44,8 @@ type UserGroupUserBindingController struct {
 	*UserGroupBindingReconciler
 }
 
-func (r *UserGroupUserBindingController) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller userGroupBinding user", "request", req)
-	return nil
-}
-
-func (r *UserGroupUserBindingController) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller userGroupBinding user", "request", req)
-	ugBinding := &userv1.UserGroupBinding{}
-	if err := r.Client.Get(ctx, req.NamespacedName, ugBinding); err != nil {
-		r.Logger.Error(err, "unable to fetch UserGroupBinding user")
-		return ctrl.Result{Requeue: true}, err
-	}
+func (r *UserGroupUserBindingController) doReconcile(ctx context.Context, ugBinding *userv1.UserGroupBinding) (ctrl.Result, error) {
+	r.Logger.V(1).Info("update reconcile controller userGroupBinding user", "request", client.ObjectKeyFromObject(ugBinding))
 	pipelines := []func(ctx context.Context, ugBinding *userv1.UserGroupBinding){
 		r.initStatus,
 		r.syncClusterRoleGenerate,

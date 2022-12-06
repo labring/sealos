@@ -61,10 +61,10 @@ func checkHostnameUnique(s ssh.Interface, ipList []string) error {
 	for _, ip := range ipList {
 		hostname, err := s.CmdToString(ip, "hostname", "")
 		if err != nil {
-			return fmt.Errorf("checker: failed to get host %s hostname, %v", ip, err)
+			return fmt.Errorf("failed to get host %s hostname, %v", ip, err)
 		}
 		if hostnameList[hostname] {
-			return fmt.Errorf("checker: hostname cannot be repeated, please set different hostname")
+			return fmt.Errorf("hostname cannot be repeated, please set different hostname")
 		}
 		hostnameList[hostname] = true
 	}
@@ -77,15 +77,15 @@ func checkTimeSync(s ssh.Interface, ipList []string) error {
 	for _, ip := range ipList {
 		timeStamp, err := s.CmdToString(ip, "date +%s", "")
 		if err != nil {
-			return fmt.Errorf("checker: failed to get %s timestamp, %v", ip, err)
+			return fmt.Errorf("failed to get %s timestamp, %v", ip, err)
 		}
 		ts, err := strconv.Atoi(timeStamp)
 		if err != nil {
-			return fmt.Errorf("checker: failed to reverse timestamp %s, %v", timeStamp, err)
+			return fmt.Errorf("failed to reverse timestamp %s, %v", timeStamp, err)
 		}
 		timeDiff := time.Since(time.Unix(int64(ts), 0)).Minutes()
 		if timeDiff < -1 || timeDiff > 1 {
-			return fmt.Errorf("checker: the time of %s node is not synchronized", ip)
+			return fmt.Errorf("the time of %s node is not synchronized", ip)
 		}
 	}
 	return nil

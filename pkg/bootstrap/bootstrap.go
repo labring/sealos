@@ -58,9 +58,9 @@ func New(cluster *v2.Cluster) Interface {
 		addons:       make([]Applier, 0),
 	}
 	// register builtin appliers
-	_ = bs.RegisterApplier(Preflight, &defaultChecker{})
-	_ = bs.RegisterApplier(Init, &defaultInitializer{})
-	_ = bs.RegisterApplier(Addon, &registryApplier{})
+	_ = bs.RegisterApplier(Preflight, defaultCheckers...)
+	_ = bs.RegisterApplier(Init, defaultInitializers...)
+	_ = bs.RegisterApplier(Addon, defaultAddons...)
 	return bs
 }
 
@@ -108,8 +108,9 @@ func (bs *realBootstrap) RegisterApplier(phase Phase, appliers ...Applier) error
 
 func (bs *realBootstrap) Reset(hosts ...string) error {
 	appliers := make([]Applier, 0)
-	// only undo addons OR?
+	// first addons, second initializers
 	appliers = append(appliers, bs.addons...)
+	appliers = append(appliers, bs.initializers...)
 	return runParallel(hosts, func(host string) error {
 		for i := range appliers {
 			applier := appliers[i]
@@ -177,5 +178,24 @@ func (initializer *defaultInitializer) Apply(ctx Context, host string) error {
 }
 
 func (initializer *defaultInitializer) Undo(_ Context, _ string) error {
+	return nil
+}
+
+func init() {
+	defaultCheckers = append(defaultCheckers, &defaultChecker{})
+	defaultInitializers = append(defaultInitializers, &defaultInitializer{})
+}
+
+func RegisterApplier(phase Phase, appliers ...Applier) error {
+	switch phase {
+	case Preflight:
+		defaultCheckers = append(defaultCheckers, appliers...)
+	case Init:
+		defaultInitializers = append(defaultInitializers, appliers...)
+	case Addon:
+		defaultAddons = append(defaultAddons, appliers...)
+	default:
+		return fmt.Errorf("unknown phase %s", phase)
+	}
 	return nil
 }

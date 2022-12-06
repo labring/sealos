@@ -17,12 +17,11 @@ package cmd
 import (
 	"errors"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var exampleDelete = `
@@ -49,7 +48,7 @@ func newDeleteCmd() *cobra.Command {
 	}
 	var deleteCmd = &cobra.Command{
 		Use:     "delete",
-		Short:   "delete some node",
+		Short:   "Remove nodes from cluster",
 		Args:    cobra.NoArgs,
 		Example: exampleDelete,
 		RunE: func(cmd *cobra.Command, args []string) error {
