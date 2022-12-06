@@ -87,7 +87,7 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	for i := 0; i < hosts.Count; i++ {
 		metadata := hosts.Metadata[i]
 		instanceID[i] = metadata.ID
-		disksID = append(disksID, metadata.DiskID...)
+		// disksID = append(disksID, metadata.DiskID...)
 	}
 	input := &ec2.StopInstancesInput{
 		InstanceIds: instanceID,
