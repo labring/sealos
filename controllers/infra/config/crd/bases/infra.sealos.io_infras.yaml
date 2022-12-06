@@ -46,8 +46,8 @@ spec:
                       description: 'ENUM: amd64/arm64 (NOTE: the default value is
                         amd64)'
                       enum:
-                        - amd64
-                        - arm64
+                      - amd64
+                      - arm64
                       type: string
                     count:
                       minimum: 0
@@ -65,19 +65,19 @@ spec:
                             description: Disk Type , default is data disk. allowed
                               value is `root|data`
                             enum:
-                              - root
-                              - data
+                            - root
+                            - data
                             type: string
                           volumeType:
                             description: 'ENUM: standard/io1/io2/gp2/gp3/sc1/st1'
                             enum:
-                              - standard
-                              - io1
-                              - io2
-                              - gp2
-                              - gp3
-                              - sc1
-                              - st1
+                            - standard
+                            - io1
+                            - io2
+                            - gp2
+                            - gp3
+                            - sc1
+                            - st1
                             type: string
                         type: object
                       maxItems: 10
