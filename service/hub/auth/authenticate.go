@@ -27,8 +27,8 @@ func (a SealosAuthenticate) Authenticate(user string, password api.PasswordStrin
 		return false, api.Labels{}, api.ErrWrongPass
 	}
 	// check client by ping apiserver
-	// or get organizations?
-	res, err := client.Discovery().RESTClient().Get().AbsPath("/healthz").DoRaw(context.Background())
+	// or get organizations TODO！
+	res, err := client.Discovery().RESTClient().Get().AbsPath("/readyz").DoRaw(context.Background())
 	if err != nil {
 		glog.Error("Authenticate false, ping apiserver error")
 		return false, api.Labels{}, api.ErrWrongPass
