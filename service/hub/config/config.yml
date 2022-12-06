@@ -4,5 +4,5 @@ server:
 token:
   issuer: "registry-token-issuer"
   expiration: 3600
-  certificate: "/tls.crt"
-  key: "/tls.key"
+  certificate: "/certs/tls.crt"
+  key: "/certs/tls.key"
