@@ -17,6 +17,15 @@ package buildah
 import (
 	"errors"
 	"fmt"
+	"github.com/containers/buildah"
+	"github.com/containers/buildah/define"
+	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/image/v5/manifest"
+	"github.com/containers/image/v5/pkg/compression"
+	"github.com/containers/image/v5/transports/alltransports"
+	"github.com/containers/storage"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"os"
 	"strings"
 	"time"
 
@@ -27,6 +36,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	iutil "github.com/labring/sealos/pkg/buildah/internal/util"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -146,113 +156,115 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 	default:
 		return errors.New("only two arguments are necessary to push: source and destination")
 	}
-	//
-	//compress := define.Gzip
-	//if iopts.disableCompression {
-	//	compress = define.Uncompressed
-	//}
-	//
-	//store, err := getStore(c)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//dest, err := alltransports.ParseImageName(destSpec)
-	//// add the docker:// transport to see if they neglected it.
-	//if err != nil {
-	//	destTransport := strings.Split(destSpec, ":")[0]
-	//	if t := transports.Get(destTransport); t != nil {
-	//		return err
-	//	}
-	//
-	//	if strings.Contains(destSpec, "://") {
-	//		return err
-	//	}
-	//
-	//	destSpec = "docker://" + destSpec
-	//	dest2, err2 := alltransports.ParseImageName(destSpec)
-	//	if err2 != nil {
-	//		return err
-	//	}
-	//	dest = dest2
-	//	logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
-	//}
-	//
-	//systemContext, err := parse.SystemContextFromOptions(c)
-	//if err != nil {
-	//	return fmt.Errorf("building system context: %w", err)
-	//}
-	//
-	//var manifestType string
-	//if iopts.format != "" {
-	//	switch iopts.format {
-	//	case "oci":
-	//		manifestType = imgspecv1.MediaTypeImageManifest
-	//	case "v2s1":
-	//		manifestType = manifest.DockerV2Schema1SignedMediaType
-	//	case "v2s2", "docker":
-	//		manifestType = manifest.DockerV2Schema2MediaType
-	//	default:
-	//		return fmt.Errorf("unknown format %q. Choose on of the supported formats: 'oci', 'v2s1', or 'v2s2'", iopts.format)
-	//	}
-	//}
-	//
-	//encConfig, encLayers, err := iutil.EncryptConfig(iopts.encryptionKeys, iopts.encryptLayers)
-	//if err != nil {
-	//	return fmt.Errorf("unable to obtain encryption config: %w", err)
-	//}
-	//
-	//options := buildah.PushOptions{
-	//	Compression:         compress,
-	//	ManifestType:        manifestType,
-	//	SignaturePolicyPath: iopts.signaturePolicy,
-	//	Store:               store,
-	//	SystemContext:       systemContext,
-	//	BlobDirectory:       iopts.blobCache,
-	//	RemoveSignatures:    iopts.removeSignatures,
-	//	SignBy:              iopts.signBy,
-	//	MaxRetries:          iopts.retry,
-	//	RetryDelay:          iopts.retryDelay,
-	//	OciEncryptConfig:    encConfig,
-	//	OciEncryptLayers:    encLayers,
-	//}
-	//if !iopts.quiet {
-	//	options.ReportWriter = os.Stderr
-	//}
-	//if iopts.compressionFormat != "" {
-	//	algo, err := compression.AlgorithmByName(iopts.compressionFormat)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	options.CompressionFormat = &algo
-	//}
-	//if flagChanged(c, "compression-level") {
-	//	options.CompressionLevel = &iopts.compressionLevel
-	//}
-	//
-	//ref, digest, err := buildah.Push(getContext(), src, dest, options)
-	//if err != nil {
-	//	if !errors.Is(err, storage.ErrImageUnknown) {
-	//		// Image might be a manifest so attempt a manifest push
-	//		if manifestsErr := manifestPush(systemContext, store, src, destSpec, *iopts); manifestsErr == nil {
-	//			return nil
-	//		}
-	//	}
-	//	return util.GetFailureCause(err, fmt.Errorf("pushing image %q to %q: %w", src, destSpec, err))
-	//}
-	//if ref != nil {
-	//	logger.Debug("pushed image %q with digest %s", ref, digest.String())
-	//} else {
-	//	logger.Debug("pushed image with digest %s", digest.String())
-	//}
-	//
-	//logger.Debug("Successfully pushed %s with digest %s", transports.ImageName(dest), digest.String())
-	//
-	//if iopts.digestfile != "" {
-	//	if err = os.WriteFile(iopts.digestfile, []byte(digest.String()), 0644); err != nil {
-	//		return util.GetFailureCause(err, fmt.Errorf("failed to write digest to file %q: %w", iopts.digestfile, err))
-	//	}
-	//}
+
+	fmt.Println(src + ":" + destSpec)
+
+	compress := define.Gzip
+	if iopts.disableCompression {
+		compress = define.Uncompressed
+	}
+
+	store, err := getStore(c)
+	if err != nil {
+		return err
+	}
+
+	dest, err := alltransports.ParseImageName(destSpec)
+	// add the docker:// transport to see if they neglected it.
+	if err != nil {
+		destTransport := strings.Split(destSpec, ":")[0]
+		if t := transports.Get(destTransport); t != nil {
+			return err
+		}
+
+		if strings.Contains(destSpec, "://") {
+			return err
+		}
+
+		destSpec = "docker://" + destSpec
+		dest2, err2 := alltransports.ParseImageName(destSpec)
+		if err2 != nil {
+			return err
+		}
+		dest = dest2
+		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
+	}
+
+	systemContext, err := parse.SystemContextFromOptions(c)
+	if err != nil {
+		return fmt.Errorf("building system context: %w", err)
+	}
+
+	var manifestType string
+	if iopts.format != "" {
+		switch iopts.format {
+		case "oci":
+			manifestType = imgspecv1.MediaTypeImageManifest
+		case "v2s1":
+			manifestType = manifest.DockerV2Schema1SignedMediaType
+		case "v2s2", "docker":
+			manifestType = manifest.DockerV2Schema2MediaType
+		default:
+			return fmt.Errorf("unknown format %q. Choose on of the supported formats: 'oci', 'v2s1', or 'v2s2'", iopts.format)
+		}
+	}
+
+	encConfig, encLayers, err := iutil.EncryptConfig(iopts.encryptionKeys, iopts.encryptLayers)
+	if err != nil {
+		return fmt.Errorf("unable to obtain encryption config: %w", err)
+	}
+
+	options := buildah.PushOptions{
+		Compression:         compress,
+		ManifestType:        manifestType,
+		SignaturePolicyPath: iopts.signaturePolicy,
+		Store:               store,
+		SystemContext:       systemContext,
+		BlobDirectory:       iopts.blobCache,
+		RemoveSignatures:    iopts.removeSignatures,
+		SignBy:              iopts.signBy,
+		MaxRetries:          iopts.retry,
+		RetryDelay:          iopts.retryDelay,
+		OciEncryptConfig:    encConfig,
+		OciEncryptLayers:    encLayers,
+	}
+	if !iopts.quiet {
+		options.ReportWriter = os.Stderr
+	}
+	if iopts.compressionFormat != "" {
+		algo, err := compression.AlgorithmByName(iopts.compressionFormat)
+		if err != nil {
+			return err
+		}
+		options.CompressionFormat = &algo
+	}
+	if flagChanged(c, "compression-level") {
+		options.CompressionLevel = &iopts.compressionLevel
+	}
+
+	ref, digest, err := buildah.Push(getContext(), src, dest, options)
+	if err != nil {
+		if !errors.Is(err, storage.ErrImageUnknown) {
+			// Image might be a manifest so attempt a manifest push
+			if manifestsErr := manifestPush(systemContext, store, src, destSpec, *iopts); manifestsErr == nil {
+				return nil
+			}
+		}
+		return util.GetFailureCause(err, fmt.Errorf("pushing image %q to %q: %w", src, destSpec, err))
+	}
+	if ref != nil {
+		logger.Debug("pushed image %q with digest %s", ref, digest.String())
+	} else {
+		logger.Debug("pushed image with digest %s", digest.String())
+	}
+
+	logger.Debug("Successfully pushed %s with digest %s", transports.ImageName(dest), digest.String())
+
+	if iopts.digestfile != "" {
+		if err = os.WriteFile(iopts.digestfile, []byte(digest.String()), 0644); err != nil {
+			return util.GetFailureCause(err, fmt.Errorf("failed to write digest to file %q: %w", iopts.digestfile, err))
+		}
+	}
 	if iopts.imageCreate {
 		imageCrdBuilder := NewImageCRDBuilder(src)
 		err := imageCrdBuilder.Run()

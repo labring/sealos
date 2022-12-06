@@ -30,12 +30,10 @@ import (
 
 const (
 	AppPath          = "app"
-	ActionPath       = "actions"
 	READMEpath       = "README.md"
 	ConfigFileName   = "config.yaml"
 	TemplateFileName = "template.yaml"
 	CMDFileName      = "CMD"
-	DefaultNamespace = "default"
 )
 
 type ImageCRDBuilder struct {
@@ -111,9 +109,10 @@ func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	icb.clustername = clusterName
 	return builderInfo.MountPoint, nil
 }
+
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
-	if !file.IsExist(filepath.Join(MountPoint, AppPath)) {
-		return fmt.Errorf("app dir can't find")
+	if !file.IsExist(filepath.Join(MountPoint, AppPath)) && !file.IsExist(filepath.Join(MountPoint, AppPath, ConfigFileName)) {
+		return fmt.Errorf("App and config  can't find")
 	}
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := FileReadUtil(filepath.Join(MountPoint, READMEpath))
@@ -235,7 +234,6 @@ func (icb *ImageCRDBuilder) ConfigParse(c []byte) error {
 	if err != nil {
 		panic(fmt.Errorf("failed to get GVK: %v", err))
 	}
-
 	icb.Content.AppConfig = config
 	return nil
 }
@@ -253,7 +251,6 @@ func (icb *ImageCRDBuilder) TemplateCmdParse() error {
 		}
 		icb.Content.AppConfig.Spec.DetailInfo.AppActions.CMD[imagev1.ActionName(k)] = imagev1.CMD(v)
 	}
-
 	return nil
 }
 

@@ -48,35 +48,21 @@ type ActionsReconciler struct {
 	logr.Logger
 }
 
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
-
-//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list
-
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Actions object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
+// +kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list
 func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger = log.FromContext(ctx)
 	action := &appv1.Actions{}
 	if err := r.Get(ctx, req.NamespacedName, action); err != nil {
-		//r.recorder.Eventf(action, core.EventTypeNormal, "action.yaml get-test", "Action %s get", action.Name)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	r.Logger.Info(fmt.Sprintf("action.Name: %v", action.Name))
 	image := &imagehubv1.Image{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: action.Spec.AppName}, image); err != nil {
-		//r.recorder.Eventf(image, core.EventTypeNormal, "image get-test", "image %s get ", image.Name)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	//fmt.Println(image.Spec.DetailInfo.AppActions.Actions["install"])
 	r.Logger.Info(fmt.Sprintf("image.Name: %v", image.Name))
 
 	switch image.Spec.DetailInfo.AppActions.ActionType {
@@ -85,7 +71,6 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.actionEngine = NewKubectlEngine(ctx, r.Client, action, image)
 	}
 	r.actionEngine.Parse()
-	fmt.Println("parse success")
 	r.actionEngine.Apply()
 
 	return ctrl.Result{}, nil
