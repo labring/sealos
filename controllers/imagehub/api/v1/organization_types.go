@@ -30,7 +30,7 @@ type OrganizationSpec struct {
 
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MaxLength=1024
-	Name string `json:"name,omitempty"` //e.g: "libring"
+	Name string `json:"name,omitempty"` //e.g: "labring"
 	// Creator is the user who first create this org
 	// update manager
 	Creator string `json:"creator,omitempty"`
@@ -56,7 +56,7 @@ type OrganizationStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MaxLength=1024
-	Name  string     `json:"name,omitempty"` //e.g: "libring"
+	Name  string     `json:"name,omitempty"` //e.g: "labring"
 	Repos []RepoName `json:"repos,omitempty"`
 }
 

@@ -90,9 +90,10 @@ func (r *ImageReconciler) doReconcile(ctx context.Context, obj client.Object) (c
 		repo.Spec.Name = img.Spec.Name.ToRepoName()
 		if err := r.Create(ctx, repo); err != nil {
 			r.Logger.Error(err, "error in create")
+			return ctrl.Result{Requeue: true}, err
 		}
 	} else if err != nil {
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 	update, err := controllerutil.CreateOrUpdate(ctx, r.Client, img, func() error {
 		if err := controllerutil.SetControllerReference(repo, img, r.Scheme); err != nil {
