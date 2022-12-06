@@ -40,6 +40,24 @@ type EC2DescribeInstancesAPI interface {
 	DescribeInstances(ctx context.Context,
 		params *ec2.DescribeInstancesInput,
 		optFns ...func(*ec2.Options)) (*ec2.DescribeInstancesOutput, error)
+	DescribeInstanceStatus(ctx context.Context,
+		params *ec2.DescribeInstanceStatusInput,
+		optFns ...func(*ec2.Options)) (*ec2.DescribeInstanceStatusOutput, error)
+}
+
+// GetInstanceStatus retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.
+// Inputs:
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
+// Output:
+//
+//	If success, a DescribeInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to DescribeInstances.
+func GetInstanceStatus(c context.Context, api EC2DescribeInstancesAPI, input *ec2.DescribeInstanceStatusInput) (*ec2.DescribeInstanceStatusOutput, error) {
+	return api.DescribeInstanceStatus(c, input)
 }
 
 // GetInstances retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.

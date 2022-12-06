@@ -32,16 +32,12 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		logger.Debug("desired host len is 0")
 		return nil
 	}
+	if infra.Status.Status == v1.Terminating.String() {
+		logger.Debug("Terminating infra...")
+		return nil
+	}
 
 	setHostsIndex(infra)
-	if !infra.DeletionTimestamp.IsZero() {
-		logger.Debug("remove all hosts")
-		for _, hosts := range infra.Spec.Hosts {
-			if err := driver.DeleteInstances(&hosts); err != nil {
-				return err
-			}
-		}
-	}
 	// get infra all hosts
 	hosts, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
 	if err != nil {

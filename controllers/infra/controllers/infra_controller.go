@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/controllers/infra/common"
+	"github.com/labring/sealos/controllers/infra/common/utils"
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"k8s.io/kubernetes/pkg/apis/core"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -61,9 +65,19 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if infra.Status.Status == infrav1.Pending.String() {
-		return ctrl.Result{}, nil
+	// 添加finalizer
+	if infra.DeletionTimestamp.IsZero() {
+		if !utils.ContainsString(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer) {
+			infra.ObjectMeta.Finalizers = append(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer)
+			if err := r.Update(ctx, infra); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
 	}
+
+	//if infra.Status.Status == infrav1.Pending.String() {
+	//	return ctrl.Result{}, nil
+	//}
 
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
@@ -82,16 +96,36 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		// requeue after 30 seconds
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	if res == controllerutil.OperationResultUpdated {
-		if infra.Status.Status == infrav1.Running.String() {
-			return ctrl.Result{}, nil
-		}
-		infra.Status.Status = infrav1.Running.String()
+	// clean infra
+	if !infra.DeletionTimestamp.IsZero() {
+		logger.Debug("removing all hosts")
+		infra.Status.Status = infrav1.Terminating.String()
 		if err = r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status update failed", "%v", err)
-			return ctrl.Result{}, err
+			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status to terminating failed", "%v", err)
+			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
 		}
-		r.recorder.Eventf(infra, core.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
+		for _, hosts := range infra.Spec.Hosts {
+			if err := r.driver.DeleteInstances(&hosts); err != nil {
+				return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+			}
+		}
+		infra.ObjectMeta.Finalizers = utils.RemoveString(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer)
+		if err := r.Update(ctx, infra); err != nil {
+			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status to terminating failed", "%v", err)
+			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
+		}
+	} else {
+		if res == controllerutil.OperationResultUpdated {
+			if infra.Status.Status == infrav1.Running.String() {
+				return ctrl.Result{}, nil
+			}
+			infra.Status.Status = infrav1.Running.String()
+			if err = r.Status().Update(ctx, infra); err != nil {
+				r.recorder.Eventf(infra, core.EventTypeWarning, "infra status update failed", "%v", err)
+				return ctrl.Result{}, err
+			}
+			r.recorder.Eventf(infra, core.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
+		}
 	}
 
 	return ctrl.Result{}, nil

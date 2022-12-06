@@ -186,6 +186,7 @@ const (
 	Succeeded
 	Failed
 	Unknown
+	Terminating
 )
 
 func (s Status) String() string {
