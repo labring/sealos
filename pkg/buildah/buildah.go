@@ -123,6 +123,7 @@ func subCommands() []*cobra.Command {
 	return []*cobra.Command{
 		newBuildCommand(),
 		newContainersCommand(),
+		newCreateCmd(),
 		newFromCommand(),
 		newImagesCommand(),
 		newInspectCommand(),
@@ -138,6 +139,7 @@ func subCommands() []*cobra.Command {
 		newSaveCommand(),
 		newTagCommand(),
 		newUmountCommand(),
+		newUnshareCommand(),
 	}
 }
 

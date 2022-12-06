@@ -22,29 +22,29 @@ kind: Infra
 metadata:
   name: aws-infra-demo
 spec:
-    regionIds: [cn-north-1]
-    ssh:
-       passwd: xxx
-       pk: /root/.ssh/id_rsa
-       port: 22
-       user: root
-   hosts:
-   - roles: [master, aaa, bbb] # required
-     count: 3 # Required
-     # key values resources.
-     resources:
-        cpu: 2
-        memory: 4
-        # other resources like GPU
-     # ENUM: amd64/arm64 (NOTE: the default value is amd64)
-     flavor: ecs.t5-lc1m2.large
-     arch: amd64
-     # ENUM: ubuntu:20.04, centos:7.2 and so on.
-     image: utuntu:20.04
-     disks:
-     - capacity: 50
-       # ENUM: system/data
-       type: system
+  hosts:
+    - roles: [ master ]
+      count: 1
+      flavor: t2.medium
+      image: "ami-0d66b970b9f16f1f5"
+      disks:
+        - capacity: 23
+          volumeType: standard
+          type: "root"
+        - capacity: 21
+          volumeType: gp3
+          type: "data"
+    - roles: [ node ]
+      count: 1
+      flavor: t2.medium
+      image: "ami-0d66b970b9f16f1f5"
+      disks:
+        - capacity: 11
+          volumeType: gp3
+          type: "root"
+        - capacity: 13
+          volumeType: gp3
+          type: "data"
 ```
 
 kubectl apply -f infra.yaml

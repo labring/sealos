@@ -69,7 +69,6 @@ func NewSSHClientByInfra(infra *v1beta1.Infra) *SSHClient {
 	config := &ssh.SSH{
 		User:     "root",
 		Password: infra.Spec.Metadata.AccessChannels.SSH.Passwd,
-		Timeout:  nil,
 	}
 	return &SSHClient{
 		RemoteHostIP: infra.Status.Cluster.EIP,

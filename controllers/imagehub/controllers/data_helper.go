@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/go-logr/logr"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
@@ -13,6 +13,8 @@ type DataHelper struct {
 	client.Client
 	logr.Logger
 }
+
+var ErrNotMatch = errors.New("NotMatch")
 
 type MatchingLabelsModifier func(name any, labels client.MatchingLabels)
 
@@ -55,16 +57,16 @@ func (r *DataHelper) getOrgInfoByOrgName(ctx context.Context, name imagehubv1.Or
 	return imagehubv1.OrgInfo{}, nil
 }
 
-//func (r *DataHelper) getRepoListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.RepositoryList, error) {
-//	res := &imagehubv1.RepositoryList{}
-//	return listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier)
-//}
+func (r *DataHelper) getRepoListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.RepositoryList, error) {
+	res := &imagehubv1.RepositoryList{}
+	return listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier)
+}
 
 func (r *DataHelper) getRepoByRepoName(ctx context.Context, name imagehubv1.RepoName) (imagehubv1.Repository, error) {
 	res := &imagehubv1.RepositoryList{}
 	lst, err := listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier, repoModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Repository{}, fmt.Errorf("no matching repo name:%s", name)
+		return imagehubv1.Repository{}, ErrNotMatch
 	}
 	return lst.Items[0], err
 }
@@ -74,7 +76,7 @@ func (r *DataHelper) getRepoInfoByRepoName(ctx context.Context, name imagehubv1.
 	if err != nil {
 		return imagehubv1.RepoInfo{}, err
 	}
-	return imagehubv1.RepoInfo(repo.Spec), nil
+	return imagehubv1.RepoInfo(repo.Status), nil
 }
 
 //func (r *DataHelper) getImageListByOrgName(ctx context.Context, name imagehubv1.OrgName) (*imagehubv1.ImageList, error) {
@@ -91,7 +93,7 @@ func (r *DataHelper) getImageByImageName(ctx context.Context, name imagehubv1.Im
 	res := &imagehubv1.ImageList{}
 	lst, err := listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier, tagModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Image{}, fmt.Errorf("no matching image name:%s", name)
+		return imagehubv1.Image{}, ErrNotMatch
 	}
 	return lst.Items[0], err
 }
@@ -108,19 +110,25 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	fd := imagehubv1.FullData{}
 
 	orgInfo, err := r.getOrgInfoByOrgName(ctx, n.ToOrgName())
-	if err != nil {
+	if err == ErrNotMatch {
+		r.Logger.V(2).Info("getOrgInfoByOrgName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.OrgInfo = orgInfo
 
 	repoInfo, err := r.getRepoInfoByRepoName(ctx, n.ToRepoName())
-	if err != nil {
+	if err == ErrNotMatch {
+		r.Logger.V(2).Info("getRepoInfoByRepoName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.RepoInfo = repoInfo
 
 	imgInfo, err := r.getImageInfoByImageName(ctx, n)
-	if err != nil {
+	if err == ErrNotMatch {
+		r.Logger.V(2).Info("getImageInfoByImageName", "err:", err.Error())
+	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
 	fd.ImageInfo = imgInfo

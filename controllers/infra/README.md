@@ -128,14 +128,28 @@ metadata:
   name: infra-apply-test
 spec:
   hosts:
-  - roles: [master] # required
-    count: 3 # Required
-    flavor: "t2.micro"
-    image: "ami-05248307900d52e3a"
-  - roles: [ node ] # required
-    count: 3 # Required
-    flavor: "t2.micro"
-    image: "ami-05248307900d52e3a"
+    - roles: [ master ]
+      count: 1
+      flavor: t2.medium
+      image: "ami-0d66b970b9f16f1f5"
+      disks:
+        - capacity: 23
+          volumeType: standard
+          type: "root"
+        - capacity: 21
+          volumeType: gp3
+          type: "data"
+    - roles: [ node ]
+      count: 1
+      flavor: t2.medium
+      image: "ami-0d66b970b9f16f1f5"
+      disks:
+        - capacity: 11
+          volumeType: gp3
+          type: "root"
+        - capacity: 13
+          volumeType: gp3
+          type: "data"
 ```
 
 ```shell
