@@ -66,7 +66,7 @@ func (r *DataHelper) getRepoByRepoName(ctx context.Context, name imagehubv1.Repo
 	res := &imagehubv1.RepositoryList{}
 	lst, err := listByLable[*imagehubv1.RepositoryList](ctx, r, res, &name, orgModifier, repoModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Repository{}, ErrNoMatch
+		return imagehubv1.Repository{}, ErrNotMatch
 	}
 	return lst.Items[0], err
 }
@@ -93,7 +93,7 @@ func (r *DataHelper) getImageByImageName(ctx context.Context, name imagehubv1.Im
 	res := &imagehubv1.ImageList{}
 	lst, err := listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier, tagModifier)
 	if len(lst.Items) == 0 {
-		return imagehubv1.Image{}, ErrNoMatch
+		return imagehubv1.Image{}, ErrNotMatch
 	}
 	return lst.Items[0], err
 }
@@ -110,7 +110,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	fd := imagehubv1.FullData{}
 
 	orgInfo, err := r.getOrgInfoByOrgName(ctx, n.ToOrgName())
-	if err == ErrNoMatch {
+	if err == ErrNotMatch {
 		r.Logger.V(2).Info("getOrgInfoByOrgName", "err:", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
@@ -118,7 +118,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	fd.OrgInfo = orgInfo
 
 	repoInfo, err := r.getRepoInfoByRepoName(ctx, n.ToRepoName())
-	if err == ErrNoMatch {
+	if err == ErrNotMatch {
 		r.Logger.V(2).Info("getRepoInfoByRepoName", "err:", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
@@ -126,7 +126,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	fd.RepoInfo = repoInfo
 
 	imgInfo, err := r.getImageInfoByImageName(ctx, n)
-	if err == ErrNoMatch {
+	if err == ErrNotMatch {
 		r.Logger.V(2).Info("getImageInfoByImageName", "err:", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
