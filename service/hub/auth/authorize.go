@@ -48,7 +48,7 @@ func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 		return res, api.ErrNoMatch
 	}
 	// if org have repo, user can pull it.
-	for _, r := range org.Spec.Repos {
+	for _, r := range org.Status.Repos {
 		if r == repo {
 			res = append(res, "pull")
 			break
