@@ -30,9 +30,7 @@ type OrganizationSpec struct {
 
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MaxLength=1024
-	Name  string     `json:"name,omitempty"` //e.g: "libring"
-	Repos []RepoName `json:"repos,omitempty"`
-
+	Name string `json:"name,omitempty"` //e.g: "labring"
 	// Creator is the user who first create this org
 	// update manager
 	Creator string `json:"creator,omitempty"`
@@ -50,12 +48,16 @@ func (n OrgName) ToMetaName() string {
 	return string(n)
 }
 
-type OrgInfo OrganizationSpec
+type OrgInfo OrganizationStatus
 
 // OrganizationStatus defines the observed state of Organization
 type OrganizationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:MaxLength=1024
+	Name  string     `json:"name,omitempty"` //e.g: "labring"
+	Repos []RepoName `json:"repos,omitempty"`
 }
 
 //+kubebuilder:object:root=true
