@@ -73,7 +73,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		logger.Debug("desired host len is 0")
 		return nil
 	}
-
 	setHostsIndex(infra)
 	if !infra.DeletionTimestamp.IsZero() {
 		logger.Debug("remove all hosts")
@@ -88,13 +87,11 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err != nil {
 		return fmt.Errorf("get all instances failed: %v", err)
 	}
-
 	// sort current hosts
 	sortHostsByIndex(v1.IndexHosts(hosts))
 	// merge current hosts list using index
 	// sort  desired hosts
 	sortHostsByIndex(v1.IndexHosts(infra.Spec.Hosts))
-
 	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
 		return err
 	}
@@ -103,7 +100,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		return err
 	}
 	infra.Spec.Hosts = currHosts
-
 	return nil
 }
 */

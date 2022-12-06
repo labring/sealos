@@ -15,7 +15,7 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: infra-apply-test
+  name: infra-cr-test
 spec:
   hosts:
     - roles: [ master ]

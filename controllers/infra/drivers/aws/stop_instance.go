@@ -83,11 +83,11 @@ func (d Driver) stopInstances(hosts *v1.Hosts) error {
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	client := d.Client
 	instanceID := make([]string, hosts.Count)
-	disksID := make([]string, 0)
+	// disksID := make([]string, 0)
 	for i := 0; i < hosts.Count; i++ {
 		metadata := hosts.Metadata[i]
 		instanceID[i] = metadata.ID
-		disksID = append(disksID, metadata.DiskID...)
+		// disksID = append(disksID, metadata.DiskID...)
 	}
 	input := &ec2.StopInstancesInput{
 		InstanceIds: instanceID,
@@ -96,9 +96,10 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 		InstanceIds: instanceID,
 		DryRun:      aws.Bool(false),
 	}
-	if err := d.DeleteVolume(disksID); err != nil {
-		return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
-	}
+
+	//if err := d.DeleteVolume(disksID); err != nil {
+	//	return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
+	//}
 	_, err := StopInstance(context.TODO(), client, input)
 	if err != nil {
 		return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)

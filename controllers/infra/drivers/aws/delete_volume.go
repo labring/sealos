@@ -42,7 +42,6 @@ func (d Driver) detachAndDeleteVolumeByID(disksID []string) error {
 		if err != nil {
 			return fmt.Errorf("detach volume failed: %v,Volume Id is : %s", err, id)
 		}
-
 		inputDelete := &ec2.DeleteVolumeInput{
 			VolumeId: &vid,
 		}
