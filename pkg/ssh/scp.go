@@ -20,6 +20,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/sftp"
@@ -139,8 +140,19 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 			}
 		}
 	} else {
-		if s.remoteFileExist(host, dest) {
-			if hash.FileDigest(src) == s.RemoteSha256Sum(host, dest) {
+		fn := func(host string, name string) bool {
+			exists, err := checkIfRemoteFileExists(client, name)
+			if err != nil {
+				logger.Error("failed to detect remote file exists: %v", err)
+			}
+			return exists
+		}
+		if isEnvTrue("USE_SHELL_TO_CHECK_FILE_EXISTS") {
+			fn = s.remoteFileExist
+		}
+		if !isEnvTrue("DO_NOT_CHECKSUM") && fn(host, dest) {
+			rfp, _ := client.Stat(dest)
+			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == s.RemoteSha256Sum(host, dest) {
 				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
 				return nil
 			}
@@ -162,12 +174,33 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 		if _, err = io.Copy(dstfp, lf); err != nil {
 			return err
 		}
-		sh := hash.FileDigest(src)
-		dh := s.RemoteSha256Sum(host, dest)
-		if sh != dh {
-			return fmt.Errorf("sha256 sum not match %s != %s, maybe network corruption?", sh, dh)
+		if !isEnvTrue("DO_NOT_CHECKSUM") {
+			sh := hash.FileDigest(src)
+			dh := s.RemoteSha256Sum(host, dest)
+			if sh != dh {
+				return fmt.Errorf("sha256 sum not match %s != %s, maybe network corruption?", sh, dh)
+			}
 		}
 		_ = epu.Add(1)
 	}
 	return nil
+}
+
+func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
+	_, err := client.Stat(fp)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isEnvTrue(k string) bool {
+	if v, ok := os.LookupEnv(k); ok {
+		boolVal, _ := strconv.ParseBool(v)
+		return boolVal
+	}
+	return false
 }

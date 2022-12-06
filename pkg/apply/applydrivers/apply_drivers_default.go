@@ -129,8 +129,8 @@ func (c *Applier) updateStatus(err error) {
 func (c *Applier) reconcileCluster() error {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired)
-	logger.Debug("run new images: %+v", c.RunNewImages)
 	if len(c.RunNewImages) != 0 {
+		logger.Debug("run new images: %+v", c.RunNewImages)
 		if err := c.installApp(c.RunNewImages); err != nil {
 			return err
 		}
