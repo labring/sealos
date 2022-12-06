@@ -112,6 +112,14 @@ func (c *Cluster) GetIPSByRole(role string) []string {
 	return hosts
 }
 
+func (c *Cluster) GetAllIPS() []string {
+	var hosts []string
+	for _, host := range c.Spec.Hosts {
+		hosts = append(hosts, host.IPS...)
+	}
+	return hosts
+}
+
 func (c *Cluster) GetRootfsImage(defaultMount string) *MountImage {
 	var image *MountImage
 	if c.Status.Mounts != nil {

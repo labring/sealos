@@ -108,8 +108,9 @@ func (bs *realBootstrap) RegisterApplier(phase Phase, appliers ...Applier) error
 
 func (bs *realBootstrap) Reset(hosts ...string) error {
 	appliers := make([]Applier, 0)
-	// only undo addons OR?
+	// first addons, second initializers
 	appliers = append(appliers, bs.addons...)
+	appliers = append(appliers, bs.initializers...)
 	return runParallel(hosts, func(host string) error {
 		for i := range appliers {
 			applier := appliers[i]
