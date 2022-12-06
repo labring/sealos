@@ -21,9 +21,6 @@ type Config struct {
 type ServerConfig struct {
 	ListenAddress string `yaml:"addr,omitempty"`
 	PathPrefix    string `yaml:"path_prefix,omitempty"`
-
-	publicKey  libtrust.PublicKey
-	privateKey libtrust.PrivateKey
 }
 
 type TokenConfig struct {
