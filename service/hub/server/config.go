@@ -19,23 +19,11 @@ type Config struct {
 
 // nolint:revive
 type ServerConfig struct {
-	ListenAddress string            `yaml:"addr,omitempty"`
-	PathPrefix    string            `yaml:"path_prefix,omitempty"`
-	RealIPHeader  string            `yaml:"real_ip_header,omitempty"`
-	RealIPPos     int               `yaml:"real_ip_pos,omitempty"`
-	CertFile      string            `yaml:"certificate,omitempty"`
-	KeyFile       string            `yaml:"key,omitempty"`
-	HSTS          bool              `yaml:"hsts,omitempty"`
-	LetsEncrypt   LetsEncryptConfig `yaml:"letsencrypt,omitempty"`
+	ListenAddress string `yaml:"addr,omitempty"`
+	PathPrefix    string `yaml:"path_prefix,omitempty"`
 
 	publicKey  libtrust.PublicKey
 	privateKey libtrust.PrivateKey
-}
-
-type LetsEncryptConfig struct {
-	Host     string `yaml:"host,omitempty"`
-	Email    string `yaml:"email,omitempty"`
-	CacheDir string `yaml:"cache_dir,omitempty"`
 }
 
 type TokenConfig struct {
@@ -97,20 +85,6 @@ func LoadConfig(fileName string) (*Config, error) {
 	if err = validate(c); err != nil {
 		return nil, fmt.Errorf("invalid config: %s", err)
 	}
-	serverConfigured := false
-	if c.Server.CertFile != "" || c.Server.KeyFile != "" {
-		// Check for partial configuration.
-		if c.Server.CertFile == "" || c.Server.KeyFile == "" {
-			return nil, fmt.Errorf("failed to load server cert and key: both were not provided")
-		}
-
-		publicKey, privateKey, err := loadCertAndKey(c.Server.CertFile, c.Server.KeyFile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load server cert and key: %s", err)
-		}
-		c.Server.publicKey, c.Server.privateKey = publicKey, privateKey
-		serverConfigured = true
-	}
 	tokenConfigured := false
 	if c.Token.CertFile != "" || c.Token.KeyFile != "" {
 		// Check for partial configuration.
@@ -124,27 +98,8 @@ func LoadConfig(fileName string) (*Config, error) {
 		c.Token.publicKey, c.Token.privateKey = publicKey, privateKey
 		tokenConfigured = true
 	}
-
-	if serverConfigured && !tokenConfigured {
-		c.Token.publicKey, c.Token.privateKey = c.Server.publicKey, c.Server.privateKey
-		tokenConfigured = true
-	}
-
 	if !tokenConfigured {
 		return nil, fmt.Errorf("failed to load token cert and key: none provided")
 	}
-
-	if !serverConfigured && c.Server.LetsEncrypt.Email != "" {
-		if c.Server.LetsEncrypt.CacheDir == "" {
-			return nil, fmt.Errorf("server.letsencrypt.cache_dir is required")
-		}
-		// We require that LetsEncrypt is an existing directory, because we really don't want it
-		// to be misconfigured and obtained certificates to be lost.
-		fi, err := os.Stat(c.Server.LetsEncrypt.CacheDir)
-		if err != nil || !fi.IsDir() {
-			return nil, fmt.Errorf("server.letsencrypt.cache_dir (%s) does not exist or is not a directory", c.Server.LetsEncrypt.CacheDir)
-		}
-	}
-
 	return c, nil
 }

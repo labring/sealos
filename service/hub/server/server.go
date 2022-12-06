@@ -97,24 +97,6 @@ func parseScope(scope string) (string, string, error) {
 
 func (as *AuthServer) ParseRequest(req *http.Request) (*AuthRequest, error) {
 	ar := &AuthRequest{RemoteConnAddr: req.RemoteAddr, RemoteAddr: req.RemoteAddr}
-	if as.config.Server.RealIPHeader != "" {
-		hv := req.Header.Get(as.config.Server.RealIPHeader)
-		ips := strings.Split(hv, ",")
-
-		realIPPos := as.config.Server.RealIPPos
-		if realIPPos < 0 {
-			realIPPos = len(ips) + realIPPos
-			if realIPPos < 0 {
-				realIPPos = 0
-			}
-		}
-
-		ar.RemoteAddr = strings.TrimSpace(ips[realIPPos])
-		glog.V(3).Infof("Conn ip %s, %s: %s, addr: %s", ar.RemoteAddr, as.config.Server.RealIPHeader, hv, ar.RemoteAddr)
-		if ar.RemoteAddr == "" {
-			return nil, fmt.Errorf("client address not provided")
-		}
-	}
 	ar.RemoteIP = parseRemoteAddr(ar.RemoteAddr)
 	if ar.RemoteIP == nil {
 		return nil, fmt.Errorf("unable to parse remote addr %s", ar.RemoteAddr)
@@ -293,9 +275,6 @@ func (as *AuthServer) CreateToken(ar *AuthRequest, ares []AuthzResult) (string, 
 func (as *AuthServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	glog.V(3).Infof("Request: %+v", req)
 	pathPrefix := as.config.Server.PathPrefix
-	if as.config.Server.HSTS {
-		rw.Header().Add("Strict-Transport-Security", "max-age=63072000; includeSubDomains")
-	}
 	switch {
 	case req.URL.Path == pathPrefix+"/auth/issuer":
 		as.doIndex(rw, req)

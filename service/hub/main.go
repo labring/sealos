@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/tls"
 	"flag"
 	"math/rand"
 	"net"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/cesanta/glog"
-	"golang.org/x/crypto/acme/autocert"
 	fsnotify "gopkg.in/fsnotify.v1"
 
 	"github.com/labring/service/hub/server"
@@ -30,66 +28,19 @@ func ServeOnce(c *server.Config, cf string) (*server.AuthServer, *http.Server) {
 	if err != nil {
 		glog.Exitf("Failed to create auth server: %s", err)
 	}
-
-	tlsConfig := &tls.Config{
-		MinVersion:               tls.VersionTLS13,
-		PreferServerCipherSuites: true,
-	}
-	if c.Server.HSTS {
-		glog.Info("HTTP Strict Transport Security enabled")
-	}
-	if c.Server.CertFile != "" || c.Server.KeyFile != "" {
-		// Check for partial configuration.
-		if c.Server.CertFile == "" || c.Server.KeyFile == "" {
-			glog.Exitf("Failed to load certificate and key: both were not provided")
-		}
-		glog.Infof("Cert file: %s", c.Server.CertFile)
-		glog.Infof("Key file : %s", c.Server.KeyFile)
-		tlsConfig.Certificates = make([]tls.Certificate, 1)
-		tlsConfig.Certificates[0], err = tls.LoadX509KeyPair(c.Server.CertFile, c.Server.KeyFile)
-		if err != nil {
-			glog.Exitf("Failed to load certificate and key: %s", err)
-		}
-	} else if c.Server.LetsEncrypt.Email != "" {
-		m := &autocert.Manager{
-			Email:  c.Server.LetsEncrypt.Email,
-			Cache:  autocert.DirCache(c.Server.LetsEncrypt.CacheDir),
-			Prompt: autocert.AcceptTOS,
-		}
-		if c.Server.LetsEncrypt.Host != "" {
-			m.HostPolicy = autocert.HostWhitelist(c.Server.LetsEncrypt.Host)
-		}
-		glog.Infof("Using LetsEncrypt, host %q, email %q", c.Server.LetsEncrypt.Host, c.Server.LetsEncrypt.Email)
-		tlsConfig.GetCertificate = m.GetCertificate
-	} else {
-		glog.Warning("Running without TLS")
-		tlsConfig = nil
-	}
-
 	hs := &http.Server{
-		Addr:      c.Server.ListenAddress,
-		Handler:   as,
-		TLSConfig: tlsConfig,
+		Addr:    c.Server.ListenAddress,
+		Handler: as,
 	}
-
 	var listener net.Listener
 	listener, err = net.Listen("tcp", c.Server.ListenAddress)
 	if err != nil {
 		glog.Fatal(err.Error())
 	}
-
 	go func() {
-		if c.Server.CertFile == "" && c.Server.KeyFile == "" {
-			if err := hs.Serve(listener); err != nil {
-				if err == http.ErrServerClosed {
-					return
-				}
-			}
-		} else {
-			if err := hs.ServeTLS(listener, c.Server.CertFile, c.Server.KeyFile); err != nil {
-				if err == http.ErrServerClosed {
-					return
-				}
+		if err := hs.Serve(listener); err != nil {
+			if err == http.ErrServerClosed {
+				return
 			}
 		}
 	}()
