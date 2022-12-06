@@ -40,6 +40,7 @@ type AuthRequestInfo struct {
 	Kubeconfig string
 }
 
+// String Rewrite String method to prevent password leakage via print AuthRequestInfo
 func (ai AuthRequestInfo) String() string {
 	return fmt.Sprintf("{%s %s %s %s}", ai.Account, strings.Join(ai.Actions, ","), ai.Type, ai.Name)
 }

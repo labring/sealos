@@ -28,6 +28,7 @@ var ErrWrongPass = errors.New("wrong password for user")
 
 type PasswordString string
 
+// String Rewrite String method to prevent password leakage via print PasswordString
 func (ps PasswordString) String() string {
 	if len(ps) == 0 {
 		return ""
