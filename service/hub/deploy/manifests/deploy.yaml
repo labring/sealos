@@ -45,7 +45,7 @@ spec:
   selector:
     matchLabels:
       app: hub-auth
-  replicas: 3
+  replicas: 1
   strategy:
     type: Recreate
   template:
