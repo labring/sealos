@@ -17,8 +17,9 @@ limitations under the License.
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -92,7 +93,7 @@ func (n ImageName) GetMateName() string {
 }
 
 type AppActions struct {
-	// TODO: support more action.yaml types ,now just support yaml.
+	// TODO: support more action types ,now just support yaml.
 	ActionType string `json:"actionType,omitempty"`
 	// action.yaml --> template
 	Actions map[ActionName]Template `json:"actions,omitempty"`

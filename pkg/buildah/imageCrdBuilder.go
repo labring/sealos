@@ -1,12 +1,29 @@
+// Copyright © 2022 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package buildah
 
 import (
 	"context"
 	"flag"
 	"fmt"
-	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -21,11 +38,9 @@ import (
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	"math/rand"
-	"os"
-	"path/filepath"
-	"strconv"
-	"time"
+
+	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	"github.com/labring/sealos/pkg/utils/file"
 )
 
 const (
@@ -98,13 +113,11 @@ func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	}
 
 	builderInfo, err := realImpl.Create(clusterName, icb.imagename)
-	fmt.Println(builderInfo.MountPoint)
 	if err != nil {
 		return "", err
 	}
-	logger.Info("Mount point: %s", builderInfo.MountPoint)
 	if iseist := file.IsExist(builderInfo.MountPoint); !iseist {
-		return "", fmt.Errorf("MountPoint not Exist")
+		return "", fmt.Errorf("mountPoint not Exist")
 	}
 	icb.clustername = clusterName
 	return builderInfo.MountPoint, nil
@@ -112,7 +125,7 @@ func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 	if !file.IsExist(filepath.Join(MountPoint, AppPath)) && !file.IsExist(filepath.Join(MountPoint, AppPath, ConfigFileName)) {
-		return fmt.Errorf("App and config  can't find")
+		return fmt.Errorf("app and config  can't find")
 	}
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := FileReadUtil(filepath.Join(MountPoint, READMEpath))
@@ -127,6 +140,9 @@ func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 		return err
 	}
 	fileinfo, err := file.Readdir(-1)
+	if err != nil {
+		return err
+	}
 	for _, f := range fileinfo {
 		if f.Name() == ConfigFileName {
 			var c []byte
@@ -140,11 +156,16 @@ func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 			continue
 		}
 		if f.IsDir() {
-			ff, err := os.Open(filepath.Join(MountPoint, AppPath, f.Name()))
+			var ff *os.File
+			ff, err = os.Open(filepath.Join(MountPoint, AppPath, f.Name()))
 			if err != nil {
 				return err
 			}
-			actionfiles, err := ff.Readdir(-1)
+			var actionfiles []os.FileInfo
+			actionfiles, err = ff.Readdir(-1)
+			if err != nil {
+				return err
+			}
 			for _, actionfile := range actionfiles {
 				if actionfile.Name() == TemplateFileName {
 					var c []byte
@@ -180,7 +201,8 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 	dyclient, _ := GetGVRdyClient(&gvk, "default")
 	if _, err := dyclient.Create(context.TODO(), &utd, metav1.CreateOptions{}); err != nil {
 		if utd.GetResourceVersion() == "" {
-			objGET, err := dyclient.Get(context.TODO(), utd.GetName(), metav1.GetOptions{})
+			var objGET *unstructured.Unstructured
+			objGET, err = dyclient.Get(context.TODO(), utd.GetName(), metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrap(err, "unable to get obj")
 			}
@@ -191,7 +213,7 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 		if !apierrors.IsAlreadyExists(err) {
 			return errors.Wrap(err, "unable to create secret")
 		}
-		if _, err := dyclient.Update(context.TODO(), &utd, metav1.UpdateOptions{}); err != nil {
+		if _, err = dyclient.Update(context.TODO(), &utd, metav1.UpdateOptions{}); err != nil {
 			return errors.Wrap(err, "unable to update secret")
 		}
 	}

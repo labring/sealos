@@ -18,7 +18,6 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Actions is the Schema for the actions API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -38,23 +37,18 @@ spec:
               actionName:
                 type: string
               appName:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
-                  Application name, actions will bind to an application , Appname
-                  contains org/appName:tag'
                 type: string
               args:
                 additionalProperties:
                   type: string
-                description: Args, the actions input args, like oss backup address...
                 type: object
               cmd:
-                description: Actions exec command, support render some args and downward
-                  API, like application name, service name ...
                 type: string
             type: object
           status:
-            description: ActionsStatus defines the observed state of Actions
+            properties:
+              status:
+                type: string
             type: object
         type: object
     served: true

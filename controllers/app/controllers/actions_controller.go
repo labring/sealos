@@ -20,6 +20,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
+	"html/template"
+
 	"github.com/go-logr/logr"
 	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
@@ -27,26 +30,24 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/yaml"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/kubernetes/pkg/apis/core"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"text/template"
 )
 
-const (
-	IMAGE_NAMESPACE = "sealos-imagehub"
-)
-
-// ActionsReconciler reconciles a Actions object
 type ActionsReconciler struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	recorder     record.EventRecorder
 	actionEngine ActionEngine
-	ctx          context.Context
 	logr.Logger
 }
+
+const (
+	DefaultNameSpace string = "default"
+)
 
 // +kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
@@ -60,24 +61,29 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 	r.Logger.Info(fmt.Sprintf("action.Name: %v", action.Name))
 	image := &imagehubv1.Image{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: action.Spec.AppName}, image); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Namespace: DefaultNameSpace, Name: action.Spec.AppName}, image); err != nil {
+		r.recorder.Eventf(image, core.EventTypeNormal, "ImageGetFailed", "Infra %s status is pending", image.Name)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	r.Logger.Info(fmt.Sprintf("image.Name: %v", image.Name))
-
 	switch image.Spec.DetailInfo.AppActions.ActionType {
-
 	case appv1.KubectlAction:
 		r.actionEngine = NewKubectlEngine(ctx, r.Client, action, image)
 	}
-	r.actionEngine.Parse()
-	r.actionEngine.Apply()
-
+	if err := r.actionEngine.Parse(); err != nil {
+		r.recorder.Eventf(action, core.EventTypeNormal, "ActionParseFailed", "Action %s status is Failed", action.Name)
+		return ctrl.Result{}, err
+	}
+	if err := r.actionEngine.Apply(); err != nil {
+		r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplyFailed", "Action %s status is Failed", action.Name)
+		return ctrl.Result{}, err
+	}
+	r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplySuccess", "Action %s status is applying", action.Name)
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *ActionsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.recorder = mgr.GetEventRecorderFor("sealos-action-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appv1.Actions{}).
 		Complete(r)
@@ -86,45 +92,38 @@ func (r *ActionsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (ctlEngine *KubectlEngine) Parse() error {
 	actionName := ctlEngine.ActionReq.Spec.ActionName
 	tpl := ctlEngine.imageInfo.Spec.DetailInfo.AppActions.Actions[imagehubv1.ActionName(actionName)]
+
 	args := ctlEngine.ActionReq.Spec.Args
 	t, err := template.New("action.yaml").Parse(string(tpl))
 	if err != nil {
-		return client.IgnoreNotFound(err)
+		return fmt.Errorf("action template parse failed")
 	}
 	var byt bytes.Buffer
-	e := t.Execute(&byt, args) //执行模板，并通过w输出
+	e := t.Execute(&byt, args)
 	if e != nil {
-		return client.IgnoreNotFound(err)
+		return fmt.Errorf("action template execute failed")
 	}
 	ctlEngine.parseResult = byt.Bytes()
-	fmt.Println(byt.String())
 	return nil
 }
 
 func (ctlEngine *KubectlEngine) Apply() error {
-	fmt.Println("start apply")
 	obj := &unstructured.Unstructured{}
 	_, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(ctlEngine.parseResult, nil, obj)
 	if err != nil {
-		fmt.Printf("Decode errL:%v\n", err)
-		return client.IgnoreNotFound(err)
+		return fmt.Errorf("action template decode failed")
 	}
-	fmt.Println("Decode fin")
+	obj.SetNamespace(DefaultNameSpace)
 	oobj, isclientobj := obj.DeepCopyObject().(client.Object)
 	if !isclientobj {
-		fmt.Printf("DeepCopyObject errL:%v\n", err)
-		return client.IgnoreNotFound(err)
+		return fmt.Errorf("deepCopyObject errL:%v", err)
 	}
-	fmt.Println("DeepCopyObject fin")
 	_, err = controllerutil.CreateOrUpdate(ctlEngine.ctx, ctlEngine.Client, oobj, func() error {
-
 		return nil
 	})
 	if err != nil {
-		fmt.Printf("CreateOrUpdate errL:%v\n", err)
-		return err
+		return fmt.Errorf("createOrUpdate errL:%v", err)
 	}
-	fmt.Println("CreateOrUpdate fin")
 
 	return nil
 }

@@ -139,7 +139,7 @@ func subCommands() []*cobra.Command {
 		newSaveCommand(),
 		newTagCommand(),
 		newUmountCommand(),
-		newUnshareCommand(),
+		newUnshareCommand(), //nolint
 	}
 }
 

@@ -17,6 +17,10 @@ package buildah
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/pkg/parse"
@@ -25,9 +29,6 @@ import (
 	"github.com/containers/image/v5/transports/alltransports"
 	"github.com/containers/storage"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"os"
-	"strings"
-	"time"
 
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/util"

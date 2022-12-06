@@ -55,12 +55,12 @@ func newCreateCmd() *cobra.Command {
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			mountEnvs, unmountMounts, err := unshareMount(bder.(*realImpl).store, []string{info.ContainerID})
+			mountEnvs, unmountMounts, err := unshareMount(bder.(*realImpl).store, []string{info.ContainerID}) //nolint
 			if err != nil {
 				return err
 			}
 			cmd.Env = append(cmd.Env, mountEnvs...)
-			unshare.ExecRunnable(cmd, unmountMounts)
+			unshare.ExecRunnable(cmd, unmountMounts) //nolint
 			os.Exit(1)
 			return nil
 		},

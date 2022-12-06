@@ -1,3 +1,0 @@
-scp -r /Users/jianghan/GolandProjects/sealos/pkg/image/ root@dev:/root/sealos/pkg/image/
-
-scp -r /Users/jianghan/GolandProjects/cluster-image/applications/zalando-postgres-operator/14/app root@dev:/root/zalando-postgres-operator/14
