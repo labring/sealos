@@ -83,7 +83,7 @@ func (d Driver) stopInstances(hosts *v1.Hosts) error {
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	client := d.Client
 	instanceID := make([]string, hosts.Count)
-	disksID := make([]string, 0)
+	// disksID := make([]string, 0)
 	for i := 0; i < hosts.Count; i++ {
 		metadata := hosts.Metadata[i]
 		instanceID[i] = metadata.ID
