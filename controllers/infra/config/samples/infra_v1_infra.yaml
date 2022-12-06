@@ -15,7 +15,7 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: infra-apply-test
+  name: 1205test
 spec:
   hosts:
   - roles: [master] # required
@@ -23,6 +23,6 @@ spec:
     flavor: "t2.large"
     image: "ami-0d66b970b9f16f1f5"
   - roles: [ node ] # required
-    count: 1 # Required
-    flavor: "t2.medium"
+    count: 2 # Required
+    flavor: "t2.small"
     image: "ami-0d66b970b9f16f1f5"

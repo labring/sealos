@@ -96,9 +96,10 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 		InstanceIds: instanceID,
 		DryRun:      aws.Bool(false),
 	}
-	if err := d.DeleteVolume(disksID); err != nil {
-		return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
-	}
+
+	//if err := d.DeleteVolume(disksID); err != nil {
+	//	return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
+	//}
 	_, err := StopInstance(context.TODO(), client, input)
 	if err != nil {
 		return fmt.Errorf("aws stop instance failed: %s, %v", instanceID, err)
