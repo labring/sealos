@@ -21,15 +21,15 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/kubernetes/pkg/apis/core"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/drivers"
+
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // InfraReconciler reconciles a Infra object
@@ -67,18 +67,18 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
-		r.recorder.Eventf(infra, core.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
 		if err := r.Status().Update(ctx, infra); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
 
 	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
-		r.recorder.Eventf(infra, core.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 		return r.applier.ReconcileInstance(infra, r.driver)
 	})
 	if err != nil {
-		r.recorder.Eventf(infra, core.EventTypeWarning, "update infra failed", "%v", err)
+		r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
 		// requeue after 30 seconds
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
@@ -88,10 +88,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 		infra.Status.Status = infrav1.Running.String()
 		if err = r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status update failed", "%v", err)
+			r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status update failed", "%v", err)
 			return ctrl.Result{}, err
 		}
-		r.recorder.Eventf(infra, core.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 	}
 
 	return ctrl.Result{}, nil
