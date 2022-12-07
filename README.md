@@ -48,12 +48,12 @@ Some Screen Shots of `sealos`:
 
 <table>
   <tr>
-      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
-      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
+      <td width="50%" align="center"><b>sealos cloud native app store</b></td>
+      <td width="50%" align="center"><b>sealos cloud native app store</b></td>
   </tr>
   <tr>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/206159907-8e34fb77-67dd-46fb-98e0-0181ee15f384.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/206159396-d2af0767-ef09-4040-b80d-24f2fbf1d6e5.png"/></td>
   </tr>
   <tr>
       <td width="50%" align="center"><b>pgsql on sealos cloud</b></td>
