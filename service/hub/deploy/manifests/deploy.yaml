@@ -14,24 +14,21 @@ data:
     token:
       issuer: "registry-token-issuer"
       expiration: 2592000  #30days
-      certificate: "/certs/tls.crt"
-      key: "/certs/tls.key"
+      certificate: "/config/tls.crt"
+      key: "/config/tls.key"
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    ...
+    -----END RSA PRIVATE KEY-----
 kind: ConfigMap
 metadata:
   labels:
     app: hub-auth
   name: hub-auth-config
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: hub-auth-certs
-type: kubernetes.io/tls
-data:
-  tls.crt: |
-    ...
-  tls.key: |
-    ...
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -65,7 +62,7 @@ spec:
                 path: tls.key
       containers:
         - name: hub-auth-server
-          image: labring/sealos-hub-auth:dev
+          image: labring/sealos-hub-service:dev
           ports:
             - containerPort: 5001
           args:
@@ -82,7 +79,4 @@ spec:
           volumeMounts:
             - name: config-vol
               mountPath: /config
-            - name: cert-vol
-              mountPath: /certs
-              readOnly: true
 ---
