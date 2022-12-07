@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: hub-auth
+    control-plane: service-manager
+  name: hub-auth-system
+---
+apiVersion: v1
+data:
+  config.yml: |
+    server:
+      addr: ":5001"
+    token:
+      issuer: "registry-token-issuer"
+      expiration: 2592000  #30days
+      certificate: "/certs/tls.crt"
+      key: "/certs/tls.key"
+kind: ConfigMap
+metadata:
+  labels:
+    app: hub-auth
+  name: hub-auth-config
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hub-auth-certs
+type: kubernetes.io/tls
+data:
+  tls.crt: |
+    ...
+  tls.key: |
+    ...
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hub-auth
+  labels:
+    app: hub-auth
+spec:
+  selector:
+    matchLabels:
+      app: hub-auth
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hub-auth
+    spec:
+      volumes:
+        - name: config-vol
+          configMap:
+            name: hub-auth-config
+        - name: cert-vol
+          secret:
+            secretName: hub-auth-certs
+            items:
+              - key: tls.crt
+                path: tls.crt
+              - key: tls.key
+                path: tls.key
+      containers:
+        - name: hub-auth-server
+          image: labring/sealos-hub-auth:dev
+          ports:
+            - containerPort: 5001
+          args:
+          - /config/config.yml
+          command:
+            - /manager
+          securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
+              runAsNonRoot: true
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: config-vol
+              mountPath: /config
+            - name: cert-vol
+              mountPath: /certs
+              readOnly: true
+---
