@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
@@ -199,10 +200,41 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				ID:     *i.InstanceId,
 				Status: string(i.State.Name),
 			}
+
 			// append diskID to metadata
 			for _, blockDeviceMap := range i.BlockDeviceMappings {
 				vid := *blockDeviceMap.Ebs.VolumeId
 				metadata.DiskID = append(metadata.DiskID, vid)
+			}
+
+			// get disk from ec2
+			var disks []v1.Disk
+			volsInput := &ec2.DescribeVolumesInput{
+				VolumeIds: metadata.DiskID,
+			}
+			volumes, err := GetVolumes(context.TODO(), client, volsInput)
+			if err != nil {
+				logger.Warn("Get Volumes Failed", "instance", i.InstanceId)
+			}
+			rootDeviceName := *i.RootDeviceName
+			for _, vol := range volumes.Volumes {
+				var diskType string
+				// judge the diskType according the attachments
+				for _, attachment := range vol.Attachments {
+					if *attachment.Device == rootDeviceName {
+						diskType = strings.ToLower(common.RootVolumeLabel)
+						break
+					} else {
+						diskType = strings.ToLower(common.DataVolumeLabel)
+						break
+					}
+				}
+				disks = append(disks, v1.Disk{
+					Capacity:   int(*vol.Size),
+					VolumeType: string(vol.VolumeType),
+					Type:       diskType,
+					Name:       *vol.VolumeId,
+				})
 			}
 			if h, ok := hostmap[index]; ok {
 				h.Count++
@@ -217,7 +249,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				Image:    *imageID,
 				Flavor:   string(instanceType),
 				Index:    index,
-				Disks:    infra.Spec.Hosts[index].Disks, // TODO: get disks from instance
+				Disks:    disks, // TODO: get disks from instance
 			}
 
 			for _, mp := range i.Tags {
