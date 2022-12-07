@@ -69,7 +69,7 @@ func (r *UserExpirationReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return r.doReconcile(ctx, user)
+		return r.reconcile(ctx, user)
 	}
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
@@ -95,7 +95,7 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserExpirationReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *UserExpirationReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	//TODO add  Expiration logic
 	return ctrl.Result{}, nil
 }

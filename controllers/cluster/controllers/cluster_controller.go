@@ -21,26 +21,20 @@ import (
 	"fmt"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	infracommon "github.com/labring/sealos/controllers/infra/common"
-
-	"github.com/labring/sealos/pkg/ssh"
-
-	"sigs.k8s.io/yaml"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
-
-	"k8s.io/kubernetes/pkg/apis/core"
-
-	"k8s.io/client-go/tools/record"
-
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
+	infracommon "github.com/labring/sealos/controllers/infra/common"
 	"github.com/labring/sealos/controllers/infra/drivers"
+	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -77,7 +71,7 @@ type ClusterReconciler struct {
 func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	cluster := &v1.Cluster{}
 	if err := r.Get(ctx, req.NamespacedName, cluster); err != nil {
-		r.recorder.Event(cluster, core.EventTypeWarning, "GetCluster", err.Error())
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "GetCluster", err.Error())
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -86,7 +80,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	infra.Namespace = cluster.Namespace
 	key := client.ObjectKey{Namespace: infra.Namespace, Name: infra.Name}
 	if err := r.Get(ctx, key, infra); err != nil {
-		r.recorder.Event(cluster, core.EventTypeWarning, "GetInfra", err.Error())
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "GetInfra", err.Error())
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 	}
 
@@ -96,18 +90,18 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	clusterfile, err := generateClusterfile(infra, cluster)
 	if err != nil {
-		r.recorder.Event(cluster, core.EventTypeWarning, "GenerateClusterfile", err.Error())
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "GenerateClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 	if err := applyClusterfile(infra, clusterfile, getSealosVersion(cluster)); err != nil {
-		r.recorder.Event(cluster, core.EventTypeWarning, "ApplyClusterfile", err.Error())
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ApplyClusterfile", err.Error())
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
 	}
 
 	// update cluster status
 	cluster.Status.Status = infrav1.Running.String()
 	if err := r.Status().Update(ctx, cluster); err != nil {
-		r.recorder.Event(cluster, core.EventTypeWarning, "UpdateClusterStatus", err.Error())
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "UpdateClusterStatus", err.Error())
 		return ctrl.Result{}, err
 	}
 
