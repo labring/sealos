@@ -66,14 +66,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	// 添加finalizer
-	if infra.DeletionTimestamp.IsZero() {
-		if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
-			return ctrl.Result{}, err
-		}
+	// add finalizer
+	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
+		return ctrl.Result{}, err
 	}
-
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
@@ -81,7 +77,6 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return ctrl.Result{}, err
 		}
 	}
-
 	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 		return r.applier.ReconcileInstance(infra, r.driver)
@@ -92,38 +87,41 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
 	// clean infra using aws terminate
-	if !infra.DeletionTimestamp.IsZero() {
-		logger.Debug("removing all hosts")
-		infra.Status.Status = infrav1.Terminating.String()
+	// now we depend on the aws terminate func to keep consistency
+	// TODO: double check the terminated Instance and then remove the finalizer...
+	var isDelete bool
+	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, err
+	}
+	if res == controllerutil.OperationResultUpdated && !isDelete {
+		if infra.Status.Status == infrav1.Running.String() {
+			return ctrl.Result{}, nil
+		}
+		infra.Status.Status = infrav1.Running.String()
 		if err = r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to terminating failed", "%v", err)
-			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
+			r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status update failed", "%v", err)
+			return ctrl.Result{}, err
 		}
-		for _, hosts := range infra.Spec.Hosts {
-			if err := r.driver.DeleteInstances(&hosts); err != nil {
-				return ctrl.Result{RequeueAfter: 30 * time.Second}, err
-			}
-		}
-		// now we depend on the aws terminate func to keep consistency
-		// TODO: double check the terminated Instance and then remove the finalizer...
-		if _, err := r.finalizer.RemoveFinalizer(ctx, infra, controller.DefaultFunc); err != nil {
-			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
-		}
-	} else {
-		if res == controllerutil.OperationResultUpdated {
-			if infra.Status.Status == infrav1.Running.String() {
-				return ctrl.Result{}, nil
-			}
-			infra.Status.Status = infrav1.Running.String()
-			if err = r.Status().Update(ctx, infra); err != nil {
-				r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status update failed", "%v", err)
-				return ctrl.Result{}, err
-			}
-			r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
-		}
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) error {
+	logger.Debug("removing all hosts")
+	infra := obj.(*infrav1.Infra)
+	infra.Status.Status = infrav1.Terminating.String()
+	if err := r.Status().Update(ctx, infra); err != nil {
+		r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to terminating failed", "%v", err)
+		return err
+	}
+	for _, hosts := range infra.Spec.Hosts {
+		if err := r.driver.DeleteInstances(&hosts); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
