@@ -20,17 +20,10 @@ type SealosAuthorize struct {
 	api.Authorizer
 }
 
-func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
+func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequestInfo) ([]string, error) {
 	glog.Info("Authorize for req: ", ai.Name)
-	// todo replace server ip to env $(SERVER)
-
 	repo := imagehubv1.RepoName(ai.Name)
-
 	var res []string
-	client, err := kubernetes.NewKubernetesClientByConfigString(ai.Kubeconfig)
-	if err != nil {
-		return res, api.ErrNoMatch
-	}
 	resource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
 		Group:    "imagehub.sealos.io",
 		Version:  "v1",

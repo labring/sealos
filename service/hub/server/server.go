@@ -14,6 +14,7 @@ import (
 
 	"github.com/cesanta/glog"
 	"github.com/docker/distribution/registry/auth/token"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/service/hub/api"
 	"github.com/labring/service/hub/auth"
 )
@@ -162,25 +163,25 @@ func (as *AuthServer) ParseRequest(req *http.Request) (*AuthRequest, error) {
 	return ar, nil
 }
 
-func (as *AuthServer) Authenticate(ar *AuthRequest) (bool, api.Labels, error) {
-	result, labels, err := as.authenticators.Authenticate(ar.Account, ar.Password)
+func (as *AuthServer) Authenticate(ar *AuthRequest) (bool, api.Labels, kubernetes.Client, error) {
+	result, labels, client, err := as.authenticators.Authenticate(ar.Account, ar.Password)
 	glog.V(2).Infof("Authn %s -> %t, %+v, %v", ar.Account, result, labels, err)
 	if err != nil {
 		if err == api.ErrNoMatch {
-			return false, nil, err
+			return false, nil, nil, err
 		} else if err == api.ErrWrongPass {
 			glog.Warningf("Failed authentication with %s: %s", err, ar.Account)
-			return false, nil, nil
+			return false, nil, nil, nil
 		}
 		err = fmt.Errorf("authentication returned error: %s", err)
 		glog.Errorf("%s: %s", ar, err)
-		return false, nil, err
+		return false, nil, nil, err
 	}
-	return result, labels, nil
+	return result, labels, client, nil
 }
 
-func (as *AuthServer) authorizeScope(ai *api.AuthRequestInfo) ([]string, error) {
-	result, err := as.authorizers.Authorize(ai)
+func (as *AuthServer) authorizeScope(client kubernetes.Client, ai *api.AuthRequestInfo) ([]string, error) {
+	result, err := as.authorizers.Authorize(client, ai)
 	glog.V(2).Infof("Authz  %s -> %s, %s", *ai, result, err)
 	if err != nil {
 		if err == api.ErrNoMatch {
@@ -193,20 +194,19 @@ func (as *AuthServer) authorizeScope(ai *api.AuthRequestInfo) ([]string, error) 
 	return result, nil
 }
 
-func (as *AuthServer) Authorize(ar *AuthRequest) ([]AuthzResult, error) {
+func (as *AuthServer) Authorize(client kubernetes.Client, ar *AuthRequest) ([]AuthzResult, error) {
 	var ares []AuthzResult
 	for _, scope := range ar.Scopes {
 		ai := &api.AuthRequestInfo{
-			Account:    ar.Account,
-			Type:       scope.Type,
-			Name:       scope.Name,
-			Service:    ar.Service,
-			IP:         ar.RemoteIP,
-			Actions:    scope.Actions,
-			Labels:     ar.Labels,
-			Kubeconfig: string(ar.Password),
+			Account: ar.Account,
+			Type:    scope.Type,
+			Name:    scope.Name,
+			Service: ar.Service,
+			IP:      ar.RemoteIP,
+			Actions: scope.Actions,
+			Labels:  ar.Labels,
 		}
-		actions, err := as.authorizeScope(ai)
+		actions, err := as.authorizeScope(client, ai)
 		if err != nil {
 			return nil, err
 		}
@@ -301,22 +301,22 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	glog.V(2).Infof("Auth request: %+v", ar)
-	{
-		authnResult, labels, err := as.Authenticate(ar)
-		if err != nil {
-			http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
-			return
-		}
-		if !authnResult {
-			glog.Warningf("Auth failed: %s", *ar)
-			rw.Header()["WWW-Authenticate"] = []string{fmt.Sprintf(`Basic realm="%s"`, as.config.Token.Issuer)}
-			http.Error(rw, "Auth failed.", http.StatusUnauthorized)
-			return
-		}
-		ar.Labels = labels
+
+	authnResult, labels, client, err := as.Authenticate(ar)
+	if err != nil {
+		http.Error(rw, fmt.Sprintf("Authentication failed (%s)", err), http.StatusInternalServerError)
+		return
 	}
+	if !authnResult {
+		glog.Warningf("Auth failed: %s", *ar)
+		rw.Header()["WWW-Authenticate"] = []string{fmt.Sprintf(`Basic realm="%s"`, as.config.Token.Issuer)}
+		http.Error(rw, "Auth failed.", http.StatusUnauthorized)
+		return
+	}
+	ar.Labels = labels
+
 	if len(ar.Scopes) > 0 {
-		ares, err = as.Authorize(ar)
+		ares, err = as.Authorize(client, ar)
 		if err != nil {
 			http.Error(rw, fmt.Sprintf("Authorization failed (%s)", err), http.StatusInternalServerError)
 			return

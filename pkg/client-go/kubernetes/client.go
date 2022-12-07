@@ -84,11 +84,7 @@ func NewKubernetesClient(kubeconfig, apiserver string) (Client, error) {
 	return &k, nil
 }
 
-func NewKubernetesClientByConfigString(content string) (Client, error) {
-	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(content))
-	if err != nil {
-		return nil, err
-	}
+func NewKubernetesClientByConfig(config *rest.Config) (Client, error) {
 	config.QPS = 1e6
 	config.Burst = 1e6
 	var k kubernetesClient

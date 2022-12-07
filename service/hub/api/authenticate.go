@@ -1,6 +1,10 @@
 package api
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+)
 
 type Labels map[string][]string
 
@@ -12,7 +16,7 @@ type Authenticator interface {
 	// e.g. none of the rules matched.
 	// Another special ErrWrongPass error is returned if the authorizer failed to authenticate.
 	// Implementations must be goroutine-safe.
-	Authenticate(user string, password PasswordString) (bool, Labels, error)
+	Authenticate(user string, password PasswordString) (bool, Labels, kubernetes.Client, error)
 
 	// Stop Finalize resources in preparation for shutdown.
 	// When this call is made there are guaranteed to be no Authenticate requests in flight

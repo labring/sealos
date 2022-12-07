@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 )
 
 // Authorizer interface performs authorization of the request.
@@ -18,7 +20,7 @@ type Authorizer interface {
 	// A special ErrNoMatch error is returned if the authorizer could not reach a decision,
 	// e.g. none of the rules matched.
 	// Implementations must be goroutine-safe.
-	Authorize(ai *AuthRequestInfo) ([]string, error)
+	Authorize(client kubernetes.Client, ai *AuthRequestInfo) ([]string, error)
 
 	// Stop Finalize resources in preparation for shutdown.
 	// When this call is made there are guaranteed to be no Authenticate requests in flight

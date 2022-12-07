@@ -60,9 +60,9 @@ spec:
             secretName: hub-auth-certs
             items:
               - key: tls.crt
-                path: server.crt
+                path: tls.crt
               - key: tls.key
-                path: server.key
+                path: tls.key
       containers:
         - name: hub-auth-server
           image: labring/sealos-hub-auth:dev

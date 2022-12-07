@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/cesanta/glog"
+	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/service/hub/api"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func init() {
@@ -16,29 +18,38 @@ type SealosAuthenticate struct {
 	api.Authenticator
 }
 
-func (a SealosAuthenticate) Authenticate(user string, password api.PasswordString) (bool, api.Labels, error) {
+func (a SealosAuthenticate) Authenticate(user string, password api.PasswordString) (bool, api.Labels, kubernetes.Client, error) {
 	glog.Info("Authenticate for user:", user)
-	// todo replace server ip to env $(SERVER)
 
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(password))
+	if err != nil {
+		return false, api.Labels{}, nil, api.ErrWrongPass
+	}
+	// replace config.Host to env host.
+	sealosHost := helper.GetKubernetesHostFromEnv()
+	if sealosHost == "" {
+		glog.Error("GetKubernetesHostFromEnv error")
+		return false, api.Labels{}, nil, api.ErrWrongPass
+	}
+	config.Host = sealosHost
 	// create client
-	client, err := kubernetes.NewKubernetesClientByConfigString(string(password))
+	client, err := kubernetes.NewKubernetesClientByConfig(config)
 	if err != nil {
 		glog.Error("NewKubernetesClientByConfigString error")
-		return false, api.Labels{}, api.ErrWrongPass
+		return false, api.Labels{}, nil, api.ErrWrongPass
 	}
 	// check client by ping apiserver
-	// or get organizations TODO！
 	res, err := client.Discovery().RESTClient().Get().AbsPath("/readyz").DoRaw(context.Background())
 	if err != nil {
 		glog.Error("Authenticate false, ping apiserver error")
-		return false, api.Labels{}, api.ErrWrongPass
+		return false, api.Labels{}, nil, api.ErrWrongPass
 	}
 	if string(res) != "ok" {
 		glog.Error("Authenticate false, apiserver response not ok")
-		return false, api.Labels{}, api.ErrWrongPass
+		return false, api.Labels{}, nil, api.ErrWrongPass
 	}
 	glog.Info("Authenticate true")
-	return true, api.Labels{}, nil
+	return true, api.Labels{}, client, nil
 }
 
 func (a SealosAuthenticate) Stop() {
