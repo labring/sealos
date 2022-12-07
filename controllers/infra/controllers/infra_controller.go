@@ -91,7 +91,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		// requeue after 30 seconds
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	// clean infra
+	// clean infra using aws terminate
 	if !infra.DeletionTimestamp.IsZero() {
 		logger.Debug("removing all hosts")
 		infra.Status.Status = infrav1.Terminating.String()
@@ -104,6 +104,8 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 			}
 		}
+		// now we depend on the aws terminate func to keep consistency
+		// TODO: double check the terminated Instance and then remove the finalizer...
 		if _, err := r.finalizer.RemoveFinalizer(ctx, infra, controller.DefaultFunc); err != nil {
 			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
 		}
