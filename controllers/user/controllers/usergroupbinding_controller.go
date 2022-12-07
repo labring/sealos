@@ -79,7 +79,7 @@ func (r *UserGroupBindingReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return r.doReconcile(ctx, userGroupBinding)
+		return r.reconcile(ctx, userGroupBinding)
 	}
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
@@ -178,7 +178,7 @@ func (r *UserGroupBindingReconciler) pipeline(ctx context.Context, ugBinding *us
 	return nil
 }
 
-func (r *UserGroupBindingReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *UserGroupBindingReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	ugBinding, ok := obj.(*userv1.UserGroupBinding)
 	if !ok {
 		return ctrl.Result{}, errors.New("obj convert UserGroup is error")
