@@ -21,8 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/endpoints-operator/library/controller"
+
 	"github.com/labring/sealos/controllers/infra/common"
-	"github.com/labring/sealos/controllers/infra/common/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"k8s.io/kubernetes/pkg/apis/core"
@@ -39,10 +40,11 @@ import (
 // InfraReconciler reconciles a Infra object
 type InfraReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	driver   drivers.Driver
-	applier  drivers.Reconcile
-	recorder record.EventRecorder
+	Scheme    *runtime.Scheme
+	driver    drivers.Driver
+	applier   drivers.Reconcile
+	recorder  record.EventRecorder
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -67,17 +69,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// 添加finalizer
 	if infra.DeletionTimestamp.IsZero() {
-		if !utils.ContainsString(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer) {
-			infra.ObjectMeta.Finalizers = append(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer)
-			if err := r.Update(ctx, infra); err != nil {
-				return ctrl.Result{}, err
-			}
+		if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
-
-	//if infra.Status.Status == infrav1.Pending.String() {
-	//	return ctrl.Result{}, nil
-	//}
 
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
@@ -109,9 +104,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 				return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 			}
 		}
-		infra.ObjectMeta.Finalizers = utils.RemoveString(infra.ObjectMeta.Finalizers, common.SealosInfraFinalizer)
-		if err := r.Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status to terminating failed", "%v", err)
+		if _, err := r.finalizer.RemoveFinalizer(ctx, infra, controller.DefaultFunc); err != nil {
 			return ctrl.Result{RequeueAfter: 15 * time.Second}, err
 		}
 	} else {
@@ -140,7 +133,9 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.driver = driver
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
-
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, common.SealosInfraFinalizer)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}).
 		Complete(r)
