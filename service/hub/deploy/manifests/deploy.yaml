@@ -55,11 +55,6 @@ spec:
       containers:
         - name: hub-service-server
           image: lingdie/sealos-hub-service:dev
-          env:
-          - name: KUBERNETES_SERVICE_HOST
-            value: "10.96.0.1"
-          - name: KUBERNETES_SERVICE_PORT
-            value: "443"
           ports:
             - containerPort: 5001
           args:
@@ -92,40 +87,3 @@ spec:
       targetPort: 5001
   selector:
     app: hub-service
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: hub-service-ingress-tls
-  namespace: hub-service-system
-type: kubernetes.io/tls
-data:
-  tls.crt: | 
-    ...
-  tls.key: |
-    ...
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: hub-service-ingress
-  namespace: hub-service-system
-  labels:
-    app: hub-service
-spec:
-  rules:
-    - host: hubauth.login.sealos.io
-      http:
-        paths:
-          - pathType: Prefix
-            path: /
-            backend:
-              service:
-                name: hub-service-manager
-                port:
-                  number: 5001
-  tls:
-    - hosts:
-        - hubauth.login.sealos.io
-      secretName: hub-service-ingress-tls
-
