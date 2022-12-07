@@ -17,7 +17,7 @@ type RestartableServer struct {
 	hs         *http.Server
 }
 
-func ServeOnce(c *server.Config, cf string) (*server.AuthServer, *http.Server) {
+func (rs *RestartableServer) Serve(c *server.Config) {
 	as, err := server.NewAuthServer(c)
 	if err != nil {
 		glog.Exitf("Failed to create auth server: %s", err)
@@ -31,19 +31,10 @@ func ServeOnce(c *server.Config, cf string) (*server.AuthServer, *http.Server) {
 	if err != nil {
 		glog.Fatal(err.Error())
 	}
-	go func() {
-		if err := hs.Serve(listener); err != nil {
-			if err == http.ErrServerClosed {
-				return
-			}
-		}
-	}()
+	if err := hs.Serve(listener); err != nil {
+		glog.Fatal(err.Error())
+	}
 	glog.Infof("Serving on %s", c.Server.ListenAddress)
-	return as, hs
-}
-
-func (rs *RestartableServer) Serve(c *server.Config) {
-	rs.authServer, rs.hs = ServeOnce(c, rs.configFile)
 }
 
 func main() {
