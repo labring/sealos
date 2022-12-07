@@ -70,10 +70,6 @@ func (a SealosAuthorize) Authorize(ai *api.AuthRequestInfo) ([]string, error) {
 func (a SealosAuthorize) Stop() {
 }
 
-func (a SealosAuthorize) Name() string {
-	return "authz.hub.sealos.io"
-}
-
 func NewSealosAuthz() SealosAuthorize {
 	return SealosAuthorize{}
 }

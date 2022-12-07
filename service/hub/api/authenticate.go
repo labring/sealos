@@ -18,9 +18,6 @@ type Authenticator interface {
 	// When this call is made there are guaranteed to be no Authenticate requests in flight
 	// and there will be no more calls made to this instance.
 	Stop()
-
-	// Name Human-readable name of the authenticator.
-	Name() string
 }
 
 var ErrNoMatch = errors.New("did not match any rule")

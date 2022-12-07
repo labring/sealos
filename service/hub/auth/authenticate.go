@@ -44,10 +44,6 @@ func (a SealosAuthenticate) Authenticate(user string, password api.PasswordStrin
 func (a SealosAuthenticate) Stop() {
 }
 
-func (a SealosAuthenticate) Name() string {
-	return "authn.hub.sealos.io"
-}
-
 func NewSealosAuthn() SealosAuthenticate {
 	return SealosAuthenticate{}
 }
