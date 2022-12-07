@@ -26,6 +26,7 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		Addr:    c.Server.ListenAddress,
 		Handler: as,
 	}
+	rs.authServer, rs.hs = as, hs
 	var listener net.Listener
 	listener, err = net.Listen("tcp", c.Server.ListenAddress)
 	if err != nil {
