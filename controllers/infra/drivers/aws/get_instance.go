@@ -217,7 +217,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				Image:    *imageID,
 				Flavor:   string(instanceType),
 				Index:    index,
-				Disks:    infra.Spec.Hosts[index].Disks, // TODO: get disks from instance
+				//				Disks:    infra.Spec.Hosts[index].Disks, // TODO: get disks from instance
 			}
 
 			for _, mp := range i.Tags {
