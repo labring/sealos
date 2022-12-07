@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu \
+          sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu \
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
             qemu-user-static binfmt-support
           make install.upx

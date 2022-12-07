@@ -30,6 +30,9 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Build ${{ matrix.module }} amd64
         working-directory: controllers/${{ matrix.module }}
         run: |
