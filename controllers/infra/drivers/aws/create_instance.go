@@ -169,7 +169,7 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 }
 
 // GetBlockDeviceMappings generate blockDeviceMappings from hosts
-func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) []types.BlockDeviceMapping {
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string, infra *v1.Infra) []types.BlockDeviceMapping {
 	var blockDeviceMappings []types.BlockDeviceMapping
 	hasSystem := checkHasSystemDisk(hosts)
 	// if not specify a system disk, we add a default
@@ -179,6 +179,12 @@ func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) [
 			Ebs: &types.EbsBlockDevice{
 				VolumeSize: &common.DefaultRootVolumeSize,
 			},
+		})
+		// update infra disk info
+		infra.Spec.Hosts[hosts.Index].Disks = append(infra.Spec.Hosts[hosts.Index].Disks, v1.Disk{
+			Capacity: int(common.DefaultRootVolumeSize),
+			Type:     strings.ToLower(common.RootVolumeLabel),
+			Name:     "",
 		})
 	}
 	systemAdded := false
@@ -234,7 +240,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if err != nil {
 		return err
 	}
-	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName)
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName, infra)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
