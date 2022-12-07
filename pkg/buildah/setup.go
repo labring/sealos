@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage/pkg/homedir"
@@ -105,13 +104,6 @@ func writeFileIfNotExists(filename string, data []byte) error {
 		err = file.WriteFile(filename, data)
 	}
 	return err
-}
-
-func IsRootless() bool {
-	if v, ok := os.LookupEnv(DisableAutoRootless); ok && strings.ToLower(v) == "true" {
-		return false
-	}
-	return unshare.IsRootless()
 }
 
 func MaybeReexecUsingUserNamespace() error {

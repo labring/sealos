@@ -27,7 +27,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/labring/sealos/pkg/buildah"
+	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -71,7 +71,7 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if iputils.IsLocalIP(host, s.localAddress) && !buildah.IsRootless() {
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
 		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}
