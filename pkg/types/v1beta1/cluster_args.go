@@ -76,23 +76,28 @@ func (c *Cluster) GetRegistryIPAndPortList() []string {
 }
 
 func (c *Cluster) GetMaster0IP() string {
-	if len(c.Spec.Hosts) == 0 {
+	master0 := c.GetMaster0IPAndPort()
+	if master0 == "" {
 		return ""
 	}
-	if len(c.Spec.Hosts[0].IPS) == 0 {
-		return ""
-	}
-	return iputils.GetHostIP(c.Spec.Hosts[0].IPS[0])
+	return iputils.GetHostIP(master0)
 }
 
 func (c *Cluster) GetMaster0IPAndPort() string {
 	if len(c.Spec.Hosts) == 0 {
 		return ""
 	}
-	if len(c.Spec.Hosts[0].IPS) == 0 {
-		return ""
+	for _, host := range c.Spec.Hosts {
+		for _, role := range host.Roles {
+			if role == MASTER {
+				if len(host.IPS) == 0 {
+					return ""
+				}
+				return host.IPS[0]
+			}
+		}
 	}
-	return c.Spec.Hosts[0].IPS[0]
+	return ""
 }
 
 func (c *Cluster) GetMaster0IPAPIServer() string {
@@ -108,6 +113,14 @@ func (c *Cluster) GetIPSByRole(role string) []string {
 				hosts = append(hosts, host.IPS...)
 			}
 		}
+	}
+	return hosts
+}
+
+func (c *Cluster) GetAllIPS() []string {
+	var hosts []string
+	for _, host := range c.Spec.Hosts {
+		hosts = append(hosts, host.IPS...)
 	}
 	return hosts
 }

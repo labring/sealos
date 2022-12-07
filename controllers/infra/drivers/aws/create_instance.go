@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -37,8 +38,6 @@ import (
 )
 
 var mutex sync.Mutex
-
-var rootVolumeSize = int32(40)
 
 var userData = `#!/bin/bash
 sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
@@ -115,6 +114,26 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 	return tags
 }
 
+func checkHasSystemDisk(hosts *v1.Hosts) bool {
+	var hasSystemDisk = false
+	for _, v := range hosts.Disks {
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) {
+			hasSystemDisk = true
+		}
+	}
+	return hasSystemDisk
+}
+
+// generateDataDiskDeviceName according https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html#available-ec2-device-names
+func generateDataDiskDeviceName(index int) (string, error) {
+	var deviceSuffix = "bcdefghijklmnop"
+	if index > len(deviceSuffix)-1 || index < 0 {
+		return "", fmt.Errorf("device index is wrong that aws can't support, please check")
+	}
+	var deviceName = fmt.Sprintf("/dev/sd%s", string(deviceSuffix[index]))
+	return deviceName, nil
+}
+
 // get tags
 func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	// Tag name and tag value
@@ -149,29 +168,49 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	return tags
 }
 
-// set blockDeviceMappings from hosts
-func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string) []types.BlockDeviceMapping {
+// GetBlockDeviceMappings generate blockDeviceMappings from hosts
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string, infra *v1.Infra) []types.BlockDeviceMapping {
 	var blockDeviceMappings []types.BlockDeviceMapping
-	// add system disk if not exists
-	if len(hosts.Disks) == 0 || hosts.Disks[0].Name != rootDeviceName {
+	hasSystem := checkHasSystemDisk(hosts)
+	// if not specify a system disk, we add a default
+	if !hasSystem {
 		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
 			DeviceName: &rootDeviceName,
 			Ebs: &types.EbsBlockDevice{
-				VolumeSize: &rootVolumeSize,
+				VolumeSize: &common.DefaultRootVolumeSize,
 			},
 		})
+		// update infra disk info
+		infra.Spec.Hosts[hosts.Index].Disks = append(infra.Spec.Hosts[hosts.Index].Disks, v1.Disk{
+			Capacity: int(common.DefaultRootVolumeSize),
+			Type:     strings.ToLower(common.RootVolumeLabel),
+			Name:     "",
+		})
 	}
-
+	systemAdded := false
+	dataDiskIndex := 0
 	for _, v := range hosts.Disks {
+		var deviceName string
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) && !systemAdded {
+			deviceName = rootDeviceName
+			systemAdded = true
+		} else {
+			// should limit dataDiskNumbers here in crd check to avoid index error.
+			deviceName, _ = generateDataDiskDeviceName(dataDiskIndex)
+			dataDiskIndex++
+		}
+
 		size := int32(v.Capacity)
-		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
-			DeviceName: &v.Name,
+		bdm := types.BlockDeviceMapping{
+			DeviceName: &deviceName,
 			Ebs: &types.EbsBlockDevice{
 				VolumeSize: &size,
-				VolumeType: types.VolumeType(v.Type),
+				VolumeType: types.VolumeType(v.VolumeType),
 			},
-		})
+		}
+		blockDeviceMappings = append(blockDeviceMappings, bdm)
 	}
+
 	return blockDeviceMappings
 }
 
@@ -201,7 +240,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if err != nil {
 		return err
 	}
-	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName)
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName, infra)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),

@@ -29,6 +29,7 @@ import (
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
 
+	wrapunshare "github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -37,7 +38,10 @@ var (
 	needToShutdownStore = false
 )
 
-var DefaultPlatform = platforms.DefaultSpec
+var (
+	DefaultPlatform = platforms.DefaultSpec
+	IsRootless      = wrapunshare.IsRootless
+)
 
 func flagChanged(c *cobra.Command, name string) bool {
 	if fs := c.Flag(name); fs != nil && fs.Changed {

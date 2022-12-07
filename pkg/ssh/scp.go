@@ -20,13 +20,14 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/sftp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/labring/sealos/pkg/buildah"
+	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/hash"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -38,7 +39,7 @@ func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
 	cmd := fmt.Sprintf("sha256sum %s | cut -d\" \" -f1", remoteFilePath)
 	remoteHash, err := s.CmdToString(host, cmd, "")
 	if err != nil {
-		logger.Error("calculate remote sha256 sum failed %s %s %v", host, remoteFilePath, err)
+		logger.Error("failed to calculate remote sha256 sum %s %s %v", host, remoteFilePath, err)
 	}
 	return remoteHash
 }
@@ -58,13 +59,11 @@ func (s *SSH) CmdToString(host, cmd, spilt string) (string, error) {
 	return str, fmt.Errorf("command %s %s return nil", host, cmd)
 }
 
-// SftpConnect  is
 func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 	sshClient, err := s.connect(host)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	// create sftp client
 	sftpClient, err := sftp.NewClient(sshClient)
 	return sshClient, sftpClient, err
@@ -72,7 +71,7 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if iputils.IsLocalIP(host, s.LocalAddress) && !buildah.IsRootless() {
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
 		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}
@@ -91,21 +90,27 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 		return fmt.Errorf("get file stat failed %s", err)
 	}
 
-	baseRemoteFilePath := filepath.Dir(remotePath)
-	_, err = sftpClient.ReadDir(baseRemoteFilePath)
+	remoteDir := filepath.Dir(remotePath)
+	rfp, err := sftpClient.Stat(remoteDir)
 	if err != nil {
-		if err = sftpClient.MkdirAll(baseRemoteFilePath); err != nil {
+		if !os.IsNotExist(err) {
 			return err
 		}
+		if err = sftpClient.MkdirAll(remoteDir); err != nil {
+			return err
+		}
+	} else if !rfp.IsDir() {
+		return fmt.Errorf("dir of remote file %s is not a directory", remotePath)
 	}
 	number := 1
 	if f.IsDir() {
 		number = file.CountDirFiles(localPath)
+		// no files in local dir, but still need to create remote dir
+		if number == 0 {
+			return sftpClient.MkdirAll(remotePath)
+		}
 	}
-	// no file in dir, do need to send
-	if number == 0 {
-		return nil
-	}
+
 	var (
 		bar = progress.Simple("copying files to "+host, number)
 	)
@@ -113,99 +118,89 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 		_ = bar.Close()
 	}()
 
-	if f.IsDir() {
-		s.copyLocalDirToRemote(host, sftpClient, localPath, remotePath, bar)
-	} else {
-		err = s.copyLocalFileToRemote(host, sftpClient, localPath, remotePath)
+	return s.doCopy(sftpClient, host, localPath, remotePath, bar)
+}
+
+func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
+	lfp, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("failed to Stat local: %v", err)
+	}
+	if lfp.IsDir() {
+		entries, err := os.ReadDir(src)
 		if err != nil {
-			errMsg := fmt.Sprintf("copy local file to remote failed %v %s %s %s", err, host, localPath, remotePath)
-			logger.Error(errMsg)
+			return fmt.Errorf("failed to ReadDir: %v", err)
 		}
-		_ = bar.Add(1)
-	}
-	return nil
-}
-
-func (s *SSH) copyLocalDirToRemote(host string, sftpClient *sftp.Client, localPath, remotePath string, epu *progressbar.ProgressBar) {
-	localFiles, err := os.ReadDir(localPath)
-	if err != nil {
-		logger.Error("read local path dir failed %s %s", host, localPath)
-		return
-	}
-	if err = sftpClient.MkdirAll(remotePath); err != nil {
-		logger.Error("failed to create remote path %s:%v", remotePath, err)
-		return
-	}
-	for _, file := range localFiles {
-		lfp := path.Join(localPath, file.Name())
-		rfp := path.Join(remotePath, file.Name())
-		if file.IsDir() {
-			if err = sftpClient.MkdirAll(rfp); err != nil {
-				logger.Error("failed to create remote path %s:%v", rfp, err)
-				return
+		if err = client.MkdirAll(dest); err != nil {
+			return fmt.Errorf("failed to Mkdir remote: %v", err)
+		}
+		for _, entry := range entries {
+			if err = s.doCopy(client, host, path.Join(src, entry.Name()), path.Join(dest, entry.Name()), epu); err != nil {
+				return err
 			}
-			s.copyLocalDirToRemote(host, sftpClient, lfp, rfp, epu)
-		} else {
-			err := s.copyLocalFileToRemote(host, sftpClient, lfp, rfp)
+		}
+	} else {
+		fn := func(host string, name string) bool {
+			exists, err := checkIfRemoteFileExists(client, name)
 			if err != nil {
-				errMsg := fmt.Sprintf("copy local file to remote failed %v %s %s %s", err, host, lfp, rfp)
-				logger.Error(errMsg)
-				return
+				logger.Error("failed to detect remote file exists: %v", err)
 			}
-			_ = epu.Add(1)
+			return exists
 		}
-	}
-}
-
-// check the remote file existence before copying
-// solve the sesion
-func (s *SSH) copyLocalFileToRemote(host string, sftpClient *sftp.Client, localPath, remotePath string) error {
-	var (
-		srcHash, dstHash string
-	)
-	srcHash = hash.FileDigest(localPath)
-	if s.remoteFileExist(host, remotePath) {
-		dstHash = s.RemoteSha256Sum(host, remotePath)
-		if srcHash == dstHash {
-			logger.Debug("remote dst %s already exists and is the latest version, skip copying process", remotePath)
-			return nil
+		if isEnvTrue("USE_SHELL_TO_CHECK_FILE_EXISTS") {
+			fn = s.remoteFileExist
 		}
-	}
-	srcFile, err := os.Open(filepath.Clean(localPath))
-	if err != nil {
-		return err
-	}
-	defer srcFile.Close()
-	dstFile, err := sftpClient.Create(remotePath)
-	if err != nil {
-		return err
-	}
-	fileStat, err := srcFile.Stat()
-	if err != nil {
-		return fmt.Errorf("get file stat failed %v", err)
-	}
-	// TODO seems not work
-	//if fileStat.Mode()&os.ModeSymlink != 0 {
-	//	target, err := os.Readlink(filepath.Clean(localPath))
-	//	if err != nil {
-	//		return err
-	//	}
-	//	// NOTE: os.Chmod and os.Chtimes don't recoganize symbolic link,
-	//	// which will lead "no such file or directory" error.
-	//	return os.Symlink(target, dest)
-	//}
-	if err := dstFile.Chmod(fileStat.Mode()); err != nil {
-		return fmt.Errorf("chmod remote file failed %v", err)
-	}
-	defer dstFile.Close()
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return err
-	}
+		if !isEnvTrue("DO_NOT_CHECKSUM") && fn(host, dest) {
+			rfp, _ := client.Stat(dest)
+			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == s.RemoteSha256Sum(host, dest) {
+				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
+				return nil
+			}
+		}
+		lf, err := os.Open(filepath.Clean(src))
+		if err != nil {
+			return err
+		}
+		defer lf.Close()
 
-	dstHash = s.RemoteSha256Sum(host, remotePath)
-	if srcHash != dstHash {
-		return fmt.Errorf("[ssh][%s] validate sha256 sum failed %s != %s", host, srcHash, dstHash)
+		dstfp, err := client.Create(dest)
+		if err != nil {
+			return err
+		}
+		if err = dstfp.Chmod(lfp.Mode()); err != nil {
+			return fmt.Errorf("failed to Chmod dst: %v", err)
+		}
+		defer dstfp.Close()
+		if _, err = io.Copy(dstfp, lf); err != nil {
+			return err
+		}
+		if !isEnvTrue("DO_NOT_CHECKSUM") {
+			sh := hash.FileDigest(src)
+			dh := s.RemoteSha256Sum(host, dest)
+			if sh != dh {
+				return fmt.Errorf("sha256 sum not match %s != %s, maybe network corruption?", sh, dh)
+			}
+		}
+		_ = epu.Add(1)
 	}
 	return nil
+}
+
+func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
+	_, err := client.Stat(fp)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isEnvTrue(k string) bool {
+	if v, ok := os.LookupEnv(k); ok {
+		boolVal, _ := strconv.ParseBool(v)
+		return boolVal
+	}
+	return false
 }

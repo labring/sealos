@@ -1,3 +1,28 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sa-labring-secret
+  annotations:
+    kubernetes.io/service-account.name: labring
+type: kubernetes.io/service-account-token
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: labring
+  namespace: default
+secrets:
+  - name: sa-labring-secret
+---
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  name: labring
+spec:
+  name: labring
+  creator: labring
+  manager: [labring]
+---
 apiVersion: imagehub.sealos.io/v1
 kind: Image
 metadata:
@@ -13,13 +38,13 @@ spec:
     docs: docs
     ID: Unkonw
     arch: Unkonw
-#---
-#apiVersion: imagehub.sealos.io/v1
-#kind: DataPack
-#metadata:
-#  name: datapack-detail-sample
-#  namespace: sealos-imagehub
-#spec:
-#  type: detail
-#  names:
-#    - labring/cert-manager:v1.8.0
+---
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapack-detail-sample
+  namespace: sealos-imagehub
+spec:
+  type: detail
+  names:
+    - labring/cert-manager:v1.8.0

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
@@ -40,6 +41,24 @@ type EC2DescribeInstancesAPI interface {
 	DescribeInstances(ctx context.Context,
 		params *ec2.DescribeInstancesInput,
 		optFns ...func(*ec2.Options)) (*ec2.DescribeInstancesOutput, error)
+	DescribeInstanceStatus(ctx context.Context,
+		params *ec2.DescribeInstanceStatusInput,
+		optFns ...func(*ec2.Options)) (*ec2.DescribeInstanceStatusOutput, error)
+}
+
+// GetInstanceStatus retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.
+// Inputs:
+//
+//	c is the context of the method call, which includes the AWS Region.
+//	api is the interface that defines the method call.
+//	input defines the input arguments to the service call.
+//
+// Output:
+//
+//	If success, a DescribeInstancesOutput object containing the result of the service call and nil.
+//	Otherwise, nil and an error from the call to DescribeInstances.
+func GetInstanceStatus(c context.Context, api EC2DescribeInstancesAPI, input *ec2.DescribeInstanceStatusInput) (*ec2.DescribeInstanceStatusOutput, error) {
+	return api.DescribeInstanceStatus(c, input)
 }
 
 // GetInstances retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.
@@ -199,10 +218,43 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				ID:     *i.InstanceId,
 				Status: string(i.State.Name),
 			}
+
 			// append diskID to metadata
 			for _, blockDeviceMap := range i.BlockDeviceMappings {
 				vid := *blockDeviceMap.Ebs.VolumeId
 				metadata.DiskID = append(metadata.DiskID, vid)
+			}
+
+			// get disk from ec2
+			var disks []v1.Disk
+			volsInput := &ec2.DescribeVolumesInput{
+				VolumeIds: metadata.DiskID,
+			}
+			volumes, err := GetVolumes(context.TODO(), client, volsInput)
+			if err != nil {
+				logger.Warn("Get Volumes Failed", "instance", i.InstanceId)
+			}
+			rootDeviceName := *i.RootDeviceName
+			if volumes != nil {
+				for _, vol := range volumes.Volumes {
+					var diskType string
+					// judge the diskType according the attachments
+					for _, attachment := range vol.Attachments {
+						if *attachment.Device == rootDeviceName {
+							diskType = strings.ToLower(common.RootVolumeLabel)
+							break
+						} else {
+							diskType = strings.ToLower(common.DataVolumeLabel)
+							break
+						}
+					}
+					disks = append(disks, v1.Disk{
+						Capacity:   int(*vol.Size),
+						VolumeType: string(vol.VolumeType),
+						Type:       diskType,
+						Name:       *vol.VolumeId,
+					})
+				}
 			}
 			if h, ok := hostmap[index]; ok {
 				h.Count++
@@ -217,7 +269,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				Image:    *imageID,
 				Flavor:   string(instanceType),
 				Index:    index,
-				Disks:    infra.Spec.Hosts[index].Disks, // TODO: get disks from instance
+				Disks:    disks,
 			}
 
 			for _, mp := range i.Tags {

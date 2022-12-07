@@ -21,24 +21,30 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/kubernetes/pkg/apis/core"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"github.com/labring/endpoints-operator/library/controller"
+
+	"github.com/labring/sealos/controllers/infra/common"
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/drivers"
+
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // InfraReconciler reconciles a Infra object
 type InfraReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	driver   drivers.Driver
-	applier  drivers.Reconcile
-	recorder record.EventRecorder
+	Scheme    *runtime.Scheme
+	driver    drivers.Driver
+	applier   drivers.Reconcile
+	recorder  record.EventRecorder
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -60,41 +66,62 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	if infra.Status.Status == infrav1.Pending.String() {
-		return ctrl.Result{}, nil
+	// add finalizer
+	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
+		return ctrl.Result{}, err
 	}
-
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
-		r.recorder.Eventf(infra, core.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
 		if err := r.Status().Update(ctx, infra); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
-
 	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
-		r.recorder.Eventf(infra, core.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 		return r.applier.ReconcileInstance(infra, r.driver)
 	})
 	if err != nil {
-		r.recorder.Eventf(infra, core.EventTypeWarning, "update infra failed", "%v", err)
+		r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
 		// requeue after 30 seconds
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
 	}
-	if res == controllerutil.OperationResultUpdated {
+	// clean infra using aws terminate
+	// now we depend on the aws terminate func to keep consistency
+	// TODO: double check the terminated Instance and then remove the finalizer...
+	var isDelete bool
+	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+		return ctrl.Result{RequeueAfter: 15 * time.Second}, err
+	}
+	if res == controllerutil.OperationResultUpdated && !isDelete {
 		if infra.Status.Status == infrav1.Running.String() {
 			return ctrl.Result{}, nil
 		}
 		infra.Status.Status = infrav1.Running.String()
 		if err = r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, core.EventTypeWarning, "infra status update failed", "%v", err)
+			r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status update failed", "%v", err)
 			return ctrl.Result{}, err
 		}
-		r.recorder.Eventf(infra, core.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
+		r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) error {
+	logger.Debug("removing all hosts")
+	infra := obj.(*infrav1.Infra)
+	infra.Status.Status = infrav1.Terminating.String()
+	if err := r.Status().Update(ctx, infra); err != nil {
+		r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to terminating failed", "%v", err)
+		return err
+	}
+	for _, hosts := range infra.Spec.Hosts {
+		if err := r.driver.DeleteInstances(&hosts); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -106,7 +133,9 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.driver = driver
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
-
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, common.SealosInfraFinalizer)
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}).
 		Complete(r)

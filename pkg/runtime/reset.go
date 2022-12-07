@@ -35,12 +35,10 @@ rm -rf %s
 )
 
 func (k *KubeadmRuntime) reset() error {
-	//Why delete registry is first?
-	//Because the registry use some cri command, eg 'nerdctl'
-	bs := bootstrap.New(k.Cluster)
-	err := bs.Reset(k.Cluster.GetRegistryIPAndPortList()...)
 	k.resetNodes(k.getNodeIPAndPortList())
 	k.resetMasters(k.getMasterIPAndPortList())
+	bs := bootstrap.New(k.Cluster)
+	err := bs.Reset(k.Cluster.GetAllIPS()...)
 	return err
 }
 

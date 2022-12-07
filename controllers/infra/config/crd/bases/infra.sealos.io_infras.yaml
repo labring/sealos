@@ -15,17 +15,28 @@ spec:
     singular: infra
   scope: Namespaced
   versions:
-  - name: v1
-    schema:
-      openAPIV3Schema:
-        description: Infra is the Schema for the infras API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
+    - additionalPrinterColumns:
+        - description: Status of Infra in group
+          jsonPath: .status.status
+          name: Status
+          type: string
+        - jsonPath: .metadata.creationTimestamp
+          name: Age
+          type: date
+        - jsonPath: .spec.availabilityZone
+          name: AZ
+          type: string
+      name: v1
+      schema:
+        openAPIV3Schema:
+          description: Infra is the Schema for the infras API
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation
               of an object. Servers should convert recognized schemas to the latest
               internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
+              type: string
+            kind:
             description: 'Kind is a string value representing the REST resource this
               object represents. Servers may infer this from the endpoint the client
               submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
@@ -42,23 +53,45 @@ spec:
                 items:
                   properties:
                     arch:
+                      default: amd64
                       description: 'ENUM: amd64/arm64 (NOTE: the default value is
                         amd64)'
+                      enum:
+                        - amd64
+                        - arm64
                       type: string
                     count:
+                      minimum: 0
                       type: integer
                     disks:
+                      description: max support 10 disks .
                       items:
                         properties:
                           capacity:
                             type: integer
                           name:
-                            description: Device name
                             type: string
                           type:
-                            description: 'ENUM: system/data'
+                            default: data
+                            description: Disk Type , default is data disk. allowed
+                              value is `root|data`
+                            enum:
+                              - root
+                              - data
+                            type: string
+                          volumeType:
+                            description: 'ENUM: standard/io1/io2/gp2/gp3/sc1/st1'
+                            enum:
+                              - standard
+                              - io1
+                              - io2
+                              - gp2
+                              - gp3
+                              - sc1
+                              - st1
                             type: string
                         type: object
+                      maxItems: 10
                       type: array
                     flavor:
                       description: ecs.t5-lc1m2.large

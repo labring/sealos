@@ -4,9 +4,6 @@
 
 <div align="center">
   <p>
-    <b>Popularize cloud native technologies with ease</b>
-  </p>
-  <p>
 
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/labring/sealos)
 [![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
@@ -30,37 +27,41 @@
 
 ## What is sealos
 
-**sealos is a cloud operating system distribution based on Kubernetes.**
+**sealos is a Kubernetes distribution, a general-purpose cloud operating system for managing cloud-native applications.**
 
 ![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
 
 - From now on, think of all your machines as an abstract supercomputer whose operating system is sealos, where Kubernetes serves as the OS kernel.
 - Instead of IaaS, PaaS and SaaS, there will only be cloud OS drivers(CSI, CNI and CRI implementations), cloud OS kernel(Kubernetes) and distributed applications.
 
-## This is not win11 but sealos desktop
+## Demo show
+
+[Online demo](https://cloud.sealos.io)
+
+[Learning sealos by examples](https://www.sealos.io/docs/examples/use-sealos-cloud-hello-world)
 
 Use the cloud like a PC desktop, Freely run and uninstall any distributed applications:
 
-![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
+![](https://user-images.githubusercontent.com/8912557/205539823-718da269-584c-46f1-b92e-7dc0227655ef.png)
 
 Some Screen Shots of `sealos`:
 
 <table>
   <tr>
-      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
-      <td width="50%" align="center"><b>redis on sealos cloud</b></td>
+      <td width="50%" align="center"><b>sealos cloud native app store</b></td>
+      <td width="50%" align="center"><b>sealos cloud native app store</b></td>
   </tr>
   <tr>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/206159907-8e34fb77-67dd-46fb-98e0-0181ee15f384.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/206159396-d2af0767-ef09-4040-b80d-24f2fbf1d6e5.png"/></td>
   </tr>
   <tr>
       <td width="50%" align="center"><b>pgsql on sealos cloud</b></td>
       <td width="50%" align="center"><b>pgsql on sealos cloud</b></td>
   </tr>
   <tr>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196185833-1b5c7a35-32e8-4f75-a52f-8b089ccbe8a4.png"/></td>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186330-cf526d0a-46b1-4938-842c-c7a90d79f97e.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/205539807-4f148fca-aebb-4003-8ae2-49e7912ad7ad.png"/></td>
+     <td><img src="https://user-images.githubusercontent.com/8912557/205539841-15192224-0b9a-4ad2-9a55-13019af092e8.png"/></td>
   </tr>
 </table>
 
@@ -68,17 +69,21 @@ Some Screen Shots of `sealos`:
 
 - Manage clusters lifecycle
   - [x] Quickly install HA Kubernetes clusters
-  - [x] Add / remove nodes
-  - [x] Clean the cluster, backup and auto recovering, etc.
+  - [x] Add / remove nodes, Clean the cluster
+  - [ ] Backup and auto recovering, etc.
 - Download and use OCI-compatible distributed applications
   - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
 - Customize your own distributed applications
   - [x] Using Dockerfile to build distributed applications images, saving all dependencies.
   - [x] Push distributed applications images to Docker Hub.
   - [x] Combine multiple applications to build your own cloud platform.
-- Sealos cloud
+- sealos cloud
+  - [x] Multi-tenant management
+  - [ ] Application management
+  - [x] Multi cloud cluster management, run user defined kubernetes and applications on any cloud.
   - [x] Run any distributed applications
-  - [x] Have a full public cloud capability, and run it anywhere
+  - [x] Cloud terminal
+  - [x] App store
 
 ## Quickstart
 
@@ -104,7 +109,6 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 ```shell
 $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
 # remove taint
-$ kubectl taint node --all node-role.kubernetes.io/control-plane-
 $ kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 ```
 

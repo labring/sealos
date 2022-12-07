@@ -21,7 +21,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/labring/sealos/pkg/buildah"
+	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -29,7 +29,7 @@ import (
 )
 
 func (s *SSH) Ping(host string) error {
-	if iputils.IsLocalIP(host, s.LocalAddress) && !buildah.IsRootless() {
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
 		logger.Debug("host %s is local, ping is always true", host)
 		return nil
 	}
@@ -46,7 +46,7 @@ func (s *SSH) Ping(host string) error {
 
 func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	var isLocal bool
-	if iputils.IsLocalIP(host, s.LocalAddress) && !buildah.IsRootless() {
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
 		logger.Debug("host %s is local, command via exec", host)
 		isLocal = true
 	}
@@ -106,7 +106,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 }
 
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
-	if iputils.IsLocalIP(host, s.LocalAddress) && !buildah.IsRootless() {
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
 		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
