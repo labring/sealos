@@ -62,7 +62,7 @@ spec:
                 path: tls.key
       containers:
         - name: hub-auth-server
-          image: labring/sealos-hub-auth:dev
+          image: labring/sealos-hub-service:dev
           ports:
             - containerPort: 5001
           args:
