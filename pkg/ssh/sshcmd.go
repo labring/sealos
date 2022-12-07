@@ -21,16 +21,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (s *SSH) Ping(host string) error {
-	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("ip %s is local ip ,ping is true", host)
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+		logger.Debug("host %s is local, ping is always true", host)
 		return nil
 	}
 	client, _, err := s.Connect(host)
@@ -46,8 +46,8 @@ func (s *SSH) Ping(host string) error {
 
 func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	var isLocal bool
-	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("ip %s is local ip ,local ssh cmd exec", host)
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+		logger.Debug("host %s is local, command via exec", host)
 		isLocal = true
 	}
 	for _, cmd := range cmds {
@@ -106,8 +106,8 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 }
 
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
-	if iputils.IsLocalIP(host, s.LocalAddress) {
-		logger.Debug("ip is local ip %s default,local ssh cmd exec", host)
+	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}

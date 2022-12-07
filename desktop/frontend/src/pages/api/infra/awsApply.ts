@@ -2,7 +2,7 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { infraCRDTemplate } from '../../../mock/infra';
-import { ApplyYaml, GetUserDefaultNameSpace, K8sApi } from '../../../services/backend/kubernetes';
+import { ApplyYaml, K8sApi } from '../../../services/backend/kubernetes';
 import { CRDTemplateBuilder } from '../../../services/backend/wrapper';
 import { JsonResp } from '../response';
 
@@ -15,7 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     nodeCount,
     masterDisk,
     nodeDisk,
-    kubeconfig
+    kubeconfig,
+    nodeDiskType,
+    masterDiskType
   } = req.body;
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
@@ -23,16 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(400);
     return;
   }
-  const namespace = GetUserDefaultNameSpace(kube_user.name);
   const infraCRD = CRDTemplateBuilder(infraCRDTemplate, {
     infraName,
-    namespace,
     masterCount,
     masterType,
     nodeCount,
     nodeType,
     masterDisk,
-    nodeDisk
+    nodeDisk,
+    nodeDiskType,
+    masterDiskType
   });
 
   try {

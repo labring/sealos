@@ -129,8 +129,8 @@ func (c *Applier) updateStatus(err error) {
 func (c *Applier) reconcileCluster() error {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired)
-	logger.Debug("run new images: %+v", c.RunNewImages)
 	if len(c.RunNewImages) != 0 {
+		logger.Debug("run new images: %+v", c.RunNewImages)
 		if err := c.installApp(c.RunNewImages); err != nil {
 			return err
 		}
@@ -145,7 +145,7 @@ func (c *Applier) reconcileCluster() error {
 
 func (c *Applier) initCluster() error {
 	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
-	createProcessor, err := processor.NewCreateProcessor(c.ClusterFile)
+	createProcessor, err := processor.NewCreateProcessor(c.ClusterDesired.Name, c.ClusterFile)
 	if err != nil {
 		return err
 	}
@@ -213,7 +213,7 @@ func (c *Applier) Delete() error {
 }
 
 func (c *Applier) deleteCluster() error {
-	deleteProcessor, err := processor.NewDeleteProcessor(c.ClusterFile)
+	deleteProcessor, err := processor.NewDeleteProcessor(c.ClusterDesired.Name, c.ClusterFile)
 	if err != nil {
 		return err
 	}

@@ -8,15 +8,15 @@
   position: relative;
   border-radius: 6px 6px 0 0;
 
-  &[data-float="false"] {
+  &[data-float='false'] {
     z-index: 10;
   }
 
-  &[data-back="light"] {
+  &[data-back='light'] {
     background: #fefefe;
   }
 
-  &[data-back="dark"] {
+  &[data-back='dark'] {
     background: #181818;
   }
 }
@@ -24,7 +24,7 @@
 .topInfo {
   height: 100%;
 
-  &[data-float="true"] {
+  &[data-float='true'] {
     opacity: 0;
   }
 
@@ -52,7 +52,7 @@
       background: rgba(136, 136, 136, 0.2);
     }
 
-    &[data-type="close"]:hover {
+    &[data-type='close']:hover {
       background: rgba(255, 0, 0, 0.8);
     }
   }
@@ -60,14 +60,12 @@
 
 .closeBtn {
   border-radius: 0 6px 0 0;
-
-
 }
 
 .snapbox {
   position: relative;
 
-  &[data-hv="true"] {
+  &[data-hv='true'] {
     background: rgba(136, 136, 136, 0.2);
   }
 }
@@ -100,7 +98,7 @@
     }
   }
 
-  &[data-dark="true"] {
+  &[data-dark='true'] {
     background: #222;
 
     .snapper {
@@ -197,12 +195,12 @@
   width: auto;
   height: auto;
 
-  &[data-back="true"] {
+  &[data-back='true'] {
     background-position: center;
     background-size: cover;
   }
 
-  img[data-free="false"] {
+  img[data-free='false'] {
     max-width: 100%;
     max-height: 100%;
   }
@@ -226,9 +224,9 @@
 }
 
 .appFullName {
-  color: #fefefe;
+  // color: #fefefe;
+  color: #0073d7;
 }
-
 
 .resizecont {
   // height: 100%;
@@ -301,18 +299,14 @@
 
     &:vertical {
       &:hover {
-        background: var(--scrollbar-bottom-btn) 0% calc(100% - 3px) / contain
-            no-repeat,
-          var(--scrollbar-top-btn) 0% calc(0% + 3px) / contain no-repeat,
-          var(--scroll);
+        background: var(--scrollbar-bottom-btn) 0% calc(100% - 3px) / contain no-repeat,
+          var(--scrollbar-top-btn) 0% calc(0% + 3px) / contain no-repeat, var(--scroll);
       }
     }
     &:horizontal {
       &:hover {
-        background: var(--scrollbar-right-btn) calc(100% - 3px) 0% / contain
-            no-repeat,
-          var(--scrollbar-left-btn) calc(0% + 3px) 0% / contain no-repeat,
-          var(--scroll);
+        background: var(--scrollbar-right-btn) calc(100% - 3px) 0% / contain no-repeat,
+          var(--scrollbar-left-btn) calc(0% + 3px) 0% / contain no-repeat, var(--scroll);
       }
     }
 
@@ -338,7 +332,7 @@
   }
 }
 
-body[data-theme="dark"] .win11Scroll,
+body[data-theme='dark'] .win11Scroll,
 .win11ScrollDark {
   &::-webkit-scrollbar {
     --scroll: rgb(44 44 44 / 25%);

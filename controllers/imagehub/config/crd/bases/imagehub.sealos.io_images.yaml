@@ -12,8 +12,10 @@ spec:
     kind: Image
     listKind: ImageList
     plural: images
+    shortNames:
+    - img
     singular: image
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1
     schema:
@@ -64,8 +66,6 @@ spec:
                 type: object
               name:
                 type: string
-            required:
-            - name
             type: object
           status:
             description: ImageStatus defines the observed state of Image

@@ -19,9 +19,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/ssh"
-
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -44,9 +43,8 @@ set ips to copy file:
 func newScpCmd() *cobra.Command {
 	var cluster *v1beta1.Cluster
 	var scpCmd = &cobra.Command{
-		Use: "scp",
-		// Aliases: []string{"cp"},
-		Short:   "copy local file to remote on all node.",
+		Use:     "scp",
+		Short:   "Copy file to remote on specified nodes",
 		Example: exampleScp,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -18,9 +18,14 @@ package aws
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/google/uuid"
 
@@ -33,6 +38,11 @@ import (
 )
 
 var mutex sync.Mutex
+
+var userData = `#!/bin/bash
+sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
+sudo sed -i 's/#PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
+`
 
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
 // We use this interface to test the functions using a mocked service.
@@ -104,21 +114,42 @@ func rolesToTags(roles []string) (tags []types.Tag) {
 	return tags
 }
 
-func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
-	client := d.Client
-	var count = int32(hosts.Count)
-	if count == 0 {
-		return nil
+func checkHasSystemDisk(hosts *v1.Hosts) bool {
+	var hasSystemDisk = false
+	for _, v := range hosts.Disks {
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) {
+			hasSystemDisk = true
+		}
 	}
+	return hasSystemDisk
+}
+
+// generateDataDiskDeviceName according https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html#available-ec2-device-names
+func generateDataDiskDeviceName(index int) (string, error) {
+	var deviceSuffix = "bcdefghijklmnop"
+	if index > len(deviceSuffix)-1 || index < 0 {
+		return "", fmt.Errorf("device index is wrong that aws can't support, please check")
+	}
+	var deviceName = fmt.Sprintf("/dev/sd%s", string(deviceSuffix[index]))
+	return deviceName, nil
+}
+
+// get tags
+func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	// Tag name and tag value
 	// Set role tag
 	tags := rolesToTags(hosts.Roles)
 	// Set label tag
 	labelKey := common.InfraInstancesLabel
 	labelValue := infra.GetInstancesAndVolumesTag()
+	uidKey := common.InfraInstancesUUID
+	uidValue := string(infra.GetUID())
 	tags = append(tags, types.Tag{
 		Key:   &labelKey,
 		Value: &labelValue,
+	}, types.Tag{
+		Key:   &uidKey,
+		Value: &uidValue,
 	})
 	// Set index tag
 	indexKey := common.InfraInstancesIndex
@@ -134,6 +165,62 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		Key:   &nameKey,
 		Value: &nameValue,
 	})
+	return tags
+}
+
+// GetBlockDeviceMappings generate blockDeviceMappings from hosts
+func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string, infra *v1.Infra) []types.BlockDeviceMapping {
+	var blockDeviceMappings []types.BlockDeviceMapping
+	hasSystem := checkHasSystemDisk(hosts)
+	// if not specify a system disk, we add a default
+	if !hasSystem {
+		blockDeviceMappings = append(blockDeviceMappings, types.BlockDeviceMapping{
+			DeviceName: &rootDeviceName,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &common.DefaultRootVolumeSize,
+			},
+		})
+		// update infra disk info
+		infra.Spec.Hosts[hosts.Index].Disks = append(infra.Spec.Hosts[hosts.Index].Disks, v1.Disk{
+			Capacity: int(common.DefaultRootVolumeSize),
+			Type:     strings.ToLower(common.RootVolumeLabel),
+			Name:     "",
+		})
+	}
+	systemAdded := false
+	dataDiskIndex := 0
+	for _, v := range hosts.Disks {
+		var deviceName string
+		if strings.EqualFold(v.Type, common.RootVolumeLabel) && !systemAdded {
+			deviceName = rootDeviceName
+			systemAdded = true
+		} else {
+			// should limit dataDiskNumbers here in crd check to avoid index error.
+			deviceName, _ = generateDataDiskDeviceName(dataDiskIndex)
+			dataDiskIndex++
+		}
+
+		size := int32(v.Capacity)
+		bdm := types.BlockDeviceMapping{
+			DeviceName: &deviceName,
+			Ebs: &types.EbsBlockDevice{
+				VolumeSize: &size,
+				VolumeType: types.VolumeType(v.VolumeType),
+			},
+		}
+		blockDeviceMappings = append(blockDeviceMappings, bdm)
+	}
+
+	return blockDeviceMappings
+}
+
+func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
+	client := d.Client
+	var count = int32(hosts.Count)
+	if count == 0 {
+		return nil
+	}
+	tags := d.GetTags(hosts, infra)
 	volumeTags := rolesToTags(hosts.Roles)
 	rootVolume, value := common.RootVolumeLabel, common.TRUELable
 	volumeTags = append(volumeTags,
@@ -143,9 +230,17 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		},
 	)
 	keyName := infra.Spec.SSH.PkName
-	//todo use ami to search root device name
-	rootDeviceName := "/dev/xvda"
-	rootVolumeSize := int32(40)
+	// todo use ami to search root device name
+
+	// encode userdata to base64
+	userData := base64.StdEncoding.EncodeToString([]byte(userData))
+	// set bdms, and read name and size from hosts
+
+	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
+	if err != nil {
+		return err
+	}
+	bdms := d.GetBlockDeviceMappings(hosts, rootDeviceName, infra)
 	input := &ec2.RunInstancesInput{
 		ImageId:      &hosts.Image,
 		InstanceType: GetInstanceType(hosts),
@@ -161,12 +256,10 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 				Tags:         volumeTags,
 			},
 		},
-		KeyName:          &keyName,
-		SecurityGroupIds: []string{"sg-0476ffedb5ca3f816"},
-		BlockDeviceMappings: []types.BlockDeviceMapping{{
-			DeviceName: &rootDeviceName,
-			Ebs:        &types.EbsBlockDevice{VolumeSize: &rootVolumeSize},
-		}},
+		KeyName:             &keyName,
+		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
+		BlockDeviceMappings: bdms,
+		UserData:            &userData,
 	}
 
 	// assign to BlockDeviceMappings from host.Disk
@@ -182,31 +275,45 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if err != nil {
 		return fmt.Errorf("create volume failed: %v", err)
 	}
-	for _, instance := range result.Instances {
-		hosts.Metadata = append(hosts.Metadata, v1.Metadata{
-			ID: *instance.InstanceId,
-		})
+
+	if err := d.WaitInstanceRunning(result.Instances); err != nil {
+		return fmt.Errorf("create instance and wait instance running failed: %v", err)
 	}
+
 	if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
 		infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
 	}
-	err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
-	if err != nil {
-		return fmt.Errorf("create and attach volumes failed: %v", err)
-	}
+	//err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
+	//if err != nil {
+	//	return fmt.Errorf("create and attach volumes failed: %v", err)
+	//}
 	return nil
 }
 
-func (d Driver) CreateKeyPair(infra *v1.Infra) error {
-	mutex.Lock()
+// retry for wait instance running
+func (d Driver) WaitInstanceRunning(instances []types.Instance) error {
 	client := d.Client
+	var instanceIds []string
+	for _, v := range instances {
+		instanceIds = append(instanceIds, *v.InstanceId)
+	}
+	input := &ec2.DescribeInstancesInput{
+		InstanceIds: instanceIds,
+	}
+	waiter := ec2.NewInstanceRunningWaiter(client)
+	return waiter.Wait(context.TODO(), input, time.Second*180)
+}
+
+func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	if infra.Spec.SSH.PkName != "" {
-		mutex.Unlock()
 		return nil
 	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	client := d.Client
 	myUUID, err := uuid.NewUUID()
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create uuid error:%v", err)
 	}
 	keyName := myUUID.String()
@@ -217,11 +324,10 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 
 	result, err := MakeKeyPair(context.TODO(), client, input)
 	if err != nil {
-		mutex.Unlock()
 		return fmt.Errorf("create key pair error:%v", err)
 	}
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
-	mutex.Unlock()
+	logger.Info("create key pair success", "keyName", *result.KeyName)
 	return nil
 }

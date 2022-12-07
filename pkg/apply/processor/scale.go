@@ -18,28 +18,26 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/pkg/constants"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
-
 	"golang.org/x/sync/errgroup"
 
+	"github.com/labring/sealos/pkg/bootstrap"
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/checker"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
+	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
-	"github.com/labring/sealos/pkg/image"
-	"github.com/labring/sealos/pkg/image/types"
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 type ScaleProcessor struct {
 	ClusterFile     clusterfile.Interface
 	Runtime         runtime.Interface
-	ImageManager    types.ImageService
-	ClusterManager  types.ClusterService
+	Buildah         buildah.Interface
 	pullImages      []string
 	MastersToJoin   []string
 	MastersToDelete []string
@@ -72,6 +70,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 			c.PreProcessImage,
 			c.RunConfig,
 			c.MountRootfs,
+			c.Bootstrap,
 			//s.GetPhasePluginFunc(plugin.PhasePreJoin),
 			c.Join,
 			//s.GetPhasePluginFunc(plugin.PhasePostJoin),
@@ -166,7 +165,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	if err != nil {
 		return err
 	}
-	if err = SyncClusterStatus(cluster, c.ClusterManager, c.ImageManager, false); err != nil {
+	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
 		return err
 	}
 	if c.IsScaleUp {
@@ -183,7 +182,7 @@ func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
-		return fmt.Errorf("failed to init runtime, %v", err)
+		return fmt.Errorf("failed to init runtime: %v", err)
 	}
 	c.Runtime = runTime
 
@@ -199,7 +198,7 @@ func (c *ScaleProcessor) PreProcessImage(cluster *v2.Cluster) error {
 		}
 		dirs, _ := fileutil.GetAllSubDirs(mount.MountPoint)
 		if len(dirs) == 0 {
-			clusterManifest, err := c.ClusterManager.Create(mount.Name, mount.ImageName)
+			clusterManifest, err := c.Buildah.Create(mount.Name, mount.ImageName)
 			if err != nil {
 				return err
 			}
@@ -233,35 +232,40 @@ func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 		return err
 	}
 
-	return fs.MountRootfs(cluster, hosts, true, false)
+	return fs.MountRootfs(cluster, hosts)
+}
+
+func (c *ScaleProcessor) MirrorRegistry(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MirrorRegistry in ScaleProcessor.")
+	return MirrorRegistry(cluster, cluster.Status.Mounts)
+}
+
+func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
+	bs := bootstrap.New(cluster)
+	if err := bs.Preflight(hosts...); err != nil {
+		return err
+	}
+	if err := bs.Init(hosts...); err != nil {
+		return err
+	}
+	return bs.ApplyAddons(hosts...)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {
-	imgSvc, err := image.NewImageService()
+	bder, err := buildah.New(clusterFile.GetCluster().Name)
 	if err != nil {
 		return nil, err
 	}
-
-	clusterSvc, err := image.NewClusterService()
-	if err != nil {
-		return nil, err
-	}
-
-	var up bool
-	// only scale up or scale down at a time
-	if len(masterToJoin) > 0 || len(nodeToJoin) > 0 {
-		up = true
-	}
-
 	return &ScaleProcessor{
 		MastersToDelete: masterToDelete,
 		MastersToJoin:   masterToJoin,
 		NodesToDelete:   nodeToDelete,
 		NodesToJoin:     nodeToJoin,
 		ClusterFile:     clusterFile,
-		ImageManager:    imgSvc,
-		ClusterManager:  clusterSvc,
+		Buildah:         bder,
 		pullImages:      images,
-		IsScaleUp:       up,
+		IsScaleUp:       len(masterToJoin) > 0 || len(nodeToJoin) > 0,
 	}, nil
 }

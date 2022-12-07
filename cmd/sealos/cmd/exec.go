@@ -19,9 +19,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/ssh"
-
 	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -44,7 +43,7 @@ func newExecCmd() *cobra.Command {
 	var cluster *v1beta1.Cluster
 	var execCmd = &cobra.Command{
 		Use:     "exec",
-		Short:   "exec a shell command or script on all node.",
+		Short:   "Execute shell command or script on specified nodes",
 		Example: exampleExec,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

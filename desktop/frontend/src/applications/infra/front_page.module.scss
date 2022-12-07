@@ -19,13 +19,11 @@
 }
 
 .btn {
-  width: 86px;
-  height: 30px;
-  background: #3981f5;
-  border-radius: 5px;
-  // margin-left: auto;
-  font-size: 12px;
-  line-height: 13px;
+  width: 96px;
+  height: 32px;
+  background: #007fee;
+  border-radius: 2px;
+  border: 1px solid #007fee;
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -63,38 +61,4 @@
   box-sizing: border-box;
   flex-grow: 1;
   scroll-behavior: smooth;
-}
-
-.status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding-left: 16px;
-
-  @mixin base_status($bg_color) {
-    width: 10px;
-    height: 10px;
-    background: $bg_color;
-    border-radius: 50%;
-  }
-  .Pending {
-    @include base_status(#ec6a5e);
-  }
-
-  .Running {
-    @include base_status(#61c554);
-  }
-
-  .Start {
-    @include base_status(#f4be4f);
-  }
-
-  .right {
-    margin-left: 6px;
-    width: 48px;
-    height: 18px;
-    font-size: 16px;
-    line-height: 18px;
-    color: #686868;
-  }
 }

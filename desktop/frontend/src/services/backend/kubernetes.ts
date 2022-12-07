@@ -144,3 +144,45 @@ export function CheckIsInCluster(): [boolean, string] {
 export function GetUserDefaultNameSpace(user: string): string {
   return 'ns-' + user;
 }
+
+export async function DeleteCRD(
+  kc: k8s.KubeConfig,
+  meta: CRDMeta,
+  name: string
+): Promise<{
+  response: http.IncomingMessage;
+  body: k8s.V1ResourceQuota;
+}> {
+  return kc.makeApiClient(k8s.CustomObjectsApi).deleteNamespacedCustomObject(
+    meta.group,
+    meta.version,
+    meta.namespace,
+    meta.plural,
+    name // resource name
+  );
+}
+
+export async function UpdateCRD(
+  kc: k8s.KubeConfig,
+  meta: CRDMeta,
+  name: string,
+  patch: any[]
+): Promise<{
+  response: http.IncomingMessage;
+  body: k8s.V1ResourceQuota;
+}> {
+  const options = { headers: { 'Content-type': k8s.PatchUtils.PATCH_FORMAT_JSON_PATCH } };
+
+  return kc.makeApiClient(k8s.CustomObjectsApi).patchNamespacedCustomObject(
+    meta.group,
+    meta.version,
+    meta.namespace,
+    meta.plural,
+    name, // resource name
+    patch, // json patch
+    undefined,
+    undefined,
+    undefined,
+    options
+  );
+}

@@ -46,7 +46,6 @@ func (k *KubeadmRuntime) Init() error {
 		k.ConfigInitKubeadmToMaster0,
 		k.UpdateCert,
 		k.CopyStaticFilesToMasters,
-		k.ApplyRegistry,
 		k.InitMaster0,
 	}
 

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths-ignore:
+    paths:
       - "webhooks/**"
-      - ".github/workflows/webhooks.yml"
+      - "!.github/workflows/webhooks.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:
@@ -29,6 +29,9 @@ jobs:
         uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
 
       - name: Build ${{ matrix.module }} amd64
         working-directory: webhooks/${{ matrix.module }}

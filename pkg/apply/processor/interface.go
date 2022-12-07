@@ -15,12 +15,16 @@
 package processor
 
 import (
+	"context"
 	"path"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/image/types"
+	"github.com/labring/sealos/pkg/filesystem/registry"
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -48,28 +52,28 @@ func SyncNewVersionConfig(cluster *v2.Cluster) {
 	}
 }
 
-func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgService types.ImageService, reset bool) error {
+func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) error {
 	if cluster.Status.Mounts == nil {
-		containers, err := service.List()
+		containers, err := bdah.ListContainers()
 		if err != nil {
 			return err
 		}
 		cluster.Status.Mounts = make([]v2.MountImage, 0)
-		for _, info := range containers {
-			manifest, err := service.Inspect(info.Containername)
+		for _, ctr := range containers {
+			bderInfo, err := bdah.InspectContainer(ctr.ContainerName)
 			if err != nil {
 				return err
 			}
 			mount := &v2.MountImage{
-				MountPoint: manifest.MountPoint,
-				ImageName:  info.Imagename,
-				Name:       info.Containername,
+				MountPoint: bderInfo.MountPoint,
+				ImageName:  ctr.ImageName,
+				Name:       ctr.ContainerName,
 			}
-			if err = OCIToImageMount(mount, imgService); err != nil {
+			if err = OCIToImageMount(mount, bdah); err != nil {
 				return err
 			}
 
-			if reset || strings.InList(info.Imagename, cluster.Spec.Image) {
+			if reset || strings.InList(ctr.ImageName, cluster.Spec.Image) {
 				cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
 			}
 		}
@@ -78,41 +82,44 @@ func SyncClusterStatus(cluster *v2.Cluster, service types.ClusterService, imgSer
 	return nil
 }
 
-func OCIToImageMount(mount *v2.MountImage, imgService types.ImageService) error {
-	oci, err := imgService.Inspect(mount.ImageName)
+type imageInspector interface {
+	InspectImage(string) (v1.Image, error)
+}
+
+func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
+	oci, err := inspector.InspectImage(mount.ImageName)
 	if err != nil {
 		return err
 	}
-	if len(oci) > 0 {
-		mount.Env = maps.ListToMap(oci[0].Config.Env)
-		delete(mount.Env, "PATH")
-		// mount.Entrypoint
-		var entrypoint []string
-		for _, cmd := range oci[0].Config.Entrypoint {
-			if cmd == "/bin/sh" || cmd == "-c" {
-				continue
-			}
-			entrypoint = append(entrypoint, cmd)
-		}
-		mount.Entrypoint = entrypoint
 
-		//mount.Cmd
-		cmds := oci[0].Config.Cmd
-		var newCMDs []string
-		for _, cmd := range cmds {
-			if cmd == "/bin/sh" || cmd == "-c" {
-				continue
-			}
-			newCMDs = append(newCMDs, cmd)
+	mount.Env = maps.ListToMap(oci.Config.Env)
+	delete(mount.Env, "PATH")
+	// mount.Entrypoint
+	var entrypoint []string
+	for _, cmd := range oci.Config.Entrypoint {
+		if cmd == "/bin/sh" || cmd == "-c" {
+			continue
 		}
-		mount.Cmd = newCMDs
-		mount.Labels = oci[0].Config.Labels
-		imageType := v2.AppImage
-		if mount.Labels[constants.ImageTypeKey] != "" {
-			imageType = v2.ImageType(mount.Labels[constants.ImageTypeKey])
-		}
-		mount.Type = imageType
+		entrypoint = append(entrypoint, cmd)
 	}
+	mount.Entrypoint = entrypoint
+
+	//mount.Cmd
+	cmds := oci.Config.Cmd
+	var newCMDs []string
+	for _, cmd := range cmds {
+		if cmd == "/bin/sh" || cmd == "-c" {
+			continue
+		}
+		newCMDs = append(newCMDs, cmd)
+	}
+	mount.Cmd = newCMDs
+	mount.Labels = oci.Config.Labels
+	imageType := v2.AppImage
+	if mount.Labels[constants.ImageTypeKey] != "" {
+		imageType = v2.ImageType(mount.Labels[constants.ImageTypeKey])
+	}
+	mount.Type = imageType
 	return nil
 }
 
@@ -127,4 +134,11 @@ func ConfirmDeleteNodes() error {
 		}
 	}
 	return nil
+}
+
+func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
+	registries := cluster.GetRegistryIPAndPortList()
+	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
+	mirror := registry.New(constants.NewData(cluster.GetName()).RootFSPath(), sshClient, mounts)
+	return mirror.MirrorTo(context.Background(), registries...)
 }

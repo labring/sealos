@@ -19,11 +19,12 @@ package controllers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -37,6 +38,7 @@ type UserExpirationReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
@@ -55,21 +57,21 @@ type UserExpirationReconciler struct {
 func (r *UserExpirationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for users expiration")
 	user := &userv1.User{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   userv1.GroupVersion.Group,
-			Version: userv1.GroupVersion.Version,
-			Kind:    "User",
-		},
-		FinalizerName: "sealos.io/user.expiration.finalizers",
+	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	user.APIVersion = ctr.Gvk.GroupVersion().String()
-	user.Kind = ctr.Gvk.Kind
-	return ctr.Run(ctx, req, user)
+
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, controller.DefaultFunc); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, user); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.reconcile(ctx, user)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -82,6 +84,9 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
 	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.expiration.finalizers")
+	}
 	r.Scheme = mgr.GetScheme()
 	r.config = mgr.GetConfig()
 	r.Logger.V(1).Info("init reconcile controller user expiration")
@@ -90,13 +95,7 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserExpirationReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller user expiration", "request", req)
-	//TODO delete sa
-	return nil
-}
-
-func (r *UserExpirationReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
+func (r *UserExpirationReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	//TODO add  Expiration logic
 	return ctrl.Result{}, nil
 }

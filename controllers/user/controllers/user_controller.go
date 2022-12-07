@@ -28,7 +28,6 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
-	"github.com/labring/endpoints-operator/library/convert"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/pkg/errors"
@@ -36,7 +35,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -65,6 +63,7 @@ type UserReconciler struct {
 	config   *rest.Config
 	*runtime.Scheme
 	client.Client
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=users,verbs=get;list;watch;create;update;patch;delete
@@ -89,21 +88,21 @@ type UserReconciler struct {
 func (r *UserReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger.V(1).Info("start reconcile for users")
 	user := &userv1.User{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   userv1.GroupVersion.Group,
-			Version: userv1.GroupVersion.Version,
-			Kind:    "User",
-		},
-		FinalizerName: "sealos.io/user.finalizers",
+	if err := r.Get(ctx, req.NamespacedName, user); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	user.APIVersion = ctr.Gvk.GroupVersion().String()
-	user.Kind = ctr.Gvk.Kind
-	return ctr.Run(ctx, req, user)
+
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, user, controller.DefaultFunc); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, user); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.reconcile(ctx, user)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -115,6 +114,9 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.finalizers")
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
@@ -128,18 +130,13 @@ func (r *UserReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	r.Logger.V(1).Info("delete reconcile controller user", "request", req)
-	return nil
-}
-
-func (r *UserReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
-	r.Logger.V(1).Info("update reconcile controller user", "request", req)
-	user := &userv1.User{}
-	err := convert.JsonConvert(obj, user)
-	if err != nil {
-		return ctrl.Result{Requeue: true}, err
+func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	r.Logger.V(1).Info("update reconcile controller user", "request", client.ObjectKeyFromObject(obj))
+	user, ok := obj.(*userv1.User)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert user is error")
 	}
+
 	pipelines := []func(ctx context.Context, user *userv1.User){
 		r.initStatus,
 		r.syncKubeConfig,
@@ -154,7 +151,7 @@ func (r *UserReconciler) Update(ctx context.Context, req ctrl.Request, gvk schem
 	if user.Status.Phase != userv1.UserUnknown {
 		user.Status.Phase = userv1.UserActive
 	}
-	err = r.updateStatus(ctx, req.NamespacedName, user.Status.DeepCopy())
+	err := r.updateStatus(ctx, client.ObjectKeyFromObject(obj), user.Status.DeepCopy())
 	if err != nil {
 		r.Recorder.Eventf(user, v1.EventTypeWarning, "SyncStatus", "Sync status %s is error: %v", user.Name, err)
 		return ctrl.Result{}, err

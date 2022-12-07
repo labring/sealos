@@ -18,10 +18,11 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -34,11 +35,10 @@ rm -rf %s
 )
 
 func (k *KubeadmRuntime) reset() error {
-	//Why delete registry is first?
-	//Because the registry use some cri command, eg 'nerdctl'
-	err := k.DeleteRegistry()
 	k.resetNodes(k.getNodeIPAndPortList())
 	k.resetMasters(k.getMasterIPAndPortList())
+	bs := bootstrap.New(k.Cluster)
+	err := bs.Reset(k.Cluster.GetAllIPS()...)
 	return err
 }
 
@@ -71,10 +71,7 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
-	shim := &ImageShim{
-		SSHInterface: k.getSSHInterface(),
-		IP:           k.getMaster0IPAndPort(),
-	}
+	shim := bootstrap.NewImageShimHelper(k.getSSHInterface(), k.getMaster0IPAndPort())
 	deleteShimCmd := shim.DeleteCMD(k.getContentData().RootFSPath())
 	if err := k.sshCmdAsync(node, resetCmd); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)

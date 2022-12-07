@@ -26,7 +26,8 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TagData struct {
-	Name  string      `json:"name"`
+	Name string `json:"name"`
+	// todo inspect image and get time
 	CTime metav1.Time `json:"creatTime"`
 }
 
@@ -34,57 +35,57 @@ type ImageName string
 
 // IsLegal check name is legal
 // name.eg: labring/mysql:v8.0.31
-func (n *ImageName) IsLegal() bool {
-	s := strings.Split(string(*n), "/")
+func (n ImageName) IsLegal() bool {
+	s := strings.Split(string(n), "/")
 	if len(s) != 2 {
 		return false
 	}
 	return len(strings.Split(s[1], ":")) == 2
 }
 
-func (n *ImageName) GetOrg() string {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n ImageName) GetOrg() string {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return str[0]
 }
 
-func (n *ImageName) GetRepo() string {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n ImageName) GetRepo() string {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return str[1]
 }
 
-func (n *ImageName) GetTag() string {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n ImageName) GetTag() string {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return str[2]
 }
 
-func (n *ImageName) ToOrgName() OrgName {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n ImageName) ToOrgName() OrgName {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return OrgName(str[0])
 }
 
-func (n *ImageName) ToRepoName() RepoName {
-	str := strings.FieldsFunc(string(*n), func(r rune) bool {
+func (n ImageName) ToRepoName() RepoName {
+	str := strings.FieldsFunc(string(n), func(r rune) bool {
 		return r == '/' || r == ':'
 	})
 	return RepoName(str[0] + "/" + str[1])
 }
 
-func (n *ImageName) ToMetaName() string {
-	return n.GetOrg() + "." + n.GetRepo()
+func (n ImageName) ToMetaName() string {
+	return n.GetOrg() + "." + n.GetRepo() + "." + n.GetTag()
 }
 
 // GetMateName TODO: change name to matename in a right way
 // libring/mysql:v8.0.3 -> libring.mysql.v8.0.3
-func (n *ImageName) GetMateName() string {
-	return strings.ReplaceAll(strings.ReplaceAll(string(*n), "/", "."), ":", ".")
+func (n ImageName) GetMateName() string {
+	return strings.ReplaceAll(strings.ReplaceAll(string(n), "/", "."), ":", ".")
 }
 
 // ImageDetailInfo TODO: add limits for ImageDetailInfo
@@ -107,7 +108,7 @@ type ImageSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	//+kubebuilder:validation:Required
-	Name       ImageName       `json:"name"`
+	Name       ImageName       `json:"name,omitempty"`
 	DetailInfo ImageDetailInfo `json:"detail,omitempty"`
 }
 
@@ -119,9 +120,9 @@ type ImageStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:shortName=img
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster,shortName=img
 
 // Image is the Schema for the images API
 type Image struct {

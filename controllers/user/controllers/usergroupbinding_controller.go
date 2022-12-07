@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/retry"
@@ -43,6 +44,7 @@ type UserGroupBindingReconciler struct {
 	cache    cache.Cache
 	*runtime.Scheme
 	client.Client
+	finalizer *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=usergroupbindings,verbs=get;list;watch;create;update;patch;delete
@@ -65,21 +67,21 @@ func (r *UserGroupBindingReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	r.Logger.V(1).Info("start reconcile for userGroupBindings")
 
 	userGroupBinding := &userv1.UserGroupBinding{}
-	ctr := controller.Controller{
-		Client:   r.Client,
-		Logger:   r.Logger,
-		Eventer:  r.Recorder,
-		Operator: r,
-		Gvk: schema.GroupVersionKind{
-			Group:   userv1.GroupVersion.Group,
-			Version: userv1.GroupVersion.Version,
-			Kind:    "UserGroupBinding",
-		},
-		FinalizerName: "sealos.io/user.group.binding.finalizers",
+	if err := r.Get(ctx, req.NamespacedName, userGroupBinding); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	userGroupBinding.APIVersion = ctr.Gvk.GroupVersion().String()
-	userGroupBinding.Kind = ctr.Gvk.Kind
-	return ctr.Run(ctx, req, userGroupBinding)
+
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, userGroupBinding, controller.DefaultFunc); ok {
+		return ctrl.Result{}, err
+	}
+
+	if ok, err := r.finalizer.AddFinalizer(ctx, userGroupBinding); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.reconcile(ctx, userGroupBinding)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -91,6 +93,9 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	if r.Recorder == nil {
 		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, "sealos.io/user.group.binding.finalizers")
 	}
 	r.Scheme = mgr.GetScheme()
 	r.cache = mgr.GetCache()
@@ -173,26 +178,19 @@ func (r *UserGroupBindingReconciler) pipeline(ctx context.Context, ugBinding *us
 	return nil
 }
 
-func (r *UserGroupBindingReconciler) Delete(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) error {
-	return NewUserGroupBindingController(ctx, req, r).Delete(ctx, req, gvk, obj)
-}
-
-func (r *UserGroupBindingReconciler) Update(ctx context.Context, req ctrl.Request, gvk schema.GroupVersionKind, obj client.Object) (ctrl.Result, error) {
-	return NewUserGroupBindingController(ctx, req, r).Update(ctx, req, gvk, obj)
-}
-
-func NewUserGroupBindingController(ctx context.Context, req ctrl.Request, reconcile *UserGroupBindingReconciler) controller.Operator {
-	ugBinding := &userv1.UserGroupBinding{}
-	if err := reconcile.Client.Get(ctx, req.NamespacedName, ugBinding); err != nil {
-		reconcile.Logger.Error(err, "unable to fetch UserGroupBinding")
-		return nil
+func (r *UserGroupBindingReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	ugBinding, ok := obj.(*userv1.UserGroupBinding)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert UserGroup is error")
 	}
 	if ugBinding.Subject.Kind == "User" {
-		return &UserGroupUserBindingController{
-			reconcile,
+		ctr := &UserGroupUserBindingController{
+			r,
 		}
+		return ctr.doReconcile(ctx, ugBinding)
 	}
-	return &UserGroupNamespaceBindingController{
-		reconcile,
+	ctr := &UserGroupNamespaceBindingController{
+		r,
 	}
+	return ctr.doReconcile(ctx, ugBinding)
 }

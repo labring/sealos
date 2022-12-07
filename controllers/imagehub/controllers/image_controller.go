@@ -18,33 +18,34 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-	rt "runtime"
-	"sort"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/go-logr/logr"
+	"github.com/labring/endpoints-operator/library/controller"
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	"github.com/pkg/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	"github.com/go-logr/logr"
-	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 )
 
 // ImageReconciler reconciles a Image object
 type ImageReconciler struct {
 	client.Client
 	logr.Logger
-	Scheme *runtime.Scheme
+	db        *DataHelper
+	finalizer *controller.Finalizer
+	Recorder  record.EventRecorder
+	Scheme    *runtime.Scheme
 }
 
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=repositories/status,verbs=get;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -56,93 +57,80 @@ type ImageReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *ImageReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	r.Logger = log.FromContext(ctx)
-	r.Logger.Info("enter reconcile", "name: ", req.Name, "namespace: ", req.Namespace)
-
-	// get image
-	var img imagehubv1.Image
-	if err := r.Get(ctx, req.NamespacedName, &img); err != nil {
+	r.Logger.V(1).Info("start reconcile for image")
+	img := &imagehubv1.Image{}
+	if err := r.Get(ctx, req.NamespacedName, img); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// start a pipeline
-	r.Logger.Info("start image pipeline", "image name:", img.Spec.Name)
-	pipeline := []func(context.Context, *imagehubv1.Image) error{
-		r.init,
-		//r.spec2Status,
-		r.syncRepo,
-	}
-	for _, fn := range pipeline {
-		err := fn(ctx, &img)
-		if err != nil {
-			r.Logger.Info("error in pipeline", "error func:", rt.FuncForPC(reflect.ValueOf(fn).Pointer()).Name())
-			return ctrl.Result{}, err
-		}
+	if ok, err := r.finalizer.RemoveFinalizer(ctx, img, r.doFinalizer); ok {
+		return ctrl.Result{}, err
 	}
 
+	if ok, err := r.finalizer.AddFinalizer(ctx, img); ok {
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		return r.doReconcile(ctx, img)
+	}
+	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
+}
+
+func (r *ImageReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+	r.Logger.V(1).Info("update reconcile controller image", "request", client.ObjectKeyFromObject(obj))
+	img, ok := obj.(*imagehubv1.Image)
+	if !ok {
+		return ctrl.Result{}, errors.New("obj convert Image is error")
+	}
+	// create repo and SetControllerReference.
+	repo := &imagehubv1.Repository{}
+	repo.Name = img.Spec.Name.ToRepoName().ToMetaName()
+	err := r.Get(ctx, client.ObjectKeyFromObject(repo), repo)
+	if err != nil && apierrors.IsNotFound(err) {
+		repo.Spec.Name = img.Spec.Name.ToRepoName()
+		if err := r.Create(ctx, repo); err != nil {
+			r.Logger.Error(err, "error in create")
+			return ctrl.Result{Requeue: true}, err
+		}
+	} else if err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+	update, err := controllerutil.CreateOrUpdate(ctx, r.Client, img, func() error {
+		if err := controllerutil.SetControllerReference(repo, img, r.Scheme); err != nil {
+			r.Logger.Error(err, "error in SetControllerReference")
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		r.Logger.Error(err, "image reconcile update repo error")
+		return ctrl.Result{Requeue: true}, err
+	}
+	r.Logger.V(1).Info("image reconcile update image:", "changes", update)
 	return ctrl.Result{}, nil
 }
 
-// init check spec info input
-func (r *ImageReconciler) init(ctx context.Context, img *imagehubv1.Image) error {
-	if !img.Spec.Name.IsLegal() {
-		r.Logger.Info("error in init", "name: ", img.Spec.Name)
-		return fmt.Errorf("image name illegal")
-	}
+func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
 	return nil
-}
-
-// spec2Status use spec to gen status
-// name: labring/mysql:v8.0.31
-//func (r *ImageReconciler) spec2Status(ctx context.Context, img *imagehubv1.Image) error {
-//	// check if spec has its baseinfo
-//	return nil
-//}
-
-// todo sync image to repo
-func (r *ImageReconciler) syncRepo(ctx context.Context, img *imagehubv1.Image) error {
-	repo := &imagehubv1.Repository{ObjectMeta: metav1.ObjectMeta{Name: img.Spec.Name.ToMetaName(), Namespace: img.Namespace}}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, repo, func() error {
-		td := imagehubv1.TagData{
-			Name:  img.Spec.Name.GetTag(),
-			CTime: img.CreationTimestamp,
-		}
-		// create repo
-		if repo.CreationTimestamp.IsZero() {
-			repo.Spec = imagehubv1.ReposiyorySpec{
-				Name:      img.Spec.Name.ToRepoName(),
-				LatestTag: td,
-			}
-		}
-		// update repo
-		if checkTag(td, repo.Spec.Tags) {
-			repo.Spec.Tags = append(repo.Spec.Tags, td)
-		}
-
-		sort.Slice(repo.Spec.Tags, func(i, j int) bool {
-			return repo.Spec.Tags[i].CTime.After(repo.Spec.Tags[j].CTime.Time)
-		})
-
-		if repo.Spec.LatestTag.CTime.Before(&img.CreationTimestamp) {
-			repo.Spec.LatestTag = td
-		}
-		return nil
-	}); err != nil {
-		return fmt.Errorf("sync repo failed: %v", err)
-	}
-	return nil
-}
-func checkTag(tag imagehubv1.TagData, tags []imagehubv1.TagData) bool {
-	for _, p := range tags {
-		if p.Name == tag.Name {
-			return false
-		}
-	}
-	return true
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ImageReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "ImageController"
+	if r.Client == nil {
+		r.Client = mgr.GetClient()
+	}
+	r.Logger = ctrl.Log.WithName(controllerName)
+	if r.Recorder == nil {
+		r.Recorder = mgr.GetEventRecorderFor(controllerName)
+	}
+	if r.finalizer == nil {
+		r.finalizer = controller.NewFinalizer(r.Client, imagehubv1.ImgFinalizerName)
+	}
+	r.Scheme = mgr.GetScheme()
+	r.db = &DataHelper{r.Client, r.Logger}
+	r.Logger.V(1).Info("init reconcile controller image")
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&imagehubv1.Image{}).
 		Complete(r)

@@ -30,22 +30,39 @@ type OrganizationSpec struct {
 
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MaxLength=1024
-	Name  string     `json:"name"` //e.g: "libring"
-	Repos []RepoName `json:"repos,omitempty"`
+	Name string `json:"name,omitempty"` //e.g: "labring"
+	// Creator is the user who first create this org
+	// update manager
+	Creator string `json:"creator,omitempty"`
+	// Manager can update org and org's repo/image
+	Manager []string `json:"manager,omitempty"`
 }
 
 type OrgName string
-type OrgInfo OrganizationSpec
+
+func (n OrgName) GetOrg() string {
+	return string(n)
+}
+
+func (n OrgName) ToMetaName() string {
+	return string(n)
+}
+
+type OrgInfo OrganizationStatus
 
 // OrganizationStatus defines the observed state of Organization
 type OrganizationStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	//+kubebuilder:validation:Required
+	//+kubebuilder:validation:MaxLength=1024
+	Name  string     `json:"name,omitempty"` //e.g: "labring"
+	Repos []RepoName `json:"repos,omitempty"`
 }
 
-//+kubebuilder:shortName=org
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster,shortName=org
 
 // Organization is the Schema for the organizations API
 type Organization struct {
