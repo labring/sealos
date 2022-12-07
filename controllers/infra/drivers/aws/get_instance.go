@@ -235,24 +235,26 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				logger.Warn("Get Volumes Failed", "instance", i.InstanceId)
 			}
 			rootDeviceName := *i.RootDeviceName
-			for _, vol := range volumes.Volumes {
-				var diskType string
-				// judge the diskType according the attachments
-				for _, attachment := range vol.Attachments {
-					if *attachment.Device == rootDeviceName {
-						diskType = strings.ToLower(common.RootVolumeLabel)
-						break
-					} else {
-						diskType = strings.ToLower(common.DataVolumeLabel)
-						break
+			if volumes != nil {
+				for _, vol := range volumes.Volumes {
+					var diskType string
+					// judge the diskType according the attachments
+					for _, attachment := range vol.Attachments {
+						if *attachment.Device == rootDeviceName {
+							diskType = strings.ToLower(common.RootVolumeLabel)
+							break
+						} else {
+							diskType = strings.ToLower(common.DataVolumeLabel)
+							break
+						}
 					}
+					disks = append(disks, v1.Disk{
+						Capacity:   int(*vol.Size),
+						VolumeType: string(vol.VolumeType),
+						Type:       diskType,
+						Name:       *vol.VolumeId,
+					})
 				}
-				disks = append(disks, v1.Disk{
-					Capacity:   int(*vol.Size),
-					VolumeType: string(vol.VolumeType),
-					Type:       diskType,
-					Name:       *vol.VolumeId,
-				})
 			}
 			if h, ok := hostmap[index]; ok {
 				h.Count++
@@ -267,7 +269,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 				Image:    *imageID,
 				Flavor:   string(instanceType),
 				Index:    index,
-				Disks:    disks, // TODO: get disks from instance
+				Disks:    disks,
 			}
 
 			for _, mp := range i.Tags {
