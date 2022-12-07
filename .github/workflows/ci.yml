@@ -137,7 +137,7 @@ jobs:
       - name: Install Dependencies
         if: ${{ (matrix.binary == 'sealos' || matrix.binary == 'sealctl') && matrix.arch == 'arm64' }}
         run: |
-          sudo apt install -y gcc-aarch64-linux-gnu
+          sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu
 
       - name: Build Binaries
         run: |
