@@ -81,7 +81,7 @@ func (r *UserGroupReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return r.doReconcile(ctx, userGroup)
+		return r.reconcile(ctx, userGroup)
 	}
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
@@ -109,7 +109,7 @@ func (r *UserGroupReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserGroupReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *UserGroupReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller user group", "request", client.ObjectKeyFromObject(obj))
 	ug, ok := obj.(*userv1.UserGroup)
 	if !ok {

@@ -32,16 +32,12 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		logger.Debug("desired host len is 0")
 		return nil
 	}
+	if infra.Status.Status == v1.Terminating.String() {
+		logger.Debug("Terminating infra...")
+		return nil
+	}
 
 	setHostsIndex(infra)
-	if !infra.DeletionTimestamp.IsZero() {
-		logger.Debug("remove all hosts")
-		for _, hosts := range infra.Spec.Hosts {
-			if err := driver.DeleteInstances(&hosts); err != nil {
-				return err
-			}
-		}
-	}
 	// get infra all hosts
 	hosts, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
 	if err != nil {
@@ -73,7 +69,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		logger.Debug("desired host len is 0")
 		return nil
 	}
-
 	setHostsIndex(infra)
 	if !infra.DeletionTimestamp.IsZero() {
 		logger.Debug("remove all hosts")
@@ -88,13 +83,11 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	if err != nil {
 		return fmt.Errorf("get all instances failed: %v", err)
 	}
-
 	// sort current hosts
 	sortHostsByIndex(v1.IndexHosts(hosts))
 	// merge current hosts list using index
 	// sort  desired hosts
 	sortHostsByIndex(v1.IndexHosts(infra.Spec.Hosts))
-
 	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
 		return err
 	}
@@ -103,7 +96,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		return err
 	}
 	infra.Spec.Hosts = currHosts
-
 	return nil
 }
 */
@@ -123,42 +115,43 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 	if err := driver.CreateKeyPair(infra); err != nil {
 		return err
 	}
+	//create required instance and reconcile count
 	for i := range desired {
-		d := desired[i]
-		cur := getHostsByIndex(d.Index, current)
+		des := desired[i]
+		cur := getHostsByIndex(des.Index, current)
 
 		eg.Go(func() error {
 			// current 0 instance -> create
 			if cur == nil {
-				logger.Info("current instance not exist create instance %#v", d)
-				if err := driver.CreateInstances(&d, infra); err != nil {
+				logger.Info("current instance not exist create instance %#v", des)
+				if err := driver.CreateInstances(&des, infra); err != nil {
 					return fmt.Errorf("create instance failed: %v", err)
 				}
 				return nil
 			}
 
 			// instance.image change -> delete all instances -> create
-			if cur.Image != d.Image {
-				logger.Info("current instance image not equal desired instance image, delete current instance and create instance %#v", d)
+			if cur.Image != des.Image {
+				logger.Info("current instance image not equal desired instance image, delete current instance and create instance %#v", des)
 				if err := driver.DeleteInstances(cur); err != nil {
 					return fmt.Errorf("desired instance < current instance delete instance failed: %v", err)
 				}
-				if err := driver.CreateInstances(&d, infra); err != nil {
+				if err := driver.CreateInstances(&des, infra); err != nil {
 					return fmt.Errorf("create instance failed: %v", err)
 				}
 			}
 
 			// (desire count > current count) -> delete superfluous instances
-			count := d.Count - cur.Count
+			count := des.Count - cur.Count
 			if count < 0 {
-				logger.Info("desired instance count < current instance count, delete superfluous instance %#v", d)
+				logger.Info("desired instance count < current instance count, delete superfluous instance %#v", des)
 				host := cur
 				host.Count = -count
 				if err := driver.DeleteInstances(host); err != nil {
 					return fmt.Errorf("desired instance < current instance delete instance failed: %v", err)
 				}
 				// desire 0 -> continue
-				if d.Count == 0 {
+				if des.Count == 0 {
 					return nil
 				}
 				hosts, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
@@ -166,12 +159,12 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 					return fmt.Errorf("get all instances failed: %v", err)
 				}
 				sortHostsByIndex(v1.IndexHosts(hosts))
-				cur = getHostsByIndex(d.Index, hosts)
+				cur = getHostsByIndex(des.Index, hosts)
 			}
 
 			if count > 0 {
-				logger.Info("desired instance count > current instance count, create instance %#v", d)
-				host := d
+				logger.Info("desired instance count > current instance count, create instance %#v", des)
+				host := des
 				host.Count = count
 				if err := driver.CreateInstances(&host, infra); err != nil {
 					return fmt.Errorf("desired instance > current instance create instance failed: %v", err)
@@ -194,6 +187,23 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			//}
 
 			// TODO check CPU memory...
+			return nil
+		})
+	}
+	//delete instances that not required
+	for i := range current {
+		cur := current[i]
+		des := getHostsByIndex(cur.Index, desired)
+
+		eg.Go(func() error {
+			// des == nil -> delete instance
+			if des == nil {
+				logger.Info("current instance is not required delete instance %#v", cur)
+				if err := driver.DeleteInstances(&cur); err != nil {
+					return fmt.Errorf("create instance failed: %v", err)
+				}
+				return nil
+			}
 			return nil
 		})
 	}

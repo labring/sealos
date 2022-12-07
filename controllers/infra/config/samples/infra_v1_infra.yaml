@@ -15,12 +15,12 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: infra-apply-test
+  name: 1206-1test
 spec:
   hosts:
     - roles: [ master ]
       count: 1
-      flavor: t2.medium
+      flavor: t2.large
       image: "ami-0d66b970b9f16f1f5"
       disks:
         - capacity: 23
@@ -29,7 +29,7 @@ spec:
         - capacity: 21
           volumeType: gp3
           type: "data"
-    - roles: [ node ]
+    - roles: [ node1 ]
       count: 1
       flavor: t2.medium
       image: "ami-0d66b970b9f16f1f5"
@@ -40,3 +40,14 @@ spec:
         - capacity: 13
           volumeType: gp3
           type: "data"
+#    - roles: [ node2 ]
+#      count: 1
+#      flavor: t2.small
+#      image: "ami-0d66b970b9f16f1f5"
+#      disks:
+#        - capacity: 11
+#          volumeType: gp3
+#          type: "root"
+#        - capacity: 13
+#          volumeType: gp3
+#          type: "data"
