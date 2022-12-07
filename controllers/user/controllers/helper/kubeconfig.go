@@ -131,14 +131,6 @@ func GetKubernetesHost(config *rest.Config) string {
 	return "https://" + net.JoinHostPort(host, port)
 }
 
-func GetKubernetesHostFromEnv() string {
-	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
-	if len(host) == 0 || len(port) == 0 {
-		return ""
-	}
-	return "https://" + net.JoinHostPort(host, port)
-}
-
 func GetDefaultNamespace() string {
 	return os.Getenv("NAMESPACE_NAME")
 }

@@ -2,9 +2,10 @@ package auth
 
 import (
 	"context"
+	"net"
+	"os"
 
 	"github.com/cesanta/glog"
-	"github.com/labring/sealos/controllers/user/controllers/helper"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/service/hub/api"
 	"k8s.io/client-go/tools/clientcmd"
@@ -26,7 +27,7 @@ func (a SealosAuthenticate) Authenticate(user string, password api.PasswordStrin
 		return false, api.Labels{}, nil, api.ErrWrongPass
 	}
 	// replace config.Host to env host.
-	sealosHost := helper.GetKubernetesHostFromEnv()
+	sealosHost := GetKubernetesHostFromEnv()
 	if sealosHost == "" {
 		glog.Error("GetKubernetesHostFromEnv error")
 		return false, api.Labels{}, nil, api.ErrWrongPass
@@ -50,6 +51,14 @@ func (a SealosAuthenticate) Authenticate(user string, password api.PasswordStrin
 	}
 	glog.Info("Authenticate true")
 	return true, api.Labels{}, client, nil
+}
+
+func GetKubernetesHostFromEnv() string {
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	if len(host) == 0 || len(port) == 0 {
+		return ""
+	}
+	return "https://" + net.JoinHostPort(host, port)
 }
 
 func (a SealosAuthenticate) Stop() {
