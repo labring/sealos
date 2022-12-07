@@ -17,18 +17,23 @@ package buildah
 import (
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"k8s.io/client-go/tools/clientcmd"
+
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 )
 
 type loginReply struct {
-	loginOpts auth.LoginOptions
-	getLogin  bool
-	tlsVerify bool
+	loginOpts  auth.LoginOptions
+	getLogin   bool
+	tlsVerify  bool
+	kubeconfig string
 }
 
 func newDefaultLoginReply() loginReply {
@@ -48,6 +53,8 @@ func (opts *loginReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.getLogin, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.getLogin, "get-login", opts.tlsVerify, "return the current login user for the registry")
 	fs.AddFlagSet(auth.GetLoginFlags(&opts.loginOpts))
+	// e.g sealos login --kubeconfig /root/.kube/config hub.sealos.io
+	fs.StringVarP(&opts.kubeconfig, "kubeconfig", "k", opts.kubeconfig, "Login to sealos registry: hub.sealos.io by kubeconfig")
 }
 
 func newLoginCommand() *cobra.Command {
@@ -59,14 +66,54 @@ func newLoginCommand() *cobra.Command {
 		Use:   "login",
 		Short: "Login to a container registry",
 		Long:  loginDescription,
+
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.kubeconfig == "" {
+				return nil
+			}
+			// username is current context kubeconfig user id
+			username, err := GetCurrentUserFromKubeConfig(opts.kubeconfig)
+			if err != nil {
+				return err
+			}
+			// set user/password
+			passwordb, err := fileutil.ReadAll(opts.kubeconfig)
+			if err != nil {
+				return err
+			}
+			opts.loginOpts.Username = username
+			opts.loginOpts.Password = string(passwordb)
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return loginCmd(cmd, args, &opts)
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			if opts.kubeconfig == "" {
+				return nil
+			}
+			// config will be copyed to $(HOME)/.sealos/$(args[0]).HOST/$(user)/config
+			registryHost, err := parseRawURL(args[0])
+			if err != nil {
+				return err
+			}
+			sealosKubeConfdir := fmt.Sprintf("%s/%s/%s/%s", os.Getenv("HOME"), ".sealos", registryHost, opts.loginOpts.Username)
+			if err := fileutil.MkDirs(sealosKubeConfdir); err != nil {
+				return err
+			}
+			sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
+			// copy file, will overwrite the original file
+			if err := fileutil.Copy(opts.kubeconfig, sealosKubeconfPath); err != nil {
+				return err
+			}
+			return nil
 		},
 		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.Name()),
 	}
 	loginCommand.SetUsageTemplate(UsageTemplate())
-
 	opts.RegisterFlags(loginCommand.Flags())
+	// set user/password and kubeconfig mutually exclusive
+	loginCommand.MarkFlagsMutuallyExclusive("username", "kubeconfig")
 	return loginCommand
 }
 
@@ -89,4 +136,32 @@ func loginCmd(c *cobra.Command, args []string, iopts *loginReply) error {
 	ctx := getContext()
 	iopts.loginOpts.GetLoginSet = flagChanged(c, "get-login")
 	return auth.Login(ctx, systemContext, &iopts.loginOpts, args)
+}
+
+func GetCurrentUserFromKubeConfig(filename string) (userid string, err error) {
+	config, err := clientcmd.LoadFromFile(filename)
+	if err != nil {
+		return "", err
+	}
+	expectedCtx, exists := config.Contexts[config.CurrentContext]
+	if !exists {
+		return "", fmt.Errorf("failed to find current context %s", config.CurrentContext)
+	}
+	return expectedCtx.AuthInfo, nil
+}
+
+func parseRawURL(rawurl string) (domain string, err error) {
+	u, err := url.ParseRequestURI(rawurl)
+	if err != nil || u.Host == "" {
+		u, repErr := url.ParseRequestURI("https://" + rawurl)
+		if repErr != nil {
+			fmt.Printf("Could not parse raw url: %s, error: %v", rawurl, err)
+			return
+		}
+		domain = u.Host
+		err = nil
+		return
+	}
+	domain = u.Host
+	return
 }
