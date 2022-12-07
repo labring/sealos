@@ -10,14 +10,12 @@ apiVersion: v1
 data:
   config.yml: |
     server:
-        addr: ":5001"
-        net: "tcp"
-        path_prefix: ""
-        certificate: "/certs/server.crt"
-        key: "/certs/server.key"
+      addr: ":5001"
     token:
       issuer: "registry-token-issuer"
-      expiration: 3600
+      expiration: 2592000  #30days
+      certificate: "/certs/tls.crt"
+      key: "/certs/tls.key"
 kind: ConfigMap
 metadata:
   labels:
