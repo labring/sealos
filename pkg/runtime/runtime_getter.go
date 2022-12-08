@@ -102,6 +102,15 @@ func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	return image, nil
 }
 
+func (k *KubeadmRuntime) getVIPFromImage() string {
+	labels := k.getImageLabels()
+	vip := labels[constants.ImageVIPKey]
+	if vip == "" {
+		vip = DefaultVIP
+	}
+	return vip
+}
+
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {
 	return k.getRemoteInterface().IPVS(ip, k.getVipAndPort(), masters)
 }

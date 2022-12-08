@@ -151,7 +151,7 @@ func (k *KubeadmRuntime) getClusterName() string {
 
 // todo: maybe make this virtual IP configurable?
 func (k *KubeadmRuntime) getVip() string {
-	return DefaultVIP
+	return k.getVIPFromImage()
 }
 
 func (k *KubeadmRuntime) getAPIServerPort() int32 {

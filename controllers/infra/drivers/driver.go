@@ -46,6 +46,7 @@ type Driver interface {
 	// Modify
 	ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error
 	CreateKeyPair(infra *v1.Infra) error
+	DeleteKeyPair(infra *v1.Infra) error
 }
 
 type Reconcile interface {

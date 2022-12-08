@@ -81,6 +81,9 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cluster.Name, applicationName), cmd)
 	}
 	for idx, i := range mounts {
+		if i.Type != v2.AppImage {
+			continue
+		}
 		mergeENV := maps.MergeMap(i.Env, envs)
 		mapping := expansion.MappingFuncFor(mergeENV)
 		for _, cmd := range i.Entrypoint {
