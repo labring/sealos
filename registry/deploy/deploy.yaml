@@ -1,0 +1,159 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: docker-registry-system
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: docker-registry-pv
+  labels:
+    pv: docker-registry-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: /data/docker
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - master
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-registry-pvc
+  namespace: docker-registry-system
+spec:
+  resources:
+    requests:
+      storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: local-storage
+  selector:
+    matchLabels:
+      pv: docker-registry-pv
+---
+apiVersion: v1
+data:
+  config.yml: |
+    version: 0.1
+    log:
+      accesslog:
+        disabled: true
+      level: debug
+      formatter: json
+      fields:
+        service: registry
+        environment: staging
+    storage:
+      delete:
+        enabled: true
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    auth:
+      token:
+        realm: https://hubauth.login.sealos.io/auth
+        service: token-service
+        issuer: registry-token-issuer
+        rootcertbundle: /etc/docker/registry/authserver.crt
+    http:
+      addr: :5000
+      host: https://hub.sealos.io:5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+      http2:
+        disabled: false
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+    threshold: 3
+  authserver.crt: |
+    ...
+kind: ConfigMap
+metadata:
+  labels:
+    app: docker-registry
+  name: docker-registry-config
+  namespace: docker-registry-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: docker-registry
+  name: docker-registry
+  namespace: docker-registry-system
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app: docker-registry
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: docker-registry
+          image: registry:2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: web
+              protocol: TCP
+          resources:
+            requests:
+              memory: 200Mi
+              cpu: "0.1"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /var/lib/registry/
+              name: docker-registry-data
+            - mountPath: /etc/docker/registry
+              name:
+      volumes:
+        - name: docker-registry-data
+          persistentVolumeClaim:
+            claimName: docker-registry-pvc
+        - name: docker-registry-config
+          configMap:
+            name:
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry-service
+  namespace: docker-registry-system
+spec:
+  ports:
+    - name: port-name
+      port: 5000
+      protocol: TCP
+      targetPort: 5000
+  selector:
+    app: docker-registry
