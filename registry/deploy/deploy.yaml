@@ -33,7 +33,7 @@ spec:
             - key: kubernetes.io/hostname
               operator: In
               values:
-                - master
+                - master # set at worker
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -89,7 +89,9 @@ data:
         interval: 10s
     threshold: 3
   authserver.crt: |
+    -----BEGIN CERTIFICATE-----
     ...
+    -----END CERTIFICATE-----
 kind: ConfigMap
 metadata:
   labels:
@@ -118,7 +120,7 @@ spec:
       securityContext:
         runAsUser: 0
       containers:
-        - name: docker-registry
+        - name: docker-registry # nosemgrep
           image: registry:2
           imagePullPolicy: IfNotPresent
           ports:
@@ -129,26 +131,20 @@ spec:
             requests:
               memory: 200Mi
               cpu: "0.1"
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            runAsNonRoot: true
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
             - mountPath: /var/lib/registry/
               name: docker-registry-data
-            - mountPath: /etc/docker/registry
-              name:
+            - mountPath: /etc/docker/registry/
+              name: docker-registry-config
       volumes:
         - name: docker-registry-data
           persistentVolumeClaim:
             claimName: docker-registry-pvc
         - name: docker-registry-config
           configMap:
-            name:
+            name: docker-registry-config
 ---
 apiVersion: v1
 kind: Service

@@ -51,7 +51,6 @@ spec:
         - name: config-vol
           configMap:
             name: hub-service-config
-        - name: cert-vol
       containers:
         - name: hub-service-server
           image: lingdie/sealos-hub-service:dev
