@@ -1,6 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { v4 as uuidv4 } from 'uuid';
 import { paymentCRDTemplate } from '../../../../../mock/user';
 import {
   ApplyYaml,
@@ -35,7 +34,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     extra?: any;
   };
 
-  const payment_name = uuidv4();
+  const payment_name = crypto.randomUUID();
   const namespace = GetUserDefaultNameSpace(kube_user.name);
   const paymentCRD = CRDTemplateBuilder(paymentCRDTemplate, {
     payment_name,

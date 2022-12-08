@@ -6,7 +6,6 @@ import { useEffect, useReducer, useRef, useState } from 'react';
 import request from 'services/request';
 import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
-import { v4 as uuidv4 } from 'uuid';
 import styles from './add_page.module.scss';
 import { PageType, useScpContext } from './index';
 import { generateTemplate } from './infra_share';
@@ -33,9 +32,7 @@ const AddPage = () => {
     nodeType: 't2.medium',
     nodeCount: 1,
     nodeDisk: 16,
-    nodeDiskType: 'gp3',
-    userName: 'root', //暂定
-    userPassword: uuidv4()
+    nodeDiskType: 'gp3'
   };
   const infraReducer = (state: any, action: any) => {
     return { ...state, ...action.payload };
