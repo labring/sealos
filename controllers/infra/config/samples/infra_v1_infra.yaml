@@ -15,7 +15,7 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: 1206-1test
+  name: 1208-1test
 spec:
   hosts:
     - roles: [ master ]
