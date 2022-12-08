@@ -28,6 +28,7 @@ const (
 	DefaultLvscareDomain     = "lvscare.node.ip"
 	DefaultLvsCareImage      = "sealos.hub:5000/sealos/lvscare:latest"
 	ImageKubeVersionKey      = "version"
+	ImageVIPKey              = "vip"
 	ImageKubeLvscareImageKey = "image"
 	ImageTypeKey             = "sealos.io.type"
 	DefaultHostsPath         = "/etc/hosts"
