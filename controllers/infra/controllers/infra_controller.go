@@ -120,6 +120,9 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 		if err := r.driver.DeleteInstances(&hosts); err != nil {
 			return err
 		}
+		if err := r.driver.DeleteKeyPair(infra); err != nil {
+			return err
+		}
 	}
 	return nil
 }
