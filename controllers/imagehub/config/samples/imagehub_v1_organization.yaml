@@ -1,12 +1,24 @@
 apiVersion: imagehub.sealos.io/v1
 kind: Organization
 metadata:
-  labels:
-    app.kubernetes.io/name: organization
-    app.kubernetes.io/instance: organization-sample
-    app.kubernetes.io/part-of: imagehub
-    app.kuberentes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: imagehub
-  name: organization-sample
+  name: lingdie
 spec:
-  # TODO(user): Add fields here
+  name: lingdie
+  creator: 5827f347-2fce-4549-9d76-a1f8979fd499
+  manager: [ 5827f347-2fce-4549-9d76-a1f8979fd499 ]
+---
+apiVersion: imagehub.sealos.io/v1
+kind: Image
+metadata:
+  name: lingdie.cert.manager.v1.8.0
+spec:
+  name: lingdie/cert-manager:v1.8.0
+  detail:
+    url: https://cert-manager.io/
+    keywords: [ storage ]
+    description: Cloud native certificate management. X.509 certificate management for Kubernetes and OpenShift
+    icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+    authorIcon: authorIcon
+    docs: docs
+    ID: Unkonw
+    arch: Unkonw
