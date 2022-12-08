@@ -25,6 +25,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
+	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -60,31 +61,39 @@ func (s *SSH) connect(host string) (*ssh.Client, error) {
 	return ssh.Dial("tcp", addr, clientConfig)
 }
 
-func (s *SSH) Connect(host string) (*ssh.Client, *ssh.Session, error) {
-	client, err := s.connect(host)
-	if err != nil {
-		return nil, nil, err
-	}
-
+func newSession(client *ssh.Client) (*ssh.Session, error) {
 	session, err := client.NewSession()
 	if err != nil {
 		_ = client.Close()
-		return nil, nil, err
+		return nil, err
 	}
-
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          0,     //disable echoing
 		ssh.TTY_OP_ISPEED: 14400, // input speed = 14.4kbaud
 		ssh.TTY_OP_OSPEED: 14400, // output speed = 14.4kbaud
 	}
-
 	if err := session.RequestPty("xterm", 80, 40, modes); err != nil {
 		_ = session.Close()
 		_ = client.Close()
+		return nil, err
+	}
+	return session, nil
+}
+
+func (s *SSH) Connect(host string) (*ssh.Client, *ssh.Session, error) {
+	client, err := s.connect(host)
+	if err != nil {
 		return nil, nil, err
 	}
-
+	session, err := newSession(client)
+	if err != nil {
+		return nil, nil, err
+	}
 	return client, session, nil
+}
+
+func (s *SSH) isLocalAction(host string) bool {
+	return !unshare.IsRootless() && s.localAddress != nil && iputils.IsLocalIP(host, s.localAddress)
 }
 
 func (s *SSH) sshAuthMethod(password, pkFile, pkData, pkPasswd string) (auth []ssh.AuthMethod) {

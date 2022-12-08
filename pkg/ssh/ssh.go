@@ -15,20 +15,24 @@
 package ssh
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"net"
-	"strings"
-	"sync"
 	"time"
 
+	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"golang.org/x/sync/errgroup"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/iputils"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+var defaultMaxRetry = 5
+
+func RegisterFlags(fs *pflag.FlagSet) {
+	fs.IntVar(&defaultMaxRetry, "max-retry", defaultMaxRetry, "define max num of ssh retry times")
+}
 
 type Interface interface {
 	// Copy is copy local files to remote host
@@ -83,7 +87,7 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
 
-	return sshClient, WaitSSHReady(sshClient, 6, ipList...)
+	return sshClient, WaitSSHReady(sshClient, defaultMaxRetry, ipList...)
 }
 
 type Client struct {
@@ -92,34 +96,21 @@ type Client struct {
 }
 
 func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
-	errCh := make(chan error, len(hosts))
-	var wg sync.WaitGroup
-	for _, h := range hosts {
-		wg.Add(1)
-		go func(host string) {
-			defer wg.Done()
-			var err error
+	eg, _ := errgroup.WithContext(context.Background())
+	for i := range hosts {
+		host := hosts[i]
+		eg.Go(func() (err error) {
 			for i := 0; i < tryTimes; i++ {
-				err = ssh.Ping(host)
-				if err == nil {
-					errCh <- nil
-					return
+				if i > 0 {
+					logger.Debug("trying to reconnect due to error occur: %v", err)
+					time.Sleep(time.Millisecond * 100)
 				}
-				time.Sleep(time.Duration(i) * time.Second)
+				if err = ssh.Ping(host); err == nil {
+					return nil
+				}
 			}
-			errCh <- fmt.Errorf("wait for [%s] ssh ready timeout:  %v, ensure that the IP address or password is correct", host, err)
-		}(h)
+			return
+		})
 	}
-	wg.Wait()
-	close(errCh)
-	var ret []string
-	for err := range errCh {
-		if err != nil {
-			ret = append(ret, err.Error())
-		}
-	}
-	if len(ret) > 0 {
-		return errors.New(strings.Join(ret, ","))
-	}
-	return nil
+	return eg.Wait()
 }
