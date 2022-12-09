@@ -32,12 +32,12 @@ import (
 )
 
 func newBuildCommand() *cobra.Command {
-	buildDescription := `
-  Builds an OCI image using instructions in one or more Containerfiles.
+	buildDescription := fmt.Sprintf(`
+  Builds an OCI image using instructions in one or more Containerfiles/Dockerfiles/Kubefiles/Sealfiles.
 
-  If no arguments are specified, Buildah will use the current working directory
-  as the build context and look for a Containerfile. The build fails if no
-  Containerfile nor Dockerfile is present.`
+  If no arguments are specified, %s will use the current working directory
+  as the build context and look for a instructions file. The build fails if no any of
+  Containerfile/Dockerfile/Kubefile/Sealfile is present.`, rootCmd.Root().Name())
 
 	layerFlagsResults := buildahcli.LayerResults{}
 	buildFlagResults := buildahcli.BudResults{}
@@ -64,7 +64,7 @@ func newBuildCommand() *cobra.Command {
 		Args: cobra.MaximumNArgs(1),
 		Example: fmt.Sprintf(`%[1]s build
   %[1]s bud -f Kubefile.simple .
-  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmd.Name()),
+  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmdName),
 	}
 	buildCommand.SetUsageTemplate(UsageTemplate())
 

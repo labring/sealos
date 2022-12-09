@@ -127,7 +127,7 @@ func newFromCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s from --pull imagename
   %[1]s from docker-daemon:imagename:imagetag
-  %[1]s from --name "myimagename" myregistry/myrepository/imagename:imagetag`, rootCmd.Name()),
+  %[1]s from --name "myimagename" myregistry/myrepository/imagename:imagetag`, rootCmdName),
 	}
 	fromCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(fromCommand.Flags())
