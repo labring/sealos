@@ -32,7 +32,7 @@ metadata:
   name: metering-nsName
   namespace:metering-system
 Spec:
-resources: map[string]resource
+resources: 
   - name:xxx
   unit: 1 /// 单位
   price:1 //  这个单位的单价
@@ -83,7 +83,7 @@ resources: map[string]resource
 
 ## 三、Resource-controller注册资源流程(以pod-controller举例)
 
-![](../../../docs/4.0/img/metering/proposal-1.png)
+![](../../img/proposal-1.png)
 
 ### 3.1 创建 ExtensionResourcePrice
 
@@ -186,7 +186,7 @@ resources:
 
 ## 四**、Metering计量计费流程**
 
-![](../../../docs/4.0/img/metering/proposal-2.png)
+![](../../img/proposal-2.png)
 
 ### 4.1 计量过程
 
@@ -258,4 +258,5 @@ Deduction 扣费模块,查看 Metering 中 TotalAmount ，在对应的用户 Acc
 
 一个resource-controller 有一个自己的ExtensionResourcePrice，每个Namespace 都会有自己的MeteringQuota记录自己统计的资源变化。下面有两个resource-controller，每个Namespace 就会有两个 MeteringQutoa 实例。
 
-![](../../../docs/4.0/img/metering/proposal-3.png)
+![](../../img/proposal-3.png)
+

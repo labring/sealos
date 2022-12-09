@@ -22,9 +22,11 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，传�
 
 resource-controller：统计资源使用量，并且把值放入计量模块（可以有多个）
 
-计量和计费模块是以 namespace 为单位进行计算的。
-
 ![](../../../img/metering/design-1.png)
+
+计量和计费模块是以 namespace 为单位进行计算的，。
+
+
 
 ### 3.2 、pod-controller角度描述计量计费流程
 
