@@ -44,7 +44,7 @@ func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
 }
 
 func getOnelineResult(output string, sep string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", sep), "\r", sep)
+	return strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", sep), "\n", sep)
 }
 
 // CmdToString execute command on host and replace output with sep to oneline
