@@ -17,6 +17,10 @@ package buildah
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/containers/buildah/define"
 
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -98,6 +102,34 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 		defer iopts.Logwriter.Close()
 	}
 
+	if len(iopts.File) == 0 {
+		ctxDir, err := getContextDir(inputArgs)
+		if err != nil {
+			return err
+		}
+		getFile := func(filename string) (string, error) {
+			file := filepath.Join(ctxDir, filename)
+			fileInfo, err := os.Stat(file)
+			if err != nil {
+				return "", fmt.Errorf("cannot find %s in context directory: %w", filename, err)
+			}
+			// The file exists, now verify the correct mode
+			if mode := fileInfo.Mode(); mode.IsRegular() {
+				return file, nil
+			}
+			return "", fmt.Errorf("assumed %s is a file but it's not", filename)
+		}
+
+		defaultFileNames := []string{"Sealfile", "Kubefile", "Dockerfile", "Containerfile"}
+		for _, name := range defaultFileNames {
+			if foundFile, err := getFile(name); err == nil && foundFile != "" {
+				iopts.File = append(iopts.File, foundFile)
+			}
+		}
+		if len(iopts.File) == 0 {
+			return fmt.Errorf("cannot find any of %v in context directory", strings.Join(defaultFileNames, ", "))
+		}
+	}
 	options, containerfiles, removeAll, err := buildahcli.GenBuildOptions(c, inputArgs, iopts)
 	if err != nil {
 		return err
@@ -129,4 +161,37 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 		logger.Debug("manifest list id = %q, ref = %q", id, ref.String())
 	}
 	return err
+}
+
+func getContextDir(inputArgs []string) (string, error) {
+	contextDir := ""
+	cliArgs := inputArgs
+	var err error
+	// Nothing provided, we assume the current working directory as build
+	// context
+	if len(cliArgs) == 0 {
+		contextDir, err = os.Getwd()
+		if err != nil {
+			return "", fmt.Errorf("unable to choose current working directory as build context: %w", err)
+		}
+	} else {
+		// The context directory could be a URL.  Try to handle that.
+		tempDir, subDir, err := define.TempDirForURL("", "buildah", cliArgs[0])
+		if err != nil {
+			return "", fmt.Errorf("prepping temporary context directory: %w", err)
+		}
+		if tempDir != "" {
+			// We had to download it to a temporary directory.
+			// Delete it later.
+			contextDir = filepath.Join(tempDir, subDir)
+		} else {
+			// Nope, it was local.  Use it as is.
+			absDir, err := filepath.Abs(cliArgs[0])
+			if err != nil {
+				return "", fmt.Errorf("determining path to directory: %w", err)
+			}
+			contextDir = absDir
+		}
+	}
+	return contextDir, err
 }
