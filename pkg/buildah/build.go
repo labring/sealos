@@ -33,11 +33,11 @@ import (
 
 func newBuildCommand() *cobra.Command {
 	buildDescription := fmt.Sprintf(`
-  Builds an OCI image using instructions in one or more Containerfiles/Dockerfiles/Kubefiles/Sealfiles.
+  Builds an OCI image using instructions in one or more Sealfiles/Kubefiles/Dockerfiles/Containerfiles.
 
   If no arguments are specified, %s will use the current working directory
   as the build context and look for a instructions file. The build fails if no any of
-  Containerfile/Dockerfile/Kubefile/Sealfile is present.`, rootCmd.Root().Name())
+  Sealfile/Kubefile/Dockerfile/Containerfile is present.`, rootCmd.Root().Name())
 
 	layerFlagsResults := buildahcli.LayerResults{}
 	buildFlagResults := buildahcli.BudResults{}
