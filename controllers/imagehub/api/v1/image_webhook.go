@@ -17,36 +17,46 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(i).
-		Complete()
-}
-
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Defaulter = &Image{}
+// ImageMutater add lables to Images
+type ImageMutater struct {
+	Client  client.Client
+	decoder *admission.Decoder
+}
 
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (i *Image) Default() {
+func (m *ImageMutater) Handle(ctx context.Context, req admission.Request) admission.Response {
+	i := &Image{}
+	err := m.decoder.Decode(req, i)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 	imagelog.Info("default", "name", i.Name)
 	i.ObjectMeta = initAnnotationAndLabels(i.ObjectMeta)
 	i.ObjectMeta.Labels[SealosOrgLable] = i.Spec.Name.GetOrg()
 	i.ObjectMeta.Labels[SealosRepoLabel] = i.Spec.Name.GetRepo()
 	i.ObjectMeta.Labels[SealosTagLabel] = i.Spec.Name.GetTag()
+
+	marshaledPod, err := json.Marshal(i)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
