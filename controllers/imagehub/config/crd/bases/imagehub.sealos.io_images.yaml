@@ -41,10 +41,9 @@ spec:
                 description: 'ImageDetailInfo TODO: add limits for ImageDetailInfo'
                 properties:
                   ID:
+                    description: should use buildah inspect to get infor.
                     type: string
                   arch:
-                    type: string
-                  authorIcon:
                     type: string
                   description:
                     type: string
@@ -56,13 +55,9 @@ spec:
                     items:
                       type: string
                     type: array
-                  rating:
-                    type: integer
                   size:
                     format: int64
                     type: integer
-                  url:
-                    type: string
                 type: object
               name:
                 type: string
