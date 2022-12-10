@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,17 +75,20 @@ func (v *ImageValidator) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	// todo get org and commpare.
-	//key := "example-mutating-admission-webhook"
-	//anno, found := pod.Annotations[key]
-	//if !found {
-	//	return admission.Denied(fmt.Sprintf("missing annotation %s", key))
-	//}
-	//if anno != "foo" {
-	//	return admission.Denied(fmt.Sprintf("annotation %s did not have value %q", key, "foo"))
-	//}
-
-	return admission.Allowed("")
+	// get org and compare org.spec.manager
+	org := &Organization{}
+	if err := v.Client.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
+		if client.IgnoreNotFound(err) == nil {
+			return admission.Denied(fmt.Sprintf("Organization not exited %s", i.Spec.Name.GetOrg()))
+		}
+		return admission.Denied(fmt.Sprintf("get Organization error %s", i.Spec.Name.GetOrg()))
+	}
+	for _, usr := range org.Spec.Manager {
+		if usr == req.UserInfo.Username {
+			return admission.Allowed("")
+		}
+	}
+	return admission.Denied(fmt.Sprintf("You are not one of Organization %s managers!", i.Spec.Name.GetOrg()))
 }
 
 // ImageMutater and ImageValidator implements admission.DecoderInjector.
