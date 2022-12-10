@@ -124,8 +124,8 @@ func main() {
 	hookServer := mgr.GetWebhookServer()
 
 	setupLog.Info("registering webhooks to the webhook server")
-	hookServer.Register("/mutate-imagehub-sealos-io-v1-repository", &webhook.Admission{Handler: &imagehubv1.ImageMutater{Client: mgr.GetClient()}})
-	hookServer.Register("/validate-imagehub-sealos-io-v1-repository", &webhook.Admission{Handler: &imagehubv1.ImageValidator{Client: mgr.GetClient()}})
+	hookServer.Register("/mutate-imagehub-sealos-io-v1-image", &webhook.Admission{Handler: &imagehubv1.ImageMutater{Client: mgr.GetClient()}})
+	hookServer.Register("/validate-imagehub-sealos-io-v1-image", &webhook.Admission{Handler: &imagehubv1.ImageValidator{Client: mgr.GetClient()}})
 
 	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
