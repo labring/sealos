@@ -60,6 +60,7 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 	if !pass {
 		return errors.New(cancel)
 	}
+	ForceOverride = true
 	return nil
 }
 
