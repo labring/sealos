@@ -75,6 +75,10 @@ func (v *ImageValidator) Handle(ctx context.Context, req admission.Request) admi
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if !i.checkLables() || !i.checkSpecName() {
+		return admission.Denied(fmt.Sprintf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name)))
+	}
+
 	// get org and compare org.spec.manager
 	org := &Organization{}
 	if err := v.Client.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
