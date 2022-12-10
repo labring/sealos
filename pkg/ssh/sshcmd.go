@@ -21,15 +21,15 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/labring/sealos/pkg/unshare"
+	"golang.org/x/crypto/ssh"
+
 	"github.com/labring/sealos/pkg/utils/exec"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (s *SSH) Ping(host string) error {
-	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+	if s.isLocalAction(host) {
 		logger.Debug("host %s is local, ping is always true", host)
 		return nil
 	}
@@ -46,7 +46,7 @@ func (s *SSH) Ping(host string) error {
 
 func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	var isLocal bool
-	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+	if s.isLocalAction(host) {
 		logger.Debug("host %s is local, command via exec", host)
 		isLocal = true
 	}
@@ -105,25 +105,31 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	return nil
 }
 
+func runCmd(client *ssh.Client, cmd string) ([]byte, error) {
+	session, err := newSession(client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session: %v", err)
+	}
+	defer client.Close()
+	defer session.Close()
+	output, err := session.CombinedOutput(cmd)
+	if err != nil {
+		err = fmt.Errorf("failed to run command: %v", err)
+	}
+	return output, err
+}
+
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
-	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+	if s.isLocalAction(host) {
 		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}
-
-	client, session, err := s.Connect(host)
+	client, err := s.connect(host)
 	if err != nil {
-		return nil, fmt.Errorf("[ssh][%s] create ssh session failed, %s", host, err)
+		return nil, fmt.Errorf("failed to connect: %v", err)
 	}
-	defer client.Close()
-	defer session.Close()
-	b, err := session.CombinedOutput(cmd)
-	if err != nil {
-		return b, fmt.Errorf("[ssh][%s]run command failed [%s]", host, cmd)
-	}
-
-	return b, nil
+	return runCmd(client, cmd)
 }
 
 func readPipe(host string, pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
