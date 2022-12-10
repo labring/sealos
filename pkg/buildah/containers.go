@@ -110,7 +110,7 @@ func newContainersCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s containers
   %[1]s containers --format "{{.ContainerID}} {{.ContainerName}}"
-  %[1]s containers -q --noheading --notruncate`, rootCmd.Name()),
+  %[1]s containers -q --noheading --notruncate`, rootCmdName),
 	}
 	containersCommand.SetUsageTemplate(UsageTemplate())
 
@@ -120,7 +120,7 @@ func newContainersCommand() *cobra.Command {
 
 func containersCmd(c *cobra.Command, args []string, iopts *containersResults) error {
 	if len(args) > 0 {
-		return fmt.Errorf("'%s containers' does not accept arguments", rootCmd.Name())
+		return fmt.Errorf("'%s containers' does not accept arguments", rootCmdName)
 	}
 	store, err := getStore(c)
 	if err != nil {
