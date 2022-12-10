@@ -19,13 +19,10 @@ package v1
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
@@ -59,37 +56,46 @@ func (m *ImageMutater) Handle(ctx context.Context, req admission.Request) admiss
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
 
-var _ webhook.Validator = &Image{}
+// ImageValidator will validate Images change.
+type ImageValidator struct {
+	Client  client.Client
+	decoder *admission.Decoder
+}
 
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (i *Image) ValidateCreate() error {
-	imagelog.Info("validate create", "name", i.Name)
-	if !i.checkSpecName() {
-		return fmt.Errorf("image name illegal")
+// Handle ImageValidator admits a pod if a specific annotation exists.
+func (v *ImageValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	i := &Image{}
+	err := v.decoder.Decode(req, i)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if !i.checkLables() {
-		return fmt.Errorf("image lables illegal")
-	}
+
+	// todo get org and commpare.
+	//key := "example-mutating-admission-webhook"
+	//anno, found := pod.Annotations[key]
+	//if !found {
+	//	return admission.Denied(fmt.Sprintf("missing annotation %s", key))
+	//}
+	//if anno != "foo" {
+	//	return admission.Denied(fmt.Sprintf("annotation %s did not have value %q", key, "foo"))
+	//}
+
+	return admission.Allowed("")
+}
+
+// ImageMutater and ImageValidator implements admission.DecoderInjector.
+// A decoder will be automatically injected.
+
+// InjectDecoder injects the decoder.
+func (m *ImageMutater) InjectDecoder(d *admission.Decoder) error {
+	m.decoder = d
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (i *Image) ValidateUpdate(old runtime.Object) error {
-	imagelog.Info("validate update", "name", i.Name)
-	if !i.checkSpecName() {
-		return fmt.Errorf("image name illegal")
-	}
-	if !i.checkLables() {
-		return fmt.Errorf("image lables illegal")
-	}
-	return nil
-}
-
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (i *Image) ValidateDelete() error {
-	imagelog.Info("validate delete", "name", i.Name)
+// InjectDecoder injects the decoder.
+func (v *ImageValidator) InjectDecoder(d *admission.Decoder) error {
+	v.decoder = d
 	return nil
 }
