@@ -30,6 +30,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/controllers/imagehub/controllers"
@@ -117,10 +118,15 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "DataPack")
 		os.Exit(1)
 	}
-	if err = (&imagehubv1.Image{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Image")
-		os.Exit(1)
-	}
+
+	// Setup webhooks
+	setupLog.Info("setting up webhook server")
+	hookServer := mgr.GetWebhookServer()
+
+	setupLog.Info("registering webhooks to the webhook server")
+	hookServer.Register("/mutate-imagehub-sealos-io-v1-repository", &webhook.Admission{Handler: &imagehubv1.ImageMutater{Client: mgr.GetClient()}})
+	//hookServer.Register("/validate-imagehub-sealos-io-v1-repository", &webhook.Admission{Handler: &imageValidator{Client: mgr.GetClient()}})
+
 	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
 		os.Exit(1)
