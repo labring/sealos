@@ -26,6 +26,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // In returns if the key is in the slice.
@@ -213,7 +215,7 @@ func IsLetterOrNumber(k string) bool {
 	return true
 }
 
-func EnvFromMap(shell string, envs map[string]string) string {
+func RenderShellFromEnv(shell string, envs map[string]string) string {
 	var env string
 	for k, v := range envs {
 		env = fmt.Sprintf("%s%s=(%s) ", env, k, v)
@@ -222,6 +224,20 @@ func EnvFromMap(shell string, envs map[string]string) string {
 		return shell
 	}
 	return fmt.Sprintf("%s&& %s", env, shell)
+}
+
+func RenderTextFromEnv(text string, envs map[string]string) string {
+	replaces := make(map[string]string, 0)
+	for k, v := range envs {
+		replaces[fmt.Sprintf("$(%s)", k)] = v
+		replaces[fmt.Sprintf("${%s}", k)] = v
+		replaces[fmt.Sprintf("$%s", k)] = v
+	}
+	logger.Debug("renderTextFromEnv: replaces: %+v ; text: %s", replaces, text)
+	for o, n := range replaces {
+		text = strings.ReplaceAll(text, o, n)
+	}
+	return text
 }
 
 func TrimQuotes(s string) string {

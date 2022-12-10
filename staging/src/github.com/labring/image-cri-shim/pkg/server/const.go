@@ -15,8 +15,10 @@
 package server
 
 const (
-	// SealosShimSock is the CRI socket the shim listens on.
-	SealosShimSock = "/var/run/image-cri-shim.sock"
 	// DirPermissions is the permissions to create the directory for sockets with.
 	DirPermissions = 0711
 )
+
+// maxMsgSize use 16MB as the default message size limit.
+// grpc library default is 4MB
+const maxMsgSize = 1024 * 1024 * 16
