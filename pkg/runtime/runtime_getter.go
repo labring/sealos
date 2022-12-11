@@ -48,7 +48,7 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
-	image := labels[constants.ImageKubeVersionKey]
+	image := labels[v1beta1.ImageKubeVersionKey]
 	if image == "" {
 		return ""
 	}
@@ -97,7 +97,7 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	labels := k.getImageLabels()
-	image := labels[constants.ImageKubeLvscareImageKey]
+	image := labels[v1beta1.ImageKubeLvscareImageKey]
 	if image == "" {
 		image = constants.DefaultLvsCareImage
 	}
@@ -106,7 +106,7 @@ func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 
 func (k *KubeadmRuntime) getVIPFromImage() string {
 	labels := k.getImageLabels()
-	vip := labels[constants.ImageVIPKey]
+	vip := labels[v1beta1.ImageVIPKey]
 	if vip == "" {
 		vip = DefaultVIP
 	} else {

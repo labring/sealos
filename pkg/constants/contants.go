@@ -19,19 +19,15 @@ import (
 )
 
 const (
-	LvsCareStaticPodName     = "kube-sealos-lvscare"
-	YamlFileSuffix           = "yaml"
-	DefaultRegistryDomain    = "sealos.hub"
-	DefaultRegistryUsername  = "admin"
-	DefaultRegistryPassword  = "passw0rd"
-	DefaultRegistryData      = "/var/lib/registry"
-	DefaultLvscareDomain     = "lvscare.node.ip"
-	DefaultLvsCareImage      = "sealos.hub:5000/sealos/lvscare:latest"
-	ImageKubeVersionKey      = "version"
-	ImageVIPKey              = "vip"
-	ImageKubeLvscareImageKey = "image"
-	ImageTypeKey             = "sealos.io.type"
-	DefaultHostsPath         = "/etc/hosts"
+	LvsCareStaticPodName    = "kube-sealos-lvscare"
+	YamlFileSuffix          = "yaml"
+	DefaultRegistryDomain   = "sealos.hub"
+	DefaultRegistryUsername = "admin"
+	DefaultRegistryPassword = "passw0rd"
+	DefaultRegistryData     = "/var/lib/registry"
+	DefaultLvscareDomain    = "lvscare.node.ip"
+	DefaultLvsCareImage     = "sealos.hub:5000/sealos/lvscare:latest"
+	DefaultHostsPath        = "/etc/hosts"
 )
 
 // CRD kind
