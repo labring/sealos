@@ -130,6 +130,9 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 			return fmt.Errorf("cannot find any of %v in context directory", strings.Join(defaultFileNames, ", "))
 		}
 	}
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	options, containerfiles, removeAll, err := buildahcli.GenBuildOptions(c, inputArgs, iopts)
 	if err != nil {
 		return err
