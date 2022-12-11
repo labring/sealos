@@ -24,16 +24,14 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	"github.com/labring/sealos/controllers/imagehub/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
-	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
-	"github.com/labring/sealos/controllers/imagehub/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -119,13 +117,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup webhooks
-	setupLog.Info("setting up webhook server")
-	hookServer := mgr.GetWebhookServer()
-
-	setupLog.Info("registering webhooks to the webhook server")
-	hookServer.Register("/mutate-imagehub-sealos-io-v1-image", &webhook.Admission{Handler: &imagehubv1.ImageMutater{Client: mgr.GetClient()}})
-	hookServer.Register("/validate-imagehub-sealos-io-v1-image", &webhook.Admission{Handler: &imagehubv1.ImageValidator{Client: mgr.GetClient()}})
+	if err = (&imagehubv1.Image{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Image")
+		os.Exit(1)
+	}
 
 	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")

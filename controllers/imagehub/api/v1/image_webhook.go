@@ -18,10 +18,11 @@ package v1
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
 
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -30,32 +31,35 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
+func (r *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	m := &ImageMutater{Client: mgr.GetClient()}
+	v := &ImageValidator{Client: mgr.GetClient()}
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		WithDefaulter(m).
+		WithValidator(v).
+		Complete()
+}
+
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
 //+kubebuilder:object:generate=false
 
-// ImageMutater add lables to Images
 type ImageMutater struct {
-	Client  client.Client
-	decoder *admission.Decoder
+	admission.Defaulter
+	client.Client
 }
 
-func (m *ImageMutater) Handle(ctx context.Context, req admission.Request) admission.Response {
-	i := &Image{}
-	err := m.decoder.Decode(req, i)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+func (r *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
+	img, ok := obj.(*Image)
+	if !ok {
+		return errors.New("obj convert Image is error")
 	}
-	imagelog.Info("default", "name", i.Name)
-	i.ObjectMeta = initAnnotationAndLabels(i.ObjectMeta)
-	i.ObjectMeta.Labels[SealosOrgLable] = i.Spec.Name.GetOrg()
-	i.ObjectMeta.Labels[SealosRepoLabel] = i.Spec.Name.GetRepo()
-	i.ObjectMeta.Labels[SealosTagLabel] = i.Spec.Name.GetTag()
-
-	marshaledPod, err := json.Marshal(i)
-	if err != nil {
-		return admission.Errored(http.StatusInternalServerError, err)
-	}
-	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
+	imagelog.Info("default", "name", img.Name)
+	img.ObjectMeta = initAnnotationAndLabels(img.ObjectMeta)
+	img.ObjectMeta.Labels[SealosOrgLable] = img.Spec.Name.GetOrg()
+	img.ObjectMeta.Labels[SealosRepoLabel] = img.Spec.Name.GetRepo()
+	img.ObjectMeta.Labels[SealosTagLabel] = img.Spec.Name.GetTag()
+	return nil
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
@@ -63,49 +67,65 @@ func (m *ImageMutater) Handle(ctx context.Context, req admission.Request) admiss
 
 // ImageValidator will validate Images change.
 type ImageValidator struct {
-	Client  client.Client
-	decoder *admission.Decoder
+	admission.Validator
+	Client client.Client
 }
 
-// Handle ImageValidator admits a pod if a specific annotation exists.
-func (v *ImageValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	i := &Image{}
-	err := v.decoder.Decode(req, i)
-	if err != nil {
-		return admission.Errored(http.StatusBadRequest, err)
+func (v *ImageValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	i, ok := obj.(*Image)
+	if !ok {
+		return errors.New("obj convert Image is error")
 	}
+	imagelog.Info("validating create", "name", i.Name)
+	return checkOption(ctx, v.Client, i)
+}
 
+func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	ni, ok := newObj.(*Image)
+	if !ok {
+		return errors.New("obj convert Image is error")
+	}
+	oi, ok := oldObj.(*Image)
+	if !ok {
+		return errors.New("obj convert Image is error")
+	}
+	imagelog.Info("validating update", "name", oi.Name)
+	if ni.Spec.Name != oi.Spec.Name {
+		return fmt.Errorf("can not change spec.name: %s", string(ni.Spec.Name))
+	}
+	return checkOption(ctx, v.Client, ni)
+}
+
+func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	i, ok := obj.(*Image)
+	if !ok {
+		return errors.New("obj convert Image is error")
+	}
+	imagelog.Info("validating delete", "name", i.Name)
+	return checkOption(ctx, v.Client, i)
+}
+
+func checkOption(ctx context.Context, c client.Client, i *Image) error {
 	if !i.checkLables() || !i.checkSpecName() {
-		return admission.Denied(fmt.Sprintf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name)))
+		return fmt.Errorf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
 	}
-
-	// get org and compare org.spec.manager
 	org := &Organization{}
-	if err := v.Client.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			return admission.Denied(fmt.Sprintf("Organization not exited %s", i.Spec.Name.GetOrg()))
+			return fmt.Errorf("organization not exited %s", i.Spec.Name.GetOrg())
 		}
-		return admission.Denied(fmt.Sprintf("get Organization error %s", i.Spec.Name.GetOrg()))
+		return fmt.Errorf("get Organization error %s", i.Spec.Name.GetOrg())
+	}
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		imagelog.Info("get request from context error when validate", "image name", i.Name)
+		return err
 	}
 	for _, usr := range org.Spec.Manager {
 		if usr == req.UserInfo.Username {
-			return admission.Allowed("")
+			return nil
 		}
 	}
-	return admission.Denied(fmt.Sprintf("You are not one of Organization %s managers!", i.Spec.Name.GetOrg()))
-}
-
-// ImageMutater and ImageValidator implements admission.DecoderInjector.
-// A decoder will be automatically injected.
-
-// InjectDecoder injects the decoder.
-func (m *ImageMutater) InjectDecoder(d *admission.Decoder) error {
-	m.decoder = d
-	return nil
-}
-
-// InjectDecoder injects the decoder.
-func (v *ImageValidator) InjectDecoder(d *admission.Decoder) error {
-	v.decoder = d
-	return nil
+	imagelog.Info("denied", "image name", i.Name)
+	return fmt.Errorf("denied, you are not one of organization %s managers", i.Spec.Name.GetOrg())
 }
