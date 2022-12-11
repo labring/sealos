@@ -109,6 +109,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 	if !i.checkLables() || !i.checkSpecName() {
 		return fmt.Errorf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
 	}
+	imagelog.Info("getting org", "org", i.Spec.Name.GetOrg())
 	org := &Organization{}
 	if err := c.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
