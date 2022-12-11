@@ -58,3 +58,9 @@ Description of these Parameters：
 - `COPY`:  The `COPY` instruction copies new files or directories from `<src>` and adds them to the filesystem of the container at the path `<dest>`.
 - `ENTRYPOINT`: Currently, it has the same functions as CMD.
 - `CMD`: The `CMD` instruction  provide default commands for an executing container. 
+
+Built-in environment variables
+
+- SEALOS_SYS_KUBE_VERSION: The version number of kubernetes, ex v1.26.0
+- SEALOS_SYS_VERSION_MAJOR: The major version number of kubernetes, ex 126
+- SEALOS_SYS_VERSION_MINOR: The minor version number of kubernetes, ex 0
