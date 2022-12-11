@@ -95,7 +95,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
+			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}

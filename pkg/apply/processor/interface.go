@@ -116,8 +116,8 @@ func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
 	mount.Cmd = newCMDs
 	mount.Labels = oci.Config.Labels
 	imageType := v2.AppImage
-	if mount.Labels[constants.ImageTypeKey] != "" {
-		imageType = v2.ImageType(mount.Labels[constants.ImageTypeKey])
+	if mount.Labels[v2.ImageTypeKey] != "" {
+		imageType = v2.ImageType(mount.Labels[v2.ImageTypeKey])
 	}
 	mount.Type = imageType
 	return nil
