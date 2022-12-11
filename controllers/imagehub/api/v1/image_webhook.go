@@ -31,11 +31,11 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-func (r *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutater{Client: mgr.GetClient()}
 	v := &ImageValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(i).
 		WithDefaulter(m).
 		WithValidator(v).
 		Complete()
@@ -49,7 +49,7 @@ type ImageMutater struct {
 	client.Client
 }
 
-func (r *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
+func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
 	img, ok := obj.(*Image)
 	if !ok {
 		return errors.New("obj convert Image is error")
