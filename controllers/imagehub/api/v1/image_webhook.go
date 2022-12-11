@@ -121,6 +121,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		imagelog.Info("get request from context error when validate", "image name", i.Name)
 		return err
 	}
+	imagelog.Info("checking user", "user", req.UserInfo.Username)
 	for _, usr := range org.Spec.Manager {
 		if usr == req.UserInfo.Username {
 			return nil
