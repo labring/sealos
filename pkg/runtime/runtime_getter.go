@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/bootstrap"
@@ -107,7 +109,11 @@ func (k *KubeadmRuntime) getVIPFromImage() string {
 	vip := labels[constants.ImageVIPKey]
 	if vip == "" {
 		vip = DefaultVIP
+	} else {
+		envs := k.getENVInterface().WrapperEnv(k.getMaster0IP())
+		vip = strings2.RenderTextFromEnv(vip, envs)
 	}
+	logger.Debug("get vip is %s", vip)
 	return vip
 }
 

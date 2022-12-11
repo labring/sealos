@@ -148,6 +148,7 @@ func (c *client) connect(kind, socket string, options ConnectOptions) (*grpc.Cli
 	}
 
 	dialOpts := []grpc.DialOption{
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMsgSize)),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),
 		grpc.FailOnNonTempDialError(true),

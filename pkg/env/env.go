@@ -61,7 +61,7 @@ func (p *processor) WrapperEnv(host string) map[string]string {
 }
 func (p *processor) WrapperShell(host, shell string) string {
 	envs := p.getHostEnv(host)
-	return strings2.EnvFromMap(shell, envs)
+	return strings2.RenderShellFromEnv(shell, envs)
 }
 
 func (p *processor) RenderAll(host, dir string) error {
