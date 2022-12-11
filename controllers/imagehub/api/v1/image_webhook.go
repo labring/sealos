@@ -31,25 +31,23 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-func (r *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
+func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutater{Client: mgr.GetClient()}
 	v := &ImageValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
+		For(i).
 		WithDefaulter(m).
 		WithValidator(v).
 		Complete()
 }
 
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
-//+kubebuilder:object:generate=false
 
 type ImageMutater struct {
-	admission.Defaulter
 	client.Client
 }
 
-func (r *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
+func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
 	img, ok := obj.(*Image)
 	if !ok {
 		return errors.New("obj convert Image is error")
@@ -63,11 +61,9 @@ func (r *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
-//+kubebuilder:object:generate=false
 
 // ImageValidator will validate Images change.
 type ImageValidator struct {
-	admission.Validator
 	Client client.Client
 }
 
@@ -109,6 +105,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 	if !i.checkLables() || !i.checkSpecName() {
 		return fmt.Errorf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
 	}
+	imagelog.Info("getting org", "org", i.Spec.Name.GetOrg())
 	org := &Organization{}
 	if err := c.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
@@ -121,6 +118,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		imagelog.Info("get request from context error when validate", "image name", i.Name)
 		return err
 	}
+	imagelog.Info("checking user", "user", req.UserInfo.Username)
 	for _, usr := range org.Spec.Manager {
 		if usr == req.UserInfo.Username {
 			return nil
