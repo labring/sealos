@@ -69,7 +69,6 @@ func newDefaultPushOptions() *pushOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
-		tlsVerify:  true,
 	}
 }
 
@@ -185,7 +184,9 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 		dest = dest2
 		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
-
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)

@@ -55,7 +55,7 @@ func (opts *manifestCreateOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringVar(&opts.os, "os", "", "if any of the specified images is a list, choose the one for `os`")
 	fs.StringVar(&opts.arch, "arch", "", "if any of the specified images is a list, choose the one for `arch`")
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"os", "arch", "insecure"}...)
 }
@@ -78,7 +78,7 @@ func (opts *manifestAddOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringSliceVar(&opts.osFeatures, "os-features", nil, "override the OS `features` of the specified image")
 	fs.StringSliceVar(&opts.annotations, "annotation", nil, "set an `annotation` for the specified image")
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.all, "all", false, "add all of the list's images if the image is a list")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"insecure"}...)
@@ -248,7 +248,7 @@ func newManifestCommand() *cobra.Command {
 	fs.StringVar(&manifestPushOpts.signBy, "sign-by", "", "sign the image using a GPG key with the specified `FINGERPRINT`")
 	fs.StringVar(&manifestPushOpts.signaturePolicy, "signature-policy", "", "`pathname` of signature policy file (not usually used)")
 	fs.BoolVar(&manifestPushOpts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	err = markFlagsHidden(fs, "signature-policy", "insecure")
@@ -307,11 +307,13 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 	listImageSpec := args[0]
 	imageSpecs := args[1:]
 
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	store, err := getStore(c)
 	if err != nil {
 		return err
 	}
-
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
@@ -381,6 +383,9 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 
 func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error {
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
+		return err
+	}
+	if err := setDefaultFlags(c); err != nil {
 		return err
 	}
 
@@ -840,6 +845,9 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ty
 
 func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
+		return err
+	}
+	if err := setDefaultFlags(c); err != nil {
 		return err
 	}
 
