@@ -69,7 +69,6 @@ func newDefaultPushOptions() *pushOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
-		tlsVerify:  true,
 	}
 }
 
@@ -120,7 +119,7 @@ func newPushCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s push imageID docker://registry.example.com/repository:tag
   %[1]s push imageID docker-daemon:image:tagi
-  %[1]s push imageID oci:/path/to/layout:image:tag`, rootCmd.Name()),
+  %[1]s push imageID oci:/path/to/layout:image:tag`, rootCmdName),
 	}
 	pushCommand.SetUsageTemplate(UsageTemplate())
 	err := opts.RegisterFlags(pushCommand.Flags())
@@ -185,7 +184,9 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 		dest = dest2
 		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
-
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)

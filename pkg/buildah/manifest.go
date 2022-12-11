@@ -55,7 +55,7 @@ func (opts *manifestCreateOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringVar(&opts.os, "os", "", "if any of the specified images is a list, choose the one for `os`")
 	fs.StringVar(&opts.arch, "arch", "", "if any of the specified images is a list, choose the one for `arch`")
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"os", "arch", "insecure"}...)
 }
@@ -78,7 +78,7 @@ func (opts *manifestAddOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringSliceVar(&opts.osFeatures, "os-features", nil, "override the OS `features` of the specified image")
 	fs.StringSliceVar(&opts.annotations, "annotation", nil, "set an `annotation` for the specified image")
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&opts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.all, "all", false, "add all of the list's images if the image is a list")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	return markFlagsHidden(fs, []string{"insecure"}...)
@@ -134,7 +134,7 @@ func newManifestCommand() *cobra.Command {
   %[1]s manifest inspect localhost/list
   %[1]s manifest push localhost/list transport:destination
   %[1]s manifest remove localhost/list sha256:entryManifestDigest
-  %[1]s manifest rm localhost/list`, rootCmd.Name()),
+  %[1]s manifest rm localhost/list`, rootCmdName),
 	}
 	manifestCommand.SetUsageTemplate(UsageTemplate())
 
@@ -147,7 +147,7 @@ func newManifestCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s manifest create mylist:v1.11
   %[1]s manifest create mylist:v1.11 arch-specific-image-to-add
-  %[1]s manifest create --all mylist:v1.11 transport:tagged-image-to-add`, rootCmd.Name()),
+  %[1]s manifest create --all mylist:v1.11 transport:tagged-image-to-add`, rootCmdName),
 		Args: cobra.MinimumNArgs(1),
 	}
 	manifestCreateCommand.SetUsageTemplate(UsageTemplate())
@@ -163,7 +163,7 @@ func newManifestCommand() *cobra.Command {
 			return manifestAddCmd(cmd, args, manifestAddOpts)
 		},
 		Example: fmt.Sprintf(`%[1]s manifest add mylist:v1.11 image:v1.11-amd64
-  %[1]s manifest add mylist:v1.11 transport:imageName`, rootCmd.Name()),
+  %[1]s manifest add mylist:v1.11 transport:imageName`, rootCmdName),
 		Args: cobra.MinimumNArgs(2),
 	}
 	manifestAddCommand.SetUsageTemplate(UsageTemplate())
@@ -178,7 +178,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestRemoveCmd(cmd, args, manifestRemoveOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736`, rootCmdName),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestRemoveCommand.SetUsageTemplate(UsageTemplate())
@@ -192,7 +192,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestExistsCmd(cmd, args)
 		},
-		Example: fmt.Sprintf(`%s manifest exists mylist`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest exists mylist`, rootCmdName),
 	}
 	manifestExistsCommand.SetUsageTemplate(UsageTemplate())
 	manifestCommand.AddCommand(manifestExistsCommand)
@@ -204,7 +204,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestAnnotateCmd(cmd, args, manifestAnnotateOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64`, rootCmdName),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestAnnotateCommand.SetUsageTemplate(UsageTemplate())
@@ -219,7 +219,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestInspectCmd(cmd, args, manifestInspectOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest inspect mylist:v1.11`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest inspect mylist:v1.11`, rootCmdName),
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestInspectCommand.SetUsageTemplate(UsageTemplate())
@@ -232,7 +232,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestPushCmd(cmd, args, manifestPushOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest push mylist:v1.11 transport:imageName`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest push mylist:v1.11 transport:imageName`, rootCmdName),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestPushCommand.SetUsageTemplate(UsageTemplate())
@@ -248,7 +248,7 @@ func newManifestCommand() *cobra.Command {
 	fs.StringVar(&manifestPushOpts.signBy, "sign-by", "", "sign the image using a GPG key with the specified `FINGERPRINT`")
 	fs.StringVar(&manifestPushOpts.signaturePolicy, "signature-policy", "", "`pathname` of signature policy file (not usually used)")
 	fs.BoolVar(&manifestPushOpts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", true, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
 	fs.SetNormalizeFunc(cli.AliasFlags)
 	err = markFlagsHidden(fs, "signature-policy", "insecure")
@@ -262,7 +262,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestRmCmd(cmd, args)
 		},
-		Example: fmt.Sprintf(`%s manifest rm mylist:v1.11`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s manifest rm mylist:v1.11`, rootCmdName),
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestRmCommand.SetUsageTemplate(UsageTemplate())
@@ -307,11 +307,13 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 	listImageSpec := args[0]
 	imageSpecs := args[1:]
 
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	store, err := getStore(c)
 	if err != nil {
 		return err
 	}
-
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
@@ -381,6 +383,9 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 
 func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error {
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
+		return err
+	}
+	if err := setDefaultFlags(c); err != nil {
 		return err
 	}
 
@@ -840,6 +845,9 @@ func manifestInspect(ctx context.Context, store storage.Store, systemContext *ty
 
 func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
+		return err
+	}
+	if err := setDefaultFlags(c); err != nil {
 		return err
 	}
 

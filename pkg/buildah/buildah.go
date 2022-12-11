@@ -107,6 +107,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
+	rootCmdName       string
 	postRunHooks      []func() error
 )
 
@@ -146,12 +147,22 @@ func subCommands() []*cobra.Command {
 func RegisterRootCommand(cmd *cobra.Command) {
 	os.Setenv("TMPDIR", parse.GetTempDir())
 	rootCmd = cmd
+	rootCmdName = getFullCmdName(rootCmd) // incase it's registered to a sub command.
 	cmd.SilenceUsage = true
 	err := RegisterGlobalFlags(cmd.PersistentFlags())
 	bailOnError(err, "failed to register global flags")
 	wrapPrePersistentRun(cmd)
 	wrapPostPersistentRun(cmd)
 	cmd.AddCommand(subCommands()...)
+}
+
+func getFullCmdName(cmd *cobra.Command) string {
+	name := cmd.Name()
+	for cmd.Parent() != nil {
+		name = fmt.Sprintf("%s %s", cmd.Parent().Name(), name)
+		cmd = cmd.Parent()
+	}
+	return name
 }
 
 func RegisterPostRun(fn func() error) {

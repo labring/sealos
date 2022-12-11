@@ -70,7 +70,7 @@ func newInspectCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s inspect containerID
   %[1]s inspect --type image imageID
-  %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmd.Name()),
+  %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmdName),
 	}
 	inspectCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(inspectCommand.Flags())
