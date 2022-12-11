@@ -42,10 +42,8 @@ func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
-//+kubebuilder:object:generate=false
 
 type ImageMutater struct {
-	admission.Defaulter
 	client.Client
 }
 
@@ -63,11 +61,9 @@ func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
-//+kubebuilder:object:generate=false
 
 // ImageValidator will validate Images change.
 type ImageValidator struct {
-	admission.Validator
 	Client client.Client
 }
 
