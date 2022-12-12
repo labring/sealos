@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: lingdie
-  namespace: default
+  namespace: user-system
 secrets:
   - name: sa-lingdie-secret
 ---
@@ -10,6 +10,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: sa-lingdie-secret
+  namespace: user-system
   annotations:
     kubernetes.io/service-account.name: lingdie
 type: kubernetes.io/service-account-token
@@ -27,7 +28,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: labring
-  namespace: default
+  namespace: user-system
 secrets:
   - name: sa-labring-secret
 ---
@@ -35,6 +36,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: sa-labring-secret
+  namespace: user-system
   annotations:
     kubernetes.io/service-account.name: labring
 type: kubernetes.io/service-account-token

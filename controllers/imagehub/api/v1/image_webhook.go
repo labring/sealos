@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -30,6 +31,8 @@ import (
 
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
+
+const saPrefix = "system:serviceaccount:user-system:"
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutater{}
@@ -73,6 +76,7 @@ func (v *ImageValidator) ValidateCreate(ctx context.Context, obj runtime.Object)
 		return errors.New("obj convert Image is error")
 	}
 	imagelog.Info("validating create", "name", i.Name)
+	imagelog.Info("enter checkOption func", "name", i.Name)
 	return checkOption(ctx, v.Client, i)
 }
 
@@ -89,6 +93,7 @@ func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runt
 	if ni.Spec.Name != oi.Spec.Name {
 		return fmt.Errorf("can not change spec.name: %s", string(ni.Spec.Name))
 	}
+	imagelog.Info("enter checkOption func", "name", ni.Name)
 	return checkOption(ctx, v.Client, ni)
 }
 
@@ -98,6 +103,7 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 		return errors.New("obj convert Image is error")
 	}
 	imagelog.Info("validating delete", "name", i.Name)
+	imagelog.Info("enter checkOption func", "name", i.Name)
 	return checkOption(ctx, v.Client, i)
 }
 
@@ -114,6 +120,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		}
 		return fmt.Errorf("get Organization error %s", i.Spec.Name.GetOrg())
 	}
+	imagelog.Info("org info", "org", org)
 	imagelog.Info("getting req from ctx")
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -121,8 +128,15 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		return err
 	}
 	imagelog.Info("checking user", "user", req.UserInfo.Username)
+	// req.UserInfo.Username e.g: system:serviceaccount:user-system:labring
+	if !strings.HasPrefix(req.UserInfo.Username, saPrefix) {
+		return fmt.Errorf("denied, you are not one of user in %s", saPrefix)
+	}
+	// replace it and compare
+	userName := strings.Replace(req.UserInfo.Username, saPrefix, "", -1)
+	imagelog.Info("checking username", "user", userName)
 	for _, usr := range org.Spec.Manager {
-		if usr == req.UserInfo.Username {
+		if usr == userName {
 			return nil
 		}
 	}
