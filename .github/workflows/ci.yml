@@ -12,12 +12,17 @@ on:
       - "docs/**"
       - "**/*.md"
       - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
   pull_request:
     branches: ["*"]
     paths-ignore:
       - "docs/**"
+      - "CHANGELOG/**"
       - "**/*.md"
       - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
 
 jobs:
   format-code:
