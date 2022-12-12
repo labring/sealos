@@ -90,7 +90,7 @@ func (r *Repository) checkSpecName() bool {
 	return r.Spec.Name.IsLegal()
 }
 
-func (r *Repository) checkLables() bool {
+func (r *Repository) checkLabels() bool {
 	return r.Labels[SealosOrgLable] == r.Spec.Name.GetOrg() &&
 		r.Labels[SealosRepoLabel] == r.Spec.Name.GetRepo()
 }

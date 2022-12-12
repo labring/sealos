@@ -32,7 +32,7 @@ import (
 var imagelog = logf.Log.WithName("image-resource")
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	m := &ImageMutater{Client: mgr.GetClient()}
+	m := &ImageMutater{}
 	v := &ImageValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(i).
@@ -44,7 +44,6 @@ func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
 
 type ImageMutater struct {
-	client.Client
 }
 
 func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
@@ -61,10 +60,11 @@ func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
 // ImageValidator will validate Images change.
 type ImageValidator struct {
-	Client client.Client
+	client.Client
 }
 
 func (v *ImageValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
@@ -102,8 +102,9 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 }
 
 func checkOption(ctx context.Context, c client.Client, i *Image) error {
-	if !i.checkLables() || !i.checkSpecName() {
-		return fmt.Errorf("missing lables or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
+	imagelog.Info("checking label and spec name", "image name", i.Spec.Name)
+	if !i.checkLabels() || !i.checkSpecName() {
+		return fmt.Errorf("missing labels or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
 	}
 	imagelog.Info("getting org", "org", i.Spec.Name.GetOrg())
 	org := &Organization{}
@@ -113,6 +114,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		}
 		return fmt.Errorf("get Organization error %s", i.Spec.Name.GetOrg())
 	}
+	imagelog.Info("getting req from ctx")
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
 		imagelog.Info("get request from context error when validate", "image name", i.Name)
