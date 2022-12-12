@@ -75,12 +75,12 @@ func (r *OrganizationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return r.doReconcile(ctx, org)
+		return r.reconcile(ctx, org)
 	}
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-func (r *OrganizationReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *OrganizationReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller org", "request", client.ObjectKeyFromObject(obj))
 	org, ok := obj.(*imagehubv1.Organization)
 	if !ok {

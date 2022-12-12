@@ -72,12 +72,12 @@ func (r *RepositoryReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		return r.doReconcile(ctx, repo)
+		return r.reconcile(ctx, repo)
 	}
 	return ctrl.Result{}, errors.New("reconcile error from Finalizer")
 }
 
-func (r *RepositoryReconciler) doReconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
 	r.Logger.V(1).Info("update reconcile controller repo", "request", client.ObjectKeyFromObject(obj))
 	repo, ok := obj.(*imagehubv1.Repository)
 	if !ok {
