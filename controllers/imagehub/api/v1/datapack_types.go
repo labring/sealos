@@ -90,8 +90,6 @@ func (i *ImageGridData) New(fd *FullData) {
 	i.Name = fd.ImageInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
-	i.AuthorIcon = fd.ImageInfo.DetailInfo.AuthorIcon
-	i.Rating = fd.ImageInfo.DetailInfo.Rating
 }
 func (i *ImageGridData) ToData() Data {
 	return Data{
@@ -126,11 +124,8 @@ func (i *ImageDetailData) New(fd *FullData) {
 	i.RepoName = fd.RepoInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
-	i.AuthorIcon = fd.ImageInfo.DetailInfo.AuthorIcon
-	i.Rating = fd.ImageInfo.DetailInfo.Rating
 
 	i.ID = fd.ImageInfo.DetailInfo.ID
-	i.URL = fd.ImageInfo.DetailInfo.URL
 	i.Docs = fd.ImageInfo.DetailInfo.Docs
 	i.Size = fd.ImageInfo.DetailInfo.Size
 	i.Arch = fd.ImageInfo.DetailInfo.Arch
