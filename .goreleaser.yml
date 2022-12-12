@@ -56,7 +56,8 @@ builds:
 
   - id: sealctl
     env:
-      - CGO_ENABLED=0
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
     main: ./cmd/sealctl
     hooks:
       post: upx "{{ .Path }}"
@@ -80,6 +81,15 @@ builds:
       - -X github.com/labring/sealos/pkg/version.gitCommit={{.ShortCommit}}
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
+    overrides:
+      - goos: linux
+        goarch: amd64
+        goamd64: v1
+        goarm: ""
+        gomips: ""
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-linux-gnu-gcc
 
   - id: lvscare
     env:
@@ -237,8 +247,8 @@ publishers:
       curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
 
 checksum:
-  disable: true
   name_template: "{{ .ProjectName }}_checksums.txt"
-
+  algorithm: sha256
+  
 snapshot:
   name_template: "{{ .Tag }}-next"
