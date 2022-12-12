@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,7 +33,7 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-const saPrefix = "system:serviceaccount:user-system:"
+const saPrefix = "system:serviceaccount"
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutater{}
@@ -128,12 +129,14 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 		return err
 	}
 	imagelog.Info("checking user", "user", req.UserInfo.Username)
+	// get sa namespace prefix, prefix format is like: "system:serviceaccount:user-system:"
+	namespacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace())
 	// req.UserInfo.Username e.g: system:serviceaccount:user-system:labring
-	if !strings.HasPrefix(req.UserInfo.Username, saPrefix) {
-		return fmt.Errorf("denied, you are not one of user in %s", saPrefix)
+	if !strings.HasPrefix(req.UserInfo.Username, namespacePrefix) {
+		return fmt.Errorf("denied, you are not one of user in %s", namespacePrefix)
 	}
 	// replace it and compare
-	userName := strings.Replace(req.UserInfo.Username, saPrefix, "", -1)
+	userName := strings.Replace(req.UserInfo.Username, namespacePrefix, "", -1)
 	imagelog.Info("checking username", "user", userName)
 	for _, usr := range org.Spec.Manager {
 		if usr == userName {
@@ -142,4 +145,12 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 	}
 	imagelog.Info("denied", "image name", i.Name)
 	return fmt.Errorf("denied, you are not one of organization %s managers", i.Spec.Name.GetOrg())
+}
+
+func getUserNamespace() string {
+	userNameSpace := os.Getenv("USER_NAMESPACE")
+	if userNameSpace == "" {
+		return "user-system"
+	}
+	return userNameSpace
 }
