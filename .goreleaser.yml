@@ -246,9 +246,14 @@ publishers:
     cmd: |
       curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
 
+archives:
+  - id: archive
+
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
   algorithm: sha256
+  ids:
+    - archive
   
 snapshot:
   name_template: "{{ .Tag }}-next"
