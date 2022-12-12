@@ -33,7 +33,10 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-const saPrefix = "system:serviceaccount"
+const (
+	saPrefix             = "system:serviceaccount"
+	defaultUsernamespace = "user-system"
+)
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutater{}
@@ -150,7 +153,7 @@ func checkOption(ctx context.Context, c client.Client, i *Image) error {
 func getUserNamespace() string {
 	userNameSpace := os.Getenv("USER_NAMESPACE")
 	if userNameSpace == "" {
-		return "user-system"
+		return defaultUsernamespace
 	}
 	return userNameSpace
 }
