@@ -135,7 +135,7 @@ func (i *Image) checkSpecName() bool {
 	return i.Spec.Name.IsLegal()
 }
 
-func (i *Image) checkLables() bool {
+func (i *Image) checkLabels() bool {
 	return i.Labels[SealosOrgLable] == i.Spec.Name.GetOrg() &&
 		i.Labels[SealosRepoLabel] == i.Spec.Name.GetRepo() &&
 		i.Labels[SealosTagLabel] == i.Spec.Name.GetTag()

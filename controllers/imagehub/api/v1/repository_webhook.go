@@ -59,7 +59,7 @@ func (r *Repository) ValidateCreate() error {
 	if !r.checkSpecName() {
 		return fmt.Errorf("repo name illegal")
 	}
-	if !r.checkLables() {
+	if !r.checkLabels() {
 		return fmt.Errorf("repo lable illegal")
 	}
 	return nil
@@ -71,7 +71,7 @@ func (r *Repository) ValidateUpdate(old runtime.Object) error {
 	if !r.checkSpecName() {
 		return fmt.Errorf("repo name illegal")
 	}
-	if !r.checkLables() {
+	if !r.checkLabels() {
 		return fmt.Errorf("repo lable illegal")
 	}
 	return nil
