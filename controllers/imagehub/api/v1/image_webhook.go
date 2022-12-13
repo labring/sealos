@@ -34,11 +34,6 @@ import (
 // log is for logging in this package.
 var imagelog = logf.Log.WithName("image-resource")
 
-const (
-	saPrefix             = "system:serviceaccount"
-	defaultUsernamespace = "user-system"
-)
-
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	m := &ImageMutator{}
 	v := &ImageValidator{Client: mgr.GetClient()}

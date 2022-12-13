@@ -21,6 +21,11 @@ const (
 	ERROR   Codes = 3
 )
 
+const (
+	saPrefix             = "system:serviceaccount"
+	defaultUsernamespace = "user-system"
+)
+
 type Checker interface {
 	checkSpecName() bool
 	checkLabels() bool
