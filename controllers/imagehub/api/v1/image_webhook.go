@@ -81,7 +81,7 @@ func (v *ImageValidator) ValidateCreate(ctx context.Context, obj runtime.Object)
 	}
 	imagelog.Info("validating create", "name", i.Name)
 	imagelog.Info("enter checkOption func", "name", i.Name)
-	return checkOption(ctx, v.Client, i)
+	return v.checkOption(ctx, i)
 }
 
 func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
@@ -98,7 +98,7 @@ func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runt
 		return fmt.Errorf("can not change spec.name: %s", string(ni.Spec.Name))
 	}
 	imagelog.Info("enter checkOption func", "name", ni.Name)
-	return checkOption(ctx, v.Client, ni)
+	return v.checkOption(ctx, ni)
 }
 
 func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
@@ -108,17 +108,17 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 	}
 	imagelog.Info("validating delete", "name", i.Name)
 	imagelog.Info("enter checkOption func", "name", i.Name)
-	return checkOption(ctx, v.Client, i)
+	return v.checkOption(ctx, i)
 }
 
-func checkOption(ctx context.Context, c client.Client, i *Image) error {
+func (v *ImageValidator) checkOption(ctx context.Context, i *Image) error {
 	imagelog.Info("checking label and spec name", "image name", i.Spec.Name)
 	if !i.checkLabels() || !i.checkSpecName() {
 		return fmt.Errorf("missing labels or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
 	}
 	imagelog.Info("getting org", "org", i.Spec.Name.GetOrg())
 	org := &Organization{}
-	if err := c.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
+	if err := v.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
 			return fmt.Errorf("organization not exited %s", i.Spec.Name.GetOrg())
 		}
