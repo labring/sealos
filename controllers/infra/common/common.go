@@ -15,6 +15,8 @@ const (
 	TrySleepTime         = time.Second
 	TRUELable            = "true"
 	SealosInfraFinalizer = "infra.sealos.io/finalizers"
+	InfraVolumeIndex     = "Index"
+	VolumeInfraID        = "InfraID"
 )
 
 var DefaultRootVolumeSize = int32(40)

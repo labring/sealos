@@ -248,11 +248,16 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 							break
 						}
 					}
+					volIndex, err := getVolIndex(vol)
+					if err != nil {
+						return nil, fmt.Errorf("aws ecs not found vplume index label: %v", err)
+					}
 					disks = append(disks, v1.Disk{
 						Capacity:   int(*vol.Size),
 						VolumeType: string(vol.VolumeType),
 						Type:       diskType,
-						Name:       *vol.VolumeId,
+						ID:         *vol.VolumeId,
+						Index:      volIndex,
 					})
 				}
 			}
@@ -370,6 +375,15 @@ func getIndex(i types.Instance) (int, error) {
 		}
 	}
 	return -1, fmt.Errorf("not found index tag: %v", i.Tags)
+}
+
+func getVolIndex(v types.Volume) (int, error) {
+	for _, tag := range v.Tags {
+		if *tag.Key == common.InfraVolumeIndex {
+			return strconv.Atoi(*tag.Value)
+		}
+	}
+	return -1, fmt.Errorf("volume index not found: %v", v.Tags)
 }
 
 //func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
