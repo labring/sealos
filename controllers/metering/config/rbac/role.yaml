@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - metering.sealos.io
   resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourceprices/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourceprices/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
   - meterings
   verbs:
   - create
@@ -27,6 +53,32 @@ rules:
   - metering.sealos.io
   resources:
   - meterings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources/status
   verbs:
   - get
   - patch

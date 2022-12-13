@@ -1,0 +1,6 @@
+apiVersion: metering.sealos.io/v1
+kind: PodResource
+metadata:
+  name: podresource-sample
+spec:
+  # TODO(user): Add fields here

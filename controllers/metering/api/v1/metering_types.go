@@ -18,7 +18,16 @@ package v1
 
 import (
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type TimeIntervalType string
+
+const (
+	MINUTE TimeIntervalType = "Minute"
+	HOUR   TimeIntervalType = "Hour"
+	DAY    TimeIntervalType = "Day"
 )
 
 /*
@@ -30,23 +39,30 @@ Spec:
     	owner: fanux
     	namespace: string
         resources: v1.ResourceList // resource type
+		timeInterval:60 // time interval
 */
 
 // MeteringSpec defines the desired state of Metering
 
 type MeteringSpec struct {
-	Namespace string          `json:"namespace"`
-	Owner     string          `json:"owner"`
-	Resources v1.ResourceList `json:"resources,omitempty"`
+	Namespace string `json:"namespace"`
+	Owner     string `json:"owner"`
+
+	//timeInterval unit is minutes
+	TimeInterval int                                      `json:"timeInterval"`
+	Resources    map[v1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
 }
 
-type TimeIntervalType string
+type ResourcePrice struct {
+	Unit     *resource.Quantity `json:"unit"`
+	Price    int64              `json:"price"` // 100 = 1¥
+	Describe string             `json:"describe,omitempty"`
+}
 
-const (
-	MINUTE TimeIntervalType = "Minute"
-	HOUR   TimeIntervalType = "Hour"
-	DAY    TimeIntervalType = "Day"
-)
+type ResourcePriceAndUsed struct {
+	ResourcePrice `json:",inline"`
+	Used          *resource.Quantity `json:"used,omitempty"`
+}
 
 type BillingList struct {
 	TimeStamp    int64            `json:"timeStamp,omitempty"`
@@ -56,11 +72,7 @@ type BillingList struct {
 }
 
 // MeteringStatus defines the observed state of Metering
-
 type MeteringStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	BillingListM     []BillingList `json:"billingListM,omitempty"`
 	BillingListH     []BillingList `json:"billingListH,omitempty"`
 	BillingListD     []BillingList `json:"billingListD,omitempty"`
 	TotalAmount      int64         `json:"totalAmount,omitempty"`

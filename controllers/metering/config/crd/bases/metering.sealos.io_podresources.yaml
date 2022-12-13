@@ -5,31 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: meterings.metering.sealos.io
+  name: podresources.metering.sealos.io
 spec:
   group: metering.sealos.io
   names:
-    kind: Metering
-    listKind: MeteringList
-    plural: meterings
-    singular: metering
+    kind: PodResource
+    listKind: PodResourceList
+    plural: podresources
+    singular: podresource
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.owner
-      name: owner
-      type: string
-    - description: ' The last two digits are decimals ,100 = 1¥'
-      jsonPath: .status.totalAmount
-      name: totalAmount
-      type: integer
-    - jsonPath: .metadata.creationTimestamp
-      name: Age
-      type: date
-    name: v1
+  - name: v1
     schema:
       openAPIV3Schema:
-        description: Metering is the Schema for the meterings API
+        description: PodResource is the Schema for the podresources API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -44,10 +33,13 @@ spec:
           metadata:
             type: object
           spec:
+            description: PodResourceSpec defines the desired state of PodResource
             properties:
-              namespace:
-                type: string
-              owner:
+              interval:
+                default: 60
+                minimum: 1
+                type: integer
+              resourceName:
                 type: string
               resources:
                 additionalProperties:
@@ -63,60 +55,16 @@ spec:
                       - type: string
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
-                    used:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
                   required:
                   - price
                   - unit
                   type: object
                 type: object
-              timeInterval:
-                type: integer
-            required:
-            - namespace
-            - owner
-            - timeInterval
             type: object
           status:
+            description: PodResourceStatus defines the observed state of PodResource
             properties:
-              billingListD:
-                items:
-                  properties:
-                    amount:
-                      format: int64
-                      type: integer
-                    settled:
-                      type: boolean
-                    timeInterval:
-                      type: string
-                    timeStamp:
-                      format: int64
-                      type: integer
-                  type: object
-                type: array
-              billingListH:
-                items:
-                  properties:
-                    amount:
-                      format: int64
-                      type: integer
-                    settled:
-                      type: boolean
-                    timeInterval:
-                      type: string
-                    timeStamp:
-                      format: int64
-                      type: integer
-                  type: object
-                type: array
               latestUpdateTime:
-                format: int64
-                type: integer
-              totalAmount:
                 format: int64
                 type: integer
             type: object
