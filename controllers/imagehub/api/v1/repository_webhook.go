@@ -43,6 +43,7 @@ func (r *Repository) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-repository,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=repositories,verbs=create;update,versions=v1,name=mrepository.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
 type RepoMutator struct {
 	client.Client
@@ -62,6 +63,7 @@ func (m RepoMutator) Default(ctx context.Context, obj runtime.Object) error {
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-repository,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=repositories,verbs=create;update;delete,versions=v1,name=vrepository.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
 // RepoValidator will validate Repositories change.
 type RepoValidator struct {
