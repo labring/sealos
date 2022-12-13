@@ -130,6 +130,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - repositories
   sideEffects: None

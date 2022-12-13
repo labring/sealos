@@ -17,70 +17,90 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 // log is for logging in this package.
 var repositorylog = logf.Log.WithName("repository-resource")
 
 func (r *Repository) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	m := &RepoMutator{Client: mgr.GetClient()}
+	v := &RepoValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(m).
+		WithValidator(v).
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-repository,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=repositories,verbs=create;update,versions=v1,name=mrepository.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
-var _ webhook.Defaulter = &Repository{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Repository) Default() {
-	repositorylog.Info("default", "name", r.Name)
-	r.ObjectMeta = initAnnotationAndLabels(r.ObjectMeta)
-	r.ObjectMeta.Labels[SealosOrgLable] = r.Spec.Name.GetOrg()
-	r.ObjectMeta.Labels[SealosRepoLabel] = r.Spec.Name.GetRepo()
+type RepoMutator struct {
+	client.Client
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-repository,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=repositories,verbs=create;update,versions=v1,name=vrepository.kb.io,admissionReviewVersions=v1
-
-var _ webhook.Validator = &Repository{}
-
-// ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *Repository) ValidateCreate() error {
-	repositorylog.Info("validate create", "name", r.Name)
-	if !r.checkSpecName() {
-		return fmt.Errorf("repo name illegal")
+func (m RepoMutator) Default(ctx context.Context, obj runtime.Object) error {
+	repo, ok := obj.(*Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
 	}
-	if !r.checkLabels() {
-		return fmt.Errorf("repo lable illegal")
-	}
+	repositorylog.Info("default", "name", repo.Name)
+	repo.ObjectMeta = initAnnotationAndLabels(repo.ObjectMeta)
+	repo.ObjectMeta.Labels[SealosOrgLable] = repo.Spec.Name.GetOrg()
+	repo.ObjectMeta.Labels[SealosRepoLabel] = repo.Spec.Name.GetRepo()
+
 	return nil
 }
 
-// ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Repository) ValidateUpdate(old runtime.Object) error {
-	repositorylog.Info("validate update", "name", r.Name)
-	if !r.checkSpecName() {
-		return fmt.Errorf("repo name illegal")
-	}
-	if !r.checkLabels() {
-		return fmt.Errorf("repo lable illegal")
-	}
-	return nil
+//+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-repository,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=repositories,verbs=create;update;delete,versions=v1,name=vrepository.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
+
+// RepoValidator will validate Repositories change.
+type RepoValidator struct {
+	client.Client
 }
 
-// ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *Repository) ValidateDelete() error {
-	repositorylog.Info("validate delete", "name", r.Name)
+func (v *RepoValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	r, ok := obj.(*Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
+	}
+	repositorylog.Info("validating create", "name", r.Name)
+	repositorylog.Info("enter checkOption func", "name", r.Name)
+	return checkOption(ctx, repositorylog, v.Client, r)
+}
 
-	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+func (v *RepoValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+	nr, ok := newObj.(*Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
+	}
+	or, ok := oldObj.(*Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
+	}
+	imagelog.Info("validating update", "name", or.Name)
+	if nr.Spec.Name != or.Spec.Name {
+		return fmt.Errorf("can not change spec.name: %s", string(nr.Spec.Name))
+	}
+	imagelog.Info("enter checkOption func", "name", nr.Name)
+	return checkOption(ctx, repositorylog, v.Client, nr)
+}
+
+func (v *RepoValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	r, ok := obj.(*Repository)
+	if !ok {
+		return errors.New("obj convert Repository is error")
+	}
+	repositorylog.Info("validating delete", "name", r.Name)
+	repositorylog.Info("enter checkOption func", "name", r.Name)
+	return checkOption(ctx, repositorylog, v.Client, r)
 }
