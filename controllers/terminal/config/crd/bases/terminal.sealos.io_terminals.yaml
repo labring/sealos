@@ -58,9 +58,13 @@ spec:
             properties:
               apiServer:
                 type: string
-              keepalived:
+              ingressType:
+                default: nginx
+                enum:
+                - nginx
+                - apisix
                 type: string
-              namespace:
+              keepalived:
                 type: string
               replicas:
                 format: int32
