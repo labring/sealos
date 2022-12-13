@@ -1,0 +1,24 @@
+@import './pgsql.common.scss';
+
+.card {
+  width: 100%;
+  background-color: $color-global-white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.title {
+  font-weight: 500;
+  font-size: 16px;
+  color: #273b58;
+  margin: 12px 0;
+}
+
+.deleteBtn {
+  @include iconBox(32px, rgba(236, 137, 45, 0.15), 50%, 8px);
+}
+
+.closeBtn {
+  @include iconBox(32px, rgba(255, 255, 255, 0.8), 12px, 8px);
+}
