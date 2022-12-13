@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cat << EOF > CHANGELOG-${VERSION}.md
+cat << EOF > CHANGELOG/CHANGELOG-${VERSION}.md
 - [v${VERSION}](#v400)
   - [Downloads for v${VERSION}](#downloads-for-)
     - [Source Code](#source-code)

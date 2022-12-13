@@ -47,7 +47,6 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.6
 ## Changelog since v4.1.4-rc1
 
 ### What's Changed
-
 * feature(main): separate registry from master0 by @xuehaipeng in https://github.com/labring/sealos/pull/1963
 * feature(main): separate registry from master0 by @cuisongliu in https://github.com/labring/sealos/pull/1970
 * feature(main): fix already installed buildah by @cuisongliu in https://github.com/labring/sealos/pull/1968
@@ -75,7 +74,7 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.6
 * feature(main): add webhook config to sdk by @cuisongliu in https://github.com/labring/sealos/pull/2013
 * feature(main): delete pyament env from deploy by @cuisongliu in https://github.com/labring/sealos/pull/2032
 * fix terminal hardcoded problem by @gitccl in https://github.com/labring/sealos/pull/2028
-* add infra other field by @wu-xm in https://github.com/labring/sealos/pull/1994
+* add infra other field by @wuxming in https://github.com/labring/sealos/pull/1994
 * add sealos cloud provider fontend by @zjy365 in https://github.com/labring/sealos/pull/2004
 * Fix yum package manager command. by @zzjin in https://github.com/labring/sealos/pull/2038
 * Add affine app demo. by @zzjin in https://github.com/labring/sealos/pull/2039
@@ -94,11 +93,11 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.6
 * feature(main): fix user controller deploy by @cuisongliu in https://github.com/labring/sealos/pull/2065
 * Begin proposal process by @zzjin in https://github.com/labring/sealos/pull/1916
 * Support ingress static cache by @zzjin in https://github.com/labring/sealos/pull/2072
-* Start Infra and add status  by @wu-xm in https://github.com/labring/sealos/pull/2078
+* Start Infra and add status  by @wuxming in https://github.com/labring/sealos/pull/2078
 * feature(main): fix auth deploy for cluster-image by @cuisongliu in https://github.com/labring/sealos/pull/2083
 * Update frontend nonRoot user. by @zzjin in https://github.com/labring/sealos/pull/2085
 * fix: copy registry to the correct path by @fengxsong in https://github.com/labring/sealos/pull/2087
-* reduction Makefile and add build-multi-arch by @wu-xm in https://github.com/labring/sealos/pull/2093
+* reduction Makefile and add build-multi-arch by @wuxming in https://github.com/labring/sealos/pull/2093
 * example: how to run Redis and Pgsql instance on sealos cloud by @cdjianghan in https://github.com/labring/sealos/pull/2104
 * Update frontend Readme. by @zzjin in https://github.com/labring/sealos/pull/2102
 * fix typo by @fengxsong in https://github.com/labring/sealos/pull/2113
@@ -177,11 +176,14 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.6
 * feature(main): support sys env  by @cuisongliu in https://github.com/labring/sealos/pull/2240
 * feature(main): add build-in env docs by @cuisongliu in https://github.com/labring/sealos/pull/2241
 * fix: set tls-verify option default to false by @fengxsong in https://github.com/labring/sealos/pull/2239
+* Fix: image hub delete useless image detail info. by @lingdie in https://github.com/labring/sealos/pull/2243
+* feature(main): add kubernetes support and changelog by @cuisongliu in https://github.com/labring/sealos/pull/2242
+* Pin ubuntu version in Release workflow, use correct goreleaser args for sealctl and add release checksum by @SignorMercurio in https://github.com/labring/sealos/pull/2249
+* ci: adjust files to be checksumed by @SignorMercurio in https://github.com/labring/sealos/pull/2250
 
 ## New Contributors
-
 * @lingdie made their first contribution in https://github.com/labring/sealos/pull/1988
-* @wu-xm made their first contribution in https://github.com/labring/sealos/pull/1994
+* @wuxming made their first contribution in https://github.com/labring/sealos/pull/1994
 * @zjy365 made their first contribution in https://github.com/labring/sealos/pull/2004
 * @cdjianghan made their first contribution in https://github.com/labring/sealos/pull/2104
 * @xiaohan1202 made their first contribution in https://github.com/labring/sealos/pull/2150
