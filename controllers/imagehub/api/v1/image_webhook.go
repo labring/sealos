@@ -129,6 +129,11 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 		return err
 	}
 	logger.Info("checking user", "user", req.UserInfo.Username)
+	// if user is kubernetes-admin, pass it.
+	if req.UserInfo.Username == kubernetesAdmin {
+		logger.Info("pass for kubernetes-admin")
+		return nil
+	}
 	// if sa is in system:serviceaccount:imagehub-system, pass it.
 	imagehubNameSpacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getImagehubNamespace())
 	if strings.HasPrefix(req.UserInfo.Username, imagehubNameSpacePrefix) {

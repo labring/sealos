@@ -25,6 +25,7 @@ const (
 	saPrefix                 = "system:serviceaccount"
 	defaultUserNamespace     = "user-system"
 	defaultImagehubNamespace = "imagehub-system"
+	kubernetesAdmin          = "kubernetes-admin"
 )
 
 //+kubebuilder:object:generate=false
