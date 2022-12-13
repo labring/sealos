@@ -134,11 +134,19 @@ type Image struct {
 func (i *Image) checkSpecName() bool {
 	return i.Spec.Name.IsLegal()
 }
-
 func (i *Image) checkLabels() bool {
 	return i.Labels[SealosOrgLable] == i.Spec.Name.GetOrg() &&
 		i.Labels[SealosRepoLabel] == i.Spec.Name.GetRepo() &&
 		i.Labels[SealosTagLabel] == i.Spec.Name.GetTag()
+}
+func (i *Image) getSpecName() string {
+	return string(i.Spec.Name)
+}
+func (i *Image) getOrgName() string {
+	return i.Spec.Name.GetOrg()
+}
+func (i *Image) getName() string {
+	return i.Name
 }
 
 //+kubebuilder:object:root=true

@@ -20,3 +20,23 @@ const (
 	PENDING Codes = 2
 	ERROR   Codes = 3
 )
+
+type Checker interface {
+	checkSpecName() bool
+	checkLabels() bool
+	getName() string
+	getSpecName() string
+	getOrgName() string
+}
+
+type OrgCombinator interface {
+	GetOrg() string
+}
+
+type RepoCombinator interface {
+	GetRepo() string
+}
+
+type TagCombinator interface {
+	GetTag() string
+}

@@ -23,6 +23,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,7 +82,7 @@ func (v *ImageValidator) ValidateCreate(ctx context.Context, obj runtime.Object)
 	}
 	imagelog.Info("validating create", "name", i.Name)
 	imagelog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return checkOption(ctx, imagelog, v.Client, i)
 }
 
 func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
@@ -98,7 +99,7 @@ func (v *ImageValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runt
 		return fmt.Errorf("can not change spec.name: %s", string(ni.Spec.Name))
 	}
 	imagelog.Info("enter checkOption func", "name", ni.Name)
-	return v.checkOption(ctx, ni)
+	return checkOption(ctx, imagelog, v.Client, ni)
 }
 
 func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
@@ -108,30 +109,30 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 	}
 	imagelog.Info("validating delete", "name", i.Name)
 	imagelog.Info("enter checkOption func", "name", i.Name)
-	return v.checkOption(ctx, i)
+	return checkOption(ctx, imagelog, v.Client, i)
 }
 
-func (v *ImageValidator) checkOption(ctx context.Context, i *Image) error {
-	imagelog.Info("checking label and spec name", "image name", i.Spec.Name)
+func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Checker) error {
+	logger.Info("checking label and spec name", "obj name", i.getSpecName())
 	if !i.checkLabels() || !i.checkSpecName() {
-		return fmt.Errorf("missing labels or image.Spec.Name is IsLegal: %s", string(i.Spec.Name))
+		return fmt.Errorf("missing labels or obj.Spec.Name is IsLegal: %s", i.getSpecName())
 	}
-	imagelog.Info("getting org", "org", i.Spec.Name.GetOrg())
+	logger.Info("getting org", "org", i.getSpecName())
 	org := &Organization{}
-	if err := v.Get(ctx, client.ObjectKey{Name: i.Spec.Name.GetOrg()}, org); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: i.getOrgName()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			return fmt.Errorf("organization not exited %s", i.Spec.Name.GetOrg())
+			return fmt.Errorf("organization not exited %s", i.getOrgName())
 		}
-		return fmt.Errorf("get Organization error %s", i.Spec.Name.GetOrg())
+		return fmt.Errorf("get Organization error %s", i.getOrgName())
 	}
-	imagelog.Info("org info", "org", org)
-	imagelog.Info("getting req from ctx")
+	logger.Info("org info", "org", org)
+	logger.Info("getting req from ctx")
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
-		imagelog.Info("get request from context error when validate", "image name", i.Name)
+		logger.Info("get request from context error when validate", "obj name", i.getName())
 		return err
 	}
-	imagelog.Info("checking user", "user", req.UserInfo.Username)
+	logger.Info("checking user", "user", req.UserInfo.Username)
 	// get sa namespace prefix, prefix format is like: "system:serviceaccount:user-system:"
 	namespacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace())
 	// req.UserInfo.Username e.g: system:serviceaccount:user-system:labring
@@ -140,14 +141,14 @@ func (v *ImageValidator) checkOption(ctx context.Context, i *Image) error {
 	}
 	// replace it and compare
 	userName := strings.Replace(req.UserInfo.Username, namespacePrefix, "", -1)
-	imagelog.Info("checking username", "user", userName)
+	logger.Info("checking username", "user", userName)
 	for _, usr := range org.Spec.Manager {
 		if usr == userName {
 			return nil
 		}
 	}
-	imagelog.Info("denied", "image name", i.Name)
-	return fmt.Errorf("denied, you are not one of organization %s managers", i.Spec.Name.GetOrg())
+	logger.Info("denied", "obj name", i.getName())
+	return fmt.Errorf("denied, you are not one of organization %s managers", i.getOrgName())
 }
 
 func getUserNamespace() string {

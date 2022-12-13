@@ -89,10 +89,18 @@ type Repository struct {
 func (r *Repository) checkSpecName() bool {
 	return r.Spec.Name.IsLegal()
 }
-
 func (r *Repository) checkLabels() bool {
 	return r.Labels[SealosOrgLable] == r.Spec.Name.GetOrg() &&
 		r.Labels[SealosRepoLabel] == r.Spec.Name.GetRepo()
+}
+func (i *Repository) getSpecName() string {
+	return string(i.Spec.Name)
+}
+func (i *Repository) getOrgName() string {
+	return i.Spec.Name.GetOrg()
+}
+func (i *Repository) getName() string {
+	return i.Name
 }
 
 //+kubebuilder:object:root=true
