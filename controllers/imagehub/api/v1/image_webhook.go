@@ -116,7 +116,8 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 	org := &Organization{}
 	if err := c.Get(ctx, client.ObjectKey{Name: i.getOrgName()}, org); err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			return fmt.Errorf("organization not exited %s", i.getOrgName())
+			logger.Info("organization not exited, pass", "org name", i.getOrgName())
+			return nil
 		}
 		return fmt.Errorf("get Organization error %s", i.getOrgName())
 	}
