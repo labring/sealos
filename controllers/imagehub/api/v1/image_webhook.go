@@ -108,6 +108,13 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Checker) error {
+	reqq, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		logger.Info("get request from context error when validate", "obj name", i.getName())
+		return err
+	}
+	logger.Info("try to get req.user.group", "user groups", reqq.UserInfo.Groups)
+
 	logger.Info("checking label and spec name", "obj name", i.getSpecName())
 	if !i.checkLabels() || !i.checkSpecName() {
 		return fmt.Errorf("missing labels or obj.Spec.Name is IsLegal: %s", i.getSpecName())
