@@ -93,14 +93,14 @@ func (r *Repository) checkLabels() bool {
 	return r.Labels[SealosOrgLable] == r.Spec.Name.GetOrg() &&
 		r.Labels[SealosRepoLabel] == r.Spec.Name.GetRepo()
 }
-func (i *Repository) getSpecName() string {
-	return string(i.Spec.Name)
+func (r *Repository) getSpecName() string {
+	return string(r.Spec.Name)
 }
-func (i *Repository) getOrgName() string {
-	return i.Spec.Name.GetOrg()
+func (r *Repository) getOrgName() string {
+	return r.Spec.Name.GetOrg()
 }
-func (i *Repository) getName() string {
-	return i.Name
+func (r *Repository) getName() string {
+	return r.Name
 }
 
 //+kubebuilder:object:root=true

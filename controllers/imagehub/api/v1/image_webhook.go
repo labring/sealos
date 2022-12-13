@@ -129,7 +129,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 	}
 	logger.Info("checking user", "user", req.UserInfo.Username)
 	// if sa is in system:serviceaccount:imagehub-system, pass it.
-	imagehubNameSpacePrefix := fmt.Sprintf("%s:%s:", getImagehubNamespace())
+	imagehubNameSpacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getImagehubNamespace())
 	if strings.HasPrefix(req.UserInfo.Username, imagehubNameSpacePrefix) {
 		logger.Info("pass for imagehub controller")
 		return nil
