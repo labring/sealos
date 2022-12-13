@@ -50,6 +50,27 @@ func flagChanged(c *cobra.Command, name string) bool {
 	return false
 }
 
+func setDefaultFlags(c *cobra.Command) error {
+	defaulters := []func(*cobra.Command) error{
+		setDefaultTLSVerifyFlag,
+	}
+	for i := range defaulters {
+		if err := defaulters[i](c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setDefaultTLSVerifyFlag(c *cobra.Command) error {
+	if fs := c.Flag("tls-verify"); fs != nil && !fs.Changed {
+		if err := c.Flags().Set("tls-verify", "false"); err != nil {
+			return fmt.Errorf("failed to set --tls-verify default to false: %v", err)
+		}
+	}
+	return nil
+}
+
 func bailOnError(err error, format string, a ...interface{}) { // nolint: golint,goprintffuncname
 	if err != nil {
 		if format != "" {

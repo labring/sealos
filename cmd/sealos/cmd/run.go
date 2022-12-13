@@ -44,12 +44,13 @@ create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
 	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
   
-  Use an independent node as the registry node of the cluster (other than the first master node)
-    sealos run -e REGISTRY_HOST=192.168.0.8 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
+  Custom VIP kubernetes cluster:
+    sealos run -e defaultVIP=10.103.97.2 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
 	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
-
+  
   Single kubernetes cluster：
 	sealos run labring/kubernetes:v1.24.0 --single
+  
 
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \

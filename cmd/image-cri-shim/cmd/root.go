@@ -22,6 +22,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/labring/image-cri-shim/pkg/types"
+
 	"github.com/labring/sealos/pkg/version"
 
 	"github.com/labring/image-cri-shim/pkg/shim"
@@ -31,7 +33,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-var cfg *shim.Config
+var cfg *types.Config
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
@@ -46,7 +48,7 @@ var rootCmd = &cobra.Command{
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
-		cfg, err = shim.Unmarshal(cfgFile)
+		cfg, err = types.Unmarshal(cfgFile)
 		if err != nil {
 			return errors.Wrap(err, "image shim config load error")
 		}
@@ -72,8 +74,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&cfgFile, "file", "f", "", "image shim root config")
 }
 
-func run(cfg *shim.Config) {
-	logger.Info("socket info shim: %v ,image: %v, registry: %v", cfg.ShimSocket, cfg.ImageSocket, cfg.Address)
+func run(cfg *types.Config) {
+	logger.Info("socket info shim: %v ,image: %v, registry: %v", cfg.ImageShimSocket, cfg.RuntimeSocket, cfg.Address)
 	imgShim, err := shim.NewShim(cfg)
 	if err != nil {
 		logger.Fatal("failed to new image_shim, %s", err)
@@ -98,6 +100,6 @@ func run(cfg *shim.Config) {
 		close(stopCh)
 	case <-stopCh:
 	}
-	_ = os.Remove(cfg.ShimSocket)
+	_ = os.Remove(cfg.ImageShimSocket)
 	logger.Info("shutting down the image_shim")
 }

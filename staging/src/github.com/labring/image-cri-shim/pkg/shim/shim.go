@@ -19,6 +19,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/labring/image-cri-shim/pkg/types"
+
 	"google.golang.org/grpc"
 
 	"github.com/labring/image-cri-shim/pkg/server"
@@ -44,19 +46,19 @@ type Shim interface {
 // shim is the implementation of Shim.
 type shim struct {
 	sync.Mutex               // hmm... do *we* need to be lockable, or the upper layer(s) ?
-	cfg        *Config       // shim options
+	cfg        *types.Config // shim options
 	client     server.Client // shim CRI client
 	server     server.Server // shim CRI server
 }
 
 // NewShim creates a new shim instance.
-func NewShim(cfg *Config) (Shim, error) {
+func NewShim(cfg *types.Config) (Shim, error) {
 	r := &shim{
 		cfg: cfg,
 	}
 
 	cltopts := server.CRIClientOptions{
-		ImageSocket: cfg.ImageSocket,
+		ImageSocket: cfg.RuntimeSocket,
 		DialNotify:  r.dialNotify,
 	}
 	clt, err := server.NewClient(cltopts)
@@ -66,11 +68,13 @@ func NewShim(cfg *Config) (Shim, error) {
 	r.client = clt
 
 	srvopts := server.Options{
-		Socket:     cfg.ShimSocket,
+		Timeout:    cfg.Timeout.Duration,
+		Socket:     cfg.ImageShimSocket,
 		User:       -1,
 		Group:      -1,
 		Mode:       0660,
 		CRIConfigs: cfg.CRIConfigs,
+		CRIVersion: cfg.CRIVersion,
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
@@ -88,7 +92,7 @@ func (r *shim) Setup() error {
 	if conn, err = r.client.Connect(server.ConnectOptions{Wait: true}); err != nil {
 		return shimError("client connection failed: %v", err)
 	}
-	if r.cfg.ImageSocket != DisableService {
+	if r.cfg.RuntimeSocket != DisableService {
 		if err = r.server.RegisterImageService(conn); err != nil {
 			return shimError("failed to register image service: %v", err)
 		}

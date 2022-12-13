@@ -1,5 +1,7 @@
 FROM gcr.io/distroless/static:nonroot
-COPY bin/manager /manager
+
+ARG TARGETARCH
+COPY bin/service-hub-$TARGETARCH /manager
 EXPOSE 5001
 USER 65532:65532
 

@@ -99,9 +99,6 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
-	err = (&Image{}).SetupWebhookWithManager(mgr)
-	Expect(err).NotTo(HaveOccurred())
-
 	err = (&Repository{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 

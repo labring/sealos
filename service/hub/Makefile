@@ -47,6 +47,7 @@ build: clean ## Build service-hub binary.
 
 .PHONY: docker-build
 docker-build: build
+	mv bin/manager bin/service-hub-${TARGETARCH}
 	docker build -t $(IMG) .
 
 .PHONY: docker-push

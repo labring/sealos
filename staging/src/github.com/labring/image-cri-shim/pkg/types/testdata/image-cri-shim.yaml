@@ -15,8 +15,7 @@
 shim: /var/run/image-cri-shim.sock
 cri: /var/run/cri-dockerd.sock
 address: http://sealos.hub:5000
-force: true
 debug: false
 image: /var/lib/image-cri-shim
-sync: 0
 auth: admin:passw0rd
+version: v1

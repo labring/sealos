@@ -22,15 +22,14 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/sftp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/hash"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/progress"
 )
@@ -44,19 +43,21 @@ func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
 	return remoteHash
 }
 
-// CmdToString is in host exec cmd and replace to spilt str
-func (s *SSH) CmdToString(host, cmd, spilt string) (string, error) {
-	data, err := s.Cmd(host, cmd)
-	str := string(data)
+func getOnelineResult(output string, sep string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(output, "\r\n", sep), "\n", sep)
+}
+
+// CmdToString execute command on host and replace output with sep to oneline
+func (s *SSH) CmdToString(host, cmd, sep string) (string, error) {
+	output, err := s.Cmd(host, cmd)
+	data := string(output)
 	if err != nil {
-		return str, fmt.Errorf("exec remote command failed %s %s %v", host, cmd, err)
+		return data, err
 	}
-	if data != nil {
-		str = strings.ReplaceAll(str, "\r\n", spilt)
-		str = strings.ReplaceAll(str, "\n", spilt)
-		return str, nil
+	if len(data) == 0 {
+		return "", fmt.Errorf("command %s on %s return nil", cmd, host)
 	}
-	return str, fmt.Errorf("command %s %s return nil", host, cmd)
+	return getOnelineResult(data, sep), nil
 }
 
 func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
@@ -69,16 +70,30 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 	return sshClient, sftpClient, err
 }
 
+func (s *SSH) sftpConnectWithRetry(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
+	for i := 0; i < defaultMaxRetry; i++ {
+		if i > 0 {
+			logger.Debug("trying to reconnect due to error occur: %v", err)
+			time.Sleep(time.Millisecond * 100)
+		}
+		sshClient, sftpClient, err = s.sftpConnect(host)
+		if err == nil || !isErrorWorthRetry(err) {
+			break
+		}
+	}
+	return
+}
+
 // Copy is copy file or dir to remotePath, add md5 validate
 func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if iputils.IsLocalIP(host, s.localAddress) && !unshare.IsRootless() {
+	if s.isLocalAction(host) {
 		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	sshClient, sftpClient, err := s.sftpConnect(host)
+	sshClient, sftpClient, err := s.sftpConnectWithRetry(host)
 	if err != nil {
-		return fmt.Errorf("new sftp client failed %s", err)
+		return fmt.Errorf("failed to connect: %s", err)
 	}
 	defer func() {
 		_ = sftpClient.Close()
@@ -110,15 +125,17 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 			return sftpClient.MkdirAll(remotePath)
 		}
 	}
-
-	var (
-		bar = progress.Simple("copying files to "+host, number)
-	)
+	bar := progress.Simple("copying files to "+host, number)
 	defer func() {
 		_ = bar.Close()
 	}()
 
 	return s.doCopy(sftpClient, host, localPath, remotePath, bar)
+}
+
+func isErrorWorthRetry(err error) bool {
+	return strings.Contains(err.Error(), "connection reset by peer") ||
+		strings.Contains(err.Error(), io.EOF.Error())
 }
 
 func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
@@ -178,7 +195,7 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 			sh := hash.FileDigest(src)
 			dh := s.RemoteSha256Sum(host, dest)
 			if sh != dh {
-				return fmt.Errorf("sha256 sum not match %s != %s, maybe network corruption?", sh, dh)
+				return fmt.Errorf("sha256 sum not match %s(%s) != %s(%s), maybe network corruption?", src, sh, dest, dh)
 			}
 		}
 		_ = epu.Add(1)

@@ -39,6 +39,9 @@ type EC2StopInstancesAPI interface {
 	StopInstances(ctx context.Context,
 		params *ec2.StopInstancesInput,
 		optFns ...func(*ec2.Options)) (*ec2.StopInstancesOutput, error)
+	DeleteKeyPair(ctx context.Context,
+		params *ec2.DeleteKeyPairInput,
+		optFns ...func(*ec2.Options)) (*ec2.DeleteKeyPairOutput, error)
 }
 
 // StopInstance stops an Amazon Elastic Compute Cloud (Amazon EC2) instance.
@@ -134,5 +137,28 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 		return fmt.Errorf("aws terminate instance failed: %s, %v", instanceID, err)
 	}
 
+	return nil
+}
+func DelKeyPair(c context.Context, api EC2StopInstancesAPI, input *ec2.DeleteKeyPairInput) (*ec2.DeleteKeyPairOutput, error) {
+	return api.DeleteKeyPair(c, input)
+}
+
+func (d Driver) deleteKeyPair(infra *v1.Infra) error {
+	if infra.Spec.SSH.PkName == "" {
+		return nil
+	}
+
+	mutex.Lock()
+	defer mutex.Unlock()
+	client := d.Client
+	input := &ec2.DeleteKeyPairInput{
+		KeyName: &infra.Spec.SSH.PkName,
+	}
+
+	_, err := DelKeyPair(context.TODO(), client, input)
+	if err != nil {
+		return fmt.Errorf("delete key pair error:%v", err)
+	}
+	logger.Info("delete key pair success", "keyName", *input.KeyName)
 	return nil
 }
