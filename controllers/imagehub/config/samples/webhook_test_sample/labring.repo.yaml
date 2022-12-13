@@ -1,0 +1,6 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Repository
+metadata:
+  name: labring.cert.manager
+spec:
+  name: labring/cert-manager
