@@ -22,8 +22,9 @@ const (
 )
 
 const (
-	saPrefix             = "system:serviceaccount"
-	defaultUsernamespace = "user-system"
+	saPrefix                 = "system:serviceaccount"
+	defaultUserNamespace     = "user-system"
+	defaultImagehubNamespace = "imagehub-system"
 )
 
 //+kubebuilder:object:generate=false

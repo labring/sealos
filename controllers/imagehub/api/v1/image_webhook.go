@@ -128,14 +128,20 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 		return err
 	}
 	logger.Info("checking user", "user", req.UserInfo.Username)
+	// if sa is in system:serviceaccount:imagehub-system, pass it.
+	imagehubNameSpacePrefix := fmt.Sprintf("%s:%s:", getImagehubNamespace())
+	if strings.HasPrefix(req.UserInfo.Username, imagehubNameSpacePrefix) {
+		logger.Info("pass for imagehub controller")
+		return nil
+	}
 	// get sa namespace prefix, prefix format is like: "system:serviceaccount:user-system:"
-	namespacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace())
+	userNamespacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace())
 	// req.UserInfo.Username e.g: system:serviceaccount:user-system:labring
-	if !strings.HasPrefix(req.UserInfo.Username, namespacePrefix) {
-		return fmt.Errorf("denied, you are not one of user in %s", namespacePrefix)
+	if !strings.HasPrefix(req.UserInfo.Username, userNamespacePrefix) {
+		return fmt.Errorf("denied, you are not one of user in %s", userNamespacePrefix)
 	}
 	// replace it and compare
-	userName := strings.Replace(req.UserInfo.Username, namespacePrefix, "", -1)
+	userName := strings.Replace(req.UserInfo.Username, userNamespacePrefix, "", -1)
 	logger.Info("checking username", "user", userName)
 	for _, usr := range org.Spec.Manager {
 		if usr == userName {
@@ -147,9 +153,16 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 }
 
 func getUserNamespace() string {
-	userNameSpace := os.Getenv("USER_NAMESPACE")
-	if userNameSpace == "" {
-		return defaultUsernamespace
+	userNamespace := os.Getenv("USER_NAMESPACE")
+	if userNamespace == "" {
+		return defaultUserNamespace
 	}
-	return userNameSpace
+	return userNamespace
+}
+func getImagehubNamespace() string {
+	imagehubNamespace := os.Getenv("IMAGEHUB_NAMESPACE")
+	if imagehubNamespace == "" {
+		return defaultImagehubNamespace
+	}
+	return imagehubNamespace
 }
