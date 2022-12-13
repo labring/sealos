@@ -26,6 +26,8 @@ const (
 	defaultUsernamespace = "user-system"
 )
 
+//+kubebuilder:object:generate=false
+
 type Checker interface {
 	checkSpecName() bool
 	checkLabels() bool
@@ -34,13 +36,19 @@ type Checker interface {
 	getOrgName() string
 }
 
+//+kubebuilder:object:generate=false
+
 type OrgCombinator interface {
 	GetOrg() string
 }
 
+//+kubebuilder:object:generate=false
+
 type RepoCombinator interface {
 	GetRepo() string
 }
+
+//+kubebuilder:object:generate=false
 
 type TagCombinator interface {
 	GetTag() string
