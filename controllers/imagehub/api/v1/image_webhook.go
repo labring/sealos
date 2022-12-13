@@ -39,7 +39,7 @@ const (
 )
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	m := &ImageMutater{}
+	m := &ImageMutator{}
 	v := &ImageValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(i).
@@ -50,10 +50,10 @@ func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
 
-type ImageMutater struct {
+type ImageMutator struct {
 }
 
-func (m *ImageMutater) Default(ctx context.Context, obj runtime.Object) error {
+func (m *ImageMutator) Default(ctx context.Context, obj runtime.Object) error {
 	img, ok := obj.(*Image)
 	if !ok {
 		return errors.New("obj convert Image is error")
