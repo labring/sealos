@@ -18,28 +18,16 @@ var ErrNotMatch = errors.New("NotMatch")
 
 type MatchingLabelsModifier func(name any, labels client.MatchingLabels)
 
-type OrgCombinator interface {
-	GetOrg() string
-}
-
-type RepoCombinator interface {
-	GetRepo() string
-}
-
-type TagCombinator interface {
-	GetTag() string
-}
-
 func orgModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosOrgLable] = name.(OrgCombinator).GetOrg()
+	labels[imagehubv1.SealosOrgLable] = name.(imagehubv1.OrgCombinator).GetOrg()
 }
 
 func repoModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosRepoLabel] = name.(RepoCombinator).GetRepo()
+	labels[imagehubv1.SealosRepoLabel] = name.(imagehubv1.RepoCombinator).GetRepo()
 }
 
 func tagModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosTagLabel] = name.(TagCombinator).GetTag()
+	labels[imagehubv1.SealosTagLabel] = name.(imagehubv1.TagCombinator).GetTag()
 }
 
 func listByLable[R client.ObjectList](ctx context.Context, r *DataHelper, result R, name any, modifiers ...MatchingLabelsModifier) (R, error) {

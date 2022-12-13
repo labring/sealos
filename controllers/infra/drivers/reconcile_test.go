@@ -30,7 +30,7 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 				{
 					Type:     string(types.VolumeTypeGp3),
 					Capacity: 35,
-					Name:     "/dev/sda2",
+					//Name:     "/dev/sda2",
 				},
 			},
 		},
@@ -43,7 +43,7 @@ func TestApplier_ReconcileInstance(t *testing.T) {
 				{
 					Type:     string(types.VolumeTypeGp2),
 					Capacity: 20,
-					Name:     "/dev/sda2",
+					//Name:     "/dev/sda2",
 				},
 			},
 		},
