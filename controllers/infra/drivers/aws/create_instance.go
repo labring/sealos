@@ -169,13 +169,19 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 }
 
 // get instace data by id
-func getInstanceByID(id *string, client *ec2.Client) (*types.Instance, error) {
+func getInstancesByID(id *string, client *ec2.Client) ([]types.Reservation, error) {
 	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
+	statusName := common.InstanceState
+	status := types.InstanceStateNameRunning
 	input := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
 			{
 				Name:   &uidKey,
 				Values: []string{*id},
+			},
+			{
+				Name:   &statusName,
+				Values: []string{string(status)},
 			},
 		},
 	}
@@ -183,7 +189,7 @@ func getInstanceByID(id *string, client *ec2.Client) (*types.Instance, error) {
 	if err != nil || len(result.Reservations) == 0 || len(result.Reservations[0].Instances) == 0 {
 		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
 	}
-	return &result.Reservations[0].Instances[0], nil
+	return result.Reservations, nil
 }
 
 // GetBlockDeviceMappings generate blockDeviceMappings from hosts
@@ -201,7 +207,7 @@ func (d Driver) GetBlockDeviceMappings(hosts *v1.Hosts, rootDeviceName string, i
 		// update infra disk info
 		infra.Spec.Hosts[hosts.Index].Disks = append(infra.Spec.Hosts[hosts.Index].Disks, v1.Disk{
 			Capacity: int(common.DefaultRootVolumeSize),
-			Type:     strings.ToLower(common.RootVolumeLabel),
+			Type:     common.RootVolumeLabel,
 		})
 	}
 	systemAdded := false
@@ -238,15 +244,9 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		return nil
 	}
 	tags := d.GetTags(hosts, infra)
-	volumeTags := rolesToTags(hosts.Roles)
-	rootVolume, value := common.RootVolumeLabel, common.TRUELable
-	volumeTags = append(volumeTags,
-		types.Tag{
-			Key:   &rootVolume,
-			Value: &value,
-		},
-	)
+	roleTags := rolesToTags(hosts.Roles)
 	keyName := infra.Spec.SSH.PkName
+	availabilityZone := infra.Spec.AvailabilityZone
 	// todo use ami to search root device name
 
 	// encode userdata to base64
@@ -270,13 +270,16 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			},
 			{
 				ResourceType: types.ResourceTypeVolume,
-				Tags:         volumeTags,
+				Tags:         roleTags,
 			},
 		},
 		KeyName:             &keyName,
 		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
 		BlockDeviceMappings: bdms,
-		UserData:            &userData,
+		Placement: &types.Placement{
+			AvailabilityZone: &availabilityZone,
+		},
+		UserData: &userData,
 	}
 
 	// assign to BlockDeviceMappings from host.Disk
@@ -301,37 +304,53 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	diskIndex := 0
 	//get BlockDeviceMapping
 	id := string(infra.UID)
-	curInstance, err := getInstanceByID(&id, d.Client)
+	reservations, err := getInstancesByID(&id, d.Client)
 	if err != nil {
-		return fmt.Errorf("get instance failed failed: %v", err)
+		return fmt.Errorf("get instance failed: %v", err)
 	}
-	for _, blockDeviceMap := range curInstance.BlockDeviceMappings {
-		vid := blockDeviceMap.Ebs.VolumeId
-		indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(diskIndex)
-		indexTag := types.Tag{
-			Key:   &indexKey,
-			Value: &indexValue,
+	for _, reservation := range reservations {
+		for _, curInstance := range reservation.Instances {
+			diskIndex = 0
+			for _, blockDeviceMap := range curInstance.BlockDeviceMappings {
+				logger.Info("curinstance id is %v", *curInstance.InstanceId)
+				vid := blockDeviceMap.Ebs.VolumeId
+				logger.Info("volumeId is %v", vid)
+				indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(diskIndex)
+				infraIDKey, infraIDValue := common.VolumeInfraID, curInstance.InstanceId
+				typeKey := common.DataVolumeLabel
+				if *blockDeviceMap.DeviceName == rootDeviceName {
+					typeKey = common.RootVolumeLabel
+				}
+				typeValue := common.TRUELable
+				volumeTags := []types.Tag{
+					{
+						Key:   &infraIDKey,
+						Value: infraIDValue,
+					}, {
+						Key:   &indexKey,
+						Value: &indexValue,
+					}, {
+						Key:   &typeKey,
+						Value: &typeValue,
+					},
+				}
+				input := &ec2.CreateTagsInput{
+					Resources: []string{*vid},
+					Tags:      volumeTags,
+				}
+				if _, err := MakeTags(context.TODO(), client, input); err != nil {
+					return fmt.Errorf("create volume tags failed: %v", err)
+				}
+				diskIndex++
+			}
 		}
-		infraIDKey, infraIDValue := common.VolumeInfraID, curInstance.InstanceId
-		infraIDTag := types.Tag{
-			Key:   &infraIDKey,
-			Value: infraIDValue,
-		}
-		input := &ec2.CreateTagsInput{
-			Resources: []string{*vid},
-			Tags: []types.Tag{
-				indexTag,
-				infraIDTag,
-			},
-		}
-		if _, err := MakeTags(context.TODO(), client, input); err != nil {
-			return fmt.Errorf("create volume tags failed: %v", err)
-		}
-		diskIndex++
 	}
 
-	if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
-		infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
+	//if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
+	//	infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
+	//}
+	if len(result.Instances) > 0 {
+		logger.Info("%v availabilityZone is %v", *result.Instances[0].InstanceId, *result.Instances[0].Placement.AvailabilityZone)
 	}
 	//err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
 	//if err != nil {
