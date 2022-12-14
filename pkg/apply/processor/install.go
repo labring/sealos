@@ -26,7 +26,6 @@ import (
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/config"
-	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/guest"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -60,6 +59,7 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 	if !pass {
 		return errors.New(cancel)
 	}
+	ForceOverride = true
 	return nil
 }
 
@@ -124,7 +124,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
+			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}

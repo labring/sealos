@@ -19,8 +19,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/versionutil"
 
 	"github.com/labring/sealos/pkg/utils/maps"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -61,7 +65,7 @@ func (p *processor) WrapperEnv(host string) map[string]string {
 }
 func (p *processor) WrapperShell(host, shell string) string {
 	envs := p.getHostEnv(host)
-	return strings2.EnvFromMap(shell, envs)
+	return strings2.RenderShellFromEnv(shell, envs)
 }
 
 func (p *processor) RenderAll(host, dir string) error {
@@ -107,7 +111,23 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	var imageEnvMap map[string]string
 	for _, img := range p.mounts {
 		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
+		if img.Type == v1beta1.RootfsImage {
+			imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey] = img.Labels[v1beta1.ImageKubeVersionKey]
+			major, minor := versionutil.GetMajorMinorInt(imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey])
+			imageEnvMap[v1beta1.ImageKubeVersionMajorEnvSysKey] = strconv.Itoa(major)
+			imageEnvMap[v1beta1.ImageKubeVersionMinorEnvSysKey] = strconv.Itoa(minor)
+		} else {
+			if _, ok := img.Env[v1beta1.ImageKubeVersionEnvSysKey]; ok {
+				logger.Warn("image name:%s , skip %s env", img.ImageName, v1beta1.ImageKubeVersionEnvSysKey)
+			}
+			for k := range img.Env {
+				if strings.HasPrefix(k, "SEALOS_SYS") {
+					logger.Warn("image name:%s , skip %s env , SEALOS_SYS prefix env is sealos system env", img.ImageName, k)
+				}
+			}
+		}
 	}
+
 	envs := maps.MergeMap(imageEnvMap, specEnvMap, hostEnvMap)
 	return envs
 }

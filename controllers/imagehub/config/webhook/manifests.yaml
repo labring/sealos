@@ -89,6 +89,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - images
   sideEffects: None
@@ -129,6 +130,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - repositories
   sideEffects: None

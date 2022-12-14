@@ -63,7 +63,7 @@ func newDefaultPullOptions() *pullOptions {
 	return &pullOptions{
 		authfile:   auth.GetDefaultAuthFile(),
 		pullPolicy: "missing",
-		tlsVerify:  true,
+		tlsVerify:  false,
 		os:         runtime.GOOS,
 		arch:       runtime.GOARCH,
 		platform:   []string{parse.DefaultPlatform()},
@@ -83,11 +83,11 @@ func (opts *pullOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.removeSignatures, "remove-signatures", opts.removeSignatures, "don't copy signatures when pulling image")
 	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
 	fs.StringSliceVar(&opts.decryptionKeys, "decryption-key", opts.decryptionKeys, "key needed to decrypt the image")
-	fs.BoolVarP(&opts.quiet, "quiet", "q", false, "don't output progress information when pulling images")
+	fs.BoolVarP(&opts.quiet, "quiet", "q", opts.quiet, "don't output progress information when pulling images")
 	fs.StringVar(&opts.os, "os", opts.os, "prefer `OS` instead of the running OS for choosing images")
 	fs.StringVar(&opts.arch, "arch", opts.arch, "prefer `ARCH` instead of the architecture of the machine for choosing images")
 	fs.StringSliceVar(&opts.platform, "platform", opts.platform, "prefer OS/ARCH instead of the current operating system and architecture for choosing images")
-	fs.StringVar(&opts.variant, "variant", "", "override the `variant` of the specified image")
+	fs.StringVar(&opts.variant, "variant", opts.variant, "override the `variant` of the specified image")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.IntVar(&opts.retry, "retry", opts.retry, "number of times to retry in case of failure when performing pull")
 	fs.DurationVar(&opts.retryDelay, "retry-delay", opts.retryDelay, "delay between retries in case of pull failures")
@@ -112,7 +112,7 @@ func newPullCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s pull imagename
   %[1]s pull docker-daemon:imagename:imagetag
-  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmd.Name()),
+  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmdName),
 	}
 	pullCommand.SetUsageTemplate(UsageTemplate())
 
@@ -131,7 +131,9 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
 	}
-
+	if err := setDefaultFlags(c); err != nil {
+		return err
+	}
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
@@ -148,7 +150,7 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err != nil {
 		return err
 	}
-	ids, err := doPull(store, systemContext, []string{args[0]}, iopts)
+	ids, err := doPull(c, store, systemContext, []string{args[0]}, iopts)
 	if err != nil {
 		return err
 	}
@@ -156,8 +158,15 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	return nil
 }
 
-func doPull(store storage.Store, systemContext *types.SystemContext, imageNames []string, iopts *pullOptions) ([]string, error) {
-	if err := auth.CheckAuthFile(iopts.authfile); err != nil {
+func doPull(c *cobra.Command, store storage.Store, systemContext *types.SystemContext, imageNames []string, iopts *pullOptions) ([]string, error) {
+	var err error
+	if systemContext == nil {
+		systemContext, err = parse.SystemContextFromOptions(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if err = auth.CheckAuthFile(iopts.authfile); err != nil {
 		return nil, err
 	}
 

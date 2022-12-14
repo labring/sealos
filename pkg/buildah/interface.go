@@ -62,12 +62,17 @@ type realImpl struct {
 }
 
 func (impl *realImpl) Pull(pf v1.Platform, pullPolicy string, imageNames ...string) error {
+	cmd := impl.mockCmd()
 	iopt := newDefaultPullOptions()
 	iopt.os = pf.OS
 	iopt.arch = pf.Architecture
 	iopt.variant = pf.Variant
 	iopt.pullPolicy = pullPolicy
-	ids, err := doPull(impl.store, impl.systemContext, imageNames, iopt)
+	_ = iopt.RegisterFlags(cmd.Flags())
+	if err := setDefaultFlags(cmd); err != nil {
+		return err
+	}
+	ids, err := doPull(cmd, impl.store, nil, imageNames, iopt)
 	if err != nil {
 		return err
 	}
@@ -114,7 +119,10 @@ func (impl *realImpl) from(name, image string) (*buildah.Builder, error) {
 	opts.name = impl.finalizeName(name)
 	opts.pull = ""
 	opts.RegisterFlags(cmd.Flags())
-	return doFrom(cmd, image, opts, impl.store, impl.systemContext)
+	if err := setDefaultFlags(cmd); err != nil {
+		return nil, err
+	}
+	return doFrom(cmd, image, opts, impl.store, nil)
 }
 
 func (impl *realImpl) mount(name string) (jsonMount, error) {
@@ -160,7 +168,7 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 }
 
 func (impl *realImpl) Load(input string) (string, error) {
-	ids, err := doPull(impl.store, impl.systemContext, []string{fmt.Sprintf("%s:%s", DockerArchive, input)}, newDefaultPullOptions())
+	ids, err := doPull(impl.mockCmd(), impl.store, impl.systemContext, []string{fmt.Sprintf("%s:%s", DockerArchive, input)}, newDefaultPullOptions())
 	if err != nil {
 		return "", err
 	}

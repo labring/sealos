@@ -130,6 +130,20 @@ func (hosts IndexHosts) Swap(i, j int) {
 	hosts[i], hosts[j] = hosts[j], hosts[i]
 }
 
+type IndexDisks []Disk
+
+func (disks IndexDisks) Len() int {
+	return len(disks)
+}
+
+func (disks IndexDisks) Less(i, j int) bool {
+	return disks[i].Index < disks[j].Index
+}
+
+func (disks IndexDisks) Swap(i, j int) {
+	disks[i], disks[j] = disks[j], disks[i]
+}
+
 type Disk struct {
 	Capacity int `json:"capacity,omitempty"`
 	// ENUM: standard/io1/io2/gp2/gp3/sc1/st1
@@ -140,22 +154,24 @@ type Disk struct {
 	// +kubebuilder:default:=data
 	// Disk Type , default is data disk. allowed value is `root|data`
 	Type string `json:"type,omitempty"`
-	Name string `json:"name,omitempty"`
+	//Name  string `json:"name,omitempty"`
+	Index int    `json:"index,omitempty"`
+	ID    string `json:"id,omitempty"`
 }
 
-type NameDisks []Disk
-
-func (disks NameDisks) Len() int {
-	return len(disks)
-}
-
-func (disks NameDisks) Less(i, j int) bool {
-	return disks[i].Name < disks[j].Name
-}
-
-func (disks NameDisks) Swap(i, j int) {
-	disks[i], disks[j] = disks[j], disks[i]
-}
+//type NameDisks []Disk
+//
+//func (disks NameDisks) Len() int {
+//	return len(disks)
+//}
+//
+//func (disks NameDisks) Less(i, j int) bool {
+//	return disks[i].Name < disks[j].Name
+//}
+//
+//func (disks NameDisks) Swap(i, j int) {
+//	disks[i], disks[j] = disks[j], disks[i]
+//}
 
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {

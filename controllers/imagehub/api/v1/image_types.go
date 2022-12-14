@@ -90,16 +90,14 @@ func (n ImageName) GetMateName() string {
 
 // ImageDetailInfo TODO: add limits for ImageDetailInfo
 type ImageDetailInfo struct {
-	URL         string   `json:"url,omitempty"`
 	Keywords    []string `json:"keywords,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Icon        string   `json:"icon,omitempty"`
-	AuthorIcon  string   `json:"authorIcon,omitempty"`
 	Docs        string   `json:"docs,omitempty"`
-	ID          string   `json:"ID,omitempty"`
-	Arch        string   `json:"arch,omitempty"`
-	Rating      int      `json:"rating,omitempty"`
-	Size        int64    `json:"size,omitempty"`
+	// should use buildah inspect to get infor.
+	ID   string `json:"ID,omitempty"`
+	Arch string `json:"arch,omitempty"`
+	Size int64  `json:"size,omitempty"`
 }
 
 // ImageSpec defines the desired state of Image
@@ -136,11 +134,19 @@ type Image struct {
 func (i *Image) checkSpecName() bool {
 	return i.Spec.Name.IsLegal()
 }
-
-func (i *Image) checkLables() bool {
+func (i *Image) checkLabels() bool {
 	return i.Labels[SealosOrgLable] == i.Spec.Name.GetOrg() &&
 		i.Labels[SealosRepoLabel] == i.Spec.Name.GetRepo() &&
 		i.Labels[SealosTagLabel] == i.Spec.Name.GetTag()
+}
+func (i *Image) getSpecName() string {
+	return string(i.Spec.Name)
+}
+func (i *Image) getOrgName() string {
+	return i.Spec.Name.GetOrg()
+}
+func (i *Image) getName() string {
+	return i.Name
 }
 
 //+kubebuilder:object:root=true

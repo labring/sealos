@@ -112,7 +112,7 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 			return err
 		}
 		if err = sftpClient.MkdirAll(remoteDir); err != nil {
-			return err
+			return fmt.Errorf("failed to Mkdir remote: %v", err)
 		}
 	} else if !rfp.IsDir() {
 		return fmt.Errorf("dir of remote file %s is not a directory", remotePath)
@@ -176,24 +176,28 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 		}
 		lf, err := os.Open(filepath.Clean(src))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to open: %v", err)
 		}
 		defer lf.Close()
 
 		dstfp, err := client.Create(dest)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create: %v", err)
 		}
 		if err = dstfp.Chmod(lfp.Mode()); err != nil {
 			return fmt.Errorf("failed to Chmod dst: %v", err)
 		}
 		defer dstfp.Close()
 		if _, err = io.Copy(dstfp, lf); err != nil {
-			return err
+			return fmt.Errorf("failed to Copy: %v", err)
 		}
 		if !isEnvTrue("DO_NOT_CHECKSUM") {
-			sh := hash.FileDigest(src)
 			dh := s.RemoteSha256Sum(host, dest)
+			if dh == "" {
+				// when ssh connection failed, remote sha256 is default to "", so ignore it.
+				return nil
+			}
+			sh := hash.FileDigest(src)
 			if sh != dh {
 				return fmt.Errorf("sha256 sum not match %s(%s) != %s(%s), maybe network corruption?", src, sh, dest, dh)
 			}

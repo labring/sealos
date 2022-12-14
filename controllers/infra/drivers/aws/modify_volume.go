@@ -2,6 +2,9 @@ package aws
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 
@@ -20,24 +23,22 @@ func ModifyVolume(c context.Context, api EC2ModifyVolumeAPI, input *ec2.ModifyVo
 
 // can't modify type when disk being used. can't smaller size when disk being used.
 func (d Driver) modifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
-	//	// no modification required
-	//	if curDisk.Capacity == desDisk.Capacity && curDisk.Type == desDisk.Type {
-	//		return nil
-	//	}
-	//	client := d.Client
-	//	volumeType := types.VolumeType(desDisk.Type)
-	//	for i := range curDisk.ID {
-	//		id := curDisk.ID[i]
-	//		size := int32(desDisk.Capacity)
-	//		input := &ec2.ModifyVolumeInput{
-	//			VolumeId:   &id,
-	//			Size:       &size,
-	//			VolumeType: volumeType,
-	//		}
-	//		if _, err := ModifyVolume(context.TODO(), client, input); err != nil {
-	//			return fmt.Errorf("modify volume id:%s error:%v", id, err)
-	//		}
-	//	}
-	//
+	// no modification required
+	if curDisk.Capacity == desDisk.Capacity && curDisk.Type == desDisk.Type {
+		return nil
+	}
+	client := d.Client
+	volumeType := types.VolumeType(desDisk.VolumeType)
+	id := curDisk.ID
+	size := int32(desDisk.Capacity)
+	input := &ec2.ModifyVolumeInput{
+		VolumeId:   &id,
+		Size:       &size,
+		VolumeType: volumeType,
+	}
+	if _, err := ModifyVolume(context.TODO(), client, input); err != nil {
+		return fmt.Errorf("modify volume id:%s error:%v", id, err)
+	}
+
 	return nil
 }
