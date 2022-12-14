@@ -189,6 +189,7 @@ func ipAt(s string, idx uint32) string {
 //
 // If `version` is empty or not valid, return false, not error.
 // At the mean time, `constraint` must be valid.
+// nosemgrep: dgryski.semgrep-go.errnilcheck.err-nil-check
 func semverCompare(constraint, version string) (bool, error) {
 	c, err := sv2.NewConstraint(constraint)
 	if err != nil {
