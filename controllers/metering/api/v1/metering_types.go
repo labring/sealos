@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,8 +49,8 @@ type MeteringSpec struct {
 	Owner     string `json:"owner"`
 
 	//timeInterval unit is minutes
-	TimeInterval int                                      `json:"timeInterval"`
-	Resources    map[v1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
+	TimeInterval int                                          `json:"timeInterval"`
+	Resources    map[corev1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
 }
 
 type ResourcePrice struct {
@@ -105,4 +105,19 @@ type MeteringList struct {
 
 func init() {
 	SchemeBuilder.Register(&Metering{}, &MeteringList{})
+}
+
+func DefaultResourceQuota() corev1.ResourceList {
+	return corev1.ResourceList{
+		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
+		corev1.ResourceLimitsCPU: resource.MustParse("10000"),
+		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
+		corev1.ResourceLimitsMemory: resource.MustParse("10000Gi"),
+		//For all PVCs, the total demand for storage resources cannot exceed this value
+		corev1.ResourceRequestsStorage: resource.MustParse("100000Gi"),
+		//"limit.storage": resource.MustParse("100Gi"),
+		//Local ephemeral storage
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100000Gi"),
+		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
+	}
 }

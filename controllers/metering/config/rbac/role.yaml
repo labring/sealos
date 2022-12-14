@@ -20,20 +20,6 @@ rules:
 - apiGroups:
   - metering.sealos.io
   resources:
-  - extensionresourceprices/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - extensionresourceprices/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
   - meterings
   verbs:
   - create

@@ -39,6 +39,9 @@ spec:
                 description: ResourceName is the name identifying various resources
                   in a ResourceList.
                 type: string
+              time:
+                format: int64
+                type: integer
               used:
                 anyOf:
                 - type: integer

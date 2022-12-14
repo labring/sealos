@@ -75,6 +75,7 @@ spec:
                   type: object
                 type: object
               timeInterval:
+                description: timeInterval unit is minutes
                 type: integer
             required:
             - namespace
@@ -82,6 +83,7 @@ spec:
             - timeInterval
             type: object
           status:
+            description: MeteringStatus defines the observed state of Metering
             properties:
               billingListD:
                 items:
