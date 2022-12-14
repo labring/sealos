@@ -19,11 +19,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strconv"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -86,10 +87,10 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	//if err := r.updateBillingList(ctx, &metering); err != nil {
-	//	r.Logger.Error(err, err.Error())
-	//	return ctrl.Result{}, err
-	//}
+	if err := r.updateBillingList(ctx, &metering); err != nil {
+		r.Logger.Error(err, err.Error())
+		return ctrl.Result{}, err
+	}
 
 	// Ensure the deployment size is the same as the spec
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * time.Duration(r.MeteringInterval)}, nil
