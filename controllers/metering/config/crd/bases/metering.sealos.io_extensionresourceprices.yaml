@@ -57,8 +57,6 @@ spec:
                   - unit
                   type: object
                 type: object
-            required:
-            - resources
             type: object
           status:
             description: ExtensionResourcePriceStatus defines the observed state of

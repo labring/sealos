@@ -67,7 +67,7 @@ type MeteringReconcile struct {
 // Reconcile metering belong to account，resourceQuota belong to metering
 func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	var ns corev1.Namespace
-	var metering meteringv1.Metering
+
 	r.Logger.Info("enter reconcile", "name: ", req.Name, "namespace: ", req.Namespace)
 	if err := r.Get(ctx, req.NamespacedName, &ns); err == nil {
 		// if create a user namespace ,will enter this reconcile
@@ -81,8 +81,36 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, client.IgnoreNotFound(err)
 			}
 		}
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
 
+	var extensionResourcePrice meteringv1.ExtensionResourcePrice
+	if err := r.Get(ctx, req.NamespacedName, &extensionResourcePrice); err == nil {
+		meteringList := &meteringv1.MeteringList{}
+		err = r.List(ctx, meteringList)
+		if err != nil {
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+		for _, metering := range meteringList.Items {
+			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
+				if metering.Spec.Resources == nil {
+					metering.Spec.Resources = make(map[corev1.ResourceName]meteringv1.ResourcePriceAndUsed, 0)
+				}
+				for resourceName, v := range extensionResourcePrice.Spec.Resources {
+					metering.Spec.Resources[resourceName] = meteringv1.ResourcePriceAndUsed{ResourcePrice: v, Used: &resource.Quantity{}}
+				}
+				//r.Logger.Info("metering", "metering", metering)
+				return nil
+			}); err != nil {
+				return ctrl.Result{}, fmt.Errorf("sync metering failed: %v", err)
+			}
+		}
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	var metering meteringv1.Metering
 	if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -91,13 +119,12 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Logger.Error(err, err.Error())
 		return ctrl.Result{}, err
 	}
-
 	// Ensure the deployment size is the same as the spec
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * time.Duration(r.MeteringInterval)}, nil
 }
 
 func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *meteringv1.Metering) error {
-	if time.Now().Unix()-metering.Status.LatestUpdateTime >= time.Minute.Milliseconds()/1000 {
+	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute*time.Duration(r.MeteringInterval)) {
 		infraList := &infrav1.InfraList{}
 		err := r.List(ctx, infraList)
 		if err != nil {
@@ -112,7 +139,6 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *met
 			}
 			amount += count
 		}
-
 		metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, amount))
 		if len(metering.Status.BillingListH) >= 24 {
 			var totalAmountD int64
@@ -269,6 +295,7 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.Metering{}).
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &meteringv1.ExtensionResourcePrice{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
 

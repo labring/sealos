@@ -21,10 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	ExtensionResourcePricePrefix = "extensionresourceprice-"
+)
+
 // ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
 type ExtensionResourcePriceSpec struct {
 	ResourceName string                            `json:"resourceName,omitempty"`
-	Resources    map[v1.ResourceName]ResourcePrice `json:"resources"`
+	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
 }
 
 // ExtensionResourcePriceStatus defines the observed state of ExtensionResourcePrice
@@ -54,4 +58,8 @@ type ExtensionResourcePriceList struct {
 
 func init() {
 	SchemeBuilder.Register(&ExtensionResourcePrice{}, &ExtensionResourcePriceList{})
+}
+
+func GetExtensionResourcePriceName(resourceControllerName string) string {
+	return ExtensionResourcePricePrefix + resourceControllerName
 }

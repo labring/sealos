@@ -3,4 +3,9 @@ kind: ExtensionResourcePrice
 metadata:
   name: extensionresourceprice-sample
 spec:
-  # TODO(user): Add fields here
+  resourceName: pod
+  resources:
+    cpu:
+      unit: "10"
+      price: 67
+      describe: "cost per cpu per hour（price:100 = 1¥）"
