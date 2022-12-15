@@ -197,7 +197,7 @@ func semverCompare(constraint, version string) (bool, error) {
 
 	v, err := sv2.NewVersion(version)
 	if err != nil {
-		// nosemgrep
+		// nolint: nilerr
 		return false, nil
 	}
 
