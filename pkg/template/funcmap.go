@@ -197,7 +197,7 @@ func semverCompare(constraint, version string) (bool, error) {
 
 	v, err := sv2.NewVersion(version)
 	if err != nil {
-		// nosemgrep: dgryski.semgrep-go.errnilcheck.err-nil-check
+		// nosemgrep: dgryski.semgrep-go.nilerr.return-nil
 		return false, nil
 	}
 
