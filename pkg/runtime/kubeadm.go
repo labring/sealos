@@ -149,7 +149,6 @@ func (k *KubeadmRuntime) getClusterName() string {
 	return k.Cluster.Name
 }
 
-// todo: maybe make this virtual IP configurable?
 func (k *KubeadmRuntime) getVip() string {
 	return k.getVIPFromImage()
 }

@@ -16,13 +16,15 @@ package env
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/template"
 
+	"github.com/labring/sealos/pkg/template"
 	"github.com/labring/sealos/pkg/types/v1beta1"
+	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -72,21 +74,35 @@ func (p *processor) RenderAll(host, dir string) error {
 		if info.IsDir() || !strings.HasSuffix(info.Name(), templateSuffix) {
 			return nil
 		}
+		err := os.Remove(strings.TrimSuffix(path, templateSuffix))
+		if err != nil {
+			logger.Warn(err)
+		}
 		writer, err := os.OpenFile(strings.TrimSuffix(path, templateSuffix), os.O_CREATE|os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("failed to open file [%s] when render env: %v", path, err)
 		}
+
 		defer func() {
 			_ = writer.Close()
 		}()
-		t, err := template.ParseFiles(path)
+		body, err := fileutil.ReadAll(path)
 		if err != nil {
-			return fmt.Errorf("failed to create template: %s %v", path, err)
+			return err
 		}
-		if host != "" {
-			if err := t.Execute(writer, p.getHostEnv(host)); err != nil {
-				return fmt.Errorf("failed to render env template: %s %v", path, err)
+
+		t, isOk, err := template.TryParse(string(body))
+		if isOk {
+			if err != nil {
+				return fmt.Errorf("failed to create template: %s %v", path, err)
 			}
+			if host != "" {
+				if err := t.Execute(writer, p.getHostEnv(host)); err != nil {
+					return fmt.Errorf("failed to render env template: %s %v", path, err)
+				}
+			}
+		} else {
+			return errors.New("convert template failed")
 		}
 		return nil
 	})
@@ -110,9 +126,6 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 		if img.Type == v1beta1.RootfsImage {
 			imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey] = img.Labels[v1beta1.ImageKubeVersionKey]
 		} else {
-			if _, ok := img.Env[v1beta1.ImageKubeVersionEnvSysKey]; ok {
-				logger.Warn("image name:%s , skip %s env", img.ImageName, v1beta1.ImageKubeVersionEnvSysKey)
-			}
 			for k := range img.Env {
 				if strings.HasPrefix(k, "SEALOS_SYS") {
 					logger.Warn("image name:%s , skip %s env , SEALOS_SYS prefix env is sealos system env", img.ImageName, k)
