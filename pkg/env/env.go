@@ -74,11 +74,14 @@ func (p *processor) RenderAll(host, dir string) error {
 		if info.IsDir() || !strings.HasSuffix(info.Name(), templateSuffix) {
 			return nil
 		}
-		err := os.Remove(strings.TrimSuffix(path, templateSuffix))
-		if err != nil {
-			logger.Warn(err)
+		fileName := strings.TrimSuffix(path, templateSuffix)
+		if fileutil.IsExist(fileName) {
+			if err := os.Remove(fileName); err != nil {
+				logger.Warn(err)
+			}
 		}
-		writer, err := os.OpenFile(strings.TrimSuffix(path, templateSuffix), os.O_CREATE|os.O_RDWR, os.ModePerm)
+
+		writer, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, os.ModePerm)
 		if err != nil {
 			return fmt.Errorf("failed to open file [%s] when render env: %v", path, err)
 		}
