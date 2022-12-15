@@ -15,8 +15,9 @@
 package buildimage
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseChartImages(t *testing.T) {
@@ -34,7 +35,15 @@ func TestParseChartImages(t *testing.T) {
 			args: args{
 				chartPath: "test/charts",
 			},
-			want:    []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
+			// want:    []string{"docker.io/cilium/istio_proxy", "quay.io/cilium/cilium:v1.12.0", "quay.io/cilium/operator-generic:v1.12.0"},
+			want: []string{
+				"docker.io/apache/apisix-dashboard:2.13-alpine",
+				"docker.io/apache/apisix-ingress-controller:1.5.0",
+				"docker.io/apache/apisix:2.15.0-alpine",
+				"docker.io/bitnami/etcd:3.5.4-debian-11-r14",
+				"docker.io/library/busybox:1.28",
+				"docker.io/library/busybox",
+			},
 			wantErr: false,
 		},
 	}
@@ -45,9 +54,8 @@ func TestParseChartImages(t *testing.T) {
 				t.Errorf("ParseChartImages() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseChartImages() got = %v, want %v", got, tt.want)
-			}
+			// use elements match to compare two lists since order is not important
+			assert.ElementsMatch(t, got, tt.want)
 		})
 	}
 }

@@ -43,11 +43,27 @@ func ParseChartImages(chartPath string) ([]string, error) {
 	if len(subChartPaths) == 0 {
 		return []string{}, nil // if chartPath not exist, return []
 	}
+
 	allImages := sets.NewString()
-	for _, subChartPath := range subChartPaths {
+	logger.Info(subChartPaths)
+	// add dependencies to subChartPaths list while iterating the list
+	for i := 0; i < len(subChartPaths); i++ {
+		subChartPath := subChartPaths[i]
+		logger.Info("loop iteration counter", i)
 		logger.Info("sub chart is", subChartPath)
 		c := Chart{
 			Path: chartPath + "/" + subChartPath,
+		}
+		// get dependencies of chart c recursively
+		chart, err := c.loadPath()
+		if err != nil {
+			return nil, err
+		}
+		for _, dependency := range chart.Dependencies() {
+			// only add the images that exist in the directory
+			if dependency.Parent().ChartFullPath() == subChartPaths[0] {
+				subChartPaths = append(subChartPaths, dependency.ChartFullPath())
+			}
 		}
 		images, err := c.GetImages()
 		if err != nil {
