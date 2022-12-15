@@ -91,7 +91,7 @@ func (c *Config) PreProcess() error {
 	logger.Info("Force: %v", c.Force)
 	logger.Info("Debug: %v", c.Debug)
 	logger.CfgConsoleLogger(c.Debug, false)
-	logger.Info("ImageDir: %v", c.Image)
+	logger.Info("ImageDir: %v, but Image config is remove", c.Image)
 	logger.Info("Timeout: %v", c.Timeout)
 	logger.Info("Auth: %v", c.Auth)
 	logger.Info("Username: %s", username)
