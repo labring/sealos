@@ -62,5 +62,3 @@ Description of these Parameters：
 Built-in environment variables
 
 - SEALOS_SYS_KUBE_VERSION: The version number of kubernetes, ex v1.26.0
-- SEALOS_SYS_VERSION_MAJOR: The major version number of kubernetes, ex 126
-- SEALOS_SYS_VERSION_MINOR: The minor version number of kubernetes, ex 0

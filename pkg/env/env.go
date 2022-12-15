@@ -19,17 +19,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/versionutil"
-
 	"github.com/labring/sealos/pkg/utils/maps"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 const templateSuffix = ".tmpl"
@@ -113,9 +109,6 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
 		if img.Type == v1beta1.RootfsImage {
 			imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey] = img.Labels[v1beta1.ImageKubeVersionKey]
-			major, minor := versionutil.GetMajorMinorInt(imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey])
-			imageEnvMap[v1beta1.ImageKubeVersionMajorEnvSysKey] = strconv.Itoa(major)
-			imageEnvMap[v1beta1.ImageKubeVersionMinorEnvSysKey] = strconv.Itoa(minor)
 		} else {
 			if _, ok := img.Env[v1beta1.ImageKubeVersionEnvSysKey]; ok {
 				logger.Warn("image name:%s , skip %s env", img.ImageName, v1beta1.ImageKubeVersionEnvSysKey)
