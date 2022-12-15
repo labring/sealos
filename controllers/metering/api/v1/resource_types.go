@@ -31,9 +31,12 @@ const (
 
 // ResourceSpec defines the desired state of Resource
 type ResourceSpec struct {
-	ResourceName v1.ResourceName    `json:"resourceName,omitempty"`
-	Used         *resource.Quantity `json:"used,omitempty"`
-	TimeStamp    int64              `json:"time,omitempty"`
+	Resources map[v1.ResourceName]ResourceInfo `json:"resources,omitempty"`
+}
+
+type ResourceInfo struct {
+	Used      *resource.Quantity `json:"used,omitempty"`
+	TimeStamp int64              `json:"time,omitempty"`
 }
 
 // ResourceStatus defines the observed state of Resource

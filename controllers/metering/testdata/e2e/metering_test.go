@@ -15,6 +15,7 @@ import (
 const (
 	TestNamespace          = "metering-test"
 	ResourceControllerName = "pod-controller"
+	PodName                = "nginx-test"
 )
 
 var MeteringSystemNamespace string
@@ -80,6 +81,79 @@ func TestMetering(t *testing.T) {
 			}
 		})
 
+		t.Run("pod controller should be ok", func(t *testing.T) {
+			baseapi.EnsureNamespace(TestNamespace)
+			time.Sleep(2 * time.Second)
+			t.Log("creat pod controller")
+			api.CreatePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+
+			//time.Sleep(20 * time.Second)
+			t.Log("ensure extension resource is created")
+			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+			if err != nil {
+				t.Fatalf("failed to get extension resource: %v", err)
+			}
+
+			if _, ok := podExtensionResourcePrice.Spec.Resources["cpu"]; !ok {
+				t.Fatalf("failed to get cpu price,resource info:%+v", podExtensionResourcePrice.Spec.Resources)
+			}
+			if _, ok := podExtensionResourcePrice.Spec.Resources["storage"]; !ok {
+				t.Fatalf("failed to get storage price,resource info:%+v", podExtensionResourcePrice.Spec.Resources)
+			}
+
+			t.Log(" del metering")
+			err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace, api.MeteringYaml)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			t.Log("create a nginx pod")
+			api.CreatPod(TestNamespace, PodName)
+
+			t.Log("ensure resource CR is created")
+			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "cpu", 0), 90)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			if _, ok := resource.Spec.Resources["cpu"]; !ok {
+				t.Fatalf("not fount cpu resource used ")
+			}
+			t.Log(resource)
+
+			t.Log("Make sure resources are counted twice")
+			resource, err = api.EnsureResourceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "cpu", 1), 90)
+			if err != nil {
+				t.Fatalf(err.Error())
+			}
+			if resource.Spec.Resources["cpu"].Used.Value() == 0 {
+				t.Fatalf("resource used count error ")
+			}
+			t.Log(resource)
+		})
+
+		t.Run("metering used update should be ok", func(t *testing.T) {
+			baseapi.EnsureNamespace(TestNamespace)
+			api.EnsurePod(TestNamespace, PodName)
+			api.EnsurePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+			time.Sleep(time.Second * 2)
+
+			metering, err := api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			if err != nil {
+				t.Fatalf("success get metering: %v", err)
+			}
+
+			t.Log(" metering resource used update should be ok")
+			metering, err = api.EnsureMeteringUsed(TestNamespace, controllers.MeteringPrefix+TestNamespace, 90)
+			if err != nil {
+				t.Fatalf("failed to get metering-quota: %v", err)
+			}
+
+			if metering.Spec.Resources["cpu"].Used.Value() == 0 {
+				t.Fatalf("pod controller fail to update metering-quota,value:%v", metering.Spec.Resources["cpu"].Used.Value())
+			}
+			t.Log("meteringQuota.Spec.Resources", metering.Spec.Resources)
+		})
+
 	})
 	t.Cleanup(clear)
 }
@@ -101,4 +175,18 @@ func clear() {
 		log.Println(err)
 	}
 
+	err = api.DeletePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = api.DeletePod(TestNamespace, PodName)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = api.DeleteExtensionResourcePrice(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+	if err != nil {
+		log.Println(err)
+	}
 }

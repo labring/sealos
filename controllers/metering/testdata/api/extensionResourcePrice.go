@@ -22,7 +22,7 @@ spec:
 `
 
 func GetExtensionResourcePrice(namespace string, name string) (*meteringv1.ExtensionResourcePrice, error) {
-	gvr := meteringv1.GroupVersion.WithResource("extensionresourcesprices")
+	gvr := meteringv1.GroupVersion.WithResource("extensionresourceprices")
 	var extensionResourcesPrice meteringv1.ExtensionResourcePrice
 	if err := baseapi.GetObject(namespace, name, gvr, &extensionResourcesPrice); err != nil {
 		return nil, err

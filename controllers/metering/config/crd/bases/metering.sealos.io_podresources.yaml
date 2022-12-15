@@ -37,6 +37,7 @@ spec:
             properties:
               interval:
                 default: 60
+                description: update used resources every Interval minutes
                 minimum: 1
                 type: integer
               resourceName:
@@ -65,6 +66,9 @@ spec:
             description: PodResourceStatus defines the observed state of PodResource
             properties:
               latestUpdateTime:
+                format: int64
+                type: integer
+              seqID:
                 format: int64
                 type: integer
             type: object

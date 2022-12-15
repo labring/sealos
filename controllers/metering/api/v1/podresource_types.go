@@ -25,8 +25,8 @@ import (
 type PodResourceSpec struct {
 	ResourceName string                            `json:"resourceName,omitempty"`
 	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
-	// update used resources every Interval minutes
 
+	// update used resources every Interval minutes
 	//+kubebuilder:default=60
 	//+kubebuilder:validation:Minimum=1
 	Interval int `json:"interval,omitempty"`
@@ -35,6 +35,7 @@ type PodResourceSpec struct {
 // PodResourceStatus defines the observed state of PodResource
 type PodResourceStatus struct {
 	LatestUpdateTime int64 `json:"latestUpdateTime,omitempty"`
+	SeqID            int64 `json:"seqID,omitempty"`
 }
 
 //+kubebuilder:object:root=true

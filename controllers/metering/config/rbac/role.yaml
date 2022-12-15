@@ -69,3 +69,15 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - resources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

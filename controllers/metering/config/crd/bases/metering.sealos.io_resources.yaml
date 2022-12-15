@@ -35,19 +35,20 @@ spec:
           spec:
             description: ResourceSpec defines the desired state of Resource
             properties:
-              resourceName:
-                description: ResourceName is the name identifying various resources
-                  in a ResourceList.
-                type: string
-              time:
-                format: int64
-                type: integer
-              used:
-                anyOf:
-                - type: integer
-                - type: string
-                pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                x-kubernetes-int-or-string: true
+              resources:
+                additionalProperties:
+                  properties:
+                    time:
+                      format: int64
+                      type: integer
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: object
             type: object
           status:
             description: ResourceStatus defines the observed state of Resource

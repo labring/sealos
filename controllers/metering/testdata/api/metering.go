@@ -59,3 +59,16 @@ func DeleteMetering(namespace string, name string) error {
 	}
 	return nil
 }
+
+func EnsureMeteringUsed(namespace string, name string, times int) (*meteringv1.Metering, error) {
+	EnsureMetering(namespace, name)
+	time.Sleep(time.Second)
+	for i := 1; i <= times; i++ {
+		meteringQuota, _ := GetMetering(namespace, name)
+		if meteringQuota.Spec.Resources["cpu"].Used.Value() > 0 {
+			return meteringQuota, nil
+		}
+		time.Sleep(time.Second)
+	}
+	return nil, fmt.Errorf("metering calculate failed")
+}

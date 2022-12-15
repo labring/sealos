@@ -3,4 +3,7 @@ kind: Resource
 metadata:
   name: resource-sample
 spec:
-  # TODO(user): Add fields here
+  resources:
+    resourceName: "cpu"
+    Used: 1
+
