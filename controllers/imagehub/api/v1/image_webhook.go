@@ -108,27 +108,11 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Checker) error {
-	reqq, err := admission.RequestFromContext(ctx)
-	if err != nil {
-		logger.Info("get request from context error when validate", "obj name", i.getName())
-		return err
-	}
-	logger.Info("try to get req.user.group", "user groups", reqq.UserInfo.Groups)
-
 	logger.Info("checking label and spec name", "obj name", i.getSpecName())
 	if !i.checkLabels() || !i.checkSpecName() {
 		return fmt.Errorf("missing labels or obj.Spec.Name is IsLegal: %s", i.getSpecName())
 	}
-	logger.Info("getting org", "org", i.getSpecName())
-	org := &Organization{}
-	if err := c.Get(ctx, client.ObjectKey{Name: i.getOrgName()}, org); err != nil {
-		if client.IgnoreNotFound(err) == nil {
-			logger.Info("organization not exited, pass", "org name", i.getOrgName())
-			return nil
-		}
-		return fmt.Errorf("get Organization error %s", i.getOrgName())
-	}
-	logger.Info("org info", "org", org)
+
 	logger.Info("getting req from ctx")
 	req, err := admission.RequestFromContext(ctx)
 	if err != nil {
@@ -136,29 +120,38 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 		return err
 	}
 	logger.Info("checking user", "user", req.UserInfo.Username)
-	// if user is kubernetes-admin, pass it.
-	if req.UserInfo.Username == kubernetesAdmin {
-		logger.Info("pass for kubernetes-admin")
-		return nil
-	}
-	// if sa is in system:serviceaccount:imagehub-system, pass it.
-	imagehubNameSpacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getImagehubNamespace())
-	if strings.HasPrefix(req.UserInfo.Username, imagehubNameSpacePrefix) {
-		logger.Info("pass for imagehub controller")
-		return nil
-	}
-	// get sa namespace prefix, prefix format is like: "system:serviceaccount:user-system:"
-	userNamespacePrefix := fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace())
-	// req.UserInfo.Username e.g: system:serviceaccount:user-system:labring
-	if !strings.HasPrefix(req.UserInfo.Username, userNamespacePrefix) {
-		return fmt.Errorf("denied, you are not one of user in %s", userNamespacePrefix)
-	}
-	// replace it and compare
-	userName := strings.Replace(req.UserInfo.Username, userNamespacePrefix, "", -1)
-	logger.Info("checking username", "user", userName)
-	for _, usr := range org.Spec.Manager {
-		if usr == userName {
+	// gen imagehubSaGroup, userSaGroup, userName
+	imagehubSaGroup := strings.Replace(defaultImagehubSaGroup, defaultImagehubNamespace, getImagehubNamespace(), -1)
+	userSaGroup := strings.Replace(defaultUserSaGroup, defaultUserNamespace, getUserNamespace(), -1)
+	userName := strings.Replace(req.UserInfo.Username, fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace()), "", -1)
+
+	for _, g := range req.UserInfo.Groups {
+		switch g {
+		// if user is kubernetes-admin, pass it.
+		case mastersGroup:
+			logger.Info("pass for kubernetes-admin")
 			return nil
+		case imagehubSaGroup:
+			logger.Info("pass for imagehub controller service account")
+			return nil
+		case userSaGroup:
+			logger.Info("checking username", "user", userName)
+			managers, err := getOrgManagers(ctx, c, i)
+			if err != nil {
+				logger.Info("get org managers error", "org name", i.getOrgName())
+				return err
+			}
+			for _, manager := range managers {
+				if userName == manager {
+					logger.Info("passed for user", "user name", userName)
+					return nil
+				}
+			}
+			// continue to check other groups
+			continue
+		default:
+			// continue to check other groups
+			continue
 		}
 	}
 	logger.Info("denied", "obj name", i.getName())
@@ -178,4 +171,17 @@ func getImagehubNamespace() string {
 		return defaultImagehubNamespace
 	}
 	return imagehubNamespace
+}
+
+func getOrgManagers(ctx context.Context, c client.Client, i Checker) (res []string, err error) {
+	org := &Organization{}
+	if err = c.Get(ctx, client.ObjectKey{Name: i.getOrgName()}, org); err != nil {
+		if client.IgnoreNotFound(err) == nil {
+			return
+		}
+		err = fmt.Errorf("get Organization error %s", i.getOrgName())
+		return
+	}
+	res = org.Spec.Manager
+	return
 }

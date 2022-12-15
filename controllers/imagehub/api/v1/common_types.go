@@ -23,9 +23,11 @@ const (
 
 const (
 	saPrefix                 = "system:serviceaccount"
+	mastersGroup             = "system:masters"
 	defaultUserNamespace     = "user-system"
 	defaultImagehubNamespace = "imagehub-system"
-	kubernetesAdmin          = "kubernetes-admin"
+	defaultUserSaGroup       = "system:serviceaccounts:user-system"
+	defaultImagehubSaGroup   = "system:serviceaccounts:imagehub-system"
 )
 
 //+kubebuilder:object:generate=false
