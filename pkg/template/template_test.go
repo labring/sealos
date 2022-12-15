@@ -35,6 +35,8 @@ version: {{if (semverCompare "^1.26.0" (default "" .ENV)) }}v1{{ else }}v1alpha2
 	execErr := v.Execute(out, map[string]interface{}{
 		// comment out this to test true return
 		// "ENV": "v1.26.1",
+		// comment out this to test false return
+		"ENV": "v1.25.10",
 	})
 	if execErr != nil {
 		t.Errorf("template exec err: %v", execErr)

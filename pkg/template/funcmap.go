@@ -29,7 +29,6 @@ import (
 	"text/template"
 
 	"github.com/BurntSushi/toml"
-	sv2 "github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig/v3"
 	"sigs.k8s.io/yaml"
 )
@@ -51,8 +50,6 @@ func funcMap() template.FuncMap {
 		"fromJsonArray": fromJSONArray,
 		"ipNet":         ipNet,
 		"ipAt":          ipAt,
-
-		"semverCompare": semverCompare, // custom semver compare to avoid error
 	}
 
 	for k, v := range extra {
@@ -183,23 +180,4 @@ func ipAt(s string, idx uint32) string {
 	ip := make(net.IP, 4)
 	binary.BigEndian.PutUint32(ip, start+idx)
 	return ip.String()
-}
-
-// semverCompare overrides the default semverCompare function to avoid error.
-//
-// If `version` is empty or not valid, return false, not error.
-// At the mean time, `constraint` must be valid.
-func semverCompare(constraint, version string) (bool, error) {
-	c, err := sv2.NewConstraint(constraint)
-	if err != nil {
-		return false, err
-	}
-
-	v, err := sv2.NewVersion(version)
-	if err != nil {
-		// nolint: nilerr
-		return false, nil
-	}
-
-	return c.Check(v), nil
 }
