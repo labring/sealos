@@ -107,6 +107,15 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 	return checkOption(ctx, imagelog, v.Client, i)
 }
 
+// default userSaGroup: system:serviceaccounts:user-system
+var imagehubSaGroup, userSaGroup string
+
+func init() {
+	// notice: group is like: system:serviceaccounts:namespace-name
+	imagehubSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getImagehubNamespace())
+	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
+}
+
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Checker) error {
 	logger.Info("checking label and spec name", "obj name", i.getSpecName())
 	if !i.checkLabels() || !i.checkSpecName() {
@@ -120,9 +129,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 		return err
 	}
 	logger.Info("checking user", "user", req.UserInfo.Username)
-	// gen imagehubSaGroup, userSaGroup, userName
-	imagehubSaGroup := strings.Replace(defaultImagehubSaGroup, defaultImagehubNamespace, getImagehubNamespace(), -1)
-	userSaGroup := strings.Replace(defaultUserSaGroup, defaultUserNamespace, getUserNamespace(), -1)
+	// get userName by replace "system:serviceaccount:user-system:labring-user-name" to "labring-user-name"
 	userName := strings.Replace(req.UserInfo.Username, fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace()), "", -1)
 
 	for _, g := range req.UserInfo.Groups {

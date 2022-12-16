@@ -26,8 +26,6 @@ const (
 	mastersGroup             = "system:masters"
 	defaultUserNamespace     = "user-system"
 	defaultImagehubNamespace = "imagehub-system"
-	defaultUserSaGroup       = "system:serviceaccounts:user-system"
-	defaultImagehubSaGroup   = "system:serviceaccounts:imagehub-system"
 )
 
 //+kubebuilder:object:generate=false
