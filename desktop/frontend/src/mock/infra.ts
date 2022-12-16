@@ -20,16 +20,16 @@ spec:
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: {{.masterDisk}}
-      type: {{.masterDiskType}}
-      name: "/dev/sda2"
+      volumeType: {{.masterDiskType}}
+      type: "root"
   - roles: [ node ]
     count: {{ .nodeCount }}
     flavor: {{ .nodeType }}
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: {{.nodeDisk}}
-      type: {{.nodeDiskType}}
-      name: "/dev/sda2"
+      volumeType: {{.nodeDiskType}}
+      type: "root"
 `;
 
 const clusterMeta: CRDMeta = {
