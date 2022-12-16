@@ -227,17 +227,24 @@ func (c *ScaleProcessor) RunConfig(cluster *v2.Cluster) error {
 func (c *ScaleProcessor) MountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline MountRootfs in ScaleProcessor.")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
-	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
+	// since app type images are only sent to the first master, in
+	// cluster scaling scenario we don't need to sent app images repeatedly.
+	// so filter out rootfs/patch type
+	fs, err := filesystem.NewRootfsMounter(filterNoneApplicationMounts(cluster.Status.Mounts))
 	if err != nil {
 		return err
 	}
-
 	return fs.MountRootfs(cluster, hosts)
 }
 
-func (c *ScaleProcessor) MirrorRegistry(cluster *v2.Cluster) error {
-	logger.Info("Executing pipeline MirrorRegistry in ScaleProcessor.")
-	return MirrorRegistry(cluster, cluster.Status.Mounts)
+func filterNoneApplicationMounts(images []v2.MountImage) []v2.MountImage {
+	ret := make([]v2.MountImage, 0)
+	for i := range images {
+		if images[i].Type != v2.AppImage {
+			ret = append(ret, images[i])
+		}
+	}
+	return ret
 }
 
 func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
