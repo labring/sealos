@@ -27,7 +27,7 @@ type PodResourceSpec struct {
 	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
 
 	// update used resources every Interval minutes
-	//+kubebuilder:default=60
+	//+kubebuilder:default=50
 	//+kubebuilder:validation:Minimum=1
 	Interval int `json:"interval,omitempty"`
 }

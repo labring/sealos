@@ -64,12 +64,15 @@ type MeteringReconcile struct {
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings/finalizers,verbs=update
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=extensionresourceprices,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile metering belong to account，resourceQuota belong to metering
 func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	var ns corev1.Namespace
-
 	r.Logger.Info("enter reconcile", "name: ", req.Name, "namespace: ", req.Namespace)
+	// when user ns create enter this logic
+	var ns corev1.Namespace
 	if err := r.Get(ctx, req.NamespacedName, &ns); err == nil {
 		// if create a user namespace ,will enter this reconcile
 		if _, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]; ok {
@@ -79,13 +82,15 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, err
 			}
 			if err := r.initMetering(ctx, ns); err != nil {
-				return ctrl.Result{}, client.IgnoreNotFound(err)
+				return ctrl.Result{}, err
 			}
 		}
+		return ctrl.Result{}, nil
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
 
+	// when extensionResourcePrice change will enter this logic
 	var extensionResourcePrice meteringv1.ExtensionResourcePrice
 	if err := r.Get(ctx, req.NamespacedName, &extensionResourcePrice); err == nil {
 		meteringList := &meteringv1.MeteringList{}
@@ -107,6 +112,38 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				return ctrl.Result{}, fmt.Errorf("sync metering failed: %v", err)
 			}
 		}
+		//r.Logger.Info("", "meteringList", meteringList)
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	}
+
+	// when Resource create will enter this logic
+	resources := &meteringv1.Resource{}
+	if err := r.Get(ctx, req.NamespacedName, resources); err == nil && resources.Status.Status != meteringv1.Complete {
+		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace)
+		var metering meteringv1.Metering
+		for resourceName, resourceInfo := range resources.Spec.Resources {
+			if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNameSpace, Name: MeteringPrefix + resourceInfo.NameSpace}, &metering); err != nil {
+				r.Logger.Error(err, "get metering failed", "name", MeteringPrefix+resourceInfo.NameSpace)
+				continue
+			}
+			if _, ok := metering.Spec.Resources[resourceName]; !ok {
+				r.Logger.Error(err, "resource not found in metering", "name", MeteringPrefix+resourceInfo.NameSpace)
+				continue
+			}
+			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
+				metering.Spec.Resources[resourceName].Used.Add(*resourceInfo.Used)
+				return r.Update(ctx, &metering)
+			}); err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+
+			resources.Status.Status = meteringv1.Complete
+			err := r.Update(ctx, resources)
+			if err != nil {
+				return ctrl.Result{Requeue: true}, err
+			}
+		}
 	} else if client.IgnoreNotFound(err) != nil {
 		return ctrl.Result{}, err
 	}
@@ -115,65 +152,106 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	r.Logger.Info("time", "now:", time.Now().Unix(), "last:", metering.Status.LatestUpdateTime, "internal", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
+	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Minutes())*int64(metering.Spec.TimeInterval) {
+		r.Logger.Info("enter update metering", "metering name: ", req.Name, "metering namespace: ", req.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
+		totalAccount, err := r.CalculateCost(ctx, &metering)
+		if err != nil {
+			r.Logger.Error(err, err.Error())
+			return ctrl.Result{}, err
+		}
 
-	if err := r.updateBillingList(ctx, &metering); err != nil {
-		r.Logger.Error(err, err.Error())
-		return ctrl.Result{}, err
+		if err := r.updateBillingList(ctx, totalAccount, metering); err != nil {
+			return ctrl.Result{}, err
+		}
+
+		// todo create payment tell account how much need deduction
 	}
-	// Ensure the deployment size is the same as the spec
+
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * time.Duration(r.MeteringInterval)}, nil
 }
 
-func (r *MeteringReconcile) updateBillingList(ctx context.Context, metering *meteringv1.Metering) error {
-	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute*time.Duration(r.MeteringInterval)) {
-		infraList := &infrav1.InfraList{}
-		err := r.List(ctx, infraList)
-		if err != nil {
-			return err
+func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meteringv1.Metering) (int64, error) {
+	var resourceMsgs []meteringv1.ResourceMsg
+	infraAmount, err := r.calculateInfraCost(ctx, metering)
+	if err != nil {
+		r.Logger.Error(err, "Failed to get InfraCost")
+	} else {
+		resourceMsgs = append(resourceMsgs, meteringv1.ResourceMsg{
+			ResourceName: "infra",
+			Amount:       float64(infraAmount),
+		})
+	}
+
+	var totalAmount float64
+	for resourceName, resourceValue := range metering.Spec.Resources {
+		if _, ok := metering.Spec.Resources[resourceName]; ok {
+			amount := float64(resourceValue.Used.MilliValue()) * float64(resourceValue.Price) / float64(resourceValue.Unit.MilliValue())
+			resourceMsgs = append(resourceMsgs, meteringv1.ResourceMsg{
+				ResourceName: resourceName,
+				Amount:       amount,
+				Used:         resourceValue.Used,
+				Unit:         resourceValue.Unit,
+			})
+			totalAmount += amount
+		} else {
+			r.Logger.Error(fmt.Errorf("resource: %v is not found", resourceName), "Failed to get Resource")
 		}
-		var amount int64
-		for _, infra := range infraList.Items {
+	}
+	totalAmount += float64(infraAmount)
+	r.Logger.Info(fmt.Sprintf("meteringNmae %v,resourceMsg: %+v", metering.Name, resourceMsgs), "totalAmount", totalAmount)
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, metering, func() error {
+		for _, v := range metering.Spec.Resources {
+			used := resource.MustParse(v.Used.String())
+			v.Used.Sub(used)
+		}
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+	return int64(totalAmount), nil
+}
+
+func (r *MeteringReconcile) calculateInfraCost(ctx context.Context, metering *meteringv1.Metering) (int64, error) {
+	infraList := &infrav1.InfraList{}
+	err := r.List(ctx, infraList)
+	//r.Logger.Info("infraList", "infraList", infraList)
+	if client.IgnoreNotFound(err) != nil {
+		r.Logger.Error(err, "Failed to get InfraList")
+		return 0, err
+	}
+	var amount int64
+	for _, infra := range infraList.Items {
+		if infra.Namespace == metering.Spec.Namespace {
 			count, err := infra.QueryPrice()
 			r.Logger.Info("get infra :", "name: ", infra.Name, "namespace: ", infra.Namespace, "price: ", count)
 			if err != nil {
-				return err
+				return 0, err
 			}
 			amount += count
 		}
-		metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, amount))
-		if len(metering.Status.BillingListH) >= 24 {
-			var totalAmountD int64
-			for i := 0; i < 24; i++ {
-				totalAmountD += metering.Status.BillingListH[i].Amount
-			}
-			metering.Status.BillingListH = metering.Status.BillingListH[24:]
-			metering.Status.BillingListD = append(metering.Status.BillingListD, NewBillingList(meteringv1.DAY, totalAmountD))
-		}
-		metering.Status.LatestUpdateTime = time.Now().Unix()
-		metering.Status.TotalAmount += amount
-		err = r.Status().Update(ctx, metering)
-		if err != nil {
-			return err
-		}
+	}
+	// amount is preHour,but billing is perMinute
+	r.Logger.V(1).Info("infra", "price:", amount)
+	return amount, nil
+}
 
-		account := &userv1.Account{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      metering.Spec.Owner,
-				Namespace: r.MeteringSystemNameSpace,
-			},
+func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64, metering meteringv1.Metering) error {
+	r.Logger.Info("enter metering updateBillingList", "metering name: ", metering.Name, "metering namespace: ", metering.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
+	metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, amount))
+	if len(metering.Status.BillingListH) >= 24 {
+		var totalAmountD int64
+		for i := 0; i < 24; i++ {
+			totalAmountD += metering.Status.BillingListH[i].Amount
 		}
-		err = r.Get(ctx, client.ObjectKey{Namespace: r.MeteringSystemNameSpace, Name: account.Name}, account)
-		if err != nil {
-			r.Logger.Error(err, "get account err", "account", account)
-			return err
-		}
-		//deduct balance
-		account.Status.Balance -= amount
-		err = r.Status().Update(ctx, account)
-		if err != nil {
-			return err
-		}
-		r.Logger.Info("DebitSuccess ,", "user:", account.Name, "balance", account.Status.Balance)
+		metering.Status.BillingListH = metering.Status.BillingListH[24:]
+		metering.Status.BillingListD = append(metering.Status.BillingListD, NewBillingList(meteringv1.DAY, totalAmountD))
+	}
+	metering.Status.TotalAmount += amount
+	metering.Status.LatestUpdateTime = time.Now().Unix()
+	err := r.Status().Update(ctx, &metering)
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -193,7 +271,7 @@ func (r *MeteringReconcile) initMetering(ctx context.Context, ns corev1.Namespac
 	if err != nil {
 		return err
 	}
-
+	r.Logger.Info("totalResourcePrice", "totalResourcePrice", totalResourcePrice)
 	if err = r.syncMetering(ctx, ns, totalResourcePrice); err != nil {
 		r.Logger.Error(err, "Failed to create Metering")
 		return client.IgnoreNotFound(err)
@@ -202,7 +280,6 @@ func (r *MeteringReconcile) initMetering(ctx context.Context, ns corev1.Namespac
 }
 
 func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespace, resourcePrice map[corev1.ResourceName]meteringv1.ResourcePriceAndUsed) error {
-	r.Logger.Info(fmt.Sprintf("SealosSystemNamespace:%v", r.MeteringSystemNameSpace))
 	metering := meteringv1.Metering{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MeteringPrefix + ns.Name,
@@ -210,7 +287,7 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 		},
 	}
 
-	//r.Logger.V(1).Info("metering env", "METERING_INTERVAL", r.MeteringSystemNameSpace, "timeinterval: ", r.MeteringInterval)
+	r.Logger.V(1).Info("metering env", "METERING_INTERVAL", r.MeteringSystemNameSpace, "timeInterval: ", r.MeteringInterval)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
 		metering.Spec.Namespace = ns.Name
 		metering.Spec.Owner = ns.Annotations[userv1.UserAnnotationOwnerKey]
@@ -221,7 +298,7 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 		r.Error(err, "Failed to update Metering")
 		return err
 	}
-
+	r.Logger.Info("metering Spec", "metering.Spec", metering.Spec)
 	// get or create resourceQuota
 	if err := r.syncResourceQuota(ctx, metering); err != nil {
 		r.Error(err, "Failed to syncResourceQuota")
@@ -297,9 +374,10 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 		For(&meteringv1.Metering{}).
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}).
 		Watches(&source.Kind{Type: &meteringv1.ExtensionResourcePrice{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &meteringv1.Resource{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }
 
 func DefaultInterval() string {
-	return "70"
+	return "60"
 }

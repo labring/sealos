@@ -39,18 +39,25 @@ Spec:
     	owner: fanux
     	namespace: string
         resources: v1.ResourceList // resource type
-		timeInterval:60 // time interval
+		timeInterval:59 // time interval
 */
 
 // MeteringSpec defines the desired state of Metering
-
 type MeteringSpec struct {
 	Namespace string `json:"namespace"`
 	Owner     string `json:"owner"`
 
 	//timeInterval unit is minutes
-	TimeInterval int                                          `json:"timeInterval"`
+	TimeInterval int                                          `json:"timeInterval,omitempty"`
 	Resources    map[corev1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
+}
+
+// MeteringStatus defines the observed state of Metering
+type MeteringStatus struct {
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 type ResourcePrice struct {
@@ -64,19 +71,18 @@ type ResourcePriceAndUsed struct {
 	Used          *resource.Quantity `json:"used,omitempty"`
 }
 
+type ResourceMsg struct {
+	ResourceName corev1.ResourceName
+	Amount       float64
+	Used         *resource.Quantity
+	Unit         *resource.Quantity
+}
+
 type BillingList struct {
 	TimeStamp    int64            `json:"timeStamp,omitempty"`
 	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
 	Settled      bool             `json:"settled,omitempty"`      //is settled
 	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
-}
-
-// MeteringStatus defines the observed state of Metering
-type MeteringStatus struct {
-	BillingListH     []BillingList `json:"billingListH,omitempty"`
-	BillingListD     []BillingList `json:"billingListD,omitempty"`
-	TotalAmount      int64         `json:"totalAmount,omitempty"`
-	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

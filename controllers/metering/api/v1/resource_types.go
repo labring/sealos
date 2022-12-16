@@ -37,6 +37,7 @@ type ResourceSpec struct {
 type ResourceInfo struct {
 	Used      *resource.Quantity `json:"used,omitempty"`
 	TimeStamp int64              `json:"time,omitempty"`
+	NameSpace string             `json:"namespace,omitempty"`
 }
 
 // ResourceStatus defines the observed state of Resource

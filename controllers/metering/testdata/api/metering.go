@@ -20,6 +20,7 @@ metadata:
 
 func GetMetering(namespace string, name string) (*meteringv1.Metering, error) {
 	gvr := meteringv1.GroupVersion.WithResource("meterings")
+
 	var metering meteringv1.Metering
 	if err := baseapi.GetObject(namespace, name, gvr, &metering); err != nil {
 		return nil, err
@@ -64,9 +65,16 @@ func EnsureMeteringUsed(namespace string, name string, times int) (*meteringv1.M
 	EnsureMetering(namespace, name)
 	time.Sleep(time.Second)
 	for i := 1; i <= times; i++ {
-		meteringQuota, _ := GetMetering(namespace, name)
-		if meteringQuota.Spec.Resources["cpu"].Used.Value() > 0 {
-			return meteringQuota, nil
+		metering, err := GetMetering(namespace, name)
+		if err != nil {
+			time.Sleep(time.Second)
+			continue
+		}
+		if _, ok := metering.Spec.Resources["cpu"]; !ok {
+			return nil, fmt.Errorf("metering resource cpu is not found")
+		}
+		if metering.Spec.Resources["cpu"].Used.Value() > 0 {
+			return metering, nil
 		}
 		time.Sleep(time.Second)
 	}

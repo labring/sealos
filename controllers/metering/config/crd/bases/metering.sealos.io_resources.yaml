@@ -38,6 +38,8 @@ spec:
               resources:
                 additionalProperties:
                   properties:
+                    namespace:
+                      type: string
                     time:
                       format: int64
                       type: integer

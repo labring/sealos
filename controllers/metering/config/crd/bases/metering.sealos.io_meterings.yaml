@@ -44,6 +44,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: MeteringSpec defines the desired state of Metering
             properties:
               namespace:
                 type: string
@@ -80,7 +81,6 @@ spec:
             required:
             - namespace
             - owner
-            - timeInterval
             type: object
           status:
             description: MeteringStatus defines the observed state of Metering
