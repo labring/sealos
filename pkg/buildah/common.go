@@ -22,6 +22,7 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
@@ -51,11 +52,12 @@ func flagChanged(c *cobra.Command, name string) bool {
 }
 
 func setDefaultFlags(c *cobra.Command) error {
-	defaulters := []func(*cobra.Command) error{
-		setDefaultTLSVerifyFlag,
-	}
-	for i := range defaulters {
-		if err := defaulters[i](c); err != nil {
+	return setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag)
+}
+
+func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command) error) error {
+	for i := range setters {
+		if err := setters[i](c); err != nil {
 			return err
 		}
 	}
@@ -63,9 +65,17 @@ func setDefaultFlags(c *cobra.Command) error {
 }
 
 func setDefaultTLSVerifyFlag(c *cobra.Command) error {
-	if fs := c.Flag("tls-verify"); fs != nil && !fs.Changed {
-		if err := c.Flags().Set("tls-verify", "false"); err != nil {
-			return fmt.Errorf("failed to set --tls-verify default to false: %v", err)
+	return setDefaultFlagIfNotChanged(c, "tls-verify", "false")
+}
+
+func setDefaultPlatformFlag(c *cobra.Command) error {
+	return setDefaultFlagIfNotChanged(c, "platform", parse.DefaultPlatform())
+}
+
+func setDefaultFlagIfNotChanged(c *cobra.Command, k, v string) error {
+	if fs := c.Flag(k); fs != nil && !fs.Changed {
+		if err := c.Flags().Set(k, v); err != nil {
+			return fmt.Errorf("failed to set --%s default to %s: %v", k, v, err)
 		}
 	}
 	return nil

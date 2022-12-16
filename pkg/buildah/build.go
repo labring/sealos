@@ -21,10 +21,8 @@ import (
 	"strings"
 
 	"github.com/containers/buildah/define"
-
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
-	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/buildah/util"
 	"github.com/spf13/cobra"
 
@@ -79,10 +77,6 @@ func newBuildCommand() *cobra.Command {
 	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
 	bailOnError(err, "failed to setup From and Build flags")
 
-	// set as default, otherwise parse.PlatformsFromOptions will get empty list
-	err = fromAndBudFlags.Set("platform", parse.DefaultPlatform())
-	bailOnError(err, "failed to set default platform flag")
-
 	sopts.RegisterFlags(flags)
 	flags.AddFlagSet(&buildFlags)
 	flags.AddFlagSet(&layerFlags)
@@ -130,9 +124,10 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 			return fmt.Errorf("cannot find any of %v in context directory", strings.Join(defaultFileNames, ", "))
 		}
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultPlatformFlag, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
+
 	options, containerfiles, removeAll, err := buildahcli.GenBuildOptions(c, inputArgs, iopts)
 	if err != nil {
 		return err

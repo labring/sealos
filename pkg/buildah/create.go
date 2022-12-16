@@ -43,12 +43,15 @@ func newCreateCmd() *cobra.Command {
 			if !IsRootless() {
 				return nil
 			}
-			shell, shellSet := os.LookupEnv("SHELL")
-			if !shellSet {
-				logger.Error("no command specified and no `SHELL` env set")
-				os.Exit(1)
+			args = args[1:]
+			if len(args) < 1 {
+				shell, shellSet := os.LookupEnv("SHELL")
+				if !shellSet {
+					logger.Error("no command specified and no `SHELL` env set")
+					os.Exit(1)
+				}
+				args = []string{shell}
 			}
-			args = []string{shell}
 			// nosemgrep: go.lang.security.audit.dangerous-exec-command.dangerous-exec-command
 			cmd := exec.Command(args[0], args[1:]...)
 			cmd.Env = unshare.RootlessEnv()

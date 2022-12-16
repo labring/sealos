@@ -226,7 +226,7 @@ func fromCmd(c *cobra.Command, args []string, iopts *fromReply) error {
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultPlatformFlag, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 	if err := auth.CheckAuthFile(iopts.authfile); err != nil {
