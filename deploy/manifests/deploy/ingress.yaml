@@ -17,12 +17,12 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: hub-sealos-io
+  name: hub-sealos-cn
   namespace: docker-registry-system
 spec:
-  secretName: hub-sealos-io-cert
+  secretName: hub-sealos-cn-cert
   dnsNames:
-    - hub.sealos.io
+    - hub.sealos.cn
   issuerRef:
     name: cluster-issuer-docker-registry
     kind: ClusterIssuer
@@ -39,9 +39,11 @@ metadata:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/rewrite-target: /
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-body-size: 4096m
+    nginx.ingress.kubernetes.io/affinity: cookie
 spec:
   rules:
-    - host: hub.sealos.io
+    - host: hub.sealos.cn
       http:
         paths:
           - pathType: Prefix
@@ -53,5 +55,5 @@ spec:
                   number: 5000
   tls:
     - hosts:
-        - hub.sealos.io
-      secretName: hub-sealos-io-cert
+        - hub.sealos.cn
+      secretName: hub-sealos-cn-cert
