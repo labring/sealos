@@ -1,0 +1,9 @@
+shim: /var/run/image-cri-shim.sock
+cri: /run/crio/crio.sock
+address: http://sealos.hub:5000
+force: true
+debug: false
+image: /var/lib/image-cri-shim
+sync: 0
+timeout: 15m
+auth: admin:passw0rd

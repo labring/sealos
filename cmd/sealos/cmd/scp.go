@@ -70,7 +70,7 @@ func newScpCmd() *cobra.Command {
 			return nil
 		},
 	}
-	scpCmd.Flags().StringVarP(&clusterName, "cluster-name", "c", "default", "name of cluster to applied scp action")
+	scpCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied scp action")
 	scpCmd.Flags().StringVarP(&roles, "roles", "r", "", "copy file to nodes with role")
 	scpCmd.Flags().StringSliceVar(&ips, "ips", []string{}, "copy file to nodes with ip address")
 	return scpCmd
