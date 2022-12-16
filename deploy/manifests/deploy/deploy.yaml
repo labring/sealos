@@ -40,7 +40,6 @@ data:
         rootcertbundle: /etc/docker/registry/authserver.crt
     http:
       addr: :5000
-      host: https://hub.sealos.io:5000
       headers:
         X-Content-Type-Options: [nosniff]
       http2:
