@@ -23,6 +23,7 @@ const (
 
 const (
 	saPrefix                 = "system:serviceaccount"
+	mastersGroup             = "system:masters"
 	defaultUserNamespace     = "user-system"
 	defaultImagehubNamespace = "imagehub-system"
 )
