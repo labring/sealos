@@ -1,5 +1,4 @@
 import {
-  Button,
   Dialog,
   DialogActions,
   DialogBody,
@@ -8,27 +7,34 @@ import {
   DialogTitle,
   Spinner
 } from '@fluentui/react-components';
-import { useEffect, useState } from 'react';
-import styles from './delete_dialog.module.scss';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
+import Button from './button';
+import styles from './delete_dialog.module.scss';
 
 type DialogComponentProps = {
   open: boolean;
   deleteName: string;
   onChangeOpen: (open: boolean) => void;
 };
+
 enum DialogStatus {
   loading,
   success
 }
+
 export default function DeletePgsqlDialog(props: DialogComponentProps) {
   const { open, deleteName, onChangeOpen } = props;
   const [isDisabled, setIsDisabled] = useState(true);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [dialogStatus, setDialogStatus] = useState<DialogStatus>();
+
   const handleDelete = async () => {
+    if (isDisabled) {
+      return;
+    }
     onChangeOpen(false);
     setDialogStatus(DialogStatus.loading);
     const res = await request.post('/api/pgsql/deletePgsql', { pgsqlName: deleteName, kubeconfig });
@@ -78,10 +84,10 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
                 </div>
               </DialogContent>
               <DialogActions className="mt-2">
-                <Button className={styles.cancelBtn} onClick={() => onChangeOpen(false)}>
+                <Button size="small" type="lightBlue" handleClick={() => onChangeOpen(false)}>
                   取消
                 </Button>
-                <Button className={styles.confirmBtn} onClick={handleDelete} disabled={isDisabled}>
+                <Button size="medium" plain disabled={isDisabled} handleClick={handleDelete}>
                   删除集群
                 </Button>
               </DialogActions>

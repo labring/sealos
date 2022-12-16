@@ -1,4 +1,4 @@
-@import './pgsql.common.scss';
+@import './pgsql_common.scss';
 
 .card {
   background: rgba(255, 255, 255, 0.75);
@@ -6,42 +6,13 @@
   border-radius: 16px;
 }
 
-.backIcon {
-  @include iconBox(32px, rgba(255, 255, 255, 0.6), 12px, 0px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .copyBtn {
   @include iconBox(32px, rgba(35, 168, 242, 0.15), 12px, 8px);
-}
-
-.isCopyed {
-  position: absolute;
-  top: 30px;
-  width: 152px;
-  height: 48px;
-  background: #ffffff;
-  box-shadow: 0px 4px 4px rgba(199, 213, 240, 0.25);
-  border-radius: 16px;
 }
 
 .pgsqlFrontPage {
   background-image: url('/images/pgsql/pgsql_bg.png');
   background-size: cover;
-}
-
-.createBtn {
-  width: 138px;
-  height: 40px;
-  background: #239bf2;
-  border-radius: 64px;
-  color: #ffffff;
-  font-weight: 600;
-  font-size: 12px;
-  line-height: 20px;
-  margin-left: auto;
 }
 
 .title {
@@ -65,17 +36,15 @@
 
 .cardName {
   @extend .card;
-  height: 168px;
 }
 
 .cardVolume {
   @extend .card;
-  height: 228px;
   margin-top: 12px;
 }
 
 .cardIops {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255);
   height: 118px;
   border-radius: 12px;
   display: flex;
@@ -88,21 +57,12 @@
   padding: 16px;
 }
 
-.addUserBtn {
-  width: 44px;
-  height: 18px;
-  background: rgba(35, 168, 242, 0.15);
-  border-radius: 16px;
-  margin-left: auto;
-  padding: 1px 14px;
-}
-
 .cardCpu {
   @extend .card;
   padding: 16px;
 }
 
-.pageWrapperScroll {
+.pgsqlFormScroll {
   display: flex;
   flex: 1 1 540px;
   flex-direction: column;
@@ -118,17 +78,6 @@
 
 .yamlTemplate div pre div {
   background: rgba(255, 255, 255) !important;
-}
-
-.scrollWrap {
-  overflow-x: scroll;
-  overflow-y: scroll;
-  position: relative;
-  box-sizing: border-box;
-  scroll-behavior: smooth;
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
 
 .customInput {
@@ -148,8 +97,4 @@
   &:hover {
     border: 1px solid #7a9dea;
   }
-}
-
-.deleteBtn {
-  @include iconBox(32px, rgba(236, 137, 45, 0.15), 50%, 8px);
 }

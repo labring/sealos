@@ -36,11 +36,11 @@ spec:
 export const generatePgsqlTemplate = (pgsqlForm: any) => {
   let user = '';
   pgsqlForm.users.forEach((item: any) => {
-    user += `${item}: []\n\t`;
+    user += `${item}: [superuser,createdb]\n    `;
   });
   let dataBase = '';
   pgsqlForm.dataBases.forEach((item: any) => {
-    dataBase += `${item.name}: ${item.user}\n\t`;
+    dataBase += `${item.name}: ${item.user}\n    `;
   });
 
   const text = `

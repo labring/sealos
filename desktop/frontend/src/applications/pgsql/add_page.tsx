@@ -3,36 +3,18 @@ import MarkDown from 'components/markdown';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
+import request from 'services/request';
+import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
 import styles from './add_page.module.scss';
-import { generatePgsqlTemplate, PageType, usePgSqlContext } from './index';
+import Button from './components/button';
 import {
-  ControlledTextField,
   ControlledDropdown,
-  ControlledNumberField
-} from './components/fluent_rhf';
-import useAppStore from 'stores/app';
-import request from 'services/request';
-
-type PgSqlForm = {
-  pgsqlName: string;
-  version: string;
-  instance: string;
-  volumeSize: string;
-  iops: string;
-  througput: string;
-  users: any[];
-  dataBases: { name: string; user: string }[];
-  requests: {
-    cpu: string;
-    memory: string;
-  };
-  limits: {
-    cpu: string;
-    memory: string;
-  };
-  oddHost: string;
-};
+  ControlledNumberField,
+  ControlledTextField
+} from './components/controlled_fluent';
+import { PageType, usePgSqlContext } from './index';
+import { generatePgsqlTemplate, TPgSqlForm } from './pgsql_common';
 
 function AddPage() {
   const { toPage } = usePgSqlContext();
@@ -41,24 +23,26 @@ function AddPage() {
   const { currentApp, openedApps } = useAppStore();
   const curApp = openedApps.find((item) => item.name === currentApp?.name);
 
-  const { handleSubmit, control, formState, watch, register, getValues } = useForm<PgSqlForm, any>({
-    defaultValues: {
-      pgsqlName: '',
-      version: '13',
-      instance: '1',
-      volumeSize: '1',
-      iops: '3000',
-      througput: '125',
-      limits: {
-        cpu: '300',
-        memory: '300'
+  const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm, any>(
+    {
+      defaultValues: {
+        pgsqlName: '',
+        version: '13',
+        instance: '1',
+        volumeSize: '1',
+        iops: '3000',
+        througput: '125',
+        limits: {
+          cpu: '300',
+          memory: '300'
+        },
+        dataBases: [],
+        users: []
       },
-      dataBases: [],
-      users: []
-    },
-    reValidateMode: 'onSubmit',
-    mode: 'all'
-  });
+      reValidateMode: 'onSubmit',
+      mode: 'all'
+    }
+  );
 
   const { fields: userArr, append, remove } = useFieldArray({ control, name: 'users' });
   const {
@@ -83,7 +67,6 @@ function AddPage() {
   const onSave = () => {
     handleSubmit(
       (data) => {
-        // console.log(data);
         applyYaml(data);
       },
       (err) => {
@@ -104,16 +87,20 @@ function AddPage() {
           curApp?.size === 'maxmin' ? 'px-8' : 'px-40'
         )}
       >
-        <div className={clsx(styles.backIcon)} onClick={() => toPage(PageType.FrontPage)}>
-          <Image src="/images/pgsql/detail_back.svg" alt="pgsql" width={24} height={24} />
-        </div>
+        <Button
+          shape="squareRound"
+          icon="/images/pgsql/detail_back.svg"
+          handleClick={() => toPage(PageType.FrontPage)}
+        />
         <div className={clsx(styles.title, 'ml-8')}>PostgreSQL 集群配置</div>
-        <button className={styles.createBtn} onClick={() => onSave()}>
-          创建集群
-        </button>
+        <div className="ml-auto">
+          <Button type="primary" handleClick={() => onSave()}>
+            创建集群
+          </Button>
+        </div>
       </div>
       <div className={clsx('flex-1 flex', curApp?.size === 'maxmin' ? 'mx-8' : 'mx-40')}>
-        <div className={styles.pageWrapperScroll}>
+        <div className={styles.pgsqlFormScroll}>
           <div className={clsx('w-full absolute py-6')}>
             <div className={styles.cardName}>
               <div className="flex p-6  items-center ">
@@ -166,19 +153,15 @@ function AddPage() {
             <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
                 <div>Users</div>
-                <div
-                  className={clsx(styles.addUserBtn, 'cursor-pointer')}
-                  onClick={() => {
-                    append('');
-                  }}
-                >
-                  <Image
-                    src="/images/pgsql/add_blue.svg"
-                    color="red"
-                    alt="pgsql"
-                    width={16}
-                    height={16}
-                  />
+                <div className="ml-auto">
+                  <Button
+                    size="mini"
+                    type="lightBlue"
+                    icon="/images/pgsql/add_blue.svg"
+                    handleClick={() => {
+                      append('');
+                    }}
+                  ></Button>
                 </div>
               </div>
               {userArr.map((item, index) => (
@@ -186,13 +169,15 @@ function AddPage() {
                   <div className={clsx(styles.customInput)} key={item.id}>
                     <input key={item.id} {...register(`users.${index}`)} placeholder="user name" />
                   </div>
-                  <div
-                    className={clsx(styles.deleteBtn, 'cursor-pointer ml-3')}
-                    onClick={() => {
-                      remove(index);
-                    }}
-                  >
-                    <Image src="/images/pgsql/delete.svg" alt="pgsql" width={16} height={16} />
+                  <div className="ml-3">
+                    <Button
+                      type="danger"
+                      shape="round"
+                      handleClick={() => {
+                        remove(index);
+                      }}
+                      icon={'/images/pgsql/delete.svg'}
+                    ></Button>
                   </div>
                 </div>
               ))}
@@ -200,13 +185,15 @@ function AddPage() {
             <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
                 <div>Databases</div>
-                <div
-                  className={clsx(styles.addUserBtn, 'cursor-pointer')}
-                  onClick={() => {
-                    dataBaseAppend({ name: '', user: '' });
-                  }}
-                >
-                  <Image src="/images/pgsql/add_blue.svg" alt="pgsql" width={16} height={16} />
+                <div className="ml-auto">
+                  <Button
+                    size="mini"
+                    type="lightBlue"
+                    handleClick={() => {
+                      dataBaseAppend({ name: '', user: '' });
+                    }}
+                    icon="/images/pgsql/add_blue.svg"
+                  ></Button>
                 </div>
               </div>
               {dataBaseArr.map((item, index) => (
@@ -228,13 +215,15 @@ function AddPage() {
                       })}
                     />
                   </div>
-                  <div
-                    className={clsx(styles.deleteBtn, 'cursor-pointer ml-3 shrink-0')}
-                    onClick={() => {
-                      dataBaseRemove(index);
-                    }}
-                  >
-                    <Image src="/images/pgsql/delete.svg" alt="pgsql" width={16} height={16} />
+                  <div className="ml-3">
+                    <Button
+                      type="danger"
+                      shape="round"
+                      handleClick={() => {
+                        dataBaseRemove(index);
+                      }}
+                      icon={'/images/pgsql/delete.svg'}
+                    ></Button>
                   </div>
                 </div>
               ))}
@@ -258,11 +247,13 @@ function AddPage() {
         <div className={clsx(styles.yaml, styles.card, 'flex-col p-6')}>
           <div className="flex items-center relative">
             <span className={styles.title}>YAML 定义</span>
-            <div
-              className={clsx(styles.copyBtn, 'ml-auto cursor-pointer')}
-              onClick={() => copyYaml()}
-            >
-              <Image src="/images/pgsql/copy.svg" alt="pgsql" width={16} height={16} />
+            <div className="ml-auto">
+              <Button
+                handleClick={() => copyYaml()}
+                type="lightBlue"
+                shape="squareRound"
+                icon="/images/pgsql/copy.svg"
+              ></Button>
             </div>
           </div>
           <div className={clsx(styles.scrollWrap, 'grow flex')}>

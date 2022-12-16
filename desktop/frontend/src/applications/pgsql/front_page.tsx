@@ -7,41 +7,19 @@ import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import ClusterInfo from './clusterInfo';
+import Button from './components/button';
 import DeletePgsqlDialog from './components/delete_dialog';
 import Drawer from './components/drawer';
 import PgsqlEventsDialog from './components/events_dialog';
 import styles from './front_page.module.scss';
 import { PageType, usePgSqlContext } from './index';
-
-export type PgsqlDetail = {
-  metadata: {
-    name: string;
-    creationTimestamp: string;
-    uid: string;
-  };
-  spec: {
-    postgresql: {
-      version: string;
-    };
-    volume: {
-      size: string;
-    };
-    resources: {
-      limits: { cpu: string; memory: string };
-      requests: { cpu: string; memory: string };
-    };
-    teamId: string;
-    numberOfInstances: number;
-  };
-  status?: {
-    PostgresClusterStatus: string;
-  };
-};
+import { EPgsqlLists, EPgsqlStatus, TPgsqlDetail } from './pgsql_common';
+import PgsqlStatus from './pgsql_status';
 
 function FrontPage() {
   const { toPage } = usePgSqlContext();
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-  const [pgsqlListStatus, setPgsqlListStatus] = useState('Pending');
+  const [pgsqlListStatus, setPgsqlListStatus] = useState(EPgsqlLists.Pending);
   const [pgsqlName, setPgsqlName] = useState('');
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [deletePgsqlVisible, setDeletePgsqlVisible] = useState(false);
@@ -49,7 +27,6 @@ function FrontPage() {
   const [pgsqlStatus, setPgsqlStatus] = useState('');
   const { currentApp, openedApps } = useAppStore();
   const curApp = openedApps.find((item) => item.name === currentApp?.name);
-  // console.log('render fronted');
 
   const { data: pgsqlLists } = useQuery(
     ['getAllPgsql'],
@@ -59,13 +36,13 @@ function FrontPage() {
         return item.status.PostgresClusterStatus === 'Running';
       });
       if (allReady) {
-        setPgsqlListStatus('Running');
+        setPgsqlListStatus(EPgsqlLists.Running);
       }
       return res;
     },
     {
-      refetchInterval: pgsqlListStatus === 'Pending' ? 10 * 1000 : false, //轮询时间
-      enabled: pgsqlListStatus === 'Pending' // 只有 url 为 '' 的时候需要请求
+      refetchInterval: pgsqlListStatus === EPgsqlLists.Pending ? 10 * 1000 : false, //轮询时间
+      enabled: pgsqlListStatus === EPgsqlLists.Pending // 只有 url 为 '' 的时候需要请求
     }
   );
 
@@ -75,21 +52,25 @@ function FrontPage() {
   };
 
   const freshList = () => {
-    setPgsqlListStatus('Pending');
+    setPgsqlListStatus(EPgsqlLists.Pending);
   };
 
-  const openDeleteDialog = (e: React.MouseEvent<HTMLDivElement>, item: PgsqlDetail) => {
+  const openDeleteDialog = (e: React.MouseEvent<HTMLDivElement>, item: TPgsqlDetail) => {
     e.stopPropagation();
     setPgsqlName(item.metadata.name);
     setDeletePgsqlVisible(true);
     freshList();
   };
 
-  const openEventDialog = (e: React.MouseEvent<HTMLDivElement>, item: PgsqlDetail) => {
+  const openEventDialog = (e: React.MouseEvent<HTMLDivElement>, item: TPgsqlDetail) => {
+    console.log(item);
     e.stopPropagation();
     setEventsDialogVisible(true);
+    setPgsqlName(item.metadata.name);
     setPgsqlStatus(
-      item?.status?.PostgresClusterStatus ? item?.status?.PostgresClusterStatus : 'emptyStatus'
+      item?.status?.PostgresClusterStatus
+        ? item?.status?.PostgresClusterStatus
+        : EPgsqlStatus.EmptyStatus
     );
   };
 
@@ -102,15 +83,17 @@ function FrontPage() {
           <Image src="/images/pgsql/logo.svg" alt="pgsql" width={32} height={32} />
         </div>
         <div className={clsx(styles.frontTitle, 'ml-8')}>PostgreSQL 集群列表</div>
-        <div
-          className={clsx(styles.addBtn, 'ml-auto cursor-pointer')}
-          onClick={() => toPage(PageType.AddPage)}
-        >
-          <Image src="/images/pgsql/add.svg" alt="pgsql" width={16} height={16} />
-          <button className="ml-2">新建集群</button>
+        <div className="ml-auto">
+          <Button
+            type="primary"
+            icon="/images/pgsql/add.svg"
+            handleClick={() => toPage(PageType.AddPage)}
+          >
+            <span className="ml-2">创建集群</span>
+          </Button>
         </div>
       </div>
-      {pgsqlLists?.data.items.length === 0 && (
+      {pgsqlLists?.data.items?.length === 0 && (
         <div className={clsx(styles.empty)}>
           <Image src="/images/pgsql/empty.png" alt="pgsql" width={230} height={230} />
           <div className={styles.title}>当前集群列表为空</div>
@@ -132,7 +115,7 @@ function FrontPage() {
               <div className={styles.headerItem}>操作</div>
             </div>
             <div className={styles.tableContent}>
-              {pgsqlLists?.data.items?.map((item: PgsqlDetail) => {
+              {pgsqlLists?.data.items?.map((item: TPgsqlDetail) => {
                 return (
                   <div
                     className={styles.tableRow}
@@ -143,18 +126,7 @@ function FrontPage() {
                       <div>{item.metadata.name}</div>
                     </div>
                     <div className={clsx(styles.tableData)}>
-                      <div
-                        className={clsx(
-                          styles.pgsqlStatus,
-                          styles[item.status?.PostgresClusterStatus || 'emptyStatus'],
-                          'cursor-pointer'
-                        )}
-                        onClick={(e) => openEventDialog(e, item)}
-                      >
-                        <div className={styles.circle}></div>
-                        <div className="px-1">{item.status?.PostgresClusterStatus}</div>
-                        <Image src="/images/pgsql/shrink.svg" alt="pgsql" width={20} height={20} />
-                      </div>
+                      <PgsqlStatus pgsqlDetail={item} openEventDialog={openEventDialog} />
                     </div>
                     <div className={clsx(styles.tableData)}>
                       {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm:ss')}
@@ -163,12 +135,12 @@ function FrontPage() {
                     <div className={styles.tableData}>{item.spec.resources.requests.memory}</div>
                     <div className={styles.tableData}>{item.spec.volume.size}</div>
                     <div className={styles.tableData}>
-                      <div
-                        className={clsx(styles.deleteBtn, 'cursor-pointer')}
-                        onClick={(e) => openDeleteDialog(e, item)}
-                      >
-                        <Image src="/images/pgsql/delete.svg" alt="pgsql" width={16} height={16} />
-                      </div>
+                      <Button
+                        type="danger"
+                        shape="round"
+                        handleClick={(e) => openDeleteDialog(e, item)}
+                        icon={'/images/pgsql/delete.svg'}
+                      ></Button>
                     </div>
                   </div>
                 );
@@ -194,7 +166,7 @@ function FrontPage() {
         open={deletePgsqlVisible}
         onChangeOpen={(open: boolean) => {
           setDeletePgsqlVisible(open);
-          setPgsqlListStatus('Pending');
+          setPgsqlListStatus(EPgsqlLists.Pending);
         }}
         deleteName={pgsqlName}
       />

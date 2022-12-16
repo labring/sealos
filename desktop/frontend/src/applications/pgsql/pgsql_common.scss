@@ -1,6 +1,9 @@
 $color-global-white: #ffffff;
 $color-global-black: #000000;
 $theme-color-bule: #239bf2;
+$theme-color-hover: rgba(255, 255, 255, 0.4);
+$theme-color-masklayer: rgba(0, 0, 0, 0.25);
+$theme-color-title: #0d1a2d;
 
 @mixin iconBox($width, $bgColr: $color-global-white, $borderRadius: 12px, $padding: 8px) {
   width: $width;
@@ -47,21 +50,22 @@ $theme-color-bule: #239bf2;
     border-radius: 50%;
   }
 }
-.Running {
+
+.running {
   background: rgba(35, 155, 242, 0.15);
   .circle {
     background: $theme-color-bule;
   }
 }
 
-.Creating {
+.creating {
   background: rgba(92, 97, 228, 0.15);
   .circle {
     background: #5c61e4;
   }
 }
 
-.Failed {
+.failed {
   background: rgba(238, 65, 97, 0.15);
   .circle {
     background: #ee4161;

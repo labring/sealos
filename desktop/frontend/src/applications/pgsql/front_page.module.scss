@@ -1,8 +1,12 @@
-@import './pgsql.common.scss';
+@import './pgsql_common.scss';
 
 .pgsqlFrontPage {
   background-image: url('/images/pgsql/pgsql_bg.png');
   background-size: cover;
+}
+
+.logo {
+  @include iconBox(48px);
 }
 
 .empty {
@@ -29,32 +33,11 @@
   }
 }
 
-.logo {
-  @include iconBox(48px);
-}
-
-.deleteBtn {
-  @include iconBox(32px, rgba(236, 137, 45, 0.15), 50%, 8px);
-}
-
-.addBtn {
-  width: 138px;
-  height: 40px;
-  background: $theme-color-bule;
-  border-radius: 64px;
-  font-weight: 600;
-  font-size: 12px;
-  color: $color-global-white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .frontTitle {
   font-weight: 600;
   font-size: 16px;
   line-height: 150%;
-  color: $color-global-black;
+  color: $theme-color-title;
 }
 
 .tableHeader {
@@ -76,7 +59,7 @@
 }
 
 .tableRow:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: $theme-color-hover;
 }
 
 .tableData,

@@ -1,11 +1,8 @@
-import { FC } from 'react';
-import { Controller } from 'react-hook-form';
-import * as React from 'react';
-import { Control, RegisterOptions, UseFormSetValue } from 'react-hook-form';
-import { SpinButtonField, InputField, Dropdown, Option } from '@fluentui/react-components/unstable';
-import { Input, Slider } from '@fluentui/react-components';
-import styles from './fluent_rhf.module.scss';
+import { Dropdown, InputField, Option, SpinButtonField } from '@fluentui/react-components/unstable';
 import clsx from 'clsx';
+import { FC } from 'react';
+import { Control, Controller, RegisterOptions, UseFormSetValue } from 'react-hook-form';
+import styles from './controlled_fluent.module.scss';
 
 export interface HookFormProps {
   control: Control<any>;

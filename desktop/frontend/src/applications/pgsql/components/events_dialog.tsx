@@ -4,10 +4,11 @@ import Image from 'next/image';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
 import styles from './events_dialog.module.scss';
+import Button from './button';
 
 type PgsqlEventsDialog = {
   name: string;
-  onCancel?: () => void;
+  onCancel: () => void;
   status?: string;
 };
 
@@ -34,8 +35,12 @@ export default function PgsqlEventsDialog(props: PgsqlEventsDialog) {
     <div className="flex flex-col">
       <div className="flex items-center">
         <div>{status}</div>
-        <div className={clsx(styles.packUpBtn, 'ml-auto cursor-pointer ')} onClick={onCancel}>
-          <Image src="/images/pgsql/shrink.svg" alt="packup" width={16} height={16} />
+        <div className="ml-auto cursor-pointer ">
+          <Button
+            shape="squareRound"
+            handleClick={() => onCancel()}
+            icon={'/images/pgsql/shrink.svg'}
+          ></Button>
         </div>
       </div>
       {items?.length === 0 && <div>暂无数据</div>}

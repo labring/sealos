@@ -1,6 +1,14 @@
-@import './pgsql.common.scss';
+@import './pgsql_common.scss';
 
-.card {
+.title {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 140%;
+  color: $theme-color-title;
+  margin: 12px 0;
+}
+
+.clusterInfoCard {
   width: 100%;
   background-color: $color-global-white;
   border-radius: 16px;
@@ -8,17 +16,13 @@
   margin-top: 16px;
 }
 
-.title {
-  font-weight: 500;
-  font-size: 16px;
-  color: #273b58;
-  margin: 12px 0;
-}
-
-.deleteBtn {
-  @include iconBox(32px, rgba(236, 137, 45, 0.15), 50%, 8px);
-}
-
-.closeBtn {
-  @include iconBox(32px, rgba(255, 255, 255, 0.8), 12px, 8px);
+.copyBox {
+  position: absolute;
+  width: 152px;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }

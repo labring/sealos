@@ -1,6 +1,5 @@
-import styles from './drawer.module.scss';
 import clsx from 'clsx';
-import { createRef, useEffect, useState } from 'react';
+import styles from './drawer.module.scss';
 
 type TDrawer = {
   open: boolean;
