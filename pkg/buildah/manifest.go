@@ -57,7 +57,7 @@ func (opts *manifestCreateOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	return markFlagsHidden(fs, []string{"os", "arch", "insecure"}...)
+	return markFlagsHidden(fs, []string{"os", "arch", "insecure", "tls-verify"}...)
 }
 
 type manifestAddOpts struct {
@@ -81,7 +81,7 @@ func (opts *manifestAddOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.all, "all", false, "add all of the list's images if the image is a list")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	return markFlagsHidden(fs, []string{"insecure"}...)
+	return markFlagsHidden(fs, []string{"insecure", "tls-verify"}...)
 }
 
 type manifestRemoveOpts struct{}
@@ -251,8 +251,7 @@ func newManifestCommand() *cobra.Command {
 	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	err = markFlagsHidden(fs, "signature-policy", "insecure")
-	bailOnError(err, "")
+	bailOnError(markFlagsHidden(fs, "signature-policy", "insecure", "tls-verify"), "")
 	manifestCommand.AddCommand(manifestPushCommand)
 
 	manifestRmCommand := &cobra.Command{

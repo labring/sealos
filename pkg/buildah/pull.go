@@ -55,7 +55,7 @@ type pullOptions struct {
 
 func (opts *pullOptions) HiddenFlags() []string {
 	return []string{
-		"signature-policy", "blob-cache",
+		"signature-policy", "blob-cache", "tls-verify",
 	}
 }
 

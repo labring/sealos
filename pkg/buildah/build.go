@@ -83,6 +83,8 @@ func newBuildCommand() *cobra.Command {
 	flags.AddFlagSet(&fromAndBudFlags)
 	flags.SetNormalizeFunc(buildahcli.AliasFlags)
 
+	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
+
 	return buildCommand
 }
 

@@ -100,7 +100,8 @@ func (opts *fromReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
 	fs.StringVar(&suffix, "suffix", "", "suffix to add to intermediate containers")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	_ = markFlagsHidden(fs, "pull-always", "pull-never", "suffix", "signature-policy")
+	bailOnError(markFlagsHidden(fs, "pull-always", "pull-never", "suffix", "signature-policy", "tls-verify"), "")
+
 	// Add in the common flags
 	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(opts.FromAndBudResults, opts.UserNSResults, opts.NameSpaceResults)
 	bailOnError(err, "failed to setup From and Bud flags")
