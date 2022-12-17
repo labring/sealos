@@ -55,6 +55,7 @@ func (opts *loginReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.AddFlagSet(auth.GetLoginFlags(&opts.loginOpts))
 	// e.g sealos login --kubeconfig /root/.kube/config hub.sealos.io
 	fs.StringVarP(&opts.kubeconfig, "kubeconfig", "k", opts.kubeconfig, "Login to sealos registry: hub.sealos.io by kubeconfig")
+	bailOnError(markFlagsHidden(fs, "tls-verify"), "")
 }
 
 func newLoginCommand() *cobra.Command {

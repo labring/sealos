@@ -40,5 +40,6 @@ func newSaveCommand() *cobra.Command {
 	saveCommand.SetUsageTemplate(UsageTemplate())
 
 	saveCommand.Flags().StringVarP(&archiveName, "output", "o", "", "save image into tar archive file")
+	_ = saveCommand.MarkFlagRequired("output")
 	return saveCommand
 }
