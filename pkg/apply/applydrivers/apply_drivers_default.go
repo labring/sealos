@@ -75,8 +75,15 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
-	c.initStatus()
 	var err error
+	defer func() {
+		logger.Debug("write cluster file to local storage: %s", clusterPath)
+		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		if err == nil {
+			err = saveerror
+		}
+	}()
+	c.initStatus()
 	if c.ClusterDesired.CreationTimestamp.IsZero() {
 		err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
@@ -84,8 +91,7 @@ func (c *Applier) Apply() error {
 		err = c.reconcileCluster()
 	}
 	c.updateStatus(err)
-	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+	return err
 }
 
 func (c *Applier) getWriteBackObjects() []interface{} {
