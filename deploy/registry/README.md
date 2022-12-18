@@ -1,0 +1,1 @@
+# How to deploy the registry service
