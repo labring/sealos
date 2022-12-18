@@ -23,11 +23,10 @@ data:
         environment: staging
     storage:
       oss:
-        accesskeyid: ...
-        accesskeysecret: ...
-        region: oss-cn-hangzhou
-        endpoint: hub-sealos-cn-oss.oss-cn-hangzhou.aliyuncs.com
-        bucket: hub-sealos-cn-oss
+        accesskeyid: ... # TODO edit it
+        accesskeysecret: ... # TODO edit it
+        region: ... # TODO edit it
+        bucket: ... # TODO edit it
       delete:
         enabled: true
       cache:
@@ -40,6 +39,7 @@ data:
         rootcertbundle: /etc/docker/registry/authserver.crt
     http:
       addr: :5000
+      secret: ... # TODO edit it
       headers:
         X-Content-Type-Options: [nosniff]
       http2:
