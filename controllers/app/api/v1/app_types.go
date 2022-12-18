@@ -31,21 +31,7 @@ type UIEndPoint struct {
 
 // AppSpec defines the desired state of App
 type AppSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of App. Edit app_types.go to remove/update
-	UIEndPoints []*UIEndPoint `json:"uiendpoints,omitempty"`
-	// The application logo url
-	Logo string `json:"logo,omitempty"`
-	// Applications info, key value
-	Info map[string]string `json:"info,omitempty"`
-	// Applications markdown docs
-	Docs string `json:"docs,omitempty"`
-	// Actions name list, the actions will in the application same namespace
-	Actions []string `json:"actions,omitempty"`
-	Workdir string   `json:"workdir,omitempty"`
-	Image   string   `json:"image,omitempty"`
+	UIEndPoints UIEndPoint `json:"uiEndPoints,omitempty"`
 }
 
 // AppStatus defines the observed state of App

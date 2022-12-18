@@ -18,44 +18,88 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/go-logr/logr"
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/kubernetes/pkg/apis/core"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 )
 
-// ActionsReconciler reconciles a Actions object
 type ActionsReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme       *runtime.Scheme
+	recorder     record.EventRecorder
+	actionEngine ActionEngine
+	logr.Logger
 }
 
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
+const (
+	DefaultNameSpace string = "default"
+)
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Actions object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
+// +kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list
 func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	r.Logger = log.FromContext(ctx)
+	action := &appv1.Actions{}
+	if err := r.Get(ctx, req.NamespacedName, action); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	r.Logger.Info(fmt.Sprintf("action.Name: %v", action.Name))
+	if action.Status.Status == "" {
+		action.Status.Status = appv1.Processing
+		r.recorder.Eventf(action, corev1.EventTypeNormal, "ActionProcessing", "Action %s start processing", action.Name)
+		if err := r.Status().Update(ctx, action); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 
-	// TODO(user): your logic here
+	image := &imagehubv1.Image{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: DefaultNameSpace, Name: action.Name}, image); err != nil {
+		r.recorder.Eventf(image, core.EventTypeNormal, "ImageGetFailed", "Infra %s status is pending", image.Name)
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 
+	r.Logger.Info(fmt.Sprintf("image.Name: %v", image.Name))
+	r.actionEngine = NewActionEngine(ctx, r.Client, action, image)
+
+	if err := r.actionEngine.Parse(); err != nil {
+		r.recorder.Eventf(action, core.EventTypeNormal, "ActionParseFailed", "Action %s status is Failed", action.Name)
+		action.Status.Status = appv1.Failed
+		if suberr := r.Status().Update(ctx, action); suberr != nil {
+			return ctrl.Result{}, fmt.Errorf("parse err happened err: %v ; %v", err, suberr)
+		}
+		return ctrl.Result{}, fmt.Errorf("parse err happened err: %v ", err)
+	}
+
+	if err := r.actionEngine.Apply(); err != nil {
+		r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplyFailed", "Action %s status is Failed", action.Name)
+		action.Status.Status = appv1.Failed
+		if suberr := r.Status().Update(ctx, action); suberr != nil {
+			return ctrl.Result{}, fmt.Errorf("apply err happened err: %v ; %v", err, suberr)
+		}
+		return ctrl.Result{}, fmt.Errorf("apply err happened err: %v ", err)
+	}
+
+	r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplySuccess", "Action %s status is applying", action.Name)
+	action.Status.Status = appv1.Success
+	if err := r.Status().Update(ctx, action); err != nil {
+		return ctrl.Result{}, err
+	}
 	return ctrl.Result{}, nil
 }
 
-// SetupWithManager sets up the controller with the Manager.
 func (r *ActionsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.recorder = mgr.GetEventRecorderFor("sealos-action-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appv1.Actions{}).
 		Complete(r)

@@ -19,12 +19,10 @@ package controllers
 import (
 	"context"
 
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 )
 
 // AppReconciler reconciles a App object
@@ -47,10 +45,11 @@ type AppReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
-
-	// TODO(user): your logic here
-
+	//_ = log.FromContext(ctx)
+	app := &appv1.App{}
+	if err := r.Get(ctx, req.NamespacedName, app); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 	return ctrl.Result{}, nil
 }
 
