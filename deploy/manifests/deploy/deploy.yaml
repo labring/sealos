@@ -75,7 +75,7 @@ spec:
       securityContext:
         runAsUser: 0
       containers:
-        - name: docker-registry
+        - name: docker-registry # nosemgrep
           image: registry:2
           imagePullPolicy: IfNotPresent
           ports:
