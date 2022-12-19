@@ -25,17 +25,18 @@ import (
 	storagetypes "github.com/containers/storage/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Interface interface {
-	Pull(v1.Platform, string, ...string) error
-	Load(string) (string, error)
-	InspectImage(string) (v1.Image, error)
-	Create(string, string) (buildah.BuilderInfo, error)
-	Delete(string) error
-	InspectContainer(string) (buildah.BuilderInfo, error)
+	Pull(imageNames []string, opts ...FlagSetter) error
+	Load(input string) (string, error)
+	InspectImage(name string) (v1.Image, error)
+	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
+	Delete(name string) error
+	InspectContainer(name string) (buildah.BuilderInfo, error)
 	ListContainers() ([]JSONContainer, error)
 }
 
@@ -61,14 +62,47 @@ type realImpl struct {
 	systemContext *types.SystemContext
 }
 
-func (impl *realImpl) Pull(pf v1.Platform, pullPolicy string, imageNames ...string) error {
+type FlagSetter func(*pflag.FlagSet) error
+
+func newFlagSetter(k string, v string) FlagSetter {
+	return func(fs *pflag.FlagSet) error {
+		if f := fs.Lookup(k); f != nil {
+			return fs.Set(k, v)
+		}
+		return nil
+	}
+}
+
+func WithPlatformOption(pf v1.Platform) FlagSetter {
+	return func(fs *pflag.FlagSet) error {
+		for _, fn := range []FlagSetter{
+			newFlagSetter("os", pf.OS),
+			newFlagSetter("arch", pf.Architecture),
+			newFlagSetter("variant", pf.Variant),
+		} {
+			if err := fn(fs); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func WithPullPolicyOption(policy string) FlagSetter {
+	return func(fs *pflag.FlagSet) error {
+		return newFlagSetter("policy", policy)(fs)
+	}
+}
+
+func (impl *realImpl) Pull(imageNames []string, opts ...FlagSetter) error {
 	cmd := impl.mockCmd()
 	iopt := newDefaultPullOptions()
-	iopt.os = pf.OS
-	iopt.arch = pf.Architecture
-	iopt.variant = pf.Variant
-	iopt.pullPolicy = pullPolicy
 	_ = iopt.RegisterFlags(cmd.Flags())
+	for i := range opts {
+		if err := opts[i](cmd.Flags()); err != nil {
+			return err
+		}
+	}
 	if err := setDefaultFlags(cmd); err != nil {
 		return err
 	}
@@ -89,11 +123,11 @@ func (impl *realImpl) InspectImage(name string) (v1.Image, error) {
 	return out.OCIv1, nil
 }
 
-func (impl *realImpl) Create(name string, image string) (buildah.BuilderInfo, error) {
+func (impl *realImpl) Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error) {
 	if err := impl.Delete(impl.finalizeName(name)); err != nil {
 		return buildah.BuilderInfo{}, fmt.Errorf("failed to delete: %v", err)
 	}
-	if _, err := impl.from(impl.finalizeName(name), image); err != nil {
+	if _, err := impl.from(impl.finalizeName(name), image, opts...); err != nil {
 		return buildah.BuilderInfo{}, fmt.Errorf("failed to from: %v", err)
 	}
 	if _, err := impl.mount(impl.finalizeName(name)); err != nil {
@@ -113,16 +147,21 @@ func (impl *realImpl) Delete(name string) error {
 	return builder.Delete()
 }
 
-func (impl *realImpl) from(name, image string) (*buildah.Builder, error) {
+func (impl *realImpl) from(name, image string, opts ...FlagSetter) (*buildah.Builder, error) {
 	cmd := impl.mockCmd()
-	opts := newDefaultFromReply()
-	opts.name = impl.finalizeName(name)
-	opts.pull = ""
-	opts.RegisterFlags(cmd.Flags())
+	iopts := newDefaultFromReply()
+	iopts.name = impl.finalizeName(name)
+	iopts.pull = ""
+	iopts.RegisterFlags(cmd.Flags())
+	for i := range opts {
+		if err := opts[i](cmd.Flags()); err != nil {
+			return nil, err
+		}
+	}
 	if err := setDefaultFlags(cmd); err != nil {
 		return nil, err
 	}
-	return doFrom(cmd, image, opts, impl.store, nil)
+	return doFrom(cmd, image, iopts, impl.store, nil)
 }
 
 func (impl *realImpl) mount(name string) (jsonMount, error) {
