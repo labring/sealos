@@ -13,6 +13,7 @@ spec:
   keepalived: 5h
   ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
   replicas: 1
+  ingressType: nginx
 ```
 
 TerminalSpec
@@ -30,6 +31,10 @@ TerminalSpec
 - replicas(int32)
   
     Number of desired pods in Deployment. 
+
+- ingressType(string)
+  
+  Ingress Type, `nginx` or `apisix`. Default to `nginx`.
 
 ## Usage
 1. run `kubectl apply terminal.yaml`

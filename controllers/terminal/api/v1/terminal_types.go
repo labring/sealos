@@ -23,6 +23,14 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+// +kubebuilder:validation:Enum=nginx;apisix
+type IngressType string
+
+const (
+	Nginx  IngressType = "nginx"
+	Apisix IngressType = "apisix"
+)
+
 // TerminalSpec defines the desired state of Terminal
 type TerminalSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -41,7 +49,8 @@ type TerminalSpec struct {
 	//+kubebuilder:validation:Optional
 	APIServer string `json:"apiServer"`
 	//+kubebuilder:validation:Optional
-	Namespace string `json:"namespace"`
+	//+kubebuilder:default=nginx
+	IngressType IngressType `json:"ingressType"`
 }
 
 // TerminalStatus defines the observed state of Terminal
