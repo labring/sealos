@@ -104,7 +104,7 @@ func CreateNamespace(client *kubernetes.Clientset, name string) *v1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Annotations: map[string]string{
-				userv1.UserAnnotationOwnerKey: "owner" + name,
+				userv1.UserAnnotationOwnerKey: name[3:],
 			},
 		},
 	}

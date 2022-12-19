@@ -118,6 +118,9 @@ spec:
               latestUpdateTime:
                 format: int64
                 type: integer
+              seqID:
+                format: int64
+                type: integer
               totalAmount:
                 format: int64
                 type: integer

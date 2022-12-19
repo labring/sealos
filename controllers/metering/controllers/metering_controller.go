@@ -23,6 +23,8 @@ import (
 	"strconv"
 	"time"
 
+	"k8s.io/client-go/util/retry"
+
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -67,6 +69,7 @@ type MeteringReconcile struct {
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=user.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile metering belong to account，resourceQuota belong to metering
 func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -119,7 +122,10 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	// when Resource create will enter this logic
 	resources := &meteringv1.Resource{}
-	if err := r.Get(ctx, req.NamespacedName, resources); err == nil && resources.Status.Status != meteringv1.Complete {
+	if err := r.Get(ctx, req.NamespacedName, resources); err == nil {
+		if resources.Status.Status == meteringv1.Complete {
+			return ctrl.Result{}, nil
+		}
 		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace)
 		var metering meteringv1.Metering
 		for resourceName, resourceInfo := range resources.Spec.Resources {
@@ -152,20 +158,23 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if err := r.Get(ctx, req.NamespacedName, &metering); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	r.Logger.Info("time", "now:", time.Now().Unix(), "last:", metering.Status.LatestUpdateTime, "internal", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
-	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Minutes())*int64(metering.Spec.TimeInterval) {
-		r.Logger.Info("enter update metering", "metering name: ", req.Name, "metering namespace: ", req.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
+
+	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval) {
+		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
 		totalAccount, err := r.CalculateCost(ctx, &metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
 
-		if err := r.updateBillingList(ctx, totalAccount, metering); err != nil {
+		if err := r.syncAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
+			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
-
-		// todo create payment tell account how much need deduction
+		if err := r.updateBillingList(ctx, totalAccount, &metering); err != nil {
+			r.Logger.Error(err, err.Error())
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * time.Duration(r.MeteringInterval)}, nil
@@ -236,24 +245,28 @@ func (r *MeteringReconcile) calculateInfraCost(ctx context.Context, metering *me
 	return amount, nil
 }
 
-func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64, metering meteringv1.Metering) error {
-	r.Logger.Info("enter metering updateBillingList", "metering name: ", metering.Name, "metering namespace: ", metering.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
-	metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, amount))
-	if len(metering.Status.BillingListH) >= 24 {
-		var totalAmountD int64
-		for i := 0; i < 24; i++ {
-			totalAmountD += metering.Status.BillingListH[i].Amount
+func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64, metering *meteringv1.Metering) error {
+	//r.Logger.Info("enter metering updateBillingList", "metering name: ", metering.Name, "metering namespace: ", metering.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		if err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Namespace}, metering); err != nil {
+			return err
 		}
-		metering.Status.BillingListH = metering.Status.BillingListH[24:]
-		metering.Status.BillingListD = append(metering.Status.BillingListD, NewBillingList(meteringv1.DAY, totalAmountD))
-	}
-	metering.Status.TotalAmount += amount
-	metering.Status.LatestUpdateTime = time.Now().Unix()
-	err := r.Status().Update(ctx, &metering)
-	if err != nil {
+		metering.Status.BillingListH = append(metering.Status.BillingListH, NewBillingList(meteringv1.HOUR, amount))
+		if len(metering.Status.BillingListH) >= 24 {
+			var totalAmountD int64
+			for i := 0; i < 24; i++ {
+				totalAmountD += metering.Status.BillingListH[i].Amount
+			}
+			metering.Status.BillingListH = metering.Status.BillingListH[24:]
+			metering.Status.BillingListD = append(metering.Status.BillingListD, NewBillingList(meteringv1.DAY, totalAmountD))
+		}
+		metering.Status.TotalAmount += amount
+		metering.Status.LatestUpdateTime = time.Now().Unix()
+		metering.Status.SeqID++
+		return r.Status().Update(ctx, metering)
+	}); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -352,6 +365,30 @@ func (r *MeteringReconcile) GetAllExtensionResources(ctx context.Context) (map[c
 	return totalResourcePrice, nil
 }
 
+func (r *MeteringReconcile) syncAccountBalance(ctx context.Context, owner string, amount int64, seqID int64) error {
+	if amount == 0 {
+		return nil
+	}
+
+	accountBalance := userv1.AccountBalance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, owner, seqID),
+			Namespace: r.MeteringSystemNameSpace,
+		},
+	}
+
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &accountBalance, func() error {
+		accountBalance.Spec.Owner = owner
+		accountBalance.Spec.TimeStamp = time.Now().Unix()
+		accountBalance.Spec.Amount = amount
+		accountBalance.Status.Status = meteringv1.Create
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "metering-controller"
@@ -365,11 +402,15 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	timeInterval := os.Getenv("METERING_INTERVAL")
-	if timeInterval == "" {
+
+	if timeInterval == "" || timeInterval == "0" {
 		timeInterval = DefaultInterval()
 	}
 	r.MeteringInterval, _ = strconv.Atoi(timeInterval)
-	r.Logger.Info("metering env", METERINGNAMESPACEENV, r.MeteringSystemNameSpace, "timeinterval:", r.MeteringInterval)
+	if r.MeteringInterval == 0 {
+		r.MeteringInterval = DefaultIntervalInt()
+	}
+	r.Logger.Info("metering env", METERINGNAMESPACEENV, r.MeteringSystemNameSpace, "timeinterval:", r.MeteringInterval, "envtimeinterval", os.Getenv("METERING_INTERVAL"))
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.Metering{}).
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}).
@@ -380,4 +421,7 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 
 func DefaultInterval() string {
 	return "60"
+}
+func DefaultIntervalInt() int {
+	return 60
 }

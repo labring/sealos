@@ -54,6 +54,7 @@ type PodResourceReconciler struct {
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=podresources/finalizers,verbs=update
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 
 func (r *PodResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	podController := &meteringv1.PodResource{}

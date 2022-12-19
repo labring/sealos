@@ -58,6 +58,7 @@ type MeteringStatus struct {
 	BillingListD     []BillingList `json:"billingListD,omitempty"`
 	TotalAmount      int64         `json:"totalAmount,omitempty"`
 	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
+	SeqID            int64         `json:"seqID,omitempty"`
 }
 
 type ResourcePrice struct {

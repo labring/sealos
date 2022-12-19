@@ -55,10 +55,12 @@ type AccountSpec struct{}
 
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
+	// Recharge amount
 	Balance int64 `json:"balance,omitempty"`
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	ChargeList []Charge `json:"chargeList,omitempty"`
+
+	//Deduction amount
+	DeductionBalance int64    `json:"deductionBalance,omitempty"`
+	ChargeList       []Charge `json:"chargeList,omitempty"`
 }
 
 //+kubebuilder:object:root=true

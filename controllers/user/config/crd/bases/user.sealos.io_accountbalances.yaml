@@ -5,20 +5,24 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: accounts.user.sealos.io
+  name: accountbalances.user.sealos.io
 spec:
   group: user.sealos.io
   names:
-    kind: Account
-    listKind: AccountList
-    plural: accounts
-    singular: account
+    kind: AccountBalance
+    listKind: AccountBalanceList
+    plural: accountbalances
+    singular: accountbalance
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.amount
+      name: Amount
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
-        description: Account is the Schema for the accounts API
+        description: AccountBalance is the Schema for the accountbalances API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -33,34 +37,24 @@ spec:
           metadata:
             type: object
           spec:
-            description: AccountSpec defines the desired state of Account
+            description: AccountBalanceSpec defines the desired state of AccountBalance
+            properties:
+              amount:
+                format: int64
+                type: integer
+              owner:
+                type: string
+              timeStamp:
+                format: int64
+                type: integer
+            required:
+            - owner
             type: object
           status:
-            description: AccountStatus defines the observed state of Account
+            description: AccountBalanceStatus defines the observed state of AccountBalance
             properties:
-              balance:
-                description: Recharge amount
-                format: int64
-                type: integer
-              chargeList:
-                items:
-                  properties:
-                    balance:
-                      format: int64
-                      type: integer
-                    status:
-                      type: string
-                    time:
-                      format: date-time
-                      type: string
-                    tradeNO:
-                      type: string
-                  type: object
-                type: array
-              deductionBalance:
-                description: Deduction amount
-                format: int64
-                type: integer
+              status:
+                type: string
             type: object
         type: object
     served: true
