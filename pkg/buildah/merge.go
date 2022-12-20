@@ -16,160 +16,137 @@ limitations under the License.
 
 package buildah
 
-// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
-	"bytes"
-	"context"
 	"fmt"
-	fileutil "github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/rand"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"golang.org/x/sync/errgroup"
 	"os"
 	"path"
 	"strings"
-	"text/template"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/containers/buildah"
+	buildahcli "github.com/containers/buildah/pkg/cli"
+	"github.com/containers/buildah/util"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/buildimage"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 )
 
-func preMerge(newImageName string, images []string) error {
-	mergeDir, err := fileutil.MkTmpdir("")
-	if err != nil {
-		return err
-	}
-	logger.Debug("mergeDir: %s", mergeDir)
-	var containerNames []string
-	eg, _ := errgroup.WithContext(context.Background())
-	b, err := New("")
-	if err != nil {
-		return err
-	}
-	for _, v := range images {
-		imageName := strings.TrimSpace(v)
-		if imageName == "" {
-			continue
-		}
-		eg.Go(func() error {
-			err = b.Pull(DefaultPlatform(), imageName)
+func newMergeCommand() *cobra.Command {
+	layerFlagsResults := buildahcli.LayerResults{}
+	buildFlagResults := buildahcli.BudResults{}
+	fromAndBudResults := buildahcli.FromAndBudResults{}
+	userNSResults := buildahcli.UserNSResults{}
+	namespaceResults := buildahcli.NameSpaceResults{}
+	buildahInfo := &buildah.BuilderInfo{}
+	sopts := saveOptions{}
+	mergeCommand := &cobra.Command{
+		Use:   "merge",
+		Short: "merge multiple images into one",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			br := buildahcli.BuildOptions{
+				LayerResults:      &layerFlagsResults,
+				BudResults:        &buildFlagResults,
+				UserNSResults:     &userNSResults,
+				FromAndBudResults: &fromAndBudResults,
+				NameSpaceResults:  &namespaceResults,
+			}
+			logger.Debug("save enable: %+v", sopts.enabled)
+			return buildCmd(cmd, []string{buildahInfo.MountPoint}, sopts, br)
+		},
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			arch := getArchFromFlag(cmd)
+			oss := getOSFromFlag(cmd)
+			variant := getVariantFromFlags(cmd)
+			tag := getTagsFromFlags(cmd)
+			logger.Debug("os: %s, arch: %s, variant: %s, tag: %+v", oss, arch, variant, tag)
+
+			platform := v1.Platform{
+				Architecture: arch,
+				OS:           oss,
+				Variant:      variant,
+			}
+			var err error
+			buildahInfo, err = mergeImagesWithScratchContainer(tag[0], args, platform)
 			if err != nil {
 				return err
 			}
-			cName := fmt.Sprintf("%s-%s", imageName, rand.Generator(8))
-			if m, err := b.Create(cName, imageName); err != nil {
-				logger.Warn("container create failed: %+v", err)
-				return err
-			} else {
-				containerNames = append(containerNames, m.ContainerID)
-				_ = fileutil.RecursionCopy(m.MountPoint, mergeDir)
-				return nil
+			return setDefaultFlagIfNotChanged(cmd, "save-image", "false")
+		},
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			tag := getTagsFromFlags(cmd)
+			logger.Debug("images %s is merged to %+v", strings.Join(args, ","), tag)
+			if buildahInfo != nil {
+				b, err := New("")
+				if err != nil {
+					return err
+				}
+				if err = b.Delete(buildahInfo.Container); err != nil {
+					return err
+				}
 			}
-		})
+			return nil
+		},
+		Args: cobra.MinimumNArgs(2),
+		Example: fmt.Sprintf(`
+  %[1]s merge kubernetes:v1.19.9 mysql:5.7.0 redis:6.0.0 -t new:0.1.0`, rootCmd.CommandPath()),
 	}
-	if err = eg.Wait(); err != nil {
-		return err
+	mergeCommand.SetUsageTemplate(UsageTemplate())
+
+	flags := mergeCommand.Flags()
+	flags.SetInterspersed(false)
+
+	// build is a all common flags
+	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
+	buildFlags.StringVar(&buildFlagResults.Runtime, "runtime", util.Runtime(), "`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.")
+	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
+	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(&fromAndBudResults, &userNSResults, &namespaceResults)
+	bailOnError(err, "failed to setup From and Build flags")
+
+	sopts.RegisterFlags(flags)
+	flags.AddFlagSet(&buildFlags)
+	flags.AddFlagSet(&layerFlags)
+	flags.AddFlagSet(&fromAndBudFlags)
+	flags.SetNormalizeFunc(buildahcli.AliasFlags)
+	bailOnError(markFlagsHidden(flags, "save-image"), "")
+	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
+	return mergeCommand
+}
+
+func mergeImagesWithScratchContainer(newImageName string, images []string, platform v1.Platform) (*buildah.BuilderInfo, error) {
+	b, err := New("")
+	if err != nil {
+		return nil, err
+	}
+	cName := fmt.Sprintf("%s-%s", newImageName, rand.Generator(8))
+	bInfo, err := b.Create(cName, "scratch", WithPlatformOption(platform))
+	if err != nil {
+		return nil, err
+	}
+	logger.Debug("mergeDir: %s", bInfo.MountPoint)
+	if err = b.Pull(images, WithPlatformOption(platform), WithPullPolicyOption(PullIfMissing.String())); err != nil {
+		return nil, err
 	}
 
-	defer func() {
-		for _, i := range containerNames {
-			_ = b.Delete(i)
-		}
-		_ = os.RemoveAll(mergeDir)
-	}()
-
-	imageObjList := make([]v1.Image, 0)
-
+	imageObjList := make([]map[string]v1.Image, 0)
 	for _, i := range images {
-		obj, err := b.InspectImage(i)
-		if err != nil {
-			return err
-		}
-		imageObjList = append(imageObjList, obj)
+		obj, _ := b.InspectImage(i)
+		imageObjList = append(imageObjList, map[string]v1.Image{i: obj})
 	}
 
-	dockerfile, err := mergeMountPath(imageObjList, images...)
+	dockerfile, err := buildimage.MergeDockerfileFromImages(imageObjList)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = os.WriteFile(path.Join(mergeDir, "Kubefile"), []byte(dockerfile), 0755)
+	mergeDir := bInfo.MountPoint
+	err = os.WriteFile(path.Join(mergeDir, "Sealfile"), []byte(dockerfile), 0755)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	logger.Debug("buildOptions file: %s", path.Join(mergeDir, "Kubefile"))
+	logger.Debug("buildOptions file: %s", path.Join(mergeDir, "Sealfile"))
 	logger.Debug("buildOptions tag: %s", newImageName)
 	logger.Debug("buildOptions contextDir: %s", mergeDir)
-	return nil
-}
-func mergeMountPath(imageObjList []v1.Image, imageNames ...string) (string, error) {
-	var labels map[string]string
-	var envs map[string]string
-	var cmds []string
-	var entrypoints []string
-	var isRootfs bool
-	for _, oci := range imageObjList {
-		labels = maps.MergeMap(labels, oci.Config.Labels)
-		if oci.Config.Labels != nil && oci.Config.Labels[v1beta1.ImageTypeKey] == string(v1beta1.RootfsImage) {
-			isRootfs = true
-		}
-		envs = maps.MergeMap(envs, maps.ListToMap(oci.Config.Env))
-		cmds = append(cmds, oci.Config.Cmd...)
-		entrypoints = append(entrypoints, oci.Config.Entrypoint...)
-	}
-	delete(envs, "PATH")
-	if isRootfs {
-		labels[v1beta1.ImageTypeKey] = string(v1beta1.RootfsImage)
-	}
-	for i, label := range labels {
-		labels[i] = "\"" + strings.ReplaceAll(label, "$", "\\$") + "\""
-	}
-	for i, entrypoint := range entrypoints {
-		entrypoints[i] = "\"" + strings.ReplaceAll(entrypoint, "$", "\\$") + "\""
-	}
-	for i, cmd := range cmds {
-		cmds[i] = "\"" + strings.ReplaceAll(cmd, "$", "\\$") + "\""
-	}
-	t := template.New("")
-	t, err := t.Parse(
-		`FROM scratch
-MAINTAINER labring
-{{- if .Labels }}
-{{- range $key, $val := .Labels }}
-LABEL {{ $key }}={{ $val }}
-{{- end }}
-{{- end }}
-{{- if .Envs }}
-{{- range $key, $val := .Envs }}
-ENV {{ $key }}={{ $val }}
-{{- end }}
-{{- end }}
-{{- if .Entrypoints }}
-ENTRYPOINT [{{ .Entrypoints }}]
-{{- end }}
-{{- if .CMDs }}
-CMD [{{ .CMDs }}]
-{{- end }}
-{{- if .Images }}
-{{- range .Images }}
-COPY --from={{.}}  . .
-{{- end }}
-{{- end }}`)
-	if err != nil {
-		return "", err
-	}
-	data := map[string]any{
-		"Labels":      labels,
-		"Envs":        envs,
-		"Entrypoints": strings.Join(entrypoints, ","),
-		"CMDs":        strings.Join(cmds, ","),
-		"Images":      imageNames,
-	}
-
-	out := bytes.NewBuffer(nil)
-	err = t.Execute(out, data)
-	if err != nil {
-		return "", err
-	}
-	return out.String(), nil
+	return &bInfo, nil
 }

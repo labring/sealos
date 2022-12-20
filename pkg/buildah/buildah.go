@@ -133,6 +133,7 @@ func subCommands() []*cobra.Command {
 		newLogoutCommand(),
 		newManifestCommand(),
 		newMountCommand(),
+		newMergeCommand(),
 		newPullCommand(),
 		newPushCommand(),
 		newRMCommand(),
