@@ -22,31 +22,32 @@ data:
         service: registry
         environment: staging
     storage:
-      oss:
-        accesskeyid: ... # TODO edit it
-        accesskeysecret: ... # TODO edit it
-        region: ... # TODO edit it
-        bucket: ... # TODO edit it
+      oss: # TODO edit it
+        accesskeyid: ...
+        accesskeysecret: ... 
+        region: ... 
+        bucket: ... 
       delete:
         enabled: true
       cache:
         blobdescriptor: inmemory
-    middleware:
-      storage:
+    middleware: 
+      storage: # TODO edit it
         - name: alicdn
           options:
             baseurl: ...
             authtype: ...
             privatekey: ...
     auth:
-      token:
+      token: # TODO DON'T edit it if  
         realm: https://hubauth.login.sealos.io/auth
         service: token-service
         issuer: registry-token-issuer
         rootcertbundle: /etc/docker/registry/authserver.crt
     http:
       addr: :5000
-      secret: ... # TODO edit it
+      secret: ... # TODO edit it,  If you are building a cluster of registries behind a load balancer, 
+                  # you MUST ensure the secret is the same for all registries.
       headers:
         X-Content-Type-Options: [nosniff]
       http2:
@@ -56,7 +57,7 @@ data:
         enabled: true
         interval: 10s
     threshold: 3
-  authserver.crt: |
+  authserver.crt: | 
     -----BEGIN CERTIFICATE-----
     ...
     -----END CERTIFICATE-----
