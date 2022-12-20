@@ -23,7 +23,6 @@ import (
 )
 
 const (
-	SealerBinPath      = "/usr/local/bin/sealos"
 	SubCmdInitOfSealos = "init"
 	DefaultSSHPassword = "Sealos123"
 )

@@ -59,10 +59,22 @@ func (k *KubeadmRuntime) GenerateCert() error {
 		k.getServiceCIDR(),
 		k.getDNSDomain(),
 	)
+	logger.Debug("cert.GenerateCert getServiceCIDR ", k.getServiceCIDR())
+	logger.Debug("cert.GenerateCert param:", k.getContentData().PkiPath(),
+		k.getContentData().PkiEtcdPath(),
+		k.getCertSANS(),
+		k.getMaster0IP(),
+		hostName,
+		k.getServiceCIDR(),
+		k.getDNSDomain())
 	if err != nil {
 		return fmt.Errorf("generate certs failed %v", err)
 	}
 	return k.sendNewCertAndKey([]string{k.getMaster0IPAndPort()})
+}
+
+func (k *KubeadmRuntime) SendNewCertAndKeyToMasters() error {
+	return k.sendNewCertAndKey(k.getMasterIPAndPortList())
 }
 
 func (k *KubeadmRuntime) CreateKubeConfig() error {

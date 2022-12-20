@@ -98,7 +98,7 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, setKubeadm bool) (Interface, error) {
 	k := &KubeadmRuntime{
 		Cluster: cluster,
 		Config: &Config{
@@ -106,6 +106,9 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 			APIServerDomain:       DefaultAPIServerDomain,
 		},
 		KubeadmConfig: &KubeadmConfig{},
+	}
+	if setKubeadm {
+		k.KubeadmConfig = kubeadm
 	}
 	if err := k.Validate(); err != nil {
 		return nil, err
@@ -119,7 +122,12 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, 
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
 func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm)
+	return newKubeadmRuntime(cluster, kubeadm, false)
+}
+
+// NewDefaultRuntimeByKubeadm arg "clusterName" is the Cluster name
+func NewDefaultRuntimeByKubeadm(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
+	return newKubeadmRuntime(cluster, kubeadm, true)
 }
 
 func (k *KubeadmRuntime) Validate() error {

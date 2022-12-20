@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"path"
 	"strings"
 
 	"github.com/labring/sealos/pkg/clusterfile"
@@ -35,7 +36,7 @@ var certCmd = &cobra.Command{
     you had better backup old certs first.
 	sealos cert --alt-names sealos.io,10.103.97.2,127.0.0.1,localhost
     using "openssl x509 -noout -text -in apiserver.crt" to check the cert
-	will update cluster API server cert, you need to restart your API server manually after using sealer cert.
+	will update cluster API server cert, you need to restart your API server manually after using sealos cert.
 
     For example: add an EIP to cert.
     1. sealos cert --alt-names 39.105.169.253
@@ -44,12 +45,19 @@ var certCmd = &cobra.Command{
     4. kubectl get pod, to check if it works or not
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cluster, err := clusterfile.GetDefaultCluster()
+		cluster, err := clusterfile.GetClusterFromName(clusterName)
 		if err != nil {
 			return fmt.Errorf("get default cluster failed, %v", err)
 		}
-		clusterFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
-		r, err := runtime.NewDefaultRuntime(cluster, clusterFile.GetKubeadmConfig())
+		clusterPath := constants.Clusterfile(cluster.Name)
+
+		cf := clusterfile.NewClusterFile(clusterPath,
+			clusterfile.WithCustomKubeadmFiles([]string{path.Join(constants.NewData(cluster.Name).EtcPath(), constants.DefaultInitKubeadmFileName)}),
+		)
+		if err = cf.Process(); err != nil {
+			return err
+		}
+		r, err := runtime.NewDefaultRuntimeByKubeadm(cluster, cf.GetKubeadmConfig())
 		if err != nil {
 			return fmt.Errorf("get default runtime failed, %v", err)
 		}
@@ -59,6 +67,6 @@ var certCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(certCmd)
-
+	certCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
 	certCmd.Flags().StringVar(&altNames, "alt-names", "", "add domain or ip in certs, sealos.io or 10.103.97.2")
 }
