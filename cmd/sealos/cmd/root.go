@@ -59,7 +59,7 @@ func init() {
 	fs.StringVar(&runtimeRootDir, "sealos-root", constants.DefaultRuntimeRootDir, "root directory for sealos actions")
 	_ = fs.MarkHidden("sealos-root")
 	// add unrelated command names that don't required buildah sdk.
-	buildah.AddUnrelatedCommandNames("docs", "exec", "gen", "scp", "version")
+	buildah.AddUnrelatedCommandNames("cert", "docs", "exec", "gen", "scp", "version")
 }
 
 func onBootOnDie() {
