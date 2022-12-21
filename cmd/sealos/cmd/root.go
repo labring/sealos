@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -57,6 +58,8 @@ func init() {
 	_ = fs.MarkHidden("cluster-root")
 	fs.StringVar(&runtimeRootDir, "sealos-root", constants.DefaultRuntimeRootDir, "root directory for sealos actions")
 	_ = fs.MarkHidden("sealos-root")
+	// add unrelated command names that don't required buildah sdk.
+	buildah.AddUnrelatedCommandNames("docs", "exec", "gen", "scp", "version")
 }
 
 func onBootOnDie() {

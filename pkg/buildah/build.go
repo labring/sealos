@@ -62,7 +62,7 @@ func newBuildCommand() *cobra.Command {
 		Args: cobra.MaximumNArgs(1),
 		Example: fmt.Sprintf(`%[1]s build
   %[1]s bud -f Kubefile.simple .
-  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmdName),
+  %[1]s bud -f Kubefile.simple -f Kubefile.notsosimple .`, rootCmd.CommandPath()),
 	}
 	buildCommand.SetUsageTemplate(UsageTemplate())
 
