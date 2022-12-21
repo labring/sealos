@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './highlight.scss';
+html {
+  font-size: 12px;
+}
+
+::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+  border-radius: 7px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,.5);
+  background-clip: padding-box;
+  border: 6px solid transparent;
+  border-radius: 14px;
+}
+
+body {
+  --dark-txt: #000;
+  --alt-txt: #fff;
+  --med-dark: #111;
+  --txt-col: #222;
+  --med-txt: #3c3c3c;
+  --comp-txt: #ddd;
+  --comp-clr: #e6e6e6;
+  --gray-txt: #555;
+  --sat-txt: #777;
+  --clrPrm: #0067c0;
+  --wintheme: #eee;
+
+  --txt_clr-rgb: 0 0 0;
+  --base_bg-rgb: 243 243 243;
+
+  --fakeMica: #f3f3f3 radial-gradient(#eff4f9 75%, #f3f3f3 100%) no-repeat fixed;
+}
+
+body[data-theme='dark'] {
+  --dark-txt: #fff;
+  --alt-txt: #000;
+  --med-dark: #eee;
+  --txt-col: #ddd;
+  --med-txt: #c3c3c3;
+  --comp-txt: #222;
+  --comp-clr: #191919;
+  --gray-txt: #aaa;
+  --sat-txt: #999;
+  --clrPrm: #4cc2ff;
+  --wintheme: #1e1e26;
+
+  --txt_clr-rgb: 255 255 255;
+  --base_bg-rgb: 32 32 32;
+
+  --fakeMica: #202020 radial-gradient(#1a1f35 25%, #202020 100%) no-repeat fixed;
+}
+
+body::-webkit-scrollbar {
+  --scroll: rgb(44 44 44 / 80%);
+}
+
+.edgeBrowser {
+  --bg0: #e7eaec;
+  --bg1: #f7fafc;
+  --ipbar: #fefefe;
+  --shd: rgba(80, 80, 80, 0.2);
+  background: var(--bg0);
+}
+
+body[data-theme='dark'] .edgeBrowser {
+  --bg0: #222228;
+  --ipbar: #222228;
+  --bg1: rgb(45, 45, 51);
+  --shd: rgba(0, 0, 0, 0.3);
+
+  .edgenavicon {
+    filter: invert(1);
+  }
+}
+
+
+
+body[data-theme='dark'] .wnstore {
+  --nav-btn-hov: #454545;
+  --page-bg: rgb(255 255 255 / 3.33%);
+  --page-bd-col: #292828;
+  --rib-bg: #2f2e30b8;
+  --rib2-bg: rgb(255 255 255 / 5%);
+
+  .win11Scroll::-webkit-scrollbar {
+    --scroll: rgb(44 44 44 / 80%);
+  }
+}
+
+.wnterm {
+  background: rgb(16, 16, 16);
+}
+
+.notepad {
+  --bg1: #f9f9f9;
+
+  background: var(--fakeMica);
+  color: var(--dark-txt);
+
+  .restWindow {
+    background: var(--bg1);
+  }
+}
+
+body[data-theme='dark'] .notepad {
+  --bg1: #282828;
+}
+
+.calcApp {
+  --bg1: rgb(243, 243, 243);
+  --bg2: #ffffff;
+  --bg3: #f9f9f9;
+  --err-bg: rgb(255, 255, 255, 0.1);
+  --err-txt: #999;
+
+  background: var(--fakeMica);
+  color: var(--dark-txt);
+}
+
+body[data-theme='dark'] .calcApp {
+  --bg1: rgba(32, 32, 32);
+  --bg2: rgba(255, 255, 255, 0.12);
+  --bg3: rgba(255, 255, 255, 0.08);
+  --err-bg: rgba(255, 255, 255, 0.033);
+  --err-txt: #777;
+
+  .menuBars {
+    filter: invert(1);
+  }
+}
+
+.whiteBoard {
+  background: var(--comp-txt);
+}
+
+.spotify {
+  background: rgb(24, 24, 24);
+}
+
+.settingsApp {
+  --bg: #f3f3f3;
+
+  background: var(--fakeMica);
+  color: rgb(var(--txt_clr-rgb));
+  min-width: 720px;
+}
+
+.discordWn {
+  background: #36393f;
+}
+
+.lightWindow {
+  background: #fff;
+}
+
+.darkWindow {
+  background: #1a1614;
+}
+
+.wnCam {
+  background: #060606;
+}
+
+.msfiles {
+  --bg1: #ffffff;
+  --bg2: #f5f5f5;
+  --dsb-col: #aaa;
+  --gray1: #bbb;
+  --gray2: #ddd;
+  --hover-bg: rgba(0, 178, 255, 0.16);
+  --focus-bg: rgba(0, 183, 255, 0.25);
+}
+
+body[data-theme='dark'] .msfiles {
+  --bg1: #191919;
+  --bg2: #1c1c1c;
+  --dsb-col: #555;
+  --gray1: #444;
+  --gray2: #222;
+  --hover-bg: rgba(136, 136, 136, 0.5);
+  --focus-bg: rgba(228, 228, 228, 0.5);
+}
