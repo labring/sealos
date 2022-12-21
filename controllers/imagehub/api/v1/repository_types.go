@@ -105,10 +105,12 @@ func (r *Repository) getName() string {
 }
 
 func (r *Repository) genKeywordsLabels(img *Image) {
-	mp := make(map[string]string)
+	if r.Labels == nil {
+		r.Labels = make(map[string]string)
+	}
 	for _, keyword := range img.Spec.DetailInfo.Keywords {
 		label := fmt.Sprintf("%s%s", KeywordsLabelPrefix, keyword)
-		mp[label] = ""
+		r.Labels[label] = ""
 	}
 }
 
