@@ -1,6 +1,6 @@
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
-import Image from 'next/image';
+import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import request from 'services/request';
@@ -15,6 +15,13 @@ import {
 } from './components/controlled_fluent';
 import { PageType, usePgSqlContext } from './index';
 import { generatePgsqlTemplate, TPgSqlForm } from './pgsql_common';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogSurface,
+  Spinner
+} from '@fluentui/react-components';
 
 function AddPage() {
   const { toPage } = usePgSqlContext();
@@ -59,15 +66,19 @@ function AddPage() {
     setYamlTemplate(generatePgsqlTemplate(data));
   });
 
-  const applyYaml = async (data: any) => {
-    const res = await request.post('/api/pgsql/applyPgsql', { data, kubeconfig });
-    toPage(PageType.FrontPage);
-  };
+  const createPgsqlMutation = useMutation({
+    mutationFn: (data: any) => {
+      return request.post('/api/pgsql/applyPgsql', { data, kubeconfig });
+    },
+    onSettled: () => {
+      toPage(PageType.FrontPage);
+    }
+  });
 
   const onSave = () => {
     handleSubmit(
       (data) => {
-        applyYaml(data);
+        createPgsqlMutation.mutate(data);
       },
       (err) => {
         console.log(err);
@@ -262,6 +273,17 @@ function AddPage() {
             </div>
           </div>
         </div>
+      </div>
+      <div>
+        <Dialog open={createPgsqlMutation.isLoading}>
+          <DialogSurface className={styles.loading}>
+            <DialogBody>
+              <DialogContent>
+                <Spinner size="small" label="创建中" />
+              </DialogContent>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
       </div>
     </div>
   );

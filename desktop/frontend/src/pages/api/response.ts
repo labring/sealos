@@ -42,6 +42,8 @@ const CommonResp = (
 
 const BadRequestResp = (resp?: NextApiResponse) =>
   CommonResp({ code: 400, message: 'Bad Request Method' }, resp);
+const BadAuthResp = (resp?: NextApiResponse) =>
+  CommonResp({ code: 401, message: 'authentication required' }, resp);
 const NotFoundResp = (resp?: NextApiResponse) =>
   CommonResp({ code: 404, message: 'Method Not Found' }, resp);
 const UnprocessableResp = (str: string, resp?: NextApiResponse) =>
@@ -56,6 +58,7 @@ const JsonResp = (data: any, resp?: NextApiResponse) =>
 
 export {
   BadRequestResp,
+  BadAuthResp,
   NotFoundResp,
   UnprocessableResp,
   MethodNotAllowedResp,

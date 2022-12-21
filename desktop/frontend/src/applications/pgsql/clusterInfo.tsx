@@ -49,14 +49,16 @@ function InfoCard(props: TInfoCard) {
             <span ref={customContent.customRef} className="truncate">
               {customContent.value && customContent.value}
             </span>
-            <Image
-              onClick={() => customContent.onCopy()}
-              className="inline-block mr-2 cursor-pointer"
-              src={'/images/infraicon/scp_ssh_copy.svg'}
-              alt="copy"
-              width={32}
-              height={32}
-            />
+            <div className="shrink-0 w-4 h-4">
+              <Image
+                onClick={() => customContent.onCopy()}
+                className="inline-block mr-2 cursor-pointer"
+                src={'/images/infraicon/scp_ssh_copy.svg'}
+                alt="copy"
+                width={32}
+                height={32}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -164,10 +166,8 @@ export default function ClusterInfo(props: TClusterInfo) {
       {secretResult?.body?.data?.username && (
         <InfoCard
           customContent={{
-            label:
-              secretResult?.body?.data?.username && window.atob(secretResult?.body?.data?.username),
-            value:
-              secretResult?.body?.data?.password && window.atob(secretResult?.body?.data?.password),
+            label: window.atob(secretResult?.body?.data?.username),
+            value: window.atob(secretResult?.body?.data?.password),
             customRef: passwordRef,
             onCopy: copyPassword
           }}

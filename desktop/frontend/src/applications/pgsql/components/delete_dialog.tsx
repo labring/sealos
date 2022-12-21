@@ -7,6 +7,7 @@ import {
   DialogTitle,
   Spinner
 } from '@fluentui/react-components';
+import { useMutation } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
@@ -15,9 +16,9 @@ import Button from './button';
 import styles from './delete_dialog.module.scss';
 
 type DialogComponentProps = {
-  open: boolean;
+  isOpen: boolean;
   deleteName: string;
-  onChangeOpen: (open: boolean) => void;
+  onOpen: (open: boolean) => void;
 };
 
 enum DialogStatus {
@@ -26,33 +27,42 @@ enum DialogStatus {
 }
 
 export default function DeletePgsqlDialog(props: DialogComponentProps) {
-  const { open, deleteName, onChangeOpen } = props;
+  const { isOpen, deleteName, onOpen } = props;
   const [isDisabled, setIsDisabled] = useState(true);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [dialogStatus, setDialogStatus] = useState<DialogStatus>();
+
+  const pgsqlListMutation = useMutation({
+    mutationFn: () => {
+      return request.post('/api/pgsql/getAll', { kubeconfig });
+    },
+    onError: (error) => {
+      console.log(error);
+    },
+    onSettled: (data, error, variables, context) => {
+      setDialogStatus(undefined);
+    }
+  });
+
+  const pgsqlMutation = useMutation({
+    mutationFn: () => {
+      return request.post('/api/pgsql/deletePgsql', { pgsqlName: deleteName, kubeconfig });
+    },
+    onSuccess: () => {
+      setDialogStatus(DialogStatus.success);
+    },
+    onSettled: () => {
+      onOpen(false);
+      pgsqlListMutation.mutate();
+    }
+  });
 
   const handleDelete = async () => {
     if (isDisabled) {
       return;
     }
-    onChangeOpen(false);
     setDialogStatus(DialogStatus.loading);
-    const res = await request.post('/api/pgsql/deletePgsql', { pgsqlName: deleteName, kubeconfig });
-    const deleteComplete = res.data.body.status === 'Success' ? true : false;
-    let fresh = false;
-    while (!fresh && deleteComplete) {
-      const all = await request.post('/api/pgsql/getAll', { kubeconfig });
-      const isFind = all.data?.items.find((item: any) => {
-        item.metadata.name === deleteName;
-      });
-      if (!isFind) {
-        fresh = true;
-      }
-    }
-    setDialogStatus(DialogStatus.success);
-    setTimeout(() => {
-      setDialogStatus(undefined);
-    }, 1000);
+    pgsqlMutation.mutate();
   };
 
   useEffect(() => {
@@ -62,7 +72,7 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
   return (
     <div>
       <div>
-        <Dialog modalType="alert" open={open}>
+        <Dialog modalType="alert" open={isOpen}>
           <DialogSurface>
             <DialogBody>
               <DialogTitle className={styles.dialogTitle}>确认要删除集群吗？ </DialogTitle>
@@ -84,7 +94,7 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
                 </div>
               </DialogContent>
               <DialogActions className="mt-2">
-                <Button size="small" type="lightBlue" handleClick={() => onChangeOpen(false)}>
+                <Button size="small" type="lightBlue" handleClick={() => onOpen(false)}>
                   取消
                 </Button>
                 <Button size="medium" plain disabled={isDisabled} handleClick={handleDelete}>

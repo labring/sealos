@@ -8,8 +8,6 @@ type TButton = {
   size?: 'default' | 'medium' | 'small' | 'mini';
   shape?: 'round' | 'squareRound';
   plain?: boolean;
-  round?: boolean;
-  squareRound?: boolean;
   icon?: string;
   children?: any;
   disabled?: boolean;

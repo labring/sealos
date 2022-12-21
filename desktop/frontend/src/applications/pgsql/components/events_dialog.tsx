@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import Image from 'next/image';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import styles from './events_dialog.module.scss';
 import Button from './button';
+import styles from './events_dialog.module.scss';
 
 type PgsqlEventsDialog = {
   name: string;

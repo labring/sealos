@@ -1,12 +1,12 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import * as k8s from '@kubernetes/client-node';
+import type { NextApiRequest, NextApiResponse } from 'next';
 import {
   GetSecret,
   GetService,
   GetUserDefaultNameSpace,
   K8sApi
 } from 'services/backend/kubernetes';
-import { JsonResp } from '../response';
+import { BadAuthResp, JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { kubeconfig, pgsqlName } = req.body;
@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const kube_user = kc.getCurrentUser();
 
   if (kube_user === null) {
-    return res.status(400);
+    return BadAuthResp(res);
   }
 
   const namespace = GetUserDefaultNameSpace(kube_user.name);

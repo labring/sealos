@@ -1,7 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { CRDMeta, K8sApi, ListCRD, GetUserDefaultNameSpace } from 'services/backend/kubernetes';
-import { JsonResp } from '../response';
+import { JsonResp, BadAuthResp } from '../response';
+import { pgsqlMeta } from 'mock/pgsql';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { kubeconfig } = req.body;
@@ -9,14 +10,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const kube_user = kc.getCurrentUser();
 
   if (kube_user === null) {
-    return res.status(400);
+    return BadAuthResp(res);
   }
 
   const meta: CRDMeta = {
-    group: 'acid.zalan.do',
-    version: 'v1',
-    namespace: GetUserDefaultNameSpace(kube_user.name),
-    plural: 'postgresqls'
+    ...pgsqlMeta,
+    namespace: GetUserDefaultNameSpace(kube_user.name)
   };
 
   try {

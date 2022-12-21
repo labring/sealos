@@ -51,19 +51,13 @@ function FrontPage() {
     setPgsqlName(pgsqlName);
   };
 
-  const freshList = () => {
-    setPgsqlListStatus(EPgsqlLists.Pending);
-  };
-
   const openDeleteDialog = (e: React.MouseEvent<HTMLDivElement>, item: TPgsqlDetail) => {
     e.stopPropagation();
     setPgsqlName(item.metadata.name);
     setDeletePgsqlVisible(true);
-    freshList();
   };
 
   const openEventDialog = (e: React.MouseEvent<HTMLDivElement>, item: TPgsqlDetail) => {
-    console.log(item);
     e.stopPropagation();
     setEventsDialogVisible(true);
     setPgsqlName(item.metadata.name);
@@ -163,8 +157,8 @@ function FrontPage() {
       </Drawer>
 
       <DeletePgsqlDialog
-        open={deletePgsqlVisible}
-        onChangeOpen={(open: boolean) => {
+        isOpen={deletePgsqlVisible}
+        onOpen={(open: boolean) => {
           setDeletePgsqlVisible(open);
           setPgsqlListStatus(EPgsqlLists.Pending);
         }}
