@@ -319,11 +319,12 @@ func (k *KubeadmRuntime) setCgroupDriver(cGroup string) {
 	k.KubeletConfiguration.CgroupDriver = cGroup
 }
 
-func (k *KubeadmRuntime) setCertSANS() {
+func (k *KubeadmRuntime) setCertSANS(certs []string) {
 	var certSans []string
 	certSans = append(certSans, "127.0.0.1")
 	certSans = append(certSans, k.getAPIServerDomain())
 	certSans = append(certSans, k.getVip())
+	certSans = append(certSans, certs...)
 	certSans = append(certSans, k.getMasterIPList()...)
 	certSans = append(certSans, k.getCertSANS()...)
 	certSans = strings2.RemoveDuplicate(certSans)

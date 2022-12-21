@@ -99,6 +99,15 @@ func (c *ClusterFile) loadClusterFile() ([]byte, error) {
 		out.WriteString("\n---\n")
 		out.Write(configData)
 	}
+
+	for i := range c.customKubeadmFiles {
+		configData, err := fileutil.ReadAll(c.customKubeadmFiles[i])
+		if err != nil {
+			return nil, err
+		}
+		out.WriteString("\n---\n")
+		out.Write(configData)
+	}
 	return out.Bytes(), nil
 }
 

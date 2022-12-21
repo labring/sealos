@@ -39,6 +39,7 @@ var (
 
 const (
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
+	DefaultCertFileName              = "cert.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
 	DefaultKubeadmTokenFileName      = "kubeadm-token.json"
