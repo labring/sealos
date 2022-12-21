@@ -49,13 +49,15 @@ spec:
               latestTag:
                 properties:
                   creatTime:
-                    description: todo inspect image and get time
                     format: date-time
+                    type: string
+                  metaName:
                     type: string
                   name:
                     type: string
                 required:
                 - creatTime
+                - metaName
                 - name
                 type: object
               name:
@@ -67,13 +69,15 @@ spec:
                 items:
                   properties:
                     creatTime:
-                      description: todo inspect image and get time
                       format: date-time
+                      type: string
+                    metaName:
                       type: string
                     name:
                       type: string
                   required:
                   - creatTime
+                  - metaName
                   - name
                   type: object
                 type: array

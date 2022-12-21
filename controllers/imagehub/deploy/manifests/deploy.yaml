@@ -120,13 +120,15 @@ spec:
                       items:
                         properties:
                           creatTime:
-                            description: todo inspect image and get time
                             format: date-time
+                            type: string
+                          metaName:
                             type: string
                           name:
                             type: string
                         required:
                         - creatTime
+                        - metaName
                         - name
                         type: object
                       type: array
@@ -202,6 +204,21 @@ spec:
                   ID:
                     description: should use buildah inspect to get infor.
                     type: string
+                  actions:
+                    additionalProperties:
+                      properties:
+                        actionType:
+                          type: string
+                        actions:
+                          type: string
+                        cmd:
+                          type: string
+                        name:
+                          description: 'TODO: support more action types ,now just
+                            support yaml.'
+                          type: string
+                      type: object
+                    type: object
                   arch:
                     type: string
                   description:
@@ -383,13 +400,15 @@ spec:
               latestTag:
                 properties:
                   creatTime:
-                    description: todo inspect image and get time
                     format: date-time
+                    type: string
+                  metaName:
                     type: string
                   name:
                     type: string
                 required:
                 - creatTime
+                - metaName
                 - name
                 type: object
               name:
@@ -401,13 +420,15 @@ spec:
                 items:
                   properties:
                     creatTime:
-                      description: todo inspect image and get time
                       format: date-time
+                      type: string
+                    metaName:
                       type: string
                     name:
                       type: string
                   required:
                   - creatTime
+                  - metaName
                   - name
                   type: object
                 type: array
