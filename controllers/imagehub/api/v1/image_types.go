@@ -26,9 +26,9 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TagData struct {
-	Name string `json:"name"`
-	// todo inspect image and get time
-	CTime metav1.Time `json:"creatTime"`
+	Name     string      `json:"name"`
+	MetaName string      `json:"metaName"`
+	CTime    metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
 type ImageName string
