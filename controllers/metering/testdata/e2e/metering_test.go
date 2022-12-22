@@ -17,7 +17,7 @@ const (
 	TestNamespace    = "ns-metering-test"
 	PodName          = "nginx-test"
 	DefaultOwner     = "metering-test"
-	AccountNamespace = "user-system"
+	AccountNamespace = "sealos-system"
 	InfraName        = "yyj-test-1"
 )
 

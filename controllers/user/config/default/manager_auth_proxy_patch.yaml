@@ -48,3 +48,5 @@ spec:
               fieldRef:
                 apiVersion: v1
                 fieldPath: metadata.namespace
+          - name: ACCOUNT_NAMESPACE
+            value: "sealos-system"

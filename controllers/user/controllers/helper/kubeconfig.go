@@ -132,11 +132,7 @@ func GetKubernetesHost(config *rest.Config) string {
 }
 
 func GetDefaultNamespace() string {
-	namespace := os.Getenv("NAMESPACE_NAME")
-	if namespace == "" {
-		namespace = "user-system"
-	}
-	return namespace
+	return os.Getenv("NAMESPACE_NAME")
 }
 
 func GetUsersSubject(user string) []rbacV1.Subject {
