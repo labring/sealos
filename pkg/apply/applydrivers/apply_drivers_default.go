@@ -84,11 +84,12 @@ func (c *Applier) Apply() error {
 		}
 	}()
 	c.initStatus()
-	if c.ClusterDesired.CreationTimestamp.IsZero() {
+	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
 		err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
 		err = c.reconcileCluster()
+		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
 	c.updateStatus(err)
 	return err
