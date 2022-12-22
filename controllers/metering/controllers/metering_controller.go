@@ -233,9 +233,9 @@ func (r *MeteringReconcile) calculateInfraCost(ctx context.Context, metering *me
 	for _, infra := range infraList.Items {
 		if infra.Namespace == metering.Spec.Namespace {
 			count, err := infra.QueryPrice()
-			r.Logger.Info("get infra :", "name: ", infra.Name, "namespace: ", infra.Namespace, "price: ", count)
+			r.Logger.Info("get infra :", "name: ", infra.Name, "namespace: ", infra.Namespace, "price: ", count, "meteringName", metering.Name, "userNamespace", metering.Spec.Namespace)
 			if err != nil {
-				return 0, err
+				r.Logger.Error(err, "Failed to get InfraPrice,meteringName", metering.Name)
 			}
 			amount += count
 		}

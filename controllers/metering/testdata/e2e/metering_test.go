@@ -18,6 +18,7 @@ const (
 	PodName          = "nginx-test"
 	DefaultOwner     = "metering-test"
 	AccountNamespace = "user-system"
+	InfraName        = "yyj-test-1"
 )
 
 var MeteringSystemNamespace string
@@ -190,6 +191,27 @@ func TestMetering(t *testing.T) {
 
 			defer t.Log(fmt.Sprintf("account:%v", account))
 		})
+
+		t.Run("metering calculate infra should be ok", func(t *testing.T) {
+			t.Log("ensure infra is created")
+			baseapi.EnsureNamespace(TestNamespace)
+			baseapi.CreateCRD(TestNamespace, InfraName, api.InfraYaml)
+			err := api.EnsureInfra(TestNamespace, InfraName, 12)
+			//if err != nil {
+			//	t.Fatalf(err.Error())
+			//}
+			infra, err := api.GetInfra(TestNamespace, InfraName)
+			if err != nil {
+				t.Fatalf("failed to get infra: %v", err)
+			}
+
+			t.Log("check infra QueryPrice")
+			price, err := infra.QueryPrice()
+			t.Log("infra price is ", price)
+			if err != nil {
+				t.Fatalf("failed to query infra price: %v", err)
+			}
+		})
 	})
 	t.Cleanup(clear)
 }
@@ -220,16 +242,16 @@ func clear() {
 	if err != nil {
 		log.Println(err)
 	}
-	//err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(controllers.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
-	//if err != nil {
-	//	log.Println(err)
-	//}
 
 	if err = api.DeleteExtensionResourcePrice(MeteringSystemNamespace, controllers.PodResourcePricePrefix); err != nil {
 		log.Println(err)
 	}
 
 	if err = baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
+		log.Println(err)
+	}
+
+	if err = baseapi.DeleteCRD(TestNamespace, InfraName, api.InfraYaml); err != nil {
 		log.Println(err)
 	}
 
