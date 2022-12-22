@@ -250,7 +250,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 					}
 					volIndex, err := getVolIndex(vol)
 					if err != nil {
-						return nil, fmt.Errorf("aws ecs not found vplume index label: %v", err)
+						return nil, fmt.Errorf("aws ecs not found volume index label: %v", err)
 					}
 					disks = append(disks, v1.Disk{
 						Capacity:   int(*vol.Size),

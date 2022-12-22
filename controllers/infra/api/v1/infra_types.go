@@ -254,23 +254,27 @@ func (i *Infra) GetInstancesAndVolumesTag() string {
 }
 
 // QueryPrice query infra price/hour, unit: CNY cents/hour
+// may be error is not nil,but the price should calculate
 func (i *Infra) QueryPrice() (int64, error) {
 	valueEc2, valueEbs := float64(0), float64(0)
+	var err error
 	for _, j := range i.Spec.Hosts {
 		if _, ok := ec2NorthPrice[j.Flavor]; !ok {
-			return -1, fmt.Errorf("no ec2 type")
+			err = fmt.Errorf("flavor:%v,no ec2 type: %v", j.Flavor, err)
+			continue
 		}
 		valueEc2 += ec2NorthPrice[j.Flavor] * float64(j.Count)
 
 		for _, disk := range j.Disks {
-			if _, ok := ebs[disk.Type]; !ok {
-				return -1, fmt.Errorf("no ebs type")
+			if _, ok := ebs[disk.VolumeType]; !ok {
+				err = fmt.Errorf(" VolumnType:%v,no ebs type :%v", disk.VolumeType, err)
+				continue
 			}
-			valueEbs += ebs[disk.Type] * float64(disk.Capacity) * float64(j.Count)
+			valueEbs += ebs[disk.VolumeType] * float64(disk.Capacity) * float64(j.Count)
 		}
 	}
 	valueEbs = valueEbs / 30 / 24
-	return int64(valueEc2 + valueEbs), nil
+	return int64(valueEc2 + valueEbs), err
 }
 
 func init() {
