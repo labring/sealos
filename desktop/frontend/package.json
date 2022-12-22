@@ -35,6 +35,7 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-draggable": "^4.4.5",
+    "react-hook-form": "^7.40.0",
     "react-markdown": "^8.0.4",
     "react-syntax-highlighter": "^15.5.0",
     "sealos-desktop-sdk": "^0.1.4",

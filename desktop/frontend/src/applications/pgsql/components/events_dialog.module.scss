@@ -1,0 +1,13 @@
+@import '../pgsql_common.scss';
+
+.packUpBtn {
+  @include iconBox(32px, #fff, 12px, 8px);
+}
+
+.eventInfo {
+  width: 360px;
+  margin-top: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  padding: 12px 8px;
+}
