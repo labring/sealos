@@ -25,14 +25,13 @@ function FrontPage() {
   const [deletePgsqlVisible, setDeletePgsqlVisible] = useState(false);
   const [eventsDialogVisible, setEventsDialogVisible] = useState(false);
   const [pgsqlStatus, setPgsqlStatus] = useState('');
-  const { currentApp, openedApps } = useAppStore();
-  const curApp = openedApps.find((item) => item.name === currentApp?.name);
+  const { currentApp } = useAppStore();
 
   const { data: pgsqlLists } = useQuery(
     ['getAllPgsql'],
     async () => {
       const res = await request.post('/api/pgsql/getAll', { kubeconfig });
-      let allReady = res.data.items?.every((item: any) => {
+      let allReady = res.data.items?.every((item: TPgsqlDetail) => {
         return item.status.PostgresClusterStatus === 'Running';
       });
       if (allReady) {
@@ -67,11 +66,13 @@ function FrontPage() {
         : EPgsqlStatus.EmptyStatus
     );
   };
-
   return (
     <div className={clsx(styles.pgsqlFrontPage, 'w-full h-full flex flex-col')}>
       <div
-        className={clsx('flex pt-8 items-center', curApp?.size === 'maxmin' ? 'px-8' : 'px-40 ')}
+        className={clsx(
+          'flex pt-8 items-center',
+          currentApp?.size === 'maxmin' ? 'px-8' : 'px-40 '
+        )}
       >
         <div className={styles.logo}>
           <Image src="/images/pgsql/logo.svg" alt="pgsql" width={32} height={32} />
@@ -95,7 +96,11 @@ function FrontPage() {
         </div>
       )}
       <div
-        className={clsx(styles.scrollWrap, 'grow', curApp?.size === 'maxmin' ? 'mx-8' : 'mx-40 ')}
+        className={clsx(
+          'grow',
+          styles.scrollWrap,
+          currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40 '
+        )}
       >
         <div className={clsx('w-full  py-8 absolute')}>
           <div className="table w-full">

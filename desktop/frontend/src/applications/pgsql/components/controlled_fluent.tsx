@@ -4,13 +4,18 @@ import { FC } from 'react';
 import { Control, Controller, RegisterOptions, UseFormSetValue } from 'react-hook-form';
 import styles from './controlled_fluent.module.scss';
 
+type TOption = {
+  key: string;
+  content: string;
+};
+
 export interface HookFormProps {
   control: Control<any>;
   name: string;
   rules?: RegisterOptions;
   defaultValue?: any;
   setValue?: UseFormSetValue<any>;
-  options?: any; //Dropdown
+  options?: TOption[]; //Dropdown
   placeholder?: string;
   contentAfter?: string; //Input
 }

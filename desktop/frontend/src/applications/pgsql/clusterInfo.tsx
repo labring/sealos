@@ -23,7 +23,7 @@ type TInfoCard = {
     label: string;
     value: string;
     customRef: any;
-    onCopy: any;
+    onCopy: () => void;
   };
 };
 
@@ -107,7 +107,7 @@ export default function ClusterInfo(props: TClusterInfo) {
     if (!obj) {
       return [{ label: '暂无数据', value: '' }];
     }
-    const result: any = [];
+    const result: TInfoData[] = [];
     Reflect.ownKeys(obj).map((key: any) => {
       let temp: TInfoData = {
         label: key,

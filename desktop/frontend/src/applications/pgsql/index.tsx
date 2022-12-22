@@ -20,7 +20,7 @@ export default function PgSql() {
   };
 
   return (
-    <PgSqlPageContext.Provider value={{ toPage } as any}>
+    <PgSqlPageContext.Provider value={{ toPage }}>
       {pageId === PageType.FrontPage ? <FrontPage /> : null}
       {pageId === PageType.AddPage ? <AddPage /> : null}
     </PgSqlPageContext.Provider>

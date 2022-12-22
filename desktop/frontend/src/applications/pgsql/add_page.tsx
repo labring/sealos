@@ -27,29 +27,26 @@ function AddPage() {
   const { toPage } = usePgSqlContext();
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [yamlTemplate, setYamlTemplate] = useState('');
-  const { currentApp, openedApps } = useAppStore();
-  const curApp = openedApps.find((item) => item.name === currentApp?.name);
+  const { currentApp } = useAppStore();
 
-  const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm, any>(
-    {
-      defaultValues: {
-        pgsqlName: '',
-        version: '13',
-        instance: '1',
-        volumeSize: '1',
-        iops: '3000',
-        througput: '125',
-        limits: {
-          cpu: '300',
-          memory: '300'
-        },
-        dataBases: [],
-        users: []
+  const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm>({
+    defaultValues: {
+      pgsqlName: '',
+      version: '13',
+      instance: '1',
+      volumeSize: '1',
+      iops: '3000',
+      througput: '125',
+      limits: {
+        cpu: '300',
+        memory: '300'
       },
-      reValidateMode: 'onSubmit',
-      mode: 'all'
-    }
-  );
+      dataBases: [],
+      users: []
+    },
+    reValidateMode: 'onSubmit',
+    mode: 'all'
+  });
 
   const { fields: userArr, append, remove } = useFieldArray({ control, name: 'users' });
   const {
@@ -67,7 +64,7 @@ function AddPage() {
   });
 
   const createPgsqlMutation = useMutation({
-    mutationFn: (data: any) => {
+    mutationFn: (data: TPgSqlForm) => {
       return request.post('/api/pgsql/applyPgsql', { data, kubeconfig });
     },
     onSettled: () => {
@@ -95,7 +92,7 @@ function AddPage() {
       <div
         className={clsx(
           'pb-4 pt-8 flex items-center',
-          curApp?.size === 'maxmin' ? 'px-8' : 'px-40'
+          currentApp?.size === 'maxmin' ? 'px-8' : 'px-40'
         )}
       >
         <Button
@@ -110,7 +107,7 @@ function AddPage() {
           </Button>
         </div>
       </div>
-      <div className={clsx('flex-1 flex', curApp?.size === 'maxmin' ? 'mx-8' : 'mx-40')}>
+      <div className={clsx('flex-1 flex', currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40')}>
         <div className={styles.pgsqlFormScroll}>
           <div className={clsx('w-full absolute py-6')}>
             <div className={styles.cardName}>

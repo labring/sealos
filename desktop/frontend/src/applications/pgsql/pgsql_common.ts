@@ -21,7 +21,7 @@ export type TPgsqlDetail = {
     databases: any;
     users: any;
   };
-  status?: {
+  status: {
     PostgresClusterStatus: string;
   };
 };
