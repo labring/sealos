@@ -17,6 +17,7 @@ package buildah
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/containers/common/pkg/config"
@@ -106,6 +107,21 @@ func writeFileIfNotExists(filename string, data []byte) error {
 	return err
 }
 
+func DetermineIfRootlessPackagePresent() error {
+	if !IsRootless() {
+		return nil
+	}
+	deps := map[string][]string{"uidmap": {"newuidmap", "newgidmap"}, "fuse-overlayfs": {"fuse-overlayfs"}}
+	for pkg, executables := range deps {
+		for i := range executables {
+			if _, err := exec.LookPath(executables[i]); err != nil {
+				return fmt.Errorf("executable file '%s' not found in $PATH, consider run in root mode or install package '%s' first", executables[i], pkg)
+			}
+		}
+	}
+	return nil
+}
+
 func MaybeReexecUsingUserNamespace() error {
 	if !IsRootless() {
 		return nil
@@ -124,6 +140,7 @@ func MaybeReexecUsingUserNamespace() error {
 type Setter func() error
 
 var defaultSetters = []Setter{
+	DetermineIfRootlessPackagePresent,
 	MaybeReexecUsingUserNamespace,
 	SetupContainerPolicy,
 	SetupRegistriesFile,
