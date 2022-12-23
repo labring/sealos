@@ -27,7 +27,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -108,7 +107,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
-	unrelatedCommands = sets.NewString("version")
+	unrelatedCommands = []string{"version"}
 	postRunHooks      []func() error
 )
 
@@ -164,11 +163,16 @@ func RegisterPostRun(fn func() error) {
 }
 
 func AddUnrelatedCommandNames(names ...string) {
-	unrelatedCommands.Insert(names...)
+	unrelatedCommands = append(unrelatedCommands, names...)
 }
 
 func skipUnrelatedCommandRun(cmd *cobra.Command) bool {
-	return unrelatedCommands.Has(cmd.Use)
+	for _, name := range unrelatedCommands {
+		if name == cmd.Name() {
+			return true
+		}
+	}
+	return false
 }
 
 func wrapPrePersistentRun(cmd *cobra.Command) {
