@@ -24,15 +24,15 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
+	"github.com/labring/sealos/controllers/app/controllers"
+	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
-	"github.com/labring/sealos/controllers/app/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -43,7 +43,7 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
+	utilruntime.Must(imagev1.AddToScheme(scheme))
 	utilruntime.Must(appv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }

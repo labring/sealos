@@ -1,0 +1,28 @@
+@import './pgsql_common.scss';
+
+.title {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 140%;
+  color: $theme-color-title;
+  margin: 12px 0;
+}
+
+.clusterInfoCard {
+  width: 100%;
+  background-color: $color-global-white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.copyBox {
+  position: absolute;
+  width: 152px;
+  height: 48px;
+  background: #ffffff;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

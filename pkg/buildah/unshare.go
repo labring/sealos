@@ -41,7 +41,7 @@ func newUnshareCommand() *cobra.Command {
 			RunE:   unshareCmd,
 			Example: fmt.Sprintf(`%[1]s unshare id
   %[1]s unshare cat /proc/self/uid_map
-  %[1]s unshare buildah-script.sh`, rootCmdName),
+  %[1]s unshare buildah-script.sh`, rootCmd.CommandPath()),
 		}
 		unshareMounts []string
 	)

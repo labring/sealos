@@ -55,7 +55,7 @@ type pullOptions struct {
 
 func (opts *pullOptions) HiddenFlags() []string {
 	return []string{
-		"signature-policy", "blob-cache",
+		"signature-policy", "blob-cache", "tls-verify",
 	}
 }
 
@@ -112,7 +112,7 @@ func newPullCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s pull imagename
   %[1]s pull docker-daemon:imagename:imagetag
-  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmdName),
+  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmd.CommandPath()),
 	}
 	pullCommand.SetUsageTemplate(UsageTemplate())
 
@@ -131,7 +131,7 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultPlatformFlag, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 	systemContext, err := parse.SystemContextFromOptions(c)

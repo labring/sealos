@@ -49,7 +49,7 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.Disk) error {
-	deviceName, err := generateDataDiskDeviceName(disk.Index)
+	deviceName, err := generateDataDiskDeviceName(disk.Index - 1)
 	if err != nil {
 		return err
 	}

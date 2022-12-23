@@ -75,17 +75,24 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
-	c.initStatus()
 	var err error
-	if c.ClusterDesired.CreationTimestamp.IsZero() {
+	defer func() {
+		logger.Debug("write cluster file to local storage: %s", clusterPath)
+		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		if err == nil {
+			err = saveerror
+		}
+	}()
+	c.initStatus()
+	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
 		err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
 		err = c.reconcileCluster()
+		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
 	c.updateStatus(err)
-	logger.Debug("write cluster file to local storage: %s", clusterPath)
-	return yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+	return err
 }
 
 func (c *Applier) getWriteBackObjects() []interface{} {
@@ -184,7 +191,7 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 	logger.Info("start to scale this cluster")
 	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
 	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
 	if err != nil {
 		return err
 	}

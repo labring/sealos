@@ -93,7 +93,7 @@ type TOSState = {
 
 const useAppStore = create<TOSState>()(
   devtools(
-    immer((set, get) => ({
+    immer<TOSState>((set, get) => ({
       installedApps: [],
       openedApps: [],
       pinnedApps: [],
@@ -138,6 +138,9 @@ const useAppStore = create<TOSState>()(
       },
       updateAppInfo: (app: TApp) => {
         set((state) => {
+          if (state.currentApp && state.currentApp.name === app.name) {
+            state.currentApp = app;
+          }
           state.openedApps = state.openedApps.map((_app) => {
             if (_app.name === app.name) {
               return app;

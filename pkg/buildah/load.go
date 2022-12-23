@@ -34,7 +34,7 @@ func newLoadCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return pullCmd(cmd, []string{fmt.Sprintf("%s:%s", DockerArchive, archiveName)}, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s load -i kubernetes.tar`, rootCmdName),
+		Example: fmt.Sprintf(`%[1]s load -i kubernetes.tar`, rootCmd.CommandPath()),
 	}
 	loadCommand.SetUsageTemplate(UsageTemplate())
 	fs := loadCommand.Flags()

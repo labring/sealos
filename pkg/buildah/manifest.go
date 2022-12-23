@@ -57,7 +57,7 @@ func (opts *manifestCreateOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.insecure, "insecure", false, "neither require HTTPS nor verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	return markFlagsHidden(fs, []string{"os", "arch", "insecure"}...)
+	return markFlagsHidden(fs, []string{"os", "arch", "insecure", "tls-verify"}...)
 }
 
 type manifestAddOpts struct {
@@ -81,7 +81,7 @@ func (opts *manifestAddOpts) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVar(&opts.all, "all", false, "add all of the list's images if the image is a list")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	return markFlagsHidden(fs, []string{"insecure"}...)
+	return markFlagsHidden(fs, []string{"insecure", "tls-verify"}...)
 }
 
 type manifestRemoveOpts struct{}
@@ -134,7 +134,7 @@ func newManifestCommand() *cobra.Command {
   %[1]s manifest inspect localhost/list
   %[1]s manifest push localhost/list transport:destination
   %[1]s manifest remove localhost/list sha256:entryManifestDigest
-  %[1]s manifest rm localhost/list`, rootCmdName),
+  %[1]s manifest rm localhost/list`, rootCmd.CommandPath()),
 	}
 	manifestCommand.SetUsageTemplate(UsageTemplate())
 
@@ -147,7 +147,7 @@ func newManifestCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s manifest create mylist:v1.11
   %[1]s manifest create mylist:v1.11 arch-specific-image-to-add
-  %[1]s manifest create --all mylist:v1.11 transport:tagged-image-to-add`, rootCmdName),
+  %[1]s manifest create --all mylist:v1.11 transport:tagged-image-to-add`, rootCmd.CommandPath()),
 		Args: cobra.MinimumNArgs(1),
 	}
 	manifestCreateCommand.SetUsageTemplate(UsageTemplate())
@@ -163,7 +163,7 @@ func newManifestCommand() *cobra.Command {
 			return manifestAddCmd(cmd, args, manifestAddOpts)
 		},
 		Example: fmt.Sprintf(`%[1]s manifest add mylist:v1.11 image:v1.11-amd64
-  %[1]s manifest add mylist:v1.11 transport:imageName`, rootCmdName),
+  %[1]s manifest add mylist:v1.11 transport:imageName`, rootCmd.CommandPath()),
 		Args: cobra.MinimumNArgs(2),
 	}
 	manifestAddCommand.SetUsageTemplate(UsageTemplate())
@@ -178,7 +178,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestRemoveCmd(cmd, args, manifestRemoveOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest remove mylist:v1.11 sha256:15352d97781ffdf357bf3459c037be3efac4133dc9070c2dce7eca7c05c3e736`, rootCmd.CommandPath()),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestRemoveCommand.SetUsageTemplate(UsageTemplate())
@@ -192,7 +192,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestExistsCmd(cmd, args)
 		},
-		Example: fmt.Sprintf(`%s manifest exists mylist`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest exists mylist`, rootCmd.CommandPath()),
 	}
 	manifestExistsCommand.SetUsageTemplate(UsageTemplate())
 	manifestCommand.AddCommand(manifestExistsCommand)
@@ -204,7 +204,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestAnnotateCmd(cmd, args, manifestAnnotateOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest annotate --annotation left=right mylist:v1.11 image:v1.11-amd64`, rootCmd.CommandPath()),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestAnnotateCommand.SetUsageTemplate(UsageTemplate())
@@ -219,7 +219,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestInspectCmd(cmd, args, manifestInspectOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest inspect mylist:v1.11`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest inspect mylist:v1.11`, rootCmd.CommandPath()),
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestInspectCommand.SetUsageTemplate(UsageTemplate())
@@ -232,7 +232,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestPushCmd(cmd, args, manifestPushOpts)
 		},
-		Example: fmt.Sprintf(`%s manifest push mylist:v1.11 transport:imageName`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest push mylist:v1.11 transport:imageName`, rootCmd.CommandPath()),
 		Args:    cobra.MinimumNArgs(2),
 	}
 	manifestPushCommand.SetUsageTemplate(UsageTemplate())
@@ -251,8 +251,7 @@ func newManifestCommand() *cobra.Command {
 	fs.BoolVar(&manifestPushOpts.tlsVerify, "tls-verify", false, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 	fs.BoolVarP(&manifestPushOpts.quiet, "quiet", "q", false, "don't output progress information when pushing lists")
 	fs.SetNormalizeFunc(cli.AliasFlags)
-	err = markFlagsHidden(fs, "signature-policy", "insecure")
-	bailOnError(err, "")
+	bailOnError(markFlagsHidden(fs, "signature-policy", "insecure", "tls-verify"), "")
 	manifestCommand.AddCommand(manifestPushCommand)
 
 	manifestRmCommand := &cobra.Command{
@@ -262,7 +261,7 @@ func newManifestCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return manifestRmCmd(cmd, args)
 		},
-		Example: fmt.Sprintf(`%s manifest rm mylist:v1.11`, rootCmdName),
+		Example: fmt.Sprintf(`%s manifest rm mylist:v1.11`, rootCmd.CommandPath()),
 		Args:    cobra.MinimumNArgs(1),
 	}
 	manifestRmCommand.SetUsageTemplate(UsageTemplate())

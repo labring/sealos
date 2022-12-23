@@ -95,7 +95,6 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		}
 		path = filepath.Join(pa, path)
 	}
-
 	Clusterfile := clusterfile.NewClusterFile(path,
 		clusterfile.WithCustomValues(args.Values),
 		clusterfile.WithCustomSets(args.Sets),
@@ -110,10 +109,18 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
 
+	localpath := constants.Clusterfile(cluster.Name)
+	cf := clusterfile.NewClusterFile(localpath)
+	err := cf.Process()
+	if err != nil && err != clusterfile.ErrClusterFileNotExists {
+		return nil, err
+	}
+	currentCluster := cf.GetCluster()
+
 	return &applydrivers.Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    Clusterfile,
-		ClusterCurrent: cluster,
+		ClusterCurrent: currentCluster,
 		RunNewImages:   nil,
 	}, nil
 }

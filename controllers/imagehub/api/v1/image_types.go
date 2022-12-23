@@ -88,6 +88,14 @@ func (n ImageName) GetMateName() string {
 	return strings.ReplaceAll(strings.ReplaceAll(string(n), "/", "."), ":", ".")
 }
 
+type Action struct {
+	// TODO: support more action types ,now just support yaml.
+	Name       string `json:"name,omitempty"`
+	ActionType string `json:"actionType,omitempty"`
+	Template   string `json:"actions,omitempty"`
+	CMD        string `json:"cmd,omitempty"`
+}
+
 // ImageDetailInfo TODO: add limits for ImageDetailInfo
 type ImageDetailInfo struct {
 	Keywords    []string `json:"keywords,omitempty"`
@@ -95,9 +103,10 @@ type ImageDetailInfo struct {
 	Icon        string   `json:"icon,omitempty"`
 	Docs        string   `json:"docs,omitempty"`
 	// should use buildah inspect to get infor.
-	ID   string `json:"ID,omitempty"`
-	Arch string `json:"arch,omitempty"`
-	Size int64  `json:"size,omitempty"`
+	ID      string            `json:"ID,omitempty"`
+	Arch    string            `json:"arch,omitempty"`
+	Size    int64             `json:"size,omitempty"`
+	Actions map[string]Action `json:"actions,omitempty"`
 }
 
 // ImageSpec defines the desired state of Image

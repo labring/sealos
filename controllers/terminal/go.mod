@@ -3,9 +3,10 @@ module github.com/labring/sealos/controllers/terminal
 go 1.19
 
 require (
+	github.com/apache/apisix-ingress-controller v1.4.1
+	github.com/jaevor/go-nanoid v1.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0
-	github.com/satori/go.uuid v1.2.0
 	k8s.io/api v0.24.3
 	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.3

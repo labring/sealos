@@ -16,6 +16,11 @@ package runtime
 
 import (
 	"fmt"
+	"path"
+
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/yaml"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -27,13 +32,43 @@ const (
 	KubeletConf    = "kubelet.conf"
 )
 
-func (k *KubeadmRuntime) UpdateCert() error {
-	logger.Info("start to generate cert and kubeConfig...")
-	if err := k.sshCmdAsync(k.getMaster0IPAndPort(), "rm -rf /etc/kubernetes/admin.conf"); err != nil {
-		return err
+func (k *KubeadmRuntime) UpdateCert(certs []string) error {
+	defer func() {
+		certSANs := k.getCertSANS()
+		data := map[string]any{"certSANs": certSANs}
+		yamlData, err := yaml.MarshalYamlConfigs(data)
+		if err != nil {
+			logger.Error("convert cert config error: %s", err.Error())
+			return
+		}
+		outConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultCertFileName)
+		logger.Debug("write cert config to %s", outConfigPath)
+		err = file.WriteFile(outConfigPath, yamlData)
+		if err != nil {
+			logger.Error("write cert config error: %s", err.Error())
+		}
+	}()
+	return k.updateCert(certs)
+}
+
+func (k *KubeadmRuntime) UpdateCertByInit() error {
+	return k.updateCert([]string{})
+}
+
+func (k *KubeadmRuntime) updateCert(certs []string) error {
+	if len(certs) != 0 {
+		k.setCertSANS(append(k.getCertSANS(), certs...))
 	}
+	logger.Info("start to generate cert and kubeConfig...")
+	for _, ipAndPort := range k.getMasterIPAndPortList() {
+		if err := k.sshCmdAsync(ipAndPort, "rm -rf /etc/kubernetes/admin.conf"); err != nil {
+			return err
+		}
+	}
+
 	pipeline := []func() error{
 		k.GenerateCert,
+		k.SendNewCertAndKeyToMasters,
 		k.CreateKubeConfig,
 	}
 	for _, f := range pipeline {
@@ -41,5 +76,5 @@ func (k *KubeadmRuntime) UpdateCert() error {
 			return fmt.Errorf("failed to generate cert %v", err)
 		}
 	}
-	return k.SendJoinMasterKubeConfigs([]string{k.getMaster0IP()}, AdminConf, ControllerConf, SchedulerConf, KubeletConf)
+	return k.SendJoinMasterKubeConfigs(k.getMasterIPList(), AdminConf, ControllerConf, SchedulerConf, KubeletConf)
 }
