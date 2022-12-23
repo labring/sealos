@@ -214,6 +214,7 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	if accountBalance.Status.Status == meteringv1.Complete {
 		return nil
 	}
+
 	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNameSpace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
 	account, err := r.syncAccount(ctx, accountBalance.Spec.Owner, r.AccountSystemNameSpace, "ns-"+accountBalance.Spec.Owner)
 	if err != nil {
@@ -222,6 +223,13 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	}
 
 	account.Status.DeductionBalance += accountBalance.Spec.Amount
+	account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
+		Amount:             accountBalance.Spec.Amount,
+		Time:               metav1.Now(),
+		Status:             string(accountBalance.Status.Status),
+		AccountBalanceName: accountBalance.Name,
+	})
+
 	if err := r.Status().Update(ctx, account); err != nil {
 		r.Logger.Error(err, err.Error())
 		return err

@@ -44,7 +44,12 @@ Query the Charging status Order, and get it status, if success, add the Amount t
 // namespace create by the user.
 
 type Charge struct {
-	Amount  int64       `json:"balance,omitempty"`
+	Amount int64 `json:"balance,omitempty"`
+
+	// deduction info will Record in the Charge
+	DeductionAmount    int64  `json:"deductionAmount,omitempty"`
+	AccountBalanceName string `json:"accountBalanceName"`
+
 	Time    metav1.Time `json:"time,omitempty"`
 	Status  string      `json:"status,omitempty"`
 	TradeNO string      `json:"tradeNO,omitempty"`

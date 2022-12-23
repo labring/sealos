@@ -6,7 +6,6 @@ on:
   push:
     branches: [ "metering-flowway" ]
     paths-ignore:
-      - "controllers/**"
       - ".github/workflows/controllers.yml"
       - "!**/*.md"
       - "!**/*.yaml"

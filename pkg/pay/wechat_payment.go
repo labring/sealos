@@ -50,7 +50,7 @@ func NewClient(ctx context.Context, opts ...core.ClientOption) (*core.Client, er
 	mchAPIv3Key := os.Getenv(MchAPIv3Key)                               // 商户APIv3密钥
 	mchPrivateKey, err := utils.LoadPrivateKey(os.Getenv(WechatPrivateKey))
 	if err != nil {
-		log.Print("private key is: ", os.Getenv(WechatPrivateKey))
+		log.Print("mchID: ", mchID, "\nmchCertificateSerialNumber: ", mchCertificateSerialNumber, "\nmchAPIv3Key: ", mchAPIv3Key, "\nprivate key is: ", os.Getenv(WechatPrivateKey))
 		return nil, fmt.Errorf("load merchant private key error: %v", err)
 	}
 	opts = append(opts, option.WithWechatPayAutoAuthCipher(mchID, mchCertificateSerialNumber, mchPrivateKey, mchAPIv3Key))

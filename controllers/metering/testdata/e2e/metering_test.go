@@ -269,5 +269,4 @@ func clear() {
 			log.Println(err)
 		}
 	}
-
 }
