@@ -24,7 +24,7 @@ function PgsqlStatus(props: PgsqlStatus) {
       onClick={(e) => openEventDialog(e, pgsqlDetail)}
     >
       <div className={styles.circle}></div>
-      <div className="px-1">{pgsqlDetail?.status?.PostgresClusterStatus}</div>
+      <div className={clsx('px-1')}>{pgsqlDetail?.status?.PostgresClusterStatus}</div>
       <Image src="/images/pgsql/shrink.svg" alt="pgsql" width={20} height={20} />
     </div>
   );

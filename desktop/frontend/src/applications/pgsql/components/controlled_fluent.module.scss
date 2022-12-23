@@ -17,7 +17,9 @@
 
 .dropDownWarp {
   width: 100%;
-  border: none !important;
+  background: #e5ebf8 !important;
+  border-radius: 12px !important;
+  border: 1px solid transparent !important;
   button {
     height: 42px;
     background: #e5ebf8;
@@ -25,6 +27,9 @@
   }
   &::after {
     border: none !important;
+  }
+  & button {
+    border: 1px solid #e5ebf8;
   }
   & button:hover {
     border: 1px solid #7a9dea;
@@ -38,6 +43,7 @@
     background: #e5ebf8;
     height: 42px;
     border-radius: 12px;
+    border: 1px solid transparent;
   }
   span::before {
     width: 100%;
