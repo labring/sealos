@@ -1,6 +1,6 @@
 import { Dropdown, InputField, Option, SpinButtonField } from '@fluentui/react-components/unstable';
 import clsx from 'clsx';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Control, Controller, RegisterOptions, UseFormSetValue } from 'react-hook-form';
 import styles from './controlled_fluent.module.scss';
 
@@ -16,6 +16,7 @@ export interface HookFormProps {
   defaultValue?: any;
   setValue?: UseFormSetValue<any>;
   options?: TOption[]; //Dropdown
+  multiselect?: boolean;
   placeholder?: string;
   contentAfter?: string; //Input
 }
@@ -40,6 +41,8 @@ export const ControlledTextField: FC<HookFormProps> = (props) => {
 };
 
 export const ControlledDropdown: FC<HookFormProps> = (props) => {
+  const [selectedOptions, setSelectedOptions] = useState<string[]>([props?.defaultValue]);
+
   return (
     <Controller
       name={props.name}
@@ -48,9 +51,13 @@ export const ControlledDropdown: FC<HookFormProps> = (props) => {
       defaultValue={props.defaultValue || ''}
       render={({ field: { onChange, onBlur, name: fieldName, value }, fieldState: { error } }) => (
         <Dropdown
-          className={clsx(styles.dropDownWarp, 'grow')}
-          defaultSelectedOptions={[props.defaultValue]}
-          onOptionSelect={(e, data) => onChange(data.optionValue)}
+          multiselect={props.multiselect}
+          className={clsx(styles.dropDownWarp, 'grow  ')}
+          selectedOptions={selectedOptions}
+          onOptionSelect={(e, data) => {
+            setSelectedOptions(data.selectedOptions.filter((res) => res !== undefined));
+            onChange(data.selectedOptions.filter((res) => res !== undefined));
+          }}
         >
           {props?.options?.map((item: any) => {
             return <Option key={item.key}>{item.content}</Option>;

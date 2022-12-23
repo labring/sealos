@@ -7,7 +7,7 @@ import {
   DialogTitle,
   Spinner
 } from '@fluentui/react-components';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
@@ -31,18 +31,7 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
   const [isDisabled, setIsDisabled] = useState(true);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [dialogStatus, setDialogStatus] = useState<DialogStatus>();
-
-  const pgsqlListMutation = useMutation({
-    mutationFn: () => {
-      return request.post('/api/pgsql/getAll', { kubeconfig });
-    },
-    onError: (error) => {
-      console.log(error);
-    },
-    onSettled: (data, error, variables, context) => {
-      setDialogStatus(undefined);
-    }
-  });
+  const queryClient = useQueryClient();
 
   const pgsqlMutation = useMutation({
     mutationFn: () => {
@@ -50,10 +39,11 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
     },
     onSuccess: () => {
       setDialogStatus(DialogStatus.success);
+      queryClient.invalidateQueries(['getAllPgsql']);
     },
     onSettled: () => {
       onOpen(false);
-      pgsqlListMutation.mutate();
+      setDialogStatus(undefined);
     }
   });
 

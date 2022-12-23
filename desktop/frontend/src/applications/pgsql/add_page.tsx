@@ -32,7 +32,7 @@ function AddPage() {
   const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm>({
     defaultValues: {
       pgsqlName: '',
-      version: '13',
+      version: '14',
       instance: '1',
       volumeSize: '1',
       iops: '3000',
@@ -75,6 +75,7 @@ function AddPage() {
   const onSave = () => {
     handleSubmit(
       (data) => {
+        // console.log(data);
         createPgsqlMutation.mutate(data);
       },
       (err) => {
@@ -120,13 +121,14 @@ function AddPage() {
                 />
               </div>
               <div className="p-6 pt-0 flex">
-                <div className="w-1/2">
+                <div className="w-full">
                   <div className="mb-3">PostgreSQL version</div>
                   <ControlledDropdown
                     control={control}
                     name="version"
-                    defaultValue={'13'}
+                    defaultValue={'14'}
                     options={[
+                      { key: '14', content: '14' },
                       { key: '13', content: '13' },
                       { key: '12', content: '12' },
                       { key: '11', content: '11' },
@@ -134,27 +136,10 @@ function AddPage() {
                     ]}
                   />
                 </div>
-                <div className="w-4"></div>
-                <div className="w-1/2">
+                <div className="w-6"></div>
+                <div className="w-full">
                   <div className="mb-3">Number of instance</div>
                   <ControlledNumberField control={control} name="instance" defaultValue={1} />
-                </div>
-              </div>
-            </div>
-            <div className={clsx(styles.cardVolume)}>
-              <div className="flex p-6  items-center ">
-                <span className="mr-4 w-32"> Volume size </span>
-                <ControlledNumberField control={control} name="volumeSize" defaultValue={1} />
-              </div>
-              <div className={clsx(styles.cardIops)}>
-                <div className="w-1/2">
-                  <div className="mb-3">IOPS</div>
-                  <ControlledNumberField control={control} name="iops" defaultValue={3000} />
-                </div>
-                <div className="w-4"></div>
-                <div className="w-1/2">
-                  <div className="mb-3">Througput</div>
-                  <ControlledNumberField control={control} name="througput" defaultValue={125} />
                 </div>
               </div>
             </div>
@@ -167,7 +152,7 @@ function AddPage() {
                     type="lightBlue"
                     icon="/images/pgsql/add_blue.svg"
                     handleClick={() => {
-                      append('');
+                      append({ name: '', authority: undefined });
                     }}
                   ></Button>
                 </div>
@@ -175,7 +160,29 @@ function AddPage() {
               {userArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
                   <div className={clsx(styles.customInput)} key={item.id}>
-                    <input key={item.id} {...register(`users.${index}`)} placeholder="user name" />
+                    <input
+                      key={item.id}
+                      {...register(`users.${index}.name`)}
+                      placeholder="user name"
+                    />
+                  </div>
+                  <div className="w-6"></div>
+                  <div className="w-full">
+                    <ControlledDropdown
+                      multiselect={true}
+                      control={control}
+                      name={`users.${index}.authority`}
+                      options={[
+                        { key: 'superuser', content: 'superuser' },
+                        { key: 'createdb', content: 'createdb' },
+                        { key: 'inherit', content: 'inherit' },
+                        { key: 'login', content: 'login' },
+                        { key: 'nologin', content: 'nologin' },
+                        { key: 'createrole', content: 'createrole' },
+                        { key: 'replication', content: 'replication' },
+                        { key: 'bypassrls', content: 'bypassrls' }
+                      ]}
+                    />
                   </div>
                   <div className="ml-3">
                     <Button
@@ -214,12 +221,12 @@ function AddPage() {
                     />
                   </div>
                   <div className="w-6"></div>
-                  <div>
+                  <div className="w-full">
                     <ControlledDropdown
                       control={control}
                       name={`dataBases.${index}.user`}
                       options={getValues('users').map((i) => {
-                        return { key: i, content: i };
+                        return { key: i.name, content: i.name };
                       })}
                     />
                   </div>
@@ -237,21 +244,40 @@ function AddPage() {
               ))}
             </div>
             <div className="flex mt-4 grow justify-between">
-              <div className={styles.cardCpu}>
+              {/* <div className={styles.cardCpu}>
                 <div className="mb-3">Odd host</div>
                 <ControlledTextField control={control} name="oddHost" placeholder="odd host" />
-              </div>
-              <div className={clsx(styles.cardCpu)}>
-                <div className="mb-3">Cpu</div>
+              </div> */}
+              <div className={clsx(styles.cardCpu, 'w-1/2')}>
+                <div className="mb-3">Cpu (m) </div>
                 <ControlledNumberField control={control} name="limits.cpu" defaultValue={300} />
               </div>
-              <div className={styles.cardCpu}>
-                <div className="mb-3">Memory</div>
+              <div className="w-4"></div>
+              <div className={clsx(styles.cardCpu, 'w-1/2')}>
+                <div className="mb-3">Memory (Mi)</div>
                 <ControlledNumberField control={control} name="limits.memory" defaultValue={300} />
               </div>
             </div>
+            <div className={clsx(styles.cardVolume)}>
+              <div className="flex p-6  items-center ">
+                <span className="mr-2 w-44"> Volume size (Gi)</span>
+                <ControlledNumberField control={control} name="volumeSize" defaultValue={1} />
+              </div>
+              {/* <div className={clsx(styles.cardIops)}>
+                <div className="w-1/2">
+                  <div className="mb-3">IOPS</div>
+                  <ControlledNumberField control={control} name="iops" defaultValue={3000} />
+                </div>
+                <div className="w-4"></div>
+                <div className="w-1/2">
+                  <div className="mb-3">Througput</div>
+                  <ControlledNumberField control={control} name="througput" defaultValue={125} />
+                </div>
+              </div> */}
+            </div>
           </div>
         </div>
+
         <div className={clsx(styles.yaml, styles.card, 'flex-col p-6')}>
           <div className="flex items-center relative">
             <span className={styles.title}>YAML 定义</span>

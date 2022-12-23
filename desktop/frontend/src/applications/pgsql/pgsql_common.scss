@@ -53,6 +53,7 @@ $theme-color-title: #0d1a2d;
 
 .running {
   background: rgba(35, 155, 242, 0.15);
+  color: rgba(35, 155, 242, 1);
   .circle {
     background: $theme-color-bule;
   }
@@ -60,6 +61,7 @@ $theme-color-title: #0d1a2d;
 
 .creating {
   background: rgba(92, 97, 228, 0.15);
+  color: rgba(92, 97, 228, 1);
   .circle {
     background: #5c61e4;
   }
@@ -67,6 +69,7 @@ $theme-color-title: #0d1a2d;
 
 .failed {
   background: rgba(238, 65, 97, 0.15);
+  color: rgba(238, 65, 97, 1);
   .circle {
     background: #ee4161;
   }

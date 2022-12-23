@@ -208,3 +208,16 @@ export async function GetSecret(
 }> {
   return kc.makeApiClient(k8s.CoreV1Api).readNamespacedSecret(name, namespace);
 }
+
+export async function ListSecret(
+  kc: k8s.KubeConfig,
+  namespace: string,
+  fieldSelector: string
+): Promise<{
+  response: http.IncomingMessage;
+  body: k8s.V1Secret;
+}> {
+  return kc
+    .makeApiClient(k8s.CoreV1Api)
+    .listNamespacedSecret(namespace, undefined, undefined, undefined, fieldSelector);
+}

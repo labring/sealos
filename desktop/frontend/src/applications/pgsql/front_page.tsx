@@ -31,8 +31,8 @@ function FrontPage() {
     ['getAllPgsql'],
     async () => {
       const res = await request.post('/api/pgsql/getAll', { kubeconfig });
-      let allReady = res.data.items?.every((item: TPgsqlDetail) => {
-        return item.status.PostgresClusterStatus === 'Running';
+      let allReady = res?.data.items?.every((item: TPgsqlDetail) => {
+        return item?.status?.PostgresClusterStatus === 'Running';
       });
       if (allReady) {
         setPgsqlListStatus(EPgsqlLists.Running);
@@ -90,7 +90,7 @@ function FrontPage() {
       </div>
       {pgsqlLists?.data.items?.length === 0 && (
         <div className={clsx(styles.empty)}>
-          <Image src="/images/pgsql/empty.png" alt="pgsql" width={230} height={230} />
+          <Image src="/images/pgsql/empty_state.svg" alt="pgsql" width={240} height={240} />
           <div className={styles.title}>当前集群列表为空</div>
           <div className={styles.desc}>点击右上角新建集群按钮,创建一个PostgreSQL集群吧~</div>
         </div>

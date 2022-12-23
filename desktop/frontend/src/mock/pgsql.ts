@@ -33,13 +33,23 @@ spec:
       memory: {{.limits.memory}}Mi
 `;
 
+type TUser = {
+  name: string;
+  authority: [];
+};
+
+type TDataBase = {
+  name: string;
+  user: string;
+};
+
 export const generatePgsqlTemplate = (pgsqlForm: any) => {
   let user = '';
-  pgsqlForm.users.forEach((item: any) => {
-    user += `${item}: [superuser,createdb]\n    `;
+  pgsqlForm.users.forEach((item: TUser) => {
+    user += `${item.name}: [${item.authority}]\n    `;
   });
   let dataBase = '';
-  pgsqlForm.dataBases.forEach((item: any) => {
+  pgsqlForm.dataBases.forEach((item: TDataBase) => {
     dataBase += `${item.name}: ${item.user}\n    `;
   });
 
