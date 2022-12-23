@@ -19,8 +19,9 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
-	"path"
+	"net/url"
 	"time"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -82,10 +83,9 @@ func (w *kubeHealthy) ForHealthyKubelet(initialTimeout time.Duration, host strin
 	logger.Debug("[kubelet-check] Initial timeout of %v passed.\n", initialTimeout)
 	return tryRunCommand(func() error {
 		trans := netutil.SetOldTransportDefaults(&http.Transport{})
-		trans.TLSClientConfig.InsecureSkipVerify = true
 		client := &http.Client{Transport: trans}
 
-		healthzEndpoint := path.Join(fmt.Sprintf("https://%s:%d", host, KubeletHealthzPort), "healthz")
+		healthzEndpoint, _ := url.JoinPath(fmt.Sprintf("http://%s:%d", host, KubeletHealthzPort), "healthz")
 		resp, err := client.Get(healthzEndpoint)
 		if err != nil {
 			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
@@ -98,6 +98,18 @@ func (w *kubeHealthy) ForHealthyKubelet(initialTimeout time.Duration, host strin
 			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
 			return errors.New("the kubelet healthz endpoint is unhealthy")
 		}
+		b, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
+			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' failed with error: %v.\n", healthzEndpoint, err)
+			return err
+		}
+		if string(b) != "ok" {
+			logger.Warn("[kubelet-check] It seems like the kubelet isn't running or healthy.")
+			logger.Warn("[kubelet-check] The HTTP call equal to 'curl -sSL %s' returned HTTP code %d\n", healthzEndpoint, resp.StatusCode)
+			return errors.New("the kubelet healthz endpoint is unhealthy: resp is " + string(b))
+		}
+
 		return nil
 	}, 5) // a failureThreshold of five means waiting for a total of 155 seconds
 }
