@@ -720,7 +720,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        image: ghcr.io/labring/sealos-metering-controller:dev
+        image: ghcr.io/xiao-jay/sealos-metering-controller:dev
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

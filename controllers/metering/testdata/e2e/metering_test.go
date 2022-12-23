@@ -19,6 +19,7 @@ const (
 	DefaultOwner     = "metering-test"
 	AccountNamespace = "sealos-system"
 	InfraName        = "yyj-test-1"
+	containerName    = "nginx"
 )
 
 var MeteringSystemNamespace string
@@ -108,9 +109,9 @@ func TestMetering(t *testing.T) {
 			api.CreatPod(TestNamespace, PodName)
 
 			t.Log("ensure resource CR is created")
-			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "cpu", 1), 90)
+			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(PodName, containerName, "cpu", 1), 90)
 			if err != nil {
-				resource, err = api.EnsureResourceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "cpu", 2), 90)
+				resource, err = api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(PodName, containerName, "cpu", 1), 90)
 				if err != nil {
 					t.Fatalf(err.Error())
 				}
@@ -256,11 +257,11 @@ func clear() {
 	}
 
 	for i := 0; i <= 5; i++ {
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "cpu", i), api.ResourceYaml); err != nil {
+		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(PodName, containerName, "cpu", int64(i)), api.ResourceYaml); err != nil {
 			log.Println(err)
 		}
 
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", controllers.PodResourcePricePrefix, "storage", i), api.ResourceYaml); err != nil {
+		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(PodName, "", "cpu", int64(i)), api.ResourceYaml); err != nil {
 			log.Println(err)
 		}
 

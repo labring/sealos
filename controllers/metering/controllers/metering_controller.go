@@ -134,7 +134,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				continue
 			}
 			if _, ok := metering.Spec.Resources[resourceName]; !ok {
-				r.Logger.Error(err, "resource not found in metering", "name", MeteringPrefix+resourceInfo.NameSpace)
+				r.Logger.Error(err, "resource not found in metering", "name", resourceName)
 				continue
 			}
 			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
@@ -169,7 +169,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 		if err := r.syncAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
 			r.Logger.Error(err, err.Error())
-			return ctrl.Result{}, err
+			return ctrl.Result{}, fmt.Errorf("meteringName:%v,amount:%v,err:%v", metering.Name, totalAccount, err)
 		}
 		if err := r.updateBillingList(ctx, totalAccount, &metering); err != nil {
 			r.Logger.Error(err, err.Error())
@@ -368,6 +368,8 @@ func (r *MeteringReconcile) GetAllExtensionResources(ctx context.Context) (map[c
 func (r *MeteringReconcile) syncAccountBalance(ctx context.Context, owner string, amount int64, seqID int64) error {
 	if amount == 0 {
 		return nil
+	} else if amount < 0 {
+		return fmt.Errorf("deduction amount is <0")
 	}
 
 	accountBalance := userv1.AccountBalance{

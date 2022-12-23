@@ -2,9 +2,9 @@ package api
 
 import (
 	"context"
-
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -68,7 +68,7 @@ const PodYaml = `
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx
+  name: ${name}
   namespace: ${namespace}
 spec:
   containers:
@@ -147,4 +147,10 @@ func EnsurePod(namespace string, name string) {
 		CreatPod(namespace, name)
 		return
 	}
+}
+
+func GetPod(namespace string, name string) (*v1.Pod, error) {
+	client := baseapi.GetDefaultKubernetesClient()
+	pod, err := client.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+	return pod, err
 }
