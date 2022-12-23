@@ -1,4 +1,5 @@
 import * as k8s from '@kubernetes/client-node';
+import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { paymentCRDTemplate } from '../../../../../mock/user';
 import {

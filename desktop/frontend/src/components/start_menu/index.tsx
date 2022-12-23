@@ -38,6 +38,14 @@ export default function StartMenu() {
     router.reload();
   };
 
+  let real_balance = 0;
+  if (amount?.data?.data?.balance) {
+    real_balance = amount.data.data.balance;
+    if (amount?.data?.data?.deductionBalance) {
+      real_balance = real_balance - amount.data.data.deductionBalance;
+    }
+  }
+
   return (
     <>
       <div
@@ -63,9 +71,7 @@ export default function StartMenu() {
             <div className={clsx(styles.balanceCard, 'mt-6 mb-12 w-full text-black')}>
               <span className="text-2xl pl-4 ">余额</span>
               <div className="flex justify-between items-center">
-                <div className="mt-4 mb-4 text-6xl ">
-                  ￥{formatMoney(amount?.data?.data?.balance || 0)}
-                </div>
+                <div className="mt-4 mb-4 text-6xl ">￥{formatMoney(real_balance)}</div>
 
                 <ChargeButton />
               </div>
