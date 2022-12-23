@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
@@ -177,7 +176,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 	var hosts []v1.Hosts
 	hostmap := make(map[int]*v1.Hosts)
 	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
-	statusName := "instance-state-name"
+	statusName := common.InstanceState
 
 	client := d.Client
 	input := &ec2.DescribeInstancesInput{
@@ -241,13 +240,14 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 					// judge the diskType according the attachments
 					for _, attachment := range vol.Attachments {
 						if *attachment.Device == rootDeviceName {
-							diskType = strings.ToLower(common.RootVolumeLabel)
+							diskType = common.RootVolumeLabel
 							break
 						} else {
-							diskType = strings.ToLower(common.DataVolumeLabel)
+							diskType = common.DataVolumeLabel
 							break
 						}
 					}
+					logger.Info("get volume id: %v, cap: %v", *vol.VolumeId, *vol.Size)
 					volIndex, err := getVolIndex(vol)
 					if err != nil {
 						return nil, fmt.Errorf("aws ecs not found volume index label: %v", err)
@@ -383,7 +383,7 @@ func getVolIndex(v types.Volume) (int, error) {
 			return strconv.Atoi(*tag.Value)
 		}
 	}
-	return -1, fmt.Errorf("volume index not found: %v", v.Tags)
+	return -1, fmt.Errorf("volume index not found: %v", *v.VolumeId)
 }
 
 //func retryGetInstance(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputGetInstance *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {

@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"time"
+
+	"github.com/labring/sealos/controllers/infra/common"
 
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
@@ -29,7 +32,9 @@ func setHostsIndex(infra *v1.Infra) {
 
 func setVolumeIndex(disks []v1.Disk, index int) {
 	for i := range disks {
-		if i != 0 && disks[i].Index == 0 {
+		if disks[i].Type == common.RootVolumeLabel {
+			disks[i].Index = 0
+		} else if disks[i].Index == 0 {
 			disks[i].Index = index
 			index++
 		}
@@ -266,10 +271,17 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 			if err := driver.ModifyVolume(&curDisk, &desDisk); err != nil {
 				return err
 			}
+			//wait for volume updated
+			//Warning: this may cause unpredictable risk
+			if curDisk.Capacity != desDisk.Capacity || curDisk.VolumeType != desDisk.VolumeType {
+				logger.Info("wait for volume updated...")
+				time.Sleep(5000 * time.Millisecond)
+			}
 			Icur++
 			Ides++
 		} else if curDisk.Index < desDisk.Index {
 			// cur have but des don't have. delete cur volume and cur pointer move to right
+			//logger.Info("curindex is %v, desindex is %v, Icur is %v, Ides is %v", curDisk.Index, desDisk.Index, Icur, Ides)
 			logger.Info("start to delete disk... cur cap is %v", curDisk.Capacity)
 			if err := driver.DeleteVolume([]string{curDisk.ID}); err != nil {
 				return err
