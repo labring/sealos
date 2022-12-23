@@ -32,6 +32,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
   type accountStatus = {
     balance: number;
+    deductionBalance: number;
   };
 
   try {
