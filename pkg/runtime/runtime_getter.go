@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"strings"
 
+	strings2 "github.com/labring/sealos/pkg/utils/strings"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/bootstrap"
@@ -46,7 +48,7 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
 	labels := k.getImageLabels()
-	image := labels[constants.ImageKubeVersionKey]
+	image := labels[v1beta1.ImageKubeVersionKey]
 	if image == "" {
 		return ""
 	}
@@ -95,11 +97,24 @@ func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
 	labels := k.getImageLabels()
-	image := labels[constants.ImageKubeLvscareImageKey]
+	image := labels[v1beta1.ImageKubeLvscareImageKey]
 	if image == "" {
 		image = constants.DefaultLvsCareImage
 	}
 	return image, nil
+}
+
+func (k *KubeadmRuntime) getVIPFromImage() string {
+	labels := k.getImageLabels()
+	vip := labels[v1beta1.ImageVIPKey]
+	if vip == "" {
+		vip = DefaultVIP
+	} else {
+		envs := k.getENVInterface().WrapperEnv(k.getMaster0IP())
+		vip = strings2.RenderTextFromEnv(vip, envs)
+	}
+	logger.Debug("get vip is %s", vip)
+	return vip
 }
 
 func (k *KubeadmRuntime) execIPVS(ip string, masters []string) error {

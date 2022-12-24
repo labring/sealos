@@ -11,3 +11,4 @@ spec:
   ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
   replicas: 1
   keepalived: 11h
+  ingressType: nginx

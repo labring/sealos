@@ -20,11 +20,12 @@ import (
 	"context"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
+	"github.com/jaevor/go-nanoid"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -44,8 +45,16 @@ const (
 	Protocol            = "https://"
 	FinalizerName       = "terminal.sealos.io/finalizer"
 	HostnameLength      = 8
-	TerminalNamespace   = "terminal-app"
 	KeepaliveAnnotation = "lastUpdateTime"
+	LetterBytes         = "abcdefghijklmnopqrstuvwxyz0123456789"
+)
+
+// request and limit for terminal pod
+const (
+	CPURequest    = "0.04"
+	MemoryRequest = "64Mi"
+	CPULimit      = "0.5"
+	MemoryLimit   = "64Mi"
 )
 
 // TerminalReconciler reconciles a Terminal object
@@ -65,6 +74,8 @@ type TerminalReconciler struct {
 //+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixroutes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -82,71 +93,47 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	terminalApp := &terminalv1.Terminal{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      req.Name,
-			Namespace: TerminalNamespace,
-		},
-	}
-	if req.Namespace != TerminalNamespace {
-		if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
-			if controllerutil.AddFinalizer(terminal, FinalizerName) {
-				if err := r.Update(ctx, terminal); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-		} else {
-			// delete terminal-app
-			if err := r.Delete(ctx, terminalApp); err != nil {
+	if terminal.ObjectMeta.DeletionTimestamp.IsZero() {
+		if controllerutil.AddFinalizer(terminal, FinalizerName) {
+			if err := r.Update(ctx, terminal); err != nil {
 				return ctrl.Result{}, err
 			}
-			if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
-				if err := r.Update(ctx, terminal); err != nil {
-					return ctrl.Result{}, err
-				}
-			}
-			return ctrl.Result{}, nil
 		}
+	} else {
+		if controllerutil.RemoveFinalizer(terminal, FinalizerName) {
+			if err := r.Update(ctx, terminal); err != nil {
+				return ctrl.Result{}, err
+			}
+		}
+		return ctrl.Result{}, nil
+	}
 
-		if err := r.fillDefaultValue(ctx, terminal); err != nil {
+	if err := r.fillDefaultValue(ctx, terminal); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	if isExpired(terminal) {
+		if err := r.Delete(ctx, terminal); err != nil {
 			return ctrl.Result{}, err
 		}
-
-		if isExpired(terminal) {
-			if err := r.Delete(ctx, terminal); err != nil {
-				return ctrl.Result{}, err
-			}
-			logger.Info("delete expired terminal success")
-			return ctrl.Result{}, nil
-		}
+		logger.Info("delete expired terminal success")
+		return ctrl.Result{}, nil
 	}
 
-	// crate a terminal in terminal-app ns
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, terminalApp, func() error {
-		terminalApp.Spec = terminal.Spec
-		return nil
-	}); err != nil {
-		return ctrl.Result{}, err
-	}
-
-	if err := r.syncRoleBinding(ctx, terminalApp); err != nil {
-		logger.Error(err, "create Role and RoleBinding failed")
-		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create Role and RoleBinding failed", "%v", err)
-		return ctrl.Result{}, err
-	}
-
-	if err := r.syncDeployment(ctx, terminalApp); err != nil {
+	var hostname string
+	if err := r.syncDeployment(ctx, terminal, &hostname); err != nil {
 		logger.Error(err, "create deployment failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create deployment failed", "%v", err)
 		return ctrl.Result{}, err
 	}
-	if err := r.syncService(ctx, terminalApp); err != nil {
+
+	if err := r.syncService(ctx, terminal); err != nil {
 		logger.Error(err, "create service failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create service failed", "%v", err)
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncIngress(ctx, terminalApp); err != nil {
+	if err := r.syncIngress(ctx, terminal, hostname); err != nil {
 		logger.Error(err, "create ingress failed")
 		r.recorder.Eventf(terminal, corev1.EventTypeWarning, "Create ingress failed", "%v", err)
 		return ctrl.Result{}, err
@@ -157,23 +144,38 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *terminalv1.Terminal) error {
-	role := &rbacv1.Role{
+func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string) error {
+	var err error
+	host := hostname + DomainSuffix
+	switch terminal.Spec.IngressType {
+	case terminalv1.Nginx:
+		err = r.syncNginxIngress(ctx, terminal, host)
+	case terminalv1.Apisix:
+		err = r.syncApisixIngress(ctx, terminal, host)
+	}
+	return err
+}
+
+func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
+	// 1. sync ApisixRoute
+	apisixRoute := &apisix.ApisixRoute{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "terminalAppRole-" + terminal.Spec.User,
-			Namespace: TerminalNamespace,
+			Name:      terminal.Name,
+			Namespace: terminal.Namespace,
 		},
 	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, role, func() error {
-		role.Rules = []rbacv1.PolicyRule{
-			{
-				APIGroups:     []string{"terminal.sealos.io"},
-				Resources:     []string{"terminals"},
-				Verbs:         []string{"get", "watch", "list"},
-				ResourceNames: []string{terminal.Name},
-			},
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixRoute, func() error {
+		expectRoute := createApisixRoute(terminal, host)
+		if len(apisixRoute.Spec.HTTP) == 0 {
+			apisixRoute.Spec.HTTP = expectRoute.Spec.HTTP
+		} else {
+			apisixRoute.Spec.HTTP[0].Name = expectRoute.Spec.HTTP[0].Name
+			apisixRoute.Spec.HTTP[0].Match = expectRoute.Spec.HTTP[0].Match
+			apisixRoute.Spec.HTTP[0].Backends = expectRoute.Spec.HTTP[0].Backends
+			apisixRoute.Spec.HTTP[0].Timeout = expectRoute.Spec.HTTP[0].Timeout
+			apisixRoute.Spec.HTTP[0].Authentication = expectRoute.Spec.HTTP[0].Authentication
 		}
-		if err := controllerutil.SetControllerReference(terminal, role, r.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(terminal, apisixRoute, r.Scheme); err != nil {
 			return err
 		}
 		return nil
@@ -181,39 +183,39 @@ func (r *TerminalReconciler) syncRoleBinding(ctx context.Context, terminal *term
 		return err
 	}
 
-	roleBinding := &rbacv1.RoleBinding{
+	// 2. sync ApisixTls
+	apisixTLS := &apisix.ApisixTls{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "terminalAppRoleBinding-" + terminal.Spec.User,
-			Namespace: TerminalNamespace,
+			Name:      terminal.Name,
+			Namespace: terminal.Namespace,
 		},
 	}
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, roleBinding, func() error {
-		roleBinding.RoleRef = rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "Role",
-			Name:     role.Name,
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixTLS, func() error {
+		expectTLS := createApisixTLS(terminal, host)
+		if apisixTLS.Spec != nil {
+			apisixTLS.Spec.Hosts = expectTLS.Spec.Hosts
+			apisixTLS.Spec.Secret = expectTLS.Spec.Secret
+		} else {
+			apisixTLS.Spec = expectTLS.Spec
 		}
-		roleBinding.Subjects = []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      terminal.Spec.User,
-				Namespace: GetDefaultUserNamespace(),
-			},
-		}
-
-		if err := controllerutil.SetControllerReference(terminal, roleBinding, r.Scheme); err != nil {
+		if err := controllerutil.SetControllerReference(terminal, apisixTLS, r.Scheme); err != nil {
 			return err
 		}
 		return nil
 	}); err != nil {
 		return err
+	}
+
+	domain := Protocol + host
+	if terminal.Status.Domain != domain {
+		terminal.Status.Domain = domain
+		return r.Status().Update(ctx, terminal)
 	}
 
 	return nil
 }
 
-func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal) error {
-	var host string
+func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *terminalv1.Terminal, host string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      terminal.Name,
@@ -221,12 +223,7 @@ func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminal
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		if len(ingress.Spec.Rules) != 0 && ingress.Spec.Rules[0].Host != "" {
-			host = ingress.Spec.Rules[0].Host
-		} else {
-			host = uuid.NewV4().String() + DomainSuffix
-		}
-		expectIngress := createIngress(terminal, host)
+		expectIngress := createNginxIngress(terminal, host)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
@@ -293,7 +290,7 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 	return nil
 }
 
-func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *terminalv1.Terminal) error {
+func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *terminalv1.Terminal, hostname *string) error {
 	labelsMap := buildLabelsMap(terminal)
 	var (
 		objectMeta      metav1.ObjectMeta
@@ -324,12 +321,27 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 	envs = []corev1.EnvVar{
 		{Name: "APISERVER", Value: terminal.Spec.APIServer},
 		{Name: "USER_TOKEN", Value: terminal.Spec.Token},
-		{Name: "NAMESPACE", Value: terminal.Spec.Namespace},
+		{Name: "NAMESPACE", Value: terminal.Namespace},
 		{Name: "USER_NAME", Value: terminal.Spec.User},
 	}
 
 	containers = []corev1.Container{
-		{Name: "tty", Image: terminal.Spec.TTYImage, Ports: ports, Env: envs},
+		{
+			Name:  "tty",
+			Image: terminal.Spec.TTYImage,
+			Ports: ports,
+			Env:   envs,
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					"cpu":    resource.MustParse(CPURequest),
+					"memory": resource.MustParse(MemoryRequest),
+				},
+				Limits: corev1.ResourceList{
+					"cpu":    resource.MustParse(CPULimit),
+					"memory": resource.MustParse(MemoryLimit),
+				},
+			},
+		},
 	}
 
 	expectDeployment := &appsv1.Deployment{
@@ -362,10 +374,19 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 			deployment.Spec.Template.Spec.Containers[0].Image = containers[0].Image
 			deployment.Spec.Template.Spec.Containers[0].Ports = containers[0].Ports
 			deployment.Spec.Template.Spec.Containers[0].Env = containers[0].Env
+			deployment.Spec.Template.Spec.Containers[0].Resources = containers[0].Resources
 		}
 
 		if deployment.Spec.Template.Spec.Hostname == "" {
-			deployment.Spec.Template.Spec.Hostname = randString(HostnameLength)
+			letterID, err := nanoid.CustomASCII(LetterBytes, HostnameLength)
+			if err != nil {
+				return err
+			}
+			// to keep pace with ingress host, hostname must start with a lower case letter
+			*hostname = "t" + letterID()
+			deployment.Spec.Template.Spec.Hostname = *hostname
+		} else {
+			*hostname = deployment.Spec.Template.Spec.Hostname
 		}
 
 		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
@@ -388,11 +409,6 @@ func (r *TerminalReconciler) fillDefaultValue(ctx context.Context, terminal *ter
 	hasUpdate := false
 	if terminal.Spec.APIServer == "" {
 		terminal.Spec.APIServer = r.Config.Host
-		hasUpdate = true
-	}
-
-	if terminal.Spec.Namespace == "" {
-		terminal.Spec.Namespace = terminal.Namespace
 		hasUpdate = true
 	}
 

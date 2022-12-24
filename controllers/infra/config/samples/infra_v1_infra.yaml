@@ -15,7 +15,7 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: 1206-1test
+  name: conft
 spec:
   hosts:
     - roles: [ master ]
@@ -23,13 +23,19 @@ spec:
       flavor: t2.large
       image: "ami-0d66b970b9f16f1f5"
       disks:
-        - capacity: 23
+        - capacity: 25
           volumeType: standard
-          type: "root"
-        - capacity: 21
-          volumeType: gp3
           type: "data"
-    - roles: [ node1 ]
+        - capacity: 33
+          volumeType: gp3
+          type: "root"
+#        - capacity: 34
+#          volumeType: gp3
+#          type: "data"
+#        - capacity: 35
+#          volumeType: gp3
+#          type: "data"
+    - roles: [ node ]
       count: 1
       flavor: t2.medium
       image: "ami-0d66b970b9f16f1f5"

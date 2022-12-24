@@ -18,28 +18,16 @@ var ErrNotMatch = errors.New("NotMatch")
 
 type MatchingLabelsModifier func(name any, labels client.MatchingLabels)
 
-type OrgCombinator interface {
-	GetOrg() string
-}
-
-type RepoCombinator interface {
-	GetRepo() string
-}
-
-type TagCombinator interface {
-	GetTag() string
-}
-
 func orgModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosOrgLable] = name.(OrgCombinator).GetOrg()
+	labels[imagehubv1.SealosOrgLable] = name.(imagehubv1.OrgCombinator).GetOrg()
 }
 
 func repoModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosRepoLabel] = name.(RepoCombinator).GetRepo()
+	labels[imagehubv1.SealosRepoLabel] = name.(imagehubv1.RepoCombinator).GetRepo()
 }
 
 func tagModifier(name any, labels client.MatchingLabels) {
-	labels[imagehubv1.SealosTagLabel] = name.(TagCombinator).GetTag()
+	labels[imagehubv1.SealosTagLabel] = name.(imagehubv1.TagCombinator).GetTag()
 }
 
 func listByLable[R client.ObjectList](ctx context.Context, r *DataHelper, result R, name any, modifiers ...MatchingLabelsModifier) (R, error) {
@@ -111,7 +99,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 
 	orgInfo, err := r.getOrgInfoByOrgName(ctx, n.ToOrgName())
 	if err == ErrNotMatch {
-		r.Logger.V(2).Info("getOrgInfoByOrgName", "err:", err.Error())
+		r.Logger.V(2).Info("failed to get origination info by", "org name", n.ToOrgName(), "err", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
@@ -119,7 +107,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 
 	repoInfo, err := r.getRepoInfoByRepoName(ctx, n.ToRepoName())
 	if err == ErrNotMatch {
-		r.Logger.V(2).Info("getRepoInfoByRepoName", "err:", err.Error())
+		r.Logger.V(2).Info("failed to get repository info by", "repo name", n.ToRepoName(), "err", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}
@@ -127,7 +115,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 
 	imgInfo, err := r.getImageInfoByImageName(ctx, n)
 	if err == ErrNotMatch {
-		r.Logger.V(2).Info("getImageInfoByImageName", "err:", err.Error())
+		r.Logger.V(2).Info("failed to get image info by", "image name", n.ToMetaName(), "err", err.Error())
 	} else if err != nil {
 		return imagehubv1.FullData{}, err
 	}

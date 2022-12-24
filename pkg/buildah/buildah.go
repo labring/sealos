@@ -107,6 +107,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 var (
 	globalFlagResults globalFlags
 	rootCmd           *cobra.Command
+	unrelatedCommands = []string{"version"}
 	postRunHooks      []func() error
 )
 
@@ -161,33 +162,45 @@ func RegisterPostRun(fn func() error) {
 	postRunHooks = append(postRunHooks, fn)
 }
 
-func wrapPrePersistentRun(cmd *cobra.Command) {
-	switch cmd.Use {
-	case "", "version":
-		return
+func AddUnrelatedCommandNames(names ...string) {
+	unrelatedCommands = append(unrelatedCommands, names...)
+}
+
+func skipUnrelatedCommandRun(cmd *cobra.Command) bool {
+	for _, name := range unrelatedCommands {
+		if name == cmd.Name() {
+			return true
+		}
 	}
+	return false
+}
+
+func wrapPrePersistentRun(cmd *cobra.Command) {
 	switch {
 	case cmd.PersistentPreRun != nil:
 		run := cmd.PersistentPreRun
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if err := TrySetupWithDefaults(defaultSetters...); err != nil {
-				logger.Fatal(err)
+			if skipUnrelatedCommandRun(cmd) {
+				return
 			}
+			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			run(cmd, args)
 		}
 	case cmd.PersistentPreRunE != nil:
 		runE := cmd.PersistentPreRunE
 		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if err := TrySetupWithDefaults(defaultSetters...); err != nil {
-				return err
+			if skipUnrelatedCommandRun(cmd) {
+				return nil
 			}
+			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			return runE(cmd, args)
 		}
 	default:
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if err := TrySetupWithDefaults(defaultSetters...); err != nil {
-				logger.Fatal(err)
+			if skipUnrelatedCommandRun(cmd) {
+				return
 			}
+			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 		}
 	}
 }
@@ -198,24 +211,18 @@ func wrapPostPersistentRun(cmd *cobra.Command) {
 	case cmd.PersistentPostRun != nil:
 		run := cmd.PersistentPostRun
 		cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
-			if err := after(cmd); err != nil {
-				logger.Fatal(err)
-			}
+			bailOnError(after(cmd), "")
 			run(cmd, args)
 		}
 	case cmd.PersistentPostRunE != nil:
 		runE := cmd.PersistentPostRunE
 		cmd.PersistentPostRunE = func(cmd *cobra.Command, args []string) error {
-			if err := after(cmd); err != nil {
-				return err
-			}
+			bailOnError(after(cmd), "")
 			return runE(cmd, args)
 		}
 	default:
 		cmd.PersistentPostRun = func(cmd *cobra.Command, args []string) {
-			if err := after(cmd); err != nil {
-				logger.Fatal(err)
-			}
+			bailOnError(after(cmd), "")
 		}
 	}
 }

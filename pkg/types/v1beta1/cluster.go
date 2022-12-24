@@ -48,9 +48,14 @@ type RegistryConfig struct {
 type ImageType string
 
 const (
-	AppImage    ImageType = "application"
-	RootfsImage ImageType = "rootfs"
-	PatchImage  ImageType = "patch"
+	AppImage                  ImageType = "application"
+	RootfsImage               ImageType = "rootfs"
+	PatchImage                ImageType = "patch"
+	ImageKubeVersionKey                 = "version"
+	ImageVIPKey                         = "vip"
+	ImageKubeLvscareImageKey            = "image"
+	ImageTypeKey                        = "sealos.io.type"
+	ImageKubeVersionEnvSysKey           = "SEALOS_SYS_KUBE_VERSION"
 )
 
 type MountImage struct {

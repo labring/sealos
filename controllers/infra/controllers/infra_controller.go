@@ -19,7 +19,6 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/labring/endpoints-operator/library/controller"
 
@@ -67,31 +66,36 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	// add finalizer
-	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
-		return ctrl.Result{}, err
-	}
+	//if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
+	//	return ctrl.Result{}, err
+	//}
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
-		if err := r.Status().Update(ctx, infra); err != nil {
-			return ctrl.Result{}, err
-		}
+		//if err := r.Status().Update(ctx, infra); err != nil {
+		//	return ctrl.Result{}, err
+		//}
 	}
+
 	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
+		controllerutil.AddFinalizer(infra, common.SealosInfraFinalizer)
+		if infra.Spec.AvailabilityZone == "" {
+			infra.Spec.AvailabilityZone = common.DefaultRegion
+		}
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 		return r.applier.ReconcileInstance(infra, r.driver)
 	})
 	if err != nil {
 		r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
-		// requeue after 30 seconds
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, err
+		// requeue right now
+		return ctrl.Result{Requeue: true}, err
 	}
 	// clean infra using aws terminate
 	// now we depend on the aws terminate func to keep consistency
 	// TODO: double check the terminated Instance and then remove the finalizer...
 	var isDelete bool
 	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
-		return ctrl.Result{RequeueAfter: 15 * time.Second}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 	if res == controllerutil.OperationResultUpdated && !isDelete {
 		if infra.Status.Status == infrav1.Running.String() {
@@ -114,11 +118,14 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 	infra.Status.Status = infrav1.Terminating.String()
 	if err := r.Status().Update(ctx, infra); err != nil {
 		r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to terminating failed", "%v", err)
-		return err
+		return fmt.Errorf("update infra error:%v", err)
 	}
 	for _, hosts := range infra.Spec.Hosts {
 		if err := r.driver.DeleteInstances(&hosts); err != nil {
-			return err
+			return fmt.Errorf("delete instance error:%v", err)
+		}
+		if err := r.driver.DeleteKeyPair(infra); err != nil {
+			return fmt.Errorf("delete keypair error:%v", err)
 		}
 	}
 	return nil

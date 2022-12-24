@@ -25,14 +25,15 @@ import (
 var ErrTypeNotFound = errors.New("no corresponding type structure was found")
 
 type ClusterFile struct {
-	path              string
-	customConfigFiles []string
-	customValues      []string
-	customSets        []string
-	customEnvs        []string
-	Cluster           *v2.Cluster
-	Configs           []v2.Config
-	KubeConfig        *runtime.KubeadmConfig
+	path               string
+	customConfigFiles  []string
+	customKubeadmFiles []string
+	customValues       []string
+	customSets         []string
+	customEnvs         []string
+	Cluster            *v2.Cluster
+	Configs            []v2.Config
+	KubeConfig         *runtime.KubeadmConfig
 	//Plugins    []v1.Plugin
 	once sync.Once
 }
@@ -41,7 +42,6 @@ type Interface interface {
 	PreProcessor
 	GetCluster() *v2.Cluster
 	GetConfigs() []v2.Config
-	//GetPlugins() []v1.Plugin
 	GetKubeadmConfig() *runtime.KubeadmConfig
 }
 
@@ -53,10 +53,6 @@ func (c *ClusterFile) GetConfigs() []v2.Config {
 	return c.Configs
 }
 
-//func (c *ClusterFile) GetPlugins() []v1.Plugin {
-//	return c.Plugins
-//}
-
 func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
 	return c.KubeConfig
 }
@@ -66,6 +62,12 @@ type OptionFunc func(*ClusterFile)
 func WithCustomConfigFiles(files []string) OptionFunc {
 	return func(c *ClusterFile) {
 		c.customConfigFiles = files
+	}
+}
+
+func WithCustomKubeadmFiles(files []string) OptionFunc {
+	return func(c *ClusterFile) {
+		c.customKubeadmFiles = files
 	}
 }
 

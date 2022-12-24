@@ -22,6 +22,7 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
+	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
@@ -48,6 +49,36 @@ func flagChanged(c *cobra.Command, name string) bool {
 		return true
 	}
 	return false
+}
+
+func setDefaultFlags(c *cobra.Command) error {
+	return setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag)
+}
+
+func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command) error) error {
+	for i := range setters {
+		if err := setters[i](c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func setDefaultTLSVerifyFlag(c *cobra.Command) error {
+	return setDefaultFlagIfNotChanged(c, "tls-verify", "false")
+}
+
+func setDefaultPlatformFlag(c *cobra.Command) error {
+	return setDefaultFlagIfNotChanged(c, "platform", parse.DefaultPlatform())
+}
+
+func setDefaultFlagIfNotChanged(c *cobra.Command, k, v string) error {
+	if fs := c.Flag(k); fs != nil && !fs.Changed {
+		if err := c.Flags().Set(k, v); err != nil {
+			return fmt.Errorf("failed to set --%s default to %s: %v", k, v, err)
+		}
+	}
+	return nil
 }
 
 func bailOnError(err error, format string, a ...interface{}) { // nolint: golint,goprintffuncname

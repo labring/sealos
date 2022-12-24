@@ -43,7 +43,7 @@ func newRMCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s rm containerID
   %[1]s rm containerID1 containerID2 containerID3
-  %[1]s rm --all`, rootCmd.Name()),
+  %[1]s rm --all`, rootCmd.CommandPath()),
 	}
 	rmCommand.SetUsageTemplate(UsageTemplate())
 

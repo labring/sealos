@@ -14,21 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package template
+package types
 
-// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
-	"bytes"
-	"text/template"
+	"testing"
 )
 
-func FromContent(templateContent string, param interface{}) (string, error) {
-	tmpl := template.Must(template.New("text").Parse(templateContent))
-	var buffer bytes.Buffer
-	err := tmpl.Execute(&buffer, param)
-	bs := buffer.Bytes()
-	if nil != bs && len(bs) > 0 {
-		return string(bs), nil
+func TestUnmarshal(t *testing.T) {
+	cfg, err := Unmarshal("testdata/image-cri-shim.yaml")
+	if err != nil {
+		t.Error(err)
+		return
 	}
-	return "", err
+	if err = cfg.PreProcess(); err != nil {
+		t.Error(err)
+		return
+	}
 }

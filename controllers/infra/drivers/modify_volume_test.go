@@ -24,12 +24,12 @@ func TestDriver_modifyVolume(t *testing.T) {
 				curDisk: &v1.Disk{
 					Type:     string(types.VolumeTypeGp3),
 					Capacity: 35,
-					Name:     "/dev/sda2",
+					//Name:     "/dev/sda2",
 				},
 				desDisk: &v1.Disk{
 					Type:     string(types.VolumeTypeGp3),
 					Capacity: 40,
-					Name:     "/dev/sda2",
+					//Name:     "/dev/sda2",
 				},
 			},
 			false,

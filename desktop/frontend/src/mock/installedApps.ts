@@ -174,25 +174,25 @@ const installedApps: TApp[] = [
       helpDocs: false
     }
   },
-  {
-    name: 'Postgres',
-    icon: '/images/pgadmin.svg',
-    type: APPTYPE.IFRAME,
-    data: {
-      url: '',
-      desc: 'postgres operator'
-    },
-    gallery: [
-      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
-    size: 'maximize',
-    menu: {
-      nameColor: 'text-black',
-      helpDropDown: true,
-      helpDocs: false
-    }
-  },
+  // {
+  //   name: 'Postgres',
+  //   icon: '/images/pgadmin.svg',
+  //   type: APPTYPE.IFRAME,
+  //   data: {
+  //     url: '',
+  //     desc: 'postgres operator'
+  //   },
+  //   gallery: [
+  //     'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   size: 'maximize',
+  //   menu: {
+  //     nameColor: 'text-black',
+  //     helpDropDown: true,
+  //     helpDocs: false
+  //   }
+  // },
   // {
   //   name: 'SDK-DEMO',
   //   icon: '/images/mysql.svg',
@@ -243,6 +243,20 @@ const installedApps: TApp[] = [
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
+    }
+  },
+  {
+    name: 'Postgres',
+    icon: '/images/pgadmin.svg',
+    type: APPTYPE.APP,
+    size: 'maximize',
+    gallery: [
+      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+    ],
+    data: {
+      url: '',
+      desc: 'postgres operator'
     }
   }
 ];

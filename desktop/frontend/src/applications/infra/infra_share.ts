@@ -48,16 +48,19 @@ spec:
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: ${infraForm.masterDisk}
-      type: ${infraForm.masterDiskType}
-      name: "/dev/sda2"
+      volumeType: ${infraForm.masterDiskType}
+      # allowed value is root|data
+      type: "root"
+
   - roles: [ node ] 
     count: ${infraForm.nodeCount} 
     flavor: ${infraForm.nodeType}
     image: "ami-0d66b970b9f16f1f5"
     disks:
     - capacity: ${infraForm.nodeDisk}
-      type: ${infraForm.nodeDiskType}
-      name: "/dev/sda2"
+      volumeType: ${infraForm.nodeDiskType}
+      # allowed value is root|data
+      type: "root"
 ---
 apiVersion: cluster.sealos.io/v1
 kind: Cluster

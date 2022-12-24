@@ -122,7 +122,7 @@ func newImagesCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s images --all
   %[1]s images [imageName]
-  %[1]s images --format '{{.ID}} {{.Name}} {{.Size}} {{.CreatedAtRaw}}'`, rootCmd.Name()),
+  %[1]s images --format '{{.ID}} {{.Name}} {{.Size}} {{.CreatedAtRaw}}'`, rootCmd.CommandPath()),
 	}
 	imagesCommand.SetUsageTemplate(UsageTemplate())
 
@@ -140,7 +140,7 @@ func imagesCmd(c *cobra.Command, args []string, iopts *imageResults) error {
 			return err
 		}
 		if len(args) > 1 {
-			return fmt.Errorf("'%s images' requires at most 1 argument", rootCmd.Name())
+			return fmt.Errorf("'%s' requires at most 1 argument", c.CommandPath())
 		}
 	}
 	if iopts.quiet && iopts.format != "" {

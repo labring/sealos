@@ -34,7 +34,7 @@ func newUmountCommand() *cobra.Command {
 		RunE:    umountCmd,
 		Example: fmt.Sprintf(`%[1]s umount containerID
   %[1]s umount containerID1 containerID2 containerID3
-  %[1]s umount --all`, rootCmd.Name()),
+  %[1]s umount --all`, rootCmd.CommandPath()),
 	}
 	umountCommand.SetUsageTemplate(UsageTemplate())
 

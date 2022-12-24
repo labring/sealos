@@ -2,9 +2,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app: hub-auth
-    control-plane: service-manager
-  name: hub-auth-system
+    app: hub-service
+  name: hub-service-system
 ---
 apiVersion: v1
 data:
@@ -14,58 +13,48 @@ data:
     token:
       issuer: "registry-token-issuer"
       expiration: 2592000  #30days
-      certificate: "/certs/tls.crt"
-      key: "/certs/tls.key"
+      certificate: "/config/tls.crt"
+      key: "/config/tls.key"
+  tls.crt: |
+    -----BEGIN CERTIFICATE-----
+    -----END CERTIFICATE-----
+  tls.key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    -----END RSA PRIVATE KEY-----
 kind: ConfigMap
 metadata:
   labels:
-    app: hub-auth
-  name: hub-auth-config
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: hub-auth-certs
-type: kubernetes.io/tls
-data:
-  tls.crt: |
-    ...
-  tls.key: |
-    ...
+    app: hub-service
+  name: hub-service-config
+  namespace: hub-service-system
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hub-auth
+  name: hub-service-deployment
+  namespace: hub-service-system
   labels:
-    app: hub-auth
+    app: hub-service
 spec:
   selector:
     matchLabels:
-      app: hub-auth
+      app: hub-service
   replicas: 1
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: hub-auth
+        app: hub-service
     spec:
       volumes:
         - name: config-vol
           configMap:
-            name: hub-auth-config
+            name: hub-service-config
         - name: cert-vol
-          secret:
-            secretName: hub-auth-certs
-            items:
-              - key: tls.crt
-                path: tls.crt
-              - key: tls.key
-                path: tls.key
       containers:
-        - name: hub-auth-server
-          image: labring/sealos-hub-auth:dev
+        - name: hub-service-server
+          image: lingdie/sealos-hub-service:dev
           ports:
             - containerPort: 5001
           args:
@@ -82,7 +71,19 @@ spec:
           volumeMounts:
             - name: config-vol
               mountPath: /config
-            - name: cert-vol
-              mountPath: /certs
-              readOnly: true
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: hub-service
+  name: hub-service-manager
+  namespace: hub-service-system
+spec:
+  ports:
+    - name: http
+      port: 5001
+      protocol: TCP
+      targetPort: 5001
+  selector:
+    app: hub-service

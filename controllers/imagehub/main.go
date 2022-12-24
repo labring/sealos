@@ -24,15 +24,14 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
+	"github.com/labring/sealos/controllers/imagehub/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
-	"github.com/labring/sealos/controllers/imagehub/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -117,10 +116,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "DataPack")
 		os.Exit(1)
 	}
+
 	if err = (&imagehubv1.Image{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Image")
 		os.Exit(1)
 	}
+
 	if err = (&imagehubv1.Repository{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "Repository")
 		os.Exit(1)

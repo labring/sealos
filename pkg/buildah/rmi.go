@@ -47,7 +47,7 @@ func newRMICommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s rmi imageID
   %[1]s rmi --all --force
-  %[1]s rmi imageID1 imageID2 imageID3`, rootCmd.Name()),
+  %[1]s rmi imageID1 imageID2 imageID3`, rootCmd.CommandPath()),
 	}
 	rmiCommand.SetUsageTemplate(UsageTemplate())
 

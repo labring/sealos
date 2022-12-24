@@ -39,9 +39,9 @@ func newUnshareCommand() *cobra.Command {
 			Short:  "Run a command in a modified user namespace",
 			Long:   unshareDescription,
 			RunE:   unshareCmd,
-			Example: `buildah unshare id
-  buildah unshare cat /proc/self/uid_map
-  buildah unshare buildah-script.sh`,
+			Example: fmt.Sprintf(`%[1]s unshare id
+  %[1]s unshare cat /proc/self/uid_map
+  %[1]s unshare buildah-script.sh`, rootCmd.CommandPath()),
 		}
 		unshareMounts []string
 	)

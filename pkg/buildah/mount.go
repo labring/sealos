@@ -37,7 +37,7 @@ func newMountCommand() *cobra.Command {
 	var (
 		mountDescription = fmt.Sprintf(`%[1]s mount
   mounts a working container's root filesystem for manipulation.
-`, rootCmd.Name())
+`, rootCmd.CommandPath())
 		opts       mountOptions
 		noTruncate bool
 	)
@@ -52,7 +52,7 @@ func newMountCommand() *cobra.Command {
 		Example: fmt.Sprintf(`%[1]s mount
   %[1]s mount containerID
   %[1]s mount containerID1 containerID2
-`, rootCmd.Name()),
+`, rootCmd.CommandPath()),
 	}
 	mountCommand.SetUsageTemplate(UsageTemplate())
 

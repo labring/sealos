@@ -95,7 +95,7 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 			return err
 		}
 		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[constants.ImageTypeKey])
+			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -108,7 +108,8 @@ func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-	err := c.Buildah.Pull(buildah.DefaultPlatform(), buildah.PullIfMissing.String(), cluster.Spec.Image...)
+	err := c.Buildah.Pull(cluster.Spec.Image, buildah.WithPlatformOption(buildah.DefaultPlatform()),
+		buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
 	if err != nil {
 		return err
 	}

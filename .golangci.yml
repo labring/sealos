@@ -28,12 +28,10 @@ linters:
     - ineffassign
     - vet
     - typecheck
-    - deadcode
     - errcheck
     - govet
     - staticcheck
     - unused
-    - varcheck
     - nilerr
     - unconvert
 

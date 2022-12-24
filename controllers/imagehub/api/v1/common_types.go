@@ -20,3 +20,38 @@ const (
 	PENDING Codes = 2
 	ERROR   Codes = 3
 )
+
+const (
+	saPrefix                 = "system:serviceaccount"
+	mastersGroup             = "system:masters"
+	defaultUserNamespace     = "user-system"
+	defaultImagehubNamespace = "imagehub-system"
+)
+
+//+kubebuilder:object:generate=false
+
+type Checker interface {
+	checkSpecName() bool
+	checkLabels() bool
+	getName() string
+	getSpecName() string
+	getOrgName() string
+}
+
+//+kubebuilder:object:generate=false
+
+type OrgCombinator interface {
+	GetOrg() string
+}
+
+//+kubebuilder:object:generate=false
+
+type RepoCombinator interface {
+	GetRepo() string
+}
+
+//+kubebuilder:object:generate=false
+
+type TagCombinator interface {
+	GetTag() string
+}

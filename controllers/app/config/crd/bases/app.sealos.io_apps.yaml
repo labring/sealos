@@ -35,40 +35,15 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              actions:
-                description: Actions name list, the actions will in the application
-                  same namespace
-                items:
-                  type: string
-                type: array
-              docs:
-                description: Applications markdown docs
-                type: string
-              image:
-                type: string
-              info:
-                additionalProperties:
-                  type: string
-                description: Applications info, key value
+              uiEndPoints:
+                properties:
+                  name:
+                    type: string
+                  theme:
+                    type: string
+                  url:
+                    type: string
                 type: object
-              logo:
-                description: The application logo url
-                type: string
-              uiendpoints:
-                description: Foo is an example field of App. Edit app_types.go to
-                  remove/update
-                items:
-                  properties:
-                    name:
-                      type: string
-                    theme:
-                      type: string
-                    url:
-                      type: string
-                  type: object
-                type: array
-              workdir:
-                type: string
             type: object
           status:
             description: AppStatus defines the observed state of App

@@ -44,7 +44,7 @@ func newDefaultLoginReply() loginReply {
 			AcceptRepositories: true,
 		},
 		getLogin:  true,
-		tlsVerify: true,
+		tlsVerify: false,
 	}
 }
 
@@ -55,6 +55,7 @@ func (opts *loginReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.AddFlagSet(auth.GetLoginFlags(&opts.loginOpts))
 	// e.g sealos login --kubeconfig /root/.kube/config hub.sealos.io
 	fs.StringVarP(&opts.kubeconfig, "kubeconfig", "k", opts.kubeconfig, "Login to sealos registry: hub.sealos.io by kubeconfig")
+	bailOnError(markFlagsHidden(fs, "tls-verify"), "")
 }
 
 func newLoginCommand() *cobra.Command {
@@ -108,7 +109,7 @@ func newLoginCommand() *cobra.Command {
 			}
 			return nil
 		},
-		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.CommandPath()),
 	}
 	loginCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(loginCommand.Flags())
@@ -123,6 +124,9 @@ func loginCmd(c *cobra.Command, args []string, iopts *loginReply) error {
 	}
 	if len(args) == 0 {
 		return errors.New("please specify a registry to login to")
+	}
+	if err := setDefaultFlags(c); err != nil {
+		return err
 	}
 
 	if err := setXDGRuntimeDir(); err != nil {

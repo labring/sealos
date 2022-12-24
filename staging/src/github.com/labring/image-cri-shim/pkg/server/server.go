@@ -1,5 +1,6 @@
 // Copyright 2019 Intel Corporation. All Rights Reserved.
 // Copyright 2019 Sealer Corporation.
+// Copyright 2022 sealos Corporation
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -15,6 +16,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -23,15 +25,20 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/labring/image-cri-shim/pkg/types"
+	"google.golang.org/grpc/codes"
+
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/status"
 	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
-	k8sapi "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	netutil "github.com/labring/sealos/pkg/utils/net"
 )
 
 type Options struct {
+	Timeout time.Duration
 	// Socket is the socket where shim listens on
 	Socket string
 	// User is the user ID for our gRPC socket.
@@ -41,7 +48,8 @@ type Options struct {
 	// Mode is the permission mode bits for our gRPC socket.
 	Mode os.FileMode
 	//CRIConfigs is cri config for auth
-	CRIConfigs map[string]k8sapi.AuthConfig
+	CRIConfigs map[string]types.AuthConfig
+	CRIVersion types.CRIVersion
 }
 
 type Server interface {
@@ -57,27 +65,37 @@ type Server interface {
 }
 
 type server struct {
-	server        *grpc.Server
-	imageClient   k8sapi.ImageServiceClient
-	imageV1Client k8sv1api.ImageServiceClient
-	options       Options
-	listener      net.Listener // socket our gRPC server listens on
+	server              *grpc.Server
+	imageV1Alpha2Client k8sv1alpha2api.ImageServiceClient
+	imageV1Client       k8sv1api.ImageServiceClient
+	options             Options
+	listener            net.Listener // socket our gRPC server listens on
 }
 
 // RegisterImageService registers an image service with the server.
 func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
-	if s.imageClient != nil && s.imageV1Client != nil {
+	if s.imageV1Alpha2Client != nil && s.imageV1Client != nil {
 		return serverError("can't register image service, already registered")
+	}
+
+	if err := s.determineAPIVersion(conn); err != nil {
+		return err
 	}
 
 	if err := s.createGrpcServer(); err != nil {
 		return err
 	}
-
-	s.imageClient = k8sapi.NewImageServiceClient(conn)
-	s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
-	k8sapi.RegisterImageServiceServer(s.server, s)
-
+	if s.useV1API() {
+		k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
+			imageClient: s.imageV1Client,
+			CRIConfigs:  s.options.CRIConfigs,
+		})
+	} else {
+		k8sv1alpha2api.RegisterImageServiceServer(s.server, &v1alpha2ImageService{
+			imageClient: s.imageV1Alpha2Client,
+			CRIConfigs:  s.options.CRIConfigs,
+		})
+	}
 	return nil
 }
 
@@ -200,4 +218,34 @@ func NewServer(options Options) (Server, error) {
 // Return a formatter server error.
 func serverError(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/server: "+format, args...)
+}
+
+// useV1API returns true if the v1 CRI API should be used instead of v1alpha2.
+func (s *server) useV1API() bool {
+	return s.options.CRIVersion == types.CRIVersionV1
+}
+
+func (s *server) determineAPIVersion(conn *grpc.ClientConn) error {
+	ctx, cancel := getContextWithTimeout(s.options.Timeout)
+	defer cancel()
+
+	logger.Info("Finding the CRI API image version")
+	if s.useV1API() {
+		s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
+		if _, err := s.imageV1Client.ImageFsInfo(ctx, &k8sv1api.ImageFsInfoRequest{}); err != nil {
+			logger.Info("Using CRI v1 image API")
+			if status.Code(err) == codes.Unimplemented {
+				return errors.New("falling using CRI v1 image API, please using other cri support v1 CRI API")
+			}
+		}
+	} else {
+		s.imageV1Alpha2Client = k8sv1alpha2api.NewImageServiceClient(conn)
+		if _, err := s.imageV1Alpha2Client.ImageFsInfo(ctx, &k8sv1alpha2api.ImageFsInfoRequest{}); err != nil {
+			logger.Info("Using CRI v1alpha2 image API")
+			if status.Code(err) == codes.Unimplemented {
+				return errors.New("falling using CRI v1alpha2 image API, please using other cri support v1alpha2 CRI API")
+			}
+		}
+	}
+	return nil
 }

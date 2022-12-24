@@ -130,6 +130,20 @@ func (hosts IndexHosts) Swap(i, j int) {
 	hosts[i], hosts[j] = hosts[j], hosts[i]
 }
 
+type IndexDisks []Disk
+
+func (disks IndexDisks) Len() int {
+	return len(disks)
+}
+
+func (disks IndexDisks) Less(i, j int) bool {
+	return disks[i].Index < disks[j].Index
+}
+
+func (disks IndexDisks) Swap(i, j int) {
+	disks[i], disks[j] = disks[j], disks[i]
+}
+
 type Disk struct {
 	Capacity int `json:"capacity,omitempty"`
 	// ENUM: standard/io1/io2/gp2/gp3/sc1/st1
@@ -140,22 +154,24 @@ type Disk struct {
 	// +kubebuilder:default:=data
 	// Disk Type , default is data disk. allowed value is `root|data`
 	Type string `json:"type,omitempty"`
-	Name string `json:"name,omitempty"`
+	//Name  string `json:"name,omitempty"`
+	Index int    `json:"index,omitempty"`
+	ID    string `json:"id,omitempty"`
 }
 
-type NameDisks []Disk
-
-func (disks NameDisks) Len() int {
-	return len(disks)
-}
-
-func (disks NameDisks) Less(i, j int) bool {
-	return disks[i].Name < disks[j].Name
-}
-
-func (disks NameDisks) Swap(i, j int) {
-	disks[i], disks[j] = disks[j], disks[i]
-}
+//type NameDisks []Disk
+//
+//func (disks NameDisks) Len() int {
+//	return len(disks)
+//}
+//
+//func (disks NameDisks) Less(i, j int) bool {
+//	return disks[i].Name < disks[j].Name
+//}
+//
+//func (disks NameDisks) Swap(i, j int) {
+//	disks[i], disks[j] = disks[j], disks[i]
+//}
 
 // InfraSpec defines the desired state of Infra
 type InfraSpec struct {
@@ -238,23 +254,27 @@ func (i *Infra) GetInstancesAndVolumesTag() string {
 }
 
 // QueryPrice query infra price/hour, unit: CNY cents/hour
+// may be error is not nil,but the price should calculate
 func (i *Infra) QueryPrice() (int64, error) {
 	valueEc2, valueEbs := float64(0), float64(0)
+	var err error
 	for _, j := range i.Spec.Hosts {
 		if _, ok := ec2NorthPrice[j.Flavor]; !ok {
-			return -1, fmt.Errorf("no ec2 type")
+			err = fmt.Errorf("flavor:%v,no ec2 type: %v", j.Flavor, err)
+			continue
 		}
 		valueEc2 += ec2NorthPrice[j.Flavor] * float64(j.Count)
 
 		for _, disk := range j.Disks {
-			if _, ok := ebs[disk.Type]; !ok {
-				return -1, fmt.Errorf("no ebs type")
+			if _, ok := ebs[disk.VolumeType]; !ok {
+				err = fmt.Errorf(" VolumnType:%v,no ebs type :%v", disk.VolumeType, err)
+				continue
 			}
-			valueEbs += ebs[disk.Type] * float64(disk.Capacity) * float64(j.Count)
+			valueEbs += ebs[disk.VolumeType] * float64(disk.Capacity) * float64(j.Count)
 		}
 	}
 	valueEbs = valueEbs / 30 / 24
-	return int64(valueEc2 + valueEbs), nil
+	return int64(valueEc2 + valueEbs), err
 }
 
 func init() {

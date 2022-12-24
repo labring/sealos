@@ -64,7 +64,7 @@ func newDefaultFromReply() *fromReply {
 		authfile:  auth.GetDefaultAuthFile(),
 		format:    defaultFormat(),
 		pull:      "true",
-		tlsVerify: true,
+		tlsVerify: false,
 		FromAndBudResults: &buildahcli.FromAndBudResults{
 			Devices:    defaultContainerConfig.Containers.Devices,
 			DNSSearch:  defaultContainerConfig.Containers.DNSSearches,
@@ -100,7 +100,8 @@ func (opts *fromReply) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&opts.signaturePolicy, "signature-policy", opts.signaturePolicy, "`pathname` of signature policy file (not usually used)")
 	fs.StringVar(&suffix, "suffix", "", "suffix to add to intermediate containers")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
-	_ = markFlagsHidden(fs, "pull-always", "pull-never", "suffix", "signature-policy")
+	bailOnError(markFlagsHidden(fs, "pull-always", "pull-never", "suffix", "signature-policy", "tls-verify"), "")
+
 	// Add in the common flags
 	fromAndBudFlags, err := buildahcli.GetFromAndBudFlags(opts.FromAndBudResults, opts.UserNSResults, opts.NameSpaceResults)
 	bailOnError(err, "failed to setup From and Bud flags")
@@ -127,7 +128,7 @@ func newFromCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s from --pull imagename
   %[1]s from docker-daemon:imagename:imagetag
-  %[1]s from --name "myimagename" myregistry/myrepository/imagename:imagetag`, rootCmd.Name()),
+  %[1]s from --name "myimagename" myregistry/myrepository/imagename:imagetag`, rootCmd.CommandPath()),
 	}
 	fromCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(fromCommand.Flags())
@@ -226,7 +227,9 @@ func fromCmd(c *cobra.Command, args []string, iopts *fromReply) error {
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
 	}
-
+	if err := setDefaultFlagsWithSetters(c, setDefaultPlatformFlag, setDefaultTLSVerifyFlag); err != nil {
+		return err
+	}
 	if err := auth.CheckAuthFile(iopts.authfile); err != nil {
 		return err
 	}
@@ -282,6 +285,12 @@ func doFrom(c *cobra.Command, image string, iopts *fromReply,
 	defaultContainerConfig, err := config.Default()
 	if err != nil {
 		return nil, err
+	}
+	if systemContext == nil {
+		systemContext, err = parse.SystemContextFromOptions(c)
+		if err != nil {
+			return nil, err
+		}
 	}
 	// Allow for --pull, --pull=true, --pull=false, --pull=never, --pull=always
 	// --pull-always and --pull-never.  The --pull-never and --pull-always options

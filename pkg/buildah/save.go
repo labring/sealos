@@ -35,10 +35,11 @@ func newSaveCommand() *cobra.Command {
 				fmt.Sprintf("%s:%s:%s", DockerArchive, archiveName, args[0]),
 			}, opts)
 		},
-		Example: fmt.Sprintf(`%[1]s save -o kubernetes.tar labring/kubernetes:latest`, rootCmd.Name()),
+		Example: fmt.Sprintf(`%[1]s save -o kubernetes.tar labring/kubernetes:latest`, rootCmd.CommandPath()),
 	}
 	saveCommand.SetUsageTemplate(UsageTemplate())
 
 	saveCommand.Flags().StringVarP(&archiveName, "output", "o", "", "save image into tar archive file")
+	_ = saveCommand.MarkFlagRequired("output")
 	return saveCommand
 }

@@ -36,7 +36,7 @@ func CopyDir(sshClient Interface, host, src, dest string, filter func(fs.DirEntr
 		if filter == nil || filter(f) {
 			err = sshClient.Copy(host, filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()))
 			if err != nil {
-				return fmt.Errorf("failed to copy entry %v", err)
+				return fmt.Errorf("failed to copy entry %s -> %s to %s: %v", filepath.Join(src, f.Name()), filepath.Join(dest, f.Name()), host, err)
 			}
 		}
 	}
