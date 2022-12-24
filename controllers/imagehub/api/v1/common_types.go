@@ -31,6 +31,19 @@ const (
 	defaultImagehubNamespace = "imagehub-system"
 )
 
+func GetSupportedKeywords() []string {
+	return []string{"Kubernetes", "Storage", "Network", "Database", "Monitoring", "Logging", "Dashboard", "MQ", "Platform", "GPU", "GitOps"}
+}
+
+var supportedKeywordsMap map[string]struct{}
+
+func init() {
+	ks := GetSupportedKeywords()
+	for _, k := range ks {
+		supportedKeywordsMap[k] = struct{}{}
+	}
+}
+
 //+kubebuilder:object:generate=false
 
 type Checker interface {
