@@ -2,7 +2,7 @@
 sidebar_position: 5
 ---
 
-# Kubernetes Support For containerd (k8s version >=1.16.0)
+# Kubernetes Support For containerd (k8s version >=1.18.0)
 
 
 | k8s version | sealos version | cri version | image version                                                 |
