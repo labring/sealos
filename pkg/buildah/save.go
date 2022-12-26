@@ -45,6 +45,6 @@ func newSaveCommand() *cobra.Command {
 	saveCommand.Flags().StringVarP(&archiveName, "output", "o", "", "save image into tar archive file")
 	_ = saveCommand.MarkFlagRequired("output")
 	saveCommand.Flags().StringVarP(&transport, "transport", "t", OCIArchive,
-		fmt.Sprintf("save image transport to tar archive file. (avaliable options are %s, %s)", OCIArchive, DockerArchive))
+		fmt.Sprintf("save image transport to tar archive file. (available options are %s, %s)", OCIArchive, DockerArchive))
 	return saveCommand
 }

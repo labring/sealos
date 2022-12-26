@@ -20,13 +20,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/labring/sealos/pkg/apply"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
-
-	"github.com/labring/sealos/pkg/apply"
-	"github.com/labring/sealos/pkg/apply/processor"
 )
 
 var exampleRun = `
@@ -63,6 +61,7 @@ func newRunCmd() *cobra.Command {
 		SSH:     &apply.SSH{},
 	}
 	var runSingle bool
+	var transport string
 	var runCmd = &cobra.Command{
 		Use:     "run",
 		Short:   "Run cloud native applications with ease, with or without a existing cluster",
@@ -74,7 +73,7 @@ func newRunCmd() *cobra.Command {
 				runArgs.Masters = iputils.LocalIP(addr)
 			}
 
-			images, err := args2Images(args)
+			images, err := args2Images(args, transport)
 			if err != nil {
 				return err
 			}
@@ -86,8 +85,8 @@ func newRunCmd() *cobra.Command {
 			return applier.Apply()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if !strings2.In(buildah.DefaultTransport, []string{buildah.OCIArchive, buildah.DockerArchive}) {
-				return fmt.Errorf("transport parameters must be %s or %s", buildah.OCIArchive, buildah.DockerArchive)
+			if err := buildah.ValidateTransport(transport); err != nil {
+				return err
 			}
 			return nil
 		},
@@ -98,7 +97,7 @@ func newRunCmd() *cobra.Command {
 	runArgs.RegisterFlags(runCmd.Flags())
 	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
-	runCmd.Flags().StringVarP(&buildah.DefaultTransport, "transport", "t", buildah.OCIArchive,
+	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
 		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))
 	return runCmd
 }
@@ -107,7 +106,7 @@ func init() {
 	rootCmd.AddCommand(newRunCmd())
 }
 
-func args2Images(args []string) ([]string, error) {
+func args2Images(args []string, transport string) ([]string, error) {
 	var images []string
 	bder, err := buildah.New("")
 	if err != nil {
@@ -115,7 +114,7 @@ func args2Images(args []string) ([]string, error) {
 	}
 	for _, arg := range args {
 		if strings.HasSuffix(arg, ".tar") || strings.HasSuffix(arg, ".gz") {
-			id, err := bder.Load(arg)
+			id, err := bder.Load(arg, transport)
 			if err != nil {
 				return images, err
 			}
