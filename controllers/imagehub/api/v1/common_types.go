@@ -37,7 +37,7 @@ func GetSupportedKeywords() []string {
 
 var supportedKeywordsMap = func() map[string]struct{} {
 	ks := GetSupportedKeywords()
-	var mp map[string]struct{}
+	mp := make(map[string]struct{})
 	for _, k := range ks {
 		mp[k] = struct{}{}
 	}
