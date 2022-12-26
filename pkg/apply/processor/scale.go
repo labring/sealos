@@ -260,8 +260,8 @@ func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	return bs.ApplyAddons(hosts...)
 }
 
-func NewScaleProcessor(clusterFile clusterfile.Interface, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {
-	bder, err := buildah.New(clusterFile.GetCluster().Name)
+func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {
+	bder, err := buildah.New(name)
 	if err != nil {
 		return nil, err
 	}

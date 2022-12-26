@@ -66,17 +66,22 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	// add finalizer
-	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
-		return ctrl.Result{}, err
-	}
+	//if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
+	//	return ctrl.Result{}, err
+	//}
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
-		if err := r.Status().Update(ctx, infra); err != nil {
-			return ctrl.Result{}, err
-		}
+		//if err := r.Status().Update(ctx, infra); err != nil {
+		//	return ctrl.Result{}, err
+		//}
 	}
+
 	res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
+		controllerutil.AddFinalizer(infra, common.SealosInfraFinalizer)
+		if infra.Spec.AvailabilityZone == "" {
+			infra.Spec.AvailabilityZone = common.DefaultRegion
+		}
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 		return r.applier.ReconcileInstance(infra, r.driver)
 	})

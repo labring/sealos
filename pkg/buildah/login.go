@@ -109,7 +109,7 @@ func newLoginCommand() *cobra.Command {
 			}
 			return nil
 		},
-		Example: fmt.Sprintf(`%s login quay.io`, rootCmdName),
+		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.CommandPath()),
 	}
 	loginCommand.SetUsageTemplate(UsageTemplate())
 	opts.RegisterFlags(loginCommand.Flags())

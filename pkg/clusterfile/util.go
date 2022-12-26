@@ -70,17 +70,6 @@ func GetClusterFromFile(filepath string) (cluster *v2.Cluster, err error) {
 	return cluster, nil
 }
 
-func GetDefaultCluster() (cluster *v2.Cluster, err error) {
-	name, err := GetDefaultClusterName()
-	if err != nil {
-		return nil, err
-	}
-
-	var filepath = constants.Clusterfile(name)
-
-	return GetClusterFromFile(filepath)
-}
-
 func GetClusterFromDataCompatV1(data []byte) (*v2.Cluster, error) {
 	var cluster *v2.Cluster
 	metaType := k8sV1.TypeMeta{}

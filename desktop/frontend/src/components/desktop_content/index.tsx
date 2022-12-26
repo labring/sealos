@@ -1,5 +1,7 @@
 import AppStore from 'applications/app_store';
 import Infra from 'applications/infra';
+import PgSql from 'applications/pgsql';
+
 import clsx from 'clsx';
 import { APPTYPE } from 'constants/app_type';
 import useAppStore, { TApp } from 'stores/app';
@@ -16,6 +18,9 @@ export default function DesktopContent() {
       case APPTYPE.APP:
         if (appItem.name === 'sealos cloud provider') {
           return <Infra />;
+        }
+        if (appItem.name === 'Postgres') {
+          return <PgSql />;
         }
         return <AppStore />;
 

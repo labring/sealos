@@ -87,11 +87,11 @@ func joinImageDomainAndName(domain, remainder string) string {
 func replaceImage(image, action string, authConfig map[string]types.AuthConfig) (newImage string) {
 	// TODO we can change the image name of req, and make the cri pull the image we need.
 	// for example:
-	// req.Image.Image = "sealer.hub/library/nginx:1.1.1"
-	// and the cri will pull "sealer.hub/library/nginx:1.1.1", and save it as "sealer.hub/library/nginx:1.1.1"
+	// req.Image.Image = "sealos.hub:5000/library/nginx:1.1.1"
+	// and the cri will pull "sealos.hub:5000/library/nginx:1.1.1", and save it as "sealos.hub:5000/library/nginx:1.1.1"
 	// note:
 	// but kubelet sometimes will invoke imageService.RemoveImage() or something else. The req.Image.Image will the original name.
-	// so we'd better tag "sealer.hub/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
+	// so we'd better tag "sealos.hub:5000/library/nginx:1.1.1" with original name "req.Image.Image" After "rsp, err := (*s.imageService).PullImage(ctx, req)".
 	//for image id]
 	newImage = image
 	images, err := exec.RunBashCmd("crictl images -q")

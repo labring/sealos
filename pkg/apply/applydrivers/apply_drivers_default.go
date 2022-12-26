@@ -84,11 +84,12 @@ func (c *Applier) Apply() error {
 		}
 	}()
 	c.initStatus()
-	if c.ClusterDesired.CreationTimestamp.IsZero() {
+	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
 		err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
 		err = c.reconcileCluster()
+		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
 	c.updateStatus(err)
 	return err
@@ -190,7 +191,7 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 	logger.Info("start to scale this cluster")
 	logger.Debug("current cluster: master %s, worker %s", c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterCurrent.GetNodeIPAndPortList())
 	logger.Debug("desired cluster: master %s, worker %s", c.ClusterDesired.GetMasterIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
+	scaleProcessor, err := processor.NewScaleProcessor(c.ClusterFile, c.ClusterDesired.Name, c.ClusterDesired.Spec.Image, mj, md, nj, nd)
 	if err != nil {
 		return err
 	}
