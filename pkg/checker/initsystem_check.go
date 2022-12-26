@@ -86,8 +86,8 @@ Systemd Service Status
   {{ end }}`)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("system service checkers template can not be executed: %s", err.Error())
-			return fmt.Errorf("service checkers template can not be executed: %s", err)
+			logger.Error("failed to render system service checkers template. error: %s", err.Error())
+			return err
 		}
 		return errors.New("convert system service template failed")
 	}

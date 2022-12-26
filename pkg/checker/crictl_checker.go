@@ -150,8 +150,8 @@ CRI Status
 `)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("crictl checkers template can not be executed: %s", err.Error())
-			return fmt.Errorf("crictl checkers template can not be executed: %s", err)
+			logger.Error("failed to render crictl checkers template. error: %s", err.Error())
+			return err
 		}
 		return errors.New("convert crictl template failed")
 	}

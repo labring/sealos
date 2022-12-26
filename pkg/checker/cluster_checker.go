@@ -111,7 +111,7 @@ Cluster Status
 `)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("cluster checkers template can not excute %s", err.Error())
+			logger.Error("failed to render cluster checkers template. error: %s", err.Error())
 			return err
 		}
 		return errors.New("convert cluster template failed")

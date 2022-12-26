@@ -101,7 +101,7 @@ Cluster Node Status
 `)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("node checkers template can not excute %s", err.Error())
+			logger.Error("failed to render node checkers template. error: %s", err.Error())
 			return err
 		}
 		return errors.New("convert node template failed")

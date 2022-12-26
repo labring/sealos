@@ -38,7 +38,7 @@ func newStatusCmd() *cobra.Command {
 			return checker.RunCheckList(list, cluster, checker.PhasePost)
 		},
 	}
-	checkCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied exec action")
+	checkCmd.Flags().StringVarP(&clusterName, "cluster", "c", "default", "name of cluster to applied status action")
 	return checkCmd
 }
 

@@ -114,7 +114,7 @@ func (n *PodChecker) Output(podNamespaceStatusList []PodNamespaceStatus) error {
 `)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("pod checkers template can not execute %s", err.Error())
+			logger.Error("failed to render pod checkers template. error: %s", err.Error())
 			return err
 		}
 		return errors.New("convert pod template failed")

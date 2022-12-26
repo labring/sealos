@@ -120,7 +120,7 @@ func (n *SvcChecker) Output(svcNamespaceStatusList []*SvcNamespaceStatus) error 
 `)
 	if err != nil || !isOk {
 		if err != nil {
-			logger.Error("svc checkers template can not execute %s", err.Error())
+			logger.Error("failed to render svc checkers template. error: %s", err.Error())
 			return err
 		}
 		return errors.New("convert svc template failed")
