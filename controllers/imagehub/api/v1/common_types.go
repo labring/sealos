@@ -35,13 +35,13 @@ func GetSupportedKeywords() []string {
 	return []string{"Kubernetes", "Storage", "Network", "Database", "Monitoring", "Logging", "Dashboard", "MQ", "Platform", "GPU", "GitOps"}
 }
 
-var supportedKeywordsMap map[string]struct{}
-
-func init() {
+var supportedKeywordsMap = func() map[string]struct{} {
 	ks := GetSupportedKeywords()
+	var mp map[string]struct{}
 	for _, k := range ks {
-		supportedKeywordsMap[k] = struct{}{}
+		mp[k] = struct{}{}
 	}
+	return mp
 }
 
 //+kubebuilder:object:generate=false
