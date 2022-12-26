@@ -109,7 +109,7 @@ func (r *Repository) genKeywordsLabels(img *Image) {
 		r.Labels = make(map[string]string)
 	}
 	for _, keyword := range img.Spec.DetailInfo.Keywords {
-		if _, ok := supportedKeywordsMap()[keyword]; ok {
+		if _, ok := supportedKeywordsMap[keyword]; ok {
 			// if keyword is supported, add it to label.
 			label := fmt.Sprintf("%s%s", KeywordsLabelPrefix, keyword)
 			r.Labels[label] = ""

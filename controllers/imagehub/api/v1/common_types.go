@@ -42,7 +42,7 @@ var supportedKeywordsMap = func() map[string]struct{} {
 		mp[k] = struct{}{}
 	}
 	return mp
-}
+}()
 
 //+kubebuilder:object:generate=false
 
