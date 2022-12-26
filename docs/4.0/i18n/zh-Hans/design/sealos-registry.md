@@ -42,3 +42,6 @@ sequenceDiagram
 
 1. 完全原生支持docker login、buildah login，不需要重新在sealos login时处理和registry api的交互
 2. 认证服务器将使用用户kubeconfig来连接sealos云，而非使用kubernetes-admin
+
+*但是也有以下缺点*
+1. kubeconfig作为密码可能过长, 在io上有消耗

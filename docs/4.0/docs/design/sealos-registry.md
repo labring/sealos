@@ -43,4 +43,8 @@ sequenceDiagram
 
 1. Fully native support for docker login, buildah login, no need to re-process the interaction with the registry api
    during sealos login
-2. Auth server will use user kubeconfig to connect sealos cloud not by kubernetes-admin.
+2. Auth server will use user kubeconfig to connect sealos cloud not by kubernetes-admin
+
+*But there are some disadvantages:*
+
+1. maybe kubeconfig is too long as password, which consumes on io
