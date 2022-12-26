@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -101,6 +102,19 @@ func (r *Repository) getOrgName() string {
 }
 func (r *Repository) getName() string {
 	return r.Name
+}
+
+func (r *Repository) genKeywordsLabels(img *Image) {
+	if r.Labels == nil {
+		r.Labels = make(map[string]string)
+	}
+	for _, keyword := range img.Spec.DetailInfo.Keywords {
+		if _, ok := supportedKeywordsMap[keyword]; ok {
+			// if keyword is supported, add it to label.
+			label := fmt.Sprintf("%s%s", KeywordsLabelPrefix, keyword)
+			r.Labels[label] = ""
+		}
+	}
 }
 
 //+kubebuilder:object:root=true

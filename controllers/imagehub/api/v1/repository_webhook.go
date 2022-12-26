@@ -54,9 +54,16 @@ func (m RepoMutator) Default(ctx context.Context, obj runtime.Object) error {
 	}
 	repositorylog.Info("default", "name", repo.Name)
 	repo.ObjectMeta = initAnnotationAndLabels(repo.ObjectMeta)
-	repo.ObjectMeta.Labels[SealosOrgLable] = repo.Spec.Name.GetOrg()
-	repo.ObjectMeta.Labels[SealosRepoLabel] = repo.Spec.Name.GetRepo()
-
+	repo.Labels[SealosOrgLable] = repo.Spec.Name.GetOrg()
+	repo.Labels[SealosRepoLabel] = repo.Spec.Name.GetRepo()
+	if repo.Status.LatestTag != nil {
+		img := &Image{}
+		err := m.Client.Get(ctx, client.ObjectKey{Name: repo.Status.LatestTag.MetaName}, img)
+		if err != nil {
+			return err
+		}
+		repo.genKeywordsLabels(img)
+	}
 	return nil
 }
 
