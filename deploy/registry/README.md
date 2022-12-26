@@ -1,6 +1,41 @@
 # How to deploy the registry service
 
+sealos registry design:
+```mermaid
+sequenceDiagram
+    participant u as User
+    participant sh as sealos Hub
+    participant sa as sealos hub Auth
+    par Login
+        u->>sh: sealos login using '-k kubeconfig'
+        sh->>sa: Check account
+        sa->>sh: Have account
+        sh->>sh: Create token
+        sh->>u: Return token
+    end
+    par Push
+        u->>sh: sealos push image
+        sh->>sa: Check account and rbac
+        sa->>sa: check image/repo/org access
+        sa->>sh: Have access rights
+        sh->>sh: Save image info and blobs
+        sh->>u: Return push status
+    end
+    par Pull
+        u->>sh: sealos pull image
+        sh->>sa: Check account and rbac
+        sa->>sa: check image/repo/org exists
+        sa->>sh: Exists!
+        sh->>sh: return image info and blobs meta
+        sh->>u: Return pull status
+    end
+
+```
+
 ## Pre-Requirements
+
+1. [sealos Cloud](../../cloud/README.md) for auth.
+2. [sealos cluster](installl_base-server.md) for registry.
 
 ### A running sealos kubernetes cluster
 
