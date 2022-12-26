@@ -33,7 +33,7 @@ $ sealos run hub.sealos.cn/labring/kubernetes:v1.24.0 hub.sealos.cn/labring/cali
 
 First, you should create an organization in sealos cloud imagehub application.
 
-After that, you can tag your image with domain `hub.sealos.cn`, than push it!
+After that, you can tag your image with domain `hub.sealos.cn` and your organization name, than push it!
 
 ```shell
 $ sealos login -k config.yml hub.sealos.cn
