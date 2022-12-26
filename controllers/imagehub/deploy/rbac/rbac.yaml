@@ -22,6 +22,9 @@ rules:
   - apiGroups: ["imagehub.sealos.io"]
     resources: [ "repositories" , "images"]
     verbs: [ "get", "watch", "list", "create", "update", "delete"] # have no limit to update repo&image, todo fix this in webhook.
+  - apiGroups: ["imagehub.sealos.io"]
+    resources: [ "datapacks" ]
+    verbs: [ "get", "create"] # user can only create or get datapack.
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
