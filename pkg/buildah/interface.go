@@ -32,7 +32,7 @@ import (
 
 type Interface interface {
 	Pull(imageNames []string, opts ...FlagSetter) error
-	Load(input string) (string, error)
+	Load(input string, ociType string) (string, error)
 	InspectImage(name string) (v1.Image, error)
 	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
 	Delete(name string) error
@@ -206,8 +206,8 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 	return jsonContainers, err
 }
 
-func (impl *realImpl) Load(input string) (string, error) {
-	ids, err := doPull(impl.mockCmd(), impl.store, impl.systemContext, []string{fmt.Sprintf("%s:%s", DockerArchive, input)}, newDefaultPullOptions())
+func (impl *realImpl) Load(input string, ociType string) (string, error) {
+	ids, err := doPull(impl.mockCmd(), impl.store, impl.systemContext, []string{fmt.Sprintf("%s:%s", ociType, input)}, newDefaultPullOptions())
 	if err != nil {
 		return "", err
 	}

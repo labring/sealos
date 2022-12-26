@@ -15,6 +15,9 @@
 package buildah
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/containers/buildah/define"
 )
 
@@ -23,7 +26,16 @@ const (
 	DockerArchive string = "docker-archive"
 )
 
-var DefaultTransport = DockerArchive
+var DefaultTransport = OCIArchive
+
+func ValidateTransport(s string) error {
+	switch s {
+	case OCIArchive, DockerArchive:
+	default:
+		return fmt.Errorf("unsupported transport %s, available options are %s", s, strings.Join([]string{OCIArchive, DockerArchive}, ", "))
+	}
+	return nil
+}
 
 const (
 	DisableAutoRootless = "DISABLE_AUTO_ROOTLESS"
