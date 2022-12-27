@@ -24,22 +24,27 @@ func newSaveCommand() *cobra.Command {
 	var (
 		opts        = newDefaultPushOptions()
 		archiveName string
+		transport   string
 	)
 
 	saveCommand := &cobra.Command{
 		Use:   "save",
 		Short: "Save image into archive file",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := ValidateTransport(transport); err != nil {
+				return err
+			}
 			return pushCmd(cmd, []string{
 				args[0],
-				fmt.Sprintf("%s:%s:%s", DockerArchive, archiveName, args[0]),
+				fmt.Sprintf("%s:%s:%s", transport, archiveName, args[0]),
 			}, opts)
 		},
 		Example: fmt.Sprintf(`%[1]s save -o kubernetes.tar labring/kubernetes:latest`, rootCmd.CommandPath()),
 	}
 	saveCommand.SetUsageTemplate(UsageTemplate())
-
 	saveCommand.Flags().StringVarP(&archiveName, "output", "o", "", "save image into tar archive file")
 	_ = saveCommand.MarkFlagRequired("output")
+	saveCommand.Flags().StringVarP(&transport, "transport", "t", OCIArchive,
+		fmt.Sprintf("save image transport to tar archive file. (available options are %s, %s)", OCIArchive, DockerArchive))
 	return saveCommand
 }

@@ -17,9 +17,11 @@ package checker
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"context"
+	"errors"
 	"os"
-	"text/template"
 	"time"
+
+	"github.com/labring/sealos/pkg/template"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -83,10 +85,10 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 		cStatus.KubeScheduler = healthyClient.ForHealthyPod(schedulerPod)
 
-		if err = healthyClient.ForHealthyKubelet(10*time.Second, ip); err != nil {
+		if err = healthyClient.ForHealthyKubelet(5*time.Second, ip); err != nil {
 			cStatus.KubeletErr = err.Error()
 		} else {
-			cStatus.KubeletErr = "<nil>"
+			cStatus.KubeletErr = Nil
 		}
 		NodeList = append(NodeList, cStatus)
 	}
@@ -95,10 +97,8 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 }
 
 func (n *ClusterChecker) Output(clusterStatus []ClusterStatus) error {
-	//t1, err := template.ParseFiles("templates/node_checker.tpl")
-	t := template.New("cluster_checker")
-	t, err := t.Parse(
-		`Cluster Status
+	tpl, isOk, err := template.TryParse(`
+Cluster Status
   Node List:
     {{- range .ClusterStatusList }}
 	NodeName: {{ .Node }}
@@ -109,13 +109,14 @@ func (n *ClusterChecker) Output(clusterStatus []ClusterStatus) error {
 		KubeletErr: {{.KubeletErr}}
     {{- end }}
 `)
-	if err != nil {
-		panic(err)
+	if err != nil || !isOk {
+		if err != nil {
+			logger.Error("failed to render cluster checkers template. error: %s", err.Error())
+			return err
+		}
+		return errors.New("convert cluster template failed")
 	}
-	t = template.Must(t, err)
-	err = t.Execute(os.Stdout, map[string][]ClusterStatus{"ClusterStatusList": clusterStatus})
-	if err != nil {
-		logger.Error("node checkers template can not excute %s", err)
+	if err = tpl.Execute(os.Stdout, map[string][]ClusterStatus{"ClusterStatusList": clusterStatus}); err != nil {
 		return err
 	}
 	return nil
