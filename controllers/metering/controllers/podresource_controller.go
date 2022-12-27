@@ -120,7 +120,7 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 				if resourceQuantity, ok = r.checkResourceExist(resourceName, con); !ok {
 					continue
 				}
-				if err := r.syncResource(ctx, pod, con.Name, resourceName, &resourceQuantity, podController.Status.SeqID); err != nil {
+				if err := r.syncResource(ctx, pod, con.Name, resourceName, &resourceQuantity, *podController); err != nil {
 					r.Logger.Error(err, "syncResource failed")
 				}
 			}
@@ -133,7 +133,7 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 		}
 		//r.Logger.V(1).Info("resourceQuota", "resourceQuota", resourceQuota)
 		storage := resourceQuota.Status.Used.Name("requests.storage", resource.BinarySI)
-		if err = r.syncResource(ctx, pod, "", "storage", storage, podController.Status.SeqID); err != nil {
+		if err = r.syncResource(ctx, pod, "", "storage", storage, *podController); err != nil {
 			r.Logger.Error(err, "syncMeteringQuota failed")
 		}
 	}
@@ -177,10 +177,10 @@ func (r *PodResourceReconciler) checkPodNamespace(pod v1.Pod) bool {
 	return true
 }
 
-func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, containerName string, resourceName v1.ResourceName, Used *resource.Quantity, seqid int64) error {
+func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, containerName string, resourceName v1.ResourceName, Used *resource.Quantity, podController meteringv1.PodResource) error {
 	podResource := meteringv1.Resource{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      GetResourceName(pod.Name, containerName, resourceName, seqid),
+			Name:      GetResourceName(pod.Namespace, pod.Name, containerName, resourceName, podController.Status.SeqID),
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}
@@ -214,12 +214,12 @@ func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName,
 	return resource.Quantity{}, false
 }
 
-func GetResourceName(podName string, containerName string, resourceName v1.ResourceName, seqID int64) string {
+func GetResourceName(namespaceName, podName string, containerName string, resourceName v1.ResourceName, seqID int64) string {
 	if containerName == "" {
-		return fmt.Sprintf("%s-%s-%s-%v", PodResourcePricePrefix, podName, resourceName, seqID)
+		return fmt.Sprintf("%s-%s-%s-%s-%v", namespaceName, PodResourcePricePrefix, podName, resourceName, seqID)
 	}
 
-	return fmt.Sprintf("%s-%s-%s-%s-%v", PodResourcePricePrefix, podName, containerName, resourceName, seqID)
+	return fmt.Sprintf("%s-%s-%s-%s-%s-%v", namespaceName, PodResourcePricePrefix, podName, containerName, resourceName, seqID)
 }
 
 // SetupWithManager sets up the controller with the Manager.

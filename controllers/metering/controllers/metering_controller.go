@@ -123,7 +123,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// when Resource create will enter this logic
 	resources := &meteringv1.Resource{}
 	if err := r.Get(ctx, req.NamespacedName, resources); err == nil {
-		if resources.Status.Status == meteringv1.Complete {
+		if resources.Status.Status == meteringv1.Complete || !resources.DeletionTimestamp.IsZero() {
 			return ctrl.Result{}, nil
 		}
 		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace)
@@ -160,7 +160,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval) {
-		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
+		//r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
 		totalAccount, err := r.CalculateCost(ctx, &metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
