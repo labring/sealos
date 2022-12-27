@@ -16,13 +16,17 @@ package buildah
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
+
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/openconfig/gnmi/errlist"
 
@@ -47,25 +51,84 @@ const (
 	AppPath          = "app"
 	READMEpath       = "README.md"
 	ConfigFileName   = "config.yaml"
+	AuthjsonPath     = "containers/auth.json"
+	SealosHubPath    = ".sealos/hub.sealos.cn"
 	TemplateFileName = "template.yaml"
 	CMDFileName      = "CMD"
 	ImagehubGroup    = "imagehub.sealos.io"
 	ImagehubVersion  = "v1"
 	ImagehubResource = "images"
+	ImagehubKind     = "Image"
+	ImagehubURL      = "hub.sealos.cn"
+	XdgRuntimeDir    = "XDG_RUNTIME_DIR"
+)
+
+const (
+	//Read Content Output
+	ReadOrBuildAppConfigOutput = "Success get appConfig"
+	ReadImageContentOutput     = "Success read image content"
+	ReadReadmeOutput           = "Success read readme file"
+	ReadActionOutput           = "Success read action content"
 )
 
 type ImageCRDBuilder struct {
 	imagename   string
 	clustername string
+	username    string
+	userconfig  string
 	AppConfig   *imagev1.Image
 }
 
-func NewAndRunImageCRDBuilder(args []string, iopts *pushOptions) {
+type dockerAuthConfig struct {
+	Auth          string `json:"auth,omitempty"`
+	IdentityToken string `json:"identitytoken,omitempty"`
+}
+
+type dockerConfigFile struct {
+	AuthConfigs map[string]dockerAuthConfig `json:"auths"`
+	CredHelpers map[string]string           `json:"credHelpers,omitempty"`
+}
+
+func NewAndRunImageCRDBuilder(args []string) {
 	//run without error returns
-	icb := &ImageCRDBuilder{args[0], "", &imagev1.Image{}}
-	if iopts.imagecrd {
+	icb := &ImageCRDBuilder{args[0], "", "", "", &imagev1.Image{}}
+	if icb.CheckLoginStatus() {
+		logger.Info("start ImageCrd Push")
 		icb.Run()
 	}
+}
+
+func (icb *ImageCRDBuilder) CheckLoginStatus() bool {
+	//Check repository target
+	if !strings.Contains(icb.imagename, ImagehubURL) {
+		return false
+	}
+	//Check Cri Login
+	var path string
+	var dockerConfig dockerConfigFile
+	if path = os.Getenv(XdgRuntimeDir); path == "" {
+		return false
+	}
+	if !file.IsExist(filepath.Join(path, AuthjsonPath)) {
+		return false
+	}
+	encodeAuth, err := file.ReadAll(filepath.Join(path, AuthjsonPath))
+	if err != nil {
+		return false
+	}
+	err = json.Unmarshal(encodeAuth, &dockerConfig)
+	if err != nil {
+		return false
+	}
+	//auth struct is username:password which is namespcae:kubeconfig in sealos.hub scenario
+	auth, err := base64.StdEncoding.DecodeString(dockerConfig.AuthConfigs[ImagehubURL].Auth)
+	if err != nil {
+		return false
+	}
+	icb.username = strings.SplitN(string(auth), ":", 2)[0]
+	icb.userconfig = strings.SplitN(string(auth), ":", 2)[1]
+	//Check Sealos Hub Login
+	return file.IsExist(filepath.Join(homedir.HomeDir(), SealosHubPath, icb.username))
 }
 
 func (icb *ImageCRDBuilder) Run() {
@@ -76,29 +139,25 @@ func (icb *ImageCRDBuilder) Run() {
 	}
 	defer func() {
 		err = icb.DeleteContainer()
-		if err != nil {
-			logger.Warn(err)
-		}
+		logger.Debug(err)
 	}()
 	err = icb.GetAppContent(MountPoint)
 	if err != nil {
-		logger.Warn(err)
+		logger.Debug(err)
 	}
 	err = icb.AppContentApply()
 	if err != nil {
-		logger.Warn(err)
+		logger.Debug(err)
 	}
 }
 
 func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	clusterName := icb.imagename + strconv.Itoa(rnd.Int())
-
 	realImpl, err := New("")
 	if err != nil {
 		return "", err
 	}
-
 	builderInfo, err := realImpl.Create(clusterName, icb.imagename)
 	if err != nil {
 		return "", err
@@ -107,6 +166,7 @@ func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 		return "", fmt.Errorf("mountPoint not Exist")
 	}
 	icb.clustername = clusterName
+	logger.Info("Success create container")
 	return builderInfo.MountPoint, nil
 }
 
@@ -126,26 +186,26 @@ The template and cmd of the action are stored in the folder named after the acti
 
 // GetAppContent do content read in filereadPipeline, if one content get failed ,it won't abort.
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
-	//app config is the based file ,it should read first
-	if err := icb.ReadAppConfig(MountPoint); err != nil {
-		return fmt.Errorf("base config cant find")
-	}
 	var errl errlist.List
 	//Using a pipe helps with future file reading needs
-	fileReadPipeLine := []func(MountPoint string) error{
+	fileReadPipeLine := []func(MountPoint string) (string, error){
+		//app config is the based file ,it should read first
+		icb.ReadOrBuildAppConfig,
 		icb.ReadImageContent,
 		icb.ReadReadme,
-		icb.ReadActions,
 	}
 	for _, f := range fileReadPipeLine {
-		if err := f(MountPoint); err != nil {
+		if out, err := f(MountPoint); err != nil {
 			errl.Add(err)
+		} else {
+			logger.Info(out)
 		}
 	}
 	return errl.Err()
 }
 
 func (icb *ImageCRDBuilder) AppContentApply() error {
+	//TODO: use user private kubeconfig rather than global kubeconfig
 	client, err := kubernetes.NewKubernetesClient("", "")
 	if err != nil {
 		return fmt.Errorf("new KubernetesClient err: %v", err)
@@ -177,6 +237,7 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 			return fmt.Errorf("image update err : %v", err)
 		}
 	}
+	logger.Info("Success image apply")
 	return nil
 }
 
@@ -185,20 +246,33 @@ func (icb *ImageCRDBuilder) DeleteContainer() error {
 	if err != nil {
 		return fmt.Errorf("deleteContainer err : %v", err)
 	}
-	return realImpl.Delete(icb.imagename)
+	return realImpl.Delete(icb.clustername)
 }
 
-func (icb *ImageCRDBuilder) ReadAppConfig(MountPoint string) error {
+func (icb *ImageCRDBuilder) ReadOrBuildAppConfig(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, AppPath, ConfigFileName)) {
+		//if app base config find
 		c, err := file.ReadAll(filepath.Join(MountPoint, AppPath, ConfigFileName))
 		if err != nil {
-			return fmt.Errorf("read config.yaml err: %v", err)
+			return "", fmt.Errorf("read config.yaml err: %v", err)
 		}
 		if err = icb.ConfigParse(c); err != nil {
-			return fmt.Errorf("readAppConfig : %v", err)
+			return "", fmt.Errorf("readAppConfig : %v", err)
 		}
+	} else {
+		//if app base config not find
+		//image name which contains "/" and ":" couldn't be used in meta name
+		MetaName := strings.Replace(icb.imagename, ":", ".", -1)
+		MetaName = strings.Replace(MetaName, "/", ".", -1)
+		c := imagev1.Image{
+			TypeMeta:   metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)},
+			ObjectMeta: metav1.ObjectMeta{Name: MetaName},
+			Spec:       imagev1.ImageSpec{Name: imagev1.ImageName(icb.imagename)},
+			Status:     imagev1.ImageStatus{},
+		}
+		icb.AppConfig = &c
 	}
-	return nil
+	return ReadOrBuildAppConfigOutput, nil
 }
 
 func (icb *ImageCRDBuilder) ConfigParse(c []byte) error {
@@ -212,36 +286,36 @@ func (icb *ImageCRDBuilder) ConfigParse(c []byte) error {
 	return nil
 }
 
-func (icb *ImageCRDBuilder) ReadReadme(MountPoint string) error {
+func (icb *ImageCRDBuilder) ReadReadme(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := file.ReadAll(filepath.Join(MountPoint, READMEpath))
 		if err != nil {
-			return fmt.Errorf("read README.md err: %v", err)
+			return "", fmt.Errorf("read README.md err: %v", err)
 		}
 		icb.AppConfig.Spec.DetailInfo.Description = string(c)
 	}
-	return nil
+	return ReadReadmeOutput, nil
 }
 
-func (icb *ImageCRDBuilder) ReadImageContent(MountPoint string) error {
+func (icb *ImageCRDBuilder) ReadImageContent(MountPoint string) (string, error) {
 	realImpl, err := New("")
 	if err != nil {
-		return fmt.Errorf("deleteContainer err : %v", err)
+		return "", fmt.Errorf("deleteContainer err : %v", err)
 	}
-	containerInfo, err := realImpl.InspectContainer(icb.imagename)
+	containerInfo, err := realImpl.InspectContainer(icb.clustername)
 	if err != nil {
-		return fmt.Errorf("readImageContent InspectImage err : %v", err)
+		return "", fmt.Errorf("readImageContent InspectImage err : %v", err)
 	}
 	var config v1.Image
 	if err = json.Unmarshal([]byte(containerInfo.Config), &config); err != nil {
-		return fmt.Errorf("get image config err : %v", err)
+		return "", fmt.Errorf("get image config err : %v", err)
 	}
 	var manifest v1.Manifest
 	if err = json.Unmarshal([]byte(containerInfo.Manifest), &manifest); err != nil {
-		return fmt.Errorf("get image config err : %v", err)
+		return "", fmt.Errorf("get image config err : %v", err)
 	}
 	icb.BindImageContent(containerInfo, config, manifest)
-	return nil
+	return ReadImageContentOutput, nil
 }
 
 func (icb *ImageCRDBuilder) BindImageContent(containerInfo buildah.BuilderInfo, config v1.Image, manifest v1.Manifest) {
@@ -253,52 +327,4 @@ func (icb *ImageCRDBuilder) BindImageContent(containerInfo buildah.BuilderInfo, 
 		size += layer.Size
 	}
 	icb.AppConfig.Spec.DetailInfo.Size = size
-}
-
-// ReadActions read all action in /app dir
-func (icb *ImageCRDBuilder) ReadActions(MountPoint string) error {
-	if file.IsExist(filepath.Join(MountPoint, AppPath)) {
-		fileEntrys, err := os.ReadDir(filepath.Join(MountPoint, AppPath))
-		if err != nil {
-			return fmt.Errorf("read actions in app dir err: %v ", err)
-		}
-		for _, f := range fileEntrys {
-			if !f.IsDir() {
-				continue
-			}
-			if _, isExist := icb.AppConfig.Spec.DetailInfo.Actions[f.Name()]; isExist {
-				logger.Warn("action name repeat")
-			}
-			icb.AppConfig.Spec.DetailInfo.Actions[f.Name()], err = icb.ReadTemplateAndCmd(MountPoint, f.Name())
-			if err != nil {
-				return fmt.Errorf("read action : %v err: %v ", filepath.Join(MountPoint, AppPath, f.Name()), err)
-			}
-		}
-	}
-	return nil
-}
-
-// ReadTemplateAndCmd read template and cmd yaml file in target action dir
-func (icb *ImageCRDBuilder) ReadTemplateAndCmd(MountPoint string, actionName string) (imagev1.Action, error) {
-	actioncontent := imagev1.Action{
-		Name:     actionName,
-		Template: "",
-		CMD:      "",
-	}
-	fileEntrys, err := os.ReadDir(filepath.Join(MountPoint, AppPath, actionName))
-	if err != nil {
-		return imagev1.Action{}, fmt.Errorf("read path: %v err: %v", filepath.Join(MountPoint, AppPath), err)
-	}
-	var byt []byte
-	for _, f := range fileEntrys {
-		if f.Name() == TemplateFileName {
-			byt, _ = file.ReadAll(filepath.Join(MountPoint, AppPath, actionName, f.Name()))
-			actioncontent.Template = string(byt)
-		}
-		if f.Name() == CMDFileName {
-			byt, _ = file.ReadAll(filepath.Join(MountPoint, AppPath, actionName, f.Name()))
-			actioncontent.CMD = string(byt)
-		}
-	}
-	return actioncontent, nil
 }
