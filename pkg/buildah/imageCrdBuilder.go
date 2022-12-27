@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/openconfig/gnmi/errlist"
@@ -47,11 +48,15 @@ const (
 	AppPath          = "app"
 	READMEpath       = "README.md"
 	ConfigFileName   = "config.yaml"
+	authjsonPath     = "containers/auth.json"
 	TemplateFileName = "template.yaml"
 	CMDFileName      = "CMD"
 	ImagehubGroup    = "imagehub.sealos.io"
 	ImagehubVersion  = "v1"
 	ImagehubResource = "images"
+	ImagehubKind     = "Image"
+	ImagehubUrl      = "hub.sealos.cn"
+	XDG_RUNTIME_DIR  = "XDG_RUNTIME_DIR"
 )
 
 type ImageCRDBuilder struct {
@@ -63,9 +68,26 @@ type ImageCRDBuilder struct {
 func NewAndRunImageCRDBuilder(args []string, iopts *pushOptions) {
 	//run without error returns
 	icb := &ImageCRDBuilder{args[0], "", &imagev1.Image{}}
-	if iopts.imagecrd {
+	if strings.Contains(icb.imagename, ImagehubUrl) && CheckLoginStatus() {
 		icb.Run()
 	}
+}
+
+func CheckLoginStatus() bool {
+	//var path string
+	//if path = os.Getenv(XDG_RUNTIME_DIR); path == "" {
+	//	return false
+	//}
+	//encodeAuth, err := file.ReadAll(filepath.Join(path, authjsonPath))
+	//if err != nil {
+	//	return false
+	//}
+	//var dockerconfig config.dockerConfigFile
+	//configStruct := json.Unmarshal()
+	//
+	//auth, err := base64.StdEncoding.DecodeString(string(encodeAuth))
+	return false
+
 }
 
 func (icb *ImageCRDBuilder) Run() {
@@ -93,12 +115,10 @@ func (icb *ImageCRDBuilder) Run() {
 func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	clusterName := icb.imagename + strconv.Itoa(rnd.Int())
-
 	realImpl, err := New("")
 	if err != nil {
 		return "", err
 	}
-
 	builderInfo, err := realImpl.Create(clusterName, icb.imagename)
 	if err != nil {
 		return "", err
@@ -126,13 +146,15 @@ The template and cmd of the action are stored in the folder named after the acti
 
 // GetAppContent do content read in filereadPipeline, if one content get failed ,it won't abort.
 func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
-	//app config is the based file ,it should read first
-	if err := icb.ReadAppConfig(MountPoint); err != nil {
-		return fmt.Errorf("base config cant find")
-	}
+
+	//if err := icb.ReadAppConfig(MountPoint); err != nil {
+	//	return fmt.Errorf("base config cant find")
+	//}
 	var errl errlist.List
 	//Using a pipe helps with future file reading needs
 	fileReadPipeLine := []func(MountPoint string) error{
+		//app config is the based file ,it should read first
+		icb.ReadOrBuildAppConfig,
 		icb.ReadImageContent,
 		icb.ReadReadme,
 		icb.ReadActions,
@@ -188,8 +210,9 @@ func (icb *ImageCRDBuilder) DeleteContainer() error {
 	return realImpl.Delete(icb.imagename)
 }
 
-func (icb *ImageCRDBuilder) ReadAppConfig(MountPoint string) error {
+func (icb *ImageCRDBuilder) ReadOrBuildAppConfig(MountPoint string) error {
 	if file.IsExist(filepath.Join(MountPoint, AppPath, ConfigFileName)) {
+		//if app base config find
 		c, err := file.ReadAll(filepath.Join(MountPoint, AppPath, ConfigFileName))
 		if err != nil {
 			return fmt.Errorf("read config.yaml err: %v", err)
@@ -197,6 +220,19 @@ func (icb *ImageCRDBuilder) ReadAppConfig(MountPoint string) error {
 		if err = icb.ConfigParse(c); err != nil {
 			return fmt.Errorf("readAppConfig : %v", err)
 		}
+	} else {
+		//if app base config not find
+		//image name which contains "/" and ":" can't be used in meta name
+		MetaName := strings.Replace(icb.imagename, ":", ".", -1)
+		MetaName = strings.Replace(MetaName, "/", ".", -1)
+		c := imagev1.Image{
+			TypeMeta:   metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)},
+			ObjectMeta: metav1.ObjectMeta{Name: MetaName},
+			Spec:       imagev1.ImageSpec{Name: imagev1.ImageName(icb.imagename)},
+			Status:     imagev1.ImageStatus{},
+		}
+		icb.AppConfig = &c
+		fmt.Println(c)
 	}
 	return nil
 }
