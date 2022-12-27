@@ -14,12 +14,12 @@
 
 package checker
 
-// nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
-	"text/template"
+
+	"github.com/labring/sealos/pkg/template"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -85,17 +85,12 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 	if err != nil {
 		return err
 	}
-	if notReadyCount != 0 {
-		return fmt.Errorf("check node %v not ready", notReadyNodeList)
-	}
 	return nil
 }
 
 func (n *NodeChecker) Output(nodeCLusterStatus NodeClusterStatus) error {
-	//t1, err := template.ParseFiles("templates/node_checker.tpl")
-	t := template.New("node_checker")
-	t, err := t.Parse(
-		`Cluster Node Status
+	tpl, isOk, err := template.TryParse(`
+Cluster Node Status
   ReadyNode: {{ .ReadyCount }}/{{ .NodeCount }}
   {{ if (gt .NotReadyCount 0 ) -}}
   Not Ready Node List:
@@ -104,13 +99,14 @@ func (n *NodeChecker) Output(nodeCLusterStatus NodeClusterStatus) error {
     {{- end }}
   {{ end }}
 `)
-	if err != nil {
-		panic(err)
+	if err != nil || !isOk {
+		if err != nil {
+			logger.Error("failed to render node checkers template. error: %s", err.Error())
+			return err
+		}
+		return errors.New("convert node template failed")
 	}
-	t = template.Must(t, err)
-	err = t.Execute(os.Stdout, nodeCLusterStatus)
-	if err != nil {
-		logger.Error("node checkers template can not excute %s", err)
+	if err = tpl.Execute(os.Stdout, nodeCLusterStatus); err != nil {
 		return err
 	}
 	return nil

@@ -139,7 +139,7 @@ evictionPressureTransitionPeriod: 5m0s
 failSwapOn: true
 fileCheckFrequency: 20s
 hairpinMode: promiscuous-bridge
-healthzBindAddress: 127.0.0.1
+healthzBindAddress: 0.0.0.0
 healthzPort: 10248
 httpCheckFrequency: 20s
 imageGCHighThresholdPercent: 85

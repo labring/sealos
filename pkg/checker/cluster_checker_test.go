@@ -27,7 +27,7 @@ func TestGenerateAll(t *testing.T) {
 		KubeAPIServer:         "Running",
 		KubeControllerManager: "Running",
 		KubeScheduler:         "Running",
-		KubeletErr:            "<nil>",
+		KubeletErr:            Nil,
 	})
 	data = append(data, ClusterStatus{
 		IP:                    "2.2.2.2",
