@@ -33,6 +33,21 @@ $ sealos run hub.sealos.cn/labring/kubernetes:v1.24.0 hub.sealos.cn/labring/cali
 
 First, you should create an organization in sealos cloud imagehub application.
 
+You can edit and apply this yaml at sealos cloud terminal application:
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  name: your-organization-name
+spec:
+  name: your-organization-name # same as metadata.name
+  creator: your-uuid # find at sealos cloud page
+  manager: [ your-uuid ] # you can add other user as manager
+```
+
+**Notice that only managers in your organization can push image to sealos registry with this organization name**
+
 After that, you can tag your image with domain `hub.sealos.cn` and your organization name, than push it!
 
 ```shell
