@@ -27,6 +27,7 @@ const (
 const (
 	saPrefix                 = "system:serviceaccount"
 	mastersGroup             = "system:masters"
+	kubeSystemNamespace      = "kube-system"
 	defaultUserNamespace     = "user-system"
 	defaultImagehubNamespace = "imagehub-system"
 )
