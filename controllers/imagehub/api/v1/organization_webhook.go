@@ -19,6 +19,8 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -58,7 +60,9 @@ func (m OrgMutator) Default(ctx context.Context, obj runtime.Object) error {
 		organizationlog.Info("get request from context error when validate", "obj name", org.Name)
 		return err
 	}
-	org.Spec.Creator = req.UserInfo.Username
+	// only change user-system user creation
+	// get userName by replace "system:serviceaccount:user-system:labring-user-name" to "labring-user-name"
+	org.Spec.Creator = strings.Replace(req.UserInfo.Username, fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace()), "", -1)
 	org.Spec.Manager = append(org.Spec.Manager, org.Spec.Creator)
 	return nil
 }
