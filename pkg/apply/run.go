@@ -160,7 +160,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 			r.cluster.Spec.SSH.Passwd = args.SSH.Password
 		}
 	}
-
+	imageList, _ = r.cluster.NewImagesAndClusterUpgrade(imageList)
 	r.cluster.Spec.Image = append(r.cluster.Spec.Image, imageList...)
 
 	// set host when cluster is not yet initialized

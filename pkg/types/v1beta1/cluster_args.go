@@ -18,7 +18,10 @@ package v1beta1
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
+	"github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/maps"
 )
@@ -238,4 +241,52 @@ func (c *Cluster) GetRolesByIP(ip string) []string {
 		}
 	}
 	return routes
+}
+
+// distinguish the k8s image and other images
+// if cluster has not k8s image, do not change the imageList
+// if cluster already has k8s image, return the trimmed-k8sImage imageList and upgrade version.
+func (c *Cluster) NewImagesAndClusterUpgrade(imageList []string) (RunNewImages []string, ClusterUpgradeV [2]string) {
+	RunNewImages = imageList
+	//current image
+	imageCur := c.Spec.Image
+	//idxCur is the index of the current version k8s cluster image
+	idxCur, ClusterCurV := images.TrimClusterImageV(imageCur)
+	ClusterUpgradeV[0] = ClusterCurV
+	//no current cluster
+	if idxCur == len(imageCur) {
+		return
+	}
+	//new image
+	//idxNew is the index of the new version k8s cluster image
+	idxNew, ClusterNewV := images.TrimClusterImageV(imageList)
+	ClusterUpgradeV[1] = ClusterNewV
+	//no new cluster
+	if idxNew == len(imageList) {
+		return
+	}
+	//trim the k8s image.
+	RunNewImages = make([]string, 0, len(imageList))
+	RunNewImages = append(RunNewImages, imageList[:idxNew]...)
+	RunNewImages = append(RunNewImages, imageList[idxNew+1:]...)
+
+	//compare the version of kubernetes
+	CurVList := strings.Split(ClusterCurV, ".")
+	NewVList := strings.Split(ClusterNewV, ".")
+	for i := range CurVList {
+		//run newer version of kubernetes
+		//assure the version string could be convert into int,or it returns 0.
+		if StringToInt(CurVList[i]) < StringToInt(NewVList[i]) {
+			return
+		}
+	}
+	//ignore the same or older version of k8s
+	ClusterUpgradeV[1] = ""
+	return
+}
+
+// check whether s could be convert to int before use the func.
+func StringToInt(s string) int {
+	n, _ := strconv.Atoi(s)
+	return n
 }

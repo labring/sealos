@@ -28,6 +28,8 @@ import (
 	str "github.com/labring/sealos/pkg/utils/strings"
 )
 
+var ClusterImagePrefix = "labring/kubernetes:v"
+
 func LoadImages(imageDir string) ([]string, error) {
 	var imageList []string
 	if imageDir != "" && file.IsExist(imageDir) {
@@ -128,4 +130,21 @@ func normalizeTaggedDigestedNamed(named reference.Named) (reference.Named, error
 // prefix the specified name with "localhost/".
 func toLocalImageName(name string) string {
 	return "localhost/" + strings.TrimLeft(name, "/")
+}
+
+func TrimClusterImageV(imageList []string) (idx int, ClusterImageV string) {
+	ClusterIdx := len(imageList)
+	for i, image := range imageList {
+		if strings.HasPrefix(image, ClusterImagePrefix) {
+			ClusterIdx = i
+			break
+		}
+	}
+	//no k8s image
+	if ClusterIdx == len(imageList) {
+		return ClusterIdx, ""
+	}
+	ClusterImageV = strings.Trim(imageList[ClusterIdx], ClusterImagePrefix)
+	idx = ClusterIdx
+	return
 }

@@ -43,12 +43,21 @@ func NewDefaultApplier(cluster *v2.Cluster, cf clusterfile.Interface, images []s
 	if !cluster.CreationTimestamp.IsZero() && err != nil {
 		return nil, err
 	}
+	var RunNewImages []string
+	var ClusterUpgradeV [2]string
+	if cf.GetCluster() != nil {
+		//new images compared with current cluster images
+		RunNewImages, ClusterUpgradeV = cf.GetCluster().NewImagesAndClusterUpgrade(images)
+	} else {
+		RunNewImages = images
+	}
 
 	return &Applier{
-		ClusterDesired: cluster,
-		ClusterFile:    cf,
-		ClusterCurrent: cf.GetCluster(),
-		RunNewImages:   images,
+		ClusterDesired:  cluster,
+		ClusterFile:     cf,
+		ClusterCurrent:  cf.GetCluster(),
+		RunNewImages:    RunNewImages,
+		ClusterUpgradeV: ClusterUpgradeV,
 	}, nil
 }
 
@@ -71,6 +80,8 @@ type Applier struct {
 	Client             kubernetes.Client
 	CurrentClusterInfo *version.Info
 	RunNewImages       []string
+	//kubernetes version to upgrade; idx-0 is the current Cluster version,idx-1 is the newer Cluster version
+	ClusterUpgradeV [2]string
 }
 
 func (c *Applier) Apply() error {
@@ -136,6 +147,10 @@ func (c *Applier) updateStatus(err error) {
 func (c *Applier) reconcileCluster() error {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired)
+	//upgrade k8s version
+	if err := c.upgradeCluster(); err != nil {
+		return err
+	}
 	if len(c.RunNewImages) != 0 {
 		logger.Debug("run new images: %+v", c.RunNewImages)
 		if err := c.installApp(c.RunNewImages); err != nil {
@@ -144,9 +159,7 @@ func (c *Applier) reconcileCluster() error {
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	// if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
-	//	return c.upgrade()
-	// }
+
 	return c.scaleCluster(mj, md, nj, nd)
 }
 
@@ -230,5 +243,16 @@ func (c *Applier) deleteCluster() error {
 	}
 
 	logger.Info("succeeded in deleting current cluster")
+	return nil
+}
+
+func (c *Applier) upgradeCluster() error {
+	if c.ClusterUpgradeV[1] == "" {
+		logger.Info("no need to upgrade cluster.")
+		return nil
+	}
+	//upgrade process
+	logger.Info("begin to upgrade cluster version, from v%s to v%s.", c.ClusterUpgradeV[0], c.ClusterUpgradeV[1])
+
 	return nil
 }
