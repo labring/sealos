@@ -33,6 +33,21 @@ $ sealos run hub.sealos.cn/labring/kubernetes:v1.24.0 hub.sealos.cn/labring/cali
 
 首先， 你需要在sealos cloud imagehub应用中创建一个组织.
 
+你可以修改下面的yaml文件然后在sealos cloud terminal 应用中apply，就能创建你自己的组织
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  name: your-organization-name
+spec:
+  name: your-organization-name # same as metadata.name
+  creator: your-uuid # find at sealos cloud page
+  manager: [ your-uuid ] # you can add other user as manager
+```
+
+**注意只有组织的管理员可以推送镜像到sealos registry**
+
 之后， 你就能使用域名 `hub.sealos.cn` 和你创建的组织名 tag 你的镜像， 然后推送到sealos registry！
 
 ```shell
