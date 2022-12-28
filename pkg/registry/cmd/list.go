@@ -63,13 +63,13 @@ func NewRegistryImageCmd() *cobra.Command {
 
 	registryImageCmd.PersistentFlags().StringVarP(&registryName, "name", "n", "sealos.hub:5000", "registry name")
 
-	registryImageCmd.AddCommand(NewRegistryListImageCmd(registryName))
-	registryImageCmd.AddCommand(NewRegistryImageRmiCmd(registryName))
+	registryImageCmd.AddCommand(NewRegistryListImageCmd())
+	registryImageCmd.AddCommand(NewRegistryImageRmiCmd())
 
 	return registryImageCmd
 }
 
-func NewRegistryListImageCmd(registryName string) *cobra.Command {
+func NewRegistryListImageCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		cfg, err := registry.GetAuthInfo()
 		if err != nil {
@@ -80,13 +80,14 @@ func NewRegistryListImageCmd(registryName string) *cobra.Command {
 	}
 	var auth map[string]types.AuthConfig
 	var is registry.Registry
+	flagsResults := imagesResults{}
 	var registryImageListCmd = &cobra.Command{
 		Use:     "list",
 		Short:   "registry list image",
 		Example: "sealctl registry image list",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			is.ListImages(registryName, registryName)
+			is.ListImages(flagsResults.registryName, flagsResults.filter)
 			return nil
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
@@ -94,6 +95,8 @@ func NewRegistryListImageCmd(registryName string) *cobra.Command {
 			is = registry.NewImage(auth)
 		},
 	}
-
+	flags := registryImageListCmd.Flags()
+	flags.SetInterspersed(false)
+	flagsResults.RegisterFlags(flags)
 	return registryImageListCmd
 }

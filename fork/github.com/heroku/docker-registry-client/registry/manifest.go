@@ -2,6 +2,7 @@ package registry
 
 import (
 	"bytes"
+	"github.com/containers/image/v5/manifest"
 	"io"
 	"net/http"
 
@@ -49,8 +50,14 @@ func (registry *Registry) ManifestV2(repository, reference string) (*schema2.Des
 	if err != nil {
 		return nil, err
 	}
-
-	req.Header.Set("Accept", schema2.MediaTypeManifest)
+	headers := map[string][]string{
+		"Accept": manifest.DefaultRequestedManifestMIMETypes,
+	}
+	for n, h := range headers {
+		for _, hh := range h {
+			req.Header.Add(n, hh)
+		}
+	}
 	resp, err := registry.Client.Do(req)
 	if err != nil {
 		return nil, err
@@ -74,12 +81,21 @@ func (registry *Registry) ManifestDigest(repository, reference string) (digest.D
 	url := registry.url("/v2/%s/manifests/%s", repository, reference)
 	registry.Logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
 
-	resp, err := registry.Client.Head(url)
-	//req, _ := http.NewRequest("HEAD", url, nil)
-	//req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-	//resp, err := registry.Client.Do(req)
-	if resp != nil {
-		defer resp.Body.Close()
+	req, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return "", err
+	}
+	headers := map[string][]string{
+		"Accept": manifest.DefaultRequestedManifestMIMETypes,
+	}
+	for n, h := range headers {
+		for _, hh := range h {
+			req.Header.Add(n, hh)
+		}
+	}
+	resp, err := registry.Client.Do(req)
+	if err != nil {
+		return "", err
 	}
 	if err != nil {
 		return "", err

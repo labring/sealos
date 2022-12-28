@@ -12,7 +12,6 @@ func (registry *Registry) Repositories() ([]string, error) {
 	var response repositoriesResponse
 	//var last string
 	for {
-		url = registry.URL + url
 		registry.Logf("registry.repositories url=%s", url)
 		url, err = registry.getPaginatedJSON(url, &response)
 		switch err {
