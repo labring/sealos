@@ -741,7 +741,7 @@ func manifestInspectCmd(c *cobra.Command, args []string, opts manifestInspectOpt
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-
+	setDefaultSystemContext(systemContext)
 	return manifestInspect(getContext(), store, systemContext, imageSpec)
 }
 
@@ -878,7 +878,7 @@ func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-
+	setDefaultSystemContext(systemContext)
 	return manifestPush(systemContext, store, listImageSpec, destSpec, opts)
 }
 

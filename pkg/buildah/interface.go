@@ -49,6 +49,7 @@ func New(id string) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
+	setDefaultSystemContext(systemContext)
 	return &realImpl{
 		id:            id,
 		store:         store,
