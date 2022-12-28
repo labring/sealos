@@ -1,3 +1,4 @@
+import { Spinner } from '@fluentui/react-components';
 import { MoreHorizontal24Regular, Navigation20Filled } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -23,12 +24,12 @@ function FrontPage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [scpStatus, setScpStatus] = useState('Pending');
 
-  const { data: scpLists } = useQuery(
+  const { data: scpLists, isLoading } = useQuery(
     ['getAwsAll'],
     async () => {
       const res = await request.post('/api/infra/awsGetAll', { kubeconfig });
       let allReady = res.data.items?.every((item: InfraInfo) => {
-        return item.status.status === 'Running';
+        return item?.status?.status === 'Running';
       });
       if (allReady) {
         setScpStatus('Running');
@@ -45,7 +46,15 @@ function FrontPage() {
     const res = await request.post('/api/infra/getAllCluster', { kubeconfig });
     return res;
   });
-  // console.log(scpLists, clusterLists, 'frontpage');
+
+  const getClusterStatus = (infraName: string) => {
+    const cluster = clusterLists?.data?.items.find(
+      (item: InfraInfo) => item.metadata.name === infraName
+    );
+    return cluster ? cluster?.status?.status : 'Pending';
+  };
+
+  // console.log(scpLists, clusterLists, isLoading, 'frontpage');
 
   return (
     <div className={clsx(styles.appWrap, 'flex h-full flex-col grow')}>
@@ -62,6 +71,11 @@ function FrontPage() {
           创建集群
         </button>
       </div>
+      {isLoading && (
+        <div className={'absolute inset-2/4'}>
+          <Spinner />
+        </div>
+      )}
       <div className={clsx(styles.pageWrapperScroll)}>
         {scpLists?.data?.items?.length > 0 && (
           <div className="space-y-6 w-full absolute box-border p-14 px-16 pt-6 mt-8">
@@ -83,7 +97,7 @@ function FrontPage() {
                       <span className={styles.title}>{item?.metadata?.name}</span>
                       <StatusComponent
                         infraStatus={item?.status?.status}
-                        clusterStatus={clusterLists?.data?.items[index]?.status?.status}
+                        clusterStatus={getClusterStatus(item.metadata.name)}
                       />
                     </div>
                     <div className="text-gray-500 text-xl pt-2 space-x-6">
