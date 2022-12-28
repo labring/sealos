@@ -94,6 +94,7 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
+	setDefaultSystemContext(systemContext)
 
 	name := args[0]
 

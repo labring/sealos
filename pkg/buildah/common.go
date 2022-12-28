@@ -81,6 +81,13 @@ func setDefaultFlagIfNotChanged(c *cobra.Command, k, v string) error {
 	return nil
 }
 
+// setDefaultSystemContext use only when tls-verify flag not present.
+func setDefaultSystemContext(sc *types.SystemContext) {
+	sc.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+	sc.OCIInsecureSkipTLSVerify = true
+	sc.DockerDaemonInsecureSkipTLSVerify = true
+}
+
 func bailOnError(err error, format string, a ...interface{}) { // nolint: golint,goprintffuncname
 	if err != nil {
 		if format != "" {
