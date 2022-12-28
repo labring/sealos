@@ -108,12 +108,13 @@ func (v *ImageValidator) ValidateDelete(ctx context.Context, obj runtime.Object)
 }
 
 // default userSaGroup: system:serviceaccounts:user-system
-var imagehubSaGroup, userSaGroup string
+var imagehubSaGroup, userSaGroup, kubeSystemGroup string
 
 func init() {
 	// notice: group is like: system:serviceaccounts:namespace-name
 	imagehubSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getImagehubNamespace())
 	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
+	kubeSystemGroup = fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Checker) error {
@@ -137,6 +138,9 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, i Che
 		// if user is kubernetes-admin, pass it.
 		case mastersGroup:
 			logger.Info("pass for kubernetes-admin")
+			return nil
+		case kubeSystemGroup:
+			logger.Info("pass for kube-system")
 			return nil
 		case imagehubSaGroup:
 			logger.Info("pass for imagehub controller service account")
