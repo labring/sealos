@@ -117,14 +117,14 @@ func init() {
 func DefaultResourceQuota() corev1.ResourceList {
 	return corev1.ResourceList{
 		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
-		corev1.ResourceLimitsCPU: resource.MustParse("10000"),
+		corev1.ResourceLimitsCPU: resource.MustParse("16"),
 		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
-		corev1.ResourceLimitsMemory: resource.MustParse("10000Gi"),
+		corev1.ResourceLimitsMemory: resource.MustParse("64Gi"),
 		//For all PVCs, the total demand for storage resources cannot exceed this value
-		corev1.ResourceRequestsStorage: resource.MustParse("100000Gi"),
+		corev1.ResourceRequestsStorage: resource.MustParse("100Gi"),
 		//"limit.storage": resource.MustParse("100Gi"),
 		//Local ephemeral storage
-		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100000Gi"),
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100Gi"),
 		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
 	}
 }

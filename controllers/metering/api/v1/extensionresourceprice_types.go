@@ -21,10 +21,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	ExtensionResourcePricePrefix = "extensionresourceprice-"
-)
-
 // ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
 type ExtensionResourcePriceSpec struct {
 	ResourceName string                            `json:"resourceName,omitempty"`

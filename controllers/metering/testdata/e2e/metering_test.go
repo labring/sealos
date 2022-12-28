@@ -25,7 +25,7 @@ const (
 var MeteringSystemNamespace string
 
 func init() {
-	MeteringSystemNamespace = os.Getenv(controllers.METERINGNAMESPACEENV)
+	MeteringSystemNamespace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
 	if MeteringSystemNamespace == "" {
 		MeteringSystemNamespace = "metering-system"
 	}
@@ -42,7 +42,7 @@ func TestMetering(t *testing.T) {
 			time.Sleep(time.Second * 3)
 
 			t.Log("ensure metering is created")
-			_, err := api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			_, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("failed to get metering: %v", err)
 			}
@@ -53,7 +53,7 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("failed to delete namespace: %v", err)
 			}
 			time.Sleep(time.Second)
-			_, err = api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			_, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err == nil {
 				t.Fatalf("success get metering: %v", err)
 			}
@@ -64,7 +64,7 @@ func TestMetering(t *testing.T) {
 			t.Log("create metering  ")
 			baseapi.EnsureNamespace(TestNamespace)
 			time.Sleep(time.Second * 3)
-			metering, err := api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("success get metering: %v", err)
 			}
@@ -73,9 +73,9 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("metering spec.Resources should not have cpu")
 			}
 			t.Log("create extensionResourcePrice  ")
-			baseapi.CreateCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(controllers.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
+			baseapi.CreateCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
 			time.Sleep(time.Second)
-			metering, err = api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			metering, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("success get metering: %v", err)
 			}
@@ -89,11 +89,11 @@ func TestMetering(t *testing.T) {
 			baseapi.EnsureNamespace(TestNamespace)
 			time.Sleep(5 * time.Second)
 			t.Log("creat pod controller")
-			api.CreatePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 
 			time.Sleep(5 * time.Second)
 			t.Log("ensure extension resource is created")
-			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(controllers.PodResourcePricePrefix))
+			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix))
 			if err != nil {
 				t.Fatalf("failed to get extension resource: %v", err)
 			}
@@ -128,13 +128,13 @@ func TestMetering(t *testing.T) {
 		})
 
 		t.Run("metering used update and calculate should be ok", func(t *testing.T) {
-			api.EnsurePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			time.Sleep(time.Second * 5)
 			baseapi.EnsureNamespace(TestNamespace)
 			api.EnsurePod(TestNamespace, PodName)
 			time.Sleep(time.Second * 5)
 
-			metering, err := api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
@@ -142,28 +142,23 @@ func TestMetering(t *testing.T) {
 			if _, ok := metering.Spec.Resources["cpu"]; !ok {
 				t.Fatalf("not fount cpu resource info in metering ")
 			}
-			//t.Log(" metering resource used update should be ok")
-			//metering, err = api.EnsureMeteringUsed(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace, 90)
-			//if err != nil {
-			//	t.Fatalf("failed to get metering used: %v", err)
-			//}
-			//t.Log("metering.Spec.Resources", metering.Spec.Resources)
+
 			t.Log("metering calculate should be ok")
-			metering, err = api.EnsureMeteringCalculate(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace, 90)
+			metering, err = api.EnsureMeteringCalculate(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace, 90)
 			if err != nil {
 				t.Fatalf("metering calculate failer: %v,calculate: %v", err, metering)
 			}
 		})
 
 		t.Run("metering create accountBalance should be ok", func(t *testing.T) {
-			api.EnsurePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			time.Sleep(time.Second * 2)
 			baseapi.EnsureNamespace(TestNamespace)
 			api.EnsurePod(TestNamespace, PodName)
 			time.Sleep(time.Second * 2)
 
 			t.Log("ensure accountBalance is created")
-			metering, err := api.GetMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
@@ -224,17 +219,17 @@ func clear() {
 		log.Println(err)
 	}
 
-	err = api.DeleteMetering(MeteringSystemNamespace, controllers.MeteringPrefix+TestNamespace)
+	err = api.DeleteMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 	if err != nil {
 		log.Println(err)
 	}
 
-	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(controllers.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
+	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
 	if err != nil {
 		log.Println(err)
 	}
 
-	err = api.DeletePodController(MeteringSystemNamespace, controllers.PodResourcePricePrefix)
+	err = api.DeletePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 	if err != nil {
 		log.Println(err)
 	}
@@ -244,7 +239,7 @@ func clear() {
 		log.Println(err)
 	}
 
-	if err = api.DeleteExtensionResourcePrice(MeteringSystemNamespace, controllers.PodResourcePricePrefix); err != nil {
+	if err = api.DeleteExtensionResourcePrice(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix); err != nil {
 		log.Println(err)
 	}
 
@@ -261,7 +256,7 @@ func clear() {
 			log.Println(err)
 		}
 
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, "", "cpu", int64(i)), api.ResourceYaml); err != nil {
+		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, "", "storage", int64(i)), api.ResourceYaml); err != nil {
 			log.Println(err)
 		}
 

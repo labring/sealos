@@ -23,7 +23,7 @@ ESSD云盘20GiBPL1  0.042/小时
 
 ## **一、背景**
 
-sealos cloud是一个多租户的，以k8s为内核的云操作系统，传统的资源隔离级别是虚拟机，而sealos cloud的资源隔离级别是namespace，每个用户都至少有一个自己的namespace用来使用，这样就给怎么计费带来挑战。怎么样计费k8s中 用户使用的cpu、memory等资源？怎么样计费流量等 metering 不可见的资源。
+sealos cloud 是一个多租户的，以 k8s 为内核的云操作系统，每个用户都至少有一个自己的 namespace 用来使用，这样就给怎么计费带来挑战。怎么样计费 k8s 中 用户使用的 cpu、memory 等资源？怎么样计费流量等 Metering 不可见的资源。
 
 ## 二、需求
 

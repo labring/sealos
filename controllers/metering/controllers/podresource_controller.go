@@ -37,10 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	PodResourcePricePrefix = "sealos-pod-controller"
-)
-
 // PodResourceReconciler reconciles a PodResource object
 type PodResourceReconciler struct {
 	client.Client
@@ -84,7 +80,7 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 	extensionResourcesPrice := &meteringv1.ExtensionResourcePrice{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.MeteringSystemNameSpace,
-			Name:      meteringv1.ExtensionResourcePricePrefix + PodResourcePricePrefix,
+			Name:      meteringv1.ExtensionResourcePricePrefix + meteringv1.PodResourcePricePrefix,
 		},
 	}
 
@@ -128,7 +124,7 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 
 		// storage resource not in pod container, so need to get it from resource quota
 		resourceQuota := v1.ResourceQuota{}
-		if err := r.Get(ctx, client.ObjectKey{Name: ResourceQuotaPrefix + pod.Namespace, Namespace: pod.Namespace}, &resourceQuota); err != nil {
+		if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + pod.Namespace, Namespace: pod.Namespace}, &resourceQuota); err != nil {
 			return err
 		}
 		//r.Logger.V(1).Info("resourceQuota", "resourceQuota", resourceQuota)
@@ -216,10 +212,10 @@ func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName,
 
 func GetResourceName(namespaceName, podName string, containerName string, resourceName v1.ResourceName, seqID int64) string {
 	if containerName == "" {
-		return fmt.Sprintf("%s-%s-%s-%s-%v", namespaceName, PodResourcePricePrefix, podName, resourceName, seqID)
+		return fmt.Sprintf("%s-%s-%s-%s-%v", namespaceName, meteringv1.PodResourcePricePrefix, podName, resourceName, seqID)
 	}
 
-	return fmt.Sprintf("%s-%s-%s-%s-%s-%v", namespaceName, PodResourcePricePrefix, podName, containerName, resourceName, seqID)
+	return fmt.Sprintf("%s-%s-%s-%s-%s-%v", namespaceName, meteringv1.PodResourcePricePrefix, podName, containerName, resourceName, seqID)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -227,9 +223,9 @@ func (r *PodResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "podResource-controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("reconcile podResource-controller")
-	r.MeteringSystemNameSpace = os.Getenv(METERINGNAMESPACEENV)
-	if os.Getenv(METERINGNAMESPACEENV) == "" {
-		r.MeteringSystemNameSpace = DEFAULTMETERINGNAMESPACE
+	r.MeteringSystemNameSpace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
+	if os.Getenv(meteringv1.METERINGNAMESPACEENV) == "" {
+		r.MeteringSystemNameSpace = meteringv1.DEFAULTMETERINGNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.PodResource{}).
