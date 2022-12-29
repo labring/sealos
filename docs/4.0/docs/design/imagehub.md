@@ -1,76 +1,192 @@
-# imagehub
+---
+sidebar_position: 6
+---
 
-## Function splitting
+# Imagehub
 
-Provide image hub functionality on the sealos cloud and on the sealos command line
+Based on kubernetes CRD, imagehub is application on sealos cloud to manage and display cluster images information.
 
-- p0 image hub basic presentation and CRUD functionality
-    - p0 baseInfo and user-supplied detailInfo display
-    - p0 search support, priority: repo name, keyword
-    - p1 Maintain a latest tag image for each repo by last upload time
-    - p2 Support for adding images to the cloud UI, providing a page for users to add images and DetailInfo
-    - p2 Support for modifying image info on cloud based on the original info of an image, based on the previous function
-    - p2 applyCRD when the user does not provide information such as imageID/imageArch, ~~ get the image information through buildah ~~
-- p0 support for sealos push image to generate imageDetailInfo based on the files in the image
-- p1 support imageCRD add/delete when border case of RepoCRD add/delete
-- p1 support for org creation, sharing, pull/push permissions for creator and binding users, and pull permissions for others; i.e. org<->user for n-to-n relationships
-- p2 image compatibility: when the image itself does not have README.md, sealos push image -o README.md parsing is supported, no need for developers to rebuild the image
-- p2 sealos search image, can be implemented using registry's _catalog interface (to be discussed)?
+## Imagehub CRD
 
-## image hub design
+imagehub has 4 types CRD.
 
-### CRD structure design and definition
+### Image
 
-Imitate the docker hub structure, using sealos push labring/mysql-op:v1 as an example
+Image will be generated from user image's readme file and will be automatically applied by sealos to imagehub CRD so
+that imagehub can display these information in sealos cloud.
 
-**Org up for tenant permission control (via k8s binding and access control), down for repository collections**
+Image's owner is being set to the repository for garbage collection.
 
-- "labring" Organization Org
-    - repositories list
+Image CRD has these elements:
 
-**Repo maintains image tag list, needs to support automatic determination of whether an image is empty/exists when it is added or deleted to create it**
+- labels:
+    - organization label
+    - repository label
+    - image tag label
+- spec:
+    - image name
+    - detail info
 
-- "mysql-op" repositories Repo
-    - tags list
+Here is an image cr example:
 
-**Img stores the image baseInfo and detailInfo, in the sealos push it will read the file in the image and load detailInfo, in the cluster CMD adding ImgCRD will need to be user defined**
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Image
+metadata:
+  labels:
+    organization.imagehub.sealos.io: labring
+    repository.imagehub.sealos.io: cert-manager
+    tag.imagehub.sealos.io: v1.8.0
+  name: labring.cert.manager.v1.8.0
+spec:
+  detail:
+    ID: Unknown
+    arch: Unknown
+    description: Cloud native certificate management. X.509 certificate management
+      for Kubernetes and OpenShift
+    docs: |
+      # cert-manager
 
-- "labring/mysql-op:v1" Image Img
-    - baseInfo
-        - name: org + repo + tag
-    - detailInfo
-        - docs: md file.
-        - keywords: srting list. used for searching in imagehub, needs to be added to the list
-        - icon: url. Currently only public URLs are supported, default icons are supported on the front end
-        - Description: string.
-        - URL: url.
-        - id: buildah inspect.
-        - arch: buildah inspect.
+      cert-manager adds certificates and certificate issuers as resource types in Kubernetes clusters, and simplifies the process of obtaining, renewing and using those certificates.
 
-### webhook & etc
+      It supports issuing certificates from a variety of sources, including Let's Encrypt (ACME), HashiCorp Vault, and Venafi TPP / TLS Protect Cloud, as well as local in-cluster issuance.
 
+      cert-manager also ensures certificates remain valid and up to date, attempting to renew certificates at an appropriate time before expiry to reduce the risk of outages and remove toil.
 
-## Mirror detailInfo related
+      ![cert-manager high level overview diagram](https://cert-manager.io/images/high-level-overview.svg)
 
-### Mirror file retrieval
+      ## Documentation
 
-- Fetched during sealos push, see mount and merge operations during sealos push
+      Documentation for cert-manager can be found at [cert-manager.io](https://cert-manager.io/docs/).
 
-### Mirror README.md convention
+      For the common use-case of automatically issuing TLS certificates for
+      Ingress resources, see the [cert-manager nginx-ingress quick start guide](https://cert-manager.io/docs/tutorials/acme/nginx-ingress/).
 
-- The README.md convention is placed under the OS root directory
+      For a more compressive guide to issuing your first certificate, see our [getting started guide](https://cert-manager.io/docs/getting-started/).
+    icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+    keywords:
+      - Storage
+  name: labring/cert-manager:v1.8.0
+```
 
-### User access to the sealos image hub process
+**Notice that some information in detail info is generated by sealos when pushing image to sealos
+registry: `hub.sealos.cn`, such as image hash, name, arch, etc...**
 
-- Login to register the cloud
-- Check hub token or pw
-- User command line execution: sealos login [hub.sealos.io](http://hub.sealos.io/) -u -p or -token
-    - Download kubeconf to ${workdir}/.sealos/
-- sealos push
-    - [parse README.md in image](http://xn--imagereadme-418q735xn00bcz8c.md/), get img detail
-    - client-go adds img crd using kubeconf
-- diffuse
-    - sealos search image
-    - image compatibility: support sealos push image -o README.md parsing when the image itself does not have README.md
+### Repository
 
-Translated with www.DeepL.com/Translator (free version)
+Repository is automatically generated after image cr creation, short name is `repo`, and its owner is the organization.
+Repository maintain image's common information and provide batter authority management in the future.
+
+Repository CRD has these element:
+
+- labels:
+    - organization label
+    - repository label
+    - keywords labels
+- spec:
+    - repository name
+- status:
+    - image tag list
+    - image latest tag
+
+Here is a repository cr example:
+
+```yaml
+  apiVersion: imagehub.sealos.io/v1
+  kind: Repository
+  metadata:
+    labels:
+      keyword.imagehub.sealos.io/Storage: ""
+      organization.imagehub.sealos.io: labring
+      repository.imagehub.sealos.io: cert-manager
+    name: labring.cert-manager
+  spec:
+    name: labring/cert-manager
+  status:
+    latestTag:
+      creatTime: "2022-12-27T07:33:08Z"
+      metaName: labring.cert.manager.v1.8.0
+      name: v1.8.0
+    tags:
+      - creatTime: "2022-12-27T07:37:34Z"
+        metaName: labring.cert.manager.v1.7.0
+        name: v1.7.0
+      - creatTime: "2022-12-27T07:33:08Z"
+        metaName: labring.cert.manager.v1.8.0
+        name: v1.8.0
+```
+
+### Organization
+
+Organization CRD is the
+
+### datapack
+
+Datapack provide data construct and package ability. It is not convenient to use kubernetes CRD directly, so we design
+datapack CRD to package data from different CRD with different information granularity.
+
+**Datapack Usage**
+
+There is two steps you need to do.
+
+- apply your datapack cr
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapackuid
+spec:
+  expireTime: 120m
+  names:
+  - labring/cert-manager:v1.8.0
+  type: detail
+```
+
+- get it until it's ready
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapackuid
+spec:
+  expireTime: 120m
+  names:
+  - labring/cert-manager:v1.8.0
+  type: detail
+status:
+  codes: 1
+  datas:
+    labring/cert-manager:v1.8.0:
+      ID: Unknown
+      arch: Unknown
+      description: Cloud native certificate management. X.509 certificate management
+        for Kubernetes and OpenShift
+      docs: |
+      icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+      keywords:
+      - Storage
+      name: labring/cert-manager:v1.8.0
+      tags:
+      - creatTime: "2022-12-27T07:37:34Z"
+        metaName: labring.cert.manager.v1.7.0
+        name: v1.7.0
+      - creatTime: "2022-12-27T07:33:08Z"
+        metaName: labring.cert.manager.v1.8.0
+        name: v1.8.0
+```
+
+**Notice that datapack cr will be expired and will be deleted after its expiration.**
+
+## Authority management
+
+### organization authority management based on kubernetes rbac
+
+### repository and image based on webhook
+
+# Sealos cli design
+
+## sealos login
+
+## sealos push
