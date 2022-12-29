@@ -1,0 +1,24 @@
+# permissions for end users to edit extensionresourceprices.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: extensionresourceprice-editor-role
+rules:
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourceprices/status
+  verbs:
+  - get

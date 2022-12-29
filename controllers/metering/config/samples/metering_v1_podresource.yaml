@@ -1,0 +1,28 @@
+apiVersion: metering.sealos.io/v1
+kind: PodResource
+metadata:
+  name: podresourceprice-sample
+  namespace: metering-system
+spec:
+  resourceName: pod
+  interval: 60
+  resources:
+    cpu:
+      unit: "10"
+      price: 67
+      describe: "cost per cpu per hour（price:100 = 1¥）"
+
+    memory:
+      unit: "10G"
+      price: 33
+      describe: "the cost per gigabyte of memory per hour（price:100 = 1¥）"
+
+    storage:
+      unit: "100G"
+      price:  21
+      describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
+
+    ephemeral-storage:
+      unit: "100G"
+      price: 21
+      describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"

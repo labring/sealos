@@ -39,12 +39,10 @@ spec:
             description: AccountStatus defines the observed state of Account
             properties:
               balance:
+                description: Recharge amount
                 format: int64
                 type: integer
               chargeList:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
                 items:
                   properties:
                     balance:
@@ -59,6 +57,10 @@ spec:
                       type: string
                   type: object
                 type: array
+              deductionBalance:
+                description: Deduction amount
+                format: int64
+                type: integer
             type: object
         type: object
     served: true

@@ -44,7 +44,12 @@ Query the Charging status Order, and get it status, if success, add the Amount t
 // namespace create by the user.
 
 type Charge struct {
-	Amount  int64       `json:"balance,omitempty"`
+	Amount int64 `json:"balance,omitempty"`
+
+	// deduction info will Record in the Charge
+	DeductionAmount    int64  `json:"deductionAmount,omitempty"`
+	AccountBalanceName string `json:"accountBalanceName"`
+
 	Time    metav1.Time `json:"time,omitempty"`
 	Status  string      `json:"status,omitempty"`
 	TradeNO string      `json:"tradeNO,omitempty"`
@@ -55,10 +60,12 @@ type AccountSpec struct{}
 
 // AccountStatus defines the observed state of Account
 type AccountStatus struct {
+	// Recharge amount
 	Balance int64 `json:"balance,omitempty"`
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	ChargeList []Charge `json:"chargeList,omitempty"`
+
+	//Deduction amount
+	DeductionBalance int64    `json:"deductionBalance,omitempty"`
+	ChargeList       []Charge `json:"chargeList,omitempty"`
 }
 
 //+kubebuilder:object:root=true

@@ -11,6 +11,81 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
+  name: extensionresourceprices.metering.sealos.io
+spec:
+  group: metering.sealos.io
+  names:
+    kind: ExtensionResourcePrice
+    listKind: ExtensionResourcePriceList
+    plural: extensionresourceprices
+    singular: extensionresourceprice
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: ExtensionResourcePrice is the Schema for the extensionresourceprices
+          API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
+            properties:
+              resourceName:
+                type: string
+              resources:
+                additionalProperties:
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
+                type: object
+            type: object
+          status:
+            description: ExtensionResourcePriceStatus defines the observed state of
+              ExtensionResourcePrice
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
   name: meterings.metering.sealos.io
 spec:
   group: metering.sealos.io
@@ -50,6 +125,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: MeteringSpec defines the desired state of Metering
             properties:
               namespace:
                 type: string
@@ -57,18 +133,38 @@ spec:
                 type: string
               resources:
                 additionalProperties:
-                  anyOf:
-                  - type: integer
-                  - type: string
-                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                  x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
                 type: object
+              timeInterval:
+                description: timeInterval unit is minutes
+                type: integer
             required:
             - namespace
             - owner
             type: object
           status:
+            description: MeteringStatus defines the observed state of Metering
             properties:
               billingListD:
                 items:
@@ -100,30 +196,171 @@ spec:
                       type: integer
                   type: object
                 type: array
-              billingListM:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
-                items:
-                  properties:
-                    amount:
-                      format: int64
-                      type: integer
-                    settled:
-                      type: boolean
-                    timeInterval:
-                      type: string
-                    timeStamp:
-                      format: int64
-                      type: integer
-                  type: object
-                type: array
               latestUpdateTime:
+                format: int64
+                type: integer
+              seqID:
                 format: int64
                 type: integer
               totalAmount:
                 format: int64
                 type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: podresources.metering.sealos.io
+spec:
+  group: metering.sealos.io
+  names:
+    kind: PodResource
+    listKind: PodResourceList
+    plural: podresources
+    singular: podresource
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: PodResource is the Schema for the podresources API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PodResourceSpec defines the desired state of PodResource
+            properties:
+              interval:
+                default: 50
+                description: update used resources every Interval minutes
+                minimum: 1
+                type: integer
+              resourceName:
+                type: string
+              resources:
+                additionalProperties:
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
+                type: object
+            type: object
+          status:
+            description: PodResourceStatus defines the observed state of PodResource
+            properties:
+              latestUpdateTime:
+                format: int64
+                type: integer
+              seqID:
+                format: int64
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.8.0
+  creationTimestamp: null
+  name: resources.metering.sealos.io
+spec:
+  group: metering.sealos.io
+  names:
+    kind: Resource
+    listKind: ResourceList
+    plural: resources
+    singular: resource
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Resource is the Schema for the resources API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ResourceSpec defines the desired state of Resource
+            properties:
+              resources:
+                additionalProperties:
+                  properties:
+                    namespace:
+                      type: string
+                    time:
+                      format: int64
+                      type: integer
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: object
+            type: object
+          status:
+            description: ResourceStatus defines the observed state of Resource
+            properties:
+              status:
+                type: string
             type: object
         type: object
     served: true
@@ -188,6 +425,66 @@ metadata:
   name: metering-manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - metering.sealos.io
   resources:
   - meterings
@@ -213,6 +510,56 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - resources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
+  - accountbalances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -368,12 +715,13 @@ spec:
         command:
         - /manager
         env:
-        - name: SEALOS_SYSTEM_NAMESPACE
+        - name: METERING_SYSTEM_NAMESPACE
           valueFrom:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
         image: ghcr.io/labring/sealos-metering-controller:dev
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
