@@ -1,74 +1,230 @@
-# imagehub
+---
+sidebar_position: 6
+---
 
-## 功能拆分
+# Imagehub
 
-在sealos cloud及sealos命令行上提供image hub功能
+基于 kubernetes CRD, imagehub 是在sealos cloud上管理和展示集群镜像信息的应用。
 
-- p0 image hub基本展示和CRUD功能
-    - p0 baseInfo及用户提供的detailInfo展示
-    - p0 支持搜索，优先级：repo name、keyword
-    - p1 按最后上传时间为每一个repo维护一个latest标签的image
-    - p2 支持cloud UI上增加image，提供一个页面方便用户添加image及DetailInfo
-    - p2 基于上一功能，支持cloud上基于某一个image原本info修改image info
-    - P2 applyCRD时 用户没有提供的信息比如 imageID/imageArch，~~通过buildah获取到镜像信息~~
-- p0 支持sealos push image基于image中的文件生成imageDetailInfo
-- p1 支持imageCRD增删时边界情况下的RepoCRD的增删
-- p1 支持org创建、共享，支持对creator与binding的user提供pull/push权限，其他提供pull权限；即org<->user为n对n关系
-- p2 image兼容: 在镜像本身没有README.md时, 支持 sealos push image -o README.md解析，不需要开发者重新构建镜像
-- p2 sealos search镜像,可以使用registry的_catalog接口实现（待讨论）?
+## Imagehub CRD
 
-## image hub 设计
+Imagehub 有四种CRD
 
-### CRD 结构设计与定义
+### Image
 
-仿照docker hub的结构设计，以sealos push labring/mysql-op:v1为例
+Image 是从用户镜像的 readme 文件中生成的，并会在推送集群镜像时由 sealos 命令行工具自动应用到 imagehub，这样在 sealos
+cloud 上 imagehub 就能展示这些信息。
 
-**Org向上实现租户权限控制(通过k8s binding及准入控制), 向下保存repository集合**
+Image 的 owner 被设置为它所在的repository，用于垃圾回收
 
-- "labring" Organization Org
-    - repositories list
+Image CRD有以下元素：
 
-**Repo维护image tag list，需要支持image增删时自动判断是否为空/存在进行删除创建**
+- labels:
+    - organization label
+    - repository label
+    - image tag label
+- spec:
+    - image name
+    - detail info
 
-- "mysql-op" repositories Repo
-    - tags list
+下面是一个image cr的例子
 
-**Img保存镜像baseInfo和detailInfo，在sealos push时会读取镜像中的文件加载detailInfo，在集群CMD中新增ImgCRD则需要用户自定义**
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Image
+metadata:
+  labels:
+    organization.imagehub.sealos.io: labring
+    repository.imagehub.sealos.io: cert-manager
+    tag.imagehub.sealos.io: v1.8.0
+  name: labring.cert.manager.v1.8.0
+spec:
+  detail:
+    ID: Unknown
+    arch: Unknown
+    description: Cloud native certificate management. X.509 certificate management
+      for Kubernetes and OpenShift
+    docs: |
+      # cert-manager
 
-- "labring/mysql-op:v1" Image Img
-    - baseInfo
-        - name: org + repo + tag
-    - detailInfo
-        - docs: md file.
-        - keywords: srting list. 在imagehub中做search用，需要加入到lable中
-        - icon: url. 目前仅支持公网URL，默认icon在前端支持
-        - Description: string.
-        - URL: url.
-        - id: buildah inspect.
-        - arch: buildah inspect.
+      cert-manager adds certificates and certificate issuers as resource types in Kubernetes clusters, and simplifies the process of obtaining, renewing and using those certificates.
 
-### webhook & etc
+      It supports issuing certificates from a variety of sources, including Let's Encrypt (ACME), HashiCorp Vault, and Venafi TPP / TLS Protect Cloud, as well as local in-cluster issuance.
 
+      cert-manager also ensures certificates remain valid and up to date, attempting to renew certificates at an appropriate time before expiry to reduce the risk of outages and remove toil.
 
-## 镜像detailInfo相关
+      ![cert-manager high level overview diagram](https://cert-manager.io/images/high-level-overview.svg)
 
-### 镜像文件获取
+      ## Documentation
 
-- 在sealos push时获取，具体参考sealos push时mount和merge操作
+      Documentation for cert-manager can be found at [cert-manager.io](https://cert-manager.io/docs/).
 
-### 镜像README.md约定
+      For the common use-case of automatically issuing TLS certificates for
+      Ingress resources, see the [cert-manager nginx-ingress quick start guide](https://cert-manager.io/docs/tutorials/acme/nginx-ingress/).
 
-- 约定README.md放在操作系统根目录下面
+      For a more compressive guide to issuing your first certificate, see our [getting started guide](https://cert-manager.io/docs/getting-started/).
+    icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+    keywords:
+      - Storage
+  name: labring/cert-manager:v1.8.0
+```
 
-# 用户使用sealos image hub 流程
+**注意：其中有些详情信息是由 sealos 命令行工具在用户推送镜像到 sealos registry： `hub.sealos.cn`时自动添加上去的，比如
+image hash、name、arch...**
 
-- 登录注册cloud
-- 查看hub token or pw
-- 用户命令行执行: sealos login [hub.sealos.io](http://hub.sealos.io/) -u -p or -token
-    - 下载kubeconf到${workdir}/.sealos/
-- sealos push
-    - [解析image中的README.md](http://xn--imagereadme-418q735xn00bcz8c.md/), 获取img detail
-    - client-go使用kubeconf添加img crd
-- 发散
-    - sealos search镜像
-    - image兼容: 在镜像本身没有README.md时, 支持 sealos push image -o README.md解析
+### Repository
+
+Repository 是在image cr创建后自动生成的，缩写是 `repo`，它的owner被设置为其所在的organization，同样用于垃圾回收。
+Repository 维护了image的共有信息，并且为未来提供了耕细粒度权限控制的基础。
+
+Repository CRD有以下元素
+
+- labels:
+    - organization label
+    - repository label
+    - keywords labels
+- spec:
+    - repository name
+- status:
+    - image tag list
+    - image latest tag
+
+下面是一个repository cr的例子
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Repository
+metadata:
+  labels:
+    keyword.imagehub.sealos.io/Storage: ""
+    organization.imagehub.sealos.io: labring
+    repository.imagehub.sealos.io: cert-manager
+  name: labring.cert-manager
+spec:
+  name: labring/cert-manager
+status:
+  latestTag:
+    creatTime: "2022-12-27T07:33:08Z"
+    metaName: labring.cert.manager.v1.8.0
+    name: v1.8.0
+  tags:
+    - creatTime: "2022-12-27T07:37:34Z"
+      metaName: labring.cert.manager.v1.7.0
+      name: v1.7.0
+    - creatTime: "2022-12-27T07:33:08Z"
+      metaName: labring.cert.manager.v1.8.0
+      name: v1.8.0
+```
+
+**注意：你不必去创建或者修改repository**
+
+### Organization
+
+Organization CRD 为用户提供了使用sealos registry的方法。用户可以创建 organization 然后 push 他们的 cluster image 到组织中。
+
+下面是创建organization的例子
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  name: organization-name
+spec:
+  name: organization-name
+  creator: your-user-uuid
+  manager: [ your-user-uuid ]
+```
+
+你可以不设置creator和manager，creator会被默认设置为你的uuid然后加入到manager中。
+
+**注意Organization的名称是大小写敏感的并且在sealos cloud上唯一**
+
+### Datapack
+
+Datapack 提供了数据构建和打包的能力：直接使用kubernetes CRD并不方便，因此我们设计了datapack CRD去从不同的CRD打包不同的数据。
+
+**Datapack 用法**
+
+你需要做下面两步：
+
+- apply datapack cr
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapackuid
+spec:
+  expireTime: 120m
+  names:
+    - labring/cert-manager:v1.8.0
+  type: detail
+```
+
+- 在其完成后 get datapack
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: DataPack
+metadata:
+  name: datapackuid
+spec:
+  expireTime: 120m
+  names:
+    - labring/cert-manager:v1.8.0
+  type: detail
+status:
+  codes: 1
+  datas:
+    labring/cert-manager:v1.8.0:
+      ID: Unknown
+      arch: Unknown
+      description: Cloud native certificate management. X.509 certificate management
+        for Kubernetes and OpenShift
+      docs: |
+      icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
+      keywords:
+        - Storage
+      name: labring/cert-manager:v1.8.0
+      tags:
+        - creatTime: "2022-12-27T07:37:34Z"
+          metaName: labring.cert.manager.v1.7.0
+          name: v1.7.0
+        - creatTime: "2022-12-27T07:33:08Z"
+          metaName: labring.cert.manager.v1.8.0
+          name: v1.8.0
+```
+
+**注意：datapack cr会在其过期后被删除**
+
+## 权限控制
+
+权限控制分为三部分
+
+### 基于 kubernetes rbac 的 organization 权限控制
+
+organization 权限控制是基于kubernetes rbac，在organzation reconcile过程中，会创建clusterrole、clusterrolebinding。
+
+### 基于 webhook 的 repository 和 image 权限控制
+
+repository 和 image 权限控制 是基于 validate webhook. 当用户创建/修改 repository 和 image时，validate
+webhook会判断用户是否是所在organization的manager。
+
+### 基于organzation CRD的镜像仓库权限管理
+
+镜像仓库权限管理是基于organzation CRD的，当用户尝试push、pull镜像仓库中的镜像时，registry auth server会用organzation
+CRD去判断用户是否有权限。
+
+# Sealos 命令行工具设计
+
+Sealos 命令行工具为了用户方便地使用imagehub和sealos registry做了一些修改
+
+## sealos login
+
+- 添加flag `-k`，意味着使用指定的kubeconfig登录registry
+- 保存kubeconfig到sealos 目录下，方便以后使用
+
+## sealos push
+
+- 判断push的镜像仓库是否是sealos registry
+- 如果是，从镜像中获取image cr的yaml并修改填充其中的部分字段然后使用kubeconfig apply到imagehub

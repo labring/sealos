@@ -12,8 +12,8 @@ imagehub has 4 types CRD.
 
 ### Image
 
-Image will be generated from user image's readme file and will be automatically applied by sealos to imagehub CRD so
-that imagehub can display these information in sealos cloud.
+Image will be generated from user image's readme file and will be automatically applied by sealos to imagehub CRD when
+user pushing cluster image to sealos registry so that imagehub can display these information in sealos cloud.
 
 Image's owner is being set to the repository for garbage collection.
 
@@ -92,29 +92,31 @@ Repository CRD has these element:
 Here is a repository cr example:
 
 ```yaml
-  apiVersion: imagehub.sealos.io/v1
-  kind: Repository
-  metadata:
-    labels:
-      keyword.imagehub.sealos.io/Storage: ""
-      organization.imagehub.sealos.io: labring
-      repository.imagehub.sealos.io: cert-manager
-    name: labring.cert-manager
-  spec:
-    name: labring/cert-manager
-  status:
-    latestTag:
-      creatTime: "2022-12-27T07:33:08Z"
+apiVersion: imagehub.sealos.io/v1
+kind: Repository
+metadata:
+  labels:
+    keyword.imagehub.sealos.io/Storage: ""
+    organization.imagehub.sealos.io: labring
+    repository.imagehub.sealos.io: cert-manager
+  name: labring.cert-manager
+spec:
+  name: labring/cert-manager
+status:
+  latestTag:
+    creatTime: "2022-12-27T07:33:08Z"
+    metaName: labring.cert.manager.v1.8.0
+    name: v1.8.0
+  tags:
+    - creatTime: "2022-12-27T07:37:34Z"
+      metaName: labring.cert.manager.v1.7.0
+      name: v1.7.0
+    - creatTime: "2022-12-27T07:33:08Z"
       metaName: labring.cert.manager.v1.8.0
       name: v1.8.0
-    tags:
-      - creatTime: "2022-12-27T07:37:34Z"
-        metaName: labring.cert.manager.v1.7.0
-        name: v1.7.0
-      - creatTime: "2022-12-27T07:33:08Z"
-        metaName: labring.cert.manager.v1.8.0
-        name: v1.8.0
 ```
+
+**Notice that you don't need to create/update repository**
 
 ### Organization
 
@@ -198,7 +200,7 @@ status:
 
 ## Authority management
 
-There are two parts of authority management.
+There are three parts of authority management.
 
 ### Organization authority management based on kubernetes rbac
 
