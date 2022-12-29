@@ -1,4 +1,6 @@
+import { Dialog, DialogSurface, Spinner } from '@fluentui/react-components';
 import { InputField } from '@fluentui/react-components/unstable';
+import { useMutation } from '@tanstack/react-query';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
 import Image from 'next/image';
@@ -19,6 +21,7 @@ const AddPage = () => {
   const [yamlTemplate, setYamlTemplate] = useState('');
   const [scpPrice, setScpPrice] = useState(0);
   const [inputNameErr, setInputNameErr] = useState(false);
+  const [isLoading, setIsloading] = useState(false);
   const oldInfraForm = useRef(null as any);
   const { currentApp, openedApps } = useAppStore();
   const curApp = openedApps.find((item) => item.name === currentApp?.name);
@@ -39,22 +42,45 @@ const AddPage = () => {
   };
   const [infraForm, dispatchInfraForm] = useReducer(infraReducer, initInfra);
 
-  const applyInfra = async () => {
-    const res = await request.post('/api/infra/awsApply', {
-      ...infraForm,
-      images: { image1, image2 },
-      kubeconfig
-    });
-    goFrontPage();
-  };
+  const applyInfraMutation = useMutation({
+    mutationFn: () => {
+      return request.post('/api/infra/awsApply', {
+        ...infraForm,
+        images: { image1, image2 },
+        kubeconfig
+      });
+    },
+    onSettled: () => {
+      setIsloading(false);
+      goFrontPage();
+    }
+  });
 
-  const applyCluster = async () => {
-    const clusterRes = await request.post('/api/infra/awsApplyCluster', {
-      ...infraForm,
-      kubeconfig,
-      images: { image1, image2 }
-    });
-  };
+  const applyClusterMutation = useMutation({
+    mutationFn: () => {
+      return request.post('/api/infra/awsApplyCluster', {
+        ...infraForm,
+        kubeconfig,
+        images: { image1, image2 }
+      });
+    },
+    onSettled: () => {}
+  });
+
+  const updateInfraMutation = useMutation({
+    mutationFn: () => {
+      return request.post('/api/infra/awsUpdate', {
+        ...infraForm,
+        kubeconfig,
+        images: { image1, image2 },
+        oldInfraForm: oldInfraForm.current
+      });
+    },
+    onSettled: () => {
+      setIsloading(false);
+      goFrontPage();
+    }
+  });
 
   const goFrontPage = () => {
     if (infraName) {
@@ -65,20 +91,12 @@ const AddPage = () => {
   };
 
   function handleBtnClick() {
+    setIsloading(true);
     if (infraName) {
-      const infraUpdate = async () => {
-        const res = await request.post('/api/infra/awsUpdate', {
-          ...infraForm,
-          kubeconfig,
-          images: { image1, image2 },
-          oldInfraForm: oldInfraForm.current
-        });
-      };
-      infraUpdate();
-      goFrontPage();
+      updateInfraMutation.mutate();
     } else {
-      applyInfra();
-      applyCluster();
+      applyInfraMutation.mutate();
+      applyClusterMutation.mutate();
     }
   }
 
@@ -191,7 +209,7 @@ const AddPage = () => {
             </div>
             <div className="flex mt-28  items-center space-x-8 justify-end  ">
               <div className={styles.moneyItem}>
-                ￥ <span className={styles.money}> {scpPrice} </span> /小时
+                ￥ <span className={styles.money}> {scpPrice.toFixed(2)} </span> /小时
               </div>
               <button className={styles.confirmBtn} onClick={handleBtnClick}>
                 {infraName ? '立即修改' : '立即创建'}
@@ -203,6 +221,14 @@ const AddPage = () => {
           </div>
         </div>
       </div>
+      <Dialog open={isLoading}>
+        <DialogSurface className={styles.customDialog}>
+          <div className="flex items-center justify-center">
+            <Image src="/images/infraicon/loading.gif" alt="infra" width={60} height={60} />
+            <div>创建中</div>
+          </div>
+        </DialogSurface>
+      </Dialog>
     </div>
   );
 };

@@ -29,8 +29,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     'c5.2xlarge': 296,
     'c6g.large': 59,
     'c6g.xlarge': 118,
-    gp2: 75,
-    gp3: 60
+    gp2: 75 / 30 / 24,
+    gp3: 60 / 30 / 24
   };
 
   const map = new Map(Object.entries(infra_price));

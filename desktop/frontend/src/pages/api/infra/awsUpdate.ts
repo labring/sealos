@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     masterDiskType
   });
   const oldInfraCRD = CRDTemplateBuilder(infraCRDTemplate, oldInfraForm);
-  console.log(infraCRD, oldInfraCRD);
+  // console.log(infraCRD, oldInfraCRD);
 
   let spec = await yaml.load(infraCRD);
   let oldSpec = await yaml.load(oldInfraCRD);
