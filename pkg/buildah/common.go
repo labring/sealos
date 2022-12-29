@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
@@ -70,6 +71,38 @@ func setDefaultTLSVerifyFlag(c *cobra.Command) error {
 
 func setDefaultPlatformFlag(c *cobra.Command) error {
 	return setDefaultFlagIfNotChanged(c, "platform", parse.DefaultPlatform())
+}
+
+func getArchFromFlag(c *cobra.Command) string {
+	arch, err := c.Flags().GetString("arch")
+	if err != nil {
+		return runtime.GOARCH
+	}
+	return arch
+}
+
+func getOSFromFlag(c *cobra.Command) string {
+	oss, err := c.Flags().GetString("os")
+	if err != nil {
+		return runtime.GOOS
+	}
+	return oss
+}
+
+func getVariantFromFlags(c *cobra.Command) string {
+	variant, err := c.Flags().GetString("variant")
+	if err != nil {
+		return ""
+	}
+	return variant
+}
+
+func getTagsFromFlags(c *cobra.Command) []string {
+	tag, err := c.Flags().GetStringArray("tag")
+	if err != nil {
+		return []string{}
+	}
+	return tag
 }
 
 func setDefaultFlagIfNotChanged(c *cobra.Command, k, v string) error {
