@@ -118,7 +118,24 @@ Here is a repository cr example:
 
 ### Organization
 
-Organization CRD is the
+Organization CRD provide user a way to assess sealos registry. User can create organization and push image to it.
+
+Here is an example:
+
+```yaml
+apiVersion: imagehub.sealos.io/v1
+kind: Organization
+metadata:
+  name: organization-name
+spec:
+  name: organization-name
+  creator: your-user-uuid
+  manager: [ your-user-uuid ]
+```
+
+You can leave creator and manager as empty, because creator uuid is automatically added.
+
+**Notice that organization is unique in sealos cloud, and its name is case sensitivity**
 
 ### datapack
 
@@ -139,7 +156,7 @@ metadata:
 spec:
   expireTime: 120m
   names:
-  - labring/cert-manager:v1.8.0
+    - labring/cert-manager:v1.8.0
   type: detail
 ```
 
@@ -153,7 +170,7 @@ metadata:
 spec:
   expireTime: 120m
   names:
-  - labring/cert-manager:v1.8.0
+    - labring/cert-manager:v1.8.0
   type: detail
 status:
   codes: 1
@@ -166,27 +183,48 @@ status:
       docs: |
       icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
       keywords:
-      - Storage
+        - Storage
       name: labring/cert-manager:v1.8.0
       tags:
-      - creatTime: "2022-12-27T07:37:34Z"
-        metaName: labring.cert.manager.v1.7.0
-        name: v1.7.0
-      - creatTime: "2022-12-27T07:33:08Z"
-        metaName: labring.cert.manager.v1.8.0
-        name: v1.8.0
+        - creatTime: "2022-12-27T07:37:34Z"
+          metaName: labring.cert.manager.v1.7.0
+          name: v1.7.0
+        - creatTime: "2022-12-27T07:33:08Z"
+          metaName: labring.cert.manager.v1.8.0
+          name: v1.8.0
 ```
 
 **Notice that datapack cr will be expired and will be deleted after its expiration.**
 
 ## Authority management
 
-### organization authority management based on kubernetes rbac
+There are two parts of authority management.
 
-### repository and image based on webhook
+### Organization authority management based on kubernetes rbac
+
+Organization authority management is based on kubernetes rbac, a clusterrole and clusterrolebinding will be created for
+authority management when organization reconciling.
+
+### Repository and image authority management based on webhook
+
+Repository and image authority management is based on webhook. When user wants to create/update repository/image,
+Validate webhook will check if user is one of the organization.spec.manager.
+
+### Registry authority management based on organization CRD
+
+Registry authority management is based on organization CRD. When user push/pull image from the registry, registry auth
+server will use the organization CRD to check if user have the authority to push/pull image.
 
 # Sealos cli design
 
+sealos cli have some changes to make it convenient for user to use imagehub and sealos registry.
+
 ## sealos login
 
+- add flag `-k`, means use kubeconfig to log in to the registry.
+- save kubeconfig to sealos directory .
+
 ## sealos push
+
+- check if the registry that image is pushing to is sealos registry or not
+- if so, get image cr yaml from image, modify name/hash/arch in the image cr yaml and use user's kubeconfig to apply it.
