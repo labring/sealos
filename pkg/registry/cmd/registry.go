@@ -17,20 +17,29 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"os"
 
-	"github.com/labring/sealos/pkg/registry/cmd"
+	"github.com/containers/buildah/pkg/parse"
+	"github.com/spf13/cobra"
 )
 
-func init() {
-	rootCmd.AddCommand(newRegistryImageCmd())
+var (
+	rootCmd *cobra.Command
+)
+
+func subCommands() []*cobra.Command {
+	return []*cobra.Command{
+		newRegistryStatusCmd(),
+		newRegistryListImageCmd(),
+		newRegistryImageRmiCmd(),
+		newRegistryPruneCmd(),
+		newRegistryImageSaveCmd(),
+	}
 }
 
-func newRegistryImageCmd() *cobra.Command {
-	var registryImageCmd = &cobra.Command{
-		Use:   "registry",
-		Short: "registry images manager",
-	}
-	cmd.RegisterRootCommand(registryImageCmd, rootCmd)
-	return registryImageCmd
+func RegisterRootCommand(cmd *cobra.Command, root *cobra.Command) {
+	rootCmd = root
+	os.Setenv("TMPDIR", parse.GetTempDir())
+	cmd.SilenceUsage = true
+	cmd.AddCommand(subCommands()...)
 }

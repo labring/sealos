@@ -20,14 +20,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/registry"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/registry"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func newRegistryListImageCmd() *cobra.Command {
+func newRegistryStatusCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		cfg, err := registry.GetAuthInfo()
 		if err != nil {
@@ -38,32 +38,22 @@ func newRegistryListImageCmd() *cobra.Command {
 	}
 	var auth map[string]types.AuthConfig
 	var is registry.Registry
-	flagsResults := imagesResults{}
-	var registryImageListCmd = &cobra.Command{
-		Use:   "images",
-		Short: "registry image list",
-		Example: fmt.Sprintf(`Example:
-  %[1]s registry images --filter name=public*
-  %[1]s registry images --filter tag=*1.1*
-  %[1]s registry images --filter tag=*sec
-  %[1]s registry images --filter name=public,tag=v1.1.1
-  %[1]s registry images --filter tag=<none>`, rootCmd.CommandPath()),
-		Args: cobra.ExactArgs(0),
+	flagsResults := registryStatusResults{}
+	var registryStatusCmd = &cobra.Command{
+		Use:     "status",
+		Short:   "registry status",
+		Example: fmt.Sprintf(`%[1]s registry status`, rootCmd.Root().CommandPath()),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			is.ListImages(flagsResults.registryName, flagsResults.filter, flagsResults.json)
+			is.Status(flagsResults.json)
 			return nil
 		},
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			auth = preValidate()
 			is = registry.NewImage(auth)
-			if _, ok := auth[flagsResults.registryName]; !ok {
-				return fmt.Errorf("not found %s in auth info", flagsResults.registryName)
-			}
-			return nil
 		},
 	}
-	flags := registryImageListCmd.Flags()
+	flags := registryStatusCmd.Flags()
 	flags.SetInterspersed(false)
 	flagsResults.RegisterFlags(flags)
-	return registryImageListCmd
+	return registryStatusCmd
 }

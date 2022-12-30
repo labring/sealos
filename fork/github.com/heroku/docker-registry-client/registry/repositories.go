@@ -4,7 +4,7 @@ type repositoriesResponse struct {
 	Repositories []string `json:"repositories"`
 }
 
-func (registry *Registry) Repositories() ([]string, error) {
+func (registry *Registry) Repositories(filterFunc func(data []string) []string) ([]string, error) {
 	url := "/v2/_catalog?n=50"
 
 	repos := make([]string, 0, 10)
@@ -16,10 +16,10 @@ func (registry *Registry) Repositories() ([]string, error) {
 		url, err = registry.getPaginatedJSON(url, &response)
 		switch err {
 		case ErrNoMorePages:
-			repos = append(repos, response.Repositories...)
+			repos = append(repos, filterFunc(response.Repositories)...)
 			return repos, nil
 		case nil:
-			repos = append(repos, response.Repositories...)
+			repos = append(repos, filterFunc(response.Repositories)...)
 			continue
 		default:
 			return nil, err

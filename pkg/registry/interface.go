@@ -27,8 +27,8 @@ import (
 type Registry interface {
 	// SaveImages is not concurrently safe
 	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)
-	ListRegistry()
-	ListImages(registryName, search string)
+	Status(json bool)
+	ListImages(registryName, search string, json bool)
 	RmiImage(registryName, imageName string) error
 }
 

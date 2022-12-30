@@ -32,7 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func NewRegistryImageRmiCmd() *cobra.Command {
+func newRegistryImageRmiCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		cfg, err := registry.GetAuthInfo()
 		if err != nil {
@@ -47,7 +47,7 @@ func NewRegistryImageRmiCmd() *cobra.Command {
 	var registryImageRMICmd = &cobra.Command{
 		Use:     "rmi",
 		Short:   "registry rmi image",
-		Example: "sealctl registry image rmi labring/lvscare:v4.1.3",
+		Example: fmt.Sprintf(`%[1]s registry  rmi labring/lvscare:v4.1.3`, rootCmd.Root().CommandPath()),
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imageList := args
