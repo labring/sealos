@@ -31,7 +31,7 @@ func (manifests *Manifests) ListImages(yamlFile string) ([]string, error) {
 
 	images, err := ParseImages(string(yamlBytes))
 	if err != nil {
-		return images, fmt.Errorf("failed to parse images from file %s", err)
+		return nil, fmt.Errorf("failed to parse images from file %s", err)
 	}
 
 	return images, nil
