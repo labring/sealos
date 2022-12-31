@@ -23,6 +23,8 @@ apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
   name: my-cluster
+  annotations:
+    sealos.io/sealos/version: "4.1.4-rc1"
 spec:
   infra: infra-apply-test
   image:
