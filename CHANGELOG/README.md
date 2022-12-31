@@ -12,3 +12,5 @@
 - [CHANGELOG-4.1.3.md](./CHANGELOG-4.1.3.md)
 - [CHANGELOG-4.1.4-rc1.md](./CHANGELOG-4.1.4-rc1.md)
 - [CHANGELOG-4.1.4-rc2.md](./CHANGELOG-4.1.4-rc2.md)
+- [CHANGELOG-4.1.4-rc3.md](./CHANGELOG-4.1.4-rc3.md)
+- [CHANGELOG-4.1.4-rc4.md](./CHANGELOG-4.1.4-rc4.md)
