@@ -116,6 +116,10 @@ func newPushCommand() *cobra.Command {
 		Long:  pushDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pushCmd(cmd, args, opts)
+			//return nil
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			NewAndRunImageCRDBuilder(args)
 		},
 		Example: fmt.Sprintf(`%[1]s push imageID docker://registry.example.com/repository:tag
   %[1]s push imageID docker-daemon:image:tagi
