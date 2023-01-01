@@ -125,7 +125,7 @@ func (c Chart) GetImages() ([]string, error) {
 		}
 		images, err := manifests.ParseImages(v)
 		if err != nil {
-			return images, err
+			return nil, err
 		}
 		list = list.Insert(images...)
 	}
