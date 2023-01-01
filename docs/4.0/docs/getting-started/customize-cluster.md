@@ -101,19 +101,15 @@ kind: Config
 metadata:
   name: calico
 spec:
-  path: manifests/calico.yaml
+  path: charts/calico/values.yaml
+  strategy: merge
   data: |
-    apiVersion: operator.tigera.io/v1
-    kind: Installation
-    metadata:
-      name: default
-    spec:
-      # Configures Calico networking.
+    installation:
+      enabled: true
+      kubernetesProvider: ""
       calicoNetwork:
-        # Note: The ipPools section cannot be modified post-install.
         ipPools:
         - blockSize: 26
-          # Note: Must be the same as podCIDR
           cidr: 10.160.0.0/12
           encapsulation: IPIP
           natOutgoing: Enabled
