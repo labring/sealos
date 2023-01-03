@@ -143,6 +143,8 @@ spec:
 
 Datapack 提供了数据构建和打包的能力：直接使用kubernetes CRD并不方便，因此我们设计了datapack CRD去从不同的CRD打包不同的数据。
 
+建议阅读[datapack设计](datapack.md)获取更多信息。
+
 **Datapack 用法**
 
 你需要做下面两步：
@@ -203,16 +205,16 @@ status:
 
 ### 基于 kubernetes rbac 的 organization 权限控制
 
-organization 权限控制是基于kubernetes rbac，在organzation reconcile过程中，会创建clusterrole、clusterrolebinding。
+organization 权限控制是基于kubernetes rbac，在organization reconcile过程中，会创建clusterrole、clusterrolebinding。
 
 ### 基于 webhook 的 repository 和 image 权限控制
 
 repository 和 image 权限控制 是基于 validate webhook. 当用户创建/修改 repository 和 image时，validate
 webhook会判断用户是否是所在organization的manager。
 
-### 基于organzation CRD的镜像仓库权限管理
+### 基于organization CRD的镜像仓库权限管理
 
-镜像仓库权限管理是基于organzation CRD的，当用户尝试push、pull镜像仓库中的镜像时，registry auth server会用organzation
+镜像仓库权限管理是基于organization CRD的，当用户尝试push、pull镜像仓库中的镜像时，registry auth server会用organization
 CRD去判断用户是否有权限。
 
 # Sealos 命令行工具设计

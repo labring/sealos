@@ -144,6 +144,8 @@ You can leave creator and manager as empty, because creator uuid is automaticall
 Datapack provide data construct and package ability. It is not convenient to use kubernetes CRD directly, so we design
 datapack CRD to package data from different CRD with different information granularity.
 
+See [datapack design](datapack.md) for more information
+
 **Datapack Usage**
 
 There is two steps you need to do.
