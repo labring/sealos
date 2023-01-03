@@ -116,7 +116,6 @@ func newPushCommand() *cobra.Command {
 		Long:  pushDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pushCmd(cmd, args, opts)
-			//return nil
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			NewAndRunImageCRDBuilder(args)

@@ -16,15 +16,15 @@ package buildah
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/containers/image/v5/pkg/docker/config"
 
 	"k8s.io/client-go/util/homedir"
 
@@ -51,13 +51,11 @@ const (
 	AppPath          = "app"
 	READMEpath       = "README.md"
 	ConfigFileName   = "config.yaml"
-	AuthjsonPath     = "containers/auth.json"
 	SealosPath       = ".sealos"
 	ImagehubGroup    = "imagehub.sealos.io"
 	ImagehubVersion  = "v1"
 	ImagehubResource = "images"
 	ImagehubKind     = "Image"
-	XdgRuntimeDir    = "XDG_RUNTIME_DIR"
 )
 
 const (
@@ -76,16 +74,6 @@ type ImageCRDBuilder struct {
 	AppConfig      *imagev1.Image
 }
 
-type dockerAuthConfig struct {
-	Auth          string `json:"auth,omitempty"`
-	IdentityToken string `json:"identitytoken,omitempty"`
-}
-
-type dockerConfigFile struct {
-	AuthConfigs map[string]dockerAuthConfig `json:"auths"`
-	CredHelpers map[string]string           `json:"credHelpers,omitempty"`
-}
-
 func NewAndRunImageCRDBuilder(args []string) {
 	var dest string
 	switch len(args) {
@@ -102,7 +90,6 @@ func NewAndRunImageCRDBuilder(args []string) {
 	}
 	//run without error returns
 	icb := &ImageCRDBuilder{dest, repositoryname, "", "", "", &imagev1.Image{}}
-
 	if icb.CheckLoginStatus() {
 		fmt.Println("start ImageCrd Push")
 		icb.Run()
@@ -111,30 +98,16 @@ func NewAndRunImageCRDBuilder(args []string) {
 
 func (icb *ImageCRDBuilder) CheckLoginStatus() bool {
 	//Check Cri Login
-	var path string
-	var dockerConfig dockerConfigFile
-	if path = os.Getenv(XdgRuntimeDir); path == "" {
-		return false
-	}
-	if !file.IsExist(filepath.Join(path, AuthjsonPath)) {
-		return false
-	}
-	encodeAuth, err := file.ReadAll(filepath.Join(path, AuthjsonPath))
+	creds, err := config.GetAllCredentials(nil)
 	if err != nil {
 		return false
 	}
-	err = json.Unmarshal(encodeAuth, &dockerConfig)
-	if err != nil {
+	if _, ok := creds[icb.repositoryname]; ok {
+		icb.username = creds[icb.repositoryname].Username
+		icb.userconfig = creds[icb.repositoryname].Password
+	} else {
 		return false
 	}
-	//auth struct is username:password which is namespcae:kubeconfig in sealos.hub scenario
-	auth, err := base64.StdEncoding.DecodeString(dockerConfig.AuthConfigs[icb.repositoryname].Auth)
-	if err != nil {
-		return false
-	}
-	icb.username = strings.SplitN(string(auth), ":", 2)[0]
-	icb.userconfig = strings.SplitN(string(auth), ":", 2)[1]
-	//Check repository target
 	return file.IsExist(filepath.Join(homedir.HomeDir(), SealosPath, icb.repositoryname)) &&
 		file.IsExist(filepath.Join(homedir.HomeDir(), SealosPath, icb.repositoryname, icb.username))
 }
