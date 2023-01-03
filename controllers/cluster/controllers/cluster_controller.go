@@ -43,7 +43,7 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
-	downloadSealosCmd   = `sealos version || wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%s/sealos_%s_linux_amd64.tar.gz  && tar -zxvf sealos_%s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
+	downloadSealosCmd   = `sealos version || wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%[1]s/sealos_%[1]s_linux_amd64.tar.gz  && tar -zxvf sealos_%[1]s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 )
 
 // ClusterReconciler reconciles a Cluster object
@@ -189,7 +189,7 @@ func applyClusterfile(infra *infrav1.Infra, clusterfile, sealosVersion string) e
 	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF
 %s
 EOF`, clusterfile)
-	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion, sealosVersion, sealosVersion)
+	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion)
 
 	cmds := []string{createClusterfile, downloadSealos, applyClusterfileCmd}
 	if err := c.CmdAsync(EIP, cmds...); err != nil {
