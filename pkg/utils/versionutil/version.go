@@ -46,8 +46,8 @@ func Compare(v1, v2 string) bool {
 	} else if v1List[1] < v2List[1] {
 		return false
 	}
-	if v1List[2] > v2List[2] {
+	if v1List[2] >= v2List[2] {
 		return true
 	}
-	return true
+	return false
 }

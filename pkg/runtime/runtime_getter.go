@@ -46,13 +46,13 @@ func (k *KubeadmRuntime) getKubeVersion() string {
 	return k.ClusterConfiguration.KubernetesVersion
 }
 
+// old implementation doesn't consider multiple rootfs images; here get the first rootfs image
 func (k *KubeadmRuntime) getKubeVersionFromImage() string {
-	labels := k.getImageLabels()
-	image := labels[v1beta1.ImageKubeVersionKey]
-	if image == "" {
+	img := k.Cluster.GetRootfsImage("")
+	if img.Labels == nil {
 		return ""
 	}
-	return image
+	return img.Labels[v1beta1.ImageKubeVersionKey]
 }
 
 func (k *KubeadmRuntime) getMaster0IP() string {
