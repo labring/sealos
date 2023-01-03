@@ -48,10 +48,10 @@ import (
 )
 
 const (
-	AppPath          = "app"
+	ImageStdPath     = "metadata"
 	READMEpath       = "README.md"
 	ConfigFileName   = "config.yaml"
-	SealosPath       = ".sealos"
+	SealosRootPath   = ".sealos"
 	ImagehubGroup    = "imagehub.sealos.io"
 	ImagehubVersion  = "v1"
 	ImagehubResource = "images"
@@ -60,21 +60,34 @@ const (
 
 const (
 	//Read Content Output
-	ReadOrBuildAppConfigOutput = "Success get appConfig"
-	ReadImageContentOutput     = "Success read image content"
-	ReadReadmeOutput           = "Success read readme file"
+	SuccessCreateContainer          = "Success create container"
+	SuccessReadOrBuildImageCROutput = "Success get image cr"
+	SuccessReadImageInfoOutput      = "Success read image Info"
+	SuccessReadReadmeOutput         = "Success read readme file"
+	SuccessImageapplyOutput         = "Success apply image cr"
+	SuccessDeleteContainer          = "Success delete container"
 )
 
-type ImageCRDBuilder struct {
-	imagename      string
-	repositoryname string
-	clustername    string
-	username       string
-	userconfig     string
-	AppConfig      *imagev1.Image
+const (
+	//Read Content Output
+	FailCreateContainer          = "Fail to create container"
+	FailReadOrBuildImageCROutput = "Fail to get image cr"
+	FailReadImageInfoOutput      = "Fail to read image Info"
+	FailReadReadmeOutput         = "Fail to read readme file"
+	FailImageapplyOutput         = "Fail to apply image cr"
+	FailDeleteContainer          = "Fail to delete container"
+)
+
+type ImageCRBuilder struct {
+	imagename    string
+	registryname string
+	containeruid string
+	username     string
+	userconfig   string
+	ImageCR      *imagev1.Image
 }
 
-func NewAndRunImageCRDBuilder(args []string) {
+func NewAndRunImageCRBuilder(args []string) {
 	var dest string
 	switch len(args) {
 	case 1:
@@ -84,81 +97,97 @@ func NewAndRunImageCRDBuilder(args []string) {
 	default:
 		return
 	}
-	repositoryname, err := parseRawURL(dest)
+	registryname, err := parseRawURL(dest)
 	if err != nil {
 		return
 	}
 	//run without error returns
-	icb := &ImageCRDBuilder{dest, repositoryname, "", "", "", &imagev1.Image{}}
+	icb := &ImageCRBuilder{dest, registryname, "", "", "", &imagev1.Image{}}
 	if icb.CheckLoginStatus() {
-		fmt.Println("start ImageCrd Push")
+		fmt.Println("Start image cr push")
 		icb.Run()
 	}
 }
 
-func (icb *ImageCRDBuilder) CheckLoginStatus() bool {
+func (icb *ImageCRBuilder) CheckLoginStatus() bool {
 	//Check Cri Login
 	creds, err := config.GetAllCredentials(nil)
 	if err != nil {
+		logger.Debug("get credentials err ,please login first ." + fmt.Sprintf("%v", err))
 		return false
 	}
-	if _, ok := creds[icb.repositoryname]; ok {
-		icb.username = creds[icb.repositoryname].Username
-		icb.userconfig = creds[icb.repositoryname].Password
+	if _, ok := creds[icb.registryname]; ok {
+		icb.username = creds[icb.registryname].Username
+		icb.userconfig = creds[icb.registryname].Password
 	} else {
+		logger.Debug("get registry login info err, please login " + icb.registryname + " first")
 		return false
 	}
-	return file.IsExist(filepath.Join(homedir.HomeDir(), SealosPath, icb.repositoryname)) &&
-		file.IsExist(filepath.Join(homedir.HomeDir(), SealosPath, icb.repositoryname, icb.username))
+	if !file.IsExist(filepath.Join(homedir.HomeDir(), SealosRootPath, icb.registryname)) ||
+		!file.IsExist(filepath.Join(homedir.HomeDir(), SealosRootPath, icb.registryname, icb.username)) {
+		logger.Debug("no kubeconfig file for this registry, skip image cr build")
+		return false
+	}
+	return true
 }
 
-func (icb *ImageCRDBuilder) Run() {
+func (icb *ImageCRBuilder) Run() {
 	MountPoint, err := icb.CreateContainer()
 	if err != nil {
 		// get err when create container ,abort all
+		fmt.Println(FailCreateContainer)
+		logger.Debug(err)
 		return
 	}
+	fmt.Println(SuccessCreateContainer)
 	defer func() {
 		err = icb.DeleteContainer()
-		logger.Debug(err)
+		if err != nil {
+			fmt.Println(FailDeleteContainer)
+			logger.Debug(err)
+			return
+		}
+		fmt.Println(SuccessDeleteContainer)
 	}()
-	err = icb.GetAppContent(MountPoint)
+	err = icb.GetMetadata(MountPoint)
 	if err != nil {
 		logger.Debug(err)
 	}
-	err = icb.AppContentApply()
+	err = icb.ImageCRApply()
 	if err != nil {
+		fmt.Println(FailImageapplyOutput)
 		logger.Debug(err)
+	} else {
+		fmt.Println(SuccessImageapplyOutput)
 	}
 }
 
-func (icb *ImageCRDBuilder) CreateContainer() (string, error) {
+func (icb *ImageCRBuilder) CreateContainer() (string, error) {
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	clusterName := icb.imagename + strconv.Itoa(rnd.Int())
+	containeruid := icb.imagename + strconv.Itoa(rnd.Int())
 	realImpl, err := New("")
 	if err != nil {
 		return "", err
 	}
-	builderInfo, err := realImpl.Create(clusterName, icb.imagename)
+	builderInfo, err := realImpl.Create(containeruid, icb.imagename)
 	if err != nil {
 		return "", err
 	}
 	if iseist := file.IsExist(builderInfo.MountPoint); !iseist {
 		return "", fmt.Errorf("mountPoint not Exist")
 	}
-	icb.clustername = clusterName
-	fmt.Println("Success create container")
+	icb.containeruid = containeruid
 	return builderInfo.MountPoint, nil
 }
 
 // GetAppContent do content read in filereadPipeline, if one content get failed ,it won't abort.
-func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
+func (icb *ImageCRBuilder) GetMetadata(MountPoint string) error {
 	var errl errlist.List
 	//Using a pipe helps with future file reading needs
 	fileReadPipeLine := []func(MountPoint string) (string, error){
 		//app config is the based file ,it should read first
-		icb.ReadOrBuildAppConfig,
-		icb.ReadImageContent,
+		icb.ReadOrBuildImageCRFile,
+		icb.ReadInspectInfo,
 		icb.ReadReadme,
 	}
 	for _, f := range fileReadPipeLine {
@@ -171,7 +200,7 @@ func (icb *ImageCRDBuilder) GetAppContent(MountPoint string) error {
 	return errl.Err()
 }
 
-func (icb *ImageCRDBuilder) AppContentApply() error {
+func (icb *ImageCRBuilder) ImageCRApply() error {
 	//TODO: use user private kubeconfig rather than global kubeconfig
 	client, err := kubernetes.NewKubernetesClient("", "")
 	if err != nil {
@@ -183,9 +212,9 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 		Resource: ImagehubResource,
 	})
 	utd := unstructured.Unstructured{}
-	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(icb.AppConfig)
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(icb.ImageCR)
 	if err != nil {
-		return fmt.Errorf("appconfig ToUnstructured err : %v", err)
+		return fmt.Errorf("ImageCR ToUnstructured err : %v", err)
 	}
 	utd.Object = obj
 	if _, err = dyclient.Create(context.TODO(), &utd, metav1.CreateOptions{}); err != nil {
@@ -204,94 +233,99 @@ func (icb *ImageCRDBuilder) AppContentApply() error {
 			return fmt.Errorf("image update err : %v", err)
 		}
 	}
-	fmt.Println("Success image apply")
+
 	return nil
 }
 
-func (icb *ImageCRDBuilder) DeleteContainer() error {
+func (icb *ImageCRBuilder) DeleteContainer() error {
 	realImpl, err := New("")
 	if err != nil {
 		return fmt.Errorf("deleteContainer err : %v", err)
 	}
-	return realImpl.Delete(icb.clustername)
+	return realImpl.Delete(icb.containeruid)
 }
 
-func (icb *ImageCRDBuilder) ReadOrBuildAppConfig(MountPoint string) (string, error) {
-	if file.IsExist(filepath.Join(MountPoint, AppPath, ConfigFileName)) {
+func (icb *ImageCRBuilder) ReadOrBuildImageCRFile(MountPoint string) (string, error) {
+	if file.IsExist(filepath.Join(MountPoint, ImageStdPath, ConfigFileName)) {
 		//if app base config find
-		c, err := file.ReadAll(filepath.Join(MountPoint, AppPath, ConfigFileName))
+		c, err := file.ReadAll(filepath.Join(MountPoint, ImageStdPath, ConfigFileName))
 		if err != nil {
-			return "", fmt.Errorf("read config.yaml err: %v", err)
+			return FailReadOrBuildImageCROutput, fmt.Errorf("read imagecr.yaml err: %v", err)
 		}
-		if err = icb.ConfigParse(c); err != nil {
-			return "", fmt.Errorf("readAppConfig : %v", err)
+		if err = icb.ImageCRParse(c); err != nil {
+			return FailReadOrBuildImageCROutput, fmt.Errorf("read ImageCR err : %v", err)
 		}
 	} else {
 		//if app base config not find
 		//image name which contains "/" and ":" couldn't be used in meta name
-		MetaName := strings.Replace(icb.imagename, ":", ".", -1)
+		MetaName := strings.Replace(icb.GetClearImagename(), ":", ".", -1)
 		MetaName = strings.Replace(MetaName, "/", ".", -1)
 		c := imagev1.Image{
 			TypeMeta:   metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)},
 			ObjectMeta: metav1.ObjectMeta{Name: MetaName},
-			Spec:       imagev1.ImageSpec{Name: imagev1.ImageName(icb.imagename)},
+			Spec:       imagev1.ImageSpec{Name: imagev1.ImageName(icb.GetClearImagename())},
 			Status:     imagev1.ImageStatus{},
 		}
-		icb.AppConfig = &c
+		icb.ImageCR = &c
 	}
-	return ReadOrBuildAppConfigOutput, nil
+	return SuccessReadOrBuildImageCROutput, nil
 }
 
-func (icb *ImageCRDBuilder) ConfigParse(c []byte) error {
-	config := imagev1.Image{}
-	_, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(c, nil, &config)
+func (icb *ImageCRBuilder) ImageCRParse(c []byte) error {
+	cr := imagev1.Image{}
+	_, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(c, nil, &cr)
 	if err != nil {
 		return fmt.Errorf("configParse err : %v", err)
 	}
-	config.Spec.DetailInfo.Actions = make(map[string]imagev1.Action)
-	icb.AppConfig = &config
+	cr.Spec.DetailInfo.Actions = make(map[string]imagev1.Action)
+	icb.ImageCR = &cr
 	return nil
 }
 
-func (icb *ImageCRDBuilder) ReadReadme(MountPoint string) (string, error) {
+func (icb *ImageCRBuilder) ReadReadme(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := file.ReadAll(filepath.Join(MountPoint, READMEpath))
 		if err != nil {
-			return "", fmt.Errorf("read README.md err: %v", err)
+			return FailReadReadmeOutput, fmt.Errorf("read README.md err: %v", err)
 		}
-		icb.AppConfig.Spec.DetailInfo.Description = string(c)
+		icb.ImageCR.Spec.DetailInfo.Description = string(c)
 	}
-	return ReadReadmeOutput, nil
+	return SuccessReadReadmeOutput, nil
 }
 
-func (icb *ImageCRDBuilder) ReadImageContent(MountPoint string) (string, error) {
+func (icb *ImageCRBuilder) ReadInspectInfo(MountPoint string) (string, error) {
 	realImpl, err := New("")
 	if err != nil {
-		return "", fmt.Errorf("deleteContainer err : %v", err)
+		return FailReadImageInfoOutput, fmt.Errorf("deleteContainer err : %v", err)
 	}
-	containerInfo, err := realImpl.InspectContainer(icb.clustername)
+	containerInfo, err := realImpl.InspectContainer(icb.containeruid)
 	if err != nil {
-		return "", fmt.Errorf("readImageContent InspectImage err : %v", err)
+		return FailReadImageInfoOutput, fmt.Errorf("readImageContent InspectImage err : %v", err)
 	}
 	var config v1.Image
 	if err = json.Unmarshal([]byte(containerInfo.Config), &config); err != nil {
-		return "", fmt.Errorf("get image config err : %v", err)
+		return FailReadImageInfoOutput, fmt.Errorf("get image config err : %v", err)
 	}
 	var manifest v1.Manifest
 	if err = json.Unmarshal([]byte(containerInfo.Manifest), &manifest); err != nil {
-		return "", fmt.Errorf("get image config err : %v", err)
+		return FailReadImageInfoOutput, fmt.Errorf("get image config err : %v", err)
 	}
 	icb.BindImageContent(containerInfo, config, manifest)
-	return ReadImageContentOutput, nil
+	return SuccessReadImageInfoOutput, nil
 }
 
-func (icb *ImageCRDBuilder) BindImageContent(containerInfo buildah.BuilderInfo, config v1.Image, manifest v1.Manifest) {
-	icb.AppConfig.Spec.DetailInfo.ID = containerInfo.FromImageID
-	icb.AppConfig.Spec.DetailInfo.Arch = config.Architecture
+func (icb *ImageCRBuilder) BindImageContent(containerInfo buildah.BuilderInfo, config v1.Image, manifest v1.Manifest) {
+	icb.ImageCR.Spec.DetailInfo.ID = containerInfo.FromImageID
+	icb.ImageCR.Spec.DetailInfo.Arch = config.Architecture
 	var size int64
 	size = manifest.Config.Size * 1000
 	for _, layer := range manifest.Layers {
 		size += layer.Size
 	}
-	icb.AppConfig.Spec.DetailInfo.Size = size
+	icb.ImageCR.Spec.DetailInfo.Size = size
+}
+
+// GetClearImagename replace 'hub.sealos.cn/org/repo:tag' to 'org/repo:tag'
+func (icb *ImageCRBuilder) GetClearImagename() string {
+	return strings.Replace(icb.imagename, icb.registryname+"/", "", 1)
 }
