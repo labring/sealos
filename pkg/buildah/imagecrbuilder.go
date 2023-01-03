@@ -59,7 +59,7 @@ const (
 )
 
 const (
-	//Read Content Output
+	//Read Content Success Output
 	SuccessCreateContainer          = "Success create container"
 	SuccessReadOrBuildImageCROutput = "Success get image cr"
 	SuccessReadImageInfoOutput      = "Success read image Info"
@@ -69,7 +69,7 @@ const (
 )
 
 const (
-	//Read Content Output
+	//Read Content Failed Output
 	FailCreateContainer          = "Fail to create container"
 	FailReadOrBuildImageCROutput = "Fail to get image cr"
 	FailReadImageInfoOutput      = "Fail to read image Info"
@@ -255,18 +255,19 @@ func (icb *ImageCRBuilder) ReadOrBuildImageCRFile(MountPoint string) (string, er
 		if err = icb.ImageCRParse(c); err != nil {
 			return FailReadOrBuildImageCROutput, fmt.Errorf("read ImageCR err : %v", err)
 		}
-	} else {
-		//if app base config not find
-		//image name which contains "/" and ":" couldn't be used in meta name
-		MetaName := strings.Replace(icb.GetClearImagename(), ":", ".", -1)
-		MetaName = strings.Replace(MetaName, "/", ".", -1)
-		icb.ImageCR.TypeMeta = metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)}
-		icb.ImageCR.ObjectMeta.Name = MetaName
-		icb.ImageCR.Spec.Name = imagev1.ImageName(icb.GetClearImagename())
 	}
+	//if app base config not find
+	//image name which contains "/" and ":" couldn't be used in meta name
+	MetaName := strings.Replace(icb.GetClearImagename(), ":", ".", -1)
+	MetaName = strings.Replace(MetaName, "/", ".", -1)
+	// replace image cr spec and matename by imagename
+	icb.ImageCR.TypeMeta = metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)}
+	icb.ImageCR.ObjectMeta.Name = MetaName
+	icb.ImageCR.Spec.Name = imagev1.ImageName(icb.GetClearImagename())
 	return SuccessReadOrBuildImageCROutput, nil
 }
 
+// ImageCRParse parse image cr yaml file ot an image cr obj
 func (icb *ImageCRBuilder) ImageCRParse(c []byte) error {
 	cr := imagev1.Image{}
 	_, _, err := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme).Decode(c, nil, &cr)
@@ -278,6 +279,7 @@ func (icb *ImageCRBuilder) ImageCRParse(c []byte) error {
 	return nil
 }
 
+// ReadReadme gen image cr detail info: Readme
 func (icb *ImageCRBuilder) ReadReadme(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := file.ReadAll(filepath.Join(MountPoint, READMEpath))
@@ -289,6 +291,7 @@ func (icb *ImageCRBuilder) ReadReadme(MountPoint string) (string, error) {
 	return SuccessReadReadmeOutput, nil
 }
 
+// ReadInspectInfo gen image cr detail info: Id, Arch and Size
 func (icb *ImageCRBuilder) ReadInspectInfo(MountPoint string) (string, error) {
 	realImpl, err := New("")
 	if err != nil {
