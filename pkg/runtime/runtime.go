@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/versionutil"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -61,6 +62,7 @@ type Interface interface {
 	DeleteMasters(mastersIPList []string) error
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	UpdateCert(certs []string) error
+	UpgradeCluster(version string) error
 }
 
 func (k *KubeadmRuntime) Reset() error {
@@ -141,4 +143,11 @@ func (k *KubeadmRuntime) Validate() error {
 		return fmt.Errorf("cluster image kubernetes version cannot be empty")
 	}
 	return nil
+}
+
+func (k *KubeadmRuntime) UpgradeCluster(version string) error {
+	if !versionutil.Compare(k.getKubeVersionFromImage(),version){
+		logger.Info("cluster vesion: %s will be upgraded into %s.",k.getKubeVersionFromImage(),version)
+	}
+	return k.upgradeCluster(version)
 }
