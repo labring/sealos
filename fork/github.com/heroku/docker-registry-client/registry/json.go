@@ -3,10 +3,9 @@ package registry
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
+	http2 "github.com/labring/sealos/pkg/utils/http"
 	"net/http"
 	"regexp"
-	"strings"
 )
 
 var (
@@ -17,6 +16,9 @@ var (
 // next page URL while updating pointed-to variable with a parsed JSON
 // value. When there are no more pages it returns `ErrNoMorePages`.
 func (registry *Registry) getPaginatedJSON(url string, response interface{}) (string, error) {
+	if _, ok := http2.IsURL(url); !ok {
+		url = registry.URL + url
+	}
 	resp, err := registry.Client.Get(url)
 	if err != nil {
 		return "", err
@@ -45,10 +47,6 @@ func getNextLink(resp *http.Response) (string, error) {
 	for _, link := range resp.Header[http.CanonicalHeaderKey("Link")] {
 		parts := nextLinkRE.FindStringSubmatch(link)
 		if parts != nil {
-			// support 2.7+ distribution
-			if strings.HasPrefix(parts[1], "/") {
-				return fmt.Sprintf("%s://%s%s", resp.Request.URL.Scheme, resp.Request.URL.Host, parts[1]), nil
-			}
 			return parts[1], nil
 		}
 	}

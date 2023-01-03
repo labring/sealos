@@ -32,7 +32,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func NewRegistryImageRmiCmd(registryName string) *cobra.Command {
+func newRegistryImageRmiCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		cfg, err := registry.GetAuthInfo()
 		if err != nil {
@@ -43,17 +43,18 @@ func NewRegistryImageRmiCmd(registryName string) *cobra.Command {
 	}
 	var auth map[string]types.AuthConfig
 	var is registry.Registry
-	var registryImageListCmd = &cobra.Command{
+	flagsResults := rmiResults{}
+	var registryImageRMICmd = &cobra.Command{
 		Use:     "rmi",
 		Short:   "registry rmi image",
-		Example: "sealctl registry image rmi labring/lvscare:v4.1.3",
+		Example: fmt.Sprintf(`%[1]s registry  rmi labring/lvscare:v4.1.3`, rootCmd.Root().CommandPath()),
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imageList := args
 			errorList := field.ErrorList{}
 			for i := range imageList {
-				imageList[i] = strings.ReplaceAll(imageList[i], fmt.Sprintf("%s/", registryName), "")
-				err := is.RmiImage(registryName, imageList[i])
+				imageList[i] = strings.ReplaceAll(imageList[i], fmt.Sprintf("%s/", flagsResults.registryName), "")
+				err := is.RmiImage(flagsResults.registryName, imageList[i])
 				if err != nil {
 					errorList = append(errorList, field.Invalid(field.NewPath("image"), imageList[i], err.Error()))
 				}
@@ -63,12 +64,14 @@ func NewRegistryImageRmiCmd(registryName string) *cobra.Command {
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			auth = preValidate()
 			is = registry.NewImage(auth)
-			if registryName == "" {
+			if flagsResults.registryName == "" {
 				return errors.New("registryName not allow empty")
 			}
 			return nil
 		},
 	}
-
-	return registryImageListCmd
+	flags := registryImageRMICmd.Flags()
+	flags.SetInterspersed(false)
+	flagsResults.RegisterFlags(flags)
+	return registryImageRMICmd
 }
