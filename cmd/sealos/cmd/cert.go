@@ -19,6 +19,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/labring/sealos/pkg/apply/processor"
+
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime"
@@ -49,6 +51,7 @@ var certCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("get default cluster failed, %v", err)
 		}
+		processor.SyncNewVersionConfig(cluster.Name)
 		clusterPath := constants.Clusterfile(cluster.Name)
 
 		cf := clusterfile.NewClusterFile(clusterPath,
