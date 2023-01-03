@@ -260,13 +260,9 @@ func (icb *ImageCRBuilder) ReadOrBuildImageCRFile(MountPoint string) (string, er
 		//image name which contains "/" and ":" couldn't be used in meta name
 		MetaName := strings.Replace(icb.GetClearImagename(), ":", ".", -1)
 		MetaName = strings.Replace(MetaName, "/", ".", -1)
-		c := imagev1.Image{
-			TypeMeta:   metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)},
-			ObjectMeta: metav1.ObjectMeta{Name: MetaName},
-			Spec:       imagev1.ImageSpec{Name: imagev1.ImageName(icb.GetClearImagename())},
-			Status:     imagev1.ImageStatus{},
-		}
-		icb.ImageCR = &c
+		icb.ImageCR.TypeMeta = metav1.TypeMeta{Kind: ImagehubKind, APIVersion: filepath.Join(ImagehubGroup, ImagehubVersion)}
+		icb.ImageCR.ObjectMeta.Name = MetaName
+		icb.ImageCR.Spec.Name = imagev1.ImageName(icb.GetClearImagename())
 	}
 	return SuccessReadOrBuildImageCROutput, nil
 }
