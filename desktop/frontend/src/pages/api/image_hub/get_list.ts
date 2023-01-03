@@ -72,14 +72,10 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
   try {
     const dataDesc = await GetClusterObject(kc, ImageHubDataPackMeta, pack_name);
-    if (dataDesc !== null && dataDesc.body !== null && dataDesc.body.status !== null) {
+    if (dataDesc?.body?.status) {
       const datapackDesc = dataDesc.body.status as DataPackDesc;
       if (datapackDesc.codes === 1) {
-        let result = [];
-        for (const key in datapackDesc.datas) {
-          result.push(datapackDesc.datas[key]);
-        }
-
+        let result = Object.values(datapackDesc.datas);
         return JsonResp({ items: result, code: 200 }, resp);
       }
       return JsonResp(datapackDesc, resp);

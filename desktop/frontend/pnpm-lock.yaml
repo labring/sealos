@@ -9,6 +9,7 @@ specifiers:
   '@fortawesome/free-solid-svg-icons': ^6.2.1
   '@fortawesome/react-fontawesome': ^0.2.0
   '@kubernetes/client-node': 0.18.0
+  '@next/font': ^13.1.1
   '@svgr/webpack': ^6.5.1
   '@tanstack/react-query': ^4.20.4
   '@types/js-yaml': ^4.0.5
@@ -51,6 +52,7 @@ dependencies:
   '@fortawesome/free-solid-svg-icons': 6.2.1
   '@fortawesome/react-fontawesome': 0.2.0_z27bm67dtmuyyvss23ckjdrcuy
   '@kubernetes/client-node': 0.18.0
+  '@next/font': registry.npmmirror.com/@next/font/13.1.1
   '@tanstack/react-query': 4.20.4_biqbaboplfbrettd7655fr4n2y
   axios: 1.2.1
   clsx: 1.2.1
@@ -8060,6 +8062,12 @@ packages:
       immer: 9.0.16
       react: 18.2.0
       use-sync-external-store: 1.2.0_react@18.2.0
+    dev: false
+
+  registry.npmmirror.com/@next/font/13.1.1:
+    resolution: {integrity: sha512-amygRorS05hYK1/XQRZo5qBl7l2fpHnezeKU/cNveWU5QJg+sg8gMGkUXHtvesNKpiKIJshBRH1TzvO+2sKpvQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@next/font/-/font-13.1.1.tgz}
+    name: '@next/font'
+    version: 13.1.1
     dev: false
 
   registry.npmmirror.com/@next/swc-android-arm-eabi/13.1.0:

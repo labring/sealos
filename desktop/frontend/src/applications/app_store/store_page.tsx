@@ -1,12 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import { Spinner } from '@fluentui/react-components';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import produce from 'immer';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, handleImageName, imagehubLabels } from './app_store_common';
+import { EPageType, handleImageName, ImagehubLabels } from './app_store_common';
 import Button from './components/button';
 import Labels from './components/labels';
 import { useAppStoreContext } from './index';
@@ -27,12 +26,12 @@ type TAppInfo = {
 
 function StorePage() {
   const { toPage } = useAppStoreContext();
-  const [imageLabels, setImageLabels] = useState<TImageLabels[]>(imagehubLabels);
+  const [imageLabels, setImageLabels] = useState<TImageLabels[]>(ImagehubLabels);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [appListStatus, setAppListStatus] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState('');
 
-  const { data, isLoading, isSuccess } = useQuery(
+  const { data, isSuccess, isError } = useQuery(
     ['getAppLists'],
     async () => {
       const res = await request.post('/api/image_hub/get_list', {
@@ -51,46 +50,15 @@ function StorePage() {
       }
     }
   );
-
   const appLists = data?.data?.items as TAppInfo[];
 
-  const handleClick = (value: string) => {
-    if (value === 'All') {
-      setImageLabels(
-        produce((draft) => {
-          const notCheckAll = draft.every((item) => item.checked === true);
-          if (notCheckAll) {
-            draft.forEach((item) => (item.checked = false));
-          } else {
-            draft.forEach((item) => (item.checked = true));
-          }
-        })
-      );
-    }
-    setImageLabels(
-      produce((draft) => {
-        const checkedItem = draft.find((item) => item.value === value);
-        if (checkedItem) {
-          checkedItem.checked = !checkedItem?.checked;
-        }
-        const checkAll = draft.some((item) => item.checked === true);
-        if (checkAll) {
-          draft[0].checked = true;
-        }
-        const notCheckAll = draft.slice(1).every((item) => item.checked === false);
-        if (notCheckAll) {
-          draft[0].checked = false;
-        }
-      })
-    );
-  };
-
   useEffect(() => {
-    let temp = imageLabels.filter((item) => item.checked === true).slice(1);
     let select: string[] = [];
-    if (temp.length > 0) {
-      select = temp.map((item) => 'keyword.imagehub.sealos.io/' + item.value);
-    }
+    imageLabels?.forEach((item) => {
+      if (item.checked === true) {
+        select.push('keyword.imagehub.sealos.io/' + item.value);
+      }
+    });
     setAppListStatus(false);
     setSelectedLabels(select.join(','));
   }, [imageLabels]);
@@ -98,13 +66,13 @@ function StorePage() {
   return (
     <div className="grow flex">
       <div className="ml-8">
-        <Labels display="column" labels={imageLabels} handleClick={handleClick} />
+        <Labels display="column" labels={imageLabels} setLabelsFunction={setImageLabels} />
       </div>
       <div className="flex flex-col ml-6 grow">
         <div className="flex items-center ">
-          <Labels display="row" labels={imageLabels} handleClick={handleClick} />
+          <Labels display="row" labels={imageLabels} setLabelsFunction={setImageLabels} />
         </div>
-        {isLoading && (
+        {!appListStatus && (
           <div className="w-full h-full flex justify-center items-center">
             <Spinner />
           </div>
@@ -123,27 +91,33 @@ function StorePage() {
                       <img src={item.icon} alt={item.name} width={110} height={110} />
                     </div>
                     <div className={clsx(styles.appDesc)}>
-                      <div className="pt-6 text-2xl"> {handleImageName(item?.name).name} </div>
+                      <div className={clsx(styles.title, 'pt-6')}>
+                        {handleImageName(item?.name).name}
+                      </div>
                       <p className={styles.appDescText}>{item?.desc}</p>
-                      <div className={clsx('mb-4')}>
-                        <Labels
-                          display="appLabel"
-                          handleClick={() => {}}
-                          labels={[]}
-                          appLabels={item.keywords}
-                        />
+                      <div className={clsx('flex space-x-4 mb-4')}>
+                        {item?.keywords?.map((item) => {
+                          return (
+                            <div
+                              key={item}
+                              className={clsx('cursor-pointer  px-4 ', styles.appLabels)}
+                            >
+                              {item}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                     <div>
                       <div className="flex">
                         <div className={clsx('w-20 h-20 ml-6 pt-6')}>
+                          <div className={styles.imageSizeText}> 19.1K </div>
                           <span className="text-stone-500 text-xs">下载量</span>
-                          <span> 19.1K </span>
                         </div>
                         <div className={styles.border1px}> </div>
-                        <div className="w-20 h-20  pt-6  pr-6">
+                        <div className="w-20 h-20 pt-6 pr-6">
+                          <div className={styles.imageSizeText}> 111M</div>
                           <span className="text-stone-500 text-xs">大小</span>
-                          <span> 111M</span>
                         </div>
                       </div>
                       <div className="flex justify-center mt-4">

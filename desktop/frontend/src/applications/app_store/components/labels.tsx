@@ -1,4 +1,6 @@
 import clsx from 'clsx';
+import produce from 'immer';
+import { useEffect, useState } from 'react';
 import styles from './labels.module.scss';
 
 type TImageLabels = {
@@ -8,67 +10,94 @@ type TImageLabels = {
 };
 
 type TLabels = {
+  display: 'column' | 'row';
   labels: TImageLabels[];
-  appLabels?: string[];
-  display: 'column' | 'row' | 'appLabel';
-  handleClick: (value: string) => void;
+  setLabelsFunction: Function;
 };
 
 function Labels(props: TLabels) {
-  const { display, labels, handleClick, appLabels } = props;
-  const selectedLabels = labels.slice(1).filter((item) => item.checked === true);
+  const { display, labels, setLabelsFunction } = props;
+  const [allActive, setAllActive] = useState(false);
+  const [selectedLabels, setSelectedLabels] = useState<TImageLabels[]>([]);
 
-  if (display === 'row') {
-    if (selectedLabels.length > 0) {
-      return (
-        <div className={clsx(styles.xLabels, ' divide-x  mb-4  ')}>
-          {selectedLabels.map((item) => {
-            return (
-              <div
-                key={item.label}
-                className={clsx('cursor-pointer  px-4 ', { [styles.xActive]: item.checked })}
-                onClick={() => handleClick(item.value)}
-              >
-                <span> {item.value} </span>
-                <span>×</span>
-              </div>
-            );
-          })}
-        </div>
+  useEffect(() => {
+    const isCheckedLabels = labels.filter((item) => item.checked === true);
+    setSelectedLabels(isCheckedLabels);
+    if (isCheckedLabels.length > 0) {
+      setAllActive(true);
+    } else {
+      setAllActive(false);
+    }
+  }, [labels]);
+
+  const handleClick = (value: string) => {
+    if (value === 'All') {
+      setLabelsFunction(
+        produce((draft: TImageLabels[]) => {
+          const isCheckAll = draft.every((item) => item.checked === true);
+          if (isCheckAll) {
+            draft.forEach((item) => (item.checked = false));
+          } else {
+            draft.forEach((item) => (item.checked = true));
+          }
+        })
       );
     } else {
-      return <div></div>;
+      setLabelsFunction(
+        produce((draft: TImageLabels[]) => {
+          const checkedItem = draft.find((item) => item.value === value);
+          if (checkedItem) {
+            checkedItem.checked = !checkedItem.checked;
+          }
+        })
+      );
     }
-  }
+  };
 
-  if (display === 'appLabel') {
+  if (display === 'row' && selectedLabels?.length > 0) {
     return (
-      <div className={clsx('flex space-x-4')}>
-        {appLabels?.map((item) => {
+      <div className={clsx(styles.xLabels, ' divide-x  mb-4  ')}>
+        {selectedLabels.map((item) => {
           return (
-            <div key={item} className={clsx('cursor-pointer  px-4 ', styles.appLabels)}>
-              <span> {item} </span>
+            <div
+              key={item.label}
+              className={clsx('cursor-pointer  px-4 ', { [styles.xActive]: item.checked })}
+              onClick={() => handleClick(item.value)}
+            >
+              <span> {item.value} </span>
+              <span>×</span>
             </div>
           );
         })}
       </div>
     );
   }
-  return (
-    <div className="flex flex-col space-y-4">
-      {labels.map((item) => {
-        return (
-          <div
-            key={item.label}
-            className={clsx(styles.label, { [styles.active]: item.checked }, 'cursor-pointer')}
-            onClick={() => handleClick(item.value)}
-          >
-            {item.value}
-          </div>
-        );
-      })}
-    </div>
-  );
+
+  if (display === 'column') {
+    return (
+      <div className="flex flex-col space-y-4">
+        <div
+          className={clsx(styles.label, { [styles.active]: allActive }, 'cursor-pointer')}
+          onClick={() => handleClick('All')}
+        >
+          All
+        </div>
+        {labels.map((item) => {
+          return (
+            <div
+              key={item.label}
+              className={clsx(styles.label, { [styles.active]: item.checked }, 'cursor-pointer')}
+              onClick={() => handleClick(item.value)}
+            >
+              {item.value}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default Labels;

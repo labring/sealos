@@ -28,8 +28,8 @@ export type TAppDetail = {
   tags: TTag[];
 };
 
-export const imagehubLabels = [
-  { label: 'All', value: 'All', checked: false },
+export const ImagehubLabels = [
+  // { label: 'All', value: 'All', checked: false },
   { label: 'Kubernetes', value: 'Kubernetes', checked: false },
   { label: 'Storage', value: 'Storage', checked: false },
   { label: 'Network', value: 'Network', checked: false },
@@ -42,9 +42,6 @@ export const imagehubLabels = [
 ];
 
 export function handleImageName(imageName: string): { name: string; tag: string } {
-  if (imageName) {
-    let result = imageName.split(':');
-    return { name: result[0], tag: result[1] };
-  }
-  return { name: '', tag: '' };
+  let result = imageName.split(':');
+  return { name: result[0], tag: result[1] };
 }

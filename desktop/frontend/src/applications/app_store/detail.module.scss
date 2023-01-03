@@ -11,7 +11,7 @@
       margin-left: 16px;
       flex-direction: column;
       justify-content: space-between;
-      &Text {
+      & .text {
         display: -webkit-box;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -20,10 +20,6 @@
         color: #717d8a;
         font-size: 12px;
       }
-    }
-    .sizeText {
-      font-size: 16px;
-      color: #0d1a2d;
     }
   }
 }

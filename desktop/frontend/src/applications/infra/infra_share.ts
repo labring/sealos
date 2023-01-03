@@ -81,7 +81,7 @@ const ConvertKeyToLabel = (key: string) => {
   return item?.label;
 };
 
-function conversionPrice(price: number, reserve: number) {
+function conversionPrice(price: number, reserve: number = 2) {
   return price.toFixed(reserve);
 }
 

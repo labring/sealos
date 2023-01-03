@@ -34,3 +34,22 @@ $small-radius: 12px;
   border: 1px solid #ffffff;
   border-radius: 16px;
 }
+
+.appLabels {
+  background: rgba(35, 155, 242, 0.15);
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #239bf2;
+}
+
+.title {
+  font-weight: 500;
+  font-size: 20px;
+  color: #0d1a2d;
+  line-height: 140%;
+}
+
+.imageSizeText {
+  font-size: 16px;
+  color: #0d1a2d;
+}

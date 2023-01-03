@@ -108,10 +108,10 @@ export default function DetailPage() {
           </div>
           {isFixed ? (
             <>
-              <div className="font-semibold text-4xl ml-4">
+              <div className={clsx(styles.title, 'ml-4')}>
                 {handleImageName(appDetail?.name).name + ':' + selectTag}
               </div>
-              <div className={clsx(styles.sizeTextm, 'ml-auto mr-6')}> 111MB </div>
+              <div className={clsx(styles.imageSizeText, 'ml-auto mr-6')}> 111MB </div>
               <Button handleClick={() => {}} type="primary">
                 安装 | {selectTag}
               </Button>
@@ -119,28 +119,31 @@ export default function DetailPage() {
           ) : (
             <>
               <div className={clsx(styles.appDesc)}>
-                <div className="font-semibold text-4xl ">
+                <div className={styles.title}>
                   {selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}
                 </div>
-                <p className={styles.appDescText}>{appDetail?.description}</p>
+                <p className={styles.text}>{appDetail?.description}</p>
                 <div className={'my-4'}>
                   <Button handleClick={() => {}} type="primary">
                     安装 | {selectTag}
                   </Button>
                 </div>
-                <Labels
-                  display="appLabel"
-                  handleClick={() => {}}
-                  labels={[]}
-                  appLabels={appDetail.keywords}
-                />
+                <div className={clsx('flex space-x-4 mb-4')}>
+                  {appDetail?.keywords?.map((item) => {
+                    return (
+                      <div key={item} className={clsx('cursor-pointer  px-4 ', styles.appLabels)}>
+                        {item}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
               <div className="flex flex-col shrink-0 mr-4 ml-8">
-                <span className={styles.sizeText}> 19.1K </span>
+                <span className={styles.imageSizeText}> 19.1K </span>
                 <span className="text-stone-500 text-xs mt-2">下载量</span>
               </div>
               <div className="flex flex-col shrink-0">
-                <span className={styles.sizeText}> 111M</span>
+                <span className={styles.imageSizeText}> 111M</span>
                 <span className="text-stone-500 text-xs mt-2">大小</span>
               </div>
             </>

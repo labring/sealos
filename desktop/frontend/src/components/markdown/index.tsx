@@ -5,7 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { vs, vs2015, stackoverflowLight } from 'react-syntax-highlighter/dist/cjs/styles/hljs';
 import styles from './index.module.scss';
-import 'github-markdown-css';
+import 'github-markdown-css/github-markdown-light.css';
 
 type TMarkDown = {
   text: string;
