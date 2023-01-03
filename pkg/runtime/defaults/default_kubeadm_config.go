@@ -41,7 +41,7 @@ apiServer:
   #    - 10.103.97.2
   extraArgs:
     #    etcd-servers: https://192.168.2.110:2379
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    feature-gates: EphemeralContainers=true
     audit-policy-file: "/etc/kubernetes/audit-policy.yml"
     audit-log-path: "/var/log/kubernetes/audit.log"
     audit-log-format: json
@@ -66,7 +66,7 @@ apiServer:
 controllerManager:
   extraArgs:
     bind-address: 0.0.0.0
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    feature-gates: EphemeralContainers=true
     experimental-cluster-signing-duration: 876000h
   extraVolumes:
     - hostPath: /etc/localtime
@@ -77,7 +77,7 @@ controllerManager:
 scheduler:
   extraArgs:
     bind-address: 0.0.0.0
-    feature-gates: TTLAfterFinished=true,EphemeralContainers=true
+    feature-gates: EphemeralContainers=true
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime
