@@ -188,7 +188,7 @@ func (icb *ImageCRBuilder) GetMetadata(MountPoint string) error {
 		//app config is the based file ,it should read first
 		icb.ReadOrBuildImageCRFile,
 		icb.ReadInspectInfo,
-		icb.ReadReadme,
+		icb.ReadDocs,
 	}
 	for _, f := range fileReadPipeLine {
 		if out, err := f(MountPoint); err != nil {
@@ -280,13 +280,13 @@ func (icb *ImageCRBuilder) ImageCRParse(c []byte) error {
 }
 
 // ReadReadme gen image cr detail info: Readme
-func (icb *ImageCRBuilder) ReadReadme(MountPoint string) (string, error) {
+func (icb *ImageCRBuilder) ReadDocs(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := file.ReadAll(filepath.Join(MountPoint, READMEpath))
 		if err != nil {
 			return FailReadReadmeOutput, fmt.Errorf("read README.md err: %v", err)
 		}
-		icb.ImageCR.Spec.DetailInfo.Description = string(c)
+		icb.ImageCR.Spec.DetailInfo.Docs = string(c)
 	}
 	return SuccessReadReadmeOutput, nil
 }
