@@ -75,6 +75,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if cluster.Status.Status == infrav1.Running.String() {
+		return ctrl.Result{}, nil
+	}
+
 	infra := &infrav1.Infra{}
 	infra.Name = cluster.Spec.Infra
 	infra.Namespace = cluster.Namespace
