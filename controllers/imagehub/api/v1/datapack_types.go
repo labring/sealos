@@ -37,18 +37,17 @@ type Data struct {
 	// base
 	Name ImageName `json:"name,omitempty"`
 	// grid
-	RepoName   RepoName `json:"repoName,omitempty"`
-	Rating     int      `json:"rating,omitempty"`
-	Icon       string   `json:"icon,omitempty"`
-	AuthorIcon string   `json:"authorIcon,omitempty"`
-	Keywords   []string `json:"keywords,omitempty"`
+	RepoName RepoName `json:"repoName,omitempty"`
+	Rating   int      `json:"rating,omitempty"`
+	Icon     string   `json:"icon,omitempty"`
+	Keywords []string `json:"keywords,omitempty"`
+	Size     int64    `json:"size,omitempty"`
 	// detail
 	Tags        TagList `json:"tags,omitempty"`
 	URL         string  `json:"URL,omitempty"`
 	Description string  `json:"description,omitempty"`
 	Docs        string  `json:"docs,omitempty"`
 	ID          string  `json:"ID,omitempty"`
-	Size        int64   `json:"size,omitempty"`
 	Arch        string  `json:"arch,omitempty"`
 }
 
@@ -77,12 +76,12 @@ func (i *ImageBaseData) ToData() Data {
 }
 
 type ImageGridData struct {
-	Name       ImageName `json:"name,omitempty"`
-	RepoName   RepoName  `json:"repoName,omitempty"`
-	Rating     int       `json:"rating,omitempty"`
-	Icon       string    `json:"icon,omitempty"`
-	AuthorIcon string    `json:"authorIcon,omitempty"`
-	Keywords   []string  `json:"keywords,omitempty"`
+	Name     ImageName `json:"name,omitempty"`
+	RepoName RepoName  `json:"repoName,omitempty"`
+	Rating   int       `json:"rating,omitempty"`
+	Icon     string    `json:"icon,omitempty"`
+	Keywords []string  `json:"keywords,omitempty"`
+	Size     int64     `json:"size,omitempty"`
 }
 
 func (i *ImageGridData) New(fd *FullData) {
@@ -90,15 +89,16 @@ func (i *ImageGridData) New(fd *FullData) {
 	i.Name = fd.ImageInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
+	i.Size = fd.ImageInfo.DetailInfo.Size
 }
 func (i *ImageGridData) ToData() Data {
 	return Data{
-		RepoName:   i.RepoName,
-		Name:       i.Name,
-		Icon:       i.Icon,
-		Keywords:   i.Keywords,
-		AuthorIcon: i.AuthorIcon,
-		Rating:     i.Rating,
+		RepoName: i.RepoName,
+		Name:     i.Name,
+		Icon:     i.Icon,
+		Keywords: i.Keywords,
+		Rating:   i.Rating,
+		Size:     i.Size,
 	}
 }
 
@@ -138,12 +138,11 @@ func (i *ImageDetailData) ToData() Data {
 		Name:        i.Name,
 		Icon:        i.Icon,
 		Keywords:    i.Keywords,
-		AuthorIcon:  i.AuthorIcon,
+		Size:        i.Size,
 		Rating:      i.Rating,
 		ID:          i.ID,
 		URL:         i.URL,
 		Docs:        i.Docs,
-		Size:        i.Size,
 		Arch:        i.Arch,
 		Description: i.Description,
 		Tags:        i.Tags,

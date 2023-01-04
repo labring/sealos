@@ -92,8 +92,6 @@ spec:
                       type: string
                     arch:
                       type: string
-                    authorIcon:
-                      type: string
                     description:
                       type: string
                     docs:
