@@ -130,6 +130,18 @@ rules:
 - apiGroups:
   - user.sealos.io
   resources:
+  - accountbalances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.sealos.io
+  resources:
   - accounts
   verbs:
   - create

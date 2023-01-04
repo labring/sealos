@@ -13,5 +13,30 @@ resources:
   kind: Metering
   path: github.com/labring/sealos/controllers/metering/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: metering
+  kind: PodResource
+  path: github.com/labring/sealos/controllers/metering/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: metering
+  kind: ExtensionResourcePrice
+  path: github.com/labring/sealos/controllers/metering/api/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: metering
+  kind: Resource
+  path: github.com/labring/sealos/controllers/metering/api/v1
+  version: v1
 version: "3"
-

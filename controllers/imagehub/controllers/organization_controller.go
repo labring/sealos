@@ -93,6 +93,14 @@ func (r *OrganizationReconciler) reconcile(ctx context.Context, obj client.Objec
 		fn(ctx, org)
 	}
 
+	// unique uuid in manager
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, org, func() error {
+		org.Spec.Manager = removeDuplicateElement(org.Spec.Manager)
+		return nil
+	}); err != nil {
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	// update status
 	repoList, _ := r.db.getRepoListByOrgName(ctx, imagehubv1.OrgName(org.Spec.Name))
 	var repoNames []imagehubv1.RepoName

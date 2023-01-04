@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/exec"
 )
 
-func NewRegistryPruneCmd() *cobra.Command {
+func newRegistryPruneCmd() *cobra.Command {
 	var configPath string
 	var dryRun, deleteUntagged bool
 	var registryImagePruneCmd = &cobra.Command{

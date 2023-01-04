@@ -17,8 +17,17 @@ limitations under the License.
 package v1
 
 import (
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+type TimeIntervalType string
+
+const (
+	MINUTE TimeIntervalType = "Minute"
+	HOUR   TimeIntervalType = "Hour"
+	DAY    TimeIntervalType = "Day"
 )
 
 /*
@@ -30,41 +39,51 @@ Spec:
     	owner: fanux
     	namespace: string
         resources: v1.ResourceList // resource type
+		timeInterval:59 // time interval
 */
 
 // MeteringSpec defines the desired state of Metering
-
 type MeteringSpec struct {
-	Namespace string          `json:"namespace"`
-	Owner     string          `json:"owner"`
-	Resources v1.ResourceList `json:"resources,omitempty"`
+	Namespace string `json:"namespace"`
+	Owner     string `json:"owner"`
+
+	//timeInterval unit is minutes
+	TimeInterval int                                          `json:"timeInterval,omitempty"`
+	Resources    map[corev1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
 }
 
-type TimeIntervalType string
+// MeteringStatus defines the observed state of Metering
+type MeteringStatus struct {
+	BillingListH     []BillingList `json:"billingListH,omitempty"`
+	BillingListD     []BillingList `json:"billingListD,omitempty"`
+	TotalAmount      int64         `json:"totalAmount,omitempty"`
+	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
+	SeqID            int64         `json:"seqID,omitempty"`
+}
 
-const (
-	MINUTE TimeIntervalType = "Minute"
-	HOUR   TimeIntervalType = "Hour"
-	DAY    TimeIntervalType = "Day"
-)
+type ResourcePrice struct {
+	Unit     *resource.Quantity `json:"unit"`
+	Price    int64              `json:"price"` // 100 = 1¥
+	Describe string             `json:"describe,omitempty"`
+}
+
+type ResourcePriceAndUsed struct {
+	ResourcePrice `json:",inline"`
+	Used          *resource.Quantity `json:"used,omitempty"`
+}
+
+type ResourceMsg struct {
+	ResourceName corev1.ResourceName
+	Amount       float64
+	Used         *resource.Quantity
+	Unit         *resource.Quantity
+}
 
 type BillingList struct {
 	TimeStamp    int64            `json:"timeStamp,omitempty"`
 	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
 	Settled      bool             `json:"settled,omitempty"`      //is settled
 	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥
-}
-
-// MeteringStatus defines the observed state of Metering
-
-type MeteringStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	BillingListM     []BillingList `json:"billingListM,omitempty"`
-	BillingListH     []BillingList `json:"billingListH,omitempty"`
-	BillingListD     []BillingList `json:"billingListD,omitempty"`
-	TotalAmount      int64         `json:"totalAmount,omitempty"`
-	LatestUpdateTime int64         `json:"latestUpdateTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -93,4 +112,19 @@ type MeteringList struct {
 
 func init() {
 	SchemeBuilder.Register(&Metering{}, &MeteringList{})
+}
+
+func DefaultResourceQuota() corev1.ResourceList {
+	return corev1.ResourceList{
+		//corev1.ResourceRequestsCPU:    resource.MustParse("100"),
+		corev1.ResourceLimitsCPU: resource.MustParse("16"),
+		//corev1.ResourceRequestsMemory: resource.MustParse("100"),
+		corev1.ResourceLimitsMemory: resource.MustParse("64Gi"),
+		//For all PVCs, the total demand for storage resources cannot exceed this value
+		corev1.ResourceRequestsStorage: resource.MustParse("100Gi"),
+		//"limit.storage": resource.MustParse("100Gi"),
+		//Local ephemeral storage
+		corev1.ResourceLimitsEphemeralStorage: resource.MustParse("100Gi"),
+		//corev1.ResourceRequestsEphemeralStorage: resource.MustParse("100Gi"),
+	}
 }

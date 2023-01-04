@@ -17,16 +17,17 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
-
-	"github.com/docker/docker/api/types"
-	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/docker/docker/api/types"
+	"github.com/spf13/cobra"
 )
 
-func NewRegistryListCmd() *cobra.Command {
+func newRegistryListImageCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
 		cfg, err := registry.GetAuthInfo()
 		if err != nil {
@@ -37,63 +38,32 @@ func NewRegistryListCmd() *cobra.Command {
 	}
 	var auth map[string]types.AuthConfig
 	var is registry.Registry
+	flagsResults := imagesResults{}
 	var registryImageListCmd = &cobra.Command{
-		Use:     "list",
-		Short:   "registry list",
-		Example: "sealctl registry list",
+		Use:   "images",
+		Short: "registry image list",
+		Example: fmt.Sprintf(`Example:
+  %[1]s registry images --filter name=public*
+  %[1]s registry images --filter tag=*1.1*
+  %[1]s registry images --filter tag=*sec
+  %[1]s registry images --filter name=public,tag=v1.1.1
+  %[1]s registry images --filter tag=<none>`, rootCmd.CommandPath()),
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			is.ListRegistry()
+			is.ListImages(flagsResults.registryName, flagsResults.filter, flagsResults.json)
 			return nil
 		},
-		PreRun: func(cmd *cobra.Command, args []string) {
+		PreRunE: func(cmd *cobra.Command, args []string) error {
 			auth = preValidate()
 			is = registry.NewImage(auth)
-		},
-	}
-
-	return registryImageListCmd
-}
-
-func NewRegistryImageCmd() *cobra.Command {
-	var registryName string
-	var registryImageCmd = &cobra.Command{
-		Use:   "image",
-		Short: "registry images manager",
-	}
-
-	registryImageCmd.PersistentFlags().StringVarP(&registryName, "name", "n", "sealos.hub:5000", "registry name")
-
-	registryImageCmd.AddCommand(NewRegistryListImageCmd(registryName))
-	registryImageCmd.AddCommand(NewRegistryImageRmiCmd(registryName))
-
-	return registryImageCmd
-}
-
-func NewRegistryListImageCmd(registryName string) *cobra.Command {
-	preValidate := func() map[string]types.AuthConfig {
-		cfg, err := registry.GetAuthInfo()
-		if err != nil {
-			logger.Error("auth info is error: %+v", err)
-			os.Exit(1)
-		}
-		return cfg
-	}
-	var auth map[string]types.AuthConfig
-	var is registry.Registry
-	var registryImageListCmd = &cobra.Command{
-		Use:     "list",
-		Short:   "registry list image",
-		Example: "sealctl registry image list",
-		Args:    cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			is.ListImages(registryName, registryName)
+			if _, ok := auth[flagsResults.registryName]; !ok {
+				return fmt.Errorf("not found %s in auth info", flagsResults.registryName)
+			}
 			return nil
 		},
-		PreRun: func(cmd *cobra.Command, args []string) {
-			auth = preValidate()
-			is = registry.NewImage(auth)
-		},
 	}
-
+	flags := registryImageListCmd.Flags()
+	flags.SetInterspersed(false)
+	flagsResults.RegisterFlags(flags)
 	return registryImageListCmd
 }

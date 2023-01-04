@@ -16,7 +16,7 @@ type TokenTransport struct {
 func (t *TokenTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := t.Transport.RoundTrip(req)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 	if authService := isTokenDemand(resp); authService != nil {
 		resp.Body.Close()

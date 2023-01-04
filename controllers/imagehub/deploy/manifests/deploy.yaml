@@ -88,11 +88,7 @@ spec:
                   properties:
                     ID:
                       type: string
-                    URL:
-                      type: string
                     arch:
-                      type: string
-                    authorIcon:
                       type: string
                     description:
                       type: string
@@ -987,7 +983,6 @@ webhooks:
     - v1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - organizations
   sideEffects: None

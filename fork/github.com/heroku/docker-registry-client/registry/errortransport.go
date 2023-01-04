@@ -26,7 +26,7 @@ type ErrorTransport struct {
 func (t *ErrorTransport) RoundTrip(request *http.Request) (*http.Response, error) {
 	resp, err := t.Transport.RoundTrip(request)
 	if err != nil {
-		return resp, err
+		return nil, err
 	}
 
 	if resp.StatusCode >= 400 {

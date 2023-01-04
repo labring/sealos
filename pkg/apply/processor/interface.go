@@ -38,8 +38,8 @@ type Interface interface {
 	Execute(cluster *v2.Cluster) error
 }
 
-func SyncNewVersionConfig(cluster *v2.Cluster) {
-	d := constants.NewData(cluster.Name)
+func SyncNewVersionConfig(clusterName string) {
+	d := constants.NewData(clusterName)
 	if !file.IsExist(d.PkiPath()) {
 		src, target := path.Join(d.Homedir(), constants.PkiDirName), d.PkiPath()
 		logger.Info("sync new version copy pki config: %s %s", src, target)

@@ -123,3 +123,15 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 
 	return fd, nil
 }
+
+func removeDuplicateElement(input []string) []string {
+	result := make([]string, 0, len(input))
+	temp := map[string]struct{}{}
+	for _, item := range input {
+		if _, ok := temp[item]; !ok {
+			temp[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
+}

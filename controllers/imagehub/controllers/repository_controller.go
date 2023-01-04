@@ -121,6 +121,9 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 	})
 	if len(repo.Status.Tags) != 0 {
 		repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
+	} else {
+		// set LatestTag nil if no tag in repo.
+		repo.Status.LatestTag = nil
 	}
 
 	latestrepo := &imagehubv1.Repository{}

@@ -47,7 +47,7 @@ func TestDefaultImage_ListRegistry(t *testing.T) {
 			is := &DefaultImage{
 				auths: tt.fields.auths,
 			}
-			is.ListRegistry()
+			is.Status(false)
 		})
 	}
 }
@@ -84,7 +84,7 @@ func TestDefaultImage_ListImages(t *testing.T) {
 			is := &DefaultImage{
 				auths: tt.fields.auths,
 			}
-			is.ListImages(tt.args.registryName, "")
+			is.ListImages(tt.args.registryName, "name=*,tag=<none>", false)
 		})
 	}
 }

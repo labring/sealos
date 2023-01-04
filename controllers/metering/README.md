@@ -1,94 +1,67 @@
-# metering
-// TODO(user): Add simple overview of use/purpose
+### 计费标准
+#### 查看阿里云按量计费
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
-
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
-
-### Running on the cluster
-1. Install Instances of Custom Resources:
-
-```sh
-kubectl apply -f config/samples/
+```
+计算型 c8y, 1vCPU 2GiB（ecs.c8y.small）0.133/小时
+通用型 g8y, 1vCPU 4GiB（ecs.g8y.small）0.200/小时
+计算型 c8y, 2vCPU 4GiB（ecs.c8y.large）0.267/小时
 ```
 
-2. Build and push your image to the location specified by `IMG`:
-	
-```sh
-make docker-build docker-push IMG=<some-registry>/metering:tag
-```
-	
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+##### 磁盘按量计费标准
 
-```sh
-make deploy IMG=<some-registry>/metering:tag
+```
+ESSD云盘20GiBPL1  0.042/小时
 ```
 
-### Uninstall CRDs
-To delete the CRDs from the cluster:
+### 价格结论
 
-```sh
-make uninstall
-```
+**综合计算：cpu：0.067/单核/小时，内存：0.033/G/小时，磁盘 0.0021G/小时**
 
-### Undeploy controller
-UnDeploy the controller to the cluster:
 
-```sh
-make undeploy
-```
 
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
+### 二、Metering 介绍
 
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+## **一、背景**
 
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
-which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
+sealos cloud 是一个多租户的，以 k8s 为内核的云操作系统，每个用户都至少有一个自己的 namespace 用来使用，这样就给怎么计费带来挑战。怎么样计费 k8s 中 用户使用的 cpu、memory 等资源？怎么样计费流量等 Metering 不可见的资源。
 
-### Test It Out
-1. Install the CRDs into the cluster:
+## 二、需求
 
-```sh
-make install
-```
+计费正在使用的pod 的cpu、memory等资源，可以计费metering感知不到的第三方资源(如流量)
 
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
+## 三、设计思路
 
-```sh
-make run
-```
+计量计费扣费解耦开，设计第三方资源计量计费接入方案
 
-**NOTE:** You can also run this in one step by running: `make install run`
+计量：计量使用的资源量
 
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
+计费：根据资源价格和使用的资源量计算出价格
 
-```sh
-make manifests
-```
+扣费：从账户中扣除计算出的价格
 
-**NOTE:** Run `make --help` for more information on all potential `make` targets
+### 3.1、各模块介绍
 
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
+![](https://tva1.sinaimg.cn/large/008vxvgGly1h89ekci465j30l00b9757.jpg)
 
-## License
+**ExtensionResourcesPrice:**注册额外资源的声明，声明中有资源的单价和单位
 
-Copyright 2022.
+**meteringQuota:**计量模块，计量使用的资源量
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+**metering:计**费模块，每分钟去meteringQuota里面看使用的多少资源，根据价格计费。
 
-    http://www.apache.org/licenses/LICENSE-2.0
+### 3.2、计量计费流程
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+![](https://tva1.sinaimg.cn/large/008vxvgGly1h89elp5qjyj30pl0ehgnr.jpg)
+
+1、资源controller注册要进行计量的资源进ExtensionResourcePrice，ExtensionResourcePrice将要计量的资源注册进MeteringQuota，将计费的资源价格注册进Metering中。
+
+2、资源controller更新MeteringQuota中资源的used，增量资源把增加的部分更新进used，比如流量，这个时间段使用50M就used中增加50Mi，更新的时间间隔按照资源controller自己的需求自己更新，可以1个钟头更新一次，price那边价格定为每小时的价格就行。
+
+3、metering计费模块，每一分钟计费一次，查看对应的meteringQuota中资源的used，使用量/单价*价格
+
+就是最终价格，增量的存入totalAmout，并且把**meteringQuota里面的used置0**。
+
+4、deduction扣费模块可以按任意时间间隔扣费。
+
+
 

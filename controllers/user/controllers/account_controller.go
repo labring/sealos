@@ -19,7 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
+
+	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 
@@ -31,11 +34,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/labring/sealos/pkg/pay"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -44,41 +44,42 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const ACCOUNTNAMESPACEENV = "ACCOUNT_NAMESPACE"
+const DEFAULTACCOUNTNAMESPACE = "sealos-system"
+
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Logger logr.Logger
+	Scheme                 *runtime.Scheme
+	Logger                 logr.Logger
+	AccountSystemNameSpace string
 }
 
 //+kubebuilder:rbac:groups=user.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=user.sealos.io,resources=accounts/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=user.sealos.io,resources=accounts/finalizers,verbs=update
+//+kubebuilder:rbac:groups=user.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the Account object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := log.FromContext(ctx)
 	//It should not stop the normal process for the failure to delete the payment
 	// delete payments that exist for more than 5 minutes
 	if err := r.DeletePayment(ctx); err != nil {
 		r.Logger.Error(err, "delete payment failed")
 	}
 
-	payment := &userv1.Payment{}
-	err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment)
-	if errors.IsNotFound(err) {
-		return ctrl.Result{}, nil
+	accountBalance := userv1.AccountBalance{}
+	if err := r.Get(ctx, req.NamespacedName, &accountBalance); err == nil {
+		if err := r.updateDeductionBalance(ctx, &accountBalance); err != nil {
+			r.Logger.Error(err, err.Error())
+			return ctrl.Result{}, err
+		}
+	} else if client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
 	}
-	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get payment: %v", err)
+
+	payment := &userv1.Payment{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: req.Name}, payment); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 	if payment.Spec.UserID == "" || payment.Spec.Amount == 0 {
 		return ctrl.Result{}, fmt.Errorf("payment is invalid: %v", payment)
@@ -90,31 +91,16 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	account := &userv1.Account{}
-	account.Name = payment.Spec.UserID
-	account.Namespace = helper.GetDefaultNamespace()
-	err = r.Get(ctx, client.ObjectKey{Namespace: helper.GetDefaultNamespace(), Name: account.Name}, account)
-	if errors.IsNotFound(err) {
-		account.Status.Balance = 0
-		account.Status.ChargeList = []userv1.Charge{}
-		logger.Info("create account", "account", account)
-		if err := r.Create(ctx, account); err != nil {
-			return ctrl.Result{}, fmt.Errorf("create account failed: %v", err)
-		}
-	} else if err != nil {
+	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNameSpace, payment.Namespace)
+	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
-	}
-
-	// add role get account permission
-	if err := r.syncRoleAndRoleBinding(ctx, payment.Spec.UserID, payment.Namespace); err != nil {
-		return ctrl.Result{}, fmt.Errorf("sync role and rolebinding failed: %v", err)
 	}
 
 	status, err := pay.QueryOrder(payment.Status.TradeNO)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("query order failed: %v", err)
 	}
-	logger.V(1).Info("query order status", "status", status)
+	r.Logger.V(1).Info("query order status", "status", status)
 	switch status {
 	case pay.StatusSuccess:
 		account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
@@ -146,11 +132,30 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
+func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamespace string, userNamespace string) (*userv1.Account, error) {
+	account := userv1.Account{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: accountNamespace,
+		},
+	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	// add role get account permission
+	if err := r.syncRoleAndRoleBinding(ctx, name, userNamespace); err != nil {
+		return nil, fmt.Errorf("sync role and rolebinding failed: %v", err)
+	}
+	return &account, nil
+}
+
 func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, namespace string) error {
 	role := rbacV1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRole-" + name,
-			Namespace: helper.GetDefaultNamespace(),
+			Namespace: r.AccountSystemNameSpace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
@@ -169,7 +174,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRoleBinding-" + name,
-			Namespace: helper.GetDefaultNamespace(),
+			Namespace: r.AccountSystemNameSpace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
@@ -205,13 +210,52 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 	return nil
 }
 
+func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountBalance *userv1.AccountBalance) error {
+	if accountBalance.Status.Status == meteringv1.Complete {
+		return nil
+	}
+
+	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNameSpace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
+	account, err := r.syncAccount(ctx, accountBalance.Spec.Owner, r.AccountSystemNameSpace, "ns-"+accountBalance.Spec.Owner)
+	if err != nil {
+		r.Logger.Error(err, err.Error())
+		return err
+	}
+
+	account.Status.DeductionBalance += accountBalance.Spec.Amount
+	account.Status.ChargeList = append(account.Status.ChargeList, userv1.Charge{
+		Amount:             accountBalance.Spec.Amount,
+		Time:               metav1.Now(),
+		Status:             string(accountBalance.Status.Status),
+		AccountBalanceName: accountBalance.Name,
+	})
+
+	if err := r.Status().Update(ctx, account); err != nil {
+		r.Logger.Error(err, err.Error())
+		return err
+	}
+
+	accountBalance.Status.Status = meteringv1.Complete
+	if err := r.Status().Update(ctx, accountBalance); err != nil {
+		r.Logger.Error(err, err.Error())
+		return err
+	}
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "account_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
+
+	r.AccountSystemNameSpace = os.Getenv(ACCOUNTNAMESPACEENV)
+	if r.AccountSystemNameSpace == "" {
+		r.AccountSystemNameSpace = DEFAULTACCOUNTNAMESPACE
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&userv1.Account{}).
 		Watches(&source.Kind{Type: &userv1.Payment{}}, &handler.EnqueueRequestForObject{}).
+		Watches(&source.Kind{Type: &userv1.AccountBalance{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
 }

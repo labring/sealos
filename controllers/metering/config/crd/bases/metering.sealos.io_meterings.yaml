@@ -44,6 +44,7 @@ spec:
           metadata:
             type: object
           spec:
+            description: MeteringSpec defines the desired state of Metering
             properties:
               namespace:
                 type: string
@@ -51,18 +52,38 @@ spec:
                 type: string
               resources:
                 additionalProperties:
-                  anyOf:
-                  - type: integer
-                  - type: string
-                  pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                  x-kubernetes-int-or-string: true
-                description: ResourceList is a set of (resource name, quantity) pairs.
+                  properties:
+                    describe:
+                      type: string
+                    price:
+                      format: int64
+                      type: integer
+                    unit:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  required:
+                  - price
+                  - unit
+                  type: object
                 type: object
+              timeInterval:
+                description: timeInterval unit is minutes
+                type: integer
             required:
             - namespace
             - owner
             type: object
           status:
+            description: MeteringStatus defines the observed state of Metering
             properties:
               billingListD:
                 items:
@@ -94,25 +115,10 @@ spec:
                       type: integer
                   type: object
                 type: array
-              billingListM:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regenerate code after modifying
-                  this file'
-                items:
-                  properties:
-                    amount:
-                      format: int64
-                      type: integer
-                    settled:
-                      type: boolean
-                    timeInterval:
-                      type: string
-                    timeStamp:
-                      format: int64
-                      type: integer
-                  type: object
-                type: array
               latestUpdateTime:
+                format: int64
+                type: integer
+              seqID:
                 format: int64
                 type: integer
               totalAmount:

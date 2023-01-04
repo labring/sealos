@@ -1,0 +1,24 @@
+# permissions for end users to edit podresources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: podresource-editor-role
+rules:
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.sealos.io
+  resources:
+  - podresources/status
+  verbs:
+  - get

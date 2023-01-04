@@ -17,32 +17,54 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
 var organizationlog = logf.Log.WithName("organization-resource")
 
 func (r *Organization) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	m := &OrgMutator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(r).
+		WithDefaulter(m).
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// +kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-organization,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=organizations,verbs=create,versions=v1,name=morganization.kb.io,admissionReviewVersions=v1
+// +kubebuilder:object:generate=false
 
-//+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-organization,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=organizations,verbs=create;update,versions=v1,name=morganization.kb.io,admissionReviewVersions=v1
+type OrgMutator struct {
+	client.Client
+}
 
-var _ webhook.Defaulter = &Organization{}
-
-// Default implements webhook.Defaulter so a webhook will be registered for the type
-func (r *Organization) Default() {
-	organizationlog.Info("default", "name", r.Name)
-
-	// TODO(user): fill in your defaulting logic.
+// Default mutate when create org
+func (m OrgMutator) Default(ctx context.Context, obj runtime.Object) error {
+	org, ok := obj.(*Organization)
+	if !ok {
+		return errors.New("obj convert Organization is error")
+	}
+	organizationlog.Info("default", "name", org.Name)
+	req, err := admission.RequestFromContext(ctx)
+	if err != nil {
+		organizationlog.Info("get request from context error when validate", "obj name", org.Name)
+		return err
+	}
+	// only change user-system user creation
+	// get userName by replace "system:serviceaccount:user-system:labring-user-name" to "labring-user-name"
+	org.Spec.Creator = strings.Replace(req.UserInfo.Username, fmt.Sprintf("%s:%s:", saPrefix, getUserNamespace()), "", -1)
+	org.Spec.Manager = append(org.Spec.Manager, org.Spec.Creator)
+	return nil
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.

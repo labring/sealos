@@ -1,0 +1,11 @@
+apiVersion: metering.sealos.io/v1
+kind: ExtensionResourcePrice
+metadata:
+  name: extensionresourceprice-sample
+spec:
+  resourceName: pod
+  resources:
+    cpu:
+      unit: "10"
+      price: 67
+      describe: "cost per cpu per hour（price:100 = 1¥）"

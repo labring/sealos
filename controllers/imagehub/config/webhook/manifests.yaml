@@ -41,7 +41,6 @@ webhooks:
     - v1
     operations:
     - CREATE
-    - UPDATE
     resources:
     - organizations
   sideEffects: None

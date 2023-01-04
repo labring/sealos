@@ -21,8 +21,9 @@ import (
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
-	"github.com/labring/sealos/controllers/metering/controllers"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
+	"github.com/labring/sealos/controllers/metering/controllers"
 
 	"os"
 
@@ -90,6 +91,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Metering")
 		os.Exit(1)
 	}
+	if err = (&controllers.PodResourceReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "PodResource")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
