@@ -66,8 +66,6 @@ spec:
                   properties:
                     ID:
                       type: string
-                    URL:
-                      type: string
                     arch:
                       type: string
                     description:
