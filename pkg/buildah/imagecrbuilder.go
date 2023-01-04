@@ -24,6 +24,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/containers/storage"
+
+	"github.com/spf13/cobra"
+
 	"github.com/containers/image/v5/pkg/docker/config"
 
 	"k8s.io/client-go/util/homedir"
@@ -56,6 +60,7 @@ const (
 	ImagehubVersion  = "v1"
 	ImagehubResource = "images"
 	ImagehubKind     = "Image"
+	KubeConfigPath   = "config"
 )
 
 const (
@@ -85,9 +90,10 @@ type ImageCRBuilder struct {
 	username     string
 	userconfig   string
 	ImageCR      *imagev1.Image
+	store        storage.Store
 }
 
-func NewAndRunImageCRBuilder(args []string) {
+func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string) {
 	var dest string
 	switch len(args) {
 	case 1:
@@ -97,12 +103,16 @@ func NewAndRunImageCRBuilder(args []string) {
 	default:
 		return
 	}
+	store, err := getStore(cmd)
+	if err != nil {
+		return
+	}
 	registryname, err := parseRawURL(dest)
 	if err != nil {
 		return
 	}
 	//run without error returns
-	icb := &ImageCRBuilder{dest, registryname, "", "", "", &imagev1.Image{}}
+	icb := &ImageCRBuilder{dest, registryname, "", "", "", &imagev1.Image{}, store}
 	if icb.CheckLoginStatus() {
 		fmt.Println("Start image cr push")
 		icb.Run()
@@ -188,7 +198,7 @@ func (icb *ImageCRBuilder) GetMetadata(MountPoint string) error {
 		//app config is the based file ,it should read first
 		icb.ReadOrBuildImageCRFile,
 		icb.ReadInspectInfo,
-		icb.ReadReadme,
+		icb.ReadDocs,
 	}
 	for _, f := range fileReadPipeLine {
 		if out, err := f(MountPoint); err != nil {
@@ -202,7 +212,7 @@ func (icb *ImageCRBuilder) GetMetadata(MountPoint string) error {
 
 func (icb *ImageCRBuilder) ImageCRApply() error {
 	//TODO: use user private kubeconfig rather than global kubeconfig
-	client, err := kubernetes.NewKubernetesClient("", "")
+	client, err := kubernetes.NewKubernetesClient(filepath.Join(homedir.HomeDir(), SealosRootPath, icb.registryname, icb.username, KubeConfigPath), "")
 	if err != nil {
 		return fmt.Errorf("new KubernetesClient err: %v", err)
 	}
@@ -280,13 +290,13 @@ func (icb *ImageCRBuilder) ImageCRParse(c []byte) error {
 }
 
 // ReadReadme gen image cr detail info: Readme
-func (icb *ImageCRBuilder) ReadReadme(MountPoint string) (string, error) {
+func (icb *ImageCRBuilder) ReadDocs(MountPoint string) (string, error) {
 	if file.IsExist(filepath.Join(MountPoint, READMEpath)) {
 		c, err := file.ReadAll(filepath.Join(MountPoint, READMEpath))
 		if err != nil {
 			return FailReadReadmeOutput, fmt.Errorf("read README.md err: %v", err)
 		}
-		icb.ImageCR.Spec.DetailInfo.Description = string(c)
+		icb.ImageCR.Spec.DetailInfo.Docs = string(c)
 	}
 	return SuccessReadReadmeOutput, nil
 }
@@ -314,14 +324,13 @@ func (icb *ImageCRBuilder) ReadInspectInfo(MountPoint string) (string, error) {
 }
 
 func (icb *ImageCRBuilder) BindImageContent(containerInfo buildah.BuilderInfo, config v1.Image, manifest v1.Manifest) {
+	var err error
 	icb.ImageCR.Spec.DetailInfo.ID = containerInfo.FromImageID
 	icb.ImageCR.Spec.DetailInfo.Arch = config.Architecture
-	var size int64
-	size = manifest.Config.Size * 1000
-	for _, layer := range manifest.Layers {
-		size += layer.Size
+	icb.ImageCR.Spec.DetailInfo.Size, _ = icb.store.ImageSize(containerInfo.FromImageID)
+	if err != nil {
+		logger.Debug("image size err : %v", err)
 	}
-	icb.ImageCR.Spec.DetailInfo.Size = size
 }
 
 // GetClearImagename replace 'hub.sealos.cn/org/repo:tag' to 'org/repo:tag'
