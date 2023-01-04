@@ -6,6 +6,15 @@ sidebar_position: 7
 
 Datapack is designed to package data from different CRD with different information granularity.
 
+## Why use it
+
+It's not convenient to get cr directly: repository has multi images and imagehub should display the latest tag info of
+the repository. If getting cr directly, you should get every repository by using `get repository` and using `get image`
+to get its latest tag info.
+
+But if you use datapack, you can easily get multi repositories and their latest tag info in one time and reuse the
+result by some strategy.
+
 ## How it works
 
 Once a datapack CR is created, datapack controller will base the CR's spec to get information from images and pack it up
@@ -88,4 +97,6 @@ status:
 
 **Notice that datapack cr will be expired and will be deleted after its expiration.**
 
-And it's recommended to hash the datapack cr's spec as datapack meta name if you need this datapack more than once.
+And it's recommended to hash the datapack cr's spec as datapack meta name if you need this datapack more than once. In
+sealos imagehub application, we do so, so that multiple users can get the result that generated before which means
+speeding up the progress of getting repositories grid view.
