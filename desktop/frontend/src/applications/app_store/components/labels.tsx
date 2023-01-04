@@ -21,13 +21,9 @@ function Labels(props: TLabels) {
   const [selectedLabels, setSelectedLabels] = useState<TImageLabels[]>([]);
 
   useEffect(() => {
-    const isCheckedLabels = labels.filter((item) => item.checked === true);
-    setSelectedLabels(isCheckedLabels);
-    if (isCheckedLabels.length > 0) {
-      setAllActive(true);
-    } else {
-      setAllActive(false);
-    }
+    const checkedLabels = labels.filter((item) => item.checked === true);
+    setSelectedLabels(checkedLabels);
+    setAllActive(checkedLabels.length === labels.length);
   }, [labels]);
 
   const handleClick = (value: string) => {
@@ -35,11 +31,7 @@ function Labels(props: TLabels) {
       setLabelsFunction(
         produce((draft: TImageLabels[]) => {
           const isCheckAll = draft.every((item) => item.checked === true);
-          if (isCheckAll) {
-            draft.forEach((item) => (item.checked = false));
-          } else {
-            draft.forEach((item) => (item.checked = true));
-          }
+          draft.forEach((item) => (item.checked = !isCheckAll));
         })
       );
     } else {

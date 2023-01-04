@@ -26,6 +26,7 @@ export type TAppDetail = {
   keywords: string[];
   name: string;
   tags: TTag[];
+  size: number;
 };
 
 export const ImagehubLabels = [
@@ -44,4 +45,14 @@ export const ImagehubLabels = [
 export function handleImageName(imageName: string): { name: string; tag: string } {
   let result = imageName.split(':');
   return { name: result[0], tag: result[1] };
+}
+
+export function formattedSize(size: number, reserve: number = 1) {
+  let suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let count = 0;
+  while (size >= 1000 && count < 4) {
+    size = size / 1000;
+    count++;
+  }
+  return `${size.toFixed(reserve)}` + `${suffixes[count]}`;
 }

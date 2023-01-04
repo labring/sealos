@@ -14,7 +14,7 @@ html {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,.5);
+  background: rgba(0, 0, 0, 0.5);
   background-clip: padding-box;
   border: 6px solid transparent;
   border-radius: 14px;
@@ -80,8 +80,6 @@ body[data-theme='dark'] .edgeBrowser {
     filter: invert(1);
   }
 }
-
-
 
 body[data-theme='dark'] .wnstore {
   --nav-btn-hov: #454545;

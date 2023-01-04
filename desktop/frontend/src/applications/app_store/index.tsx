@@ -9,6 +9,7 @@ import styles from './index.module.scss';
 import MinePage from './mine_page';
 import OrganizationPage from './organization_page';
 import StorePage from './store_page';
+import Icon from 'components/iconfont';
 
 const ApppStoreContext = createContext({} as TAppStore);
 

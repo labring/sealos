@@ -2,9 +2,8 @@
 import {
   ArrowLeft16Regular,
   ChevronDown24Regular,
-  Tag16Filled,
   DocumentOnePage20Filled,
-  Cloud16Filled
+  Tag16Filled
 } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
@@ -13,11 +12,12 @@ import produce from 'immer';
 import { useEffect, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, handleImageName, TAppDetail, TTag } from './app_store_common';
+import { EPageType, formattedSize, handleImageName, TAppDetail, TTag } from './app_store_common';
 import Button from './components/button';
-import Labels from './components/labels';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
+import Iconfont from 'components/iconfont';
+import { iteratorSymbol } from 'immer/dist/internal';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
@@ -50,6 +50,7 @@ export default function DetailPage() {
   if (appDetailStatus) {
     appDetail = data?.data?.items[0];
   }
+  // console.log(appDetail);
 
   const handleScrollEvent = () => {
     const scrollTop = appRef.current?.scrollTop;
@@ -119,8 +120,12 @@ export default function DetailPage() {
           ) : (
             <>
               <div className={clsx(styles.appDesc)}>
-                <div className={styles.title}>
-                  {selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}
+                <div className={clsx(styles.title, 'flex items-center')}>
+                  <div>{selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}</div>
+                  <div className={styles.fingerPrint}>
+                    <Iconfont iconName="icon-hash" />
+                    {/* <span className={styles.id}>{appDetail.ID}</span> */}
+                  </div>
                 </div>
                 <p className={styles.text}>{appDetail?.description}</p>
                 <div className={'my-4'}>
@@ -143,7 +148,9 @@ export default function DetailPage() {
                 <span className="text-stone-500 text-xs mt-2">下载量</span>
               </div>
               <div className="flex flex-col shrink-0">
-                <span className={styles.imageSizeText}> 111M</span>
+                <span className={styles.imageSizeText}>
+                  {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
+                </span>
                 <span className="text-stone-500 text-xs mt-2">大小</span>
               </div>
             </>
@@ -155,7 +162,7 @@ export default function DetailPage() {
           ref={appRef}
           className={clsx(styles.baseCard, styles.mainLeft, styles.hiddenScrollWrap)}
         >
-          <div className="absolute w-full pt-8 px-6 ">
+          <div className="absolute w-full py-8 px-6 ">
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
                 <DocumentOnePage20Filled primaryFill=" #717D8A" />
@@ -185,7 +192,7 @@ export default function DetailPage() {
                     onClick={() => handleSelectTag(item.name)}
                   >
                     <div className={clsx('w-12', { 'opacity-0': !item.checked })}>
-                      <ChevronDown24Regular />
+                      <Iconfont iconName="icon-checked" />
                     </div>
                     <div>{item.name}</div>
                     <div className="ml-auto">size</div>

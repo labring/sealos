@@ -2,10 +2,11 @@
 import { Spinner } from '@fluentui/react-components';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
+import Iconfont from 'components/iconfont';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, handleImageName, ImagehubLabels } from './app_store_common';
+import { EPageType, formattedSize, handleImageName, ImagehubLabels } from './app_store_common';
 import Button from './components/button';
 import Labels from './components/labels';
 import { useAppStoreContext } from './index';
@@ -21,7 +22,8 @@ type TAppInfo = {
   icon: string;
   keywords: string[];
   name: string;
-  desc?: string;
+  description?: string;
+  size: number;
 };
 
 function StorePage() {
@@ -65,8 +67,10 @@ function StorePage() {
 
   return (
     <div className="grow flex">
-      <div className="ml-8">
-        <Labels display="column" labels={imageLabels} setLabelsFunction={setImageLabels} />
+      <div className={clsx(styles.labelsScrollWrap)}>
+        <div className="absolute ml-8 pb-10">
+          <Labels display="column" labels={imageLabels} setLabelsFunction={setImageLabels} />
+        </div>
       </div>
       <div className="flex flex-col ml-6 grow">
         <div className="flex items-center ">
@@ -79,7 +83,7 @@ function StorePage() {
         )}
         <div className={clsx(styles.pageWrapperScroll, styles.hiddenScrollWrap)}>
           {isSuccess && (
-            <div className="space-y-4 w-full  absolute">
+            <div className="absolute w-full space-y-4 pb-10">
               {appLists?.map((item: TAppInfo) => {
                 return (
                   <div
@@ -87,14 +91,17 @@ function StorePage() {
                     className={clsx(styles.appInfo, 'mr-8')}
                     onClick={() => toPage(EPageType.DetailPage, item.name)}
                   >
-                    <div className=" p-8 flex items-center justify-center shrink-0">
-                      <img src={item.icon} alt={item.name} width={110} height={110} />
+                    <div className="p-8 flex items-center justify-center shrink-0">
+                      <img width={110} height={110} src={item?.icon} alt={item?.name} />
                     </div>
                     <div className={clsx(styles.appDesc)}>
-                      <div className={clsx(styles.title, 'pt-6')}>
-                        {handleImageName(item?.name).name}
+                      <div className={clsx(styles.title, 'pt-6 flex items-center')}>
+                        <div>{handleImageName(item?.name).name}</div>
+                        <div className={styles.fingerPrint}>
+                          <Iconfont iconName="icon-hash" />
+                        </div>
                       </div>
-                      <p className={styles.appDescText}>{item?.desc}</p>
+                      <p className={styles.appDescText}>{item?.description}</p>
                       <div className={clsx('flex space-x-4 mb-4')}>
                         {item?.keywords?.map((item) => {
                           return (
@@ -108,7 +115,7 @@ function StorePage() {
                         })}
                       </div>
                     </div>
-                    <div>
+                    <div className=" pr-8">
                       <div className="flex">
                         <div className={clsx('w-20 h-20 ml-6 pt-6')}>
                           <div className={styles.imageSizeText}> 19.1K </div>
@@ -116,7 +123,9 @@ function StorePage() {
                         </div>
                         <div className={styles.border1px}> </div>
                         <div className="w-20 h-20 pt-6 pr-6">
-                          <div className={styles.imageSizeText}> 111M</div>
+                          <div className={styles.imageSizeText}>
+                            {item.size ? formattedSize(item.size) : 'empty'}
+                          </div>
                           <span className="text-stone-500 text-xs">大小</span>
                         </div>
                       </div>

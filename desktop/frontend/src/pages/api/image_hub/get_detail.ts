@@ -11,6 +11,13 @@ type DataPackDesc = {
   datas: any;
 };
 
+enum DataPackStatus {
+  Notrun,
+  Ok,
+  Pending,
+  Error
+}
+
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   const { kubeconfig, image_name } = req.body;
 
@@ -32,7 +39,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
     const dataDesc = await GetClusterObject(kc, ImageHubDataPackMeta, pack_name);
     if (dataDesc?.body?.status) {
       const datapackDesc = dataDesc.body.status as DataPackDesc;
-      if (datapackDesc.codes === 1) {
+      if (datapackDesc.codes === DataPackStatus.Ok) {
         let result = Object.values(datapackDesc.datas);
         return JsonResp({ items: result, code: 200 }, resp);
       }

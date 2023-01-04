@@ -27,7 +27,7 @@ $des-text-color: #605e5c;
   }
 
   .border1px {
-    border: 0.5px solid $des-text-color;
+    border-right: 1px solid $des-text-color;
     height: 24px;
     position: relative;
     top: 26px;
@@ -37,4 +37,16 @@ $des-text-color: #605e5c;
 
 .title {
   font-weight: 400;
+}
+
+.labelsScrollWrap {
+  flex-basis: 150px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }

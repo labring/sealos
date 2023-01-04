@@ -1,5 +1,5 @@
 function Organization() {
-  return <div>organization</div>;
+  return <div></div>;
 }
 
 export default Organization;

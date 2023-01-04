@@ -1,5 +1,5 @@
 function Mine() {
-  return <div>mine</div>;
+  return <div></div>;
 }
 
 export default Mine;
