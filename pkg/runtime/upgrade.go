@@ -77,9 +77,10 @@ func (k *KubeadmRuntime) upgradeNode(ips []string, versoin string) error {
 		now := time.Now()
 		//restart api-server takes a few seconds
 		for err != nil {
-			if time.Now().After(now.Add(1 * time.Minute)) {
+			if time.Now().After(now.Add(2 * time.Minute)) {
 				return err
 			}
+			time.Sleep(5 * time.Second)
 			err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
 		}
 	}
