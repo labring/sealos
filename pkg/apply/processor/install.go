@@ -28,6 +28,7 @@ import (
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/guest"
+	runtime "github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -39,6 +40,7 @@ var ForceOverride bool
 type InstallProcessor struct {
 	ClusterFile      clusterfile.Interface
 	Buildah          buildah.Interface
+	Runtime          runtime.Interface
 	Guest            guest.Interface
 	NewMounts        []v2.MountImage
 	NewImages        []string
@@ -87,6 +89,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 		c.RunConfig,
 		c.MountRootfs,
 		c.MirrorRegistry,
+		c.UpgradeIfNeed,
 		// i.GetPhasePluginFunc(plugin.PhasePreGuest),
 		c.RunGuest,
 		c.PostProcess,
@@ -160,6 +163,30 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			c.NewMounts = append(c.NewMounts, *mount)
 		}
 	}
+	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	if err != nil {
+		return fmt.Errorf("failed to init runtime, %v", err)
+	}
+	c.Runtime = runTime
+	return nil
+}
+
+func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
+	logger.Info("Executing UpgradeIfNeed Pipeline in InstallProcessor")
+	for i := range c.NewMounts {
+		img := c.NewMounts[i]
+		if img.Type != v2.RootfsImage {
+			continue
+		}
+		logger.Debug("try Upgrade Cluster to %s", img.Labels["version"])
+		err := c.Runtime.UpgradeCluster(img.Labels["version"])
+		if err != nil {
+			logger.Info("upgrade cluster failure")
+			return err
+		}
+		//upgrade success; replace the old cluster mount
+		cluster.ReplaceRootfsImage()
+	}
 	return nil
 }
 
@@ -199,6 +226,7 @@ func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
 }
 
 func (c *InstallProcessor) MountRootfs(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline MountRootfs in InstallProcessor.")
 	if len(c.NewMounts) == 0 {
 		return nil
 	}

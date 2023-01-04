@@ -67,7 +67,6 @@ controllerManager:
   extraArgs:
     bind-address: 0.0.0.0
     feature-gates: EphemeralContainers=true
-    experimental-cluster-signing-duration: 876000h
   extraVolumes:
     - hostPath: /etc/localtime
       mountPath: /etc/localtime

@@ -146,8 +146,16 @@ func (k *KubeadmRuntime) Validate() error {
 }
 
 func (k *KubeadmRuntime) UpgradeCluster(version string) error {
-	if !versionutil.Compare(k.getKubeVersionFromImage(),version){
-		logger.Info("cluster vesion: %s will be upgraded into %s.",k.getKubeVersionFromImage(),version)
+	curversion := k.getKubeVersionFromImage()
+	if curversion == version {
+		logger.Info("the cluster version no change")
+		return nil
+	} else if versionutil.Compare(version, curversion) {
+		logger.Info("cluster vesion: %s will be upgraded into %s.", curversion, version)
+		return k.upgradeCluster(version)
+	} else if versionutil.Compare(curversion, version) {
+		logger.Info("new cluster version %s behind the current version %s", version, curversion)
+		return nil
 	}
-	return k.upgradeCluster(version)
+	return fmt.Errorf("verion format error")
 }

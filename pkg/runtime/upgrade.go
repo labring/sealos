@@ -1,10 +1,18 @@
 package runtime
 
+import (
+	"fmt"
+	"time"
+)
+
 const (
 	upgradeApplyCmd = "kubeadm upgrade apply %s"
 	upradeNodeCmd   = "kubeadm upgrade node"
 	drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
 	uncordonNodeCmd = "kubectl uncordon %s"
+	daemonReload    = "systemctl daemon-reload"
+	restartKubelet  = "systemctl restart kubelet"
+	kubeBinaryPath  = "/var/lib/sealos/data/default/rootfs/bin"
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
@@ -27,39 +35,54 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
 	//install kubeadm:{version} at master0
-
-	//execute  kubeadm upgrade apply {version} at master0
-	k.upgradeApply(master0ip, version)
-
-	//install kubelet:{version},kubectl{version} at master0
-	//and reload kubelet daemon
-
-	k.reloadKubelet(master0ip)
-	return nil
-}
-
-func (k *KubeadmRuntime) upgradeApply(ip string, version string) error {
-
-	return nil
+	err := k.sshCmdAsync(master0ip,
+		fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
+		//execute  kubeadm upgrade apply {version} at master0
+		fmt.Sprintf(upgradeApplyCmd, version),
+		//install kubelet:{version},kubectl{version} at master0
+		fmt.Sprintf("cp -rf %s/kubectl /usr/bin", kubeBinaryPath),
+		fmt.Sprintf("cp -rf %s/kubelet /usr/bin", kubeBinaryPath),
+		//reload kubelet daemon
+		daemonReload,
+		restartKubelet,
+	)
+	return err
 }
 
 func (k *KubeadmRuntime) upgradeNode(ips []string, versoin string) error {
 	for _, ip := range ips {
-		//install kubeadm:{version} at the node
-
-		//kubectl drain <node-to-drain> --ignore-daemonsets
-
-		//install kubelet:{version},kubectl{version} at the node
-
+		nodename, err := k.getRemoteInterface().Hostname(ip)
+		if err != nil {
+			return err
+		}
+		err = k.sshCmdAsync(ip,
+			//install kubeadm:{version} at the node
+			fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
+			//upgrade other control-plane and nodes
+			upradeNodeCmd,
+			//kubectl drain <node-to-drain> --ignore-daemonsets
+			fmt.Sprintf(drainNodeCmd, nodename),
+			//install kubelet:{version},kubectl{version} at the node
+			fmt.Sprintf("cp -rf %s/kubectl /usr/bin", kubeBinaryPath),
+			fmt.Sprintf("cp -rf %s/kubelet /usr/bin", kubeBinaryPath),
+			//reload kubelet daemon
+			daemonReload,
+			restartKubelet,
+		)
+		if err != nil {
+			return err
+		}
 		//kubectl uncordon <node-to-uncordon>
-
-		k.reloadKubelet(ip)
+		err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
+		now := time.Now()
+		//restart api-server takes a few seconds
+		for err != nil {
+			if time.Now().After(now.Add(1 * time.Minute)) {
+				return err
+			}
+			err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
+		}
 	}
 
 	return nil
-}
-
-func (k *KubeadmRuntime) reloadKubelet(ip string) error {
-	cmd := []string{"systemctl daemon-reload", "systemctl restart kubelet"}
-	return k.getSSHInterface().CmdAsync(ip, cmd...)
 }
