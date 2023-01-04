@@ -88,11 +88,7 @@ spec:
                   properties:
                     ID:
                       type: string
-                    URL:
-                      type: string
                     arch:
-                      type: string
-                    authorIcon:
                       type: string
                     description:
                       type: string
