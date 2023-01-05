@@ -5,7 +5,7 @@ metadata:
 spec:
   name: labring/cert-manager:v1.8.0
   detail:
-    keywords: [ storage ]
+    keywords: [ Storage ]
     description: Cloud native certificate management. X.509 certificate management for Kubernetes and OpenShift
     icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
     docs: docs
