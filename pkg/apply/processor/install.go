@@ -31,6 +31,7 @@ import (
 	runtime "github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
+	"github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
 )
@@ -163,25 +164,25 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			c.NewMounts = append(c.NewMounts, *mount)
 		}
 	}
-	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}
-	c.Runtime = runTime
+	c.Runtime = runtime
 	return nil
 }
 
 func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 	logger.Info("Executing UpgradeIfNeed Pipeline in InstallProcessor")
-	for i := range c.NewMounts {
-		img := c.NewMounts[i]
-		if img.Type != v2.RootfsImage {
+	for _, img := range c.NewMounts {
+		version := images.GetKubeVersionFromImage(img)
+		if version == "" {
 			continue
 		}
-		logger.Debug("try Upgrade Cluster to %s", img.Labels[v2.ImageKubeVersionKey])
-		err := c.Runtime.UpgradeCluster(img.Labels[v2.ImageKubeVersionKey])
+		logger.Debug("try Upgrade Cluster to %s", version)
+		err := c.Runtime.UpgradeCluster(version)
 		if err != nil {
-			logger.Info("upgrade cluster failure")
+			logger.Info("upgrade cluster failed")
 			return err
 		}
 		//upgrade success; replace the old cluster mount

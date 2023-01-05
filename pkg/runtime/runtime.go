@@ -148,7 +148,7 @@ func (k *KubeadmRuntime) Validate() error {
 func (k *KubeadmRuntime) UpgradeCluster(version string) error {
 	curversion := k.getKubeVersionFromImage()
 	if curversion == version {
-		logger.Info("the cluster version no change")
+		logger.Info("The cluster version has not changed")
 		return nil
 	} else if versionutil.Compare(version, curversion) {
 		logger.Info("cluster vesion: %s will be upgraded into %s.", curversion, version)

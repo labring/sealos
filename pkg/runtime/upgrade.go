@@ -15,7 +15,16 @@
 package runtime
 
 import (
+	"context"
 	"fmt"
+	str "strings"
+	"time"
+
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/versionutil"
 )
 
 var (
@@ -26,11 +35,18 @@ var (
 	uncordonNodeCmd = "kubectl uncordon %s"
 	daemonReload    = "systemctl daemon-reload"
 	restartKubelet  = "systemctl restart kubelet"
-	kubeBinaryPath  = "/var/lib/sealos/data/default/rootfs/bin"
+	KubeBinaryPath  = "/var/lib/sealos/data/%s/rootfs/bin"
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
-	//upgrade control-plane
+	//v1.25.0 some flag unsupported
+	if versionutil.Compare(version, V1250) {
+		logger.Info("start change ClusterConfiguration up to v1.25")
+		if err := k.ChangeConfigToV125(); err != nil {
+			return err
+		}
+	}
+	//upgrade master0
 	err := k.upgradeMaster0(version)
 	if err != nil {
 		return err
@@ -43,6 +59,8 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		}
 		upgradeNodes = append(upgradeNodes, ip)
 	}
+	//wait for restarting api-server that may happen connection refused, or it may fail.
+	time.Sleep(5 * time.Second)
 	return k.upgradeOtherNodes(upgradeNodes)
 }
 
@@ -52,6 +70,8 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	if err != nil {
 		return err
 	}
+	clusterName := k.Cluster.Name
+	kubeBinaryPath := fmt.Sprintf(KubeBinaryPath, clusterName)
 	//install kubeadm:{version} at master0
 	err = k.sshCmdAsync(master0ip,
 		fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
@@ -78,6 +98,8 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err != nil {
 			return err
 		}
+		clusterName := k.Cluster.Name
+		kubeBinaryPath := fmt.Sprintf(KubeBinaryPath, clusterName)
 		err = k.sshCmdAsync(ip,
 			//install kubeadm:{version} at the node
 			fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
@@ -98,6 +120,33 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) ChangeConfigToV125() error {
+	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+	if err != nil {
+		logger.Info("get k8s-client failure : %s", err)
+		return err
+	}
+	KubeadmConfig, err := cli.Kubernetes().CoreV1().ConfigMaps("kube-system").Get(context.TODO(), "kubeadm-config", metaV1.GetOptions{})
+	if err != nil {
+		logger.Info("get kubeadmConfig with k8s-client failure : %s", err)
+		return err
+	}
+	ccf := KubeadmConfig.Data[ClusterConfiguration]
+	logger.Debug("get configmap data:\n%s", ccf)
+
+	ccf = str.ReplaceAll(ccf, "TTLAfterFinished=true,", "")
+	ccf = str.ReplaceAll(ccf, "\n    experimental-cluster-signing-duration: 876000h", "")
+
+	logger.Debug("update config:\n%s", ccf)
+	KubeadmConfig.Data[ClusterConfiguration] = ccf
+	_, err = cli.Kubernetes().CoreV1().ConfigMaps("kube-system").Update(context.TODO(), KubeadmConfig, metaV1.UpdateOptions{})
+	if err != nil {
+		logger.Info("update kubeadmConfig with k8s-client failure : %s", err)
+		return err
 	}
 	return nil
 }
