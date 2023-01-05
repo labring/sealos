@@ -6,7 +6,6 @@ import tabStyles from './tab.module.scss';
 import clsx from 'clsx';
 import useAppStore, { TApp } from 'stores/app';
 import Draggable from 'react-draggable';
-import { Dropdown } from '@fluentui/react-components/unstable';
 import HelpDropDown from './help_dropdown';
 import HelpDocs from './help_docs';
 
@@ -19,17 +18,8 @@ export default function AppWindow(props: {
 
   const { closeApp, updateAppInfo, switchApp } = useAppStore((state) => state);
   const dragDom = useRef(null);
-  const [snap, setSnap] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const openSnap = () => {
-    setSnap(true);
-  };
-
-  const closeSnap = () => {
-    setSnap(false);
-  };
 
   return (
     <Draggable
@@ -92,7 +82,6 @@ export default function AppWindow(props: {
 
               <div
                 className={clsx(styles.snapbox, 'h-full')}
-                data-hv={snap}
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
@@ -102,8 +91,6 @@ export default function AppWindow(props: {
                   });
                   setPosition({ x: 0, y: 0 });
                 }}
-                onMouseOver={openSnap}
-                onMouseLeave={closeSnap}
               >
                 <div className={styles.uicon}>
                   <Icon

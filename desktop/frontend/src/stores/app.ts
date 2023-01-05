@@ -138,22 +138,17 @@ const useAppStore = create<TOSState>()(
       },
       updateAppInfo: (app: TApp) => {
         set((state) => {
-          if (state.currentApp && state.currentApp.name === app.name) {
-            state.currentApp = app;
-          }
           state.openedApps = state.openedApps.map((_app) => {
-            if (_app.name === app.name) {
-              return app;
-            }
-            return _app;
+            return _app.name === app.name ? app : _app;
           });
 
           state.installedApps = state.installedApps.map((_app) => {
-            if (_app.name === app.name) {
-              return app;
-            }
-            return _app;
+            return _app.name === app.name ? app : _app;
           });
+
+          const temp = state.openedApps.filter((item) => item.size !== 'minimize');
+          temp.sort((a, b) => b.zIndex - a.zIndex);
+          state.currentApp = temp[0];
         });
       },
 
@@ -168,11 +163,12 @@ const useAppStore = create<TOSState>()(
         _app.isShow = true;
         _app.size = 'maximize';
 
+        get().updateAppInfo(_app);
+
         set((state) => {
           if (!state.openedApps.find((item) => item.name === _app.name)) {
             state.openedApps.push(_app);
           }
-
           state.currentApp = _app;
           state.maxZIndex = zIndex;
         });
