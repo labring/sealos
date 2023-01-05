@@ -116,7 +116,10 @@ export default function ChargeButton() {
                       </p>
                       <p>
                         <span className="text-gray-400">支付结果：</span>
-                        {queryChargeRes.data?.data?.status ? '' : '支付中...'}
+                        {queryChargeRes.data?.data?.status &&
+                        queryChargeRes.data?.data?.status === 'SUCCESS'
+                          ? '支付成功!'
+                          : '支付中...'}
                       </p>
                     </div>
                   </>
