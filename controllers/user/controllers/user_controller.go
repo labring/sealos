@@ -167,7 +167,7 @@ func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) {
 		Message:            "user has been initialized",
 		LastTransitionTime: metav1.Now(),
 		LastHeartbeatTime:  metav1.Now(),
-	}x
+	}
 	user.Status.Phase = userv1.UserPending
 	user.Status.ObservedGeneration = user.Generation
 	if !helper.IsConditionTrue(user.Status.Conditions, initializedCondition) {

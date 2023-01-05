@@ -2,54 +2,60 @@
 
 ## **一、背景**
 
-sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，传统的资源隔离级别是虚拟机，而 sealos cloud  的资源隔离级别是 namespace ，每个用户都至少有一个自己的 namespace  用来使用，这样就给怎么计费带来挑战。怎么样计费 k8s 中用户使用的 cpu 、 memory 等资源？怎么样计费流量等  Metering 不可见的资源。
+sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每个用户都至少有一个自己的 namespace  用来使用，这样就给怎么计费带来挑战。怎么样计费 k8s 中用户使用的 cpu 、 memory 等资源？怎么样计费流量等  Metering 不可见的资源。
 
-## 二、需求
+## 二、需要满足的场景
 
-计费正在使用的 pod 的 cpu、memory 等资源，可以计量计费 Metering 感知不到的第三方资源(如流量)
+1、计量计费正在使用的 pod 的 cpu、memory 等资源
+
+2、可以计量计费 Metering 感知不到的第三方资源(如流量)，需要资源接入方案
+
+3、需要要创建用户Namesapce的时候自动创建好Metering和他计费所需要的字段
+
+3、每个controller需要实现幂等
+
+4、有突发情况，比如Meterng-controller挂了2天，这两天扣的价格是否能正常恢复
+
+5、能否随着用户Namespace的创建自动创建Metering
 
 ## 三、设计思路
 
 ### 3.1、各模块介绍
 
-计量计费扣费解耦开，设计第三方资源计量计费接入方案
+资源控制器：统计资源使用量
 
-计量：计量使用的资源量
+计量计费系统：根据统计的资源使用量和价格表计算出价格，让用户账户扣除这些钱
 
-计费：根据资源价格和使用的资源量计算出价格
+![](../../../img/metering/metering-1.png)
 
-扣费：从账户中扣除计算出的价格
+### 3.2 、计量计费流程
 
-resource-controller：统计资源使用量，并且把值放入计量模块（可以有多个）
+3.2.1 资源控制器统计过程
 
-![](../../../img/metering/design-1.png)
+![](../../../img/metering/metering-2.png)
 
-计量和计费模块是以 namespace 为单位进行计算的，。
+3.2.2 计量计费系统根据使用量计算出价格
 
+![](../../../img/metering/metering-3.png)
 
+## 四、遇到的问题
 
-### 3.2 、pod-controller角度描述计量计费流程
+一个controller需要同时更新多个cr导致无法做到幂等
 
-3.2.1 计量模块流程
+详细介绍：https://github.com/labring/sealos/discussions/2231
 
-用户声明了一个1核1g 内存资源的 pod 在自己的 Namespace，pod-controller统计了用户的pod的资源使用量，把1核1g使用量存入计量模块（pod-controller自定义统计触发条件，现在是间隔60分钟触发一次）。
+解决方案：
 
-![](../../../img/metering/design-2.png)
+**原则：一个CR只有一个controller更新**
 
-pod-controller 统计的是所有用户ns下的pod资源，并存入对应的计量 crd 中。
+![https://p.ipic.vip/pfe19p.png](../../../img/metering/metering-4.png)
 
-![](../../../img/metering/design-3.png)
+绿色代表controller，蓝色代表CR（即CRD的实例化）
 
-3.2.2 计费模块
+1、pod-controller统计资源过程：pod-controller统计资源使用量后，不再是更改现有CR，而是产生一个资源使用量CR
 
-计费模块应扣款=（资源价格单价 * 计量模块中资源使用量）
+2、Metering-controller计量过程：watch Resource的产生，产生之后会把其中的资源使用值放入Metering的 CR 中
 
-计量和计费模块是1对1的，创建用户 Namespace 的时候会自动在用户 Namespace 创建计量模块，在系统 Namespace 创建计费模块。
+3、Metering-controller计费过程：根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额。
 
-![](../../../img/metering/design-4.png)
-
-3.2.3 扣款模块
-
-扣费控制器从计费模块中获得应扣款，然后在用户的 account 中扣除。
-
-![](../../../img/metering/design-5.png)
+4、扣费过程：Account 监听了Accountbalance CR的产生，并且读取需要扣费的值，进行扣费。

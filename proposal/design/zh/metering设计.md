@@ -8,41 +8,36 @@
 
 ## 二**、各个模块介绍**
 
-### 1**、MeteringQuota（计量模块）**
+### 1**、Metering（计量计费模块合一）**
 
-计量使用的资源量
-
-```
-Kind: MeteringQuota
-Status:
-resources:
-  - name:xxx //resource name
-  Used: 0
-  - name:xxx
-  Used: 0
-```
-
-### **2、Metering（计费模块）**
-
-计费模块应扣款 =（资源价格单价 * 计量模块中资源使用量）
+计费方式：used/unit *price 就是需要扣除的的价格
 
 ```go
+apiVersion: metering.sealos.io/v1
 kind: Metering
 metadata:
   name: metering-nsName
   namespace:metering-system
-Spec:
-resources: 
-  - name:xxx
-  unit: 1 /// 单位
-  price:1 //  这个单位的单价
-Status：
-totalAmount：100 // 计费模块计算出来的应扣账款
+spec:
+  namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
+  owner: ff839a27-0a35-452f-820e-3e47d596ba68
+  resources:
+    cpu:
+      describe: cost per cpu per hour（price:100 = 1¥）
+      price: 67
+      unit: "10"
+      used: "0"
+    memory:
+      describe: the cost per gigabyte of memory per hour（price:100 = 1¥）
+      price: 33
+      unit: 10G
+      used: "0"
+  timeInterval: 60 //计费60分钟计费一次
 ```
 
-### 3、Resource-controller（以 podResource-controller举例）
+### 2、Resource-controller（以 podResource-controller举例）
 
-进行 resource 的统计，会创建 extensionresourceprice 来声明 cpu 和 memory 这两种资源要进行计量计费，并且将资源的申明注入到 Metering 和 MeteringQuota 中。
+进行 resource 的统计，会创建 extensionresourceprice 来声明 cpu 和 memory 这两种资源要进行计量计费，并且将资源的申明注入到 Metering 中。
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -55,57 +50,73 @@ spec:
   interval: 60
   resources:
     cpu:
-      unit: "1"
-      price: 1
+      unit: "10"
+      price: 67
       describe: "cost per cpu per hour（price:100 = 1¥）"
     memory:
-      unit: "1G"
-      price: 1
+      unit: "10G"
+      price: 33
       describe: "the cost per gigabyte of memory per hour（price:100 = 1¥）"
 ```
 
-### 4、**ExtensionResourcesPrice**
+### 3、**ExtensionResourcesPrice**
 
-由 resource-controller 创建，创建的时候会把资源和价格更新到对应的 Metering 和 MeteringQuota中
+由 resource-controller 创建，创建的时候会把资源和价格更新到对应的 Metering
 
 ```yaml
 apiVersion: metering.sealos.io/v1
 Kind: ExtensionResourcesPrice
 Spec:
-resources: map[string]resource
+resources: 
   - name:cpu
-  unit: 1  //单位使用资源
-  price:1  // 单位资源价格
+  unit: 10  //单位使用资源
+  price:67 // 单位资源价格
   - name:memory
-  unit: 1  //单位使用资源
-  price:1  // 单位资源价格
+  unit: 10  //单位使用资源
+  price:33  // 单位资源价格
+```
+
+### 4、Resource
+
+```yaml
+apiVersion: metering.sealos.io/v1
+kind: Resource
+metadata:
+  name: ns-c220b19f-0eee-4bee-bae9-9d91270531c0-memory-362
+  namespace: metering-system
+spec:
+  resources: 
+    memory:  // resource name
+      namespace: ns-c220b19f-0eee-4bee-bae9-9d91270531c0
+      time: 1672898068 //时间戳
+      used: 1Gi
+status:
+  status: complete
+```
+
+5、AccountBalance
+
+```yaml
+apiVersion: user.sealos.io/v1
+kind: AccountBalance
+metadata:
+  name: accountbalance-b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6-92
+  namespace: metering-system
+spec:
+  amount: 6 //需要支付的金额
+  owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6
+  timeStamp: 1672031381
+status:
+  status: complete //已支付
 ```
 
 ## 三、Resource-controller注册资源流程(以pod-controller举例)
 
-![](../../img/proposal-1.png)
+![](../../img/metering-proposal-1.png)
 
 ### 3.1 创建 ExtensionResourcePrice
 
-apply pod-controller 的时候，reconcile 中需要根据 resources 字段创建 ExtensionResourcePrice
-
-```yaml
-apiVersion: metering.sealos.io/v1
-kind: PodResource
-metadata:
-  name: podresource-sample
-  namespace: metering-system
-spec:
-  resourceName: pod
-  interval: 60
-  resources:
-    cpu:
-      unit: "1"
-      price: 1
-    memory:
-      unit: "1G"
-      price: 1
-```
+pod-controller需要创建 ExtensionResourcePrice 来让metering 知道这个资源也需要计量计费。
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -114,18 +125,18 @@ metadata:
   name: podresource-sample
   namespace: metering-system
 Spec:
-resources: map[string]resource
+resources: 
   - name:cpu
   unit: 1  //单位使用资源
-  price:1  // 单位资源价格
+  price:1  // 单位资源价格
   - name:memory
   unit: 1  //单位使用资源
-  price:2  // 单位资源价格
+  price:2  // 单位资源价格
 ```
 
 ### 3.2 ExtensionResourcePrice-controller 注册资源信息
 
-**Metering 和 MeteringQuota 初始信息：**
+**Metering 初始信息：**
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -133,24 +144,16 @@ kind: Metering
 metadata:
   name: metering-nsName
   namespace:metering-system
-Spec:
-resources: map[string]resource
-Status：
-totalAmount：0 // 计费模块计算出来的应扣账款
-------------------------------------------------------------------------
-apiVersion: metering.sealos.io/v1
-Kind: MeteringQuota
-metadata:
-  name: meteringQuota-nsName
-  namespace:nsName
-Status:
-resources:
-
+spec:
+  namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
+  owner: ff839a27-0a35-452f-820e-3e47d596ba68
+  resources:
+  timeInterval: 60 //计费60分钟计费一次
 ```
 
 **改变后：**
 
-ExtensionResourcePrice-controller 把资源名字注册进所有MeteringQuota里面，把资源价格注册进 Metering 中。
+ExtensionResourcePrice-controller 把资源名字和价格注册进所有Metering里面。
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -158,75 +161,36 @@ kind: Metering
 metadata:
   name: metering-nsName
   namespace:metering-system
-Spec:
-resources: map[string]resource
-  - name:cpu
-  unit: 1
-  price:1    
- - name:memory
-  unit: 1
-  price:2 
-Status：
-totalAmount：0 // 计费模块计算出来的应扣账款
-```
-
-```yaml
-apiVersion: metering.sealos.io/v1
-Kind: MeteringQuota
-metadata:
-  name: meteringQuota-nsName
-  namespace:nsName
-Status:
-resources:
-  - name:cpu
-  Used: 0
-  - name:memory
-  Used: 0
+spec:
+  namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
+  owner: ff839a27-0a35-452f-820e-3e47d596ba68
+  resources:
+    cpu:
+      price: 1
+      unit: "1"
+      used: "0"
+    memory:
+      price: 2
+      unit: 1G
+      used: "0"
+  timeInterval: 60 //计费60分钟计费一次
 ```
 
 ## 四**、Metering计量计费流程**
 
-![](../../img/proposal-2.png)
+![](../../img/metering-proposal-2.png)
 
-### 4.1 计量过程
+绿色代表controller，蓝色代表CR（即CRD的实例化）
 
-假设 apply 了一个 1 核  cpu ， 1G  内存的 pod 资源在用户 namespace ，podcontroller 会去周期性（以1个小时为周期举例）扫描所有 pod ，发现这个用户 apply 了这个 pod ，给他 namespace 的  MeteringQuota 里面计量使用了资源 1核 1G.
+#### 4.1、pod-controller统计资源过程：
 
-```yaml
-apiVersion: metering.sealos.io/v1
-Kind: MeteringQuota
-metadata:
-  name: meteringQuota-nsName
-  namespace:nsName
-Status:
-resources:
-  - name:cpu
-  Used: 1
-  - name:memory
-  Used: 1G
-```
+pod-controller统计资源使用量后，不再是更改现有CR，而是产生一个资源使用量CR
 
-### 4.2 计费过程
+![](../../img/metering-proposal-3.png)
 
-Metering-controller 会周期性去扫描所有 MeteringQuota，查看使用了多少资源，并且根据单价算出实际价格，然后把这个值加到 Metering.Status.totalAmount 中，这个例子中就应该+3，然后把 MeteringQuota 里面的值置0。
+#### 4.2、Metering-controller计量过程：
 
-**计费后MeteringQuota结果**
-
-```yaml
-apiVersion: metering.sealos.io/v1
-Kind: MeteringQuota
-metadata:
-  name: meteringQuota-nsName
-  namespace:nsName
-Status:
-resources:
-  - name:cpu
-  Used: 0
-  - name:memory
-  Used: 0
-```
-
-**计费后Metering结果**
+watch Resource的产生，产生之后会把其中的资源使用值放入Metering的 CR 中
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -234,29 +198,24 @@ kind: Metering
 metadata:
   name: metering-nsName
   namespace:metering-system
-Spec:
-resources: map[string]resource
-  - name:cpu
-  unit: 1
-  price:1    
- - name:memory
-  unit: 1
-  price:2 
-Status：
-totalAmount：3 // 计费模块计算出来的应扣账款
+spec:
+  namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
+  owner: ff839a27-0a35-452f-820e-3e47d596ba68
+  resources:
+    cpu:
+      price: 1
+      unit: "1"
+      used: 1 // 这里改变，+1
+    memory:
+      price: 2
+      unit: 1G
+      used: "0"
 ```
 
-### 4.3 扣费过程
+#### 4.3、Metering-controller计费过程：
 
-Deduction 扣费模块,查看 Metering 中 TotalAmount ，在对应的用户 Account 扣除对应钱，并且把 TotalAmount 清零防止二次扣费。
+根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额。
 
-## 遇到的问题：
+#### 4.4、扣费过程：
 
-1、网关 controller 和 pod controller 会频繁更新同一个MeteringQuota的不同字段，会造成一个controller因为更新了旧版本的MeteringQuota而失败
-
-解决方案：
-
-一个resource-controller 有一个自己的ExtensionResourcePrice，每个Namespace 都会有自己的MeteringQuota记录自己统计的资源变化。下面有两个resource-controller，每个Namespace 就会有两个 MeteringQutoa 实例。
-
-![](../../img/proposal-3.png)
-
+Account 监听了Accountbalance CR的产生，并且读取需要扣费的值，进行扣费。
