@@ -39,25 +39,6 @@ body {
   --fakeMica: #f3f3f3 radial-gradient(#eff4f9 75%, #f3f3f3 100%) no-repeat fixed;
 }
 
-body[data-theme='dark'] {
-  --dark-txt: #fff;
-  --alt-txt: #000;
-  --med-dark: #eee;
-  --txt-col: #ddd;
-  --med-txt: #c3c3c3;
-  --comp-txt: #222;
-  --comp-clr: #191919;
-  --gray-txt: #aaa;
-  --sat-txt: #999;
-  --clrPrm: #4cc2ff;
-  --wintheme: #1e1e26;
-
-  --txt_clr-rgb: 255 255 255;
-  --base_bg-rgb: 32 32 32;
-
-  --fakeMica: #202020 radial-gradient(#1a1f35 25%, #202020 100%) no-repeat fixed;
-}
-
 body::-webkit-scrollbar {
   --scroll: rgb(44 44 44 / 80%);
 }
@@ -68,29 +49,6 @@ body::-webkit-scrollbar {
   --ipbar: #fefefe;
   --shd: rgba(80, 80, 80, 0.2);
   background: var(--bg0);
-}
-
-body[data-theme='dark'] .edgeBrowser {
-  --bg0: #222228;
-  --ipbar: #222228;
-  --bg1: rgb(45, 45, 51);
-  --shd: rgba(0, 0, 0, 0.3);
-
-  .edgenavicon {
-    filter: invert(1);
-  }
-}
-
-body[data-theme='dark'] .wnstore {
-  --nav-btn-hov: #454545;
-  --page-bg: rgb(255 255 255 / 3.33%);
-  --page-bd-col: #292828;
-  --rib-bg: #2f2e30b8;
-  --rib2-bg: rgb(255 255 255 / 5%);
-
-  .win11Scroll::-webkit-scrollbar {
-    --scroll: rgb(44 44 44 / 80%);
-  }
 }
 
 .wnterm {
@@ -108,10 +66,6 @@ body[data-theme='dark'] .wnstore {
   }
 }
 
-body[data-theme='dark'] .notepad {
-  --bg1: #282828;
-}
-
 .calcApp {
   --bg1: rgb(243, 243, 243);
   --bg2: #ffffff;
@@ -121,18 +75,6 @@ body[data-theme='dark'] .notepad {
 
   background: var(--fakeMica);
   color: var(--dark-txt);
-}
-
-body[data-theme='dark'] .calcApp {
-  --bg1: rgba(32, 32, 32);
-  --bg2: rgba(255, 255, 255, 0.12);
-  --bg3: rgba(255, 255, 255, 0.08);
-  --err-bg: rgba(255, 255, 255, 0.033);
-  --err-txt: #777;
-
-  .menuBars {
-    filter: invert(1);
-  }
 }
 
 .whiteBoard {
@@ -159,10 +101,6 @@ body[data-theme='dark'] .calcApp {
   background: #fff;
 }
 
-.darkWindow {
-  background: #1a1614;
-}
-
 .wnCam {
   background: #060606;
 }
@@ -175,14 +113,4 @@ body[data-theme='dark'] .calcApp {
   --gray2: #ddd;
   --hover-bg: rgba(0, 178, 255, 0.16);
   --focus-bg: rgba(0, 183, 255, 0.25);
-}
-
-body[data-theme='dark'] .msfiles {
-  --bg1: #191919;
-  --bg2: #1c1c1c;
-  --dsb-col: #555;
-  --gray1: #444;
-  --gray2: #222;
-  --hover-bg: rgba(136, 136, 136, 0.5);
-  --focus-bg: rgba(228, 228, 228, 0.5);
 }

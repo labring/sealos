@@ -30,7 +30,6 @@ export type TAppDetail = {
 };
 
 export const ImagehubLabels = [
-  // { label: 'All', value: 'All', checked: false },
   { label: 'Kubernetes', value: 'Kubernetes', checked: false },
   { label: 'Storage', value: 'Storage', checked: false },
   { label: 'Network', value: 'Network', checked: false },
@@ -41,6 +40,12 @@ export const ImagehubLabels = [
   { label: 'MQ', value: 'MQ', checked: false },
   { label: 'Platform', value: 'Platform', checked: false }
 ];
+
+export type TImageLabels = {
+  label: string;
+  value: string;
+  checked: boolean;
+};
 
 export function handleImageName(imageName: string): { name: string; tag: string } {
   let result = imageName.split(':');
@@ -55,4 +60,11 @@ export function formattedSize(size: number, reserve: number = 1) {
     count++;
   }
   return `${size.toFixed(reserve)}` + `${suffixes[count]}`;
+}
+
+export function getSelectLabels(labels: TImageLabels[]): string {
+  return labels
+    ?.map((item) => (item.checked ? 'keyword.imagehub.sealos.io/' + item.value : null))
+    .filter((item) => item)
+    .join(',');
 }

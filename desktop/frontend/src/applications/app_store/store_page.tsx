@@ -1,22 +1,23 @@
 /* eslint-disable @next/next/no-img-element */
 import { Spinner } from '@fluentui/react-components';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from 'components/iconfont';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, formattedSize, handleImageName, ImagehubLabels } from './app_store_common';
+import {
+  EPageType,
+  formattedSize,
+  handleImageName,
+  ImagehubLabels,
+  TImageLabels,
+  getSelectLabels
+} from './app_store_common';
 import Button from './components/button';
 import Labels from './components/labels';
 import { useAppStoreContext } from './index';
 import styles from './store_page.module.scss';
-
-type TImageLabels = {
-  label: string;
-  value: string;
-  checked: boolean;
-};
 
 type TAppInfo = {
   icon: string;
@@ -30,11 +31,12 @@ function StorePage() {
   const { toPage } = useAppStoreContext();
   const [imageLabels, setImageLabels] = useState<TImageLabels[]>(ImagehubLabels);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-  const [appListStatus, setAppListStatus] = useState(false);
-  const [selectedLabels, setSelectedLabels] = useState('');
 
-  const { data, isSuccess, isError } = useQuery(
-    ['getAppLists'],
+  const selectedLabels = getSelectLabels(imageLabels);
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, isSuccess, isError } = useQuery(
+    ['getAppLists', selectedLabels],
     async () => {
       const res = await request.post('/api/image_hub/get_list', {
         kubeconfig,
@@ -43,27 +45,14 @@ function StorePage() {
       return res;
     },
     {
-      refetchInterval: appListStatus === false ? 2 * 1000 : false,
-      enabled: appListStatus === false,
       onSuccess: (data) => {
-        if (data.data.code === 200) {
-          setAppListStatus(true);
+        if (data.data.code === 201) {
+          queryClient.invalidateQueries({ queryKey: ['getAppLists', selectedLabels] });
         }
       }
     }
   );
   const appLists = data?.data?.items as TAppInfo[];
-
-  useEffect(() => {
-    let select: string[] = [];
-    imageLabels?.forEach((item) => {
-      if (item.checked === true) {
-        select.push('keyword.imagehub.sealos.io/' + item.value);
-      }
-    });
-    setAppListStatus(false);
-    setSelectedLabels(select.join(','));
-  }, [imageLabels]);
 
   return (
     <div className="grow flex">
@@ -76,7 +65,7 @@ function StorePage() {
         <div className="flex items-center ">
           <Labels display="row" labels={imageLabels} setLabelsFunction={setImageLabels} />
         </div>
-        {!appListStatus && (
+        {isLoading && (
           <div className="w-full h-full flex justify-center items-center">
             <Spinner />
           </div>

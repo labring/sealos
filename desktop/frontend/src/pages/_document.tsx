@@ -1,7 +1,6 @@
 import { createDOMRenderer, renderToStyleElements } from '@fluentui/react-components';
 import Document, { Head, Html, Main, NextScript } from 'next/document';
 import React from 'react';
-
 class MyDocument extends Document {
   static async getInitialProps(ctx: any) {
     // 👇 creates a renderer that will be used for SSR
@@ -61,6 +60,7 @@ class MyDocument extends Document {
             rel="stylesheet"
             href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=optional"
           />
+          <script src="//at.alicdn.com/t/c/font_3832498_su260k21s5.js" defer></script>
         </Head>
         <body>
           <Main />

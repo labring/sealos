@@ -1,10 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
-import {
-  ArrowLeft16Regular,
-  ChevronDown24Regular,
-  DocumentOnePage20Filled,
-  Tag16Filled
-} from '@fluentui/react-icons';
+import { ArrowLeft16Regular, DocumentOnePage20Filled, Tag16Filled } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
@@ -17,7 +12,6 @@ import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
 import Iconfont from 'components/iconfont';
-import { iteratorSymbol } from 'immer/dist/internal';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
@@ -50,7 +44,6 @@ export default function DetailPage() {
   if (appDetailStatus) {
     appDetail = data?.data?.items[0];
   }
-  // console.log(appDetail);
 
   const handleScrollEvent = () => {
     const scrollTop = appRef.current?.scrollTop;
@@ -124,7 +117,7 @@ export default function DetailPage() {
                   <div>{selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}</div>
                   <div className={styles.fingerPrint}>
                     <Iconfont iconName="icon-hash" />
-                    {/* <span className={styles.id}>{appDetail.ID}</span> */}
+                    <span className={styles.id}>{appDetail.ID?.substring(0, 12)}</span>
                   </div>
                 </div>
                 <p className={styles.text}>{appDetail?.description}</p>
