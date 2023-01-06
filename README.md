@@ -114,7 +114,7 @@ $ kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
 
 > Building a custom cluster image
 
-See [Building an Example CloudImage](https://www.sealos.io/docs/getting-started/build-example-cloudimage).
+See [Building an Example CloudImage](https://www.sealos.io/docs/build-example-cloudimage).
 
 > Storage, message queue, database, etc.
 
