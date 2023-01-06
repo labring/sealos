@@ -151,6 +151,9 @@ func (k *KubeadmRuntime) UpgradeCluster(version string) error {
 		logger.Info("The cluster version has not changed")
 		return nil
 	} else if versionutil.Compare(version, curversion) {
+		if err := versionutil.UpgradeVersionLimit(curversion, version); err != nil {
+			return err
+		}
 		logger.Info("cluster vesion: %s will be upgraded into %s.", curversion, version)
 		return k.upgradeCluster(version)
 	} else if versionutil.Compare(curversion, version) {

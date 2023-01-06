@@ -48,6 +48,7 @@ const (
 	EtcDirName                       = "etc"
 	ChartsDirName                    = "charts"
 	ManifestsDirName                 = "manifests"
+	BinDirName                       = "bin"
 	RegistryDirName                  = "registry"
 	ImagesDirName                    = "images"
 	ImageShimDirName                 = "shim"
@@ -96,6 +97,7 @@ type Data interface {
 
 	RootFSCharsPath() string
 	RootFSManifestsPath() string
+	RootFSBinPath() string
 	RootFSSealctlPath() string
 }
 
@@ -124,6 +126,10 @@ func (d *data) RootFSCharsPath() string {
 
 func (d *data) RootFSManifestsPath() string {
 	return filepath.Join(d.RootFSPath(), ManifestsDirName)
+}
+
+func (d *data) RootFSBinPath() string {
+	return filepath.Join(d.RootFSPath(), BinDirName)
 }
 
 func (d *data) EtcPath() string {

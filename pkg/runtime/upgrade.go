@@ -35,7 +35,10 @@ var (
 	uncordonNodeCmd = "kubectl uncordon %s"
 	daemonReload    = "systemctl daemon-reload"
 	restartKubelet  = "systemctl restart kubelet"
-	KubeBinaryPath  = "/var/lib/sealos/data/%s/rootfs/bin"
+
+	installKubeadmCmd = "cp -rf %s/kubeadm /usr/bin"
+	installKubeletCmd = "cp -rf %s/kubelet /usr/bin"
+	installKubectlCmd = "cp -rf %s/kubectl /usr/bin"
 )
 
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
@@ -70,11 +73,10 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	if err != nil {
 		return err
 	}
-	clusterName := k.Cluster.Name
-	kubeBinaryPath := fmt.Sprintf(KubeBinaryPath, clusterName)
+	kubeBinaryPath := k.getContentData().RootFSBinPath()
 	//install kubeadm:{version} at master0
 	err = k.sshCmdAsync(master0ip,
-		fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
+		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 		//execute  kubeadm upgrade apply {version} at master0
 		fmt.Sprintf(upgradeApplyCmd, version),
 		// kubectl drain <node-to-drain> --ignore-daemonsets
@@ -82,8 +84,8 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		//kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
 		//install kubelet:{version},kubectl{version} at master0
-		fmt.Sprintf("cp -rf %s/kubectl /usr/bin", kubeBinaryPath),
-		fmt.Sprintf("cp -rf %s/kubelet /usr/bin", kubeBinaryPath),
+		fmt.Sprintf(installKubectlCmd, kubeBinaryPath),
+		fmt.Sprintf(installKubeletCmd, kubeBinaryPath),
 		//reload kubelet daemon
 		daemonReload,
 		restartKubelet,
@@ -98,11 +100,10 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err != nil {
 			return err
 		}
-		clusterName := k.Cluster.Name
-		kubeBinaryPath := fmt.Sprintf(KubeBinaryPath, clusterName)
+		kubeBinaryPath := k.getContentData().RootFSBinPath()
 		err = k.sshCmdAsync(ip,
 			//install kubeadm:{version} at the node
-			fmt.Sprintf("cp -rf %s/kubeadm /usr/bin", kubeBinaryPath),
+			fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 			//upgrade other control-plane and nodes
 			upradeNodeCmd,
 			// kubectl drain <node-to-drain> --ignore-daemonsets
@@ -110,8 +111,8 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 			//kubectl cordon <node-to-cordon>
 			fmt.Sprintf(cordonNodeCmd, nodename),
 			//install kubelet:{version},kubectl{version} at the node
-			fmt.Sprintf("cp -rf %s/kubectl /usr/bin", kubeBinaryPath),
-			fmt.Sprintf("cp -rf %s/kubelet /usr/bin", kubeBinaryPath),
+			fmt.Sprintf(installKubectlCmd, kubeBinaryPath),
+			fmt.Sprintf(installKubeletCmd, kubeBinaryPath),
 			//reload kubelet daemon
 			daemonReload,
 			restartKubelet,
