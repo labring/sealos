@@ -2,25 +2,9 @@
 
 .appHeader {
   padding: 8px 16px 16px 16px;
-  .appInfo {
-    display: flex;
-    flex-grow: 1;
-    .appDesc {
-      display: flex;
-      flex-grow: 1;
-      margin-left: 16px;
-      flex-direction: column;
-      justify-content: space-between;
-      & .text {
-        display: -webkit-box;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        color: #717d8a;
-        font-size: 12px;
-      }
-    }
+  .nav svg {
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -62,4 +46,66 @@
   font-size: 16px;
   line-height: 22px;
   color: #0d1a2d;
+}
+
+.appInfo {
+  display: flex;
+  flex-grow: 1;
+
+  .image {
+    transition: all 0.3s ease-in-out;
+    width: 110px;
+    height: 110px;
+  }
+
+  .installBtn {
+    margin: 12px 0;
+  }
+
+  .appDesc {
+    display: flex;
+    flex-grow: 1;
+    margin-left: 16px;
+    flex-direction: column;
+
+    & .text {
+      display: -webkit-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      color: #717d8a;
+      font-size: 12px;
+    }
+  }
+
+  .rightInfo {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+  }
+
+  .fixedRightInfo {
+    display: none;
+  }
+}
+
+.fixed {
+  align-items: center;
+  .image {
+    width: 60px;
+    height: 60px;
+  }
+
+  .imageLabels,
+  .rightInfo,
+  .installBtn,
+  .appDesc .text {
+    display: none;
+  }
+
+  .fixedRightInfo {
+    display: block;
+    margin-left: 16px;
+  }
 }

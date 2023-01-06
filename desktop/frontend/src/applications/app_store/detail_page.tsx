@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
-import { ArrowLeft16Regular, DocumentOnePage20Filled, Tag16Filled } from '@fluentui/react-icons';
+import { DocumentOnePage20Filled, Tag16Filled } from '@fluentui/react-icons';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
+import Iconfont from 'components/iconfont';
 import MarkDown from 'components/markdown';
 import produce from 'immer';
 import { useEffect, useRef, useState } from 'react';
@@ -11,7 +12,6 @@ import { EPageType, formattedSize, handleImageName, TAppDetail, TTag } from './a
 import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
-import Iconfont from 'components/iconfont';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
@@ -35,8 +35,8 @@ export default function DetailPage() {
       return res;
     },
     {
-      refetchInterval: appDetailStatus === false ? 2 * 1000 : false,
-      enabled: appDetailStatus === false
+      refetchInterval: !appDetailStatus ? 2 * 1000 : false,
+      enabled: !appDetailStatus
     }
   );
 
@@ -89,65 +89,56 @@ export default function DetailPage() {
           className={clsx(styles.nav, 'cursor-pointer ')}
           onClick={() => toPage(EPageType.StorePage, '')}
         >
-          <ArrowLeft16Regular />
+          <Iconfont iconName="icon-back" />
         </div>
-        <div className={clsx(styles.appInfo, isFixed && 'items-center')}>
-          <div className="shrink-0 flex justify-center items-center">
-            <img
-              src={appDetail?.icon}
-              alt={appDetail?.name}
-              width={isFixed ? 60 : 110}
-              height={isFixed ? 60 : 110}
-            />
+        <div className={clsx(styles.appInfo, { [styles.fixed]: isFixed })}>
+          <div className={styles.image}>
+            <img src={appDetail?.icon} alt={appDetail?.name} />
           </div>
-          {isFixed ? (
-            <>
-              <div className={clsx(styles.title, 'ml-4')}>
-                {handleImageName(appDetail?.name).name + ':' + selectTag}
+          <div className={clsx(styles.appDesc)}>
+            <div className={clsx(styles.title, 'flex items-center')}>
+              <div>{selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}</div>
+              <div className={styles.fingerPrint}>
+                <Iconfont iconName="icon-hash" />
+                <span className={styles.imageId}>{appDetail.ID?.substring(0, 12)}</span>
               </div>
-              <div className={clsx(styles.imageSizeText, 'ml-auto mr-6')}> 111MB </div>
+            </div>
+            <p className={styles.text}>{appDetail?.description}</p>
+            <div className={styles.installBtn}>
               <Button handleClick={() => {}} type="primary">
                 安装 | {selectTag}
               </Button>
-            </>
-          ) : (
-            <>
-              <div className={clsx(styles.appDesc)}>
-                <div className={clsx(styles.title, 'flex items-center')}>
-                  <div>{selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}</div>
-                  <div className={styles.fingerPrint}>
-                    <Iconfont iconName="icon-hash" />
-                    <span className={styles.id}>{appDetail.ID?.substring(0, 12)}</span>
+            </div>
+            <div className={clsx(styles.imageLabels, 'flex space-x-4 mb-4')}>
+              {appDetail?.keywords?.map((item) => {
+                return (
+                  <div key={item} className={clsx('cursor-pointer  px-4 ', styles.appLabels)}>
+                    {item}
                   </div>
-                </div>
-                <p className={styles.text}>{appDetail?.description}</p>
-                <div className={'my-4'}>
-                  <Button handleClick={() => {}} type="primary">
-                    安装 | {selectTag}
-                  </Button>
-                </div>
-                <div className={clsx('flex space-x-4 mb-4')}>
-                  {appDetail?.keywords?.map((item) => {
-                    return (
-                      <div key={item} className={clsx('cursor-pointer  px-4 ', styles.appLabels)}>
-                        {item}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex flex-col shrink-0 mr-4 ml-8">
-                <span className={styles.imageSizeText}> 19.1K </span>
-                <span className="text-stone-500 text-xs mt-2">下载量</span>
-              </div>
-              <div className="flex flex-col shrink-0">
-                <span className={styles.imageSizeText}>
-                  {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
-                </span>
-                <span className="text-stone-500 text-xs mt-2">大小</span>
-              </div>
-            </>
-          )}
+                );
+              })}
+            </div>
+          </div>
+          <div className={styles.rightInfo}>
+            <span className={styles.imageSizeText}> 19.1K </span>
+            <span className="text-stone-500 text-xs mt-2">下载量</span>
+          </div>
+          <div className={clsx(styles.rightInfo, 'ml-4')}>
+            <span className={styles.imageSizeText}>
+              {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
+            </span>
+            <span className="text-stone-500 text-xs mt-2">大小</span>
+          </div>
+          <div className={clsx(styles.fixedRightInfo)}>
+            <span className={styles.imageSizeText}>
+              {appDetail.size ? formattedSize(appDetail.size) : ''}
+            </span>
+          </div>
+          <div className={clsx(styles.fixedRightInfo)}>
+            <Button handleClick={() => {}} type="primary">
+              安装 | {selectTag}
+            </Button>
+          </div>
         </div>
       </div>
       <div className={clsx('flex  grow my-4')}>

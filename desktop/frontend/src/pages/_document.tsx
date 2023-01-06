@@ -60,7 +60,7 @@ class MyDocument extends Document {
             rel="stylesheet"
             href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=optional"
           />
-          <script src="//at.alicdn.com/t/c/font_3832498_su260k21s5.js" defer></script>
+          <script src="//at.alicdn.com/t/c/font_3832498_k0ajol52vnd.js" defer></script>
         </Head>
         <body>
           <Main />

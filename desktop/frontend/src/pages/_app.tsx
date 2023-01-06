@@ -26,7 +26,6 @@ function APP({ Component, pageProps, renderer }: EnhancedAppProps) {
   return (
     // 👇 Accepts a renderer from <Document /> or creates a default one
     //    Also triggers rehydration a client
-
     <RendererProvider renderer={renderer || createDOMRenderer()}>
       <SSRProvider>
         <FluentProvider theme={webLightTheme}>

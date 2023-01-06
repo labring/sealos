@@ -1,8 +1,6 @@
 import clsx from 'clsx';
-import produce from 'immer';
-import { useEffect, useState } from 'react';
-import styles from './labels.module.scss';
 import Iconfont from 'components/iconfont';
+import styles from './labels.module.scss';
 
 type TImageLabels = {
   label: string;
@@ -13,39 +11,28 @@ type TImageLabels = {
 type TLabels = {
   display: 'column' | 'row';
   labels: TImageLabels[];
-  setLabelsFunction: Function;
+  onChange: (value: string) => void;
 };
 
 function Labels(props: TLabels) {
-  const { display, labels, setLabelsFunction } = props;
-  const selectedLabels = labels.filter((item) => item.checked);
+  const { display, labels, onChange } = props;
 
-  const handleClick = (value: string) => {
-    setLabelsFunction(
-      produce((draft: TImageLabels[]) => {
-        const checkedItem = draft.find((item) => item.value === value);
-        if (checkedItem) {
-          checkedItem.checked = !checkedItem.checked;
-        }
-      })
-    );
-  };
-
-  if (display === 'row' && selectedLabels?.length > 0) {
+  if (display === 'row' && labels?.length > 0) {
     return (
-      <div className={clsx(styles.xLabels, ' divide-x  mb-4  ')}>
-        {selectedLabels.map((item) => {
+      <div className={clsx(styles.xLabels)}>
+        {labels.map((item) => {
           return (
             <div
               key={item.label}
-              className={clsx('cursor-pointer px-4 flex items-center', {
+              className={clsx('cursor-pointer flex items-center', styles.tag, {
                 [styles.xActive]: item.checked
               })}
-              onClick={() => handleClick(item.value)}
+              onClick={() => onChange(item.value)}
             >
+              <span className={styles.border1px}></span>
               <span> {item.value} </span>
               <span className={styles.deleteIcon}>
-                <Iconfont iconName="icon-delete" />
+                <Iconfont iconName="icon-delete-grey-copy" />
               </span>
             </div>
           );
@@ -62,7 +49,7 @@ function Labels(props: TLabels) {
             <div
               key={item.label}
               className={clsx(styles.label, { [styles.active]: item.checked }, 'cursor-pointer')}
-              onClick={() => handleClick(item.value)}
+              onClick={() => onChange(item.value)}
             >
               {item.value}
             </div>

@@ -1,6 +1,9 @@
 $theme-color-white: #ffffff;
 $theme-color-blue: rgba(35, 155, 242, 1);
 $small-radius: 12px;
+$background-base-color: rgba(255, 255, 255, 0.75);
+$background-min-hover: rgba(255, 255, 255, 0.4);
+$background-max-hover: rgba(255, 255, 255, 0.65);
 
 .pageWrapperScroll {
   display: flex;
@@ -63,7 +66,7 @@ $small-radius: 12px;
   align-items: center;
   margin-left: 12px;
   padding: 0 8px;
-  .id {
+  .imageId {
     margin-left: 8px;
     font-size: 10px;
     text-transform: capitalize;
