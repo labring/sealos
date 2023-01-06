@@ -28,7 +28,7 @@ spec:
   user: {{ .kube_user.name }}
   token: {{ .kube_user.token }}
   apiServer: https://kubernetes.default.svc.cluster.local:443
-  ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.18.4
+  ttyImage: ghcr.io/cuisongliu/go-docker-dev:1.19.4
   replicas: 1
   keepalived: 4h
 `;
