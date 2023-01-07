@@ -10,6 +10,9 @@ import StartMenu from 'components/start_menu';
 import MasterSDK from 'sealos-desktop-sdk/master';
 import useSessionStore from 'stores/session';
 
+import { Nunito } from '@next/font/google';
+const nunito = Nunito({ subsets: ['latin'] });
+
 export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
   const session = useSessionStore((s) => s.session);
@@ -35,7 +38,7 @@ export default function Layout({ children }: any) {
         <title>sealos Cloud</title>
         <meta name="description" content="sealos cloud dashboard" />
       </Head>
-      <div className={styles.desktopContainer}>
+      <div className={(styles.desktopContainer, nunito.className)}>
         <Background />
         <DesktopContent />
         <Taskbar />

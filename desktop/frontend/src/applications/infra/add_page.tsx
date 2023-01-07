@@ -10,7 +10,7 @@ import useAppStore from 'stores/app';
 import useSessionStore from 'stores/session';
 import styles from './add_page.module.scss';
 import { PageType, useScpContext } from './index';
-import { generateTemplate } from './infra_share';
+import { generateTemplate, conversionPrice } from './infra_share';
 import SelectNodeComponent from './select_node';
 
 const AddPage = () => {
@@ -209,7 +209,7 @@ const AddPage = () => {
             </div>
             <div className="flex mt-28  items-center space-x-8 justify-end  ">
               <div className={styles.moneyItem}>
-                ￥ <span className={styles.money}> {scpPrice.toFixed(2)} </span> /小时
+                ￥ <span className={styles.money}> {conversionPrice(scpPrice, 2)} </span> /小时
               </div>
               <button className={styles.confirmBtn} onClick={handleBtnClick}>
                 {infraName ? '立即修改' : '立即创建'}
