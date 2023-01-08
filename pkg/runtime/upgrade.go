@@ -75,7 +75,7 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	}
 	kubeBinaryPath := k.getContentData().RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
-	if err = k.pingApiServer(); err != nil {
+	if err = k.pingAPIServer(); err != nil {
 		return err
 	}
 	err = k.sshCmdAsync(master0ip,
@@ -106,7 +106,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		}
 		kubeBinaryPath := k.getContentData().RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
-		if err = k.pingApiServer(); err != nil {
+		if err = k.pingAPIServer(); err != nil {
 			return err
 		}
 		logger.Info("upgrade node %s", nodename)
@@ -161,7 +161,7 @@ func (k *KubeadmRuntime) ChangeConfigToV125() error {
 	return nil
 }
 
-func (k *KubeadmRuntime) pingApiServer() error {
+func (k *KubeadmRuntime) pingAPIServer() error {
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
 		return err
