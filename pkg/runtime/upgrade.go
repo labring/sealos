@@ -27,7 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )
 
-var (
+const (
 	upgradeApplyCmd = "kubeadm upgrade apply %s"
 	upradeNodeCmd   = "kubeadm upgrade node"
 	//drainNodeCmd    = "kubectl drain %s --ignore-daemonsets"
@@ -50,6 +50,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		}
 	}
 	//upgrade master0
+	logger.Info("start to upgrade master0")
 	err := k.upgradeMaster0(version)
 	if err != nil {
 		return err
@@ -62,8 +63,7 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		}
 		upgradeNodes = append(upgradeNodes, ip)
 	}
-	//wait for restarting api-server that may happen connection refused, or it may fail.
-	time.Sleep(5 * time.Second)
+	logger.Info("start to upgrade other control-planes and worker nodes")
 	return k.upgradeOtherNodes(upgradeNodes)
 }
 
@@ -74,13 +74,15 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		return err
 	}
 	kubeBinaryPath := k.getContentData().RootFSBinPath()
-	//install kubeadm:{version} at master0
+	//assure the connection to api-server succeed before executing upgrade cmds
+	if err = k.pingApiServer(); err != nil {
+		return err
+	}
 	err = k.sshCmdAsync(master0ip,
+		//install kubeadm:{version} at master0
 		fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 		//execute  kubeadm upgrade apply {version} at master0
 		fmt.Sprintf(upgradeApplyCmd, version),
-		// kubectl drain <node-to-drain> --ignore-daemonsets
-		// fmt.Sprintf(drainNodeCmd, nodename),
 		//kubectl cordon <node-to-cordon>
 		fmt.Sprintf(cordonNodeCmd, master0Name),
 		//install kubelet:{version},kubectl{version} at master0
@@ -101,13 +103,15 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 			return err
 		}
 		kubeBinaryPath := k.getContentData().RootFSBinPath()
+		//assure the connection to api-server succeed before executing upgrade cmds
+		if err = k.pingApiServer(); err != nil {
+			return err
+		}
 		err = k.sshCmdAsync(ip,
 			//install kubeadm:{version} at the node
 			fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
 			//upgrade other control-plane and nodes
 			upradeNodeCmd,
-			// kubectl drain <node-to-drain> --ignore-daemonsets
-			// fmt.Sprintf(drainNodeCmd, nodename),
 			//kubectl cordon <node-to-cordon>
 			fmt.Sprintf(cordonNodeCmd, nodename),
 			//install kubelet:{version},kubectl{version} at the node
@@ -148,6 +152,25 @@ func (k *KubeadmRuntime) ChangeConfigToV125() error {
 	if err != nil {
 		logger.Info("update kubeadmConfig with k8s-client failure : %s", err)
 		return err
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) pingApiServer() error {
+	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+	if err != nil {
+		return err
+	}
+	timeout := time.Now().Add(1 * time.Minute)
+	for {
+		_, err = cli.Kubernetes().CoreV1().Nodes().List(context.TODO(), metaV1.ListOptions{})
+		if err == nil {
+			break
+		}
+		if time.Now().After(timeout) {
+			return fmt.Errorf("restart api-server timeout within one minute")
+		}
+		time.Sleep(1 * time.Second)
 	}
 	return nil
 }
