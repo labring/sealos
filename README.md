@@ -17,6 +17,8 @@
   </p>
 </div>
 
+[![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/7bPNZfsjJu)
+
 ---
 
 [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
