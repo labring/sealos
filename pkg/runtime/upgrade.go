@@ -91,9 +91,11 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 		//reload kubelet daemon
 		daemonReload,
 		restartKubelet,
-		fmt.Sprintf(uncordonNodeCmd, master0Name),
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return k.tryUncordonNode(master0ip)
 }
 
 func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
@@ -107,6 +109,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err = k.pingApiServer(); err != nil {
 			return err
 		}
+		logger.Info("upgrade node %s", nodename)
 		err = k.sshCmdAsync(ip,
 			//install kubeadm:{version} at the node
 			fmt.Sprintf(installKubeadmCmd, kubeBinaryPath),
@@ -120,9 +123,11 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 			//reload kubelet daemon
 			daemonReload,
 			restartKubelet,
-			fmt.Sprintf(uncordonNodeCmd, nodename),
 		)
 		if err != nil {
+			return err
+		}
+		if err = k.tryUncordonNode(ip); err != nil {
 			return err
 		}
 	}
@@ -170,7 +175,27 @@ func (k *KubeadmRuntime) pingApiServer() error {
 		if time.Now().After(timeout) {
 			return fmt.Errorf("restart api-server timeout within one minute")
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) tryUncordonNode(ip string) error {
+	nodename, err := k.getRemoteInterface().Hostname(ip)
+	if err != nil {
+		return err
+	}
+	err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
+	timeout := time.Now().Add(1 * time.Minute)
+	for err != nil {
+		time.Sleep(5 * time.Second)
+		err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
+		if err == nil {
+			break
+		}
+		if time.Now().After(timeout) {
+			return fmt.Errorf("try uncordon node %s timeout one minute", nodename)
+		}
 	}
 	return nil
 }
