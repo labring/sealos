@@ -102,10 +102,13 @@ type ImageDetailInfo struct {
 	Description string   `json:"description,omitempty"`
 	Icon        string   `json:"icon,omitempty"`
 	Docs        string   `json:"docs,omitempty"`
-	// should use buildah inspect to get infor.
-	ID      string            `json:"ID,omitempty"`
-	Arch    string            `json:"arch,omitempty"`
-	Size    int64             `json:"size,omitempty"`
+	// URL sealos cloud ui endpoint
+	URL string `json:"url,omitempty"`
+	// ID Arch Size should use buildah inspect to get infor.
+	ID   string `json:"ID,omitempty"`
+	Arch string `json:"arch,omitempty"`
+	Size int64  `json:"size,omitempty"`
+	// Actions todo
 	Actions map[string]Action `json:"actions,omitempty"`
 }
 
