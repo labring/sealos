@@ -44,7 +44,7 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每�
 
 详细介绍：https://github.com/labring/sealos/discussions/2231
 
-解决方案：
+#### 解决方案：
 
 **原则：一个CR只有一个controller更新**
 
@@ -52,9 +52,9 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每�
 
 绿色代表controller，蓝色代表CR（即CRD的实例化）
 
-1、pod-controller统计资源过程：pod-controller统计资源使用量后，不再是更改现有CR，而是产生一个资源使用量CR
+1、pod-controller统计资源过程：pod-controller统计资源使用量后，不再是更改现有CR，而是 create 一个资源使用量CR。
 
-2、Metering-controller计量过程：watch Resource的产生，产生之后会把其中的资源使用值放入Metering的 CR 中
+2、Metering-controller计量过程：watch Resource的产生，产生之后会把其中的资源使用值放入Metering的 CR 中。
 
 3、Metering-controller计费过程：根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额。
 

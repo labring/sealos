@@ -6,9 +6,9 @@
 
 整体流程会在官网的 design 文档中介绍， proposal 中会侧重于介绍 CRD 字段设计细节。
 
-## 二**、各个模块介绍**
+## 二、各个模块介绍
 
-### 1**、Metering（计量计费模块合一）**
+### 2.1、Metering（计量计费模块合一）
 
 计费方式：used/unit *price 就是需要扣除的的价格
 
@@ -35,7 +35,7 @@ spec:
   timeInterval: 60 //计费60分钟计费一次
 ```
 
-### 2、Resource-controller（以 podResource-controller举例）
+### 2.2、Resource-controller（以 podResource-controller举例）
 
 进行 resource 的统计，会创建 extensionresourceprice 来声明 cpu 和 memory 这两种资源要进行计量计费，并且将资源的申明注入到 Metering 中。
 
@@ -50,16 +50,16 @@ spec:
   interval: 60
   resources:
     cpu:
-      unit: "10"
-      price: 67
+      unit: "1"
+      price: 1
       describe: "cost per cpu per hour（price:100 = 1¥）"
     memory:
-      unit: "10G"
-      price: 33
+      unit: "1G"
+      price: 2
       describe: "the cost per gigabyte of memory per hour（price:100 = 1¥）"
 ```
 
-### 3、**ExtensionResourcesPrice**
+### 2.3、ExtensionResourcesPrice
 
 由 resource-controller 创建，创建的时候会把资源和价格更新到对应的 Metering
 
@@ -68,15 +68,15 @@ apiVersion: metering.sealos.io/v1
 Kind: ExtensionResourcesPrice
 Spec:
 resources: 
-  - name:cpu
-  unit: 10  //单位使用资源
-  price:67 // 单位资源价格
-  - name:memory
-  unit: 10  //单位使用资源
-  price:33  // 单位资源价格
+  cpu:
+    unit: 1  //单位使用资源
+    price:1 // 单位资源价格
+  memory:
+    unit: 1  //单位使用资源
+    price:2  // 单位资源价格
 ```
 
-### 4、Resource
+### 2.4、Resource
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -91,10 +91,10 @@ spec:
       time: 1672898068 //时间戳
       used: 1Gi
 status:
-  status: complete
+  status: complete //已经被metering-controller统计过了
 ```
 
-5、AccountBalance
+### 2.5、AccountBalance
 
 ```yaml
 apiVersion: user.sealos.io/v1
@@ -118,23 +118,9 @@ status:
 
 pod-controller需要创建 ExtensionResourcePrice 来让metering 知道这个资源也需要计量计费。
 
-```yaml
-apiVersion: metering.sealos.io/v1
-Kind: ExtensionResourcesPrice
-metadata:
-  name: podresource-sample
-  namespace: metering-system
-Spec:
-resources: 
-  - name:cpu
-  unit: 1  //单位使用资源
-  price:1  // 单位资源价格
-  - name:memory
-  unit: 1  //单位使用资源
-  price:2  // 单位资源价格
-```
+yaml文件同[2.3](# 2.3、ExtensionResourcesPrice)
 
-### 3.2 ExtensionResourcePrice-controller 注册资源信息
+### 3.2 Metering-controller 注册资源信息
 
 **Metering 初始信息：**
 
@@ -148,12 +134,12 @@ spec:
   namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
   owner: ff839a27-0a35-452f-820e-3e47d596ba68
   resources:
-  timeInterval: 60 //计费60分钟计费一次
+  timeInterval: 60 //计费间隔：60分钟计费一次
 ```
 
 **改变后：**
 
-ExtensionResourcePrice-controller 把资源名字和价格注册进所有Metering里面。
+Metering-controller 把资源名字和价格注册进所有Metering里面。
 
 ```yaml
 apiVersion: metering.sealos.io/v1
@@ -173,7 +159,7 @@ spec:
       price: 2
       unit: 1G
       used: "0"
-  timeInterval: 60 //计费60分钟计费一次
+  timeInterval: 60 
 ```
 
 ## 四**、Metering计量计费流程**
@@ -214,7 +200,21 @@ spec:
 
 #### 4.3、Metering-controller计费过程：
 
-根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额。
+根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额，根据使用的资源量计算出需要支付1块钱。
+
+```
+apiVersion: user.sealos.io/v1
+kind: AccountBalance
+metadata:
+  name: accountbalance-b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6-92
+  namespace: metering-system
+spec:
+  amount: 1 //需要支付的金额大小
+  owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6 //用户名字
+  timeStamp: 1672031381
+```
+
+
 
 #### 4.4、扣费过程：
 
