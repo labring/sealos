@@ -35,8 +35,16 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              uiEndPoints:
+              image:
+                type: string
+            type: object
+          status:
+            description: AppStatus defines the observed state of App
+            properties:
+              UIEndPoint:
                 properties:
+                  icon:
+                    type: string
                   name:
                     type: string
                   theme:
@@ -44,9 +52,8 @@ spec:
                   url:
                     type: string
                 type: object
-            type: object
-          status:
-            description: AppStatus defines the observed state of App
+              image:
+                type: string
             type: object
         type: object
     served: true

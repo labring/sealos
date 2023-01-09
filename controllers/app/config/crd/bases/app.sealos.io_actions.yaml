@@ -36,8 +36,6 @@ spec:
             properties:
               actionName:
                 type: string
-              appName:
-                type: string
               args:
                 additionalProperties:
                   type: string

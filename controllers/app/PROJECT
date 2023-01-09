@@ -13,13 +13,17 @@ resources:
   kind: App
   path: github.com/labring/sealos/controllers/app/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
   domain: sealos.io
   group: app
-  kind: Actions
+  kind: Action
   path: github.com/labring/sealos/controllers/app/api/v1
   version: v1
 version: "3"

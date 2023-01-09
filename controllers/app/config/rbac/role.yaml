@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - app.sealos.io
   resources:
+  - actions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - actions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - app.sealos.io
+  resources:
+  - actions/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - app.sealos.io
+  resources:
   - apps
   verbs:
   - create
@@ -31,3 +57,11 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - images
+  verbs:
+  - get
+  - list
+  - watch

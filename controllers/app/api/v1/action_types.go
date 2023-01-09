@@ -43,8 +43,9 @@ type ActionsStatus struct {
 	Status string `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
+
 type Actions struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -53,8 +54,9 @@ type Actions struct {
 	Status ActionsStatus `json:"status,omitempty"`
 }
 
-// +kubebuilder:object:root=true
 // ActionsList contains a list of Actions
+//+kubebuilder:object:root=true
+
 type ActionsList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

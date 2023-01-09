@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-type ActionsReconciler struct {
+type ActionReconcile struct {
 	client.Client
 	Scheme       *runtime.Scheme
 	recorder     record.EventRecorder
@@ -44,11 +44,12 @@ const (
 	DefaultNameSpace string = "default"
 )
 
-// +kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
-// +kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list
-func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+//+kubebuilder:rbac:groups=app.sealos.io,resources=actions,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=app.sealos.io,resources=actions/finalizers,verbs=update
+//+kubebuilder:rbac:groups=imagehub.sealos.io,resources=images,verbs=get;list
+
+func (r *ActionReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.Logger = log.FromContext(ctx)
 	action := &appv1.Actions{}
 	if err := r.Get(ctx, req.NamespacedName, action); err != nil {
@@ -98,7 +99,7 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{}, nil
 }
 
-func (r *ActionsReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ActionReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-action-controller")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appv1.Actions{}).

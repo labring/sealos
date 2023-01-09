@@ -17,27 +17,26 @@ limitations under the License.
 package v1
 
 import (
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 type UIEndPoint struct {
 	Name  string `json:"name,omitempty"`
-	Theme string `json:"theme,omitempty"`
 	URL   string `json:"url,omitempty"`
+	Icon  string `json:"icon,omitempty"`
+	Theme string `json:"theme,omitempty"`
 }
 
 // AppSpec defines the desired state of App
 type AppSpec struct {
-	UIEndPoints UIEndPoint `json:"uiEndPoints,omitempty"`
+	Image imagehubv1.ImageName `json:"image,omitempty"`
 }
 
 // AppStatus defines the observed state of App
 type AppStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Image imagehubv1.ImageName `json:"image,omitempty"`
+	UI    UIEndPoint           `json:"UIEndPoint,omitempty"`
 }
 
 //+kubebuilder:object:root=true
