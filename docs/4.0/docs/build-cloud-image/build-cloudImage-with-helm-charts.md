@@ -173,7 +173,7 @@ root@ubuntu:~# helm -n nginx ls
 
 By default, when building an image, sealos only parses the default values.yml, However, you can also provide a custom values.yaml for sealos.
 
-The custom values.yaml must same layer with your chart , and file name must be `<chart-name>.values.yaml`,eg`loki-stack.values.yaml`
+The custom values file must put in the same directory as your chart, and must named with form like `<chart-name>.values.yaml`, e.g., `loki-stack.values.yaml`.
 
 ```shell
 .
@@ -203,7 +203,7 @@ grafana:
   enabled: true
 ```
 
-Different values.yaml files will parses different images, which is the purpose of customizing values.yml - to enable sealos to automatically parses the images during run `sealos build` .
+Different values files may be output to a different list of images to enable sealos to automatically parses the images during `sealos build`.
 
 ```shell
 $ helm template charts/loki-stack/ -f charts/loki-stack/values.yaml|grep image: 
@@ -219,14 +219,3 @@ $ helm template charts/loki-stack/ -f charts/loki-stack.values.yaml|grep image:
           image: "bats/bats:v1.1.0"
           image: bats/bats:v1.1.0
 ```
-
-
-
-
-
-
-
-
-
-
-

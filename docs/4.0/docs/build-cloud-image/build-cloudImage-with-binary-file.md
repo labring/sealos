@@ -24,7 +24,7 @@ chmod a+x linux-amd64/helm
 mv linux-amd64/helm opt/
 ```
 
-Create a file named `Kubefile` for image build:
+Create a file named `Sealosfile` for image build:
 
 ```shell
 FROM scratch
@@ -36,7 +36,7 @@ The directory structure is as follows now:
 
 ```
 .
-├── Kubefile
+├── Sealosfile
 └── opt
     └── helm
 ```
