@@ -21,8 +21,6 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/crypto/ssh"
-
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
@@ -105,10 +103,15 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	return nil
 }
 
-func runCmd(client *ssh.Client, cmd string) ([]byte, error) {
-	session, err := newSession(client)
+func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
+	if s.isLocalAction(host) {
+		logger.Debug("host %s is local, command via exec", host)
+		d, err := exec.RunBashCmd(cmd)
+		return []byte(d), err
+	}
+	client, session, err := s.Connect(host)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %v", err)
+		return nil, fmt.Errorf("failed to create ssh session for %s: %v", host, err)
 	}
 	defer client.Close()
 	defer session.Close()
@@ -117,19 +120,6 @@ func runCmd(client *ssh.Client, cmd string) ([]byte, error) {
 		err = fmt.Errorf("failed to run command: %v", err)
 	}
 	return output, err
-}
-
-func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
-	if s.isLocalAction(host) {
-		logger.Debug("host %s is local, command via exec", host)
-		d, err := exec.RunBashCmd(cmd)
-		return []byte(d), err
-	}
-	client, err := s.connect(host)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect: %v", err)
-	}
-	return runCmd(client, cmd)
 }
 
 func readPipe(host string, pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
