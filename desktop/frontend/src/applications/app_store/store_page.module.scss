@@ -1,0 +1,49 @@
+@import './app_store_common.scss';
+
+$tag-bg-color: #f3f2f1;
+$des-text-color: #605e5c;
+
+.appInfo {
+  display: flex;
+  background: $background-base-color;
+  border-radius: 12px;
+  height: 160px;
+
+  &:hover {
+    background: $background-max-hover;
+  }
+
+  .appDesc {
+    flex-grow: 1;
+    flex-basis: 580px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .description {
+    padding-top: 8px;
+    display: -webkit-box;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    color: $des-text-color;
+    font-size: 12px;
+  }
+}
+
+.title {
+  font-weight: 400;
+}
+
+.labelsScrollWrap {
+  flex-basis: 150px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

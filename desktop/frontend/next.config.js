@@ -1,12 +1,12 @@
 // @ts-check
-const runtimeCaching = require('next-pwa/cache');
-const isProduction = process.env.NODE_ENV === 'production';
+const runtimeCaching = require('next-pwa/cache')
+const isProduction = process.env.NODE_ENV === 'production'
 
 const withPWA = require('next-pwa')({
   dest: 'public',
   runtimeCaching,
   disable: !isProduction
-});
+})
 
 /**
  * @type {import('next').NextConfig}
@@ -23,14 +23,14 @@ const nextConfig = withPWA({
       }
     ]
   },
-  webpack(config) {
+  webpack (config) {
     config.module.rules.push({
       test: /\.svg$/i,
       issuer: /\.[jt]sx?$/,
       use: ['@svgr/webpack']
-    });
+    })
 
-    return config;
+    return config
   },
   images: {
     domains: ['avatars.githubusercontent.com']
@@ -42,6 +42,6 @@ const nextConfig = withPWA({
   typescript: {
     ignoreBuildErrors: true
   }
-});
+})
 
-module.exports = nextConfig;
+module.exports = nextConfig

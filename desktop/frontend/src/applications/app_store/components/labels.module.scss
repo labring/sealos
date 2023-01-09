@@ -1,0 +1,49 @@
+.label {
+  width: 124px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid transparent;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.4);
+  }
+}
+
+.active {
+  color: rgba(35, 155, 242, 1);
+  border: 1px solid rgba(35, 155, 242, 1);
+}
+
+.xLabels {
+  display: flex;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.75);
+  padding: 6px 16px;
+  margin-bottom: 12px;
+  & .tag + .tag {
+    .border1px {
+      display: block;
+    }
+  }
+}
+
+.xActive {
+  color: rgba(35, 155, 242, 1);
+}
+
+.deleteIcon svg {
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+}
+
+.border1px {
+  display: none;
+  border-right: 1px solid rgba(218, 218, 218, 1);
+  height: 12px;
+  margin: 0 8px;
+}

@@ -25,7 +25,6 @@ apiVersion: imagehub.sealos.io/v1
 kind: DataPack
 metadata:
   name: {{ .pack_name }}
-  namespace: {{ .namespace }}
 spec:
   type: {{ .pack_type }}
   names: [{{ join .images "," }}]
