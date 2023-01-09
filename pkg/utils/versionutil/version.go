@@ -17,6 +17,8 @@ limitations under the License.
 package versionutil
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -46,8 +48,34 @@ func Compare(v1, v2 string) bool {
 	} else if v1List[1] < v2List[1] {
 		return false
 	}
-	if v1List[2] > v2List[2] {
+	if v1List[2] >= v2List[2] {
 		return true
 	}
-	return true
+	return false
+}
+
+// assure version format right and new >=
+// The upgrade of minor version number cannot be skipped
+func UpgradeVersionLimit(old, new string) error {
+	new = strings.Replace(new, "v", "", -1)
+	old = strings.Replace(old, "v", "", -1)
+	new = strings.Split(new, "-")[0]
+	old = strings.Split(old, "-")[0]
+	newList := strings.Split(new, ".")
+	oldList := strings.Split(old, ".")
+
+	minorNewV, err := strconv.Atoi(newList[1])
+	if err != nil {
+		return err
+	}
+	minorOldV, err := strconv.Atoi(oldList[1])
+	if err != nil {
+		return err
+	}
+	if newList[0] > oldList[0] {
+		return fmt.Errorf("upgrade of senior version cannot be executed")
+	} else if minorNewV > minorOldV+1 {
+		return fmt.Errorf("upgrade of minor version number cannot be skipped")
+	}
+	return nil
 }

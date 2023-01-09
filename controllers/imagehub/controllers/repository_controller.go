@@ -105,8 +105,8 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 	r.Logger.V(1).Info("repo reconcile update repo:", "changes", update)
 
 	// update status
-	imgList, _ := r.db.getImageListByRepoName(ctx, repo.Spec.Name)
-	r.Logger.Info("getImageListByRepoName", "imgList Len:", len(imgList.Items))
+	imgList, _ := r.db.GetImageListByRepoName(ctx, repo.Spec.Name)
+	r.Logger.Info("GetImageListByRepoName", "imgList Len:", len(imgList.Items))
 	tagList := imagehubv1.TagList{}
 	for _, img := range imgList.Items {
 		tagList = append(tagList, imagehubv1.TagData{

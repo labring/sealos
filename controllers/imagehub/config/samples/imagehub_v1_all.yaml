@@ -9,7 +9,6 @@ spec:
     keywords: [ storage ]
     description: OpenEBS helps Developers and Platform SREs easily deploy Kubernetes Stateful Workloads that require fast and highly reliable container attached storage. OpenEBS turns any storage available on the Kubernetes worker nodes into local or distributed Kubernetes Persistent Volumes.
     icon: https://openebs.io/images/logos/logo.svg
-    authorIcon: https://openebs.io/images/logos/logo.svg
     docs: |
       # OpenEBS
 
@@ -145,7 +144,6 @@ spec:
     keywords: [ Storage ]
     description: Helm is the best way to find, share, and use software built for Kubernetes
     icon: https://helm.sh/img/helm.svg
-    authorIcon: https://helm.sh/img/helm.svg
     docs: |
       # Helm
 
@@ -234,7 +232,6 @@ spec:
     keywords: [ storage ]
     description: Cloud native certificate management. X.509 certificate management for Kubernetes and OpenShift
     icon: https://cert-manager.io/images/cert-manager-logo-icon.svg
-    authorIcon: authorIcon
     docs: |
       
       <p align="center">
@@ -251,7 +248,7 @@ spec:
       <a href="https://godoc.org/github.com/cert-manager/cert-manager"><img src="https://godoc.org/github.com/cert-manager/cert-manager?status.svg"></a>
       <a href="https://goreportcard.com/report/github.com/cert-manager/cert-manager"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/cert-manager/cert-manager" /></a>
       <br />
-      <a href="https://artifacthub.io/packages/search?repo=cert-manager"><img alt="Artifact Hub" src="https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager" /></a>
+      <a href="https://artifacthub.io/packages/search?repo=cert-manager"><img alt="Artifact Hub" src="https://img.shields.io/endpoint?URL=https://artifacthub.io/badge/repository/cert-manager" /></a>
       <a href="https://api.securityscorecards.dev/projects/github.com/cert-manager/cert-manager"><img src="https://api.securityscorecards.dev/projects/github.com/cert-manager/cert-manager/badge" alt="Scorecard score"/></a>
       </p>
 
@@ -365,7 +362,6 @@ spec:
       Rook turns distributed storage systems into self-managing, self-scaling, self-healing storage services. It automates the tasks of a storage administrator: deployment, bootstrapping, configuration, provisioning, scaling, upgrading, migration, disaster recovery, monitoring, and resource management.
       Rook uses the power of the Kubernetes platform to deliver its services via a Kubernetes Operator for Ceph.
     icon: https://rook.io/images/rook-logo.svg
-    authorIcon: https://rook.io/images/rook-logo.svg
     docs: |
       <img alt="Rook" src="Documentation/media/logo.svg" width="50%" height="50%">
 
@@ -476,7 +472,6 @@ spec:
     description: |
       MySQL Operator for Kubernetes manages MySQL InnoDB Cluster setups inside a Kubernetes Cluster. MySQL Operator for Kubernetes manages the full lifecycle with setup and maintenance including automating upgrades and backups.
     icon: https://rook.io/images/rook-logo.svg
-    authorIcon: https://rook.io/images/rook-logo.svg
     docs: |
       <img alt="Rook" src="Documentation/media/logo.svg" width="50%" height="50%">
 
@@ -587,7 +582,6 @@ spec:
     description: |
       Get the performance you love from open source ClickHouse in a serverless offering that takes care of the details so you can spend more time getting insight out of the fastest database on earth.
     icon: https://rook.io/images/rook-logo.svg
-    authorIcon: https://rook.io/images/rook-logo.svg
     docs: |
       ClickHouse® is an open-source column-oriented database management system that allows generating analytical data reports in real-time.
       
@@ -623,7 +617,6 @@ spec:
     description: |
       A Golang based redis operator that will make/oversee Redis standalone/cluster mode setup on top of the Kubernetes. It can create a redis cluster setup with best practices on Cloud as well as the Bare metal environment. Also, it provides an in-built monitoring capability using redis-exporter.
     icon: https://2215807951-files.gitbook.io/~/files/v0/b/gitbook-legacy-files/o/assets%2F-MFROMngQbx5IGrLZR-g%2F-MFROP5SFffhX9AX-LAR%2F-MFROuWngEXGngu4yCyr%2Fimage.png?alt=media&token=c1561fe4-9740-4f34-99e2-bee924100fe7
-    authorIcon: https://2215807951-files.gitbook.io/~/files/v0/b/gitbook-legacy-files/o/assets%2F-MFROMngQbx5IGrLZR-g%2F-MFROP5SFffhX9AX-LAR%2F-MFROuWngEXGngu4yCyr%2Fimage.png?alt=media&token=c1561fe4-9740-4f34-99e2-bee924100fe7
     docs: |
       # redis-operator
 
@@ -996,7 +989,6 @@ spec:
     description: |
       Installs the kube-prometheus stack, a collection of Kubernetes manifests, Grafana dashboards, and Prometheus rules combined with documentation and scripts to provide easy to operate end-to-end Kubernetes cluster monitoring with Prometheus using the Prometheus Operator.
     icon: https://artifacthub.io/image/0503add5-3fce-4b63-bbf3-b9f649512a86@1x
-    authorIcon: https://artifacthub.io/image/0503add5-3fce-4b63-bbf3-b9f649512a86@1x
     docs: |
       # Prometheus Community Kubernetes Helm Charts
 
@@ -1047,7 +1039,6 @@ spec:
     description: |
       Metrics Server is a scalable, efficient source of container resource metrics for Kubernetes built-in autoscaling pipelines.
     icon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/metrics-server/img/metrics-server-stack-220x234.png
-    authorIcon: https://dyltqmyl993wv.cloudfront.net/assets/stacks/metrics-server/img/metrics-server-stack-220x234.png
     docs: |
       # Kubernetes Metrics Server
 
@@ -1247,7 +1238,6 @@ spec:
 
       For this setup, we are using bitnami redis Helm charts to start the Redis server/cluster.
     icon: https://i0.wp.com/exporterhub.io/wp-content/uploads/2022/06/redis-cube-red_white-rgb.png?fit=294%2C252&ssl=1
-    authorIcon: https://i0.wp.com/exporterhub.io/wp-content/uploads/2022/06/redis-cube-red_white-rgb.png?fit=294%2C252&ssl=1
     docs: |
       # Prometheus Redis Metrics Exporter
 
