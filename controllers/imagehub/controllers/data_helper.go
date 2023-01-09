@@ -72,12 +72,12 @@ func (r *DataHelper) getRepoInfoByRepoName(ctx context.Context, name imagehubv1.
 //	return listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier)
 //}
 
-func (r *DataHelper) getImageListByRepoName(ctx context.Context, name imagehubv1.RepoName) (*imagehubv1.ImageList, error) {
+func (r *DataHelper) GetImageListByRepoName(ctx context.Context, name imagehubv1.RepoName) (*imagehubv1.ImageList, error) {
 	res := &imagehubv1.ImageList{}
 	return listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier)
 }
 
-func (r *DataHelper) getImageByImageName(ctx context.Context, name imagehubv1.ImageName) (imagehubv1.Image, error) {
+func (r *DataHelper) GetImageByImageName(ctx context.Context, name imagehubv1.ImageName) (imagehubv1.Image, error) {
 	res := &imagehubv1.ImageList{}
 	lst, err := listByLable[*imagehubv1.ImageList](ctx, r, res, &name, orgModifier, repoModifier, tagModifier)
 	if len(lst.Items) == 0 {
@@ -86,8 +86,8 @@ func (r *DataHelper) getImageByImageName(ctx context.Context, name imagehubv1.Im
 	return lst.Items[0], err
 }
 
-func (r *DataHelper) getImageInfoByImageName(ctx context.Context, name imagehubv1.ImageName) (imagehubv1.ImageInfo, error) {
-	image, err := r.getImageByImageName(ctx, name)
+func (r *DataHelper) GetImageInfoByImageName(ctx context.Context, name imagehubv1.ImageName) (imagehubv1.ImageInfo, error) {
+	image, err := r.GetImageByImageName(ctx, name)
 	if err != nil {
 		return imagehubv1.ImageInfo{}, err
 	}
@@ -113,7 +113,7 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	}
 	fd.RepoInfo = repoInfo
 
-	imgInfo, err := r.getImageInfoByImageName(ctx, n)
+	imgInfo, err := r.GetImageInfoByImageName(ctx, n)
 	if err == ErrNotMatch {
 		r.Logger.V(2).Info("failed to get image info by", "image name", n.ToMetaName(), "err", err.Error())
 	} else if err != nil {

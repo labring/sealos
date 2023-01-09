@@ -41,7 +41,7 @@ spec:
                 description: 'ImageDetailInfo TODO: add limits for ImageDetailInfo'
                 properties:
                   ID:
-                    description: should use buildah inspect to get infor.
+                    description: ID Arch Size should use buildah inspect to get infor.
                     type: string
                   actions:
                     additionalProperties:
@@ -57,6 +57,7 @@ spec:
                             support yaml.'
                           type: string
                       type: object
+                    description: Actions todo
                     type: object
                   arch:
                     type: string
@@ -73,6 +74,9 @@ spec:
                   size:
                     format: int64
                     type: integer
+                  url:
+                    description: URL sealos cloud ui endpoint
+                    type: string
                 type: object
               name:
                 type: string
