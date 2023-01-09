@@ -161,7 +161,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		}
 	}
 
-	r.cluster.Spec.Image = append(r.cluster.Spec.Image, imageList...)
+	r.cluster.SetNewImages(imageList)
 
 	// set host when cluster is not yet initialized
 	if !r.cluster.CreationTimestamp.IsZero() {

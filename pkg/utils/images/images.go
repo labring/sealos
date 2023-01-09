@@ -23,6 +23,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/pkg/errors"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	str "github.com/labring/sealos/pkg/utils/strings"
@@ -128,4 +129,14 @@ func normalizeTaggedDigestedNamed(named reference.Named) (reference.Named, error
 // prefix the specified name with "localhost/".
 func toLocalImageName(name string) string {
 	return "localhost/" + strings.TrimLeft(name, "/")
+}
+
+func GetKubeVersionFromImage(img v1beta1.MountImage) string {
+	if img.Type != v1beta1.RootfsImage {
+		return ""
+	}
+	if img.Labels == nil {
+		return ""
+	}
+	return img.Labels[v1beta1.ImageKubeVersionKey]
 }
