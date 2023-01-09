@@ -86,7 +86,6 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
 	var ipList []string
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
-
 	return sshClient, WaitSSHReady(sshClient, defaultMaxRetry, ipList...)
 }
 
@@ -95,21 +94,12 @@ type Client struct {
 	Host string
 }
 
-func WaitSSHReady(ssh Interface, tryTimes int, hosts ...string) error {
+func WaitSSHReady(ssh Interface, _ int, hosts ...string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for i := range hosts {
 		host := hosts[i]
 		eg.Go(func() (err error) {
-			for i := 0; i < tryTimes; i++ {
-				if i > 0 {
-					logger.Debug("trying to reconnect due to error occur: %v", err)
-					time.Sleep(time.Millisecond * 100)
-				}
-				if err = ssh.Ping(host); err == nil {
-					return nil
-				}
-			}
-			return
+			return ssh.Ping(host)
 		})
 	}
 	return eg.Wait()

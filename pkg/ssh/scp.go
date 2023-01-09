@@ -60,7 +60,7 @@ func (s *SSH) CmdToString(host, cmd, sep string) (string, error) {
 	return getOnelineResult(data, sep), nil
 }
 
-func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
+func (s *SSH) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client, error) {
 	sshClient, err := s.connect(host)
 	if err != nil {
 		return nil, nil, err
@@ -70,17 +70,11 @@ func (s *SSH) sftpConnect(host string) (*ssh.Client, *sftp.Client, error) {
 	return sshClient, sftpClient, err
 }
 
-func (s *SSH) sftpConnectWithRetry(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
-	for i := 0; i < defaultMaxRetry; i++ {
-		if i > 0 {
-			logger.Debug("trying to reconnect due to error occur: %v", err)
-			time.Sleep(time.Millisecond * 100)
-		}
-		sshClient, sftpClient, err = s.sftpConnect(host)
-		if err == nil || !isErrorWorthRetry(err) {
-			break
-		}
-	}
+func (s *SSH) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
+	err = exponentialBackoffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
+		sshClient, sftpClient, err = s.newClientAndSftpClient(host)
+		return err
+	}, isErrorWorthRetry)
 	return
 }
 
@@ -91,7 +85,7 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	sshClient, sftpClient, err := s.sftpConnectWithRetry(host)
+	sshClient, sftpClient, err := s.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
