@@ -238,6 +238,7 @@ func (hrs *httpReadSeeker) reader() (io.Reader, error) {
 			if submatches[3] == "*" {
 				hrs.size = -1
 			} else {
+				// nosemgrep
 				size, err := strconv.ParseUint(submatches[3], 10, 64)
 				if err != nil {
 					return nil, fmt.Errorf("could not parse total size in Content-Range header: %s", contentRange)
