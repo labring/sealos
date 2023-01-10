@@ -12,7 +12,7 @@
 
 计费方式：used/unit *price 就是需要扣除的的价格
 
-```go
+```yaml
 apiVersion: metering.sealos.io/v1
 kind: Metering
 metadata:
@@ -206,7 +206,7 @@ Metering-controller会在一个计费周期内（一般是60分钟）进行计�
 
 2、生成一个AccountBalance的CR，里面会存放需要扣除的金额，根据使用的资源量1核 CPU 计算出需要支付1块钱（计算公式：used/unit *price）。
 
-```
+```yaml
 # 清空Metering CR中统计的资源使用量
 apiVersion: metering.sealos.io/v1
 kind: Metering
@@ -229,7 +229,7 @@ spec:
 
 
 
-```
+```yaml
 apiVersion: user.sealos.io/v1
 kind: AccountBalance
 metadata:
