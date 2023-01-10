@@ -200,6 +200,10 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 	for _, r := range result.Reservations {
 		for j := range r.Instances {
 			i := r.Instances[j]
+			if infra.Spec.SSH.PkName == "" {
+				infra.Spec.SSH.PkName = *i.KeyName
+			}
+
 			if i.State.Name != types.InstanceStateNameRunning {
 				logger.Warn("instance is not running, skip it", "instance", i.InstanceId)
 				continue

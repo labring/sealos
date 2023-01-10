@@ -267,13 +267,13 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 		curDisk, desDisk := cur[Icur], des[Ides]
 		// same mount path, two pointers move to right
 		if curDisk.Index == desDisk.Index {
-			logger.Info("start to modify disk... cur cap is %v, des cap is %v", curDisk.Capacity, desDisk.Capacity)
-			if err := driver.ModifyVolume(&curDisk, &desDisk); err != nil {
-				return err
-			}
-			//wait for volume updated
-			//Warning: this may cause unpredictable risk
 			if curDisk.Capacity != desDisk.Capacity || curDisk.VolumeType != desDisk.VolumeType {
+				logger.Info("start to modify disk... cur cap is %v, des cap is %v", curDisk.Capacity, desDisk.Capacity)
+				if err := driver.ModifyVolume(&curDisk, &desDisk); err != nil {
+					return err
+				}
+				//wait for volume updated
+				//Warning: this may cause unpredictable risk
 				logger.Info("wait for volume updated...")
 				time.Sleep(5000 * time.Millisecond)
 			}
