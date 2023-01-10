@@ -102,4 +102,7 @@ require (
 	k8s.io/api v0.25.0
 )
 
-replace github.com/labring/sealos => ../../
+
+replace (
+	github.com/labring/sealos => ../../
+)
