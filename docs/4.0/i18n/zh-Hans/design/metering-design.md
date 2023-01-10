@@ -24,7 +24,7 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每�
 
 资源控制器：统计资源使用量
 
-计量计费系统：根据统计的资源使用量和价格表计算出价格，让用户账户扣除这些钱
+计量计费系统：在一个计费周期内根据统计的资源使用量和价格表计算出价格一次，让用户账户扣除这些钱，并且会清空统计的资源使用量。
 
 ![](../../../img/metering/metering-1.png)
 
@@ -35,6 +35,8 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每�
 ![](../../../img/metering/metering-2.png)
 
 3.2.2 计量计费系统根据使用量计算出价格
+
+会在一个计费周期内统计一次并且算出价格，并且会清空计量计费内的资源使用量，最后后在用户账户中扣除计算出来需要支付的钱。
 
 ![](../../../img/metering/metering-3.png)
 
@@ -56,6 +58,6 @@ sealos cloud  是一个多租户的，以 k8s 为内核的云操作系统，每�
 
 2、Metering-controller计量过程：watch Resource的产生，产生之后会把其中的资源使用值放入Metering的 CR 中。
 
-3、Metering-controller计费过程：根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额。
+3、Metering-controller计费过程：根据Metering CR中统计的资源使用量和价格表计算出价格，并且会清空统计的资源使用量，生成一个AccountBalance的CR，里面会存放需要扣除的金额（计算公式：used/unit *price）。
 
 4、扣费过程：Account 监听了Accountbalance CR的产生，并且读取需要扣费的值，进行扣费。

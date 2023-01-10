@@ -200,7 +200,34 @@ spec:
 
 #### 4.3、Metering-controller计费过程：
 
-根据Metering CR中统计的资源使用量，根据价格表计算出价格，生成一个AccountBalance的CR，里面会存放需要扣除的金额，根据使用的资源量计算出需要支付1块钱。
+Metering-controller会在一个计费周期内（一般是60分钟）进行计费一次
+
+1、根据Metering CR中统计的资源使用量和价格表计算出价格，并且会清空统计的资源使用量
+
+2、生成一个AccountBalance的CR，里面会存放需要扣除的金额，根据使用的资源量1核 CPU 计算出需要支付1块钱（计算公式：used/unit *price）。
+
+```
+# 清空Metering CR中统计的资源使用量
+apiVersion: metering.sealos.io/v1
+kind: Metering
+metadata:
+  name: metering-nsName
+  namespace:metering-system
+spec:
+  namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
+  owner: ff839a27-0a35-452f-820e-3e47d596ba68
+  resources:
+    cpu:
+      price: 1
+      unit: "1"
+      used: 0 // 这里改变，重新置为0
+    memory:
+      price: 2
+      unit: 1G
+      used: "0"
+```
+
+
 
 ```
 apiVersion: user.sealos.io/v1
@@ -213,8 +240,6 @@ spec:
   owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6 //用户名字
   timeStamp: 1672031381
 ```
-
-
 
 #### 4.4、扣费过程：
 
