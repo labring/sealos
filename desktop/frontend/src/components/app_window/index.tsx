@@ -49,8 +49,8 @@ export default function AppWindow(props: {
         <div className={'windowHeader'}>
           <div
             className={styles.toolbar}
-            onClick={() => {
-              switchApp(wnapp);
+            onClick={(e) => {
+              switchApp(wnapp, 'clickHeader');
             }}
             style={{
               background: wnapp.style?.bg || '#fff'
@@ -87,7 +87,8 @@ export default function AppWindow(props: {
                   e.preventDefault();
                   updateAppInfo({
                     ...wnapp,
-                    size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
+                    size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin',
+                    cacheSize: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
                   });
                   setPosition({ x: 0, y: 0 });
                 }}

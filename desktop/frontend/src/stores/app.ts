@@ -17,12 +17,14 @@ export type TAppFront = {
         bg: string;
       }
     | {};
+  cacheSize: 'maximize' | 'maxmin' | 'minimize';
 };
 
 const initialFrantState: TAppFront = {
   isShow: false,
   zIndex: 1,
   size: 'maximize',
+  cacheSize: 'maximize',
   style: {}
 };
 
@@ -76,7 +78,7 @@ type TOSState = {
   openApp(app: TApp): void;
 
   // switch the app
-  switchApp(app: TApp): void;
+  switchApp(app: TApp, type?: 'clickHeader'): void;
 
   updateAppInfo(app: TApp): void;
 
@@ -174,13 +176,17 @@ const useAppStore = create<TOSState>()(
         });
       },
 
-      switchApp: (app: TApp) => {
+      switchApp: (app: TApp, type) => {
         const zIndex = (get().maxZIndex || 0) + 1;
         const _app: TApp = JSON.parse(JSON.stringify(app));
         _app.zIndex = zIndex;
         _app.isShow = true;
-        if (_app.size === 'minimize') {
-          _app.size = 'maximize';
+        if (type !== 'clickHeader') {
+          if (get().currentApp?.name === _app.name) {
+            _app.size === 'minimize' ? (_app.size = _app.cacheSize) : (_app.size = 'minimize');
+          } else {
+            _app.size = _app.cacheSize;
+          }
         }
         set((state) => {
           // repalce app info
