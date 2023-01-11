@@ -122,10 +122,14 @@ spec:
                             type: string
                           name:
                             type: string
+                          size:
+                            format: int64
+                            type: integer
                         required:
                         - creatTime
                         - metaName
                         - name
+                        - size
                         type: object
                       type: array
                   type: object
@@ -406,10 +410,14 @@ spec:
                     type: string
                   name:
                     type: string
+                  size:
+                    format: int64
+                    type: integer
                 required:
                 - creatTime
                 - metaName
                 - name
+                - size
                 type: object
               name:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
@@ -426,10 +434,14 @@ spec:
                       type: string
                     name:
                       type: string
+                    size:
+                      format: int64
+                      type: integer
                   required:
                   - creatTime
                   - metaName
                   - name
+                  - size
                   type: object
                 type: array
             type: object

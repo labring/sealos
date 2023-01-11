@@ -100,10 +100,14 @@ spec:
                             type: string
                           name:
                             type: string
+                          size:
+                            format: int64
+                            type: integer
                         required:
                         - creatTime
                         - metaName
                         - name
+                        - size
                         type: object
                       type: array
                   type: object

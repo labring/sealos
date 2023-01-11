@@ -53,19 +53,12 @@ func NewExecCmdFromIPs(cluster *v2.Cluster, ips []string) (Exec, error) {
 }
 
 func (e *Exec) RunCmd(cmd string) error {
+	sshClient := NewSSHClient(&e.cluster.Spec.SSH, true)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range e.ipList {
 		ip := ipAddr
 		eg.Go(func() error {
-			sshClient, sshErr := NewSSHByCluster(e.cluster, true)
-			if sshErr != nil {
-				return sshErr
-			}
-			err := sshClient.CmdAsync(ip, cmd)
-			if err != nil {
-				return err
-			}
-			return nil
+			return sshClient.CmdAsync(ip, cmd)
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -75,19 +68,12 @@ func (e *Exec) RunCmd(cmd string) error {
 }
 
 func (e *Exec) RunCopy(srcFilePath, dstFilePath string) error {
+	sshClient := NewSSHClient(&e.cluster.Spec.SSH, true)
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, ipAddr := range e.ipList {
 		ip := ipAddr
 		eg.Go(func() error {
-			sshClient, sshErr := NewSSHByCluster(e.cluster, true)
-			if sshErr != nil {
-				return sshErr
-			}
-			err := sshClient.Copy(ip, srcFilePath, dstFilePath)
-			if err != nil {
-				return err
-			}
-			return nil
+			return sshClient.Copy(ip, srcFilePath, dstFilePath)
 		})
 	}
 	if err := eg.Wait(); err != nil {

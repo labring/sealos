@@ -1,6 +1,6 @@
 # Build cloud image with binary file
 
-Command line tools such as helm or kustomize are single binary files. We can package them into cloud images, and then install them by deploying cloud images on the master node.Let's take helm as an example to introduce how to package binary files into cloud image.
+Command line tools such as helm or kustomize are single binary files. Sealos can package them into cloud images, and then install them by deploying cloud images on the master node.Let's take helm as an example to introduce how to package binary files into cloud image.
 
 Create a base directory as build workspace.
 
@@ -24,28 +24,21 @@ chmod a+x linux-amd64/helm
 mv linux-amd64/helm opt/
 ```
 
-**Notes:** you should install helm command tool to local host first.
-
-Now the `charts` directory as follow.
-
-```
-charts/
-└── nginx
-    ├── Chart.lock
-    ├── charts
-    ├── Chart.yaml
-    ├── README.md
-    ├── templates
-    ├── values.schema.json
-    └── values.yaml
-```
-
-Create a Kubefile for image build:
+Create a file named `Sealosfile` for image build:
 
 ```shell
 FROM scratch
 COPY opt ./opt
 CMD ["cp opt/helm /usr/bin/"]
+```
+
+The directory structure is as follows now:
+
+```
+.
+├── Sealosfile
+└── opt
+    └── helm
 ```
 
 Now everything is ready, you can start to build the cloud image.
@@ -94,16 +87,7 @@ Successfully tagged labring/helm:v3.10.1
                   Address :github.com/labring/sealos
 ```
 
-The directory structure is as follows now:
-
-```shell
-.
-├── Kubefile
-└── opt
-    └── helm
-```
-
-View the built image locally, now all dependent manifests and images are build into cloud image.
+View the built image locally, now all dependent binary files are build into cloud image.
 
 ```shell
 root@ubuntu:~/cloud-images# sealos images
@@ -125,3 +109,21 @@ sealos login docker.io -u xxx -p xxx
 
 sealos login registry.cn-hangzhou.aliyuncs.com -u xxx -p xxx
 ```
+
+## Install cloud image
+
+Then you can run cloud image in your cluster.
+
+```
+sealos run labring/helm:v3.10.1
+```
+
+The helm binary command will installed to your master nodes of your kubernetes cluster.
+
+```
+root@ubuntu:~# which helm
+/usr/bin/helm
+```
+
+
+

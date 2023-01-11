@@ -1,6 +1,0 @@
-apiVersion: imagehub.sealos.io/v1
-kind: Repository
-metadata:
-  name: lingdie.cert.manager
-spec:
-  name: lingdie/cert-manager

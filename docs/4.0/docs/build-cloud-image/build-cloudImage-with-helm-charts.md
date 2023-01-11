@@ -1,6 +1,6 @@
 # Build cloud image with helm charts
 
-Let's still take the simplest nginx application as an example to introduce how to build a nginx cloud image based on hem charts.
+Let's still take the simplest nginx application as an example to introduce how to build an nginx cloud image based on hem charts.
 
 Create a base directory for build work.
 
@@ -18,7 +18,7 @@ $ mkdir charts
 Prepare the ningx helm charts,Here we use [bitnami official nginx helm charts](https://bitnami.com/stack/nginx), let's pull the helm chart file to local and untar it to`charts` directory.
 
 ```shell
-helm repo add my-repo https://charts.bitnami.com/bitnami
+helm repo add bitnami https://charts.bitnami.com/bitnami
 helm search repo bitnami/nginx
 helm pull bitnami/nginx --version=13.2.13 -d charts/ --untar
 ```
@@ -39,9 +39,10 @@ charts/
     └── values.yaml
 ```
 
-Create a Kubefile for image build:
+Create a file named `Kubefile` for image build:
 
 ```shell
+$ cat Kubefile
 FROM scratch
 COPY charts charts
 COPY registry registry
@@ -152,4 +153,69 @@ If you use a private image repository, just login registry with `sealos login` b
 sealos login docker.io -u xxx -p xxx
 
 sealos login registry.cn-hangzhou.aliyuncs.com -u xxx -p xxx
+```
+
+## Install cloud image
+
+Then you can run cloud image in your cluster.
+
+```shell
+sealos run labring/nginx:v1.23.2
+```
+
+The helm binary command will installed to your master nodes of your kubernetes cluster.
+
+```shell
+root@ubuntu:~# helm -n nginx ls
+```
+
+## Custom values.yaml
+
+By default, when building an image, sealos only parses the default values.yml, However, you can also provide a custom values.yaml for sealos.
+
+The custom values file must put in the same directory as your chart, and must named with form like `<chart-name>.values.yaml`, e.g., `loki-stack.values.yaml`.
+
+```shell
+.
+├── charts
+│   ├── loki-stack
+│   │   ├── charts
+│   │   ├── Chart.yaml
+│   │   ├── README.md
+│   │   ├── requirements.lock
+│   │   ├── requirements.yaml
+│   │   ├── templates
+│   │   └── values.yaml
+│   └── loki-stack.values.yaml
+├── init.sh
+├── Kubefile
+```
+
+The `loki-stack.values.yaml` like this:
+
+```shell
+$ cat charts/loki-stack.values.yaml
+promtail:
+  enabled: false
+fluent-bit:
+  enabled: true
+grafana:
+  enabled: true
+```
+
+Different values files may be output to a different list of images to enable sealos to automatically parses the images during `sealos build`.
+
+```shell
+$ helm template charts/loki-stack/ -f charts/loki-stack/values.yaml|grep image: 
+          image: "grafana/promtail:2.0.0"
+          image: "grafana/loki:2.0.0"
+          image: bats/bats:v1.1.0
+
+$ helm template charts/loki-stack/ -f charts/loki-stack.values.yaml|grep image: 
+          image: "grafana/fluent-bit-plugin-loki:1.6.0-amd64"
+          image: "kiwigrid/k8s-sidecar:0.1.209"
+          image: "grafana/grafana:6.7.0"
+          image: "grafana/loki:2.0.0"
+          image: "bats/bats:v1.1.0"
+          image: bats/bats:v1.1.0
 ```
