@@ -1,20 +1,15 @@
-import clsx from 'clsx';
-import styles from './index.module.scss';
-
 type TIconfont = {
   iconName: string;
+  color?: string;
 };
 
 function Iconfont(props: TIconfont) {
-  const { iconName } = props;
+  const { iconName, color } = props;
+  const iconStyle = {
+    color: color
+  };
 
-  return (
-    <>
-      <svg className={clsx(styles.icon)} aria-hidden="true">
-        <use xlinkHref={`#${iconName}`}></use>
-      </svg>
-    </>
-  );
+  return <i className={`iconfont ${iconName}`} style={iconStyle}></i>;
 }
 
 export default Iconfont;
