@@ -124,7 +124,11 @@ func DecodeX509CertificateBytes(certBytes []byte) (*x509.Certificate, error) {
 }
 
 func GetKubernetesHost(config *rest.Config) string {
-	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	host, port := os.Getenv("SEALOS_CLOUD_HOST"), os.Getenv("SEALOS_CLOUD_PORT")
+	if len(host) != 0 && len(port) != 0 {
+		return "https://" + net.JoinHostPort(host, port)
+	}
+	host, port = os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
 	if len(host) == 0 || len(port) == 0 {
 		return config.Host
 	}
