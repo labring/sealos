@@ -6,4 +6,4 @@ metadata:
 spec:
   type: detail
   names:
-    - labring/cert-manager:v1.8.0
+    - lingdie/cert-manager:v1.8.0

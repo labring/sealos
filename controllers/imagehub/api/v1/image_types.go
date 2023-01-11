@@ -28,6 +28,7 @@ import (
 type TagData struct {
 	Name     string      `json:"name"`
 	MetaName string      `json:"metaName"`
+	Size     int64       `json:"size"`
 	CTime    metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
