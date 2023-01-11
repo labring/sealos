@@ -35,7 +35,7 @@ import (
 var imagelog = logf.Log.WithName("image-resource")
 
 func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	m := &ImageMutator{}
+	m := &ImageMutator{Client: mgr.GetClient()}
 	v := &ImageValidator{Client: mgr.GetClient()}
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(i).
@@ -45,8 +45,10 @@ func (i *Image) SetupWebhookWithManager(mgr ctrl.Manager) error {
 }
 
 //+kubebuilder:webhook:path=/mutate-imagehub-sealos-io-v1-image,mutating=true,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update,versions=v1,name=mimage.kb.io,admissionReviewVersions=v1
+//+kubebuilder:object:generate=false
 
 type ImageMutator struct {
+	client.Client
 }
 
 func (m *ImageMutator) Default(ctx context.Context, obj runtime.Object) error {
@@ -59,6 +61,15 @@ func (m *ImageMutator) Default(ctx context.Context, obj runtime.Object) error {
 	img.ObjectMeta.Labels[SealosOrgLable] = img.Spec.Name.GetOrg()
 	img.ObjectMeta.Labels[SealosRepoLabel] = img.Spec.Name.GetRepo()
 	img.ObjectMeta.Labels[SealosTagLabel] = img.Spec.Name.GetTag()
+
+	oldimg := &Image{}
+	oldimg.Name = img.Name
+	err := m.Get(ctx, client.ObjectKeyFromObject(oldimg), oldimg)
+	if err != nil {
+		return client.IgnoreNotFound(err)
+	}
+	// mulate image cr
+	img.MulateFromOldobj(oldimg)
 	return nil
 }
 
