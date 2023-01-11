@@ -132,6 +132,9 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
+	if !r.cluster.CreationTimestamp.IsZero() && r.cluster.Status.Phase != v2.ClusterSuccess {
+		return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
+	}
 	if err := PreProcessIPList(args.Cluster); err != nil {
 		return err
 	}
@@ -163,11 +166,6 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 
 	r.cluster.SetNewImages(imageList)
 
-	// set host when cluster is not yet initialized
-	if !r.cluster.CreationTimestamp.IsZero() {
-		return nil
-	}
-
 	if len(args.Cluster.Masters) > 0 {
 		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
@@ -180,7 +178,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 		if len(nodes) > 0 {
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		}
-		r.cluster.Spec.Hosts = r.hosts
+		r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
 	} else {
 		return fmt.Errorf("master ip(s) must specified")
 	}
@@ -236,11 +234,15 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	hostMap := map[string]*v2.Host{}
 	for i := range ips {
 		ip, port := iputils.GetHostIPAndPortOrDefault(ips[i], defaultPort)
-		if _, ok := hostMap[port]; !ok {
-			hostMap[port] = &v2.Host{IPS: []string{fmt.Sprintf("%s:%s", ip, port)}, Roles: roles}
+		socket := fmt.Sprintf("%s:%s", ip, port)
+		if stringsutil.In(socket, r.cluster.GetAllIPS()) {
 			continue
 		}
-		hostMap[port].IPS = append(hostMap[port].IPS, fmt.Sprintf("%s:%s", ip, port))
+		if _, ok := hostMap[port]; !ok {
+			hostMap[port] = &v2.Host{IPS: []string{socket}, Roles: roles}
+			continue
+		}
+		hostMap[port].IPS = append(hostMap[port].IPS, socket)
 	}
 	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], defaultPort)
 	for port, host := range hostMap {
