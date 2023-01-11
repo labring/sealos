@@ -179,7 +179,7 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 		}
 		r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
-	} else {
+	} else if r.cluster.CreationTimestamp.IsZero() {
 		return fmt.Errorf("master ip(s) must specified")
 	}
 	logger.Debug("cluster info: %v", r.cluster)
