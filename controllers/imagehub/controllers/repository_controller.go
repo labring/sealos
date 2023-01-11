@@ -112,6 +112,7 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 		tagList = append(tagList, imagehubv1.TagData{
 			Name:     img.Spec.Name.GetTag(),
 			MetaName: img.Name,
+			Size:     img.Spec.DetailInfo.Size,
 			CTime:    img.CreationTimestamp,
 		})
 	}
