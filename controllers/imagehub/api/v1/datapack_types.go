@@ -36,6 +36,7 @@ const (
 type Data struct {
 	// base
 	Name ImageName `json:"name,omitempty"`
+	Type ImageType `json:"type,omitempty"`
 	// grid
 	RepoName    RepoName `json:"repoName,omitempty"`
 	Rating      int      `json:"rating,omitempty"`
@@ -63,19 +64,23 @@ type FullData struct {
 
 type ImageBaseData struct {
 	Name ImageName `json:"name,omitempty"`
+	Type ImageType `json:"type,omitempty"`
 }
 
 func (i *ImageBaseData) New(fd *FullData) {
 	i.Name = fd.ImageInfo.Name
+	i.Type = fd.ImageInfo.Type
 }
 func (i *ImageBaseData) ToData() Data {
 	return Data{
 		Name: i.Name,
+		Type: i.Type,
 	}
 }
 
 type ImageGridData struct {
 	Name        ImageName `json:"name,omitempty"`
+	Type        ImageType `json:"type,omitempty"`
 	RepoName    RepoName  `json:"repoName,omitempty"`
 	Rating      int       `json:"rating,omitempty"`
 	Icon        string    `json:"icon,omitempty"`
@@ -85,18 +90,19 @@ type ImageGridData struct {
 }
 
 func (i *ImageGridData) New(fd *FullData) {
-	i.RepoName = fd.RepoInfo.Name
 	i.Name = fd.ImageInfo.Name
+	i.Type = fd.ImageInfo.Type
+	i.RepoName = fd.RepoInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
 	i.Size = fd.ImageInfo.DetailInfo.Size
 	i.Description = fd.ImageInfo.DetailInfo.Description
 }
-
 func (i *ImageGridData) ToData() Data {
 	return Data{
-		RepoName:    i.RepoName,
 		Name:        i.Name,
+		Type:        i.Type,
+		RepoName:    i.RepoName,
 		Icon:        i.Icon,
 		Keywords:    i.Keywords,
 		Rating:      i.Rating,
@@ -107,6 +113,7 @@ func (i *ImageGridData) ToData() Data {
 
 type ImageDetailData struct {
 	Name        ImageName `json:"name,omitempty"`
+	Type        ImageType `json:"type,omitempty"`
 	RepoName    RepoName  `json:"repoName,omitempty"`
 	Rating      int       `json:"rating,omitempty"`
 	Icon        string    `json:"icon,omitempty"`
@@ -121,6 +128,7 @@ type ImageDetailData struct {
 
 func (i *ImageDetailData) New(fd *FullData) {
 	i.Name = fd.ImageInfo.Name
+	i.Type = fd.ImageInfo.Type
 
 	i.RepoName = fd.RepoInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
@@ -135,8 +143,9 @@ func (i *ImageDetailData) New(fd *FullData) {
 }
 func (i *ImageDetailData) ToData() Data {
 	return Data{
-		RepoName:    i.RepoName,
 		Name:        i.Name,
+		Type:        i.Type,
+		RepoName:    i.RepoName,
 		Icon:        i.Icon,
 		Keywords:    i.Keywords,
 		Size:        i.Size,

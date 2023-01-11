@@ -110,6 +110,8 @@ spec:
                         - size
                         type: object
                       type: array
+                    type:
+                      type: string
                   type: object
                 description: Datas in datapack status
                 type: object

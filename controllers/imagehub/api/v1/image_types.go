@@ -32,6 +32,13 @@ type TagData struct {
 	CTime    metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
+type ImageType string
+
+const (
+	CloudImageType   ImageType = "cloud-image"
+	ClusterImageType ImageType = "cluster-image"
+)
+
 type ImageName string
 
 // IsLegal check name is legal
@@ -120,6 +127,7 @@ type ImageSpec struct {
 
 	//+kubebuilder:validation:Required
 	Name       ImageName       `json:"name,omitempty"`
+	Type       ImageType       `json:"type,omitempty"`
 	DetailInfo ImageDetailInfo `json:"detail,omitempty"`
 }
 
