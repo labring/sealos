@@ -190,7 +190,15 @@ func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 	return k.getSSHInterface().CmdAsync(host, cmd...)
 }
 
+func (k *KubeadmRuntime) sshCmdToString(host string, cmd string) (string, error) {
+	return k.getSSHInterface().CmdToString(host, cmd, "")
+}
+
 func (k *KubeadmRuntime) sshCopy(host, srcFilePath, dstFilePath string) error {
+	if srcFilePath == dstFilePath {
+		logger.Info("src and dst is same path , skip copy %s", srcFilePath)
+		return nil
+	}
 	return k.getSSHInterface().Copy(host, srcFilePath, dstFilePath)
 }
 

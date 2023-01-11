@@ -32,6 +32,7 @@ type CommandType string
 const InitMaster CommandType = "initMaster"
 const JoinMaster CommandType = "joinMaster"
 const JoinNode CommandType = "joinNode"
+const UpdateCluster CommandType = "updateCluster"
 
 func vlogToStr(vlog int) string {
 	str := strconv.Itoa(vlog)
@@ -47,11 +48,13 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 		InitMaser115Upper  = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print` // --upload-certs --skip-certificate-key-print --skip-token-print
 		JoinMaster115Upper = "kubeadm join --config=%s"
 		JoinNode115Upper   = "kubeadm join --config=%s"
+		UpdateClusterAll   = "kubeadm init phase upload-config kubeadm --config=%s"
 	)
 
 	initConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
 	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
+	updateClusterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
 
 	var discoveryTokens []string
 	for _, data := range k.getTokenCaCertHash() {
@@ -59,10 +62,12 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 	}
 
 	cmds := map[CommandType]string{
-		InitMaster: fmt.Sprintf(InitMaster115Lower, initConfigPath),
-		JoinMaster: fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
-		JoinNode:   fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
+		InitMaster:    fmt.Sprintf(InitMaster115Lower, initConfigPath),
+		JoinMaster:    fmt.Sprintf(JoinMaster115Lower, k.getMaster0IP(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " "), k.getJoinCertificateKey()),
+		JoinNode:      fmt.Sprintf(JoinNode115Lower, k.getVip(), k.getAPIServerPort(), k.getJoinToken(), strings.Join(discoveryTokens, " ")),
+		UpdateCluster: fmt.Sprintf(UpdateClusterAll, updateClusterConfigPath),
 	}
+
 	//other version >= 1.15.x
 	if versionutil.Compare(version, V1150) {
 		cmds[InitMaster] = fmt.Sprintf(InitMaser115Upper, initConfigPath)

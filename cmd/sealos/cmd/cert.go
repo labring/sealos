@@ -42,9 +42,8 @@ var certCmd = &cobra.Command{
 
     For example: add an EIP to cert.
     1. sealos cert --alt-names 39.105.169.253
-    2. update the kubeconfig, cp /etc/kubernetes/admin.conf .kube/config
-    3. edit .kube/config, set the apiserver address as 39.105.169.253, (don't forget to open the security group port for 6443, if you using public cloud)
-    4. kubectl get pod, to check if it works or not
+    2. edit .kube/config, set the apiserver address as 39.105.169.253, (don't forget to open the security group port for 6443, if you using public cloud)
+    3. kubectl get pod, to check if it works or not
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cluster, err := clusterfile.GetClusterFromName(clusterName)
