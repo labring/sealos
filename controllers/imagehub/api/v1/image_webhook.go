@@ -62,21 +62,15 @@ func (m *ImageMutator) Default(ctx context.Context, obj runtime.Object) error {
 	img.ObjectMeta.Labels[SealosRepoLabel] = img.Spec.Name.GetRepo()
 	img.ObjectMeta.Labels[SealosTagLabel] = img.Spec.Name.GetTag()
 
-	if needMutate(img) {
-		oldimg := &Image{}
-		oldimg.Name = img.Name
-		err := m.Get(ctx, client.ObjectKeyFromObject(oldimg), oldimg)
-		if err != nil {
-			return client.IgnoreNotFound(err)
-		}
-		// mulate image cr
-		img.Spec.DetailInfo.Docs = oldimg.Spec.DetailInfo.Docs
+	oldimg := &Image{}
+	oldimg.Name = img.Name
+	err := m.Get(ctx, client.ObjectKeyFromObject(oldimg), oldimg)
+	if err != nil {
+		return client.IgnoreNotFound(err)
 	}
+	// mulate image cr
+	img.MulateFromOldobj(oldimg)
 	return nil
-}
-
-func needMutate(i *Image) bool {
-	return i.Spec.DetailInfo.Docs == ""
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-image,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=images,verbs=create;update;delete,versions=v1,name=vimage.kb.io,admissionReviewVersions=v1

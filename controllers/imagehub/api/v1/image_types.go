@@ -162,6 +162,21 @@ func (i *Image) getName() string {
 	return i.Name
 }
 
+func (i *Image) MulateFromOldobj(old *Image) {
+	if i.Spec.DetailInfo.Docs == "" {
+		i.Spec.DetailInfo.Docs = old.Spec.DetailInfo.Docs
+	}
+	if i.Spec.DetailInfo.Icon == "" {
+		i.Spec.DetailInfo.Icon = old.Spec.DetailInfo.Icon
+	}
+	if i.Spec.DetailInfo.Description == "" {
+		i.Spec.DetailInfo.Description = old.Spec.DetailInfo.Description
+	}
+	if len(i.Spec.DetailInfo.Keywords) == 0 {
+		i.Spec.DetailInfo.Keywords = old.Spec.DetailInfo.Keywords
+	}
+}
+
 //+kubebuilder:object:root=true
 
 // ImageList contains a list of Image
