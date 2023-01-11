@@ -56,11 +56,6 @@ class MyDocument extends Document {
           <link rel="manifest" href="/manifest.json" />
           <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5" />
           <link rel="shortcut icon" href="/favicon.ico" />
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=optional"
-          />
-          <script src="//at.alicdn.com/t/c/font_3832498_k0ajol52vnd.js" defer></script>
         </Head>
         <body>
           <Main />

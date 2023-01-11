@@ -20,7 +20,9 @@ const installedApps: TApp[] = [
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
-    }
+    },
+    cacheSize: 'maximize',
+    mask: true
   },
   {
     name: 'App Store',
@@ -37,9 +39,11 @@ const installedApps: TApp[] = [
     size: 'maximize',
     menu: {
       nameColor: 'text-black',
-      helpDropDown: true,
+      helpDropDown: false,
       helpDocs: false
-    }
+    },
+    cacheSize: 'maximize',
+    mask: true
   },
   // {
   //   name: 'Python Compiler',
@@ -87,7 +91,9 @@ const installedApps: TApp[] = [
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
-    }
+    },
+    cacheSize: 'maximize',
+    mask: true
   },
   {
     name: 'Kubernetes Dashboard',
@@ -106,27 +112,31 @@ const installedApps: TApp[] = [
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
-    }
-  },
-  {
-    name: 'Kuboard',
-    icon: '/images/kuboard.svg',
-    type: APPTYPE.IFRAME,
-    data: {
-      url: '',
-      desc: 'sealos Cloud Kuboard'
     },
-    gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
-    size: 'maximize',
-    menu: {
-      nameColor: 'text-black',
-      helpDropDown: true,
-      helpDocs: false
-    }
+    cacheSize: 'maximize',
+    mask: true
   },
+  // {
+  //   name: 'Kuboard',
+  //   icon: '/images/kuboard.svg',
+  //   type: APPTYPE.IFRAME,
+  //   data: {
+  //     url: '',
+  //     desc: 'sealos Cloud Kuboard'
+  //   },
+  //   gallery: [
+  //     'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   size: 'maximize',
+  //   menu: {
+  //     nameColor: 'text-black',
+  //     helpDropDown: true,
+  //     helpDocs: false
+  //   },
+  //   cacheSize: 'maximize',
+  //   mask: true
+  // },
   // {
   //   name: 'Prometheus',
   //   icon: '/images/prometheus.svg',
@@ -155,25 +165,27 @@ const installedApps: TApp[] = [
   //   ],
   //   size: 'maximize'
   // },
-  {
-    name: 'Redis',
-    icon: '/images/redis.svg',
-    type: APPTYPE.IFRAME,
-    data: {
-      url: '',
-      desc: 'redis operator'
-    },
-    gallery: [
-      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
-    size: 'maximize',
-    menu: {
-      nameColor: 'text-black',
-      helpDropDown: true,
-      helpDocs: false
-    }
-  },
+  // {
+  //   name: 'Redis',
+  //   icon: '/images/redis.svg',
+  //   type: APPTYPE.IFRAME,
+  //   data: {
+  //     url: '',
+  //     desc: 'redis operator'
+  //   },
+  //   gallery: [
+  //     'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   size: 'maximize',
+  //   menu: {
+  //     nameColor: 'text-black',
+  //     helpDropDown: true,
+  //     helpDocs: false
+  //   },
+  //   cacheSize: 'maximize',
+  //   mask: true
+  // },
   // {
   //   name: 'Postgres',
   //   icon: '/images/pgadmin.svg',
@@ -223,28 +235,32 @@ const installedApps: TApp[] = [
     menu: {
       nameColor: '#0073D7',
       helpDropDown: false,
-      helpDocs: true
-    }
-  },
-  {
-    name: 'AFFiNE',
-    icon: '/images/affine.svg',
-    type: APPTYPE.IFRAME,
-    data: {
-      url: '',
-      desc: 'AFFiNE operator'
-    },
-    gallery: [
-      'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
-    size: 'maximize',
-    menu: {
-      nameColor: 'text-black',
-      helpDropDown: true,
       helpDocs: false
-    }
+    },
+    cacheSize: 'maximize',
+    mask: true
   },
+  // {
+  //   name: 'AFFiNE',
+  //   icon: '/images/affine.svg',
+  //   type: APPTYPE.IFRAME,
+  //   data: {
+  //     url: '',
+  //     desc: 'AFFiNE operator'
+  //   },
+  //   gallery: [
+  //     'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   size: 'maximize',
+  //   menu: {
+  //     nameColor: 'text-black',
+  //     helpDropDown: true,
+  //     helpDocs: false
+  //   },
+  //   cacheSize: 'maximize',
+  //   mask: true
+  // },
   {
     name: 'Postgres',
     icon: '/images/pgadmin.svg',
@@ -257,7 +273,9 @@ const installedApps: TApp[] = [
     data: {
       url: '',
       desc: 'postgres operator'
-    }
+    },
+    cacheSize: 'maximize',
+    mask: true
   }
 ];
 
