@@ -23,7 +23,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/controllers/cluster/utils"
+
+	"github.com/go-logr/logr"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -61,6 +63,7 @@ var errClusterFileNotExists = errors.New("get clusterfile on master failed").Err
 // ClusterReconciler reconciles a Cluster object
 type ClusterReconciler struct {
 	client.Client
+	logr.Logger
 	driver   drivers.Driver
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
@@ -103,13 +106,13 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	c := getSSHclient(infra)
 	ips := getAllInstanceIP(infra)
 	if err := waitAllInstanceSSHReady(c, ips); err != nil {
-		logger.Error("wait ssh ready failed: %v", err)
+		r.Logger.Error(err, "wait ssh ready failed")
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
-	EIP := getMaster0PublicIP(infra)
-	if EIP == "" {
-		logger.Error("get master ip failed")
+	EIP, err := getMaster0PublicIP(infra)
+	if err != nil {
+		r.Logger.Error(err, "Failed to get master0 ip")
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 	}
 
@@ -134,7 +137,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		desiredCluster := generateClusterFromInfra(infra, cluster)
 		newCluster := mergeCluster(currentCluster, desiredCluster)
 		newClusterFile, err := convertClusterToYaml(newCluster)
-		logger.Info("new clusterfile: %v", newClusterFile)
+		r.Logger.Info("new clusterfile", "clusterfile: ", newClusterFile)
 
 		if err != nil {
 			r.recorder.Event(cluster, corev1.EventTypeWarning, "GenerateClusterfile", err.Error())
@@ -209,17 +212,17 @@ func convertClusterToYaml(cluster interface{}) (string, error) {
 }
 
 // Get master0 public ip from infra
-func getMaster0PublicIP(infra *infrav1.Infra) string {
+func getMaster0PublicIP(infra *infrav1.Infra) (string, error) {
 	for _, host := range infra.Spec.Hosts {
 		for _, meta := range host.Metadata {
 			for _, ip := range meta.IP {
 				if ip.IPType == infracommon.IPTypePublic && host.Roles[0] == v1beta1.MASTER {
-					return ip.IPValue
+					return ip.IPValue, nil
 				}
 			}
 		}
 	}
-	return ""
+	return "", fmt.Errorf("get master0 ip failed")
 }
 
 func getAllInstanceIP(infra *infrav1.Infra) []string {
@@ -246,7 +249,7 @@ func getSealosVersion(cluster *v1.Cluster) string {
 
 func waitAllInstanceSSHReady(c ssh.Interface, ips []string) error {
 	for _, ip := range ips {
-		if err := ssh.WaitSSHReady(c, 5, ip); err != nil {
+		if err := utils.WaitSSHReady(c, 5, ip); err != nil {
 			return fmt.Errorf("wait node %v ssh ready failed: %v", ip, err)
 		}
 	}
@@ -255,7 +258,7 @@ func waitAllInstanceSSHReady(c ssh.Interface, ips []string) error {
 
 func getSSHclient(infra *infrav1.Infra) ssh.Interface {
 	s := &v1beta1.SSH{
-		User:   "root",
+		User:   defaultUser,
 		PkData: infra.Spec.SSH.PkData,
 	}
 	c := ssh.NewSSHClient(s, true)
@@ -295,7 +298,10 @@ func getMasterClusterfile(c ssh.Interface, cluster *v1.Cluster, EIP string) (*v1
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	const controllerName = "cluster_controller"
+	r.Logger = ctrl.Log.WithName(controllerName)
 	driver, err := drivers.NewDriver()
+
 	if err != nil {
 		return fmt.Errorf("cluster controller new driver failed: %v", err)
 	}

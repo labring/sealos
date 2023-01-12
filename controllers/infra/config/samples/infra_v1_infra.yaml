@@ -15,15 +15,15 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: conft
+  name: xiaohan-test
 spec:
   hosts:
     - roles: [ master ]
       count: 1
       flavor: t2.large
-      image: "ami-0d66b970b9f16f1f5"
+      image: "ami-093d54fcd8afe8208"
       disks:
-        - capacity: 25
+        - capacity: 40
           volumeType: standard
           type: "data"
         - capacity: 33
@@ -38,7 +38,7 @@ spec:
     - roles: [ node ]
       count: 1
       flavor: t2.medium
-      image: "ami-0d66b970b9f16f1f5"
+      image: "ami-093d54fcd8afe8208"
       disks:
         - capacity: 11
           volumeType: gp3
