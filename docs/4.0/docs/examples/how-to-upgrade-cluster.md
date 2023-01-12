@@ -1,6 +1,8 @@
 # how to upgrade cluster
 
-Just run the command '**sealos run labring/kubernetes:<new-version>**' . **Make sure that you have built the cluster before. **
+Just run the command '**sealos run labring/kubernetes:\<new-version\>**'.
+
+**Make sure that you have built the cluster before.**
 
 ## For examples
 
