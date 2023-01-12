@@ -50,3 +50,7 @@ spec:
                 fieldPath: metadata.namespace
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
+          - name: SEALOS_CLOUD_HOST
+            value: "cloud.sealos.io"
+          - name: SEALOS_CLOUD_PORT
+            value: "443"
