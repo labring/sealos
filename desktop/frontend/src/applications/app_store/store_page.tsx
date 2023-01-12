@@ -13,20 +13,16 @@ import {
   handleImageName,
   ImagehubLabels,
   TImageLabels,
-  getSelectLabels
+  getSelectLabels,
+  TAppInfo,
+  sortByName
 } from './app_store_common';
 import Button from './components/button';
 import Labels from './components/labels';
+import Error from './components/error';
 import { useAppStoreContext } from './index';
 import styles from './store_page.module.scss';
-
-type TAppInfo = {
-  icon: string;
-  keywords: string[];
-  name: string;
-  description?: string;
-  size: number;
-};
+import { ListContextLoading } from './components/imagehub_loading';
 
 function StorePage() {
   const { toPage } = useAppStoreContext();
@@ -46,13 +42,16 @@ function StorePage() {
     },
     {
       onSuccess: (data) => {
-        if (data.data.code === 201) {
+        if (data.status === 201) {
           queryClient.invalidateQueries({ queryKey: ['getAppLists', selectedLabels] });
         }
       }
     }
   );
-  const appLists = data?.data?.items as TAppInfo[];
+  let appLists: TAppInfo[] = [];
+  if (data?.status === 200) {
+    appLists = sortByName(data.data);
+  }
 
   const handleLabelsChange = (value: string) => {
     setImageLabels(
@@ -62,6 +61,12 @@ function StorePage() {
           checkedItem.checked = !checkedItem.checked;
         }
       })
+    );
+  };
+
+  const handleLabelsClear = () => {
+    setImageLabels(
+      produce((draft: TImageLabels[]) => draft.forEach((item) => (item.checked = false)))
     );
   };
 
@@ -78,14 +83,16 @@ function StorePage() {
             display="row"
             labels={imageLabels.filter((item) => item.checked)}
             onChange={handleLabelsChange}
+            onClear={handleLabelsClear}
           />
         </div>
-        {isLoading && (
+        {isError && (
           <div className="w-full h-full flex justify-center items-center">
-            <Spinner />
+            <Error />
           </div>
         )}
         <div className={clsx(styles.pageWrapperScroll, styles.hiddenScrollWrap)}>
+          {isLoading && <ListContextLoading />}
           {isSuccess && (
             <div className="absolute w-full space-y-4 pb-10">
               {appLists?.map((item: TAppInfo) => {
@@ -96,13 +103,18 @@ function StorePage() {
                     onClick={() => toPage(EPageType.DetailPage, item.name)}
                   >
                     <div className="p-8 pl-6 flex items-center justify-center shrink-0">
-                      <img width={110} height={110} src={item?.icon} alt={item?.name} />
+                      <img
+                        width={110}
+                        height={110}
+                        src={item?.icon ?? '/images/appstore/image_empty.svg'}
+                        alt={item?.name}
+                      />
                     </div>
                     <div className={clsx(styles.appDesc)}>
                       <div className={clsx(styles.title, 'pt-6 flex items-center')}>
                         <div>{handleImageName(item?.name).name}</div>
                         <div className={styles.fingerPrint}>
-                          <Iconfont iconName="icon-hash" />
+                          <Iconfont iconName="icon-hash" color="#239BF2" />
                         </div>
                       </div>
                       <div className={styles.description}>{item?.description}</div>
@@ -121,10 +133,11 @@ function StorePage() {
                     </div>
                     <div className="pr-10">
                       <div className="flex pt-6 space-x-2">
-                        <div className={clsx('w-20 h-20 text-right')}>
+                        {/* <div className={clsx('w-20 h-20 text-right')}>
                           <div className={styles.imageSizeText}> 19.1K </div>
                           <span className="text-stone-500 text-xs pt-2">下载量</span>
-                        </div>
+                        </div> */}
+                        <div className="w-20 h-20"></div>
                         <div className="w-20 h-20 text-right">
                           <div className={styles.imageSizeText}>
                             {item.size ? formattedSize(item.size) : 'empty'}
@@ -132,11 +145,11 @@ function StorePage() {
                           <span className="text-stone-500 text-xs pt-2">大小</span>
                         </div>
                       </div>
-                      <div className="flex justify-end mt-4">
+                      {/* <div className="flex justify-end mt-4">
                         <Button type="primary" size="medium" handleClick={() => {}}>
                           安装
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 );

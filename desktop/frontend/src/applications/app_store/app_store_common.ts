@@ -27,6 +27,7 @@ export type TAppDetail = {
   name: string;
   tags: TTag[];
   size: number;
+  type: 'cluster-image' | 'cloud-image';
 };
 
 export const ImagehubLabels = [
@@ -45,6 +46,14 @@ export type TImageLabels = {
   label: string;
   value: string;
   checked: boolean;
+};
+
+export type TAppInfo = {
+  icon: string;
+  keywords: string[];
+  name: string;
+  description?: string;
+  size: number;
 };
 
 export function handleImageName(imageName: string): { name: string; tag: string } {
@@ -67,4 +76,18 @@ export function getSelectLabels(labels: TImageLabels[]): string {
     ?.map((item) => (item.checked ? 'keyword.imagehub.sealos.io/' + item.value : null))
     .filter((item) => item)
     .join(',');
+}
+
+export function sortByName(arr: TAppInfo[]) {
+  const map = new Map();
+  const result = [];
+  for (const item of arr) {
+    map.set(item.name, item);
+  }
+  let mapKeys = [...map.keys()];
+  mapKeys.sort();
+  for (const name of mapKeys) {
+    result.push(map.get(name));
+  }
+  return result;
 }
