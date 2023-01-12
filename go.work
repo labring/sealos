@@ -16,3 +16,11 @@ use (
 	./staging/src/github.com/labring/lvscare
 	./webhooks/whitelist
 )
+
+replace k8s.io/apimachinery => k8s.io/apimachinery v0.24.3
+
+replace k8s.io/code-generator => k8s.io/code-generator v0.24.3
+
+replace k8s.io/cri-api => k8s.io/cri-api v0.24.3
+
+replace k8s.io/mount-utils => k8s.io/mount-utils v0.24.3

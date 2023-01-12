@@ -16,7 +16,9 @@ package ssh
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"strconv"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -86,7 +88,7 @@ func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
 	var ipList []string
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
 	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
-	return sshClient, WaitSSHReady(sshClient, defaultMaxRetry, ipList...)
+	return sshClient, WaitSSHReady(sshClient, 100, ipList...)
 }
 
 type Client struct {
@@ -99,7 +101,15 @@ func WaitSSHReady(ssh Interface, _ int, hosts ...string) error {
 	for i := range hosts {
 		host := hosts[i]
 		eg.Go(func() (err error) {
-			return ssh.Ping(host)
+			timeStamp, err := ssh.CmdToString(host, "date +%s", "")
+			if err != nil {
+				return fmt.Errorf("ssh is not ready")
+			}
+			_, err = strconv.Atoi(timeStamp)
+			if err != nil {
+				return fmt.Errorf("ssh is not ready")
+			}
+			return nil
 		})
 	}
 	return eg.Wait()
