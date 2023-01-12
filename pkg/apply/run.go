@@ -126,15 +126,23 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 }
 
 func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error {
-	if len(imageList) == 0 {
-		return fmt.Errorf("image can not be empty")
-	}
 	if args.Cluster.ClusterName == "" {
 		return fmt.Errorf("cluster name can not be empty")
 	}
-	if !r.cluster.CreationTimestamp.IsZero() && r.cluster.Status.Phase != v2.ClusterSuccess {
-		return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
+	//the first run check
+	if r.cluster.CreationTimestamp.IsZero() {
+		if len(imageList) == 0 {
+			return fmt.Errorf("image can not be empty")
+		}
+		if len(args.Cluster.Masters) == 0 {
+			return fmt.Errorf("master ip(s) must specified")
+		}
+	} else {
+		if r.cluster.Status.Phase != v2.ClusterSuccess {
+			return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
+		}
 	}
+
 	if err := PreProcessIPList(args.Cluster); err != nil {
 		return err
 	}
@@ -166,22 +174,19 @@ func (r *ClusterArgs) SetClusterRunArgs(imageList []string, args *RunArgs) error
 
 	r.cluster.SetNewImages(imageList)
 
-	if len(args.Cluster.Masters) > 0 {
-		masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
-		nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
-		r.hosts = []v2.Host{}
+	masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
+	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
+	r.hosts = []v2.Host{}
 
-		clusterSSH := r.cluster.GetSSH()
-		sshClient := ssh.NewSSHClient(&clusterSSH, true)
-
+	clusterSSH := r.cluster.GetSSH()
+	sshClient := ssh.NewSSHClient(&clusterSSH, true)
+	if len(masters) > 0 {
 		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
-		if len(nodes) > 0 {
-			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
-		}
-		r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
-	} else {
-		return fmt.Errorf("master ip(s) must specified")
 	}
+	if len(nodes) > 0 {
+		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+	}
+	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
 	logger.Debug("cluster info: %v", r.cluster)
 	return nil
 }
