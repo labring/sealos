@@ -43,7 +43,7 @@ const Taskbar = () => {
           return (
             <div
               onClick={() => {
-                switchApp(item);
+                switchApp({ ...item, mask: false });
               }}
               key={index}
               className={clsx({

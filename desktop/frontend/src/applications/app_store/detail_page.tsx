@@ -1,10 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
-import { DocumentOnePage20Filled, Tag16Filled } from '@fluentui/react-icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from 'components/iconfont';
 import MarkDown from 'components/markdown';
-import produce from 'immer';
 import { useEffect, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
@@ -18,97 +16,90 @@ export default function DetailPage() {
   const appRef = useRef<HTMLDivElement>(null);
   const [isFixed, setFixed] = useState(false);
   const { kubeconfig } = useSessionStore((state) => state.getSession());
-  const [appDetailStatus, setAppDetailStatus] = useState(false);
-  const [appTags, setAppTags] = useState<TTag[]>();
-  const [selectTag, setSelectTag] = useState('');
+  const [selectTag, setSelectTag] = useState(handleImageName(detailAppName).tag);
+  let fullImageName: string = handleImageName(detailAppName).name + ':' + selectTag;
+  let imageCommand: string = 'sealos run ' + fullImageName;
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
 
-  const { data } = useQuery(
-    ['getAppDetail'],
+  const { data, isLoading, isSuccess } = useQuery(
+    ['getAppDetail', fullImageName],
     async () => {
       const res = await request.post('/api/image_hub/get_detail', {
         kubeconfig,
-        image_name: detailAppName
+        image_name: fullImageName
       });
-      if (res.data.code === 200) {
-        setAppDetailStatus(true);
-      }
       return res;
     },
     {
-      refetchInterval: !appDetailStatus ? 2 * 1000 : false,
-      enabled: !appDetailStatus
+      onSuccess: (data) => {
+        if (data.status === 201) {
+          queryClient.invalidateQueries({ queryKey: ['getAppDetail', fullImageName] });
+        }
+      }
     }
   );
 
   let appDetail = {} as TAppDetail;
-  if (appDetailStatus) {
-    appDetail = data?.data?.items[0];
+  if (data?.status === 200) {
+    appDetail = data.data[0];
   }
+
+  const handleCopy = (value: string) => {
+    let timer: number;
+    setOpen((s) => {
+      if (!open) {
+        timer = window.setTimeout(() => setOpen(false), 1000);
+      } else {
+        window.clearTimeout(timer);
+      }
+      return !s;
+    });
+    navigator.clipboard.writeText(value);
+  };
 
   const handleScrollEvent = () => {
     const scrollTop = appRef.current?.scrollTop;
-    if (scrollTop && scrollTop > 20) {
-      setFixed(true);
-    } else {
-      setFixed(false);
-    }
-  };
-
-  const handleSelectTag = (tagName: string) => {
-    setAppTags(
-      produce((draft) => {
-        const lastItem = draft?.find((item) => item.checked === true);
-        if (lastItem) {
-          lastItem.checked = false;
-        }
-        const selectItem = draft?.find((item) => item.name === tagName);
-        if (selectItem) {
-          setSelectTag(selectItem.name);
-          selectItem.checked = true;
-        }
-      })
-    );
+    setFixed(Boolean(scrollTop && scrollTop > 20));
   };
 
   useEffect(() => {
     appRef.current?.addEventListener('scroll', handleScrollEvent);
-    if (appDetail.tags && appDetail.tags.length > 0) {
-      setAppTags(
-        produce(appDetail.tags, (draft) => {
-          draft[0].checked = true;
-        })
-      );
-      setSelectTag(appDetail.tags[0].name);
-    }
-  }, [appDetail.tags]);
+    return () => {
+      appRef.current?.removeEventListener('scroll', handleScrollEvent);
+    };
+  }, []);
 
   return (
     <div className={clsx(styles.backgroundWrap, 'flex flex-col grow h-full p-8 pb-0')}>
       <div className={clsx(styles.baseCard, styles.appHeader, 'w-full')}>
         <div
-          className={clsx(styles.nav, 'cursor-pointer ')}
+          className={clsx('cursor-pointer w-60')}
           onClick={() => toPage(EPageType.StorePage, '')}
         >
           <Iconfont iconName="icon-back" />
         </div>
         <div className={clsx(styles.appInfo, { [styles.fixed]: isFixed })}>
           <div className={styles.image}>
-            <img src={appDetail?.icon} alt={appDetail?.name} />
+            <img
+              src={appDetail?.icon ?? '/images/appstore/image_empty.svg'}
+              alt={appDetail?.name}
+            />
           </div>
           <div className={clsx(styles.appDesc)}>
             <div className={clsx(styles.title, 'flex items-center')}>
-              <div>{selectTag && handleImageName(appDetail?.name).name + ':' + selectTag}</div>
+              <div>{fullImageName}</div>
               <div className={styles.fingerPrint}>
-                <Iconfont iconName="icon-hash" />
+                <Iconfont iconName="icon-hash" color="#239BF2" />
                 <span className={styles.imageId}>{appDetail.ID?.substring(0, 12)}</span>
               </div>
             </div>
             <p className={styles.text}>{appDetail?.description}</p>
-            <div className={styles.installBtn}>
+            {/* <div className={styles.installBtn}>
               <Button handleClick={() => {}} type="primary">
                 安装 | {selectTag}
               </Button>
-            </div>
+            </div> */}
             <div className={clsx(styles.imageLabels, 'flex space-x-4 mb-4')}>
               {appDetail?.keywords?.map((item) => {
                 return (
@@ -119,10 +110,10 @@ export default function DetailPage() {
               })}
             </div>
           </div>
-          <div className={styles.rightInfo}>
+          {/* <div className={styles.rightInfo}>
             <span className={styles.imageSizeText}> 19.1K </span>
             <span className="text-stone-500 text-xs mt-2">下载量</span>
-          </div>
+          </div> */}
           <div className={clsx(styles.rightInfo, 'ml-4')}>
             <span className={styles.imageSizeText}>
               {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
@@ -134,11 +125,11 @@ export default function DetailPage() {
               {appDetail.size ? formattedSize(appDetail.size) : ''}
             </span>
           </div>
-          <div className={clsx(styles.fixedRightInfo)}>
+          {/* <div className={clsx(styles.fixedRightInfo)}>
             <Button handleClick={() => {}} type="primary">
               安装 | {selectTag}
             </Button>
-          </div>
+          </div> */}
         </div>
       </div>
       <div className={clsx('flex  grow my-4')}>
@@ -149,10 +140,19 @@ export default function DetailPage() {
           <div className="absolute w-full py-8 px-6 ">
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
-                <DocumentOnePage20Filled primaryFill=" #717D8A" />
+                <Iconfont iconName="icon-overview" />
               </div>
-              <span className={styles.markdownTitle}>概况</span>
+              <span className={styles.markdownTitle}>概览</span>
             </div>
+            {appDetail.type === 'cluster-image' ? (
+              <div className={styles.appCommand}>
+                <div className={styles.copyBtn} onClick={() => handleCopy(imageCommand)}>
+                  <Iconfont iconName="icon-copy" />
+                  <div className={clsx(styles.popover, open ? styles.active : '')}>copyed</div>
+                </div>
+                <div>{imageCommand}</div>
+              </div>
+            ) : null}
             <div className={styles.markDownWrap}>
               <MarkDown text={appDetail?.docs} isShowCopyBtn={false}></MarkDown>
             </div>
@@ -162,24 +162,23 @@ export default function DetailPage() {
           <div className="absolute w-full pt-8 px-6 ">
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
-                <Tag16Filled primaryFill=" #717D8A" />
+                <Iconfont iconName="icon-tag" />
               </div>
-              <div className="text-lg ml-4 font-medium">Tags</div>
-              <div></div>
+              <div className={styles.markdownTitle}>Tags</div>
             </div>
             <div className={clsx('w-full space-y-2')}>
-              {appTags?.map((item) => {
+              {appDetail.tags?.map((item) => {
                 return (
                   <div
-                    className={styles.tag}
                     key={item.name}
-                    onClick={() => handleSelectTag(item.name)}
+                    className={clsx(styles.tag, { [styles.activeTag]: selectTag === item.name })}
+                    onClick={() => setSelectTag(item.name)}
                   >
                     <div className={clsx('w-12', { 'opacity-0': !item.checked })}>
-                      <Iconfont iconName="icon-checked" />
+                      <Iconfont iconName={'icon-checked'} color={'#239BF2'} />
                     </div>
                     <div>{item.name}</div>
-                    <div className="ml-auto">size</div>
+                    {/* <div className="ml-auto">size</div> */}
                   </div>
                 );
               })}

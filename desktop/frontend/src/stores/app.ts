@@ -18,6 +18,7 @@ export type TAppFront = {
       }
     | {};
   cacheSize: 'maximize' | 'maxmin' | 'minimize';
+  mask: boolean;
 };
 
 const initialFrantState: TAppFront = {
@@ -25,6 +26,7 @@ const initialFrantState: TAppFront = {
   zIndex: 1,
   size: 'maximize',
   cacheSize: 'maximize',
+  mask: true,
   style: {}
 };
 
@@ -78,7 +80,7 @@ type TOSState = {
   openApp(app: TApp): void;
 
   // switch the app
-  switchApp(app: TApp, type?: 'clickHeader'): void;
+  switchApp(app: TApp, type?: 'clickMask'): void;
 
   updateAppInfo(app: TApp): void;
 
@@ -141,6 +143,7 @@ const useAppStore = create<TOSState>()(
       updateAppInfo: (app: TApp) => {
         set((state) => {
           state.openedApps = state.openedApps.map((_app) => {
+            _app.mask = true;
             return _app.name === app.name ? app : _app;
           });
 
@@ -148,9 +151,9 @@ const useAppStore = create<TOSState>()(
             return _app.name === app.name ? app : _app;
           });
 
-          const temp = state.openedApps.filter((item) => item.size !== 'minimize');
-          temp.sort((a, b) => b.zIndex - a.zIndex);
-          state.currentApp = temp[0];
+          const activeApps = state.openedApps.filter((item) => item.size !== 'minimize');
+          activeApps.sort((a, b) => b.zIndex - a.zIndex);
+          state.currentApp = activeApps[0];
         });
       },
 
@@ -164,6 +167,7 @@ const useAppStore = create<TOSState>()(
         _app.zIndex = zIndex;
         _app.isShow = true;
         _app.size = 'maximize';
+        _app.mask = false;
 
         get().updateAppInfo(_app);
 
@@ -181,13 +185,16 @@ const useAppStore = create<TOSState>()(
         const _app: TApp = JSON.parse(JSON.stringify(app));
         _app.zIndex = zIndex;
         _app.isShow = true;
-        if (type !== 'clickHeader') {
+        if (type !== 'clickMask') {
           if (get().currentApp?.name === _app.name) {
             _app.size === 'minimize' ? (_app.size = _app.cacheSize) : (_app.size = 'minimize');
           } else {
             _app.size = _app.cacheSize;
           }
         }
+
+        get().updateAppInfo(_app);
+
         set((state) => {
           // repalce app info
           state.openedApps = state.openedApps.map((item) => {

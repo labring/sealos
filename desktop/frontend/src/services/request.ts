@@ -101,7 +101,8 @@ request.interceptors.response.use(
 
     // UnWrap
     const apiResp = data as ApiResp;
-    if (apiResp.code !== 200) {
+    const successfulCode = [200, 201];
+    if (!successfulCode.includes(apiResp.code)) {
       return Promise.reject(new Error(apiResp.code + ':' + apiResp.message));
     }
 

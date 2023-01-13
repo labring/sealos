@@ -20,9 +20,11 @@
 
 .xLabels {
   display: flex;
+  height: 32px;
+  align-items: center;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.75);
-  padding: 6px 16px;
+  padding: 0 16px;
   margin-bottom: 12px;
   & .tag + .tag {
     .border1px {
@@ -35,15 +37,17 @@
   color: rgba(35, 155, 242, 1);
 }
 
-.deleteIcon svg {
-  width: 12px;
-  height: 12px;
-  margin-left: 8px;
-}
-
 .border1px {
   display: none;
   border-right: 1px solid rgba(218, 218, 218, 1);
   height: 12px;
   margin: 0 8px;
+}
+
+.clearLabels {
+  cursor: pointer;
+  margin-left: 24px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #8b949e;
 }

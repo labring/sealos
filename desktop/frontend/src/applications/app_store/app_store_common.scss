@@ -28,8 +28,9 @@ $background-max-hover: rgba(255, 255, 255, 0.65);
 }
 
 .backgroundWrap {
-  background-image: url('/images/appstore/appstore_background.png');
+  background-image: url('/images/appstore/background.png');
   background-size: cover;
+  background-position: top;
 }
 
 .baseCard {

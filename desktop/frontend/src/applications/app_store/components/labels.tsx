@@ -12,10 +12,11 @@ type TLabels = {
   display: 'column' | 'row';
   labels: TImageLabels[];
   onChange: (value: string) => void;
+  onClear?: () => void;
 };
 
 function Labels(props: TLabels) {
-  const { display, labels, onChange } = props;
+  const { display, labels, onChange, onClear } = props;
 
   if (display === 'row' && labels?.length > 0) {
     return (
@@ -31,12 +32,15 @@ function Labels(props: TLabels) {
             >
               <span className={styles.border1px}></span>
               <span> {item.value} </span>
-              <span className={styles.deleteIcon}>
-                <Iconfont iconName="icon-delete-grey-copy" />
+              <span className="ml-2">
+                <Iconfont iconName="icon-delete" color="#8B949E" />
               </span>
             </div>
           );
         })}
+        <span className={styles.clearLabels} onClick={onClear}>
+          清空
+        </span>
       </div>
     );
   }
