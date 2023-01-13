@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -80,9 +81,9 @@ func (r *ClusterArgs) resetArgs(args *ResetArgs) error {
 		clusterSSH := r.cluster.GetSSH()
 		sshClient := ssh.NewSSHClient(&clusterSSH, true)
 
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, processor.GetHostArch(sshClient, masters[0])})
 		if len(nodes) > 0 {
-			r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+			r.setHostWithIpsPort(nodes, []string{v2.NODE, processor.GetHostArch(sshClient, nodes[0])})
 		}
 		r.cluster.Spec.Hosts = r.hosts
 	}

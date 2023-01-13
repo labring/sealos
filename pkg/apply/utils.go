@@ -21,9 +21,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
-	"github.com/labring/sealos/pkg/utils/logger"
 	stringsutil "github.com/labring/sealos/pkg/utils/strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -82,23 +80,4 @@ func validateIPList(s string) error {
 		}
 	}
 	return nil
-}
-
-// GetHostArch returns the host architecture of the given ip using SSH.
-// Note that hosts of the same type(master/node) must have the same architecture,
-// so we only need to check the first host of the given type.
-func GetHostArch(sshClient ssh.Interface, ip string) string {
-	var arch = string(v2.AMD64)
-
-	cmd, err := sshClient.Cmd(ip, "arch")
-	if err != nil {
-		logger.Error("get host arch failed: %v, defaults to amd64", err)
-		return arch
-	}
-	cmdStr := strings.TrimSpace(string(cmd))
-	if cmdStr != "x86_64" {
-		arch = string(v2.ARM64)
-	}
-
-	return arch
 }

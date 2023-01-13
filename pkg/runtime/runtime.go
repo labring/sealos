@@ -63,6 +63,7 @@ type Interface interface {
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	UpdateCert(certs []string) error
 	UpgradeCluster(version string) error
+	GetIPList() ([]string, error)
 }
 
 func (k *KubeadmRuntime) Reset() error {

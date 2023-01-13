@@ -29,6 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -133,7 +134,7 @@ func joinNodes(cluster *v2.Cluster, scaleArgs *ScaleArgs) error {
 
 			return &v2.Host{
 				IPS:   addrs,
-				Roles: []string{role, GetHostArch(sshClient, addrs[0])},
+				Roles: []string{role, processor.GetHostArch(sshClient, addrs[0])},
 			}, nil
 		}
 		return nil, nil

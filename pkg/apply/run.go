@@ -19,6 +19,7 @@ import (
 	"strconv"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
+	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -73,10 +74,6 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 		if len(args.Cluster.Masters) == 0 {
 			return fmt.Errorf("master ip(s) must specified")
 		}
-	} else {
-		if r.cluster.Status.Phase != v2.ClusterSuccess {
-			return fmt.Errorf("cluster status is not %s", v2.ClusterSuccess)
-		}
 	}
 
 	if err := PreProcessIPList(args.Cluster); err != nil {
@@ -117,10 +114,10 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	clusterSSH := r.cluster.GetSSH()
 	sshClient := ssh.NewSSHClient(&clusterSSH, true)
 	if len(masters) > 0 {
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, processor.GetHostArch(sshClient, masters[0])})
 	}
 	if len(nodes) > 0 {
-		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		r.setHostWithIpsPort(nodes, []string{v2.NODE, processor.GetHostArch(sshClient, nodes[0])})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
 	logger.Debug("cluster info: %v", r.cluster)

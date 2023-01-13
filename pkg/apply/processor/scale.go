@@ -31,6 +31,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -46,11 +47,30 @@ type ScaleProcessor struct {
 	IsScaleUp       bool
 }
 
-func (c *ScaleProcessor) Execute(cluster *v2.Cluster) error {
+func (c *ScaleProcessor) Execute(cluster *v2.Cluster) (err error) {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if err == nil {
+			return
+		}
+		logger.Info("execute scaleProcessor fail")
+		//rollback cluster hosts direct
+		if c.Runtime == nil {
+			logger.Info("rollback cluster hosts to old")
+			cluster.Spec.Hosts = c.ClusterFile.GetCluster().GetHosts()
+			return
+		}
+		//rollback cluster hosts by runtime
+		if ips, err0 := c.Runtime.GetIPList(); err0 != nil {
+			logger.Info("fail to get cluster ip list: %s", err0)
+		} else {
+			logger.Info("rollback cluster hosts, get ips %s from runtime", ips)
+			c.RollBack(cluster, ips)
+		}
+	}()
 
 	for _, f := range pipLine {
 		if err = f(cluster); err != nil {
@@ -86,6 +106,26 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		c.UnMountRootfs,
 	)
 	return todoList, nil
+}
+
+func (c *ScaleProcessor) RollBack(cluster *v2.Cluster, ips []string) error {
+	ipsToJoin := append(c.MastersToJoin, c.NodesToJoin...)
+	for _, ip := range ipsToJoin {
+		if !strings.In(ip, ips) {
+			TrimHostIp(cluster, ip)
+		}
+	}
+	for _, ip := range c.MastersToDelete {
+		if strings.In(ip, ips) {
+			AddMasterIp(cluster, ip)
+		}
+	}
+	for _, ip := range c.NodesToDelete {
+		if strings.In(ip, ips) {
+			AddNodeIp(cluster, ip)
+		}
+	}
+	return nil
 }
 
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {

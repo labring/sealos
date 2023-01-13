@@ -56,10 +56,14 @@ func NewDefaultScaleApplier(current, cluster *v2.Cluster) (Interface, error) {
 	if cluster.Name == "" {
 		cluster.Name = current.Name
 	}
-	cFile := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
+	cf := clusterfile.NewClusterFile(constants.Clusterfile(cluster.Name))
+	err := cf.Process()
+	if !cluster.CreationTimestamp.IsZero() && err != nil {
+		return nil, err
+	}
 	return &Applier{
 		ClusterDesired: cluster,
-		ClusterFile:    cFile,
+		ClusterFile:    cf,
 		ClusterCurrent: current,
 	}, nil
 }
