@@ -133,7 +133,7 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, platf
 	imageObjList := make([]map[string]v1.Image, 0)
 	for _, i := range images {
 		obj, _ := b.InspectImage(i)
-		imageObjList = append(imageObjList, map[string]v1.Image{i: obj})
+		imageObjList = append(imageObjList, map[string]v1.Image{i: *obj})
 	}
 
 	dockerfile, err := buildimage.MergeDockerfileFromImages(imageObjList)

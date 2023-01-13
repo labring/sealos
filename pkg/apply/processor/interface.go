@@ -85,7 +85,7 @@ func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) 
 }
 
 type imageInspector interface {
-	InspectImage(string) (v1.Image, error)
+	InspectImage(imgName string, opts ...string) (*v1.Image, error)
 }
 
 func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
