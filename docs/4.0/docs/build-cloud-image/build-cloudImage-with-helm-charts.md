@@ -15,7 +15,7 @@ $ cd cloud-images
 $ mkdir charts
 ```
 
-Prepare the ningx helm charts,Here we use [bitnami official nginx helm charts](https://bitnami.com/stack/nginx), let's pull the helm chart file to local and untar it to`charts` directory.
+Prepare the nginx helm charts,Here we use [bitnami official nginx helm charts](https://bitnami.com/stack/nginx), let's pull the helm chart file to local and untar it to`charts` directory.
 
 ```shell
 helm repo add bitnami https://charts.bitnami.com/bitnami
