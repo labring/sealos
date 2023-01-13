@@ -52,7 +52,7 @@ func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	// checker if all the node is ready
 	data := constants.NewData(cluster.Name)
-	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), cluster.GetMaster0IPAPIServer())
+	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
 		return err
 	}
