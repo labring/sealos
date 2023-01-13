@@ -92,7 +92,8 @@ func (k *KubeadmRuntime) getRegistryIPAndPort() string {
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {
-	return k.Cluster.GetMaster0IPAPIServer()
+	master0 := k.getMaster0IP()
+	return fmt.Sprintf("https://%s:%d", master0, k.getAPIServerPort())
 }
 
 func (k *KubeadmRuntime) getLvscareImage() (string, error) {
