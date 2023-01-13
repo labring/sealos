@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import './highlight.scss';
+
 html {
   font-size: 12px;
   scrollbar-color: transparent transparent;
@@ -114,4 +115,12 @@ body::-webkit-scrollbar {
   --gray2: #ddd;
   --hover-bg: rgba(0, 178, 255, 0.16);
   --focus-bg: rgba(0, 183, 255, 0.25);
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  vertical-align: -0.15em;
+  fill: currentColor;
+  overflow: hidden;
 }

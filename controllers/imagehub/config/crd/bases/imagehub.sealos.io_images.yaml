@@ -80,6 +80,8 @@ spec:
                 type: object
               name:
                 type: string
+              type:
+                type: string
             type: object
           status:
             description: ImageStatus defines the observed state of Image

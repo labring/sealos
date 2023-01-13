@@ -144,9 +144,7 @@ func (c *Applier) reconcileCluster() error {
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-	// if len(mj) == 0 && len(md) == 0 && len(nj) == 0 && len(nd) == 0 {
-	//	return c.upgrade()
-	// }
+
 	return c.scaleCluster(mj, md, nj, nd)
 }
 

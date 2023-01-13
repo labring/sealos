@@ -16,10 +16,13 @@ export default function AppWindow(props: {
 }) {
   const wnapp = props.app;
 
-  const { closeApp, updateAppInfo, switchApp } = useAppStore((state) => state);
+  const { closeApp, updateAppInfo, switchApp, currentApp, openedApps } = useAppStore(
+    (state) => state
+  );
   const dragDom = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  // console.log(position);
 
   return (
     <Draggable
@@ -50,10 +53,10 @@ export default function AppWindow(props: {
           <div
             className={styles.toolbar}
             onClick={(e) => {
-              switchApp(wnapp, 'clickHeader');
+              switchApp({ ...wnapp, mask: false }, 'clickMask');
             }}
             style={{
-              background: wnapp.style?.bg || '#fff'
+              background: '#fff'
             }}
           >
             <div className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}>
@@ -121,8 +124,18 @@ export default function AppWindow(props: {
           </div>
         </div>
         <div className={clsx(tabStyles.windowScreen, 'flex flex-col')}>
-          <div className="restWindow flex-grow flex flex-col">
-            <div className="flex-grow overflow-hidden">{props.children}</div>
+          <div className="restWindow flex-grow flex flex-col relative">
+            <div className="flex-grow overflow-hidden">
+              {wnapp.mask && (
+                <div
+                  className={styles.appMask}
+                  onClick={() => {
+                    switchApp({ ...wnapp, mask: false }, 'clickMask');
+                  }}
+                ></div>
+              )}
+              {props.children}
+            </div>
           </div>
         </div>
       </div>

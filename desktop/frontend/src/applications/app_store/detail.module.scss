@@ -2,10 +2,6 @@
 
 .appHeader {
   padding: 8px 16px 16px 16px;
-  .nav svg {
-    width: 26px;
-    height: 26px;
-  }
 }
 
 .mainLeft {
@@ -14,16 +10,18 @@
 }
 
 .mainRight {
-  flex: 1 1 260px;
+  flex: 0 1 260px;
 }
 
 .tag {
+  cursor: pointer;
   height: 42px;
   display: flex;
   align-items: center;
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
+  border: 1px solid transparent;
 }
 
 .markDownWrap div {
@@ -42,7 +40,7 @@
 
 .markdownTitle {
   margin-left: 12px;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 16px;
   line-height: 22px;
   color: #0d1a2d;
@@ -108,4 +106,49 @@
     display: block;
     margin-left: 16px;
   }
+}
+
+.activeTag {
+  border: 1px solid #239bf2;
+  color: #239bf2;
+}
+
+.appCommand {
+  background-color: #4d5060;
+  border-radius: 8px;
+  padding: 16px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 20px;
+  position: relative;
+
+  .copyBtn {
+    position: absolute;
+    top: 10px;
+    right: 18px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.popover {
+  opacity: 0;
+  position: absolute;
+  padding: 8px;
+  width: 80px;
+  border-radius: 16px;
+  background: #ffffff;
+  bottom: 40px;
+  color: #333333;
+  text-align: center;
+  transition: all 0.5 ease;
+}
+
+.active {
+  opacity: 1;
 }

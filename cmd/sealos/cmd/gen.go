@@ -50,11 +50,11 @@ func newGenCmd() *cobra.Command {
 	var out string
 	var genCmd = &cobra.Command{
 		Use:     "gen",
-		Short:   "Generate a Clusterfile with all default settings",
+		Short:   "generate a Clusterfile with all default settings",
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			objects, err := apply.NewClusterFromArgs(args, genArgs)
+			objects, err := apply.NewClusterFromGenArgs(args, genArgs)
 			if err != nil {
 				return err
 			}

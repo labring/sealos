@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	ckubeadm "k8s.io/kubernetes/cmd/kubeadm/app/constants"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
@@ -34,4 +36,12 @@ var (
 func GetStaticPod(client clientset.Interface, nodeName string, component string) (*v1.Pod, error) {
 	staticPodName := fmt.Sprintf("%s-%s", component, nodeName)
 	return client.CoreV1().Pods(metav1.NamespaceSystem).Get(context.TODO(), staticPodName, metav1.GetOptions{})
+}
+
+func GetKubeadmConfig(client clientset.Interface) (*v1.ConfigMap, error) {
+	cm, err := client.CoreV1().ConfigMaps(metav1.NamespaceSystem).Get(context.Background(), ckubeadm.KubeadmConfigConfigMap, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return cm, nil
 }

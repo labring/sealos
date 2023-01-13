@@ -14,7 +14,13 @@ import {
 } from 'services/backend/kubernetes';
 import { CRDTemplateBuilder } from 'services/backend/wrapper';
 import { hashAny } from 'utils/strings';
-import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../response';
+import {
+  BadRequestResp,
+  InternalErrorResp,
+  JsonResp,
+  UnprocessableResp,
+  CreatedJsonResp
+} from '../response';
 
 type repositoryStatus = {
   items: {
@@ -66,9 +72,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
         images_names.push(item.spec.name + ':' + item.status.latestTag.name);
       }
     }
-    // return JsonResp(repositoryDesc.body, resp);
   } catch (err) {
-    console.log(err, 'list');
     if (err instanceof k8s.HttpError) {
       return InternalErrorResp(err.body.message, resp);
     }
@@ -83,7 +87,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       const datapackDesc = dataDesc.body.status as DataPackDesc;
       if (datapackDesc.codes === DataPackStatus.Ok) {
         let result = Object.values(datapackDesc.datas);
-        return JsonResp({ items: result, code: 200 }, resp);
+        return JsonResp(result, resp);
       }
       return JsonResp(datapackDesc, resp);
     }
@@ -100,7 +104,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
   try {
     const result = await ApplyYaml(kc, datapackCRD);
-    return JsonResp({ ...result, code: 201 }, resp);
+    return CreatedJsonResp(result, resp);
   } catch (err) {
     return InternalErrorResp(String(err), resp);
   }

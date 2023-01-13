@@ -31,6 +31,7 @@ specifiers:
   postcss: ^8.4.20
   qrcode.react: ^3.1.0
   react: 18.2.0
+  react-content-loader: ^6.2.0
   react-dom: 18.2.0
   react-draggable: ^4.4.5
   react-hook-form: ^7.40.0
@@ -65,6 +66,7 @@ dependencies:
   next-pwa: 5.6.0_next@13.1.0
   qrcode.react: 3.1.0_react@18.2.0
   react: 18.2.0
+  react-content-loader: registry.npmmirror.com/react-content-loader/6.2.0_react@18.2.0
   react-dom: 18.2.0_react@18.2.0
   react-draggable: 4.4.5_biqbaboplfbrettd7655fr4n2y
   react-hook-form: 7.41.0_react@18.2.0
@@ -8252,3 +8254,15 @@ packages:
       oidc-token-hash: 5.0.1
     dev: false
     optional: true
+
+  registry.npmmirror.com/react-content-loader/6.2.0_react@18.2.0:
+    resolution: {integrity: sha512-r1dI6S+uHNLW68qraLE2njJYOuy6976PpCExuCZUcABWbfnF3FMcmuESRI8L4Bj45wnZ7n8g71hkPLzbma7/Cw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/react-content-loader/-/react-content-loader-6.2.0.tgz}
+    id: registry.npmmirror.com/react-content-loader/6.2.0
+    name: react-content-loader
+    version: 6.2.0
+    engines: {node: '>=10'}
+    peerDependencies:
+      react: '>=16.0.0'
+    dependencies:
+      react: 18.2.0
+    dev: false

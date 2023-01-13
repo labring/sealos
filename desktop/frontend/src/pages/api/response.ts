@@ -56,6 +56,17 @@ const InternalErrorResp = (str: string, resp?: NextApiResponse) =>
 const JsonResp = (data: any, resp?: NextApiResponse) =>
   CommonResp({ code: 200, message: 'ok', data: data, statusCode: 200 }, resp);
 
+const CreatedJsonResp = (data: any, resp?: NextApiResponse) =>
+  CommonResp(
+    {
+      code: 201,
+      message: 'the resource has been created and needs to be requested again',
+      data: data,
+      statusCode: 201
+    },
+    resp
+  );
+
 export {
   BadRequestResp,
   BadAuthResp,
@@ -64,5 +75,6 @@ export {
   MethodNotAllowedResp,
   InternalErrorResp,
   CommonResp,
-  JsonResp
+  JsonResp,
+  CreatedJsonResp
 };

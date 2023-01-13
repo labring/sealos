@@ -4,7 +4,13 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApplyYaml, GetClusterObject, K8sApi } from 'services/backend/kubernetes';
 import { CRDTemplateBuilder } from 'services/backend/wrapper';
 import { hashAny } from 'utils/strings';
-import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../response';
+import {
+  BadRequestResp,
+  InternalErrorResp,
+  JsonResp,
+  UnprocessableResp,
+  CreatedJsonResp
+} from '../response';
 
 type DataPackDesc = {
   codes: number;
@@ -41,7 +47,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       const datapackDesc = dataDesc.body.status as DataPackDesc;
       if (datapackDesc.codes === DataPackStatus.Ok) {
         let result = Object.values(datapackDesc.datas);
-        return JsonResp({ items: result, code: 200 }, resp);
+        return JsonResp(result, resp);
       }
       return JsonResp(datapackDesc, resp);
     }
@@ -58,7 +64,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
   try {
     const result = await ApplyYaml(kc, datapackCRD);
-    return JsonResp({ ...result, code: 201 }, resp);
+    return CreatedJsonResp(result, resp);
   } catch (err) {
     return InternalErrorResp(String(err), resp);
   }

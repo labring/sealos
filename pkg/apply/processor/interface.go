@@ -20,6 +20,7 @@ import (
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
@@ -30,6 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/strings"
 )
 
@@ -141,4 +143,53 @@ func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	mirror := registry.New(constants.NewData(cluster.GetName()).RootFSPath(), sshClient, mounts)
 	return mirror.MirrorTo(context.Background(), registries...)
+}
+
+func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
+	imageTypes := sets.NewString()
+	for _, image := range cluster.Spec.Image {
+		oci, err := bd.InspectImage(image)
+		if err != nil {
+			return err
+		}
+		if oci.Config.Labels != nil {
+			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
+		} else {
+			imageTypes.Insert(string(v2.AppImage))
+		}
+	}
+	if !imageTypes.Has(string(v2.RootfsImage)) {
+		return errors.New("can't apply ApplicationImage, kubernetes cluster not found, need to run a BaseImage")
+	}
+	return nil
+}
+
+func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
+	err := bd.Pull(cluster.Spec.Image, buildah.WithPlatformOption(buildah.DefaultPlatform()),
+		buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
+	if err != nil {
+		return err
+	}
+	if err := CheckImageType(cluster, bd); err != nil {
+		return err
+	}
+	if cluster.Status.Mounts != nil {
+		return nil
+	}
+	for _, img := range cluster.Spec.Image {
+		bderInfo, err := bd.Create(rand.Generator(8), img)
+		if err != nil {
+			return err
+		}
+		mount := &v2.MountImage{
+			Name:       bderInfo.Container,
+			ImageName:  img,
+			MountPoint: bderInfo.MountPoint,
+		}
+		if err = OCIToImageMount(mount, bd); err != nil {
+			return err
+		}
+		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+	}
+	return nil
 }

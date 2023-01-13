@@ -32,6 +32,13 @@ type TagData struct {
 	CTime    metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
+type ImageType string
+
+const (
+	CloudImageType   ImageType = "cloud-image"
+	ClusterImageType ImageType = "cluster-image"
+)
+
 type ImageName string
 
 // IsLegal check name is legal
@@ -120,6 +127,7 @@ type ImageSpec struct {
 
 	//+kubebuilder:validation:Required
 	Name       ImageName       `json:"name,omitempty"`
+	Type       ImageType       `json:"type,omitempty"`
 	DetailInfo ImageDetailInfo `json:"detail,omitempty"`
 }
 
@@ -160,6 +168,21 @@ func (i *Image) getOrgName() string {
 }
 func (i *Image) getName() string {
 	return i.Name
+}
+
+func (i *Image) MulateFromOldobj(old *Image) {
+	if i.Spec.DetailInfo.Docs == "" {
+		i.Spec.DetailInfo.Docs = old.Spec.DetailInfo.Docs
+	}
+	if i.Spec.DetailInfo.Icon == "" {
+		i.Spec.DetailInfo.Icon = old.Spec.DetailInfo.Icon
+	}
+	if i.Spec.DetailInfo.Description == "" {
+		i.Spec.DetailInfo.Description = old.Spec.DetailInfo.Description
+	}
+	if len(i.Spec.DetailInfo.Keywords) == 0 {
+		i.Spec.DetailInfo.Keywords = old.Spec.DetailInfo.Keywords
+	}
 }
 
 //+kubebuilder:object:root=true
