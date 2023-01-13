@@ -184,15 +184,16 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 }
 
 func (k *KubeadmRuntime) deleteMaster(master string) error {
-	if err := k.resetNode(master); err != nil {
-		return err
-	}
 	//remove master
 	masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
 	if len(masterIPs) > 0 {
 		if err := k.deleteKubeNode(master); err != nil {
 			return fmt.Errorf("delete master %s failed %v", master, err)
 		}
+	}
+
+	if err := k.resetNode(master); err != nil {
+		return err
 	}
 	return nil
 }

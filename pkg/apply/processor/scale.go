@@ -150,8 +150,8 @@ func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline DeleteCheck in ScaleProcessor.")
 	var ips []string
 	ips = append(ips, cluster.GetMaster0IPAndPort())
-	ips = append(ips, c.MastersToDelete...)
-	ips = append(ips, c.NodesToDelete...)
+	//ips = append(ips, c.MastersToDelete...)
+	//ips = append(ips, c.NodesToDelete...)
 	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
 	if err != nil {
 		return err

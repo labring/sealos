@@ -120,7 +120,7 @@ func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
 		return err
 	}
 	ctx := context.Background()
-	hostname, err := k.execHostname(ip)
+	hostname, err := kubernetes.GetHostNameFromInternalIP(cli.Kubernetes(), ip)
 	if err != nil {
 		return err
 	}

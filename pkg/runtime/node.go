@@ -122,12 +122,13 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 }
 
 func (k *KubeadmRuntime) deleteNode(node string) error {
-	if err := k.resetNode(node); err != nil {
-		return err
-	}
 	//remove node
 	if len(k.getMasterIPList()) > 0 {
 		return k.deleteKubeNode(node)
+	}
+
+	if err := k.resetNode(node); err != nil {
+		return err
 	}
 
 	return nil
