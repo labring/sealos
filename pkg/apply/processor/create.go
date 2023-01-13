@@ -16,11 +16,9 @@ package processor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/buildah"
@@ -33,7 +31,6 @@ import (
 	"github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -87,51 +84,13 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	return nil
 }
 
-func (c *CreateProcessor) CheckImageType(cluster *v2.Cluster) error {
-	imageTypes := sets.NewString()
-	for _, image := range cluster.Spec.Image {
-		oci, err := c.Buildah.InspectImage(image)
-		if err != nil {
-			return err
-		}
-		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
-		} else {
-			imageTypes.Insert(string(v2.AppImage))
-		}
-	}
-	if !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("can't apply ApplicationImage, kubernetes cluster not found, need to run a BaseImage")
-	}
-	return nil
-}
-
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-	err := c.Buildah.Pull(cluster.Spec.Image, buildah.WithPlatformOption(buildah.DefaultPlatform()),
-		buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
-	if err != nil {
+
+	if err := MountClusterImages(cluster, c.Buildah); err != nil {
 		return err
 	}
-	if err = c.CheckImageType(cluster); err != nil {
-		return err
-	}
-	for _, img := range cluster.Spec.Image {
-		bderInfo, err := c.Buildah.Create(rand.Generator(8), img)
-		if err != nil {
-			return err
-		}
-		mount := &v2.MountImage{
-			Name:       bderInfo.Container,
-			ImageName:  img,
-			MountPoint: bderInfo.MountPoint,
-		}
-		if err = OCIToImageMount(mount, c.Buildah); err != nil {
-			return err
-		}
-		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
-	}
-	if err = SyncClusterStatus(cluster, c.Buildah, false); err != nil {
+	if err := SyncClusterStatus(cluster, c.Buildah, false); err != nil {
 		return err
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
