@@ -5,11 +5,15 @@ type TIconfont = {
 
 function Iconfont(props: TIconfont) {
   const { iconName, color } = props;
-  const iconStyle = {
-    color: color
+  const style = {
+    fill: color
   };
 
-  return <i className={`iconfont ${iconName}`} style={iconStyle}></i>;
+  return (
+    <svg className="icon" aria-hidden="true" style={style}>
+      <use xlinkHref={`#${iconName}`}></use>
+    </svg>
+  );
 }
 
 export default Iconfont;

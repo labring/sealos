@@ -22,7 +22,7 @@ const ListContextLoading = () => {
   const count = ['one', 'two', 'three', 'four', 'five'];
   const cardStyle = {
     background: 'rgba(255, 255, 255, 0.75)',
-    'border-radius': '12px',
+    borderRadius: '12px',
     height: '160px'
   };
   return (

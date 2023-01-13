@@ -56,6 +56,7 @@ class MyDocument extends Document {
           <link rel="manifest" href="/manifest.json" />
           <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#5bbad5" />
           <link rel="shortcut icon" href="/favicon.ico" />
+          <script src="/iconfont/iconfont.js" async></script>
         </Head>
         <body>
           <Main />
