@@ -20,6 +20,9 @@ import (
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/image/v5/image"
+	imagestorage "github.com/containers/image/v5/storage"
+	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	storagetypes "github.com/containers/storage/types"
@@ -33,7 +36,7 @@ import (
 type Interface interface {
 	Pull(imageNames []string, opts ...FlagSetter) error
 	Load(input string, ociType string) (string, error)
-	InspectImage(name string) (v1.Image, error)
+	InspectImage(name string, opts ...string) (*v1.Image, error)
 	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
 	Delete(name string) error
 	InspectContainer(name string) (buildah.BuilderInfo, error)
@@ -115,13 +118,50 @@ func (impl *realImpl) Pull(imageNames []string, opts ...FlagSetter) error {
 	return nil
 }
 
-func (impl *realImpl) InspectImage(name string) (v1.Image, error) {
-	builder, err := openImage(getContext(), impl.systemContext, impl.store, name)
-	if err != nil {
-		return v1.Image{}, err
+func finalizeReference(transport types.ImageTransport, imgName string) (types.ImageTransport, string) {
+	parts := strings.SplitN(imgName, ":", 2)
+	if len(parts) == 2 {
+		if transport := transports.Get(parts[0]); transport != nil {
+			return transport, imgName
+		}
 	}
-	out := buildah.GetBuildInfo(builder)
-	return out.OCIv1, nil
+	return transport, formatReferenceWithTransportName(transport.Name(), imgName)
+}
+
+func (impl *realImpl) InspectImage(name string, opts ...string) (*v1.Image, error) {
+	transportName := TransportContainersStorage
+	if len(opts) > 0 {
+		transportName = opts[0]
+	}
+	transport := transports.Get(transportName)
+	if transport == nil {
+		return nil, fmt.Errorf(`unknown transport "%s"`, opts[0])
+	}
+	transport, name = finalizeReference(transport, name)
+	parts := strings.SplitN(name, ":", 2)
+	// should never happened
+	if len(parts) != 2 {
+		return nil, fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, name)
+	}
+	imgName := parts[1]
+	if st, ok := transport.(imagestorage.StoreTransport); ok {
+		st.SetStore(impl.store)
+	}
+	ref, err := transport.ParseReference(imgName)
+	if err != nil {
+		return nil, err
+	}
+	ctx := getContext()
+	src, err := ref.NewImageSource(ctx, impl.systemContext)
+	if err != nil {
+		return nil, err
+	}
+	defer src.Close()
+	img, err := image.FromUnparsedImage(ctx, impl.systemContext, image.UnparsedInstance(src, nil))
+	if err != nil {
+		return nil, err
+	}
+	return img.OCIConfig(ctx)
 }
 
 func (impl *realImpl) Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error) {
