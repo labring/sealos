@@ -16,27 +16,73 @@ limitations under the License.
 
 package apply
 
-import "github.com/labring/sealos/pkg/runtime"
+import (
+	"errors"
+	"fmt"
 
-func NewClusterFromGenArgs(imageName []string, args *RunArgs) ([]interface{}, error) {
+	"github.com/labring/sealos/pkg/apply/processor"
+	"github.com/labring/sealos/pkg/buildah"
+	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/yaml"
+)
+
+func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 	cluster := initCluster(args.ClusterName)
 	c := &ClusterArgs{
 		clusterName: args.ClusterName,
 		cluster:     cluster,
 	}
-	if err := c.runArgs(imageName, args); err != nil {
+	if err := c.runArgs(imageNames, args); err != nil {
 		return nil, err
 	}
-	kubeadmcfg := &runtime.KubeadmConfig{}
-	if err := kubeadmcfg.Merge(""); err != nil {
+
+	img, err := genImageInfo(imageNames[0])
+	if err != nil {
 		return nil, err
 	}
-	// todo: only generate configurations of the corresponding components by passing parameters
-	return []interface{}{c.cluster,
-		kubeadmcfg.InitConfiguration,
-		kubeadmcfg.ClusterConfiguration,
-		kubeadmcfg.JoinConfiguration,
-		kubeadmcfg.KubeProxyConfiguration,
-		kubeadmcfg.KubeletConfiguration,
-	}, nil
+	if img.Type != v1beta1.RootfsImage {
+		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
+	}
+	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
+	rtInterface, err := runtime.NewDefaultRuntime(cluster, nil)
+	if err != nil {
+		return nil, err
+	}
+	if rt, ok := rtInterface.(*runtime.KubeadmRuntime); ok {
+		if err = rt.ConvertInitConfigConversion(); err != nil {
+			return nil, err
+		}
+		c.cluster.Status = v1beta1.ClusterStatus{}
+		// todo: only generate configurations of the corresponding components by passing parameters
+		objects := []interface{}{c.cluster,
+			rt.InitConfiguration,
+			rt.ClusterConfiguration,
+			rt.JoinConfiguration,
+			rt.KubeProxyConfiguration,
+			rt.KubeletConfiguration,
+		}
+		data, err := yaml.MarshalYamlConfigs(objects...)
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	}
+	return nil, errors.New("unknown convert kubeadmRuntime error")
+}
+
+func genImageInfo(imageName string) (*v1beta1.MountImage, error) {
+	bder, err := buildah.New("")
+	if err != nil {
+		return nil, err
+	}
+	mount := &v1beta1.MountImage{
+		Name:       "default",
+		ImageName:  imageName,
+		MountPoint: "",
+	}
+	if err = processor.OCIToImageMount(mount, bder); err != nil {
+		return nil, err
+	}
+	return mount, nil
 }

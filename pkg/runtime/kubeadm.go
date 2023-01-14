@@ -349,12 +349,23 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	if err := k.MergeKubeadmConfig(); err != nil {
+	if err := k.ConvertInitConfigConversion(); err != nil {
 		return nil, err
 	}
 	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
 		return nil, err
 	}
+	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
+		&k.conversion.ClusterConfiguration,
+		&k.conversion.KubeletConfiguration,
+		&k.conversion.KubeProxyConfiguration)
+}
+
+func (k *KubeadmRuntime) ConvertInitConfigConversion() error {
+	if err := k.MergeKubeadmConfig(); err != nil {
+		return err
+	}
+
 	k.setInitAdvertiseAddress(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.APIServer.ExtraArgs == nil {
@@ -364,13 +375,9 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 
 	if err := k.convertKubeadmVersion(); err != nil {
-		return nil, errors.Wrap(err, "convert kubeadm version failed")
+		return errors.Wrap(err, "convert kubeadm version failed")
 	}
-
-	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
-		&k.conversion.ClusterConfiguration,
-		&k.conversion.KubeletConfiguration,
-		&k.conversion.KubeProxyConfiguration)
+	return nil
 }
 
 func (k *KubeadmRuntime) convertKubeadmVersion() error {
