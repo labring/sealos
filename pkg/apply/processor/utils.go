@@ -1,3 +1,17 @@
+// Copyright © 2022 sealos.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package processor
 
 import (
@@ -11,7 +25,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func TrimHostIp(cluster *v2.Cluster, ip string) error {
+func TrimHostIP(cluster *v2.Cluster, ip string) {
 	hosts := cluster.Spec.Hosts
 	logger.Debug("hosts before trim: %s ", hosts)
 	for i := 0; i < len(hosts); i++ {
@@ -35,10 +49,9 @@ func TrimHostIp(cluster *v2.Cluster, ip string) error {
 	}
 	logger.Debug("hosts after trim: %s ", hosts)
 	cluster.Spec.Hosts = hosts
-	return nil
 }
 
-func AddMasterIp(cluster *v2.Cluster, ip string) error {
+func AddMasterIP(cluster *v2.Cluster, ip string) {
 	host := v2.Host{}
 	//set host ips
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
@@ -50,10 +63,9 @@ func AddMasterIp(cluster *v2.Cluster, ip string) error {
 	host.Roles = []string{v2.MASTER, GetHostArch(sshClient, ip)}
 	//add host to cluster
 	cluster.Spec.Hosts = append(cluster.Spec.Hosts, host)
-	return nil
 }
 
-func AddNodeIp(cluster *v2.Cluster, ip string) error {
+func AddNodeIP(cluster *v2.Cluster, ip string) {
 	host := v2.Host{}
 	//set host ips
 	defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
@@ -65,7 +77,6 @@ func AddNodeIp(cluster *v2.Cluster, ip string) error {
 	host.Roles = []string{v2.NODE, GetHostArch(sshClient, ip)}
 	//add host to cluster
 	cluster.Spec.Hosts = append(cluster.Spec.Hosts, host)
-	return nil
 }
 
 // GetHostArch returns the host architecture of the given ip using SSH.

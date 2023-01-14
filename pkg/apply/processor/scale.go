@@ -108,24 +108,23 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	return todoList, nil
 }
 
-func (c *ScaleProcessor) RollBack(cluster *v2.Cluster, ips []string) error {
+func (c *ScaleProcessor) RollBack(cluster *v2.Cluster, ips []string) {
 	ipsToJoin := append(c.MastersToJoin, c.NodesToJoin...)
 	for _, ip := range ipsToJoin {
 		if !strings.In(ip, ips) {
-			TrimHostIp(cluster, ip)
+			TrimHostIP(cluster, ip)
 		}
 	}
 	for _, ip := range c.MastersToDelete {
 		if strings.In(ip, ips) {
-			AddMasterIp(cluster, ip)
+			AddMasterIP(cluster, ip)
 		}
 	}
 	for _, ip := range c.NodesToDelete {
 		if strings.In(ip, ips) {
-			AddNodeIp(cluster, ip)
+			AddNodeIP(cluster, ip)
 		}
 	}
-	return nil
 }
 
 func (c *ScaleProcessor) Delete(cluster *v2.Cluster) error {
