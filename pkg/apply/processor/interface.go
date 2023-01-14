@@ -18,6 +18,10 @@ import (
 	"context"
 	"path"
 
+	"github.com/labring/sealos/pkg/utils/rand"
+
+	"github.com/containers/storage"
+
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -31,7 +35,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
-	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/strings"
 )
 
@@ -89,9 +92,18 @@ type imageInspector interface {
 }
 
 func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
-	oci, err := inspector.InspectImage(mount.ImageName)
+	var (
+		err error
+		oci *v1.Image
+	)
+	oci, err = inspector.InspectImage(mount.ImageName)
 	if err != nil {
-		return err
+		if errors.Is(err, storage.ErrImageUnknown) {
+			oci, err = inspector.InspectImage(mount.ImageName, "docker")
+		}
+		if err != nil {
+			return err
+		}
 	}
 
 	mount.Env = maps.ListToMap(oci.Config.Env)

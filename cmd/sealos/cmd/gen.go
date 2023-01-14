@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 var exampleGen = `
@@ -54,11 +53,7 @@ func newGenCmd() *cobra.Command {
 		Long:    `generate a Clusterfile of the kubernetes cluster, which can be applied by 'sealos apply' command`,
 		Example: exampleGen,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			objects, err := apply.NewClusterFromGenArgs(args, genArgs)
-			if err != nil {
-				return err
-			}
-			data, err := yaml.MarshalYamlConfigs(objects...)
+			data, err := apply.NewClusterFromGenArgs(args, genArgs)
 			if err != nil {
 				return err
 			}

@@ -17,8 +17,11 @@ limitations under the License.
 package apply
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/spf13/cobra"
+
+	"github.com/labring/sealos/pkg/buildah"
 )
 
 func TestNewClusterFromGenArgs(t *testing.T) {
@@ -29,21 +32,61 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    []interface{}
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "default",
+			args: args{
+				imageName: []string{"docker.io/labring/kubernetes:v1.25.3"},
+				args: &RunArgs{
+					Cluster: &Cluster{
+						Masters:     "172.16.1.35",
+						Nodes:       "",
+						ClusterName: "default",
+					},
+					SSH:               nil,
+					CustomEnv:         nil,
+					CustomCMD:         nil,
+					CustomConfigFiles: nil,
+					fs:                nil,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		buildah.RegisterRootCommand(&cobra.Command{
+			Use:   "test",
+			Short: "test",
+		})
+		t.Run(tt.name, func(t *testing.T) {
+			got, _ := NewClusterFromGenArgs(tt.args.imageName, tt.args.args)
+			t.Logf("%s", string(got))
+		})
+	}
+}
+
+func Test_genImageInfo(t *testing.T) {
+	type args struct {
+		imageName []string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "default",
+			args: args{imageName: []string{"docker.io/labring/kubernetes:v1.25.3"}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewClusterFromGenArgs(tt.args.imageName, tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("NewClusterFromGenArgs() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewClusterFromGenArgs() got = %v, want %v", got, tt.want)
-			}
+			buildah.RegisterRootCommand(&cobra.Command{
+				Use:   "test",
+				Short: "test",
+			})
+			got, _ := genImageInfo(tt.args.imageName[0])
+			t.Logf("%+v", got)
 		})
 	}
 }
