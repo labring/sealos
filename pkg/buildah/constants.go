@@ -69,11 +69,11 @@ var (
 	TransportContainersStorage = storage.Transport.Name()
 )
 
-func formatReferenceWithTransportName(tr string, ref string) string {
+func FormatReferenceWithTransportName(tr string, ref string) string {
 	switch tr {
-	case TransportAtomic, TransportDir, TransportDockerArchive, TransportOCI, TransportOCIArchive, TransportTarball, TransportSif:
+	case TransportAtomic, TransportContainersStorage, TransportDir, TransportDockerArchive, TransportOCI, TransportOCIArchive, TransportTarball, TransportSif:
 		return tr + ":" + ref
-	case TransportContainersStorage, TransportDocker:
+	case TransportDocker:
 		return tr + "://" + ref
 	default:
 		panic(fmt.Errorf("unknown transport %s", tr))

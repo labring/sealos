@@ -125,7 +125,7 @@ func finalizeReference(transport types.ImageTransport, imgName string) (types.Im
 			return transport, imgName
 		}
 	}
-	return transport, formatReferenceWithTransportName(transport.Name(), imgName)
+	return transport, FormatReferenceWithTransportName(transport.Name(), imgName)
 }
 
 func (impl *realImpl) InspectImage(name string, opts ...string) (*v1.Image, error) {
