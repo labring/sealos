@@ -92,13 +92,10 @@ type imageInspector interface {
 }
 
 func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
-	var (
-		err error
-		oci *v1.Image
-	)
-	oci, err = inspector.InspectImage(mount.ImageName)
+	oci, err := inspector.InspectImage(mount.ImageName)
 	if err != nil {
-		if errors.Is(err, storage.ErrImageUnknown) {
+		if errors.Is(err, storage.ErrImageUnknown) || errors.Is(err, storage.ErrNotAnImage) {
+			logger.Debug("cannot find image in local storage, trying to inspect from remote")
 			oci, err = inspector.InspectImage(mount.ImageName, "docker")
 		}
 		if err != nil {
