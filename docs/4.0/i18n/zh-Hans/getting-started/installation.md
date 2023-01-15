@@ -13,8 +13,8 @@ import TabItem from '@theme/TabItem';
   <TabItem value="amd64" label="amd64" default>
 
 ```bash
-$ wget https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.3_linux_amd64.tar.gz \
-   && tar zxvf sealos_4.1.3_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
+$ wget https://github.com/labring/sealos/releases/download/v4.1.3/sealos_4.1.4_linux_amd64.tar.gz \
+   && tar zxvf sealos_4.1.4_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin
 ```
 
   </TabItem>
