@@ -25,7 +25,7 @@ type Interface interface {
 ```go
 InspectImage("containers-storage://apache/apisix:3.1.0-debian")
 InspectImage("apache/apisix:3.1.0-debian")
-InspectImage("@digestID")
+InspectImage("imageID")
 ```
 - inspect remote image
 ```go
