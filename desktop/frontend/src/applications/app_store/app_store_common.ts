@@ -15,6 +15,7 @@ export type TTag = {
   metaName: string;
   name: string;
   checked: boolean;
+  size: number;
 };
 
 export type TAppDetail = {

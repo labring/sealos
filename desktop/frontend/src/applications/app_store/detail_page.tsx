@@ -10,6 +10,7 @@ import { EPageType, formattedSize, handleImageName, TAppDetail, TTag } from './a
 import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
+import { CardLoading, ImageMarkdownLoading, ImageTagsLoading } from './components/imagehub_loading';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
@@ -70,6 +71,42 @@ export default function DetailPage() {
     };
   }, []);
 
+  if (isLoading) {
+    return (
+      <div className={clsx(styles.backgroundWrap, 'flex flex-col grow h-full p-8 pb-0')}>
+        <div className={clsx(styles.baseCard, styles.appHeader, 'w-full')}>
+          <div
+            className={clsx('cursor-pointer w-60')}
+            onClick={() => toPage(EPageType.StorePage, '')}
+          >
+            <Iconfont iconName="icon-back" />
+          </div>
+          <CardLoading width={400} height={110} />
+        </div>
+        <div className={clsx('flex grow my-4')}>
+          <div className={clsx(styles.baseCard, styles.mainLeft, 'py-8 px-6')}>
+            <div className={clsx('flex items-center mb-4')}>
+              <div className={styles.iconBtn}>
+                <Iconfont iconName="icon-overview" />
+              </div>
+              <span className={styles.markdownTitle}>概览</span>
+            </div>
+            <ImageMarkdownLoading />
+          </div>
+          <div className={clsx(styles.baseCard, styles.mainRight, 'pt-8 px-6 flex flex-col')}>
+            <div className={clsx('flex items-center')}>
+              <div className={styles.iconBtn}>
+                <Iconfont iconName="icon-tag" />
+              </div>
+              <div className={styles.markdownTitle}>Tags</div>
+            </div>
+            <ImageTagsLoading />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={clsx(styles.backgroundWrap, 'flex flex-col grow h-full p-8 pb-0')}>
       <div className={clsx(styles.baseCard, styles.appHeader, 'w-full')}>
@@ -80,7 +117,7 @@ export default function DetailPage() {
           <Iconfont iconName="icon-back" />
         </div>
         <div className={clsx(styles.appInfo, { [styles.fixed]: isFixed })}>
-          <div className={styles.image}>
+          <div className={clsx(styles.image, 'flex items-center justify-center shrink-0')}>
             <img
               src={appDetail?.icon ?? '/images/appstore/image_empty.svg'}
               alt={appDetail?.name}
@@ -132,7 +169,7 @@ export default function DetailPage() {
           </div> */}
         </div>
       </div>
-      <div className={clsx('flex  grow my-4')}>
+      <div className={clsx('flex grow my-4')}>
         <div
           ref={appRef}
           className={clsx(styles.baseCard, styles.mainLeft, styles.hiddenScrollWrap)}
@@ -158,15 +195,15 @@ export default function DetailPage() {
             </div>
           </div>
         </div>
-        <div className={clsx(styles.baseCard, styles.mainRight, styles.hiddenScrollWrap)}>
-          <div className="absolute w-full pt-8 px-6 ">
-            <div className={clsx('flex items-center mb-4')}>
-              <div className={styles.iconBtn}>
-                <Iconfont iconName="icon-tag" />
-              </div>
-              <div className={styles.markdownTitle}>Tags</div>
+        <div className={clsx(styles.baseCard, styles.mainRight, 'pt-8 px-6 flex flex-col')}>
+          <div className={clsx('flex items-center')}>
+            <div className={styles.iconBtn}>
+              <Iconfont iconName="icon-tag" />
             </div>
-            <div className={clsx('w-full space-y-2')}>
+            <div className={styles.markdownTitle}>Tags</div>
+          </div>
+          <div className={clsx(styles.hiddenScrollWrap, 'grow my-4')}>
+            <div className={clsx('absolute w-full space-y-2')}>
               {appDetail.tags?.map((item) => {
                 return (
                   <div
@@ -174,11 +211,13 @@ export default function DetailPage() {
                     className={clsx(styles.tag, { [styles.activeTag]: selectTag === item.name })}
                     onClick={() => setSelectTag(item.name)}
                   >
-                    <div className={clsx('w-12', { 'opacity-0': !item.checked })}>
-                      <Iconfont iconName={'icon-checked'} color={'#239BF2'} />
+                    <div className={clsx('w-12')}>
+                      {selectTag === item.name && (
+                        <Iconfont iconName="icon-checked" color="#239BF2" />
+                      )}
                     </div>
                     <div>{item.name}</div>
-                    {/* <div className="ml-auto">size</div> */}
+                    <div className="ml-auto">{formattedSize(item.size)}</div>
                   </div>
                 );
               })}
