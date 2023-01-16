@@ -16,19 +16,28 @@ package buildah
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 	"text/template"
 
 	"github.com/containers/buildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/image/v5/image"
+	imagestorage "github.com/containers/image/v5/storage"
+	"github.com/containers/image/v5/types"
+	"github.com/containers/storage"
+	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"golang.org/x/term"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -69,7 +78,11 @@ func newInspectCommand() *cobra.Command {
 			return inspectCmd(cmd, args, opts)
 		},
 		Example: fmt.Sprintf(`%[1]s inspect containerID
-  %[1]s inspect --type image imageID
+  %[1]s inspect --type image imageWithTag
+  %[1]s inspect --type image @imageID # or just imageID, '@' is optional
+  %[1]s inspect --type image docker://alpine:latest
+  %[1]s inspect --type image oci-archive:/abs/path/of/oci/tarfile.tar
+  %[1]s inspect --type image docker-archive:/abs/path/of/docker/tarfile.tar
   %[1]s inspect --format '{{.OCIv1.Config.Env}}' alpine`, rootCmd.CommandPath()),
 	}
 	inspectCommand.SetUsageTemplate(UsageTemplate())
@@ -78,7 +91,10 @@ func newInspectCommand() *cobra.Command {
 }
 
 func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
-	var builder *buildah.Builder
+	var (
+		builder   *buildah.Builder
+		ociConfig *ociv1.Image
+	)
 
 	if len(args) == 0 {
 		return errors.New("container or image name must be specified")
@@ -112,7 +128,7 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 			if flagChanged(c, "type") {
 				return fmt.Errorf("reading build container: %w", err)
 			}
-			builder, err = openImage(ctx, systemContext, store, name)
+			ociConfig, err = openImage(ctx, systemContext, store, name)
 			if err != nil {
 				if manifestErr := manifestInspect(ctx, store, systemContext, name); manifestErr == nil {
 					return nil
@@ -121,16 +137,22 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 			}
 		}
 	case inspectTypeImage:
-		builder, err = openImage(ctx, systemContext, store, name)
+		ociConfig, err = openImage(ctx, systemContext, store, name)
 		if err != nil {
 			return err
 		}
 	case inspectTypeManifest:
 		return manifestInspect(ctx, store, systemContext, name)
 	default:
-		return fmt.Errorf("the only recognized types are %q and %q", inspectTypeContainer, inspectTypeImage)
+		return fmt.Errorf("available type options are %s", strings.Join(
+			[]string{inspectTypeContainer, inspectTypeApp, inspectTypeImage, inspectTypeManifest}, ", "))
 	}
-	out := buildah.GetBuildInfo(builder)
+	var out interface{}
+	if builder != nil {
+		out = buildah.GetBuildInfo(builder)
+	} else if ociConfig != nil {
+		out = ociConfig
+	}
 	if iopts.format != "" {
 		format := iopts.format
 		if matched, err := regexp.MatchString("{{.*}}", format); err != nil {
@@ -157,4 +179,45 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 		enc.SetEscapeHTML(false)
 	}
 	return enc.Encode(out)
+}
+
+func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store, imgRef string) (*ociv1.Image, error) {
+	img, closer, err := inspectImage(ctx, sc, store, imagestorage.Transport, imgRef)
+	if err != nil {
+		return nil, err
+	}
+	if closer != nil {
+		defer func() {
+			if err = closer(); err != nil {
+				logger.Error("unexpected error while closing image: %v", err)
+			}
+		}()
+	}
+	return img.OCIConfig(ctx)
+}
+
+func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgRef string) (types.Image, func() error, error) {
+	transport, imgRef = finalizeReference(transport, imgRef)
+	parts := strings.SplitN(imgRef, ":", 2)
+	// should never happened
+	if len(parts) != 2 {
+		return nil, nil, fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, imgRef)
+	}
+	imgName := parts[1]
+	if st, ok := transport.(imagestorage.StoreTransport); ok {
+		st.SetStore(store)
+	}
+	ref, err := transport.ParseReference(imgName)
+	if err != nil {
+		return nil, nil, err
+	}
+	src, err := ref.NewImageSource(ctx, sc)
+	if err != nil {
+		return nil, nil, err
+	}
+	img, err := image.FromUnparsedImage(ctx, sc, image.UnparsedInstance(src, nil))
+	if err != nil {
+		return nil, nil, err
+	}
+	return img, src.Close, nil
 }
