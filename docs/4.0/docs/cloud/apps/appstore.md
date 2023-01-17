@@ -1,2 +1,0 @@
-# sealos app store
-
