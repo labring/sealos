@@ -18,19 +18,19 @@ sealos postgres sql可以让用户轻松实现在各大公有云平台上启动�
 
 
 登录 [sealos cloud](https://cloud.sealos.io),点击桌面上的postgres sql图标，即可进入postgres sql的集群管理界面。
-![pgsqlimg_2.png](..%2F..%2F..%2F..%2Fimg%2Fpgsqlimg_2.png)
+![pgsqlimg_2.png](pgsqlimg_2.png)
 
 在该界面下可以管理和创建自己的postgres集群。
 
 点击创建集群按钮，只需配置postgres sql的版本，节点数量，节点容量，数据库用户即权限，即可快速创建一个postgres sql集群。
-![pgsqlimg_3.png](..%2F..%2F..%2F..%2Fimg%2Fpgsqlimg_3.png)
+![pgsqlimg_3.png](pgsqlimg_3.png)
 
 
 ## 通过命令行来建立集群
 
 
 在[sealos cloud](https://cloud.sealos.io)上使用Termianl应用创建postgres sql集群
-![pgsqlimg_4.png](..%2F..%2F..%2F..%2Fimg%2Fpgsqlimg_4.png)
+![pgsqlimg_4.png](pgsqlimg_4.png)
 创建一个文件，里面包含 在postgres集群创建时的基本配置，sealos会帮助你自动启动相对应的PG Cluster。
 以下是一个例子：
 
@@ -79,7 +79,7 @@ PG在创建时会对每个用户默认生成相应的密码，可以通过获取
 kubectl get scret ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do -o yaml
 ```
 也可以通过集群管理界面手动复制用户名和密码。
-![pgsqlimg.png](..%2F..%2F..%2F..%2Fimg%2Fpgsqlimg.png)
+![pgsqlimg.png](pgsqlimg.png)
 
 ## 使用psql 连接到PG Cluster
 
@@ -90,6 +90,5 @@ kubectl get scret ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do -o
 psql -h ${pgclusterName}.${uid}.svc.cluster.local -d ${dbname} -U ${username}
 ```
 
-![pgsqlimg_1.png](..%2F..%2F..%2F..%2Fimg%2Fpgsqlimg_1.png)
-
+![pgsqlimg_1.png](pgsqlimg_1.png)
 你也可以在sealos上部署自己的业务来对pgsql进行访问。
