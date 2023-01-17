@@ -20,8 +20,6 @@ import (
 
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/pkg/parse"
-	"github.com/containers/image/v5/image"
-	imagestorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
@@ -137,29 +135,17 @@ func (impl *realImpl) InspectImage(name string, opts ...string) (*v1.Image, erro
 	if transport == nil {
 		return nil, fmt.Errorf(`unknown transport "%s"`, opts[0])
 	}
-	transport, name = finalizeReference(transport, name)
-	parts := strings.SplitN(name, ":", 2)
-	// should never happened
-	if len(parts) != 2 {
-		return nil, fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, name)
-	}
-	imgName := parts[1]
-	if st, ok := transport.(imagestorage.StoreTransport); ok {
-		st.SetStore(impl.store)
-	}
-	ref, err := transport.ParseReference(imgName)
-	if err != nil {
-		return nil, err
-	}
 	ctx := getContext()
-	src, err := ref.NewImageSource(ctx, impl.systemContext)
+	img, closer, err := inspectImage(ctx, impl.systemContext, impl.store, transport, name)
 	if err != nil {
 		return nil, err
 	}
-	defer src.Close()
-	img, err := image.FromUnparsedImage(ctx, impl.systemContext, image.UnparsedInstance(src, nil))
-	if err != nil {
-		return nil, err
+	if closer != nil {
+		defer func() {
+			if err = closer(); err != nil {
+				logger.Error("unexpected error while closing image: %v", err)
+			}
+		}()
 	}
 	return img.OCIConfig(ctx)
 }

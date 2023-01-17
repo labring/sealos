@@ -249,21 +249,6 @@ func openBuilders(store storage.Store) (builders []*buildah.Builder, err error) 
 	return buildah.OpenAllBuilders(store)
 }
 
-func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store, name string) (builder *buildah.Builder, err error) {
-	options := buildah.ImportFromImageOptions{
-		Image:         name,
-		SystemContext: sc,
-	}
-	builder, err = buildah.ImportBuilderFromImage(ctx, store, options)
-	if err != nil {
-		return nil, err
-	}
-	if builder == nil {
-		return nil, errors.New("mocking up build configuration")
-	}
-	return builder, nil
-}
-
 // getContext returns a context.TODO
 func getContext() context.Context {
 	return context.TODO()
