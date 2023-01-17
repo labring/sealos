@@ -18,19 +18,19 @@ public cloud platforms. Based on the postgres-operator developed by the open sou
 
 
 Log in to [sealos cloud](https://cloud.sealos.io), click the postgres sql icon on the desktop to enter the postgres sql cluster management interface
-![pgsqlimg_2.png](..%2F..%2F..%2Fimg%2Fpgsqlimg_2.png)
+![pgsqlimg_2.png](pgsqlimg_2.png)
 
 Under this interface, you can manage and create your own postgres cluster.
 
 Click the create cluster button, and you only need to configure the postgres sql version, number of nodes, node capacity, and database user permissions to quickly create a postgres sql cluster.
-![pgsqlimg_3.png](..%2F..%2F..%2Fimg%2Fpgsqlimg_3.png)
+![pgsqlimg_3.png](pgsqlimg_3.png)
 
 
 ## Create a Cluster on the Terminal
 
 
 Create a postgres sql cluster using the Termianl application on [sealos cloud](https://cloud.sealos.io)
-![pgsqlimg_4.png](..%2F..%2F..%2Fimg%2Fpgsqlimg_4.png)
+![pgsqlimg_4.png](pgsqlimg_4.png)
 Create a file that contains the basic configuration when the postgres cluster is created, and sealos will help you automatically start the corresponding PG Cluster.
 Here is an example:
 
@@ -79,7 +79,7 @@ When PG is created, it will generate a corresponding password for each user by d
 kubectl get scret ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do -o yaml
 ```
 The username and password can also be copied manually through the cluster management interface.
-![pgsqlimg.png](..%2F..%2F..%2Fimg%2Fpgsqlimg.png)
+![pgsqlimg.png](pgsqlimg.png)
 
 ## Connect to PG Cluster using psql
 
@@ -90,6 +90,6 @@ Open Terminal, execute the following command, and fill in the cluster name creat
 psql -h ${pgclusterName}.${uid}.svc.cluster.local -d ${dbname} -U ${username}
 ```
 
-![pgsqlimg_1.png](..%2F..%2F..%2Fimg%2Fpgsqlimg_1.png)
+![pgsqlimg_1.png](pgsqlimg_1.png)
 
 You can also deploy your own business on sealos to access pgsql.
