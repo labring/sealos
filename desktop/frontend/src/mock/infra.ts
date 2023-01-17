@@ -17,7 +17,7 @@ spec:
   - roles: [ master ]
     count: {{ .masterCount }} 
     flavor: {{ .masterType }}
-    image: "ami-0d66b970b9f16f1f5"
+    image: "ami-073b7de61877e5b7b"
     disks:
     - capacity: {{.masterDisk}}
       volumeType: {{.masterDiskType}}
@@ -25,7 +25,7 @@ spec:
   - roles: [ node ]
     count: {{ .nodeCount }}
     flavor: {{ .nodeType }}
-    image: "ami-0d66b970b9f16f1f5"
+    image: "ami-073b7de61877e5b7b"
     disks:
     - capacity: {{.nodeDisk}}
       volumeType: {{.nodeDiskType}}
