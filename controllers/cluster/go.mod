@@ -42,7 +42,6 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
@@ -113,6 +112,7 @@ require (
 )
 
 require (
+	github.com/go-logr/logr v1.2.3
 	github.com/labring/sealos v0.0.0
 	github.com/labring/sealos/controllers/infra v0.0.0
 )

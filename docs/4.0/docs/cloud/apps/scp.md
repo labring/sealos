@@ -1,1 +1,0 @@
-# sealos Cloud Provider
