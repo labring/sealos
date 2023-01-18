@@ -1,10 +1,14 @@
+---
+sidebar_position: 1
+---
+
 # sealos app store
 
 sealos app store display image information that stored in sealos registry `hub.sealos.cn`.
 
 ![img.png](img.png)
 
-see [use-sealos-registry.md](../../getting-started/use-sealos-registry.md) to get more detail.
+see [use-sealos-registry.md](use-sealos-registry.md) to get more detail.
 
 ## Create and manage your organization
 
