@@ -40,7 +40,7 @@ const installedApps: TApp[] = [
     menu: {
       nameColor: 'text-black',
       helpDropDown: false,
-      helpDocs: false
+      helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
     },
     cacheSize: 'maximize',
     mask: true
@@ -90,7 +90,7 @@ const installedApps: TApp[] = [
     menu: {
       nameColor: 'text-black',
       helpDropDown: true,
-      helpDocs: false
+      helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
     },
     cacheSize: 'maximize',
     mask: true
@@ -235,7 +235,7 @@ const installedApps: TApp[] = [
     menu: {
       nameColor: '#0073D7',
       helpDropDown: false,
-      helpDocs: false
+      helpDocs: 'https://www.sealos.io/docs/cloud/apps/scp/'
     },
     cacheSize: 'maximize',
     mask: true
@@ -275,7 +275,12 @@ const installedApps: TApp[] = [
       desc: 'postgres operator'
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    menu: {
+      nameColor: 'text-black',
+      helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
+      helpDropDown: false
+    }
   }
 ];
 

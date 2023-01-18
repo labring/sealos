@@ -50,7 +50,7 @@ export type TApp = {
   menu?: {
     nameColor: string;
     helpDropDown: boolean;
-    helpDocs: boolean;
+    helpDocs: boolean | string;
   };
 } & TAppFront;
 
