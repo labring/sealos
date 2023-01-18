@@ -135,7 +135,7 @@ sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
 ## 使用 cri-docker 镜像
 
 ```shell
-sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/calico:v3.24.1 \
+sealos run labring/kubernetes-docker:v1.20.5-4.1.3 labring/helm:v3.8.2 labring/calico:v3.24.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
