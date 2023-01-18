@@ -65,7 +65,11 @@ export default function AppWindow(props: {
                 {wnapp.name}
               </div>
               {wnapp.menu?.helpDropDown && <HelpDropDown />}
-              {wnapp.menu?.helpDocs && <HelpDocs />}
+              {wnapp.menu?.helpDocs && (
+                <HelpDocs
+                  url={typeof wnapp.menu?.helpDocs === 'string' ? wnapp.menu?.helpDocs : ''}
+                />
+              )}
             </div>
 
             <div className={clsx(styles.actbtns, 'flex items-center')}>

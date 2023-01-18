@@ -1,6 +1,11 @@
 import Image from 'next/image';
 
-export default function HelpDocs() {
+type TDocs = {
+  url: string;
+};
+
+export default function HelpDocs(props: TDocs) {
+  const { url } = props;
   return (
     <div>
       <Image
@@ -10,7 +15,7 @@ export default function HelpDocs() {
         height={16}
         alt="help"
         onClick={() => {
-          window.open('https://www.sealos.io/docs/Intro');
+          window.open(url);
         }}
       />
     </div>
