@@ -15,7 +15,7 @@ type TMarkDown = {
 const MarkDown = (props: TMarkDown) => {
   const { text, themeDark, isShowCopyBtn } = props;
   const copyContent = () => {
-    navigator.clipboard.writeText(text.slice(10, -4));
+    navigator.clipboard.writeText(text.slice(8, -4));
   };
   return (
     <div className={clsx(styles.copyMark, 'markdown-body')}>

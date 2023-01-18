@@ -41,25 +41,29 @@ function AddPage() {
         cpu: '300',
         memory: '300'
       },
-      dataBases: [],
-      users: []
+      dataBases: [{ name: '', user: '' }],
+      users: [{ name: '', authority: '' }]
     },
     reValidateMode: 'onSubmit',
     mode: 'all'
   });
 
-  const { fields: userArr, append, remove } = useFieldArray({ control, name: 'users' });
+  const {
+    fields: userArr,
+    append,
+    remove
+  } = useFieldArray({ control, name: 'users', rules: { required: true } });
   const {
     fields: dataBaseArr,
     append: dataBaseAppend,
     remove: dataBaseRemove
-  } = useFieldArray({ control, name: 'dataBases' });
+  } = useFieldArray({ control, name: 'dataBases', rules: { required: true } });
 
   useEffect(() => {
     setYamlTemplate(generatePgsqlTemplate(formState.defaultValues));
   }, [formState.defaultValues]);
 
-  watch((data) => {
+  watch((data: TPgSqlForm | any) => {
     setYamlTemplate(generatePgsqlTemplate(data));
   });
 
@@ -75,7 +79,6 @@ function AddPage() {
   const onSave = () => {
     handleSubmit(
       (data) => {
-        // console.log(data);
         createPgsqlMutation.mutate(data);
       },
       (err) => {
@@ -109,16 +112,22 @@ function AddPage() {
         </div>
       </div>
       <div className={clsx('flex-1 flex', currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40')}>
-        <div className={styles.pgsqlFormScroll}>
-          <div className={clsx('w-full absolute py-6')}>
+        <div className={clsx(styles.pgsqlFormScroll, 'mt-6')}>
+          <div className={clsx('w-full absolute pb-6')}>
             <div className={styles.cardName}>
-              <div className="flex p-6  items-center ">
-                <span className="mr-4"> Name </span>
-                <ControlledTextField
-                  control={control}
-                  name="pgsqlName"
-                  placeholder="postgreSQL cluster name ( 3-32 )"
-                />
+              <div className={clsx('flex p-6 items-center')}>
+                <div className="w-20">
+                  <span style={{ color: '#EC872A' }}>* </span>
+                  Name
+                </div>
+                <div className={clsx(styles.inputName)}>
+                  <ControlledTextField
+                    control={control}
+                    name="pgsqlName"
+                    placeholder="postgreSQL cluster name ( 3-32 )"
+                    rules={{ required: { value: true, message: 'this is required' } }}
+                  />
+                </div>
               </div>
               <div className="p-6 pt-0 flex">
                 <div className="w-full">
@@ -145,7 +154,9 @@ function AddPage() {
             </div>
             <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
-                <div>Users</div>
+                <div>
+                  <span style={{ color: '#EC872A' }}>*</span> Users
+                </div>
                 <div className="ml-auto">
                   <Button
                     size="mini"
@@ -159,19 +170,19 @@ function AddPage() {
               </div>
               {userArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
-                  <div className={clsx(styles.customInput)} key={item.id}>
-                    <input
-                      key={item.id}
-                      {...register(`users.${index}.name`)}
-                      placeholder="user name"
-                    />
-                  </div>
+                  <ControlledTextField
+                    control={control}
+                    name={`users.${index}.name`}
+                    placeholder="user name"
+                    rules={{ required: { value: true, message: 'this is required' } }}
+                  />
                   <div className="w-6"></div>
                   <div className="w-full">
                     <ControlledDropdown
                       multiselect={true}
                       control={control}
                       name={`users.${index}.authority`}
+                      rules={{ required: true }}
                       options={[
                         { key: 'superuser', content: 'superuser' },
                         { key: 'createdb', content: 'createdb' },
@@ -199,7 +210,9 @@ function AddPage() {
             </div>
             <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
-                <div>Databases</div>
+                <div>
+                  <span style={{ color: '#EC872A' }}>*</span> Databases
+                </div>
                 <div className="ml-auto">
                   <Button
                     size="mini"
@@ -213,18 +226,19 @@ function AddPage() {
               </div>
               {dataBaseArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
-                  <div className={clsx(styles.customInput)} key={item.id}>
-                    <input
-                      key={item.id}
-                      {...register(`dataBases.${index}.name`)}
-                      placeholder="databases name ( 3-32 )"
-                    />
-                  </div>
+                  <ControlledTextField
+                    control={control}
+                    name={`dataBases.${index}.name`}
+                    placeholder="databases name ( 3-32 )"
+                    rules={{ required: { value: true, message: 'this is required' } }}
+                  />
+
                   <div className="w-6"></div>
                   <div className="w-full">
                     <ControlledDropdown
                       control={control}
                       name={`dataBases.${index}.user`}
+                      rules={{ required: true }}
                       options={getValues('users').map((i) => {
                         return { key: i.name, content: i.name };
                       })}

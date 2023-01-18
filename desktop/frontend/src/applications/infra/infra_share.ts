@@ -34,8 +34,7 @@ const SELECT_DISKS = [
 ];
 
 const generateTemplate = (infraForm: any) => {
-  const text = ` 
-\`\`\`yaml
+  const text = `\`\`\`yaml
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
@@ -71,8 +70,7 @@ spec:
   image:
     - ${infraForm.image1}
     - ${infraForm.image2}
-\`\`\`
-`;
+\`\`\``;
   return text;
 };
 
