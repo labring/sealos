@@ -121,7 +121,7 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 		return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
 	})
 	if len(repo.Status.Tags) != 0 {
-		repo.Status.LatestTag = &repo.Status.Tags[len(repo.Status.Tags)-1]
+		repo.Status.LatestTag = &repo.Status.Tags[0]
 	} else {
 		// set LatestTag nil if no tag in repo.
 		repo.Status.LatestTag = nil
