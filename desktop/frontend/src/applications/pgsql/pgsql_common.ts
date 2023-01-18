@@ -90,7 +90,7 @@ metadata:
 spec:
   teamId: "acid"
   postgresql:
-    version: ${pgsqlForm.version}
+    version: "${pgsqlForm.version}"
   numberOfInstances: ${pgsqlForm.instance}
   volume:
     size: ${pgsqlForm.volumeSize}Gi

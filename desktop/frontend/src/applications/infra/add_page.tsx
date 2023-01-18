@@ -217,7 +217,7 @@ const AddPage = () => {
             </div>
           </div>
           <div className={clsx(styles.markdown, 'ml-6')}>
-            <MarkDown text={yamlTemplate}></MarkDown>
+            <MarkDown text={yamlTemplate} isShowCopyBtn></MarkDown>
           </div>
         </div>
       </div>

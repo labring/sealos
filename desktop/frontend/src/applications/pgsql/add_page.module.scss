@@ -109,3 +109,19 @@
   padding: 0 !important;
   border-radius: 16px !important;
 }
+
+.valid {
+  border: 1px solid rgba(238, 65, 97, 1) !important;
+  div span:hover {
+    border: 1px solid transparent !important;
+  }
+  div span::after {
+    border-color: transparent !important;
+  }
+}
+
+.inputName {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}

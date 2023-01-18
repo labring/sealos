@@ -28,6 +28,9 @@ function AddPage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [yamlTemplate, setYamlTemplate] = useState('');
   const { currentApp } = useAppStore();
+  const [nameValid, setNameValid] = useState(false);
+  const [userValid, setUserValid] = useState(false);
+  const [dataBasesValid, setDataBaseValid] = useState(false);
 
   const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm>({
     defaultValues: {
@@ -59,7 +62,16 @@ function AddPage() {
     setYamlTemplate(generatePgsqlTemplate(formState.defaultValues));
   }, [formState.defaultValues]);
 
-  watch((data) => {
+  watch((data: TPgSqlForm | any) => {
+    if (data.pgsqlName) {
+      setNameValid(false);
+    }
+    if (data?.users[0]?.name && data?.users[0]?.authority) {
+      setUserValid(false);
+    }
+    if (data?.dataBases[0]?.name && data?.dataBases[0]?.user) {
+      setDataBaseValid(false);
+    }
     setYamlTemplate(generatePgsqlTemplate(data));
   });
 
@@ -75,8 +87,17 @@ function AddPage() {
   const onSave = () => {
     handleSubmit(
       (data) => {
-        // console.log(data);
-        createPgsqlMutation.mutate(data);
+        if (!data?.pgsqlName) {
+          setNameValid(true);
+        }
+        if (!data?.users[0]?.name || !data?.users[0].authority) {
+          setUserValid(true);
+        }
+        if (!data?.dataBases[0]?.name || !data?.dataBases[0].user) {
+          setDataBaseValid(true);
+        } else {
+          createPgsqlMutation.mutate(data);
+        }
       },
       (err) => {
         console.log(err);
@@ -109,16 +130,21 @@ function AddPage() {
         </div>
       </div>
       <div className={clsx('flex-1 flex', currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40')}>
-        <div className={styles.pgsqlFormScroll}>
-          <div className={clsx('w-full absolute py-6')}>
+        <div className={clsx(styles.pgsqlFormScroll, 'mt-6')}>
+          <div className={clsx('w-full absolute pb-6')}>
             <div className={styles.cardName}>
-              <div className="flex p-6  items-center ">
-                <span className="mr-4"> Name </span>
-                <ControlledTextField
-                  control={control}
-                  name="pgsqlName"
-                  placeholder="postgreSQL cluster name ( 3-32 )"
-                />
+              <div className={clsx('flex p-6 items-center')}>
+                <div className="w-20">
+                  <span style={{ color: '#EC872A' }}>* </span>
+                  Name
+                </div>
+                <div className={clsx({ [styles.valid]: nameValid }, styles.inputName)}>
+                  <ControlledTextField
+                    control={control}
+                    name="pgsqlName"
+                    placeholder="postgreSQL cluster name ( 3-32 )"
+                  />
+                </div>
               </div>
               <div className="p-6 pt-0 flex">
                 <div className="w-full">
@@ -143,9 +169,11 @@ function AddPage() {
                 </div>
               </div>
             </div>
-            <div className={clsx(styles.cardUsers, 'mt-4')}>
+            <div className={clsx(styles.cardUsers, { [styles.valid]: userValid }, 'mt-4')}>
               <div className="flex">
-                <div>Users</div>
+                <div>
+                  <span style={{ color: '#EC872A' }}>*</span> Users
+                </div>
                 <div className="ml-auto">
                   <Button
                     size="mini"
@@ -197,9 +225,11 @@ function AddPage() {
                 </div>
               ))}
             </div>
-            <div className={clsx(styles.cardUsers, 'mt-4')}>
+            <div className={clsx(styles.cardUsers, { [styles.valid]: dataBasesValid }, 'mt-4')}>
               <div className="flex">
-                <div>Databases</div>
+                <div>
+                  <span style={{ color: '#EC872A' }}>*</span> Databases
+                </div>
                 <div className="ml-auto">
                   <Button
                     size="mini"
