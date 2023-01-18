@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 2
 ---
 
 # Use sealos registry to store and distribute your cluster image
@@ -53,5 +53,5 @@ After that, you can tag your image with domain `hub.sealos.cn` and your organiza
 ```shell
 $ sealos login -k config.yml hub.sealos.cn
 $ sealos tag your-image-id hub.sealos.cn/your-organization-name/your-image-name:tag
-$ sealos push your-image-id hub.sealos.cn/your-organization-name/your-image-name:tag
+$ sealos push hub.sealos.cn/your-organization-name/your-image-name:tag
 ```
