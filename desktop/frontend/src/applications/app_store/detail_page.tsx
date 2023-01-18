@@ -6,7 +6,13 @@ import MarkDown from 'components/markdown';
 import { useEffect, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, formattedSize, handleImageName, TAppDetail, TTag } from './app_store_common';
+import {
+  EPageType,
+  formattedSize,
+  handleImageName,
+  TAppDetail,
+  throttle
+} from './app_store_common';
 import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
@@ -29,7 +35,7 @@ export default function DetailPage() {
   };
 
   useEffect(() => {
-    appRef.current?.addEventListener('scroll', handleScrollEvent);
+    appRef.current?.addEventListener('scroll', throttle(handleScrollEvent));
   }, []);
 
   const { data, isLoading, isSuccess } = useQuery(

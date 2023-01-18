@@ -4,25 +4,25 @@ import styles from './pgination.module.scss';
 import Iconfont from 'components/iconfont';
 
 export type TPagination = {
-  current: number; //当前页数
-  pageSize: number; //每页条数
-  total: number; //总数
+  current: number; // current page count
+  pageSize: number; // quantity per page
+  total: number; // total
   showTotal?: boolean;
-  onChange: (page: number, pageSize: number) => void; //页码或 pageSize 改变的回调
+  onChange: (page: number, pageSize: number) => void; // Callback that change the page number or pageSize
   special?: boolean; //can only take one step back
 };
 
 /**
  * props TPagination
- * 总页数<=9条时全部展示
- * 当前页数减去4 <= 1,尾巴渲染省略...项及总分页数
- * 当前页数加上4 >=总页数,渲染分页总数-7的连号页码,头部渲染省略...项及第1页
- * 其余情况则头尾都渲染省略...项,第1页及总分页数,中间渲染页码。
+ * All pages are displayed when the total number of pages is less than or equal to nine.
+ * Current page count minus four is less than or equal to one tail render omit... Item and total number of pages.
+ * The current number of pages plus four is greater than or equal to the total number of pages, the total number of render pages minus the numbered page number of 7, header rendering omitted... Item and page 1.
+ * For the rest of the case, both ends are rendered and omitted... Item, page 1 and total number of pages, intermediate render page number.
  */
 function Pagination(props: TPagination) {
   const { current = 1, pageSize, total, showTotal, onChange, special } = props;
   const [currentPage, setCurrentPage] = useState(current);
-  const totalPageSize = Math.ceil(total / pageSize) || 1; //总分页数
+  const totalPageSize = Math.ceil(total / pageSize) || 1;
 
   const pageChange = (cur: number) => {
     if (currentPage === cur) return;
@@ -30,31 +30,31 @@ function Pagination(props: TPagination) {
     onChange(cur, pageSize);
   };
 
-  //下一页事件
+  // next page
   const nextPageChange = () => {
     if (currentPage === totalPageSize) return;
     pageChange(currentPage + 1);
   };
 
-  //上一页事件
+  // previous page
   const prePageChange = () => {
     if (currentPage === 1) return;
     pageChange(currentPage - 1);
   };
 
-  //向前5页的省略号事件
+  // First 5 pages
   const preOmitPageChange = () => {
     pageChange(currentPage - 5);
   };
 
-  //向后5页的省略号事件
+  // Back 5 pages
   const nextOmitPageChange = () => {
     pageChange(currentPage + 5);
   };
 
   const firstPage = (
     <li
-      key={'first' + Math.random()}
+      key={'first'}
       onClick={() => {
         pageChange(1);
       }}
@@ -64,7 +64,7 @@ function Pagination(props: TPagination) {
   );
 
   const lastPage = (
-    <li key={'last' + Math.random()} onClick={() => pageChange(totalPageSize)}>
+    <li key={'last'} onClick={() => pageChange(totalPageSize)}>
       {totalPageSize}
     </li>
   );
@@ -94,20 +94,19 @@ function Pagination(props: TPagination) {
     if (totalPageSize <= 9) {
       contentList = Array.from({ length: totalPageSize }).map((_, i) => pageItem(i + 1));
     } else if (currentPage + 4 >= totalPageSize) {
-      contentList = [
-        firstPage,
-        <PageOmit key={'omit' + Math.random()} onClick={preOmitPageChange} />
-      ].concat(Array.from({ length: 9 - 2 }).map((_, i) => pageItem(i + totalPageSize - 9 + 3)));
+      contentList = [firstPage, <PageOmit key={'omit-pre'} onClick={preOmitPageChange} />].concat(
+        Array.from({ length: 9 - 2 }).map((_, i) => pageItem(i + totalPageSize - 9 + 3))
+      );
     } else if (currentPage - 4 <= 1) {
       contentList = Array.from({ length: 9 - 2 })
         .map((_, i) => pageItem(i + 1))
-        .concat([<PageOmit key={'omit' + Math.random()} onClick={nextOmitPageChange} />, lastPage]);
+        .concat([<PageOmit key={'omit-next'} onClick={nextOmitPageChange} />, lastPage]);
     } else {
       contentList = [
         firstPage,
-        <PageOmit key={'omit' + Math.random()} title="向前5页" onClick={preOmitPageChange} />,
+        <PageOmit key={'omit-before'} title="向前5页" onClick={preOmitPageChange} />,
         ...Array.from({ length: 9 - 4 }).map((_, i) => pageItem(i + currentPage - 2)),
-        <PageOmit key={'omit' + Math.random()} title="向后5页" onClick={nextOmitPageChange} />,
+        <PageOmit key={'omit-back'} title="向后5页" onClick={nextOmitPageChange} />,
         lastPage
       ];
     }
@@ -121,7 +120,7 @@ function Pagination(props: TPagination) {
     } else {
       contentList = [
         firstPage,
-        <PageOmit key={'omit' + Math.random()} title="向前5页" onClick={preOmitPageChange} />
+        <PageOmit key={'omit-pre'} title="向前5页" onClick={preOmitPageChange} />
       ].concat(Array.from({ length: 3 }).map((_, i) => pageItem(i + currentPage - 2)));
     }
     return contentList;
