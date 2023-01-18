@@ -34,6 +34,7 @@ export const ControlledTextField: FC<HookFormProps> = (props) => {
           onChange={onChange}
           className={clsx(styles.inputWarp, 'grow')}
           placeholder={props.placeholder}
+          validationState={error && 'error'}
         />
       )}
     />
@@ -52,7 +53,7 @@ export const ControlledDropdown: FC<HookFormProps> = (props) => {
       render={({ field: { onChange, onBlur, name: fieldName, value }, fieldState: { error } }) => (
         <Dropdown
           multiselect={props.multiselect}
-          className={clsx(styles.dropDownWarp, 'grow  ')}
+          className={clsx(styles.dropDownWarp, 'grow', error && styles.errorWarp)}
           selectedOptions={selectedOptions}
           onOptionSelect={(e, data) => {
             setSelectedOptions(data.selectedOptions.filter((res) => res !== undefined));

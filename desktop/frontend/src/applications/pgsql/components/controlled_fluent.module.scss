@@ -36,6 +36,15 @@
   }
 }
 
+.errorWarp {
+  border: 1px solid #ee4161 !important;
+  button {
+    &:hover {
+      border-color: transparent;
+    }
+  }
+}
+
 .numberWarp {
   width: 100%;
   span {

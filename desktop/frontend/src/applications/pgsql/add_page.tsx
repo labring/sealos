@@ -28,9 +28,6 @@ function AddPage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [yamlTemplate, setYamlTemplate] = useState('');
   const { currentApp } = useAppStore();
-  const [nameValid, setNameValid] = useState(false);
-  const [userValid, setUserValid] = useState(false);
-  const [dataBasesValid, setDataBaseValid] = useState(false);
 
   const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm>({
     defaultValues: {
@@ -44,34 +41,29 @@ function AddPage() {
         cpu: '300',
         memory: '300'
       },
-      dataBases: [],
-      users: []
+      dataBases: [{ name: '', user: '' }],
+      users: [{ name: '', authority: '' }]
     },
     reValidateMode: 'onSubmit',
     mode: 'all'
   });
 
-  const { fields: userArr, append, remove } = useFieldArray({ control, name: 'users' });
+  const {
+    fields: userArr,
+    append,
+    remove
+  } = useFieldArray({ control, name: 'users', rules: { required: true } });
   const {
     fields: dataBaseArr,
     append: dataBaseAppend,
     remove: dataBaseRemove
-  } = useFieldArray({ control, name: 'dataBases' });
+  } = useFieldArray({ control, name: 'dataBases', rules: { required: true } });
 
   useEffect(() => {
     setYamlTemplate(generatePgsqlTemplate(formState.defaultValues));
   }, [formState.defaultValues]);
 
   watch((data: TPgSqlForm | any) => {
-    if (data.pgsqlName) {
-      setNameValid(false);
-    }
-    if (data?.users[0]?.name && data?.users[0]?.authority) {
-      setUserValid(false);
-    }
-    if (data?.dataBases[0]?.name && data?.dataBases[0]?.user) {
-      setDataBaseValid(false);
-    }
     setYamlTemplate(generatePgsqlTemplate(data));
   });
 
@@ -87,17 +79,7 @@ function AddPage() {
   const onSave = () => {
     handleSubmit(
       (data) => {
-        if (!data?.pgsqlName) {
-          setNameValid(true);
-        }
-        if (!data?.users[0]?.name || !data?.users[0].authority) {
-          setUserValid(true);
-        }
-        if (!data?.dataBases[0]?.name || !data?.dataBases[0].user) {
-          setDataBaseValid(true);
-        } else {
-          createPgsqlMutation.mutate(data);
-        }
+        createPgsqlMutation.mutate(data);
       },
       (err) => {
         console.log(err);
@@ -138,11 +120,12 @@ function AddPage() {
                   <span style={{ color: '#EC872A' }}>* </span>
                   Name
                 </div>
-                <div className={clsx({ [styles.valid]: nameValid }, styles.inputName)}>
+                <div className={clsx(styles.inputName)}>
                   <ControlledTextField
                     control={control}
                     name="pgsqlName"
                     placeholder="postgreSQL cluster name ( 3-32 )"
+                    rules={{ required: { value: true, message: 'this is required' } }}
                   />
                 </div>
               </div>
@@ -169,7 +152,7 @@ function AddPage() {
                 </div>
               </div>
             </div>
-            <div className={clsx(styles.cardUsers, { [styles.valid]: userValid }, 'mt-4')}>
+            <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
                 <div>
                   <span style={{ color: '#EC872A' }}>*</span> Users
@@ -187,19 +170,19 @@ function AddPage() {
               </div>
               {userArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
-                  <div className={clsx(styles.customInput)} key={item.id}>
-                    <input
-                      key={item.id}
-                      {...register(`users.${index}.name`)}
-                      placeholder="user name"
-                    />
-                  </div>
+                  <ControlledTextField
+                    control={control}
+                    name={`users.${index}.name`}
+                    placeholder="user name"
+                    rules={{ required: { value: true, message: 'this is required' } }}
+                  />
                   <div className="w-6"></div>
                   <div className="w-full">
                     <ControlledDropdown
                       multiselect={true}
                       control={control}
                       name={`users.${index}.authority`}
+                      rules={{ required: true }}
                       options={[
                         { key: 'superuser', content: 'superuser' },
                         { key: 'createdb', content: 'createdb' },
@@ -225,7 +208,7 @@ function AddPage() {
                 </div>
               ))}
             </div>
-            <div className={clsx(styles.cardUsers, { [styles.valid]: dataBasesValid }, 'mt-4')}>
+            <div className={clsx(styles.cardUsers, 'mt-4')}>
               <div className="flex">
                 <div>
                   <span style={{ color: '#EC872A' }}>*</span> Databases
@@ -243,18 +226,19 @@ function AddPage() {
               </div>
               {dataBaseArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
-                  <div className={clsx(styles.customInput)} key={item.id}>
-                    <input
-                      key={item.id}
-                      {...register(`dataBases.${index}.name`)}
-                      placeholder="databases name ( 3-32 )"
-                    />
-                  </div>
+                  <ControlledTextField
+                    control={control}
+                    name={`dataBases.${index}.name`}
+                    placeholder="databases name ( 3-32 )"
+                    rules={{ required: { value: true, message: 'this is required' } }}
+                  />
+
                   <div className="w-6"></div>
                   <div className="w-full">
                     <ControlledDropdown
                       control={control}
                       name={`dataBases.${index}.user`}
+                      rules={{ required: true }}
                       options={getValues('users').map((i) => {
                         return { key: i.name, content: i.name };
                       })}
