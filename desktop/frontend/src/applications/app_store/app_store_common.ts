@@ -80,6 +80,7 @@ export function getSelectLabels(labels: TImageLabels[]): string {
 }
 
 export function sortByName(arr: TAppInfo[]) {
+  if (!Array.isArray(arr) || arr.length <= 0) return [];
   const map = new Map();
   const result = [];
   for (const item of arr) {

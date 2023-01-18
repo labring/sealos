@@ -23,6 +23,7 @@ import Error from './components/error';
 import { useAppStoreContext } from './index';
 import styles from './store_page.module.scss';
 import { ListContextLoading } from './components/imagehub_loading';
+import Pagination, { TPagination } from './components/pgination';
 
 function StorePage() {
   const { toPage } = useAppStoreContext();
@@ -30,13 +31,32 @@ function StorePage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const selectedLabels = getSelectLabels(imageLabels);
   const queryClient = useQueryClient();
+  const [pagination, setPagination] = useState({
+    current: 1,
+    total: 0,
+    pageSize: 10,
+    continueKey: ['']
+  });
+
+  const onChangePagination = (page: number, pageSize: number) => {
+    setPagination(
+      produce((draft) => {
+        draft.current = page;
+        if (page === 1) {
+          draft.continueKey = [''];
+        }
+      })
+    );
+  };
 
   const { data, isLoading, isSuccess, isError } = useQuery(
-    ['getAppLists', selectedLabels],
+    ['getAppLists', selectedLabels, pagination.current],
     async () => {
       const res = await request.post('/api/image_hub/get_list', {
         kubeconfig,
-        labels: selectedLabels
+        labels: selectedLabels,
+        limit: pagination.pageSize,
+        _continue: pagination.continueKey[pagination.current - 1]
       });
       return res;
     },
@@ -45,12 +65,24 @@ function StorePage() {
         if (data.status === 201) {
           queryClient.invalidateQueries({ queryKey: ['getAppLists', selectedLabels] });
         }
+        if (data.status === 200) {
+          setPagination(
+            produce((draft) => {
+              draft.total =
+                (data.data.metadata.remainingItemCount || 0) + draft.pageSize * draft.current;
+              if (!draft.continueKey.includes(data.data.metadata.continue)) {
+                draft.continueKey.push(data.data.metadata.continue);
+              }
+            })
+          );
+        }
       }
     }
   );
+
   let appLists: TAppInfo[] = [];
   if (data?.status === 200) {
-    appLists = sortByName(data.data);
+    appLists = sortByName(data.data.data);
   }
 
   const handleLabelsChange = (value: string) => {
@@ -91,7 +123,7 @@ function StorePage() {
             <Error />
           </div>
         )}
-        <div className={clsx(styles.pageWrapperScroll, styles.hiddenScrollWrap)}>
+        <div className={clsx(styles.pageWrapperScroll, styles.customScrollStyle)}>
           {isLoading && <ListContextLoading />}
           {isSuccess && (
             <div className="absolute w-full space-y-4 pb-10">
@@ -154,6 +186,17 @@ function StorePage() {
                   </div>
                 );
               })}
+              <div className="float-right mr-8">
+                <Pagination
+                  special
+                  current={pagination.current}
+                  total={pagination.total}
+                  pageSize={pagination.pageSize}
+                  onChange={(page, pageSize) => {
+                    onChangePagination(page, pageSize);
+                  }}
+                />
+              </div>
             </div>
           )}
         </div>

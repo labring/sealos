@@ -29,7 +29,7 @@ export default function AppStore() {
 
   return (
     <ApppStoreContext.Provider value={{ toPage, detailAppName }}>
-      <div className={clsx(styles.backgroundWrap, 'flex grow flex-col h-full p-6 pb-0')}>
+      <div className={clsx(styles.backgroundWrap, 'flex grow flex-col h-full pt-6 pl-6')}>
         {pageId === EPageType.StorePage && <StorePage />}
         {pageId === EPageType.OrganizationPage && <OrganizationPage />}
         {pageId === EPageType.MinePage && <MinePage />}

@@ -1,12 +1,16 @@
 type TIconfont = {
   iconName: string;
   color?: string;
+  width?: number;
+  height?: number;
 };
 
 function Iconfont(props: TIconfont) {
-  const { iconName, color } = props;
+  const { iconName, color, width, height } = props;
   const style = {
-    fill: color
+    fill: color,
+    width,
+    height
   };
 
   return (

@@ -34,6 +34,11 @@ type repositoryStatus = {
       };
     };
   }[];
+  metadata: {
+    continue: string;
+    remainingItemCount: number;
+    resourceVersion: string;
+  };
 };
 
 type DataPackDesc = {
@@ -49,8 +54,7 @@ enum DataPackStatus {
 }
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
-  const { kubeconfig, labels } = req.body;
-
+  const { kubeconfig, labels, _continue, limit } = req.body;
   if (kubeconfig === '') {
     return UnprocessableResp('kubeconfig or user empty', resp);
   }
@@ -64,10 +68,12 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
 
   let images_names: Array<string> = [];
 
+  let repositories_metadata = {};
   try {
-    const repositoryDesc = await ListClusterObject(kc, RepositoryMeta, labels);
+    const repositoryDesc = await ListClusterObject(kc, RepositoryMeta, labels, limit, _continue);
     if (repositoryDesc?.body) {
       const result = repositoryDesc.body as repositoryStatus;
+      repositories_metadata = result.metadata;
       for (const item of result.items) {
         images_names.push(item.spec.name + ':' + item.status.latestTag.name);
       }
@@ -87,7 +93,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
       const datapackDesc = dataDesc.body.status as DataPackDesc;
       if (datapackDesc.codes === DataPackStatus.Ok) {
         let result = Object.values(datapackDesc.datas);
-        return JsonResp(result, resp);
+        return JsonResp({ data: result, metadata: repositories_metadata }, resp);
       }
       return JsonResp(datapackDesc, resp);
     }
