@@ -77,7 +77,7 @@ export default function DetailPage() {
             className={clsx('cursor-pointer w-60')}
             onClick={() => toPage(EPageType.StorePage, '')}
           >
-            <Iconfont iconName="icon-back" />
+            <Iconfont iconName="icon-back2" color="#717D8A" />
           </div>
           <CardLoading width={400} height={110} />
         </div>
@@ -85,7 +85,7 @@ export default function DetailPage() {
           <div ref={appRef} className={clsx(styles.baseCard, styles.mainLeft, 'py-8 px-6')}>
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
-                <Iconfont iconName="icon-overview" />
+                <Iconfont iconName="icon-overview" color="#717D8A" />
               </div>
               <span className={styles.markdownTitle}>概览</span>
             </div>
@@ -94,7 +94,7 @@ export default function DetailPage() {
           <div className={clsx(styles.baseCard, styles.mainRight, 'pt-8 px-6 flex flex-col')}>
             <div className={clsx('flex items-center')}>
               <div className={styles.iconBtn}>
-                <Iconfont iconName="icon-tag" />
+                <Iconfont iconName="icon-tag" color="#717D8A" />
               </div>
               <div className={styles.markdownTitle}>Tags</div>
             </div>
@@ -112,7 +112,7 @@ export default function DetailPage() {
           className={clsx('cursor-pointer w-60')}
           onClick={() => toPage(EPageType.StorePage, '')}
         >
-          <Iconfont iconName="icon-back" />
+          <Iconfont iconName="icon-back2" color="#717D8A" />
         </div>
         <div className={clsx(styles.appInfo, { [styles.fixed]: isFixed })}>
           <div className={clsx(styles.image, 'flex items-center justify-center shrink-0')}>
@@ -180,7 +180,7 @@ export default function DetailPage() {
           <div className="absolute w-full py-8 px-6">
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
-                <Iconfont iconName="icon-overview" />
+                <Iconfont iconName="icon-overview" color="#717D8A" />
               </div>
               <span className={styles.markdownTitle}>概览</span>
             </div>
@@ -201,7 +201,7 @@ export default function DetailPage() {
         <div className={clsx(styles.baseCard, styles.mainRight, 'pt-8 px-6 flex flex-col')}>
           <div className={clsx('flex items-center')}>
             <div className={styles.iconBtn}>
-              <Iconfont iconName="icon-tag" />
+              <Iconfont iconName="icon-tag" color="#717D8A" />
             </div>
             <div className={styles.markdownTitle}>Tags</div>
           </div>
