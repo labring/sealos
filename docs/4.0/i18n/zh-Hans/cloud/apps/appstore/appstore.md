@@ -4,7 +4,7 @@ sealos app store 是用来展示和分享存储在 sealos registry `hub.sealos.c
 
 ![img.png](img.png)
 
-关于 sealos registry 可以参考 [use-sealos-registry.md](../../getting-started/use-sealos-registry.md)。
+关于 sealos registry 可以参考 [use-sealos-registry.md](use-sealos-registry.md)。
 
 ## 创建和管理你的组织
 
