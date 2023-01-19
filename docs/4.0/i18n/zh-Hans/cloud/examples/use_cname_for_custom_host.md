@@ -4,15 +4,15 @@
 
 ## Pre-requirement
 
-1. You have a [sealos cloud](https://cloud.sealos.io) account.
-2. You have a running service at sealos cloud, in this tutorial, we use a hello-world demo service.
-3. You have a url that we already provided, pointing to your service above, like `https://example.cloud.sealos.io`
-4. You have a custom domain name, like `sealos.example.com`, and https certificate for it.
+1. 一个 [sealos cloud](https://cloud.sealos.io) 账号.
+2. 一个已经在 sealos cloud 上运行的服务, 本教程中使用 hello-world 样例.
+3. 一个 sealos cloud 已经提供的url, 指向上述的服务, 本教程中假设为 `https://example.cloud.sealos.io`
+4. 一个自有的域名, 假设为 `sealos.example.com`, 同时拥有其 https 证书.
 
-## Steps
+## 步骤
 
-* Create a **cname record** for your custom domain name `sealos.example.com`, point it to the url above `example.cloud.sealos.io`.
-* Create a **secret yaml** for your custom domain name for https certificate.
+* 创建一个 **cname 记录** 从自定义的域名 `sealos.example.com`, 指向已经提供的url地址: `example.cloud.sealos.io`.
+* 创建一个 **secret yaml** 来存储自定义域名的证书信息.
 
     `secret.yaml`
     ```yaml
@@ -25,11 +25,11 @@
     tls.crt: 1234567890abcdef==
     tls.key: 1234567890abcdef==
     ````
-    **Note**: the namespace should be the same as your account. The tls.crt and tls.key should be base64 encoded.
+    **注意**: 命名空间要与账号的命名空间一致. `tls.crt` 与 `tls.key` 需要 base64 编码.
 
-    You can use `cat crt.pem | base64 -w0` to encode your crt and key file.
+    可以使用 `cat crt.pem | base64 -w0` 命令来编码已有的证书与 key 文件为 base64 格式.
 
-* Create a **CA issuer** to use your own cert.
+* 创建一个 **CA issuer** 来使用刚才创建的密码.
 
     `issuer.yaml`
     ```yaml
@@ -42,7 +42,7 @@
       ca:
         secretName: sealos-example-com-ca-key-pair
     ```
-* Create a **ingress nginx** to expose your service.
+* 创建一个 **ingress nginx** 来导出服务可访问.
 
     `ingress.yaml`
     ```yaml
@@ -71,4 +71,4 @@
             - sealos.example.com
           secretName: sealos-example-com-ca-key-pair
     ```
-**Done**
+**完成**
