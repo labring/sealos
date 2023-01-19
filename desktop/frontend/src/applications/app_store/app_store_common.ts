@@ -82,8 +82,8 @@ export function getSelectLabels(labels: TImageLabels[]): string {
 export function sortByName(arr: TAppInfo[]) {
   if (!Array.isArray(arr) || arr.length <= 0) return [];
   arr.sort((a, b) => {
-    var val1 = a.name;
-    var val2 = b.name;
+    const val1 = a.name;
+    const val2 = b.name;
     if (val1 < val2) {
       return -1;
     } else if (val1 > val2) {

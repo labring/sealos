@@ -31,6 +31,7 @@ function StorePage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const selectedLabels = getSelectLabels(imageLabels);
   const queryClient = useQueryClient();
+  const [test, setTest] = useState(1);
   const [pagination, setPagination] = useState({
     current: 1,
     total: 0,
@@ -189,7 +190,7 @@ function StorePage() {
               <div className="float-right mr-8">
                 <Pagination
                   special
-                  current={pagination.current}
+                  defaultCurrent={pagination.current}
                   total={pagination.total}
                   pageSize={pagination.pageSize}
                   onChange={(page, pageSize) => {
