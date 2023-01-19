@@ -81,29 +81,6 @@ export function getSelectLabels(labels: TImageLabels[]): string {
 
 export function sortByName(arr: TAppInfo[]) {
   if (!Array.isArray(arr) || arr.length <= 0) return [];
-  arr.sort((a, b) => {
-    const val1 = a.name;
-    const val2 = b.name;
-    if (val1 < val2) {
-      return -1;
-    } else if (val1 > val2) {
-      return 1;
-    } else {
-      return 0;
-    }
-  });
+  arr.sort((a, b) => (a.name > b.name ? 1 : -1));
   return arr;
-}
-
-export function throttle(fn: Function, delay = 200) {
-  let timer: any = null;
-  return function () {
-    if (timer) {
-      return;
-    }
-    timer = setTimeout(() => {
-      fn.apply(this, arguments);
-      timer = 0;
-    }, delay);
-  };
 }

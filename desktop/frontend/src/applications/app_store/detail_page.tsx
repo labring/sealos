@@ -6,17 +6,12 @@ import MarkDown from 'components/markdown';
 import { useEffect, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import {
-  EPageType,
-  formattedSize,
-  handleImageName,
-  TAppDetail,
-  throttle
-} from './app_store_common';
+import { EPageType, formattedSize, handleImageName, TAppDetail } from './app_store_common';
 import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
 import { CardLoading, ImageMarkdownLoading, ImageTagsLoading } from './components/imagehub_loading';
+import { throttle } from 'lodash';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
