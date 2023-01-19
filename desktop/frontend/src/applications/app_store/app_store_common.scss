@@ -27,6 +27,17 @@ $background-max-hover: rgba(255, 255, 255, 0.65);
   }
 }
 
+.customScrollStyle {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #7291be;
+    border-radius: 10px;
+  }
+}
+
 .backgroundWrap {
   background-image: url('/images/appstore/background.png');
   background-size: cover;

@@ -17,7 +17,7 @@ const AddPage = () => {
   const { infraName, toPage } = useScpContext();
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [image1, setImage1] = useState('labring/kubernetes:v1.25.5');
-  const [image2, setImage2] = useState('labring/calico:v3.22.1');
+  const [image2, setImage2] = useState('labring/calico:v3.24.1');
   const [yamlTemplate, setYamlTemplate] = useState('');
   const [scpPrice, setScpPrice] = useState(0);
   const [inputNameErr, setInputNameErr] = useState(false);

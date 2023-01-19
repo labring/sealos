@@ -6,11 +6,12 @@ import MarkDown from 'components/markdown';
 import { useEffect, useRef, useState } from 'react';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
-import { EPageType, formattedSize, handleImageName, TAppDetail, TTag } from './app_store_common';
+import { EPageType, formattedSize, handleImageName, TAppDetail } from './app_store_common';
 import Button from './components/button';
 import styles from './detail.module.scss';
 import { useAppStoreContext } from './index';
 import { CardLoading, ImageMarkdownLoading, ImageTagsLoading } from './components/imagehub_loading';
+import { throttle } from 'lodash';
 
 export default function DetailPage() {
   const { toPage, detailAppName } = useAppStoreContext();
@@ -22,6 +23,15 @@ export default function DetailPage() {
   let imageCommand: string = 'sealos run ' + fullImageName;
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  const handleScrollEvent = () => {
+    const scrollTop = appRef.current?.scrollTop;
+    setFixed(Boolean(scrollTop && scrollTop > 20));
+  };
+
+  useEffect(() => {
+    appRef.current?.addEventListener('scroll', throttle(handleScrollEvent));
+  }, []);
 
   const { data, isLoading, isSuccess } = useQuery(
     ['getAppDetail', fullImageName],
@@ -59,18 +69,6 @@ export default function DetailPage() {
     navigator.clipboard.writeText(value);
   };
 
-  const handleScrollEvent = () => {
-    const scrollTop = appRef.current?.scrollTop;
-    setFixed(Boolean(scrollTop && scrollTop > 20));
-  };
-
-  useEffect(() => {
-    appRef.current?.addEventListener('scroll', handleScrollEvent);
-    return () => {
-      appRef.current?.removeEventListener('scroll', handleScrollEvent);
-    };
-  }, []);
-
   if (isLoading) {
     return (
       <div className={clsx(styles.backgroundWrap, 'flex flex-col grow h-full p-8 pb-0')}>
@@ -84,7 +82,7 @@ export default function DetailPage() {
           <CardLoading width={400} height={110} />
         </div>
         <div className={clsx('flex grow my-4')}>
-          <div className={clsx(styles.baseCard, styles.mainLeft, 'py-8 px-6')}>
+          <div ref={appRef} className={clsx(styles.baseCard, styles.mainLeft, 'py-8 px-6')}>
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
                 <Iconfont iconName="icon-overview" />
@@ -128,7 +126,7 @@ export default function DetailPage() {
               <div>{fullImageName}</div>
               <div className={styles.fingerPrint}>
                 <Iconfont iconName="icon-hash" color="#239BF2" />
-                <span className={styles.imageId}>{appDetail.ID?.substring(0, 12)}</span>
+                <span className={styles.imageId}>{appDetail?.ID?.substring(0, 12)}</span>
               </div>
             </div>
             <p className={styles.text}>{appDetail?.description}</p>
@@ -172,9 +170,14 @@ export default function DetailPage() {
       <div className={clsx('flex grow my-4')}>
         <div
           ref={appRef}
-          className={clsx(styles.baseCard, styles.mainLeft, styles.hiddenScrollWrap)}
+          className={clsx(
+            styles.baseCard,
+            styles.mainLeft,
+            styles.pageWrapperScroll,
+            styles.hiddenScrollWrap
+          )}
         >
-          <div className="absolute w-full py-8 px-6 ">
+          <div className="absolute w-full py-8 px-6">
             <div className={clsx('flex items-center mb-4')}>
               <div className={styles.iconBtn}>
                 <Iconfont iconName="icon-overview" />
@@ -211,7 +214,7 @@ export default function DetailPage() {
                     className={clsx(styles.tag, { [styles.activeTag]: selectTag === item.name })}
                     onClick={() => setSelectTag(item.name)}
                   >
-                    <div className={clsx('w-12')}>
+                    <div className={clsx('w-8')}>
                       {selectTag === item.name && (
                         <Iconfont iconName="icon-checked" color="#239BF2" />
                       )}

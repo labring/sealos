@@ -13,6 +13,7 @@ specifiers:
   '@svgr/webpack': ^6.5.1
   '@tanstack/react-query': ^4.20.4
   '@types/js-yaml': ^4.0.5
+  '@types/lodash': ^4.14.191
   '@types/node': 18.11.17
   '@types/react': 18.0.26
   '@types/react-dom': 18.0.9
@@ -26,6 +27,7 @@ specifiers:
   github-markdown-css: ^5.1.0
   immer: ^9.0.16
   js-yaml: ^4.1.0
+  lodash: ^4.17.21
   next: 13.1.0
   next-pwa: ^5.6.0
   postcss: ^8.4.20
@@ -62,6 +64,7 @@ dependencies:
   github-markdown-css: registry.npmmirror.com/github-markdown-css/5.1.0
   immer: 9.0.16
   js-yaml: 4.1.0
+  lodash: registry.npmmirror.com/lodash/4.17.21
   next: 13.1.0_3duxcpitbtplz62feflag7fwby
   next-pwa: 5.6.0_next@13.1.0
   qrcode.react: 3.1.0_react@18.2.0
@@ -79,6 +82,7 @@ dependencies:
 devDependencies:
   '@svgr/webpack': 6.5.1
   '@types/js-yaml': 4.0.5
+  '@types/lodash': registry.npmmirror.com/@types/lodash/4.14.191
   '@types/node': 18.11.17
   '@types/react': 18.0.26
   '@types/react-dom': 18.0.9
@@ -5963,10 +5967,6 @@ packages:
     resolution: {integrity: sha512-HDWXG8isMntAyRF5vZ7xKuEvOhT4AhlRt/3czTSjvGUxjYCBVRQY48ViDHyfYz9VIoBkW4TMGQNapx+l3RUwdA==}
     dev: false
 
-  /lodash/4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-    dev: false
-
   /loose-envify/1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
@@ -7884,7 +7884,7 @@ packages:
       fast-json-stable-stringify: 2.1.0
       fs-extra: 9.1.0
       glob: 7.2.3
-      lodash: 4.17.21
+      lodash: registry.npmmirror.com/lodash/4.17.21
       pretty-bytes: 5.6.0
       rollup: 2.79.1
       rollup-plugin-terser: 7.0.2_rollup@2.79.1
@@ -8219,6 +8219,12 @@ packages:
     dev: false
     optional: true
 
+  registry.npmmirror.com/@types/lodash/4.14.191:
+    resolution: {integrity: sha512-BdZ5BCCvho3EIXw6wUCXHe7rS53AIDPLE+JzwgT+OsJk53oBfbSmZZ7CX4VaRoN78N+TJpFi9QPlfIVNmJYWxQ==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@types/lodash/-/lodash-4.14.191.tgz}
+    name: '@types/lodash'
+    version: 4.14.191
+    dev: true
+
   registry.npmmirror.com/fsevents/2.3.2:
     resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/fsevents/-/fsevents-2.3.2.tgz}
     name: fsevents
@@ -8241,6 +8247,12 @@ packages:
     requiresBuild: true
     dev: false
     optional: true
+
+  registry.npmmirror.com/lodash/4.17.21:
+    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/lodash/-/lodash-4.17.21.tgz}
+    name: lodash
+    version: 4.17.21
+    dev: false
 
   registry.npmmirror.com/openid-client/5.3.1:
     resolution: {integrity: sha512-RLfehQiHch9N6tRWNx68cicf3b1WR0x74bJWHRc25uYIbSRwjxYcTFaRnzbbpls5jroLAaB/bFIodTgA5LJMvw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/openid-client/-/openid-client-5.3.1.tgz}

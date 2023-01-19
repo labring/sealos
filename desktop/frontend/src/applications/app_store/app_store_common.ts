@@ -78,17 +78,3 @@ export function getSelectLabels(labels: TImageLabels[]): string {
     .filter((item) => item)
     .join(',');
 }
-
-export function sortByName(arr: TAppInfo[]) {
-  const map = new Map();
-  const result = [];
-  for (const item of arr) {
-    map.set(item.name, item);
-  }
-  let mapKeys = [...map.keys()];
-  mapKeys.sort();
-  for (const name of mapKeys) {
-    result.push(map.get(name));
-  }
-  return result;
-}

@@ -225,7 +225,9 @@ export async function ListSecret(
 export async function ListClusterObject(
   kc: k8s.KubeConfig,
   meta: CRDMeta,
-  labelSelector: string
+  labelSelector: string,
+  limit: number,
+  _continue: string
 ): Promise<{
   response: http.IncomingMessage;
   body: object;
@@ -238,9 +240,10 @@ export async function ListClusterObject(
       meta.plural,
       undefined,
       undefined,
+      _continue,
       undefined,
-      undefined,
-      labelSelector
+      labelSelector,
+      limit
     );
 }
 

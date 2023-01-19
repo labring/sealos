@@ -8,7 +8,7 @@ const installedApps: TApp[] = [
     icon: '/images/sealos.svg',
     type: APPTYPE.IFRAME,
     data: {
-      url: 'https://www.sealos.io/docs/Intro',
+      url: 'https://www.sealos.io/docs/cloud/Intro',
       desc: 'Sealos Documents'
     },
     gallery: [

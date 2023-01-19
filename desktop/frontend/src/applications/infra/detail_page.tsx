@@ -109,7 +109,7 @@ function DetailPage() {
           </span>
           <span className="mt-4">
             <SvgIcon src="/images/infraicon/scp_image.svg" />
-            kuberentes:v1.24.0
+            {clusterInfo?.data?.spec?.image[0]}
           </span>
           <span className="mt-4">
             <SvgIcon src="/images/infraicon/scp_user.svg" />
@@ -120,7 +120,7 @@ function DetailPage() {
             ref={sshRef}
             onClick={() => {
               positioningRef.current?.setTarget(sshRef.current as any);
-              copyContext(scpInfo?.data.spec.ssh?.pkData);
+              copyContext(scpInfo?.data?.spec?.ssh?.pkData);
             }}
           >
             <SvgIcon src="/images/infraicon/scp_ssh.svg" />
