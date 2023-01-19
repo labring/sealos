@@ -1,31 +1,31 @@
 # Sealos Account
 
-Account 是用户账户，点击左下角头像可查看自己的账户
+Click on the avatar in the lower left corner to view your own account.
 
 ![](image1.png)
 
-## 1、充值介绍
+## 1、Recharge Introduction
 
-目前暂时只支持微信充值，点击立即充值和充值金额，微信扫码即可支付
+Only supported weChat recharge at present, click to recharge immediately and the recharge amount, and WeChat can scan the code to pay.
 
 ![](image2.png)
 
-支付完成即可关闭充值界面
+After the payment is completed, the recharge interface can be closed.
 
-支付结果：
+**Payment result:**
 
 ![](image3.png)
 
-## 2、扣费介绍
+## 2、Deduction introduction
 
-用户使用资源（比如cpu，memory），就需要在账户中扣除金额
+When the user uses resources (such as cpu, memory), the amount needs to be deducted from the account
 
-价格表
+**Price List:**
 
-| 资源名字 | 单位 | 价格（每小时） |
-| -------- | ---- | -------------- |
-| cpu      | 1核  | 0.067元        |
-| memory   | 1Gi  | 0.033元        |
-| disk     | 1Gi  | 0.0021         |
+| resource name | unit | price (per hour) |
+|---------------| -- | -------------- |
+| cpu           | 1 core | 0.067元       |
+| memory        | 1Gi | 0.033元        |
+| disk          | 1Gi | 0.0021         |
 
-如果用户欠费，会影响正常使用，如果欠费太多，则会自动清除用户资源。
+If the user is in arrears, it will affect the normal use. If there is too much arrears, the user resources will be automatically cleared.
