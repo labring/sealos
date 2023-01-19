@@ -43,7 +43,8 @@ var mutex sync.Mutex
 
 var userData = `#!/bin/bash
 sudo cp /home/ec2-user/.ssh/authorized_keys /root/.ssh/authorized_keys
-sudo sed -i 's/#PermitRootLogin no/PermitRootLogin yes/g' /etc/ssh/sshd_config
+sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
+sudo sed -ie "s/no-port-for.*exit 142\" //g" /root/.ssh/authorized_keys
 `
 
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
@@ -314,9 +315,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		for _, curInstance := range reservation.Instances {
 			diskIndex = 0
 			for _, blockDeviceMap := range curInstance.BlockDeviceMappings {
-				logger.Info("curinstance id is %v", *curInstance.InstanceId)
 				vid := blockDeviceMap.Ebs.VolumeId
-				logger.Info("volumeId is %v", vid)
 				indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(diskIndex)
 				infraIDKey, infraIDValue := common.VolumeInfraID, curInstance.InstanceId
 				typeKey := common.DataVolumeLabel
@@ -348,9 +347,6 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		}
 	}
 
-	//if infra.Spec.AvailabilityZone == "" && len(result.Instances) > 0 {
-	//	infra.Spec.AvailabilityZone = *result.Instances[0].Placement.AvailabilityZone
-	//}
 	if len(result.Instances) > 0 {
 		logger.Info("%v availabilityZone is %v", *result.Instances[0].InstanceId, *result.Instances[0].Placement.AvailabilityZone)
 	}
