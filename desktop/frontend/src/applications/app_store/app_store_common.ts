@@ -78,9 +78,3 @@ export function getSelectLabels(labels: TImageLabels[]): string {
     .filter((item) => item)
     .join(',');
 }
-
-export function sortByName(arr: TAppInfo[]) {
-  if (!Array.isArray(arr) || arr.length <= 0) return [];
-  arr.sort((a, b) => (a.name > b.name ? 1 : -1));
-  return arr;
-}

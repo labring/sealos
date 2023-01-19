@@ -14,8 +14,7 @@ import {
   ImagehubLabels,
   TImageLabels,
   getSelectLabels,
-  TAppInfo,
-  sortByName
+  TAppInfo
 } from './app_store_common';
 import Button from './components/button';
 import Labels from './components/labels';
@@ -24,6 +23,7 @@ import { useAppStoreContext } from './index';
 import styles from './store_page.module.scss';
 import { ListContextLoading } from './components/imagehub_loading';
 import Pagination, { TPagination } from './components/pgination';
+import { sortBy } from 'lodash';
 
 function StorePage() {
   const { toPage } = useAppStoreContext();
@@ -83,7 +83,7 @@ function StorePage() {
 
   let appLists: TAppInfo[] = [];
   if (data?.status === 200) {
-    appLists = sortByName(data.data.data);
+    appLists = sortBy(data.data.data, (o) => o.name);
   }
 
   const handleLabelsChange = (value: string) => {
