@@ -200,6 +200,8 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 	for _, r := range result.Reservations {
 		for j := range r.Instances {
 			i := r.Instances[j]
+			logger.Info("get instance id: %v", *i.InstanceId)
+
 			if infra.Spec.SSH.PkName == "" {
 				infra.Spec.SSH.PkName = *i.KeyName
 			}
@@ -251,7 +253,6 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 							break
 						}
 					}
-					logger.Info("get volume id: %v, cap: %v", *vol.VolumeId, *vol.Size)
 					volIndex, err := getVolIndex(vol)
 					if err != nil {
 						return nil, fmt.Errorf("aws ecs not found volume index label: %v", err)

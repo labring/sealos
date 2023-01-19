@@ -135,24 +135,17 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return err
 		}
 
-		infra.Status.Status = infrav1.Running.String()
-		if err := r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to running failed", "%v", err)
-			return fmt.Errorf("update infra error:%v", err)
+		if infra.Status.Status != infrav1.Running.String() {
+			infra.Status.Status = infrav1.Running.String()
+			if err := r.Status().Update(ctx, infra); err != nil {
+				r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to running failed", "%v", err)
+				return fmt.Errorf("update infra error:%v", err)
+			}
+			r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 		}
 
-		r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 		return nil
 	})
-
-	//res, err := controllerutil.CreateOrUpdate(ctx, r.Client, infra, func() error {
-	//	controllerutil.AddFinalizer(infra, common.SealosInfraFinalizer)
-	//	if infra.Spec.AvailabilityZone == "" {
-	//		infra.Spec.AvailabilityZone = common.DefaultRegion
-	//	}
-	//	r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
-	//	return r.applier.ReconcileInstance(infra, r.driver)
-	//})
 
 	//clean instance when save ssh key failed
 	if keyError != nil {
@@ -175,6 +168,8 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
 		return ctrl.Result{Requeue: true}, err
 	}
+
+	// delete secret
 	if isDelete {
 		err := r.Delete(ctx, secret)
 		if err != nil {
@@ -197,14 +192,7 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 	if err != nil {
 		return err
 	}
-	//for _, hosts := range infra.Spec.Hosts {
-	//	if err := r.driver.DeleteInstances(&hosts); err != nil {
-	//		return fmt.Errorf("delete instance error:%v", err)
-	//	}
-	//	if err := r.driver.DeleteKeyPair(infra); err != nil {
-	//		return fmt.Errorf("delete keypair error:%v", err)
-	//	}
-	//}
+
 	return nil
 }
 
