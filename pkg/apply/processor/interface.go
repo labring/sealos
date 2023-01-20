@@ -22,7 +22,6 @@ import (
 
 	"github.com/containers/storage"
 
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -88,7 +87,7 @@ func SyncClusterStatus(cluster *v2.Cluster, bdah buildah.Interface, reset bool) 
 }
 
 type imageInspector interface {
-	InspectImage(imgName string, opts ...string) (*v1.Image, error)
+	InspectImage(imgName string, opts ...string) (*buildah.InspectOutput, error)
 }
 
 func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
@@ -103,11 +102,11 @@ func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
 		}
 	}
 
-	mount.Env = maps.ListToMap(oci.Config.Env)
+	mount.Env = maps.ListToMap(oci.OCIv1.Config.Env)
 	delete(mount.Env, "PATH")
 	// mount.Entrypoint
 	var entrypoint []string
-	for _, cmd := range oci.Config.Entrypoint {
+	for _, cmd := range oci.OCIv1.Config.Entrypoint {
 		if cmd == "/bin/sh" || cmd == "-c" {
 			continue
 		}
@@ -116,7 +115,7 @@ func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
 	mount.Entrypoint = entrypoint
 
 	//mount.Cmd
-	cmds := oci.Config.Cmd
+	cmds := oci.OCIv1.Config.Cmd
 	var newCMDs []string
 	for _, cmd := range cmds {
 		if cmd == "/bin/sh" || cmd == "-c" {
@@ -125,7 +124,7 @@ func OCIToImageMount(mount *v2.MountImage, inspector imageInspector) error {
 		newCMDs = append(newCMDs, cmd)
 	}
 	mount.Cmd = newCMDs
-	mount.Labels = oci.Config.Labels
+	mount.Labels = oci.OCIv1.Config.Labels
 	imageType := v2.AppImage
 	if mount.Labels[v2.ImageTypeKey] != "" {
 		imageType = v2.ImageType(mount.Labels[v2.ImageTypeKey])
@@ -161,8 +160,8 @@ func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
 		if err != nil {
 			return err
 		}
-		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
+		if oci.OCIv1.Config.Labels != nil {
+			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}

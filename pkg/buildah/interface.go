@@ -34,7 +34,7 @@ import (
 type Interface interface {
 	Pull(imageNames []string, opts ...FlagSetter) error
 	Load(input string, ociType string) (string, error)
-	InspectImage(name string, opts ...string) (*v1.Image, error)
+	InspectImage(name string, opts ...string) (*InspectOutput, error)
 	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
 	Delete(name string) error
 	InspectContainer(name string) (buildah.BuilderInfo, error)
@@ -126,7 +126,7 @@ func finalizeReference(transport types.ImageTransport, imgName string) (types.Im
 	return transport, FormatReferenceWithTransportName(transport.Name(), imgName)
 }
 
-func (impl *realImpl) InspectImage(name string, opts ...string) (*v1.Image, error) {
+func (impl *realImpl) InspectImage(name string, opts ...string) (*InspectOutput, error) {
 	transportName := TransportContainersStorage
 	if len(opts) > 0 {
 		transportName = opts[0]
@@ -136,18 +136,7 @@ func (impl *realImpl) InspectImage(name string, opts ...string) (*v1.Image, erro
 		return nil, fmt.Errorf(`unknown transport "%s"`, opts[0])
 	}
 	ctx := getContext()
-	img, closer, err := inspectImage(ctx, impl.systemContext, impl.store, transport, name)
-	if err != nil {
-		return nil, err
-	}
-	if closer != nil {
-		defer func() {
-			if err = closer(); err != nil {
-				logger.Error("unexpected error while closing image: %v", err)
-			}
-		}()
-	}
-	return img.OCIConfig(ctx)
+	return openImage(ctx, impl.systemContext, impl.store, transport, name)
 }
 
 func (impl *realImpl) Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error) {
