@@ -225,9 +225,10 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 		FromImageDigest: "",
 		OCIv1:           config,
 	}
-	outputData.FromImageDigest, err = manifest.Digest(rawManifest)
-	if err != nil {
+	if imageDigest, err := manifest.Digest(rawManifest); err != nil {
 		return nil, fmt.Errorf("error computing manifest digest: %w", err)
+	} else {
+		outputData.FromImageDigest = imageDigest
 	}
 	if dockerRef := img.Reference().DockerReference(); dockerRef != nil {
 		outputData.Name = dockerRef.Name()
