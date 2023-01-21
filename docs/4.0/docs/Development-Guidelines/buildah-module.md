@@ -6,13 +6,13 @@ Therefore, sealos provides the use interface of buildah.
 
 ```go
 type Interface interface {
-	Pull(imageNames []string, opts ...FlagSetter) error
-	Load(input string, ociType string) (string, error)
-	InspectImage(name string, opts ...string) (*v1.Image, error)
-	Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
-	Delete(name string) error
-	InspectContainer(name string) (buildah.BuilderInfo, error)
-	ListContainers() ([]JSONContainer, error)
+    Pull(imageNames []string, opts ...FlagSetter) error
+    Load(input string, ociType string) (string, error)
+    InspectImage(name string, opts ...string) (*InspectOutput, error)
+    Create(name string, image string, opts ...FlagSetter) (buildah.BuilderInfo, error)
+    Delete(name string) error
+    InspectContainer(name string) (buildah.BuilderInfo, error)
+    ListContainers() ([]JSONContainer, error)
 }
 ```
 

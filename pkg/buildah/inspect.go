@@ -196,6 +196,7 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 		rawManifest []byte
 		config      *ociv1.Image
 		src         types.ImageSource
+		imageDigest digest.Digest
 	)
 	img, src, err := inspectImage(ctx, sc, store, transport, imgRef)
 	if err != nil {
@@ -222,17 +223,16 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 	}
 
 	outputData := &InspectOutput{
+		Name:            "",
 		FromImageDigest: "",
 		OCIv1:           config,
 	}
-	if imageDigest, err := manifest.Digest(rawManifest); err != nil {
+
+	if imageDigest, err = manifest.Digest(rawManifest); err != nil {
 		return nil, fmt.Errorf("error computing manifest digest: %w", err)
-	} else {
-		outputData.FromImageDigest = imageDigest
 	}
-	if dockerRef := img.Reference().DockerReference(); dockerRef != nil {
-		outputData.Name = dockerRef.Name()
-	}
+	outputData.FromImageDigest = imageDigest
+	outputData.Name = imgRef
 	return outputData, nil
 }
 
