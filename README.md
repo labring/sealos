@@ -40,7 +40,7 @@
 
 [Online demo](https://cloud.sealos.io)
 
-[Learning sealos by examples](https://www.sealos.io/docs/examples/use-sealos-cloud-hello-world)
+[sealos cloud DOCS](https://www.sealos.io/docs/cloud/Intro)
 
 Use the cloud like a PC desktop, Freely run and uninstall any distributed applications:
 
