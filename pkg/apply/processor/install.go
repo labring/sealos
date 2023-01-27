@@ -128,8 +128,8 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		if err != nil {
 			return err
 		}
-		if oci.Config.Labels != nil {
-			imageTypes.Insert(oci.Config.Labels[v2.ImageTypeKey])
+		if oci.OCIv1.Config.Labels != nil {
+			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}

@@ -134,7 +134,7 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, platf
 	for _, i := range images {
 		obj, _ := b.InspectImage(i)
 		if obj != nil {
-			imageObjList = append(imageObjList, map[string]v1.Image{i: *obj})
+			imageObjList = append(imageObjList, map[string]v1.Image{i: *obj.OCIv1})
 		}
 	}
 
