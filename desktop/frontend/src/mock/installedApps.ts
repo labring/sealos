@@ -22,7 +22,8 @@ const installedApps: TApp[] = [
       helpDocs: false
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    zIndex: 1
   },
   {
     name: 'App Store',
@@ -43,7 +44,8 @@ const installedApps: TApp[] = [
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    zIndex: 1
   },
   // {
   //   name: 'Python Compiler',
@@ -93,7 +95,8 @@ const installedApps: TApp[] = [
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    zIndex: 1
   },
   {
     name: 'Kubernetes Dashboard',
@@ -114,7 +117,8 @@ const installedApps: TApp[] = [
       helpDocs: false
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    zIndex: 1
   },
   // {
   //   name: 'Kuboard',
@@ -238,7 +242,8 @@ const installedApps: TApp[] = [
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/scp/'
     },
     cacheSize: 'maximize',
-    mask: true
+    mask: true,
+    zIndex: 1
   },
   // {
   //   name: 'AFFiNE',
@@ -280,7 +285,8 @@ const installedApps: TApp[] = [
       nameColor: 'text-black',
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
-    }
+    },
+    zIndex: 1
   }
 ];
 

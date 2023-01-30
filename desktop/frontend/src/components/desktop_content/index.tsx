@@ -12,6 +12,9 @@ import styles from './index.module.scss';
 
 export default function DesktopContent() {
   const { installedApps: apps, openedApps, currentApp, openApp } = useAppStore((state) => state);
+  const isBrowser = typeof window !== 'undefined';
+  const desktopWidth = isBrowser ? document.getElementById('desktop')?.offsetWidth || 0 : 0;
+  const desktopHeight = isBrowser ? document.getElementById('desktop')?.offsetHeight || 0 : 0;
 
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
@@ -33,7 +36,7 @@ export default function DesktopContent() {
   }
 
   return (
-    <div className={styles.desktop}>
+    <div id="desktop" className={styles.desktop}>
       <div className={styles.desktopCont}>
         {/* 已安装的应用 */}
         {apps.map((appItem: any, i: number) => {
@@ -56,7 +59,13 @@ export default function DesktopContent() {
       {/* 打开的应用窗口 */}
       {openedApps.map((appItem) => {
         return (
-          <AppWindow key={appItem.name} style={{ height: '100vh' }} app={appItem}>
+          <AppWindow
+            key={appItem.name}
+            style={{ height: '100vh' }}
+            app={appItem}
+            desktopWidth={desktopWidth}
+            desktopHeight={desktopHeight}
+          >
             {renderApp(appItem)}
           </AppWindow>
         );
