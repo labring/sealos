@@ -166,7 +166,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		if err := r.syncAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
+		if err := r.createAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, fmt.Errorf("meteringName:%v,amount:%v,err:%v", metering.Name, totalAccount, err)
 		}
@@ -289,7 +289,7 @@ func (r *MeteringReconcile) initMetering(ctx context.Context, ns corev1.Namespac
 	}
 	r.Logger.Info("totalResourcePrice", "totalResourcePrice", totalResourcePrice)
 	if err = r.syncMetering(ctx, ns, totalResourcePrice); err != nil {
-		r.Logger.Error(err, "Failed to create Metering")
+		r.Logger.Error(err, "Failed to create Metering", "nsName", ns.Name)
 		return client.IgnoreNotFound(err)
 	}
 	return nil
@@ -368,7 +368,7 @@ func (r *MeteringReconcile) GetAllExtensionResources(ctx context.Context) (map[c
 	return totalResourcePrice, nil
 }
 
-func (r *MeteringReconcile) syncAccountBalance(ctx context.Context, owner string, amount int64, seqID int64) error {
+func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner string, amount int64, seqID int64) error {
 	if amount == 0 {
 		return nil
 	} else if amount < 0 {
@@ -382,13 +382,15 @@ func (r *MeteringReconcile) syncAccountBalance(ctx context.Context, owner string
 		},
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &accountBalance, func() error {
+	// only create accountBalance
+	if err := r.Get(ctx, types.NamespacedName{Name: accountBalance.Name, Namespace: accountBalance.Namespace}, &accountBalance); err == nil {
+		return fmt.Errorf("accountbalancnce have existed,name:%v", accountBalance.Name)
+	} else if client.IgnoreNotFound(err) == nil {
 		accountBalance.Spec.Owner = owner
 		accountBalance.Spec.TimeStamp = time.Now().Unix()
 		accountBalance.Spec.Amount = amount
-		accountBalance.Status.Status = meteringv1.Create
-		return nil
-	}); err != nil {
+		return r.Create(ctx, &accountBalance)
+	} else if err != nil {
 		return err
 	}
 	return nil
