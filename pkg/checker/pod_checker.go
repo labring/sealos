@@ -35,6 +35,10 @@ type PodChecker struct {
 	client kubernetes.Client
 }
 
+func (n *PodChecker) Name() string {
+	return "PodChecker"
+}
+
 type PodNamespaceStatus struct {
 	NamespaceName     string
 	RunningCount      uint32
@@ -45,22 +49,22 @@ type PodNamespaceStatus struct {
 
 var PodNamespaceStatusList []PodNamespaceStatus
 
-func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *PodChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	// checker if all the node is ready
 	data := constants.NewData(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 
 	n.client = c
 
 	nsList, err := n.client.Kubernetes().CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 
 	for _, podNamespace := range nsList.Items {
@@ -70,7 +74,7 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 		var notRunningPodList []*corev1.Pod
 		namespacePodList, err := n.client.Kubernetes().CoreV1().Pods(podNamespace.Name).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			return err
+			return nil, []error{err}
 		}
 
 		for _, pod := range namespacePodList.Items {
@@ -94,9 +98,9 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	err = n.Output(PodNamespaceStatusList)
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
-	return nil
+	return nil, nil
 }
 
 func (n *PodChecker) Output(podNamespaceStatusList []PodNamespaceStatus) error {

@@ -38,9 +38,13 @@ type CRIShimStatus struct {
 	Error     string
 }
 
-func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *CRIShimChecker) Name() string {
+	return "CRIShimChecker"
+}
+
+func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	status := &CRIShimStatus{}
 	defer func() {
@@ -77,7 +81,7 @@ func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 
 	status.Error = Nil
-	return nil
+	return nil, nil
 }
 
 func (n *CRIShimChecker) Output(status *CRIShimStatus) error {

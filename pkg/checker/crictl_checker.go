@@ -41,6 +41,10 @@ import (
 type CRICtlChecker struct {
 }
 
+func (n *CRICtlChecker) Name() string {
+	return "CRICtlChecker"
+}
+
 type Container struct {
 	Container string
 	State     string
@@ -58,9 +62,9 @@ type CRICtlStatus struct {
 	Error               string
 }
 
-func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	status := &CRICtlStatus{}
 	defer func() {
@@ -83,7 +87,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	crictlPath, err := execer.LookPath("crictl")
 	if err != nil {
 		status.Error = errors.Wrap(err, "error looking for path of crictl").Error()
-		return nil
+		return nil, nil
 	}
 
 	imageList, err := n.getCRICtlImageList(crictlPath)
@@ -107,7 +111,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
 	if err != nil {
 		status.Error = errors.Wrap(err, "get ssh interface error").Error()
-		return nil
+		return nil, nil
 	}
 
 	root := constants.NewData(cluster.Name).RootFSPath()
@@ -125,7 +129,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	status.ImageShimPullStatus = shimStatus
 	status.Error = Nil
-	return nil
+	return nil, nil
 }
 
 func (n *CRICtlChecker) Output(status *CRICtlStatus) error {

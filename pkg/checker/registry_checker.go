@@ -39,6 +39,10 @@ import (
 type RegistryChecker struct {
 }
 
+func (n *RegistryChecker) Name() string {
+	return "RegistryChecker"
+}
+
 type RegistryStatus struct {
 	Port           string
 	DebugPort      string
@@ -51,14 +55,14 @@ type RegistryStatus struct {
 	Error          string
 }
 
-func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	localAddr, _ := iputils.ListLocalHostAddrs()
 	if !iputils.IsLocalIP(cluster.GetRegistryIP(), localAddr) {
 		logger.Info("current registry ip is %s,not local addr,skip check.", cluster.GetRegistryIP())
-		return nil
+		return nil, nil
 	}
 	status := &RegistryStatus{}
 	defer func() {
@@ -87,7 +91,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
 	if err != nil {
 		status.Error = errors.Wrap(err, "get ssh interface error").Error()
-		return nil
+		return nil, nil
 	}
 	root := constants.NewData(cluster.Name).RootFSPath()
 	regInfo := bootstrap.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
@@ -96,7 +100,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	regInterface, err := registry.NewRegistryForDomain(status.RegistryDomain, regInfo.Username, regInfo.Password)
 	if err != nil {
 		status.Error = errors.Wrap(err, "get registry interface error").Error()
-		return nil
+		return nil, nil
 	}
 	if err = regInterface.Ping(); err != nil {
 		status.Ping = fmt.Sprintf("error: %+v", err)
@@ -104,7 +108,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 		status.Ping = "ok"
 	}
 	status.Error = Nil
-	return nil
+	return nil, nil
 }
 
 func (n *RegistryChecker) Output(status *RegistryStatus) error {

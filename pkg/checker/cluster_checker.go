@@ -44,20 +44,24 @@ type ClusterStatus struct {
 	KubeletErr            string
 }
 
-func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *ClusterChecker) Name() string {
+	return "ClusterChecker"
+}
+
+func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 
 	// checker if all the node is ready
 	data := constants.NewData(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 	nodes, err := c.Kubernetes().CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 	healthyClient := kubernetes.NewKubeHealthy(c.Kubernetes(), 30*time.Second)
 	var NodeList []ClusterStatus
@@ -69,19 +73,19 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 		apiPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeAPIServer)
 		if err != nil {
-			return err
+			return nil, []error{err}
 		}
 		cStatus.KubeAPIServer = healthyClient.ForHealthyPod(apiPod)
 
 		controllerPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeControllerManager)
 		if err != nil {
-			return err
+			return nil, []error{err}
 		}
 		cStatus.KubeControllerManager = healthyClient.ForHealthyPod(controllerPod)
 
 		schedulerPod, err := kubernetes.GetStaticPod(c.Kubernetes(), node.Name, kubernetes.KubeScheduler)
 		if err != nil {
-			return err
+			return nil, []error{err}
 		}
 		cStatus.KubeScheduler = healthyClient.ForHealthyPod(schedulerPod)
 
@@ -93,7 +97,7 @@ func (n *ClusterChecker) Check(cluster *v2.Cluster, phase string) error {
 		NodeList = append(NodeList, cStatus)
 	}
 
-	return n.Output(NodeList)
+	return nil, []error{n.Output(NodeList)}
 }
 
 func (n *ClusterChecker) Output(clusterStatus []ClusterStatus) error {

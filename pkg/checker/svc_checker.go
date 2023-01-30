@@ -17,7 +17,10 @@ package checker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+
+	"github.com/labring/sealos/pkg/ssh"
 
 	"github.com/labring/sealos/pkg/template"
 
@@ -35,6 +38,10 @@ type SvcChecker struct {
 	client kubernetes.Client
 }
 
+func (n *SvcChecker) Name() string {
+	return "SvcChecker"
+}
+
 type SvcNamespaceStatus struct {
 	NamespaceName       string
 	ServiceCount        int
@@ -46,15 +53,15 @@ type SvcClusterStatus struct {
 	SvcNamespaceStatusList []*SvcNamespaceStatus
 }
 
-func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	// checker if all the node is ready
 	data := constants.NewData(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 
 	n.client = c
@@ -63,12 +70,12 @@ func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	nsList, err := n.client.Kubernetes().CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 
 	var svcNamespaceStatusList []*SvcNamespaceStatus
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 	for _, svcNamespace := range nsList.Items {
 		namespaceSVCList, err := n.client.Kubernetes().CoreV1().Services(svcNamespace.Name).List(context.TODO(), metav1.ListOptions{})
@@ -102,9 +109,9 @@ func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	err = n.Output(svcNamespaceStatusList)
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
-	return nil
+	return nil, nil
 }
 
 func (n *SvcChecker) Output(svcNamespaceStatusList []*SvcNamespaceStatus) error {
@@ -144,4 +151,50 @@ func IsExistEndpoint(endpointList *corev1.EndpointsList, serviceName string) boo
 
 func NewSvcChecker() Interface {
 	return &SvcChecker{}
+}
+
+// ServiceCheck checks if some service is enabled or active. If it is, warn the user that there may be problems
+// if no actions are taken.
+type ServiceCheck struct {
+	service string
+	label   string
+	ip      string
+}
+
+func NewServiceCheck(service string, label string, ip string) Interface {
+	return &ServiceCheck{service: service, label: label, ip: ip}
+}
+
+// Name returns label for individual ServiceChecks. If not known, will return based on service.
+func (sc ServiceCheck) Name() string {
+	if sc.label != "" {
+		return fmt.Sprintf("%s:%s", sc.ip, sc.label)
+	}
+	return fmt.Sprintf("%s:ServiceCheck: %s", sc.ip, sc.service)
+}
+
+// Check checks if some service is enabled or active. If it is, warn the user that there may be problems
+func (sc ServiceCheck) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
+	if phase != PhasePre {
+		return nil, nil
+	}
+	logger.Debug("%s:Validating whether %s is active or enabled: %s", sc.ip, sc.service)
+	ServiceEnableCMD := fmt.Sprintf("systemctl is-enabled %s", sc.service)
+	ServiceActiveCMD := fmt.Sprintf("systemctl is-active %s", sc.service)
+	SSH := ssh.NewSSHClient(&cluster.Spec.SSH, false)
+	EnableInfo, err := SSH.CmdToString(sc.ip, ServiceEnableCMD, "")
+	if err != nil {
+		return nil, []error{fmt.Errorf(err.Error() + "failed to get service info")}
+	}
+	if EnableInfo != SystemctlServiceEnabled {
+		return nil, nil
+	}
+	ActiveInfo, err := SSH.CmdToString(sc.ip, ServiceActiveCMD, "")
+	if err != nil {
+		return nil, []error{fmt.Errorf(err.Error() + "failed to get service info")}
+	}
+	if ActiveInfo != SystemctlServiceActive {
+		return nil, nil
+	}
+	return nil, []error{fmt.Errorf("firewalld is active, please ensure apiserver and kubelet ports are available or your cluster may not function correctly")}
 }
