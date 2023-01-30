@@ -146,9 +146,6 @@ function StorePage() {
                     <div className={clsx(styles.appDesc)}>
                       <div className={clsx(styles.title, 'pt-6 flex items-center')}>
                         <div>{handleImageName(item?.name).name}</div>
-                        <div className={styles.fingerPrint}>
-                          <Iconfont iconName="icon-hash" color="#239BF2" />
-                        </div>
                       </div>
                       <div className={styles.description}>{item?.description}</div>
                       <div className={clsx('flex space-x-4 pt-4')}>

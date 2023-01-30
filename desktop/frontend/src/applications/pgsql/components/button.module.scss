@@ -35,6 +35,9 @@
 
 .primary {
   background: #239bf2;
+  &:hover {
+    background: #1383d4;
+  }
 }
 
 .success {
