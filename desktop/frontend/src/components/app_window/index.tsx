@@ -5,7 +5,7 @@ import styles from './index.module.scss';
 import tabStyles from './tab.module.scss';
 import clsx from 'clsx';
 import useAppStore, { TApp } from 'stores/app';
-import Draggable from 'react-draggable';
+import Draggable, { DraggableEventHandler } from 'react-draggable';
 import HelpDropDown from './help_dropdown';
 import HelpDocs from './help_docs';
 
@@ -13,16 +13,34 @@ export default function AppWindow(props: {
   style?: React.CSSProperties;
   app: TApp;
   children: any;
+  desktopHeight: number;
+  desktopWidth: number;
 }) {
-  const wnapp = props.app;
-
+  const { app: wnapp, desktopHeight, desktopWidth } = props;
   const { closeApp, updateAppInfo, switchApp, currentApp, openedApps } = useAppStore(
     (state) => state
   );
   const dragDom = useRef(null);
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  // console.log(position);
+
+  const handleDragBoundary: DraggableEventHandler = (e, position) => {
+    const { x, y } = position;
+    const appHeaderHeight = document.querySelector('.windowHeader')?.clientHeight || 30;
+    if (currentApp?.size === 'maxmin') {
+      let upperBoundary = -desktopHeight * 0.1;
+      let lowerBoundary = desktopHeight * 0.9 - appHeaderHeight;
+      setPosition({
+        x: x,
+        y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? lowerBoundary : y
+      });
+    } else {
+      setPosition({
+        x: x,
+        y: y < 0 ? 0 : y > desktopHeight - appHeaderHeight ? desktopHeight - appHeaderHeight : y
+      });
+    }
+  };
 
   return (
     <Draggable
@@ -32,7 +50,8 @@ export default function AppWindow(props: {
       onDrag={(e, position) => {
         setPosition(position);
       }}
-      onStop={() => {
+      onStop={(e, position) => {
+        handleDragBoundary(e, position);
         setDragging(false);
       }}
       handle=".windowHeader"
