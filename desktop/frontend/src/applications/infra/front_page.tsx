@@ -14,7 +14,7 @@ import StatusComponent from './scp_status';
 type InfraInfo = {
   apiVersion: string;
   kind: string;
-  metadata: { creationTimestamp: string; uid: string; name: string };
+  metadata: { creationTimestamp: string; uid: string; name: string; deletionTimestamp: string };
   spec: any;
   status: { connections: string; ssh: any; status: string };
 };
@@ -96,7 +96,9 @@ function FrontPage() {
                     <div className="flex">
                       <span className={styles.title}>{item?.metadata?.name}</span>
                       <StatusComponent
-                        infraStatus={item?.status?.status}
+                        infraStatus={
+                          item?.metadata?.deletionTimestamp ? 'Deleting' : item?.status?.status
+                        }
                         clusterStatus={getClusterStatus(item.metadata.name)}
                       />
                     </div>

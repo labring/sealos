@@ -18,7 +18,7 @@ const installedApps: TApp[] = [
     size: 'maximize',
     menu: {
       nameColor: 'text-black',
-      helpDropDown: true,
+      helpDropDown: false,
       helpDocs: false
     },
     cacheSize: 'maximize',
@@ -91,7 +91,7 @@ const installedApps: TApp[] = [
     size: 'maximize',
     menu: {
       nameColor: 'text-black',
-      helpDropDown: true,
+      helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
     },
     cacheSize: 'maximize',

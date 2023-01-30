@@ -71,8 +71,12 @@ function DetailPage() {
   };
 
   const deleteInfra = async () => {
-    const result = await request.post('/api/infra/awsDeleteCluster', { infraName, kubeconfig });
-    const res = await request.post('/api/infra/awsDelete', { infraName, kubeconfig });
+    try {
+      const result = await request.post('/api/infra/awsDeleteCluster', { infraName, kubeconfig });
+      const res = await request.post('/api/infra/awsDelete', { infraName, kubeconfig });
+    } catch (error) {
+      // console.log(error);
+    }
     setDeDialog(false);
     toPage(PageType.FrontPage, '');
   };
