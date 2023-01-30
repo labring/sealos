@@ -283,6 +283,10 @@ func NewBillingList(TimeInterval meteringv1.TimeIntervalType, amount int64) mete
 }
 
 func (r *MeteringReconcile) initMetering(ctx context.Context, ns corev1.Namespace) error {
+	metering := meteringv1.Metering{}
+	if err := r.Get(ctx, types.NamespacedName{Name: meteringv1.MeteringPrefix + ns.Name, Namespace: r.MeteringSystemNameSpace}, &metering); err == nil {
+		return fmt.Errorf("metering %v already exists", metering.Name)
+	}
 	totalResourcePrice, err := r.GetAllExtensionResources(ctx)
 	if err != nil {
 		return err
