@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Imagehub
 
 Based on kubernetes CRD, imagehub is application on sealos cloud to manage and display cluster images information.
