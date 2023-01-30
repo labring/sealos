@@ -1,7 +1,3 @@
----
-sidebar_position: 1
----
-
 # Imagehub
 
 基于 kubernetes CRD, imagehub 是在sealos cloud上管理和展示集群镜像信息的应用。

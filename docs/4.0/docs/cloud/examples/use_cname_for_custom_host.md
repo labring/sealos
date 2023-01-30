@@ -14,25 +14,23 @@ This document describes how to use sealos cloud to expose a service with custom 
 * Create a **cname record** for your custom domain name `sealos.example.com`, point it to the url above `example.cloud.sealos.io`.
 * Create a **secret yaml** for your custom domain name for https certificate.
 
-    `secret.yaml`
-    ```yaml
+    ```yaml title="secret.yaml"
     apiVersion: v1
     kind: Secret
     metadata:
-    name: sealos-example-com-ca-key-pair
-    namespace: ns-1234567890abcdef
+      name: sealos-example-com-ca-key-pair
+      namespace: ns-1234567890abcdef
     data:
-    tls.crt: 1234567890abcdef==
-    tls.key: 1234567890abcdef==
-    ````
+      tls.crt: 1234567890abcdef==
+      tls.key: 1234567890abcdef==
+    ```
     **Note**: the namespace should be the same as your account. The tls.crt and tls.key should be base64 encoded.
 
     You can use `cat crt.pem | base64 -w0` to encode your crt and key file.
 
 * Create a **CA issuer** to use your own cert.
 
-    `issuer.yaml`
-    ```yaml
+    ```yaml title="issuer.yaml"
     apiVersion: cert-manager.io/v1
     kind: Issuer
     metadata:
@@ -44,8 +42,7 @@ This document describes how to use sealos cloud to expose a service with custom 
     ```
 * Create a **ingress nginx** to expose your service.
 
-    `ingress.yaml`
-    ```yaml
+    ```yaml title="ingress.yaml"
     apiVersion: networking.k8s.io/v1
     kind: Ingress
     metadata:
@@ -71,4 +68,5 @@ This document describes how to use sealos cloud to expose a service with custom 
             - sealos.example.com
           secretName: sealos-example-com-ca-key-pair
     ```
+
 **Done**

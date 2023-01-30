@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Datapack Design
 
 Datapack is designed to package data from different CRD with different information granularity.

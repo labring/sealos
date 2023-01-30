@@ -1,7 +1,3 @@
----
-sidebar_position: 2
----
-
 # Datapack 设计
 
 Datapack 提供了数据构建和打包的能力：直接使用kubernetes CRD并不方便，因此我们设计了datapack CRD去从不同的CRD打包不同的数据。
