@@ -26,9 +26,10 @@ export default function AppWindow(props: {
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     const { x, y } = position;
+    const appHeaderHeight = document.querySelector('.windowHeader')?.clientHeight || 30;
     if (currentApp?.size === 'maxmin') {
       let upperBoundary = -desktopHeight * 0.1;
-      let lowerBoundary = desktopHeight * 0.9 - 30;
+      let lowerBoundary = desktopHeight * 0.9 - appHeaderHeight;
       setPosition({
         x: x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? lowerBoundary : y
@@ -36,7 +37,7 @@ export default function AppWindow(props: {
     } else {
       setPosition({
         x: x,
-        y: y < 0 ? 0 : y > desktopHeight - 30 ? desktopHeight - 30 : y
+        y: y < 0 ? 0 : y > desktopHeight - appHeaderHeight ? desktopHeight - appHeaderHeight : y
       });
     }
   };
