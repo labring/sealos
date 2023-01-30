@@ -59,6 +59,7 @@ type MeteringReconcile struct {
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=meterings/finalizers,verbs=update
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=extensionresourceprices,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=metering.sealos.io,resources=resources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -119,7 +120,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if resources.Status.Status == meteringv1.Complete || !resources.DeletionTimestamp.IsZero() {
 			return ctrl.Result{}, nil
 		}
-		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace)
+		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace, "resource Used", resources.Spec.Resources)
 		var metering meteringv1.Metering
 		for resourceName, resourceInfo := range resources.Spec.Resources {
 			if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNameSpace, Name: meteringv1.MeteringPrefix + resourceInfo.NameSpace}, &metering); err != nil {
@@ -132,14 +133,14 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
 				metering.Spec.Resources[resourceName].Used.Add(*resourceInfo.Used)
-				return r.Update(ctx, &metering)
+				return nil
 			}); err != nil {
+				r.Logger.Error(err, "update metering failed", "name", meteringv1.MeteringPrefix+resourceInfo.NameSpace)
 				return ctrl.Result{Requeue: true}, err
 			}
-
 			resources.Status.Status = meteringv1.Complete
-			err := r.Update(ctx, resources)
-			if err != nil {
+			if err := r.Status().Update(ctx, resources); err != nil {
+				r.Logger.Error(err, err.Error())
 				return ctrl.Result{Requeue: true}, err
 			}
 		}
@@ -161,7 +162,8 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 
 		if err := r.clearResourceUsed(ctx, &metering); err != nil {
-			return ctrl.Result{}, err
+			r.Logger.Error(err, err.Error())
+			return ctrl.Result{Requeue: true}, err
 		}
 
 		if err := r.syncAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
@@ -205,7 +207,7 @@ func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meterin
 		}
 	}
 	totalAmount += float64(infraAmount)
-	r.Logger.Info(fmt.Sprintf("meteringNmae %v,resourceMsg: %+v", metering.Name, resourceMsgs), "totalAmount", totalAmount)
+	r.Logger.Info(fmt.Sprintf("meteringNmae %v,resourceMsg: %+v", metering.Name, resourceMsgs), "totalAmount", totalAmount, "seqID", metering.Status.SeqID)
 	return int64(totalAmount), nil
 }
 

@@ -148,6 +148,7 @@ func TestMetering(t *testing.T) {
 			if err != nil {
 				t.Fatalf("metering calculate failer: %v,calculate: %v", err, metering)
 			}
+			t.Logf("metering:%+v", metering.Spec.Resources)
 		})
 
 		t.Run("metering create accountBalance should be ok", func(t *testing.T) {
