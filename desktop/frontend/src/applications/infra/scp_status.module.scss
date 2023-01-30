@@ -12,7 +12,7 @@
   }
 
   .Pending {
-    @include base_status(#ec6a5e);
+    @include base_status(#a27df1);
   }
 
   .Running {
@@ -21,6 +21,10 @@
 
   .Start {
     @include base_status(#f4be4f);
+  }
+
+  .Deleting {
+    @include base_status(#ec6a5e);
   }
 
   .right {
