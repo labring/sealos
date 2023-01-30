@@ -148,6 +148,7 @@ func TestMetering(t *testing.T) {
 			if err != nil {
 				t.Fatalf("metering calculate failer: %v,calculate: %v", err, metering)
 			}
+			t.Logf("metering:%+v", metering.Spec.Resources)
 		})
 
 		t.Run("metering create accountBalance should be ok", func(t *testing.T) {
@@ -165,7 +166,7 @@ func TestMetering(t *testing.T) {
 			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")
-				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, metering.Spec.Owner, 2), 90)
+				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 				if err != nil {
 					t.Fatalf("failed to create accountBalance: %v", err)
 				}
