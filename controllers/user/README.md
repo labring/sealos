@@ -473,13 +473,3 @@ metadata:
   resourceVersion: ""
 ```
 
-add payment
-```yaml
-apiVersion: user.sealos.io/v1
-kind: Payment
-metadata:
-  name: payment-sample
-spec:
-    userID: 51d368d3-06c7-42c5-97b1-c1f0d0c8636e
-    amount: 1
-```

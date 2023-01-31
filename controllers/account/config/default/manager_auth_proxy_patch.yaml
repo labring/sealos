@@ -10,13 +10,7 @@ spec:
     spec:
       containers:
       - name: kube-rbac-proxy
-        securityContext:
-          runAsNonRoot: true
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - "ALL"
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"
@@ -34,21 +28,10 @@ spec:
             cpu: 5m
             memory: 64Mi
       - name: manager
-        imagePullPolicy: Always
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
-        envFrom:
-          - secretRef:
-              name: manager-secret
-        env:
-          - name: NAMESPACE_NAME
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: metadata.namespace
-          - name: SEALOS_CLOUD_HOST
-            value: "cloud.sealos.io"
-          - name: SEALOS_CLOUD_PORT
-            value: "443"
+      - env:
+          - name: ACCOUNT_NAMESPACE
+            value: "sealos-system"

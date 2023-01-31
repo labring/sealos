@@ -1,0 +1,6 @@
+apiVersion: account.sealos.io/v1
+kind: AccountBalance
+metadata:
+  name: accountbalance-sample
+spec:
+  # TODO(user): Add fields here
