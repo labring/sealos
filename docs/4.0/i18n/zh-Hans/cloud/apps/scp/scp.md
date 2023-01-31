@@ -6,16 +6,16 @@ sealos Cloud Provider （以下简称 SCP）
 
 ## 产品优势
 
-* 速度快，分钟级云上构建自定义 kubernetes 集群
-* 配置灵活，通过更改配置文件自由伸缩集群
-* 价格便宜，比直接启动云服务器便宜 10% 费用
-* 操作简单，产品体验如同在 PC 上安装和使用一款应用一样简单
-* API 完全兼容 kubernetes CRD 设计，支持远程调用，支持对接到任何其它系统，如 CI/CD 系统自动创建/销毁集群
-* 支持自定义集群，通过集群镜像能力自由选择需要安装的 kubernetes 版本，以及上层 addon, 支持现有 sealos 仓库中的所有集群镜像
-* 跨平台，自由切换云厂商，多家云厂商资源统一纳管
+* **速度快**，分钟级云上构建自定义 kubernetes 集群
+* **配置灵活**，通过更改配置文件自由伸缩集群
+* **价格便宜**，比直接启动云服务器便宜 10% 费用
+* **操作简单**，产品体验如同在 PC 上安装和使用一款应用一样简单
+* **兼容性**，API 完全兼容 kubernetes CRD 设计，支持远程调用，支持对接到任何其它系统，如 CI/CD 系统自动创建/销毁集群
+* **自定义**，支持自定义集群，通过集群镜像能力自由选择需要安装的 kubernetes 版本，以及上层 addon, 支持现有 sealos 仓库中的所有集群镜像
+* **跨平台**，自由切换云厂商，多家云厂商资源统一纳管
 
 
-## 通过 scp 用户界面使用
+## 通过 SCP 用户界面使用
 
 登录 [sealos cloud](https://cloud.sealos.io), 点击桌面上的sealos cloud provider图标，进入创建集群界面。
 
@@ -39,9 +39,9 @@ ssh -i ~/.ssh/cloud.key root@master-ip  #root用户登录master节点
 kubectl get pod -A
 ```
 
-## 通过命令行使用
+## 通过Cloud Terminal使用
 
-### 在 sealos cloud 上使用 cloud terminal 创建 infra
+在 sealos cloud 上使用 cloud terminal 创建 infra
 
 ![img_3.png](img_3.png)
 

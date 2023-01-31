@@ -49,7 +49,7 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.Disk) error {
-	deviceName, err := generateDataDiskDeviceName(disk.Index - 1)
+	deviceName, err := generateDataDiskDeviceName(disk.Index)
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,13 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 	for _, v := range host.Metadata {
 		//Volume_tag: [role:true,Data:true,name:namespace+name]
 		tags := rolesToTags(host.Roles)
+		id := v.ID
+
 		nameKey, fullName := common.InfraVolumesLabel, infra.GetInstancesAndVolumesTag()
 		dataLable, value := common.DataVolumeLabel, common.TRUELable
+		indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(disk.Index)
+		infraIDKey, infraIDValue := common.VolumeInfraID, id
+
 		tags = append(tags, []types.Tag{
 			{
 				Key:   &nameKey,
@@ -73,6 +78,14 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 			{
 				Key:   &dataLable,
 				Value: &value,
+			},
+			{
+				Key:   &indexKey,
+				Value: &indexValue,
+			},
+			{
+				Key:   &infraIDKey,
+				Value: &infraIDValue,
 			},
 		}...,
 		)
@@ -92,32 +105,10 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 		if err != nil {
 			return fmt.Errorf("create volume failed: %v", err)
 		}
-		id := v.ID
 		inputAttach := &ec2.AttachVolumeInput{
 			Device:     &deviceName,
 			VolumeId:   result.VolumeId,
 			InstanceId: &id,
-		}
-		//add index and InfraID tag to volume
-		indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(disk.Index)
-		indexTag := types.Tag{
-			Key:   &indexKey,
-			Value: &indexValue,
-		}
-		infraIDKey, infraIDValue := common.VolumeInfraID, id
-		infraIDTag := types.Tag{
-			Key:   &infraIDKey,
-			Value: &infraIDValue,
-		}
-		inputTags := &ec2.CreateTagsInput{
-			Resources: []string{*result.VolumeId},
-			Tags: []types.Tag{
-				indexTag,
-				infraIDTag,
-			},
-		}
-		if _, err := MakeTags(context.TODO(), client, inputTags); err != nil {
-			return fmt.Errorf("create volume tags failed: %v", err)
 		}
 
 		//retry 1s,2s,4,8,16,32,64. 8times
