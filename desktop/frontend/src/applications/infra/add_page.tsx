@@ -90,13 +90,22 @@ const AddPage = () => {
     }
   };
 
+  const validForm = (str: string): boolean => {
+    let pattern = /^[a-z0-9][a-z0-9-\.]*[a-z0-9]?$/;
+    return pattern.test(str);
+  };
+
   function handleBtnClick() {
-    setIsloading(true);
     if (infraName) {
       updateInfraMutation.mutate();
-    } else {
+      setIsloading(true);
+    }
+    if (validForm(infraForm.infraName)) {
+      setIsloading(true);
       applyInfraMutation.mutate();
       applyClusterMutation.mutate();
+    } else {
+      setInputNameErr(true);
     }
   }
 
@@ -128,11 +137,11 @@ const AddPage = () => {
             masterType: masterInfo.flavor,
             masterCount: masterInfo.count,
             masterDisk: masterInfo.disks[0].capacity,
-            masterDiskType: masterInfo.disks[0].type,
+            masterDiskType: masterInfo.disks[0].volumeType,
             nodeType: nodeInfo.flavor,
             nodeCount: nodeInfo.count,
             nodeDisk: nodeInfo.disks[0].capacity,
-            nodeDiskType: nodeInfo.disks[0].type
+            nodeDiskType: nodeInfo.disks[0].volumeType
           };
           oldInfraForm.current = payload;
           dispatchInfraForm({ payload });
@@ -162,23 +171,21 @@ const AddPage = () => {
                 <div className={styles.dot}></div>
                 <span className={styles.info}>基础信息</span>
               </div>
-              <div className="pl-8 mt-8  flex items-center">
-                <div className={clsx(styles.cloudlabel, inputNameErr ? 'mb-6' : '')}>集群名字 </div>
+              <div className="mt-8 flex items-center">
+                <div className={clsx(styles.cloudlabel, inputNameErr ? 'mb-6' : '')}>
+                  <span style={{ color: '#EC872A' }}>*</span> 集群名字
+                </div>
                 <InputField
                   className={clsx(
                     curApp?.size === 'maxmin' ? styles.inputNameMin : styles.inputName
                   )}
                   value={infraForm.infraName}
                   placeholder="请输入集群名称"
+                  validationMessageIcon={null}
                   validationState={inputNameErr ? 'error' : 'success'}
-                  validationMessage={inputNameErr ? '不能输入中文名称' : undefined}
+                  validationMessage={inputNameErr ? '仅支持小写字母、数字、中划线' : undefined}
                   onChange={(e, data) => {
-                    if (/[\u4E00-\u9FA5]/g.test(data.value)) {
-                      setInputNameErr(true);
-                    } else {
-                      setInputNameErr(false);
-                    }
-
+                    setInputNameErr(!validForm(data.value));
                     return dispatchInfraForm({
                       payload: { infraName: data.value, clusterName: data.value }
                     });
@@ -225,7 +232,7 @@ const AddPage = () => {
         <DialogSurface className={styles.customDialog}>
           <div className="flex items-center justify-center">
             <Image src="/images/infraicon/loading.gif" alt="infra" width={60} height={60} />
-            <div>创建中</div>
+            <div>{infraName ? '变更中' : '创建中'}</div>
           </div>
         </DialogSurface>
       </Dialog>

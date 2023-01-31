@@ -14,12 +14,19 @@ import styles from './index.module.scss';
 export default function DesktopContent() {
   const desktopContainerDom = useRef<HTMLDivElement>(null)
   const { installedApps: apps, openedApps, openApp, updateAppOrder } = useAppStore((state) => state)
+  
+  /* icon orders */
   const [itemsLen, setItemsLen] = useState(0)
   const gridItems = useMemo(() => new Array(itemsLen).fill(null).map((_, i) => {
     const app = apps.find(item => item.order === i)
     return !!app ? {...app} : null
   }),[apps, itemsLen])
+  /* dragging icon */
   const [downingItemIndex, setDowningItemIndex] = useState<number>()
+
+  const isBrowser = typeof window !== 'undefined';
+  const desktopWidth = isBrowser ? document.getElementById('desktop')?.offsetWidth || 0 : 0;
+  const desktopHeight = isBrowser ? document.getElementById('desktop')?.offsetHeight || 0 : 0;
 
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
@@ -97,7 +104,13 @@ export default function DesktopContent() {
       {/* 打开的应用窗口 */}
       {openedApps.map((appItem) => {
         return (
-          <AppWindow key={appItem.name} style={{ height: '100vh' }} app={appItem}>
+          <AppWindow
+            key={appItem.name}
+            style={{ height: '100vh' }}
+            app={appItem}
+            desktopWidth={desktopWidth}
+            desktopHeight={desktopHeight}
+          >
             {renderApp(appItem)}
           </AppWindow>
         );

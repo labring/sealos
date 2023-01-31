@@ -31,13 +31,21 @@ function StorePage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const selectedLabels = getSelectLabels(imageLabels);
   const queryClient = useQueryClient();
-  const [test, setTest] = useState(1);
+  const [errorImageUrl, setErrorImageUrl] = useState('/images/appstore/error.svg');
   const [pagination, setPagination] = useState({
     current: 1,
     total: 0,
     pageSize: 10,
     continueKey: ['']
   });
+  const resetPagination = () => {
+    setPagination({
+      current: 1,
+      total: 0,
+      pageSize: 10,
+      continueKey: ['']
+    });
+  };
 
   const onChangePagination = (page: number, pageSize: number) => {
     setPagination(
@@ -77,6 +85,9 @@ function StorePage() {
             })
           );
         }
+      },
+      onError: (err) => {
+        setErrorImageUrl('/images/appstore/error_timeout.svg');
       }
     }
   );
@@ -95,6 +106,7 @@ function StorePage() {
         }
       })
     );
+    resetPagination();
   };
 
   const handleLabelsClear = () => {
@@ -121,7 +133,7 @@ function StorePage() {
         </div>
         {isError && (
           <div className="w-full h-full flex justify-center items-center">
-            <Error />
+            <Error imageUrl={errorImageUrl} />
           </div>
         )}
         <div className={clsx(styles.pageWrapperScroll, styles.customScrollStyle)}>
@@ -146,9 +158,6 @@ function StorePage() {
                     <div className={clsx(styles.appDesc)}>
                       <div className={clsx(styles.title, 'pt-6 flex items-center')}>
                         <div>{handleImageName(item?.name).name}</div>
-                        <div className={styles.fingerPrint}>
-                          <Iconfont iconName="icon-hash" color="#239BF2" />
-                        </div>
                       </div>
                       <div className={styles.description}>{item?.description}</div>
                       <div className={clsx('flex space-x-4 pt-4')}>

@@ -8,7 +8,7 @@ const storageOrderKey = 'app-orders'
 
 export type TAppFront = {
   isShow?: boolean;
-  zIndex?: number;
+  zIndex: number;
   size: 'maximize' | 'maxmin' | 'minimize';
   style?:
     | {

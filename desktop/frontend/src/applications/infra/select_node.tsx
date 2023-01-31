@@ -92,7 +92,7 @@ const SelectNodeComponent = ({
         <span className={styles.cloudLabel}>机器</span>
         <Dropdown
           className={clsx(curApp?.size === 'maxmin' ? styles.selectTypeMin : styles.selectType)}
-          placeholder="请选择类型"
+          placeholder="类型"
           selectedOptions={onDefaultNodeType(nodeType)}
           onOptionSelect={(e, data) => onSelectNodeType(data.optionValue)}
         >
@@ -128,7 +128,7 @@ const SelectNodeComponent = ({
           className={clsx(
             curApp?.size === 'maxmin' ? styles.selectDiskTypeMin : styles.selectDiskType
           )}
-          placeholder="请选择类型"
+          placeholder="类型"
           selectedOptions={onDefaultDiskType(diskType)}
           onOptionSelect={(e, data) => onSelectDiskType(data.optionValue)}
         >

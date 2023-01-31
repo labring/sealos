@@ -38,12 +38,9 @@ export default function StartMenu() {
     router.reload();
   };
 
-  let real_balance = 0;
-  if (amount?.data?.data?.balance) {
-    real_balance = amount.data.data.balance;
-    if (amount?.data?.data?.deductionBalance) {
-      real_balance = real_balance - amount.data.data.deductionBalance;
-    }
+  let real_balance = amount?.data?.data?.balance ?? 0;
+  if (amount?.data?.data?.deductionBalance) {
+    real_balance = real_balance - amount.data.data.deductionBalance;
   }
 
   return (

@@ -130,6 +130,14 @@ rules:
   - update
   - watch
 - apiGroups:
+  - metering.sealos.io
+  resources:
+  - resources/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - user.sealos.io
   resources:
   - accountbalances

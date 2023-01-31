@@ -12,6 +12,7 @@ apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
   name: {{ .infraName }}
+  namespace: {{ .namespace }}
 spec:
   hosts: 
   - roles: [ master ]
@@ -44,6 +45,7 @@ apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
   name: {{ .clusterName }}
+  namespace: {{ .namespace }}
 spec:
   infra: {{ .infraName}}
   image: 

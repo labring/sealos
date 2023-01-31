@@ -11,8 +11,13 @@ const StatusComponent = ({ infraStatus, clusterStatus, desc = true }: StatusComp
   const colorStatus: any = {
     Pending: { value: 'Pending', title: '创建中' },
     Running: { value: 'Running', title: '运行中' },
-    Start: { value: 'Start', title: '启动中' }
+    Start: { value: 'Start', title: '启动中' },
+    Deleting: { value: 'Deleting', title: '删除中' }
   };
+
+  if (infraStatus === 'Deleting') {
+    status = 'Deleting';
+  }
 
   if (infraStatus === 'Running') {
     status = 'Start';

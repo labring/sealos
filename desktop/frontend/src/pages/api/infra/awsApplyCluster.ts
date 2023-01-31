@@ -16,11 +16,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const image1 = req.body.images.image1;
   const image2 = req.body.images.image2;
+  const namespace = GetUserDefaultNameSpace(kube_user.name);
   const clusterCRD = CRDTemplateBuilder(clusterCRDTemplate, {
     clusterName,
     infraName,
     image1,
-    image2
+    image2,
+    namespace
   });
 
   try {
