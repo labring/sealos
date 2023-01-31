@@ -1,48 +1,67 @@
+@import "../../styles/mixin.scss";
+
 .desktop {
   position: absolute;
   width: 100vw;
   height: calc(100vh - 80px);
   top: 0;
   overflow: hidden;
-}
 
-.desktopCont {
-  width: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
-}
-
-.dskApp {
-  cursor: default;
-  margin: 4px;
-  height: 84px;
-  width: 74px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-size: 12px;
-  transition: all ease-in-out 200ms;
-  justify-content: center;
-  border: 1px solid transparent;
-
-  &:focus {
-    background: rgba(255, 255, 255, 0.24);
-  }
-  &:hover {
-    background: rgba(255, 255, 255, 0.12);
-  }
-  &:focus {
-    border: 1px dotted white;
-  }
-
-  .appName {
-    text-align: center;
-    color: #fafafa;
-    line-height: 16px;
-    margin-top: 4px;
-    text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+  .desktopCont {
+    height: 100%;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(18, calc(100% / 18));
+    grid-template-rows: repeat(8, calc(100% / 8));
+    grid-auto-flow: column;
+    grid-column-gap: 5px;
+  
+    .dskItem {
+      height: 100%;
+    
+      .dskApp {
+        height: 100%;
+        cursor: default;
+        transition: all ease-in-out 200ms;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        user-select: none;
+      
+        &:focus {
+          background: rgba(255, 255, 255, 0.24);
+        }
+        &:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+        &:focus {
+          border: 1px dotted white;
+        }
+      
+        .dskIcon {
+          width: min(50%, 34px);
+          min-width: 20px;
+          height: 40px;
+          text-align: center;
+          display: flex;
+          align-items: flex-end;
+          flex-shrink: 0
+        }
+      
+        .appName {
+          max-width: 100%;
+          height: 36px;
+          text-align: center;
+          color: #fafafa;
+          font-size: 12px;
+          text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+          margin-top: 4px;
+          @include ellipsis(2);
+        }
+      }
+    }
   }
 }
 

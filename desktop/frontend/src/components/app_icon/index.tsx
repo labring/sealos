@@ -1,8 +1,18 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
 
-export default function DeskTopIcon(props: { src: string; className: string; width: number }) {
-  const { src, className, width, ...rest } = props;
+interface Props {
+  src: string
+  className: string
+  width: number | string
+}
 
-  return <img src={props.src} alt="" width={width} />;
+export default function DeskTopIcon({
+  src, 
+  className, 
+  width, 
+  ...rest
+}:Props) {
+
+  return <img className={className} src={src} alt="" width={width} {...rest} />;
 }

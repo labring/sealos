@@ -20,24 +20,38 @@ export default function AppWindow(props: {
   const { closeApp, updateAppInfo, switchApp, currentApp, openedApps } = useAppStore(
     (state) => state
   );
-  const dragDom = useRef(null);
+  const dragDom = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     const { x, y } = position;
-    const appHeaderHeight = document.querySelector('.windowHeader')?.clientHeight || 30;
+    const appHeaderHeight = dragDom.current?.querySelector('.windowHeader')?.clientHeight || 30;
+    const appHeaderWidth = dragDom.current?.querySelector('.windowHeader')?.clientWidth || 3000;
+
     if (currentApp?.size === 'maxmin') {
       let upperBoundary = -desktopHeight * 0.1;
       let lowerBoundary = desktopHeight * 0.9 - appHeaderHeight;
       setPosition({
-        x: x,
-        y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? lowerBoundary : y
+        x: x < 0 
+            ? x < -1.1 * appHeaderWidth // (0.8width + width/0.6*0.2)
+              ? 0 : x
+            : x > 1.1 * appHeaderWidth 
+              ? 0 : x,
+        y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {
       setPosition({
-        x: x,
-        y: y < 0 ? 0 : y > desktopHeight - appHeaderHeight ? desktopHeight - appHeaderHeight : y
+        x: x < 0 
+            ? x < -0.8 * appHeaderWidth
+              ? 0 : x
+            : x > 0.8 * appHeaderWidth
+              ? 0 : x,
+        y: y < 0 
+            ? 0 
+            : y > desktopHeight - appHeaderHeight 
+              ? 0
+              : y
       });
     }
   };
