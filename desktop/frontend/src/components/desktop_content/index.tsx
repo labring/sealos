@@ -1,3 +1,4 @@
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import AppStore from 'applications/app_store';
 import Infra from 'applications/infra';
 import PgSql from 'applications/pgsql';
@@ -11,7 +12,14 @@ import IframeApp from './iframe_app';
 import styles from './index.module.scss';
 
 export default function DesktopContent() {
-  const { installedApps: apps, openedApps, currentApp, openApp } = useAppStore((state) => state);
+  const desktopContainerDom = useRef<HTMLDivElement>(null)
+  const { installedApps: apps, openedApps, openApp, updateAppOrder } = useAppStore((state) => state)
+  const [itemsLen, setItemsLen] = useState(0)
+  const gridItems = useMemo(() => new Array(itemsLen).fill(null).map((_, i) => {
+    const app = apps.find(item => item.order === i)
+    return !!app ? {...app} : null
+  }),[apps, itemsLen])
+  const [downingItemIndex, setDowningItemIndex] = useState<number>()
 
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
@@ -32,22 +40,55 @@ export default function DesktopContent() {
     }
   }
 
+  const onDrop = useCallback((e:any, i:number) => {
+    setDowningItemIndex(undefined)
+    const dom:Element  = e.target
+    /* if it doesnot contain "item", it drop in a appGrid */
+    if(!dom.classList.contains('item')) return
+
+    if(!downingItemIndex || gridItems[downingItemIndex] === null) return
+
+    // @ts-ignore nextline
+    updateAppOrder(gridItems[downingItemIndex], i)
+  },[downingItemIndex, gridItems, updateAppOrder])
+
+  useEffect(() => {
+    if(!desktopContainerDom.current) return
+    setItemsLen(
+      Math.floor((desktopContainerDom.current.clientWidth-20) / 70) *
+      Math.floor((desktopContainerDom.current.clientHeight-20) / 80)
+    )
+  }, [desktopContainerDom])
+
   return (
-    <div className={styles.desktop}>
+    <div ref={desktopContainerDom} className={styles.desktop}>
+      {/* 已安装的应用 */}
       <div className={styles.desktopCont}>
-        {/* 已安装的应用 */}
-        {apps.map((appItem: any, i: number) => {
+        {gridItems.map((item, i:number) => {
           return (
             <div
               key={i}
-              className={styles.dskApp}
-              tabIndex={0}
-              onClick={() => {
-                openApp(appItem);
-              }}
+              className={`item ${styles.dskItem}`}
+              draggable={i === downingItemIndex}
+              onMouseDown={() => item && setDowningItemIndex(i)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => onDrop(e, i)}
             >
-              <AppIcon className={clsx(styles.dskIcon, 'prtclk')} src={appItem.icon} width={36} />
-              <div className={styles.appName}>{appItem.name}</div>
+              {
+                !!item ? (
+                  <div
+                    className={styles.dskApp}
+                    onClick={() => {
+                      openApp(item)
+                    }}
+                  >
+                    <div className={`${styles.dskIcon}`}>
+                      <AppIcon className={clsx('prtclk')} src={item.icon} width={36} />
+                    </div>
+                    <div className={styles.appName}>{item.name}</div>
+                  </div>
+                ) : null
+              }
             </div>
           );
         })}

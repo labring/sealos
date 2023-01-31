@@ -1,3 +1,5 @@
+@import "../../styles/mixin.scss";
+
 .desktop {
   position: absolute;
   width: 100vw;
@@ -7,25 +9,28 @@
 }
 
 .desktopCont {
-  width: 0;
+  width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px,1fr));
+  grid-template-rows: repeat(auto-fill, minmax(80px,1fr));
+  grid-auto-flow: column;
+}
+
+.dskItem {
+  width: 100%;
+  height: 80px;
 }
 
 .dskApp {
   cursor: default;
-  margin: 4px;
-  height: 84px;
-  width: 74px;
+  transition: all ease-in-out 200ms;
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-size: 12px;
-  transition: all ease-in-out 200ms;
-  justify-content: center;
   border: 1px solid transparent;
+  user-select: none;
 
   &:focus {
     background: rgba(255, 255, 255, 0.24);
@@ -37,12 +42,23 @@
     border: 1px dotted white;
   }
 
+  .dskIcon {
+    height: 44px;
+    display: flex;
+    align-items: flex-end;
+    flex-shrink: 0
+  }
+
   .appName {
+    width: 100%;
+    height: 36px;
     text-align: center;
     color: #fafafa;
     line-height: 16px;
-    margin-top: 4px;
+    font-size: 12px;
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+    padding: 4px 4px 0 4px;
+    @include ellipsis(2);
   }
 }
 
