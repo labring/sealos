@@ -85,13 +85,14 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if infra.Status.Status == "" {
 		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
+		if err := r.Status().Update(ctx, infra); err != nil {
+			r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra pending status", "%v", err)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
 	}
-	logger.Info("infra finalizer: %v, status: %v", infra.Finalizers[0], infra.Status.Status)
 
-	if err := r.Status().Update(ctx, infra); err != nil {
-		r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
-		return ctrl.Result{}, err
-	}
+	logger.Info("infra finalizer: %v, status: %v", infra.Finalizers[0], infra.Status.Status)
 
 	err := retry.RetryOnConflict(wait.Backoff{
 		Steps:    5,
@@ -99,6 +100,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		Factor:   1.0,
 		Jitter:   0.1,
 	}, func() error {
+		if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
+			return client.IgnoreNotFound(err)
+		}
+
 		if keyError != nil {
 			return keyError
 		}
@@ -126,9 +131,13 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 		if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
 			keyError = r.createSecret(ctx, infra)
-			logger.Info("secret %v created, error: %v", secret.Name, keyError)
-			return keyError
+			logger.Info("secret %v created, error: %v", infra.Name, keyError)
+			if keyError != nil {
+				return keyError
+			}
 		}
+
+		logger.Info("start to update infra...")
 
 		if err := r.Update(ctx, infra); err != nil {
 			r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
@@ -138,7 +147,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if infra.Status.Status != infrav1.Running.String() {
 			infra.Status.Status = infrav1.Running.String()
 			if err := r.Status().Update(ctx, infra); err != nil {
-				r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to running failed", "%v", err)
+				r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra running status", "%v", err)
 				return fmt.Errorf("update infra error:%v", err)
 			}
 			r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
@@ -185,7 +194,7 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 	infra := obj.(*infrav1.Infra)
 	infra.Status.Status = infrav1.Terminating.String()
 	if err := r.Status().Update(ctx, infra); err != nil {
-		r.recorder.Eventf(infra, corev1.EventTypeWarning, "infra status to terminating failed", "%v", err)
+		r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra terminating status", "%v", err)
 		return fmt.Errorf("update infra error:%v", err)
 	}
 	err := r.DeleteInstances(infra)

@@ -20,7 +20,7 @@ spec:
   hosts:
     - roles: [ master ]
       count: 1
-      flavor: t2.large
+      flavor: t2.medium
       image: "ami-093d54fcd8afe8208"
       disks:
         - capacity: 40
@@ -46,14 +46,4 @@ spec:
         - capacity: 13
           volumeType: gp3
           type: "data"
-#    - roles: [ node2 ]
-#      count: 1
-#      flavor: t2.small
-#      image: "ami-0d66b970b9f16f1f5"
-#      disks:
-#        - capacity: 11
-#          volumeType: gp3
-#          type: "root"
-#        - capacity: 13
-#          volumeType: gp3
-#          type: "data"
+

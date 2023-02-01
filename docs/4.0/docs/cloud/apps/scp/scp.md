@@ -6,16 +6,17 @@ It currently supports AWS, and will support Ali Cloud, Tencent Cloud, Huawei Clo
 
 ## Product Advantages
 
-* High speed, build custom kubernetes clusters on the cloud in minutes
-* Flexible configuration, freely scalable clusters by editing configuration files
-* Inexpensive, 10% cheaper than starting a cloud server directly
-* Easy to use, the product experience is as simple as installing and using an application on a PC
-* API is fully compatible with kubernetes CRD design, supports remote calls, and supports docking to any other system, such as CI/CD systems to automatically create/destroy clusters
-* Support for custom clusters, with the ability to freely choose which version of kubernetes to install and the upper addon through cluster image capabilities, and support for all cluster images in existing sealos repositories
-* Cross-platform, free to switch cloud vendors, multiple cloud vendors resources unified management
+* **High Speed**, build custom kubernetes clusters on the cloud in minutes
+* **Flexible Configuration**, freely scalable clusters by editing configuration files
+* **Low Cost**, 10% cheaper than starting a cloud server directly
+* **Easy to Use**, the product experience is as simple as installing and using an application on a PC
+* **Compatibility**, API is fully compatible with kubernetes CRD design, supports remote calls, and supports docking to any other system, such as CI/CD systems to automatically create/destroy clusters
+* **Customized**, support for custom clusters, with the ability to freely choose which version of kubernetes to install and the upper addon through cluster image capabilities, and support for all cluster images in existing sealos repositories
+* **Cross-platform**, free to switch cloud vendors, multiple cloud vendors resources unified management
 
+## How to Use
 
-## Use by scp UI
+### Use SCP by UI
 
 Log in to [sealos cloud](https://cloud.sealos.io), click the sealos cloud provider icon on the desktop, and enter the Create Cluster interface.
 
@@ -39,9 +40,9 @@ ssh -i ~/.ssh/cloud.key root@master-ip  #Log in the master node as the user root
 kubectl get pod -A
 ```
 
-## Use by command line
+### Use SCP by Cloud Terminal
 
-### Create infra on sealos cloud using cloud terminal
+Create infra on sealos cloud using cloud terminal
 
 ![img_3.png](img_3.png)
 
@@ -93,7 +94,7 @@ kubectl edit infra infra-apply-test
 As with the UI, you can get the ssh private key from the cluster information returned by infra, access the master0 node of the cluster, and then use all the kubectl commands.
 
 
-## Use sealos cloud provider locally
+### Use SCP locally
 
 Prerequisite: kubectl is already installed locally.
 

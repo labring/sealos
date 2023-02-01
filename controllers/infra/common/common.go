@@ -9,16 +9,19 @@ const (
 	InfraVolumesLabel    = "infra.sealos.io/volumes/label"
 	IPTypePublic         = "public"
 	IPTypePrivate        = "private"
-	DataVolumeLabel      = "data"
-	RootVolumeLabel      = "root"
+	DataVolumeLabel      = "infra.sealos.io/volumes/data"
+	RootVolumeLabel      = "infra.sealos.io/volumes/root"
 	TryTimes             = 8
 	TrySleepTime         = time.Second
 	TRUELable            = "true"
 	SealosInfraFinalizer = "infra.sealos.io/finalizers"
-	InfraVolumeIndex     = "Index"
-	VolumeInfraID        = "InfraID"
+	InfraVolumeIndex     = "infra.sealos.io/volumes/index"
+	VolumeInfraID        = "infra.sealos.io/volumes/infraID"
 	InstanceState        = "instance-state-name"
 	DefaultRegion        = "cn-north-1b"
+	KeyPairUser          = "sealos.io/aws/keypair/user"
+	KeyPairGeneral       = "sealos.io/aws/keypair/general"
+	KeyPairRoot          = "sealos.io/aws/keypair/root"
 )
 
 var DefaultRootVolumeSize = int32(40)

@@ -280,15 +280,14 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 			Icur++
 			Ides++
 		} else if curDisk.Index < desDisk.Index {
-			// cur have but des don't have. delete cur volume and cur pointer move to right
-			//logger.Info("curindex is %v, desindex is %v, Icur is %v, Ides is %v", curDisk.Index, desDisk.Index, Icur, Ides)
+			// cur exists but des doesn't exist. delete cur volume and move cur pointer to right
 			logger.Info("start to delete disk... cur cap is %v", curDisk.Capacity)
 			if err := driver.DeleteVolume([]string{curDisk.ID}); err != nil {
 				return err
 			}
 			Icur++
 		} else {
-			// des have but cur don't have. create des volume and des pointer move to right
+			// des exists but cur doesn't exist, create des volume and move des pointer to right
 			logger.Info("start to create disk... des cap is %v", desDisk.Capacity)
 			if err := driver.CreateVolumes(infra, current, []v1.Disk{desDisk}); err != nil {
 				return err
