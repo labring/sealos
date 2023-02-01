@@ -50,6 +50,7 @@ const (
 	defaultUser            = "root"
 	defaultSealosVersion   = "4.1.4"
 	defaultWorkDir         = "/root/.sealos"
+	defaultClusterName     = "default"
 	defaultClusterFileName = "Clusterfile"
 )
 const (
@@ -116,7 +117,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
 	}
 
-	currentCluster, err := getMasterClusterfile(c, cluster, EIP)
+	currentCluster, err := getMasterClusterfile(c, EIP)
 	if err != nil && err.Error() != errClusterFileNotExists {
 		return ctrl.Result{Requeue: true}, nil
 	}
@@ -173,6 +174,7 @@ func getPrivateIP(meta infrav1.Metadata) string {
 // Generate Clusterfile by infra and cluster
 func generateClusterFromInfra(infra *infrav1.Infra, cluster *v1.Cluster) *v1.Cluster {
 	new := cluster.DeepCopy()
+	new.Name = defaultClusterName
 	new.CreationTimestamp = metav1.Time{}
 	new.Spec.SSH = infra.Spec.SSH
 	new.Spec.SSH.User = defaultUser
@@ -281,8 +283,8 @@ EOF`, clusterfile)
 	return nil
 }
 
-func getMasterClusterfile(c ssh.Interface, cluster *v1.Cluster, EIP string) (*v1beta1.Cluster, error) {
-	path := filepath.Join(defaultWorkDir, cluster.Name, defaultClusterFileName)
+func getMasterClusterfile(c ssh.Interface, EIP string) (*v1beta1.Cluster, error) {
+	path := filepath.Join(defaultWorkDir, defaultClusterName, defaultClusterFileName)
 	cmd := fmt.Sprintf(getClusterfileCmd, path)
 	out, err := c.Cmd(EIP, cmd)
 	if err != nil {
