@@ -25,10 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
-	"github.com/aws/aws-sdk-go-v2/config"
-
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/google/uuid"
@@ -411,50 +407,5 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 	infra.Spec.SSH.PkName = *result.KeyName
 	infra.Spec.SSH.PkData = *result.KeyMaterial
 	logger.Info("create key pair success", "keyName", *result.KeyName)
-	return nil
-}
-
-// list all aws key pair
-func ListAndDeleteKeyPair() error {
-	config, err := config.LoadDefaultConfig(context.TODO())
-	eg, _ := errgroup.WithContext(context.Background())
-	if err != nil {
-		return fmt.Errorf("load default config failed %s", err)
-	}
-	client := ec2.NewFromConfig(config)
-
-	filterKey := fmt.Sprintf("tag:%s", common.KeyPairUser)
-	input := &ec2.DescribeKeyPairsInput{
-		Filters: []types.Filter{
-			{
-				Name:   &filterKey,
-				Values: []string{common.KeyPairGeneral},
-			},
-		},
-	}
-
-	result, err := client.DescribeKeyPairs(context.TODO(), input)
-	if err != nil {
-		return fmt.Errorf("list key pair error:%v", err)
-	}
-
-	for _, v := range result.KeyPairs {
-		// delete aws key pair by name concurrently
-		input := &ec2.DeleteKeyPairInput{
-			KeyName: v.KeyName,
-		}
-		eg.Go(func() error {
-			logger.Info("start to delete keypair: %v", *input.KeyName)
-			_, err := client.DeleteKeyPair(context.TODO(), input)
-			if err != nil {
-				return fmt.Errorf("delete key pair error:%v", err)
-			}
-			return nil
-		})
-	}
-
-	if err := eg.Wait(); err != nil {
-		return err
-	}
 	return nil
 }
