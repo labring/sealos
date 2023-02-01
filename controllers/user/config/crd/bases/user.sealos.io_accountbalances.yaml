@@ -42,6 +42,8 @@ spec:
               amount:
                 format: int64
                 type: integer
+              details:
+                type: string
               owner:
                 type: string
               timeStamp:

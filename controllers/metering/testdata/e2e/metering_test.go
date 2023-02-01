@@ -172,6 +172,7 @@ func TestMetering(t *testing.T) {
 				}
 			}
 
+			t.Log(accountBalance.Spec)
 			if accountBalance.Spec.Amount == 0 || accountBalance.Spec.Owner == "" {
 				t.Fatalf("failed to create accountBalance: %v", accountBalance)
 			}
