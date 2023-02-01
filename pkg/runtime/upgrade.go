@@ -97,7 +97,7 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	if err != nil {
 		return err
 	}
-	return k.tryUncordonNode(master0ip)
+	return k.tryUncordonNode(master0ip, master0Name)
 }
 
 func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
@@ -131,7 +131,7 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err != nil {
 			return err
 		}
-		if err = k.tryUncordonNode(ip); err != nil {
+		if err = k.tryUncordonNode(ip, nodename); err != nil {
 			return err
 		}
 	}
@@ -184,12 +184,8 @@ func (k *KubeadmRuntime) pingAPIServer() error {
 	return nil
 }
 
-func (k *KubeadmRuntime) tryUncordonNode(ip string) error {
-	nodename, err := k.getRemoteInterface().Hostname(ip)
-	if err != nil {
-		return err
-	}
-	err = k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
+func (k *KubeadmRuntime) tryUncordonNode(ip, nodename string) error {
+	err := k.sshCmdAsync(ip, fmt.Sprintf(uncordonNodeCmd, nodename))
 	timeout := time.Now().Add(1 * time.Minute)
 	for err != nil {
 		time.Sleep(5 * time.Second)
