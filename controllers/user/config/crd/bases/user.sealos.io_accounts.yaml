@@ -45,7 +45,13 @@ spec:
               chargeList:
                 items:
                   properties:
+                    accountBalanceName:
+                      type: string
                     balance:
+                      format: int64
+                      type: integer
+                    deductionAmount:
+                      description: deduction info will Record in the Charge
                       format: int64
                       type: integer
                     status:

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -155,18 +156,17 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval) {
 		//r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
-		totalAccount, err := r.CalculateCost(ctx, &metering)
+		totalAccount, resourceMsgs, err := r.CalculateCost(ctx, &metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
-
 		if err := r.clearResourceUsed(ctx, &metering); err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		if err := r.createAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID); err != nil {
+		if err := r.createAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID, resourceMsgs); err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, fmt.Errorf("meteringName:%v,amount:%v,err:%v", metering.Name, totalAccount, err)
 		}
@@ -179,7 +179,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute * time.Duration(r.MeteringInterval)}, nil
 }
 
-func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meteringv1.Metering) (int64, error) {
+func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meteringv1.Metering) (int64, interface{}, error) {
 	var resourceMsgs []meteringv1.ResourceMsg
 	infraAmount, err := r.calculateInfraCost(ctx, metering)
 	if err != nil {
@@ -208,7 +208,7 @@ func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meterin
 	}
 	totalAmount += float64(infraAmount)
 	r.Logger.Info(fmt.Sprintf("meteringNmae %v,resourceMsg: %+v", metering.Name, resourceMsgs), "totalAmount", totalAmount, "seqID", metering.Status.SeqID)
-	return int64(totalAmount), nil
+	return int64(totalAmount), resourceMsgs, nil
 }
 
 func (r *MeteringReconcile) calculateInfraCost(ctx context.Context, metering *meteringv1.Metering) (int64, error) {
@@ -283,9 +283,10 @@ func NewBillingList(TimeInterval meteringv1.TimeIntervalType, amount int64) mete
 }
 
 func (r *MeteringReconcile) initMetering(ctx context.Context, ns corev1.Namespace) error {
-	metering := meteringv1.Metering{}
-	if err := r.Get(ctx, types.NamespacedName{Name: meteringv1.MeteringPrefix + ns.Name, Namespace: r.MeteringSystemNameSpace}, &metering); err == nil {
-		return fmt.Errorf("metering %v already exists", metering.Name)
+	// get or create resourceQuota
+	if err := r.syncResourceQuota(ctx, ns.Name); err != nil {
+		r.Error(err, "Failed to syncResourceQuota")
+		return err
 	}
 	totalResourcePrice, err := r.GetAllExtensionResources(ctx)
 	if err != nil {
@@ -306,6 +307,10 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}
+	if err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Namespace}, &metering); err == nil {
+		r.Logger.Info(fmt.Sprintf("metering %v already exists", metering.Name))
+		return nil
+	}
 
 	r.Logger.V(1).Info("metering env", "METERING_INTERVAL", r.MeteringSystemNameSpace, "timeInterval: ", r.MeteringInterval)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
@@ -319,19 +324,15 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 		return err
 	}
 	r.Logger.Info("metering Spec", "metering.Spec", metering.Spec)
-	// get or create resourceQuota
-	if err := r.syncResourceQuota(ctx, metering); err != nil {
-		r.Error(err, "Failed to syncResourceQuota")
-		return err
-	}
+
 	return nil
 }
 
-func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, metering meteringv1.Metering) error {
+func (r *MeteringReconcile) syncResourceQuota(ctx context.Context, nsName string) error {
 	quota := &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      meteringv1.ResourceQuotaPrefix + metering.Spec.Namespace,
-			Namespace: metering.Spec.Namespace,
+			Name:      meteringv1.ResourceQuotaPrefix + nsName,
+			Namespace: nsName,
 		},
 	}
 
@@ -372,7 +373,7 @@ func (r *MeteringReconcile) GetAllExtensionResources(ctx context.Context) (map[c
 	return totalResourcePrice, nil
 }
 
-func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner string, amount int64, seqID int64) error {
+func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner string, amount int64, seqID int64, resourceMsgs interface{}) error {
 	if amount == 0 {
 		return nil
 	} else if amount < 0 {
@@ -393,6 +394,11 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner stri
 		accountBalance.Spec.Owner = owner
 		accountBalance.Spec.TimeStamp = time.Now().Unix()
 		accountBalance.Spec.Amount = amount
+		resourceMsgsjson, err := json.Marshal(resourceMsgs)
+		if err != nil {
+			return err
+		}
+		accountBalance.Spec.Details = string(resourceMsgsjson)
 		return r.Create(ctx, &accountBalance)
 	} else if err != nil {
 		return err

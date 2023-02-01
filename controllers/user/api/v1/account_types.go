@@ -48,7 +48,7 @@ type Charge struct {
 
 	// deduction info will Record in the Charge
 	DeductionAmount    int64  `json:"deductionAmount,omitempty"`
-	AccountBalanceName string `json:"accountBalanceName"`
+	AccountBalanceName string `json:"accountBalanceName,omitempty"`
 
 	Time    metav1.Time `json:"time,omitempty"`
 	Status  string      `json:"status,omitempty"`

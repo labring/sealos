@@ -28,6 +28,7 @@ type AccountBalanceSpec struct {
 	Owner     string `json:"owner"`
 	TimeStamp int64  `json:"timeStamp,omitempty"`
 	Amount    int64  `json:"amount,omitempty"`
+	Details   string `json:"details,omitempty"`
 }
 
 // AccountBalanceStatus defines the observed state of AccountBalance
