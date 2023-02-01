@@ -9,8 +9,8 @@ const (
 	InfraVolumesLabel    = "infra.sealos.io/volumes/label"
 	IPTypePublic         = "public"
 	IPTypePrivate        = "private"
-	DataVolumeLabel      = "infra.sealos.io/volumes/data"
-	RootVolumeLabel      = "infra.sealos.io/volumes/root"
+	DataVolumeLabel      = "data"
+	RootVolumeLabel      = "root"
 	TryTimes             = 8
 	TrySleepTime         = time.Second
 	TRUELable            = "true"
