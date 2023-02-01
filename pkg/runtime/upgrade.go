@@ -73,6 +73,8 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	if err != nil {
 		return err
 	}
+	//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
+	master0Name = str.ToLower(master0Name)
 	kubeBinaryPath := k.getContentData().RootFSBinPath()
 	//assure the connection to api-server succeed before executing upgrade cmds
 	if err = k.pingAPIServer(); err != nil {
@@ -104,6 +106,8 @@ func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
 		if err != nil {
 			return err
 		}
+		//default nodeName in k8s is the lower case of their hostname because of DNS protocol.
+		nodename = str.ToLower(nodename)
 		kubeBinaryPath := k.getContentData().RootFSBinPath()
 		//assure the connection to api-server succeed before executing upgrade cmds
 		if err = k.pingAPIServer(); err != nil {
