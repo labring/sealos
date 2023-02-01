@@ -2,10 +2,10 @@ package e2e
 
 import (
 	"fmt"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/controllers"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	"log"
 	"os"
@@ -163,10 +163,10 @@ func TestMetering(t *testing.T) {
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
-			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
+			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")
-				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
+				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 				if err != nil {
 					t.Fatalf("failed to create accountBalance: %v", err)
 				}
@@ -262,7 +262,7 @@ func clear() {
 			log.Println(err)
 		}
 
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, DefaultOwner, i), api.AccountBalanceYaml); err != nil {
+		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, DefaultOwner, i), api.AccountBalanceYaml); err != nil {
 			log.Println(err)
 		}
 	}
