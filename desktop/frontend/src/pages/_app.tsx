@@ -24,7 +24,7 @@ type EnhancedAppProps = AppProps & { renderer?: GriffelRenderer };
 
 function APP({ Component, pageProps, renderer }: EnhancedAppProps) {
   return (
-    // 👇 Accepts a renderer from <Document /> or creates a default one
+    // 👇 Accepts a renderer from <Document /> or creates a default one.RendererProvider can provide global styles
     //    Also triggers rehydration a client
     <RendererProvider renderer={renderer || createDOMRenderer()}>
       <SSRProvider>
