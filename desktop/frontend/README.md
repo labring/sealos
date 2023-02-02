@@ -146,7 +146,7 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### 代码阅读说明
 
-1. src/pages/\_app.tsx 了解fluentui和react-query两个库一些内容
+1. src/pages/\_app.tsx 了解 fluentui 和 react-query 两个库一些内容
 2. src/pages/index.ts
 3. src/layout/index.tsx
 4. src/components/desktop_content.tsx

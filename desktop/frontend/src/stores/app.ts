@@ -208,6 +208,9 @@ const useAppStore = create<TOSState>()(
             }
           }
 
+          /* first login, order is undefine */
+          order = isNaN(order) ? 0 : order
+
           set(state => {
             const map = {...state.orderApps}
             map[app.name] = order
