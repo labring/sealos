@@ -22,22 +22,21 @@ cloud-native (built around the technical ecosystem of kubernetes) architecture a
 
 ## sealos Cloud capability
 
-* Log in to use kubernetes without installing a kubernetes cluster, providing the ability for multi-tenants to share a kubernetes in a public network environment
-  * This scenario is suitable for users who deploy business components on kubernetes, not for users who need cluster administrator privileges
+* No need to installing a kubernetes cluster, providing the ability for multi-tenants to share a kubernetes in a public network environment.
+  * This scenario is suitable for users who deploy business components on kubernetes, not for users who need cluster administrator privileges.
   * The advantage is that it can be used directly without installation, and the resource scheduling is more sufficient, so the cost will be lower. It is more than 40% cheaper than virtual machines of the same specification, and it provides strong isolation capabilities.
-  * The disadvantage is that the user does not have administrator privileges
-  * It is very suitable for the scenario where many departments of an enterprise share a cluster, which greatly improves resource utilization
-* [App store](https://www.sealos.io/docs/cloud/apps/appstore/): Compatible with the application warehouse of the sealos cluster mirror, all distributed software can be installed with one click
-* [Cloud Terminal](https://www.sealos.io/docs/cloud/apps/terminal/): Open the terminal and you can use kubernetes directly to deploy your own pod
-* [Sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/): Help users build a kubernetes cluster that is completely their own, and can freely define the cluster
-* [Sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/): Help users build pgsql database instances in minutes
+  * The disadvantage is that the user does not have administrator privileges.
+  * It is very suitable for the scenario where many departments of an enterprise share a cluster, which greatly improves resource utilization.
+* [App store](https://www.sealos.io/docs/cloud/apps/appstore/): Compatible with the application warehouse of the sealos cluster mirror, all distributed software can be installed with one click.
+* [Cloud Terminal](https://www.sealos.io/docs/cloud/apps/terminal/): Open the terminal and you can use kubernetes directly to deploy your own pod.
+* [Sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/): Help users build a kubernetes cluster that is completely their own, and can freely define the cluster.
+* [Sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/): Help users build pgsql database instances in minutes.
 
-In the future sealos will provide more applications
+In the future sealos will provide more applications.
 
 ## Other Links
 
-* Welcome to our main community [discord](https://discord.gg/mzRVdnbw5g)
-* Open source project address [github](https://github.com/labring/sealos)
-* sealos Function Compute application on [laf](https://github.com/labring/laf) Make writing code as easy as blogging
-* sealos Cloud demo address [sealos Cloud](https://cloud.sealos.io)
-* Commercial [Contact Us](https://www.wenjuan.com/s/UZBZJv9ToJ)
+* Welcome to our main community [discord](https://discord.gg/mzRVdnbw5g).
+* Open source project address [github](https://github.com/labring/sealos).
+* sealos Function Compute application [laf](https://github.com/labring/laf) Make writing code as easy as blogging.
+* sealos Cloud demo address [sealos Cloud](https://cloud.sealos.io).
