@@ -3,14 +3,13 @@ module github.com/labring/sealos/controllers/app
 go 1.20
 
 require (
+	github.com/go-logr/logr v1.2.3
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.23.0
+	k8s.io/api v0.25.0
 	k8s.io/apimachinery v0.25.0
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
-	github.com/go-logr/logr v1.2.3
-	k8s.io/api v0.25.0
-	k8s.io/kubernetes v1.26.1
 )
 
 require (

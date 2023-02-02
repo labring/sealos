@@ -26,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubernetes/pkg/apis/core"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -65,7 +64,7 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	image := &imagehubv1.Image{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: DefaultNameSpace, Name: action.Name}, image); err != nil {
-		r.recorder.Eventf(image, core.EventTypeNormal, "ImageGetFailed", "Infra %s status is pending", image.Name)
+		r.recorder.Eventf(image, corev1.EventTypeNormal, "ImageGetFailed", "Infra %s status is pending", image.Name)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -73,7 +72,7 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.actionEngine = NewActionEngine(ctx, r.Client, action, image)
 
 	if err := r.actionEngine.Parse(); err != nil {
-		r.recorder.Eventf(action, core.EventTypeNormal, "ActionParseFailed", "Action %s status is Failed", action.Name)
+		r.recorder.Eventf(action, corev1.EventTypeNormal, "ActionParseFailed", "Action %s status is Failed", action.Name)
 		action.Status.Status = appv1.Failed
 		if suberr := r.Status().Update(ctx, action); suberr != nil {
 			return ctrl.Result{}, fmt.Errorf("parse err happened err: %v ; %v", err, suberr)
@@ -82,7 +81,7 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if err := r.actionEngine.Apply(); err != nil {
-		r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplyFailed", "Action %s status is Failed", action.Name)
+		r.recorder.Eventf(action, corev1.EventTypeNormal, "ActionApplyFailed", "Action %s status is Failed", action.Name)
 		action.Status.Status = appv1.Failed
 		if suberr := r.Status().Update(ctx, action); suberr != nil {
 			return ctrl.Result{}, fmt.Errorf("apply err happened err: %v ; %v", err, suberr)
@@ -90,7 +89,7 @@ func (r *ActionsReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, fmt.Errorf("apply err happened err: %v ", err)
 	}
 
-	r.recorder.Eventf(action, core.EventTypeNormal, "ActionApplySuccess", "Action %s status is applying", action.Name)
+	r.recorder.Eventf(action, corev1.EventTypeNormal, "ActionApplySuccess", "Action %s status is applying", action.Name)
 	action.Status.Status = appv1.Success
 	if err := r.Status().Update(ctx, action); err != nil {
 		return ctrl.Result{}, err
