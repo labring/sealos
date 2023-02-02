@@ -26,8 +26,6 @@ import (
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,6 +35,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 )
+
+const UserAnnotationOwnerKey = "user.sealos.io/creator"
 
 // GetDefaultKubernetesClient returns a kubernetes client
 func GetDefaultKubernetesClient() *kubernetes.Clientset {
@@ -104,7 +104,7 @@ func CreateNamespace(client *kubernetes.Clientset, name string) *v1.Namespace {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 			Annotations: map[string]string{
-				userv1.UserAnnotationOwnerKey: name[3:],
+				UserAnnotationOwnerKey: name[3:],
 			},
 		},
 	}
