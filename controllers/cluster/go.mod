@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/cluster
 
-go 1.19
+go 1.20
 
 require (
 	github.com/onsi/ginkgo v1.16.5
@@ -10,6 +10,7 @@ require (
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/yaml v1.3.0
+	github.com/go-logr/logr v1.2.3
 )
 
 require (
@@ -112,7 +113,6 @@ require (
 )
 
 require (
-	github.com/go-logr/logr v1.2.3
 	github.com/labring/sealos v0.0.0
 	github.com/labring/sealos/controllers/infra v0.0.0
 )

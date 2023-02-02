@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/infra
 
-go 1.19
+go 1.20
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.16.8
@@ -15,6 +15,8 @@ require (
 	k8s.io/client-go v0.25.0
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/kustomize/kyaml v0.13.9
+	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
+	k8s.io/api v0.25.0
 )
 
 require (
@@ -97,11 +99,8 @@ require (
 )
 
 require (
-	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
 	github.com/labring/sealos v0.0.0-00010101000000-000000000000
-	k8s.io/api v0.25.0
 )
-
 
 replace (
 	github.com/labring/sealos => ../../

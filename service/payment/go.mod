@@ -1,6 +1,6 @@
 module payment
 
-go 1.19
+go 1.20
 
 require (
 	github.com/emicklei/go-restful-openapi/v2 v2.9.0

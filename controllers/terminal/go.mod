@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/terminal
 
-go 1.19
+go 1.20
 
 require (
 	github.com/apache/apisix-ingress-controller v1.4.1
