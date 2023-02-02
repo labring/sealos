@@ -1,23 +1,24 @@
 # sealos Cloud introduction
 
-sealos Cloud is the sealos cluster operated and maintained by labring team to provide public cloud services.
-Users can directly use [sealos Cloud](https://cloud.sealos.io)
+sealos Cloud is a sealos cluster operated and maintained by labring team to provide public cloud services.
+Users can directly use [sealos Cloud](https://cloud.sealos.io),
 Users can also run sealos in their own private environment to have the same capabilities as sealos Cloud.
 
-sealos Cloud is an ALL IN cloud-native public cloud service that provides common service capabilities in public clouds, 
+sealos Cloud is an ALL IN cloud-native public cloud service, 
 such as database services, function computing services, and object storage services.
+
 The biggest difference from public clouds such as AWS is that the technical architecture is completely implemented using 
-cloud-native (in a narrow sense, cloud-native, built around the technical ecosystem of kubernetes) architecture.
+cloud-native (built around the technical ecosystem of kubernetes) architecture and 100% opensource.
 
 ## why sealos Cloud
 
 * The product is simple and clean, if you have been tortured by the dazzling advertising discount information of other Cloud provider.
-* Completely open source, which means unlimited and free to customize
+* Completely open source, which means unlimited and free to customize.
 * The public cloud and private cloud is exactly the same. The public cloud and private cloud of sealos have the same set of codes. 
-* Runs everywhere, compatible with various other cloud infrastructures, compatible with bare metal, supports various architectures and mainstream linux operating systems
-* The price is cheap, and privatization can help enterprises save 80% of infrastructure costs, and direct use of public clouds can save 10% to 40% of costs
-* Everything is application, users only need to care about the applications they need to use
-* The architecture is simplified, whether it is on a TV box or a data center with hundreds of thousands of servers, it can run sealos Cloud
+* Runs everywhere, compatible with various other cloud infrastructures, compatible with bare metal, supports various architectures and mainstream linux operating systems.
+* The price is cheap, and privatization can help enterprises save 80% of infrastructure costs, and direct use of public clouds can save 10% to 40% of costs.
+* Everything is application, users only need to care about the applications they need to use.
+* The architecture is simplified, whether it is on a TV box or a data center with hundreds of thousands of servers, it can run sealos Cloud.
 
 ## sealos Cloud capability
 
