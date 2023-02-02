@@ -27,7 +27,11 @@ function FrontPage() {
   const [pgsqlStatus, setPgsqlStatus] = useState('');
   const { currentApp } = useAppStore();
 
-  const { data: pgsqlLists } = useQuery(
+  const {
+    data: pgsqlLists,
+    isSuccess,
+    isError
+  } = useQuery(
     ['getAllPgsql'],
     async () => {
       const res = await request.post('/api/pgsql/getAll', { kubeconfig });
@@ -88,66 +92,68 @@ function FrontPage() {
           </Button>
         </div>
       </div>
-      {pgsqlLists?.data.items?.length === 0 && (
+      {(isError || pgsqlLists?.data?.items?.length === 0) && (
         <div className={clsx(styles.empty)}>
           <Image src="/images/pgsql/empty_state.svg" alt="pgsql" width={240} height={240} />
           <div className={styles.title}>当前集群列表为空</div>
           <div className={styles.desc}>点击右上角新建集群按钮,创建一个PostgreSQL集群吧~</div>
         </div>
       )}
-      <div
-        className={clsx(
-          'grow',
-          styles.scrollWrap,
-          currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40 '
-        )}
-      >
-        <div className={clsx('w-full  py-8 absolute')}>
-          <div className="table w-full">
-            <div className={styles.tableHeader}>
-              <div className={styles.headerItem}>名字</div>
-              <div className={clsx(styles.headerItem)}>状态</div>
-              <div className={styles.headerItem}>创建时间</div>
-              <div className={styles.headerItem}>CPU</div>
-              <div className={styles.headerItem}>Memory</div>
-              <div className={styles.headerItem}>Size</div>
-              <div className={styles.headerItem}>操作</div>
-            </div>
-            <div className={styles.tableContent}>
-              {pgsqlLists?.data.items?.map((item: TPgsqlDetail) => {
-                return (
-                  <div
-                    className={styles.tableRow}
-                    key={item.metadata.uid}
-                    onClick={() => getPgsql(item.metadata.name)}
-                  >
-                    <div className={styles.tableData}>
-                      <div>{item.metadata.name}</div>
+      {isSuccess && pgsqlLists?.data?.items?.length !== 0 && (
+        <div
+          className={clsx(
+            'grow',
+            styles.scrollWrap,
+            currentApp?.size === 'maxmin' ? 'mx-8' : 'mx-40 '
+          )}
+        >
+          <div className={clsx('w-full  py-8 absolute')}>
+            <div className="table w-full">
+              <div className={styles.tableHeader}>
+                <div className={styles.headerItem}>名字</div>
+                <div className={clsx(styles.headerItem)}>状态</div>
+                <div className={styles.headerItem}>创建时间</div>
+                <div className={styles.headerItem}>CPU</div>
+                <div className={styles.headerItem}>Memory</div>
+                <div className={styles.headerItem}>Size</div>
+                <div className={styles.headerItem}>操作</div>
+              </div>
+              <div className={styles.tableContent}>
+                {pgsqlLists?.data.items?.map((item: TPgsqlDetail) => {
+                  return (
+                    <div
+                      className={styles.tableRow}
+                      key={item.metadata.uid}
+                      onClick={() => getPgsql(item.metadata.name)}
+                    >
+                      <div className={styles.tableData}>
+                        <div>{item.metadata.name}</div>
+                      </div>
+                      <div className={clsx(styles.tableData)}>
+                        <PgsqlStatus pgsqlDetail={item} openEventDialog={openEventDialog} />
+                      </div>
+                      <div className={clsx(styles.tableData)}>
+                        {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm:ss')}
+                      </div>
+                      <div className={styles.tableData}>{item.spec.resources.requests.cpu}</div>
+                      <div className={styles.tableData}>{item.spec.resources.requests.memory}</div>
+                      <div className={styles.tableData}>{item.spec.volume.size}</div>
+                      <div className={styles.tableData}>
+                        <Button
+                          type="danger"
+                          shape="round"
+                          handleClick={(e) => openDeleteDialog(e, item)}
+                          icon={'/images/pgsql/delete.svg'}
+                        ></Button>
+                      </div>
                     </div>
-                    <div className={clsx(styles.tableData)}>
-                      <PgsqlStatus pgsqlDetail={item} openEventDialog={openEventDialog} />
-                    </div>
-                    <div className={clsx(styles.tableData)}>
-                      {formatTime(item?.metadata?.creationTimestamp, 'YYYY/MM/DD HH:mm:ss')}
-                    </div>
-                    <div className={styles.tableData}>{item.spec.resources.requests.cpu}</div>
-                    <div className={styles.tableData}>{item.spec.resources.requests.memory}</div>
-                    <div className={styles.tableData}>{item.spec.volume.size}</div>
-                    <div className={styles.tableData}>
-                      <Button
-                        type="danger"
-                        shape="round"
-                        handleClick={(e) => openDeleteDialog(e, item)}
-                        icon={'/images/pgsql/delete.svg'}
-                      ></Button>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <Drawer
         open={eventsDialogVisible}

@@ -38,11 +38,13 @@ $theme-color-title: #0d1a2d;
 .pgsqlStatus {
   background: rgba(92, 97, 228, 0.15);
   border-radius: 12px;
-  height: 40px;
+  height: 38px;
   width: 100px;
+  padding: 0px 8px;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-around;
 
   .circle {
     width: 8px;

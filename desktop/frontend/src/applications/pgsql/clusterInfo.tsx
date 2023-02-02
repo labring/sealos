@@ -129,7 +129,7 @@ export default function ClusterInfo(props: TClusterInfo) {
   };
 
   return (
-    <div className={styles.pageWrapperScroll}>
+    <>
       <div className={clsx(styles.header, 'flex items-center')}>
         <PgsqlStatus pgsqlDetail={detailPgsql} openEventDialog={openEventDialog} />
         <div className="ml-4">
@@ -215,6 +215,6 @@ export default function ClusterInfo(props: TClusterInfo) {
           }
         ]}
       />
-    </div>
+    </>
   );
 }

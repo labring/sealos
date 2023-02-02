@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
+import Iconfont from 'components/iconfont';
 import request from 'services/request';
 import useSessionStore from 'stores/session';
 import Button from './button';
@@ -35,11 +36,9 @@ export default function PgsqlEventsDialog(props: PgsqlEventsDialog) {
       <div className="flex items-center">
         <div>{status}</div>
         <div className="ml-auto cursor-pointer ">
-          <Button
-            shape="squareRound"
-            handleClick={() => onCancel()}
-            icon={'/images/pgsql/shrink.svg'}
-          ></Button>
+          <Button shape="squareRound" handleClick={() => onCancel()}>
+            <Iconfont width={16} height={16} iconName="icon-shrink" color="#239BF2" />
+          </Button>
         </div>
       </div>
       {items?.length === 0 && <div>暂无数据</div>}

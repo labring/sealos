@@ -99,11 +99,7 @@ export default function DeletePgsqlDialog(props: DialogComponentProps) {
       <div>
         <Dialog open={dialogStatus === DialogStatus.loading}>
           <DialogSurface className={styles.loading}>
-            <DialogBody>
-              <DialogContent>
-                <Spinner size="small" label="删除中" />
-              </DialogContent>
-            </DialogBody>
+            <Spinner size="small" label="删除中" />
           </DialogSurface>
         </Dialog>
       </div>

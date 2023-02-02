@@ -41,8 +41,8 @@ function AddPage() {
         cpu: '300',
         memory: '300'
       },
-      dataBases: [{ name: '', user: '' }],
-      users: [{ name: '', authority: '' }]
+      dataBases: [{ name: 'rootdb', user: 'root' }],
+      users: [{ name: 'root', authority: 'superuser' }]
     },
     reValidateMode: 'onSubmit',
     mode: 'all'
@@ -183,6 +183,7 @@ function AddPage() {
                       control={control}
                       name={`users.${index}.authority`}
                       rules={{ required: true }}
+                      defaultValue="superuser"
                       options={[
                         { key: 'superuser', content: 'superuser' },
                         { key: 'createdb', content: 'createdb' },
@@ -238,6 +239,7 @@ function AddPage() {
                     <ControlledDropdown
                       control={control}
                       name={`dataBases.${index}.user`}
+                      defaultValue="root"
                       rules={{ required: true }}
                       options={getValues('users').map((i) => {
                         return { key: i.name, content: i.name };
@@ -314,11 +316,7 @@ function AddPage() {
       <div>
         <Dialog open={createPgsqlMutation.isLoading}>
           <DialogSurface className={styles.loading}>
-            <DialogBody>
-              <DialogContent>
-                <Spinner size="small" label="创建中" />
-              </DialogContent>
-            </DialogBody>
+            <Spinner size="small" label="创建中" />
           </DialogSurface>
         </Dialog>
       </div>

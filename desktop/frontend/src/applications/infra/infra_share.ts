@@ -44,7 +44,7 @@ spec:
   - roles: [master] 
     count: ${infraForm.masterCount}
     flavor: ${infraForm.masterType}
-    image: "ami-09123565dfe16d662"
+    image: "ami-048280a00d5085dd1"
     disks:
     - capacity: ${infraForm.masterDisk}
       volumeType: ${infraForm.masterDiskType}
@@ -54,7 +54,7 @@ spec:
   - roles: [ node ] 
     count: ${infraForm.nodeCount} 
     flavor: ${infraForm.nodeType}
-    image: "ami-09123565dfe16d662"
+    image: "ami-048280a00d5085dd1"
     disks:
     - capacity: ${infraForm.nodeDisk}
       volumeType: ${infraForm.nodeDiskType}

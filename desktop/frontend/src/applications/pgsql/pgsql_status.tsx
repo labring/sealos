@@ -1,7 +1,7 @@
 import clsx from 'clsx';
 import styles from './pgsql_status.module.scss';
 import { TPgsqlDetail, EPgsqlStatus } from './pgsql_common';
-import Image from 'next/image';
+import Iconfont from 'components/iconfont';
 
 type PgsqlStatus = {
   pgsqlDetail: TPgsqlDetail;
@@ -24,8 +24,12 @@ function PgsqlStatus(props: PgsqlStatus) {
       onClick={(e) => openEventDialog(e, pgsqlDetail)}
     >
       <div className={styles.circle}></div>
-      <div className={clsx('px-1')}>{pgsqlDetail?.status?.PostgresClusterStatus}</div>
-      <Image src="/images/pgsql/shrink.svg" alt="pgsql" width={20} height={20} />
+      <div className={clsx('px-1 w-16')}>
+        {pgsqlDetail?.status?.PostgresClusterStatus === EPgsqlStatus.Failed
+          ? 'Failed'
+          : pgsqlDetail?.status?.PostgresClusterStatus}
+      </div>
+      <Iconfont width={16} height={16} iconName="icon-shrink" />
     </div>
   );
 }
