@@ -1,26 +1,30 @@
 # How to run bytebase on sealos cloud
 
-If you run bytebase on kubernetes, you need to prepare a kubernetes cluster, pgsql database instance, even storage driver, and ingress for external access. 
-These dependencies can be easily resolved on sealos cloud and [bytebase](https://github.com/bytebase/bytebase) can be started quickly.
+If you run [Bytebase on Kubernetes](/docs/get-started/install/deploy-to-kubernetes), you need to prepare a Kubernetes cluster, PostgreSQL instance, even storage driver, and ingress for external access.
 
-LOGIN [sealos cloud](https://cloud.sealos.io)
+sealos cloud, on the other hand, provides these dependencies out-of-the-box and [Bytebase](https://github.com/bytebase/bytebase) can be started quickly.
 
-## Create a pgsql instance
+## Prerequisites
 
-Click the postgres icon to create a pgsql cluster,[reference documents](https://www.sealos.io/docs/cloud/apps/postgres/)
+A [sealos cloud](https://cloud.sealos.io) account (free signup).
 
-## USE cloud terminal
+## Create a PostgreSQL Instance
 
-Click the terminal icon to directly write the yaml file.
+From sealos cloud, click the postgres icon to create a PostgreSQL Instance. [See details](https://www.sealos.io/docs/cloud/apps/postgres/).
 
-The part that needs to be modified:
-1. The domain name in the startup parameters needs to be changed to the user’s own, and must be consistent with the following ingress configuration, such as "bytebase.clodu.sealos.io"
-2. The database access settings in the startup parameters can be copied from the pgsql details that have been started on the sealos cloud
-3. The domain name configuration in Ingress, the domain name needs to be unique
+## Use Cloud Terminal
 
-bytebase.yaml:
+Click the terminal icon to edit the yaml file.
+
+You need to modify:
+
+1. In Ingress section, the host needs to be unique such as `bytebase.cloud.sealos.io` in the example.
+2. [--external-url](/get-started/install/external-url) must be consistent with the above host name.
+3. [--pg](/get-started/install/external-postgres) value
+   can be copied from the PostgreSQL instance details created above.
 
 ```yaml
+# bytebase.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -114,7 +118,7 @@ spec:
 ```
 
 ```shell
-root@tx3ghqs7m:~# kubectl apply -f bytebase.yaml 
+root@tx3ghqs7m:~# kubectl apply -f bytebase.yaml
 deployment.apps/bytebase configured
 service/bytebase-entrypoint configured
 ingress.networking.k8s.io/hello-world configured
@@ -124,4 +128,4 @@ NAME                                                             READY   STATUS 
 bytebase-85db7644bc-pt9cl                                        1/1     Running   0          5s
 ```
 
-Then you can access bytebase through the set public network secondary domain name, such as https://bytebase.cloud.sealos.io
+Then you can access Bytebase through the configured address https://bytebase.cloud.sealos.io.
