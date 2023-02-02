@@ -18,10 +18,13 @@ package controllers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
+
+	version2 "github.com/labring/sealos/pkg/version"
 
 	"github.com/labring/sealos/controllers/cluster/utils"
 
@@ -55,7 +58,8 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
-	downloadSealosCmd   = `sealos version || wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%[1]s/sealos_%[1]s_linux_amd64.tar.gz  && tar -zxvf sealos_%[1]s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
+	sealosVersionCmd    = "sealos version"
+	downloadSealosCmd   = `wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%[1]s/sealos_%[1]s_linux_amd64.tar.gz  && tar -zxvf sealos_%[1]s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 	getClusterfileCmd   = "cat %s"
 )
 
@@ -173,11 +177,11 @@ func getPrivateIP(meta infrav1.Metadata) string {
 
 // Generate Clusterfile by infra and cluster
 func generateClusterFromInfra(infra *infrav1.Infra, cluster *v1.Cluster) *v1.Cluster {
-	new := cluster.DeepCopy()
-	new.Name = defaultClusterName
-	new.CreationTimestamp = metav1.Time{}
-	new.Spec.SSH = infra.Spec.SSH
-	new.Spec.SSH.User = defaultUser
+	newCluster := cluster.DeepCopy()
+	newCluster.Name = defaultClusterName
+	newCluster.CreationTimestamp = metav1.Time{}
+	newCluster.Spec.SSH = infra.Spec.SSH
+	newCluster.Spec.SSH.User = defaultUser
 
 	for _, host := range infra.Spec.Hosts {
 		for _, meta := range host.Metadata {
@@ -186,21 +190,21 @@ func generateClusterFromInfra(infra *infrav1.Infra, cluster *v1.Cluster) *v1.Clu
 				continue
 			}
 
-			new.Spec.Hosts = append(new.Spec.Hosts, v1beta1.Host{
+			newCluster.Spec.Hosts = append(newCluster.Spec.Hosts, v1beta1.Host{
 				IPS:   []string{privateIP},
 				Roles: host.Roles,
 			})
 		}
 	}
-	return new
+	return newCluster
 }
 
 // merge current cluster to new cluster
 func mergeCluster(currentCluster *v1beta1.Cluster, desiredCluster *v1.Cluster) *v1beta1.Cluster {
-	new := currentCluster.DeepCopy()
+	newCluster := currentCluster.DeepCopy()
 	hosts := desiredCluster.Spec.Hosts
-	new.Spec.Hosts = hosts
-	return new
+	newCluster.Spec.Hosts = hosts
+	return newCluster
 }
 
 func convertClusterToYaml(cluster interface{}) (string, error) {
@@ -243,7 +247,7 @@ func getAllInstanceIP(infra *infrav1.Infra) []string {
 
 // get sealos version from cluster
 func getSealosVersion(cluster *v1.Cluster) string {
-	if v, ok := cluster.Annotations["sealos.io/sealos/version"]; ok && v != "" {
+	if v, ok := cluster.Annotations["sealos.io/version"]; ok && v != "" {
 		return v
 	}
 	return defaultSealosVersion
@@ -273,14 +277,35 @@ func applyClusterfile(c ssh.Interface, EIP, clusterfile, sealosVersion string) e
 	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF
 %s
 EOF`, clusterfile)
-	downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion)
+	out, err := c.Cmd(EIP, sealosVersionCmd)
+	if err == nil {
+		currentVersion, err2 := parseSealosVersion(out)
+		if err2 != nil {
+			return fmt.Errorf("get sealos version failed: %v", err2)
+		}
+		if *currentVersion != sealosVersion {
+			downloadSealos := fmt.Sprintf(downloadSealosCmd, sealosVersion)
+			if err := c.CmdAsync(EIP, []string{downloadSealos}...); err != nil {
+				return fmt.Errorf("download sealos failed: %v", err)
+			}
+		}
+	}
 
-	cmds := []string{createClusterfile, downloadSealos, applyClusterfileCmd}
+	cmds := []string{createClusterfile, applyClusterfileCmd}
 	if err := c.CmdAsync(EIP, cmds...); err != nil {
 		return fmt.Errorf("write clusterfile to remote failed: %v", err)
 	}
 
 	return nil
+}
+
+func parseSealosVersion(out []byte) (*string, error) {
+	version := &version2.Info{}
+	err := json.Unmarshal(out, version)
+	if err != nil {
+		return nil, fmt.Errorf("parse sealos version failed: %v", err)
+	}
+	return &version.GitVersion, nil
 }
 
 func getMasterClusterfile(c ssh.Interface, EIP string) (*v1beta1.Cluster, error) {
