@@ -30,13 +30,11 @@
         border: 1px solid transparent;
         user-select: none;
       
-        &:focus {
-          background: rgba(255, 255, 255, 0.24);
-        }
         &:hover {
           background: rgba(255, 255, 255, 0.12);
         }
-        &:focus {
+        &:active {
+          background: rgba(255, 255, 255, 0.24);
           border: 1px dotted white;
         }
       
