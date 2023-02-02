@@ -242,7 +242,7 @@ func (as *AuthServer) CreateToken(ar *AuthRequest, ares []AuthzResult) (string, 
 		NotBefore:  now - 10,
 		IssuedAt:   now,
 		Expiration: now + tc.Expiration,
-		JWTID:      fmt.Sprintf("%d", rand.Int63()),
+		JWTID:      fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int63()),
 		Access:     []*token.ResourceActions{},
 	}
 	for _, a := range ares {

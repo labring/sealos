@@ -25,8 +25,8 @@ import (
 )
 
 func Rand(a int) int {
-	rand.Seed(time.Now().Unix())
-	return rand.Intn(a)
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return rnd.Intn(a)
 }
 
 func Generator(len int) string {

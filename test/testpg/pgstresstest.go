@@ -44,10 +44,10 @@ spec:
 
   users:
     pg-test: [superuser,createdb]
-    
+
   databases:
     pg-db: pg-test
-    
+
   resources:
     requests:
       cpu: 300m
@@ -112,8 +112,8 @@ func RunPostgresTest(config, userNamespace string) error {
 // PostgresClusterRandomCreate Create random PostgresCluster.
 func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	var err error
-	rand.Seed(time.Now().UnixNano())
-	n := rand.Intn(5)
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	n := rnd.Intn(5)
 	objSlice := []*unstructured.Unstructured{}
 	//Create
 	for i := 0; i < n; i++ {
