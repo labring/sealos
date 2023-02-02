@@ -1,6 +1,6 @@
 module github.com/labring/sealos/controllers/user
 
-go 1.19
+go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
@@ -87,7 +87,10 @@ require (
 
 require (
 	github.com/labring/sealos v0.0.0-00010101000000-000000000000
-	github.com/labring/sealos/controllers/metering v0.0.0-20230201080457-28e3f2942b26
+	github.com/labring/sealos/controllers/metering v0.0.0-00010101000000-000000000000
 )
 
-replace github.com/labring/sealos => ../../
+replace (
+	github.com/labring/sealos => ../../
+	github.com/labring/sealos/controllers/metering => ../../controllers/metering
+)

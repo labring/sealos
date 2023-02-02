@@ -134,16 +134,16 @@ const (
 type HostRole string
 
 func createPassword() string {
-	rand.Seed(time.Now().UnixNano())
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	all := digits + specials + letter
 	length := passwordLength
 	buf := make([]byte, length)
-	buf[0] = digits[rand.Intn(len(digits))]
-	buf[1] = specials[rand.Intn(len(specials))]
+	buf[0] = digits[rnd.Intn(len(digits))]
+	buf[1] = specials[rnd.Intn(len(specials))]
 	for i := 2; i < length; i++ {
-		buf[i] = all[rand.Intn(len(all))]
+		buf[i] = all[rnd.Intn(len(all))]
 	}
-	rand.Shuffle(len(buf), func(i, j int) {
+	rnd.Shuffle(len(buf), func(i, j int) {
 		buf[i], buf[j] = buf[j], buf[i]
 	})
 	return string(buf)

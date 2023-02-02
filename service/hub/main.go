@@ -2,10 +2,8 @@ package main
 
 import (
 	"flag"
-	"math/rand"
 	"net"
 	"net/http"
-	"time"
 
 	"github.com/cesanta/glog"
 	"github.com/labring/service/hub/server"
@@ -40,7 +38,6 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 
 func main() {
 	flag.Parse()
-	rand.Seed(time.Now().UnixNano())
 	glog.CopyStandardLogTo("INFO")
 
 	cf := flag.Arg(0)

@@ -7,8 +7,8 @@ Some tools can be very handy to help you start a virtual machine such as [multip
 ## Install golang
 
 ```shell
-wget https://go.dev/dl/go1.19.2.linux-amd64.tar.gz
-tar -C /usr/local -zxvf go1.19.2.linux-amd64.tar.gz
+wget https://go.dev/dl/go1.20.linux-amd64.tar.gz
+tar -C /usr/local -zxvf go1.20.linux-amd64.tar.gz
 cat >> /etc/profile <<EOF
 # set go path
 export PATH=\$PATH:/usr/local/go/bin
@@ -143,8 +143,8 @@ sudo su
 ```shell
 apt-get install build-essential
 apt install make
-wget https://go.dev/dl/go1.19.3.linux-arm64.tar.gz
-tar -C /usr/local -zxvf go1.19.3.linux-arm64.tar.gz
+wget https://go.dev/dl/go1.20.linux-arm64.tar.gz
+tar -C /usr/local -zxvf go1.20.linux-arm64.tar.gz
 cat >> /etc/profile <<EOF
 # set go path
 export PATH=\$PATH:/usr/local/go/bin
