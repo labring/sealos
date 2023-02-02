@@ -1,13 +1,13 @@
-# Example for using cname for custom host
+# Example of using cname for custom host
 
 This document describes how to use sealos cloud to expose a service with custom host name.
 
 ## Pre-requirement
 
 1. You have a [sealos cloud](https://cloud.sealos.io) account.
-2. You have a running service at sealos cloud, in this tutorial, we use a hello-world demo service.
-3. You have a url that we already provided, pointing to your service above, like `https://example.cloud.sealos.io`
-4. You have a custom domain name, like `sealos.example.com`, and https certificate for it.
+2. You have a running service at sealos cloud. In this tutorial, we will use a hello-world demo service.
+3. You have a url that we already provided, pointing to your service above. We'll use `https://example.cloud.sealos.io` as our example.
+4. You have a custom domain name, like `sealos.example.com`, as well as the https certificate for it.
 
 ## Steps
 

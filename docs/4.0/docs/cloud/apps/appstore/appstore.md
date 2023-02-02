@@ -1,16 +1,16 @@
 # sealos app store
 
-sealos app store display image information that stored in sealos registry `hub.sealos.cn`.
+sealos app store displays image information stored in sealos registry `hub.sealos.cn`.
 
 ![img.png](img.png)
 
-see [use-sealos-registry.md](use-sealos-registry.md) to get more detail.
+look at [use-sealos-registry.md](use-sealos-registry.md) to get more details.
 
 ## Create and manage your organization
 
-At the present stage, we only support creating organization by apply an organization cr yaml.
+Currently, we only support organization creation by applying an organization cr yaml file.
 
-Here is an example, you can edit this yaml in terminal app in sealos cloud:
+Here is an example, you can edit this yaml in the terminal app in sealos cloud:
 
 ```yaml
 apiVersion: imagehub.sealos.io/v1
@@ -23,16 +23,16 @@ spec:
   manager: [ your-uuid ] # you can add other users as manager
 ```
 
-We will support gui to manage organization in the future.
+We will support GUI to manage organizations in the future.
 
 ## How to display your image information in sealos app store
 
 By default, if you push an image to sealos registry `hub.sealos.cn`, sealos will generate an image cr and apply it to
 sealos cloud.
 
-You can customise the image cr by write an image cr into the image, and the `README.md` will be parsed as an element of the image cr.
+You can customize the image cr by writing an image cr into the image, and the `README.md` will be parsed as an element of the image cr.
 
-So you need to make your image file structure like the following tree map:
+You need to construct your image files in the following structure:
 
 ```text
 ├── etc
@@ -41,7 +41,7 @@ So you need to make your image file structure like the following tree map:
 └── README.md
 ```
 
-And the image cr yaml named as `config.yaml` is like:
+An example of the image cr yaml named as `config.yaml` is like this:
 
 ```yaml
 apiVersion: imagehub.sealos.io/v1

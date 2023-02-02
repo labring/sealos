@@ -1,12 +1,12 @@
 # Cloud terminal tutorial
 
 Cloud terminal is a web terminal running in the container, 
-and the user's .kube/config has been configured in the terminal,
+and the user's .kube/config has been configured in the terminal.
 
 It also contains some commonly used commands, 
-which can be used to access almost all APIs of applications that sealos has provided.
+which can be used to access almost all APIs of applications that sealos provides.
 
-Tips: Currently, persistent files are not supported in the terminal. 
+Tips: Currently, persistent files are not supported in the terminal. Remember to back up your files edited in the terminal.
 
 ## Access api server
 
@@ -43,9 +43,8 @@ users:
     token: eyJhbGciOiJSUzI1NiIsImtpZCI6IjItUWxyLUc3X0FiNjF...
 ```
 
-If you change the server address to https://cloud.sealos.io:6443, 
-you can access the api server remotely, such as using your local terminal,
-Or integrate into any CI/CD system, just copy the file content to the client's ~.kube/config directory
+You can access the api server remotely (e.g. using your local terminal) by changing the server address to https://cloud.sealos.io:6443.
+To integrate into any CI/CD system, just copy the file content to the client's ~.kube/config directory.
 
 ## Access Control
 
@@ -58,12 +57,11 @@ User "system:serviceaccount:user-system:8b66134e-5294-480f-b6c4-00243fc2488e"
 cannot list resource "nodes" in API group "" at the cluster scope
 ```
 
-Users do not have permission to access.
+Users do not have permission to access the information.
 
 ## Access other resources
 
-You can access the database instance through the terminal, 
-or the multi-cluster provided by sealos cloud provider
+You can access the database instances or the multi-cluster provided by sealos cloud provider through the terminal.
 
 ```shell
 root@thpqxr0bh:~# kubectl get infra
@@ -87,8 +85,8 @@ Of course, you can also delete or edit these resources.
 
 ## Debugging
 
-terminal is still a debugging tool, 
-because its is also a pod running under the user ns, 
+Terminal is also a perfect debugging tool, 
+because it is essentially a pod running under the user ns, 
 and it comes with many network tools.
 
 ```shell
