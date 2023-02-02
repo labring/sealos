@@ -7,20 +7,19 @@ import { immer } from 'zustand/middleware/immer';
 const storageOrderKey = 'app-orders'
 
 export type TAppFront = {
-  isShow?: boolean;
-  zIndex: number;
-  size: 'maximize' | 'maxmin' | 'minimize';
-  style?:
-    | {
-        width: number | string;
-        height: number | string;
-        isFull: boolean;
-        bg: string;
-      }
-    | {};
-  cacheSize: 'maximize' | 'maxmin' | 'minimize';
-  mask: boolean;
+  isShow: boolean
+  zIndex: number
+  size: 'maximize' | 'maxmin' | 'minimize'
+  cacheSize: 'maximize' | 'maxmin' | 'minimize'
+  style: {
+    width?: number | string
+    height?: number | string
+    isFull?: boolean
+    bg?: string
+  }
+  mask: boolean
   order: number
+  mouseDowning: boolean
 };
 
 const initialFrantState: TAppFront = {
@@ -28,12 +27,13 @@ const initialFrantState: TAppFront = {
   zIndex: 1,
   size: 'maximize',
   cacheSize: 'maximize',
-  mask: true,
   style: {},
-  order: 0
+  mask: true,
+  order: 0,
+  mouseDowning: false
 };
 
-export type TApp = {
+export type TAppConfig = {
   // app name
   name: string;
   // app icon
@@ -55,7 +55,9 @@ export type TApp = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
-} & TAppFront;
+}
+
+export type TApp = TAppConfig & TAppFront;
 
 type TOSState = {
   installedApps: TApp[];
@@ -87,10 +89,12 @@ type TOSState = {
   // switch the app
   switchApp(app: TApp, type?: 'clickMask'): void;
 
-  updateAppInfo(app: TApp): void;
+  updateOpenedAppInfo(app: TApp): void;
 
   // update app order in desktop
   updateAppOrder(app: TApp, i:number): void;
+
+  updateAppsMousedown(app: TApp, status: boolean): void;
 
   installApp(app: TApp): void;
 
@@ -172,14 +176,11 @@ const useAppStore = create<TOSState>()(
           });
           return res;
         },
-        updateAppInfo: (app: TApp) => {
+
+        updateOpenedAppInfo: (app: TApp) => {
           set((state) => {
             state.openedApps = state.openedApps.map((_app) => {
               _app.mask = true;
-              return _app.name === app.name ? app : _app;
-            });
-
-            state.installedApps = state.installedApps.map((_app) => {
               return _app.name === app.name ? app : _app;
             });
 
@@ -221,10 +222,6 @@ const useAppStore = create<TOSState>()(
 
         updateAppOrder: (app: TApp, i: number) => {
           set(state => {
-            state.openedApps = state.openedApps.map((_app) => {
-              return _app.name === app.name ? {...app, order: i} : _app;
-            });
-
             const newOrdersAppMap:{[key:string]:number} = {}
 
             state.installedApps = state.installedApps.map((_app) => {
@@ -233,6 +230,17 @@ const useAppStore = create<TOSState>()(
             });
 
             state.orderApps = newOrdersAppMap
+          })
+        },
+
+        /**
+         * update apps mousedown enum. app set to status, other apps set to false
+         */
+        updateAppsMousedown(app: TApp, status: boolean) {
+          set(state => {
+            state.installedApps = state.installedApps.map((_app) => {
+              return _app.name === app.name ? {...app, mouseDowning: status} : {..._app, mouseDowning: false};
+            });
           })
         },
 
@@ -248,7 +256,7 @@ const useAppStore = create<TOSState>()(
           _app.size = 'maximize';
           _app.mask = false;
 
-          get().updateAppInfo(_app);
+          get().updateOpenedAppInfo(_app);
 
           set((state) => {
             if (!state.openedApps.find((item) => item.name === _app.name)) {
@@ -272,7 +280,7 @@ const useAppStore = create<TOSState>()(
             }
           }
 
-          get().updateAppInfo(_app);
+          get().updateOpenedAppInfo(_app);
 
           set((state) => {
             // repalce app info

@@ -1,8 +1,8 @@
-import { TApp } from 'stores/app';
+import { TAppConfig } from 'stores/app';
 import { APPTYPE } from 'constants/app_type';
 
 // 已安装 app
-const installedApps: TApp[] = [
+const installedApps: TAppConfig[] = [
   {
     name: 'Sealos Document',
     icon: '/images/sealos.svg',
@@ -15,16 +15,11 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize',
     menu: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: false
     },
-    cacheSize: 'maximize',
-    mask: true,
-    zIndex: 1,
-    order: 0
   },
   {
     name: 'App Store',
@@ -38,16 +33,11 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize',
     menu: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
     },
-    cacheSize: 'maximize',
-    mask: true,
-    zIndex: 1,
-    order: 0
   },
   // {
   //   name: 'Python Compiler',
@@ -90,16 +80,11 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize',
     menu: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
     },
-    cacheSize: 'maximize',
-    mask: true,
-    zIndex: 1,
-    order: 0
   },
   {
     name: 'Kubernetes Dashboard',
@@ -113,16 +98,11 @@ const installedApps: TApp[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize',
     menu: {
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
     },
-    cacheSize: 'maximize',
-    mask: true,
-    zIndex: 1,
-    order: 0
   },
   // {
   //   name: 'Kuboard',
@@ -239,16 +219,11 @@ const installedApps: TApp[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    size: 'maximize',
     menu: {
       nameColor: '#0073D7',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/scp/'
     },
-    cacheSize: 'maximize',
-    mask: true,
-    zIndex: 1,
-    order: 0
   },
   // {
   //   name: 'AFFiNE',
@@ -275,7 +250,6 @@ const installedApps: TApp[] = [
     name: 'Postgres',
     icon: '/images/pgadmin.svg',
     type: APPTYPE.APP,
-    size: 'maximize',
     gallery: [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
@@ -284,15 +258,11 @@ const installedApps: TApp[] = [
       url: '',
       desc: 'postgres operator'
     },
-    cacheSize: 'maximize',
-    mask: true,
     menu: {
       nameColor: 'text-black',
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
     },
-    zIndex: 1,
-    order: 0
   }
 ];
 

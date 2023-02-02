@@ -17,7 +17,7 @@ export default function AppWindow(props: {
   desktopWidth: number;
 }) {
   const { app: wnapp, desktopHeight, desktopWidth } = props;
-  const { closeApp, updateAppInfo, switchApp, currentApp, openedApps } = useAppStore(
+  const { closeApp, updateOpenedAppInfo, switchApp, currentApp, openedApps } = useAppStore(
     (state) => state
   );
   const dragDom = useRef<HTMLDivElement>(null);
@@ -111,7 +111,7 @@ export default function AppWindow(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  updateAppInfo({
+                  updateOpenedAppInfo({
                     ...wnapp,
                     size: 'minimize'
                   });
@@ -125,7 +125,7 @@ export default function AppWindow(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  updateAppInfo({
+                  updateOpenedAppInfo({
                     ...wnapp,
                     size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin',
                     cacheSize: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
@@ -148,7 +148,7 @@ export default function AppWindow(props: {
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  updateAppInfo({
+                  updateOpenedAppInfo({
                     ...wnapp,
                     isShow: false
                   });

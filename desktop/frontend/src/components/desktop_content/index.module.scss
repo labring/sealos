@@ -30,12 +30,13 @@
         border: 1px solid transparent;
         user-select: none;
       
-        &:hover {
+        &.active {
           background: rgba(255, 255, 255, 0.12);
-        }
-        &:active {
-          background: rgba(255, 255, 255, 0.24);
           border: 1px dotted white;
+        }
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.3);
         }
       
         .dskIcon {
