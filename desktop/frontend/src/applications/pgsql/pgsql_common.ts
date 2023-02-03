@@ -49,7 +49,7 @@ export type TPgSqlForm = {
 export enum EPgsqlStatus {
   Running = 'Running',
   Creating = 'Creating',
-  Failed = 'Failed',
+  Failed = 'CreateFailed',
   EmptyStatus = 'EmptyStatus'
 }
 
