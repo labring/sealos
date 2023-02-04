@@ -1,7 +1,7 @@
 # sealos Cloud Provider
 
-sealos Cloud Provider (SCP)
-Allows users to easily launch a custom kubernetes cluster on all major public cloud platforms.
+Sealos Cloud Provider (SCP)
+allows users to easily launch a custom kubernetes cluster on all major public cloud platforms.
 It currently supports AWS, and will support Ali Cloud, Tencent Cloud, Huawei Cloud, GCP, Azure, and Baremetal in the future.
 
 ## Product Advantages
@@ -9,10 +9,10 @@ It currently supports AWS, and will support Ali Cloud, Tencent Cloud, Huawei Clo
 * **High Speed**, build custom kubernetes clusters on the cloud in minutes
 * **Flexible Configuration**, freely scalable clusters by editing configuration files
 * **Low Cost**, 10% cheaper than starting a cloud server directly
-* **Easy to Use**, the product experience is as simple as installing and using an application on a PC
+* **Easy to Use**, it is as simple as installing and using an application on a PC
 * **Compatibility**, API is fully compatible with kubernetes CRD design, supports remote calls, and supports docking to any other system, such as CI/CD systems to automatically create/destroy clusters
 * **Customized**, support for custom clusters, with the ability to freely choose which version of kubernetes to install and the upper addon through cluster image capabilities, and support for all cluster images in existing sealos repositories
-* **Cross-platform**, free to switch cloud vendors, multiple cloud vendors resources unified management
+* **Cross-platform**, free to switch between cloud vendors, multiple cloud vendors' resources can be uniformly managed
 
 ## How to Use
 
@@ -26,7 +26,7 @@ You can start a kubernetes cluster in minutes by specifying the node type, numbe
 
 ![img_1.png](img_1.png)
 
-In this interface, you can view cluster id, creation time, ssh key, as well as intranet and public IP and operation status of each node. It also supports modifying the cluster and releasing the cluster with one click, so that you can easily manage and change the cluster life cycle.
+On this page, you can view cluster id, creation time, ssh key, as well as intranet and public IP and operation status of each node. It is also supported to modify the cluster and release the cluster with one click, so that you can easily manage the cluster life cycle.
 
 ![img_2.png](img_2.png)
 
@@ -102,7 +102,7 @@ Download the user-specific kubeconfig file from the sealos cloud:
 
 ![img_4.png](img_4.png)
 
-Copy to the .kube/config file, e.g. `cp kubeconfig.yaml .kube/config`
+Copy this file as .kube/config, e.g. `cp kubeconfig.yaml .kube/config`
 
 This license file is exclusive to the user and can be used to access all APIs from anywhere, not just to access and use the sealos cloud provider.
 

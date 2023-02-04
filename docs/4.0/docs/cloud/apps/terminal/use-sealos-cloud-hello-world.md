@@ -6,7 +6,7 @@ then use ingress to access the pod.
 
 ## Login to the sealos cloud
 
-https://cloud.sealos.io you can use github account to login.
+https://cloud.sealos.io you can use your github account to login.
 
 ## Open the cloud terminal
 
