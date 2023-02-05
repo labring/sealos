@@ -71,4 +71,7 @@ baseurl=https://yum.fury.io/${USERNAME:-labring}/
 enabled=1
 gpgcheck=0
 \`\`\`
+
+See [the CHANGELOG](https://github.com/${USERNAME:-labring}/sealos/blob/main/CHANGELOG/CHANGELOG.md) for more details.
+
 EOF
