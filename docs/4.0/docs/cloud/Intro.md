@@ -1,16 +1,16 @@
-# sealos Cloud introduction
+# Sealos Cloud introduction
 
-sealos Cloud is the sealos clusters operated and maintained by labring team which provide public cloud services.
+Sealos Cloud is the sealos clusters operated and maintained by labring team which provide public cloud services.
 Users can directly use [sealos Cloud](https://cloud.sealos.io)
 Users can also run sealos in their own environment to have the same capabilities as sealos Cloud.
 
-sealos Cloud is a public cloud service purely based on cloud-native technology. It provides common service capabilities in public clouds, 
+Sealos Cloud is a public cloud service purely based on cloud-native technology. It provides common service capabilities in public clouds, 
 such as database services, function computing services, and object storage services.
 
 The biggest difference from public clouds such as AWS is that the technical architecture is completely implemented using 
 cloud-native (built around the technical ecosystem of kubernetes) architecture and 100% opensource.
 
-## why sealos Cloud
+## Why sealos Cloud
 
 * The product is simple and clean. You won't be tortured by the dazzling advertising discount information published by other Cloud providers.
 * Completely open source, which means unlimited usage and freedom to customize.
@@ -20,7 +20,7 @@ cloud-native (built around the technical ecosystem of kubernetes) architecture a
 * Everything is application, users only need to care about the applications they need to use.
 * The architecture is simplified. No matter the device is a TV box or a data center with hundreds of thousands of servers, it can run sealos Cloud.
 
-## sealos Cloud capability
+## Sealos Cloud capability
 
 * No need to installing a kubernetes cluster, providing the ability for multi-tenants to share a kubernetes in a public network environment.
   * This scenario is suitable for users who deploy business components on kubernetes, not for users who need cluster administrator privileges.
@@ -38,5 +38,5 @@ In the future, sealos will provide more applications.
 
 * Welcome to our main community [discord](https://discord.gg/mzRVdnbw5g).
 * Open source project address [github](https://github.com/labring/sealos).
-* sealos Function Compute application [laf](https://github.com/labring/laf) Make writing code as easy as blogging.
-* sealos Cloud demo address [sealos Cloud](https://cloud.sealos.io).
+* Sealos Function Compute application [laf](https://github.com/labring/laf) Make writing code as easy as blogging.
+* Sealos Cloud demo address [sealos Cloud](https://cloud.sealos.io).
