@@ -26,11 +26,11 @@ cloud-native (built around the technical ecosystem of kubernetes) architecture a
   * This scenario is suitable for users who deploy business components on kubernetes, not for users who need cluster administrator privileges.
   * The advantage is that it can be used directly without installation, and the resource scheduling is more sufficient, so the cost will be lower. It is more than 40% cheaper than virtual machines of the same specification, and it provides strong isolation capabilities.
   * The disadvantage is that the user does not have administrator privileges.
-  * It is very suitable for the scenario where many departments of an enterprise share a cluster. Our solution can greatly improve resource utilization
-* [App store](https://www.sealos.io/docs/cloud/apps/appstore/): Compatible with the application warehouse of the sealos cluster mirror, all distributed software can be installed with one click
+  * It is very suitable for the scenario where many departments of an enterprise share a cluster. Our solution can greatly improve resource utilization.
+* [App store](https://www.sealos.io/docs/cloud/apps/appstore/): Compatible with the application warehouse of the sealos cluster mirror, all distributed software can be installed with one click.
 * [Cloud Terminal](https://www.sealos.io/docs/cloud/apps/terminal/): Open the terminal and you can directly use kubernetes to deploy your own pod.
-* [Sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/): Help users build kubernetes clusters with complete ownership and control
-* [Sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/): Help users build pgsql database instances in minutes
+* [Sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/): Help users build kubernetes clusters with complete ownership and control.
+* [Sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/): Help users build pgsql database instances in minutes.
 
 In the future, sealos will provide more applications.
 
