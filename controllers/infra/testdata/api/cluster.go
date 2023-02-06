@@ -14,6 +14,8 @@ kind: Cluster
 metadata:
   name: ${name}
   namespace: ${namespace}
+  annotations:
+    sealos.io/version: "4.1.4"
 spec:
   infra: ${name}
   image:

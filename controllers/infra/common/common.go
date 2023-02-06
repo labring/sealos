@@ -15,6 +15,7 @@ const (
 	TrySleepTime         = time.Second
 	TRUELable            = "true"
 	SealosInfraFinalizer = "infra.sealos.io/finalizers"
+	InfraSecretPrefix    = "infra-secret"
 	InfraVolumeIndex     = "infra.sealos.io/volumes/index"
 	VolumeInfraID        = "infra.sealos.io/volumes/infraID"
 	InstanceState        = "instance-state-name"

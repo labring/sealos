@@ -75,9 +75,9 @@ More information can be found via the [Kubebuilder Documentation](https://book.k
 
 ## Cluster operator specify the sealos version
 
-Using the annotations: "sealos.io/sealos/version"
+Using the annotations: "sealos.io/version"
 
-Example: "sealos.io/sealos/version=4.1.3"
+Example: "sealos.io/version=4.1.3"
 
 ## Cluster operator local build multi-arch docker image
 

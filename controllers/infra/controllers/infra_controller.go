@@ -130,6 +130,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		}
 
 		if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
+			logger.Info("get secret error: %v", err)
 			keyError = r.createSecret(ctx, infra)
 			logger.Info("secret %v created, error: %v", infra.Name, keyError)
 			if keyError != nil {
@@ -223,9 +224,10 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	dst := base64.StdEncoding.EncodeToString(src)
 	sshData := make(map[string][]byte)
 	sshData[infra.Name] = []byte(dst)
+	secretName := fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      infra.Name,
+			Name:      secretName,
 			Namespace: infra.Namespace,
 		},
 		Type: corev1.SSHAuthPrivateKey,
@@ -236,7 +238,7 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	}, 5, 10*time.Millisecond)
 
 	if err != nil {
-		return fmt.Errorf("create secret error")
+		return fmt.Errorf("create secret error: %v", err)
 	}
 
 	return nil

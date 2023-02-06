@@ -68,6 +68,8 @@ apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
   name: infra-apply-test
+  annotations:
+    sealos.io/version: "4.1.4"
 spec:
   infra: infra-apply-test
   images:
@@ -156,7 +158,7 @@ kind: Cluster
 metadata:
   name: test-cluster
   annotations:
-    sealos.io/sealos/version: "4.1.4" # 指定使用 sealos 的版本
+    sealos.io/version: "4.1.4" # 指定使用 sealos 的版本
 spec:
   infra: my-cluster # 指定 infra 的名称，会在对应的 infra 上启动 kubernetes 集群
   image: # 集群镜像列表，根据自己需求自定义 kubernetes 版本 或者其它组件
