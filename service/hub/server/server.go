@@ -181,7 +181,6 @@ func (as *AuthServer) Authenticate(ar *AuthRequest) (bool, api.Labels, kubernete
 }
 
 func (as *AuthServer) authorizeScope(client kubernetes.Client, ai *api.AuthRequestInfo) ([]string, error) {
-
 	// if client is nil, authorize anonymously by using server.kubeconfig
 	if client == nil {
 		glog.V(2).Infof("Authorize anonymously")
