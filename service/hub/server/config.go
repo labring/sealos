@@ -8,12 +8,22 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cesanta/glog"
 	"github.com/docker/libtrust"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	yaml "gopkg.in/yaml.v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 var K8sClient kubernetes.Client
+
+func init() {
+	var err error
+	K8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
+	if err != nil {
+		glog.Exitf("Failed to get kubeconfig: %s", err)
+	}
+}
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
