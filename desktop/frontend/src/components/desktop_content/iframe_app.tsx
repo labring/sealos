@@ -56,7 +56,7 @@ export default function IframApp(props: { appItem: TApp }) {
           allow="camera;microphone"
           className="w-full h-full"
           frameBorder={0}
-          id={`app-window-${appItem.name}`}
+          id={`app-window-${appItem.key}`}
         />
       )}
     </div>

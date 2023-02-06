@@ -33,9 +33,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
-
-tests/*
-!tests/.gitkeep
+next-env.d.ts
 
 .yalc/
 yalc.lock
