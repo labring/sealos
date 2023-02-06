@@ -34,6 +34,8 @@ const initialFrantState: TAppFront = {
 };
 
 export type TAppConfig = {
+  // app key
+  key: string;
   // app name
   name: string;
   // app icon
