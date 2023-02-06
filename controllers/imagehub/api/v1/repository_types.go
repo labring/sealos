@@ -33,6 +33,8 @@ type RepositorySpec struct {
 
 	//+kubebuilder:validation:Required
 	Name RepoName `json:"name"` // e.g: "libring/mysql"
+	//+kubebuilder:default:=false
+	IsPrivate bool `json:"isPrivate"`
 }
 
 type RepoName string
