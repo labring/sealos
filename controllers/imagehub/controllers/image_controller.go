@@ -87,7 +87,10 @@ func (r *ImageReconciler) reconcile(ctx context.Context, obj client.Object) (ctr
 	repo.Name = img.Spec.Name.ToRepoName().ToMetaName()
 	err := r.Get(ctx, client.ObjectKeyFromObject(repo), repo)
 	if err != nil && apierrors.IsNotFound(err) {
-		repo.Spec.Name = img.Spec.Name.ToRepoName()
+		repo.Spec = imagehubv1.RepositorySpec{
+			Name:      img.Spec.Name.ToRepoName(),
+			IsPrivate: false,
+		}
 		if err := r.Create(ctx, repo); err != nil {
 			r.Logger.Error(err, "error in create")
 			return ctrl.Result{Requeue: true}, err

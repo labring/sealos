@@ -63,7 +63,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	}
 
 	// if repo is public, user can pull it anyway.
-	if repo.Spec.IsPublic {
+	if !repo.Spec.IsPrivate {
 		res = append(res, "pull")
 	}
 
