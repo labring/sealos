@@ -36,3 +36,6 @@ yarn-error.log*
 
 tests/*
 !tests/.gitkeep
+
+.yalc/
+yalc.lock

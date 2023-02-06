@@ -1,3 +1,4 @@
+import { createMasterAPP, masterApp, EVENT_NAME } from 'sealos-desktop-sdk';
 import { Background } from 'components/background';
 import styles from './index.module.scss';
 import Taskbar from 'components/taskbar';
@@ -6,11 +7,9 @@ import Head from 'next/head';
 import useAppStore from 'stores/app';
 import { useEffect } from 'react';
 import StartMenu from 'components/start_menu';
-
-import MasterSDK from 'sealos-desktop-sdk/master';
 import useSessionStore from 'stores/session';
-
 import { Nunito } from '@next/font/google';
+
 const nunito = Nunito({ subsets: ['latin'] });
 
 export default function Layout({ children }: any) {
@@ -25,11 +24,24 @@ export default function Layout({ children }: any) {
   }, [init]);
 
   useEffect(() => {
-    if (!window) {
-      return;
-    }
-    const sdk = new MasterSDK(session);
-    sdk.init();
+    return createMasterAPP({
+      session
+    });
+  }, [session]);
+
+  useEffect(() => {
+    masterApp.addEventListen(EVENT_NAME.GET_APPS, async (data) => {
+      console.log('receive', data);
+      const res = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(['app1', 'app2', '...']);
+        }, 1000);
+      });
+      return {
+        reply: 'i am master. i replyt apps',
+        data: res
+      };
+    });
   }, [session]);
 
   return (
