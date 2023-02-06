@@ -76,6 +76,7 @@ type Applier struct {
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
 	var err error
+	var errCode constants.ErrorCode
 	defer func() {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
 		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
@@ -85,13 +86,13 @@ func (c *Applier) Apply() error {
 	}()
 	c.initStatus()
 	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
-		err = c.initCluster()
+		errCode, err = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
-		err = c.reconcileCluster()
+		errCode, err = c.reconcileCluster()
 		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
-	c.updateStatus(err)
+	c.updateStatus(errCode, err)
 	return err
 }
 
@@ -112,7 +113,7 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
-func (c *Applier) updateStatus(err error) {
+func (c *Applier) updateStatus(errCode constants.ErrorCode, err error) {
 	condition := v2.ClusterCondition{
 		Type:              "ApplyClusterSuccess",
 		Status:            v1.ConditionTrue,
@@ -127,41 +128,44 @@ func (c *Applier) updateStatus(err error) {
 		condition.Message = err.Error()
 		logger.Error("Applied to cluster error: %v", err)
 	}
-	if err != nil {
+	if err != nil && errCode != constants.InstallAppError {
 		c.ClusterDesired.Status.Phase = v2.ClusterFailed
 	}
 	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
 }
 
-func (c *Applier) reconcileCluster() error {
+func (c *Applier) reconcileCluster() (constants.ErrorCode, error) {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired.Name)
 	if len(c.RunNewImages) != 0 {
 		logger.Debug("run new images: %+v", c.RunNewImages)
 		if err := c.installApp(c.RunNewImages); err != nil {
-			return err
+			return constants.InstallAppError, err
 		}
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
 
-	return c.scaleCluster(mj, md, nj, nd)
+	if err := c.scaleCluster(mj, md, nj, nd); err != nil {
+		return constants.ScaleClusterError, err
+	}
+	return constants.NoError, nil
 }
 
-func (c *Applier) initCluster() error {
+func (c *Applier) initCluster() (constants.ErrorCode, error) {
 	logger.Info("Start to create a new cluster: master %s, worker %s, registry %s", c.ClusterDesired.GetMasterIPList(), c.ClusterDesired.GetNodeIPList(), c.ClusterDesired.GetRegistryIP())
 	createProcessor, err := processor.NewCreateProcessor(c.ClusterDesired.Name, c.ClusterFile)
 	if err != nil {
-		return err
+		return constants.InitClusterError, err
 	}
 
 	if err = createProcessor.Execute(c.ClusterDesired); err != nil {
-		return err
+		return constants.InitClusterError, err
 	}
 
 	logger.Info("succeeded in creating a new cluster, enjoy it!")
 
-	return nil
+	return constants.NoError, nil
 }
 
 func (c *Applier) installApp(images []string) error {
