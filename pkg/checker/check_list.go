@@ -15,7 +15,10 @@
 package checker
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"os"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -27,14 +30,30 @@ const (
 
 // Interface Define checkers when pre or post install, like checker node status, checker pod status...
 type Interface interface {
-	Check(cluster *v2.Cluster, phase string) error
+	Name() string
+	// Check checks the cluster status,which will return two value list, the first is warnings, the second is error.
+	Check(cluster *v2.Cluster, phase string) (warnings, errorList []error)
 }
 
 func RunCheckList(list []Interface, cluster *v2.Cluster, phase string) error {
-	for _, l := range list {
-		if err := l.Check(cluster, phase); err != nil {
-			return fmt.Errorf("failed to run checker: %v", err)
+	var errsBuffer bytes.Buffer
+	for _, c := range list {
+		name := c.Name()
+		warnings, errs := c.Check(cluster, phase)
+
+		for _, w := range warnings {
+			_, err := io.WriteString(os.Stdout, fmt.Sprintf("\t[WARNING %s]: %v\n", name, w))
+			if err != nil {
+				return err
+			}
+		}
+		for _, i := range errs {
+			errsBuffer.WriteString(fmt.Sprintf("\t[ERROR %s]: %v\n", name, i.Error()))
 		}
 	}
+	if errsBuffer.Len() > 0 {
+		return fmt.Errorf(errsBuffer.String())
+	}
+
 	return nil
 }

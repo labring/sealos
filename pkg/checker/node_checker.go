@@ -40,6 +40,10 @@ const (
 type NodeChecker struct {
 }
 
+func (n *NodeChecker) Name() string {
+	return "NodeChecker"
+}
+
 type NodeClusterStatus struct {
 	ReadyCount       uint32
 	NotReadyCount    uint32
@@ -47,19 +51,19 @@ type NodeClusterStatus struct {
 	NotReadyNodeList []string
 }
 
-func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	// checker if all the node is ready
 	data := constants.NewData(cluster.Name)
 	c, err := kubernetes.NewKubernetesClient(data.AdminFile(), "")
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 	nodes, err := c.Kubernetes().CoreV1().Nodes().List(context.Background(), v1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
 	var notReadyNodeList []string
 	var readyCount uint32
@@ -83,9 +87,9 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	err = n.Output(nodeClusterStatus)
 	if err != nil {
-		return err
+		return nil, []error{err}
 	}
-	return nil
+	return nil, nil
 }
 
 func (n *NodeChecker) Output(nodeCLusterStatus NodeClusterStatus) error {

@@ -42,9 +42,13 @@ type InitSystemStatus struct {
 	ServiceList []systemStatus
 }
 
-func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *InitSystemChecker) Name() string {
+	return "InitSystemChecker"
+}
+
+func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
 	if phase != PhasePost {
-		return nil
+		return nil, nil
 	}
 	status := &InitSystemStatus{}
 
@@ -57,7 +61,7 @@ func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) error {
 	initsystemvar, err := initsystem.GetInitSystem()
 	if err != nil {
 		status.Error = errors.Wrap(err, "get initsystem error").Error()
-		return nil
+		return nil, nil
 	}
 
 	serviceNames := []string{"kubelet", "containerd", "cri-docker", "docker", "registry", "image-cri-shim"}
@@ -70,7 +74,7 @@ func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 
 	status.Error = Nil
-	return nil
+	return nil, nil
 }
 
 func (n *InitSystemChecker) Output(status *InitSystemStatus) error {

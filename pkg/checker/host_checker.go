@@ -16,77 +16,118 @@ package checker
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 	"time"
 
-	"github.com/labring/sealos/pkg/ssh"
-	"github.com/labring/sealos/pkg/utils/logger"
+	"k8s.io/apimachinery/pkg/util/validation"
 
+	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/pkg/errors"
 )
 
-type HostChecker struct {
-	IPs []string
+type HostnameFormatChecker struct {
+	iplist []string
 }
 
-func (a HostChecker) Check(cluster *v2.Cluster, phase string) error {
-	var ipList []string
-	for _, hosts := range cluster.Spec.Hosts {
-		ipList = append(ipList, hosts.IPS...)
-	}
-	if len(a.IPs) != 0 {
-		ipList = a.IPs
-	}
-	sshClient, err := ssh.NewSSHByCluster(cluster, false)
-	if err != nil {
-		return fmt.Errorf("checker: failed to create ssh client, %v", err)
-	}
-	if err := checkHostnameUnique(sshClient, ipList); err != nil {
-		return err
-	}
-	return checkTimeSync(sshClient, ipList)
+func (fac *HostnameFormatChecker) Name() string {
+	return "HostnameFormatChecker"
 }
 
-func NewHostChecker() Interface {
-	return &HostChecker{}
+func NewHostnameFormatChecker(iplist []string) Interface {
+	return &HostnameFormatChecker{iplist: iplist}
 }
 
-func NewIPsHostChecker(ips []string) Interface {
-	return &HostChecker{IPs: ips}
-}
-
-func checkHostnameUnique(s ssh.Interface, ipList []string) error {
-	logger.Info("checker:hostname %v", ipList)
-	hostnameList := map[string]bool{}
-	for _, ip := range ipList {
-		hostname, err := s.CmdToString(ip, "hostname", "")
+func (fac HostnameFormatChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
+	if phase != PhasePre {
+		return nil, nil
+	}
+	logger.Info("chcker:nodenameFormat %v", fac.iplist)
+	SSH := ssh.NewSSHClient(&cluster.Spec.SSH, false)
+	for _, ip := range fac.iplist {
+		InpathCMD := "hostname"
+		hostname, err := SSH.CmdToString(ip, InpathCMD, "")
 		if err != nil {
-			return fmt.Errorf("failed to get host %s hostname, %v", ip, err)
+			warnings = append(warnings, errors.Errorf("failed to get host %s hostname, %v", ip, err))
+			continue
 		}
-		if hostnameList[hostname] {
-			return fmt.Errorf("hostname cannot be repeated, please set different hostname")
+		for _, msg := range validation.IsQualifiedName(ip) {
+			warnings = append(warnings, errors.Errorf("invalid node name format %q: %s", hostname, msg))
 		}
-		hostnameList[hostname] = true
+		addr, err := net.LookupHost(ip)
+		if addr == nil {
+			warnings = append(warnings, errors.Errorf("hostname \"%s\" could not be reached", hostname))
+		}
+		if err != nil {
+			warnings = append(warnings, errors.Wrapf(err, "hostname \"%s\"", hostname))
+		}
 	}
-	return nil
+
+	return warnings, errorList
 }
 
-// Check whether the node time is synchronized
-func checkTimeSync(s ssh.Interface, ipList []string) error {
-	logger.Info("checker:timeSync %v", ipList)
-	for _, ip := range ipList {
-		timeStamp, err := s.CmdToString(ip, "date +%s", "")
+type TimeSyncChecker struct {
+	iplist []string
+}
+
+func (tsc *TimeSyncChecker) Name() string {
+	return "TimeSyncChecker"
+}
+
+func NewTimeSyncChecker(iplist []string) Interface {
+	return &TimeSyncChecker{iplist: iplist}
+}
+
+func (tsc *TimeSyncChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
+	if phase != PhasePre {
+		return nil, nil
+	}
+	logger.Info("checker:timeSync %v", tsc.iplist)
+	SSH := ssh.NewSSHClient(&cluster.Spec.SSH, false)
+	for _, ip := range tsc.iplist {
+		timeStamp, err := SSH.CmdToString(ip, "date +%s", "")
 		if err != nil {
-			return fmt.Errorf("failed to get %s timestamp, %v", ip, err)
+			return nil, []error{fmt.Errorf("failed to get %s timestamp, %v", ip, err)}
 		}
 		ts, err := strconv.Atoi(timeStamp)
 		if err != nil {
-			return fmt.Errorf("failed to reverse timestamp %s, %v", timeStamp, err)
+			return nil, []error{fmt.Errorf("failed to reverse timestamp %s, %v", timeStamp, err)}
 		}
 		timeDiff := time.Since(time.Unix(int64(ts), 0)).Minutes()
 		if timeDiff < -1 || timeDiff > 1 {
-			return fmt.Errorf("the time of %s node is not synchronized", ip)
+			return nil, []error{fmt.Errorf("the time of %s node is not synchronized", ip)}
 		}
 	}
-	return nil
+
+	return warnings, errorList
+}
+
+type HostnameUniqueChecker struct {
+	iplist []string
+}
+
+func (huc *HostnameUniqueChecker) Name() string {
+	return "HostnameUniqueChecker"
+}
+func NewHostnameUniqueChecker(iplist []string) Interface {
+	return &HostnameUniqueChecker{iplist: iplist}
+}
+
+func (huc *HostnameUniqueChecker) Check(cluster *v2.Cluster, phase string) (warnings, errorList []error) {
+	logger.Info("checker:hostname %v", huc.iplist)
+	SSH := ssh.NewSSHClient(&cluster.Spec.SSH, false)
+	hostnameList := map[string]bool{}
+	for _, ip := range huc.iplist {
+		hostname, err := SSH.CmdToString(ip, "hostname", "")
+		if err != nil {
+			return nil, []error{fmt.Errorf("failed to get host %s hostname, %v", ip, err)}
+		}
+		if hostnameList[hostname] {
+			return nil, []error{fmt.Errorf("hostname cannot be repeated, please set different hostname")}
+		}
+		hostnameList[hostname] = true
+	}
+	return nil, nil
 }
