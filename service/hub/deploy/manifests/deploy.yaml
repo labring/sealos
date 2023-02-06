@@ -6,10 +6,17 @@ metadata:
   name: hub-service-system
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: hub-service
+  name: hub-service-config
+  namespace: hub-service-system
 data:
   config.yml: |
     server:
       addr: ":5001"
+      kubeconfig: "/config/kubeconfig.yaml"
     token:
       issuer: "registry-token-issuer"
       expiration: 2592000  #30days
@@ -21,12 +28,7 @@ data:
   tls.key: |
     -----BEGIN RSA PRIVATE KEY-----
     -----END RSA PRIVATE KEY-----
-kind: ConfigMap
-metadata:
-  labels:
-    app: hub-service
-  name: hub-service-config
-  namespace: hub-service-system
+  kubeconfig.yaml: |
 ---
 apiVersion: apps/v1
 kind: Deployment
