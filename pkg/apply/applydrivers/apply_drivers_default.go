@@ -75,24 +75,24 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
-	var err error
+	var clusterErr, appErr error
 	defer func() {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
 		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
-		if err == nil {
-			err = saveerror
+		if clusterErr == nil {
+			clusterErr = saveerror
 		}
 	}()
 	c.initStatus()
 	if c.ClusterDesired.CreationTimestamp.IsZero() && (c.ClusterCurrent == nil || c.ClusterCurrent.CreationTimestamp.IsZero()) {
-		err = c.initCluster()
+		clusterErr = c.initCluster()
 		c.ClusterDesired.CreationTimestamp = metav1.Now()
 	} else {
-		err = c.reconcileCluster()
+		clusterErr, appErr = c.reconcileCluster()
 		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
-	c.updateStatus(err)
-	return err
+	c.updateStatus(clusterErr, appErr)
+	return clusterErr
 }
 
 func (c *Applier) getWriteBackObjects() []interface{} {
@@ -112,7 +112,7 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
-func (c *Applier) updateStatus(err error) {
+func (c *Applier) updateStatus(clusterErr error, appErr error) {
 	condition := v2.ClusterCondition{
 		Type:              "ApplyClusterSuccess",
 		Status:            v1.ConditionTrue,
@@ -121,31 +121,30 @@ func (c *Applier) updateStatus(err error) {
 		Message:           "Applied to cluster successfully",
 	}
 	c.ClusterDesired.Status.Phase = v2.ClusterSuccess
-	if err != nil {
+	if clusterErr != nil {
 		condition.Status = v1.ConditionFalse
 		condition.Reason = "ApplyClusterError"
-		condition.Message = err.Error()
-		logger.Error("Applied to cluster error: %v", err)
+		condition.Message = clusterErr.Error()
+		logger.Error("Applied to cluster error: %v", clusterErr)
 	}
-	if err != nil {
+	if clusterErr != nil {
 		c.ClusterDesired.Status.Phase = v2.ClusterFailed
 	}
 	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
 }
 
-func (c *Applier) reconcileCluster() error {
+func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {
 	// sync newVersion pki and etc dir in `.sealos/default/pki` and `.sealos/default/etc`
 	processor.SyncNewVersionConfig(c.ClusterDesired.Name)
 	if len(c.RunNewImages) != 0 {
 		logger.Debug("run new images: %+v", c.RunNewImages)
-		if err := c.installApp(c.RunNewImages); err != nil {
-			return err
+		if appErr = c.installApp(c.RunNewImages); appErr != nil {
+			return nil, appErr
 		}
 	}
 	mj, md := iputils.GetDiffHosts(c.ClusterCurrent.GetMasterIPAndPortList(), c.ClusterDesired.GetMasterIPAndPortList())
 	nj, nd := iputils.GetDiffHosts(c.ClusterCurrent.GetNodeIPAndPortList(), c.ClusterDesired.GetNodeIPAndPortList())
-
-	return c.scaleCluster(mj, md, nj, nd)
+	return c.scaleCluster(mj, md, nj, nd), nil
 }
 
 func (c *Applier) initCluster() error {
