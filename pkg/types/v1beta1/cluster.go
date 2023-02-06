@@ -67,7 +67,6 @@ type MountImage struct {
 	Labels     map[string]string `json:"labels,omitempty"`
 	Cmd        []string          `json:"cmd,omitempty"`
 	Entrypoint []string          `json:"entrypoint,omitempty"`
-	ImagePhase ImagePhase        `json:"imagePhase,omitempty"`
 }
 
 type ClusterPhase string
@@ -76,14 +75,6 @@ const (
 	ClusterFailed    ClusterPhase = "ClusterFailed"
 	ClusterSuccess   ClusterPhase = "ClusterSuccess"
 	ClusterInProcess ClusterPhase = "ClusterInProcess"
-)
-
-type ImagePhase string
-
-const (
-	ImageFailed    ImagePhase = "ImageFailed"
-	ImageSuccess   ImagePhase = "ImageSuccess"
-	ImageInProcess ImagePhase = "ImageInProcess"
 )
 
 // ClusterCondition describes the state of a cluster at a certain point.
