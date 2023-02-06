@@ -22,6 +22,13 @@ type SealosAuthenticate struct {
 func (a SealosAuthenticate) Authenticate(user string, password api.PasswordString) (bool, api.Labels, kubernetes.Client, error) {
 	glog.Info("Authenticate for user:", user)
 
+	// user can log in anonymously
+	if user == "" && password == "" {
+		glog.Info("Authenticated anonymously")
+		return true, api.Labels{}, nil, nil
+	}
+
+	// if user/password is specified
 	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(password))
 	if err != nil {
 		return false, api.Labels{}, nil, api.ErrWrongPass

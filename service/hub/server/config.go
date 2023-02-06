@@ -9,8 +9,11 @@ import (
 	"strings"
 
 	"github.com/docker/libtrust"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	yaml "gopkg.in/yaml.v2"
 )
+
+var K8sClient kubernetes.Client
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
@@ -21,6 +24,7 @@ type Config struct {
 type ServerConfig struct {
 	ListenAddress string `yaml:"addr,omitempty"`
 	PathPrefix    string `yaml:"path_prefix,omitempty"`
+	Kubeconfig    string `yaml:"kubeconfig,omitempty"`
 }
 
 type TokenConfig struct {
@@ -39,6 +43,12 @@ func validate(c *Config) error {
 	}
 	if c.Server.PathPrefix != "" && !strings.HasPrefix(c.Server.PathPrefix, "/") {
 		return errors.New("server.path_prefix must be an absolute path")
+	}
+	if c.Server.Kubeconfig != "" {
+		_, err := kubernetes.NewKubernetesClient(c.Server.Kubeconfig, "")
+		if err != nil {
+			return errors.New("server.kubeconfig is not validated")
+		}
 	}
 	if c.Token.Issuer == "" {
 		return errors.New("token.issuer is required")
@@ -82,6 +92,8 @@ func LoadConfig(fileName string) (*Config, error) {
 	if err = validate(c); err != nil {
 		return nil, fmt.Errorf("invalid config: %s", err)
 	}
+	// store client globally
+	K8sClient, _ = kubernetes.NewKubernetesClient(c.Server.Kubeconfig, "")
 	tokenConfigured := false
 	if c.Token.CertFile != "" || c.Token.KeyFile != "" {
 		// Check for partial configuration.
