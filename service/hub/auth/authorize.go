@@ -7,7 +7,6 @@ import (
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/service/hub/api"
-	"github.com/labring/service/hub/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,19 +22,12 @@ type SealosAuthorize struct {
 
 func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequestInfo) ([]string, error) {
 	glog.Info("Authorize for req: ", ai.Name)
-	// if log in anonymously, use default global client
-	var authzClient kubernetes.Client
-	if client == nil {
-		authzClient = server.K8sClient
-	} else {
-		authzClient = client
-	}
 
 	repoName := imagehubv1.RepoName(ai.Name)
 	var res []string
 
 	// get repo using authzClient
-	repoResource := authzClient.KubernetesDynamic().Resource(schema.GroupVersionResource{
+	repoResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
 		Group:    "imagehub.sealos.io",
 		Version:  "v1",
 		Resource: "repositories",
@@ -53,7 +45,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	}
 
 	// get org using authzClient
-	orgResource := authzClient.KubernetesDynamic().Resource(schema.GroupVersionResource{
+	orgResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
 		Group:    "imagehub.sealos.io",
 		Version:  "v1",
 		Resource: "organizations",
