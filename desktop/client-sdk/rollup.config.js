@@ -1,9 +1,14 @@
 import dts from "rollup-plugin-dts";
 import esbuild from "rollup-plugin-esbuild";
+import nodePolyfills from 'rollup-plugin-node-polyfills'
 
-const bundle = (config) => {
+const bundle = ({ plugins, ...config }) => {
   return {
     ...config,
+    plugins: [
+      ...plugins,
+      nodePolyfills()
+    ],
     input: config.input,
     external: (id) => !/^[./]/.test(id),
   };
@@ -15,13 +20,13 @@ export default [
     input: "src/index.ts",
     output: [
       {
-        file: `dist/index.js`,
+        file: `build/index.js`,
         format: "cjs",
         sourcemap: true,
         exports: "auto",
       },
       {
-        file: `dist/index.mjs`,
+        file: `build/index.mjs`,
         format: "es",
         sourcemap: true,
         exports: "auto",
@@ -33,35 +38,7 @@ export default [
     plugins: [dts()],
     input: "src/index.ts",
     output: {
-      file: `dist/index.d.ts`,
-      format: "es",
-    },
-  }),
-
-  bundle({
-    plugins: [esbuild()],
-    input: "src/master.ts",
-    output: [
-      {
-        file: `dist/master.js`,
-        format: "cjs",
-        sourcemap: true,
-        exports: "auto",
-      },
-      {
-        file: `dist/master.mjs`,
-        format: "es",
-        sourcemap: true,
-        exports: "auto",
-      },
-    ],
-  }),
-
-  bundle({
-    plugins: [dts()],
-    input: "src/master.ts",
-    output: {
-      file: `dist/master.d.ts`,
+      file: `build/index.d.ts`,
       format: "es",
     },
   }),
