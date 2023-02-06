@@ -4,6 +4,7 @@ import { APPTYPE } from 'constants/app_type';
 // 已安装 app
 const installedApps: TAppConfig[] = [
   {
+    key: 'Sealos-Document',
     name: 'Sealos Document',
     icon: '/images/sealos.svg',
     type: APPTYPE.IFRAME,
@@ -22,6 +23,7 @@ const installedApps: TAppConfig[] = [
     },
   },
   {
+    key: 'App-Store',
     name: 'App Store',
     icon: '/images/icons/app_store.png',
     type: APPTYPE.APP,
@@ -69,6 +71,7 @@ const installedApps: TAppConfig[] = [
   //   size: 'maximize'
   // },
   {
+    key: 'Terminal',
     name: 'Terminal',
     icon: '/images/terminal.svg',
     type: APPTYPE.IFRAME,
@@ -87,6 +90,7 @@ const installedApps: TAppConfig[] = [
     },
   },
   {
+    key: 'Kubernetes-Dashboard',
     name: 'Kubernetes Dashboard',
     icon: '/images/kubernetes.svg',
     type: APPTYPE.IFRAME,
@@ -208,6 +212,7 @@ const installedApps: TAppConfig[] = [
   //   size: 'maximize'
   // },
   {
+    key: 'sealos-cloud-provider',
     name: 'sealos cloud provider',
     icon: '/images/infraicon/scp.png',
     type: APPTYPE.APP,
@@ -247,6 +252,7 @@ const installedApps: TAppConfig[] = [
   //   mask: true
   // },
   {
+    key: 'Postgres',
     name: 'Postgres',
     icon: '/images/pgadmin.svg',
     type: APPTYPE.APP,
@@ -263,7 +269,24 @@ const installedApps: TAppConfig[] = [
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
     },
-  }
+  },
+  {
+    key: 'sealos-app-sdk-demo',
+    name: 'Sealos SDK APP Demo',
+    icon: '/images/sealos.svg',
+    type: APPTYPE.IFRAME,
+    data: {
+      url: 'https://sdk-app-demo.cloud.sealos.io',
+      desc: 'Sealos Demo'
+    },
+    gallery: [
+    ],
+    menu: {
+      nameColor: 'text-black',
+      helpDropDown: false,
+      helpDocs: false
+    },
+  },
 ];
 
 export default installedApps;
