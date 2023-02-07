@@ -69,6 +69,8 @@ apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
   name: infra-apply-test
+  annotations:
+    sealos.io/version: "4.1.4" 
 spec:
   infra: infra-apply-test
   images:
@@ -157,7 +159,7 @@ kind: Cluster
 metadata:
   name: test-cluster
   annotations:
-    sealos.io/sealos/version: "4.1.4" # Specify the version of sealos to use
+    sealos.io/version: "4.1.4" # Specify the version of sealos to use
 spec:
   infra: my-cluster # Specifying the name of the infra will start the kubernetes cluster on the corresponding infra
   image: # List of cluster images, customize kubernetes version or other components according to your needs
