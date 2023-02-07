@@ -32,7 +32,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 		Version:  "v1",
 		Resource: "repositories",
 	})
-	unstructRepo, err := repoResource.Get(context.Background(), repoName.GetRepo(), metav1.GetOptions{})
+	unstructRepo, err := repoResource.Get(context.Background(), repoName.ToMetaName(), metav1.GetOptions{})
 	if err != nil {
 		glog.Infof("error when Authorize req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
 		return nil, api.ErrNoMatch
