@@ -24,6 +24,8 @@ import (
 	"strconv"
 	"time"
 
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	"k8s.io/client-go/util/retry"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -380,9 +382,9 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner stri
 		return fmt.Errorf("deduction amount is <0")
 	}
 
-	accountBalance := userv1.AccountBalance{
+	accountBalance := accountv1.AccountBalance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%v", userv1.AccountBalancePrefix, owner, seqID),
+			Name:      fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, owner, seqID),
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}

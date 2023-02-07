@@ -1,0 +1,24 @@
+# permissions for end users to edit accounts.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-editor-role
+rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get

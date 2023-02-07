@@ -9,6 +9,7 @@ use (
 	./controllers/metering
 	./controllers/terminal
 	./controllers/user
+	./controllers/account
 	./service/auth
 	./service/hub
 	./service/payment

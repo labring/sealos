@@ -1,0 +1,6 @@
+apiVersion: account.sealos.io/v1
+kind: Account
+metadata:
+  name: account-sample
+spec:
+  # TODO(user): Add fields here

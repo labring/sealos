@@ -1,0 +1,20 @@
+# permissions for end users to view accounts.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: account-viewer-role
+rules:
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - accounts/status
+  verbs:
+  - get

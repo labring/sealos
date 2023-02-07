@@ -5,9 +5,6 @@ resources:
 - bases/user.sealos.io_users.yaml
 - bases/user.sealos.io_usergroups.yaml
 - bases/user.sealos.io_usergroupbindings.yaml
-- bases/user.sealos.io_accounts.yaml
-- bases/user.sealos.io_payments.yaml
-- bases/user.sealos.io_accountbalances.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -19,9 +16,6 @@ patchesStrategicMerge:
 #- patches/webhook_in_usergroupuserbindings.yaml
 #- patches/webhook_in_usergroupnamespacebindings.yaml
 #- patches/webhook_in_usergroupbindings.yaml
-#- patches/webhook_in_accounts.yaml
-#- patches/webhook_in_payments.yaml
-#- patches/webhook_in_accountbalances.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -32,9 +26,6 @@ patchesStrategicMerge:
 #- patches/cainjection_in_usergroupuserbindings.yaml
 #- patches/cainjection_in_usergroupnamespacebindings.yaml
 #- patches/cainjection_in_usergroupbindings.yaml
-#- patches/cainjection_in_accounts.yaml
-#- patches/cainjection_in_payments.yaml
-#- patches/cainjection_in_accountbalances.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
