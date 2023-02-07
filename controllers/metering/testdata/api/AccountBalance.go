@@ -3,13 +3,12 @@ package api
 import (
 	"fmt"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	"time"
 )
 
 const AccountBalanceYaml = `
-apiVersion: user.sealos.io/v1
+apiVersion: account.sealos.io/v1
 kind: AccountBalance
 metadata:
   name: ${name}
@@ -17,7 +16,7 @@ metadata:
 `
 
 func GetAccountBalance(namespace string, name string) (*accountv1.AccountBalance, error) {
-	gvr := userv1.GroupVersion.WithResource("accountbalances")
+	gvr := accountv1.GroupVersion.WithResource("accountbalances")
 	var accountbalance accountv1.AccountBalance
 	if err := baseapi.GetObject(namespace, name, gvr, &accountbalance); err != nil {
 		return nil, err

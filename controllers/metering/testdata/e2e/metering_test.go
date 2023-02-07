@@ -163,6 +163,7 @@ func TestMetering(t *testing.T) {
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
+
 			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")

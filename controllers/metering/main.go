@@ -19,6 +19,8 @@ package main
 import (
 	"flag"
 
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -52,6 +54,7 @@ func init() {
 	utilruntime.Must(infrav1.AddToScheme(scheme))
 	utilruntime.Must(meteringv1.AddToScheme(scheme))
 	utilruntime.Must(userv1.AddToScheme(scheme))
+	utilruntime.Must(accountv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

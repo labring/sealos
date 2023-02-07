@@ -6,7 +6,7 @@ import (
 )
 
 const AccountYaml = `
-apiVersion: user.sealos.io/v1
+apiVersion: account.sealos.io/v1
 kind: Account
 metadata:
   name: ${name}
