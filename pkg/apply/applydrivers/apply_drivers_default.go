@@ -76,11 +76,13 @@ type Applier struct {
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
 	var clusterErr, appErr error
+	// save cluster to file after apply
 	defer func() {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
-		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
-		if clusterErr == nil {
-			clusterErr = saveerror
+		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		if saveErr != nil {
+			logger.Error("write cluster file to local storage: %s error, %s", clusterPath, saveErr)
+			logger.Debug("complete write back file: \n %v", c.getWriteBackObjects())
 		}
 	}()
 	c.initStatus()
