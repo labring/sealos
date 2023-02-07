@@ -48,24 +48,6 @@ type InstallProcessor struct {
 	imagesToOverride []string
 }
 
-func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
-	if ForceOverride || len(c.imagesToOverride) == 0 {
-		return nil
-	}
-
-	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
-	cancel := "you have canceled to override these apps!"
-	pass, err := confirm.Confirm(prompt, cancel)
-	if err != nil {
-		return err
-	}
-	if !pass {
-		return errors.New(cancel)
-	}
-	ForceOverride = true
-	return nil
-}
-
 func (c *InstallProcessor) Execute(cluster *v2.Cluster) error {
 	pipLine, err := c.GetPipeLine()
 	if err != nil {
@@ -100,6 +82,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 }
 
 func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
+	logger.Info("Executing SyncStatusAndCheck Pipeline in InstallProcessor")
 	err := c.ClusterFile.Process()
 	if err != nil {
 		return err
@@ -117,7 +100,28 @@ func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 	return nil
 }
 
+func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
+	logger.Info("Executing ConfirmOverrideApps Pipeline in InstallProcessor")
+
+	if ForceOverride || len(c.imagesToOverride) == 0 {
+		return nil
+	}
+
+	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
+	cancel := "you have canceled to override these apps!"
+	pass, err := confirm.Confirm(prompt, cancel)
+	if err != nil {
+		return err
+	}
+	if !pass {
+		return errors.New(cancel)
+	}
+	ForceOverride = true
+	return nil
+}
+
 func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
+	logger.Info("Executing PreProcess Pipeline in InstallProcessor")
 	if err := c.Buildah.Pull(c.NewImages, buildah.WithPlatformOption(buildah.DefaultPlatform()),
 		buildah.WithPullPolicyOption(buildah.PullIfMissing.String())); err != nil {
 		return err
