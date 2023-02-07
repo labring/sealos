@@ -216,8 +216,8 @@ const AddPage = () => {
                 <div className={styles.dot}></div>
                 <span className={styles.info}>基础信息</span>
               </div>
-              <div className="mt-8 flex items-center">
-                <div className={clsx(styles.cloudlabel, inputNameErr ? 'mb-6' : '')}>
+              <div className="mt-8 flex">
+                <div className={clsx(styles.cloudlabel)}>
                   <span style={{ color: '#EC872A' }}>*</span> 集群名字
                 </div>
                 <InputField
