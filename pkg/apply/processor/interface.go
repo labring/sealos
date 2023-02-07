@@ -18,10 +18,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/labring/sealos/pkg/utils/rand"
-
 	"github.com/containers/storage"
-
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
@@ -34,6 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/maps"
+	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/strings"
 )
 
@@ -167,9 +165,18 @@ func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
 		}
 	}
 	if !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("can't apply ApplicationImage, kubernetes cluster not found, need to run a BaseImage")
+		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
 	}
 	return nil
+}
+
+func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
+	for idx, m := range mounts {
+		if m.ImageName == imageName {
+			return idx
+		}
+	}
+	return -1
 }
 
 func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
@@ -181,11 +188,21 @@ func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
 	if err := CheckImageType(cluster, bd); err != nil {
 		return err
 	}
-	if cluster.Status.Mounts != nil {
-		return nil
+	if cluster.Status.Mounts == nil {
+		cluster.Status.Mounts = make([]v2.MountImage, 0)
 	}
 	for _, img := range cluster.Spec.Image {
-		bderInfo, err := bd.Create(rand.Generator(8), img)
+		idx := getIndexOfContainerInMounts(cluster.Status.Mounts, img)
+		var ctrName string
+		// reuse container name
+		if idx >= 0 {
+			ctrName = cluster.Status.Mounts[idx].Name
+		} else {
+			ctrName = rand.Generator(8)
+		}
+		// recreate container anyway, this function call will remount the mount point of the image
+		// since after the host reboot, the `merged` dir will become an empty dir when we using `overlayfs` as driver
+		bderInfo, err := bd.Create(ctrName, img)
 		if err != nil {
 			return err
 		}
@@ -197,7 +214,11 @@ func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
 		if err = OCIToImageMount(mount, bd); err != nil {
 			return err
 		}
-		cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+		if idx >= 0 {
+			cluster.Status.Mounts[idx] = *mount
+		} else {
+			cluster.Status.Mounts = append(cluster.Status.Mounts, *mount)
+		}
 	}
 	return nil
 }

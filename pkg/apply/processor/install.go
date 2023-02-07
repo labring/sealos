@@ -138,31 +138,33 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		return errors.New("can't apply PatchImage only, need to init a Cluster to append it")
 	}
 	for _, img := range c.NewImages {
+		var ctrName string
 		mount := cluster.FindImage(img)
-		if mount == nil {
-			// create
-			mount = &v2.MountImage{
-				Name:      rand.Generator(8),
-				ImageName: img,
-			}
-			cluster.Spec.Image = merge(cluster.Spec.Image, img)
-		} else if !ForceOverride {
-			continue
-		} else {
-			logger.Debug("trying to override app %s", img)
-		}
 		if mount != nil {
-			manifest, err := c.Buildah.Create(mount.Name, img)
-			if err != nil {
-				return err
+			if !ForceOverride {
+				continue
 			}
-			mount.MountPoint = manifest.MountPoint
-			if err = OCIToImageMount(mount, c.Buildah); err != nil {
-				return err
-			}
-			cluster.SetMountImage(mount)
-			c.NewMounts = append(c.NewMounts, *mount)
+			ctrName = mount.Name
+			logger.Debug("trying to override app %s", img)
+		} else {
+			ctrName = rand.Generator(8)
 		}
+		cluster.Spec.Image = merge(cluster.Spec.Image, img)
+		bderInfo, err := c.Buildah.Create(ctrName, img)
+		if err != nil {
+			return err
+		}
+		mount = &v2.MountImage{
+			Name:       bderInfo.Container,
+			MountPoint: bderInfo.MountPoint,
+			ImageName:  img,
+		}
+
+		if err = OCIToImageMount(mount, c.Buildah); err != nil {
+			return err
+		}
+		cluster.SetMountImage(mount)
+		c.NewMounts = append(c.NewMounts, *mount)
 	}
 	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {

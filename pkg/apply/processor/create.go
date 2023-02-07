@@ -86,11 +86,7 @@ func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
-
 	if err := MountClusterImages(cluster, c.Buildah); err != nil {
-		return err
-	}
-	if err := SyncClusterStatus(cluster, c.Buildah, false); err != nil {
 		return err
 	}
 	runTime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())

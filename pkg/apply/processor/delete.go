@@ -84,11 +84,8 @@ func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
 	}
-	if cluster.Status.Mounts == nil {
-		logger.Warn("delete process unmount rootfs skip is cluster not mount any rootfs")
-		return nil
-	}
-	fs, err := filesystem.NewRootfsMounter(cluster.Status.Mounts)
+	// umount don't care imageMounts
+	fs, err := filesystem.NewRootfsMounter(nil)
 	if err != nil {
 		return err
 	}
