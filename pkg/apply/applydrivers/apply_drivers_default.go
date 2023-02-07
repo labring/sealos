@@ -75,6 +75,7 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
+	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
 	// save cluster to file after apply
 	defer func() {
@@ -94,6 +95,11 @@ func (c *Applier) Apply() error {
 		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
 	c.updateStatus(clusterErr, appErr)
+
+	// return app error if not nil
+	if appErr != nil {
+		return appErr
+	}
 	return clusterErr
 }
 
