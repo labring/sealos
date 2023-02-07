@@ -11,14 +11,14 @@ const infraCRDTemplate: string = `
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: {{ .infraName }}
+  name: "{{ .infraName }}"
   namespace: {{ .namespace }}
 spec:
   hosts: 
   - roles: [ master ]
     count: {{ .masterCount }} 
     flavor: {{ .masterType }}
-    image: "ami-048280a00d5085dd1"
+    image: "{{ .infraImage }}"
     disks:
     - capacity: {{.masterDisk}}
       volumeType: {{.masterDiskType}}
@@ -26,7 +26,7 @@ spec:
   - roles: [ node ]
     count: {{ .nodeCount }}
     flavor: {{ .nodeType }}
-    image: "ami-048280a00d5085dd1"
+    image: "{{ .infraImage }}"
     disks:
     - capacity: {{.nodeDisk}}
       volumeType: {{.nodeDiskType}}
@@ -44,10 +44,10 @@ const clusterCRDTemplate: string = `
 apiVersion: cluster.sealos.io/v1
 kind: Cluster
 metadata:
-  name: {{ .clusterName }}
+  name: "{{ .clusterName }}"
   namespace: {{ .namespace }}
 spec:
-  infra: {{ .infraName}}
+  infra: "{{ .infraName}}"
   image: 
     - {{ .image1}}
     - {{ .image2}} 

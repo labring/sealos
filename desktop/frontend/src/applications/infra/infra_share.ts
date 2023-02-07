@@ -38,13 +38,13 @@ const generateTemplate = (infraForm: any) => {
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: ${infraForm.infraName}
+  name: "${infraForm.infraName}"
 spec:
   hosts:
   - roles: [master] 
     count: ${infraForm.masterCount}
     flavor: ${infraForm.masterType}
-    image: "ami-048280a00d5085dd1"
+    image: "${infraForm.infraImage}"
     disks:
     - capacity: ${infraForm.masterDisk}
       volumeType: ${infraForm.masterDiskType}
@@ -54,7 +54,7 @@ spec:
   - roles: [ node ] 
     count: ${infraForm.nodeCount} 
     flavor: ${infraForm.nodeType}
-    image: "ami-048280a00d5085dd1"
+    image: "${infraForm.infraImage}"
     disks:
     - capacity: ${infraForm.nodeDisk}
       volumeType: ${infraForm.nodeDiskType}
@@ -83,11 +83,36 @@ function conversionPrice(price: number, reserve: number = 2) {
   return price.toFixed(reserve);
 }
 
+let timeout: any = null;
+/**
+ *
+ * @param {Function} func
+ * @param {Number} wait
+ * @param {Boolean} immediate
+ * @return null
+ */
+const debounce = (func: Function, wait = 1000, immediate = false) => {
+  if (timeout !== null) clearTimeout(timeout);
+  if (immediate) {
+    const callNow = !timeout;
+
+    timeout = setTimeout(function () {
+      timeout = null;
+    }, wait);
+    if (callNow) typeof func === 'function' && func();
+  } else {
+    timeout = setTimeout(function () {
+      typeof func === 'function' && func();
+    }, wait);
+  }
+};
+
 export {
   TABLE_HEADERS,
   SELECT_NODES,
   SELECT_DISKS,
   generateTemplate,
   ConvertKeyToLabel,
-  conversionPrice
+  conversionPrice,
+  debounce
 };

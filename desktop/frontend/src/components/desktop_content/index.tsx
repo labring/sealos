@@ -12,29 +12,36 @@ import IframeApp from './iframe_app';
 import styles from './index.module.scss';
 
 export default function DesktopContent() {
-  const { 
-    installedApps: apps, 
-    openedApps, 
-    openApp, 
+  const {
+    installedApps: apps,
+    openedApps,
+    openApp,
     updateAppOrder,
-    updateAppsMousedown 
-} = useAppStore((state) => state)
-  
+    updateAppsMousedown
+  } = useAppStore((state) => state);
+
   /* icon orders */
-  const itemsLen = 18*8 // x:18, y:8
-  const gridItems = useMemo(() => new Array(itemsLen).fill(null).map((_, i) => {
-    const app = apps.find(item => item.order === i)
-    return !!app ? {...app} : null
-  }),[apps, itemsLen])
+  const itemsLen = 18 * 8; // x:18, y:8
+  const gridItems = useMemo(
+    () =>
+      new Array(itemsLen).fill(null).map((_, i) => {
+        const app = apps.find((item) => item.order === i);
+        return !!app ? { ...app } : null;
+      }),
+    [apps, itemsLen]
+  );
   /* dragging icon */
-  const [downingItemIndex, setDowningItemIndex] = useState<number>()
+  const [downingItemIndex, setDowningItemIndex] = useState<number>();
 
   const isBrowser = typeof window !== 'undefined';
-  const DesktopDom = useMemo(() => isBrowser ? document.getElementById('desktop') : null, [isBrowser])
+  const DesktopDom = useMemo(
+    () => (isBrowser ? document.getElementById('desktop') : null),
+    [isBrowser]
+  );
   const desktopWidth = DesktopDom?.offsetWidth || 0;
   const desktopHeight = DesktopDom?.offsetHeight || 0;
 
-  const lastDownIconTime = useRef({appName: '', time: Date.now()})
+  const lastDownIconTime = useRef({ appName: '', time: Date.now() });
 
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
@@ -55,57 +62,63 @@ export default function DesktopContent() {
     }
   }
 
-  const onDrop = useCallback((e:any, i:number) => {
-    setDowningItemIndex(undefined)
-    const dom:Element  = e.target
-    /* if it doesnot contain "app-item", it drop in a appGrid */
-    if(!dom.classList.contains('app-item')) return
+  const onDrop = useCallback(
+    (e: any, i: number) => {
+      setDowningItemIndex(undefined);
+      const dom: Element = e.target;
+      /* if it doesnot contain "app-item", it drop in a appGrid */
+      if (!dom.classList.contains('app-item')) return;
 
-    if(downingItemIndex === undefined || gridItems[downingItemIndex] === null) return
+      if (downingItemIndex === undefined || gridItems[downingItemIndex] === null) return;
 
-    // @ts-ignore nextline
-    updateAppOrder(gridItems[downingItemIndex], i)
-  },[downingItemIndex, gridItems, updateAppOrder])
+      // @ts-ignore nextline
+      updateAppOrder(gridItems[downingItemIndex], i);
+    },
+    [downingItemIndex, gridItems, updateAppOrder]
+  );
 
   /**
    * click a app. if app is "mouseDowning", open it. Otherwise add "mouseDowing" to it.
    */
-  const onclickDesktop = useCallback((e: MouseEvent<HTMLDivElement>) => {
-    /* find app target */
-    let target = e.target as Element;
-    while (target !== e.currentTarget && !target?.classList.contains('app')) {
-      target =  target.parentElement as Element
-    }
-
-    const app = apps.find(item => item.name === target.getAttribute('data-app'))
-
-    /* target is app */
-    if(!!app) {
-      updateAppsMousedown(app, true)
-
-      /* double click, open app */
-      if(lastDownIconTime.current.appName === app.name &&  Date.now() - lastDownIconTime.current.time < 500) {
-        openApp(app)
+  const onclickDesktop = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      /* find app target */
+      let target = e.target as Element;
+      while (target && target !== e.currentTarget && !target?.classList.contains('app')) {
+        target = target?.parentElement as Element;
       }
 
-      lastDownIconTime.current = {
-        appName: app.name,
-        time: Date.now()
+      const app = apps.find((item) => item.name === target.getAttribute('data-app'));
+
+      /* target is app */
+      if (!!app) {
+        updateAppsMousedown(app, true);
+
+        /* double click, open app */
+        if (
+          lastDownIconTime.current.appName === app.name &&
+          Date.now() - lastDownIconTime.current.time < 500
+        ) {
+          openApp(app);
+        }
+
+        lastDownIconTime.current = {
+          appName: app.name,
+          time: Date.now()
+        };
+      } else {
+        // target is blank
+        updateAppsMousedown(apps[0], false);
       }
-    } else { // target is blank
-      updateAppsMousedown(apps[0], false)
-    }
-  },[apps, openApp, updateAppsMousedown])
+    },
+    [apps, openApp, updateAppsMousedown]
+  );
 
   return (
-    <div 
-      id="desktop" 
-      className={styles.desktop} 
-      onClick={onclickDesktop}
-    >
+    <div id="desktop" className={styles.desktop}>
       {/* 已安装的应用 */}
-      <div className={styles.desktopCont}>
-        {gridItems.map((item, i:number) => {
+      <div className={styles.desktopCont} onClick={onclickDesktop}>
+        {gridItems.map((item, i: number) => {
           return (
             <div
               key={i}
@@ -115,19 +128,17 @@ export default function DesktopContent() {
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => onDrop(e, i)}
             >
-              {
-                !!item ? (
-                  <div
-                    className={`app ${styles.dskApp} ${item.mouseDowning ? styles.active : ''}`}
-                    data-app={item.name}
-                  >
-                    <div className={`${styles.dskIcon}`}>
-                      <AppIcon className={clsx('prtclk')} src={item.icon} width="100%" />
-                    </div>
-                    <div className={styles.appName}>{item.name}</div>
+              {!!item ? (
+                <div
+                  className={`app ${styles.dskApp} ${item.mouseDowning ? styles.active : ''}`}
+                  data-app={item.name}
+                >
+                  <div className={`${styles.dskIcon}`}>
+                    <AppIcon className={clsx('prtclk')} src={item.icon} width="100%" />
                   </div>
-                ) : null
-              }
+                  <div className={styles.appName}>{item.name}</div>
+                </div>
+              ) : null}
             </div>
           );
         })}

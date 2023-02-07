@@ -19,6 +19,7 @@ export interface HookFormProps {
   multiselect?: boolean;
   placeholder?: string;
   contentAfter?: string; //Input
+  validationMessage?: string;
 }
 
 export const ControlledTextField: FC<HookFormProps> = (props) => {
@@ -35,6 +36,8 @@ export const ControlledTextField: FC<HookFormProps> = (props) => {
           className={clsx(styles.inputWarp, 'grow')}
           placeholder={props.placeholder}
           validationState={error && 'error'}
+          validationMessage={error && props.validationMessage}
+          validationMessageIcon={null}
         />
       )}
     />
