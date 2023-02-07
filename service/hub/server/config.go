@@ -15,11 +15,11 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-var K8sClient kubernetes.Client
+var k8sClient kubernetes.Client
 
 func init() {
 	var err error
-	K8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
+	k8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
 	if err != nil {
 		glog.Exitf("Failed to get kubeconfig: %s", err)
 	}
@@ -103,7 +103,7 @@ func LoadConfig(fileName string) (*Config, error) {
 		return nil, fmt.Errorf("invalid config: %s", err)
 	}
 	// store client globally
-	K8sClient, _ = kubernetes.NewKubernetesClient(c.Server.Kubeconfig, "")
+	k8sClient, _ = kubernetes.NewKubernetesClient(c.Server.Kubeconfig, "")
 	tokenConfigured := false
 	if c.Token.CertFile != "" || c.Token.KeyFile != "" {
 		// Check for partial configuration.
