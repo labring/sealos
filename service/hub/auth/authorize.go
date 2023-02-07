@@ -34,7 +34,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	})
 	unstructRepo, err := repoResource.Get(context.Background(), repoName.GetRepo(), metav1.GetOptions{})
 	if err != nil {
-		glog.Infof("error when Authorize req: %s for user %s, get repoName cr from apiserver error", repoName, ai.Account)
+		glog.Infof("error when Authorize req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
 		return nil, api.ErrNoMatch
 	}
 	repo := imagehubv1.Repository{}
@@ -52,7 +52,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	})
 	unstructOrg, err := orgResource.Get(context.Background(), repoName.GetOrg(), metav1.GetOptions{})
 	if err != nil {
-		glog.Infof("error when Authorize req: %s for user %s, get org cr from apiserver error", repoName, ai.Account)
+		glog.Infof("error when Authorize req: %s for user %s, get org cr from apiserver error: %s ", repoName, ai.Account, err)
 		return nil, api.ErrNoMatch
 	}
 	org := imagehubv1.Organization{}
