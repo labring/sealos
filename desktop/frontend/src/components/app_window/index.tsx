@@ -33,25 +33,20 @@ export default function AppWindow(props: {
       let upperBoundary = -desktopHeight * 0.1;
       let lowerBoundary = desktopHeight * 0.9 - appHeaderHeight;
       setPosition({
-        x: x < 0 
+        x:
+          x < 0
             ? x < -1.1 * appHeaderWidth // (0.8width + width/0.6*0.2)
-              ? 0 : x
-            : x > 1.1 * appHeaderWidth 
-              ? 0 : x,
+              ? 0
+              : x
+            : x > 1.1 * appHeaderWidth
+            ? 0
+            : x,
         y: y < upperBoundary ? upperBoundary : y > lowerBoundary ? 0 : y
       });
     } else {
       setPosition({
-        x: x < 0 
-            ? x < -0.8 * appHeaderWidth
-              ? 0 : x
-            : x > 0.8 * appHeaderWidth
-              ? 0 : x,
-        y: y < 0 
-            ? 0 
-            : y > desktopHeight - appHeaderHeight 
-              ? 0
-              : y
+        x: x < 0 ? (x < -0.8 * appHeaderWidth ? 0 : x) : x > 0.8 * appHeaderWidth ? 0 : x,
+        y: y < 0 ? 0 : y > desktopHeight - appHeaderHeight ? 0 : y
       });
     }
   };
@@ -82,7 +77,19 @@ export default function AppWindow(props: {
           zIndex: wnapp.zIndex
         }}
       >
-        <div className={'windowHeader'}>
+        <div
+          className={'windowHeader'}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            updateOpenedAppInfo({
+              ...wnapp,
+              size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin',
+              cacheSize: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
+            });
+            setPosition({ x: 0, y: 0 });
+          }}
+        >
           <div
             className={styles.toolbar}
             onClick={(e) => {
