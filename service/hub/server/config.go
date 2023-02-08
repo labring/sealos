@@ -8,7 +8,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cesanta/glog"
 	"github.com/docker/libtrust"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	yaml "gopkg.in/yaml.v2"
@@ -16,14 +15,6 @@ import (
 )
 
 var k8sClient kubernetes.Client
-
-func init() {
-	var err error
-	k8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
-	if err != nil {
-		glog.Exitf("Failed to get kubeconfig: %s", err)
-	}
-}
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
@@ -110,6 +101,11 @@ func LoadConfig(fileName string) (*Config, error) {
 	}
 	if !tokenConfigured {
 		return nil, fmt.Errorf("failed to load token cert and key: none provided")
+	}
+	// setup k8sClient by using controller-runtime
+	k8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
+	if err != nil {
+		return nil, err
 	}
 	return c, nil
 }
