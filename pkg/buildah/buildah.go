@@ -149,7 +149,6 @@ func RegisterRootCommand(cmd *cobra.Command) {
 	os.Setenv("TMPDIR", parse.GetTempDir())
 	rootCmd = cmd
 	cmd.SilenceUsage = true
-	cmd.SilenceErrors = true
 	err := RegisterGlobalFlags(cmd.PersistentFlags())
 	bailOnError(err, "failed to register global flags")
 	wrapPrePersistentRun(cmd)
