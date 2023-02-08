@@ -1,20 +1,22 @@
-# 在sealos-cloud 上面拉取私有镜像教程
+# pull private image tutorial on sealos cloud 
 
-## 1、在sealos-cloud上面创建docker hub secret
+this docs teach you how to run private image pod in sealos cloud
+
+## create docker hub secret on sealos cloud 
 
 ```
 kubectl create secret docker-registry regcred \
-  --docker-server=<你的镜像仓库服务器> \ //docker hub的话是https://index.docker.io/v1/ 
-  --docker-username=<你的用户名> \
-  --docker-password=<你的密码> \
-  --docker-email=<你的邮箱地址>
+  --docker-server=<your docker-server> \ //docker hub is https://index.docker.io/v1/ 
+  --docker-username=<your username> \
+  --docker-password=<your password> \
+  --docker-email=<your email>
 ```
 
 
 
-## 2、创建pod
+## create pod
 
-2.1上传一个镜像，并且在docker hub上面从public修改为private
+### push a image and change it from public to private on docker hub
 
 ```
 docker pull hellodm/my-first-demo:v1.0
@@ -22,7 +24,9 @@ docker tag 375fb2abe5d4 xiaojie99999/my-first-demo:v1.0
 docker push xiaojie99999/my-first-demo:v1.0
 ```
 
-2.2 creat a pod，在sealos cloud 上面的terminal里面apply这个yaml
+
+
+### apply this yaml on sealos cloud terminal to create a pod
 
 ```
 apiVersion: v1
@@ -48,7 +52,7 @@ spec:
   - name: regcred
 ```
 
-## 3、结果
+## result
 
 ```
 root@t5bha6vem:~# kubectl get pod 
