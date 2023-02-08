@@ -55,18 +55,19 @@ func TestMetering(t *testing.T) {
 			time.Sleep(time.Second)
 			_, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err == nil {
-				t.Fatalf("success get metering: %v", err)
+				t.Fatalf("succcess get metering: %v", err)
 			}
 		})
 
 		t.Run("extension should be ok", func(t *testing.T) {
 			// test extension will register cpu price to metering
 			t.Log("create metering  ")
+			time.Sleep(time.Second * 10)
 			baseapi.EnsureNamespace(TestNamespace)
-			time.Sleep(time.Second * 3)
+			time.Sleep(time.Second * 10)
 			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
-				t.Fatalf("success get metering: %v", err)
+				t.Fatalf("fail get metering: %v", err)
 			}
 
 			if _, ok := metering.Spec.Resources["cpu"]; ok {
@@ -86,6 +87,7 @@ func TestMetering(t *testing.T) {
 		})
 
 		t.Run("pod controller should be ok", func(t *testing.T) {
+			time.Sleep(5 * time.Second)
 			baseapi.EnsureNamespace(TestNamespace)
 			time.Sleep(5 * time.Second)
 			t.Log("creat pod controller")
@@ -129,7 +131,7 @@ func TestMetering(t *testing.T) {
 
 		t.Run("metering used update and calculate should be ok", func(t *testing.T) {
 			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-			time.Sleep(time.Second * 5)
+			time.Sleep(time.Second * 10)
 			baseapi.EnsureNamespace(TestNamespace)
 			api.EnsurePod(TestNamespace, PodName)
 			time.Sleep(time.Second * 5)

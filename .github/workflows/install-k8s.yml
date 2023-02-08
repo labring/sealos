@@ -1,0 +1,49 @@
+name: install k8s though sealos
+on:
+  workflow_dispatch:
+    inputs:
+      sealosPatch:
+        description: 'sealos patch image for development.'
+        required: false
+        default: ghcr.io/labring/sealos-patch:dev
+
+jobs:
+  install-k8s:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Trace memory
+        run: |
+          env
+          cd /home/runner/work && tree -L 5
+          free -m
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.2
+        with:
+          sealosVersion: 4.1.5-alpha2
+          buildah: true
+          debug: true
+          sealctl: false
+      - name: Auto print sealos version
+        uses: labring/sealos-action@v0.0.2
+        with:
+          type: version
+      - name: Auto install k8s using sealos
+        uses: labring/sealos-action@v0.0.2
+        with:
+          image: labring/kubernetes:v1.25.0
+          debug: true
+          type: run-k8s
+      - name: After k8s operation
+        run: |
+          sleep 60
+          sudo -u root crictl ps -a
+          sudo -u root cat /etc/hosts
+          sudo -u root systemctl status kubelet
+          sudo -u root kubectl get nodes --kubeconfig /etc/kubernetes/admin.conf 
+          NODENAME=$(sudo -u root kubectl get nodes -ojsonpath='{.items[0].metadata.name}' --kubeconfig /etc/kubernetes/admin.conf )
+          NODEIP=$(sudo -u root kubectl get nodes -ojsonpath='{.items[0].status.addresses[0].address}' --kubeconfig /etc/kubernetes/admin.conf )
+          echo "NodeName=$NODENAME,NodeIP=$NODEIP"
+          sudo -u root kubectl get nodes --kubeconfig /etc/kubernetes/admin.conf 
+          sudo -u root kubectl get pods -A --kubeconfig /etc/kubernetes/admin.conf
