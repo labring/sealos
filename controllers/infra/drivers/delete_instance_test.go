@@ -32,9 +32,10 @@ func TestDriver_DeleteInstances(t *testing.T) {
 			false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDriver()
+			d, err := NewAWSDriver()
 			if err != nil {
 				t.Errorf("create driver failed")
 			}

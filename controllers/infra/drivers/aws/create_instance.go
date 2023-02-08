@@ -172,7 +172,7 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 // get instace data by id
 func getInstancesByID(id *string, client *ec2.Client) ([]types.Reservation, error) {
 	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
-	statusName := common.InstanceState
+	statusName := "instance-state-name"
 	status := types.InstanceStateNameRunning
 	input := &ec2.DescribeInstancesInput{
 		Filters: []types.Filter{
@@ -248,7 +248,6 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	roleTags := rolesToTags(hosts.Roles)
 	keyName := infra.Spec.SSH.PkName
 	availabilityZone := infra.Spec.AvailabilityZone
-	// todo use ami to search root device name
 
 	// encode userdata to base64
 	userData := base64.StdEncoding.EncodeToString([]byte(userData))
@@ -369,7 +368,7 @@ func (d Driver) WaitInstanceRunning(instances []types.Instance) error {
 	return waiter.Wait(context.TODO(), input, time.Second*180)
 }
 
-func (d Driver) CreateKeyPair(infra *v1.Infra) error {
+func (d Driver) createKeyPair(infra *v1.Infra) error {
 	if infra.Spec.SSH.PkData != "" {
 		return nil
 	}

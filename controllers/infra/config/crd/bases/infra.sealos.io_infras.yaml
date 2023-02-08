@@ -145,6 +145,13 @@ spec:
                       type: array
                   type: object
                 type: array
+              platform:
+                default: aws
+                description: 'ENUM: aws/aliyun'
+                enum:
+                - aws
+                - aliyun
+                type: string
               regionIDs:
                 description: RegionIDs is cloud provider regionID list
                 items:
