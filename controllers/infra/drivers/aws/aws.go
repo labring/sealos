@@ -68,6 +68,10 @@ func (d Driver) ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
 	return d.modifyVolume(curDisk, desDisk)
 }
 
+func (d Driver) CreateKeyPair(infra *v1.Infra) error {
+	return d.createKeyPair(infra)
+}
+
 func (d Driver) DeleteKeyPair(infra *v1.Infra) error {
 	return d.deleteKeyPair(infra)
 }

@@ -20,6 +20,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/controllers/infra/common"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+
+	"github.com/labring/sealos/controllers/infra/drivers/aliyun"
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	"github.com/labring/sealos/controllers/infra/drivers/aws"
@@ -53,7 +59,7 @@ type Reconcile interface {
 	ReconcileInstance(infra *v1.Infra, driver Driver) error
 }
 
-func NewDriver() (Driver, error) {
+func NewAWSDriver() (Driver, error) {
 	config, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
 		return nil, fmt.Errorf("load default config failed %s", err)
@@ -64,4 +70,12 @@ func NewDriver() (Driver, error) {
 		Config: config,
 		Client: client,
 	}, nil
+}
+
+func NewAliyunDriver() (Driver, error) {
+	client, err := ecs.NewClientWithAccessKey(common.AliyunRegionID, common.AliyunAccessKeyID, common.AliyunAccessKeySecret)
+	if err != nil {
+		return nil, fmt.Errorf("get aliyun client failed: %v", err)
+	}
+	return &aliyun.Driver{Client: client}, nil
 }

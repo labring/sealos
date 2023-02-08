@@ -95,43 +95,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	return nil
 }
 
-/*
-func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
-	if len(infra.Spec.Hosts) == 0 {
-		logger.Debug("desired host len is 0")
-		return nil
-	}
-	setHostsIndex(infra)
-	if !infra.DeletionTimestamp.IsZero() {
-		logger.Debug("remove all hosts")
-		for _, hosts := range infra.Spec.Hosts {
-			if err := driver.DeleteInstances(&hosts); err != nil {
-				return err
-			}
-		}
-	}
-	// get infra all hosts
-	hosts, err := driver.GetInstances(infra)
-	if err != nil {
-		return fmt.Errorf("get all instances failed: %v", err)
-	}
-	// sort current hosts
-	sortHostsByIndex(v1.IndexHosts(hosts))
-	// merge current hosts list using index
-	// sort  desired hosts
-	sortHostsByIndex(v1.IndexHosts(infra.Spec.Hosts))
-	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
-		return err
-	}
-	currHosts, err := driver.GetInstances(infra)
-	if err != nil {
-		return err
-	}
-	infra.Spec.Hosts = currHosts
-	return nil
-}
-*/
-
 func sortDisksByIndex(disks v1.IndexDisks) {
 	sort.Sort(disks)
 }
@@ -211,21 +174,6 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			if err := a.ReconcileDisks(infra, cur, des.Disks, driver); err != nil {
 				return fmt.Errorf("reconcile disks failed: %v", err)
 			}
-
-			//if cur.Flavor != d.Flavor {
-			//	logger.Info("current instance flavor not equal desired instance flavor, update instance %#v", d)
-			//	if err := driver.ModifyInstances(cur, &d); err != nil {
-			//		return fmt.Errorf("modify instances: %v", err)
-			//	}
-			//}
-
-			// compare volume between current and desire
-			// can't modify volume type when volume being used. can't smaller size when volume being used.
-			//if !reflect.DeepEqual(cur.Disks, d.Disks) {
-			//	if err := a.ReconcileDisks(infra, cur, d.Disks, driver); err != nil {
-			//		return fmt.Errorf("ReconcileDisks failed: %v", err)
-			//	}
-			//}
 
 			// TODO check CPU memory...
 			return nil

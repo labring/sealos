@@ -36,7 +36,6 @@ import (
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	infracommon "github.com/labring/sealos/controllers/infra/common"
-	"github.com/labring/sealos/controllers/infra/drivers"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
@@ -69,7 +68,6 @@ var errClusterFileNotExists = errors.New("get clusterfile on master failed").Err
 type ClusterReconciler struct {
 	client.Client
 	logr.Logger
-	driver   drivers.Driver
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
 }
@@ -327,12 +325,6 @@ func getMasterClusterfile(c ssh.Interface, EIP string) (*v1beta1.Cluster, error)
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "cluster_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
-	driver, err := drivers.NewDriver()
-
-	if err != nil {
-		return fmt.Errorf("cluster controller new driver failed: %v", err)
-	}
-	r.driver = driver
 	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).

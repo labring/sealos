@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	customController "github.com/labring/sealos/pkg/utils/controller"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,11 +50,13 @@ import (
 // InfraReconciler reconciles a Infra object
 type InfraReconciler struct {
 	client.Client
-	Scheme    *runtime.Scheme
-	driver    drivers.Driver
-	applier   drivers.Reconcile
-	recorder  record.EventRecorder
-	finalizer *controller.Finalizer
+	Scheme       *runtime.Scheme
+	awsDriver    drivers.Driver
+	aliyunDriver drivers.Driver
+	driver       drivers.Driver
+	applier      drivers.Reconcile
+	recorder     record.EventRecorder
+	finalizer    *controller.Finalizer
 }
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -76,6 +80,16 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	// choose driver
+	platform := infra.Spec.Platform
+	// default aws
+	r.driver = r.awsDriver
+	switch platform {
+	case "aliyun":
+		r.driver = r.aliyunDriver
+	}
+
 	// add finalizer
 	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
 		return ctrl.Result{}, err
@@ -129,8 +143,12 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return err
 		}
 
-		if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
-			logger.Info("get secret error: %v", err)
+		secretNamespacedName := types.NamespacedName{
+			Namespace: infra.Namespace,
+			Name:      getSecretName(infra),
+		}
+		if err := r.Get(ctx, secretNamespacedName, secret); err != nil {
+			logger.Info("get secret %v error: %v", secretNamespacedName, err)
 			keyError = r.createSecret(ctx, infra)
 			logger.Info("secret %v created, error: %v", infra.Name, keyError)
 			if keyError != nil {
@@ -224,7 +242,7 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	dst := base64.StdEncoding.EncodeToString(src)
 	sshData := make(map[string][]byte)
 	sshData[infra.Name] = []byte(dst)
-	secretName := fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
+	secretName := getSecretName(infra)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
@@ -244,13 +262,22 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	return nil
 }
 
+func getSecretName(infra *infrav1.Infra) string {
+	return fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	driver, err := drivers.NewDriver()
+	awsDriver, err := drivers.NewAWSDriver()
 	if err != nil {
-		return fmt.Errorf("infra controller new driver failed: %v", err)
+		return fmt.Errorf("infra controller new aws driver failed: %v", err)
 	}
-	r.driver = driver
+	aliyunDriver, err := drivers.NewAliyunDriver()
+	if err != nil {
+		return fmt.Errorf("infra controller new aliyun driver failed: %v", err)
+	}
+	r.awsDriver = awsDriver
+	r.aliyunDriver = aliyunDriver
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 	if r.finalizer == nil {
