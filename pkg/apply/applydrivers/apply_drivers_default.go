@@ -97,7 +97,7 @@ func (c *Applier) Apply() error {
 	c.updateStatus(clusterErr, appErr)
 
 	// return app error if not nil
-	if appErr != nil {
+	if IgnoreCancelledError(appErr) != nil {
 		return appErr
 	}
 	return clusterErr
@@ -120,6 +120,7 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
+// todo(lingdie): use appErr to generate cmdPhase for each cmd and maintain a error map for images
 func (c *Applier) updateStatus(clusterErr error, appErr error) {
 	condition := v2.ClusterCondition{
 		Type:              "ApplyClusterSuccess",

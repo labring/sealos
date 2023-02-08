@@ -108,13 +108,14 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 	}
 
 	prompt := fmt.Sprintf("are you sure to override these following apps? \n%s\t", strings.Join(c.imagesToOverride, "\n"))
-	cancel := "you have canceled to override these apps!"
-	pass, err := confirm.Confirm(prompt, cancel)
+	cancelledMsg := "you have canceled to override these apps"
+	pass, err := confirm.Confirm(prompt, cancelledMsg)
 	if err != nil {
 		return err
 	}
 	if !pass {
-		return errors.New(cancel)
+		// return a cancelled error to stop apply process.
+		return errors.New(CancelledError)
 	}
 	ForceOverride = true
 	return nil
