@@ -23,7 +23,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/types"
 
-	customController "github.com/labring/sealos/pkg/utils/controller"
+	customCtrl "github.com/labring/sealos/pkg/utils/controller"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -62,6 +62,7 @@ type InfraReconciler struct {
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -192,17 +193,8 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	// clean infra using aws terminate
 	// now we depend on the aws terminate func to keep consistency
 	// TODO: double check the terminated Instance and then remove the finalizer...
-	var isDelete bool
-	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+	if _, err := r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
 		return ctrl.Result{Requeue: true}, err
-	}
-
-	// delete secret
-	if isDelete {
-		err := r.Delete(ctx, secret)
-		if err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
 	}
 
 	return ctrl.Result{}, nil
@@ -251,7 +243,10 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 		Type: corev1.SSHAuthPrivateKey,
 		Data: sshData,
 	}
-	_, err := customController.RetryCreateOrUpdate(ctx, r.Client, secret, func() error {
+	if err := ctrl.SetControllerReference(infra, secret, r.Scheme); err != nil {
+		return fmt.Errorf("set owner reference error: %v", err)
+	}
+	_, err := customCtrl.RetryCreateOrUpdate(ctx, r.Client, secret, func() error {
 		return nil
 	}, 5, 10*time.Millisecond)
 

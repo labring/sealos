@@ -20,8 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/labring/sealos/controllers/infra/common"
-
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
 	"github.com/labring/sealos/controllers/infra/drivers/aliyun"
@@ -73,7 +71,7 @@ func NewAWSDriver() (Driver, error) {
 }
 
 func NewAliyunDriver() (Driver, error) {
-	client, err := ecs.NewClientWithAccessKey(common.AliyunRegionID, common.AliyunAccessKeyID, common.AliyunAccessKeySecret)
+	client, err := ecs.NewClientWithAccessKey("AliyunRegionID", "AliyunAccessKeyID", "AliyunAccessKeySecret")
 	if err != nil {
 		return nil, fmt.Errorf("get aliyun client failed: %v", err)
 	}

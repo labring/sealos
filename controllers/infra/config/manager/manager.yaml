@@ -52,7 +52,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: docker.io/xiaojie99999/infra:v0.0.1
+        image: controller:latest
         name: manager
         securityContext:
           runAsNonRoot: true

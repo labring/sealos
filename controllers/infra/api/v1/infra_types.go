@@ -179,7 +179,7 @@ type InfraSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// ENUM: aws/aliyun
-	// +kubebuilder:validation:Required
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:validation:Enum=aws;aliyun
 	// +kubebuilder:default:=aws
 	Platform string `json:"platform,omitempty"`
