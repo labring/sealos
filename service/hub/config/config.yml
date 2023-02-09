@@ -1,6 +1,5 @@
 server:
   addr: ":5001"
-  kubeconfig: "/config/kubeconfig.yaml"
 token:
   issuer: "registry-token-issuer"
   expiration: 2592000  #30days
