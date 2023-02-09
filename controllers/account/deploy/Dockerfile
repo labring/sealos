@@ -1,5 +1,6 @@
 FROM scratch
+
 USER 65532:65532
+COPY manifests ./manifests/account-controller
 COPY registry ./registry
-COPY manifests ./account-controller
-CMD ["kubectl apply -f account-controller/deploy.yaml"]
+CMD ["kubectl apply -f manifests/account-controller/deploy.yaml"]

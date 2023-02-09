@@ -33,9 +33,6 @@ spec:
         - --leader-elect
         image: controller:latest
         imagePullPolicy: Always
-        envFrom:
-          - secretRef:
-              name: payment-secret
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
