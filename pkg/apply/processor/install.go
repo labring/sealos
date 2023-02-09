@@ -115,7 +115,7 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 	}
 	if !pass {
 		// return a cancelled error to stop apply process.
-		return errors.New(CancelledError)
+		return ErrCancelled
 	}
 	ForceOverride = true
 	return nil

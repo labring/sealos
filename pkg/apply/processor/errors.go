@@ -16,8 +16,6 @@ limitations under the License.
 
 package processor
 
-const CancelledError = "cancelled"
+import "errors"
 
-func IsCancelledError(err error) bool {
-	return err.Error() == CancelledError
-}
+var ErrCancelled = errors.New("cancelled")

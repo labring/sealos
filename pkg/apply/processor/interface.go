@@ -138,7 +138,7 @@ func ConfirmDeleteNodes() error {
 		if pass, err := confirm.Confirm(prompt, cancel); err != nil {
 			return err
 		} else if !pass {
-			return errors.New(cancel)
+			return ErrCancelled
 		}
 	}
 	return nil

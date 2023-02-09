@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/apply"
@@ -40,6 +42,9 @@ func newResetCmd() *cobra.Command {
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := processor.ConfirmDeleteNodes(); err != nil {
+				if errors.Is(err, processor.ErrCancelled) {
+					return nil
+				}
 				return err
 			}
 			applier, err := apply.NewApplierFromResetArgs(resetArgs)
