@@ -21,11 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	customController "github.com/labring/sealos/pkg/utils/controller"
+	"k8s.io/apimachinery/pkg/types"
+
+	customCtrl "github.com/labring/sealos/pkg/utils/controller"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/retry"
 
 	"github.com/labring/endpoints-operator/library/controller"
@@ -58,6 +59,7 @@ type InfraReconciler struct {
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -94,12 +96,7 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	logger.Info("infra finalizer: %v, status: %v", infra.Finalizers[0], infra.Status.Status)
 
-	err := retry.RetryOnConflict(wait.Backoff{
-		Steps:    5,
-		Duration: 10 * time.Millisecond,
-		Factor:   1.0,
-		Jitter:   0.1,
-	}, func() error {
+	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 			return client.IgnoreNotFound(err)
 		}
@@ -129,8 +126,12 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return err
 		}
 
-		if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
-			logger.Info("get secret error: %v", err)
+		secretNamespacedName := types.NamespacedName{
+			Namespace: infra.Namespace,
+			Name:      getSecretName(infra),
+		}
+		if err := r.Get(ctx, secretNamespacedName, secret); err != nil {
+			logger.Info("get secret %v error: %v", secretNamespacedName, err)
 			keyError = r.createSecret(ctx, infra)
 			logger.Info("secret %v created, error: %v", infra.Name, keyError)
 			if keyError != nil {
@@ -174,17 +175,8 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	// clean infra using aws terminate
 	// now we depend on the aws terminate func to keep consistency
 	// TODO: double check the terminated Instance and then remove the finalizer...
-	var isDelete bool
-	if isDelete, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+	if _, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
 		return ctrl.Result{Requeue: true}, err
-	}
-
-	// delete secret
-	if isDelete {
-		err := r.Delete(ctx, secret)
-		if err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
 	}
 
 	return ctrl.Result{}, nil
@@ -224,7 +216,7 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	dst := base64.StdEncoding.EncodeToString(src)
 	sshData := make(map[string][]byte)
 	sshData[infra.Name] = []byte(dst)
-	secretName := fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
+	secretName := getSecretName(infra)
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretName,
@@ -233,7 +225,10 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 		Type: corev1.SSHAuthPrivateKey,
 		Data: sshData,
 	}
-	_, err := customController.RetryCreateOrUpdate(ctx, r.Client, secret, func() error {
+	if err := ctrl.SetControllerReference(infra, secret, r.Scheme); err != nil {
+		return fmt.Errorf("set owner reference error: %v", err)
+	}
+	_, err := customCtrl.RetryCreateOrUpdate(ctx, r.Client, secret, func() error {
 		return nil
 	}, 5, 10*time.Millisecond)
 
@@ -242,6 +237,10 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 	}
 
 	return nil
+}
+
+func getSecretName(infra *infrav1.Infra) string {
+	return fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
 }
 
 // SetupWithManager sets up the controller with the Manager.
