@@ -75,12 +75,15 @@ type Applier struct {
 
 func (c *Applier) Apply() error {
 	clusterPath := constants.Clusterfile(c.ClusterDesired.Name)
+	// clusterErr and appErr should not appear in the same time
 	var clusterErr, appErr error
+	// save cluster to file after apply
 	defer func() {
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
-		saveerror := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
-		if clusterErr == nil {
-			clusterErr = saveerror
+		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
+		if saveErr != nil {
+			logger.Error("write cluster file to local storage: %s error, %s", clusterPath, saveErr)
+			logger.Debug("complete write back file: \n %v", c.getWriteBackObjects())
 		}
 	}()
 	c.initStatus()
@@ -92,6 +95,11 @@ func (c *Applier) Apply() error {
 		c.ClusterDesired.CreationTimestamp = c.ClusterCurrent.CreationTimestamp
 	}
 	c.updateStatus(clusterErr, appErr)
+
+	// return app error if not nil
+	if IgnoreCancelledError(appErr) != nil {
+		return appErr
+	}
 	return clusterErr
 }
 
@@ -112,6 +120,7 @@ func (c *Applier) initStatus() {
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
+// todo(lingdie): use appErr to generate cmdPhase for each cmd and maintain a error map for images
 func (c *Applier) updateStatus(clusterErr error, appErr error) {
 	condition := v2.ClusterCondition{
 		Type:              "ApplyClusterSuccess",
