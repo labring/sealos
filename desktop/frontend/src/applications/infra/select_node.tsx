@@ -11,17 +11,12 @@ type SelectNodeComponent = {
   nodeCount: string;
   nodeDisk: number;
   diskType: string;
+  diskLimit: number;
   dispatchInfraForm: (action: any) => void;
 };
 
-const SelectNodeComponent = ({
-  type,
-  nodeType,
-  nodeCount,
-  nodeDisk,
-  diskType,
-  dispatchInfraForm
-}: SelectNodeComponent) => {
+const SelectNodeComponent = (props: SelectNodeComponent) => {
+  const { type, nodeType, nodeCount, nodeDisk, diskType, diskLimit, dispatchInfraForm } = props;
   const { currentApp, openedApps } = useAppStore();
   const curApp = openedApps.find((item) => item.name === currentApp?.name);
 
@@ -113,7 +108,7 @@ const SelectNodeComponent = ({
         <span className={styles.cloudLabel}>硬盘</span>
         <Slider
           className={clsx(curApp?.size === 'maxmin' ? styles.sliderCountMin : styles.sliderCount)}
-          min={0}
+          min={diskLimit}
           max={128}
           value={nodeDisk}
           onChange={(e, data) => setNodeDiskValue(data.value)}
@@ -122,6 +117,7 @@ const SelectNodeComponent = ({
           className={clsx(curApp?.size === 'maxmin' ? styles.diskCountMin : styles.diskCount)}
           value={nodeDisk.toString()}
           contentAfter={'G'}
+          min={diskLimit}
           onChange={(e, data) => onChangeDiskValue(data)}
         ></Input>
         <Dropdown

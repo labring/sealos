@@ -115,8 +115,8 @@ function AddPage() {
         <div className={clsx(styles.pgsqlFormScroll, 'mt-6')}>
           <div className={clsx('w-full absolute pb-6')}>
             <div className={styles.cardName}>
-              <div className={clsx('flex p-6 items-center')}>
-                <div className="w-20">
+              <div className={clsx('flex p-6')}>
+                <div className="w-20 pt-4">
                   <span style={{ color: '#EC872A' }}>* </span>
                   Name
                 </div>
@@ -125,7 +125,14 @@ function AddPage() {
                     control={control}
                     name="pgsqlName"
                     placeholder="postgreSQL cluster name ( 3-32 )"
-                    rules={{ required: { value: true, message: 'this is required' } }}
+                    validationMessage="必须以字母数字开头、结尾;只能包含小写字母、数字，以及 '-' 和 '.'"
+                    rules={{
+                      required: { value: true, message: 'this is required' },
+                      pattern: {
+                        value: /^[a-z0-9]+([-.][a-z0-9]+)*$/,
+                        message: 'error message'
+                      }
+                    }}
                   />
                 </div>
               </div>

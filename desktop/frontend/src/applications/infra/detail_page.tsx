@@ -84,7 +84,10 @@ function DetailPage() {
   return (
     <div className={clsx(styles.detailPage, 'relative')}>
       <div className={clsx(curApp?.size === 'maxmin' ? styles.leftInfoMin : styles.leftInfo)}>
-        <div className={clsx(styles.infraTitle, 'flex items-center')}>
+        <div
+          className={clsx(styles.infraTitle, 'flex items-center')}
+          data-overlength={!!(nameLen > 10)}
+        >
           <span className="w-40 truncate">{scpInfo?.data?.metadata?.name}</span>
           <StatusComponent infraStatus={infraStatus} clusterStatus={clusterStatus} desc={false} />
           {nameLen > 10 && (

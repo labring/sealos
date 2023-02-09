@@ -125,7 +125,7 @@ $color-btn-blue: #007fee;
   padding: 0px 20px;
 }
 
-.infraTitle:hover {
+.infraTitle[data-overlength='true']:hover {
   padding-bottom: 48px;
 }
 

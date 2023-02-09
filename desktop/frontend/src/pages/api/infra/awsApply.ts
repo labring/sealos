@@ -17,8 +17,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     nodeDisk,
     kubeconfig,
     nodeDiskType,
-    masterDiskType
+    masterDiskType,
+    infraImage
   } = req.body;
+
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
   if (kube_user === null) {
@@ -36,7 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     nodeDisk,
     nodeDiskType,
     masterDiskType,
-    namespace
+    namespace,
+    infraImage
   });
 
   try {
