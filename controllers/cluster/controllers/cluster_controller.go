@@ -58,6 +58,7 @@ const (
 )
 const (
 	applyClusterfileCmd = "sealos apply -f /root/Clusterfile"
+	preDownload         = `sealos version || wget https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%[1]s/sealos_%[1]s_linux_amd64.tar.gz && tar -zxvf sealos_%[1]s_linux_amd64.tar.gz sealos && chmod +x sealos && mv sealos /usr/bin`
 	sealosVersionCmd    = "sealos version"
 	downloadSealosCmd   = `wget  https://ghproxy.com/https://github.com/labring/sealos/releases/download/v%[1]s/sealos_%[1]s_linux_amd64.tar.gz  && tar -zxvf sealos_%[1]s_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin`
 	getClusterfileCmd   = "cat %s"
@@ -277,6 +278,10 @@ func applyClusterfile(c ssh.Interface, EIP, clusterfile, sealosVersion string) e
 	createClusterfile := fmt.Sprintf(`tee /root/Clusterfile <<EOF
 %s
 EOF`, clusterfile)
+	preDownloadSealos := fmt.Sprintf(preDownload, sealosVersion)
+	if err := c.CmdAsync(EIP, []string{preDownloadSealos}...); err != nil {
+		return fmt.Errorf("download sealos failed: %v", err)
+	}
 	out, err := c.Cmd(EIP, sealosVersionCmd)
 	if err == nil {
 		currentVersion, err2 := parseSealosVersion(out)
@@ -290,7 +295,6 @@ EOF`, clusterfile)
 			}
 		}
 	}
-
 	cmds := []string{createClusterfile, applyClusterfileCmd}
 	if err := c.CmdAsync(EIP, cmds...); err != nil {
 		return fmt.Errorf("write clusterfile to remote failed: %v", err)
