@@ -15,6 +15,7 @@
 package applydrivers
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -97,7 +98,7 @@ func (c *Applier) Apply() error {
 	c.updateStatus(clusterErr, appErr)
 
 	// return app error if not nil
-	if IgnoreCancelledError(appErr) != nil {
+	if appErr != nil && !errors.Is(appErr, processor.ErrCancelled) {
 		return appErr
 	}
 	return clusterErr
