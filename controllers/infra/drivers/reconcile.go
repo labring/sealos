@@ -95,43 +95,6 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 	return nil
 }
 
-/*
-func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
-	if len(infra.Spec.Hosts) == 0 {
-		logger.Debug("desired host len is 0")
-		return nil
-	}
-	setHostsIndex(infra)
-	if !infra.DeletionTimestamp.IsZero() {
-		logger.Debug("remove all hosts")
-		for _, hosts := range infra.Spec.Hosts {
-			if err := driver.DeleteInstances(&hosts); err != nil {
-				return err
-			}
-		}
-	}
-	// get infra all hosts
-	hosts, err := driver.GetInstances(infra)
-	if err != nil {
-		return fmt.Errorf("get all instances failed: %v", err)
-	}
-	// sort current hosts
-	sortHostsByIndex(v1.IndexHosts(hosts))
-	// merge current hosts list using index
-	// sort  desired hosts
-	sortHostsByIndex(v1.IndexHosts(infra.Spec.Hosts))
-	if err = a.ReconcileHosts(hosts, infra, driver); err != nil {
-		return err
-	}
-	currHosts, err := driver.GetInstances(infra)
-	if err != nil {
-		return err
-	}
-	infra.Spec.Hosts = currHosts
-	return nil
-}
-*/
-
 func sortDisksByIndex(disks v1.IndexDisks) {
 	sort.Sort(disks)
 }
@@ -139,11 +102,6 @@ func sortDisksByIndex(disks v1.IndexDisks) {
 func sortHostsByIndex(hosts v1.IndexHosts) {
 	sort.Sort(hosts)
 }
-
-//func sortDisksByName(disks v1.NameDisks) {
-//	sort.Sort(disks)
-//}
-//
 
 func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Driver) error {
 	desired := infra.Spec.Hosts

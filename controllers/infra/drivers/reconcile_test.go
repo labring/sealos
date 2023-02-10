@@ -15,7 +15,7 @@ import (
 )
 
 func TestApplier_ReconcileInstance(t *testing.T) {
-	driver, err := NewDriver()
+	driver, err := NewDriver("aws")
 	if err != nil {
 		t.Errorf("new driver failed %v", err)
 	}

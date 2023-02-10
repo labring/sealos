@@ -151,6 +151,13 @@ spec:
                       type: array
                   type: object
                 type: array
+              platform:
+                default: aws
+                description: 'ENUM: aws/aliyun'
+                enum:
+                - aws
+                - aliyun
+                type: string
               regionIDs:
                 description: RegionIDs is cloud provider regionID list
                 items:
@@ -243,6 +250,18 @@ metadata:
   creationTimestamp: null
   name: infra-manager-role
 rules:
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - infra.sealos.io
   resources:
