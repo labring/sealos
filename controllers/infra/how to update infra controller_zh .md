@@ -6,4 +6,3 @@
 | 支持更多类型的ec2实例（如t2.2xlarge）和更多类型的镜像 | 在前端页面代码扩容即可                                       |
 | cluster支持增加删除集群节点操作                       | 在每个master节点安装sealos，需要时登入任一master节点调用sealos add/selaos delete |
 | cluster模块执行命令信息导出到前端                     | 放到job中去做，能够实现fmt打印导出到前端                     |
-

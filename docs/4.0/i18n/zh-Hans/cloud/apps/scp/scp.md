@@ -55,11 +55,11 @@ metadata:
   name: infra-apply-test
 spec:
   hosts:
-  - roles: [master] # required
+  - roles: [master] # Required
     count: 1 # Required
     flavor: "t2.large"
-    image: "ami-0d66b970b9f16f1f5"
-  - roles: [ node ] # required
+    image: "ami-0d66b970b9f16f1f5" 
+  - roles: [ node ] # Required
     count: 1 # Required
     flavor: "t2.medium"
     image: "ami-0d66b970b9f16f1f5"
