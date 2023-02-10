@@ -55,7 +55,7 @@ func TestMetering(t *testing.T) {
 			time.Sleep(time.Second)
 			_, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err == nil {
-				t.Fatalf("succcess get metering: %v", err)
+				t.Fatalf("success get metering: %v", err)
 			}
 		})
 
@@ -169,6 +169,7 @@ func TestMetering(t *testing.T) {
 			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")
+				metering, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 				if err != nil {
 					t.Fatalf("failed to create accountBalance: %v", err)
@@ -219,7 +220,22 @@ func TestMetering(t *testing.T) {
 
 func clear() {
 	//time.Sleep(200 * time.Second)
-	err := baseapi.DeleteNamespace(TestNamespace)
+	execout, err := baseapi.Exec("sudo -u root kubectl get pod -n metering-system|grep metering |awk '{print $1}' |xargs kubectl logs -n metering-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	execout, err = baseapi.Exec("sudo -u root kubectl get pod -n account-system|grep account |awk '{print $1}' |xargs kubectl logs -n account-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	execout, err = baseapi.Exec("sudo -u root kubectl get accountbalance -A")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	err = baseapi.DeleteNamespace(TestNamespace)
 	if err != nil {
 		log.Println(err)
 	}

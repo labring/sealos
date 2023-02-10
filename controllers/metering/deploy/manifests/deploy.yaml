@@ -425,6 +425,18 @@ metadata:
   name: metering-manager-role
 rules:
 - apiGroups:
+  - account.sealos.io
+  resources:
+  - accountbalances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -556,18 +568,6 @@ rules:
   - get
   - patch
   - update
-- apiGroups:
-  - user.sealos.io
-  resources:
-  - accountbalances
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

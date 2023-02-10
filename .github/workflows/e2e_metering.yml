@@ -64,6 +64,7 @@ jobs:
         run: |
           make pre-deploy
           sudo -u root kubectl create namespace account-system
+          sudo -u root kubectl create namespace sealos-system
           sudo -u root kubectl create secret generic payment-secret -n account-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
       - name: install CRD infra
@@ -85,6 +86,4 @@ jobs:
       -  name: e2e Test
          working-directory: ./controllers/metering
          run: |
-           export METERINGNAME = sudo -u root kubectl get pod -n metering-system|grep metering |awk '{print $1}'
-           trap "sudo -u root kubectl logs $METERINGNAME -n metering-system" EXIT
            go test ./testdata/e2e/metering_test.go -v

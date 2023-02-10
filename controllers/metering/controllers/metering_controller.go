@@ -66,7 +66,7 @@ type MeteringReconcile struct {
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=user.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=account.sealos.io,resources=accountbalances,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile metering belong to account，resourceQuota belong to metering
 func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
