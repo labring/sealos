@@ -80,10 +80,8 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 	workCmd := func(applicationName, cmd string, t v2.ImageType) string {
 		if t == v2.RootfsImage {
 			return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(cluster.Name), cmd)
-		} else {
-			return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cluster.Name, applicationName), cmd)
 		}
-
+		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cluster.Name, applicationName), cmd)
 	}
 	for idx, i := range mounts {
 		if i.Type != v2.AppImage && i.Type != v2.RootfsImage {
