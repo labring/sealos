@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/pkg/errors"
 
 	"sigs.k8s.io/yaml"
@@ -77,7 +79,7 @@ func PrintInfo() error {
 	OutputInfo.SealosVersion = version.Get()
 	cluster, err := clusterfile.GetClusterFromName(clusterName)
 	if err != nil {
-		return errors.Wrap(err, "fail to find cluster from name")
+		logger.Debug(err, "fail to find cluster from name")
 	}
 	OutputInfo.KubernetesVersion = version.GetKubernetesVersion(cluster)
 	OutputInfo.CriRuntimeVersion = version.GetCriRuntimeVersion()
