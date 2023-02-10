@@ -77,6 +77,10 @@ func GetAppWorkDir(clusterName, applicationName string) string {
 	return filepath.Join(DataPath(), clusterName, "applications", applicationName, "workdir")
 }
 
+func GetRootWorkDir(clusterName string) string {
+	return filepath.Join(DataPath(), clusterName, "rootfs")
+}
+
 func IsRegistryDir(entry fs.DirEntry) bool {
 	return entry.IsDir() && entry.Name() == RegistryDirName
 }

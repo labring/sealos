@@ -77,29 +77,32 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mounts []v2.MountImage) []string {
 	command := make([]string, 0)
 	overrideCmd := cluster.Spec.Command
-	workCmd := func(applicationName, cmd string) string {
+	workCmd := func(applicationName, cmd string, t v2.ImageType) string {
+		if t == v2.RootfsImage {
+			return fmt.Sprintf(constants.CdAndExecCmd, constants.GetRootWorkDir(cluster.Name), cmd)
+		}
 		return fmt.Sprintf(constants.CdAndExecCmd, constants.GetAppWorkDir(cluster.Name, applicationName), cmd)
 	}
 	for idx, i := range mounts {
-		if i.Type != v2.AppImage {
+		if i.Type != v2.AppImage && i.Type != v2.RootfsImage {
 			continue
 		}
 		mergeENV := maps.MergeMap(i.Env, envs)
 		mapping := expansion.MappingFuncFor(mergeENV)
 		for _, cmd := range i.Entrypoint {
-			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
+			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping), i.Type))
 		}
 
 		// if --cmd is specified, only the CMD of the first MountImage will be overridden
 		if idx == 0 && len(overrideCmd) > 0 {
 			for _, cmd := range overrideCmd {
-				command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
+				command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping), i.Type))
 			}
 			continue
 		}
 
 		for _, cmd := range i.Cmd {
-			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping)))
+			command = append(command, workCmd(i.Name, expansion.Expand(cmd, mapping), i.Type))
 		}
 	}
 
