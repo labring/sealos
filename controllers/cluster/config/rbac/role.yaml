@@ -43,3 +43,11 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/status
+  verbs:
+  - get
+  - patch
+  - update

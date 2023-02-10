@@ -59,7 +59,7 @@ spec:
   - roles: [master] # Required
     count: 1 # Required
     flavor: "t2.large"
-    image: "ami-0d66b970b9f16f1f5"
+    image: "ami-0d66b970b9f16f1f5" 
   - roles: [ node ] # Required
     count: 1 # Required
     flavor: "t2.medium"
@@ -129,10 +129,10 @@ spec:
   hosts:
     - roles: [ master ]
       count: 1
-      flavor: t2.large # Virtual Machine Models
-      image: "ami-0d66b970b9f16f1f5" # Virtual Machine Image
+      flavor: t2.large # Virtual machine flavor
+      image: "ami-0d66b970b9f16f1f5" # Virtual machine image， need to be consistent with the virtual machine architecture
       disks:
-        - capacity: 40 # System Disk Size
+        - capacity: 40 # System disk size
           volumeType: gp3
           type: "root" # System disk configuration
         - capacity: 40
@@ -162,7 +162,7 @@ metadata:
     sealos.io/version: "4.1.4" # Specify the version of sealos to use
 spec:
   infra: my-cluster # Specifying the name of the infra will start the kubernetes cluster on the corresponding infra
-  image: # List of cluster images, customize kubernetes version or other components according to your needs
+  image: # List of cluster images, customize kubernetes version or other components
   - labring/kubernetes:v1.24.0
   - labring/calico:v3.22.1
 ```

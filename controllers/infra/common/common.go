@@ -23,6 +23,8 @@ const (
 	KeyPairUser          = "sealos.io/aws/keypair/user"
 	KeyPairGeneral       = "sealos.io/aws/keypair/general"
 	KeyPairRoot          = "sealos.io/aws/keypair/root"
+	ArchAmd64            = "amd64"
+	ArchArm64            = "arm64"
 )
 
 var DefaultRootVolumeSize = int32(40)

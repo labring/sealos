@@ -20,6 +20,7 @@ spec:
   infra: ${name}
   image:
     - labring/kubernetes:v1.25.5
+    - labring/helm:v3.8.2
     - labring/calico:v3.24.1
 `
 

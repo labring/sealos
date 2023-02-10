@@ -19,7 +19,7 @@ spec:
   - roles: [master] 
     count: 1
     flavor: t2.medium
-    image: "ami-09123565dfe16d662"
+    image: "ami-048280a00d5085dd1"
     disks:
     - capacity: 16
       volumeType: gp3
@@ -29,7 +29,7 @@ spec:
   - roles: [ node ] 
     count: 1 
     flavor: t2.medium
-    image: "ami-09123565dfe16d662"
+    image: "ami-048280a00d5085dd1"
     disks:
     - capacity: 16
       volumeType: gp3
