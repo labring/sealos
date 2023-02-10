@@ -24,7 +24,6 @@ spec:
   - name: v1
     schema:
       openAPIV3Schema:
-        description: Actions is the Schema for the actions API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -37,23 +36,19 @@ spec:
           spec:
             description: ActionsSpec defines the desired state of Actions
             properties:
-              alias:
-                description: Alias will show it on dashboard. like DELETE UPDATE MIGRATE...
-                type: string
-              appName:
-                description: Application name, actions will bind to an application
+              actionName:
                 type: string
               args:
                 additionalProperties:
                   type: string
-                description: Args, the actions input args, like oss backup address...
                 type: object
               cmd:
-                description: Actions exec command, support render some args and downward API, like application name, service name ...
                 type: string
             type: object
           status:
-            description: ActionsStatus defines the observed state of Actions
+            properties:
+              status:
+                type: string
             type: object
         type: object
     served: true
@@ -93,38 +88,15 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              actions:
-                description: Actions name list, the actions will in the application same namespace
-                items:
-                  type: string
-                type: array
-              docs:
-                description: Applications markdown docs
-                type: string
-              image:
-                type: string
-              info:
-                additionalProperties:
-                  type: string
-                description: Applications info, key value
+              uiEndPoints:
+                properties:
+                  name:
+                    type: string
+                  theme:
+                    type: string
+                  url:
+                    type: string
                 type: object
-              logo:
-                description: The application logo url
-                type: string
-              uiendpoints:
-                description: Foo is an example field of App. Edit app_types.go to remove/update
-                items:
-                  properties:
-                    name:
-                      type: string
-                    theme:
-                      type: string
-                    url:
-                      type: string
-                  type: object
-                type: array
-              workdir:
-                type: string
             type: object
           status:
             description: AppStatus defines the observed state of App
@@ -185,32 +157,6 @@ metadata:
   creationTimestamp: null
   name: app-manager-role
 rules:
-- apiGroups:
-  - app.sealos.io
-  resources:
-  - actions
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - app.sealos.io
-  resources:
-  - actions/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - app.sealos.io
-  resources:
-  - actions/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - app.sealos.io
   resources:
@@ -402,6 +348,7 @@ spec:
         command:
         - /manager
         image: ghcr.io/labring/sealos-app-controller:dev
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

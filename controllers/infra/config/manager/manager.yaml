@@ -54,6 +54,7 @@ spec:
         - --leader-elect
         image: docker.io/xiaojie99999/infra:v0.0.1
         name: manager
+        imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
           allowPrivilegeEscalation: false

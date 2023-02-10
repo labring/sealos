@@ -432,6 +432,7 @@ spec:
         command:
         - /manager
         image: docker.io/xiaojie99999/infra:v0.0.1
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

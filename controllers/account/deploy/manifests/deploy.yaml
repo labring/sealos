@@ -519,6 +519,9 @@ spec:
         env:
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
+        envFrom:
+        - secretRef:
+            name: payment-secret
         image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
