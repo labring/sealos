@@ -27,6 +27,7 @@ import (
 
 	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/manifest"
+	"github.com/containers/image/v5/pkg/shortnames"
 	"github.com/opencontainers/go-digest"
 
 	"github.com/containers/buildah"
@@ -250,16 +251,38 @@ func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.St
 	if st, ok := transport.(imagestorage.StoreTransport); ok {
 		st.SetStore(store)
 	}
-	ref, err := transport.ParseReference(imgName)
+
+	// try out the candidates as resolved by shortnames. This takes
+	// "localhost/" prefixed images into account as well.
+	candidates, err := shortnames.ResolveLocally(sc, imgName)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error resolve shortname %s: %w", imgName, storage.ErrImageUnknown)
 	}
 
-	if err = retry.IfNecessary(ctx, func() error {
-		src, err = ref.NewImageSource(ctx, sc)
-		return err
-	}, &retry.Options{}); err != nil {
-		return nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, err)
+	var errs []error
+	for _, candidate := range candidates {
+		f := func() (types.ImageSource, error) {
+			ref, err := transport.ParseReference(candidate.String())
+			if err != nil {
+				return nil, err
+			}
+			innerSrc, err := ref.NewImageSource(ctx, sc)
+			if err != nil {
+				return nil, err
+			}
+			return innerSrc, nil
+		}
+		res, err := f()
+		if err != nil {
+			errs = append(errs, err)
+		} else {
+			logger.Debug("using image name %q", candidate.String())
+			src = res
+			break
+		}
+	}
+	if src == nil {
+		return nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, errors.Join(errs...))
 	}
 
 	img, err := image.FromUnparsedImage(ctx, sc, image.UnparsedInstance(src, nil))
