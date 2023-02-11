@@ -21,7 +21,7 @@
 
 ---
 
-[Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro)
+[Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
 ## Run a Kubernetes cluster
 
