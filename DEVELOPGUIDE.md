@@ -1,6 +1,6 @@
 # Environment settings
 
-sealos only support linux now, you need a linux server to test it.
+sealos only support Linux now, you need a Linux server to test it.
 
 Some tools can be very handy to help you start a virtual machine such as [multipass](https://multipass.run/)
 
@@ -24,9 +24,9 @@ cd sealos
 make build BINS=sealos
 ```
 
-You can scp the bin file to your linux host.
+You can scp the bin file to your Linux host.
 
-If you use multipaas, you can mount the bin dir to the vm:
+If you use multipass, you can mount the bin dir to the vm:
 
 ```shell script
 multipass mount /your-bin-dir <name>[:<path>]
@@ -36,27 +36,38 @@ Then test it locally.
 
 ## Notes about cross-platform building
 
-All the binaries except `sealos` can be built anywhere since they have `CGO_ENABLED=0`. However, `sealos` needs to support overlay driver when running some subcommands like `images`, which relies on CGO. Therefore CGO is switched on when building `sealos`, making it impossible to build `sealos` binaries on platforms other than Linux.
+All the binaries except `sealos` can be built anywhere since they have `CGO_ENABLED=0`. However, `sealos` needs to support overlay driver when running some subcommands like `images`, which relies on CGO. Therefore, CGO is switched on when building `sealos`, making it impossible to build `sealos` binaries on platforms other than Linux.
 
 > Both Makefile and GoReleaser in this project have this setting.
 
 ## Notes about go workspace
 
-As sealos is using go1.18's workspace feature, once you add a new module, you need to run `go work usr -r .` at root directry to update the workspace synced.
+As sealos is using go1.18's [workspace feature](https://go.dev/doc/tutorial/workspaces), once you add a new module, you need to run `go work use -r .` at root directory to update the workspace synced.
 
 ### Create a new CRD and Controller
-Create your CRD directory in pkg "controllers" first.
 
-Cd into your CRD directory
+1. Create your CRD directory in pkg `/controllers` first and cd into it.
+2. Use `kubebuilder` to init the project.
+3. Then `go work use -r .` at current directory to update the workspace.
+4. Use `kubebuilder` to create your CRD and Controller
 
-```shell script
-kubebuilder init --domain sealos.io --repo github.com/labring/sealos/controllers/<name>
-```
+You can execute the following commands to do things above:
 
-Then `go work use -r .` at current directory to update the workspace.
+```shell
+# cd sealos_code_dir
+# edit the CRD_NAME and CRD_GROUP to your own
+export CRD_NAME=Changeme
+export CRD_GROUP=changeme
 
-```shell script
-kubebuilder create api --group <name> --version v1 --kind <name>
+# copy and paste to create a new CRD and Controller
+mkdir controllers/${CRD_NAME} 
+cd controllers/${CRD_NAME}
+kubebuilder init --domain sealos.io --repo github.com/labring/sealos/controllers/${CRD_NAME}
+# note: for darwin/arm64, execute the following command instead, refer: https://book.kubebuilder.io/quick-start.html#create-a-project
+# kubebuilder init --domain sealos.io --repo github.com/labring/sealos/controllers/${CRD_NAME} --plugins=go/v4-alpha
+go work use -r .
+kubebuilder create api --group ${CRD_GROUP} --version v1 --kind ${CRD_NAME}
+cd -
 ```
 
 ## Using sealos image ci
@@ -127,13 +138,16 @@ kubebuilder create api --group <name> --version v1 --kind <name>
 
 ## Example: how to build sealos on macOS(ARM64) using multipass
 
-1. luanch vm and mount sealos source code:
+1. launch vm and mount sealos source code:
 ```shell
+# edit the SEALOS_CODE_DIR to your own
+export SEALOS_CODE_DIR=/Users/fanux/work/src/github.com/labring/sealos
+# copy, paste and run to launch vm
 multipass launch \
-   --mount /Users/fanux/work/src/github.com/labring/sealos:/go/src/github.com/labring/sealos \
+   --mount ${SEALOS_CODE_DIR}:/go/src/github.com/labring/sealos \
    --name sealos-dev --cpus 2 --mem 4G --disk 40G
 ```
-convert the source code DIR(/Users/fanux/work/src/github.com/labring/sealos) to your own.
+
 2. exec into the vm
 ```shell
 multipass exec sealos-dev bash
@@ -153,8 +167,8 @@ source /etc/profile  && go version
 ```
 4. Build the source code
 ```shell
-go env -w GOPROXY=https://goproxy.cn,direct && make build
-# OR make build
+go env -w GOPROXY=https://goproxy.cn,direct # optional
+make build
 ```
 
 ## FAQ
