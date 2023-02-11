@@ -431,7 +431,11 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: docker.io/xiaojie99999/infra:v0.0.1
+        envFrom:
+        - secretRef:
+            name: infra-secret
+        image: ghcr.io/labring/sealos-infra-controller:dev
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

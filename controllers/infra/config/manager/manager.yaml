@@ -52,8 +52,12 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: docker.io/xiaojie99999/infra:v0.0.1
+        image: controller:latest
         name: manager
+        imagePullPolicy: Always
+        envFrom:
+          - secretRef:
+              name: infra-secret
         securityContext:
           runAsNonRoot: true
           allowPrivilegeEscalation: false

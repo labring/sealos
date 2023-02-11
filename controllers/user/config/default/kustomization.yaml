@@ -12,11 +12,6 @@ namePrefix: user-
 #commonLabels:
 #  someName: someValue
 
-secretGenerator:
-  - envs:
-      - payment.env
-    name: manager-secret
-
 bases:
   - ../crd
   - ../rbac

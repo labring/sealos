@@ -442,6 +442,7 @@ spec:
         - name: USER_NAMESPACE
           value: user-system
         image: ghcr.io/labring/sealos-terminal-controller:dev
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz

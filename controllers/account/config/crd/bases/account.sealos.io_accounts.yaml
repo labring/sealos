@@ -61,8 +61,6 @@ spec:
                       type: string
                     tradeNO:
                       type: string
-                  required:
-                  - accountBalanceName
                   type: object
                 type: array
               deductionBalance:

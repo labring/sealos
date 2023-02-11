@@ -48,6 +48,8 @@ spec:
               amount:
                 format: int64
                 type: integer
+              details:
+                type: string
               owner:
                 type: string
               timeStamp:
@@ -136,8 +138,6 @@ spec:
                       type: string
                     tradeNO:
                       type: string
-                  required:
-                  - accountBalanceName
                   type: object
                 type: array
               deductionBalance:
@@ -516,10 +516,13 @@ spec:
         - --leader-elect
         command:
         - /manager
+        env:
+        - name: ACCOUNT_NAMESPACE
+          value: sealos-system
         envFrom:
         - secretRef:
             name: payment-secret
-        image: controller:latest
+        image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
