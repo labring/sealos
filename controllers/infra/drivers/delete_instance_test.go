@@ -34,7 +34,7 @@ func TestDriver_DeleteInstances(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDriver()
+			d, err := NewDriver("aws")
 			if err != nil {
 				t.Errorf("create driver failed")
 			}

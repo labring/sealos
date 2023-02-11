@@ -178,6 +178,10 @@ type InfraSpec struct {
 	// desired state of infra
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// ENUM: aws/aliyun
+	// +kubebuilder:validation:Enum=aws;aliyun
+	// +kubebuilder:default:=aws
+	Platform string `json:"platform,omitempty"`
 	// RegionIDs is cloud provider regionID list
 	RegionIDs []string    `json:"regionIDs,omitempty"`
 	ZoneIDs   []string    `json:"zoneIDs,omitempty"`

@@ -53,7 +53,7 @@ func TestDriver_CreateVolumes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, _ := NewDriver()
+			d, _ := NewDriver("aws")
 
 			if err := d.CreateVolumes(tt.args.infra, tt.args.host, tt.args.disks); (err != nil) != tt.wantErr {
 				t.Errorf("CreateVolumes() error = %v, wantErr %v", err, tt.wantErr)

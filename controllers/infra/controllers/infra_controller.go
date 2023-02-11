@@ -78,6 +78,14 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	// init driver
+	if r.driver == nil {
+		driver, err := drivers.NewDriver(infra.Spec.Platform)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		r.driver = driver
+	}
 	// add finalizer
 	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
 		return ctrl.Result{}, err
@@ -245,11 +253,6 @@ func getSecretName(infra *infrav1.Infra) string {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	driver, err := drivers.NewDriver()
-	if err != nil {
-		return fmt.Errorf("infra controller new driver failed: %v", err)
-	}
-	r.driver = driver
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 	if r.finalizer == nil {
