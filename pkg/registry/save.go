@@ -23,6 +23,8 @@ import (
 	"strings"
 	"sync"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/passwd"
 	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -75,13 +77,18 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 	}()
 
 	//handle image name
+	pullImages := sets.NewString()
 	for _, image := range images {
 		named, err := ParseNormalizedNamed(image)
 		if err != nil {
 			return nil, fmt.Errorf("parse image name error: %v", err)
 		}
+		if pullImages.Has(named.FullName()) {
+			continue
+		}
 		is.domainToImages[named.domain+named.repo] = append(is.domainToImages[named.domain+named.repo], named)
 		progress.Message(is.progressOut, "", fmt.Sprintf("Pulling image: %s", named.FullName()))
+		pullImages.Insert(named.FullName())
 	}
 
 	//perform image save ability
