@@ -53,11 +53,14 @@ jobs:
           TAG=dev
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
-      - name: set up buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v2
+      - # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
         with:
-          buildx-version: latest
+          driver-opts: network=host
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
