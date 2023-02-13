@@ -121,6 +121,8 @@ func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.Im
 	}
 	fd.ImageInfo = imgInfo
 
+	// todo get counter info
+
 	return fd, nil
 }
 

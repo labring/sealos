@@ -72,9 +72,6 @@ spec:
                       type: string
                     docs:
                       type: string
-                    downloadCount:
-                      format: int64
-                      type: integer
                     icon:
                       type: string
                     keywords:
@@ -84,6 +81,9 @@ spec:
                     name:
                       description: base
                       type: string
+                    pullCount:
+                      format: int64
+                      type: integer
                     rating:
                       type: integer
                     repoName:

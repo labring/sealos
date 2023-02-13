@@ -23,6 +23,20 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type CounterType string
+
+const (
+	RepositoryPullCounter CounterType = "repository-pull-counter"
+	ImagePullCounter      CounterType = "image-pull-counter"
+	RepositoryRateCounter CounterType = "repository-rate-counter"
+	ImageRateCounter      CounterType = "image-rate-counter"
+)
+
+type CounterInfo struct {
+	Count   int64  `json:"count,omitempty"`
+	RefName string `json:"refName,omitempty"`
+}
+
 // CounterSpec defines the desired state of Counter
 type CounterSpec struct {
 	//+kubebuilder:Enum=repository-pull-counter;image-pull-counter;repository-rate-counter;image-rate-counter
