@@ -113,14 +113,20 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 }
 
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
+	k.ImageKubeVersion = k.getKubeVersionFromImage()
+	for _, fn := range []string{
+		"",                          // generate default kubeadm configs
+		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
+	} {
+		if err := k.Merge(fn); err != nil {
+			return err
+		}
+	}
+	// merge from clusterfile
 	if k.Config.ClusterFileKubeConfig != nil {
 		if err := k.LoadFromClusterfile(k.Config.ClusterFileKubeConfig); err != nil {
 			return fmt.Errorf("failed to load kubeadm config from clusterfile: %v", err)
 		}
-	}
-	k.ImageKubeVersion = k.getKubeVersionFromImage()
-	if err := k.Merge(k.getDefaultKubeadmConfig()); err != nil {
-		return fmt.Errorf("failed to merge kubeadm config: %v", err)
 	}
 	k.setKubeadmAPIVersion()
 	return k.validateVIP(k.getVip())
