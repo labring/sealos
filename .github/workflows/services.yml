@@ -159,7 +159,7 @@ jobs:
         if: github.repository == 'labring/sealos'
         with:
           issue-number: 140
-          repository: labring/cluster-image
+          repository: labring-actions/cluster-image
           body: |
             /imagebuild_apps sealos-${{ matrix.module }}-service dev
           token: "${{ secrets.GH_TOKEN }}"

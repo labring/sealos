@@ -9,13 +9,13 @@ on:
       - ".github/workflows/controllers.yml"
       - "!**/*.md"
       - "!**/*.yaml"
-    pull_request:
-      branches: [ "*" ]
-      paths:
-        - "controllers/**"
-        - ".github/workflows/controllers.yml"
-        - "!**/*.md"
-        - "!**/*.yaml"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "controllers/**"
+      - ".github/workflows/controllers.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
 
 env:
   # Common versions

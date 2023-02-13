@@ -14,6 +14,9 @@ on:
       - "**/*.yaml"
       - "CONTRIBUTORS"
       - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
   pull_request:
     branches: ["*"]
     paths-ignore:
@@ -23,6 +26,9 @@ on:
       - "**/*.yaml"
       - "CONTRIBUTORS"
       - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
 
 jobs:
   resolve-modules:
@@ -62,7 +68,7 @@ jobs:
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   build:
-    needs: [golangci-lint, coverage]
+    needs: [golangci-lint]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
