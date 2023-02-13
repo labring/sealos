@@ -25,7 +25,7 @@ import (
 
 type DataPackType string
 
-// datares types
+// data types
 const (
 	ImageBaseDataType   DataPackType = "base"
 	ImageGridDataType   DataPackType = "grid"
@@ -38,12 +38,13 @@ type Data struct {
 	Name ImageName `json:"name,omitempty"`
 	Type ImageType `json:"type,omitempty"`
 	// grid
-	RepoName    RepoName `json:"repoName,omitempty"`
-	Rating      int      `json:"rating,omitempty"`
-	Icon        string   `json:"icon,omitempty"`
-	Keywords    []string `json:"keywords,omitempty"`
-	Size        int64    `json:"size,omitempty"`
-	Description string   `json:"description,omitempty"`
+	RepoName      RepoName `json:"repoName,omitempty"`
+	Rating        int      `json:"rating,omitempty"`
+	DownloadCount int64    `json:"downloadCount,omitempty"`
+	Icon          string   `json:"icon,omitempty"`
+	Keywords      []string `json:"keywords,omitempty"`
+	Size          int64    `json:"size,omitempty"`
+	Description   string   `json:"description,omitempty"`
 	// detail
 	Tags TagList `json:"tags,omitempty"`
 	Docs string  `json:"docs,omitempty"`
@@ -79,20 +80,22 @@ func (i *ImageBaseData) ToData() Data {
 }
 
 type ImageGridData struct {
-	Name        ImageName `json:"name,omitempty"`
-	Type        ImageType `json:"type,omitempty"`
-	RepoName    RepoName  `json:"repoName,omitempty"`
-	Rating      int       `json:"rating,omitempty"`
-	Icon        string    `json:"icon,omitempty"`
-	Keywords    []string  `json:"keywords,omitempty"`
-	Size        int64     `json:"size,omitempty"`
-	Description string    `json:"description,omitempty"`
+	Name          ImageName `json:"name,omitempty"`
+	Type          ImageType `json:"type,omitempty"`
+	RepoName      RepoName  `json:"repoName,omitempty"`
+	Rating        int       `json:"rating,omitempty"`
+	DownloadCount int64     `json:"downloadCount,omitempty"`
+	Icon          string    `json:"icon,omitempty"`
+	Keywords      []string  `json:"keywords,omitempty"`
+	Size          int64     `json:"size,omitempty"`
+	Description   string    `json:"description,omitempty"`
 }
 
 func (i *ImageGridData) New(fd *FullData) {
 	i.Name = fd.ImageInfo.Name
 	i.Type = fd.ImageInfo.Type
 	i.RepoName = fd.RepoInfo.Name
+	i.DownloadCount = fd.RepoInfo.DownloadCount
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
 	i.Size = fd.ImageInfo.DetailInfo.Size
@@ -112,18 +115,19 @@ func (i *ImageGridData) ToData() Data {
 }
 
 type ImageDetailData struct {
-	Name        ImageName `json:"name,omitempty"`
-	Type        ImageType `json:"type,omitempty"`
-	RepoName    RepoName  `json:"repoName,omitempty"`
-	Rating      int       `json:"rating,omitempty"`
-	Icon        string    `json:"icon,omitempty"`
-	Keywords    []string  `json:"keywords,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Docs        string    `json:"docs,omitempty"`
-	ID          string    `json:"ID,omitempty"`
-	Size        int64     `json:"size,omitempty"`
-	Arch        string    `json:"arch,omitempty"`
-	Tags        TagList   `json:"tags,omitempty"`
+	Name          ImageName `json:"name,omitempty"`
+	Type          ImageType `json:"type,omitempty"`
+	RepoName      RepoName  `json:"repoName,omitempty"`
+	Rating        int       `json:"rating,omitempty"`
+	DownloadCount int64     `json:"downloadCount,omitempty"`
+	Icon          string    `json:"icon,omitempty"`
+	Keywords      []string  `json:"keywords,omitempty"`
+	Description   string    `json:"description,omitempty"`
+	Docs          string    `json:"docs,omitempty"`
+	ID            string    `json:"ID,omitempty"`
+	Size          int64     `json:"size,omitempty"`
+	Arch          string    `json:"arch,omitempty"`
+	Tags          TagList   `json:"tags,omitempty"`
 }
 
 func (i *ImageDetailData) New(fd *FullData) {
@@ -133,6 +137,7 @@ func (i *ImageDetailData) New(fd *FullData) {
 	i.RepoName = fd.RepoInfo.Name
 	i.Icon = fd.ImageInfo.DetailInfo.Icon
 	i.Keywords = fd.ImageInfo.DetailInfo.Keywords
+	i.DownloadCount = fd.RepoInfo.DownloadCount
 
 	i.ID = fd.ImageInfo.DetailInfo.ID
 	i.Docs = fd.ImageInfo.DetailInfo.Docs
@@ -143,18 +148,19 @@ func (i *ImageDetailData) New(fd *FullData) {
 }
 func (i *ImageDetailData) ToData() Data {
 	return Data{
-		Name:        i.Name,
-		Type:        i.Type,
-		RepoName:    i.RepoName,
-		Icon:        i.Icon,
-		Keywords:    i.Keywords,
-		Size:        i.Size,
-		Rating:      i.Rating,
-		ID:          i.ID,
-		Docs:        i.Docs,
-		Arch:        i.Arch,
-		Description: i.Description,
-		Tags:        i.Tags,
+		Name:          i.Name,
+		Type:          i.Type,
+		RepoName:      i.RepoName,
+		DownloadCount: i.DownloadCount,
+		Icon:          i.Icon,
+		Keywords:      i.Keywords,
+		Size:          i.Size,
+		Rating:        i.Rating,
+		ID:            i.ID,
+		Docs:          i.Docs,
+		Arch:          i.Arch,
+		Description:   i.Description,
+		Tags:          i.Tags,
 	}
 }
 
@@ -168,7 +174,7 @@ type DataPackSpec struct {
 	Type  DataPackType `json:"type,omitempty"`
 	Names []ImageName  `json:"names,omitempty"`
 	//+kubebuilder:validation:Optional
-	//+kubebuilder:default:="5m"
+	//+kubebuilder:default:="2h"
 	ExpireTime string `json:"expireTime,omitempty"`
 }
 
