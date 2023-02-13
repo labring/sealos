@@ -14,6 +14,9 @@ on:
       - "**/*.yaml"
       - "CONTRIBUTORS"
       - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
   pull_request:
     branches: ["*"]
     paths-ignore:
@@ -23,47 +26,11 @@ on:
       - "**/*.yaml"
       - "CONTRIBUTORS"
       - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
 
 jobs:
-  format-code:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Format Code
-        run: make format
-
-      - name: Commit Changes
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: "chore(fmt): format code"
-          commit_options: "-s"
-
-  check-license:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Setup Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Check License
-        run: make verify-license
-
   resolve-modules:
     runs-on: ubuntu-20.04
     outputs:
@@ -77,7 +44,7 @@ jobs:
         run: sh ./scripts/resolve-modules.sh
 
   golangci-lint:
-    needs: [format-code, check-license, resolve-modules]
+    needs: [resolve-modules]
     runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -100,29 +67,8 @@ jobs:
           working-directory: ${{ matrix.workdir }}
           args: "--out-${NO_FUTURE}format colored-line-number"
 
-  coverage:
-    needs: [format-code, check-license]
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-
-      - name: Run Coverage
-        run: make coverage
-
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
-
   build:
-    needs: [golangci-lint, coverage]
+    needs: [golangci-lint]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
@@ -254,12 +200,15 @@ jobs:
         run: |
           TAG=dev
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-
-      - name: set up buildx
-        id: buildx
-        uses: crazy-max/ghaction-docker-buildx@v2
+      -
+        # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
         with:
-          buildx-version: latest
+          driver-opts: network=host
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2

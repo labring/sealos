@@ -46,7 +46,7 @@ jobs:
         run: |
           ls -l
           sealos build --debug  -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster .
-          sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GITHUB_TOKEN }} --debug ghcr.io
+          sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_TOKEN }} --debug ghcr.io
           sealos push  ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster
       - name: docker images
         run: |
