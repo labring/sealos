@@ -6,7 +6,14 @@ on:
     branches: [ "main" ]
     paths:
       - "webhooks/**"
-      - "!.github/workflows/webhooks.yml"
+      - ".github/workflows/webhooks.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "webhooks/**"
+      - ".github/workflows/webhooks.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 env:
@@ -14,6 +21,42 @@ env:
   GO_VERSION: "1.20"
 
 jobs:
+  resolve-modules:
+    runs-on: ubuntu-20.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Resolve Modules
+        id: set-matrix
+        run: sh ./scripts/resolve-modules.sh ./webhooks
+
+  golangci-lint:
+    needs: [ resolve-modules ]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
+      - name: Run Linter
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          working-directory: ${{ matrix.workdir }}
+          args: "--out-${NO_FUTURE}format colored-line-number"
+
   image-build:
     runs-on: ubuntu-latest
     strategy:
@@ -64,12 +107,14 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
+        if: ${{ github.event_name == 'push' }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
 
       - name: build (and publish) ${{ matrix.module }} main image
+        if: ${{ github.event_name == 'push' }}
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
@@ -84,7 +129,21 @@ jobs:
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
           .
-
+      - name: build ${{ matrix.module }} image
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
+        working-directory: webhooks/${{ matrix.module }}
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos-${{ matrix.module }}-webhook container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
+          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
+          -f Dockerfile \
+          .
 #  build-on-cluster-image:
 #    needs:
 #      - image-build
