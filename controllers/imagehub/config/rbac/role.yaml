@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - imagehub.sealos.io
   resources:
+  - counters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - counters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
+  - counters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - imagehub.sealos.io
+  resources:
   - datapacks
   verbs:
   - create

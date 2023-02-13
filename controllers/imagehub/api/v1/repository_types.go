@@ -71,10 +71,9 @@ type TagList []TagData
 type RepositoryStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Name          RepoName `json:"name,omitempty"` // e.g: "libring/mysql"
-	DownloadCount int64    `json:"downloadCount,omitempty"`
-	Tags          TagList  `json:"tags,omitempty"`
-	LatestTag     *TagData `json:"latestTag,omitempty"`
+	Name      RepoName `json:"name,omitempty"` // e.g: "libring/mysql"
+	Tags      TagList  `json:"tags,omitempty"`
+	LatestTag *TagData `json:"latestTag,omitempty"`
 }
 
 //+kubebuilder:object:root=true

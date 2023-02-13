@@ -1,0 +1,12 @@
+apiVersion: imagehub.sealos.io/v1
+kind: Counter
+metadata:
+  labels:
+    app.kubernetes.io/name: counter
+    app.kubernetes.io/instance: counter-sample
+    app.kubernetes.io/part-of: imagehub
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: imagehub
+  name: counter-sample
+spec:
+  # TODO(user): Add fields here

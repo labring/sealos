@@ -60,6 +60,7 @@ type FullData struct {
 	ImageInfo ImageInfo `json:"imageInfo,omitempty"`
 	RepoInfo  RepoInfo  `json:"repoInfo,omitempty"`
 	OrgInfo   OrgInfo   `json:"orgInfo,omitempty"`
+	CountInfo Counter   `json:"countInfo,omitempty"`
 	// todo add RatingInfo
 }
 

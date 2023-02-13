@@ -49,4 +49,13 @@ resources:
   kind: DataPack
   path: github.com/labring/sealos/controllers/imagehub/api/v1
   version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: sealos.io
+  group: imagehub
+  kind: Counter
+  path: github.com/labring/sealos/controllers/imagehub/api/v1
+  version: v1
 version: "3"
