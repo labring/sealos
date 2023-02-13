@@ -36,6 +36,7 @@ func EnsureMetering(namespace string, name string) {
 
 func EnsureMeteringCalculate(namespace string, name string, times int) (*meteringv1.Metering, error) {
 	EnsureMetering(namespace, name)
+	metering, _ := GetMetering(namespace, name)
 	time.Sleep(time.Second)
 	for i := 1; i <= times; i++ {
 		metering, err := GetMetering(namespace, name)
@@ -47,7 +48,7 @@ func EnsureMeteringCalculate(namespace string, name string, times int) (*meterin
 		}
 		time.Sleep(time.Second)
 	}
-	return nil, fmt.Errorf("metering calculate failed")
+	return metering, fmt.Errorf("metering calculate failed")
 }
 
 func DeleteMetering(namespace string, name string) error {

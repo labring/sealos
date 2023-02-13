@@ -37,5 +37,5 @@ func EnsureAccountBalanceCreate(namespace string, name string, times int) (*acco
 		}
 		time.Sleep(time.Second)
 	}
-	return nil, fmt.Errorf("accountbalance get faile")
+	return nil, fmt.Errorf("accountbalance get fail")
 }

@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ app,cluster,infra,metering,user, terminal,imagehub ]
+        module: [ app, cluster, infra, metering, user, terminal, imagehub, account]
     permissions:
       issues: write
     steps:
@@ -97,7 +97,7 @@ jobs:
         if: github.repository == 'labring/sealos'
         with:
           issue-number: 140
-          repository: labring/cluster-image
+          repository: labring-actions/cluster-image
           body: |
             /imagebuild_apps sealos-${{ matrix.module }}-controller dev
           token: "${{ secrets.GH_TOKEN }}"

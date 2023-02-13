@@ -28,8 +28,8 @@ spec:
           name: https
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1000m
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -38,6 +38,9 @@ spec:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
         - "--leader-elect"
+        envFrom:
+          - configMapRef:
+              name: metering-manager-configmap
         env:
           - name: METERING_SYSTEM_NAMESPACE
             valueFrom:
