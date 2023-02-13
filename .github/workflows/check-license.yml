@@ -5,14 +5,20 @@ on:
   workflow_dispatch:
   push:
     branches: [ "main" ]
-    paths:
-      - "!**/*.md"
-      - "!**/*.yaml"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
   pull_request:
     branches: [ "*" ]
-    paths:
-      - "!**/*.md"
-      - "!**/*.yaml"
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
 env:
   # Common versions
   GO_VERSION: "1.20"

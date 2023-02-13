@@ -9,7 +9,7 @@ on:
     branches: [ "main" ]
     paths:
       - "controllers/metering/**"
-      - "!.github/workflows/controllers.yml"
+      - ".github/workflows/e2e_metering.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 jobs:
