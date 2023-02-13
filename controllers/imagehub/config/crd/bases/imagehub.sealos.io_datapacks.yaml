@@ -38,7 +38,7 @@ spec:
             description: DataPackSpec defines the desired state of DataPack
             properties:
               expireTime:
-                default: 5m
+                default: 2h
                 type: string
               names:
                 items:
@@ -72,6 +72,9 @@ spec:
                       type: string
                     docs:
                       type: string
+                    downloadCount:
+                      format: int64
+                      type: integer
                     icon:
                       type: string
                     keywords:

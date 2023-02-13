@@ -50,6 +50,9 @@ spec:
           status:
             description: RepositoryStatus defines the observed state of Repository
             properties:
+              downloadCount:
+                format: int64
+                type: integer
               latestTag:
                 properties:
                   creatTime:
