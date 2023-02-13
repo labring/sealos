@@ -705,8 +705,8 @@ spec:
           protocol: TCP
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1000m
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -728,6 +728,9 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
+        envFrom:
+        - configMapRef:
+            name: metering-manager-configmap
         image: ghcr.io/labring/sealos-metering-controller:dev
         imagePullPolicy: Always
         livenessProbe:
@@ -745,8 +748,8 @@ spec:
           periodSeconds: 10
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1000m
+            memory: 1280Mi
           requests:
             cpu: 10m
             memory: 64Mi
