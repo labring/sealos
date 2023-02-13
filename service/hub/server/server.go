@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,9 +15,14 @@ import (
 
 	"github.com/cesanta/glog"
 	"github.com/docker/distribution/registry/auth/token"
+	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/service/hub/api"
 	"github.com/labring/sealos/service/hub/auth"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -196,7 +202,60 @@ func (as *AuthServer) authorizeScope(client kubernetes.Client, ai *api.AuthReque
 		glog.Errorf("%s: %s", *ai, err)
 		return nil, err
 	}
+
+	// if result have "pull", update repo.status.downloadCount using k8sClient.
+	for _, r := range result {
+		if r == "pull" {
+			err := updateDownloadCount(k8sClient, ai)
+			if err != nil {
+				// should not return error
+				glog.Errorf("updateDownloadCount error: %s", err)
+				return result, nil
+			}
+		}
+	}
+
 	return result, nil
+}
+
+// updateDownloadCount update repo.status.downloadCount++
+func updateDownloadCount(client kubernetes.Client, ai *api.AuthRequestInfo) error {
+	// get repo cr from apiserver
+	repoName := imagehubv1.RepoName(ai.Name)
+	repoResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "imagehub.sealos.io",
+		Version:  "v1",
+		Resource: "repositories",
+	})
+	unstructRepo, err := repoResource.Get(context.Background(), repoName.ToMetaName(), metav1.GetOptions{})
+	if err != nil {
+		glog.Infof("error when updateDownloadCount req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
+		return err
+	}
+	repo := imagehubv1.Repository{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructRepo.UnstructuredContent(), &repo)
+	if err != nil {
+		glog.Infof("error when updateDownloadCount req: %s for user %s, convert unstructRepo to repo cr error: %s", repoName, ai.Account, err)
+		return err
+	}
+	// update status.downloadCount
+	repo.Status.DownloadCount++
+
+	// convert repo cr to unstructRepo
+	unstructRepo2, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&repo)
+	if err != nil {
+		glog.Infof("error when updateDownloadCount req: %s for user %s, convert repo cr to unstructRepo error: %s", repoName, ai.Account, err)
+		return err
+	}
+
+	// update status
+	un := &unstructured.Unstructured{Object: unstructRepo2}
+	_, err = repoResource.UpdateStatus(context.Background(), un, metav1.UpdateOptions{})
+	if err != nil {
+		glog.Infof("error when updateDownloadCount req: %s for user %s, update repo cr status error: %s", repoName, ai.Account, err)
+		return err
+	}
+	return nil
 }
 
 func (as *AuthServer) Authorize(client kubernetes.Client, ar *AuthRequest) ([]AuthzResult, error) {

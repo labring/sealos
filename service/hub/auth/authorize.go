@@ -77,7 +77,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	repo := imagehubv1.Repository{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructRepo.UnstructuredContent(), &repo)
 	if err != nil {
-		glog.Infof("error when unstruct organization")
+		glog.Infof("error when unstruct repository")
 		return nil, api.ErrNoMatch
 	}
 
