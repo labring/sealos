@@ -10,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	clients "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func init() {
@@ -23,7 +24,13 @@ type SealosAuthorize struct {
 func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequestInfo) ([]string, error) {
 	glog.Info("Authorize for req: ", ai.Name)
 
+	// check repo name is legal
 	repoName := imagehubv1.RepoName(ai.Name)
+	if !repoName.IsLegal() {
+		glog.Infof("error when Authorize req: %s for user %s, repo name is illegal", repoName, ai.Account)
+		return nil, api.ErrNoMatch
+	}
+
 	var res []string
 
 	// get repo using authzClient
@@ -32,11 +39,16 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 		Version:  "v1",
 		Resource: "repositories",
 	})
+
 	unstructRepo, err := repoResource.Get(context.Background(), repoName.ToMetaName(), metav1.GetOptions{})
-	if err != nil {
+	if clients.IgnoreNotFound(err) != nil {
 		glog.Infof("error when Authorize req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
 		return nil, api.ErrNoMatch
+	} else if err != nil && clients.IgnoreNotFound(err) == nil {
+		// if repo cr not found, continue to check org cr
+		glog.Infof("error when Authorize req: %s for user %s, repo cr not found", repoName, ai.Account)
 	}
+
 	repo := imagehubv1.Repository{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructRepo.UnstructuredContent(), &repo)
 	if err != nil {
@@ -75,7 +87,7 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 		}
 	}
 
-	glog.Info("Authorize true")
+	glog.Infof("Authorize req: %s for user %s, result: %s", repoName, ai.Account, res)
 	return res, nil
 }
 
