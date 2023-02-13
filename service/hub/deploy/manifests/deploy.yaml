@@ -6,6 +6,12 @@ metadata:
   name: hub-service-system
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: hub-service
+  name: hub-service-config
+  namespace: hub-service-system
 data:
   config.yml: |
     server:
@@ -21,12 +27,107 @@ data:
   tls.key: |
     -----BEGIN RSA PRIVATE KEY-----
     -----END RSA PRIVATE KEY-----
-kind: ConfigMap
+---
+apiVersion: v1
+kind: ServiceAccount
 metadata:
-  labels:
-    app: hub-service
-  name: hub-service-config
+  name: hub-service-anonymous
   namespace: hub-service-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: hub-service-anonymous-role
+rules:
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - images
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - images/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - images/status
+    verbs:
+      - get
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - organizations
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - organizations/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - organizations/status
+    verbs:
+      - get
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - repositories
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - repositories/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - imagehub.sealos.io
+    resources:
+      - repositories/status
+    verbs:
+      - get
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterrolebindings
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    verbs:
+      - get
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: hub-service-anonymous-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: hub-service-anonymous-role
+subjects:
+  - kind: ServiceAccount
+    name: hub-service-anonymous
+    namespace: hub-service-system
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -52,21 +153,22 @@ spec:
           configMap:
             name: hub-service-config
         - name: cert-vol
+      serviceAccountName: hub-service-anonymous
       containers:
         - name: hub-service-server
           image: lingdie/sealos-hub-service:dev
           ports:
             - containerPort: 5001
           args:
-          - /config/config.yml
+            - /config/config.yml
           command:
             - /manager
           securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - ALL
-              runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
           imagePullPolicy: Always
           volumeMounts:
             - name: config-vol

@@ -1,8 +1,7 @@
 server:
   addr: ":5001"
-
 token:
   issuer: "registry-token-issuer"
   expiration: 2592000  #30days
-  certificate: "/certs/tls.crt"
-  key: "/certs/tls.key"
+  certificate: "/config/tls.crt"
+  key: "/config/tls.key"

@@ -9,8 +9,12 @@ import (
 	"strings"
 
 	"github.com/docker/libtrust"
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	yaml "gopkg.in/yaml.v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+var k8sClient kubernetes.Client
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
@@ -97,6 +101,11 @@ func LoadConfig(fileName string) (*Config, error) {
 	}
 	if !tokenConfigured {
 		return nil, fmt.Errorf("failed to load token cert and key: none provided")
+	}
+	// setup k8sClient by using controller-runtime
+	k8sClient, err = kubernetes.NewKubernetesClientByConfig(ctrl.GetConfigOrDie())
+	if err != nil {
+		return nil, err
 	}
 	return c, nil
 }
