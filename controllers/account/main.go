@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	"github.com/labring/sealos/pkg/pay"
 	"os"
 
 	"github.com/labring/sealos/controllers/account/controllers"
@@ -87,14 +86,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Account")
 		os.Exit(1)
 	}
-	if os.Getenv(pay.AppID) != "" {
-		if err = (&controllers.PaymentReconciler{
-			Client: mgr.GetClient(),
-			Scheme: mgr.GetScheme(),
-		}).SetupWithManager(mgr); err != nil {
-			setupLog.Error(err, "unable to create controller", "controller", "Payment")
-			os.Exit(1)
-		}
+	if err = (&controllers.PaymentReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Payment")
+		os.Exit(1)
 	}
 
 	//+kubebuilder:scaffold:builder

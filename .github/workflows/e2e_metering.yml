@@ -77,13 +77,8 @@ jobs:
         uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Install dependence
-        working-directory: ./controllers/metering
-        run: |
-          go mod tidy
-          sudo -u root kubectl get pod -A 
-          sudo -u root kubectl describe pod -n account-system
       -  name: e2e Test
          working-directory: ./controllers/metering
          run: |
+           sudo -u root kubectl get pod -A 
            go test ./testdata/e2e/metering_test.go -v
