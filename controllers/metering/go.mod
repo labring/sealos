@@ -4,9 +4,9 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/labring/sealos/controllers/account v0.0.0-00010101000000-000000000000
-	github.com/labring/sealos/controllers/infra v0.0.0-20230206061842-9cf6844d4f70
-	github.com/labring/sealos/controllers/user v0.0.0-20230206022421-71e6848f6810
+	github.com/labring/sealos/controllers/account v0.0.0
+	github.com/labring/sealos/controllers/infra v0.0.0
+	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.23.0
 	k8s.io/api v0.25.0
@@ -47,7 +47,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
-	github.com/labring/sealos v0.0.0-00010101000000-000000000000 // indirect
+	github.com/labring/sealos v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -92,5 +92,6 @@ require (
 replace (
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/account => ../../controllers/account
+	github.com/labring/sealos/controllers/infra => ../../controllers/infra
 	github.com/labring/sealos/controllers/user => ../../controllers/user
 )
