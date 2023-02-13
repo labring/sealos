@@ -57,6 +57,7 @@ func init() {
 func overrideKubeletDefaults(obj interface{}) {
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
+	obj.(*kubelet.KubeletConfiguration).CgroupDriver = ""
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 
@@ -89,6 +90,10 @@ const (
 	KubeletConfiguration   = "KubeletConfiguration"
 )
 
+var defaultMergeOpts = []func(*mergo.Config){
+	mergo.WithOverride,
+}
+
 // LoadFromClusterfile :Load KubeadmConfig from Clusterfile.
 // If it has `KubeadmConfig` in Clusterfile, load every field to each configuration.
 // If Kubeadm raw Config in Clusterfile, just load it.
@@ -97,7 +102,7 @@ func (k *KubeadmConfig) LoadFromClusterfile(kubeadmConfig *KubeadmConfig) error 
 		return nil
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, kubeadmConfig.APIServer.CertSANs...)
-	return mergo.Merge(k, kubeadmConfig)
+	return mergo.Merge(k, kubeadmConfig, defaultMergeOpts...)
 }
 
 // Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.
@@ -107,24 +112,27 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		defaultKubeadmConfig *KubeadmConfig
 		err                  error
 	)
-	if kubeadmYamlPath == "" || !file.IsExist(kubeadmYamlPath) {
+	if kubeadmYamlPath == "" {
 		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), DecodeCRDFromString)
 		if err != nil {
 			return err
 		}
-		return mergo.Merge(k, defaultKubeadmConfig)
+		return mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
+	} else if !file.IsExist(kubeadmYamlPath) {
+		logger.Debug("skip merging kubeadm configs from cause file %s not exists", kubeadmYamlPath)
+		return nil
 	}
+	logger.Debug("trying to merge kubeadm configs from file %s", kubeadmYamlPath)
 	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, DecodeCRDFromFile)
 	if err != nil {
-		return fmt.Errorf("failed to found kubeadm config from %s: %v", kubeadmYamlPath, err)
+		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, defaultKubeadmConfig.APIServer.CertSANs...)
-	err = mergo.Merge(k, defaultKubeadmConfig)
+	err = mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
 	if err != nil {
-		return fmt.Errorf("failed to merge kubeadm config: %v", err)
+		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
-	//using the DefaultKubeadmConfig configuration merge
-	return k.Merge("")
+	return nil
 }
 
 func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interface{}, error)) (*KubeadmConfig, error) {
@@ -169,13 +177,9 @@ func NewKubeadmConfig() interface{} {
 func DecodeCRDFromFile(filePath string, kind string) (interface{}, error) {
 	file, err := os.Open(filepath.Clean(filePath))
 	if err != nil {
-		return nil, fmt.Errorf("failed to dump Config %v", err)
+		return nil, err
 	}
-	defer func() {
-		if err := file.Close(); err != nil {
-			logger.Warn("failed to dump Config close clusterfile failed %v", err)
-		}
-	}()
+	defer file.Close()
 	return DecodeCRDFromReader(file, kind)
 }
 

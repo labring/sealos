@@ -114,7 +114,6 @@ authorization:
   webhook:
     cacheAuthorizedTTL: 5m0s
     cacheUnauthorizedTTL: 30s
-cgroupDriver:
 cgroupsPerQOS: true
 clusterDomain: cluster.local
 configMapAndSecretChangeDetectionStrategy: Watch
