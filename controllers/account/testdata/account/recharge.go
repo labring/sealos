@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"os"
 	"strconv"
 
@@ -46,9 +47,9 @@ func RechargeAccount(AccountName, namespace string, amount int64) error {
 	return nil
 }
 
-func GetAccount(namespace string, name string) (*userv1.Account, error) {
-	gvr := userv1.GroupVersion.WithResource("accounts")
-	var account userv1.Account
+func GetAccount(namespace string, name string) (*accountv1.Account, error) {
+	gvr := accountv1.GroupVersion.WithResource("accounts")
+	var account accountv1.Account
 	if err := baseapi.GetObject(namespace, name, gvr, &account); err != nil {
 		return nil, err
 	}
