@@ -13,23 +13,58 @@ on:
 #      - "!**/*.md"
 #      - "!**/*.yaml"
 jobs:
-  metering_e2e_test:
+  build-image:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ metering ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.4
+        with:
+          sealosVersion: 4.1.5-alpha2
+
+      - name: Build ${{ matrix.module }} amd64
+        working-directory: controllers/${{ matrix.module }}
+        run: |
+          GOARCH=amd64 make build
+          mv bin/manager bin/controller-${{ matrix.module }}-amd64
+          chmod +x bin/controller-${{ matrix.module }}-amd64
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=deploy
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+      - name: build   ${{ matrix.module }} main controller image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller
+        working-directory: controllers/${{ matrix.module }}/deploy
+        run: |
+          ls -l
+          sealos build --debug  -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster .
+          sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GITHUB_TOKEN }} --debug ghcr.io
+          sealos push  ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster
+      - name: docker images
+        run: |
+          sudo sealos images
+
+  e2e-test:
+    needs:
+      - build-image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Auto install sealos
-        uses: labring/sealos-action@v0.0.2
+        uses: labring/sealos-action@v0.0.4
         with:
           sealosVersion: 4.1.5-alpha2
-          buildah: true
-          debug: true
-          sealctl: false
-      - name: Auto print sealos version
-        uses: labring/sealos-action@v0.0.2
-        with:
-          type: version
+
       - name: Auto install k8s using sealos
         uses: labring/sealos-action@v0.0.2
         with:
@@ -54,11 +89,16 @@ jobs:
           sudo -u root kubectl get nodes 
           sudo -u root kubectl get nodes 
           sudo -u root kubectl get pods -A
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=deploy
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+
       - name: install CRD metering
         working-directory: ./controllers/metering
         run: |
-          make pre-deploy
-          sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
+          sudo sealos run --env METERING_INTERVAL=1 ghcr.io/${{ github.repository_owner }}/sealos-metering-controller:${{ steps.prepare.outputs.tag_name }}-cluster
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
