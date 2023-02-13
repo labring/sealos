@@ -15,7 +15,12 @@ spec:
     singular: cluster
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Status of Cluster in group
+      jsonPath: .status.status
+      name: Status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Cluster is the Schema for the clusters API
