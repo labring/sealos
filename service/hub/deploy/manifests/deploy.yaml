@@ -99,6 +99,8 @@ rules:
       - repositories/status
     verbs:
       - get
+      - update
+      - patch
   - apiGroups:
       - rbac.authorization.k8s.io
     resources:
