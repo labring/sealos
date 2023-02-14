@@ -25,7 +25,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/containers/common/pkg/retry"
 	"github.com/containers/image/v5/manifest"
 	"github.com/containers/image/v5/pkg/shortnames"
 	"github.com/opencontainers/go-digest"
@@ -67,6 +66,8 @@ func (opts *inspectResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.SetInterspersed(false)
 	fs.StringVarP(&opts.format, "format", "f", "", "use `format` as a Go template to format the output")
 	fs.StringVarP(&opts.inspectType, "type", "t", inspectTypeContainer, "look at the item of the specified `type` (container or image) and name")
+	fs.Bool("tls-verify", false, "require HTTPS and verify certificates when talking to the container registry or daemon")
+	bailOnError(markFlagsHidden(fs, "tls-verify"), "")
 }
 
 func newInspectCommand() *cobra.Command {
@@ -110,12 +111,14 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 	if len(args) > 1 {
 		return errors.New("too many arguments specified")
 	}
+	if err := setDefaultTLSVerifyFlag(c); err != nil {
+		return err
+	}
 
 	systemContext, err := parse.SystemContextFromOptions(c)
 	if err != nil {
 		return fmt.Errorf("building system context: %w", err)
 	}
-	setDefaultSystemContext(systemContext)
 
 	name := args[0]
 
@@ -209,17 +212,13 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 		}
 	}()
 
-	if err = retry.IfNecessary(ctx, func() error {
-		rawManifest, _, err = src.GetManifest(ctx, nil)
-		return err
-	}, &retry.Options{}); err != nil {
+	rawManifest, _, err = src.GetManifest(ctx, nil)
+	if err != nil {
 		return nil, fmt.Errorf("error retrieving manifest for image: %w", err)
 	}
 
-	if err = retry.IfNecessary(ctx, func() error {
-		config, err = img.OCIConfig(ctx)
-		return err
-	}, &retry.Options{}); err != nil {
+	config, err = img.OCIConfig(ctx)
+	if err != nil {
 		return nil, fmt.Errorf("error reading OCI-formatted configuration data: %w", err)
 	}
 
@@ -238,9 +237,6 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 }
 
 func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgRef string) (types.Image, types.ImageSource, error) {
-	var (
-		src types.ImageSource
-	)
 	transport, imgRef = finalizeReference(transport, imgRef)
 	parts := strings.SplitN(imgRef, ":", 2)
 	// should never happened
@@ -252,37 +248,34 @@ func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.St
 		st.SetStore(store)
 	}
 
-	// try out the candidates as resolved by shortnames. This takes
-	// "localhost/" prefixed images into account as well.
-	candidates, err := shortnames.ResolveLocally(sc, imgName)
-	if err != nil {
-		return nil, nil, fmt.Errorf("error resolve shortname %s: %w", imgName, storage.ErrImageUnknown)
-	}
-
-	var errs []error
-	for _, candidate := range candidates {
-		f := func() (types.ImageSource, error) {
-			ref, err := transport.ParseReference(candidate.String())
-			if err != nil {
-				return nil, err
-			}
-			innerSrc, err := ref.NewImageSource(ctx, sc)
-			if err != nil {
-				return nil, err
-			}
-			return innerSrc, nil
-		}
-		res, err := f()
+	parseSource := func(s string) (types.ImageSource, error) {
+		ref, err := transport.ParseReference(s)
 		if err != nil {
-			errs = append(errs, err)
-		} else {
-			logger.Debug("using image name %q", candidate.String())
-			src = res
-			break
+			return nil, err
 		}
+		return ref.NewImageSource(ctx, sc)
 	}
-	if src == nil {
-		return nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, errors.Join(errs...))
+	var (
+		src types.ImageSource
+		err error
+	)
+	switch transport.Name() {
+	case TransportContainersStorage:
+		names, err := shortnames.ResolveLocally(sc, imgName)
+		if err != nil {
+			return nil, nil, fmt.Errorf("error resolve shortname %s: %w", imgName, storage.ErrImageUnknown)
+		}
+		for _, name := range names {
+			src, err = parseSource(name.String())
+			if err == nil {
+				break
+			}
+		}
+	default:
+		src, err = parseSource(imgName)
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, err)
 	}
 
 	img, err := image.FromUnparsedImage(ctx, sc, image.UnparsedInstance(src, nil))
