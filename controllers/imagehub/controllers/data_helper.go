@@ -94,6 +94,10 @@ func (r *DataHelper) GetImageInfoByImageName(ctx context.Context, name imagehubv
 	return imagehubv1.ImageInfo(image.Spec), nil
 }
 
+func (r *DataHelper) GetCounterByRepoName() {
+
+}
+
 func (r *DataHelper) genFulldataByImageName(ctx context.Context, n imagehubv1.ImageName) (imagehubv1.FullData, error) {
 	fd := imagehubv1.FullData{}
 

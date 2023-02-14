@@ -6,6 +6,7 @@ const (
 	SealosOrgLable  = "organization.imagehub.sealos.io"
 	SealosRepoLabel = "repository.imagehub.sealos.io"
 	SealosTagLabel  = "tag.imagehub.sealos.io"
+	CounterLabel    = "counter.imagehub.sealos.io"
 
 	OrgFinalizerName      = "organization.imagehub.sealos.io/finalizer"
 	RepoFinalizerName     = "repository.imagehub.sealos.io/finalizer"

@@ -58,4 +58,8 @@ resources:
   kind: Counter
   path: github.com/labring/sealos/controllers/imagehub/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

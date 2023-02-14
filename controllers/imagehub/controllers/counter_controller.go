@@ -49,7 +49,8 @@ type CounterReconciler struct {
 func (r *CounterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// set controller reference to the counter object
+	// add rbac to the counter object for usr in user namespace
 
 	return ctrl.Result{}, nil
 }
