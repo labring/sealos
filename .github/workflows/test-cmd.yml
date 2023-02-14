@@ -26,7 +26,7 @@ on:
       - "webhooks/**"
 
 jobs:
-  verfiy cmd:
+  verfiy-cmd:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
