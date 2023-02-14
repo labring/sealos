@@ -41,7 +41,8 @@ var _ webhook.Defaulter = &Counter{}
 func (r *Counter) Default() {
 	counterlog.Info("default", "name", r.Name)
 	r.ObjectMeta = initAnnotationAndLabels(r.ObjectMeta)
-	r.Labels[CounterLabel] = r.Spec.RefName
+	r.Labels[CounterRefLabel] = r.Spec.RefName
+	r.Labels[CounterTypeLabel] = string(r.Spec.Type)
 }
 
 //+kubebuilder:webhook:path=/validate-imagehub-sealos-io-v1-counter,mutating=false,failurePolicy=fail,sideEffects=None,groups=imagehub.sealos.io,resources=counters,verbs=create;update,versions=v1,name=vcounter.kb.io,admissionReviewVersions=v1

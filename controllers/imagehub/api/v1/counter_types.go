@@ -33,14 +33,15 @@ const (
 )
 
 type CounterInfo struct {
-	Count   int64  `json:"count,omitempty"`
-	RefName string `json:"refName,omitempty"`
+	Type    CounterType `json:"type,omitempty"`
+	RefName string      `json:"refName,omitempty"`
+	Count   int64       `json:"count,omitempty"`
 }
 
 // CounterSpec defines the desired state of Counter
 type CounterSpec struct {
 	//+kubebuilder:Enum=repository-pull-counter;image-pull-counter;repository-rate-counter;image-rate-counter
-	Type string `json:"type,omitempty"`
+	Type CounterType `json:"type,omitempty"`
 
 	// RefName is the name of the repository or image cr matename.
 	RefName string `json:"refName,omitempty"`
