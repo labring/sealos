@@ -34,8 +34,11 @@ jobs:
 
       - name: Echo
         run: |
-          echo ${{github.repository.name}}
-          echo ${{github.ref.name}}
+          echo ${{ github.repository }}
+          echo ${{ github.repository_owner }}
+          echo ${{ github.ref }}
+          echo ${{ github.ref_name }}
+          echo ${{ github.ref#refs/tags/ }}
 
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
