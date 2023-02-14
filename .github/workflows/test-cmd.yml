@@ -32,14 +32,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Get Sealos Git Info
+        id: sealos-git-info
+        run: |
+          echo "::set-output name=sealosGit::$(git config --get remote.origin.url)"
+          echo "::set-output name=sealosGitBranch::$(git rev-parse --abbrev-ref HEAD)"
+
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
         with:
           type: install-dev
-          # ${{github.GITHUB_REPOSITORY}} is the repository name, such as labring/sealos
-          sealosGit: https://github.com/${{github.GITHUB_REPOSITORY}}.git
-          # ${{github.GITHUB_BASE_REF}} is the base branch name, such as main
-          sealosGitBranch: ${{github.GITHUB_BASE_REF}}
+          sealosGit: ${{steps.sealos-git-info.outputs.sealosGit}}
+          sealosGitBranch: ${{steps.sealos-git-info.outputs.sealosGitBranch}}
           pruneCRI: true
 
       - name: Run Sealos Command Inspect Test
