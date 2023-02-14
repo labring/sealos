@@ -26,24 +26,23 @@ on:
       - "webhooks/**"
 
 jobs:
-  test-cmd:
+  verfiy cmd:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Get Sealos Git Info
-        id: sealosGitInfo
+      - name: Echo
         run: |
-          echo "##[set-output name=seaolsGit;]$(echo https://github.com/${GITHUB_REPOSITORY}.git)"
-          echo "##[set-output name=seaolsBranch;]$(echo ${GITHUB_REF##*/})"
+          echo ${{github.repository.name}}
+          echo ${{github.ref.name}}
 
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
         with:
           type: install-dev
-          sealosGit: ${{steps.sealosGitInfo.outputs.sealosGit}}
-          sealosGitBranch: ${{steps.sealosGitInfo.outputs.sealosGitBranch}}
+          sealosGit: https://github.com/${{github.repository.name}}.git
+          sealosGitBranch: ${{github.ref.name}}
           pruneCRI: true
 
       - name: Run Sealos Command Inspect Test
