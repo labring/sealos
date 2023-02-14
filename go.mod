@@ -5,7 +5,6 @@ go 1.20
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/Masterminds/sprig/v3 v3.2.2
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.985
 	github.com/casdoor/casdoor-go-sdk v0.4.1
 	github.com/containerd/containerd v1.6.8
 	github.com/containers/buildah v1.28.1
@@ -22,7 +21,6 @@ require (
 	github.com/emicklei/go-restful/v3 v3.9.0
 	github.com/emirpasic/gods v1.18.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/huaweicloud/huaweicloud-sdk-go-v3 v0.0.72
 	github.com/imdario/mergo v0.3.13
 	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
 	github.com/labring/image-cri-shim v0.0.0
@@ -119,7 +117,6 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
-	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.12 // indirect
@@ -200,7 +197,6 @@ require (
 	google.golang.org/genproto v0.0.0-20221024183307-1bc688fe9f3e // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
