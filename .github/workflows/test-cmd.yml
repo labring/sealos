@@ -1,0 +1,52 @@
+name: test-cmd
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
+  pull_request:
+    branches: ["*"]
+    paths-ignore:
+      - "docs/**"
+      - "CHANGELOG/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
+
+jobs:
+  test-cmd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.4
+        with:
+          type: install-dev
+          # ${{GITHUB_REPOSITORY}} is the repository name, such as labring/sealos
+          sealosGit: https://github.com/${{GITHUB_REPOSITORY}}.git
+          # ${{GITHUB_BASE_REF}} is the base branch name, such as main
+          sealosGitBranch: ${{GITHUB_BASE_REF}}
+          pruneCRI: true
+
+      - name: Run Sealos Command Inspect Test
+        run: |
+          sudo sealos inspect docker://docker.io/labring/sealos:latest
+
+      - name: Run Sealos Command Gen Test
+        run: |
+          sudo sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+          --masters 192.168.0.2,192.168.0.3,192.168.0.4 --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd passw0rd
