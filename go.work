@@ -2,6 +2,7 @@ go 1.20
 
 use (
 	.
+	./controllers/account
 	./controllers/app
 	./controllers/cluster
 	./controllers/imagehub
@@ -9,7 +10,6 @@ use (
 	./controllers/metering
 	./controllers/terminal
 	./controllers/user
-	./controllers/account
 	./service/auth
 	./service/hub
 	./service/payment

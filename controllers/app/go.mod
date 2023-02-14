@@ -82,6 +82,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require github.com/labring/sealos/controllers/imagehub v0.0.0-00010101000000-000000000000
+require github.com/labring/sealos/controllers/imagehub v0.0.0
 
 replace github.com/labring/sealos/controllers/imagehub => ../../controllers/imagehub
