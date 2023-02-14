@@ -36,10 +36,10 @@ jobs:
         uses: labring/sealos-action@v0.0.4
         with:
           type: install-dev
-          # ${{GITHUB_REPOSITORY}} is the repository name, such as labring/sealos
-          sealosGit: https://github.com/${{GITHUB_REPOSITORY}}.git
-          # ${{GITHUB_BASE_REF}} is the base branch name, such as main
-          sealosGitBranch: ${{GITHUB_BASE_REF}}
+          # ${{github.GITHUB_REPOSITORY}} is the repository name, such as labring/sealos
+          sealosGit: https://github.com/${{github.GITHUB_REPOSITORY}}.git
+          # ${{github.GITHUB_BASE_REF}} is the base branch name, such as main
+          sealosGitBranch: ${{github.GITHUB_BASE_REF}}
           pruneCRI: true
 
       - name: Run Sealos Command Inspect Test
