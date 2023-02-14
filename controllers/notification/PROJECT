@@ -1,0 +1,15 @@
+domain: sealos.io
+layout:
+- go.kubebuilder.io/v3
+projectName: notification
+repo: github.com/labring/sealos/controllers/notification
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: sealos.io
+  group: notification
+  kind: Notification
+  path: github.com/labring/sealos/controllers/notification/api/v1
+  version: v1
+version: "3"

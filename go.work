@@ -8,6 +8,7 @@ use (
 	./controllers/imagehub
 	./controllers/infra
 	./controllers/metering
+	./controllers/notification
 	./controllers/terminal
 	./controllers/user
 	./service/auth

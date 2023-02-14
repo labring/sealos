@@ -1,0 +1,6 @@
+apiVersion: notification.sealos.io/v1
+kind: Notification
+metadata:
+  name: notification-sample
+spec:
+  # TODO(user): Add fields here
