@@ -34,11 +34,24 @@ spec:
             type: object
           spec:
             description: NotificationSpec defines the desired state of Notification
+              UserName and whether read will be set in label,because set in label
+              is ease to query
             properties:
-              foo:
-                description: Foo is an example field of Notification. Edit notification_types.go
-                  to remove/update
+              from:
                 type: string
+              importance:
+                type: string
+              message:
+                type: string
+              timestamp:
+                format: int64
+                type: integer
+              title:
+                type: string
+            required:
+            - message
+            - timestamp
+            - title
             type: object
           status:
             description: NotificationStatus defines the observed state of Notification

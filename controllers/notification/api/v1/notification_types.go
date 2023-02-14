@@ -20,8 +20,20 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type Type string
+
+const High Type = "High"
+const Medium Type = "Medium"
+const Low Type = "Low"
+
 // NotificationSpec defines the desired state of Notification
+// UserName and whether read will be set in label,because set in label is ease to query
 type NotificationSpec struct {
+	Title      string `json:"title"`
+	Message    string `json:"message"`
+	TimeStamp  int64  `json:"timestamp"`
+	From       string `json:"from,omitempty"`
+	Importance Type   `json:"importance,omitempty"`
 }
 
 // NotificationStatus defines the observed state of Notification
