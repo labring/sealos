@@ -1,0 +1,126 @@
+name: Test Sealos Inspect Command
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/**"
+      - "cmd/**"
+      - "pkg/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/**"
+      - "cmd/**"
+      - "pkg/**"
+
+jobs:
+  verify-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+      
+
+  verify-inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Inspect
+        working-directory: test/testdata
+        run: |
+          sudo sealos pull labring/kubernetes:v1.23.8
+          echo "test inspect local image labring/kubernetes:v1.23.8"
+          sudo sealos inspect labring/kubernetes:v1.23.8
+          echo "test inspect remote image labring/kubernetes:v1.23.8"
+          sudo sealos inspect docker://labring/kubernetes:v1.24.0
+          echo "save alpine using docker and oci"
+          sudo buildah pull alpine:3 
+          sudo buildah push alpine:3 docker-archive:$PWD/docker-alpine.tar
+          sudo buildah push alpine:3 oci-archive:$PWD/oci-alpine.tar
+          echo "test inspect oci archive alpine.tar"
+          sudo sealos inspect oci-archive:$PWD/oci-alpine.tar
+          echo "test inspect docker archive alpine.tar"
+          sudo sealos inspect docker-archive:$PWD/docker-alpine.tar
+  verify-gen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Inspect
+        run: |
+          sudo sealos gen labring/kubernetes:v1.23.8 --masters 127.0.0.1
+
+  verify-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Run
+        run: |
+          sudo sealos pull labring/kubernetes:v1.25.0
+          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
+          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+
+  verify-load:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Run
+        run: |
+          sudo sealos pull labring/kubernetes:v1.25.0
+          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
+          sudo sealos save -o k8s.tar k8s:dev
+          sudo sealos rmi labring/kubernetes:v1.25.0
+          sudo sealos rmi k8s:dev
+          sudo sealos load -i k8s.tar
+          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
