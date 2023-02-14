@@ -32,20 +32,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Echo
-        run: |
-          echo ${{ github.repository }}
-          echo ${{ github.repository_owner }}
-          echo ${{ github.repository_name }}
-          echo ${{ github.ref }}
-          echo ${{ github.ref_name }}
-
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
         with:
           type: install-dev
-          sealosGit: https://github.com/${{github.repository.name}}.git
-          sealosGitBranch: ${{github.ref.name}}
+          sealosGit: https://github.com/${{github.repository}}.git
+          sealosGitBranch: ${{github.ref}}
           pruneCRI: true
 
       - name: Run Sealos Command Inspect Test
