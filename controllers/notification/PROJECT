@@ -7,6 +7,7 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: sealos.io
   group: notification
   kind: Notification
