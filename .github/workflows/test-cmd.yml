@@ -35,8 +35,8 @@ jobs:
       - name: Get Sealos Git Info
         id: sealosGitInfo
         run: |
-          echo "##[set-output name=seaolsGit;]$(echo https://github.com/${GITHUB_REPOSITORY}.git)")"
-          echo "##[set-output name=seaolsBranch;]$(echo ${GITHUB_REF##*/}")"
+          echo "##[set-output name=seaolsGit;]$(echo https://github.com/${GITHUB_REPOSITORY}.git)"
+          echo "##[set-output name=seaolsBranch;]$(echo ${GITHUB_REF##*/})"
 
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
