@@ -318,3 +318,32 @@ jobs:
           sudo $binDIR/buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
           sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
           sudo $binDIR/buildah images
+
+  test-cmd:
+    needs: [build]
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        binary: [sealos, sealctl, lvscare, image-cri-shim]
+        arch: [arm64, amd64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.binary }}-${{ matrix.arch }}
+          path: bin/linux_${{ matrix.arch }}
+
+      - name: Run Sealos Command Inspect Test
+        if: ${{ (matrix.binary == 'sealos') }}
+        run: |
+          bin/linux_${{ matrix.arch}}/sealos inspect docker://docker.io/labring/sealos:latest
+
+      - name: Run Sealos Command Gen Test
+        if: ${{ (matrix.binary == 'sealos') }}
+        run: |
+          bin/linux_${{ matrix.arch}}/sealos gen labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+          --masters 192.168.0.2,192.168.0.3,192.168.0.4 --nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd passw0rd
+
