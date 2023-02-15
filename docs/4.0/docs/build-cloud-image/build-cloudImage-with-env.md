@@ -65,7 +65,7 @@ CMD ["kubectl apply -f manifests/service.yaml"]
 When you build the image ,nothing will be happen, it will render when running the application. if `--env` not set, it will use Kubefile default ENV.
 
 ```shell
-sealos run labring/nginx:v1.23.1 --env serviceType=LoadBalancer --env http_NodePort=30080 --env https_NodePort=30443
+sealos run labring/nginx:1.23.1 --env serviceType=LoadBalancer --env http_NodePort=30080 --env https_NodePort=30443
 ```
 
 You will find sealos will Render a new yaml file named `service.yaml` based on `service.yaml.tmpl` on master node local path.
