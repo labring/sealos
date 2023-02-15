@@ -77,15 +77,42 @@ const (
 	ClusterInProcess ClusterPhase = "ClusterInProcess"
 )
 
+type ClusterConditionType string
+
+const (
+	ClusterConditionTypeSuccess ClusterConditionType = "ApplyClusterSuccess"
+	ClusterConditionTypeError   ClusterConditionType = "ApplyClusterError"
+)
+
 // ClusterCondition describes the state of a cluster at a certain point.
 type ClusterCondition struct {
-	Type              string             `json:"type"`
-	Status            v1.ConditionStatus `json:"status"`
-	LastHeartbeatTime metav1.Time        `json:"lastHeartbeatTime,omitempty"`
+	Type              ClusterConditionType `json:"type"`
+	Status            v1.ConditionStatus   `json:"status"`
+	LastHeartbeatTime metav1.Time          `json:"lastHeartbeatTime,omitempty"`
 	// +optional
 	Reason string `json:"reason,omitempty"`
 	// +optional
 	Message string `json:"message,omitempty"`
+}
+
+func NewSuccessClusterCondition() ClusterCondition {
+	return ClusterCondition{
+		Type:              ClusterConditionTypeSuccess,
+		Status:            v1.ConditionTrue,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Ready",
+		Message:           "Applied to cluster successfully",
+	}
+}
+
+func NewFailedClusterCondition(message string) ClusterCondition {
+	return ClusterCondition{
+		Type:              ClusterConditionTypeError,
+		Status:            v1.ConditionFalse,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Error",
+		Message:           message,
+	}
 }
 
 type ClusterStatus struct {
