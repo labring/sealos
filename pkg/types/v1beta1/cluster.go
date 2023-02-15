@@ -108,7 +108,7 @@ func NewFailedClusterCondition(message string) ClusterCondition {
 		Type:              ClusterConditionTypeError,
 		Status:            v1.ConditionFalse,
 		LastHeartbeatTime: metav1.Now(),
-		Reason:            "Error",
+		Reason:            "ApplyCluster",
 		Message:           message,
 	}
 }
