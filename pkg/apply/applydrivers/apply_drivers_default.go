@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/version"
 
@@ -123,22 +122,15 @@ func (c *Applier) initStatus() {
 // todo: set up signal handler
 // todo(lingdie): use appErr to generate cmdPhase for each cmd and maintain a error map for images
 func (c *Applier) updateStatus(clusterErr error, appErr error) {
-	condition := v2.ClusterCondition{
-		Type:              "ApplyClusterSuccess",
-		Status:            v1.ConditionTrue,
-		LastHeartbeatTime: metav1.Now(),
-		Reason:            "Ready",
-		Message:           "Applied to cluster successfully",
-	}
-	c.ClusterDesired.Status.Phase = v2.ClusterSuccess
+	// update cluster status using clusterErr
+	var condition v2.ClusterCondition
 	if clusterErr != nil {
-		condition.Status = v1.ConditionFalse
-		condition.Reason = "ApplyClusterError"
-		condition.Message = clusterErr.Error()
-		logger.Error("Applied to cluster error: %v", clusterErr)
-	}
-	if clusterErr != nil {
+		condition = v2.NewFailedClusterCondition(clusterErr.Error())
 		c.ClusterDesired.Status.Phase = v2.ClusterFailed
+		logger.Error("Applied to cluster error: %v", clusterErr)
+	} else {
+		condition = v2.NewSuccessClusterCondition()
+		c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	}
 	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
 }
