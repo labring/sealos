@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	customCtrl "github.com/labring/sealos/pkg/utils/controller"
@@ -93,16 +94,27 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	//add pending status
 	if infra.Status.Status == "" {
-		infra.Status.Status = infrav1.Pending.String()
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "InfraPending", "Infra %s status is pending", infra.Name)
-		if err := r.Status().Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra pending status", "%v", err)
-			return ctrl.Result{}, err
+		if err := r.updateStatus(ctx, client.ObjectKeyFromObject(infra), v1.Pending.String()); err != nil {
+			r.recorder.Event(infra, corev1.EventTypeWarning, "UpdateInfraStatus", err.Error())
+			return ctrl.Result{RequeueAfter: time.Second * 3}, err
 		}
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 3}, nil
 	}
 
 	logger.Info("infra finalizer: %v, status: %v", infra.Finalizers[0], infra.Status.Status)
+
+	// clean infra using aws terminate
+	// now we depend on the aws terminate func to keep consistency
+	// TODO: double check the terminated Instance and then remove the finalizer...
+	if _, err := r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+		return ctrl.Result{RequeueAfter: time.Second * 3}, err
+	}
+
+	// if infra is failed, we do not need to reconcile again
+	if infra.Status.Status == v1.Failed.String() {
+		return ctrl.Result{}, nil
+	}
 
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
@@ -138,6 +150,14 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			Namespace: infra.Namespace,
 			Name:      getSecretName(infra),
 		}
+
+		logger.Info("start to update infra...")
+
+		if err := r.Update(ctx, infra); err != nil {
+			r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
+			return err
+		}
+
 		if err := r.Get(ctx, secretNamespacedName, secret); err != nil {
 			logger.Info("get secret %v error: %v", secretNamespacedName, err)
 			keyError = r.createSecret(ctx, infra)
@@ -147,18 +167,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 		}
 
-		logger.Info("start to update infra...")
-
-		if err := r.Update(ctx, infra); err != nil {
-			r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
-			return err
-		}
-
 		if infra.Status.Status != infrav1.Running.String() {
-			infra.Status.Status = infrav1.Running.String()
-			if err := r.Status().Update(ctx, infra); err != nil {
-				r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra running status", "%v", err)
-				return fmt.Errorf("update infra error:%v", err)
+			if err := r.updateStatus(ctx, client.ObjectKeyFromObject(infra), v1.Running.String()); err != nil {
+				r.recorder.Event(infra, corev1.EventTypeWarning, "UpdateInfraStatus", err.Error())
+				return err
 			}
 			r.recorder.Eventf(infra, corev1.EventTypeNormal, "infra running success", "%s/%s", infra.Namespace, infra.Name)
 		}
@@ -166,25 +178,13 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return nil
 	})
 
-	//clean instance when save ssh key failed
-	if keyError != nil {
-		logger.Debug("removing all hosts since ssh key failed")
-		if err := r.DeleteInstances(infra); err != nil {
-			return ctrl.Result{Requeue: true}, err
-		}
-	}
-
 	if err != nil {
 		r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
-		// requeue right now
-		return ctrl.Result{Requeue: true}, err
-	}
-
-	// clean infra using aws terminate
-	// now we depend on the aws terminate func to keep consistency
-	// TODO: double check the terminated Instance and then remove the finalizer...
-	if _, err = r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
-		return ctrl.Result{Requeue: true}, err
+		if err := r.updateStatus(ctx, client.ObjectKeyFromObject(infra), v1.Failed.String()); err != nil {
+			r.recorder.Event(infra, corev1.EventTypeWarning, "UpdateInfraStatus", err.Error())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
@@ -249,6 +249,23 @@ func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra
 
 func getSecretName(infra *infrav1.Infra) string {
 	return fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
+}
+
+func (r *InfraReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status string) error {
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		original := &infrav1.Infra{}
+		if err := r.Get(ctx, nn, original); err != nil {
+			return err
+		}
+		original.Status.Status = status
+		if err := r.Status().Update(ctx, original); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

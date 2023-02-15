@@ -344,10 +344,6 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			}
 		}
 	}
-
-	if len(result.Instances) > 0 {
-		logger.Info("%v availabilityZone is %v", *result.Instances[0].InstanceId, *result.Instances[0].Placement.AvailabilityZone)
-	}
 	//err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
 	//if err != nil {
 	//	return fmt.Errorf("create and attach volumes failed: %v", err)
