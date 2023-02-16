@@ -31,6 +31,7 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -72,6 +73,10 @@ type ClusterReconciler struct {
 	logr.Logger
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
+}
+
+type ClusterReconcilerOptions struct {
+	MaxConcurrentReconciles int
 }
 
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -360,7 +365,7 @@ func (r *ClusterReconciler) updateStatus(ctx context.Context, nn types.Namespace
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts ClusterReconcilerOptions) error {
 	const controllerName = "cluster_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
@@ -368,5 +373,8 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Cluster{}).
 		Watches(&source.Kind{Type: &infrav1.Infra{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
+		}).
 		Complete(r)
 }
