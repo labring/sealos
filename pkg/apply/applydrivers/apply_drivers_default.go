@@ -115,7 +115,9 @@ func (c *Applier) getWriteBackObjects() []interface{} {
 
 func (c *Applier) initStatus() {
 	c.ClusterDesired.Status.Phase = v2.ClusterInProcess
-	c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
+	if c.ClusterDesired.Status.Conditions == nil {
+		c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
+	}
 }
 
 // todo: atomic updating status after each installation for better reconcile?
