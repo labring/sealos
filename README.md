@@ -134,7 +134,7 @@ And now everything is ready.
 ## Use cri-docker image
 
 ```shell
-sealos run labring/kubernetes-docker:v1.20.8-4.1.4 labring/calico:v3.24.1 \
+sealos run labring/kubernetes-docker:v1.20.8-4.1.4 labring/calico:v3.22.1 \
      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
 ```
