@@ -49,13 +49,9 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 	if filter.nameStrategy == FilterStrategyEquals {
 		repos = []string{filter.Name}
 	} else {
-		repos, err = reg.Repositories(func(data []string) []string {
+		repos, _ = reg.Repositories(func(data []string) []string {
 			return filter.Run(data, FilterTypeName)
 		})
-		if err != nil {
-			logger.Error("list image is error: %+v", err)
-			return
-		}
 	}
 
 	var imageVersionList bool
@@ -80,16 +76,28 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 		} else {
 			imageVersionList = true
 			for _, tag := range tags {
+				var imageDigest digest.Digest
 				var imageID digest.Digest
-				imageID, _ = reg.ManifestDigest(repo, tag)
+				imageDigestStr, imageIDStr := "<none>", "<none>"
+				imageDigest, _ = reg.ManifestDigest(repo, tag)
+				manifest, _ := reg.ManifestV2(repo, tag)
+				if imageDigest != "" {
+					imageDigestStr = imageDigest.String()
+				}
+				if manifest != nil {
+					imageID = manifest.Config.Digest
+					imageIDStr = imageID.Hex()
+				}
 				listImage = append(listImage, imageOutputParams{
 					RegistryName: registryName,
 					ImageName:    repo,
 					Tag:          tag,
-					ImageID:      imageID.String(),
+					ImageID:      imageIDStr,
+					ImageDigest:  imageDigestStr,
 				})
 			}
 		}
+
 	}
 	if enableJSON {
 		marshalled, err := json.Marshal(listImage)
@@ -101,6 +109,7 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 		return
 	}
 	table.OutputA(listImage)
+
 }
 
 type imageOutputParams struct {
@@ -108,4 +117,5 @@ type imageOutputParams struct {
 	ImageName    string
 	Tag          string
 	ImageID      string
+	ImageDigest  string
 }
