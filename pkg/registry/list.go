@@ -70,15 +70,15 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 			listImage = append(listImage, imageOutputParams{
 				RegistryName: registryName,
 				ImageName:    repo,
-				Tag:          "<none>",
-				ImageID:      "<none>",
+				Tag:          none,
+				ImageID:      none,
 			})
 		} else {
 			imageVersionList = true
 			for _, tag := range tags {
 				var imageDigest digest.Digest
 				var imageID digest.Digest
-				imageDigestStr, imageIDStr := "<none>", "<none>"
+				imageDigestStr, imageIDStr := none, none
 				imageDigest, _ = reg.ManifestDigest(repo, tag)
 				manifest, _ := reg.ManifestV2(repo, tag)
 				if imageDigest != "" {
@@ -97,7 +97,6 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 				})
 			}
 		}
-
 	}
 	if enableJSON {
 		marshalled, err := json.Marshal(listImage)
@@ -109,7 +108,6 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 		return
 	}
 	table.OutputA(listImage)
-
 }
 
 type imageOutputParams struct {

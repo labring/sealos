@@ -47,7 +47,7 @@ func (is *DefaultImage) GetImage(registryName, name string, enableJSON bool) {
 	var imageDigest digest.Digest
 	var imageID digest.Digest
 	var image imageOutputParams
-	imageDigestStr, imageIDStr := "<none>", "<none>"
+	imageDigestStr, imageIDStr := none, none
 	imageDigest, _ = reg.ManifestDigest(repo, tag)
 	manifest, _ := reg.ManifestV2(repo, tag)
 	if imageDigest != "" {
