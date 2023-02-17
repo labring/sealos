@@ -16,19 +16,19 @@ func TestDriver_deleteVolumes(t *testing.T) {
 		{
 			"test delete volume",
 			args{
-				[]string{},
+				[]string{"d-bp1ds373gmumyeoxj149", "d-bp1g8yzs1qf3rt8nx33k"},
 			},
 			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDriver("aws")
+			d, err := NewDriver("aliyun")
 			if err != nil {
 				t.Errorf("create driver failed")
 			}
 			if err := d.DeleteVolume(tt.args.disksID); (err != nil) != tt.wantErr {
-				t.Errorf("createInstances() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DeleteVolume() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

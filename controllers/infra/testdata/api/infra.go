@@ -17,7 +17,7 @@ metadata:
 spec:
   hosts:
   - roles: [master] 
-    count: 1
+    count: 2
     flavor: t2.medium
     image: "ami-048280a00d5085dd1"
     disks:
@@ -27,7 +27,7 @@ spec:
       type: "root"
 
   - roles: [ node ] 
-    count: 1 
+    count: 2
     flavor: t2.medium
     image: "ami-048280a00d5085dd1"
     disks:

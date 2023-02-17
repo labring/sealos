@@ -21,20 +21,27 @@ func TestDriver_DeleteInstances(t *testing.T) {
 			"test delete instance",
 			args{hosts: &v1.Hosts{
 				Roles:     []string{"master"},
-				Count:     1,
+				Count:     2,
 				Resources: nil,
 				Flavor:    string(types.InstanceTypeT2Micro),
 				Arch:      "",
 				Image:     "ami-05248307900d52e3a",
 				Disks:     nil,
-				Metadata:  []v1.Metadata{},
+				Metadata: []v1.Metadata{
+					{
+						ID: "i-bp1b12w8wosiidi8bz77",
+					},
+					{
+						ID: "i-bp1b12w8wosiidi8bz76",
+					},
+				},
 			}},
 			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDriver("aws")
+			d, err := NewDriver("aliyun")
 			if err != nil {
 				t.Errorf("create driver failed")
 			}

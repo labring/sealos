@@ -70,7 +70,9 @@ spec:
                           capacity:
                             type: integer
                           id:
-                            type: string
+                            items:
+                              type: string
+                            type: array
                           index:
                             description: Name  string `json:"name,omitempty"`
                             type: integer

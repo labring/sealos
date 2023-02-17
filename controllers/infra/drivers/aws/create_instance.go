@@ -294,7 +294,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	//}
 	result, err := MakeInstance(context.TODO(), client, input)
 	if err != nil {
-		return fmt.Errorf("create volume failed: %v", err)
+		return fmt.Errorf("create instance failed: %v", err)
 	}
 
 	if err := d.WaitInstanceRunning(result.Instances); err != nil {
@@ -378,7 +378,7 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 		return fmt.Errorf("create uuid error:%v", err)
 	}
 	keyName := myUUID.String()
-	keypairKey, keypairValue := common.KeyPairUser, common.KeyPairGeneral
+	keypairKey, keypairValue := common.KeyPairUser, infra.GetInstancesAndVolumesTag()
 	keyTags := []types.Tag{
 		{
 			Key:   &keypairKey,

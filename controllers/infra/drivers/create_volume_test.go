@@ -27,14 +27,15 @@ func TestDriver_CreateVolumes(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sealos-infra",
 						Namespace: "sealos-infra-ns",
+						UID:       "0abafc31-735b-4a9c-923f-493af2ed1b25",
 					},
 					Spec: v1.InfraSpec{
-						AvailabilityZone: "cn-north-1a",
+						AvailabilityZone: "cn-hangzhou-i",
 					},
 				},
 				disks: []v1.Disk{{
-					Type:     string(types.VolumeTypeGp3),
-					Capacity: 40,
+					VolumeType: "cloud_essd",
+					Capacity:   20,
 					//Name:     "/dev/sda2",
 				}},
 				host: &v1.Hosts{
@@ -45,7 +46,14 @@ func TestDriver_CreateVolumes(t *testing.T) {
 					Arch:      "",
 					Image:     "ami-05248307900d52e3a",
 					Disks:     nil,
-					Metadata:  []v1.Metadata{},
+					Metadata: []v1.Metadata{
+						{
+							ID: "i-bp1b12w8wosiidi8bz77",
+						},
+						{
+							ID: "i-bp1b12w8wosiidi8bz76",
+						},
+					},
 				},
 			},
 			false,
@@ -53,7 +61,7 @@ func TestDriver_CreateVolumes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, _ := NewDriver("aws")
+			d, _ := NewDriver("aliyun")
 
 			if err := d.CreateVolumes(tt.args.infra, tt.args.host, tt.args.disks); (err != nil) != tt.wantErr {
 				t.Errorf("CreateVolumes() error = %v, wantErr %v", err, tt.wantErr)

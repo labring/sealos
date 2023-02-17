@@ -1,33 +1,27 @@
 package drivers
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
-func TestDriver_GetInstances(t *testing.T) {
+func TestDriver_createKeyPair(t *testing.T) {
 	type args struct {
-		key    string
-		value  string
-		infra  *v1.Infra
-		status string
+		infra *v1.Infra
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *v1.Hosts
 		wantErr bool
 	}{
 		{
-			"test get instance",
+			"test create keypair",
 			args{
-				key:    "master",
-				value:  "true",
-				status: "running",
 				infra: &v1.Infra{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -40,9 +34,6 @@ func TestDriver_GetInstances(t *testing.T) {
 					},
 				},
 			},
-			&v1.Hosts{
-				Count: 1,
-			},
 			false,
 		},
 	}
@@ -52,12 +43,12 @@ func TestDriver_GetInstances(t *testing.T) {
 			if err != nil {
 				t.Errorf("create driver failed: %v", err)
 			}
-			host, err := d.GetInstances(tt.args.infra, tt.args.status)
+			err = d.CreateKeyPair(tt.args.infra)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInstances() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("CreateKeypair() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			fmt.Println("got hosts: ", host[0].Metadata)
+			logger.Info("infra ssh: ", tt.args.infra.Spec.SSH)
 		})
 	}
 }

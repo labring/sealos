@@ -19,6 +19,7 @@ package aws
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
@@ -172,7 +173,7 @@ func (d Driver) getInstancesByLabel(key string, value string, infra *v1.Infra) (
 }
 
 // getInstances get all instances for an infra
-func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([]v1.Hosts, error) {
+func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error) {
 	var hosts []v1.Hosts
 	hostmap := make(map[int]*v1.Hosts)
 	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
@@ -187,7 +188,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 			},
 			{
 				Name:   &statusName,
-				Values: []string{string(status)},
+				Values: []string{status},
 			},
 		},
 	}
@@ -261,7 +262,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 						Capacity:   int(*vol.Size),
 						VolumeType: string(vol.VolumeType),
 						Type:       diskType,
-						ID:         *vol.VolumeId,
+						ID:         []string{*vol.VolumeId},
 						Index:      volIndex,
 					})
 				}
@@ -269,6 +270,7 @@ func (d Driver) getInstances(infra *v1.Infra, status types.InstanceStateName) ([
 			if h, ok := hostmap[index]; ok {
 				h.Count++
 				hostmap[index].Metadata = append(hostmap[index].Metadata, metadata)
+				mergeDisks(&hostmap[index].Disks, &disks)
 				continue
 			}
 			instanceType, imageID := i.InstanceType, i.ImageId
@@ -327,4 +329,17 @@ func getVolIndex(v types.Volume) (int, error) {
 		}
 	}
 	return -1, fmt.Errorf("volume index not found: %v", *v.VolumeId)
+}
+
+func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
+	if len(*newDisk) == 0 {
+		return
+	}
+	sort.Sort(v1.IndexDisks(*newDisk))
+	sort.Sort(v1.IndexDisks(*curDisk))
+	for i := range *newDisk {
+		if (*newDisk)[i].Index == (*curDisk)[i].Index {
+			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
+		}
+	}
 }

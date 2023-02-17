@@ -3,9 +3,9 @@ package drivers
 import (
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
@@ -25,19 +25,41 @@ func TestDriver_createInstances(t *testing.T) {
 			args{
 				hosts: &v1.Hosts{
 					Roles:     []string{"master"},
-					Count:     1,
+					Count:     2,
 					Resources: nil,
-					Flavor:    string(types.InstanceTypeT2Micro),
+					Flavor:    "ecs.s6-c1m1.small",
 					Arch:      "",
-					Image:     "ami-08bb4e3ce08ca7ddb",
-					Disks:     nil,
-					Metadata:  nil,
+					Image:     "centos_7_9_x64_20G_alibase_20230109.vhd",
+					Disks: []v1.Disk{
+						{
+							Capacity:   20,
+							Type:       "root",
+							VolumeType: "cloud_essd",
+						},
+						{
+							Capacity:   20,
+							Type:       "data",
+							VolumeType: "cloud_essd",
+						},
+						{
+							Capacity:   20,
+							Type:       "data",
+							VolumeType: "cloud_essd",
+						},
+					},
+					Metadata: nil,
 				},
 				infra: &v1.Infra{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "sealos-infra",
 						Namespace: "sealos-infra-ns",
+						UID:       "0abafc31-735b-4a9c-923f-493af2ed1b25",
+					},
+					Spec: v1.InfraSpec{
+						SSH: v1beta1.SSH{
+							PkName: "infra-test",
+						},
 					},
 				},
 			},
@@ -46,7 +68,7 @@ func TestDriver_createInstances(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := NewDriver("aws")
+			d, err := NewDriver("aliyun")
 			if err != nil {
 				t.Errorf("create driver failed")
 			}

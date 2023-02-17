@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -22,23 +26,38 @@ func ModifyVolume(c context.Context, api EC2ModifyVolumeAPI, input *ec2.ModifyVo
 }
 
 // can't modify type when disk being used. can't smaller size when disk being used.
-func (d Driver) modifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
+func (d Driver) modifyVolumes(curDisk *v1.Disk, desDisk *v1.Disk) error {
 	// no modification required
-	if curDisk.Capacity == desDisk.Capacity && curDisk.Type == desDisk.Type {
+	if curDisk.Capacity == desDisk.Capacity && curDisk.VolumeType == desDisk.VolumeType {
 		return nil
 	}
-	client := d.Client
+	eg, _ := errgroup.WithContext(context.Background())
 	volumeType := types.VolumeType(desDisk.VolumeType)
-	id := curDisk.ID
+	ids := curDisk.ID
 	size := int32(desDisk.Capacity)
-	input := &ec2.ModifyVolumeInput{
+	for _, id := range ids {
+		volumeID := id
+		eg.Go(func() error {
+			return d.modifyVolumeByID(volumeID, size, volumeType)
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d Driver) modifyVolumeByID(id string, size int32, volumeType types.VolumeType) error {
+	client := d.Client
+	modifyInput := &ec2.ModifyVolumeInput{
 		VolumeId:   &id,
 		Size:       &size,
 		VolumeType: volumeType,
 	}
-	if _, err := ModifyVolume(context.TODO(), client, input); err != nil {
+	logger.Info("modify volume id:%s, volumeType: %v", id, volumeType)
+
+	if _, err := ModifyVolume(context.TODO(), client, modifyInput); err != nil {
 		return fmt.Errorf("modify volume id:%s error:%v", id, err)
 	}
-
 	return nil
 }
