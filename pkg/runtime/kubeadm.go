@@ -355,11 +355,11 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
+	if err := k.ConvertInitConfigConversion(); err != nil {
 		return nil, err
 	}
 
-	if err := k.ConvertInitConfigConversion(); err != nil {
+	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
 		return nil, err
 	}
 	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
