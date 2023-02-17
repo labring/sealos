@@ -72,6 +72,7 @@ func newDefaultPushOptions() *pushOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
+		crOption:   CrOptionNo,
 	}
 }
 
@@ -99,7 +100,7 @@ func (opts *pushOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
 
 	// TODO: remove this flag once we have a better way to handle image cr pushing to the dest registry
-	fs.Var(&opts.crOption, "cr-option", "push image cr to the dest registry")
+	fs.Var(&opts.crOption, "cr-option", `push image cr to the dest registry, allow values: "yes", "no", "only", default is "no"`)
 	return markFlagsHidden(fs, []string{"signature-policy", "blob-cache", "tls-verify"}...)
 }
 
