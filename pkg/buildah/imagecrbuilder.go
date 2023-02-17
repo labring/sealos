@@ -17,6 +17,7 @@ package buildah
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"path/filepath"
@@ -63,6 +64,33 @@ const (
 	KubeConfigPath   = "config"
 )
 
+type crOpionEnum string
+
+const (
+	CrOptionNo   crOpionEnum = "no"
+	CrOptionYes  crOpionEnum = "yes"
+	CrOptionOnly crOpionEnum = "only"
+)
+
+// String is used both by fmt.Print and by Cobra in help text
+func (e *crOpionEnum) String() string {
+	return string(*e)
+}
+
+func (e *crOpionEnum) Set(v string) error {
+	switch v {
+	case "only", "yes", "no":
+		*e = crOpionEnum(v)
+		return nil
+	default:
+		return errors.New(`must be one of "only", "yes", "no"`)
+	}
+}
+
+func (e *crOpionEnum) Type() string {
+	return "crOpionEnum"
+}
+
 const (
 	//Read Content Success Output
 	SuccessCreateContainer          = "Success create container"
@@ -74,7 +102,7 @@ const (
 )
 
 const (
-	//Read Content Failed Output
+	// Read Content Failed Output
 	FailCreateContainer          = "Fail to create container"
 	FailReadOrBuildImageCROutput = "Fail to get image cr"
 	FailReadImageInfoOutput      = "Fail to read image Info"
@@ -93,7 +121,7 @@ type ImageCRBuilder struct {
 	store        storage.Store
 }
 
-func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string) {
+func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string) error {
 	var dest string
 	switch len(args) {
 	case 1:
@@ -101,22 +129,23 @@ func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string) {
 	case 2:
 		dest = args[1]
 	default:
-		return
+		return errors.New("dest image name must be specified")
 	}
 	store, err := getStore(cmd)
 	if err != nil {
-		return
+		return err
 	}
 	registryname, err := parseRawURL(dest)
 	if err != nil {
-		return
+		return err
 	}
 	//run without error returns
 	icb := &ImageCRBuilder{dest, registryname, "", "", "", &imagev1.Image{}, store}
 	if icb.CheckLoginStatus() {
 		fmt.Println("Start image cr push")
-		icb.Run()
+		return icb.Run()
 	}
+	return nil
 }
 
 func (icb *ImageCRBuilder) CheckLoginStatus() bool {
@@ -141,13 +170,13 @@ func (icb *ImageCRBuilder) CheckLoginStatus() bool {
 	return true
 }
 
-func (icb *ImageCRBuilder) Run() {
+func (icb *ImageCRBuilder) Run() error {
 	MountPoint, err := icb.CreateContainer()
 	if err != nil {
 		// get err when create container ,abort all
 		fmt.Println(FailCreateContainer)
 		logger.Debug(err)
-		return
+		return err
 	}
 	fmt.Println(SuccessCreateContainer)
 	defer func() {
@@ -166,10 +195,11 @@ func (icb *ImageCRBuilder) Run() {
 	err = icb.ImageCRApply()
 	if err != nil {
 		fmt.Println(FailImageapplyOutput)
-		logger.Debug(err)
+		return err
 	} else {
 		fmt.Println(SuccessImageapplyOutput)
 	}
+	return err
 }
 
 func (icb *ImageCRBuilder) CreateContainer() (string, error) {
@@ -190,7 +220,7 @@ func (icb *ImageCRBuilder) CreateContainer() (string, error) {
 	return builderInfo.MountPoint, nil
 }
 
-// GetAppContent do content read in filereadPipeline, if one content get failed ,it won't abort.
+// GetMetadata do content read in filereadPipeline, if one content get failed ,it won't abort.
 func (icb *ImageCRBuilder) GetMetadata(MountPoint string) error {
 	var errl errlist.List
 	//Using a pipe helps with future file reading needs
