@@ -78,7 +78,7 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 			for _, tag := range tags {
 				var imageDigest digest.Digest
 				var imageID digest.Digest
-				imageDigestStr, imageIDStr := none, none
+				imageDigestStr, imageIDStr, imageIDShortStr := none, none, none
 				imageDigest, _ = reg.ManifestDigest(repo, tag)
 				manifest, _ := reg.ManifestV2(repo, tag)
 				if imageDigest != "" {
@@ -87,12 +87,14 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 				if manifest != nil {
 					imageID = manifest.Config.Digest
 					imageIDStr = imageID.Hex()
+					imageIDShortStr = imageIDStr[:12]
 				}
 				listImage = append(listImage, imageOutputParams{
 					RegistryName: registryName,
 					ImageName:    repo,
 					Tag:          tag,
 					ImageID:      imageIDStr,
+					ImageIDShort: imageIDShortStr,
 					ImageDigest:  imageDigestStr,
 				})
 			}
@@ -114,6 +116,7 @@ type imageOutputParams struct {
 	RegistryName string
 	ImageName    string
 	Tag          string
-	ImageID      string
-	ImageDigest  string
+	ImageID      string `table:"-"`
+	ImageIDShort string `table:"ImageID" json:"-"`
+	ImageDigest  string `table:"-"`
 }
