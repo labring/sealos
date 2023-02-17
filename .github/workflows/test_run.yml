@@ -1,0 +1,363 @@
+name: Test Sealos Run Command
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/test_run.yml"
+      - "cmd/**"
+      - "pkg/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/test_run.yml"
+      - "cmd/**"
+      - "pkg/**"
+
+
+jobs:
+  verify-run-containerd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
+
+  verify-run-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: false
+          autoFetch: false
+      - name: Remove docker
+        run: |
+          CRI_TYPE=docker
+          dpkg-query --search "$(command -v containerd)" "$(command -v docker)"
+          sudo apt-get remove -y moby-buildx moby-cli moby-compose moby-containerd moby-engine &>/dev/null
+          sudo systemctl unmask "${CRI_TYPE//-/}" || true
+          sudo mkdir -p /sys/fs/cgroup/systemd
+          sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
+
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
+
+
+  verify-run-containerd-buildimage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+      - name: build new image
+        run: |
+          mkdir -p /tmp/buildimage
+          cat > /tmp/buildimage/kubeadm.yml <<EOF
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat > /tmp/buildimage/Kubefile <<EOF
+          FROM labring/kubernetes:v1.25.0
+          COPY kubeadm.yml etc/
+          EOF
+          sudo sealos build --debug -t hack:dev  /tmp/buildimage
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+
+  verify-run-docker-buildimage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: false
+          autoFetch: false
+      - name: Remove docker
+        run: |
+          CRI_TYPE=docker
+          dpkg-query --search "$(command -v containerd)" "$(command -v docker)"
+          sudo apt-get remove -y moby-buildx moby-cli moby-compose moby-containerd moby-engine &>/dev/null
+          sudo systemctl unmask "${CRI_TYPE//-/}" || true
+          sudo mkdir -p /sys/fs/cgroup/systemd
+          sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
+      - name: build new image
+        run: |
+          mkdir -p /tmp/buildimage
+          cat > /tmp/buildimage/kubeadm.yml <<EOF
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat > /tmp/buildimage/Kubefile <<EOF
+          FROM labring/kubernetes-docker:v1.25.0
+          COPY kubeadm.yml etc/
+          EOF
+          sudo sealos build --debug -t hack:dev  /tmp/buildimage
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+
+
+  verify-run-containerd-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - labring/kubernetes:v1.25.0
+              - labring/helm:v3.8.2
+              - labring/calico:v3.24.1
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile  --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+
+  verify-run-docker-apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: false
+          autoFetch: false
+      - name: Remove docker
+        run: |
+          CRI_TYPE=docker
+          dpkg-query --search "$(command -v containerd)" "$(command -v docker)"
+          sudo apt-get remove -y moby-buildx moby-cli moby-compose moby-containerd moby-engine &>/dev/null
+          sudo systemctl unmask "${CRI_TYPE//-/}" || true
+          sudo mkdir -p /sys/fs/cgroup/systemd
+          sudo mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd || true
+
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - labring/kubernetes-docker:v1.25.0
+              - labring/helm:v3.8.2
+              - labring/calico:v3.24.1
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -ex
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
