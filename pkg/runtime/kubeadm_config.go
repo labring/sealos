@@ -57,7 +57,6 @@ func init() {
 func overrideKubeletDefaults(obj interface{}) {
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
-	obj.(*kubelet.KubeletConfiguration).CgroupDriver = ""
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 

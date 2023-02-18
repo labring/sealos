@@ -32,7 +32,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: sh ./scripts/resolve-modules.sh ./controllers
+        run: bash ./scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
     needs: [ resolve-modules ]
