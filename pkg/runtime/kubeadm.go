@@ -115,8 +115,8 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	for _, fn := range []string{
-		"",                          // generate default kubeadm configs
 		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
+		"",                          // generate default kubeadm configs
 	} {
 		if err := k.Merge(fn); err != nil {
 			return err
@@ -355,24 +355,33 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	if err := k.ConvertInitConfigConversion(); err != nil {
+
+	setCGroupDriverAndSocket := func() error {
+		if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
 		return nil, err
 	}
 
-	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
-		return nil, err
-	}
 	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
 		&k.conversion.ClusterConfiguration,
 		&k.conversion.KubeletConfiguration,
 		&k.conversion.KubeProxyConfiguration)
 }
 
-func (k *KubeadmRuntime) ConvertInitConfigConversion() error {
+func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func() error) error {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return err
 	}
-
+	for _, fn := range fns {
+		if err := fn(); err != nil {
+			return err
+		}
+	}
 	k.setInitAdvertiseAddress(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.APIServer.ExtraArgs == nil {

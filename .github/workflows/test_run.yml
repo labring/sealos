@@ -157,7 +157,7 @@ jobs:
           sudo sealos build --debug -t hack:dev  /tmp/buildimage
       - name: Auto install k8s using sealos
         run: |
-          sudo sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          sudo sealos run hack:dev labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
           mkdir -p "$HOME/.kube"
           sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
           sudo chown "$(whoami)" "$HOME/.kube/config"
@@ -215,7 +215,7 @@ jobs:
           sudo sealos build --debug -t hack:dev  /tmp/buildimage
       - name: Auto install k8s using sealos
         run: |
-          sudo sealos run labring/kubernetes-docker:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          sudo sealos run hack:dev labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
           mkdir -p "$HOME/.kube"
           sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
           sudo chown "$(whoami)" "$HOME/.kube/config"

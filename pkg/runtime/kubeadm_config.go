@@ -57,7 +57,6 @@ func init() {
 func overrideKubeletDefaults(obj interface{}) {
 	kubeletconfig.SetObjectDefaults_KubeletConfiguration(obj.(*kubelet.KubeletConfiguration))
 	logger.Debug("override defaults of kubelet configuration")
-	obj.(*kubelet.KubeletConfiguration).CgroupDriver = ""
 	obj.(*kubelet.KubeletConfiguration).ResolverConfig = nil
 }
 
@@ -90,10 +89,6 @@ const (
 	KubeletConfiguration   = "KubeletConfiguration"
 )
 
-var defaultMergeOpts = []func(*mergo.Config){
-	mergo.WithOverride,
-}
-
 // LoadFromClusterfile :Load KubeadmConfig from Clusterfile.
 // If it has `KubeadmConfig` in Clusterfile, load every field to each configuration.
 // If Kubeadm raw Config in Clusterfile, just load it.
@@ -102,7 +97,7 @@ func (k *KubeadmConfig) LoadFromClusterfile(kubeadmConfig *KubeadmConfig) error 
 		return nil
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, kubeadmConfig.APIServer.CertSANs...)
-	return mergo.Merge(k, kubeadmConfig, defaultMergeOpts...)
+	return mergo.Merge(k, kubeadmConfig)
 }
 
 // Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.
@@ -117,7 +112,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		if err != nil {
 			return err
 		}
-		return mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
+		return mergo.Merge(k, defaultKubeadmConfig)
 	} else if !file.IsExist(kubeadmYamlPath) {
 		logger.Debug("skip merging kubeadm configs from cause file %s not exists", kubeadmYamlPath)
 		return nil
@@ -128,7 +123,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, defaultKubeadmConfig.APIServer.CertSANs...)
-	err = mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
+	err = mergo.Merge(k, defaultKubeadmConfig)
 	if err != nil {
 		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
