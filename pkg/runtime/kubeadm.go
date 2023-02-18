@@ -355,7 +355,6 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-
 	setCGroupDriverAndSocket := func() error {
 		if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
 			return err
