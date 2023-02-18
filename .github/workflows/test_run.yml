@@ -71,7 +71,7 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
@@ -116,7 +116,7 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
@@ -175,7 +175,7 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
@@ -233,7 +233,7 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
@@ -311,7 +311,7 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
@@ -389,8 +389,192 @@ jobs:
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
           echo "Current Cluster info"
-          set -ex
+          set -e
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+
+
+  verify-run-containerd-buildimage-apply:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: build new image
+        run: |
+          mkdir -p /tmp/buildimage
+          cat > /tmp/buildimage/kubeadm.yml <<EOF
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat > /tmp/buildimage/Kubefile <<EOF
+          FROM labring/kubernetes:v1.25.0
+          COPY kubeadm.yml etc/
+          EOF
+          sudo sealos build --debug -t hack:dev  /tmp/buildimage
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - hack:dev
+              - labring/helm:v3.8.2
+              - labring/calico:v3.24.1
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.56.0.0/16"
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile  --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.56.0.0/16
+
+  verify-run-docker-buildimage-apply:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+      - name: build new image
+        run: |
+          mkdir -p /tmp/buildimage
+          cat > /tmp/buildimage/kubeadm.yml <<EOF
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          EOF
+          cat > /tmp/buildimage/Kubefile <<EOF
+          FROM labring/kubernetes-docker:v1.25.0
+          COPY kubeadm.yml etc/
+          EOF
+          sudo sealos build --debug -t hack:dev  /tmp/buildimage
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - hack:dev
+              - labring/helm:v3.8.2
+              - labring/calico:v3.24.1
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta2
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.56.0.0/16"
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get nodes --no-headers -oname | while read -r node; do kubectl get "$node" -o template='{{range .spec.taints}}{{.key}}{{"\n"}}{{end}}' | while read -r taint; do
+            kubectl taint ${node/\// } "$taint"-
+          done; done
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /var/run/cri-dockerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.56.0.0/16

@@ -115,8 +115,8 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	for _, fn := range []string{
-		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
 		"",                          // generate default kubeadm configs
+		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
 	} {
 		if err := k.Merge(fn); err != nil {
 			return err
@@ -511,11 +511,13 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("node: %s , criSocket: %s", node, criSocket)
 	k.setCRISocket(criSocket)
 	cGroupDriver, err := k.getCGroupDriver(node)
 	if err != nil {
 		return err
 	}
+	logger.Debug("node: %s , cGroupDriver: %s", node, cGroupDriver)
 	k.setCgroupDriver(cGroupDriver)
 	return nil
 }
