@@ -50,7 +50,7 @@ type ImageCRBuilder struct {
 	userconfig string
 	imageCR    *imagev1.Image
 
-	containerId string
+	containerID string
 	mountPoint  string
 	store       storage.Store
 }
@@ -75,23 +75,23 @@ func (icb *ImageCRBuilder) Run() error {
 	return nil
 }
 
-// CreateContainer create a container, return mountpoint and containerId
+// CreateContainer create a container, return mountpoint and containerID
 func (icb *ImageCRBuilder) CreateContainer() error {
 	logger.Debug("Executing CreateContainer in ImageCRBuilder")
 	// generate a random container name
-	containeruid := fmt.Sprintf("%s-%s", icb.image, strconv.Itoa(rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
+	containerID := fmt.Sprintf("%s-%s", icb.image, strconv.Itoa(rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
 	realImpl, err := New("")
 	if err != nil {
 		return err
 	}
-	builderInfo, err := realImpl.Create(containeruid, icb.image)
+	builderInfo, err := realImpl.Create(containerID, icb.image)
 	if err != nil {
 		return err
 	}
 	if isExist := file.IsExist(builderInfo.MountPoint); !isExist {
 		return fmt.Errorf("mountPoint not Exist")
 	}
-	icb.containerId = containeruid
+	icb.containerID = containerID
 	icb.mountPoint = builderInfo.MountPoint
 	return nil
 }
@@ -187,7 +187,7 @@ func (icb *ImageCRBuilder) DeleteContainer() error {
 	if err != nil {
 		return err
 	}
-	return realImpl.Delete(icb.containerId)
+	return realImpl.Delete(icb.containerID)
 }
 
 // ParseImageCR parse image cr yaml file ot an image cr obj
@@ -222,7 +222,7 @@ func (icb *ImageCRBuilder) GetInspectInfo() error {
 	if err != nil {
 		return err
 	}
-	containerInfo, err := realImpl.InspectContainer(icb.containerId)
+	containerInfo, err := realImpl.InspectContainer(icb.containerID)
 	if err != nil {
 		return err
 	}
