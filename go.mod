@@ -22,6 +22,7 @@ require (
 	github.com/emirpasic/gods v1.18.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.13
+	github.com/jaevor/go-nanoid v1.3.0
 	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
