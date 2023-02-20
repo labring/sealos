@@ -7,13 +7,13 @@ on:
     paths:
       - ".github/workflows/test_run.yml"
       - "cmd/**"
-      - "pkg/**"
+      - "pkg/runtime/**"
   pull_request:
     branches: ["*"]
     paths:
       - ".github/workflows/test_run.yml"
       - "cmd/**"
-      - "pkg/**"
+      - "pkg/runtime/**"
 
 
 jobs:
