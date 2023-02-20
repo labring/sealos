@@ -74,7 +74,7 @@ func NewImageCRBuilderFromArgs(cmd *cobra.Command, args []string) (*ImageCRBuild
 }
 
 func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string, iopts *pushOptions) error {
-	if iopts.crOption != CrOptionYes {
+	if iopts.crOption == CrOptionNo {
 		logger.Debug("skip image cr build by flag cr-option")
 		return nil
 	}
