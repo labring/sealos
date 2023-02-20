@@ -19,6 +19,8 @@ package registry
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/modood/table"
 	"github.com/opencontainers/go-digest"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -55,9 +57,10 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 	}
 
 	var imageVersionList bool
+	repoLens := sets.NewString()
 	defer func() {
 		if !enableJSON {
-			logger.Info("Image count %d", len(repos))
+			logger.Info("Image count %d", repoLens.Len())
 			if imageVersionList {
 				logger.Info("Images Version count %d", len(listImage))
 			}
@@ -67,12 +70,7 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 		tags, _ := reg.Tags(repo)
 		tags = filter.Run(tags, FilterTypeTag)
 		if len(tags) == 0 {
-			listImage = append(listImage, imageOutputParams{
-				RegistryName: registryName,
-				ImageName:    repo,
-				Tag:          none,
-				ImageID:      none,
-			})
+			continue
 		} else {
 			imageVersionList = true
 			for _, tag := range tags {
@@ -89,6 +87,9 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 					imageIDStr = imageID.Hex()
 					imageIDShortStr = imageIDStr[:12]
 				}
+				if imageIDStr == none && imageDigestStr == none {
+					continue
+				}
 				listImage = append(listImage, imageOutputParams{
 					RegistryName: registryName,
 					ImageName:    repo,
@@ -97,6 +98,7 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 					ImageIDShort: imageIDShortStr,
 					ImageDigest:  imageDigestStr,
 				})
+				repoLens = repoLens.Insert(repo)
 			}
 		}
 	}

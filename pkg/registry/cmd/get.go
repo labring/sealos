@@ -1,5 +1,5 @@
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2023 cuisongliu@qq.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ func newRegistryGetImageCmd() *cobra.Command {
 		Use:   "image",
 		Short: "registry image list",
 		Example: fmt.Sprintf(`Example:
-  %[1]s registry image --filter name=public*`, rootCmd.CommandPath()),
+  %[1]s registry image --image `, rootCmd.CommandPath()),
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			is.GetImage(flagsResults.registryName, flagsResults.image, flagsResults.json)
