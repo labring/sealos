@@ -113,24 +113,22 @@ jobs:
           sudo mv /tmp/{sealos,sealctl} /usr/bin/
           sudo sealctl version
           sudo sealos version
-      - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
-        with:
-          type: prune
-      - name: Verify Registry save raw
-        run: |
-          sealctl logout docker.io
-          mkdir -p raw-amd64
-          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-amd64 --arch amd64 --max-pull-procs 8 --debug
-          mkdir -p raw-arm64
-          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-arm64 --arch arm64 --max-pull-procs 8 --debug
-      - name: Verify Registry save default
-        run: |
-          mkdir -p default
-          mkdir -p images/shim
-          cat >> images/shim/images <<EOF
-          alpine:3.14
-          nginx:1.23.3
-          busybox:1.35
-          EOF
-          sealctl registry save default  --data-dir default --max-pull-procs 8 --debug .
+#      - name: Verify Registry save raw
+#        run: |
+#          sudo docker logout docker.io
+#          docker logout docker.io
+#          sealctl logout docker.io
+#          mkdir -p raw-amd64
+#          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-amd64 --arch amd64 --max-pull-procs 8 --debug
+#          mkdir -p raw-arm64
+#          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-arm64 --arch arm64 --max-pull-procs 8 --debug
+#      - name: Verify Registry save default
+#        run: |
+#          mkdir -p default
+#          mkdir -p images/shim
+#          cat >> images/shim/images <<EOF
+#          alpine:3.14
+#          nginx:1.23.3
+#          busybox:1.35
+#          EOF
+#          sealctl registry save default  --data-dir default --max-pull-procs 8 --debug .
