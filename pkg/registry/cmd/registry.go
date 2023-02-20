@@ -31,6 +31,7 @@ func subCommands() []*cobra.Command {
 	return []*cobra.Command{
 		newRegistryStatusCmd(),
 		newRegistryListImageCmd(),
+		newRegistryGetImageCmd(),
 		newRegistryImageRmiCmd(),
 		newRegistryPruneCmd(),
 		newRegistryImageSaveCmd(),
