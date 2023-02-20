@@ -235,12 +235,13 @@ func (icb *ImageCRBuilder) GetInspectInfo() error {
 		return err
 	}
 
-	icb.imageCR.Spec.DetailInfo.ID = containerInfo.FromImageID
-	icb.imageCR.Spec.DetailInfo.Arch = image.Architecture
-	icb.imageCR.Spec.DetailInfo.Size, err = icb.store.ImageSize(containerInfo.FromImageID)
+	sz, err := icb.store.ImageSize(containerInfo.FromImageID)
 	if err != nil {
 		return err
 	}
+	icb.imageCR.Spec.DetailInfo.ID = containerInfo.FromImageID
+	icb.imageCR.Spec.DetailInfo.Arch = image.Architecture
+	icb.imageCR.Spec.DetailInfo.Size = sz
 	return nil
 }
 
