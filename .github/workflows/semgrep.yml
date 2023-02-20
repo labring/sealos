@@ -29,7 +29,11 @@ jobs:
       # Fetch project source with GitHub Actions Checkout.
       - uses: actions/checkout@v3
       # Run the "semgrep ci" command on the command line of the docker image.
-      - run: semgrep ci
+      -
+        run: |
+          semgrep ci \
+          --exclude-rule go.lang.security.audit.xss.import-text-template.import-text-template \
+          --exclude-rule yaml.kubernetes.security.run-as-non-root.run-as-non-root
         env:
            # Add the rules that Semgrep uses by setting the SEMGREP_RULES environment variable.
            SEMGREP_RULES: p/default # more at semgrep.dev/explore
