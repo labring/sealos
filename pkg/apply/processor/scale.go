@@ -119,7 +119,7 @@ func (c *ScaleProcessor) Join(cluster *v2.Cluster) error {
 	return c.Runtime.SyncNodeIPVS(cluster.GetMasterIPAndPortList(), c.NodesToJoin)
 }
 
-func (c *ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
+func (c ScaleProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline UnMountRootfs in ScaleProcessor.")
 	hosts := append(c.MastersToDelete, c.NodesToDelete...)
 	if cluster.Status.Mounts == nil {
