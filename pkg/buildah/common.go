@@ -23,7 +23,6 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
-	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
@@ -67,10 +66,6 @@ func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command
 
 func setDefaultTLSVerifyFlag(c *cobra.Command) error {
 	return setDefaultFlagIfNotChanged(c, "tls-verify", "false")
-}
-
-func setDefaultPlatformFlag(c *cobra.Command) error {
-	return setDefaultFlagIfNotChanged(c, "platform", parse.DefaultPlatform())
 }
 
 func getArchFromFlag(c *cobra.Command) string {

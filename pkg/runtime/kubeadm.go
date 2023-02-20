@@ -355,11 +355,8 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	setCGroupDriverAndSocket := func() error {
-		if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
-			return err
-		}
-		return nil
+	setCGroupDriverAndSocket := func(krt *KubeadmRuntime) error {
+		return krt.setCGroupDriverAndSocket(krt.getMaster0IPAndPort())
 	}
 
 	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
@@ -372,12 +369,12 @@ func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 		&k.conversion.KubeProxyConfiguration)
 }
 
-func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func() error) error {
+func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime) error) error {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return err
 	}
 	for _, fn := range fns {
-		if err := fn(); err != nil {
+		if err := fn(k); err != nil {
 			return err
 		}
 	}

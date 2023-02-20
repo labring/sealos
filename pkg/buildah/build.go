@@ -126,7 +126,7 @@ func buildCmd(c *cobra.Command, inputArgs []string, sopts saveOptions, iopts bui
 			return fmt.Errorf("cannot find any of %v in context directory", strings.Join(defaultFileNames, ", "))
 		}
 	}
-	if err := setDefaultFlagsWithSetters(c, setDefaultPlatformFlag, setDefaultTLSVerifyFlag); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 
