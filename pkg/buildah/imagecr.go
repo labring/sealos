@@ -78,6 +78,7 @@ func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string, iopts *pushOptio
 		logger.Debug("skip image cr build by flag cr-option")
 		return nil
 	}
+	logger.Info("start image cr build and push")
 	icb, err := NewImageCRBuilderFromArgs(cmd, args)
 	if err != nil {
 		logger.Debug("new image cr builder failed, skip image cr build")
@@ -88,7 +89,12 @@ func NewAndRunImageCRBuilder(cmd *cobra.Command, args []string, iopts *pushOptio
 		logger.Debug("skip image cr build, not sealos registry")
 		return nil
 	}
-	return icb.Run()
+	if err := icb.Run(); err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Info("image cr build and push success")
+	return nil
 }
 
 func IsSealosRegistry(icb *ImageCRBuilder) bool {

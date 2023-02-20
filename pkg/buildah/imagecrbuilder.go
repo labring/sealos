@@ -77,7 +77,7 @@ func (icb *ImageCRBuilder) Run() error {
 
 // CreateContainer create a container, return mountpoint and containerId
 func (icb *ImageCRBuilder) CreateContainer() error {
-	logger.Info("Executing CreateContainer in ImageCRBuilder")
+	logger.Debug("Executing CreateContainer in ImageCRBuilder")
 	// generate a random container name
 	containeruid := fmt.Sprintf("%s-%s", icb.image, strconv.Itoa(rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
 	realImpl, err := New("")
@@ -182,7 +182,7 @@ func (icb *ImageCRBuilder) ApplyImageCR() error {
 }
 
 func (icb *ImageCRBuilder) DeleteContainer() error {
-	logger.Info("Executing DeleteContainer in ImageCRBuilder")
+	logger.Debug("Executing DeleteContainer in ImageCRBuilder")
 	realImpl, err := New("")
 	if err != nil {
 		return err
