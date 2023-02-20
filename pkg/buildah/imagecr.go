@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 
 	"github.com/containers/image/v5/pkg/docker/config"
+	"github.com/spf13/cobra"
+	"k8s.io/client-go/util/homedir"
+
 	imagev1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/spf13/cobra"
-	"k8s.io/client-go/util/homedir"
 )
 
 // SpecificCroption is used to parse the cr-option `auto` to `yes` or `no`.
