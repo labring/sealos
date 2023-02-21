@@ -7,9 +7,9 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.22.1
 	golang.org/x/sync v0.1.0
-	k8s.io/api v0.25.0
-	k8s.io/apimachinery v0.25.0
-	k8s.io/client-go v0.25.0
+	k8s.io/api v0.25.6
+	k8s.io/apimachinery v0.25.6
+	k8s.io/client-go v0.25.6
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/yaml v1.3.0
 )
