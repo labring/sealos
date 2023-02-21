@@ -2,6 +2,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= ghcr.io/labring/sealos-app-controller:dev
 TARGETARCH ?= amd64
+
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 
@@ -69,9 +70,6 @@ build:  ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-# If you wish built the manager image targeting other platforms you can use the --platform flag.
-# (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
-# More info: https://docs.docker.com/develop/develop-images/build_enhancements/
 .PHONY: docker-build
 docker-build: test build ## Build docker image with the manager.
 	mv bin/manager bin/controller-app-${TARGETARCH}
