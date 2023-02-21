@@ -7,9 +7,9 @@ require (
 	github.com/jaevor/go-nanoid v1.3.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.20.0
-	k8s.io/api v0.24.3
-	k8s.io/apimachinery v0.24.3
-	k8s.io/client-go v0.24.3
+	k8s.io/api v0.25.6
+	k8s.io/apimachinery v0.25.6
+	k8s.io/client-go v0.25.6
 	sigs.k8s.io/controller-runtime v0.12.3
 )
 
