@@ -35,9 +35,27 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              foo:
-                description: Foo is an example field of App. Edit app_types.go to
-                  remove/update
+              data:
+                properties:
+                  desc:
+                    type: string
+                  url:
+                    type: string
+                type: object
+              icon:
+                type: string
+              menuData:
+                properties:
+                  helpDocs:
+                    type: string
+                  helpDropDown:
+                    type: boolean
+                  nameColor:
+                    type: string
+                type: object
+              name:
+                type: string
+              type:
                 type: string
             type: object
           status:
