@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"os"
 
 	"github.com/labring/sealos/controllers/account/controllers"
@@ -46,6 +47,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
+	utilruntime.Must(infrav1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -98,6 +100,10 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Debt")
+		os.Exit(1)
+	}
+	if err = (&accountv1.Debt{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Debt")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

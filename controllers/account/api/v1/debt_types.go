@@ -23,15 +23,19 @@ import (
 const (
 	DebtStatusNormal DebtStatusType = "Normal"
 	DebtStatusSmall  DebtStatusType = "Small"
-	DebtStatusMild   DebtStatusType = "Mild"
+	DebtStatusMedium DebtStatusType = "Medium"
 	DebtStatusLarge  DebtStatusType = "Large"
 	DebtPrefix                      = "debt-"
 )
 
 type DebtStatusType string
 
-var DefaultPriceList = map[DebtStatusType]int64{
-	DebtStatusNormal: 0,
+var DefaultDebtConfig = map[string]string{
+	"Normal": "0",
+	// 3 day
+	"Small": "10800",
+	// 4 day
+	"Medium": "14400",
 }
 
 // DebtSpec defines the desired state of Debt

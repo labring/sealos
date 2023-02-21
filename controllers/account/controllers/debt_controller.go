@@ -22,11 +22,13 @@ import (
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
+
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,6 +48,7 @@ type DebtReconciler struct {
 //+kubebuilder:rbac:groups=account.sealos.io,resources=debts/finalizers,verbs=update
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	account := &accountv1.Account{}
@@ -58,11 +61,6 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 			debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
 		}
 
-		if _, ok := accountv1.DefaultPriceList[debt.Status.AccountDebtStatus]; !ok {
-			return ctrl.Result{}, fmt.Errorf("error debt status:%v", debt.Status.AccountDebtStatus)
-		}
-
-		// user debt amount over DebtStatus
 		if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
 			r.Logger.Error(err, "reconcile debt status error")
 			return ctrl.Result{}, err
@@ -77,32 +75,82 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 
 func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
 	// future will get priceList data in configmap
-	oweamount := account.Status.Balance - account.Status.DeductionBalance
+	DebtConfig := accountv1.DefaultDebtConfig
+	//configMap := v1.ConfigMap{}
+	//if err := r.Get(ctx, client.ObjectKey{Name: accountv1.DebtConfigName, Namespace: accountv1.DebtConfigNamespace}, &configMap); err == nil {
+	//	DebtConfig = configMap.Data
+	//}
 
-	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusMild || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
+	oweamount := account.Status.Balance - account.Status.DeductionBalance
+	Updataflag := false
+	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
+		Updataflag = true
+		if err := r.change2Normal(ctx, *account); err != nil {
+			return err
+		}
 	}
 
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < 0 {
+	normalPrice, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusNormal)])
+	if err != nil {
+		r.Error(err, "get normal price error")
+	}
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < int64(normalPrice) {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
-		r.sendNotice(ctx, account.Name)
+		Updataflag = true
+		r.sendSmallNotice(ctx, account.Name)
+		r.change2Small(ctx, *account)
 	}
 
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > 3*60*60 {
-		debt.Status.AccountDebtStatus = accountv1.DebtStatusMild
+	smalltime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusSmall)])
+	if err != nil {
+		r.Error(err, "get small time error")
+	}
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > int64(smalltime) {
+		debt.Status.AccountDebtStatus = accountv1.DebtStatusMedium
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
-		r.sendNotice(ctx, account.Name)
+		Updataflag = true
+		r.sendMediumNotice(ctx, account.Name)
+		r.change2Medium(ctx, *account)
 	}
 
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMild && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > 4*60*60 {
+	mediumtime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusMedium)])
+	if err != nil {
+		r.Error(err, "get small time error")
+	}
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > int64(mediumtime) {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
-		r.sendNotice(ctx, account.Name)
-		return r.deleteUserResource(ctx, GetUserNameSpace(account.Name))
+		Updataflag = true
+		r.sendLargeNotice(ctx, account.Name)
+		r.change2Large(ctx, *account)
 	}
 
+	if Updataflag {
+		if err := r.Status().Update(ctx, debt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *DebtReconciler) change2Normal(ctx context.Context, account accountv1.Account) error {
+	return nil
+}
+
+func (r *DebtReconciler) change2Small(ctx context.Context, account accountv1.Account) error {
+	return nil
+}
+
+func (r *DebtReconciler) change2Medium(ctx context.Context, account accountv1.Account) error {
+
+	return nil
+}
+
+func (r *DebtReconciler) change2Large(ctx context.Context, account accountv1.Account) error {
+	r.deleteUserResource(ctx, GetUserNameSpace(account.Name))
 	return nil
 }
 
@@ -126,8 +174,19 @@ func GetUserNameSpace(AccountName string) string {
 	return "ns-" + AccountName
 }
 
-func (r *DebtReconciler) sendNotice(ctx context.Context, accountName string) error {
+func (r *DebtReconciler) sendNotice(ctx context.Context, accountName string, notice any) error {
 	return nil
+}
+
+func (r *DebtReconciler) sendSmallNotice(ctx context.Context, accountName string) error {
+	return r.sendNotice(ctx, accountName, nil)
+}
+
+func (r *DebtReconciler) sendMediumNotice(ctx context.Context, accountName string) error {
+	return r.sendNotice(ctx, accountName, nil)
+}
+func (r *DebtReconciler) sendLargeNotice(ctx context.Context, accountName string) error {
+	return r.sendNotice(ctx, accountName, nil)
 }
 
 func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace string) error {
