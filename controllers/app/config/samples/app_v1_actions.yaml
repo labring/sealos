@@ -1,6 +1,0 @@
-apiVersion: app.sealos.io/v1
-kind: Actions
-metadata:
-  name: actions-sample
-spec:
-  # TODO(user): Add fields here
