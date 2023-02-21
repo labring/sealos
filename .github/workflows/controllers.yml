@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal, metering, infra, cluster, imagehub, account]
+        module: [ user, terminal, metering, infra, cluster, imagehub, account, app]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ cluster, infra, metering, user, terminal, imagehub, account]
+        module: [ cluster, infra, metering, user, terminal, imagehub, account, app]
     permissions:
       issues: write
     steps:
