@@ -145,7 +145,6 @@ func (r *DebtReconciler) change2Small(ctx context.Context, account accountv1.Acc
 }
 
 func (r *DebtReconciler) change2Medium(ctx context.Context, account accountv1.Account) error {
-
 	return nil
 }
 
@@ -231,7 +230,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "DebtController"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	return ctrl.NewControllerManagedBy(mgr).
-		//For(&accountv1.Debt{}).
+		For(&accountv1.Debt{}).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		Watches(&source.Kind{Type: &accountv1.Account{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)
