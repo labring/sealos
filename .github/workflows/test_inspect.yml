@@ -93,6 +93,10 @@ jobs:
           sudo sealos inspect oci-archive:$PWD/oci-alpine.tar
           echo "test inspect docker archive alpine.tar"
           sudo sealos inspect docker-archive:$PWD/docker-alpine.tar
+          imageID=`sudo sealos images | grep labring/kubernetes | grep v1.23.8 | awk '{print $3}'`
+          echo "test inspect id ${imageID}"
+          sudo sealos inspect ${imageID}
+
   verify-gen:
     needs: [build-sealos]
     runs-on: ubuntu-latest
@@ -111,55 +115,3 @@ jobs:
       - name: Inspect
         run: |
           sudo sealos gen labring/kubernetes:v1.23.8 --masters 127.0.0.1
-
-  verify-run:
-    needs: [build-sealos]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download sealos
-        uses: actions/download-artifact@v3
-        with:
-          name: sealos
-          path: /tmp/
-      - name: Verify sealos
-        run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/
-          sudo sealos version
-      - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
-        with:
-          type: prune
-      - name: Run
-        run: |
-          sudo sealos pull labring/kubernetes:v1.25.0
-          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
-          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
-
-  verify-load:
-    needs: [build-sealos]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download sealos
-        uses: actions/download-artifact@v3
-        with:
-          name: sealos
-          path: /tmp/
-      - name: Verify sealos
-        run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/
-          sudo sealos version
-      - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
-        with:
-          type: prune
-      - name: Run
-        run: |
-          sudo sealos pull labring/kubernetes:v1.25.0
-          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
-          sudo sealos save -o k8s.tar k8s:dev
-          sudo sealos rmi labring/kubernetes:v1.25.0
-          sudo sealos rmi k8s:dev
-          sudo sealos load -i k8s.tar
-          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug

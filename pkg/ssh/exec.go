@@ -35,7 +35,7 @@ type Exec struct {
 func NewExecCmdFromRoles(cluster *v2.Cluster, roles string) (Exec, error) {
 	var ipList []string
 	if roles == "" {
-		ipList = append(cluster.GetMasterIPList(), cluster.GetNodeIPList()...)
+		ipList = append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	} else {
 		roleList := strings.Split(roles, ",")
 		for _, role := range roleList {
@@ -45,6 +45,7 @@ func NewExecCmdFromRoles(cluster *v2.Cluster, roles string) (Exec, error) {
 			return Exec{}, fmt.Errorf("failed to get ipList, please check your roles label")
 		}
 	}
+	logger.Debug("exec from roles ipList is %+v", ipList)
 	return Exec{cluster: cluster, ipList: ipList}, nil
 }
 
