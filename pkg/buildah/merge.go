@@ -91,7 +91,7 @@ func newMergeCommand() *cobra.Command {
 		},
 		Args: cobra.MinimumNArgs(2),
 		Example: fmt.Sprintf(`
-  %[1]s merge kubernetes:v1.19.9 mysql:5.7.0 redis:6.0.0 -t new:0.1.0`, rootCmd.CommandPath()),
+  %[1]s merge -t new:0.1.0 kubernetes:v1.19.9 mysql:5.7.0 redis:6.0.0`, rootCmd.CommandPath()),
 	}
 	mergeCommand.SetUsageTemplate(UsageTemplate())
 
