@@ -97,7 +97,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleGenerate(ctx context.Con
 			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
 			clusterRole.Rules = []rbacv1.PolicyRule{
 				{
-					Verbs:         []string{"get", "watch", "list"},
+					Verbs:         []string{"get", "watch"},
 					APIGroups:     []string{""},
 					Resources:     []string{"namespaces"},
 					ResourceNames: namespaceList,
