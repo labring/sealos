@@ -309,7 +309,7 @@ metadata:
   name: app-controller-manager
   namespace: app-system
 spec:
-  replicas: 1
+  replicas: 0
   selector:
     matchLabels:
       control-plane: controller-manager
@@ -393,7 +393,6 @@ spec:
             drop:
             - ALL
       securityContext:
-        allowPrivilegeEscalation: false
         runAsNonRoot: true
       serviceAccountName: app-controller-manager
       terminationGracePeriodSeconds: 10
