@@ -8,12 +8,14 @@ on:
       - ".github/workflows/test_run.yml"
       - "cmd/**"
       - "pkg/runtime/**"
+      - "pkg/buildah/**"
   pull_request:
     branches: ["*"]
     paths:
       - ".github/workflows/test_run.yml"
       - "cmd/**"
       - "pkg/runtime/**"
+      - "pkg/buildah/**"
 
 
 jobs:
@@ -549,3 +551,80 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.160.0.0/12
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.56.0.0/16
+  verify-run-by-loadtar:
+    needs: [ build-sealos ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Run
+        run: |
+          sudo sealos pull docker.io/labring/helm:v3.8.2
+          sudo sealos pull labring/kubernetes:v1.25.0
+          echo "save helm using docker and oci"
+          sudo buildah push labring/helm:v3.8.2 oci-archive:$PWD/oci-helm.tar
+          sudo sealos run  labring/kubernetes:v1.25.0 --single --debug
+          sudo sealos run  $PWD/oci-helm.tar
+  verify-run-by-shortname:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Run
+        run: |
+          sudo sealos pull labring/kubernetes:v1.25.0
+          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
+          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+
+  verify-run-by-load-shortname:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Run
+        run: |
+          sudo sealos pull labring/kubernetes:v1.25.0
+          sudo sealos tag labring/kubernetes:v1.25.0 k8s:dev
+          sudo sealos save -o k8s.tar k8s:dev
+          sudo sealos rmi labring/kubernetes:v1.25.0
+          sudo sealos rmi k8s:dev
+          sudo sealos load -i k8s.tar
+          sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug

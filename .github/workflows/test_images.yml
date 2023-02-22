@@ -1,0 +1,73 @@
+name: Test Sealos Images Command
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/test_images.yml"
+      - "cmd/**"
+      - "pkg/buildah/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/test_images.yml"
+      - "cmd/**"
+      - "pkg/buildah/**"
+
+
+jobs:
+  build-sealos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+      - name: Save Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealos
+          path: /usr/bin/sealos
+  verify-run-containerd:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Verify Images
+        run: |
+          echo "Verify Images"
+          sudo sealos pull docker.io/labring/kubernetes:v1.20.0
+          echo "verify images"
+          sudo sealos images
+          echo "verify create"
+          sudo sealos create docker.io/labring/kubernetes:v1.20.0
+          sudo sealos create docker.io/labring/kubernetes:v1.20.1
+          echo "verify pull"
+          sudo sealos pull docker.io/labring/kubernetes:v1.20.2
+          echo "verify rmi"
+          sudo sealos rmi docker.io/labring/kubernetes:v1.20.2
+          echo "verify save"
+          sudo sealos save -o k8s.tar docker.io/labring/kubernetes:v1.20.1
+          echo "verify load"
+          sudo sealos load -i k8s.tar
+#          echo "verify merge"
+#          sudo sealos merge docker.io/labring/kubernetes:v1.21.0 labring/helm:v3.8.2 -t new:1.0.0
+          
