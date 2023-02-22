@@ -4,7 +4,9 @@ import (
 	accountapi "github.com/labring/sealos/controllers/account/testdata/account"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
 	baseapi "github.com/labring/sealos/test/testdata/api"
+	"log"
 	"testing"
+	"time"
 )
 
 const (
@@ -20,6 +22,7 @@ func init() {
 func TestDebt(t *testing.T) {
 	t.Run("debt should be ok", func(t *testing.T) {
 		baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
+		time.Sleep(3 * time.Second)
 		err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -1000)
 		if err != nil {
 			t.Fatalf(err.Error())
@@ -38,5 +41,7 @@ func TestDebt(t *testing.T) {
 }
 
 func clear() {
-
+	if err := baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
+		log.Println(err)
+	}
 }
