@@ -33,7 +33,7 @@ jobs:
         with:
           name: sealos
           path: /usr/bin/sealos
-  verify-run-containerd:
+  verify-images:
     needs: [build-sealos]
     runs-on: ubuntu-latest
     steps:
@@ -68,6 +68,6 @@ jobs:
           sudo sealos save -o k8s.tar docker.io/labring/kubernetes:v1.20.1
           echo "verify load"
           sudo sealos load -i k8s.tar
-#          echo "verify merge"
-#          sudo sealos merge docker.io/labring/kubernetes:v1.21.0 labring/helm:v3.8.2 -t new:1.0.0
+          echo "verify merge"
+          sudo sealos merge -t new:0.1.0 docker.io/labring/kubernetes:v1.21.0 labring/helm:v3.8.2
           
