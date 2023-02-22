@@ -63,6 +63,7 @@ export function handleImageName(imageName: string): { name: string; tag: string 
 }
 
 export function formattedSize(size: number, reserve: number = 1) {
+  if (!size) return;
   let suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
   let count = 0;
   while (size >= 1000 && count < 4) {
@@ -73,6 +74,7 @@ export function formattedSize(size: number, reserve: number = 1) {
 }
 
 export function getSelectLabels(labels: TImageLabels[]): string {
+  if (!labels) return '';
   return labels
     ?.map((item) => (item.checked ? 'keyword.imagehub.sealos.io/' + item.value : null))
     .filter((item) => item)
