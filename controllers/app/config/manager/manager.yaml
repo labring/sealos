@@ -57,7 +57,6 @@ spec:
       #             values:
       #               - linux
       securityContext:
-        allowPrivilegeEscalation: false
         runAsNonRoot: true
         # TODO(user): For common cases that do not require escalating privileges
         # it is recommended to ensure that all your Pods/Containers are restrictive.
