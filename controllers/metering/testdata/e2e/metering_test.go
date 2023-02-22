@@ -108,7 +108,7 @@ func TestMetering(t *testing.T) {
 			}
 
 			t.Log("create a nginx pod")
-			api.CreatPod(TestNamespace, PodName)
+			api.MustCreatPod(TestNamespace, PodName)
 
 			t.Log("ensure resource CR is created")
 			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, containerName, "cpu", 1), 90)

@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,7 +33,7 @@ func RechargeAccount(AccountName, namespace string, amount int64) error {
 	}
 	account.Status.Balance += amount
 	client := baseapi.GetDefaultDynamicClient()
-	gvr := userv1.GroupVersion.WithResource("accounts")
+	gvr := accountv1.GroupVersion.WithResource("accounts")
 	unstructured2, err := runtime.DefaultUnstructuredConverter.ToUnstructured(account)
 	if err != nil {
 		return err
