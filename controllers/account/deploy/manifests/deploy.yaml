@@ -636,7 +636,7 @@ spec:
         envFrom:
         - secretRef:
             name: payment-secret
-        image: xiaojie99999/account:v2.0.0
+        image: xiaojie99999/account:v2.0.1
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -674,6 +674,7 @@ spec:
         - --logtostderr=true
         - --v=0
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        imagePullPolicy: IfNotPresent
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443

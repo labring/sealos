@@ -72,13 +72,14 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client) error
 		return err
 	}
 
-	if _, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]; !ok {
+	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
+	if !ok {
 		logger.Info("this namespace is not user namespace", "namespace", ns.Name)
 		return nil
 	}
 
 	account := Account{}
-	if err := c.Get(ctx, client.ObjectKey{Name: ns.Name, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: user, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
 		logger.Error(err, "get account error")
 		return err
 	}
