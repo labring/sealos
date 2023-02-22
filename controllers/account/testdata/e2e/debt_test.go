@@ -38,6 +38,8 @@ func TestDebt(t *testing.T) {
 		}
 		t.Log(account)
 
+		baseapi.EnsureNamespace(TestNamespace)
+		time.Sleep(3 * time.Second)
 		out, err := api.CreatePod(TestNamespace, PodName)
 		t.Log(out, err)
 		if err == nil {
@@ -68,4 +70,13 @@ func clear() {
 	if err := baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
 		log.Println(err)
 	}
+
+	if err := baseapi.DeleteCRD(TestNamespace, PodName, api.PodYaml); err != nil {
+		log.Println(err)
+	}
+	err = baseapi.DeleteNamespace(TestNamespace)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
