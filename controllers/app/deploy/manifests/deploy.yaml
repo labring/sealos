@@ -46,11 +46,6 @@ spec:
             type: object
           spec:
             description: ActionSpec defines the desired state of Action
-            properties:
-              foo:
-                description: Foo is an example field of Action. Edit action_types.go
-                  to remove/update
-                type: string
             type: object
           status:
             description: ActionStatus defines the observed state of Action
@@ -469,6 +464,7 @@ spec:
             drop:
             - ALL
       securityContext:
+        allowPrivilegeEscalation: false
         runAsNonRoot: true
       serviceAccountName: app-controller-manager
       terminationGracePeriodSeconds: 10
