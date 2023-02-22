@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen upx
+BUILD_TOOLS ?= golangci-lint goimports addlicense deepcopy-gen conversion-gen
 
 .PHONY: tools.install
 tools.install: $(addprefix tools.install., $(BUILD_TOOLS))
@@ -45,11 +45,3 @@ install.deepcopy-gen:
 .PHONY: install.conversion-gen
 install.conversion-gen:
 	@$(GO) install k8s.io/code-generator/cmd/conversion-gen@latest
-
-# upx platform is NOT relevant to cross-compiling platforms
-.PHONY: install.upx
-install.upx:
-	@wget https://github.com/upx/upx/releases/download/v3.96/upx-3.96-$(shell go env GOARCH)_$(GOOS).tar.xz
-	@tar xf upx*.tar.xz
-	@sudo cp upx*/upx $(TOOLS_DIR)
-	@rm -rf upx*

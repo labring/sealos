@@ -36,11 +36,11 @@ Options:
   DEBUG            Whether or not to generate debug symbols. Default is 0.
 
   BINS             Binaries to build. Default is all binaries under cmd.
-                   This option is available when using: make {build/compress}(.multiarch)
+                   This option is available when using: make {build}(.multiarch)
                    Example: make build BINS="sealos sealctl"
 
   PLATFORMS        Platform to build for. Default is linux_arm64 and linux_amd64.
-                   This option is available when using: make {build/compress}.multiarch
+                   This option is available when using: make {build}.multiarch
                    Example: make build.multiarch PLATFORMS="linux_arm64 linux_amd64"
 
   V                Set to 1 enable verbose build. Default is 0.
@@ -96,16 +96,6 @@ format:
 .PHONY: coverage
 coverage:
 	@$(MAKE) go.coverage
-
-## compress: Compress the binaries using upx for host platform.
-.PHONY: compress
-compress:
-	@$(MAKE) go.compress
-
-## compress.multiarch: Compress the binaries using upx for multiple platforms. See option PLATFORMS.
-.PHONY: compress.multiarch
-compress.multiarch:
-	@$(MAKE) go.compress.multiarch
 
 ## verify-license: Verify the license headers for all files.
 .PHONY: verify-license

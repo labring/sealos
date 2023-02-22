@@ -44,9 +44,6 @@ jobs:
           sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu \
             libbtrfs-dev libgpgme-dev libdevmapper-dev \
             qemu-user-static binfmt-support
-          make install.upx
-          sudo cp tools/upx /usr/bin/
-          sudo chmod a+x /usr/bin/upx
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2

@@ -94,10 +94,6 @@ jobs:
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
 
-      - name: Compress Binaries
-        run: |
-          make compress BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
-
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
