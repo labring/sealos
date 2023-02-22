@@ -1,0 +1,15 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: app-sample
+spec:
+  name: laf
+  icon:
+  type: iframe
+  data:
+    url: https://console.lafyun.com/
+    desc:
+  menuData:
+    nameColor: text-black
+    helpDropDown: false
+    helpDocs:
