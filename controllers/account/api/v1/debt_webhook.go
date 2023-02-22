@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -83,7 +84,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client) error
 	}
 
 	if account.Status.Balance-account.Status.DeductionBalance < 0 {
-		return errors.New("account balance less than 0")
+		return errors.New(fmt.Sprintf("account balance less than 0,now account is %d", account.Status.Balance-account.Status.DeductionBalance))
 	}
 	return nil
 }

@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	accountapi "github.com/labring/sealos/controllers/account/testdata/account"
+	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	"log"
@@ -22,6 +22,7 @@ func init() {
 
 func TestDebt(t *testing.T) {
 	t.Run("debt should be ok", func(t *testing.T) {
+		baseapi.EnsureNamespace(TestNamespace)
 		baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
 		time.Sleep(3 * time.Second)
 
@@ -38,7 +39,6 @@ func TestDebt(t *testing.T) {
 		}
 		t.Log(account)
 
-		baseapi.EnsureNamespace(TestNamespace)
 		time.Sleep(3 * time.Second)
 		out, err := api.CreatePod(TestNamespace, PodName)
 		t.Log(out, err)
