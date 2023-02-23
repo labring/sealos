@@ -33,14 +33,15 @@ import (
 	dockerjsonmessage "github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/progress"
 	"github.com/docker/docker/pkg/streamformatter"
-	"github.com/labring/sealos/pkg/passwd"
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
-	"github.com/labring/sealos/pkg/utils/http"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
+	"github.com/labring/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (

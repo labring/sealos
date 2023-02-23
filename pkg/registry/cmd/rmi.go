@@ -23,10 +23,11 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types"
-	"github.com/labring/sealos/pkg/registry"
-	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/validation/field"
+
+	"github.com/labring/sealos/pkg/registry"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 func newRegistryImageRmiCmd() *cobra.Command {

@@ -17,12 +17,13 @@ package ipvs
 import (
 	"fmt"
 
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/hosts"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/hosts"
 )
 
 const (

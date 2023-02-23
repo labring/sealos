@@ -23,10 +23,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/keyutil"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // clientCertAuth struct holds info required to build a client certificate to provide authentication info in a kubeconfig object

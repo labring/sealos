@@ -23,6 +23,9 @@ import (
 	"os"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/exec"
+
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -32,8 +35,6 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/utils/exec"
 )
 
 type CRICtlChecker struct {

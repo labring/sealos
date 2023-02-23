@@ -25,12 +25,13 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/logger"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	netutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // Healthy is an interface for waiting for criteria in Kubernetes to happen

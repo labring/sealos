@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/labring/sealos/pkg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -28,7 +30,6 @@ import (
 	strutil "github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/tmpl"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func ParseYamlImages(dir string) ([]string, error) {

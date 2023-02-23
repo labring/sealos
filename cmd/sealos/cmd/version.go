@@ -20,12 +20,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
+
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
-	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
 )
 
 var shortPrint bool

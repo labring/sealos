@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -31,7 +33,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/registry"
 	"github.com/labring/sealos/pkg/utils/yaml"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 type RegistryChecker struct {

@@ -24,9 +24,10 @@ import (
 
 	"github.com/labring/image-cri-shim/pkg/shim"
 	"github.com/labring/image-cri-shim/pkg/types"
+	"github.com/spf13/cobra"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
-	"github.com/spf13/cobra"
 )
 
 var cfg *types.Config
