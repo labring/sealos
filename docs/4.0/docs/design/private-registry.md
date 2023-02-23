@@ -40,13 +40,13 @@ Sealos private registry runs with HTTP and `--net host ` option，You should con
 Login with `sealos login` command, the default username and password is `admin:passw0rd`.
 
 ```shell
-sealos login 192.168.1.10:5000 -u admin -p passw0rd
+sealos login -u admin -p passw0rd 192.168.1.10:5000
 ```
 
 Or use the `docker login` command.
 
 ```shell
-docker login 192.168.1.10:5000 -u admin -p passw0rd 
+docker login -u admin -p passw0rd 192.168.1.10:5000
 ```
 
 ## Push and pull images

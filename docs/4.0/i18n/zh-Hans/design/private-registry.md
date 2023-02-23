@@ -40,13 +40,13 @@ sealos 私有仓库使用 `--net host` 参数运行在 HTTP 下，应当在本�
 使用 `sealos login` 命令来进行登录，默认用户名与密码是 `admin:passw0rd`。
 
 ```shell
-sealos login 192.168.1.10:5000 -u admin -p passw0rd
+sealos login -u admin -p passw0rd 192.168.1.10:5000
 ```
 
 也可以使用 `docker login` 命令。
 
 ```shell
-docker login 192.168.1.10:5000 -u admin -p passw0rd 
+docker login -u admin -p passw0rd 192.168.1.10:5000 
 ```
 
 ## 推送与拉取镜像
