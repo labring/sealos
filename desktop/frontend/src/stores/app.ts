@@ -1,25 +1,25 @@
 import { APPTYPE } from 'constants/app_type';
 import request from 'services/request';
 import create from 'zustand';
-import { devtools,persist } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
-const storageOrderKey = 'app-orders'
+const storageOrderKey = 'app-orders';
 
 export type TAppFront = {
-  isShow: boolean
-  zIndex: number
-  size: 'maximize' | 'maxmin' | 'minimize'
-  cacheSize: 'maximize' | 'maxmin' | 'minimize'
+  isShow: boolean;
+  zIndex: number;
+  size: 'maximize' | 'maxmin' | 'minimize';
+  cacheSize: 'maximize' | 'maxmin' | 'minimize';
   style: {
-    width?: number | string
-    height?: number | string
-    isFull?: boolean
-    bg?: string
-  }
-  mask: boolean
-  order: number
-  mouseDowning: boolean
+    width?: number | string;
+    height?: number | string;
+    isFull?: boolean;
+    bg?: string;
+  };
+  mask: boolean;
+  order: number;
+  mouseDowning: boolean;
 };
 
 const initialFrantState: TAppFront = {
@@ -57,14 +57,14 @@ export type TAppConfig = {
     helpDropDown: boolean;
     helpDocs: boolean | string;
   };
-}
+};
 
 export type TApp = TAppConfig & TAppFront;
 
 type TOSState = {
   installedApps: TApp[];
 
-  orderApps: {[key:string]:number};
+  orderApps: { [key: string]: number };
 
   // all apps in app store
   allApps: TApp[];
@@ -94,7 +94,7 @@ type TOSState = {
   updateOpenedAppInfo(app: TApp): void;
 
   // update app order in desktop
-  updateAppOrder(app: TApp, i:number): void;
+  updateAppOrder(app: TApp, i: number): void;
 
   updateAppsMousedown(app: TApp, status: boolean): void;
 
@@ -125,20 +125,23 @@ const useAppStore = create<TOSState>()(
         init: async () => {
           const res = await request('/api/desktop/getInstalledApps');
 
-          set(state => {
+          set((state) => {
             /* equal order. just save first item */
-            const map:{[key:string]:string} = Object.entries(get().orderApps).reduce((acc:any, [key, value]) => {
-              acc[value] = key;
-              return acc;
-            }, {})
-            state.orderApps = Object.entries(map).reduce((acc:any, [key, value]) => {
+            const map: { [key: string]: string } = Object.entries(get().orderApps).reduce(
+              (acc: any, [key, value]) => {
+                acc[value] = key;
+                return acc;
+              },
+              {}
+            );
+            state.orderApps = Object.entries(map).reduce((acc: any, [key, value]) => {
               acc[value] = +key;
               return acc;
-            }, {})
-          })
+            }, {});
+          });
 
           set((state) => {
-            state.installedApps = res.data.map((item: TApp, i:number) => {
+            state.installedApps = res.data.map((item: TApp, i: number) => {
               return {
                 ...item,
                 ...initialFrantState,
@@ -159,10 +162,10 @@ const useAppStore = create<TOSState>()(
         installApp: (app: TApp) => {
           set((state) => {
             state.installedApps = [
-              ...state.installedApps, 
-              { 
-                ...app, 
-                ...initialFrantState, 
+              ...state.installedApps,
+              {
+                ...app,
+                ...initialFrantState,
                 // @ts-ignore nextline
                 order: state.getAppOrder(app)
               }
@@ -195,55 +198,57 @@ const useAppStore = create<TOSState>()(
         /**
          * get install app order value.
          */
-        getAppOrder: (app:TApp) => {
-          let order = get().orderApps[app.name] 
+        getAppOrder: (app: TApp) => {
+          let order = get().orderApps[app.name];
 
           /* new app */
-          if(typeof order !== 'number') {
-            const orders = Object.values(get().orderApps)
-            orders.sort((a,b) => a-b)
+          if (typeof order !== 'number') {
+            const orders = Object.values(get().orderApps);
+            orders.sort((a, b) => a - b);
 
-            for(let i=0;i<orders.length;i++) {
-              if(i === orders.length-1 || orders[i]+1 !== orders[i+1]) {
-                order = orders[i] + 1
-                break
+            for (let i = 0; i < orders.length; i++) {
+              if (i === orders.length - 1 || orders[i] + 1 !== orders[i + 1]) {
+                order = orders[i] + 1;
+                break;
               }
             }
           }
 
           /* first login, order is undefine */
-          order = isNaN(order) ? 0 : order
+          order = isNaN(order) ? 0 : order;
 
-          set(state => {
-            const map = {...state.orderApps}
-            map[app.name] = order
-            state.orderApps = map
-          })
-          return order
+          set((state) => {
+            const map = { ...state.orderApps };
+            map[app.name] = order;
+            state.orderApps = map;
+          });
+          return order;
         },
 
         updateAppOrder: (app: TApp, i: number) => {
-          set(state => {
-            const newOrdersAppMap:{[key:string]:number} = {}
+          set((state) => {
+            const newOrdersAppMap: { [key: string]: number } = {};
 
             state.installedApps = state.installedApps.map((_app) => {
-              newOrdersAppMap[_app.name] = _app.name === app.name ? i : _app.order
-              return _app.name === app.name ? {...app, order: i} : _app;
+              newOrdersAppMap[_app.name] = _app.name === app.name ? i : _app.order;
+              return _app.name === app.name ? { ...app, order: i } : _app;
             });
 
-            state.orderApps = newOrdersAppMap
-          })
+            state.orderApps = newOrdersAppMap;
+          });
         },
 
         /**
          * update apps mousedown enum. app set to status, other apps set to false
          */
         updateAppsMousedown(app: TApp, status: boolean) {
-          set(state => {
+          set((state) => {
             state.installedApps = state.installedApps.map((_app) => {
-              return _app.name === app.name ? {...app, mouseDowning: status} : {..._app, mouseDowning: false};
+              return _app.name === app.name
+                ? { ...app, mouseDowning: status }
+                : { ..._app, mouseDowning: false };
             });
-          })
+          });
         },
 
         openApp: async (app: TApp) => {

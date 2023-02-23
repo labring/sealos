@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "为 /etc/hosts 追加 CDN(兼容wsl)",
+            "type": "shell",
+            "command": "echo '43.154.218.213 apiserver.cluster.local' | sudo tee -a /etc/hosts",
+        }
+    ]
+}

@@ -5,8 +5,8 @@
 oss-config
 ossutil64
 main.exe
-main
 dist
+.vscode
 scripts/release/Note.md
 .ossutil_checkpoint
 bin

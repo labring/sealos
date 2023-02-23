@@ -20,7 +20,7 @@ const installedApps: TAppConfig[] = [
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: false
-    },
+    }
   },
   {
     key: 'App-Store',
@@ -39,7 +39,7 @@ const installedApps: TAppConfig[] = [
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
-    },
+    }
   },
   // {
   //   name: 'Python Compiler',
@@ -87,7 +87,7 @@ const installedApps: TAppConfig[] = [
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
-    },
+    }
   },
   {
     key: 'Kubernetes-Dashboard',
@@ -106,7 +106,7 @@ const installedApps: TAppConfig[] = [
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
-    },
+    }
   },
   // {
   //   name: 'Kuboard',
@@ -228,7 +228,7 @@ const installedApps: TAppConfig[] = [
       nameColor: '#0073D7',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/scp/'
-    },
+    }
   },
   // {
   //   name: 'AFFiNE',
@@ -268,8 +268,8 @@ const installedApps: TAppConfig[] = [
       nameColor: 'text-black',
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
-    },
-  },
+    }
+  }
   // {
   //   key: 'sealos-app-sdk-demo',
   //   name: 'Sealos SDK APP Demo',

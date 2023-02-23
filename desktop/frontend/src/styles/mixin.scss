@@ -3,7 +3,6 @@
   overflow: hidden;
   -webkit-line-clamp: $line;
   -webkit-box-orient: vertical;
-  text-overflow: ellipsis; 
+  text-overflow: ellipsis;
   word-wrap: break-word;
 }
-  

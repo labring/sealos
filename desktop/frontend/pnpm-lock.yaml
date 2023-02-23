@@ -31,6 +31,7 @@ specifiers:
   next: 13.1.0
   next-pwa: ^5.6.0
   postcss: ^8.4.20
+  prettier: ^2.8.4
   qrcode.react: ^3.1.0
   react: 18.2.0
   react-content-loader: ^6.2.0
@@ -67,6 +68,7 @@ dependencies:
   lodash: registry.npmmirror.com/lodash/4.17.21
   next: 13.1.0_3duxcpitbtplz62feflag7fwby
   next-pwa: 5.6.0_next@13.1.0
+  prettier: 2.8.4
   qrcode.react: 3.1.0_react@18.2.0
   react: 18.2.0
   react-content-loader: registry.npmmirror.com/react-content-loader/6.2.0_react@18.2.0
@@ -6874,6 +6876,12 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
     dev: true
+
+  /prettier/2.8.4:
+    resolution: {integrity: sha512-vIS4Rlc2FNh0BySk3Wkd6xmwxB0FpOndW5fisM5H8hsZSxU2VWVB5CWIkIjWvrHjIhxk2g3bfMKM87zNTrZddw==}
+    engines: {node: '>=10.13.0'}
+    hasBin: true
+    dev: false
 
   /pretty-bytes/5.6.0:
     resolution: {integrity: sha512-FFw039TmrBqFK8ma/7OL3sDz/VytdtJr044/QUJtH0wK9lb9jLq9tJyIxUwtQJHwar2BqtiA4iCWSwo9JLkzFg==}
