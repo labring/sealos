@@ -452,6 +452,18 @@ rules:
   - patch
   - update
 - apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - infra.sealos.io
   resources:
   - infras
@@ -673,7 +685,7 @@ spec:
         - --upstream=http://127.0.0.1:8080/
         - --logtostderr=true
         - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        image: gcr.dockerproxy.com/kubebuilder/kube-rbac-proxy:v0.11.0
         imagePullPolicy: IfNotPresent
         name: kube-rbac-proxy
         ports:
