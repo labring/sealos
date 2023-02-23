@@ -309,7 +309,7 @@ func detectCRISocketImpl(isSocket func(string) bool, knownCRISockets []string) (
 		return foundCRISockets[0], nil
 	default:
 		// Multiple CRIs installed?
-		return "", fmt.Errorf("Found multiple CRI sockets, please use --cri-socket to select one: %s", strings.Join(foundCRISockets, ", "))
+		return "", fmt.Errorf("found multiple CRI sockets, please use --cri-socket to select one: %s", strings.Join(foundCRISockets, ", "))
 	}
 }
 
