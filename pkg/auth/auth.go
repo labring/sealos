@@ -34,14 +34,14 @@ func Init(config conf.Config) error {
 	var err error
 	ssoClient, err = sso.InitSSO()
 	if err != nil {
-		return fmt.Errorf("Init SSO platform failed: %w", err)
+		return fmt.Errorf("init SSO platform failed: %w", err)
 	}
 	return nil
 }
 
 func GetLoginRedirect() (string, error) {
 	redirectURL, err := ssoClient.GetRedirectURL()
-	return redirectURL, fmt.Errorf("Get redirect url failed: %w", err)
+	return redirectURL, fmt.Errorf("get redirect url failed: %w", err)
 }
 
 func GetOAuthToken(state, code string) (*oauth2.Token, error) {
@@ -55,17 +55,17 @@ func GetUserInfo(accessToken string) (*sso.User, error) {
 func GetKubeConfig(accessToken string) (string, error) {
 	user, err := ssoClient.GetUserInfo(accessToken)
 	if err != nil {
-		return "", fmt.Errorf("Get user info failed: %w", err)
+		return "", fmt.Errorf("get user info failed: %w", err)
 	}
 
 	err = utils.CreateOrUpdateKubeConfig(user.ID)
 	if err != nil {
-		return "", fmt.Errorf("Create kube config failed: %w", err)
+		return "", fmt.Errorf("create kube config failed: %w", err)
 	}
 	// Wait for user controller to write kubeconfig into status
 	kubeConfig, err := utils.GetKubeConfig(user.ID, 10)
 	if err != nil {
-		return "", fmt.Errorf("Create kubeconfig failed: %w", err)
+		return "", fmt.Errorf("create kubeconfig failed: %w", err)
 	}
 	return kubeConfig, nil
 }

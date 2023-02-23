@@ -96,7 +96,7 @@ func PrintInfo() error {
 	default:
 		// There is a bug in the program if we hit this case.
 		// However, we follow a policy of never panicking.
-		return fmt.Errorf("VersionOptions were not validated: --output=%q should have been rejected", output)
+		return fmt.Errorf("versionOptions were not validated: --output=%q should have been rejected", output)
 	}
 	missinfo := []string{}
 	if OutputInfo.KubernetesVersion == nil {

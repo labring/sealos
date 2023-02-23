@@ -32,7 +32,7 @@ func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {
 		return err
 	}
 	if newKey := client.ObjectKeyFromObject(obj); key != newKey {
-		return fmt.Errorf("MutateFn cannot mutate object name and/or object namespace")
+		return fmt.Errorf("mutateFn cannot mutate object name and/or object namespace")
 	}
 	return nil
 }

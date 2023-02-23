@@ -119,7 +119,7 @@ func init() {
 
 func (r *User) validateCSRExpirationSeconds() error {
 	if r.Spec.CSRExpirationSeconds == 0 {
-		return errors.New("CSRExpirationSeconds is not allowed to be 0")
+		return errors.New("csrExpirationSeconds is not allowed to be 0")
 	}
 	return nil
 }
