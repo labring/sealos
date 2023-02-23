@@ -1,5 +1,5 @@
 .taskbar {
-  --bg1: rgba(255, 255, 255, .3);
+  --bg1: rgba(255, 255, 255, 0.3);
   --bg2: rgba(255, 255, 255, 0.67);
 
   position: absolute;
@@ -81,7 +81,7 @@
   place-items: center;
 
   &:after {
-    content: "";
+    content: '';
     position: absolute;
     display: block;
     bottom: 0;
@@ -123,5 +123,3 @@
     opacity: 0.8;
   }
 }
-
-
