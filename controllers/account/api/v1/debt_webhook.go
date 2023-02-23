@@ -19,36 +19,44 @@ package v1
 import (
 	"context"
 	"fmt"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
-	"github.com/labring/sealos/pkg/utils/logger"
-	corev1 "k8s.io/api/core/v1"
 	"os"
+
+	"github.com/go-logr/logr"
+	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=pods,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
+// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="",resources=*,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
 //+kubebuilder:object:generate=false
 
 type PodAnnotator struct {
-	Client  client.Client
-	decoder *admission.Decoder
+	Client client.Client
 }
 
+var debtlog = logf.Log.WithName("image-resource")
+
 func (a *PodAnnotator) Handle(ctx context.Context, req admission.Request) admission.Response {
+	return checkOption(ctx, debtlog, a.Client, req.Namespace)
+}
+
+func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
 	ns := corev1.Namespace{}
-	if err := a.Client.Get(ctx, client.ObjectKey{Name: req.Namespace}, &ns); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: nsName}, &ns); err != nil {
 		logger.Error(err, "get namespace error")
-		return admission.ValidationResponse(false, req.Namespace)
+		return admission.ValidationResponse(false, nsName)
 	}
 
+	// Check if it is a user namespace
 	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
 	if !ok {
 		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s", ns.Name))
 	}
 
 	account := Account{}
-	if err := a.Client.Get(ctx, client.ObjectKey{Name: user, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: user, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
 		logger.Error(err, "get account error")
 		return admission.ValidationResponse(false, err.Error())
 	}
@@ -58,9 +66,4 @@ func (a *PodAnnotator) Handle(ctx context.Context, req admission.Request) admiss
 	}
 
 	return admission.ValidationResponse(true, "")
-}
-
-func (a *PodAnnotator) InjectDecoder(d *admission.Decoder) error {
-	a.decoder = d
-	return nil
 }

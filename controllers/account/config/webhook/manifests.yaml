@@ -23,5 +23,5 @@ webhooks:
     - CREATE
     - UPDATE
     resources:
-    - pods
+    - '*'
   sideEffects: None

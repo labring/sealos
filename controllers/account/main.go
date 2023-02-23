@@ -18,8 +18,9 @@ package main
 
 import (
 	"flag"
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"os"
+
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/labring/sealos/controllers/account/controllers"

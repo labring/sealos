@@ -13,4 +13,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: xiaojie99999/account
-  newTag: v2.0.2
+  newTag: v2.0.3
