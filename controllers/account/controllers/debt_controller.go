@@ -101,8 +101,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
-		r.sendSmallNotice(ctx, account.Name)
-		r.change2Small(ctx, *account)
+		if err := r.sendSmallNotice(ctx, account.Name); err != nil {
+			return err
+		}
+		if err := r.change2Small(ctx, *account); err != nil {
+			return err
+		}
 	}
 
 	smalltime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusSmall)])
@@ -113,8 +117,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusMedium
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
-		r.sendMediumNotice(ctx, account.Name)
-		r.change2Medium(ctx, *account)
+		if err := r.sendMediumNotice(ctx, account.Name); err != nil {
+			return err
+		}
+		if err := r.change2Medium(ctx, *account); err != nil {
+			return err
+		}
 	}
 
 	mediumtime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusMedium)])
@@ -125,8 +133,12 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
-		r.sendLargeNotice(ctx, account.Name)
-		r.change2Large(ctx, *account)
+		if err := r.sendLargeNotice(ctx, account.Name); err != nil {
+			return err
+		}
+		if err := r.change2Large(ctx, *account); err != nil {
+			return err
+		}
 	}
 
 	if Updataflag {
@@ -150,7 +162,9 @@ func (r *DebtReconciler) change2Medium(ctx context.Context, account accountv1.Ac
 }
 
 func (r *DebtReconciler) change2Large(ctx context.Context, account accountv1.Account) error {
-	r.deleteUserResource(ctx, GetUserNameSpace(account.Name))
+	if err := r.deleteUserResource(ctx, GetUserNameSpace(account.Name)); err != nil {
+		return err
+	}
 	return nil
 }
 

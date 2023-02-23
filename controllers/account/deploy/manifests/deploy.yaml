@@ -648,7 +648,7 @@ spec:
         envFrom:
         - secretRef:
             name: payment-secret
-        image: xiaojie99999/account:v2.0.3
+        image: xiaojie99999/account:v2.1.0
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

@@ -36,7 +36,7 @@ type PodAnnotator struct {
 	Client client.Client
 }
 
-var debtlog = logf.Log.WithName("image-resource")
+var debtlog = logf.Log.WithName("debt-resource")
 
 func (a *PodAnnotator) Handle(ctx context.Context, req admission.Request) admission.Response {
 	return checkOption(ctx, debtlog, a.Client, req.Namespace)
@@ -44,7 +44,7 @@ func (a *PodAnnotator) Handle(ctx context.Context, req admission.Request) admiss
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
 	ns := corev1.Namespace{}
-	if err := c.Get(ctx, client.ObjectKey{Name: nsName}, &ns); err != nil {
+	if err := c.Get(ctx, client.ObjectKey{Name: nsName}, &ns); client.IgnoreNotFound(err) != nil {
 		logger.Error(err, "get namespace error")
 		return admission.ValidationResponse(false, nsName)
 	}
@@ -52,13 +52,13 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 	// Check if it is a user namespace
 	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
 	if !ok {
-		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s", ns.Name))
+		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
 
 	account := Account{}
 	if err := c.Get(ctx, client.ObjectKey{Name: user, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
 		logger.Error(err, "get account error")
-		return admission.ValidationResponse(false, err.Error())
+		return admission.ValidationResponse(true, err.Error())
 	}
 
 	if account.Status.Balance-account.Status.DeductionBalance < 0 {
