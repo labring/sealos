@@ -636,7 +636,7 @@ spec:
         envFrom:
         - secretRef:
             name: payment-secret
-        image: xiaojie99999/account:v2.0.1
+        image: xiaojie99999/account:v2.0.2
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -773,7 +773,7 @@ webhooks:
     service:
       name: account-webhook-service
       namespace: account-system
-      path: /mutate-account-sealos-io-v1-debt
+      path: /mutate-v1-pod
   failurePolicy: Fail
   name: mpod.kb.io
   rules:

@@ -11,7 +11,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-account-sealos-io-v1-debt
+      path: /mutate-v1-pod
   failurePolicy: Fail
   name: mpod.kb.io
   rules:

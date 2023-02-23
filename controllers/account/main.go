@@ -20,6 +20,7 @@ import (
 	"flag"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/labring/sealos/controllers/account/controllers"
 
@@ -102,10 +103,13 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Debt")
 		os.Exit(1)
 	}
-	if err = (&accountv1.Debt{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "Debt")
-		os.Exit(1)
-	}
+	//if err = (&accountv1.Debt{}).SetupWebhookWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create webhook", "webhook", "Debt")
+	//	os.Exit(1)
+	//}
+
+	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &accountv1.PodAnnotator{Client: mgr.GetClient()}})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
