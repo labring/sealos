@@ -18,13 +18,13 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -231,7 +231,7 @@ func (r *UserGroupReconciler) syncOwnerUGUserBinding(ctx context.Context, ug *us
 			ugBinding.RoleRef = userv1.RoleRefTypeUser
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create user UserGroupBinding")
+			return fmt.Errorf("unable to create user UserGroupBinding: %w", err)
 		}
 		r.Logger.V(1).Info("create or update user UserGroupBinding", "OperationResult", change)
 		return nil

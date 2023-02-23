@@ -18,24 +18,20 @@ package controllers
 
 import (
 	"context"
-
-	"github.com/labring/sealos/controllers/user/controllers/cache"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-
-	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/util/retry"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"fmt"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+	"github.com/labring/sealos/controllers/user/controllers/cache"
+	"github.com/labring/sealos/controllers/user/controllers/helper"
+	"golang.org/x/sync/errgroup"
+	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
 // UserGroupNamespaceBindingController reconciles a UserGroupBinding namespace object
@@ -96,7 +92,7 @@ func (r *UserGroupNamespaceBindingController) syncNamespace(ctx context.Context,
 
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create namespace by UserGroupBinding")
+			return fmt.Errorf("unable to create namespace by UserGroupBinding: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace by UserGroupBinding", "OperationResult", change)
 		return nil
@@ -158,7 +154,7 @@ func (r *UserGroupNamespaceBindingController) syncRoleBinding(ctx context.Contex
 
 					return nil
 				}); err != nil {
-					return errors.Wrap(err, "unable to create namespace UserGroupBinding roleBinding")
+					return fmt.Errorf("unable to create namespace UserGroupBinding roleBinding: %w", err)
 				}
 				r.Logger.V(1).Info("create or update namespace UserGroupBinding roleBinding", "OperationResult", change, "user", user.Subject.Name)
 				return nil
