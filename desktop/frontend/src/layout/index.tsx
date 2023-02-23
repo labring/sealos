@@ -19,7 +19,7 @@ export default function Layout({ children }: any) {
   useEffect(() => {
     (async () => {
       // Initialize, get user information, install application information, etc.
-      await init();
+      await init(session?.kubeconfig);
     })();
   }, [init]);
 

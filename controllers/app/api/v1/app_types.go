@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,24 +20,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+type Data struct {
+	URL  string `json:"url,omitempty"`
+	Desc string `json:"desc,omitempty"`
+}
 
-type UIEndPoint struct {
-	Name  string `json:"name,omitempty"`
-	Theme string `json:"theme,omitempty"`
-	URL   string `json:"url,omitempty"`
+type MenuData struct {
+	NameColor    string `json:"nameColor,omitempty"`
+	HelpDropDown bool   `json:"helpDropDown,omitempty"`
+	HelpDocs     string `json:"helpDocs,omitempty"`
 }
 
 // AppSpec defines the desired state of App
 type AppSpec struct {
-	UIEndPoints UIEndPoint `json:"uiEndPoints,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Icon     string   `json:"icon,omitempty"`
+	Type     string   `json:"type,omitempty"`
+	Data     Data     `json:"data,omitempty"`
+	MenuData MenuData `json:"menuData,omitempty"`
 }
 
 // AppStatus defines the observed state of App
 type AppStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true

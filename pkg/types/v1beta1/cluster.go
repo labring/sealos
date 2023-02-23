@@ -77,6 +77,15 @@ const (
 	ClusterInProcess ClusterPhase = "ClusterInProcess"
 )
 
+const (
+	ClusterConditionTypeSuccess string = "ApplyClusterSuccess"
+	ClusterConditionTypeError   string = "ApplyClusterError"
+
+	CommandConditionTypeSuccess   string = "ApplyCommandSuccess"
+	CommandConditionTypeError     string = "ApplyCommandError"
+	CommandConditionTypeCancelled string = "ApplyCommandCancelled"
+)
+
 // ClusterCondition describes the state of a cluster at a certain point.
 type ClusterCondition struct {
 	Type              string             `json:"type"`
@@ -88,10 +97,74 @@ type ClusterCondition struct {
 	Message string `json:"message,omitempty"`
 }
 
+func NewSuccessClusterCondition() ClusterCondition {
+	return ClusterCondition{
+		Type:              ClusterConditionTypeSuccess,
+		Status:            v1.ConditionTrue,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Ready",
+		Message:           "Applied to cluster successfully",
+	}
+}
+
+func NewFailedClusterCondition(message string) ClusterCondition {
+	return ClusterCondition{
+		Type:              ClusterConditionTypeError,
+		Status:            v1.ConditionFalse,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Apply Cluster",
+		Message:           message,
+	}
+}
+
+type CommandCondition struct {
+	Type              string             `json:"type"`
+	Status            v1.ConditionStatus `json:"status"`
+	LastHeartbeatTime metav1.Time        `json:"lastHeartbeatTime,omitempty"`
+
+	// +optional
+	Images []string `json:"images"`
+	// +optional
+	Reason string `json:"reason,omitempty"`
+	// +optional
+	Message string `json:"message,omitempty"`
+}
+
+func NewSuccessCommandCondition() CommandCondition {
+	return CommandCondition{
+		Type:              CommandConditionTypeSuccess,
+		Status:            v1.ConditionTrue,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Apply Command",
+		Message:           "Applied to cluster successfully",
+	}
+}
+
+func NewFailedCommandCondition(message string) CommandCondition {
+	return CommandCondition{
+		Type:              CommandConditionTypeError,
+		Status:            v1.ConditionFalse,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Apply Command",
+		Message:           message,
+	}
+}
+
+func NewCancelledCommandCondition(message string) CommandCondition {
+	return CommandCondition{
+		Type:              CommandConditionTypeCancelled,
+		Status:            v1.ConditionFalse,
+		LastHeartbeatTime: metav1.Now(),
+		Reason:            "Apply Command",
+		Message:           message,
+	}
+}
+
 type ClusterStatus struct {
-	Phase      ClusterPhase       `json:"phase,omitempty"`
-	Mounts     []MountImage       `json:"mounts,omitempty"`
-	Conditions []ClusterCondition `json:"conditions,omitempty" `
+	Phase             ClusterPhase       `json:"phase,omitempty"`
+	Mounts            []MountImage       `json:"mounts,omitempty"`
+	Conditions        []ClusterCondition `json:"conditions,omitempty"`
+	CommandConditions []CommandCondition `json:"commandCondition,omitempty"`
 }
 
 type SSH struct {

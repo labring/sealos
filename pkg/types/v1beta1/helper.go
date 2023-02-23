@@ -79,6 +79,16 @@ func UpdateCondition(conditions []ClusterCondition, condition ClusterCondition) 
 	}
 	return conditions
 }
+
+// UpdateCommandCondition updates condition in cluster conditions using giving condition, append only
+func UpdateCommandCondition(cmdConditions []CommandCondition, cmdCondition CommandCondition) []CommandCondition {
+	if cmdConditions == nil {
+		cmdConditions = make([]CommandCondition, 0)
+	}
+	cmdConditions = append(cmdConditions, cmdCondition)
+	return cmdConditions
+}
+
 func DeleteCondition(conditions []ClusterCondition, conditionType string) []ClusterCondition {
 	if conditions == nil {
 		conditions = make([]ClusterCondition, 0)

@@ -355,24 +355,29 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 }
 
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	if err := k.setCGroupDriverAndSocket(k.getMaster0IPAndPort()); err != nil {
+	setCGroupDriverAndSocket := func(krt *KubeadmRuntime) error {
+		return krt.setCGroupDriverAndSocket(krt.getMaster0IPAndPort())
+	}
+
+	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
 		return nil, err
 	}
 
-	if err := k.ConvertInitConfigConversion(); err != nil {
-		return nil, err
-	}
 	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
 		&k.conversion.ClusterConfiguration,
 		&k.conversion.KubeletConfiguration,
 		&k.conversion.KubeProxyConfiguration)
 }
 
-func (k *KubeadmRuntime) ConvertInitConfigConversion() error {
+func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime) error) error {
 	if err := k.MergeKubeadmConfig(); err != nil {
 		return err
 	}
-
+	for _, fn := range fns {
+		if err := fn(k); err != nil {
+			return err
+		}
+	}
 	k.setInitAdvertiseAddress(k.getMaster0IP())
 	k.setControlPlaneEndpoint(fmt.Sprintf("%s:%d", k.getAPIServerDomain(), k.getAPIServerPort()))
 	if k.APIServer.ExtraArgs == nil {
@@ -502,11 +507,13 @@ func (k *KubeadmRuntime) setCGroupDriverAndSocket(node string) error {
 	if err != nil {
 		return err
 	}
+	logger.Debug("node: %s , criSocket: %s", node, criSocket)
 	k.setCRISocket(criSocket)
 	cGroupDriver, err := k.getCGroupDriver(node)
 	if err != nil {
 		return err
 	}
+	logger.Debug("node: %s , cGroupDriver: %s", node, cGroupDriver)
 	k.setCgroupDriver(cGroupDriver)
 	return nil
 }

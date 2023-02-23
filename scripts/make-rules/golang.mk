@@ -102,14 +102,3 @@ go.format: tools.verify.goimports
 go.coverage:
 	@$(GO) test -race -failfast -coverprofile=coverage.out -covermode=atomic `go list ./pkg/env ./pkg/apply  | grep -v "/test\|/fork"`
 
-.PHONY: go.compress.%
-go.compress.%: go.bin.%
-	$(eval COMMAND := $(word 2,$(subst ., ,$*)))
-	$(eval PLATFORM := $(word 1,$(subst ., ,$*)))
-	@$(TOOLS_DIR)/upx $(BIN_DIR)/$(PLATFORM)/$(COMMAND)
-
-.PHONY: go.compress
-go.compress: tools.verify.upx $(addprefix go.compress., $(addprefix $(PLATFORM)., $(BINS)))
-
-.PHONY: go.compress.multiarch
-go.compress.multiarch: tools.verify.upx $(foreach p,$(PLATFORMS),$(addprefix go.compress., $(addprefix $(p)., $(BINS))))

@@ -51,8 +51,9 @@ https://apt.fury.io/${USERNAME:-labring}/
 To enable, add the following file **/etc/apt/sources.list.d/fury.list**:
 
 \`\`\`
-deb [trusted=yes] https://apt.fury.io/${USERNAME:-labring}/ /
+deb [trusted=yes] https://apt.repo.sealos.io/ /
 \`\`\`
+
 
 ### Yum源
 
@@ -67,7 +68,7 @@ To enable, add the following file **/etc/yum.repos.d/fury.repo**:
 \`\`\`
 [fury]
 name=Gemfury Private Repo
-baseurl=https://yum.fury.io/${USERNAME:-labring}/
+baseurl=https://yum.repo.sealos.io/
 enabled=1
 gpgcheck=0
 \`\`\`

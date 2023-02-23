@@ -23,8 +23,6 @@ builds:
       - CC=aarch64-linux-gnu-gcc
     main: ./cmd/sealos
     binary: sealos
-    hooks:
-      post: upx "{{ .Path }}"
     goos:
       - linux
     goarch:
@@ -59,8 +57,6 @@ builds:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
     main: ./cmd/sealctl
-    hooks:
-      post: upx "{{ .Path }}"
     binary: sealctl
     goos:
       - linux
@@ -95,8 +91,6 @@ builds:
     env:
       - CGO_ENABLED=0
     main: ./cmd/lvscare
-    hooks:
-      post: upx "{{ .Path }}"
     binary: lvscare
     goos:
       - linux
@@ -122,8 +116,6 @@ builds:
     env:
       - CGO_ENABLED=0
     main: ./cmd/image-cri-shim
-    hooks:
-      post: upx "{{ .Path }}"
     binary: image-cri-shim
     goos:
       - linux

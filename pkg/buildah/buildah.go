@@ -62,6 +62,7 @@ func (opts *globalFlags) HiddenFlags() []string {
 		"cpu-profile",
 		"default-mounts-file",
 		"memory-profile",
+		"root", "runroot", "storage-driver", "storage-opt",
 	}
 }
 

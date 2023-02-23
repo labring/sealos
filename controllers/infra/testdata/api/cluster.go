@@ -15,12 +15,11 @@ metadata:
   name: ${name}
   namespace: ${namespace}
   annotations:
-    sealos.io/version: "4.1.4"
+    sealos.io/version: "4.1.5-alpha2"
 spec:
   infra: ${name}
   image:
     - labring/kubernetes:v1.25.5
-    - labring/helm:v3.8.2
     - labring/calico:v3.24.1
 `
 

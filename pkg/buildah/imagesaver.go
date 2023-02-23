@@ -16,8 +16,10 @@ package buildah
 
 import (
 	"path"
+	"runtime"
 	"strings"
 
+	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -69,12 +71,37 @@ func runSaveImages(contextDir string, platforms []v1.Platform, opts *saveOptions
 }
 
 func parsePlatforms(c *cobra.Command) ([]v1.Platform, error) {
-	platforms, err := parse.PlatformsFromOptions(c)
+	parsedPlatforms, err := parse.PlatformsFromOptions(c)
 	if err != nil {
 		return nil, err
 	}
+	// flags are not modified, use local platform
+	switch len(parsedPlatforms) {
+	case 0:
+		return []v1.Platform{platforms.DefaultSpec()}, nil
+	case 1:
+		var platform v1.Platform
+		idx0 := parsedPlatforms[0]
+		if idx0.OS != "" {
+			platform.OS = idx0.OS
+		} else {
+			platform.OS = runtime.GOOS
+		}
+		if idx0.Arch != "" {
+			platform.Architecture = idx0.Arch
+		} else {
+			platform.Architecture = runtime.GOARCH
+		}
+		if idx0.Variant != "" {
+			platform.Variant = idx0.Variant
+		} else {
+			platform.Variant = platforms.DefaultSpec().Variant
+		}
+		return []v1.Platform{platform}, nil
+	}
+
 	var ret []v1.Platform
-	for _, pf := range platforms {
+	for _, pf := range parsedPlatforms {
 		ret = append(ret, v1.Platform{Architecture: pf.Arch, OS: pf.OS, Variant: pf.Variant})
 	}
 	return ret, nil

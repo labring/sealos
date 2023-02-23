@@ -25,17 +25,16 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/containers/image/v5/manifest"
-	"github.com/containers/image/v5/pkg/shortnames"
-	"github.com/opencontainers/go-digest"
-
 	"github.com/containers/buildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/buildah/util"
 	"github.com/containers/image/v5/image"
+	"github.com/containers/image/v5/manifest"
 	imagestorage "github.com/containers/image/v5/storage"
 	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
+	"github.com/opencontainers/go-digest"
 	ociv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -132,8 +131,10 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 			if flagChanged(c, "type") {
 				return fmt.Errorf("reading build container: %w", err)
 			}
+			logger.Debug("failed to inspect container: %v, trying to inspect image", err)
 			output, err = openImage(ctx, systemContext, store, imagestorage.Transport, name)
 			if err != nil {
+				logger.Debug("failed to open image: %v, trying to inspect manifest", err)
 				if manifestErr := manifestInspect(ctx, store, systemContext, name); manifestErr == nil {
 					return nil
 				}
@@ -188,17 +189,24 @@ func inspectCmd(c *cobra.Command, args []string, iopts *inspectResults) error {
 type InspectOutput struct {
 	Name            string        `json:",omitempty"`
 	FromImageDigest digest.Digest `json:",omitempty"`
+	FromImageID     digest.Digest `json:",omitempty"`
 	OCIv1           *ociv1.Image  `json:"OCIv1,omitempty"`
 }
 
 func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgRef string) (*InspectOutput, error) {
 	var (
-		rawManifest []byte
-		config      *ociv1.Image
-		src         types.ImageSource
-		imageDigest digest.Digest
+		rawManifest          []byte
+		config               *ociv1.Image
+		src                  types.ImageSource
+		imageDigest, imageID digest.Digest
 	)
-	img, src, err := inspectImage(ctx, sc, store, transport, imgRef)
+	// parse transport from image reference or use default
+	transport, imgName, err := parseTransportAndReference(transport, imgRef)
+	if err != nil {
+		return nil, err
+	}
+
+	foundID, img, src, err := inspectImage(ctx, sc, store, transport, imgName)
 	if err != nil {
 		return nil, err
 	}
@@ -207,6 +215,18 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 			logger.Error("unexpected error while closing image: %v", err)
 		}
 	}()
+
+	// only set for transport container-storage
+	if _, ok := transport.(imagestorage.StoreTransport); ok && foundID != "" {
+		simg, err := store.Image(foundID)
+		if err != nil {
+			return nil, err
+		}
+		imageID = digest.Digest(simg.ID)
+		if strings.HasPrefix(simg.ID, imgName) && len(simg.Names) > 0 {
+			imgRef = simg.Names[0]
+		}
+	}
 
 	rawManifest, _, err = src.GetManifest(ctx, nil)
 	if err != nil {
@@ -218,33 +238,32 @@ func openImage(ctx context.Context, sc *types.SystemContext, store storage.Store
 		return nil, fmt.Errorf("error reading OCI-formatted configuration data: %w", err)
 	}
 
-	outputData := &InspectOutput{
-		Name:            "",
-		FromImageDigest: "",
-		OCIv1:           config,
-	}
-
 	if imageDigest, err = manifest.Digest(rawManifest); err != nil {
 		return nil, fmt.Errorf("error computing manifest digest: %w", err)
 	}
-	outputData.FromImageDigest = imageDigest
-	outputData.Name = imgRef
-	return outputData, nil
+
+	return &InspectOutput{
+		Name:            imgRef,
+		FromImageDigest: imageDigest,
+		FromImageID:     imageID,
+		OCIv1:           config,
+	}, nil
 }
 
-func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgRef string) (types.Image, types.ImageSource, error) {
-	transport, imgRef = finalizeReference(transport, imgRef)
+func parseTransportAndReference(defaultTransport types.ImageTransport, ref string) (types.ImageTransport, string, error) {
+	transport, imgRef := finalizeReference(defaultTransport, ref)
 	parts := strings.SplitN(imgRef, ":", 2)
 	// should never happened
 	if len(parts) != 2 {
-		return nil, nil, fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, imgRef)
+		return nil, "", fmt.Errorf(`invalid image name "%s", expected colon-separated transport:reference`, imgRef)
 	}
-	imgName := parts[1]
-	if st, ok := transport.(imagestorage.StoreTransport); ok {
-		st.SetStore(store)
-	}
+	return transport, parts[1], nil
+}
 
+// inspectImage return image id if found
+func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.Store, transport types.ImageTransport, imgName string) (string, types.Image, types.ImageSource, error) {
 	parseSource := func(s string) (types.ImageSource, error) {
+		logger.Debug("parse reference %s with transport %s", s, transport.Name())
 		ref, err := transport.ParseReference(s)
 		if err != nil {
 			return nil, err
@@ -252,31 +271,25 @@ func inspectImage(ctx context.Context, sc *types.SystemContext, store storage.St
 		return ref.NewImageSource(ctx, sc)
 	}
 	var (
-		src types.ImageSource
-		err error
+		imageID string
+		src     types.ImageSource
+		err     error
 	)
 	switch transport.Name() {
 	case TransportContainersStorage:
-		names, resolveErr := shortnames.ResolveLocally(sc, imgName)
-		if resolveErr != nil {
-			return nil, nil, fmt.Errorf("error resolve shortname %s: %w", imgName, storage.ErrImageUnknown)
+		_, img, tmpErr := util.FindImage(store, "", sc, imgName)
+		if tmpErr != nil {
+			return "", nil, nil, fmt.Errorf("importing settings: %w", tmpErr)
 		}
-		for _, name := range names {
-			src, err = parseSource(name.String())
-			if err == nil {
-				break
-			}
-		}
+		imageID = img.ID
+		src, err = parseSource(img.ID)
 	default:
 		src, err = parseSource(imgName)
 	}
 	if err != nil {
-		return nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, err)
+		return imageID, nil, nil, fmt.Errorf("error parsing image name %q: %w", imgName, err)
 	}
 
 	img, err := image.FromUnparsedImage(ctx, sc, image.UnparsedInstance(src, nil))
-	if err != nil {
-		return nil, nil, err
-	}
-	return img, src, nil
+	return imageID, img, src, err
 }

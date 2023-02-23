@@ -1,0 +1,134 @@
+name: Test Saelctl Registry Command
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/test_registry.yml"
+      - "fork/github.com/heroku/**"
+      - "pkg/registry/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/test_registry.yml"
+      - "fork/github.com/heroku/**"
+      - "pkg/registry/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+      - name: Save Binaries sealos
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealos
+          path: /usr/bin/sealos
+      - name: Save Binaries sealctl
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealctl
+          path: /usr/bin/sealctl
+  verify-registry:
+    needs: [build]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealctl
+        run: |
+          sudo chmod a+x /tmp/{sealos,sealctl}
+          sudo mv /tmp/{sealos,sealctl} /usr/bin/
+          sudo sealctl version
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Registry Status
+        run: |
+          sealctl login --username admin --password passw0rd sealos.hub:5000
+          sealctl pull alpine:3
+          sealctl tag alpine:3 sealos.hub:5000/library/alpine:3
+          sealctl push sealos.hub:5000/library/alpine:3
+          sealctl registry status
+      - name: Verify Registry Images
+        run: |
+          sealctl registry images
+          sealctl registry images -n sealos.hub:5000 --filter tag=*5.4* 
+          sealctl registry images -n sealos.hub:5000 --filter name=kube*,tag=3  
+          sealctl registry images -n sealos.hub:5000 --filter name=library/alpine,tag=3  
+          sealctl registry images -n sealos.hub:5000 --filter name=library/alpine,tag=3 --json
+      - name: Verify Registry Image
+        run: |
+          sealctl registry image -n sealos.hub:5000 --image library/alpine:3 
+          sealctl registry image -n sealos.hub:5000 --image library/alpine:3  --json
+      - name: Verify Registry Rmi Image
+        run: |
+          sealctl registry rmi -n sealos.hub:5000 --debug library/alpine:3   
+          sudo sealctl registry prune --debug
+  verify-registry-save:
+    needs: [build]
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealctl
+        run: |
+          sudo chmod a+x /tmp/{sealos,sealctl}
+          sudo mv /tmp/{sealos,sealctl} /usr/bin/
+          sudo sealctl version
+          sudo sealos version
+#      - name: Verify Registry save raw
+#        run: |
+#          sudo docker logout docker.io
+#          docker logout docker.io
+#          sealctl logout docker.io
+#          mkdir -p raw-amd64
+#          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-amd64 --arch amd64 --max-pull-procs 8 --debug
+#          mkdir -p raw-arm64
+#          sealctl registry save raw --images alpine:3.14 --images nginx:1.23.3 --images busybox:1.35 --data-dir raw-arm64 --arch arm64 --max-pull-procs 8 --debug
+#      - name: Verify Registry save default
+#        run: |
+#          mkdir -p default
+#          mkdir -p images/shim
+#          cat >> images/shim/images <<EOF
+#          alpine:3.14
+#          nginx:1.23.3
+#          busybox:1.35
+#          EOF
+#          sealctl registry save default  --data-dir default --max-pull-procs 8 --debug .

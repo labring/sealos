@@ -3,6 +3,7 @@ package registry
 import (
 	"bytes"
 	"github.com/containers/image/v5/manifest"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"io"
 	"net/http"
 
@@ -50,14 +51,22 @@ func (registry *Registry) ManifestV2(repository, reference string) (*schema2.Des
 	if err != nil {
 		return nil, err
 	}
+	var DefaultRequestedManifestMIMETypes = []string{
+		imgspecv1.MediaTypeImageManifest,
+		manifest.DockerV2Schema2MediaType,
+		manifest.DockerV2Schema1SignedMediaType,
+		manifest.DockerV2Schema1MediaType,
+		imgspecv1.MediaTypeImageIndex,
+	}
 	headers := map[string][]string{
-		"Accept": manifest.DefaultRequestedManifestMIMETypes,
+		"Accept": DefaultRequestedManifestMIMETypes,
 	}
 	for n, h := range headers {
 		for _, hh := range h {
 			req.Header.Add(n, hh)
 		}
 	}
+	//req.Header.Set("Accept", schema1.MediaTypeManifest)
 	resp, err := registry.Client.Do(req)
 	if err != nil {
 		return nil, err

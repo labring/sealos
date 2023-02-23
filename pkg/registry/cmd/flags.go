@@ -44,6 +44,19 @@ func (opts *imagesResults) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&opts.filter, "filter", opts.filter, "Filter support 'name' and 'tag' , strategy support prefix (eg key*),suffix(eg *key),equals(eg key),empty(eg <none>),like(eg *key*)")
 }
 
+type imageResults struct {
+	registryName string
+	image        string
+	json         bool
+}
+
+func (opts *imageResults) RegisterFlags(fs *pflag.FlagSet) {
+	fs.SetInterspersed(false)
+	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
+	fs.StringVarP(&opts.registryName, "name", "n", defaultRegistryName, "registry name")
+	fs.StringVar(&opts.image, "image", opts.image, "image name,ex library/nginx:test")
+}
+
 type rmiResults struct {
 	registryName string
 }

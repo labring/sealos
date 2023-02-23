@@ -77,7 +77,7 @@ type TOSState = {
   currentApp?: TApp;
 
   // init desktop
-  init(): void;
+  init(kubeconfig: string): void;
 
   // get all apps of the app store
   getAllApps(): void;
@@ -122,8 +122,10 @@ const useAppStore = create<TOSState>()(
         isHideStartMenu: true,
         allApps: [],
 
-        init: async () => {
-          const res = await request('/api/desktop/getInstalledApps');
+        init: async (kubeconfig: string) => {
+          const res = await request.post('/api/desktop/getInstalledApps', {
+            kubeconfig
+          });
 
           set((state) => {
             /* equal order. just save first item */
@@ -141,7 +143,7 @@ const useAppStore = create<TOSState>()(
           });
 
           set((state) => {
-            state.installedApps = res.data.map((item: TApp, i: number) => {
+            state.installedApps = res?.data?.map((item: TApp, i: number) => {
               return {
                 ...item,
                 ...initialFrantState,

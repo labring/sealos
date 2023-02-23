@@ -32,7 +32,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: sh ./scripts/resolve-modules.sh ./controllers
+        run: bash ./scripts/resolve-modules.sh ./controllers
 
   golangci-lint:
     needs: [ resolve-modules ]
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ user, terminal, metering, infra, cluster, app, imagehub, account]
+        module: [ user, terminal, metering, infra, cluster, imagehub, account, app]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ app, cluster, infra, metering, user, terminal, imagehub, account]
+        module: [ cluster, infra, metering, user, terminal, imagehub, account, app]
     permissions:
       issues: write
     steps:

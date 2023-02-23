@@ -24,10 +24,14 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+
 	"github.com/labring/sealos/controllers/cluster/utils"
 
 	"github.com/go-logr/logr"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -69,6 +73,10 @@ type ClusterReconciler struct {
 	logr.Logger
 	Scheme   *runtime.Scheme
 	recorder record.EventRecorder
+}
+
+type ClusterReconcilerOptions struct {
+	MaxConcurrentReconciles int
 }
 
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -121,7 +129,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	currentCluster, err := getMasterClusterfile(c, EIP)
 	if err != nil && err.Error() != errClusterFileNotExists {
-		return ctrl.Result{Requeue: true}, nil
+		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
 	// generate new clusterfile
@@ -146,12 +154,15 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// apply new clusterfile
 	if err := applyClusterfile(c, EIP, newClusterFile, getSealosVersion(cluster), getSealosArch(infra)); err != nil {
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ApplyClusterfile", err.Error())
-		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 60}, err
+		if err := r.updateStatus(ctx, client.ObjectKeyFromObject(cluster), v1.Failed.String()); err != nil {
+			r.recorder.Event(cluster, corev1.EventTypeWarning, "UpdateClusterStatus", err.Error())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, err
 	}
 
 	// update cluster status
-	cluster.Status.Status = v1.Running.String()
-	if err := r.Status().Update(ctx, cluster); err != nil {
+	if err := r.updateStatus(ctx, client.ObjectKeyFromObject(cluster), v1.Running.String()); err != nil {
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "UpdateClusterStatus", err.Error())
 		return ctrl.Result{}, err
 	}
@@ -194,7 +205,7 @@ func generateClusterFromInfra(infra *infrav1.Infra, cluster *v1.Cluster) *v1.Clu
 }
 
 // merge current cluster to new cluster
-func mergeCluster(currentCluster *v1beta1.Cluster, desiredCluster *v1.Cluster) *v1beta1.Cluster {
+func mergeCluster(currentCluster *v1.Cluster, desiredCluster *v1.Cluster) *v1.Cluster {
 	newCluster := currentCluster.DeepCopy()
 	hosts := desiredCluster.Spec.Hosts
 	newCluster.Spec.Hosts = hosts
@@ -302,7 +313,7 @@ EOF`, clusterfile)
 
 	cmds := []string{createClusterfile, applyClusterfileCmd}
 	if err := c.CmdAsync(EIP, cmds...); err != nil {
-		return fmt.Errorf("write clusterfile to remote failed: %v", err)
+		return fmt.Errorf("apply clusterfile failed: %v", err)
 	}
 
 	return nil
@@ -321,14 +332,14 @@ func parseSealosVersion(out []byte) (*string, error) {
 	return &version, nil
 }
 
-func getMasterClusterfile(c ssh.Interface, EIP string) (*v1beta1.Cluster, error) {
+func getMasterClusterfile(c ssh.Interface, EIP string) (*v1.Cluster, error) {
 	path := filepath.Join(defaultWorkDir, defaultClusterName, defaultClusterFileName)
 	cmd := fmt.Sprintf(getClusterfileCmd, path)
 	out, err := c.Cmd(EIP, cmd)
 	if err != nil {
 		return nil, fmt.Errorf("get clusterfile on master failed")
 	}
-	currentCluster := &v1beta1.Cluster{}
+	currentCluster := &v1.Cluster{}
 	err = yaml.Unmarshal(out, currentCluster)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshall yaml failed: %v", err)
@@ -336,8 +347,25 @@ func getMasterClusterfile(c ssh.Interface, EIP string) (*v1beta1.Cluster, error)
 	return currentCluster, nil
 }
 
+func (r *ClusterReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status string) error {
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		original := &v1.Cluster{}
+		if err := r.Get(ctx, nn, original); err != nil {
+			return err
+		}
+		original.Status.Status = status
+		if err := r.Status().Update(ctx, original); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts ClusterReconcilerOptions) error {
 	const controllerName = "cluster_controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
@@ -345,5 +373,8 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Cluster{}).
 		Watches(&source.Kind{Type: &infrav1.Infra{}}, &handler.EnqueueRequestForObject{}).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
+		}).
 		Complete(r)
 }

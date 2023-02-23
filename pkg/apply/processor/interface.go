@@ -146,6 +146,7 @@ func ConfirmDeleteNodes() error {
 
 func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
+	logger.Debug("registry nodes is: %+v", registries)
 	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	mirror := registry.New(constants.NewData(cluster.GetName()).RootFSPath(), sshClient, mounts)
 	return mirror.MirrorTo(context.Background(), registries...)

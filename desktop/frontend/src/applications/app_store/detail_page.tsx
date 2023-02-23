@@ -151,13 +151,13 @@ export default function DetailPage() {
           </div> */}
           <div className={clsx(styles.rightInfo, 'ml-4')}>
             <span className={styles.imageSizeText}>
-              {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
+              {appDetail?.size ? formattedSize(appDetail?.size) : 'empty'}
             </span>
             <span className="text-stone-500 text-xs mt-2">大小</span>
           </div>
           <div className={clsx(styles.fixedRightInfo)}>
             <span className={styles.imageSizeText}>
-              {appDetail.size ? formattedSize(appDetail.size) : ''}
+              {appDetail?.size ? formattedSize(appDetail?.size) : ''}
             </span>
           </div>
           {/* <div className={clsx(styles.fixedRightInfo)}>
@@ -184,7 +184,7 @@ export default function DetailPage() {
               </div>
               <span className={styles.markdownTitle}>概览</span>
             </div>
-            {appDetail.type === 'cluster-image' ? (
+            {appDetail?.type === 'cluster-image' ? (
               <div className={styles.appCommand}>
                 <div className={styles.copyBtn} onClick={() => handleCopy(imageCommand)}>
                   <Iconfont iconName="icon-copy" />
@@ -207,7 +207,7 @@ export default function DetailPage() {
           </div>
           <div className={clsx(styles.hiddenScrollWrap, 'grow my-4')}>
             <div className={clsx('absolute w-full space-y-2')}>
-              {appDetail.tags?.map((item) => {
+              {appDetail?.tags?.map((item) => {
                 return (
                   <div
                     key={item.name}

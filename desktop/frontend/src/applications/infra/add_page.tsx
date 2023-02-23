@@ -106,6 +106,10 @@ const AddPage = () => {
     }
   };
 
+  const validForm = (): boolean => {
+    return imageKeyList[imageKey] && validResourcesName(infraForm.infraName);
+  };
+
   const validResourcesName = (str: string): boolean => {
     let pattern = /^[a-z0-9]+([-.][a-z0-9]+)*$/;
     return pattern.test(str);
@@ -138,7 +142,7 @@ const AddPage = () => {
     if (infraName) {
       updateInfraMutation.mutate();
       setIsloading(true);
-    } else if (validResourcesName(infraForm.infraName)) {
+    } else if (validForm()) {
       if (await infraExist(infraForm.infraName)) {
         setInputNameErr(true);
         setNameErrMsg('名称重复');
@@ -147,7 +151,7 @@ const AddPage = () => {
         applyInfraMutation.mutate();
         applyClusterMutation.mutate();
       }
-    } else {
+    } else if (!validResourcesName(infraForm.infraName)) {
       setInputNameErr(true);
     }
   }
