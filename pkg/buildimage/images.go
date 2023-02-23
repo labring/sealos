@@ -15,13 +15,11 @@
 package buildimage
 
 import (
+	"fmt"
 	"io/fs"
 	"path"
 	"path/filepath"
 	"strings"
-
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/buildimage/manifests"
 	"github.com/labring/sealos/pkg/constants"
@@ -30,6 +28,7 @@ import (
 	strutil "github.com/labring/sealos/pkg/utils/strings"
 	"github.com/labring/sealos/pkg/utils/tmpl"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func ParseYamlImages(dir string) ([]string, error) {
@@ -82,12 +81,12 @@ func ParseShimImages(dir string) ([]string, error) {
 	list := sets.NewString()
 	paths, err := file.GetFiles(dir)
 	if err != nil {
-		return nil, errors.Wrap(err, "load image list files error")
+		return nil, fmt.Errorf("load image list files error: %w", err)
 	}
 	for _, p := range paths {
 		images, err := file.ReadLines(p)
 		if err != nil {
-			return nil, errors.Wrap(err, "load image list error")
+			return nil, fmt.Errorf("load image list error: %w", err)
 		}
 		list = list.Insert(images...)
 	}
@@ -97,7 +96,7 @@ func ParseShimImages(dir string) ([]string, error) {
 
 func List(dir string) ([]string, error) {
 	wrapGetImageErr := func(err error, s string) error {
-		return errors.Wrapf(err, "failed to get images in %s", s)
+		return fmt.Errorf("failed to get images in %s: %w", s, err)
 	}
 	chrtDir := path.Join(dir, constants.ChartsDirName)
 	chrtImgs, err := ParseChartImages(chrtDir)

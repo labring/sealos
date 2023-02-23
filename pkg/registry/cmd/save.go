@@ -18,9 +18,8 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"os"
-
-	"github.com/pkg/errors"
 
 	"github.com/docker/docker/api/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -101,7 +100,7 @@ func saveRawCmd() *cobra.Command {
 			is := registry.NewImageSaver(context.Background(), flagsResults.registryPullMaxPullProcs, auth)
 			outImages, err := is.SaveImages(flagsResults.images, flagsResults.registryPullRegistryDir, v1.Platform{OS: "linux", Architecture: flagsResults.registryPullArch})
 			if err != nil {
-				return errors.Wrap(err, "pull registry images is error")
+				return fmt.Errorf("pull registry images is error: %w", err)
 			}
 			logger.Info("pull images list save to local : %+v", outImages)
 			return nil

@@ -15,7 +15,8 @@
 package auth
 
 import (
-	"github.com/pkg/errors"
+	"fmt"
+
 	"golang.org/x/oauth2"
 
 	"github.com/labring/sealos/pkg/auth/conf"
@@ -33,14 +34,14 @@ func Init(config conf.Config) error {
 	var err error
 	ssoClient, err = sso.InitSSO()
 	if err != nil {
-		return errors.Wrap(err, "Init SSO platform failed")
+		return fmt.Errorf("Init SSO platform failed: %w", err)
 	}
 	return nil
 }
 
 func GetLoginRedirect() (string, error) {
 	redirectURL, err := ssoClient.GetRedirectURL()
-	return redirectURL, errors.Wrap(err, "Get redirect url failed")
+	return redirectURL, fmt.Errorf("Get redirect url failed: %w", err)
 }
 
 func GetOAuthToken(state, code string) (*oauth2.Token, error) {
@@ -54,17 +55,17 @@ func GetUserInfo(accessToken string) (*sso.User, error) {
 func GetKubeConfig(accessToken string) (string, error) {
 	user, err := ssoClient.GetUserInfo(accessToken)
 	if err != nil {
-		return "", errors.Wrap(err, "Get user info failed")
+		return "", fmt.Errorf("Get user info failed: %w", err)
 	}
 
 	err = utils.CreateOrUpdateKubeConfig(user.ID)
 	if err != nil {
-		return "", errors.Wrap(err, "Create kube config failed")
+		return "", fmt.Errorf("Create kube config failed: %w", err)
 	}
 	// Wait for user controller to write kubeconfig into status
 	kubeConfig, err := utils.GetKubeConfig(user.ID, 10)
 	if err != nil {
-		return "", errors.Wrap(err, "Create kubeconfig failed")
+		return "", fmt.Errorf("Create kubeconfig failed: %w", err)
 	}
 	return kubeConfig, nil
 }

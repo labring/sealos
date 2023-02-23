@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -29,16 +30,12 @@ import (
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/yaml"
-
-	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/cert"
-
 	v1 "k8s.io/kubernetes/cmd/kubeadm/app/apis/bootstraptoken/v1"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Token struct {
@@ -142,12 +139,12 @@ func discoveryTokenCaCertHash(adminPath string) ([]string, error) {
 	if clusterConfig.CertificateAuthorityData != nil {
 		caCerts, err = cert.ParseCertsPEM(clusterConfig.CertificateAuthorityData)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse CA certificate from kubeconfig")
+			return nil, fmt.Errorf("failed to parse CA certificate from kubeconfig: %w", err)
 		}
 	} else if clusterConfig.CertificateAuthority != "" {
 		caCerts, err = cert.CertsFromFile(clusterConfig.CertificateAuthority)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to load CA certificate referenced by kubeconfig")
+			return nil, fmt.Errorf("failed to load CA certificate referenced by kubeconfig: %w", err)
 		}
 	} else {
 		return nil, errors.New("no CA certificates found in kubeconfig")

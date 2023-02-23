@@ -16,21 +16,16 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
-
-	"sigs.k8s.io/yaml"
-
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
-
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 var shortPrint bool
@@ -88,13 +83,13 @@ func PrintInfo() error {
 	case "yaml":
 		marshalled, err = yaml.Marshal(&OutputInfo)
 		if err != nil {
-			return errors.Wrap(err, "fail to marshal yaml")
+			return fmt.Errorf("fail to marshal yaml: %w", err)
 		}
 		fmt.Println(string(marshalled))
 	case "json":
 		marshalled, err = json.Marshal(&OutputInfo)
 		if err != nil {
-			return errors.Wrap(err, "fail to marshal json")
+			return fmt.Errorf("fail to marshal json: %w", err)
 		}
 		fmt.Println(string(marshalled))
 	default:

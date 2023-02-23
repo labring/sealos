@@ -23,12 +23,6 @@ import (
 	"strings"
 	"sync"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
-	"github.com/labring/sealos/pkg/passwd"
-	"github.com/labring/sealos/pkg/utils/http"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/reference"
@@ -39,12 +33,14 @@ import (
 	dockerjsonmessage "github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/progress"
 	"github.com/docker/docker/pkg/streamformatter"
+	"github.com/labring/sealos/pkg/passwd"
+	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
+	"github.com/labring/sealos/pkg/utils/http"
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/opencontainers/go-digest"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/labring/sealos/pkg/registry/distributionpkg/proxy"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -116,7 +112,7 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
-				return errors.WithMessagef(err, "save domain %s image %s", tmpnameds[0].domain, tmpnameds[0].FullName())
+				return fmt.Errorf("save domain %s image %s: %w", tmpnameds[0].domain, tmpnameds[0].FullName(), err)
 			}
 			outImages = append(outImages, tmpnameds[0].FullName())
 			return nil

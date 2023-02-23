@@ -20,7 +20,6 @@ import (
 	"github.com/containers/buildah/define"
 	encconfig "github.com/containers/ocicrypt/config"
 	enchelpers "github.com/containers/ocicrypt/helpers"
-	"github.com/pkg/errors"
 )
 
 func DecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
@@ -29,7 +28,7 @@ func DecryptConfig(decryptionKeys []string) (*encconfig.DecryptConfig, error) {
 		// decryption
 		dcc, err := enchelpers.CreateCryptoConfig([]string{}, decryptionKeys)
 		if err != nil {
-			return nil, errors.Wrapf(err, "invalid decryption keys")
+			return nil, fmt.Errorf("invalid decryption keys: %w", err)
 		}
 		cc := encconfig.CombineCryptoConfigs([]encconfig.CryptoConfig{dcc})
 		decConfig = cc.DecryptConfig

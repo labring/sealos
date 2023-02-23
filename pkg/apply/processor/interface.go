@@ -16,12 +16,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"path"
 
 	"github.com/containers/storage"
-	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/filesystem/registry"
@@ -33,6 +31,7 @@ import (
 	"github.com/labring/sealos/pkg/utils/maps"
 	"github.com/labring/sealos/pkg/utils/rand"
 	"github.com/labring/sealos/pkg/utils/strings"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 type Interface interface {

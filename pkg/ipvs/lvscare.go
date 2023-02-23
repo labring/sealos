@@ -19,8 +19,6 @@ import (
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/hosts"
-
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,7 +63,7 @@ func podToYaml(pod v1.Pod) ([]byte, error) {
 	const mediaType = runtime.ContentTypeYAML
 	info, ok := runtime.SerializerInfoForMediaType(codecs.SupportedMediaTypes(), mediaType)
 	if !ok {
-		return []byte{}, errors.Errorf("unsupported media type %q", mediaType)
+		return []byte{}, fmt.Errorf("unsupported media type %q", mediaType)
 	}
 
 	encoder := codecs.EncoderForVersion(info.Serializer, gv)

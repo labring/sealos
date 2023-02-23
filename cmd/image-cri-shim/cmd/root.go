@@ -22,15 +22,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/labring/image-cri-shim/pkg/types"
-
-	"github.com/labring/sealos/pkg/version"
-
 	"github.com/labring/image-cri-shim/pkg/shim"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-
+	"github.com/labring/image-cri-shim/pkg/types"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/version"
+	"github.com/spf13/cobra"
 )
 
 var cfg *types.Config
@@ -50,7 +46,7 @@ var rootCmd = &cobra.Command{
 		var err error
 		cfg, err = types.Unmarshal(cfgFile)
 		if err != nil {
-			return errors.Wrap(err, "image shim config load error")
+			return fmt.Errorf("image shim config load error: %w", err)
 		}
 
 		if err = cfg.PreProcess(); err != nil {

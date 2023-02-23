@@ -17,17 +17,16 @@ limitations under the License.
 package types
 
 import (
+	"errors"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
-	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/yaml"
-
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 type CRIVersion string

@@ -17,19 +17,16 @@ limitations under the License.
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/validation/field"
-
-	"github.com/pkg/errors"
-
 	"github.com/docker/docker/api/types"
-	"github.com/spf13/cobra"
-
 	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 func newRegistryImageRmiCmd() *cobra.Command {
