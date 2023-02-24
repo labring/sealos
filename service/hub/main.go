@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cesanta/glog"
-	"github.com/labring/service/hub/server"
+	"github.com/labring/sealos/service/hub/server"
 )
 
 type RestartableServer struct {

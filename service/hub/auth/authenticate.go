@@ -7,7 +7,7 @@ import (
 
 	"github.com/cesanta/glog"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/service/hub/api"
+	"github.com/labring/sealos/service/hub/api"
 	"k8s.io/client-go/tools/clientcmd"
 )
 

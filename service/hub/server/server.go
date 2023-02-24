@@ -15,8 +15,8 @@ import (
 	"github.com/cesanta/glog"
 	"github.com/docker/distribution/registry/auth/token"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/service/hub/api"
-	"github.com/labring/service/hub/auth"
+	"github.com/labring/sealos/service/hub/api"
+	"github.com/labring/sealos/service/hub/auth"
 )
 
 var (

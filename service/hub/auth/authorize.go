@@ -6,7 +6,7 @@ import (
 	"github.com/cesanta/glog"
 	imagehubv1 "github.com/labring/sealos/controllers/imagehub/api/v1"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
-	"github.com/labring/service/hub/api"
+	"github.com/labring/sealos/service/hub/api"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
