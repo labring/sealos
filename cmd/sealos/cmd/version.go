@@ -106,7 +106,7 @@ func PrintInfo() error {
 		missinfo = append(missinfo, "cri runtime version")
 	}
 	if OutputInfo.KubernetesVersion == nil || OutputInfo.CriRuntimeVersion == nil {
-		fmt.Printf("failed to get %s\ncheck kubernetes status or use commend \"sealos run\" to launch kubernetes\n", strings.Join(missinfo, " and "))
+		fmt.Printf("WARNING: Failed to get %s.\nCheck kubernetes status or use command \"sealos run\" to launch kubernetes\n", strings.Join(missinfo, " and "))
 	}
 
 	return nil
