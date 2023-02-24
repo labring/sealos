@@ -16,21 +16,17 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
-
+	"github.com/spf13/cobra"
 	"sigs.k8s.io/yaml"
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-
+	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/version"
-
-	"github.com/spf13/cobra"
 )
 
 var shortPrint bool
@@ -88,19 +84,19 @@ func PrintInfo() error {
 	case "yaml":
 		marshalled, err = yaml.Marshal(&OutputInfo)
 		if err != nil {
-			return errors.Wrap(err, "fail to marshal yaml")
+			return fmt.Errorf("fail to marshal yaml: %w", err)
 		}
 		fmt.Println(string(marshalled))
 	case "json":
 		marshalled, err = json.Marshal(&OutputInfo)
 		if err != nil {
-			return errors.Wrap(err, "fail to marshal json")
+			return fmt.Errorf("fail to marshal json: %w", err)
 		}
 		fmt.Println(string(marshalled))
 	default:
 		// There is a bug in the program if we hit this case.
 		// However, we follow a policy of never panicking.
-		return fmt.Errorf("VersionOptions were not validated: --output=%q should have been rejected", output)
+		return fmt.Errorf("versionOptions were not validated: --output=%q should have been rejected", output)
 	}
 	missinfo := []string{}
 	if OutputInfo.KubernetesVersion == nil {

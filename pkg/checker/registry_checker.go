@@ -17,20 +17,19 @@ limitations under the License.
 package checker
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/template"
-	"github.com/labring/sealos/pkg/utils/iputils"
-
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/registry"
 	"github.com/labring/sealos/pkg/utils/yaml"
@@ -70,7 +69,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	registryConfig := "/etc/registry/registry_config.yml"
 	if cfg, err := fileutil.ReadAll(registryConfig); err != nil {
-		status.Error = errors.Wrap(err, "read registry config error").Error()
+		status.Error = fmt.Errorf("read registry config error: %w", err).Error()
 	} else {
 		cfgMap, _ := yaml.UnmarshalData(cfg)
 		status.Port, _, _ = unstructured.NestedString(cfgMap, "http", "addr")
@@ -86,7 +85,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
 	if err != nil {
-		status.Error = errors.Wrap(err, "get ssh interface error").Error()
+		status.Error = fmt.Errorf("get ssh interface error: %w", err).Error()
 		return nil
 	}
 	root := constants.NewData(cluster.Name).RootFSPath()
@@ -95,7 +94,7 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
 	regInterface, err := registry.NewRegistryForDomain(status.RegistryDomain, regInfo.Username, regInfo.Password)
 	if err != nil {
-		status.Error = errors.Wrap(err, "get registry interface error").Error()
+		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil
 	}
 	if err = regInterface.Ping(); err != nil {

@@ -18,3 +18,5 @@
 - [CHANGELOG-4.1.5-alpha1.md](./CHANGELOG-4.1.5-alpha1.md)
 - [CHANGELOG-4.1.5-alpha2.md](./CHANGELOG-4.1.5-alpha2.md)
 - [CHANGELOG-4.1.5-rc1.md](./CHANGELOG-4.1.5-rc1.md)
+- [CHANGELOG-4.1.5-rc2.md](./CHANGELOG-4.1.5-rc2.md)
+- [CHANGELOG-4.1.5-rc3.md](./CHANGELOG-4.1.5-rc3.md)

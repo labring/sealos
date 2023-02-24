@@ -19,11 +19,8 @@ package kubernetes
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
-
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
 
 	apps "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -34,6 +31,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/apimachinery/pkg/util/wait"
 	clientset "k8s.io/client-go/kubernetes"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -80,11 +79,11 @@ func NewKubeIdempotency(client clientset.Interface) Idempotency {
 func (ki *kubeIdempotency) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 	if _, err := ki.client.CoreV1().ConfigMaps(cm.ObjectMeta.Namespace).Create(context.TODO(), cm, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create ConfigMap")
+			return fmt.Errorf("unable to create ConfigMap: %w", err)
 		}
 
 		if _, err := ki.client.CoreV1().ConfigMaps(cm.ObjectMeta.Namespace).Update(context.TODO(), cm, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update ConfigMap")
+			return fmt.Errorf("unable to update ConfigMap: %w", err)
 		}
 	}
 	return nil
@@ -94,11 +93,11 @@ func (ki *kubeIdempotency) CreateOrUpdateConfigMap(cm *v1.ConfigMap) error {
 func (ki *kubeIdempotency) CreateOrUpdateSecret(secret *v1.Secret) error {
 	if _, err := ki.client.CoreV1().Secrets(secret.ObjectMeta.Namespace).Create(context.TODO(), secret, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create secret")
+			return fmt.Errorf("unable to create secret: %w", err)
 		}
 
 		if _, err := ki.client.CoreV1().Secrets(secret.ObjectMeta.Namespace).Update(context.TODO(), secret, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update secret")
+			return fmt.Errorf("unable to update secret: %w", err)
 		}
 	}
 	return nil
@@ -110,7 +109,7 @@ func (ki *kubeIdempotency) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) e
 		// Note: We don't run .Update here afterwards as that's probably not required
 		// Only thing that could be updated is annotations/labels in .metadata, but we don't use that currently
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create serviceaccount")
+			return fmt.Errorf("unable to create serviceaccount: %w", err)
 		}
 	}
 	return nil
@@ -120,11 +119,11 @@ func (ki *kubeIdempotency) CreateOrUpdateServiceAccount(sa *v1.ServiceAccount) e
 func (ki *kubeIdempotency) CreateOrUpdateDeployment(deploy *apps.Deployment) error {
 	if _, err := ki.client.AppsV1().Deployments(deploy.ObjectMeta.Namespace).Create(context.TODO(), deploy, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create deployment")
+			return fmt.Errorf("unable to create deployment: %w", err)
 		}
 
 		if _, err := ki.client.AppsV1().Deployments(deploy.ObjectMeta.Namespace).Update(context.TODO(), deploy, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update deployment")
+			return fmt.Errorf("unable to update deployment: %w", err)
 		}
 	}
 	return nil
@@ -134,11 +133,11 @@ func (ki *kubeIdempotency) CreateOrUpdateDeployment(deploy *apps.Deployment) err
 func (ki *kubeIdempotency) CreateOrUpdateDaemonSet(ds *apps.DaemonSet) error {
 	if _, err := ki.client.AppsV1().DaemonSets(ds.ObjectMeta.Namespace).Create(context.TODO(), ds, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create daemonset")
+			return fmt.Errorf("unable to create daemonset: %w", err)
 		}
 
 		if _, err := ki.client.AppsV1().DaemonSets(ds.ObjectMeta.Namespace).Update(context.TODO(), ds, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update daemonset")
+			return fmt.Errorf("unable to update daemonset: %w", err)
 		}
 	}
 	return nil
@@ -160,11 +159,11 @@ func (ki *kubeIdempotency) DeleteDeploymentForeground(namespace, name string) er
 func (ki *kubeIdempotency) CreateOrUpdateRole(role *rbac.Role) error {
 	if _, err := ki.client.RbacV1().Roles(role.ObjectMeta.Namespace).Create(context.TODO(), role, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create RBAC role")
+			return fmt.Errorf("unable to create RBAC role: %w", err)
 		}
 
 		if _, err := ki.client.RbacV1().Roles(role.ObjectMeta.Namespace).Update(context.TODO(), role, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update RBAC role")
+			return fmt.Errorf("unable to update RBAC role: %w", err)
 		}
 	}
 	return nil
@@ -174,11 +173,11 @@ func (ki *kubeIdempotency) CreateOrUpdateRole(role *rbac.Role) error {
 func (ki *kubeIdempotency) CreateOrUpdateRoleBinding(roleBinding *rbac.RoleBinding) error {
 	if _, err := ki.client.RbacV1().RoleBindings(roleBinding.ObjectMeta.Namespace).Create(context.TODO(), roleBinding, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create RBAC rolebinding")
+			return fmt.Errorf("unable to create RBAC rolebinding: %w", err)
 		}
 
 		if _, err := ki.client.RbacV1().RoleBindings(roleBinding.ObjectMeta.Namespace).Update(context.TODO(), roleBinding, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update RBAC rolebinding")
+			return fmt.Errorf("unable to update RBAC rolebinding: %w", err)
 		}
 	}
 	return nil
@@ -188,11 +187,11 @@ func (ki *kubeIdempotency) CreateOrUpdateRoleBinding(roleBinding *rbac.RoleBindi
 func (ki *kubeIdempotency) CreateOrUpdateClusterRole(clusterRole *rbac.ClusterRole) error {
 	if _, err := ki.client.RbacV1().ClusterRoles().Create(context.TODO(), clusterRole, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create RBAC clusterrole")
+			return fmt.Errorf("unable to create RBAC clusterrole: %w", err)
 		}
 
 		if _, err := ki.client.RbacV1().ClusterRoles().Update(context.TODO(), clusterRole, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update RBAC clusterrole")
+			return fmt.Errorf("unable to update RBAC clusterrole: %w", err)
 		}
 	}
 	return nil
@@ -202,11 +201,11 @@ func (ki *kubeIdempotency) CreateOrUpdateClusterRole(clusterRole *rbac.ClusterRo
 func (ki *kubeIdempotency) CreateOrUpdateClusterRoleBinding(clusterRoleBinding *rbac.ClusterRoleBinding) error {
 	if _, err := ki.client.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{}); err != nil {
 		if !apierrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "unable to create RBAC clusterrolebinding")
+			return fmt.Errorf("unable to create RBAC clusterrolebinding: %w", err)
 		}
 
 		if _, err := ki.client.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterRoleBinding, metav1.UpdateOptions{}); err != nil {
-			return errors.Wrap(err, "unable to update RBAC clusterrolebinding")
+			return fmt.Errorf("unable to update RBAC clusterrolebinding: %w", err)
 		}
 	}
 	return nil
@@ -232,7 +231,7 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 
 		oldData, err := json.Marshal(n)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to marshal unmodified node %q into JSON", n.Name)
+			return false, fmt.Errorf("failed to marshal unmodified node %q into JSON: %w", n.Name, err)
 		}
 
 		// Execute the mutating function
@@ -240,12 +239,12 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 
 		newData, err := json.Marshal(n)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to marshal modified node %q into JSON", n.Name)
+			return false, fmt.Errorf("failed to marshal modified node %q into JSON: %w", n.Name, err)
 		}
 
 		patchBytes, err := strategicpatch.CreateTwoWayMergePatch(oldData, newData, v1.Node{})
 		if err != nil {
-			return false, errors.Wrap(err, "failed to create two way merge patch")
+			return false, fmt.Errorf("failed to create two way merge patch: %w", err)
 		}
 
 		if _, err := ki.client.CoreV1().Nodes().Patch(context.TODO(), n.Name, types.StrategicMergePatchType, patchBytes, metav1.PatchOptions{}); err != nil {
@@ -253,7 +252,7 @@ func (ki *kubeIdempotency) patchNodeOnce(nodeName string, patchFn func(*v1.Node)
 				logger.Debug("Temporarily unable to update node metadata due to conflict (will retry)")
 				return false, nil
 			}
-			return false, errors.Wrapf(err, "error patching node %q through apiserver", n.Name)
+			return false, fmt.Errorf("error patching node %q through apiserver: %w", n.Name, err)
 		}
 
 		return true, nil

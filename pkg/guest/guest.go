@@ -19,8 +19,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/labring/sealos/fork/golang/expansion"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
@@ -54,7 +52,7 @@ func (d *Default) Apply(cluster *v2.Cluster, mounts []v2.MountImage) error {
 		adminFile := runtime.GetConstantData(cluster.Name).AdminFile()
 		data, err := fileutil.ReadAll(adminFile)
 		if err != nil {
-			return errors.Wrap(err, "read admin.conf error in guest")
+			return fmt.Errorf("read admin.conf error in guest: %w", err)
 		}
 		master0IP := cluster.GetMaster0IP()
 		outData := strings.ReplaceAll(string(data), runtime.DefaultAPIServerDomain, master0IP)

@@ -1,4 +1,4 @@
-@import "../../styles/mixin.scss";
+@import '../../styles/mixin.scss';
 
 .desktop {
   position: absolute;
@@ -15,10 +15,10 @@
     grid-template-rows: repeat(8, calc(100% / 8));
     grid-auto-flow: column;
     grid-column-gap: 5px;
-  
+
     .dskItem {
       height: 100%;
-    
+
       .dskApp {
         height: 100%;
         cursor: default;
@@ -29,7 +29,7 @@
         justify-content: center;
         border: 1px solid transparent;
         user-select: none;
-      
+
         &.active {
           background: rgba(255, 255, 255, 0.12);
           border: 1px dotted white;
@@ -38,7 +38,7 @@
         &:hover {
           background: rgba(255, 255, 255, 0.3);
         }
-      
+
         .dskIcon {
           width: min(50%, 34px);
           min-width: 20px;
@@ -46,9 +46,9 @@
           text-align: center;
           display: flex;
           align-items: flex-end;
-          flex-shrink: 0
+          flex-shrink: 0;
         }
-      
+
         .appName {
           max-width: 100%;
           height: 36px;
@@ -76,14 +76,14 @@
   width: 640px;
   height: min(100% - 24px, 720px);
   left: 0;
-  &[data-align="center"] {
+  &[data-align='center'] {
     margin-left: auto;
     margin-right: auto;
     right: 0;
     text-align: center;
   }
 
-  &[data-align="left"] {
+  &[data-align='left'] {
     left: 8px;
   }
 
@@ -97,14 +97,14 @@
   z-index: 9999;
   box-sizing: border-box;
 
-  &[data-hide="true"] {
+  &[data-hide='true'] {
     transform: translateY(100px);
     opacity: 0;
     pointer-events: none;
   }
 }
 
-body[data-theme="dark"] .startMenu {
+body[data-theme='dark'] .startMenu {
   --bg1: rgba(36, 36, 36, 0.8);
   --bg2: rgba(255, 255, 255, 0.1);
   --bg3: rgba(0, 0, 0, 0.15);
@@ -120,22 +120,22 @@ body[data-theme="dark"] .startMenu {
   position: relative;
   height: calc(100% - 64px);
 
-  &[data-allapps="false"] {
+  &[data-allapps='false'] {
     opacity: 0;
     transition: cubic-bezier(0, 0.58, 0.42, 1) 300ms;
   }
 
-  &[data-allapps="true"] {
+  &[data-allapps='true'] {
     transform: translateX(-640px);
     transition: cubic-bezier(0, 0.58, 0.42, 1) 300ms;
   }
 }
 
 .stmenu {
-  &[data-allapps="false"] {
+  &[data-allapps='false'] {
     opacity: 1;
   }
-  &[data-allapps="true"] {
+  &[data-allapps='true'] {
     opacity: 0;
   }
 }
@@ -344,7 +344,7 @@ body[data-theme="dark"] .startMenu {
   transition: all ease-in-out 200ms;
   transform-origin: center;
 
-  &[data-alpha="true"] {
+  &[data-alpha='true'] {
     transform: scale(0);
     opacity: 0;
     pointer-events: none;
@@ -392,7 +392,7 @@ body[data-theme="dark"] .startMenu {
   transform-origin: center;
   transition: all ease-in-out 200ms;
 
-  &[data-alpha="false"] {
+  &[data-alpha='false'] {
     opacity: 0;
     transform: scale(2);
     pointer-events: none;

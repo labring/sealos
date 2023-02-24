@@ -16,19 +16,17 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path"
 
 	"golang.org/x/sync/errgroup"
-	"k8s.io/apimachinery/pkg/util/json"
-
-	"github.com/labring/sealos/pkg/utils/file"
-
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/json"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
@@ -118,7 +116,7 @@ func (k *KubeadmRuntime) UpdateCertByInit() error {
 		return err
 	}
 	if err := k.CreateKubeConfig(); err != nil {
-		return errors.Wrap(err, "failed to generate kubernetes conf")
+		return fmt.Errorf("failed to generate kubernetes conf: %w", err)
 	}
 	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], AdminConf, ControllerConf, SchedulerConf, KubeletConf)
 }

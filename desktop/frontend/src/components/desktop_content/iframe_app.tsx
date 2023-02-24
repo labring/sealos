@@ -1,6 +1,6 @@
 import { Spinner } from '@fluentui/react-components';
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { BuildInAction } from '../../interfaces/kubernetes';
 import request from '../../services/request';
 import { TApp } from '../../stores/app';
@@ -9,7 +9,9 @@ import { cleanName } from '../../utils/strings';
 
 export default function IframApp(props: { appItem: TApp }) {
   const { appItem } = props;
-  const time = useRef(0);
+  const [loadingTime, setLoadingTime] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const loadingTimer = useRef<any>(null);
   const session = useSessionStore((s) => s.session);
 
   const [url, setUrl] = useState(appItem.data?.url || '');
@@ -24,7 +26,6 @@ export default function IframApp(props: { appItem: TApp }) {
       refetchInterval: url === '' ? 1000 : false, //轮询时间
       enabled: url === '', // 只有 url 为 '' 的时候需要请求
       onSuccess(data: any) {
-        time.current++;
         let controller = new AbortController();
         if (data?.data?.status === 200 && data?.data?.iframe_page) {
           setTimeout(() => {
@@ -44,19 +45,34 @@ export default function IframApp(props: { appItem: TApp }) {
     }
   );
 
+  useEffect(() => {
+    loadingTimer.current = setInterval(() => {
+      setLoadingTime((state) => state + 1);
+    }, 1000);
+
+    return () => {
+      clearInterval;
+    };
+  }, []);
+
   return (
     <div className="h-full">
-      {url === '' ? (
+      {loading && (
         <div className="h-full grid content-center">
-          <Spinner label={'应用启动中... ' + time.current + ' 秒'} size={'large'} />
+          <Spinner label={'应用启动中... ' + loadingTime + ' 秒'} size={'large'} />
         </div>
-      ) : (
+      )}
+      {!!url && (
         <iframe
           src={url}
-          allow="camera;microphone"
+          allow="camera;microphone;"
           className="w-full h-full"
           frameBorder={0}
-          id={`app-window-${appItem.name}`}
+          id={`app-window-${appItem.key}`}
+          onLoad={() => {
+            clearInterval(loadingTimer.current);
+            setLoading(false);
+          }}
         />
       )}
     </div>

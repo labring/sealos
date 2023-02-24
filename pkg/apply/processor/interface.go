@@ -16,10 +16,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"path"
 
 	"github.com/containers/storage"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/buildah"
@@ -146,6 +146,7 @@ func ConfirmDeleteNodes() error {
 
 func MirrorRegistry(cluster *v2.Cluster, mounts []v2.MountImage) error {
 	registries := cluster.GetRegistryIPAndPortList()
+	logger.Debug("registry nodes is: %+v", registries)
 	sshClient := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	mirror := registry.New(constants.NewData(cluster.GetName()).RootFSPath(), sshClient, mounts)
 	return mirror.MirrorTo(context.Background(), registries...)

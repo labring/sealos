@@ -17,12 +17,12 @@ limitations under the License.
 package types
 
 import (
+	"errors"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
-	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 

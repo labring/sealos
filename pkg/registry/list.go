@@ -19,6 +19,8 @@ package registry
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/modood/table"
 	"github.com/opencontainers/go-digest"
 	"k8s.io/apimachinery/pkg/util/json"
@@ -49,19 +51,16 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 	if filter.nameStrategy == FilterStrategyEquals {
 		repos = []string{filter.Name}
 	} else {
-		repos, err = reg.Repositories(func(data []string) []string {
+		repos, _ = reg.Repositories(func(data []string) []string {
 			return filter.Run(data, FilterTypeName)
 		})
-		if err != nil {
-			logger.Error("list image is error: %+v", err)
-			return
-		}
 	}
 
 	var imageVersionList bool
+	repoLens := sets.NewString()
 	defer func() {
 		if !enableJSON {
-			logger.Info("Image count %d", len(repos))
+			logger.Info("Image count %d", repoLens.Len())
 			if imageVersionList {
 				logger.Info("Images Version count %d", len(listImage))
 			}
@@ -71,23 +70,35 @@ func (is *DefaultImage) ListImages(registryName, search string, enableJSON bool)
 		tags, _ := reg.Tags(repo)
 		tags = filter.Run(tags, FilterTypeTag)
 		if len(tags) == 0 {
-			listImage = append(listImage, imageOutputParams{
-				RegistryName: registryName,
-				ImageName:    repo,
-				Tag:          "<none>",
-				ImageID:      "<none>",
-			})
+			continue
 		} else {
 			imageVersionList = true
 			for _, tag := range tags {
+				var imageDigest digest.Digest
 				var imageID digest.Digest
-				imageID, _ = reg.ManifestDigest(repo, tag)
+				imageDigestStr, imageIDStr, imageIDShortStr := none, none, none
+				imageDigest, _ = reg.ManifestDigest(repo, tag)
+				manifest, _ := reg.ManifestV2(repo, tag)
+				if imageDigest != "" {
+					imageDigestStr = imageDigest.String()
+				}
+				if manifest != nil {
+					imageID = manifest.Config.Digest
+					imageIDStr = imageID.Hex()
+					imageIDShortStr = imageIDStr[:12]
+				}
+				if imageIDStr == none && imageDigestStr == none {
+					continue
+				}
 				listImage = append(listImage, imageOutputParams{
 					RegistryName: registryName,
 					ImageName:    repo,
 					Tag:          tag,
-					ImageID:      imageID.String(),
+					ImageID:      imageIDStr,
+					ImageIDShort: imageIDShortStr,
+					ImageDigest:  imageDigestStr,
 				})
+				repoLens = repoLens.Insert(repo)
 			}
 		}
 	}
@@ -107,5 +118,7 @@ type imageOutputParams struct {
 	RegistryName string
 	ImageName    string
 	Tag          string
-	ImageID      string
+	ImageID      string `table:"-"`
+	ImageIDShort string `table:"ImageID" json:"-"`
+	ImageDigest  string `table:"-"`
 }

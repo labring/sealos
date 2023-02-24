@@ -179,7 +179,7 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			// can't modify volume type when volume being used. can't smaller size when volume being used.
 			//if !reflect.DeepEqual(cur.Disks, d.Disks) {
 			//	if err := a.ReconcileDisks(infra, cur, d.Disks, driver); err != nil {
-			//		return fmt.Errorf("ReconcileDisks failed: %v", err)
+			//		return fmt.Errorf("reconcileDisks failed: %v", err)
 			//	}
 			//}
 

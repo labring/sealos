@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "prepare": "husky install",
+    "formatFrontend": "./desktop/frontend/node_modules/.bin/prettier --config \"./desktop/frontend/.prettierrc.js\" --write \"./desktop/frontend/src/**/*.{ts,tsx,scss}\""
+  },
+  "devDependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.2"
+  },
+  "lint-staged": {
+    "./desktop/frontend/src/**/*.{ts,tsx,scss}": "npm run formatFrontend"
+  }
+}

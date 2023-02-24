@@ -16,10 +16,10 @@ package sso
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	casdoorAuth "github.com/casdoor/casdoor-go-sdk/auth"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/labring/sealos/pkg/auth/conf"
@@ -107,7 +107,7 @@ type Provider struct {
 func NewCasdoorClient() (*CasdoorClient, error) {
 	initData, err := readInitDataFromFile()
 	if err != nil {
-		return nil, errors.Wrap(err, "Read Casdoor init data failed")
+		return nil, fmt.Errorf("read Casdoor init data failed: %w", err)
 	}
 	client := &CasdoorClient{
 		Endpoint:     conf.GlobalConfig.SSOEndpoint,
@@ -142,7 +142,7 @@ func (c *CasdoorClient) GetToken(state, code string) (*oauth2.Token, error) {
 func (c *CasdoorClient) GetUserInfo(accessToken string) (*User, error) {
 	casdoorUser, err := casdoorAuth.ParseJwtToken(accessToken)
 	if err != nil {
-		return nil, errors.Wrap(err, "Parse Jwt token failed")
+		return nil, fmt.Errorf("parse Jwt token failed: %w", err)
 	}
 	return &User{
 		ID:     casdoorUser.Id,
@@ -158,11 +158,11 @@ func readInitDataFromFile() (*CasdoorInitData, error) {
 	}
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, errors.Wrap(err, "Read init data failed")
+		return nil, fmt.Errorf("read init data failed: %w", err)
 	}
 	var initData CasdoorInitData
 	if err := json.Unmarshal(data, &initData); err != nil {
-		return nil, errors.Wrap(err, "Unmarshal init data failed")
+		return nil, fmt.Errorf("unmarshal init data failed: %w", err)
 	}
 	return &initData, nil
 }

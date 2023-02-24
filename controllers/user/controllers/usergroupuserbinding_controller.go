@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	"github.com/labring/sealos/controllers/user/controllers/cache"
@@ -27,7 +28,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +97,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleGenerate(ctx context.Con
 			clusterRole.Annotations = map[string]string{userAnnotationOwnerKey: userName}
 			clusterRole.Rules = []rbacv1.PolicyRule{
 				{
-					Verbs:         []string{"get", "watch", "list"},
+					Verbs:         []string{"get", "watch"},
 					APIGroups:     []string{""},
 					Resources:     []string{"namespaces"},
 					ResourceNames: namespaceList,
@@ -105,7 +105,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleGenerate(ctx context.Con
 			}
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create user UserGroupBinding generate clusterRole")
+			return fmt.Errorf("unable to create user UserGroupBinding generate clusterRole: %w", err)
 		}
 		r.Logger.V(1).Info("create or update user UserGroupBinding generate clusterRole", "OperationResult", change)
 		return nil
@@ -133,7 +133,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleGenerate(ctx context.Con
 			}
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create user UserGroupBinding generate clusterRoleBinding")
+			return fmt.Errorf("unable to create user UserGroupBinding generate clusterRoleBinding: %w", err)
 		}
 		r.Logger.V(1).Info("create or update user UserGroupBinding generate clusterRoleBinding", "OperationResult", change)
 		return nil
@@ -184,7 +184,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBinding(ctx context.Cont
 
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create user UserGroupBinding clusterRoleBinding")
+			return fmt.Errorf("unable to create user UserGroupBinding clusterRoleBinding: %w", err)
 		}
 		r.Logger.V(1).Info("create or update user UserGroupBinding clusterRoleBinding", "OperationResult", change)
 		return nil
@@ -227,7 +227,7 @@ func (r *UserGroupUserBindingController) syncClusterRoleBindingByOwner(ctx conte
 
 				return nil
 			}); err != nil {
-				return errors.Wrap(err, "unable to create owner user UserGroupBinding clusterRoleBinding")
+				return fmt.Errorf("unable to create owner user UserGroupBinding clusterRoleBinding: %w", err)
 			}
 			r.Logger.V(1).Info("create or update owner user UserGroupBinding clusterRoleBinding", "OperationResult", change)
 			return nil
@@ -289,7 +289,7 @@ func (r *UserGroupUserBindingController) syncRoleBinding(ctx context.Context, ug
 
 					return nil
 				}); err != nil {
-					return errors.Wrap(err, "unable to create namespace UserGroupBinding roleBinding")
+					return fmt.Errorf("unable to create namespace UserGroupBinding roleBinding: %w", err)
 				}
 				r.Logger.V(1).Info("create or update namespace UserGroupBinding roleBinding", "OperationResult", change, "user", ugBinding.Subject.Name, "namespace", namespace.Name)
 				return nil

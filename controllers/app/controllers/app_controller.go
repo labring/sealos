@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright 2023.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,10 +19,12 @@ package controllers
 import (
 	"context"
 
-	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	appv1 "github.com/labring/sealos/controllers/app/api/v1"
 )
 
 // AppReconciler reconciles a App object
@@ -43,13 +45,12 @@ type AppReconciler struct {
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.13.0/pkg/reconcile
 func (r *AppReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	//_ = log.FromContext(ctx)
-	app := &appv1.App{}
-	if err := r.Get(ctx, req.NamespacedName, app); err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	_ = log.FromContext(ctx)
+
+	// TODO(user): your logic here
+
 	return ctrl.Result{}, nil
 }
 

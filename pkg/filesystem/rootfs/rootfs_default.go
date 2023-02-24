@@ -22,7 +22,6 @@ import (
 	"io/fs"
 	"path"
 
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -71,16 +70,16 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 			}
 			err := renderENV(src.MountPoint, ipList, envProcessor)
 			if err != nil {
-				return errors.Wrap(err, "failed to render env")
+				return fmt.Errorf("failed to render env: %w", err)
 			}
 			dirs, err := file.StatDir(src.MountPoint, true)
 			if err != nil {
-				return errors.Wrap(err, "failed to stat files")
+				return fmt.Errorf("failed to stat files: %w", err)
 			}
 			if len(dirs) != 0 {
 				_, err = exec.RunBashCmd(fmt.Sprintf(constants.DefaultChmodBash, src.MountPoint))
 				if err != nil {
-					return errors.Wrap(err, "run chmod to rootfs failed")
+					return fmt.Errorf("run chmod to rootfs failed: %w", err)
 				}
 			}
 			return nil

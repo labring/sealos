@@ -19,10 +19,10 @@ package v1
 import (
 	"fmt"
 
+	"github.com/labring/sealos/controllers/infra/common"
 	v1bata1 "github.com/labring/sealos/pkg/types/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/kustomize/kyaml/resid"
 )
 
 /*
@@ -251,7 +251,7 @@ type InfraList struct {
 func (i *Infra) GetInstancesAndVolumesTag() string {
 	namespace := i.Namespace
 	if namespace == "" {
-		namespace = resid.DefaultNamespace
+		namespace = common.DefaultNamespace
 	}
 	// TODO maybe we also needs a cluster identify
 	return fmt.Sprintf("%s/%s", namespace, i.Name)

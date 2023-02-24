@@ -35,15 +35,28 @@ spec:
           spec:
             description: AppSpec defines the desired state of App
             properties:
-              uiEndPoints:
+              data:
                 properties:
-                  name:
-                    type: string
-                  theme:
+                  desc:
                     type: string
                   url:
                     type: string
                 type: object
+              icon:
+                type: string
+              menuData:
+                properties:
+                  helpDocs:
+                    type: string
+                  helpDropDown:
+                    type: boolean
+                  nameColor:
+                    type: string
+                type: object
+              name:
+                type: string
+              type:
+                type: string
             type: object
           status:
             description: AppStatus defines the observed state of App

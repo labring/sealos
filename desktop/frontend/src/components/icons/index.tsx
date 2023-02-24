@@ -1,10 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
-import React from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { fas } from '@fortawesome/free-solid-svg-icons'
-import { far } from '@fortawesome/free-regular-svg-icons'
+import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { fas } from '@fortawesome/free-solid-svg-icons';
+import { far } from '@fortawesome/free-regular-svg-icons';
 
-import styles from './index.module.scss'
+import styles from './index.module.scss';
 
 const Index = (props: any) => {
   let src = `/images/icons/${(props.dir ? props.dir + '/' : '') + props.src}.png`;
@@ -14,12 +14,12 @@ const Index = (props: any) => {
   const clickDispatch = (event: React.MouseEvent<HTMLDivElement>) => {
     var action = {
       type: event.currentTarget.dataset.action,
-      payload: event.currentTarget.dataset.payload,
-    }
+      payload: event.currentTarget.dataset.payload
+    };
     if (action.type) {
       // dispatch(action)
     }
-  }
+  };
   if (props.fafa) {
     return (
       <div
@@ -37,14 +37,12 @@ const Index = (props: any) => {
             width: props.width,
             height: props.height || props.width,
             color: props.color || null,
-            margin: props.margin || null,
+            margin: props.margin || null
           }}
-          icon={
-            props.reg == null ? fas[props.fafa] : far[props.fafa]
-          }
+          icon={props.reg == null ? fas[props.fafa] : far[props.fafa]}
         />
       </div>
-    )
+    );
   }
   return (
     <img

@@ -24,14 +24,13 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
 func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	var err error
 	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, newNodesIPList...); err != nil {
-		return errors.Wrap(err, "join nodes wait for ssh ready time out")
+		return fmt.Errorf("join nodes wait for ssh ready time out: %w", err)
 	}
 
 	masters := k.getMasterIPListAndHTTPSPort()

@@ -5,4 +5,4 @@ COPY bin/service-hub-$TARGETARCH /manager
 EXPOSE 5001
 USER 65532:65532
 
-ENTRYPOINT "/manager"
+ENTRYPOINT ["/manager"]

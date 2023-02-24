@@ -26,7 +26,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/strings"
 
-	"github.com/pkg/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -98,7 +97,7 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	logger.Info("start to init filesystem join masters...")
 	var err error
 	if err = ssh.WaitSSHReady(k.getSSHInterface(), 6, masters...); err != nil {
-		return errors.Wrap(err, "join masters wait for ssh ready time out")
+		return fmt.Errorf("join masters wait for ssh ready time out: %w", err)
 	}
 
 	if err = k.CopyStaticFiles(masters); err != nil {

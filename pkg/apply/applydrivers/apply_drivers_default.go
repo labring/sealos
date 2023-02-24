@@ -115,14 +115,15 @@ func (c *Applier) getWriteBackObjects() []interface{} {
 
 func (c *Applier) initStatus() {
 	c.ClusterDesired.Status.Phase = v2.ClusterInProcess
-	c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
+	if c.ClusterDesired.Status.Conditions == nil {
+		c.ClusterDesired.Status.Conditions = make([]v2.ClusterCondition, 0)
+	}
 }
 
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
-// todo(lingdie): use appErr to generate cmdPhase for each cmd and maintain a error map for images
 func (c *Applier) updateStatus(clusterErr error, appErr error) {
-	// update cluster status using clusterErr
+	// update cluster condition using clusterErr
 	var condition v2.ClusterCondition
 	if clusterErr != nil {
 		condition = v2.NewFailedClusterCondition(clusterErr.Error())
@@ -133,6 +134,20 @@ func (c *Applier) updateStatus(clusterErr error, appErr error) {
 		c.ClusterDesired.Status.Phase = v2.ClusterSuccess
 	}
 	c.ClusterDesired.Status.Conditions = v2.UpdateCondition(c.ClusterDesired.Status.Conditions, condition)
+
+	// update command condition using appErr
+	var cmdCondition v2.CommandCondition
+	if appErr != nil {
+		if errors.Is(appErr, processor.ErrCancelled) {
+			cmdCondition = v2.NewCancelledCommandCondition(appErr.Error())
+		} else {
+			cmdCondition = v2.NewFailedCommandCondition(appErr.Error())
+		}
+	} else {
+		cmdCondition = v2.NewSuccessCommandCondition()
+	}
+	cmdCondition.Images = c.RunNewImages
+	c.ClusterDesired.Status.CommandConditions = v2.UpdateCommandCondition(c.ClusterDesired.Status.CommandConditions, cmdCondition)
 }
 
 func (c *Applier) reconcileCluster() (clusterErr error, appErr error) {

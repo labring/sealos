@@ -31,7 +31,7 @@ jobs:
 
       - name: Resolve Modules
         id: set-matrix
-        run: sh ./scripts/resolve-modules.sh ./webhooks
+        run: bash ./scripts/resolve-modules.sh ./webhooks
 
   golangci-lint:
     needs: [ resolve-modules ]

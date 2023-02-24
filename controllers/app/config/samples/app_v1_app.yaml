@@ -3,4 +3,13 @@ kind: App
 metadata:
   name: app-sample
 spec:
-  # TODO(user): Add fields here
+  name: laf
+  icon:
+  type: iframe
+  data:
+    url: https://console.lafyun.com/
+    desc:
+  menuData:
+    nameColor: text-black
+    helpDropDown: false
+    helpDocs:

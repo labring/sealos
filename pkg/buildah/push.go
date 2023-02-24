@@ -62,6 +62,9 @@ type pushOptions struct {
 	encryptionKeys     []string
 	encryptLayers      []int
 	insecure           bool
+
+	// TODO: remove this flag once we have a better way to handle image cr pushing to the dest registry
+	crOption CrOpionEnum
 }
 
 func newDefaultPushOptions() *pushOptions {
@@ -69,6 +72,7 @@ func newDefaultPushOptions() *pushOptions {
 		authfile:   auth.GetDefaultAuthFile(),
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
+		crOption:   CrOptionAuto,
 	}
 }
 
@@ -94,6 +98,9 @@ func (opts *pushOptions) RegisterFlags(fs *pflag.FlagSet) error {
 	fs.StringSliceVar(&opts.encryptionKeys, "encryption-key", opts.encryptionKeys, "key with the encryption protocol to use needed to encrypt the image (e.g. jwe:/path/to/key.pem)")
 	fs.IntSliceVar(&opts.encryptLayers, "encrypt-layer", opts.encryptLayers, "layers to encrypt, 0-indexed layer indices with support for negative indexing (e.g. 0 is the first layer, -1 is the last layer). If not defined, will encrypt all layers if encryption-key flag is specified")
 	fs.BoolVar(&opts.tlsVerify, "tls-verify", opts.tlsVerify, "require HTTPS and verify certificates when accessing the registry. TLS verification cannot be used when talking to an insecure registry.")
+
+	// TODO: remove this flag once we have a better way to handle image cr pushing to the dest registry
+	fs.Var(&opts.crOption, "cr-option", `push image cr to the dest registry, allow values: "yes", "no", "only", "auto"`)
 	return markFlagsHidden(fs, []string{"signature-policy", "blob-cache", "tls-verify"}...)
 }
 
@@ -114,11 +121,17 @@ func newPushCommand() *cobra.Command {
 		Use:   "push",
 		Short: "Push an image to a specified destination",
 		Long:  pushDescription,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			// specific croption is only valid when crOption is auto, and switch to a specific croption `yes` / `no`
+			if opts.crOption == CrOptionAuto {
+				opts.crOption = SpecificCroption(args)
+			}
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pushCmd(cmd, args, opts)
 		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			NewAndRunImageCRBuilder(cmd, args)
+		PostRunE: func(cmd *cobra.Command, args []string) error {
+			return NewAndRunImageCRBuilder(cmd, args, opts)
 		},
 		Example: fmt.Sprintf(`%[1]s push imageID docker://registry.example.com/repository:tag
   %[1]s push imageID docker-daemon:image:tagi
@@ -240,6 +253,12 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 	}
 	if flagChanged(c, "compression-level") {
 		options.CompressionLevel = &iopts.compressionLevel
+	}
+
+	// check if the cr option is set to only and return before push.
+	if iopts.crOption == CrOptionOnly {
+		logger.Info("Only push image cr to the dest registry")
+		return nil
 	}
 
 	ref, digest, err := buildah.Push(getContext(), src, dest, options)

@@ -16,6 +16,7 @@ package file
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -23,8 +24,6 @@ import (
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
 )
 
 // Filename returns the file name after the last "/".

@@ -17,12 +17,12 @@ limitations under the License.
 package http
 
 import (
+	"fmt"
 	http2 "net/http"
 	"net/url"
 	"time"
 
 	"github.com/labring/endpoints-operator/library/probe/http"
-	"github.com/pkg/errors"
 )
 
 func Request(address string, header map[string]string) (string, error) {
@@ -37,5 +37,5 @@ func Request(address string, header map[string]string) (string, error) {
 		_, data, err := prob.Probe(url, head, timeout)
 		return data, err
 	}
-	return "", errors.Wrap(err, "convert url error")
+	return "", fmt.Errorf("convert url error: %w", err)
 }
