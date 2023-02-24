@@ -181,8 +181,7 @@ func getIndexOfContainerInMounts(mounts []v2.MountImage, imageName string) int {
 }
 
 func MountClusterImages(cluster *v2.Cluster, bd buildah.Interface) error {
-	err := bd.Pull(cluster.Spec.Image, buildah.WithPlatformOption(buildah.DefaultPlatform()),
-		buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
+	err := bd.Pull(cluster.Spec.Image, buildah.WithPullPolicyOption(buildah.PullIfMissing.String()))
 	if err != nil {
 		return err
 	}

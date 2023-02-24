@@ -123,8 +123,7 @@ func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
 
 func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing PreProcess Pipeline in InstallProcessor")
-	if err := c.Buildah.Pull(c.NewImages, buildah.WithPlatformOption(buildah.DefaultPlatform()),
-		buildah.WithPullPolicyOption(buildah.PullIfMissing.String())); err != nil {
+	if err := c.Buildah.Pull(c.NewImages, buildah.WithPullPolicyOption(buildah.PullIfMissing.String())); err != nil {
 		return err
 	}
 	imageTypes := sets.NewString()
