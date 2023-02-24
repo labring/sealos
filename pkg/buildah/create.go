@@ -51,16 +51,19 @@ func newCreateCmd() *cobra.Command {
 		Short: "Create a cluster without running the CMD, for inspecting image",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(c *cobra.Command, args []string) error {
-			oss, arch, variant, err := parse.Platform(opts.platform)
-			if err != nil {
-				return err
-			}
 			bder, err := New("")
 			if err != nil {
 				return err
 			}
-			info, err := bder.Create(opts.name, args[0],
-				WithPlatformOption(v1.Platform{OS: oss, Architecture: arch, Variant: variant}))
+			flagSetters := []FlagSetter{}
+			if flagChanged(c, "platform") {
+				oss, arch, variant, err := parse.Platform(opts.platform)
+				if err != nil {
+					return err
+				}
+				flagSetters = append(flagSetters, WithPlatformOption(v1.Platform{OS: oss, Architecture: arch, Variant: variant}))
+			}
+			info, err := bder.Create(opts.name, args[0], flagSetters...)
 			if err != nil {
 				return err
 			}
