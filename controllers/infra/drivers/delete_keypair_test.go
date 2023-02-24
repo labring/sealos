@@ -1,33 +1,27 @@
 package drivers
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
-func TestDriver_GetInstances(t *testing.T) {
+func TestDriver_deleteKeyPair(t *testing.T) {
 	type args struct {
-		key    string
-		value  string
-		infra  *v1.Infra
-		status string
+		infra *v1.Infra
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    *v1.Hosts
 		wantErr bool
 	}{
 		{
-			"test get instance",
+			"test delete keypair",
 			args{
-				key:    "master",
-				value:  "true",
-				status: "running",
 				infra: &v1.Infra{
 					TypeMeta: metav1.TypeMeta{},
 					ObjectMeta: metav1.ObjectMeta{
@@ -37,11 +31,11 @@ func TestDriver_GetInstances(t *testing.T) {
 					},
 					Spec: v1.InfraSpec{
 						AvailabilityZone: "cn-hangzhou-i",
+						SSH: v1beta1.SSH{
+							PkName: "infra-0abafc31-735b-4a9c-923f-493af2ed1b25",
+						},
 					},
 				},
-			},
-			&v1.Hosts{
-				Count: 1,
 			},
 			false,
 		},
@@ -52,12 +46,11 @@ func TestDriver_GetInstances(t *testing.T) {
 			if err != nil {
 				t.Errorf("create driver failed: %v", err)
 			}
-			host, err := d.GetInstances(tt.args.infra, tt.args.status)
+			err = d.DeleteKeyPair(tt.args.infra)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInstances() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DeleteKeypair() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			fmt.Println("got hosts: ", host[0].Metadata)
 		})
 	}
 }

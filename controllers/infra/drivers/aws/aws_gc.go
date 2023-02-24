@@ -31,15 +31,7 @@ type GarbageCollector struct {
 func (g *GarbageCollector) KeyPairGC() error {
 	eg, _ := errgroup.WithContext(context.Background())
 
-	filterKey := fmt.Sprintf("tag:%s", common.KeyPairUser)
-	input := &ec2.DescribeKeyPairsInput{
-		Filters: []ec2Types.Filter{
-			{
-				Name:   &filterKey,
-				Values: []string{common.KeyPairGeneral},
-			},
-		},
-	}
+	input := &ec2.DescribeKeyPairsInput{}
 
 	result, err := g.ec2Client.DescribeKeyPairs(context.TODO(), input)
 	if err != nil {
@@ -51,11 +43,18 @@ func (g *GarbageCollector) KeyPairGC() error {
 		input := &ec2.DeleteKeyPairInput{
 			KeyName: v.KeyName,
 		}
+		namespacedName, isValid := parseKeyPairTag(v)
 		eg.Go(func() error {
-			logger.Info("start to delete keypair: %v", *input.KeyName)
-			_, err := g.ec2Client.DeleteKeyPair(context.TODO(), input)
-			if err != nil {
-				return fmt.Errorf("delete key pair error:%v", err)
+			if isValid {
+				logger.Info("start to execute instance, namespacedName: %v", *namespacedName)
+				gvr := infrav1.GroupVersion.WithResource("infras")
+				if _, err := g.k8sClient.Resource(gvr).Namespace(namespacedName.Namespace).Get(context.TODO(), namespacedName.Name, metav1.GetOptions{}); err != nil {
+					_, err2 := g.ec2Client.DeleteKeyPair(context.TODO(), input)
+					if err2 != nil {
+						return fmt.Errorf("delete key pair error:%v", err2)
+					}
+					logger.Info("delete key pair: %v", *input.KeyName)
+				}
 			}
 			return nil
 		})
@@ -107,6 +106,22 @@ func (g *GarbageCollector) InstanceGC() error {
 func parseInstanceTag(i ec2Types.Instance) (*types.NamespacedName, bool) {
 	for _, tag := range i.Tags {
 		if *tag.Key == common.InfraInstancesLabel {
+			str := strings.Split(*tag.Value, "/")
+			if len(str) < 2 {
+				return nil, false
+			}
+			return &types.NamespacedName{
+				Namespace: str[0],
+				Name:      str[1],
+			}, true
+		}
+	}
+	return nil, false
+}
+
+func parseKeyPairTag(i ec2Types.KeyPairInfo) (*types.NamespacedName, bool) {
+	for _, tag := range i.Tags {
+		if *tag.Key == common.KeyPairUser {
 			str := strings.Split(*tag.Value, "/")
 			if len(str) < 2 {
 				return nil, false

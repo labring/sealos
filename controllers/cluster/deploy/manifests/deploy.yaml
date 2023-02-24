@@ -21,7 +21,15 @@ spec:
     singular: cluster
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - description: Status of Cluster in group
+      jsonPath: .status.status
+      name: Status
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
     schema:
       openAPIV3Schema:
         description: Cluster is the Schema for the clusters API
@@ -247,6 +255,14 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/status
+  verbs:
+  - get
+  - patch
+  - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

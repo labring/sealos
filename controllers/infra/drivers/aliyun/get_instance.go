@@ -2,6 +2,7 @@ package aliyun
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
@@ -16,6 +17,7 @@ type ECSDescribeInstancesAPI interface {
 	DescribeInstances(request *ecs.DescribeInstancesRequest) (response *ecs.DescribeInstancesResponse, err error)
 	DescribeDisks(request *ecs.DescribeDisksRequest) (response *ecs.DescribeDisksResponse, err error)
 	DescribeImages(request *ecs.DescribeImagesRequest) (response *ecs.DescribeImagesResponse, err error)
+	DescribeInstanceStatus(request *ecs.DescribeInstanceStatusRequest) (response *ecs.DescribeInstanceStatusResponse, err error)
 }
 
 func GetInstances(api ECSDescribeInstancesAPI, request *ecs.DescribeInstancesRequest) (*ecs.DescribeInstancesResponse, error) {
@@ -30,13 +32,21 @@ func GetImages(api ECSDescribeInstancesAPI, request *ecs.DescribeImagesRequest) 
 	return api.DescribeImages(request)
 }
 
+func GetInstanceStatus(api ECSDescribeInstancesAPI, request *ecs.DescribeInstanceStatusRequest) (*ecs.DescribeInstanceStatusResponse, error) {
+	return api.DescribeInstanceStatus(request)
+}
+
 func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error) {
 	var hosts []v1.Hosts
 	hostmap := make(map[int]*v1.Hosts)
 
+	if status == common.InstanceStatusRunning {
+		status = ECSInstanceStatusNameRunning
+	}
 	client := d.Client
 	request := &ecs.DescribeInstancesRequest{
-		Status: status,
+		RpcRequest: ecs.CreateDescribeInstancesRequest().RpcRequest,
+		Status:     status,
 		Tag: &[]ecs.DescribeInstancesTag{
 			{
 				Key:   common.InfraInstancesUUID,
@@ -56,7 +66,7 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 		}
 
 		if i.Status != status {
-			logger.Warn("instance is not running, skip it", "instance", i.InstanceId)
+			logger.Warn("instance is not running, skip it", "instance", i.InstanceId, i.Status)
 			continue
 		}
 		index, err := getIndex(i)
@@ -68,7 +78,7 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 			infra.Spec.AvailabilityZone = availabilityZone
 		}
 		metadata := v1.Metadata{
-			IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: i.IntranetIp}, {IPType: common.IPTypePublic, IPValue: i.InternetIp}},
+			IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: i.VpcAttributes.PrivateIpAddress.IpAddress[0]}, {IPType: common.IPTypePublic, IPValue: i.PublicIpAddress.IpAddress[0]}},
 			ID:     i.InstanceId,
 			Status: i.Status,
 		}
@@ -76,28 +86,23 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 		// get disks of instance
 		var disks []v1.Disk
 		diskRequest := &ecs.DescribeDisksRequest{
+			RpcRequest: ecs.CreateDescribeDisksRequest().RpcRequest,
 			InstanceId: i.InstanceId,
 		}
 		diskResponse, err := GetDisks(client, diskRequest)
 		if err != nil {
 			logger.Warn("Get volumes failed", "instance", i.InstanceId)
 		}
-		// get root device name
-		rootDeviceName, err := d.getRootDeviceNameByImageID(i.ImageId)
-		if err != nil {
-			logger.Warn("Get root device name faied", "instance", i.InstanceId)
-		}
 		for _, disk := range diskResponse.Disks.Disk {
 			vid := disk.DiskId
 			metadata.DiskID = append(metadata.DiskID, vid)
 			var diskType string
 			// judge the diskType
-			if disk.Device == rootDeviceName {
+			if disk.Type == "system" {
 				diskType = common.RootVolumeLabel
 			} else {
 				diskType = common.DataVolumeLabel
 			}
-			volIndex, err := getVolumeIndex(disk)
 			if err != nil {
 				return nil, fmt.Errorf("aliyun ecs volume index label not found: %v", err)
 			}
@@ -105,18 +110,21 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 				Capacity:   disk.Size,
 				VolumeType: disk.Category,
 				Type:       diskType,
-				ID:         disk.DiskId,
-				Index:      volIndex,
+				ID:         []string{vid},
 			})
 		}
 		if h, ok := hostmap[index]; ok {
 			h.Count++
 			hostmap[index].Metadata = append(hostmap[index].Metadata, metadata)
+			mergeDisks(&hostmap[index].Disks, &disks)
 			continue
 		}
 		instanceType, imageID := i.InstanceType, i.ImageId
+		arch, _ := d.getArchFromImageID(imageID)
+
 		hostmap[index] = &v1.Hosts{
 			Count:    1,
+			Arch:     arch,
 			Metadata: []v1.Metadata{metadata},
 			Image:    imageID,
 			Flavor:   instanceType,
@@ -151,31 +159,31 @@ func getIndex(i ecs.Instance) (int, error) {
 	return -1, fmt.Errorf("index tag not found: %v", i.Tags)
 }
 
-func getVolumeIndex(v ecs.Disk) (int, error) {
-	for _, tag := range v.Tags.Tag {
-		if tag.TagKey == common.InfraVolumeIndex {
-			return strconv.Atoi(tag.TagValue)
-		}
+func (d Driver) getArchFromImageID(id string) (string, error) {
+	describeImagesRequest := &ecs.DescribeImagesRequest{
+		RpcRequest: ecs.CreateDescribeImagesRequest().RpcRequest,
+		ImageId:    id,
 	}
-	return -1, fmt.Errorf("volume index not found: %v", v.DiskId)
-}
-
-func (d Driver) getRootDeviceNameByImageID(id string) (string, error) {
-	imageRequest := &ecs.DescribeImagesRequest{
-		ImageId: id,
-	}
-	imageResponse, err := GetImages(d.Client, imageRequest)
+	describeImageResponse, err := GetImages(d.Client, describeImagesRequest)
 	if err != nil {
 		return "", err
 	}
-	if len(imageResponse.Images.Image) == 0 {
+	if len(describeImageResponse.Images.Image) == 0 {
 		return "", fmt.Errorf("image %v not found", id)
 	}
-	diskDeviceMappings := imageResponse.Images.Image[0].DiskDeviceMappings.DiskDeviceMapping
-	for _, ddm := range diskDeviceMappings {
-		if ddm.Type == "system" {
-			return ddm.Device, nil
+	arch := common.ArchAmd64
+	if describeImageResponse.Images.Image[0].Architecture == common.ArchArm64 {
+		arch = common.ArchArm64
+	}
+	return arch, nil
+}
+
+func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
+	sort.Sort(v1.IndexDisks(*newDisk))
+	sort.Sort(v1.IndexDisks(*curDisk))
+	for i := range *curDisk {
+		if (*newDisk)[i].Index == (*curDisk)[i].Index {
+			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
 		}
 	}
-	return "", fmt.Errorf("system device not found")
 }

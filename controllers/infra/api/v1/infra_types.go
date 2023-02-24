@@ -155,8 +155,8 @@ type Disk struct {
 	// Disk Type , default is data disk. allowed value is `root|data`
 	Type string `json:"type,omitempty"`
 	//Name  string `json:"name,omitempty"`
-	Index int    `json:"index,omitempty"`
-	ID    string `json:"id,omitempty"`
+	Index int      `json:"index,omitempty"`
+	ID    []string `json:"id,omitempty"`
 }
 
 //type NameDisks []Disk

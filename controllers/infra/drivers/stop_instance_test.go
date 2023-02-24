@@ -17,12 +17,15 @@ func TestDriver_StopInstances(t *testing.T) {
 	}{
 		{"test delete instance",
 			args{hosts: &v1.Hosts{
-				Count: 0,
+				Count: 2,
 				Metadata: []v1.Metadata{
 					{
 						IP: nil,
 						// TODO this test case should get the instance id from create interface.
-						ID: "i-0d72e0c54323d1d67",
+						ID: "i-bp1b12w8wosiidi8bz77",
+					},
+					{
+						ID: "i-bp1b12w8wosiidi8bz76",
 					},
 				},
 			}},
@@ -31,7 +34,7 @@ func TestDriver_StopInstances(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, _ := NewDriver("aws")
+			d, _ := NewDriver("aliyun")
 			if err := d.StopInstances(tt.args.hosts); (err != nil) != tt.wantErr {
 				t.Errorf("StopInstances() error = %v, wantErr %v", err, tt.wantErr)
 			}

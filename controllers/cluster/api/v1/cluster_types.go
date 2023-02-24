@@ -83,6 +83,7 @@ type ClusterStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.status",description="Status of Cluster in group"
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Cluster is the Schema for the clusters API
 type Cluster struct {

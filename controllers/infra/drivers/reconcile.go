@@ -8,8 +8,6 @@ import (
 
 	"github.com/labring/sealos/controllers/infra/common"
 
-	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-
 	"golang.org/x/sync/errgroup"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -71,7 +69,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 
 	setHostsIndex(infra)
 	// get infra all hosts
-	hosts, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
+	hosts, err := driver.GetInstances(infra, common.InstanceStatusRunning)
 	if err != nil {
 		return fmt.Errorf("get all instances failed: %v", err)
 	}
@@ -86,7 +84,7 @@ func (a *Applier) ReconcileInstance(infra *v1.Infra, driver Driver) error {
 		return err
 	}
 
-	cur, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
+	cur, err := driver.GetInstances(infra, common.InstanceStatusRunning)
 	if err != nil {
 		return fmt.Errorf("set current instances info failed: %v", err)
 	}
@@ -148,7 +146,7 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 				if des.Count == 0 {
 					return nil
 				}
-				hosts, err := driver.GetInstances(infra, types.InstanceStateNameRunning)
+				hosts, err := driver.GetInstances(infra, common.InstanceStatusRunning)
 				if err != nil {
 					return fmt.Errorf("get all instances failed: %v", err)
 				}
@@ -226,7 +224,7 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 		// same mount path, two pointers move to right
 		if curDisk.Index == desDisk.Index {
 			if curDisk.Capacity != desDisk.Capacity || curDisk.VolumeType != desDisk.VolumeType {
-				logger.Info("start to modify disk... cur cap is %v, des cap is %v", curDisk.Capacity, desDisk.Capacity)
+				logger.Info("start to modify disk...")
 				if err := driver.ModifyVolume(&curDisk, &desDisk); err != nil {
 					return err
 				}
@@ -240,7 +238,7 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 		} else if curDisk.Index < desDisk.Index {
 			// cur exists but des doesn't exist. delete cur volume and move cur pointer to right
 			logger.Info("start to delete disk... cur cap is %v", curDisk.Capacity)
-			if err := driver.DeleteVolume([]string{curDisk.ID}); err != nil {
+			if err := driver.DeleteVolume(curDisk.ID); err != nil {
 				return err
 			}
 			Icur++
@@ -257,7 +255,7 @@ func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Di
 	if Icur != len(cur) {
 		for ; Icur < len(cur); Icur++ {
 			curDisk := cur[Icur]
-			if err := driver.DeleteVolume([]string{curDisk.ID}); err != nil {
+			if err := driver.DeleteVolume(curDisk.ID); err != nil {
 				return err
 			}
 		}
