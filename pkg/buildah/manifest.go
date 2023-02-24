@@ -306,7 +306,7 @@ func manifestCreateCmd(c *cobra.Command, args []string, opts manifestCreateOpts)
 	listImageSpec := args[0]
 	imageSpecs := args[1:]
 
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 	store, err := getStore(c)
@@ -384,7 +384,7 @@ func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
 		return err
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 
@@ -846,7 +846,7 @@ func manifestPushCmd(c *cobra.Command, args []string, opts pushOptions) error {
 	if err := auth.CheckAuthFile(opts.authfile); err != nil {
 		return err
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 

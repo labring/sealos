@@ -200,7 +200,7 @@ func pushCmd(c *cobra.Command, args []string, iopts *pushOptions) error {
 		dest = dest2
 		logger.Debug("Assuming docker:// as the transport method for DESTINATION: %s", destSpec)
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 	systemContext, err := parse.SystemContextFromOptions(c)

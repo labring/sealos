@@ -19,9 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
 
-	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
@@ -40,8 +38,7 @@ var (
 )
 
 var (
-	DefaultPlatform = platforms.DefaultSpec
-	IsRootless      = wrapunshare.IsRootless
+	IsRootless = wrapunshare.IsRootless
 )
 
 func flagChanged(c *cobra.Command, name string) bool {
@@ -49,10 +46,6 @@ func flagChanged(c *cobra.Command, name string) bool {
 		return true
 	}
 	return false
-}
-
-func setDefaultFlags(c *cobra.Command) error {
-	return setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag)
 }
 
 func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command) error) error {
@@ -63,33 +56,84 @@ func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command
 	}
 	return nil
 }
+func markFlagsHiddenPlatform() []string {
+	return []string{
+		"arch", "os", "os-feature", "os-version", "variant",
+	}
+}
+func markFlagsHiddenBuild() []string {
+	return []string{
+		"add-host",
+		"annotation",
+		"cache-from",
+		"cache-to",
+		"cache-ttl",
+		"cap-add",
+		"cap-drop",
+		"cgroup-parent",
+		"cgroupns",
+		"cpp-flag",
+		"cpu-period",
+		"cpu-quota",
+		"cpu-shares",
+		"cpuset-cpus",
+		"cpuset-mems",
+		"decryption-key",
+		"device",
+		"disable-content-trust",
+		"hooks-dir",
+		"identity-label",
+		"iidfile",
+		"ipc",
+		"isolation",
+		"layers",
+		"logfile",
+		"logsplit",
+		"memory",
+		"memory-swap",
+		"network",
+		"no-cache",
+		"no-hosts",
+		"omit-history",
+		"output",
+		"pid",
+		"runtime",
+		"runtime-flag",
+		"secret",
+		"security-opt",
+		"sign-by",
+		"skip-unused-stages",
+		"squash",
+		"ssh",
+		"stdin",
+		"target",
+		"timestamp",
+		"ulimit",
+		"unsetenv",
+		"userns",
+		"userns-gid-map",
+		"userns-gid-map-group",
+		"userns-uid-map",
+		"userns-uid-map-user",
+		"uts",
+		"volume",
+	}
+}
 
 func setDefaultTLSVerifyFlag(c *cobra.Command) error {
 	return setDefaultFlagIfNotChanged(c, "tls-verify", "false")
 }
 
-func getArchFromFlag(c *cobra.Command) string {
-	arch, err := c.Flags().GetString("arch")
-	if err != nil {
-		return runtime.GOARCH
-	}
-	return arch
+func setDefaultSaveImageFlag(c *cobra.Command) error {
+	return setDefaultFlagIfNotChanged(c, "save-image", "false")
 }
 
-func getOSFromFlag(c *cobra.Command) string {
-	oss, err := c.Flags().GetString("os")
-	if err != nil {
-		return runtime.GOOS
-	}
-	return oss
-}
-
-func getVariantFromFlags(c *cobra.Command) string {
-	variant, err := c.Flags().GetString("variant")
+func getPlatformFromFlags(c *cobra.Command) string {
+	platform, err := c.Flags().GetString("platform")
 	if err != nil {
 		return ""
 	}
-	return variant
+	return platform
 }
 
 func getTagsFromFlags(c *cobra.Command) []string {
