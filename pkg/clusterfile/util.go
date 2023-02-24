@@ -46,7 +46,7 @@ func GetDefaultClusterName() (string, error) {
 	if len(clusters) == 1 {
 		return clusters[0], nil
 	} else if len(clusters) > 1 {
-		return "", fmt.Errorf("Select a cluster through the -c parameter: " + strings.Join(clusters, ","))
+		return "", fmt.Errorf("select a cluster through the -c parameter: " + strings.Join(clusters, ","))
 	}
 
 	return "", ErrClusterNotExist

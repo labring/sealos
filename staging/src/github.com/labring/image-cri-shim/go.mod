@@ -3,12 +3,13 @@ module github.com/labring/image-cri-shim
 go 1.20
 
 require (
+	github.com/labring/sealos v0.0.0
 	github.com/pelletier/go-toml v1.9.5
-	github.com/pkg/errors v0.9.1
 	google.golang.org/grpc v1.50.1
 	k8s.io/apimachinery v0.25.6
 	k8s.io/cri-api v0.25.6
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
@@ -46,11 +47,6 @@ require (
 	k8s.io/klog/v2 v2.70.1 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
-)
-
-require (
-	github.com/labring/sealos v0.0.0-00010101000000-000000000000
-	sigs.k8s.io/yaml v1.3.0
 )
 
 replace github.com/labring/sealos => ../../../../../

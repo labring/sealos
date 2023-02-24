@@ -41,11 +41,11 @@ func WaitForServer(socket string, timeout time.Duration, opts ...interface{}) er
 			dialOpts = append(dialOpts, o...)
 		case **grpc.ClientConn:
 			if connp != nil {
-				return fmt.Errorf("WaitForServer: multiple net.Conn pointer options given")
+				return fmt.Errorf("waitForServer: multiple net.Conn pointer options given")
 			}
 			connp = o
 		default:
-			return fmt.Errorf("WaitForServer: invalid option of type %T", o)
+			return fmt.Errorf("waitForServer: invalid option of type %T", o)
 		}
 	}
 

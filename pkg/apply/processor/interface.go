@@ -16,10 +16,10 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"path"
 
 	"github.com/containers/storage"
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/pkg/buildah"

@@ -17,14 +17,14 @@ limitations under the License.
 package checker
 
 import (
+	"errors"
+	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/template"
-
 	"github.com/labring/image-cri-shim/pkg/types"
-	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/buildimage"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -52,7 +52,7 @@ func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	criShimConfig := "/etc/image-cri-shim.yaml"
 	if shimCfg, err := types.Unmarshal(criShimConfig); err != nil {
-		status.Error = errors.Wrap(err, "read image-cri-shim config error").Error()
+		status.Error = fmt.Errorf("read image-cri-shim config error: %w", err).Error()
 	} else {
 		status.Config = map[string]string{}
 
@@ -69,7 +69,7 @@ func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) error {
 		if dir := status.Config["RootfsImageList"]; dir != "" {
 			images, err := buildimage.ParseShimImages(dir)
 			if err != nil {
-				status.Error = errors.Wrap(err, "read image-cri-shim config error").Error()
+				status.Error = fmt.Errorf("read image-cri-shim config error: %w", err).Error()
 			} else {
 				status.ImageList = images
 			}

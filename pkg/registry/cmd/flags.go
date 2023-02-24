@@ -17,10 +17,9 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"runtime"
-
-	"github.com/pkg/errors"
 
 	"github.com/docker/docker/api/types"
 	"github.com/spf13/pflag"
@@ -94,7 +93,7 @@ func (opts *registrySaveResults) CheckAuth() (map[string]types.AuthConfig, error
 	}
 	cfg, err := registry.GetAuthInfo()
 	if err != nil {
-		return nil, errors.Wrap(err, "auth info is error")
+		return nil, fmt.Errorf("auth info is error: %w", err)
 	}
 	return cfg, nil
 }

@@ -35,7 +35,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.1-0.20220411205349-bde1400a84be
 	github.com/opencontainers/image-spec v1.1.0-rc1
 	github.com/pelletier/go-toml v1.9.5
-	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.5
 	github.com/schollz/progressbar/v3 v3.8.6
 	github.com/sirupsen/logrus v1.9.0
@@ -155,6 +154,7 @@ require (
 	github.com/openshift/imagebuilder v1.2.4-0.20220711175835-4151e43600df // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/proglottis/gpgme v0.1.3 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect

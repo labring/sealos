@@ -14,7 +14,7 @@ type DataHelper struct {
 	logr.Logger
 }
 
-var ErrNotMatch = errors.New("NotMatch")
+var ErrNotMatch = errors.New("notMatch")
 
 type MatchingLabelsModifier func(name any, labels client.MatchingLabels)
 

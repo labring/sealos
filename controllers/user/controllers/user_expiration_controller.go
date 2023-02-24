@@ -18,8 +18,7 @@ package controllers
 
 import (
 	"context"
-
-	"github.com/pkg/errors"
+	"errors"
 
 	"github.com/go-logr/logr"
 	"github.com/labring/endpoints-operator/library/controller"

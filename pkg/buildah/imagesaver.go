@@ -15,6 +15,7 @@
 package buildah
 
 import (
+	"fmt"
 	"path"
 	"runtime"
 	"strings"
@@ -22,7 +23,6 @@ import (
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
@@ -63,7 +63,7 @@ func runSaveImages(contextDir string, platforms []v1.Platform, opts *saveOptions
 		logger.Debug("pull images %v for platform %s", images, strings.Join([]string{pf.OS, pf.Architecture}, "/"))
 		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), pf)
 		if err != nil {
-			return errors.Wrap(err, "failed to save images")
+			return fmt.Errorf("failed to save images: %w", err)
 		}
 		logger.Info("saving images %s", strings.Join(images, ", "))
 	}

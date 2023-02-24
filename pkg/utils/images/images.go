@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/docker/reference"
-	"github.com/pkg/errors"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -35,12 +34,12 @@ func LoadImages(imageDir string) ([]string, error) {
 		paths, err := file.GetFiles(imageDir)
 		logger.Info("get files path is %v", paths)
 		if err != nil {
-			return nil, errors.Wrap(err, "load image list files error")
+			return nil, fmt.Errorf("load image list files error: %w", err)
 		}
 		for _, p := range paths {
 			images, err := file.ReadLines(p)
 			if err != nil {
-				return nil, errors.Wrap(err, "load image list error")
+				return nil, fmt.Errorf("load image list error: %w", err)
 			}
 			imageList = append(imageList, images...)
 		}
@@ -64,12 +63,12 @@ func NormalizeName(name string) (reference.Named, error) {
 	// NOTE: this code is in symmetrie with containers/image/pkg/shortnames.
 	ref, err := reference.Parse(name)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error normalizing name %q", name)
+		return nil, fmt.Errorf("error normalizing name %q: %w", name, err)
 	}
 
 	named, ok := ref.(reference.Named)
 	if !ok {
-		return nil, errors.Errorf("%q is not a named reference", name)
+		return nil, fmt.Errorf("%q is not a named reference", name)
 	}
 
 	// Enforce "localhost" if needed.

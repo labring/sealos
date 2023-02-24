@@ -1629,6 +1629,7 @@ golang.org/x/net v0.0.0-20220826154423-83b083e8dc8b/go.mod h1:YDH+HFinaLZZlnHAfS
 golang.org/x/net v0.0.0-20220909164309-bea034e7d591/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
 golang.org/x/net v0.0.0-20221014081412-f15817d10f9b/go.mod h1:YDH+HFinaLZZlnHAfSS6ZXJJ9M9t4Dl22yv3iI2vPwk=
 golang.org/x/net v0.1.0/go.mod h1:Cx3nUiGt4eDBEyega/BKRp+/AlGL8hYe7U9odMt2Cco=
+golang.org/x/net v0.3.0/go.mod h1:MBQ8lrhLObU/6UmLb4fmbmk5OcyYmqtbGd/9yIeKjEE=
 golang.org/x/net v0.4.0/go.mod h1:MBQ8lrhLObU/6UmLb4fmbmk5OcyYmqtbGd/9yIeKjEE=
 golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2/go.mod h1:jaDAt6Dkxork7LmZnYtzbRWj0W47D86a3TGe0YHBvmE=
 golang.org/x/oauth2 v0.0.0-20220718184931-c8730f7fcb92/go.mod h1:h4gKUeWbJ4rQPri7E0u6Gs4e9Ri2zaLxzw5DI5XGrYg=
@@ -1818,8 +1819,6 @@ k8s.io/kube-aggregator v0.24.3 h1:7ScKNCG5JuSGnZPPH1DOu5R28/TU0DWll0fJgnKbEC8=
 k8s.io/kube-controller-manager v0.24.3 h1:8U9wCyx7FARr0bu30rfUiWw1bcy4ZdZ/bZMP+bBzT3I=
 k8s.io/kube-scheduler v0.24.3 h1:F4831qPvbTy8Eo2DamDnyyag+/Wczl+vSGZ6h8nrsAo=
 k8s.io/kubectl v0.24.3 h1:PqY8ho/S/KuE2/hCC3Iee7X+lOtARYo0LQsNzvV/edE=
-k8s.io/kubernetes v1.25.6 h1:3zBcz3I4CXKnzR/K37Kzjtmu4O+/5XV/tUCa7gSiJG4=
-k8s.io/kubernetes v1.25.6/go.mod h1:iB7lKyWeYg8+Oi5EPDEfdMtmae8BvjzziSpek2CcBe4=
 k8s.io/legacy-cloud-providers v0.24.3 h1:fy/H/26dp22QjuAIrEYqw8xNbUF2y9XnapaHjpoByiI=
 k8s.io/metrics v0.24.3 h1:pXzh+PG8L8ANg0PD3Ce8+yG5oj8BLvzBgsz8yCVEXyg=
 k8s.io/mount-utils v0.24.3 h1:o16GMv2uk3MzGgbgSYT49lNPHMgpmVbwJu9VPO47KgI=

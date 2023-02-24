@@ -17,13 +17,11 @@ limitations under the License.
 package checker
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
 	"github.com/labring/sealos/pkg/template"
-
-	"github.com/pkg/errors"
-
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/initsystem"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -56,7 +54,7 @@ func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) error {
 	}()
 	initsystemvar, err := initsystem.GetInitSystem()
 	if err != nil {
-		status.Error = errors.Wrap(err, "get initsystem error").Error()
+		status.Error = fmt.Errorf("get initsystem error: %w", err).Error()
 		return nil
 	}
 
@@ -80,8 +78,8 @@ Systemd Service Status
   Error: {{ .Error }}
   {{ if .ServiceList -}}
   Init System List:
-    {{- range  .ServiceList }} 
-    Name: {{.Name}} Status: {{.Status}} 
+    {{- range  .ServiceList }}
+    Name: {{.Name}} Status: {{.Status}}
     {{- end }}
   {{ end }}`)
 	if err != nil || !isOk {

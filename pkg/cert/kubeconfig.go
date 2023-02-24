@@ -18,16 +18,16 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/labring/sealos/pkg/utils/logger"
-
-	"github.com/pkg/errors"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/util/keyutil"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 // clientCertAuth struct holds info required to build a client certificate to provide authentication info in a kubeconfig object
@@ -87,7 +87,7 @@ func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndp
 		// retrieves the KubeConfigSpec for given kubeConfigFileName
 		spec, exists := specs[kubeConfigFileName]
 		if !exists {
-			return errors.Errorf("couldn't retrieve KubeConfigSpec for %s", kubeConfigFileName)
+			return fmt.Errorf("couldn't retrieve KubeConfigSpec for %s", kubeConfigFileName)
 		}
 
 		// builds the KubeConfig object
@@ -110,7 +110,7 @@ func createKubeConfigFiles(outDir string, cfg Config, nodeName, controlPlaneEndp
 func getKubeConfigSpecs(cfg Config, nodeName, controlPlaneEndpoint string) (map[string]*kubeConfigSpec, error) {
 	caCert, caKey, err := LoadCaCertAndKeyFromDisk(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "couldn't create a kubeconfig; the CA files couldn't be loaded")
+		return nil, fmt.Errorf("couldn't create a kubeconfig; the CA files couldn't be loaded: %w", err)
 	}
 
 	if len(nodeName) == 0 {
@@ -185,12 +185,12 @@ func buildKubeConfigFromSpec(spec *kubeConfigSpec, clustername string) (*clientc
 
 	clientCert, clientKey, err := NewCaCertAndKeyFromRoot(clientCertConfig, spec.CACert, spec.ClientCertAuth.CAKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failure while creating %s client certificate", spec.ClientName)
+		return nil, fmt.Errorf("failure while creating %s client certificate: %w", spec.ClientName, err)
 	}
 
 	encodedClientKey, err := keyutil.MarshalPrivateKeyToPEM(clientKey)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to marshal private key to PEM")
+		return nil, fmt.Errorf("failed to marshal private key to PEM: %w", err)
 	}
 	// create a kubeconfig with the client certs
 	return CreateWithCerts(
@@ -214,21 +214,21 @@ func validateKubeConfig(outDir, filename string, config *clientcmdapi.Config) er
 	// The kubeconfig already exists, let's check if it has got the same CA and server URL
 	currentConfig, err := clientcmd.LoadFromFile(kubeConfigFilePath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load kubeconfig file %s that already exists on disk", kubeConfigFilePath)
+		return fmt.Errorf("failed to load kubeconfig file %s that already exists on disk: %w", kubeConfigFilePath, err)
 	}
 
 	expectedCtx, exists := config.Contexts[config.CurrentContext]
 	if !exists {
-		return errors.Errorf("failed to find expected context %s", config.CurrentContext)
+		return fmt.Errorf("failed to find expected context %s", config.CurrentContext)
 	}
 	expectedCluster := expectedCtx.Cluster
 	currentCtx, exists := currentConfig.Contexts[currentConfig.CurrentContext]
 	if !exists {
-		return errors.Errorf("failed to find CurrentContext in Contexts of the kubeconfig file %s", kubeConfigFilePath)
+		return fmt.Errorf("failed to find CurrentContext in Contexts of the kubeconfig file %s", kubeConfigFilePath)
 	}
 	currentCluster := currentCtx.Cluster
 	if currentConfig.Clusters[currentCluster] == nil {
-		return errors.Errorf("failed to find the given CurrentContext Infra in Clusters of the kubeconfig file %s", kubeConfigFilePath)
+		return fmt.Errorf("failed to find the given CurrentContext Infra in Clusters of the kubeconfig file %s", kubeConfigFilePath)
 	}
 
 	// Make sure the compared CAs are whitespace-trimmed. The function clientcmd.LoadFromFile() just decodes
@@ -239,11 +239,11 @@ func validateKubeConfig(outDir, filename string, config *clientcmdapi.Config) er
 
 	// If the current CA cert on disk doesn't match the expected CA cert, error out because we have a file, but it's stale
 	if !bytes.Equal(caCurrent, caExpected) {
-		return errors.Errorf("a kubeconfig file %q exists already but has got the wrong CA cert", kubeConfigFilePath)
+		return fmt.Errorf("a kubeconfig file %q exists already but has got the wrong CA cert", kubeConfigFilePath)
 	}
 	// If the current API Server location on disk doesn't match the expected API server, error out because we have a file, but it's stale
 	if currentConfig.Clusters[currentCluster].Server != config.Clusters[expectedCluster].Server {
-		return errors.Errorf("a kubeconfig file %q exists already but has got the wrong API Server URL", kubeConfigFilePath)
+		return fmt.Errorf("a kubeconfig file %q exists already but has got the wrong API Server URL", kubeConfigFilePath)
 	}
 
 	return nil
@@ -265,7 +265,7 @@ func createKubeConfigFileIfNotExists(outDir, filename string, config *clientcmda
 		logger.Debug("[kubeconfig] Writing %q kubeconfig file\n", filename)
 		err = WriteToDisk(kubeConfigFilePath, config)
 		if err != nil {
-			return errors.Wrapf(err, "failed to save kubeconfig file %q on disk", kubeConfigFilePath)
+			return fmt.Errorf("failed to save kubeconfig file %q on disk: %w", kubeConfigFilePath, err)
 		}
 		return nil
 	}

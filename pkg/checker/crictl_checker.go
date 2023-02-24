@@ -18,19 +18,18 @@ package checker
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/labring/sealos/pkg/template"
-
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/exec"
 
 	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	exec2 "github.com/labring/sealos/pkg/utils/exec"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -72,7 +71,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	criShimConfig := "/etc/crictl.yaml"
 	if cfg, err := fileutil.ReadAll(criShimConfig); err != nil {
-		status.Error = errors.Wrap(err, "read crictl config error").Error()
+		status.Error = fmt.Errorf("read crictl config error: %w", err).Error()
 	} else {
 		cfgMap, _ := yaml.UnmarshalData(cfg)
 		status.Config = map[string]string{}
@@ -82,19 +81,19 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	execer := exec.New()
 	crictlPath, err := execer.LookPath("crictl")
 	if err != nil {
-		status.Error = errors.Wrap(err, "error looking for path of crictl").Error()
+		status.Error = fmt.Errorf("error looking for path of crictl: %w", err).Error()
 		return nil
 	}
 
 	imageList, err := n.getCRICtlImageList(crictlPath)
 	if err != nil {
-		status.Error = errors.Wrap(err, "error list images of crictl").Error()
+		status.Error = fmt.Errorf("error list images of crictl: %w", err).Error()
 	}
 	status.ImageList = imageList
 
 	containerList, err := n.getCRICtlContainerList(crictlPath)
 	if err != nil {
-		status.Error = errors.Wrap(err, "error ps container of crictl").Error()
+		status.Error = fmt.Errorf("error ps container of crictl: %w", err).Error()
 	}
 	status.ContainerList = containerList
 
@@ -106,7 +105,7 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 	}
 	sshCtx, err := ssh.NewSSHByCluster(cluster, false)
 	if err != nil {
-		status.Error = errors.Wrap(err, "get ssh interface error").Error()
+		status.Error = fmt.Errorf("get ssh interface error: %w", err).Error()
 		return nil
 	}
 
@@ -115,13 +114,13 @@ func (n *CRICtlChecker) Check(cluster *v2.Cluster, phase string) error {
 
 	regStatus, err := n.getRegistryStatus(crictlPath, pauseImage, fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port))
 	if err != nil {
-		status.Error = errors.Wrap(err, "pull registry image error").Error()
+		status.Error = fmt.Errorf("pull registry image error: %w", err).Error()
 	}
 	status.RegistryPullStatus = regStatus
 
 	shimStatus, err := n.getRegistryStatus(crictlPath, pauseImage, "k8s.gcr.io")
 	if err != nil {
-		status.Error = errors.Wrap(err, "pull shim image error").Error()
+		status.Error = fmt.Errorf("pull shim image error: %w", err).Error()
 	}
 	status.ImageShimPullStatus = shimStatus
 	status.Error = Nil

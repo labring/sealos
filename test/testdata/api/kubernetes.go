@@ -17,13 +17,13 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"gopkg.in/yaml.v3"

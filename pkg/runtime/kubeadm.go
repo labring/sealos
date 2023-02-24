@@ -28,7 +28,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/versionutil"
 	"github.com/labring/sealos/pkg/utils/yaml"
 
-	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/json"
 
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
@@ -387,7 +386,7 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 
 	if err := k.convertKubeadmVersion(); err != nil {
-		return errors.Wrap(err, "convert kubeadm version failed")
+		return fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
 	return nil
 }
@@ -480,7 +479,7 @@ func (k *KubeadmRuntime) generateJoinNodeConfigs(node string) ([]byte, error) {
 	k.cleanJoinLocalAPIEndPoint()
 	k.setAPIServerEndpoint(k.getVipAndPort())
 	if err := k.convertKubeadmVersion(); err != nil {
-		return nil, errors.Wrap(err, "convert kubeadm version failed")
+		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
 	return yaml.MarshalYamlConfigs(
 		&k.conversion.KubeletConfiguration,
@@ -497,7 +496,7 @@ func (k *KubeadmRuntime) generateJoinMasterConfigs(masterIP string) ([]byte, err
 	k.setJoinAdvertiseAddress(iputils.GetHostIP(masterIP))
 	k.setAPIServerEndpoint(fmt.Sprintf("%s:%d", k.getMaster0IP(), k.getAPIServerPort()))
 	if err := k.convertKubeadmVersion(); err != nil {
-		return nil, errors.Wrap(err, "convert kubeadm version failed")
+		return nil, fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
 	return yaml.MarshalYamlConfigs(k.conversion.JoinConfiguration, k.conversion.KubeletConfiguration)
 }

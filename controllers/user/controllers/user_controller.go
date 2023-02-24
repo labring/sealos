@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -30,7 +31,6 @@ import (
 	"github.com/labring/endpoints-operator/library/controller"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	"github.com/labring/sealos/controllers/user/controllers/helper"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -298,7 +298,7 @@ func (r *UserReconciler) syncOwnerUG(ctx context.Context, user *userv1.User) {
 			ug.Annotations = map[string]string{userAnnotationOwnerKey: user.Name}
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create UserGroup")
+			return fmt.Errorf("unable to create UserGroup: %w", err)
 		}
 		r.Logger.V(1).Info("create or update UserGroup ", "OperationResult", change)
 		return nil
@@ -340,7 +340,7 @@ func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *
 			}
 			return nil
 		}); err != nil {
-			return errors.Wrap(err, "unable to create namespace UserGroupBinding")
+			return fmt.Errorf("unable to create namespace UserGroupBinding: %w", err)
 		}
 		r.Logger.V(1).Info("create or update namespace UserGroupBinding", "OperationResult", change)
 		return nil
