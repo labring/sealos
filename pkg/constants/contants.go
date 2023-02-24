@@ -55,5 +55,5 @@ var Contact = `
 
                   Website: https://www.sealos.io/
                   Address: github.com/labring/sealos
-             BuildVersion: %s
+                  Version: %s
 `
