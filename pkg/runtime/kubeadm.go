@@ -111,6 +111,7 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 	return driver, nil
 }
 
+// MergeKubeadmConfig Unsafe, dangerous use of goroutines.
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	for _, fn := range []string{

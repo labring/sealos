@@ -42,10 +42,12 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 		node := node
 		eg.Go(func() error {
 			logger.Info("start to join %s as worker", node)
+			k.Lock()
 			err = k.ConfigJoinNodeKubeadmToNode(node)
 			if err != nil {
 				return fmt.Errorf("failed to copy join node kubeadm config %s %v", node, err)
 			}
+			k.Unlock()
 			err = k.execHostsAppend(node, k.getVip(), k.getAPIServerDomain())
 			if err != nil {
 				return fmt.Errorf("add apiserver domain hosts failed %v", err)
