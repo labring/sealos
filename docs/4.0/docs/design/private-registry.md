@@ -16,48 +16,92 @@ $ systemctl status image-cri-shim.service
 
 ## Where the private registry running
 
-The sealos private registry runs on the first node of the cluster，The first node of the cluster is where you run the create cluster command, you can see this container with the following command.
+The sealos private registry runs on the first node of the cluster，The first node of the cluster is where you run the create cluster command, you can see this systemd service `registry.service ` with the following command.
 
 ```shell
-$ nerdctl ps
-CONTAINER ID    IMAGE                               COMMAND                   CREATED         STATUS    PORTS    NAMES
-eb772a8cc788    docker.io/library/registry:2.7.1    "/entrypoint.sh /etc…"    22 hours ago    Up                 sealos-registry 
+$ systemctl status registry.service
 ```
 
-**Notes:** The data of the registry is saved in `/var/lib/sealos/data/default/rootfs/registry/` directory.
+**Notes:** The data of the registry is saved in ` /var/lib/sealos/data/default/rootfs/registry` directory.
 
 ## Login to the private registry
 
-Sealos private registry runs with HTTP and `--net host ` option，You should configure insecure-registries at local and connect with the first node's IP address，Example of docker client config.
+Sealos private registry runs with HTTP，You should configure insecure-registries at local，Example of docker client config.
 
 ```json
-# cat /etc/docker/daemon.json 
+$ cat /etc/docker/daemon.json 
 {
-  "insecure-registries": ["192.168.1.10:5000"],
+  "insecure-registries": ["sealos.hub:5000"]
 }
 ```
 
-Login with `sealos login` command, the default username and password is `admin:passw0rd`.
+Restart docker to reload config
 
-```shell
-sealos login -u admin -p passw0rd 192.168.1.10:5000
+```
+$ systemctl daemon-reload && systemctl restart docker
 ```
 
-Or use the `docker login` command.
+Configure local domain name resolution, and `192.168.1.30` is the first node's IP address of kubernetes cluster.
 
 ```shell
-docker login -u admin -p passw0rd 192.168.1.10:5000
+$ cat /etc/hosts
+...
+192.168.1.30 sealos.hub
 ```
 
-## Push and pull images
-
-Push image example:
+Login with `docker login` command, the default username and password is `admin:passw0rd`.
 
 ```shell
-$ sealos tag quay.io/skopeo/stable 192.168.72.50:5000/skopeo/stable
-$ sealos push 192.168.72.50:5000/skopeo/stable
+$ docker login -u admin -p passw0rd sealos.hub:5000
+```
+
+Or use the `sealos login` command.
+
+```shell
+$ sealos login -u admin -p passw0rd sealos.hub:5000
+```
+
+## Manage registry with sealctl
+
+Login registry
+
+```
+$ sealctl login -u admin -p passw0rd sealos.hub:5000
+```
+
+Check registry status
+
+```
+$ sealctl registry status
++-----------------+------------------------+----------+----------+---------+
+| Name            | URL                    | UserName | Password | Healthy |
++-----------------+------------------------+----------+----------+---------+
+| sealos.hub:5000 | http://sealos.hub:5000 | admin    | passw0rd | ok      |
++-----------------+------------------------+----------+----------+---------+
+```
+
+List all images in registry
+
+```
+root@node1:~# sealctl registry images
+```
+
+## Push images to private registry
+
+Only retag the registry  url and other parts remain unchanged, eg:
+
+```
+docker.io/library/nginx:1.23.3  -->  sealos.hub:5000/library/nginx:1.23.3
+```
+
+Example:
+
+```shell
+$ docker tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
+
+$ docker push sealos.hub:5000/library/nginx:1.23.3
 Using default tag: latest
-The push refers to repository [192.168.72.50:5000/skopeo/stable]
+The push refers to repository [sealos.hub:5000/library/nginx/1.23.3]
 a98b3d943f46: Pushed 
 b48290351261: Pushed 
 f39ec3c22bd5: Pushed 
@@ -67,14 +111,37 @@ c550c8e0f355: Pushed
 latest: digest: sha256:238efd85942755fbd28d4d23d1f8dedd99e9eec20777e946f132633b826a9295 size: 1570
 ```
 
-Pull image example:
+## Run pods use private registry image
 
-```shell
-sealos pull 192.168.72.50:5000/skopeo/stable
+Create a deployment yaml
+
+```yaml
+$ cat nginx-app.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/library/nginx:1.23.3
+        ports:
+        - containerPort: 80
 ```
 
-Or use the `docker pull` command:
+Apply the yaml
 
 ```shell
-docker pull 192.168.72.50:5000/skopeo/stable
+$ kubectl apply -f nginx-app.yaml
 ```
+
+Image-cri-shim service will first redirect the pull request to sealos.hub, If no image is found in sealos.hub, the image will be pulled from the Internet.
