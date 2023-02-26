@@ -103,3 +103,12 @@ func DeleteCondition(conditions []ClusterCondition, conditionType string) []Clus
 	conditions = newConditions
 	return conditions
 }
+
+func In(key string, slice []string) bool {
+	for _, s := range slice {
+		if key == s {
+			return true
+		}
+	}
+	return false
+}

@@ -145,7 +145,7 @@ func (r *ClusterArgs) setHostWithIpsPort(ips []string, roles []string) {
 	_, master0Port := iputils.GetHostIPAndPortOrDefault(ips[0], defaultPort)
 	for port, host := range hostMap {
 		host.IPS = removeIPListDuplicatesAndEmpty(host.IPS)
-		if port == master0Port && stringsutil.InList(v2.Master, roles) {
+		if port == master0Port && stringsutil.InList(v2.MASTER, roles) {
 			r.hosts = append([]v2.Host{*host}, r.hosts...)
 			continue
 		}

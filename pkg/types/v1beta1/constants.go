@@ -26,18 +26,9 @@ var (
 	REGISTRY = "registry"
 )
 
-type Provider string
-
 type Arch string
 
 const (
 	AMD64 Arch = "amd64"
 	ARM64 Arch = "arm64"
-)
-
-type Protocol string
-
-const (
-	ProtocolTCP Protocol = "tcp"
-	ProtocolUDP Protocol = "udp"
 )

@@ -85,7 +85,7 @@ func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
 func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
 	var ipList []string
 	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
-	ipList = append(ipList, append(cluster.GetIPSByRole(v2.Master), cluster.GetIPSByRole(v2.Node)...)...)
+	ipList = append(ipList, append(cluster.GetIPSByRole(v2.MASTER), cluster.GetIPSByRole(v2.NODE)...)...)
 	return sshClient, WaitSSHReady(sshClient, defaultMaxRetry, ipList...)
 }
 
