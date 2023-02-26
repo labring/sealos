@@ -24,7 +24,33 @@ $ systemctl status registry.service
 
 **Notes:** The data of the registry is saved in ` /var/lib/sealos/data/default/rootfs/registry` directory.
 
-## Login to the private registry
+## Manage registry with sealos
+
+Login registry
+
+```
+$ sealos login -u admin -p passw0rd sealos.hub:5000
+```
+
+Pull image
+
+```
+$ sealos pull docker.io/library/nginx:1.23.3
+```
+
+Retag image
+
+```
+$ sealos tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
+```
+
+Push image
+
+```
+$ sealos push sealos.hub:5000/library/nginx:1.23.3
+```
+
+## Manage registry with docker
 
 Sealos private registry runs with HTTP，You should configure insecure-registries at local，Example of docker client config.
 
@@ -55,11 +81,62 @@ Login with `docker login` command, the default username and password is `admin:p
 $ docker login -u admin -p passw0rd sealos.hub:5000
 ```
 
-Or use the `sealos login` command.
+## Manage registry with containerd
+
+The containerd-based cluster has `ctr` and `crictl` commands installed by default, but neither of them is very easy to use.
+
+1. **ctr command**
 
 ```shell
-$ sealos login -u admin -p passw0rd sealos.hub:5000
+ctr images pull --all-platforms docker.io/library/nginx:1.23.3
+ctr images tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
+ctr images push --plain-http --user admin:passw0rd sealos.hub:5000/library/nginx:1.23.3
 ```
+
+Export image from default namespace
+
+```
+ctr -n default images ls
+ctr images export --all-platforms nginx_1.23.3.tar.gz docker.io/library/nginx:1.23.3
+```
+
+Import images to k8s.io namespace
+
+```shell
+ctr -n k8s.io images import --all-platforms nginx_1.23.3.tar.gz
+ctr -n k8s.io images ls |grep nginx
+```
+
+**Notes:** To get the image when running the kubectl apply command, you must upload the image to the `k8s.io` namespace.
+
+2. **nerdctl comamnd**
+
+Or you can install nerdctl，`nerdctl` is a Docker-compatible CLI for containerd， but the cluster installed by sealos does not contain the nerdctl command by default.
+
+```shell
+wget https://github.com/containerd/nerdctl/releases/download/v1.2.0/nerdctl-1.2.0-linux-amd64.tar.gz
+tar -zxvf nerdctl-1.2.0-linux-amd64.tar.gz nerdctl && mv nerdctl /usr/local/bin
+```
+
+Then you can use nerdctl manage images
+
+```
+nerdctl login -u admin -p passw0rd sealos.hub:5000
+nerdctl pull docker.io/library/nginx:1.23.3
+nerdctl tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
+nerdctl push sealos.hub:5000/library/nginx:1.23.3
+```
+
+To get the image when running the kubectl apply command, nerdctl also need upload the image to the `k8s.io` namespace.
+
+```
+nerdctl -n k8s.io load -i nginx_1.23.3.tar.gz 
+```
+
+Notes:
+
+- `ctr` and `nerdctl` command belongs to containerd.
+- `crictl` command belongs to  kubernetes, but it does not support tag image and login registry, only support pull and push.
 
 ## Manage registry with sealctl
 
@@ -84,6 +161,12 @@ List all images in registry
 
 ```
 root@node1:~# sealctl registry images
+```
+
+More command
+
+```
+sealctl --help
 ```
 
 ## Push images to private registry
