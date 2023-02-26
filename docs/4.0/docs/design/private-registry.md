@@ -38,7 +38,7 @@ Pull image
 $ sealos pull docker.io/library/nginx:1.23.3
 ```
 
-Retag image
+Retag image, suggest only retag the registry  url and other parts remain unchanged, eg:
 
 ```
 $ sealos tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
@@ -138,6 +138,81 @@ Notes:
 - `ctr` and `nerdctl` command belongs to containerd.
 - `crictl` command belongs to  kubernetes, but it does not support tag image and login registry, only support pull and push.
 
+3. **nerdctl build**
+
+If you want to use nerdctl to build an image, you need more steps, and you need to install buildkit.
+
+```shell
+wget https://github.com/moby/buildkit/releases/download/v0.11.3/buildkit-v0.11.3.linux-amd64.tar.gz
+tar -zxvf buildkit-v0.11.3.linux-amd64.tar.gz -C /usr/local/bin --strip=1
+```
+
+Add buildkit.service
+
+```shell
+cat >/etc/systemd/system/buildkit.service<<EOF
+[Unit]
+Description=BuildKit
+Requires=buildkit.socket
+After=buildkit.socket
+Documentation=https://github.com/moby/buildkit
+
+[Service]
+Type=notify
+ExecStart=/usr/local/bin/buildkitd --addr fd://
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
+Add buildkit.socket
+
+```shell
+cat >/etc/systemd/system/buildkit.socket<<EOF
+[Unit]
+Description=BuildKit
+Documentation=https://github.com/moby/buildkit
+
+[Socket]
+ListenStream=%t/buildkit/buildkitd.sock
+SocketMode=0660
+
+[Install]
+WantedBy=sockets.target
+EOF
+```
+
+Start buildkit service
+
+```shell
+systemctl enable --now buildkit
+```
+
+Create a Dockerfile and build image with nerdctl
+
+```shell
+root@node1:~/tmp# nerdctl build -t sealos.hub:5000/library/ubuntu:22.04 .
+[+] Building 188.2s (6/6)                                                                                                                                                                   
+[+] Building 188.3s (6/6) FINISHED                                                                                                                                                          
+ => [internal] load build definition from Dockerfile                                                                                                                                   0.1s
+ => => transferring dockerfile: 101B                                                                                                                                                   0.0s
+ => [internal] load .dockerignore                                                                                                                                                      0.1s
+ => => transferring context: 2B                                                                                                                                                        0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:22.04                                                                                                                        3.6s
+ => [1/2] FROM docker.io/library/ubuntu:22.04@sha256:9a0bdde4188b896a372804be2384015e90e3f84906b750c1a53539b585fbbe7f                                                                156.4s
+ => => resolve docker.io/library/ubuntu:22.04@sha256:9a0bdde4188b896a372804be2384015e90e3f84906b750c1a53539b585fbbe7f                                                                  0.0s
+ => => sha256:677076032cca0a2362d25cf3660072e738d1b96fe860409a33ce901d695d7ee8 29.53MB / 29.53MB                                                                                     154.8s
+ => => extracting sha256:677076032cca0a2362d25cf3660072e738d1b96fe860409a33ce901d695d7ee8                                                                                              1.5s
+ => [2/2] RUN apt update -y -q && apt install -y -q vim                                                                                                                               20.8s
+ => exporting to docker image format                                                                                                                                                   7.2s
+ => => exporting layers                                                                                                                                                                5.3s 
+ => => exporting manifest sha256:7719df8c3f4082d4b0bc6be8d44fecc953f158627c55bdae52e87139c202911d                                                                                      0.0s 
+ => => exporting config sha256:dd78505ad42da5eeaf60077356520df57e7893038bb4a8b8d53e78fe4c4892b6                                                                                        0.0s 
+ => => sending tarball                                                                                                                                                                 1.9s 
+Loaded image: sealos.hub:5000/library/ubuntu:22.04
+```
+
 ## Manage registry with sealctl
 
 Login registry
@@ -169,34 +244,9 @@ More command
 sealctl --help
 ```
 
-## Push images to private registry
-
-Only retag the registry  url and other parts remain unchanged, eg:
-
-```
-docker.io/library/nginx:1.23.3  -->  sealos.hub:5000/library/nginx:1.23.3
-```
-
-Example:
-
-```shell
-$ docker tag docker.io/library/nginx:1.23.3 sealos.hub:5000/library/nginx:1.23.3
-
-$ docker push sealos.hub:5000/library/nginx:1.23.3
-Using default tag: latest
-The push refers to repository [sealos.hub:5000/library/nginx/1.23.3]
-a98b3d943f46: Pushed 
-b48290351261: Pushed 
-f39ec3c22bd5: Pushed 
-e5a31cf70f11: Pushed 
-b9394289d761: Pushed 
-c550c8e0f355: Pushed 
-latest: digest: sha256:238efd85942755fbd28d4d23d1f8dedd99e9eec20777e946f132633b826a9295 size: 1570
-```
-
 ## Run pods use private registry image
 
-Create a deployment yaml
+Create a sample deployment yaml
 
 ```yaml
 $ cat nginx-app.yaml
