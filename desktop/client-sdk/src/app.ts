@@ -19,6 +19,7 @@ class ClientSDK {
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>()
 
   constructor(config: AppConstructorParam) {
+
     this.commonConfig = {
       appKey: config.appKey,
       clientLocation: ''
