@@ -12,5 +12,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: xiaojie99999/account
-  newTag: v2.1.0
+  newName: ghcr.io/labring/sealos-account-controller
+  newTag: dev

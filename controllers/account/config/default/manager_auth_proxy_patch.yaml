@@ -13,7 +13,7 @@ spec:
         securityContext:
           runAsNonRoot: true
           allowPrivilegeEscalation: false
-        image: gcr.dockerproxy.com/kubebuilder/kube-rbac-proxy:v0.11.0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
         imagePullPolicy: IfNotPresent
         args:
         - "--secure-listen-address=0.0.0.0:8443"

@@ -16,7 +16,7 @@ webhooks:
   name: mpod.kb.io
   rules:
   - apiGroups:
-    - ""
+    - '*'
     apiVersions:
     - v1
     operations:
