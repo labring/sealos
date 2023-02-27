@@ -45,6 +45,8 @@ sudo sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/g' /etc/ssh/sshd_config
 sudo sed -ie "s/no-port-for.*exit 142\" //g" /root/.ssh/authorized_keys
 `
 
+const defaultAvailabilityZone = "cn-north-1b"
+
 // EC2CreateInstanceAPI defines the interface for the RunInstances and CreateTags functions.
 // We use this interface to test the functions using a mocked service.
 type EC2CreateInstanceAPI interface {
@@ -169,28 +171,24 @@ func (d Driver) GetTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
 	return tags
 }
 
-// get instace data by id
-func getInstancesByID(id *string, client *ec2.Client) ([]types.Reservation, error) {
-	uidKey := fmt.Sprintf("tag:%s", common.InfraInstancesUUID)
-	statusName := common.InstanceState
-	status := types.InstanceStateNameRunning
-	input := &ec2.DescribeInstancesInput{
-		Filters: []types.Filter{
-			{
-				Name:   &uidKey,
-				Values: []string{*id},
-			},
-			{
-				Name:   &statusName,
-				Values: []string{string(status)},
-			},
-		},
-	}
-	result, err := GetInstances(context.TODO(), client, input)
-	if err != nil || len(result.Reservations) == 0 || len(result.Reservations[0].Instances) == 0 {
-		return nil, fmt.Errorf("got an error retrieving information about your Amazon EC2 instances: %v", err)
-	}
-	return result.Reservations, nil
+// GetVolumeTags get tags
+func (d Driver) GetVolumeTags(hosts *v1.Hosts, infra *v1.Infra) []types.Tag {
+	// Set role tag
+	tags := rolesToTags(hosts.Roles)
+	// Set label tag
+	labelKey := common.InfraInstancesLabel
+	labelValue := infra.GetInstancesAndVolumesTag()
+	// Set infra uid tag
+	uidKey := common.InfraInstancesUUID
+	uidValue := string(infra.GetUID())
+	tags = append(tags, types.Tag{
+		Key:   &labelKey,
+		Value: &labelValue,
+	}, types.Tag{
+		Key:   &uidKey,
+		Value: &uidValue,
+	})
+	return tags
 }
 
 // GetBlockDeviceMappings generate blockDeviceMappings from hosts
@@ -245,9 +243,11 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		return nil
 	}
 	tags := d.GetTags(hosts, infra)
-	roleTags := rolesToTags(hosts.Roles)
+	volumeTags := d.GetVolumeTags(hosts, infra)
 	keyName := infra.Spec.SSH.PkName
-	availabilityZone := infra.Spec.AvailabilityZone
+	if infra.Spec.AvailabilityZone == "" {
+		infra.Spec.AvailabilityZone = defaultAvailabilityZone
+	}
 	// todo use ami to search root device name
 
 	// encode userdata to base64
@@ -271,14 +271,14 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 			},
 			{
 				ResourceType: types.ResourceTypeVolume,
-				Tags:         roleTags,
+				Tags:         volumeTags,
 			},
 		},
 		KeyName:             &keyName,
 		SecurityGroupIds:    []string{"sg-0476ffedb5ca3f816"},
 		BlockDeviceMappings: bdms,
 		Placement: &types.Placement{
-			AvailabilityZone: &availabilityZone,
+			AvailabilityZone: &infra.Spec.AvailabilityZone,
 		},
 		UserData: &userData,
 	}
@@ -301,49 +301,6 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 		return fmt.Errorf("create instance and wait instance running failed: %v", err)
 	}
 
-	//set tag to volume
-	diskIndex := 0
-	//get BlockDeviceMapping
-	id := string(infra.UID)
-	reservations, err := getInstancesByID(&id, d.Client)
-	if err != nil {
-		return fmt.Errorf("get instance failed: %v", err)
-	}
-	for _, reservation := range reservations {
-		for _, curInstance := range reservation.Instances {
-			diskIndex = 0
-			for _, blockDeviceMap := range curInstance.BlockDeviceMappings {
-				vid := blockDeviceMap.Ebs.VolumeId
-				indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(diskIndex)
-				infraIDKey, infraIDValue := common.VolumeInfraID, curInstance.InstanceId
-				typeKey := common.DataVolumeLabel
-				if *blockDeviceMap.DeviceName == rootDeviceName {
-					typeKey = common.RootVolumeLabel
-				}
-				typeValue := common.TRUELable
-				volumeTags := []types.Tag{
-					{
-						Key:   &infraIDKey,
-						Value: infraIDValue,
-					}, {
-						Key:   &indexKey,
-						Value: &indexValue,
-					}, {
-						Key:   &typeKey,
-						Value: &typeValue,
-					},
-				}
-				input := &ec2.CreateTagsInput{
-					Resources: []string{*vid},
-					Tags:      volumeTags,
-				}
-				if _, err := MakeTags(context.TODO(), client, input); err != nil {
-					return fmt.Errorf("create volume tags failed: %v", err)
-				}
-				diskIndex++
-			}
-		}
-	}
 	//err = d.createAndAttachVolumes(infra, hosts, hosts.Disks)
 	//if err != nil {
 	//	return fmt.Errorf("create and attach volumes failed: %v", err)

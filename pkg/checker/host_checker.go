@@ -63,6 +63,7 @@ func checkHostnameUnique(s ssh.Interface, ipList []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to get host %s hostname, %v", ip, err)
 		}
+
 		if hostnameList[hostname] {
 			return fmt.Errorf("hostname cannot be repeated, please set different hostname")
 		}

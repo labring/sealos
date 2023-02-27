@@ -88,17 +88,26 @@ func (d Driver) stopInstances(hosts *v1.Hosts) error {
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 	client := d.Client
 	instanceID := make([]string, hosts.Count)
+	var disksID []string
+	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
+	if err != nil {
+		return fmt.Errorf("aws delete disks failed(get root device name):, %v", err)
+	}
 	for i := 0; i < hosts.Count; i++ {
 		if len(hosts.Metadata) == 0 {
 			return nil
 		}
 		metadata := hosts.Metadata[i]
 		instanceID[i] = metadata.ID
+		for _, disk := range hosts.Disks {
+			if disk.Device != rootDeviceName {
+				disksID = append(disksID, disk.ID...)
+			}
+		}
 	}
-
-	//if err := d.DeleteVolume(disksID); err != nil {
-	//	return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
-	//}
+	if err := d.DeleteVolume(disksID); err != nil {
+		return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
+	}
 
 	// first query for the instance status that can be stopped
 	describeInputStatus := &ec2.DescribeInstanceStatusInput{

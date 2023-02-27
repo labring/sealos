@@ -5,10 +5,8 @@ metadata:
   namespace: infra-system
 data:
   #  machine with sealos
-  amazon-linux: "ami-048280a00d5085dd1"
-  ubuntu: "ami-072370b4c0664c740"
-  lower-limit: "8"
+  aws-amazon-linux: "ami-048280a00d5085dd1"
+  aws-ubuntu: "ami-072370b4c0664c740"
   #  GPU machine
-  ubuntu-GPU: "ami-00c3365284ff0b28f"
-  lower-limit-GPU: "45"
+  aws-ubuntu-GPU: "ami-00c3365284ff0b28f"
 immutable: true

@@ -75,11 +75,12 @@ spec:
                         properties:
                           capacity:
                             type: integer
-                          id:
+                          device:
                             type: string
-                          index:
-                            description: Name  string `json:"name,omitempty"`
-                            type: integer
+                          id:
+                            items:
+                              type: string
+                            type: array
                           type:
                             default: data
                             description: Disk Type , default is data disk. allowed

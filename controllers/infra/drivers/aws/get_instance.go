@@ -254,16 +254,15 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 							break
 						}
 					}
-					volIndex, err := getVolIndex(vol)
-					if err != nil {
-						return nil, fmt.Errorf("aws ecs not found volume index label: %v", err)
+					if len(vol.Attachments) == 0 {
+						return nil, fmt.Errorf("aws ec2 volume %v has no attachments", *vol.VolumeId)
 					}
 					disks = append(disks, v1.Disk{
 						Capacity:   int(*vol.Size),
 						VolumeType: string(vol.VolumeType),
 						Type:       diskType,
 						ID:         []string{*vol.VolumeId},
-						Index:      volIndex,
+						Device:     *vol.Attachments[0].Device,
 					})
 				}
 			}
@@ -322,23 +321,14 @@ func getIndex(i types.Instance) (int, error) {
 	return -1, fmt.Errorf("not found index tag: %v", i.Tags)
 }
 
-func getVolIndex(v types.Volume) (int, error) {
-	for _, tag := range v.Tags {
-		if *tag.Key == common.InfraVolumeIndex {
-			return strconv.Atoi(*tag.Value)
-		}
-	}
-	return -1, fmt.Errorf("volume index not found: %v", *v.VolumeId)
-}
-
 func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
 	if len(*newDisk) == 0 {
 		return
 	}
-	sort.Sort(v1.IndexDisks(*newDisk))
-	sort.Sort(v1.IndexDisks(*curDisk))
+	sort.Sort(v1.DeviceDisks(*newDisk))
+	sort.Sort(v1.DeviceDisks(*curDisk))
 	for i := range *newDisk {
-		if (*newDisk)[i].Index == (*curDisk)[i].Index {
+		if (*newDisk)[i].Device == (*curDisk)[i].Device {
 			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
 		}
 	}

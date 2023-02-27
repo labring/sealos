@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"strconv"
 	"time"
+
+	"github.com/labring/sealos/pkg/utils/logger"
 
 	"golang.org/x/sync/errgroup"
 
@@ -49,7 +50,8 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.Disk) error {
-	deviceName, err := generateDataDiskDeviceName(disk.Index)
+	deviceName, err := d.generateNewDeviceName(host)
+	logger.Info("generate new device name: %s", deviceName)
 	if err != nil {
 		return err
 	}
@@ -66,22 +68,12 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 		id := v.ID
 
 		nameKey, fullName := common.InfraVolumesLabel, infra.GetInstancesAndVolumesTag()
-		dataLable, value := common.DataVolumeLabel, common.TRUELable
-		indexKey, indexValue := common.InfraVolumeIndex, strconv.Itoa(disk.Index)
 		infraIDKey, infraIDValue := common.VolumeInfraID, id
 
 		tags = append(tags, []types.Tag{
 			{
 				Key:   &nameKey,
 				Value: &fullName,
-			},
-			{
-				Key:   &dataLable,
-				Value: &value,
-			},
-			{
-				Key:   &indexKey,
-				Value: &indexValue,
 			},
 			{
 				Key:   &infraIDKey,
@@ -120,6 +112,25 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 		return err
 	}
 	return nil
+}
+
+// generateNewDeviceName generate new device name for new volume.
+func (d Driver) generateNewDeviceName(host *v1.Hosts) (string, error) {
+	var deviceName string
+	deviceIndex := 0
+	var deviceSuffix = "fghijklmnop"
+	deviceMap := map[string]struct{}{}
+	for _, v := range host.Disks {
+		deviceMap[v.Device] = struct{}{}
+	}
+	for i := 0; i < len(deviceSuffix); i++ {
+		deviceName = fmt.Sprintf("/dev/sd%s", string(deviceSuffix[i]))
+		if _, ok := deviceMap[deviceName]; !ok {
+			deviceIndex = i
+			break
+		}
+	}
+	return fmt.Sprintf("/dev/sd%s", string(deviceSuffix[deviceIndex])), nil
 }
 
 func retryAttachVolume(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputAttach *ec2.AttachVolumeInput) error {

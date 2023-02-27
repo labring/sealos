@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -125,10 +128,6 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return keyError
 		}
 
-		if infra.Spec.AvailabilityZone == "" {
-			infra.Spec.AvailabilityZone = common.DefaultRegion
-		}
-
 		if err := r.Get(ctx, req.NamespacedName, secret); err == nil && infra.Spec.SSH.PkData == "" {
 			pkData, err2 := base64.StdEncoding.DecodeString(string(secret.Data[infra.Name]))
 			if err2 != nil {
@@ -211,9 +210,9 @@ func (r *InfraReconciler) DeleteInstances(infra *infrav1.Infra) error {
 		if err := r.driver.DeleteInstances(&hosts); err != nil {
 			return fmt.Errorf("delete instance error:%v", err)
 		}
-		if err := r.driver.DeleteKeyPair(infra); err != nil {
-			return fmt.Errorf("delete keypair error:%v", err)
-		}
+	}
+	if err := r.driver.DeleteKeyPair(infra); err != nil {
+		return fmt.Errorf("delete keypair error:%v", err)
 	}
 	return nil
 }
@@ -276,6 +275,7 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.finalizer = controller.NewFinalizer(r.Client, common.SealosInfraFinalizer)
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrav1.Infra{}).
+		For(&infrav1.Infra{}, builder.WithPredicates(
+			predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
 }
