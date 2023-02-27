@@ -17,13 +17,16 @@ package clusterfile
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
+	"github.com/imdario/mergo"
 	"helm.sh/helm/v3/pkg/cli/values"
 	"helm.sh/helm/v3/pkg/getter"
+	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/runtime"
@@ -165,6 +168,26 @@ func (c *ClusterFile) DecodeKubeadmConfig(data []byte) error {
 	}
 	if kubeadmConfig == nil {
 		return ErrTypeNotFound
+	}
+	c.KubeConfig = kubeadmConfig
+	return nil
+}
+
+func (c *ClusterFile) SetSingleMode(enable bool) error {
+	if !enable {
+		return nil
+	}
+
+	kubeadmConfig := &runtime.KubeadmConfig{
+		InitConfiguration: kubeadm.InitConfiguration{
+			SkipPhases: []string{"mark-control-plane"},
+		},
+	}
+	if c.KubeConfig != nil {
+		err := mergo.Merge(kubeadmConfig, c.KubeConfig, mergo.WithAppendSlice)
+		if err != nil {
+			return fmt.Errorf("merge: %v", err)
+		}
 	}
 	c.KubeConfig = kubeadmConfig
 	return nil

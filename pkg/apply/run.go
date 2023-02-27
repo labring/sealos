@@ -44,6 +44,10 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err != nil && err != clusterfile.ErrClusterFileNotExists {
 		return nil, err
 	}
+	if err = cf.SetSingleMode(args.Single); err != nil {
+		return nil, err
+	}
+
 	cluster := cf.GetCluster()
 	if cluster == nil {
 		logger.Debug("creating new cluster")
