@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"sync"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
@@ -58,7 +57,6 @@ func (k *KubeadmRuntime) InitMaster0() error {
 
 // sendJoinCPConfig send join CP masters configuration
 func (k *KubeadmRuntime) sendJoinCPConfig(joinMaster []string) error {
-	k.Mutex = &sync.Mutex{}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, master := range joinMaster {
 		master := master
