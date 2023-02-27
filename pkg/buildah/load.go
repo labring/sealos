@@ -49,7 +49,7 @@ func newLoadCommand() *cobra.Command {
 	fs.StringVarP(&archiveName, "input", "i", "", "load image from tar archive file")
 	fs.StringVarP(&transport, "transport", "t", OCIArchive,
 		fmt.Sprintf("load image transport from tar archive file. (available options are %s, %s)", OCIArchive, DockerArchive))
-	_ = markFlagsHidden(fs, "os", "arch", "platform", "variant")
+	_ = markFlagsHidden(fs, markFlagsHiddenPlatform()...)
 	_ = loadCommand.MarkFlagRequired("input")
 	return loadCommand
 }

@@ -125,7 +125,7 @@ func loginCmd(c *cobra.Command, args []string, iopts *loginReply) error {
 	if len(args) == 0 {
 		return errors.New("please specify a registry to login to")
 	}
-	if err := setDefaultFlags(c); err != nil {
+	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 

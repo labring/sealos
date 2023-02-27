@@ -19,15 +19,16 @@ package maps
 import (
 	"fmt"
 	"strings"
+
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 )
 
-func MapToString(data map[string]string) string {
-	result := make([]string, 0)
-	for k, v := range data {
-		result = append(result, fmt.Sprintf("%s=%s", k, v))
+func MapToStringBySpilt(data map[string]string, spilt string) string {
+	result := make([]string, len(data))
+	for _, k := range yaml.SortedMapKeys(data) {
+		result = append(result, fmt.Sprintf("%s=%s", k, data[k]))
 	}
-
-	return strings.Join(result, ",")
+	return strings.Join(result, spilt)
 }
 
 func StringToMap(data string, spilt string) map[string]string {

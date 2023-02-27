@@ -105,7 +105,7 @@ func (impl *realImpl) Pull(imageNames []string, opts ...FlagSetter) error {
 			return err
 		}
 	}
-	if err := setDefaultFlags(cmd); err != nil {
+	if err := setDefaultFlagsWithSetters(cmd, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
 	ids, err := doPull(cmd, impl.store, nil, imageNames, iopt)
@@ -174,7 +174,7 @@ func (impl *realImpl) from(name, image string, opts ...FlagSetter) (*buildah.Bui
 			return nil, err
 		}
 	}
-	if err := setDefaultFlags(cmd); err != nil {
+	if err := setDefaultFlagsWithSetters(cmd, setDefaultTLSVerifyFlag); err != nil {
 		return nil, err
 	}
 	return doFrom(cmd, image, iopts, impl.store, nil)

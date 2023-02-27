@@ -62,17 +62,13 @@ func MergeDockerfileFromImages(imageObjList []map[string]v1.Image) (string, erro
 	}
 	t := template.New("")
 	t, err := t.Parse(
-		`FROM scratch
+		`FROM {{ .Image0 }}
 MAINTAINER labring
 {{- if .Labels }}
-{{- range $key, $val := .Labels }}
-LABEL {{ $key }}={{ $val }}
-{{- end }}
+LABEL {{ .Labels }}
 {{- end }}
 {{- if .Envs }}
-{{- range $key, $val := .Envs }}
-ENV {{ $key }}={{ $val }}
-{{- end }}
+ENV {{ .Envs }}
 {{- end }}
 {{- if .Entrypoints }}
 ENTRYPOINT [{{ .Entrypoints }}]
@@ -82,18 +78,19 @@ CMD [{{ .CMDs }}]
 {{- end }}
 {{- if .Images }}
 {{- range .Images }}
-COPY --from={{.}}  . .
+COPY --from={{.}}   . .
 {{- end }}
 {{- end }}`)
 	if err != nil {
 		return "", err
 	}
 	data := map[string]any{
-		"Labels":      labels,
-		"Envs":        envs,
+		"Labels":      maps.MapToStringBySpilt(labels, " \\\n\t"),
+		"Envs":        maps.MapToStringBySpilt(envs, " \\\n\t"),
 		"Entrypoints": strings.Join(entrypoints, ","),
 		"CMDs":        strings.Join(cmds, ","),
-		"Images":      imageNames,
+		"Images":      imageNames[1:],
+		"Image0":      imageNames[0],
 	}
 
 	out := bytes.NewBuffer(nil)
