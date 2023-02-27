@@ -102,6 +102,7 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 
 func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, setKubeadm bool) (Interface, error) {
 	k := &KubeadmRuntime{
+		Mutex:   &sync.Mutex{},
 		Cluster: cluster,
 		Config: &Config{
 			ClusterFileKubeConfig: kubeadm,
