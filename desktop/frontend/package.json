@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
-    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk"
+    "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
+    "formatFrontend": "./node_modules/.bin/prettier --config \"./.prettierrc.js\" --write \"./src/**/*.{ts,tsx,scss}\""
   },
   "browserslist": [
     "defaults",
