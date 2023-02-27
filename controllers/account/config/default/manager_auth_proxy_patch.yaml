@@ -34,6 +34,8 @@ spec:
         env:
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
+          - name: NAMESPACE_NAME
+            value: "user-system"
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"
