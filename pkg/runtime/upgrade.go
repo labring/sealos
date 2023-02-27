@@ -15,8 +15,10 @@
 package runtime
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"os"
 	str "strings"
 	"time"
 
@@ -44,8 +46,14 @@ const (
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	//v1.25.0 some flag unsupported
 	if versionutil.Compare(version, V1250) {
-		logger.Info("start change ClusterConfiguration up to v1.25")
+		logger.Info("Change ClusterConfiguration up to v1.25 if need.")
 		if err := k.ChangeConfigToV125(); err != nil {
+			return err
+		}
+	}
+	if versionutil.Compare(version, V1260) {
+		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2. You will need to upgrade to containerd v1.6.0 or higher.")
+		if err := k.changeCRIVersion(); err != nil {
 			return err
 		}
 	}
@@ -196,6 +204,31 @@ func (k *KubeadmRuntime) tryUncordonNode(ip, nodename string) error {
 		if time.Now().After(timeout) {
 			return fmt.Errorf("try uncordon node %s timeout one minute", nodename)
 		}
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) changeCRIVersion() error {
+	if err := modifyFile("/etc/image-cri-shim.yaml", "version: v1alpha2", "version: v1"); err != nil {
+		return err
+	}
+	master0ip := k.getMaster0IP()
+	return k.sshCmdAsync(master0ip,
+		"systemctl restart image-cri-shim",
+		"systemctl restart kubelet",
+	)
+}
+
+func modifyFile(filePath, old, new string) error {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	modifiedData := []byte(string(data) + "\n")
+	modifiedData = bytes.ReplaceAll(modifiedData, []byte(old), []byte(new))
+	err = os.WriteFile(filePath, modifiedData, os.ModePerm)
+	if err != nil {
+		return err
 	}
 	return nil
 }
