@@ -54,7 +54,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -90,7 +90,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -126,7 +126,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -162,7 +162,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -198,7 +198,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -234,7 +234,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -270,7 +270,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -306,7 +306,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -342,7 +342,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -378,7 +378,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -414,7 +414,7 @@ func TestDelete(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -472,7 +472,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -508,7 +508,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -544,7 +544,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -580,7 +580,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -616,7 +616,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -652,7 +652,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -688,7 +688,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},
@@ -724,7 +724,7 @@ func TestJoin(t *testing.T) {
 							},
 							{
 								IPS:   []string{"192.168.16.1:22", "192.168.16.2:22", "192.168.16.3:22", "192.168.16.4:22"},
-								Roles: []string{v2.Node},
+								Roles: []string{v2.NODE},
 							},
 						},
 					},

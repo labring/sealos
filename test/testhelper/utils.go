@@ -23,7 +23,6 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/exec"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/testhelper/settings"
 
 	"github.com/onsi/gomega"
@@ -63,17 +62,6 @@ func WriteFile(fileName string, content []byte) error {
 type SSHClient struct {
 	RemoteHostIP string
 	SSH          *ssh.SSH
-}
-
-func NewSSHClientByInfra(infra *v1beta1.Infra) *SSHClient {
-	config := &ssh.SSH{
-		User:     "root",
-		Password: infra.Spec.Metadata.AccessChannels.SSH.Passwd,
-	}
-	return &SSHClient{
-		RemoteHostIP: infra.Status.Cluster.EIP,
-		SSH:          config,
-	}
 }
 
 func IsFileExist(filename string) bool {
