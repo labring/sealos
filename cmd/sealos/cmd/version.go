@@ -68,18 +68,43 @@ func getContact() string {
 }
 
 func PrintInfo() error {
-	var (
-		marshalled []byte
-	)
 	OutputInfo := &version.Output{}
 	OutputInfo.SealosVersion = version.Get()
 	cluster, err := clusterfile.GetClusterFromName(clusterName)
 	if err != nil {
 		logger.Debug(err, "fail to find cluster from name")
+		err = PrintToStd(OutputInfo)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	OutputInfo.KubernetesVersion = version.GetKubernetesVersion(cluster)
 	OutputInfo.CriRuntimeVersion = version.GetCriRuntimeVersion()
 
+	err = PrintToStd(OutputInfo)
+	if err != nil {
+		return err
+	}
+	missinfo := []string{}
+	if OutputInfo.KubernetesVersion == nil {
+		missinfo = append(missinfo, "kubernetes version")
+	}
+	if OutputInfo.CriRuntimeVersion == nil {
+		missinfo = append(missinfo, "cri runtime version")
+	}
+	if OutputInfo.KubernetesVersion == nil || OutputInfo.CriRuntimeVersion == nil {
+		fmt.Printf("WARNING: Failed to get %s.\nCheck kubernetes status or use command \"sealos run\" to launch kubernetes\n", strings.Join(missinfo, " and "))
+	}
+
+	return nil
+}
+
+func PrintToStd(OutputInfo *version.Output) error {
+	var (
+		marshalled []byte
+		err        error
+	)
 	switch output {
 	case "yaml":
 		marshalled, err = yaml.Marshal(&OutputInfo)
@@ -98,16 +123,5 @@ func PrintInfo() error {
 		// However, we follow a policy of never panicking.
 		return fmt.Errorf("versionOptions were not validated: --output=%q should have been rejected", output)
 	}
-	missinfo := []string{}
-	if OutputInfo.KubernetesVersion == nil {
-		missinfo = append(missinfo, "kubernetes version")
-	}
-	if OutputInfo.CriRuntimeVersion == nil {
-		missinfo = append(missinfo, "cri runtime version")
-	}
-	if OutputInfo.KubernetesVersion == nil || OutputInfo.CriRuntimeVersion == nil {
-		fmt.Printf("WARNING: Failed to get %s.\nCheck kubernetes status or use command \"sealos run\" to launch kubernetes\n", strings.Join(missinfo, " and "))
-	}
-
 	return nil
 }
