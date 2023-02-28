@@ -15,10 +15,8 @@
 package runtime
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os"
 	str "strings"
 	"time"
 
@@ -53,9 +51,6 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	}
 	if versionutil.Compare(version, V1260) {
 		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2. You will need to upgrade to containerd v1.6.0 or higher.")
-		if err := k.changeCRIVersion(); err != nil {
-			return err
-		}
 	}
 	//upgrade master0
 	logger.Info("start to upgrade master0")
@@ -72,11 +67,16 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		upgradeNodes = append(upgradeNodes, ip)
 	}
 	logger.Info("start to upgrade other control-planes and worker nodes")
-	return k.upgradeOtherNodes(upgradeNodes)
+	return k.upgradeOtherNodes(upgradeNodes, version)
 }
 
 func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
+	if versionutil.Compare(version, V1260) {
+		if err := k.changeCRIVersion(master0ip); err != nil {
+			return err
+		}
+	}
 	master0Name, err := k.getRemoteInterface().Hostname(master0ip)
 	if err != nil {
 		return err
@@ -108,8 +108,13 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	return k.tryUncordonNode(master0ip, master0Name)
 }
 
-func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
+func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 	for _, ip := range ips {
+		if versionutil.Compare(version, V1260) {
+			if err := k.changeCRIVersion(ip); err != nil {
+				return err
+			}
+		}
 		nodename, err := k.getRemoteInterface().Hostname(ip)
 		if err != nil {
 			return err
@@ -208,27 +213,10 @@ func (k *KubeadmRuntime) tryUncordonNode(ip, nodename string) error {
 	return nil
 }
 
-func (k *KubeadmRuntime) changeCRIVersion() error {
-	if err := modifyFile("/etc/image-cri-shim.yaml", "version: v1alpha2", "version: v1"); err != nil {
-		return err
-	}
-	master0ip := k.getMaster0IP()
-	return k.sshCmdAsync(master0ip,
+func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
+	return k.sshCmdAsync(ip,
+		"sed -i \"s/v1alpha2/v1/\" /etc/image-cri-shim.yaml",
 		"systemctl restart image-cri-shim",
 		"systemctl restart kubelet",
 	)
-}
-
-func modifyFile(filePath, old, new string) error {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return err
-	}
-	modifiedData := []byte(string(data) + "\n")
-	modifiedData = bytes.ReplaceAll(modifiedData, []byte(old), []byte(new))
-	err = os.WriteFile(filePath, modifiedData, os.ModePerm)
-	if err != nil {
-		return err
-	}
-	return nil
 }
