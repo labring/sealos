@@ -91,9 +91,7 @@ spec:
         control-plane: service-manager
     spec:
       containers:
-      - command:
-        - /manager
-        image: ghcr.io/labring/sealos-auth-service:dev
+      - image: ghcr.io/labring/sealos-auth-service:dev
         imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 15
