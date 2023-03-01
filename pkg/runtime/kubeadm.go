@@ -42,6 +42,7 @@ const (
 	V1150 = "v1.15.0"
 	V1220 = "v1.22.0"
 	V1250 = "v1.25.0"
+	V1260 = "v1.26.0"
 
 	KubeadmV1beta1 = "kubeadm.k8s.io/v1beta1"
 	KubeadmV1beta2 = "kubeadm.k8s.io/v1beta2"

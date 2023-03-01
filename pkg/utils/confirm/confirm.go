@@ -34,7 +34,7 @@ func Confirm(prompt, cancel string) (bool, error) {
 			return true, nil
 		}
 		if noRx.MatchString(input) {
-			fmt.Print(cancel)
+			fmt.Println(cancel)
 			return false, nil
 		}
 	}

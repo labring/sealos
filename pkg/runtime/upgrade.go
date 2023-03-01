@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	str "strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )
@@ -44,8 +46,14 @@ const (
 func (k *KubeadmRuntime) upgradeCluster(version string) error {
 	//v1.25.0 some flag unsupported
 	if versionutil.Compare(version, V1250) {
-		logger.Info("start change ClusterConfiguration up to v1.25")
+		logger.Info("Change ClusterConfiguration up to v1.25 if need.")
 		if err := k.ChangeConfigToV125(); err != nil {
+			return err
+		}
+	}
+	if versionutil.Compare(version, V1260) {
+		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2.")
+		if err := confirmUpgrade(); err != nil {
 			return err
 		}
 	}
@@ -64,11 +72,16 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		upgradeNodes = append(upgradeNodes, ip)
 	}
 	logger.Info("start to upgrade other control-planes and worker nodes")
-	return k.upgradeOtherNodes(upgradeNodes)
+	return k.upgradeOtherNodes(upgradeNodes, version)
 }
 
 func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	master0ip := k.getMaster0IP()
+	if versionutil.Compare(version, V1260) {
+		if err := k.changeCRIVersion(master0ip); err != nil {
+			return err
+		}
+	}
 	master0Name, err := k.getRemoteInterface().Hostname(master0ip)
 	if err != nil {
 		return err
@@ -100,8 +113,13 @@ func (k *KubeadmRuntime) upgradeMaster0(version string) error {
 	return k.tryUncordonNode(master0ip, master0Name)
 }
 
-func (k *KubeadmRuntime) upgradeOtherNodes(ips []string) error {
+func (k *KubeadmRuntime) upgradeOtherNodes(ips []string, version string) error {
 	for _, ip := range ips {
+		if versionutil.Compare(version, V1260) {
+			if err := k.changeCRIVersion(ip); err != nil {
+				return err
+			}
+		}
 		nodename, err := k.getRemoteInterface().Hostname(ip)
 		if err != nil {
 			return err
@@ -196,6 +214,27 @@ func (k *KubeadmRuntime) tryUncordonNode(ip, nodename string) error {
 		if time.Now().After(timeout) {
 			return fmt.Errorf("try uncordon node %s timeout one minute", nodename)
 		}
+	}
+	return nil
+}
+
+func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
+	return k.sshCmdAsync(ip,
+		"sed -i \"s/v1alpha2/v1/\" /etc/image-cri-shim.yaml",
+		"systemctl restart image-cri-shim",
+		"systemctl restart kubelet",
+	)
+}
+
+func confirmUpgrade() error {
+	prompt := "already upgrade to containerd v1.6.0 or higher."
+	cancel := "need to upgrade to containerd v1.6.0 or higher. And you can retry to upgrade cluster by the same command."
+	yes, err := confirm.Confirm(prompt, cancel)
+	if err != nil {
+		return err
+	}
+	if !yes {
+		return errors.New("cancelled")
 	}
 	return nil
 }
