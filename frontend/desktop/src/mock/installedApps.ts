@@ -23,24 +23,40 @@ const installedApps: TAppConfig[] = [
     }
   },
   {
-    key: 'App-Store',
-    name: 'App Store',
+    key: 'sealos-image-hub',
+    name: 'Image Hub',
     icon: '/images/icons/app_store.png',
-    type: APPTYPE.APP,
+    type: APPTYPE.IFRAME,
     data: {
-      url: '',
-      desc: 'App Store'
+      url: 'https://hub.sealos.io/',
+      desc: 'Image Hub'
     },
-    gallery: [
-      'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
-      'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
-    ],
+    gallery: [],
     menu: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
     }
   },
+  // {
+  //   key: 'App-Store',
+  //   name: 'App Store',
+  //   icon: '/images/icons/app_store.png',
+  //   type: APPTYPE.APP,
+  //   data: {
+  //     url: '',
+  //     desc: 'App Store'
+  //   },
+  //   gallery: [
+  //     'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
+  //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
+  //   ],
+  //   menu: {
+  //     nameColor: 'text-black',
+  //     helpDropDown: false,
+  //     helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
+  //   }
+  // },
   // {
   //   name: 'Python Compiler',
   //   icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/1200px-Python-logo-notext.svg.png',

@@ -1,23 +1,24 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
+
 1.  Copy "pre-commit" to .git
 
 ```bash
 cd /sealos # Make sure you are in the sealos root directory
-cp desktop/frontend/scripts/pre-commit .git/hooks/
+cp frontend/desktop/scripts/pre-commit .git/hooks/
 chmod +x .git/hooks/pre-commit
 ```
 
 You will see formatting code when commit ".ts .tsx .scss" files.
 
-2. run the development server:  
+2. run the development server:
 
 ```bash
 pnpm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.  
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ### 目录说明
 
@@ -167,11 +168,11 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 ### 其它
 
-1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: https://cloud.sealos.io/ 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。  
+1. 获取登录凭证: 由于 login 页面不是在 desktop 项目里，所以需要从线上 sealos 获取登录凭证到本地开发: https://cloud.sealos.io/ 。复制 storage 里的 session 到 localhost 环境实现 mock 登录。
 
 2. fluent v9 支持 ssr: https://react.fluentui.dev/?path=/docs/concepts-developer-server-side-rendering--page
 
-3. TanStack Query用法：https://cangsdarm.github.io/react-query-web-i18n/react
+3. TanStack Query 用法：https://cangsdarm.github.io/react-query-web-i18n/react
 
 4. 使用 vscode 进行单步调试
 
