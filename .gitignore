@@ -2,6 +2,7 @@
 *rpmnew
 *swo
 .idea
+.vscode
 oss-config
 ossutil64
 main.exe
