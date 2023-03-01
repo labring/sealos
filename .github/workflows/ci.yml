@@ -6,6 +6,11 @@ env:
 
 on:
   workflow_dispatch:
+    inputs:
+      push_mage:
+        description: 'Push images'
+        required: false
+        type: boolean
   push:
     branches: ["main"]
     paths-ignore:
@@ -186,7 +191,7 @@ jobs:
   container:
     needs: [docker]
     runs-on: ubuntu-20.04
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -256,7 +261,7 @@ jobs:
   patch-oci:
     needs: [docker]
     runs-on: ubuntu-20.04
-    if: ${{ github.event_name == 'push' }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
