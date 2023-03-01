@@ -29,21 +29,6 @@ export default function Layout({ children }: any) {
     });
   }, [session]);
 
-  useEffect(() => {
-    masterApp.addEventListen(EVENT_NAME.GET_APPS, async (data) => {
-      console.log('receive', data);
-      const res = await new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(['app1', 'app2', '...']);
-        }, 1000);
-      });
-      return {
-        reply: 'i am master. i replyt apps',
-        data: res
-      };
-    });
-  }, [session]);
-
   return (
     <>
       <Head>

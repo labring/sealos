@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, resp: NextApiResponse
   }
 
   const account_meta: CRDMeta = {
-    group: 'user.sealos.io',
+    group: 'account.sealos.io',
     version: 'v1',
     namespace: 'sealos-system',
     plural: 'accounts'

@@ -1,14 +1,14 @@
 import { CRDMeta } from '../services/backend/kubernetes';
 
 const paymentMeta: CRDMeta = {
-  group: 'user.sealos.io',
+  group: 'account.sealos.io',
   version: 'v1',
   namespace: 'sealos-system',
   plural: 'payments'
 };
 
 const paymentCRDTemplate: string = `
-apiVersion: user.sealos.io/v1
+apiVersion: account.sealos.io/v1
 kind: Payment
 metadata:
   name: {{ .payment_name }}
