@@ -71,6 +71,7 @@ func newRunCmd() *cobra.Command {
 			if runSingle {
 				addr, _ := iputils.ListLocalHostAddrs()
 				runArgs.Masters = iputils.LocalIP(addr)
+				runArgs.Single = true
 			}
 
 			images, err := args2Images(args, transport)

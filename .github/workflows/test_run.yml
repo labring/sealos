@@ -35,6 +35,53 @@ jobs:
         with:
           name: sealos
           path: /usr/bin/sealos
+
+  verify-run-single:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Single Node Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Check Single Node Stains"
+          taints=$(kubectl get nodes -o json | jq ".items[].spec.taints")
+          if [ grep -q "control-plane"< <(echo $taints) ]; then
+            printf "node taints: %s\n" $taints && false
+          fi
+          echo "Current Cluster info"
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
+
   verify-run-containerd:
     needs: [build-sealos]
     runs-on: ubuntu-latest
