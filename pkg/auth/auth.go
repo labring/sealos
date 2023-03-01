@@ -41,7 +41,10 @@ func Init(config conf.Config) error {
 
 func GetLoginRedirect() (string, error) {
 	redirectURL, err := ssoClient.GetRedirectURL()
-	return redirectURL, fmt.Errorf("get redirect url failed: %w", err)
+	if err != nil {
+		return "", fmt.Errorf("get redirect url failed: %w", err)
+	}
+	return redirectURL, nil
 }
 
 func GetOAuthToken(state, code string) (*oauth2.Token, error) {
