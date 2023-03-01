@@ -2,6 +2,11 @@ name: Build Webhooks image
 
 on:
   workflow_dispatch:
+    inputs:
+      push_mage:
+        description: 'Push images'
+        required: false
+        type: boolean
   push:
     branches: [ "main" ]
     paths:
@@ -107,14 +112,14 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_TOKEN }}
 
       - name: build (and publish) ${{ matrix.module }} main image
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-webhook
