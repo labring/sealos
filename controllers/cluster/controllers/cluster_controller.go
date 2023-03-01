@@ -31,8 +31,10 @@ import (
 
 	"github.com/go-logr/logr"
 
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
@@ -371,7 +373,8 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts ClusterRecon
 	r.recorder = mgr.GetEventRecorderFor("sealos-cluster-controller")
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.Cluster{}).
+		For(&v1.Cluster{}, builder.WithPredicates(
+			predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Watches(&source.Kind{Type: &infrav1.Infra{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
