@@ -52,10 +52,10 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		}
 	}
 	if versionutil.Compare(version, V1260) {
+		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2.")
 		if err := confirmUpgrade(); err != nil {
 			return err
 		}
-		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2. You will need to upgrade to containerd v1.6.0 or higher.")
 	}
 	//upgrade master0
 	logger.Info("start to upgrade master0")
