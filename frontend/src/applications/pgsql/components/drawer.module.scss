@@ -1,0 +1,129 @@
+.drawerWrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  z-index: 2020;
+  background: rgba(0, 0, 0, 0.25);
+  animation: drawer-open 0.3s;
+}
+
+.drawerContainer {
+  position: relative;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  width: 100%;
+  margin-top: 30px;
+  height: calc(100% - 30px);
+}
+
+.zDrawer {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  z-index: 2023;
+  background-color: #fff;
+  background-image: url('/images/pgsql/pgsql_bg.png');
+  background-size: cover;
+  border-radius: 8px 0px 0px 0px;
+}
+
+@keyframes drawer-open {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes right-drawer-in {
+  0% {
+    transform: translate(100%, 0px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+@keyframes right-drawer-out {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  100% {
+    transform: translate(100%, 0px);
+  }
+}
+
+@keyframes left-drawer-in {
+  0% {
+    transform: translate(-100%, 0px);
+  }
+  100% {
+    transform: translate(0px, 0px);
+  }
+}
+@keyframes left-drawer-out {
+  0% {
+    transform: translate(0px, 0px);
+  }
+  100% {
+    transform: translate(100%, 0px);
+  }
+}
+
+.leftEnter {
+  animation: left-drawer-in 0.3s;
+}
+
+.rightEnter {
+  animation: right-drawer-in 0.3s;
+}
+
+.right {
+  width: 30%;
+  height: 100%;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.left {
+  width: 30%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.middle {
+  width: 416px;
+  height: calc(100% - 100px);
+  position: relative;
+  margin: 50px auto;
+  border-radius: 16px;
+}
+
+.drawerBody {
+  padding: 16px;
+  flex: 1;
+}
+
+.pageWrapperScroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  position: relative;
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

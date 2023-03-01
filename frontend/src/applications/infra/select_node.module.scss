@@ -1,0 +1,81 @@
+.head {
+  height: 24px;
+  line-height: 24px;
+  display: flex;
+  align-items: center;
+  .dot {
+    width: 15px;
+    height: 15px;
+    background: #3981f5;
+    box-shadow: 2px 2px 0px #c5dbff;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .info {
+    font-size: 16px;
+    line-height: 22px;
+    color: #333333;
+    padding-left: 10px;
+  }
+}
+
+.selectType {
+  min-width: 120px !important;
+  width: 168px;
+  margin-right: 12px;
+}
+
+.selectTypeMin {
+  @extend .selectType;
+  width: 130px;
+}
+
+.selectTypeCount {
+  min-width: 120px !important;
+  width: 168px;
+}
+
+.selectTypeCountMin {
+  @extend .selectTypeCount;
+  width: 132px;
+}
+
+.cloudLabel {
+  width: 60px;
+  text-align: right;
+  display: inline-block;
+  font-size: 14px;
+  line-height: 20px;
+  color: #201f1e;
+  margin-right: 16px;
+}
+
+.selectDiskType {
+  min-width: 40px !important;
+  width: 80px;
+}
+
+.selectDiskTypeMin {
+  @extend .selectDiskType;
+  width: 60px;
+}
+
+.diskCount {
+  min-width: 20px !important;
+  width: 80px;
+  margin-right: 12px;
+  margin-left: 12px;
+}
+
+.diskCountMin {
+  @extend .diskCount;
+  width: 60px;
+}
+
+.sliderCount {
+  width: 168px;
+}
+
+.sliderCountMin {
+  width: 130px;
+}

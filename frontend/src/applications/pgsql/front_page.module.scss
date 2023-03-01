@@ -1,0 +1,78 @@
+@import './pgsql_common.scss';
+
+.pgsqlFrontPage {
+  background-image: url('/images/pgsql/pgsql_bg.png');
+  background-size: cover;
+}
+
+.logo {
+  @include iconBox(48px);
+}
+
+.empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  .title {
+    height: 44px;
+    margin-top: 30px;
+    font-weight: 600;
+    line-height: 150%;
+    font-size: 28px;
+    color: #0d1a2d;
+  }
+  .desc {
+    height: 20px;
+    line-height: 150%;
+    margin-top: 10px;
+    font-weight: 500;
+    font-size: 12px;
+    color: #0d1a2d;
+  }
+}
+
+.frontTitle {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 150%;
+  color: $theme-color-title;
+}
+
+.tableHeader {
+  display: flex;
+  width: 100%;
+  background: $color-global-white;
+  padding: 14px 24px;
+  border-radius: 12px;
+}
+
+.tableRow {
+  display: flex;
+  width: 100%;
+  margin-top: 8px;
+  padding: 14px 24px;
+  background: $color-global-white;
+  border-radius: 12px;
+  align-items: center;
+}
+
+.tableRow:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.tableData,
+.headerItem {
+  flex: 1 1 20%;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.headerItem {
+  text-transform: uppercase;
+}
