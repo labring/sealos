@@ -2,7 +2,10 @@ module github.com/labring/sealos/service/auth
 
 go 1.20
 
-require github.com/emicklei/go-restful/v3 v3.9.0
+require (
+	github.com/emicklei/go-restful/v3 v3.9.0
+	k8s.io/apimachinery v0.25.6
+)
 
 require (
 	github.com/casdoor/casdoor-go-sdk v0.4.1 // indirect
@@ -54,9 +57,6 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require (
-	github.com/labring/sealos v0.0.0-00010101000000-000000000000
-	k8s.io/apimachinery v0.25.6
-)
+require github.com/labring/sealos v0.0.0-00010101000000-000000000000
 
 replace github.com/labring/sealos => ../../
