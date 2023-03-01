@@ -16,6 +16,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	str "strings"
 	"time"
@@ -23,6 +24,7 @@ import (
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/utils/confirm"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 )
@@ -50,6 +52,9 @@ func (k *KubeadmRuntime) upgradeCluster(version string) error {
 		}
 	}
 	if versionutil.Compare(version, V1260) {
+		if err := confirmUpgrade(); err != nil {
+			return err
+		}
 		logger.Info("Kubernetes v1.26 will not support CRI v1alpha2. You will need to upgrade to containerd v1.6.0 or higher.")
 	}
 	//upgrade master0
@@ -219,4 +224,17 @@ func (k *KubeadmRuntime) changeCRIVersion(ip string) error {
 		"systemctl restart image-cri-shim",
 		"systemctl restart kubelet",
 	)
+}
+
+func confirmUpgrade() error {
+	prompt := "already upgrade to containerd v1.6.0 or higher."
+	cancel := "need to upgrade to containerd v1.6.0 or higher. And you can retry to upgrade cluster by the same command."
+	yes, err := confirm.Confirm(prompt, cancel)
+	if err != nil {
+		return err
+	}
+	if !yes {
+		return errors.New("cancelled")
+	}
+	return nil
 }
