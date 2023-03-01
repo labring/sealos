@@ -24,25 +24,11 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 	glog.Info("Authorize for req: ", ai.Name)
 
 	repoName := imagehubv1.RepoName(ai.Name)
-	var res []string
+	if !repoName.IsLegal() {
+		return nil, api.ErrNoMatch
+	}
 
-	// get repo using authzClient
-	repoResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
-		Group:    "imagehub.sealos.io",
-		Version:  "v1",
-		Resource: "repositories",
-	})
-	unstructRepo, err := repoResource.Get(context.Background(), repoName.ToMetaName(), metav1.GetOptions{})
-	if err != nil {
-		glog.Infof("error when Authorize req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
-		return nil, api.ErrNoMatch
-	}
-	repo := imagehubv1.Repository{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructRepo.UnstructuredContent(), &repo)
-	if err != nil {
-		glog.Infof("error when unstruct organization")
-		return nil, api.ErrNoMatch
-	}
+	var res []string
 
 	// get org using authzClient
 	orgResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
@@ -62,11 +48,6 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 		return nil, api.ErrNoMatch
 	}
 
-	// if repo is public, user can pull it anyway.
-	if !repo.Spec.IsPrivate {
-		res = append(res, "pull")
-	}
-
 	// if user is one of the org managers, user can pull and push it.
 	for _, r := range org.Spec.Manager {
 		if r == ai.Account {
@@ -75,7 +56,36 @@ func (a SealosAuthorize) Authorize(client kubernetes.Client, ai *api.AuthRequest
 		}
 	}
 
-	glog.Info("Authorize true")
+	// return if user is one of the org managers
+	if len(res) != 0 {
+		glog.Info("Authorize true")
+		return res, nil
+	}
+
+	// check repo is public or not
+	// get repo using authzClient
+	repoResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
+		Group:    "imagehub.sealos.io",
+		Version:  "v1",
+		Resource: "repositories",
+	})
+	unstructRepo, err := repoResource.Get(context.Background(), repoName.ToMetaName(), metav1.GetOptions{})
+	if err != nil {
+		glog.Infof("error when Authorize req: %s for user %s, get repo cr from apiserver error: %s", repoName, ai.Account, err)
+		return nil, api.ErrNoMatch
+	}
+	repo := imagehubv1.Repository{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(unstructRepo.UnstructuredContent(), &repo)
+	if err != nil {
+		glog.Infof("error when unstruct organization")
+		return nil, api.ErrNoMatch
+	}
+
+	// if repo is public, user can pull it anyway.
+	if !repo.Spec.IsPrivate {
+		res = append(res, "pull")
+	}
+
 	return res, nil
 }
 
