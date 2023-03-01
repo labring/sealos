@@ -101,7 +101,25 @@ func (k *KubeadmConfig) LoadFromClusterfile(kubeadmConfig *KubeadmConfig) error 
 		return nil
 	}
 	k.APIServer.CertSANs = append(k.APIServer.CertSANs, kubeadmConfig.APIServer.CertSANs...)
+	return k.mutuallyExclusiveMerge(kubeadmConfig)
+}
+
+// mutuallyExclusiveMerge merge from kubeadmConfig, the mutually exclusive field will be droped.
+func (k *KubeadmConfig) mutuallyExclusiveMerge(kubeadmConfig *KubeadmConfig) error {
+	for _, fn := range []func(*KubeadmConfig){
+		k.etcdLocalOrExternal,
+	} {
+		fn(kubeadmConfig)
+	}
 	return mergo.Merge(k, kubeadmConfig, defaultMergeOpts...)
+}
+
+func (k *KubeadmConfig) etcdLocalOrExternal(kubeadmConfig *KubeadmConfig) {
+	if kubeadmConfig.Etcd.External != nil {
+		k.Etcd.Local = nil
+	} else if kubeadmConfig.Etcd.Local != nil {
+		k.Etcd.External = nil
+	}
 }
 
 // Merge Using github.com/imdario/mergo to merge KubeadmConfig to the CloudImage default kubeadm Config, overwrite some field.

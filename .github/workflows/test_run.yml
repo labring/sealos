@@ -422,6 +422,104 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
 
+  verify-run-containerd-apply-with-external-etcd:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Start a local ETCD server
+        run: |
+          ETCD_VER=v3.4.24
+          GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+          DOWNLOAD_URL=${GITHUB_URL}
+
+          rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+          rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+
+          echo "Download ETCD binary"
+          curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+          tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
+          rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+          echo "ETCD info"
+          /tmp/etcd-download-test/etcd --version
+          /tmp/etcd-download-test/etcdctl version
+        
+          echo "Start a local ETCD server"
+          ALLOW_NONE_AUTHENTICATION=yes
+          nohup /tmp/etcd-download-test/etcd --listen-client-urls http://0.0.0.0:2379 \
+            --advertise-client-urls http://0.0.0.0:2379 > output.file 2>&1 &
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -Ev 'inet6|docker|host|br-' | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - labring/kubernetes:v1.25.0
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          etcd:
+            external:
+              endpoints:
+              - http://127.0.0.1:2379
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile  --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep http://127.0.0.1:2379
 
   verify-run-containerd-buildimage-apply:
     needs: [build-sealos]
