@@ -8,7 +8,7 @@ import (
 	baseapi "github.com/labring/sealos/test/testdata/api"
 )
 
-const InfraYaml = `
+const InfraYaml_AWS = `
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
@@ -37,8 +37,35 @@ spec:
       type: "root"
 `
 
+const InfraYaml_Aliyun = `
+apiVersion: infra.sealos.io/v1
+kind: Infra
+metadata:
+  name: ${name}
+  namespace: ${namespace}
+spec:
+  platform: aliyun
+  hosts:
+    - roles: [ master ]
+      count: 1
+      flavor: ecs.c7.large
+      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
+      disks:
+        - capacity: 20
+          volumeType: "cloud_essd"
+          type: "root"
+    - roles: [ node ]
+      count: 1
+      flavor: ecs.c7.large
+      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
+      disks:
+        - capacity: 20
+          volumeType: "cloud_essd"
+          type: "root"
+`
+
 func CreateInfra(namespace string, name string) error {
-	_, err := baseapi.KubeApplyFromTemplate(InfraYaml, map[string]string{
+	_, err := baseapi.KubeApplyFromTemplate(InfraYaml_Aliyun, map[string]string{
 		"namespace": namespace,
 		"name":      name,
 	})
@@ -49,7 +76,7 @@ func CreateInfra(namespace string, name string) error {
 }
 
 func DeleteInfra(namespace string, name string) error {
-	_, err := baseapi.KubeDeleteFromTemplate(InfraYaml, map[string]string{
+	_, err := baseapi.KubeDeleteFromTemplate(InfraYaml_Aliyun, map[string]string{
 		"namespace": namespace,
 		"name":      name,
 	})
@@ -81,6 +108,9 @@ func WaitInfraRunning(namespace string, name string, times int) error {
 		}
 		if infra.Status.Status == infrav1.Running.String() {
 			return nil
+		}
+		if infra.Status.Status == infrav1.Failed.String() {
+			return fmt.Errorf("infra %s is failed", name)
 		}
 		time.Sleep(time.Second)
 	}

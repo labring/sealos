@@ -20,6 +20,9 @@ func CreateKeyPair(api ECSCreateKeyPairAPI, request *ecs.CreateKeyPairRequest) (
 }
 
 func (d Driver) createKeyPair(infra *v1.Infra) error {
+	if infra.Spec.SSH.PkData != "" {
+		return nil
+	}
 	client := d.Client
 	keyPairName := getKeyPairName(infra)
 	keyPairTag := getKeyPairTag(infra)

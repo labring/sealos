@@ -98,19 +98,17 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 			metadata.DiskID = append(metadata.DiskID, vid)
 			var diskType string
 			// judge the diskType
-			if disk.Type == "system" {
+			if disk.Type == systemDiskType {
 				diskType = common.RootVolumeLabel
 			} else {
 				diskType = common.DataVolumeLabel
-			}
-			if err != nil {
-				return nil, fmt.Errorf("aliyun ecs volume index label not found: %v", err)
 			}
 			disks = append(disks, v1.Disk{
 				Capacity:   disk.Size,
 				VolumeType: disk.Category,
 				Type:       diskType,
 				ID:         []string{vid},
+				Device:     disk.Device,
 			})
 		}
 		if h, ok := hostmap[index]; ok {
@@ -179,10 +177,10 @@ func (d Driver) getArchFromImageID(id string) (string, error) {
 }
 
 func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
-	sort.Sort(v1.IndexDisks(*newDisk))
-	sort.Sort(v1.IndexDisks(*curDisk))
+	sort.Sort(v1.DeviceDisks(*newDisk))
+	sort.Sort(v1.DeviceDisks(*curDisk))
 	for i := range *curDisk {
-		if (*newDisk)[i].Index == (*curDisk)[i].Index {
+		if (*newDisk)[i].Device == (*curDisk)[i].Device {
 			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
 		}
 	}

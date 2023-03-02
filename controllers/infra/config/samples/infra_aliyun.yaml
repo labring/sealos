@@ -17,28 +17,27 @@ kind: Infra
 metadata:
   name: xiaohan-test
 spec:
-  platform: aws
+  platform: aliyun
   hosts:
     - roles: [ master ]
       count: 2
-      flavor: t2.medium
-      image: "ami-093d54fcd8afe8208"
+      flavor: ecs.s6-c1m1.small
+      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
       disks:
         - capacity: 33
-          volumeType: gp3
+          volumeType: "cloud_efficiency"
           type: "root"
         - capacity: 34
-          volumeType: gp3
+          volumeType: "cloud_efficiency"
           type: "data"
-#        - capacity: 35
-#          volumeType: gp3
-#          type: "data"
+    #        - capacity: 35
+    #          volumeType: gp3
+    #          type: "data"
     - roles: [ node ]
       count: 1
-      flavor: t2.medium
-      image: "ami-093d54fcd8afe8208"
+      flavor: ecs.s6-c1m1.small
+      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
       disks:
-        - capacity: 11
-          volumeType: gp3
+        - capacity: 40
+          volumeType: "cloud_efficiency"
           type: "root"
-

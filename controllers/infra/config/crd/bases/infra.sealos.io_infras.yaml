@@ -69,13 +69,12 @@ spec:
                         properties:
                           capacity:
                             type: integer
+                          device:
+                            type: string
                           id:
                             items:
                               type: string
                             type: array
-                          index:
-                            description: Name  string `json:"name,omitempty"`
-                            type: integer
                           type:
                             default: data
                             description: Disk Type , default is data disk. allowed
@@ -94,6 +93,11 @@ spec:
                             - gp3
                             - sc1
                             - st1
+                            - cloud_efficiency
+                            - cloud_ssd
+                            - cloud_essd
+                            - cloud_auto
+                            - cloud
                             type: string
                         type: object
                       maxItems: 10
