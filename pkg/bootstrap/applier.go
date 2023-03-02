@@ -67,7 +67,7 @@ func (a *registryApplier) Apply(ctx Context, host string) error {
 			return err
 		}
 	}
-	return ctx.GetExecer().CmdAsync(host, ctx.GetShellWrapper()(host, ctx.GetBash().InitRegistryBash()))
+	return ctx.GetExecer().CmdAsync(host, ctx.GetBash().InitRegistryBash(host))
 }
 
 func (a *registryApplier) configLocalHtpasswd(cfgBasedir string, rc *v2.RegistryConfig) (string, error) {
@@ -111,7 +111,7 @@ func newHtpasswdMaker(root string) *htpasswdMaker {
 }
 
 func (*registryApplier) Undo(ctx Context, host string) error {
-	return ctx.GetExecer().CmdAsync(host, ctx.GetShellWrapper()(host, ctx.GetBash().CleanRegistryBash()))
+	return ctx.GetExecer().CmdAsync(host, ctx.GetBash().CleanRegistryBash(host))
 }
 
 func init() {

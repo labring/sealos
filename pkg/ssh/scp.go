@@ -49,6 +49,7 @@ func getOnelineResult(output string, sep string) string {
 
 // CmdToString execute command on host and replace output with sep to oneline
 func (s *SSH) CmdToString(host, cmd, sep string) (string, error) {
+	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	output, err := s.Cmd(host, cmd)
 	data := string(output)
 	if err != nil {

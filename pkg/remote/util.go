@@ -39,7 +39,6 @@ func renderTemplate(tmpl *template.Template, data map[string]interface{}) (strin
 func bashToString(clusterName string, sshInterface ssh.Interface, host, cmd string) (string, error) {
 	data := constants.NewData(clusterName)
 	cmd = fmt.Sprintf("%s %s", data.RootFSSealctlPath(), cmd)
-	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	str, err := sshInterface.CmdToString(host, cmd, "")
 	if err != nil {
 		logger.Debug("failed to exec remote %s shell: %s output: %s error: %+v", host, cmd, data, err)
@@ -49,6 +48,5 @@ func bashToString(clusterName string, sshInterface ssh.Interface, host, cmd stri
 func bashCTLSync(clusterName string, sshInterface ssh.Interface, host, cmd string) error {
 	data := constants.NewData(clusterName)
 	cmd = fmt.Sprintf("%s  %s", data.RootFSSealctlPath(), cmd)
-	logger.Debug("start to exec remote %s shell: %s", host, cmd)
 	return sshInterface.CmdAsync(host, cmd)
 }

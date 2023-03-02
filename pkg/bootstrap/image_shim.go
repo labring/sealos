@@ -51,11 +51,6 @@ func (is *ImageShim) GetInfo(rootfs string) string {
 	return image
 }
 
-func (is *ImageShim) ApplyCMD(rootfs string) string {
-	shimData := is.GetInfo(rootfs)
-	return fmt.Sprintf(constants.DefaultCPFmt, shimData, path.Join(rootfs, constants.ImagesDirName, constants.ImageShimDirName), shimData)
-}
-
 func (is *ImageShim) DeleteCMD(rootfs string) string {
 	return fmt.Sprintf("rm -rf %s", is.GetInfo(rootfs))
 }

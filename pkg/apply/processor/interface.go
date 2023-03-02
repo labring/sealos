@@ -17,6 +17,7 @@ package processor
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
 
 	"github.com/containers/storage"
@@ -160,7 +161,14 @@ func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
 			return err
 		}
 		if oci.OCIv1.Config.Labels != nil {
-			imageTypes.Insert(oci.OCIv1.Config.Labels[v2.ImageTypeKey])
+			imageType := oci.OCIv1.Config.Labels[v2.ImageTypeKey]
+			imageVersion := oci.OCIv1.Config.Labels[v2.ImageTypeVersionKey]
+			if imageType != "" {
+				imageTypes.Insert(imageType)
+				if imageType == string(v2.RootfsImage) && !strings.InList(imageVersion, v2.ImageVersionList) {
+					return fmt.Errorf("can't apply rootfs type images and version %s not %+v", imageVersion, v2.ImageVersionList)
+				}
+			}
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
@@ -168,6 +176,7 @@ func CheckImageType(cluster *v2.Cluster, bd buildah.Interface) error {
 	if !imageTypes.Has(string(v2.RootfsImage)) {
 		return errors.New("can't apply application type images only since RootFS type image is not applied yet")
 	}
+
 	return nil
 }
 

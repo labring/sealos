@@ -47,8 +47,6 @@ type realBootstrap struct {
 	addons       []Applier
 }
 
-type shellWrapper func(string, string) string
-
 func New(cluster *v2.Cluster) Interface {
 	ctx := NewContextFrom(cluster)
 	bs := &realBootstrap{
@@ -153,8 +151,7 @@ func (c *defaultChecker) Apply(ctx Context, host string) error {
 	if c.is == nil {
 		c.is = NewImageShimHelper(ctx.GetExecer(), ctx.GetCluster().GetRegistryIP())
 	}
-	shimCmd := c.is.ApplyCMD(ctx.GetData().RootFSPath())
-	cmds := []string{ctx.GetShellWrapper()(host, ctx.GetBash().CheckBash()), shimCmd}
+	cmds := []string{ctx.GetBash().CheckBash(host)}
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 
@@ -173,7 +170,7 @@ func (initializer *defaultInitializer) Filter(_ Context, _ string) bool {
 }
 
 func (initializer *defaultInitializer) Apply(ctx Context, host string) error {
-	cmds := []string{ctx.GetShellWrapper()(host, ctx.GetBash().InitBash())}
+	cmds := []string{ctx.GetBash().InitBash(host)}
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 
