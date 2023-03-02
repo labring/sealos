@@ -162,34 +162,39 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	}
 
 	// add account balance when account is new user
-	if key, ok := account.Annotations[AccountAnnotationNewAccount]; !ok || key != "false" {
-		stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
-		if stringAmount != "" {
-			amount, err := strconv.Atoi(stringAmount)
-			if err != nil {
-				return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
-			}
-			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
-				if account.Annotations == nil {
-					account.Annotations = make(map[string]string, 0)
-				}
-				account.Annotations[AccountAnnotationNewAccount] = "false"
-				return nil
-			}); err != nil {
-				return nil, err
-			}
-			account.Status.Balance += int64(amount)
-			account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
-				Amount:   int64(amount),
-				Time:     metav1.Time{Time: time.Now()},
-				Describe: "new account charge",
-			})
-			if err := r.Status().Update(ctx, &account); err != nil {
-				return nil, err
-			}
-			r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
-		}
+	stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
+	if newAccountFlag, ok := account.Annotations[AccountAnnotationNewAccount]; ok && newAccountFlag == "false" {
+		r.Logger.V(1).Info("account is not a new user ", "account", account)
+		return &account, nil
 	}
+
+	// should set bonus amount that will give some money to new account
+	if stringAmount != "" {
+		amount, err := strconv.Atoi(stringAmount)
+		if err != nil {
+			return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
+		}
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+			if account.Annotations == nil {
+				account.Annotations = make(map[string]string, 0)
+			}
+			account.Annotations[AccountAnnotationNewAccount] = "false"
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+		account.Status.Balance += int64(amount)
+		account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
+			Amount:   int64(amount),
+			Time:     metav1.Time{Time: time.Now()},
+			Describe: "new account charge",
+		})
+		if err := r.Status().Update(ctx, &account); err != nil {
+			return nil, err
+		}
+		r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
+	}
+
 	return &account, nil
 }
 
