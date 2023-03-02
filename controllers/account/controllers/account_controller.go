@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
@@ -44,8 +45,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const ACCOUNTNAMESPACEENV = "ACCOUNT_NAMESPACE"
-const DEFAULTACCOUNTNAMESPACE = "sealos-system"
+const (
+	ACCOUNTNAMESPACEENV         = "ACCOUNT_NAMESPACE"
+	DEFAULTACCOUNTNAMESPACE     = "sealos-system"
+	AccountAnnotationNewAccount = "account.sealos.io/new-account"
+	NEWACCOUNTAMOUNTENV         = "NEW_ACCOUNT_AMOUNT"
+)
 
 // AccountReconciler reconciles a Account object
 type AccountReconciler struct {
@@ -143,6 +148,10 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+		if account.Annotations == nil {
+			account.Annotations = make(map[string]string, 0)
+		}
+		account.Annotations[AccountAnnotationNewAccount] = "true"
 		return nil
 	}); err != nil {
 		return nil, err
@@ -150,6 +159,36 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 	// add role get account permission
 	if err := r.syncRoleAndRoleBinding(ctx, name, userNamespace); err != nil {
 		return nil, fmt.Errorf("sync role and rolebinding failed: %v", err)
+	}
+
+	// add account balance when account is new user
+	if key, ok := account.Annotations[AccountAnnotationNewAccount]; !ok || key != "false" {
+		stringAmount := os.Getenv(NEWACCOUNTAMOUNTENV)
+		if stringAmount != "" {
+			amount, err := strconv.Atoi(stringAmount)
+			if err != nil {
+				return nil, fmt.Errorf("convert %s to int failed: %v", stringAmount, err)
+			}
+			if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &account, func() error {
+				if account.Annotations == nil {
+					account.Annotations = make(map[string]string, 0)
+				}
+				account.Annotations[AccountAnnotationNewAccount] = "false"
+				return nil
+			}); err != nil {
+				return nil, err
+			}
+			account.Status.Balance += int64(amount)
+			account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
+				Amount:   int64(amount),
+				Time:     metav1.Time{Time: time.Now()},
+				Describe: "new account charge",
+			})
+			if err := r.Status().Update(ctx, &account); err != nil {
+				return nil, err
+			}
+			r.Logger.Info("account created,will charge new account some money", "account", account, "stringAmount", stringAmount)
+		}
 	}
 	return &account, nil
 }

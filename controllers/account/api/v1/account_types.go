@@ -50,9 +50,10 @@ type Charge struct {
 	DeductionAmount    int64  `json:"deductionAmount,omitempty"`
 	AccountBalanceName string `json:"accountBalanceName,omitempty"`
 
-	Time    metav1.Time `json:"time,omitempty"`
-	Status  string      `json:"status,omitempty"`
-	TradeNO string      `json:"tradeNO,omitempty"`
+	Time     metav1.Time `json:"time,omitempty"`
+	Status   string      `json:"status,omitempty"`
+	TradeNO  string      `json:"tradeNO,omitempty"`
+	Describe string      `json:"describe,omitempty"`
 }
 
 // AccountSpec defines the desired state of Account

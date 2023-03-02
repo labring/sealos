@@ -54,6 +54,8 @@ spec:
                       description: deduction info will Record in the Charge
                       format: int64
                       type: integer
+                    describe:
+                      type: string
                     status:
                       type: string
                     time:
