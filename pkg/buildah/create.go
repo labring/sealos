@@ -30,6 +30,7 @@ import (
 type createOptions struct {
 	name     string
 	platform string
+	short    bool
 }
 
 func newDefaultCreateOptions() *createOptions {
@@ -42,6 +43,7 @@ func newDefaultCreateOptions() *createOptions {
 func (opts *createOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.StringVarP(&opts.name, "cluster", "c", opts.name, "name of cluster to be created but not actually run")
 	fs.StringVar(&opts.platform, "platform", opts.platform, "set the OS/ARCH/VARIANT of the image to the provided value instead of the current operating system and architecture of the host (for example `linux/arm`)")
+	fs.BoolVar(&opts.short, "short", false, "if true, print just the mount path.")
 }
 
 func newCreateCmd() *cobra.Command {
@@ -67,7 +69,11 @@ func newCreateCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			logger.Info("Mount point: %s", info.MountPoint)
+			if !opts.short {
+				logger.Info("Mount point: %s", info.MountPoint)
+			} else {
+				println(info.MountPoint)
+			}
 			if !IsRootless() {
 				return nil
 			}
