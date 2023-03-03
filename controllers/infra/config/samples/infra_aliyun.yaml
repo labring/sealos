@@ -15,7 +15,7 @@
 apiVersion: infra.sealos.io/v1
 kind: Infra
 metadata:
-  name: xiaohan-test
+  name: xiaohan-test-aliyun
 spec:
   platform: aliyun
   hosts:

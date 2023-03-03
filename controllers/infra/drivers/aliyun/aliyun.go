@@ -58,3 +58,7 @@ func (d Driver) CreateKeyPair(infra *v1.Infra) error {
 func (d Driver) DeleteKeyPair(infra *v1.Infra) error {
 	return d.deleteKeyPair(infra)
 }
+
+func (d Driver) DeleteInfra(infra *v1.Infra) error {
+	return d.deleteInfra(infra)
+}

@@ -18,6 +18,7 @@ type ECSDescribeInstancesAPI interface {
 	DescribeDisks(request *ecs.DescribeDisksRequest) (response *ecs.DescribeDisksResponse, err error)
 	DescribeImages(request *ecs.DescribeImagesRequest) (response *ecs.DescribeImagesResponse, err error)
 	DescribeInstanceStatus(request *ecs.DescribeInstanceStatusRequest) (response *ecs.DescribeInstanceStatusResponse, err error)
+	TagResources(request *ecs.TagResourcesRequest) (response *ecs.TagResourcesResponse, err error)
 }
 
 func GetInstances(api ECSDescribeInstancesAPI, request *ecs.DescribeInstancesRequest) (*ecs.DescribeInstancesResponse, error) {
@@ -34,6 +35,10 @@ func GetImages(api ECSDescribeInstancesAPI, request *ecs.DescribeImagesRequest) 
 
 func GetInstanceStatus(api ECSDescribeInstancesAPI, request *ecs.DescribeInstanceStatusRequest) (*ecs.DescribeInstanceStatusResponse, error) {
 	return api.DescribeInstanceStatus(request)
+}
+
+func TagResources(api ECSDescribeInstancesAPI, request *ecs.TagResourcesRequest) (*ecs.TagResourcesResponse, error) {
+	return api.TagResources(request)
 }
 
 func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error) {
@@ -77,10 +82,18 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 			availabilityZone := i.ZoneId
 			infra.Spec.AvailabilityZone = availabilityZone
 		}
+
 		metadata := v1.Metadata{
 			IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: i.VpcAttributes.PrivateIpAddress.IpAddress[0]}, {IPType: common.IPTypePublic, IPValue: i.PublicIpAddress.IpAddress[0]}},
 			ID:     i.InstanceId,
 			Status: i.Status,
+		}
+
+		for _, tag := range i.Tags.Tag {
+			if tag.TagKey == common.MasterO {
+				metadata.Labels = make(map[string]string)
+				metadata.Labels[common.MasterO] = tag.TagValue
+			}
 		}
 
 		// get disks of instance
@@ -145,6 +158,12 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 	for _, v := range hostmap {
 		hosts = append(hosts, *v)
 	}
+
+	err = d.setMaster0IfNotExists(&hosts)
+	if err != nil {
+		return nil, err
+	}
+
 	return hosts, nil
 }
 
@@ -184,4 +203,37 @@ func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
 			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
 		}
 	}
+}
+
+func (d Driver) setMaster0IfNotExists(hosts *[]v1.Hosts) error {
+	for _, h := range *hosts {
+		for _, meta := range h.Metadata {
+			if _, ok := meta.Labels[common.MasterO]; ok {
+				return nil
+			}
+		}
+	}
+	for i := range *hosts {
+		h := &(*hosts)[i]
+		if len(h.Roles) > 0 && h.Roles[0] == v1beta1.MASTER {
+			for j := range h.Metadata {
+				label := make(map[string]string)
+				label[common.MasterO] = common.TRUELable
+				h.Metadata[j].Labels = label
+				labelKey, labelValue := common.MasterO, common.TRUELable
+				tagResourcesRequest := &ecs.TagResourcesRequest{
+					RpcRequest:   ecs.CreateTagResourcesRequest().RpcRequest,
+					ResourceType: resourceTypeInstance,
+					ResourceId:   &[]string{h.Metadata[j].ID},
+					Tag:          &[]ecs.TagResourcesTag{{Key: labelKey, Value: labelValue}},
+				}
+				_, err := TagResources(d.Client, tagResourcesRequest)
+				if err != nil {
+					return fmt.Errorf("set master0 label failed: %v", err)
+				}
+				return nil
+			}
+		}
+	}
+	return nil
 }

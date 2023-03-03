@@ -44,6 +44,9 @@ type EC2DescribeInstancesAPI interface {
 	DescribeInstanceStatus(ctx context.Context,
 		params *ec2.DescribeInstanceStatusInput,
 		optFns ...func(*ec2.Options)) (*ec2.DescribeInstanceStatusOutput, error)
+	CreateTags(ctx context.Context,
+		params *ec2.CreateTagsInput,
+		optFns ...func(*ec2.Options)) (*ec2.CreateTagsOutput, error)
 }
 
 // GetInstanceStatus retrieves information about your Amazon Elastic Compute Cloud (Amazon EC2) instances.
@@ -74,6 +77,10 @@ func GetInstanceStatus(c context.Context, api EC2DescribeInstancesAPI, input *ec
 //	Otherwise, nil and an error from the call to DescribeInstances.
 func GetInstances(c context.Context, api EC2DescribeInstancesAPI, input *ec2.DescribeInstancesInput) (*ec2.DescribeInstancesOutput, error) {
 	return api.DescribeInstances(c, input)
+}
+
+func CreateTags(c context.Context, api EC2DescribeInstancesAPI, input *ec2.CreateTagsInput) (*ec2.CreateTagsOutput, error) {
+	return api.CreateTags(c, input)
 }
 
 /*
@@ -203,10 +210,6 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 			i := r.Instances[j]
 			logger.Info("get instance id: %v", *i.InstanceId)
 
-			if infra.Spec.SSH.PkName == "" {
-				infra.Spec.SSH.PkName = *i.KeyName
-			}
-
 			if i.State.Name != types.InstanceStateNameRunning {
 				logger.Warn("instance is not running, skip it", "instance", i.InstanceId)
 				continue
@@ -223,6 +226,13 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 				IP:     []v1.IPAddress{{IPType: common.IPTypePrivate, IPValue: *i.PrivateIpAddress}, {IPType: common.IPTypePublic, IPValue: *i.PublicIpAddress}},
 				ID:     *i.InstanceId,
 				Status: string(i.State.Name),
+			}
+
+			for _, tag := range i.Tags {
+				if *tag.Key == common.MasterO {
+					metadata.Labels = make(map[string]string)
+					metadata.Labels[common.MasterO] = *tag.Value
+				}
 			}
 
 			// append diskID to metadata
@@ -301,6 +311,12 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 	for _, v := range hostmap {
 		hosts = append(hosts, *v)
 	}
+
+	err = d.setMaster0IfNotExists(&hosts)
+	if err != nil {
+		return nil, err
+	}
+
 	return hosts, nil
 }
 
@@ -332,4 +348,40 @@ func mergeDisks(curDisk *[]v1.Disk, newDisk *[]v1.Disk) {
 			(*curDisk)[i].ID = append((*curDisk)[i].ID, (*newDisk)[i].ID...)
 		}
 	}
+}
+
+func (d Driver) setMaster0IfNotExists(hosts *[]v1.Hosts) error {
+	for _, h := range *hosts {
+		for _, meta := range h.Metadata {
+			if _, ok := meta.Labels[common.MasterO]; ok {
+				return nil
+			}
+		}
+	}
+	for i := range *hosts {
+		h := &(*hosts)[i]
+		if len(h.Roles) > 0 && h.Roles[0] == v1beta1.MASTER {
+			for j := range h.Metadata {
+				label := make(map[string]string)
+				label[common.MasterO] = common.TRUELable
+				h.Metadata[j].Labels = label
+				labelKey, labelValue := common.MasterO, common.TRUELable
+				createTagsInput := &ec2.CreateTagsInput{
+					Resources: []string{h.Metadata[j].ID},
+					Tags: []types.Tag{
+						{
+							Key:   &labelKey,
+							Value: &labelValue,
+						},
+					},
+				}
+				_, err := CreateTags(context.TODO(), d.Client, createTagsInput)
+				if err != nil {
+					return fmt.Errorf("create tags failed: %v", err)
+				}
+				return nil
+			}
+		}
+	}
+	return nil
 }

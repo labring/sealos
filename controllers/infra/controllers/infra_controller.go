@@ -27,10 +27,6 @@ import (
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	customCtrl "github.com/labring/sealos/pkg/utils/controller"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"k8s.io/client-go/util/retry"
 
 	"github.com/labring/endpoints-operator/library/controller"
@@ -40,8 +36,6 @@ import (
 
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/drivers"
-
-	base64 "encoding/base64"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,7 +48,7 @@ import (
 type InfraReconciler struct {
 	client.Client
 	Scheme    *runtime.Scheme
-	driver    drivers.Driver
+	driver    map[string]drivers.Driver
 	applier   drivers.Reconcile
 	recorder  record.EventRecorder
 	finalizer *controller.Finalizer
@@ -76,19 +70,9 @@ type InfraReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.1/pkg/reconcile
 func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	infra := &infrav1.Infra{}
-	secret := &corev1.Secret{}
-	var keyError error
 
 	if err := r.Get(ctx, req.NamespacedName, infra); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-	// init driver
-	if r.driver == nil {
-		driver, err := drivers.NewDriver(infra.Spec.Platform)
-		if err != nil {
-			return ctrl.Result{}, err
-		}
-		r.driver = driver
 	}
 	// add finalizer
 	if _, err := r.finalizer.AddFinalizer(ctx, infra); err != nil {
@@ -110,8 +94,10 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	// clean infra using aws terminate
 	// now we depend on the aws terminate func to keep consistency
 	// TODO: double check the terminated Instance and then remove the finalizer...
-	if _, err := r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
+	if isDeleted, err := r.finalizer.RemoveFinalizer(ctx, infra, r.DeleteInfra); err != nil {
 		return ctrl.Result{RequeueAfter: time.Second * 3}, err
+	} else if isDeleted {
+		return ctrl.Result{}, nil
 	}
 
 	// if infra is failed, we do not need to reconcile again
@@ -124,46 +110,24 @@ func (r *InfraReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			return client.IgnoreNotFound(err)
 		}
 
-		if keyError != nil {
-			return keyError
-		}
-
-		if err := r.Get(ctx, req.NamespacedName, secret); err == nil && infra.Spec.SSH.PkData == "" {
-			pkData, err2 := base64.StdEncoding.DecodeString(string(secret.Data[infra.Name]))
-			if err2 != nil {
-				keyError = err2
-				return err2
-			}
-			logger.Info("get ssh from secret: %v", string(pkData))
-			infra.Spec.SSH.PkData = string(pkData)
-		}
-
 		r.recorder.Eventf(infra, corev1.EventTypeNormal, "start to reconcile instance", "%s/%s", infra.Namespace, infra.Name)
 
-		if err := r.applier.ReconcileInstance(infra, r.driver); err != nil {
+		if err := r.applier.ReconcileInstance(infra, r.driver[infra.Spec.Platform]); err != nil {
 			r.recorder.Eventf(infra, corev1.EventTypeWarning, "reconcile infra failed", "%v", err)
 			return err
-		}
-
-		secretNamespacedName := types.NamespacedName{
-			Namespace: infra.Namespace,
-			Name:      getSecretName(infra),
 		}
 
 		logger.Info("start to update infra...")
 
 		if err := r.Update(ctx, infra); err != nil {
+			// if update failed, we need to delete the instance
+			logger.Info("update infra failed, delete infra...")
+			err2 := r.driver[infra.Spec.Platform].DeleteInfra(infra)
+			if err2 != nil {
+				logger.Info("delete infra error: %v", err2)
+			}
 			r.recorder.Eventf(infra, corev1.EventTypeWarning, "update infra failed", "%v", err)
 			return err
-		}
-
-		if err := r.Get(ctx, secretNamespacedName, secret); err != nil {
-			logger.Info("get secret %v error: %v", secretNamespacedName, err)
-			keyError = r.createSecret(ctx, infra)
-			logger.Info("secret %v created, error: %v", infra.Name, keyError)
-			if keyError != nil {
-				return keyError
-			}
 		}
 
 		if infra.Status.Status != infrav1.Running.String() {
@@ -197,57 +161,12 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 		r.recorder.Eventf(infra, corev1.EventTypeWarning, "failed to update infra terminating status", "%v", err)
 		return fmt.Errorf("update infra error:%v", err)
 	}
-	err := r.DeleteInstances(infra)
+	err := r.driver[infra.Spec.Platform].DeleteInfra(infra)
 	if err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (r *InfraReconciler) DeleteInstances(infra *infrav1.Infra) error {
-	for _, hosts := range infra.Spec.Hosts {
-		if err := r.driver.DeleteInstances(&hosts); err != nil {
-			return fmt.Errorf("delete instance error:%v", err)
-		}
-	}
-	if err := r.driver.DeleteKeyPair(infra); err != nil {
-		return fmt.Errorf("delete keypair error:%v", err)
-	}
-	return nil
-}
-
-func (r *InfraReconciler) createSecret(ctx context.Context, infra *infrav1.Infra) error {
-	logger.Debug("create secret for infra %v", infra.Name)
-	src := []byte(infra.Spec.SSH.PkData)
-	dst := base64.StdEncoding.EncodeToString(src)
-	sshData := make(map[string][]byte)
-	sshData[infra.Name] = []byte(dst)
-	secretName := getSecretName(infra)
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: infra.Namespace,
-		},
-		Type: corev1.SSHAuthPrivateKey,
-		Data: sshData,
-	}
-	if err := ctrl.SetControllerReference(infra, secret, r.Scheme); err != nil {
-		return fmt.Errorf("set owner reference error: %v", err)
-	}
-	_, err := customCtrl.RetryCreateOrUpdate(ctx, r.Client, secret, func() error {
-		return nil
-	}, 5, 10*time.Millisecond)
-
-	if err != nil {
-		return fmt.Errorf("create secret error: %v", err)
-	}
-
-	return nil
-}
-
-func getSecretName(infra *infrav1.Infra) string {
-	return fmt.Sprintf("%s-%s", common.InfraSecretPrefix, infra.Name)
 }
 
 func (r *InfraReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status string) error {
@@ -273,6 +192,14 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 	if r.finalizer == nil {
 		r.finalizer = controller.NewFinalizer(r.Client, common.SealosInfraFinalizer)
+	}
+	r.driver = make(map[string]drivers.Driver)
+	var err error
+	for _, driverName := range common.DriverList {
+		r.driver[driverName], err = drivers.NewDriver(driverName)
+	}
+	if err != nil {
+		return fmt.Errorf("new driver error: %v", err)
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}, builder.WithPredicates(

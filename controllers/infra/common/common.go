@@ -26,6 +26,8 @@ const (
 	InstanceStatusRunning = "running"
 	AliyunKeyPairPrefix   = "infra"
 	DefaultNamespace      = "default"
+	MasterO               = "master0"
 )
 
 var DefaultRootVolumeSize = int32(40)
+var DriverList = []string{"aliyun", "aws"}
