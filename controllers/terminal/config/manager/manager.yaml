@@ -71,5 +71,7 @@ spec:
         env:
           - name: USER_NAMESPACE
             value: "user-system"
+          - name: DOMAIN
+            value: "cloud.sealos.io"
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
