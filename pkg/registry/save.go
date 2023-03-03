@@ -326,6 +326,9 @@ func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distributio
 	ls, _ := blobStore.(localStore).Local(is.ctx)
 	for _, blob := range blobLists {
 		tmpBlob := blob
+		if len(blob) == 0 {
+			continue
+		}
 		numCh <- struct{}{}
 		eg.Go(func() error {
 			defer func() {
