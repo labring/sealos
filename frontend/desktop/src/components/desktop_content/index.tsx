@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, MouseEvent, useRef } from 'react';
-import AppStore from 'applications/app_store';
 import Infra from 'applications/infra';
 import PgSql from 'applications/pgsql';
 
@@ -52,7 +51,7 @@ export default function DesktopContent() {
         if (appItem.name === 'Postgres') {
           return <PgSql />;
         }
-        return <AppStore />;
+        return null;
 
       case APPTYPE.IFRAME:
         return <IframeApp appItem={appItem} />;
