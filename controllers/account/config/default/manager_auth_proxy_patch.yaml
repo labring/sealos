@@ -26,7 +26,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -36,6 +36,8 @@ spec:
             value: "sealos-system"
           - name: NAMESPACE_NAME
             value: "user-system"
+          - name: NEW_ACCOUNT_AMOUNT
+            value: "500"
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"

@@ -131,6 +131,8 @@ spec:
                       description: deduction info will Record in the Charge
                       format: int64
                       type: integer
+                    describe:
+                      type: string
                     status:
                       type: string
                     time:
@@ -515,7 +517,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 5m
             memory: 64Mi
@@ -531,6 +533,8 @@ spec:
         env:
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
+        - name: NEW_ACCOUNT_AMOUNT
+          value: "500"
         envFrom:
         - secretRef:
             name: payment-secret
@@ -552,7 +556,7 @@ spec:
         resources:
           limits:
             cpu: 500m
-            memory: 128Mi
+            memory: 512Mi
           requests:
             cpu: 10m
             memory: 64Mi
