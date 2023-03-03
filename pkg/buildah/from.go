@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -62,6 +64,7 @@ func newDefaultFromReply() *fromReply {
 	}
 	return &fromReply{
 		authfile:  auth.GetDefaultAuthFile(),
+		certDir:   constants.RegistryCertDir,
 		format:    defaultFormat(),
 		pull:      "true",
 		tlsVerify: false,

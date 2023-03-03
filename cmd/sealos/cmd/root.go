@@ -58,7 +58,7 @@ func init() {
 	fs.BoolVar(&debug, "debug", false, "enable debug logger")
 	fs.StringVar(&clusterRootDir, "cluster-root", constants.DefaultClusterRootFsDir, "cluster root directory for remote")
 	_ = fs.MarkHidden("cluster-root")
-	fs.StringVar(&runtimeRootDir, "sealos-root", constants.DefaultRuntimeRootDir, "root directory for sealos actions")
+	fs.StringVar(&runtimeRootDir, "sealos-root", constants.RuntimeRootDir, "root directory for sealos actions")
 	_ = fs.MarkHidden("sealos-root")
 	// add unrelated command names that don't required buildah sdk.
 	buildah.AddUnrelatedCommandNames("cert", "status", "docs", "exec", "scp", "version")
@@ -66,7 +66,7 @@ func init() {
 
 func onBootOnDie() {
 	constants.DefaultClusterRootFsDir = clusterRootDir
-	constants.DefaultRuntimeRootDir = runtimeRootDir
+	constants.RuntimeRootDir = runtimeRootDir
 	var rootDirs = []string{
 		constants.LogPath(),
 		constants.Workdir(),

@@ -21,6 +21,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -70,6 +72,7 @@ type pushOptions struct {
 func newDefaultPushOptions() *pushOptions {
 	return &pushOptions{
 		authfile:   auth.GetDefaultAuthFile(),
+		certDir:    constants.RegistryCertDir,
 		retry:      buildahcli.MaxPullPushRetries,
 		retryDelay: buildahcli.PullPushRetryDelay,
 		crOption:   CrOptionAuto,

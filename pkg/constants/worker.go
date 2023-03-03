@@ -23,7 +23,7 @@ const (
 )
 
 func Workdir() string {
-	return DefaultRuntimeRootDir
+	return RuntimeRootDir
 }
 
 func ClusterDir(clusterName string) string {

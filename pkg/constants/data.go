@@ -34,7 +34,8 @@ const (
 
 var (
 	DefaultClusterRootFsDir = path.Join(defaultDataRoot, AppName)
-	DefaultRuntimeRootDir   = GetRuntimeRootDir(AppName)
+	RuntimeRootDir          = GetDefaultRuntimeRootDir(AppName)
+	RegistryCertDir         = GetDefaultRegistryCertDir()
 )
 
 const (
@@ -58,15 +59,19 @@ const (
 	StaticsDirName                   = "statics"
 )
 
-func GetRuntimeRootDir(name string) string {
+func GetDefaultRuntimeRootDir(name string) string {
 	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {
 		return v
 	}
 	return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
 }
 
+func GetDefaultRegistryCertDir() string {
+	return filepath.Join(RuntimeRootDir, "cert.d")
+}
+
 func LogPath() string {
-	return filepath.Join(DefaultRuntimeRootDir, "logs")
+	return filepath.Join(RuntimeRootDir, "logs")
 }
 
 func DataPath() string {

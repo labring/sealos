@@ -21,6 +21,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/containers/buildah"
 	"github.com/containers/buildah/define"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -62,6 +64,7 @@ func (opts *pullOptions) HiddenFlags() []string {
 func newDefaultPullOptions() *pullOptions {
 	return &pullOptions{
 		authfile:   auth.GetDefaultAuthFile(),
+		certDir:    constants.RegistryCertDir,
 		pullPolicy: "missing",
 		tlsVerify:  false,
 		os:         runtime.GOOS,

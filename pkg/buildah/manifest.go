@@ -23,6 +23,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/containers/buildah/pkg/cli"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/buildah/util"
@@ -240,7 +242,7 @@ func newManifestCommand() *cobra.Command {
 	fs.BoolVar(&manifestPushOpts.rm, "rm", false, "remove the manifest list if push succeeds")
 	fs.BoolVar(&manifestPushOpts.all, "all", false, "also push the images in the list")
 	fs.StringVar(&manifestPushOpts.authfile, "authfile", auth.GetDefaultAuthFile(), "path of the authentication file. Use REGISTRY_AUTH_FILE environment variable to override")
-	fs.StringVar(&manifestPushOpts.certDir, "cert-dir", "", "use certificates at the specified path to access the registry")
+	fs.StringVar(&manifestPushOpts.certDir, "cert-dir", constants.RegistryCertDir, "use certificates at the specified path to access the registry")
 	fs.StringVar(&manifestPushOpts.creds, "creds", "", "use `[username[:password]]` for accessing the registry")
 	fs.StringVar(&manifestPushOpts.digestfile, "digestfile", "", "after copying the image, write the digest of the resulting digest to the file")
 	fs.StringVarP(&manifestPushOpts.format, "format", "f", "", "manifest type (oci or v2s2) to attempt to use when pushing the manifest list (default is manifest type of source)")

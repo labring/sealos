@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/constants"
+
 	"github.com/containers/buildah/define"
 	"github.com/containers/buildah/imagebuildah"
 	buildahcli "github.com/containers/buildah/pkg/cli"
@@ -71,6 +73,9 @@ func newBuildCommand() *cobra.Command {
 
 	// build is a all common flags
 	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
+	if buildFlagResults.CertDir == "" {
+		buildFlagResults.CertDir = constants.RegistryCertDir
+	}
 	buildFlags.StringVar(&buildFlagResults.Runtime, "runtime", util.Runtime(), "`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.")
 
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)
