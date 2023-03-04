@@ -441,6 +441,8 @@ spec:
         env:
         - name: USER_NAMESPACE
           value: user-system
+        - name: DOMAIN
+          value: cloud.sealos.io
         image: ghcr.io/labring/sealos-terminal-controller:dev
         imagePullPolicy: Always
         livenessProbe:

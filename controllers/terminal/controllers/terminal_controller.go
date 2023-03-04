@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"os"
 	"time"
 
 	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
@@ -47,22 +48,24 @@ const (
 	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
 	LetterBytes         = "abcdefghijklmnopqrstuvwxyz0123456789"
+	DefaultDomain       = "cloud.sealos.io"
 )
 
 // request and limit for terminal pod
 const (
-	CPURequest    = "0.04"
-	MemoryRequest = "64Mi"
-	CPULimit      = "0.5"
-	MemoryLimit   = "64Mi"
+	CPURequest    = "0.01"
+	MemoryRequest = "16Mi"
+	CPULimit      = "0.8"
+	MemoryLimit   = "1Gi"
 )
 
 // TerminalReconciler reconciles a Terminal object
 type TerminalReconciler struct {
 	client.Client
-	Scheme   *runtime.Scheme
-	recorder record.EventRecorder
-	Config   *rest.Config
+	Scheme         *runtime.Scheme
+	recorder       record.EventRecorder
+	Config         *rest.Config
+	terminalDomain string
 }
 
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals,verbs=get;list;watch;create;update;patch;delete
@@ -146,7 +149,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string) error {
 	var err error
-	host := hostname + DomainSuffix
+	host := hostname + r.terminalDomain
 	switch terminal.Spec.IngressType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host)
@@ -444,9 +447,18 @@ func buildLabelsMap(terminal *terminalv1.Terminal) map[string]string {
 	return labelsMap
 }
 
+func getDomain() string {
+	domain := os.Getenv("DOMAIN")
+	if domain == "" {
+		return DefaultDomain
+	}
+	return domain
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
+	r.terminalDomain = "." + getDomain()
 	r.Config = mgr.GetConfig()
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &terminalv1.Terminal{}, IsController: false}
 	return ctrl.NewControllerManagedBy(mgr).

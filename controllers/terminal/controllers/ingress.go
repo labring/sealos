@@ -30,7 +30,6 @@ import (
 const (
 	SecretName      = "wildcard-cloud-sealos-io-cert"
 	SecretNamespace = "sealos-system"
-	DomainSuffix    = ".cloud.sealos.io"
 	AuthType        = "basicAuth"
 )
 
