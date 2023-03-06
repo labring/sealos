@@ -80,10 +80,11 @@ type IPAddress struct {
 
 type Metadata struct {
 	// 0 private , 1 public
-	IP     []IPAddress `json:"ipaddress,omitempty"`
-	ID     string      `json:"id,omitempty"`
-	DiskID []string    `json:"diskId,omitempty"`
-	Status string      `json:"status,omitempty"`
+	IP     []IPAddress       `json:"ipaddress,omitempty"`
+	ID     string            `json:"id,omitempty"`
+	DiskID []string          `json:"diskId,omitempty"`
+	Status string            `json:"status,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 type Hosts struct {

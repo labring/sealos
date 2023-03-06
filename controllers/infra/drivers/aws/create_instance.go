@@ -323,7 +323,7 @@ func (d Driver) WaitInstanceRunning(instances []types.Instance) error {
 }
 
 func (d Driver) CreateKeyPair(infra *v1.Infra) error {
-	if infra.Spec.SSH.PkData != "" {
+	if infra.Spec.SSH.PkName != "" {
 		return nil
 	}
 

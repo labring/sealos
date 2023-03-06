@@ -98,7 +98,7 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	// get data disk
 	dataDisks := getDataDisks(hosts)
 	// get host name
-	hostName := getHostName(hosts, infra)
+	hostName := getHostName(infra)
 
 	// create instance
 	runInstanceRequest := &ecs.RunInstancesRequest{
@@ -202,8 +202,9 @@ func getDataDisks(host *v1.Hosts) []ecs.RunInstancesDataDisk {
 	return dataDisks
 }
 
-func getHostName(hosts *v1.Hosts, infra *v1.Infra) string {
-	return fmt.Sprintf("%s-%s-%d", infra.Namespace, infra.Name, hosts.Index)
+// getHostName Ensure unique hostname, according: https://help.aliyun.com/document_detail/63440.html
+func getHostName(infra *v1.Infra) string {
+	return fmt.Sprintf("%s-%s-${instance_id}", infra.Namespace, infra.Name)
 }
 
 func getNetWorkName(infra *v1.Infra) string {

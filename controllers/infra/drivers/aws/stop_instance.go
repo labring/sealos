@@ -23,6 +23,10 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/labring/sealos/controllers/cluster/common"
+
+	"golang.org/x/sync/errgroup"
+
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/common/utils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -42,6 +46,13 @@ type EC2StopInstancesAPI interface {
 	DeleteKeyPair(ctx context.Context,
 		params *ec2.DeleteKeyPairInput,
 		optFns ...func(*ec2.Options)) (*ec2.DeleteKeyPairOutput, error)
+	DescribeVolumes(ctx context.Context,
+		params *ec2.DescribeVolumesInput,
+		optFns ...func(*ec2.Options)) (*ec2.DescribeVolumesOutput, error)
+}
+
+func GetVolume(c context.Context, api EC2DescribeVolumesAPI, input *ec2.DescribeVolumesInput) (*ec2.DescribeVolumesOutput, error) {
+	return api.DescribeVolumes(c, input)
 }
 
 // StopInstance stops an Amazon Elastic Compute Cloud (Amazon EC2) instance.
@@ -86,26 +97,46 @@ func (d Driver) stopInstances(hosts *v1.Hosts) error {
 }
 
 func (d Driver) deleteInstances(hosts *v1.Hosts) error {
+	return d.deleteInstancesByOption(hosts, false)
+}
+
+func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
 	client := d.Client
 	instanceID := make([]string, hosts.Count)
-	var disksID []string
+	var disksIDs []string
 	rootDeviceName, err := d.getImageRootDeviceNameByID(hosts.Image)
 	if err != nil {
 		return fmt.Errorf("aws delete disks failed(get root device name):, %v", err)
 	}
+	idx := 0
 	for i := 0; i < hosts.Count; i++ {
 		if len(hosts.Metadata) == 0 {
 			return nil
 		}
-		metadata := hosts.Metadata[i]
-		instanceID[i] = metadata.ID
-		for _, disk := range hosts.Disks {
-			if disk.Device != rootDeviceName {
-				disksID = append(disksID, disk.ID...)
+		metadata := hosts.Metadata[idx]
+		// if deleteAll is false, skip master0
+		if _, ok := metadata.Labels[common.Master0Label]; ok && !deleteAll {
+			idx++
+			i--
+			continue
+		}
+		// skip root disk
+		for _, disksID := range metadata.DiskID {
+			getDiskInput := &ec2.DescribeVolumesInput{
+				VolumeIds: []string{disksID},
+			}
+			volume, err := GetVolume(context.TODO(), client, getDiskInput)
+			if err != nil || len(volume.Volumes) == 0 {
+				return fmt.Errorf("failed to get volume: %s, %v", disksID, err)
+			}
+			if *volume.Volumes[0].Attachments[0].Device != rootDeviceName {
+				disksIDs = append(disksIDs, disksID)
 			}
 		}
+		instanceID[i] = metadata.ID
+		idx++
 	}
-	if err := d.DeleteVolume(disksID); err != nil {
+	if err := d.DeleteVolume(disksIDs); err != nil {
 		return fmt.Errorf("aws stop instance failed(delete volume):, %v", err)
 	}
 
@@ -151,6 +182,29 @@ func (d Driver) deleteInstances(hosts *v1.Hosts) error {
 
 	return nil
 }
+
+func (d Driver) deleteInfra(infra *v1.Infra) error {
+	eg, _ := errgroup.WithContext(context.Background())
+	logger.Info("delete instances of infra %s", infra.Name)
+	for i := range infra.Spec.Hosts {
+		host := infra.Spec.Hosts[i]
+		eg.Go(func() error {
+			if err := d.deleteInstancesByOption(&host, true); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	if err := eg.Wait(); err != nil {
+		return fmt.Errorf("delete instances error:%v", err)
+	}
+	logger.Info("delete key pair of infra %s", infra.Name)
+	if err := d.deleteKeyPair(infra); err != nil {
+		return fmt.Errorf("delete key pair error:%v", err)
+	}
+	return nil
+}
+
 func DelKeyPair(c context.Context, api EC2StopInstancesAPI, input *ec2.DeleteKeyPairInput) (*ec2.DeleteKeyPairOutput, error) {
 	return api.DeleteKeyPair(c, input)
 }

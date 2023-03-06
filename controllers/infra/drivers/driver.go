@@ -44,11 +44,12 @@ type Driver interface {
 	// Create and Attach
 	CreateVolumes(infra *v1.Infra, host *v1.Hosts, disks []v1.Disk) error
 	// Delete and Detach
-	DeleteVolume(disksID []string) error
+	DeleteVolume(disks []string) error
 	// Modify
 	ModifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error
 	CreateKeyPair(infra *v1.Infra) error
 	DeleteKeyPair(infra *v1.Infra) error
+	DeleteInfra(infra *v1.Infra) error
 }
 
 type Reconcile interface {

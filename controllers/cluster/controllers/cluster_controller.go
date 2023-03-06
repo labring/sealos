@@ -24,6 +24,10 @@ import (
 	"strings"
 	"time"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/labring/sealos/controllers/cluster/common"
+
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
@@ -44,7 +48,6 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -103,6 +106,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if cluster.Status.Status == v1.Failed.String() {
+		return ctrl.Result{}, nil
+	}
+
 	infra := &infrav1.Infra{}
 	infra.Name = cluster.Spec.Infra
 	infra.Namespace = cluster.Namespace
@@ -123,7 +130,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{RequeueAfter: time.Second * 5}, nil
 	}
 
-	EIP, err := getMaster0PublicIP(infra)
+	EIP, err := r.getMaster0PublicIP(infra)
+	r.Logger.Info("get master0 public ip", "ip", EIP)
 	if err != nil {
 		r.Logger.Error(err, "Failed to get master0 ip")
 		return ctrl.Result{RequeueAfter: time.Second * 30}, nil
@@ -224,17 +232,36 @@ func convertClusterToYaml(cluster interface{}) (string, error) {
 }
 
 // Get master0 public ip from infra
-func getMaster0PublicIP(infra *infrav1.Infra) (string, error) {
-	for _, host := range infra.Spec.Hosts {
-		for _, meta := range host.Metadata {
-			for _, ip := range meta.IP {
-				if ip.IPType == infracommon.IPTypePublic && host.Roles[0] == v1beta1.MASTER {
-					return ip.IPValue, nil
+func (r *ClusterReconciler) getMaster0PublicIP(infra *infrav1.Infra) (string, error) {
+	for i := range infra.Spec.Hosts {
+		host := &infra.Spec.Hosts[i]
+		for j := range host.Metadata {
+			meta := &host.Metadata[j]
+			if _, ok := meta.Labels[common.Master0Label]; ok {
+				moveToHead(host, j)
+				if ip := getPublicIP(host.Metadata[0]); ip != "" {
+					return ip, nil
 				}
 			}
 		}
 	}
 	return "", fmt.Errorf("get master0 ip failed")
+}
+
+func getPublicIP(meta infrav1.Metadata) string {
+	for _, ip := range meta.IP {
+		if ip.IPType == infracommon.IPTypePublic {
+			return ip.IPValue
+		}
+	}
+	return ""
+}
+
+func moveToHead(host *infrav1.Hosts, i int) {
+	if i == 0 {
+		return
+	}
+	host.Metadata[0], host.Metadata[i] = host.Metadata[i], host.Metadata[0]
 }
 
 func getAllInstanceIP(infra *infrav1.Infra) []string {

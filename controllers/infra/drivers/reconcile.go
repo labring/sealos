@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	"github.com/labring/sealos/controllers/infra/common"
 
 	"golang.org/x/sync/errgroup"
@@ -107,6 +109,9 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			// (desire count > current count) -> delete superfluous instances
 			count := des.Count - cur.Count
 			if count < 0 {
+				if des.Roles[0] == v1beta1.MASTER && des.Count == 0 {
+					return fmt.Errorf("master count must be greater than 0")
+				}
 				logger.Info("desired instance count < current instance count, delete superfluous instance %#v", des)
 				host := cur
 				host.Count = -count

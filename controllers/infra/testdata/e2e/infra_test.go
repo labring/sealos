@@ -32,7 +32,7 @@ func TestInfra(t *testing.T) {
 				t.Fatalf("create infra failed: %v", err)
 			}
 
-			if err := api.WaitInfraRunning(TestNamespace, InfraName, 100); err != nil {
+			if err := api.WaitInfraRunning(TestNamespace, InfraName, 300); err != nil {
 				flag = false
 				t.Fatalf("infra failed to run: %v", err)
 			}

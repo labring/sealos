@@ -19,4 +19,5 @@ const (
 	defaultIPProtocol              = "tcp"
 	defaultPortRange               = "1/65535"
 	defaultSourceCidrIP            = "0.0.0.0/0"
+	resourceTypeInstance           = "instance"
 )
