@@ -26,15 +26,13 @@ type Context interface {
 	GetCluster() *v2.Cluster
 	GetData() constants.Data
 	GetExecer() ssh.Interface
-	GetShellWrapper() shellWrapper
 }
 
 type realContext struct {
-	bash         constants.Bash
-	cluster      *v2.Cluster
-	data         constants.Data
-	execer       ssh.Interface
-	shellWrapper shellWrapper
+	bash    constants.Bash
+	cluster *v2.Cluster
+	data    constants.Data
+	execer  ssh.Interface
 }
 
 func (ctx realContext) GetBash() constants.Bash {
@@ -53,10 +51,6 @@ func (ctx realContext) GetExecer() ssh.Interface {
 	return ctx.execer
 }
 
-func (ctx realContext) GetShellWrapper() shellWrapper {
-	return ctx.shellWrapper
-}
-
 func NewContextFrom(cluster *v2.Cluster) Context {
 	execer := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	envProcessor := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
@@ -64,10 +58,7 @@ func NewContextFrom(cluster *v2.Cluster) Context {
 	return &realContext{
 		cluster: cluster,
 		execer:  execer,
-		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels()),
+		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), envProcessor.WrapperShell),
 		data:    constants.NewData(cluster.GetName()),
-		shellWrapper: func(host, s string) string {
-			return envProcessor.WrapperShell(host, s)
-		},
 	}
 }

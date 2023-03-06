@@ -52,7 +52,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 		if cmd == "" {
 			continue
 		}
-
+		logger.Debug("start to exec remote %s shell: %s", host, cmd)
 		if err := func(cmd string) error {
 			if isLocal {
 				return exec.Cmd("bash", "-c", cmd)

@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/labring/sealos/pkg/version"
+
 	"github.com/labring/sealos/pkg/template"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
@@ -123,20 +125,28 @@ func (p *processor) getHostEnv(hostIP string) map[string]string {
 	}
 	hostEnvMap := maps.ListToMap(hostEnv)
 	specEnvMap := maps.ListToMap(p.Spec.Env)
+
 	var imageEnvMap map[string]string
 	for _, img := range p.mounts {
 		imageEnvMap = maps.MergeMap(imageEnvMap, img.Env)
 		if img.Type == v1beta1.RootfsImage {
 			imageEnvMap[v1beta1.ImageKubeVersionEnvSysKey] = img.Labels[v1beta1.ImageKubeVersionKey]
-		} else {
-			for k := range img.Env {
-				if strings.HasPrefix(k, "SEALOS_SYS") {
-					logger.Warn("image name:%s , skip %s env , SEALOS_SYS prefix env is sealos system env", img.ImageName, k)
-				}
-			}
+			imageEnvMap[v1beta1.ImageSealosVersionEnvSysKey] = version.Get().GitVersion
 		}
 	}
 
-	envs := maps.MergeMap(imageEnvMap, specEnvMap, hostEnvMap)
+	filterSysEnv := func(env map[string]string) map[string]string {
+		outEnv := make(map[string]string, 0)
+		for k, v := range env {
+			if strings.HasPrefix(k, "SEALOS_SYS") {
+				logger.Warn("skip %s env , SEALOS_SYS prefix env is sealos system env", k)
+			} else {
+				outEnv[k] = v
+			}
+		}
+		return outEnv
+	}
+
+	envs := maps.MergeMap(imageEnvMap, filterSysEnv(specEnvMap), filterSysEnv(hostEnvMap))
 	return envs
 }

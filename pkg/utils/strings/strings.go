@@ -218,12 +218,12 @@ func IsLetterOrNumber(k string) bool {
 func RenderShellFromEnv(shell string, envs map[string]string) string {
 	var env string
 	for k, v := range envs {
-		env = fmt.Sprintf("%s%s=(%s) ", env, k, v)
+		env = fmt.Sprintf("%s%s=\"%s\" ", env, k, v)
 	}
 	if env == "" {
 		return shell
 	}
-	return fmt.Sprintf("%s&& %s", env, shell)
+	return fmt.Sprintf("export %s; %s", env, shell)
 }
 
 func RenderTextFromEnv(text string, envs map[string]string) string {

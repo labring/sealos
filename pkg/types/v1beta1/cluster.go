@@ -48,15 +48,24 @@ type RegistryConfig struct {
 type ImageType string
 
 const (
-	AppImage                  ImageType = "application"
-	RootfsImage               ImageType = "rootfs"
-	PatchImage                ImageType = "patch"
-	ImageKubeVersionKey                 = "version"
-	ImageVIPKey                         = "vip"
-	ImageKubeLvscareImageKey            = "image"
-	ImageTypeKey                        = "sealos.io.type"
-	ImageKubeVersionEnvSysKey           = "SEALOS_SYS_KUBE_VERSION"
+	AppImage                    ImageType = "application"
+	RootfsImage                 ImageType = "rootfs"
+	PatchImage                  ImageType = "patch"
+	ImageKubeVersionKey                   = "version"
+	ImageVIPKey                           = "vip"
+	ImageKubeLvscareImageKey              = "image"
+	ImageTypeKey                          = "sealos.io.type"
+	ImageTypeVersionKey                   = "sealos.io.version"
+	ImageKubeVersionEnvSysKey             = "SEALOS_SYS_KUBE_VERSION"
+	ImageSealosVersionEnvSysKey           = "SEALOS_SYS_SEALOS_VERSION"
 )
+
+const (
+	ImageTypeVersionKeyV1Beta1 = "v1beta1"
+	ImageTypeVersionKeyV1Beta2 = "v1beta2"
+)
+
+var ImageVersionList = []string{ImageTypeVersionKeyV1Beta1, ImageTypeVersionKeyV1Beta2}
 
 type MountImage struct {
 	Name       string            `json:"name"`
