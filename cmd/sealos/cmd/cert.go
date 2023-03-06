@@ -65,6 +65,12 @@ var certCmd = &cobra.Command{
 		}
 		return r.UpdateCert(strings.Split(altNames, ","))
 	},
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if strings.TrimSpace(altNames) == "" {
+			return fmt.Errorf("this command alt-names param can't empty")
+		}
+		return nil
+	},
 }
 
 func init() {
