@@ -41,7 +41,8 @@ spec:
                 description: 'ImageDetailInfo TODO: add limits for ImageDetailInfo'
                 properties:
                   ID:
-                    description: ID Arch Size should use buildah inspect to get infor.
+                    description: ID Arch Size Ctime should use buildah inspect to
+                      get infor.
                     type: string
                   actions:
                     additionalProperties:
@@ -61,6 +62,9 @@ spec:
                     type: object
                   arch:
                     type: string
+                  creatTime:
+                    format: date-time
+                    type: string
                   description:
                     type: string
                   docs:
@@ -77,6 +81,8 @@ spec:
                   url:
                     description: URL sealos cloud ui endpoint
                     type: string
+                required:
+                - creatTime
                 type: object
               name:
                 type: string
