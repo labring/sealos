@@ -285,6 +285,22 @@ const installedApps: TAppConfig[] = [
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
     }
+  },
+  {
+    key: 'sealos-deploy-manager',
+    name: 'Deploy Manager',
+    icon: '/images/sealos.svg',
+    type: APPTYPE.IFRAME,
+    gallery: [],
+    data: {
+      url: 'https://deploy.cloud.sealos.io',
+      desc: 'deploy manager'
+    },
+    menu: {
+      nameColor: 'text-black',
+      helpDocs: 'https://www.sealos.io/docs/cloud/Intro/',
+      helpDropDown: false
+    }
   }
   // {
   //   key: 'sealos-app-sdk-demo',
