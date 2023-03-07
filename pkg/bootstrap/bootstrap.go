@@ -27,95 +27,90 @@ import (
 type Phase string
 
 const (
-	Preflight Phase = "preflight"
-	Init      Phase = "init"
-	Addon     Phase = "addon"
+	Preflight  Phase = "preflight"
+	Init       Phase = "init"
+	Postflight Phase = "postflight"
 )
 
 type Interface interface {
-	Preflight(hosts ...string) error
-	Init(hosts ...string) error
+	Apply(hosts ...string) error
 	RegisterApplier(Phase, ...Applier) error
-	ApplyAddons(hosts ...string) error
-	Reset(hosts ...string) error
+	Delete(hosts ...string) error
 }
 
 type realBootstrap struct {
 	ctx          Context
-	checks       []Applier
+	preflights   []Applier
 	initializers []Applier
-	addons       []Applier
+	postflights  []Applier
 }
 
 func New(cluster *v2.Cluster) Interface {
 	ctx := NewContextFrom(cluster)
 	bs := &realBootstrap{
 		ctx:          ctx,
-		checks:       make([]Applier, 0),
+		preflights:   make([]Applier, 0),
 		initializers: make([]Applier, 0),
-		addons:       make([]Applier, 0),
+		postflights:  make([]Applier, 0),
 	}
 	// register builtin appliers
-	_ = bs.RegisterApplier(Preflight, defaultCheckers...)
+	_ = bs.RegisterApplier(Preflight, defaultPreflights...)
 	_ = bs.RegisterApplier(Init, defaultInitializers...)
-	_ = bs.RegisterApplier(Addon, defaultAddons...)
+	_ = bs.RegisterApplier(Postflight, defaultPostflights...)
 	return bs
 }
 
-func (bs *realBootstrap) Preflight(hosts ...string) error {
-	return bs.apply(bs.checks, hosts...)
-}
-
-func (bs *realBootstrap) Init(hosts ...string) error {
-	return bs.apply(bs.initializers, hosts...)
-}
-
-func (bs *realBootstrap) ApplyAddons(hosts ...string) error {
-	return bs.apply(bs.addons, hosts...)
-}
-
-func (bs *realBootstrap) apply(appliers []Applier, hosts ...string) error {
-	return runParallel(hosts, func(host string) error {
-		for i := range appliers {
-			applier := appliers[i]
+func (bs *realBootstrap) Apply(hosts ...string) error {
+	appliers := make([]Applier, 0)
+	appliers = append(appliers, bs.preflights...)
+	appliers = append(appliers, bs.initializers...)
+	appliers = append(appliers, bs.postflights...)
+	logger.Debug("apply %+v on hosts %+v", appliers, hosts)
+	for i := range appliers {
+		applier := appliers[i]
+		if err := runParallel(hosts, func(host string) error {
 			if !applier.Filter(bs.ctx, host) {
 				return nil
 			}
-			logger.Debug("apply %s on host %s", applier.Name(), host)
+			logger.Debug("apply %s on host %s", applier, host)
 			if err := applier.Apply(bs.ctx, host); err != nil {
 				return err
 			}
+			return nil
+		}); err != nil {
+			return err
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 func (bs *realBootstrap) RegisterApplier(phase Phase, appliers ...Applier) error {
 	switch phase {
 	case Preflight:
-		bs.checks = append(bs.checks, appliers...)
+		bs.preflights = append(bs.preflights, appliers...)
 	case Init:
 		bs.initializers = append(bs.initializers, appliers...)
-	case Addon:
-		bs.addons = append(bs.addons, appliers...)
+	case Postflight:
+		bs.postflights = append(bs.postflights, appliers...)
 	default:
 		return fmt.Errorf("unknown phase %s", phase)
 	}
 	return nil
 }
 
-func (bs *realBootstrap) Reset(hosts ...string) error {
+func (bs *realBootstrap) Delete(hosts ...string) error {
 	appliers := make([]Applier, 0)
-	// first addons, second initializers
-	appliers = append(appliers, bs.addons...)
+	appliers = append(appliers, bs.postflights...)
 	appliers = append(appliers, bs.initializers...)
+	appliers = append(appliers, bs.preflights...)
 	return runParallel(hosts, func(host string) error {
+		logger.Debug("delete runParallel %+v on host %s", appliers, host)
 		for i := range appliers {
 			applier := appliers[i]
 			if !applier.Filter(bs.ctx, host) {
-				return nil
+				continue
 			}
-			logger.Debug("undo %s on host %s", applier.Name(), host)
+			logger.Debug("undo %s on host %s", applier, host)
 			if err := applier.Undo(bs.ctx, host); err != nil {
 				return err
 			}
@@ -139,10 +134,9 @@ type defaultChecker struct {
 	is *ImageShim
 }
 
-func (c *defaultChecker) Name() string {
-	return "default checker"
+func (c *defaultChecker) String() string {
+	return "default_checker"
 }
-
 func (c *defaultChecker) Filter(_ Context, _ string) bool {
 	return true
 }
@@ -161,9 +155,7 @@ func (c *defaultChecker) Undo(_ Context, _ string) error {
 
 type defaultInitializer struct{}
 
-func (initializer *defaultInitializer) Name() string {
-	return "default initializer"
-}
+func (*defaultInitializer) String() string { return "initializer" }
 
 func (initializer *defaultInitializer) Filter(_ Context, _ string) bool {
 	return true
@@ -179,18 +171,18 @@ func (initializer *defaultInitializer) Undo(_ Context, _ string) error {
 }
 
 func init() {
-	defaultCheckers = append(defaultCheckers, &defaultChecker{})
-	defaultInitializers = append(defaultInitializers, &defaultInitializer{})
+	defaultPreflights = append(defaultPreflights, &defaultChecker{})
+	defaultInitializers = append(defaultInitializers, &registryHostApplier{}, &registryApplier{}, &defaultInitializer{})
 }
 
 func RegisterApplier(phase Phase, appliers ...Applier) error {
 	switch phase {
 	case Preflight:
-		defaultCheckers = append(defaultCheckers, appliers...)
+		defaultPreflights = append(defaultPreflights, appliers...)
 	case Init:
 		defaultInitializers = append(defaultInitializers, appliers...)
-	case Addon:
-		defaultAddons = append(defaultAddons, appliers...)
+	case Postflight:
+		defaultPostflights = append(defaultPostflights, appliers...)
 	default:
 		return fmt.Errorf("unknown phase %s", phase)
 	}

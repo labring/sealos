@@ -18,12 +18,17 @@ package registry
 
 import (
 	"context"
+	"fmt"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+)
+
+const (
+	defaultUntarRegistry = "cd %s/%s ; if [[ -s untar-registry.sh ]]; then source untar-registry.sh ; else source common.sh && logger 'untar-registry.sh not found, skip untar registry'; fi"
 )
 
 type Interface interface {
@@ -46,7 +51,10 @@ func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
 		for j := range hosts {
 			host := hosts[j]
 			eg.Go(func() error {
-				return ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir)
+				if err := ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir); err != nil {
+					return err
+				}
+				return s.ssh.CmdAsync(host, fmt.Sprintf(defaultUntarRegistry, s.root, constants.ScriptsDirName))
 			})
 		}
 	}

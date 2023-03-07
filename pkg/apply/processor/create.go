@@ -129,13 +129,7 @@ func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in CreateProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	bs := bootstrap.New(cluster)
-	if err := bs.Preflight(hosts...); err != nil {
-		return err
-	}
-	if err := bs.Init(hosts...); err != nil {
-		return err
-	}
-	return bs.ApplyAddons(hosts...)
+	return bs.Apply(hosts...)
 }
 
 func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
