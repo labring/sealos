@@ -23,10 +23,10 @@
 * AIGES 与 Language Wrapper
 
 - C/C++ Wrapper
-  ![](/img/ai-applications/c++.png)
+  ![](/docs/4.0/img/ai-applications/c++.png)
 
 - Python Wrapper
-  ![](/img/ai-applications/python.png)
+  ![](/docs/4.0/img/ai-applications/python.png)
 
 ## 面向场景
 
@@ -50,7 +50,7 @@ AI能力最终需要落地工程化，部分企业缺乏统一标准的AI工程�
 
 ## 框架架构
 
-![img](https://github.com/iflytek/proposals/blob/main/athenaloader/athena.png?raw=true)
+![](https://github.com/iflytek/proposals/blob/main/athenaloader/athena.png?raw=true)
 
 ## 框架安装
 
@@ -72,9 +72,9 @@ $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sea
 $ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.24.1   --masters 192.168.64.2 -p <password>
 ```
 
-![](/img/ai-applications/sealos4-run-k8s.png)
-![](/img/ai-applications/sealos4-run-k8s-2.png)
-![](/img/ai-applications/sealos4-run-k8s-3.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s-2.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s-3.png)
 
 * Install helm
 
