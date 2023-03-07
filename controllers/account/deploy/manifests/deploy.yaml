@@ -645,6 +645,10 @@ spec:
         env:
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
+        - name: NAMESPACE_NAME
+          value: user-system
+        - name: NEW_ACCOUNT_AMOUNT
+          value: "500"
         envFrom:
         - secretRef:
             name: payment-secret
@@ -702,44 +706,6 @@ spec:
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
-      - args:
-        - --health-probe-bind-address=:8081
-        - --metrics-bind-address=127.0.0.1:8080
-        - --leader-elect
-        command:
-        - /manager
-        env:
-        - name: ACCOUNT_NAMESPACE
-          value: sealos-system
-        - name: NEW_ACCOUNT_AMOUNT
-          value: "500"
-        envFrom:
-        - secretRef:
-            name: payment-secret
-        image: ghcr.io/labring/sealos-account-controller:dev
-        imagePullPolicy: Always
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        name: manager
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
       securityContext:
         runAsNonRoot: true
       serviceAccountName: account-controller-manager
