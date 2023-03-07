@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-default-user
+  namespace: app-system
+rules:
+  - apiGroups: ["app.sealos.io"]
+    resources: [ "apps" ]
+    verbs: [ "get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-default-user-rolebinding
+  namespace: app-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-default-user
+subjects:
+  - kind: Group
+    name: system:serviceaccounts:user-system
+    apiGroup: rbac.authorization.k8s.io
