@@ -166,7 +166,6 @@ func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
 		if len(hosts.Metadata) == 0 {
 			return nil
 		}
-		logger.Info("i = %d, idx = %d", i, idx)
 		metadata := hosts.Metadata[idx]
 		// if deleteAll is false, skip master0
 		if _, ok := metadata.Labels[common.Master0Label]; ok && !deleteAll {
