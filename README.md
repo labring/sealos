@@ -1,5 +1,5 @@
 <h2 align="center">
-  
+
 ![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
 ![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
@@ -16,7 +16,9 @@ A general-purpose Cloud Operating System designed for managing Cloud Native appl
 [![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
 [![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
-<br /><br />
+
+<br />
+
 [![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/7bPNZfsjJu)
 
 </div>
