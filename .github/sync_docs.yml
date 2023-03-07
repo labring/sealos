@@ -6,7 +6,7 @@ fanux/sealos-site:
     dest: i18n/zh-Hans/docusaurus-plugin-content-docs/current/
     deleteOrphaned: true
   - source: docs/4.0/img/
-    dest: static/img
+    dest: static/docs/4.0/img/
     deleteOrphaned: true
   - source: README.md
     dest: docs/Intro.md

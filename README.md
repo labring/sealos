@@ -1,13 +1,13 @@
 <h2 align="center">
   
-![](docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
-![](docs/4.0/img/sealos-left.png#gh-light-mode-only)
+![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
+![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
 A general-purpose Cloud Operating System designed for managing Cloud Native applications
+
 </h2>
 
 <div align="center">
-  <p>
 
 [![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
 [![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
@@ -16,10 +16,9 @@ A general-purpose Cloud Operating System designed for managing Cloud Native appl
 [![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealos.io)
 [![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
-<br><br>
+<br /><br />
 [![discord](https://theme.zdassets.com/theme_assets/678183/cc59daa07820943e943c2fc283b9079d7003ff76.svg)](https://discord.gg/7bPNZfsjJu)
 
-  </p>
 </div>
 
 > [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
@@ -43,28 +42,21 @@ A general-purpose Cloud Operating System designed for managing Cloud Native appl
 
 Utilize the Cloud infrastructure akin to a Desktop computer, with the liberty to install or uninstall any Distributed Application at will:
 
-![](docs/4.0/img/sealos-desktop.png)
+![](/docs/4.0/img/sealos-desktop.png)
 
 Some Screen Shots of `Sealos Desktop`:
 
-<table>
-  <tr>
-      <td width="50%" align="center"><b>Sealos App Store</b></td>
-      <td width="50%" align="center"><b>Sealos App Store</b></td>
-  </tr>
-  <tr>
-     <td><img src="docs/4.0/img/sealos-app-store-1.jpg"/></td>
-     <td><img src="docs/4.0/img/sealos-app-store-2.jpg"/></td>
-  </tr>
-  <tr>
-      <td width="50%" align="center"><b>PostgreSQL on Sealos Desktop</b></td>
-      <td width="50%" align="center"><b>PostgreSQL on Sealos Desktop</b></td>
-  </tr>
-  <tr>
-     <td><img src="docs/4.0/img/postgresql-1.jpg"/></td>
-     <td><img src="docs/4.0/img/postgresql-2.jpg"/></td>
-  </tr>
-</table>
+<div align="center">
+
+| Sealos App Store | Sealos App Store |
+| :---: | :---: |
+| ![](/docs/4.0/img/sealos-app-store-1.jpg) | ![](/docs/4.0/img/sealos-app-store-2.jpg) |
+
+| PostgreSQL on Sealos Desktop | PostgreSQL on Sealos Desktop |
+| :---: | :---: |
+| ![](/docs/4.0/img/postgresql-1.jpg) | ![](/docs/4.0/img/postgresql-2.jpg) |
+
+</div>
 
 ## Core features
 

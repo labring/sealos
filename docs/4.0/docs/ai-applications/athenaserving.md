@@ -17,10 +17,10 @@ code (according to established standards) into grpc/HTTP services
 * AIGES And Language Wrapper
 
 - C/C++ Wrapper
-  ![](/img/ai-applications/c++.png)
+  ![](/docs/4.0/img/ai-applications/c++.png)
 
 - Python Wrapper
-  ![](/img/ai-applications/python.png)
+  ![](/docs/4.0/img/ai-applications/python.png)
 
 
 ## Scene Oriented
@@ -46,7 +46,7 @@ engineering solution.
 
 ## Architecture
 
-![img](https://github.com/iflytek/proposals/blob/main/athenaloader/athena.png?raw=true)
+![](https://github.com/iflytek/proposals/blob/main/athenaloader/athena.png?raw=true)
 
 ## Framework Install
 
@@ -70,9 +70,9 @@ $ wget -c https://sealyun-home.oss-cn-beijing.aliyuncs.com/sealos-4.0/latest/sea
 $ sealos run labring/kubernetes:v1.19.16 labring/calico:v3.24.1   --masters 192.168.64.2 -p <password>
 ```
 
-![](/img/ai-applications/sealos4-run-k8s.png)
-![](/img/ai-applications/sealos4-run-k8s-2.png)
-![](/img/ai-applications/sealos4-run-k8s-3.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s-2.png)
+![](/docs/4.0/img/ai-applications/sealos4-run-k8s-3.png)
 
 * Install helm
 
