@@ -204,7 +204,7 @@ func getDataDisks(host *v1.Hosts) []ecs.RunInstancesDataDisk {
 
 // getHostName Ensure unique hostname, according: https://help.aliyun.com/document_detail/63440.html
 func getHostName(infra *v1.Infra) string {
-	return fmt.Sprintf("%s-%s-${instance_id}", infra.Namespace, infra.Name)
+	return fmt.Sprintf("%s-${instance_id}", infra.Name)
 }
 
 func getNetWorkName(infra *v1.Infra) string {
