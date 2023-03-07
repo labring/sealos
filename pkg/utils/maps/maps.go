@@ -40,7 +40,7 @@ func ListToMap(data []string) map[string]string {
 	m := make(map[string]string)
 	for _, l := range data {
 		if l != "" {
-			kv := strings.Split(l, "=")
+			kv := strings.SplitN(l, "=", 2)
 			if len(kv) == 2 {
 				m[kv[0]] = kv[1]
 			}

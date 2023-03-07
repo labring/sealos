@@ -38,49 +38,50 @@ type Bash interface {
 	InitRegistryBash(host string) string
 	CleanRegistryBash(host string) string
 	CheckBash(host string) string
+	WrapBash(host string, shell string) string
 }
 
 type bash struct {
-	data         Data
-	render       map[string]string
-	shellWrapper func(string, string) string
+	data          Data
+	renderContext map[string]string
+	wrap          func(string, string) string
 }
 
-func (b *bash) defaultBashVal(key string) string {
-	if val, ok := b.render[key]; ok {
+func (b *bash) getFromRenderContextOrDefault(key string) string {
+	if val, ok := b.renderContext[key]; ok {
 		return fmt.Sprintf("bash %s", val)
 	}
 	return fmt.Sprintf("bash %s.sh", key)
 }
 
-func (b *bash) shellWrapperBash(host, shell string) string {
-	return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), b.shellWrapper(host, shell))
+func (b *bash) WrapBash(host, shell string) string {
+	return fmt.Sprintf(DefaultBashFmt, b.data.RootFSScriptsPath(), b.wrap(host, shell))
 }
 
 func (b *bash) CheckBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderCheck))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderCheck))
 }
 
 func (b *bash) InitBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderInit))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderInit))
 }
 
 func (b *bash) CleanBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderClean))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderClean))
 }
 
 func (b *bash) AuthBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderAuth))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderAuth))
 }
 
 func (b *bash) InitRegistryBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderInitRegistry))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderInitRegistry))
 }
 
 func (b *bash) CleanRegistryBash(host string) string {
-	return b.shellWrapperBash(host, b.defaultBashVal(renderCleanRegistry))
+	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderCleanRegistry))
 }
 
-func NewBash(clusterName string, render map[string]string, shellWrapper func(string, string) string) Bash {
-	return &bash{data: NewData(clusterName), render: render, shellWrapper: shellWrapper}
+func NewBash(clusterName string, renderContext map[string]string, shellWrapper func(string, string) string) Bash {
+	return &bash{data: NewData(clusterName), renderContext: renderContext, wrap: shellWrapper}
 }
