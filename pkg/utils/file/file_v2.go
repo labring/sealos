@@ -50,6 +50,10 @@ func IsFile(filePath string) bool {
 	return !f.IsDir()
 }
 
+func IsTarFile(s string) bool {
+	return strings.HasSuffix(s, ".tar") || strings.HasSuffix(s, ".gz") || strings.HasSuffix(s, ".tgz")
+}
+
 // IsDir returns if the given path is a directory.
 func IsDir(path string) bool {
 	s, err := os.Stat(path)
