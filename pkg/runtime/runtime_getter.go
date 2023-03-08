@@ -25,7 +25,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
 	"github.com/labring/sealos/pkg/remote"
@@ -34,13 +33,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
-
-func (k *KubeadmRuntime) getRegistry() *v1beta1.RegistryConfig {
-	k.registryOnce.Do(func() {
-		k.Registry = bootstrap.GetRegistryInfo(k.getSSHInterface(), k.getContentData().RootFSPath(), k.getRegistryIPAndPort())
-	})
-	return k.Registry
-}
 
 func (k *KubeadmRuntime) getKubeVersion() string {
 	return k.ClusterConfiguration.KubernetesVersion
@@ -85,10 +77,6 @@ func (k *KubeadmRuntime) getNodeIPAndPortList() []string {
 
 func (k *KubeadmRuntime) getMaster0IPAndPort() string {
 	return k.Cluster.GetMaster0IPAndPort()
-}
-
-func (k *KubeadmRuntime) getRegistryIPAndPort() string {
-	return k.Cluster.GetRegistryIPAndPort()
 }
 
 func (k *KubeadmRuntime) getMaster0IPAPIServer() string {

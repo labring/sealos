@@ -255,13 +255,7 @@ func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	bs := bootstrap.New(cluster)
-	if err := bs.Preflight(hosts...); err != nil {
-		return err
-	}
-	if err := bs.Init(hosts...); err != nil {
-		return err
-	}
-	return bs.ApplyAddons(hosts...)
+	return bs.Apply(hosts...)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

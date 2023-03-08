@@ -38,7 +38,7 @@ func (k *KubeadmRuntime) reset() error {
 	k.resetNodes(k.getNodeIPAndPortList())
 	k.resetMasters(k.getMasterIPAndPortList())
 	bs := bootstrap.New(k.Cluster)
-	err := bs.Reset(k.Cluster.GetAllIPS()...)
+	err := bs.Delete(k.Cluster.GetAllIPS()...)
 	return err
 }
 
@@ -92,10 +92,6 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	}
 	if err := k.sshCmdAsync(node, deleteHomeDirCmd); err != nil {
 		logger.Error("failed to clean node homedir, exec command %s failed, %v", deleteHomeDirCmd, err)
-	}
-	err = k.execHostsDelete(node, k.getRegistry().Domain)
-	if err != nil {
-		logger.Error("delete registry hosts failed %v", err)
 	}
 	err = k.execHostsDelete(node, k.getAPIServerDomain())
 	if err != nil {

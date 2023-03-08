@@ -17,6 +17,7 @@ package bootstrap
 import (
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/env"
+	"github.com/labring/sealos/pkg/remote"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -26,6 +27,7 @@ type Context interface {
 	GetCluster() *v2.Cluster
 	GetData() constants.Data
 	GetExecer() ssh.Interface
+	GetRemoter() remote.Interface
 }
 
 type realContext struct {
@@ -33,6 +35,7 @@ type realContext struct {
 	cluster *v2.Cluster
 	data    constants.Data
 	execer  ssh.Interface
+	remoter remote.Interface
 }
 
 func (ctx realContext) GetBash() constants.Bash {
@@ -51,14 +54,19 @@ func (ctx realContext) GetExecer() ssh.Interface {
 	return ctx.execer
 }
 
+func (ctx realContext) GetRemoter() remote.Interface {
+	return ctx.remoter
+}
+
 func NewContextFrom(cluster *v2.Cluster) Context {
 	execer := ssh.NewSSHClient(&cluster.Spec.SSH, true)
 	envProcessor := env.NewEnvProcessor(cluster, cluster.Status.Mounts)
-
+	remoter := remote.New(cluster.GetName(), execer)
 	return &realContext{
 		cluster: cluster,
 		execer:  execer,
 		bash:    constants.NewBash(cluster.GetName(), cluster.GetImageLabels(), envProcessor.WrapperShell),
 		data:    constants.NewData(cluster.GetName()),
+		remoter: remoter,
 	}
 }
