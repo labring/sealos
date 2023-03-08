@@ -52,7 +52,7 @@ export type TAppConfig = {
   gallery: string[];
   extra?: {};
   // app top info
-  menu?: {
+  menuData?: {
     nameColor: string;
     helpDropDown: boolean;
     helpDocs: boolean | string;

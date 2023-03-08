@@ -11,7 +11,7 @@ export default function Layout({ children }: any) {
   const [isLodaing, setIsLoading] = useState(true);
   useEffect(() => {
     return createSealosApp({
-      appKey: 'sealos-image-hub'
+      appKey: 'system-sealos-image-hub'
     });
   }, []);
 

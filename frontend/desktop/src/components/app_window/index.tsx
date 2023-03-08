@@ -101,13 +101,14 @@ export default function AppWindow(props: {
           >
             <div className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}>
               <img src={wnapp.icon} alt={wnapp.name} width={14} />
-              <div className={clsx('ml-2')} style={{ color: wnapp.menu?.nameColor }}>
+              <div className={clsx('ml-2')} style={{ color: wnapp.menuData?.nameColor }}>
                 {wnapp.name}
               </div>
-              {wnapp.menu?.helpDropDown && <HelpDropDown />}
-              {wnapp.menu?.helpDocs && (
+              {wnapp.menuData?.helpDropDown && <HelpDropDown />}
+              {/* @ts-ignore    */}
+              {!!wnapp.menuData?.helpDocs && (
                 <HelpDocs
-                  url={typeof wnapp.menu?.helpDocs === 'string' ? wnapp.menu?.helpDocs : ''}
+                  url={typeof wnapp.menuData?.helpDocs === 'string' ? wnapp.menuData?.helpDocs : ''}
                 />
               )}
             </div>

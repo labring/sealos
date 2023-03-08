@@ -16,7 +16,7 @@ const installedApps: TAppConfig[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: false
@@ -32,7 +32,7 @@ const installedApps: TAppConfig[] = [
       desc: 'Image Hub'
     },
     gallery: [],
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
@@ -51,7 +51,7 @@ const installedApps: TAppConfig[] = [
   //     'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
   //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: false,
   //     helpDocs: 'https://www.sealos.io/docs/cloud/apps/appstore/'
@@ -99,7 +99,7 @@ const installedApps: TAppConfig[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/terminal/'
@@ -118,7 +118,7 @@ const installedApps: TAppConfig[] = [
       'https://cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDropDown: true,
       helpDocs: false
@@ -137,7 +137,7 @@ const installedApps: TAppConfig[] = [
   //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
   //   size: 'maximize',
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: true,
   //     helpDocs: false
@@ -186,7 +186,7 @@ const installedApps: TAppConfig[] = [
   //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
   //   size: 'maximize',
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: true,
   //     helpDocs: false
@@ -207,7 +207,7 @@ const installedApps: TAppConfig[] = [
   //     'https://www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
   //   size: 'maximize',
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: true,
   //     helpDocs: false
@@ -240,7 +240,7 @@ const installedApps: TAppConfig[] = [
       'https: //cdn.programiz.com/cdn/farfuture/IwFGGPqycIxTfzLl7mPdcaqUaircnStXfipaHd4EBik/mtime:1605833048/sites/all/themes/programiz/assets/compiler.png',
       'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
     ],
-    menu: {
+    menuData: {
       nameColor: '#0073D7',
       helpDropDown: false,
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/scp/'
@@ -259,7 +259,7 @@ const installedApps: TAppConfig[] = [
   //     'https: //www.programiz.com/blog/content/images/2020/07/programiz-online-compiler.png'
   //   ],
   //   size: 'maximize',
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: true,
   //     helpDocs: false
@@ -280,7 +280,7 @@ const installedApps: TAppConfig[] = [
       url: '',
       desc: 'postgres operator'
     },
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDocs: 'https://www.sealos.io/docs/cloud/apps/postgres/',
       helpDropDown: false
@@ -296,7 +296,7 @@ const installedApps: TAppConfig[] = [
       url: 'https://deploy.cloud.sealos.io',
       desc: 'deploy manager'
     },
-    menu: {
+    menuData: {
       nameColor: 'text-black',
       helpDocs: 'https://www.sealos.io/docs/cloud/Intro/',
       helpDropDown: false
@@ -313,7 +313,7 @@ const installedApps: TAppConfig[] = [
   //   },
   //   gallery: [
   //   ],
-  //   menu: {
+  //   menuData: {
   //     nameColor: 'text-black',
   //     helpDropDown: false,
   //     helpDocs: false
