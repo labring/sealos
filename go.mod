@@ -23,7 +23,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/imdario/mergo v0.3.13
 	github.com/jaevor/go-nanoid v1.3.0
-	github.com/labring/endpoints-operator/library v0.0.0-20220819031233-733d330beaea
 	github.com/labring/image-cri-shim v0.0.0
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/imagehub v0.0.0
@@ -72,7 +71,6 @@ require (
 	github.com/Microsoft/hcsshim v0.9.5 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/aliyun/alibaba-cloud-sdk-go v1.62.198 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect

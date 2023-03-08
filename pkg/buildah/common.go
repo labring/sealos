@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/containers/buildah"
 	"github.com/containers/common/pkg/umask"
@@ -332,4 +333,9 @@ Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 {{end}}
 `
+}
+
+func getSelfExe() string {
+	// if run in rootless mode
+	return strings.TrimSuffix(os.Args[0], "-in-a-user-namespace")
 }

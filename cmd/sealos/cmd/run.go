@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -108,21 +107,9 @@ func init() {
 }
 
 func args2Images(args []string, transport string) ([]string, error) {
-	var images []string
 	bder, err := buildah.New("")
 	if err != nil {
-		return images, err
+		return nil, err
 	}
-	for _, arg := range args {
-		if strings.HasSuffix(arg, ".tar") || strings.HasSuffix(arg, ".gz") {
-			id, err := bder.Load(arg, transport)
-			if err != nil {
-				return images, err
-			}
-			images = append(images, id)
-		} else {
-			images = append(images, arg)
-		}
-	}
-	return images, nil
+	return buildah.Preload(bder, args, transport)
 }

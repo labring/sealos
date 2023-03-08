@@ -126,6 +126,7 @@ func subCommands() []*cobra.Command {
 		newBuildCommand(),
 		newContainersCommand(),
 		newCreateCmd(),
+		newDiffCommand(),
 		newFromCommand(),
 		newImagesCommand(),
 		newInspectCommand(),
