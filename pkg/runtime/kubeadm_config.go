@@ -91,6 +91,7 @@ const (
 
 var defaultMergeOpts = []func(*mergo.Config){
 	mergo.WithOverride,
+	mergo.WithAppendSlice,
 }
 
 // LoadFromClusterfile :Load KubeadmConfig from Clusterfile.
@@ -100,7 +101,6 @@ func (k *KubeadmConfig) LoadFromClusterfile(kubeadmConfig *KubeadmConfig) error 
 	if kubeadmConfig == nil {
 		return nil
 	}
-	k.APIServer.CertSANs = append(k.APIServer.CertSANs, kubeadmConfig.APIServer.CertSANs...)
 	return k.mutuallyExclusiveMerge(kubeadmConfig)
 }
 
@@ -144,7 +144,6 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
-	k.APIServer.CertSANs = append(k.APIServer.CertSANs, defaultKubeadmConfig.APIServer.CertSANs...)
 	err = mergo.Merge(k, defaultKubeadmConfig, defaultMergeOpts...)
 	if err != nil {
 		return fmt.Errorf("failed to merge kubeadm config from %s: %v", kubeadmYamlPath, err)
