@@ -210,6 +210,7 @@ jobs:
           sudo cat /root/.sealos/default/Clusterfile
       - name: Verify Cluster Status
         run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
           echo "Verify Cluster"
           echo "Current system info"
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
@@ -220,6 +221,10 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 127.0.0.1
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep apiserver.cluster.local
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.103.97.2
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep ${local_ip}
 
   verify-run-docker-buildimage:
     needs: [build-sealos]
@@ -324,6 +329,9 @@ jobs:
           kind: ClusterConfiguration
           networking:
             serviceSubnet: "100.55.0.0/16"
+          apiServer:
+            certSANs:
+            - 192.168.72.100
           EOF
           cat /tmp/apply/Clusterfile
       - name: Auto install k8s using sealos
@@ -338,6 +346,7 @@ jobs:
           sudo cat /root/.sealos/default/Clusterfile
       - name: Verify Cluster Status
         run: |
+          local_ip=`ip addr | grep inet | grep -v inet6 | grep -v docker |grep -v host | awk '{print $2}' | awk -F '/' '{print $1}'`
           echo "Verify Cluster"
           echo "Current system info"
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
@@ -348,6 +357,11 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 127.0.0.1
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep apiserver.cluster.local
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.103.97.2
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep ${local_ip}
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 192.168.72.100
 
   verify-run-docker-apply:
     needs: [build-sealos]
