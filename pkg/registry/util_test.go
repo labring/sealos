@@ -29,13 +29,13 @@ import (
 
 func TestGetAuthInfo(t *testing.T) {
 	t.Run("no credentials found", func(t *testing.T) {
-		authConfigs, err := GetAuthInfo()
+		authConfigs, err := GetAuthInfo(nil)
 		require.NoError(t, err)
 		require.Empty(t, authConfigs)
 	})
 	t.Run("has credentials found", func(t *testing.T) {
 		t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-		authConfigs, err := GetAuthInfo()
+		authConfigs, err := GetAuthInfo(nil)
 		require.NoError(t, err)
 		require.NotEmpty(t, authConfigs)
 	})
@@ -43,7 +43,7 @@ func TestGetAuthInfo(t *testing.T) {
 
 func TestSaveImages(t *testing.T) {
 	t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-	authConfigs, _ := GetAuthInfo()
+	authConfigs, _ := GetAuthInfo(nil)
 	save := NewImageSaver(context.TODO(), 5, authConfigs)
 	t.Run("no credentials found", func(t *testing.T) {
 		_ = os.Mkdir("testdata/registry", 0755)

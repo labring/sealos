@@ -22,6 +22,7 @@ import (
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
+	"github.com/containers/image/v5/types"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -42,7 +43,7 @@ func (opts *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&opts.enabled, "save-image", true, "save images parsed to local")
 }
 
-func runSaveImages(contextDir string, platforms []v1.Platform, opts *saveOptions) error {
+func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saveOptions) error {
 	if !opts.enabled {
 		logger.Warn("save-image is disabled, skip pulling images")
 		return nil
@@ -54,7 +55,7 @@ func runSaveImages(contextDir string, platforms []v1.Platform, opts *saveOptions
 	if len(images) == 0 {
 		return nil
 	}
-	auths, err := registry.GetAuthInfo()
+	auths, err := registry.GetAuthInfo(sys)
 	if err != nil {
 		return err
 	}

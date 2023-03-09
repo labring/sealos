@@ -29,7 +29,7 @@ import (
 
 func newRegistryGetImageCmd() *cobra.Command {
 	preValidate := func() map[string]types.AuthConfig {
-		cfg, err := registry.GetAuthInfo()
+		cfg, err := registry.GetAuthInfo(nil)
 		if err != nil {
 			logger.Error("auth info is error: %+v", err)
 			os.Exit(1)

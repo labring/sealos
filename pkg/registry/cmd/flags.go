@@ -91,7 +91,7 @@ func (opts *registrySaveResults) CheckAuth() (map[string]types.AuthConfig, error
 	if !file.IsExist(opts.registryPullRegistryDir) {
 		_ = os.MkdirAll(opts.registryPullRegistryDir, 0755)
 	}
-	cfg, err := registry.GetAuthInfo()
+	cfg, err := registry.GetAuthInfo(nil)
 	if err != nil {
 		return nil, fmt.Errorf("auth info is error: %w", err)
 	}
