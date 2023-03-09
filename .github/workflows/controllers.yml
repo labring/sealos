@@ -114,7 +114,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
+          password: ${{ secrets.GH_PAT }}
 
       - name: build (and publish) ${{ matrix.module }} main image
         if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
@@ -167,4 +167,4 @@ jobs:
           repository: labring-actions/cluster-image
           body: |
             /imagebuild_apps sealos-${{ matrix.module }}-controller dev
-          token: "${{ secrets.GH_TOKEN }}"
+          token: "${{ secrets.GH_PAT }}"

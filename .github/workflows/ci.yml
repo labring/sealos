@@ -218,7 +218,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
-          password: ${{ secrets.GH_TOKEN }}
+          password: ${{ secrets.GH_PAT }}
 
       - name: Download sealos
         uses: actions/download-artifact@v3
@@ -306,7 +306,7 @@ jobs:
           sudo $binDIR/buildah images
           BEFORE_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ steps.prepare.outputs.commit_sha }}
           IMAGE_NAME=${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}
-          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_TOKEN }}" "ghcr.io"
+          sudo $binDIR/buildah login -u "${{ github.repository_owner }}" -p "${{ secrets.GH_PAT }}" "ghcr.io"
           sudo $binDIR/buildah pull oci-archive:patch-amd64.tar
           sudo $binDIR/buildah tag ${BEFORE_IMAGE_NAME}-amd64 ${IMAGE_NAME}-amd64
           sudo $binDIR/buildah rmi ${BEFORE_IMAGE_NAME}-amd64
