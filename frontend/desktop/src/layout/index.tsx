@@ -1,4 +1,4 @@
-import { createMasterAPP, masterApp, EVENT_NAME } from 'sealos-desktop-sdk';
+import { createMasterAPP } from 'sealos-desktop-sdk/master';
 import { Background } from 'components/background';
 import styles from './index.module.scss';
 import Taskbar from 'components/taskbar';
@@ -24,9 +24,7 @@ export default function Layout({ children }: any) {
   }, [init]);
 
   useEffect(() => {
-    return createMasterAPP({
-      session
-    });
+    return createMasterAPP();
   }, [session]);
 
   return (

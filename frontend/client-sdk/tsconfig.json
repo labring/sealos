@@ -1,17 +1,20 @@
 {
   "compilerOptions": {
-    "baseUrl": "./src",
-    "target": "es6",
+    "sourceMap": true,
+    "target": "es2015",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "noEmitOnError": true,
     "lib": [
-      "es2016",
-      "dom"
+        "es2017",
+        "DOM"
     ],
-    "module": "commonjs",
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "skipLibCheck": true
-  }
+    "esModuleInterop": false,
+    "allowJs": true,
+    "noImplicitAny": true
+  },
+  "include": [
+    "./src/**/*.ts"
+  ]
 }

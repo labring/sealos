@@ -5,7 +5,6 @@ import {
   AppSendMessageType,
   MasterReplyMessageType,
   Session,
-  AppConstructorParam
 } from './types';
 
 class ClientSDK {
@@ -17,14 +16,6 @@ class ClientSDK {
   };
 
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>()
-
-  constructor(config: AppConstructorParam) {
-
-    this.commonConfig = {
-      appKey: config.appKey,
-      clientLocation: ''
-    };
-  }
 
   private sendMessageToMaster(apiName: `${API_NAME}`, data: { [key: string]: any } = {}, needReply = true): Promise<any> {
     if (!this.initialized) return Promise.reject("APP is uninitialized")
@@ -86,11 +77,8 @@ class ClientSDK {
 
     this.initialized = true
 
-    this.sendMessageToMaster(API_NAME.SYSTEM_CONNECT)
-
     return () => {
       console.log('sealos app destroy')
-      this.sendMessageToMaster(API_NAME.SYSTEM_DISCONNECT, {}, false)
       window.removeEventListener('message', listenCb)
     }
   }
@@ -110,11 +98,11 @@ class ClientSDK {
 
 export let sealosApp: ClientSDK
 
-export const createSealosApp = (config: AppConstructorParam) => {
+export const createSealosApp = () => {
   if (!isBrowser()) {
     console.error("This method need run in the browser.")
     return
   }
-  sealosApp = new ClientSDK(config)
+  sealosApp = new ClientSDK()
   return sealosApp.init()
 }
