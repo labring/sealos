@@ -17,14 +17,12 @@ limitations under the License.
 package apply
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/runtime"
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
 func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
@@ -45,30 +43,11 @@ func NewClusterFromGenArgs(imageNames []string, args *RunArgs) ([]byte, error) {
 		return nil, fmt.Errorf("input first image %s is not kubernetes image", imageNames)
 	}
 	cluster.Status.Mounts = append(cluster.Status.Mounts, *img)
-	rtInterface, err := runtime.NewDefaultRuntime(cluster, nil)
+	rtInterface, err := runtime.NewDefaultRuntime(cluster, &runtime.KubeadmConfig{})
 	if err != nil {
 		return nil, err
 	}
-	if rt, ok := rtInterface.(*runtime.KubeadmRuntime); ok {
-		if err = rt.ConvertInitConfigConversion(); err != nil {
-			return nil, err
-		}
-		c.cluster.Status = v1beta1.ClusterStatus{}
-		// todo: only generate configurations of the corresponding components by passing parameters
-		objects := []interface{}{c.cluster,
-			rt.InitConfiguration,
-			rt.ClusterConfiguration,
-			rt.JoinConfiguration,
-			rt.KubeProxyConfiguration,
-			rt.KubeletConfiguration,
-		}
-		data, err := yaml.MarshalYamlConfigs(objects...)
-		if err != nil {
-			return nil, err
-		}
-		return data, nil
-	}
-	return nil, errors.New("unknown convert kubeadmRuntime error")
+	return rtInterface.GetAdminKubeconfig()
 }
 
 func genImageInfo(imageName string) (*v1beta1.MountImage, error) {

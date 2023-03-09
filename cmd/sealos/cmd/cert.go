@@ -59,7 +59,7 @@ var certCmd = &cobra.Command{
 		if err = cf.Process(); err != nil {
 			return err
 		}
-		r, err := runtime.NewDefaultRuntimeByKubeadm(cluster, cf.GetKubeadmConfig())
+		r, err := runtime.NewDefaultRuntime(cluster, cf.GetKubeadmConfig())
 		if err != nil {
 			return fmt.Errorf("get default runtime failed, %v", err)
 		}
