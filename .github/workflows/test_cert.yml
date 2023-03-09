@@ -1,0 +1,81 @@
+name: Test Sealos Cert Command
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/test_cert.yml"
+      - "cmd/**"
+      - "pkg/runtime/**"
+      - "pkg/buildah/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/test_cert.yml"
+      - "cmd/**"
+      - "pkg/runtime/**"
+      - "pkg/buildah/**"
+
+
+jobs:
+  build-sealos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Auto install sealos
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+      - name: Save Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealos
+          path: /usr/bin/sealos
+
+  verify-run-containerd-cert:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos run labring/kubernetes:v1.25.0 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+          sudo sealos cert --alt-names testci.sealos.github.io --debug
+          sudo cat /root/.sealos/default/etc/kubeadm-update.yml
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Current Cluster info"
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
+          sudo cat /root/.sealos/default/etc/kubeadm-update.yml | grep testci.sealos.github.io

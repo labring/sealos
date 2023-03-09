@@ -329,6 +329,11 @@ func (k *KubeadmRuntime) setCertSANS(certs []string) {
 	k.ClusterConfiguration.APIServer.CertSANs = certSans
 }
 
+func (k *KubeadmRuntime) setExcludeCIDRs() {
+	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
+	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
+}
+
 func (k *KubeadmRuntime) getEtcdDataDir() string {
 	const defaultEtcdDataDir = "/var/lib/etcd"
 	if k.ClusterConfiguration.Etcd.Local == nil {
@@ -355,11 +360,11 @@ func (k *KubeadmRuntime) setCRISocket(criSocket string) {
 	k.InitConfiguration.NodeRegistration.CRISocket = criSocket
 }
 
-func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	setCGroupDriverAndSocket := func(krt *KubeadmRuntime) error {
-		return krt.setCGroupDriverAndSocket(krt.getMaster0IPAndPort())
-	}
+var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
+	return krt.setCGroupDriverAndSocket(krt.getMaster0IPAndPort())
+}
 
+func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
 	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
 		return nil, err
 	}
@@ -384,11 +389,11 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 	if k.APIServer.ExtraArgs == nil {
 		k.APIServer.ExtraArgs = make(map[string]string)
 	}
-	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
-	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
-
+	k.setExcludeCIDRs()
+	k.setCertSANS([]string{})
 	// after all merging done, set default fields
 	k.finalizeInitConfig()
+
 	if err := k.convertKubeadmVersion(); err != nil {
 		return fmt.Errorf("convert kubeadm version failed: %w", err)
 	}

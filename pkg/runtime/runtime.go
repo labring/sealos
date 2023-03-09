@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/labring/sealos/pkg/utils/yaml"
+
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 
@@ -52,6 +54,26 @@ func (k *KubeadmRuntime) Init() error {
 	return k.pipeline("init", pipeline)
 }
 
+func (k *KubeadmRuntime) GetAdminKubeconfig() ([]byte, error) {
+	k.KubeadmConfig = k.ClusterFileKubeConfig
+	if err := k.ConvertInitConfigConversion(); err != nil {
+		return nil, err
+	}
+	k.Cluster.Status = v2.ClusterStatus{}
+	objects := []interface{}{k.Cluster,
+		k.InitConfiguration,
+		k.ClusterConfiguration,
+		k.JoinConfiguration,
+		k.KubeProxyConfiguration,
+		k.KubeletConfiguration,
+	}
+	data, err := yaml.MarshalYamlConfigs(objects...)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 type Interface interface {
 	Init() error
 	Reset() error
@@ -62,6 +84,7 @@ type Interface interface {
 	SyncNodeIPVS(mastersIPList, nodeIPList []string) error
 	UpdateCert(certs []string) error
 	UpgradeCluster(version string) error
+	GetAdminKubeconfig() ([]byte, error)
 }
 
 func (k *KubeadmRuntime) Reset() error {
@@ -99,7 +122,7 @@ func (k *KubeadmRuntime) DeleteMasters(mastersIPList []string) error {
 	return k.deleteMasters(mastersIPList)
 }
 
-func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, setKubeadm bool) (Interface, error) {
+func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
 	k := &KubeadmRuntime{
 		Mutex:   &sync.Mutex{},
 		Cluster: cluster,
@@ -109,27 +132,18 @@ func newKubeadmRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig, setKubeadm b
 		},
 		KubeadmConfig: &KubeadmConfig{},
 	}
-	if setKubeadm {
-		k.KubeadmConfig = kubeadm
-	}
 	if err := k.Validate(); err != nil {
 		return nil, err
 	}
 	if logger.IsDebugMode() {
 		k.vlog = 6
 	}
-	k.setCertSANS([]string{})
 	return k, nil
 }
 
 // NewDefaultRuntime arg "clusterName" is the Cluster name
 func NewDefaultRuntime(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm, false)
-}
-
-// NewDefaultRuntimeByKubeadm arg "clusterName" is the Cluster name
-func NewDefaultRuntimeByKubeadm(cluster *v2.Cluster, kubeadm *KubeadmConfig) (Interface, error) {
-	return newKubeadmRuntime(cluster, kubeadm, true)
+	return newKubeadmRuntime(cluster, kubeadm)
 }
 
 func (k *KubeadmRuntime) Validate() error {
