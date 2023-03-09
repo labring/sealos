@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/pkg/docker/config"
+	imagetypes "github.com/containers/image/v5/types"
+	"github.com/docker/docker/api/types"
 
 	"github.com/labring/sealos/pkg/utils/registry"
-
-	"github.com/docker/docker/api/types"
 )
 
 // this package contains some utils to handle docker image name
@@ -94,8 +94,8 @@ func ParseNormalizedNamed(s string) (Named, error) {
 	return named, nil
 }
 
-func GetAuthInfo() (map[string]types.AuthConfig, error) {
-	creds, err := config.GetAllCredentials(nil)
+func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, error) {
+	creds, err := config.GetAllCredentials(sys)
 	if err != nil {
 		return nil, err
 	}
