@@ -26,10 +26,12 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 type TagData struct {
-	Name     string      `json:"name"`
-	MetaName string      `json:"metaName"`
-	Size     int64       `json:"size"`
-	CTime    metav1.Time `json:"creatTime"` // todo inspect image and get time
+	Name     string `json:"name"`
+	MetaName string `json:"metaName"`
+	Size     int64  `json:"size"`
+
+	//+kubebuilder:default:="1970-01-01T00:00:00Z"
+	CTime metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
 type ImageType string
@@ -113,9 +115,10 @@ type ImageDetailInfo struct {
 	// URL sealos cloud ui endpoint
 	URL string `json:"url,omitempty"`
 	// ID Arch Size Ctime should use buildah inspect to get infor.
-	ID    string      `json:"ID,omitempty"`
-	Arch  string      `json:"arch,omitempty"`
-	Size  int64       `json:"size,omitempty"`
+	ID   string `json:"ID,omitempty"`
+	Arch string `json:"arch,omitempty"`
+	Size int64  `json:"size,omitempty"`
+	//+kubebuilder:default:="1970-01-01T00:00:00Z"
 	CTime metav1.Time `json:"creatTime"`
 	// Actions todo
 	Actions map[string]Action `json:"actions,omitempty"`
