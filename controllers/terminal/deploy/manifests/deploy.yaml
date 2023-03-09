@@ -443,6 +443,10 @@ spec:
           value: user-system
         - name: DOMAIN
           value: cloud.sealos.io
+        - name: SECRET_NAME
+          value: wildcard-cloud-sealos-io-cert
+        - name: SECRET_NAMESPACE
+          value: sealos-system
         image: ghcr.io/labring/sealos-terminal-controller:dev
         imagePullPolicy: Always
         livenessProbe:

@@ -48,7 +48,12 @@ const (
 	HostnameLength      = 8
 	KeepaliveAnnotation = "lastUpdateTime"
 	LetterBytes         = "abcdefghijklmnopqrstuvwxyz0123456789"
-	DefaultDomain       = "cloud.sealos.io"
+)
+
+const (
+	DefaultDomain          = "cloud.sealos.io"
+	DefaultSecretName      = "wildcard-cloud-sealos-io-cert"
+	DefaultSecretNamespace = "sealos-system"
 )
 
 // request and limit for terminal pod
@@ -62,10 +67,12 @@ const (
 // TerminalReconciler reconciles a Terminal object
 type TerminalReconciler struct {
 	client.Client
-	Scheme         *runtime.Scheme
-	recorder       record.EventRecorder
-	Config         *rest.Config
-	terminalDomain string
+	Scheme          *runtime.Scheme
+	recorder        record.EventRecorder
+	Config          *rest.Config
+	terminalDomain  string
+	secretName      string
+	secretNamespace string
 }
 
 //+kubebuilder:rbac:groups=terminal.sealos.io,resources=terminals,verbs=get;list;watch;create;update;patch;delete
@@ -168,7 +175,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixRoute, func() error {
-		expectRoute := createApisixRoute(terminal, host)
+		expectRoute := r.createApisixRoute(terminal, host)
 		if len(apisixRoute.Spec.HTTP) == 0 {
 			apisixRoute.Spec.HTTP = expectRoute.Spec.HTTP
 		} else {
@@ -194,7 +201,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, apisixTLS, func() error {
-		expectTLS := createApisixTLS(terminal, host)
+		expectTLS := r.createApisixTLS(terminal, host)
 		if apisixTLS.Spec != nil {
 			apisixTLS.Spec.Hosts = expectTLS.Spec.Hosts
 			apisixTLS.Spec.Secret = expectTLS.Spec.Secret
@@ -226,7 +233,7 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		expectIngress := createNginxIngress(terminal, host)
+		expectIngress := r.createNginxIngress(terminal, host)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
@@ -455,10 +462,28 @@ func getDomain() string {
 	return domain
 }
 
+func getSecretName() string {
+	secretName := os.Getenv("SECRET_NAME")
+	if secretName == "" {
+		return DefaultSecretName
+	}
+	return secretName
+}
+
+func getSecretNamespace() string {
+	secretNamespace := os.Getenv("SECRET_NAMESPACE")
+	if secretNamespace == "" {
+		return DefaultSecretNamespace
+	}
+	return secretNamespace
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
 	r.terminalDomain = "." + getDomain()
+	r.secretName = getSecretName()
+	r.secretNamespace = getSecretNamespace()
 	r.Config = mgr.GetConfig()
 	owner := &handler.EnqueueRequestForOwner{OwnerType: &terminalv1.Terminal{}, IsController: false}
 	return ctrl.NewControllerManagedBy(mgr).
