@@ -28,12 +28,10 @@ import (
 )
 
 const (
-	SecretName      = "wildcard-cloud-sealos-io-cert"
-	SecretNamespace = "sealos-system"
-	AuthType        = "basicAuth"
+	AuthType = "basicAuth"
 )
 
-func createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
+func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
@@ -69,7 +67,7 @@ func createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv
 
 	tls := networkingv1.IngressTLS{
 		Hosts:      []string{host},
-		SecretName: SecretName,
+		SecretName: r.secretName,
 	}
 
 	ingress := &networkingv1.Ingress{
@@ -83,7 +81,7 @@ func createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv
 }
 
 // TODO: attempt use websocket https://apisix.apache.org/zh/docs/ingress-controller/concepts/apisix_route/#websocket-proxy
-func createApisixRoute(terminal *terminalv1.Terminal, host string) *apisix.ApisixRoute {
+func (r *TerminalReconciler) createApisixRoute(terminal *terminalv1.Terminal, host string) *apisix.ApisixRoute {
 	// config proxy_read_timeout and proxy_send_timeout
 	upstreamTimeout := &apisix.UpstreamTimeout{
 		Read: metav1.Duration{
@@ -126,7 +124,7 @@ func createApisixRoute(terminal *terminalv1.Terminal, host string) *apisix.Apisi
 	return apisixRoute
 }
 
-func createApisixTLS(terminal *terminalv1.Terminal, host string) *apisix.ApisixTls {
+func (r *TerminalReconciler) createApisixTLS(terminal *terminalv1.Terminal, host string) *apisix.ApisixTls {
 	apisixTLS := &apisix.ApisixTls{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      terminal.Name,
@@ -137,8 +135,8 @@ func createApisixTLS(terminal *terminalv1.Terminal, host string) *apisix.ApisixT
 				apisix.HostType(host),
 			},
 			Secret: apisix.ApisixSecret{
-				Name:      SecretName,
-				Namespace: SecretNamespace,
+				Name:      r.secretName,
+				Namespace: r.secretNamespace,
 			},
 		},
 	}
