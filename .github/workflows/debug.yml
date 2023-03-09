@@ -3,8 +3,10 @@ on:
   issue_comment:
     types: [created]
 jobs:
-  echo-event:
-    name: Print
+  debug:
+    name: Event
     runs-on: ubuntu-latest
-    steps: |
-      echo "${{github.event.comment.author_association}}"
+    steps:
+      - name: Print
+        run: |
+          echo "${{github.event.comment.author_association}}"
