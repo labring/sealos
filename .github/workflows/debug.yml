@@ -1,0 +1,10 @@
+name: Debug On Comment
+on:
+  issue_comment:
+    types: [created]
+jobs:
+  echo-event:
+    name: Print
+    runs-on: ubuntu-latest
+    steps: |
+      echo "${{github.event.comment.author_association}}"
