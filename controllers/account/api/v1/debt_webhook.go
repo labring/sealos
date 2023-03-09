@@ -19,7 +19,9 @@ package v1
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -29,24 +31,66 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// +kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="*",resources=*,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
-//+kubebuilder:object:generate=false
+const (
+	saPrefix            = "system:serviceaccount"
+	mastersGroup        = "system:masters"
+	kubeSystemNamespace = "kube-system"
+)
 
-type PodAnnotator struct {
+var logger = logf.Log.WithName("debt-resource")
+
+func (i *Debt) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	m := &DebtMutator{Client: mgr.GetClient()}
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(i).
+		WithDefaulter(m).
+		Complete()
+}
+
+//+kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="*",resources=*,verbs=update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
+// +kubebuilder:object:generate=false
+
+type DebtMutator struct {
 	Client client.Client
 }
 
-var debtlog = logf.Log.WithName("debt-resource")
+func (d DebtMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+	return admission.ValidationResponse(true, "")
+}
 
-func (a *PodAnnotator) Handle(ctx context.Context, req admission.Request) admission.Response {
-	return checkOption(ctx, debtlog, a.Client, req.Namespace)
+func (d DebtMutator) Default(ctx context.Context, obj runtime.Object) error {
+	return nil
+	//logger.Info("getting req from ctx")
+	//req, err := admission.RequestFromContext(ctx)
+	//if err != nil {
+	//	logger.Info("get request from context error when validate", "obj kind", obj.GetObjectKind())
+	//	return err
+	//}
+	//
+	//logger.Info("checking user", "user", req.UserInfo.Username)
+	//kubeSystemGroup := fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
+	//for _, g := range req.UserInfo.Groups {
+	//	switch g {
+	//	// if user is kubernetes-admin, pass it.
+	//	case mastersGroup:
+	//		logger.Info("pass for kubernetes-admin")
+	//		return nil
+	//	case kubeSystemGroup:
+	//		logger.Info("pass for kube-system")
+	//		return nil
+	//	default:
+	//		// continue to check other groups
+	//		continue
+	//	}
+	//}
+	//return nil
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
 	ns := corev1.Namespace{}
 	if err := c.Get(ctx, client.ObjectKey{Name: nsName}, &ns); client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "get namespace error")
-		return admission.ValidationResponse(false, nsName)
+		logger.Error(err, "get namespace error", "naName", nsName)
+		return admission.ValidationResponse(true, nsName)
 	}
 
 	// Check if it is a user namespace

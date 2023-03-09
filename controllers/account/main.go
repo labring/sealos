@@ -19,11 +19,10 @@ package main
 import (
 	"flag"
 	"os"
-
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/labring/sealos/controllers/account/controllers"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -109,7 +108,7 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &accountv1.PodAnnotator{Client: mgr.GetClient()}})
+	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &accountv1.DebtMutator{Client: mgr.GetClient()}})
 
 	//+kubebuilder:scaffold:builder
 
