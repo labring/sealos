@@ -22,6 +22,7 @@ on:
       - "controllers/**"
       - "service/**"
       - "webhooks/**"
+      - "frontend/**"
   pull_request:
     branches: ["*"]
     paths-ignore:
@@ -34,6 +35,7 @@ on:
       - "controllers/**"
       - "service/**"
       - "webhooks/**"
+      - "frontend/**"
 
 jobs:
   resolve-modules:
