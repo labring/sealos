@@ -162,7 +162,7 @@ func (c *ClusterFile) DecodeConfigs(data []byte) error {
 }
 
 func (c *ClusterFile) DecodeKubeadmConfig(data []byte) error {
-	kubeadmConfig, err := runtime.LoadKubeadmConfigs(string(data), runtime.DecodeCRDFromString)
+	kubeadmConfig, err := runtime.LoadKubeadmConfigs(string(data), c.setDefaults, runtime.DecodeCRDFromString)
 	if err != nil {
 		return err
 	}

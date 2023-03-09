@@ -28,8 +28,8 @@ import (
 	"github.com/labring/sealos/pkg/utils/versionutil"
 	"github.com/labring/sealos/pkg/utils/yaml"
 
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/json"
-
 	kubeproxyconfigv1alpha1 "k8s.io/kube-proxy/config/v1alpha1"
 	kubeletconfigv1beta1 "k8s.io/kubelet/config/v1beta1"
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
@@ -387,10 +387,24 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
 
+	// after all merging done, set default fields
+	k.finalizeInitConfig()
 	if err := k.convertKubeadmVersion(); err != nil {
 		return fmt.Errorf("convert kubeadm version failed: %w", err)
 	}
 	return nil
+}
+
+func (k *KubeadmRuntime) finalizeInitConfig() {
+	for _, obj := range []k8sruntime.Object{
+		&k.ClusterConfiguration,
+		&k.InitConfiguration,
+		&k.JoinConfiguration,
+		&k.KubeProxyConfiguration,
+		&k.KubeletConfiguration,
+	} {
+		scheme.Default(obj)
+	}
 }
 
 func (k *KubeadmRuntime) convertKubeadmVersion() error {
