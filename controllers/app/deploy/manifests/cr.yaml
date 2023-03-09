@@ -1,7 +1,7 @@
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: kubernetes.dashboard
+  name: kubernetes-dashboard
   namespace: app-system
 spec:
   data:
@@ -34,7 +34,7 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: sealos.cloud.provider
+  name: sealos-cloud-provider
   namespace: app-system
 spec:
   data:
@@ -51,7 +51,7 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: sealos.document
+  name: sealos-document
   namespace: app-system
 spec:
   data:
@@ -68,7 +68,7 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: sealos.image.hub
+  name: sealos-imagehub
   namespace: app-system
 spec:
   data:
@@ -102,7 +102,7 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  name: deploy.manager
+  name: deploy-manager
 spec:
   name: Deploy Manager
   icon: "/images/sealos.svg"
