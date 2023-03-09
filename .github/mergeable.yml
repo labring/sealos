@@ -1,0 +1,67 @@
+version: 2
+mergeable:
+  - when: pull_request.*, pull_request_review.*
+    name: check title and commit
+    validate:
+      - do: title
+        # Enforce semantic release convention.
+        must_include:
+          regex: ^(feat|docs|chore|fix|refactor|test|style|perf|ci)(\(\w+\))?:.+$
+          message: Semantic release conventions must be followed.
+        # All todo check boxes must be checked.
+      - do: description
+        must_exclude:
+          regex: \[ \]
+          message: There are incomplete TODO task(s) unchecked.
+      - do: commit
+        message:
+          regex: '^(feat|docs|chore|fix|refactor|test|style|perf|ci)(\(\w+\))?:.+$'
+          message: 'Semantic release conventions must be followed' # Semantic release conventions must be followed
+          skip_merge: true # Optional, Default is true. Will skip commit with message that includes 'Merge'
+          oldest_only: false # Optional, Default is false. Only check the regex against the oldest commit
+          newest_only: false # Optional, Default is false. Only check the regex against the newest commit
+          single_commit_only: true # Optional, Default is false. only process this validator if there is one commit
+          message_type: '' # Optional, only check regex against the field specified. Default is '', which processes the 'message' field. Can also be set to 'author_email' or 'committer_email'
+    pass:
+      - do: checks
+        status: 'success'
+      - do: labels
+        # if label doesn't exist, it'll be created
+        labels: [ 'needs-triage' ] # Only arrays are accepted
+        mode: 'replace'
+    error:
+      - do: labels
+        labels: [ 'needs-triage' ]
+        mode: 'delete'
+      - do: labels
+        labels: [ 'triage/accepted' ]
+        mode: 'replace'
+    fail:
+      - do: labels
+        labels: [ 'needs-triage' ]
+        mode: 'delete'
+      - do: labels
+        labels: [ 'triage/accepted' ]
+        mode: 'replace'
+  - when: pull_request.*, pull_request_review.*
+    validate:
+      - do: approvals
+        min:
+          count: 1
+        block:
+          changes_requested: true
+        exclude:
+          users: [ 'sealos-ci-robot' ]
+      - do: milestone
+        no_empty:
+          enabled: true # Cannot be empty when true.
+          message: 'Milestone cannot be empty'
+        begins_with:
+          match: 'v' # array of strings
+          message: 'Milestones must be chosen to start with v'
+    pass:
+      - do: checks
+        status: 'success'
+      - do: labels
+        labels: [ 'approved' ]
+        mode: 'replace'
