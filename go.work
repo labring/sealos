@@ -6,6 +6,7 @@ use (
 	./controllers/app
 	./controllers/cluster
 	./controllers/imagehub
+	./controllers/imagehub/api-service
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal

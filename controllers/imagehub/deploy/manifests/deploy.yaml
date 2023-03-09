@@ -815,6 +815,24 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: api-service
+    app.kubernetes.io/created-by: imagehub
+    app.kubernetes.io/name: service
+    app.kubernetes.io/part-of: imagehub
+  name: imagehub-api-service
+  namespace: imagehub-system
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8888
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -922,6 +940,25 @@ spec:
           capabilities:
             drop:
             - ALL
+          runAsNonRoot: true
+      - image: ghcr.io/labring/sealos-imagehub-service:dev
+        name: sealos-imagehub-service
+        ports:
+          - containerPort: 8888
+            name: http
+            protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
           runAsNonRoot: true
       securityContext:
         runAsNonRoot: true
