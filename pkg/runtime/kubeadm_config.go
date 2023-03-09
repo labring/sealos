@@ -130,7 +130,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		err                  error
 	)
 	if kubeadmYamlPath == "" {
-		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), DecodeCRDFromString)
+		defaultKubeadmConfig, err = LoadKubeadmConfigs(k.FetchDefaultKubeadmConfig(), false, DecodeCRDFromString)
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 		return nil
 	}
 	logger.Debug("trying to merge kubeadm configs from file %s", kubeadmYamlPath)
-	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, DecodeCRDFromFile)
+	defaultKubeadmConfig, err = LoadKubeadmConfigs(kubeadmYamlPath, false, DecodeCRDFromFile)
 	if err != nil {
 		return fmt.Errorf("failed to load kubeadm config from %s: %v", kubeadmYamlPath, err)
 	}
@@ -151,7 +151,19 @@ func (k *KubeadmConfig) Merge(kubeadmYamlPath string) error {
 	return nil
 }
 
-func LoadKubeadmConfigs(arg string, decode func(arg string, kind string) (interface{}, error)) (*KubeadmConfig, error) {
+func LoadKubeadmConfigs(arg string, setDefaults bool, decode func(arg string, kind string) (interface{}, error)) (*KubeadmConfig, error) {
+	if setDefaults {
+		decode = func(arg string, kind string) (interface{}, error) {
+			ret, err := decode(arg, kind)
+			if err != nil {
+				return nil, err
+			}
+			if obj, ok := ret.(k8sruntime.Object); ok {
+				scheme.Default(obj)
+			}
+			return ret, nil
+		}
+	}
 	kubeadmConfig := &KubeadmConfig{}
 	initConfig, err := decode(arg, InitConfiguration)
 	if err != nil {
@@ -240,7 +252,6 @@ func TypeConversion(raw []byte, kind string) (interface{}, error) {
 	if err := yaml.Unmarshal(raw, obj); err != nil {
 		return nil, err
 	}
-	scheme.Default(obj)
 	return obj, nil
 }
 

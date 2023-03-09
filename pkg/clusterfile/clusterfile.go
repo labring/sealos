@@ -31,6 +31,7 @@ type ClusterFile struct {
 	customValues       []string
 	customSets         []string
 	customEnvs         []string
+	setDefaults        bool
 	Cluster            *v2.Cluster
 	Configs            []v2.Config
 	KubeConfig         *runtime.KubeadmConfig
@@ -59,6 +60,12 @@ func (c *ClusterFile) GetKubeadmConfig() *runtime.KubeadmConfig {
 }
 
 type OptionFunc func(*ClusterFile)
+
+func WithSetDefaults(v bool) OptionFunc {
+	return func(c *ClusterFile) {
+		c.setDefaults = true
+	}
+}
 
 func WithCustomConfigFiles(files []string) OptionFunc {
 	return func(c *ClusterFile) {
