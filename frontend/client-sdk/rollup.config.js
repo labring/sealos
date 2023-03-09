@@ -1,45 +1,96 @@
 import dts from "rollup-plugin-dts";
-import esbuild from "rollup-plugin-esbuild";
-import nodePolyfills from 'rollup-plugin-node-polyfills'
+import typescript from "@rollup/plugin-typescript";
+import copy from "rollup-plugin-copy";
 
-const bundle = ({ plugins, ...config }) => {
+const bundleFile = ({ input, output }) => {
   return {
-    ...config,
     plugins: [
-      ...plugins,
-      nodePolyfills()
+      typescript({
+        tsconfig: "./tsconfig.json",
+      }),
     ],
-    input: config.input,
-    external: (id) => !/^[./]/.test(id),
+    input,
+    output,
+  };
+};
+const bundleType = ({ input, output }) => {
+  return {
+    plugins: [dts()],
+    input,
+    output,
   };
 };
 
 export default [
-  bundle({
-    plugins: [esbuild()],
-    input: "src/index.ts",
+  // master
+  bundleFile({
+    input: "src/master.ts",
     output: [
       {
-        file: `build/index.js`,
-        format: "cjs",
-        sourcemap: true,
-        exports: "auto",
+        file: `dist/master.esm.js`,
+        format: "es",
       },
       {
-        file: `build/index.mjs`,
-        format: "es",
-        sourcemap: true,
-        exports: "auto",
+        file: `dist/master.js`,
+        format: "cjs",
       },
     ],
   }),
-
-  bundle({
-    plugins: [dts()],
-    input: "src/index.ts",
+  bundleType({
+    input: "src/master.ts",
     output: {
-      file: `build/index.d.ts`,
+      file: `dist/master.d.ts`,
       format: "es",
     },
+    plugins: [dts()],
+  }),
+  // app
+  bundleFile({
+    input: "src/app.ts",
+    output: [
+      {
+        file: `dist/app.esm.js`,
+        format: "es",
+      },
+      {
+        file: `dist/app.js`,
+        format: "cjs",
+      },
+    ],
+  }),
+  bundleType({
+    input: "src/app.ts",
+    output: {
+      file: `dist/app.d.ts`,
+      format: "es",
+    },
+    plugins: [dts()],
+  }),
+  // index
+  bundleFile({
+    input: "src/index.ts",
+    output: [
+      {
+        file: `dist/index.esm.js`,
+        format: "es",
+      },
+      {
+        file: `dist/index.js`,
+        format: "cjs",
+      },
+    ],
+  }),
+  bundleType({
+    input: "src/index.ts",
+    output: {
+      file: `dist/index.d.ts`,
+      format: "es",
+    },
+    plugins: [
+      dts(),
+      copy({
+        targets: [{ src: "package.json", dest: "dist" }],
+      }),
+    ],
   }),
 ];
