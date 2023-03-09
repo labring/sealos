@@ -68,7 +68,6 @@ spec:
 apiVersion: app.sealos.io/v1
 kind: App
 metadata:
-  generation: 1
   name: sealos.image.hub
   namespace: app-system
 spec:
@@ -99,3 +98,19 @@ spec:
     nameColor: text-black
   name: Terminal
   type: iframe
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: deploy.manager
+spec:
+  name: Deploy Manager
+  icon: "/images/sealos.svg"
+  type: iframe
+  data:
+    url: "https://deploy.cloud.sealos.io"
+    desc: Deploy Manager
+  menuData:
+    nameColor: text-black
+    helpDropDown: false
+    helpDocs:
