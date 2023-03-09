@@ -3,6 +3,11 @@ on:
   issue_comment:
     types: [created]
 jobs:
+  echo-event:
+    name: Print
+    runs-on: ubuntu-latest
+    steps: |
+      echo "${{github.event.comment.author_association}}"
   cherry-pick:
     name: Cherry Pick
     if: github.event.issue.pull_request != '' && contains(github.event.comment.body, '/cherry-pick')
