@@ -1,0 +1,116 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: kubernetes-dashboard
+  namespace: app-system
+spec:
+  data:
+    desc: sealos Cloud Kubernetes Dashboard
+    url: ""
+  icon: /images/kubernetes.svg
+  menuData:
+    helpDropDown: true
+    nameColor: text-black
+  name: Kubernetes-Dashboard
+  type: iframe
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: postgres
+  namespace: app-system
+spec:
+  data:
+    desc: postgres operator
+    url: ""
+  icon: /images/pgadmin.svg
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/postgres/
+    helpDropDown: false
+    nameColor: text-black
+  name: Postgres
+  type: app
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: sealos-cloud-provider
+  namespace: app-system
+spec:
+  data:
+    desc: infra operator
+    url: ""
+  icon: /images/infraicon/scp.png
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/scp/
+    helpDropDown: false
+    nameColor: '#0073D7'
+  name: sealos cloud provider
+  type: app
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: sealos-document
+  namespace: app-system
+spec:
+  data:
+    desc: Sealos Documents
+    url: https://www.sealos.io/docs/cloud/Intro
+  icon: /images/sealos.svg
+  menuData:
+    helpDocs: "false"
+    helpDropDown: false
+    nameColor: text-black
+  name: Sealos Document
+  type: iframe
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: sealos-imagehub
+  namespace: app-system
+spec:
+  data:
+    desc: Image Hub
+    url: https://hub.sealos.io/
+  icon: /images/icons/app_store.png
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/appstore/
+    helpDropDown: false
+    nameColor: text-black
+  name: Image Hub
+  type: iframe
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: terminal
+  namespace: app-system
+spec:
+  data:
+    desc: sealos CLoud Terminal
+    url: ""
+  icon: /images/terminal.svg
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/terminal/
+    helpDropDown: false
+    nameColor: text-black
+  name: Terminal
+  type: iframe
+---
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: deploy-manager
+spec:
+  name: Deploy Manager
+  icon: "/images/sealos.svg"
+  type: iframe
+  data:
+    url: "https://deploy.cloud.sealos.io"
+    desc: Deploy Manager
+  menuData:
+    nameColor: text-black
+    helpDropDown: false
+    helpDocs:
