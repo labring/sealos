@@ -11,6 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (kube_user === null) {
     return res.status(400);
   }
+  const defaultMeta = {
+    group: 'app.sealos.io',
+    version: 'v1',
+    namespace: 'app-system',
+    plural: 'apps'
+  };
+
   const meta = {
     group: 'app.sealos.io',
     version: 'v1',
@@ -19,14 +26,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   };
 
   try {
-    const listCrd = await ListCRD(kc, meta);
+    const defaultResult = await ListCRD(kc, defaultMeta);
+    const userResult = await ListCRD(kc, meta);
+
     //@ts-ignore
-    const items = listCrd?.body?.items;
-    let appItems = [];
-    if (items) {
-      appItems = items.map((item: any) => item.spec);
-    }
-    JsonResp([...installedApps, ...appItems], res);
+    const defaultArr = defaultResult?.body?.items.map((item: any) => {
+      return { key: `system-${item.metadata.name}`, ...item.spec };
+    });
+    //@ts-ignore
+    const userArr = userResult?.body?.items.map((item: any) => {
+      return { key: `user-${item.metadata.name}`, ...item.spec };
+    });
+
+    JsonResp([...defaultArr, ...userArr], res);
   } catch (err) {
     JsonResp(installedApps, res);
   }

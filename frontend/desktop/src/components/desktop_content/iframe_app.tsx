@@ -68,7 +68,7 @@ export default function IframApp(props: { appItem: TApp }) {
           allow="camera;microphone;"
           className="w-full h-full"
           frameBorder={0}
-          id={`app-window-${appItem.key}`}
+          id={`app-window-${appItem.key}`} // key format sealos.image.hub
           onLoad={() => {
             clearInterval(loadingTimer.current);
             setLoading(false);
