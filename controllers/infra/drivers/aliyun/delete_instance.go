@@ -60,6 +60,11 @@ func (d Driver) deleteInfra(infra *v1.Infra) error {
 			instanceID = hosts.Metadata[0].ID
 		}
 	}
+	if len(instanceID) == 0 {
+		logger.Info("no instance need to be deleted")
+		return nil
+	}
+
 	// get instance info
 	describeInstanceRequest := &ecs.DescribeInstancesRequest{
 		RpcRequest:  ecs.CreateDescribeInstancesRequest().RpcRequest,
