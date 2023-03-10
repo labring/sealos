@@ -13,14 +13,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/apis/get/counter",
+				Path:    "",
 				Handler: getCounterHandler(serverCtx),
 			},
 			{
-				Method:  http.MethodPost,
-				Path:    "/apis/update/counter",
+				Method:  http.MethodPut,
+				Path:    "/status",
 				Handler: updateCounterHandler(serverCtx),
 			},
 		},
+		rest.WithPrefix("/apis/counters.sealos.io/v1/namespace/:namespace/name/:name"),
 	)
+	// TODO add other routes
+	//server.AddRoute()
 }
