@@ -72,10 +72,10 @@ func newBuildCommand() *cobra.Command {
 	flags.SetInterspersed(false)
 
 	// build is a all common flags
-	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
 	if buildFlagResults.CertDir == "" {
 		buildFlagResults.CertDir = constants.RegistryCertDir
 	}
+	buildFlags := buildahcli.GetBudFlags(&buildFlagResults)
 	buildFlags.StringVar(&buildFlagResults.Runtime, "runtime", util.Runtime(), "`path` to an alternate runtime. Use BUILDAH_RUNTIME environment variable to override.")
 
 	layerFlags := buildahcli.GetLayerFlags(&layerFlagsResults)

@@ -26,6 +26,7 @@ import (
 
 	"github.com/docker/docker/registry"
 	"github.com/docker/go-connections/tlsconfig"
+
 	"github.com/labring/sealos/pkg/constants"
 
 	"github.com/labring/sealos/pkg/registry/distributionpkg/client"
@@ -90,7 +91,7 @@ func (pr *proxyingRegistry) Repositories(ctx context.Context, repos []string, la
 func (pr *proxyingRegistry) Repository(ctx context.Context, name reference.Named) (distribution.Repository, error) {
 	c := pr.authChallenger
 	tlsConfig := tlsconfig.ServerDefault()
-	// ex from ${RuntimeRootDir:-/root/.sealos}/cert.d/sealos.hub:5000/xx.crt
+	// ex from ${RuntimeRootDir:-/root/.sealos}/certs.d/sealos.hub:5000/xx.crt
 	if err := registry.ReadCertsDirectory(tlsConfig, filepath.Join(constants.GetDefaultRegistryCertDir(), pr.remoteURL.Host)); err != nil {
 		return nil, err
 	}
@@ -231,7 +232,7 @@ func (r *remoteAuthChallenger) tryEstablishChallenges(ctx context.Context) error
 		return err
 	}
 
-	//	dcontext.GetLogger(ctx).Infof("Challenge established with upstream : %s %s", remoteURL, r.cm)
+	//      dcontext.GetLogger(ctx).Infof("Challenge established with upstream : %s %s", remoteURL, r.cm)
 	return nil
 }
 

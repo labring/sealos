@@ -67,7 +67,7 @@ func GetDefaultRuntimeRootDir(name string) string {
 }
 
 func GetDefaultRegistryCertDir() string {
-	return filepath.Join(RuntimeRootDir, "cert.d")
+	return filepath.Join(RuntimeRootDir, "certs.d")
 }
 
 func LogPath() string {
