@@ -11,8 +11,8 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-v1-pod
-  failurePolicy: Fail
+      path: /mutate-v1-sealos-cloud
+  failurePolicy: Ignore
   name: mpod.kb.io
   rules:
   - apiGroups:
@@ -20,6 +20,7 @@ webhooks:
     apiVersions:
     - v1
     operations:
+    - CREATE
     - UPDATE
     resources:
     - '*'

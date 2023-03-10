@@ -19,6 +19,8 @@ package main
 import (
 	"flag"
 	"os"
+
+	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/labring/sealos/controllers/account/controllers"
@@ -108,7 +110,11 @@ func main() {
 	//	os.Exit(1)
 	//}
 
-	mgr.GetWebhookServer().Register("/mutate-v1-pod", &webhook.Admission{Handler: &accountv1.DebtMutator{Client: mgr.GetClient()}})
+	if err = cache.SetupCache(mgr); err != nil {
+		setupLog.Error(err, "unable to cache controller")
+		os.Exit(1)
+	}
+	mgr.GetWebhookServer().Register("/mutate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
 
 	//+kubebuilder:scaffold:builder
 

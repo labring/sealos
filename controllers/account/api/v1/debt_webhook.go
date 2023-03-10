@@ -19,9 +19,6 @@ package v1
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -39,75 +36,72 @@ const (
 
 var logger = logf.Log.WithName("debt-resource")
 
-func (i *Debt) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	m := &DebtMutator{Client: mgr.GetClient()}
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(i).
-		WithDefaulter(m).
-		Complete()
-}
+//func (i *Debt) SetupWebhookWithManager(mgr ctrl.Manager) error {
+//	m := &DebtMutator{Client: mgr.GetClient()}
+//	return ctrl.NewWebhookManagedBy(mgr).
+//		For(i).
+//		WithDefaulter(m).
+//		Complete()
+//}
 
-//+kubebuilder:webhook:path=/mutate-v1-pod,mutating=true,failurePolicy=fail,groups="*",resources=*,verbs=update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/mutate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
 // +kubebuilder:object:generate=false
 
-type DebtMutator struct {
+type DebtValidate struct {
 	Client client.Client
 }
 
-func (d DebtMutator) Handle(ctx context.Context, request admission.Request) admission.Response {
+func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
+	logger.Info("checking user", "userInfo", req.UserInfo)
+	kubeSystemGroup := fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
+	for _, g := range req.UserInfo.Groups {
+		switch g {
+		// if user is kubernetes-admin, pass it
+		case mastersGroup:
+			logger.Info("pass for kubernetes-admin")
+			return admission.ValidationResponse(true, "")
+		case kubeSystemGroup:
+			logger.Info("pass for kube-system")
+			return admission.ValidationResponse(true, "")
+		default:
+			// continue to check other groups
+			continue
+		}
+	}
+
+	// check is user ns
+	if len(req.Namespace) > 3 && req.Namespace[:3] == "ns-" {
+		return checkOption(ctx, logger, d.Client, req.Namespace)
+	}
+
 	return admission.ValidationResponse(true, "")
 }
 
-func (d DebtMutator) Default(ctx context.Context, obj runtime.Object) error {
-	return nil
-	//logger.Info("getting req from ctx")
-	//req, err := admission.RequestFromContext(ctx)
-	//if err != nil {
-	//	logger.Info("get request from context error when validate", "obj kind", obj.GetObjectKind())
-	//	return err
-	//}
-	//
-	//logger.Info("checking user", "user", req.UserInfo.Username)
-	//kubeSystemGroup := fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
-	//for _, g := range req.UserInfo.Groups {
-	//	switch g {
-	//	// if user is kubernetes-admin, pass it.
-	//	case mastersGroup:
-	//		logger.Info("pass for kubernetes-admin")
-	//		return nil
-	//	case kubeSystemGroup:
-	//		logger.Info("pass for kube-system")
-	//		return nil
-	//	default:
-	//		// continue to check other groups
-	//		continue
-	//	}
-	//}
-	//return nil
-}
-
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {
-	ns := corev1.Namespace{}
-	if err := c.Get(ctx, client.ObjectKey{Name: nsName}, &ns); client.IgnoreNotFound(err) != nil {
-		logger.Error(err, "get namespace error", "naName", nsName)
+	nsList := &corev1.NamespaceList{}
+	if err := c.List(ctx, nsList, client.MatchingFields{"name": nsName}); err != nil {
+		logger.Error(err, "list ns error", "naName", nsName, "nsList", nsList)
 		return admission.ValidationResponse(true, nsName)
 	}
 
+	//ns name unique in k8s
+	ns := nsList.Items[0]
 	// Check if it is a user namespace
 	user, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]
 	if !ok {
 		return admission.ValidationResponse(true, fmt.Sprintf("this namespace is not user namespace %s,or have not create", ns.Name))
 	}
 
-	account := Account{}
-	if err := c.Get(ctx, client.ObjectKey{Name: user, Namespace: os.Getenv("ACCOUNT_NAMESPACE")}, &account); err != nil {
+	accountList := AccountList{}
+	if err := c.List(ctx, &accountList, client.MatchingFields{"name": user}); err != nil {
 		logger.Error(err, "get account error")
 		return admission.ValidationResponse(true, err.Error())
 	}
 
-	if account.Status.Balance-account.Status.DeductionBalance < 0 {
-		return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %d", account.Status.Balance-account.Status.DeductionBalance))
+	for _, account := range accountList.Items {
+		if account.Status.Balance-account.Status.DeductionBalance < 0 {
+			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %d", account.Status.Balance-account.Status.DeductionBalance))
+		}
 	}
-
 	return admission.ValidationResponse(true, "")
 }
