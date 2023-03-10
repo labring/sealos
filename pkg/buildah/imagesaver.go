@@ -50,7 +50,7 @@ func (opts *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
 }
 
 const (
-	defaultTarRegistry = "tar -czf %[1]s  --directory=%[2]s docker && rm -rf %[2]s/docker"
+	defaultTarRegistry = "rm -rf %[1]s/* && tar -czf %[2]s  --directory=%[3]s docker && rm -rf %[3]s/docker"
 )
 
 func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saveOptions) error {
@@ -68,7 +68,7 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 				}
 				registryHash := fmt.Sprintf("compressed-%s", rand.Generator(16))
 				compressedFile := fmt.Sprintf("%s/%s/%s", registryDir, "compressed", registryHash)
-				return exec.Cmd("bash", "-c", fmt.Sprintf(defaultTarRegistry, compressedFile, registryDir))
+				return exec.Cmd("bash", "-c", fmt.Sprintf(defaultTarRegistry, path.Join(registryDir, "compressed"), compressedFile, registryDir))
 			}
 		}
 		return nil

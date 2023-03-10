@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	defaultUntarRegistry = "cd %s/%s ; if [[ -s untar-registry.sh ]]; then source untar-registry.sh ; else source common.sh && logger 'untar-registry.sh not found, skip untar registry'; fi"
+	defaultUntarRegistry = "cd %s/%s ; if [[ -s untar-registry.sh ]]; then source untar-registry.sh ; else source common.sh && logger 'untar-registry.sh was not found, skip decompression registry or execute sealos run labring/registry:untar'; fi"
 )
 
 type Interface interface {

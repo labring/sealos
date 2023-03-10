@@ -16,7 +16,6 @@ package processor
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -137,9 +136,6 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		} else {
 			imageTypes.Insert(string(v2.AppImage))
 		}
-	}
-	if imageTypes.Has(string(v2.PatchImage)) && !imageTypes.Has(string(v2.RootfsImage)) {
-		return errors.New("can't apply PatchImage only, need to init a Cluster to append it")
 	}
 	for _, img := range c.NewImages {
 		var ctrName string
