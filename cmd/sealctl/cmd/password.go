@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -46,7 +47,7 @@ func newRegistryCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			pwd := passwd.Htpasswd(username, password)
 			if printBool {
-				println(pwd)
+				fmt.Println(pwd)
 				return
 			}
 			logger.Debug("password registry is %s", pwd)
@@ -75,7 +76,7 @@ func newContainerdCmd() *cobra.Command {
 		Short: "generator containerd password",
 		Run: func(cmd *cobra.Command, args []string) {
 			pwd := passwd.LoginAuth(username, password)
-			println(pwd)
+			fmt.Println(pwd)
 		},
 	}
 	// manually to set host via gateway

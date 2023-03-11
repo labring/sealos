@@ -199,14 +199,14 @@ func HttpServer(port uint16) error {
 var serverLogger = ctrl.Log.WithName("serverLogger")
 
 func Auth(ctx *gin.Context) {
-	println("auth in ...")
+	fmt.Println("auth in ...")
 	var review v1.SubjectAccessReview
 	err := ctx.BindJSON(&review)
 	//{"kind":"SubjectAccessReview","apiVersion":"authorization.k8s.io/v1beta1","metadata":{"creationTimestamp":null},"spec":{"resourceAttributes":{"namespace":"ns-cuisongliu","verb":"list","version":"v1","resource":"pods"},"user":"system:serviceaccount:default:cuisongliu","group":["system:serviceaccounts","system:serviceaccounts:default","system:authenticated"],"uid":"01575033-6a76-4426-88d0-3da94c6c3e03"},"status":{"allowed":false}}
 	//d, err := ctx.GetRawData()
-	println("inff", "msg", string(review.Spec.User))
+	fmt.Println("inff", "msg", string(review.Spec.User))
 	if err != nil {
-		println(err, "has error")
+		fmt.Println(err, "has error")
 	}
 
 	//allow := true

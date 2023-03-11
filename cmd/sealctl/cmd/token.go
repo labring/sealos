@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ func newTokenCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			data, _ := json.Marshal(t)
-			println(string(data))
+			fmt.Println(string(data))
 		},
 	}
 	return tokenCmd

@@ -17,6 +17,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -66,7 +67,7 @@ func newCRISocketCmd() *cobra.Command {
 				logger.Error(err)
 				return
 			}
-			println(criSocket)
+			fmt.Println(criSocket)
 		},
 	}
 	return criSocketCmd
@@ -82,7 +83,7 @@ func newIsDockerCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			runtime := criRuntime()
 			isDocker := runtime.IsDocker()
-			println(strconv.FormatBool(isDocker))
+			fmt.Println(strconv.FormatBool(isDocker))
 		},
 	}
 	return isDockerCmd
@@ -100,7 +101,7 @@ func newIsRunningCmd() *cobra.Command {
 			runtime := criRuntime()
 			err := runtime.IsRunning()
 			if shortPrint {
-				println(strconv.FormatBool(err == nil))
+				fmt.Println(strconv.FormatBool(err == nil))
 				return
 			}
 			if err != nil {
@@ -130,7 +131,7 @@ func newListKubeContainersCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if sPrint {
-				println(strings.Join(containers, ","))
+				fmt.Println(strings.Join(containers, ","))
 				return
 			}
 			logger.Info("container runtime containers is %+v", containers)
@@ -209,7 +210,7 @@ func newImageExistsCmd() *cobra.Command {
 			runtime := criRuntime()
 			b := runtime.ImageExists(imageName)
 			if shortPrint {
-				println(strconv.FormatBool(b))
+				fmt.Println(strconv.FormatBool(b))
 				return
 			}
 			if !b {
@@ -239,7 +240,7 @@ func newCGroupDriverCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if shortPrint {
-				println(driver)
+				fmt.Println(driver)
 				return
 			}
 			logger.Info("container runtime cgroup-driver is %s", driver)

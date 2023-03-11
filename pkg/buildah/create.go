@@ -15,6 +15,7 @@
 package buildah
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 
@@ -72,7 +73,8 @@ func newCreateCmd() *cobra.Command {
 			if !opts.short {
 				logger.Info("Mount point: %s", info.MountPoint)
 			} else {
-				println(info.MountPoint)
+				println()
+				fmt.Println(info.MountPoint)
 			}
 			if !IsRootless() {
 				return nil
