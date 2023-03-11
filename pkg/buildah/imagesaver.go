@@ -20,6 +20,10 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/rand"
+
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/image/v5/types"
@@ -36,16 +40,37 @@ import (
 type saveOptions struct {
 	maxPullProcs int
 	enabled      bool
+	compress     bool
 }
 
 func (opts *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&opts.maxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
 	fs.BoolVar(&opts.enabled, "save-image", true, "save images parsed to local")
+	fs.BoolVar(&opts.compress, "compress", false, "save images with compress")
 }
+
+const (
+	defaultTarRegistry = "rm -rf %[1]s/* && tar -czf %[2]s  --directory=%[3]s docker && rm -rf %[3]s/docker"
+)
 
 func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saveOptions) error {
 	if !opts.enabled {
 		logger.Warn("save-image is disabled, skip pulling images")
+		return nil
+	}
+	registryDir := path.Join(contextDir, constants.RegistryDirName)
+	compress := func() error {
+		if opts.compress {
+			logger.Debug("build images using compress mode, compress file in %s/compressed dir", registryDir)
+			if file.IsExist(path.Join(registryDir, "docker")) {
+				if err := file.MkDirs(path.Join(registryDir, "compressed")); err != nil {
+					return err
+				}
+				registryHash := fmt.Sprintf("compressed-%s", rand.Generator(16))
+				compressedFile := fmt.Sprintf("%s/%s/%s", registryDir, "compressed", registryHash)
+				return exec.Cmd("bash", "-c", fmt.Sprintf(defaultTarRegistry, path.Join(registryDir, "compressed"), compressedFile, registryDir))
+			}
+		}
 		return nil
 	}
 	images, err := buildimage.List(contextDir)
@@ -53,22 +78,23 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 		return err
 	}
 	if len(images) == 0 {
-		return nil
+		return compress()
 	}
 	auths, err := registry.GetAuthInfo(sys)
 	if err != nil {
 		return err
 	}
 	is := registry.NewImageSaver(getContext(), opts.maxPullProcs, auths)
+
 	for _, pf := range platforms {
 		logger.Debug("pull images %v for platform %s", images, strings.Join([]string{pf.OS, pf.Architecture}, "/"))
-		images, err = is.SaveImages(images, path.Join(contextDir, constants.RegistryDirName), pf)
+		images, err = is.SaveImages(images, registryDir, pf)
 		if err != nil {
 			return fmt.Errorf("failed to save images: %w", err)
 		}
 		logger.Info("saving images %s", strings.Join(images, ", "))
 	}
-	return nil
+	return compress()
 }
 
 func parsePlatforms(c *cobra.Command) ([]v1.Platform, error) {
