@@ -20,24 +20,18 @@ spec:
   platform: aliyun
   hosts:
     - roles: [ master ]
-      count: 2
-      flavor: ecs.s6-c1m1.small
-      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
-      disks:
-        - capacity: 33
-          volumeType: "cloud_efficiency"
-          type: "root"
-        - capacity: 34
-          volumeType: "cloud_efficiency"
-          type: "data"
-    #        - capacity: 35
-    #          volumeType: gp3
-    #          type: "data"
-    - roles: [ node ]
       count: 1
-      flavor: ecs.s6-c1m1.small
+      flavor: ecs.c7.large
       image: "centos_7_9_x64_20G_alibase_20230109.vhd"
       disks:
         - capacity: 40
-          volumeType: "cloud_efficiency"
+          volumeType: "cloud_essd"
+          type: "root"
+    - roles: [ node ]
+      count: 1
+      flavor: ecs.c7.large
+      image: "centos_7_9_x64_20G_alibase_20230109.vhd"
+      disks:
+        - capacity: 40
+          volumeType: "cloud_essd"
           type: "root"
