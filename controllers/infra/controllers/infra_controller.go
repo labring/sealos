@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	ctrl2 "github.com/labring/endpoints-operator/library/controller"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
@@ -28,8 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/client-go/util/retry"
-
-	"github.com/labring/endpoints-operator/library/controller"
 
 	"github.com/labring/sealos/controllers/infra/common"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -51,7 +53,11 @@ type InfraReconciler struct {
 	driver    map[string]drivers.Driver
 	applier   drivers.Reconcile
 	recorder  record.EventRecorder
-	finalizer *controller.Finalizer
+	finalizer *ctrl2.Finalizer
+}
+
+type InfraReconcilerOptions struct {
+	MaxConcurrentReconciles int
 }
 
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch;create;update;patch;delete
@@ -187,11 +193,11 @@ func (r *InfraReconciler) updateStatus(ctx context.Context, nn types.NamespacedN
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager, opts InfraReconcilerOptions) error {
 	r.applier = &drivers.Applier{}
 	r.recorder = mgr.GetEventRecorderFor("sealos-infra-controller")
 	if r.finalizer == nil {
-		r.finalizer = controller.NewFinalizer(r.Client, common.SealosInfraFinalizer)
+		r.finalizer = ctrl2.NewFinalizer(r.Client, common.SealosInfraFinalizer)
 	}
 	r.driver = make(map[string]drivers.Driver)
 	var err error
@@ -204,5 +210,8 @@ func (r *InfraReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&infrav1.Infra{}, builder.WithPredicates(
 			predicate.Or(predicate.GenerationChangedPredicate{}))).
+		WithOptions(controller.Options{
+			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
+		}).
 		Complete(r)
 }
