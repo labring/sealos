@@ -28,8 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/service/auth/pkg/conf"
 )
 
 const (

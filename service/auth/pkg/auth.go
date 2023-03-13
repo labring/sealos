@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package auth
+package pkg
 
 import (
 	"fmt"
 
 	"golang.org/x/oauth2"
 
-	"github.com/labring/sealos/pkg/auth/conf"
-	"github.com/labring/sealos/pkg/auth/sso"
-	"github.com/labring/sealos/pkg/auth/utils"
+	"github.com/labring/sealos/service/auth/pkg/conf"
+	"github.com/labring/sealos/service/auth/pkg/sso"
+	"github.com/labring/sealos/service/auth/pkg/utils"
 )
 
 var (

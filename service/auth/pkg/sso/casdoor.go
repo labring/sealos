@@ -22,7 +22,7 @@ import (
 	casdoorAuth "github.com/casdoor/casdoor-go-sdk/auth"
 	"golang.org/x/oauth2"
 
-	"github.com/labring/sealos/pkg/auth/conf"
+	"github.com/labring/sealos/service/auth/pkg/conf"
 )
 
 type CasdoorClient struct {

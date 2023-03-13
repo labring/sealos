@@ -17,8 +17,8 @@ package sso
 import (
 	"strings"
 
-	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/service/auth/pkg/conf"
 
 	"golang.org/x/oauth2"
 )

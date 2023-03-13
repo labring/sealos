@@ -15,8 +15,8 @@
 package conf
 
 import (
-	"github.com/labring/sealos/pkg/auth/conf"
 	"github.com/labring/sealos/pkg/utils/yaml"
+	"github.com/labring/sealos/service/auth/pkg/conf"
 )
 
 var GlobalConfig Config
