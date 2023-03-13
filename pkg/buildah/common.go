@@ -21,6 +21,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/pkg/system"
+
 	"github.com/containers/buildah"
 	"github.com/containers/common/pkg/umask"
 	is "github.com/containers/image/v5/storage"
@@ -295,11 +297,8 @@ func getContext() context.Context {
 }
 
 func defaultFormat() string {
-	format := os.Getenv("BUILDAH_FORMAT")
-	if format != "" {
-		return format
-	}
-	return buildah.OCI
+	format, _ := system.Get(system.BuildahFormatConfigKey)
+	return format
 }
 
 // Tail returns a string slice after the first element unless there are

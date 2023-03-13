@@ -27,14 +27,9 @@ import (
 	"github.com/containers/storage/pkg/homedir"
 )
 
-const (
-	defaultDataRoot = "/var/lib"
-	AppName         = "sealos"
-)
-
 var (
-	DefaultClusterRootFsDir = path.Join(defaultDataRoot, AppName)
-	DefaultRuntimeRootDir   = GetRuntimeRootDir(AppName)
+	DefaultRuntimeRootDir   string
+	DefaultClusterRootFsDir string
 )
 
 const (

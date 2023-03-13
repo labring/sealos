@@ -17,6 +17,8 @@ package confirm
 import (
 	"fmt"
 	"regexp"
+
+	"github.com/manifoldco/promptui"
 )
 
 // Confirm is send the prompt and get result
@@ -38,4 +40,30 @@ func Confirm(prompt, cancel string) (bool, error) {
 			return false, nil
 		}
 	}
+}
+
+// ByPromptui is send the prompt and get result
+func ByPromptui(msg, cancel string) bool {
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+	//validate := func(input string) error {
+	//	_, err := strconv.ParseFloat(input, 64)
+	//	return err
+	//}
+
+	prompt := promptui.Prompt{
+		Label:     msg,
+		IsConfirm: true,
+		Templates: templates,
+	}
+	_, err := prompt.Run()
+	if err != nil {
+		fmt.Println(cancel)
+		return false
+	}
+	return true
 }
