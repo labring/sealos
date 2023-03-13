@@ -3,9 +3,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { CRDMeta, DeleteCRD, GetUserDefaultNameSpace, K8sApi } from 'services/backend/kubernetes';
 import { JsonResp, BadAuthResp } from '../response';
 import { pgsqlMeta } from 'mock/pgsql';
+import { authSession } from 'services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { pgsqlName, kubeconfig } = req.body;
+  const { pgsqlName } = req.body;
+  const kubeconfig = await authSession(req.headers);
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
 

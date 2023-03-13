@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Image from 'next/image';
 import request from 'services/request';
-import useSessionStore from 'stores/session';
 import { formatTime } from 'utils/format';
 import styles from './clusterInfo.module.scss';
 import Button from './components/button';
@@ -84,10 +83,9 @@ function InfoCard(props: TInfoCard) {
 
 export default function ClusterInfo(props: TClusterInfo) {
   const { detailName, onCancel, openEventDialog, openDeleteDialog } = props;
-  const { kubeconfig } = useSessionStore((state) => state.getSession());
 
   const { data } = useQuery(['getPgsql'], () =>
-    request.post('/api/pgsql/getPgsql', { kubeconfig, pgsqlName: detailName })
+    request.post('/api/pgsql/getPgsql', { pgsqlName: detailName })
   );
   const detailPgsql: TPgsqlDetail = data?.data;
   const namespace = detailPgsql?.metadata?.namespace;
@@ -97,7 +95,6 @@ export default function ClusterInfo(props: TClusterInfo) {
     queryKey: ['getPgsqlOthers'],
     queryFn: () =>
       request.post('/api/pgsql/getPgsqlOthers', {
-        kubeconfig,
         pgsqlName: detailName,
         users: ['postgres', 'standby', ...Object.keys(detailPgsql?.spec?.users)]
       }),

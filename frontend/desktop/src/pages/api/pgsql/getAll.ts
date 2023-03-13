@@ -7,7 +7,7 @@ import { authSession } from 'services/backend/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const { kubeconfig } = await authSession(req.headers);
+    const kubeconfig = await authSession(req.headers);
     const kc = K8sApi(kubeconfig);
     const kube_user = kc.getCurrentUser();
 

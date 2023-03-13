@@ -1,10 +1,12 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { authSession } from 'services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi } from 'services/backend/kubernetes';
 import { BadAuthResp, JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { kubeconfig, pgsqlName } = req.body;
+  const { pgsqlName } = req.body;
+  const kubeconfig = await authSession(req.headers);
   const kc = K8sApi(kubeconfig);
   const kube_user = kc.getCurrentUser();
 

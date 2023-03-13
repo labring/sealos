@@ -1,11 +1,11 @@
+import { Dialog, DialogSurface, Spinner } from '@fluentui/react-components';
+import { useMutation } from '@tanstack/react-query';
 import clsx from 'clsx';
 import MarkDown from 'components/markdown';
-import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import request from 'services/request';
 import useAppStore from 'stores/app';
-import useSessionStore from 'stores/session';
 import styles from './add_page.module.scss';
 import Button from './components/button';
 import {
@@ -15,21 +15,13 @@ import {
 } from './components/controlled_fluent';
 import { PageType, usePgSqlContext } from './index';
 import { generatePgsqlTemplate, TPgSqlForm } from './pgsql_common';
-import {
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  Spinner
-} from '@fluentui/react-components';
 
 function AddPage() {
   const { toPage } = usePgSqlContext();
-  const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [yamlTemplate, setYamlTemplate] = useState('');
   const { currentApp } = useAppStore();
 
-  const { handleSubmit, control, formState, watch, register, getValues } = useForm<TPgSqlForm>({
+  const { handleSubmit, control, formState, watch, getValues } = useForm<TPgSqlForm>({
     defaultValues: {
       pgsqlName: '',
       version: '14',
@@ -69,7 +61,7 @@ function AddPage() {
 
   const createPgsqlMutation = useMutation({
     mutationFn: (data: TPgSqlForm) => {
-      return request.post('/api/pgsql/applyPgsql', { data, kubeconfig });
+      return request.post('/api/pgsql/applyPgsql', { data });
     },
     onSettled: () => {
       toPage(PageType.FrontPage);
@@ -78,10 +70,10 @@ function AddPage() {
 
   const onSave = () => {
     handleSubmit(
-      (data) => {
+      (data: TPgSqlForm) => {
         createPgsqlMutation.mutate(data);
       },
-      (err) => {
+      (err: any) => {
         console.log(err);
       }
     )();
@@ -175,6 +167,7 @@ function AddPage() {
                   ></Button>
                 </div>
               </div>
+              {/* @ts-ignore */}
               {userArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
                   <ControlledTextField
@@ -232,6 +225,7 @@ function AddPage() {
                   ></Button>
                 </div>
               </div>
+              {/* @ts-ignore */}
               {dataBaseArr.map((item, index) => (
                 <div className="flex items-center mt-3" key={item.id}>
                   <ControlledTextField
@@ -248,7 +242,7 @@ function AddPage() {
                       name={`dataBases.${index}.user`}
                       defaultValue="root"
                       rules={{ required: true }}
-                      options={getValues('users').map((i) => {
+                      options={getValues('users').map((i: any) => {
                         return { key: i.name, content: i.name };
                       })}
                     />
