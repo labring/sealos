@@ -114,23 +114,27 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 }
 
 func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
+	var err error
 	logger.Info("start to remove node from k8s %s", ip)
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
-		return err
+		logger.Warn("kubernetes client get node %s failed %v,skip delete node", ip, err)
+		return nil
 	}
 	ctx := context.Background()
 	hostname, err := kubernetes.GetHostNameFromInternalIP(cli.Kubernetes(), ip)
 	if err != nil {
-		return err
+		logger.Warn("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
+		return nil
 	}
 	deletePropagation := v1.DeletePropagationBackground
 	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Warn("not find target delete node ip: %s", ip)
+			return nil
 		}
-		return err
+		logger.Warn("kubernetes client delete node %s failed %v,skip delete node", ip, err)
 	}
 	return nil
 }
