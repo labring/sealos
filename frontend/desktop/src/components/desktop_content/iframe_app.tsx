@@ -65,7 +65,7 @@ export default function IframApp(props: { appItem: TApp }) {
       {!!url && (
         <iframe
           src={url}
-          allow="camera;microphone;"
+          allow="camera;microphone;clipboard-write;"
           className="w-full h-full"
           frameBorder={0}
           id={`app-window-${appItem.key}`} // key format sealos.image.hub
