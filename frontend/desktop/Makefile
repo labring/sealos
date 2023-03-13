@@ -1,10 +1,10 @@
 
-SERVICE_NAME=desktop-frontend
+SERVICE_NAME=zhujingyang/desktop-frontend
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):latest
+IMG ?= $(SERVICE_NAME):0.4.6
 
 .PHONY: all
-all: build
+all: docker-build-and-push
 
 ##@ General
 
@@ -39,10 +39,9 @@ docker-build: ## Build docker image with the desktop-frontend.
 
 ##@ Deployment
 
-.PHONY: docker-push
-docker-push:  ## Push docker image.
-	echo "To be done."
-
-#TODO: add support of docker push
-
-#TODO: add support of sealos apply
+.PHONY: docker-push-image
+docker-push-image: ## Push docker image to Docker Hub.
+	docker push $(IMG)
+	
+.PHONY: docker-build-and-push
+docker-build-and-push: docker-build docker-push-image ## Build and push docker image with the desktop-frontend.

@@ -53,23 +53,35 @@ export type TAppInfo = {
 };
 
 export function handleImageName(imageName: string): { name: string; tag: string } {
-  let result = imageName.split(':');
-  return { name: result[0], tag: result[1] };
+  try {
+    let result = imageName.split(':');
+    return { name: result[0], tag: result[1] };
+  } catch (error) {
+    return { name: '', tag: '' };
+  }
 }
 
 export function formattedSize(size: number, reserve: number = 1) {
-  let suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let count = 0;
-  while (size >= 1000 && count < 4) {
-    size = size / 1000;
-    count++;
+  try {
+    let suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let count = 0;
+    while (size >= 1000 && count < 4) {
+      size = size / 1000;
+      count++;
+    }
+    return `${size.toFixed(reserve)}` + `${suffixes[count]}`;
+  } catch (error) {
+    return 0;
   }
-  return `${size.toFixed(reserve)}` + `${suffixes[count]}`;
 }
 
 export function getSelectLabels(labels: TImageLabels[]): string {
-  return labels
-    ?.map((item) => (item.checked ? 'keyword.imagehub.sealos.io/' + item.value : null))
-    .filter((item) => item)
-    .join(',');
+  try {
+    return labels
+      ?.map((item) => (item.checked ? 'keyword.imagehub.sealos.io/' + item.value : null))
+      .filter((item) => item)
+      .join(',');
+  } catch (error) {
+    return '';
+  }
 }
