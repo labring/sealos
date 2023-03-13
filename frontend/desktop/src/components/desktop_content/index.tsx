@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, MouseEvent, useRef } from 'react';
-import Infra from 'applications/infra';
 import PgSql from 'applications/pgsql';
 
 import clsx from 'clsx';
@@ -45,9 +44,6 @@ export default function DesktopContent() {
   function renderApp(appItem: TApp) {
     switch (appItem.type) {
       case APPTYPE.APP:
-        if (appItem.name === 'sealos cloud provider') {
-          return <Infra />;
-        }
         if (appItem.name === 'Postgres') {
           return <PgSql />;
         }

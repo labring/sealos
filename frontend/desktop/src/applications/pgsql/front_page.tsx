@@ -34,7 +34,7 @@ function FrontPage() {
   } = useQuery(
     ['getAllPgsql'],
     async () => {
-      const res = await request.post('/api/pgsql/getAll', { kubeconfig });
+      const res = await request('/api/pgsql/getAll');
       let allReady = res?.data.items?.every((item: TPgsqlDetail) => {
         return item?.status?.PostgresClusterStatus === 'Running';
       });

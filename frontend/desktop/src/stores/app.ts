@@ -123,9 +123,7 @@ const useAppStore = create<TOSState>()(
         allApps: [],
 
         init: async (kubeconfig: string) => {
-          const res = await request.post('/api/desktop/getInstalledApps', {
-            kubeconfig
-          });
+          const res = await request('/api/desktop/getInstalledApps');
 
           set((state) => {
             /* equal order. just save first item */

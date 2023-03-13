@@ -1,31 +1,32 @@
 import installedApps from 'mock/installedApps';
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { authSession } from 'services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
 import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { kubeconfig } = req.body;
-  const kc = K8sApi(kubeconfig);
-  const kube_user = kc.getCurrentUser();
-
-  if (kube_user === null) {
-    return res.status(400);
-  }
-  const defaultMeta = {
-    group: 'app.sealos.io',
-    version: 'v1',
-    namespace: 'app-system',
-    plural: 'apps'
-  };
-
-  const meta = {
-    group: 'app.sealos.io',
-    version: 'v1',
-    namespace: GetUserDefaultNameSpace(kube_user.name),
-    plural: 'apps'
-  };
-
   try {
+    const { kubeconfig } = await authSession(req.headers);
+    const kc = K8sApi(kubeconfig);
+    const kube_user = kc.getCurrentUser();
+    if (kube_user === null) {
+      return res.status(400);
+    }
+
+    const defaultMeta = {
+      group: 'app.sealos.io',
+      version: 'v1',
+      namespace: 'app-system',
+      plural: 'apps'
+    };
+
+    const meta = {
+      group: 'app.sealos.io',
+      version: 'v1',
+      namespace: GetUserDefaultNameSpace(kube_user.name),
+      plural: 'apps'
+    };
+
     const defaultResult = await ListCRD(kc, defaultMeta);
     const userResult = await ListCRD(kc, meta);
 
@@ -39,7 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     JsonResp([...defaultArr, ...userArr], res);
-  } catch (err) {
+  } catch (error) {
     JsonResp(installedApps, res);
   }
 }
