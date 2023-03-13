@@ -8,7 +8,7 @@ import (
 
 type ServiceContext struct {
 	Config    config.Config
-	k8sClient kubernetes.Client
+	K8sClient kubernetes.Client
 }
 
 func NewServiceContext(c config.Config) (*ServiceContext, error) {
@@ -18,6 +18,6 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 	}
 	return &ServiceContext{
 		Config:    c,
-		k8sClient: k8sClient,
+		K8sClient: k8sClient,
 	}, nil
 }
