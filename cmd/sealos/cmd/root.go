@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/labring/sealos/pkg/system"
+
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/file"
@@ -27,9 +29,7 @@ import (
 )
 
 var (
-	debug          bool
-	clusterRootDir string
-	runtimeRootDir string
+	debug bool
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -56,24 +56,33 @@ func init() {
 	cobra.OnInitialize(onBootOnDie)
 	fs := rootCmd.PersistentFlags()
 	fs.BoolVar(&debug, "debug", false, "enable debug logger")
-	fs.StringVar(&clusterRootDir, "cluster-root", constants.DefaultClusterRootFsDir, "cluster root directory for remote")
-	_ = fs.MarkHidden("cluster-root")
-	fs.StringVar(&runtimeRootDir, "sealos-root", constants.DefaultRuntimeRootDir, "root directory for sealos actions")
-	_ = fs.MarkHidden("sealos-root")
 	// add unrelated command names that don't required buildah sdk.
 	buildah.AddUnrelatedCommandNames("cert", "status", "docs", "exec", "scp", "version")
 }
 
 func onBootOnDie() {
-	constants.DefaultClusterRootFsDir = clusterRootDir
-	constants.DefaultRuntimeRootDir = runtimeRootDir
+	var config string
+	var err error
+	if config, err = system.Get(system.DataRootConfigKey); err != nil {
+		logger.Error(err)
+		os.Exit(1)
+		return
+	}
+	constants.DefaultClusterRootFsDir = config
+	if config, err = system.Get(system.RuntimeRootConfigKey); err != nil {
+		logger.Error(err)
+		os.Exit(1)
+		return
+	}
+	constants.DefaultRuntimeRootDir = config
 	var rootDirs = []string{
 		constants.LogPath(),
 		constants.Workdir(),
 	}
-	if err := file.MkDirs(rootDirs...); err != nil {
+	if err = file.MkDirs(rootDirs...); err != nil {
 		logger.Error(err)
-		panic(1)
+		os.Exit(1)
+		return
 	}
 	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }

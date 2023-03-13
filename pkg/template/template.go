@@ -16,6 +16,7 @@ package template
 
 // nosemgrep: go.lang.security.audit.xss.import-text-template.import-text-template
 import (
+	"bytes"
 	"text/template"
 )
 
@@ -40,4 +41,14 @@ func ParseFiles(filenames ...string) (*template.Template, error) {
 
 func Must(t *template.Template, err error) *template.Template {
 	return template.Must(t, err)
+}
+
+func RenderTemplate(name, defaultStr string, data map[string]interface{}) (string, error) {
+	var out bytes.Buffer
+	tmpl := template.Must(template.New(name).Parse(defaultStr))
+	err := tmpl.Execute(&out, data)
+	if err != nil {
+		return "", err
+	}
+	return out.String(), nil
 }
