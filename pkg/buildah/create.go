@@ -73,7 +73,6 @@ func newCreateCmd() *cobra.Command {
 			if !opts.short {
 				logger.Info("Mount point: %s", info.MountPoint)
 			} else {
-				println()
 				fmt.Println(info.MountPoint)
 			}
 			if !IsRootless() {
