@@ -34,9 +34,9 @@ import (
 	"github.com/labring/sealos/pkg/utils/progress"
 )
 
-func (s *SSH) RemoteSha256Sum(host, remoteFilePath string) string {
+func (c *Client) RemoteSha256Sum(host, remoteFilePath string) string {
 	cmd := fmt.Sprintf("sha256sum %s | cut -d\" \" -f1", remoteFilePath)
-	remoteHash, err := s.CmdToString(host, cmd, "")
+	remoteHash, err := c.CmdToString(host, cmd, "")
 	if err != nil {
 		logger.Error("failed to calculate remote sha256 sum %s %s %v", host, remoteFilePath, err)
 	}
@@ -48,9 +48,9 @@ func getOnelineResult(output string, sep string) string {
 }
 
 // CmdToString execute command on host and replace output with sep to oneline
-func (s *SSH) CmdToString(host, cmd, sep string) (string, error) {
+func (c *Client) CmdToString(host, cmd, sep string) (string, error) {
 	logger.Debug("start to exec remote %s shell: %s", host, cmd)
-	output, err := s.Cmd(host, cmd)
+	output, err := c.Cmd(host, cmd)
 	data := string(output)
 	if err != nil {
 		return data, err
@@ -61,8 +61,8 @@ func (s *SSH) CmdToString(host, cmd, sep string) (string, error) {
 	return getOnelineResult(data, sep), nil
 }
 
-func (s *SSH) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client, error) {
-	sshClient, err := s.connect(host)
+func (c *Client) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client, error) {
+	sshClient, err := c.connect(host)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -71,22 +71,22 @@ func (s *SSH) newClientAndSftpClient(host string) (*ssh.Client, *sftp.Client, er
 	return sshClient, sftpClient, err
 }
 
-func (s *SSH) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
-	err = exponentialBackoffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
-		sshClient, sftpClient, err = s.newClientAndSftpClient(host)
+func (c *Client) sftpConnect(host string) (sshClient *ssh.Client, sftpClient *sftp.Client, err error) {
+	err = exponentialBackOffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
+		sshClient, sftpClient, err = c.newClientAndSftpClient(host)
 		return err
 	}, isErrorWorthRetry)
 	return
 }
 
 // Copy is copy file or dir to remotePath, add md5 validate
-func (s *SSH) Copy(host, localPath, remotePath string) error {
-	if s.isLocalAction(host) {
+func (c *Client) Copy(host, localPath, remotePath string) error {
+	if c.isLocalAction(host) {
 		logger.Debug("local %s copy files src %s to dst %s", host, localPath, remotePath)
 		return file.RecursionCopy(localPath, remotePath)
 	}
 	logger.Debug("remote copy files src %s to dst %s", localPath, remotePath)
-	sshClient, sftpClient, err := s.sftpConnect(host)
+	sshClient, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
 	}
@@ -125,15 +125,10 @@ func (s *SSH) Copy(host, localPath, remotePath string) error {
 		_ = bar.Close()
 	}()
 
-	return s.doCopy(sftpClient, host, localPath, remotePath, bar)
+	return c.doCopy(sftpClient, host, localPath, remotePath, bar)
 }
 
-func isErrorWorthRetry(err error) bool {
-	return strings.Contains(err.Error(), "connection reset by peer") ||
-		strings.Contains(err.Error(), io.EOF.Error())
-}
-
-func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
+func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {
 	lfp, err := os.Stat(src)
 	if err != nil {
 		return fmt.Errorf("failed to Stat local: %v", err)
@@ -147,7 +142,7 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 			return fmt.Errorf("failed to Mkdir remote: %v", err)
 		}
 		for _, entry := range entries {
-			if err = s.doCopy(client, host, path.Join(src, entry.Name()), path.Join(dest, entry.Name()), epu); err != nil {
+			if err = c.doCopy(client, host, path.Join(src, entry.Name()), path.Join(dest, entry.Name()), epu); err != nil {
 				return err
 			}
 		}
@@ -159,12 +154,9 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 			}
 			return exists
 		}
-		if isEnvTrue("USE_SHELL_TO_CHECK_FILE_EXISTS") {
-			fn = s.remoteFileExist
-		}
 		if !isEnvTrue("DO_NOT_CHECKSUM") && fn(host, dest) {
 			rfp, _ := client.Stat(dest)
-			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == s.RemoteSha256Sum(host, dest) {
+			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == c.RemoteSha256Sum(host, dest) {
 				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
 				return nil
 			}
@@ -187,7 +179,7 @@ func (s *SSH) doCopy(client *sftp.Client, host, src, dest string, epu *progressb
 			return fmt.Errorf("failed to Copy: %v", err)
 		}
 		if !isEnvTrue("DO_NOT_CHECKSUM") {
-			dh := s.RemoteSha256Sum(host, dest)
+			dh := c.RemoteSha256Sum(host, dest)
 			if dh == "" {
 				// when ssh connection failed, remote sha256 is default to "", so ignore it.
 				return nil

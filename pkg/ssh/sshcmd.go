@@ -26,25 +26,21 @@ import (
 	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
-func (s *SSH) Ping(host string) error {
-	if s.isLocalAction(host) {
+func (c *Client) Ping(host string) error {
+	if c.isLocalAction(host) {
 		logger.Debug("host %s is local, ping is always true", host)
 		return nil
 	}
-	client, _, err := s.Connect(host)
+	client, _, err := c.Connect(host)
 	if err != nil {
-		return fmt.Errorf("[ssh %s]create ssh session failed, %v", host, err)
+		return fmt.Errorf("failed to connect %s: %v", host, err)
 	}
-	err = client.Close()
-	if err != nil {
-		return err
-	}
-	return nil
+	return client.Close()
 }
 
-func (s *SSH) CmdAsync(host string, cmds ...string) error {
+func (c *Client) CmdAsync(host string, cmds ...string) error {
 	var isLocal bool
-	if s.isLocalAction(host) {
+	if c.isLocalAction(host) {
 		logger.Debug("host %s is local, command via exec", host)
 		isLocal = true
 	}
@@ -57,7 +53,7 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			if isLocal {
 				return exec.Cmd("bash", "-c", cmd)
 			}
-			client, session, err := s.Connect(host)
+			client, session, err := c.Connect(host)
 			if err != nil {
 				return fmt.Errorf("failed to create ssh session for %s: %v", host, err)
 			}
@@ -81,10 +77,10 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			doneout := make(chan error, 1)
 			doneerr := make(chan error, 1)
 			go func() {
-				doneerr <- readPipe(host, stderr, &combineSlice, &combineLock, s.isStdout)
+				doneerr <- readPipe(host, stderr, &combineSlice, &combineLock, c.printStdout)
 			}()
 			go func() {
-				doneout <- readPipe(host, stdout, &combineSlice, &combineLock, s.isStdout)
+				doneout <- readPipe(host, stdout, &combineSlice, &combineLock, c.printStdout)
 			}()
 			<-doneerr
 			<-doneout
@@ -93,7 +89,6 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 			if err != nil {
 				return strings2.WrapExecResult(host, cmd, []byte(strings.Join(combineSlice, "\n")), err)
 			}
-
 			return nil
 		}(cmd); err != nil {
 			return err
@@ -103,13 +98,13 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 	return nil
 }
 
-func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
-	if s.isLocalAction(host) {
+func (c *Client) Cmd(host, cmd string) ([]byte, error) {
+	if c.isLocalAction(host) {
 		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}
-	client, session, err := s.Connect(host)
+	client, session, err := c.Connect(host)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ssh session for %s: %v", host, err)
 	}

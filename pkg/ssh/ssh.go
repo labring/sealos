@@ -17,13 +17,14 @@ package ssh
 import (
 	"context"
 	"net"
-	"time"
+	"sync"
 
 	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/sync/errgroup"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	fileutils "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -35,71 +36,148 @@ func RegisterFlags(fs *pflag.FlagSet) {
 }
 
 type Interface interface {
-	// Copy is copy local files to remote host
+	// Copy copy local file to remote
 	// scp -r /tmp root@192.168.0.2:/root/tmp => Copy("192.168.0.2","tmp","/root/tmp")
-	// need check md5sum
-	Copy(host, srcFilePath, dstFilePath string) error
-	// CmdAsync is exec command on remote host, and asynchronous return logs
-	CmdAsync(host string, cmd ...string) error
-	// Cmd is exec command on remote host, and return combined standard output and standard error
+	// skip checksum if env DO_NOT_CHECKSUM=true
+	Copy(host, src, dst string) error
+	// CmdAsync exec commands on remote host asynchronously
+	CmdAsync(host string, cmds ...string) error
+	// Cmd exec command on remote host, and return combined standard output and standard error
 	Cmd(host, cmd string) ([]byte, error)
-	//CmdToString is exec command on remote host, and return spilt standard output and standard error
+	// CmdToString exec command on remote host, and return spilt standard output by separator and standard error
 	CmdToString(host, cmd, spilt string) (string, error)
 	Ping(host string) error
 }
 
-type SSH struct {
-	isStdout   bool
-	User       string
-	Password   string
-	PkFile     string
-	PkData     string
-	PkPassword string
-	Timeout    time.Duration
+var (
+	getAddressesOnce sync.Once
+	localAddresses   *[]net.Addr
+)
 
-	// private properties
-	localAddress *[]net.Addr
-	clientConfig *ssh.ClientConfig
-}
-
-func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
-	if ssh.User == "" {
-		ssh.User = v2.DefaultUserRoot
-	}
-	address, err := iputils.ListLocalHostAddrs()
-	// todo: return error?
-	if err != nil {
-		logger.Warn("failed to get local address, %v", err)
-	}
-	return &SSH{
-		isStdout:     isStdout,
-		User:         ssh.User,
-		Password:     ssh.Passwd,
-		PkFile:       ssh.Pk,
-		PkData:       ssh.PkData,
-		PkPassword:   ssh.PkPasswd,
-		localAddress: address,
-	}
-}
-
-func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
-	var ipList []string
-	sshClient := NewSSHClient(&cluster.Spec.SSH, isStdout)
-	ipList = append(ipList, append(cluster.GetIPSByRole(v2.MASTER), cluster.GetIPSByRole(v2.NODE)...)...)
-	return sshClient, WaitSSHReady(sshClient, defaultMaxRetry, ipList...)
+func getLocalAddresses() *[]net.Addr {
+	getAddressesOnce.Do(func() {
+		var err error
+		localAddresses, err = iputils.ListLocalHostAddrs()
+		if err != nil {
+			logger.Warn("failed to list local addresses: %v", err)
+		}
+	})
+	return localAddresses
 }
 
 type Client struct {
-	SSH  Interface
-	Host string
+	*ssh.ClientConfig
+	printStdout bool
 }
 
-func WaitSSHReady(ssh Interface, _ int, hosts ...string) error {
+var _ Interface = &Client{}
+
+var defaultCiphers = []string{
+	"aes128-ctr", "aes192-ctr", "aes256-ctr",
+	"chacha20-poly1305@openssh.com",
+	"aes128-gcm@openssh.com",
+	"arcfour256", "arcfour128",
+	"aes128-cbc", "aes192-cbc", "aes256-cbc",
+	"3des-cbc",
+}
+
+func New(opt *Option, opts ...OptionFunc) (*Client, error) {
+	return newFromOptions(opt, opts...)
+}
+
+func newFromOptions(opt *Option, opts ...OptionFunc) (*Client, error) {
+	if opt == nil {
+		opt = NewOption()
+	}
+	for i := range opts {
+		opts[i](opt)
+	}
+
+	config := &ssh.ClientConfig{
+		Config: ssh.Config{
+			Ciphers: defaultCiphers,
+		},
+		User:            opt.User,
+		Timeout:         opt.Timeout,
+		Auth:            []ssh.AuthMethod{},
+		HostKeyCallback: opt.HostKeyCallback,
+	}
+	if len(opt.Password) > 0 {
+		config.Auth = append(config.Auth, ssh.Password(opt.Password))
+	}
+	if len(opt.RawPrivateKeyData) > 0 {
+		signer, err := parsePrivateKey([]byte(opt.RawPrivateKeyData), []byte(opt.Passphrase))
+		if err != nil {
+			return nil, err
+		}
+		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+	} else if len(opt.PrivateKey) > 0 {
+		if !fileutils.IsExist(opt.PrivateKey) {
+			logger.Debug("not trying to parse private key file cause it's not exists")
+		} else {
+			signer, err := parsePrivateKeyFile(opt.PrivateKey, opt.Passphrase)
+			if err != nil {
+				return nil, err
+			}
+			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
+		}
+	}
+	return &Client{ClientConfig: config, printStdout: opt.Stdout}, nil
+}
+
+func newOptionFromSSH(ssh *v2.SSH, isStdout bool) *Option {
+	opts := []OptionFunc{
+		WithStdout(isStdout),
+	}
+	if len(ssh.User) > 0 {
+		opts = append(opts, WithUser(ssh.User))
+	}
+	if len(ssh.Passwd) > 0 {
+		opts = append(opts, WithPassword(ssh.Passwd))
+	}
+	if len(ssh.Pk) > 0 {
+		opts = append(opts, WithPrivateKeyAndPhrase(ssh.Pk, ssh.PkPasswd))
+	}
+	if len(ssh.PkData) > 0 {
+		opts = append(opts, WithRawPrivateKeyDataAndPhrase(ssh.PkData, ssh.PkPasswd))
+	}
+	opt := NewOption()
+	for i := range opts {
+		opts[i](opt)
+	}
+	return opt
+}
+
+func newFromSSH(ssh *v2.SSH, isStdout bool) (Interface, error) {
+	return New(newOptionFromSSH(ssh, isStdout))
+}
+
+func NewSSHClient(ssh *v2.SSH, isStdout bool) Interface {
+	client, err := newFromSSH(ssh, isStdout)
+	if err != nil {
+		logger.Fatal("failed to create ssh client: %v", err)
+	}
+	return client
+}
+
+func NewSSHByCluster(cluster *v2.Cluster, isStdout bool) (Interface, error) {
+	cc := &clusterClient{
+		cluster:  cluster,
+		isStdout: isStdout,
+		configs:  make(map[string]*Option),
+		cache:    make(map[*Option]Interface),
+	}
+	var ipList []string
+	ipList = append(ipList, append(cluster.GetIPSByRole(v2.MASTER), cluster.GetIPSByRole(v2.NODE)...)...)
+	return cc, WaitSSHReady(cc, defaultMaxRetry, ipList...)
+}
+
+func WaitSSHReady(client Interface, _ int, hosts ...string) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for i := range hosts {
 		host := hosts[i]
 		eg.Go(func() (err error) {
-			return ssh.Ping(host)
+			return client.Ping(host)
 		})
 	}
 	return eg.Wait()
