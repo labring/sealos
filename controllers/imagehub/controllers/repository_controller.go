@@ -110,15 +110,15 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 	tagList := imagehubv1.TagList{}
 	for _, img := range imgList.Items {
 		tagList = append(tagList, imagehubv1.TagData{
-			Name:     img.Spec.Name.GetTag(),
-			MetaName: img.Name,
-			Size:     img.Spec.DetailInfo.Size,
-			CTime:    img.Spec.DetailInfo.CTime,
+			Name:       img.Spec.Name.GetTag(),
+			MetaName:   img.Name,
+			Size:       img.Spec.DetailInfo.Size,
+			CreateTime: img.Spec.DetailInfo.CTime,
 		})
 	}
 	repo.Status.Tags = tagList
 	sort.Slice(repo.Status.Tags, func(i, j int) bool {
-		return repo.Status.Tags[i].CTime.After(repo.Status.Tags[j].CTime.Time)
+		return repo.Status.Tags[i].CreateTime.After(repo.Status.Tags[j].CreateTime.Time)
 	})
 	if len(repo.Status.Tags) != 0 {
 		repo.Status.LatestTag = &repo.Status.Tags[0]

@@ -31,7 +31,7 @@ type TagData struct {
 	Size     int64  `json:"size"`
 
 	//+kubebuilder:default:="1970-01-01T00:00:00Z"
-	CTime metav1.Time `json:"creatTime"` // todo inspect image and get time
+	CreateTime metav1.Time `json:"creatTime"` // todo inspect image and get time
 }
 
 type ImageType string
