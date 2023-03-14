@@ -1,14 +1,14 @@
 import { Spinner } from '@fluentui/react-components';
 import { useQuery } from '@tanstack/react-query';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { BuildInAction } from '../../interfaces/kubernetes';
 import request from '../../services/request';
 import { TApp } from '../../stores/app';
 import useSessionStore from '../../stores/session';
 import { cleanName } from '../../utils/strings';
 
-export default function IframApp(props: { appItem: TApp }) {
-  const { appItem } = props;
+export default function IframApp({ appItem, isShow }: { appItem: TApp; isShow: boolean }) {
+  const Iframe = useRef<HTMLIFrameElement>(null);
   const [loadingTime, setLoadingTime] = useState(0);
   const [loading, setLoading] = useState(true);
   const loadingTimer = useRef<any>(null);
@@ -46,14 +46,33 @@ export default function IframApp(props: { appItem: TApp }) {
   );
 
   useEffect(() => {
+    // open timer
     loadingTimer.current = setInterval(() => {
       setLoadingTime((state) => state + 1);
     }, 1000);
 
-    return () => {
-      clearInterval;
+    // listen desktop keydown refresh
+    const listenDesktopKeyDown = (event: KeyboardEvent) => {
+      if (
+        (event.keyCode === 116 || (event.ctrlKey && event.keyCode === 82)) &&
+        isShow &&
+        appItem.data?.url
+      ) {
+        setLoading(true);
+        setUrl('');
+        setTimeout(() => {
+          setUrl(appItem.data.url);
+        }, 100);
+        event.preventDefault();
+      }
     };
-  }, []);
+    window.addEventListener('keydown', listenDesktopKeyDown);
+
+    return () => {
+      clearInterval(loadingTimer.current);
+      window.removeEventListener('keydown', listenDesktopKeyDown);
+    };
+  }, [appItem.data.url, isShow]);
 
   return (
     <div className="h-full">
@@ -64,6 +83,7 @@ export default function IframApp(props: { appItem: TApp }) {
       )}
       {!!url && (
         <iframe
+          ref={Iframe}
           src={url}
           allow="camera;microphone;clipboard-write;"
           className="w-full h-full"
@@ -72,6 +92,7 @@ export default function IframApp(props: { appItem: TApp }) {
           onLoad={() => {
             clearInterval(loadingTimer.current);
             setLoading(false);
+            setLoadingTime(0);
           }}
         />
       )}

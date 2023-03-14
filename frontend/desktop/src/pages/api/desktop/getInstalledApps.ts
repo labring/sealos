@@ -1,4 +1,4 @@
-import installedApps from 'mock/installedApps';
+// import MockInstalAPPs from 'mock/installedApps';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authSession } from 'services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
@@ -39,8 +39,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return { key: `user-${item.metadata.name}`, ...item.spec };
     });
 
-    JsonResp([...defaultArr, ...userArr], res);
-  } catch (error) {
-    JsonResp(installedApps, res);
+    let apps = [...defaultArr, ...userArr]
+
+    // if (process.env.NODE_ENV === 'development') {
+    //   apps = apps.concat(MockInstalAPPs)
+    // }
+
+    JsonResp(apps, res);
+  } catch (err) {
+    JsonResp([], res);
   }
 }
