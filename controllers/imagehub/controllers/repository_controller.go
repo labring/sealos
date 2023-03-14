@@ -113,7 +113,7 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 			Name:       img.Spec.Name.GetTag(),
 			MetaName:   img.Name,
 			Size:       img.Spec.DetailInfo.Size,
-			CreateTime: img.Spec.DetailInfo.CTime,
+			CreateTime: img.Spec.DetailInfo.CreateTime,
 		})
 	}
 	repo.Status.Tags = tagList

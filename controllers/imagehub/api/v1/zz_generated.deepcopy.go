@@ -284,7 +284,7 @@ func (in *ImageDetailInfo) DeepCopyInto(out *ImageDetailInfo) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
-	in.CTime.DeepCopyInto(&out.CTime)
+	in.CreateTime.DeepCopyInto(&out.CreateTime)
 	if in.Actions != nil {
 		in, out := &in.Actions, &out.Actions
 		*out = make(map[string]Action, len(*in))
