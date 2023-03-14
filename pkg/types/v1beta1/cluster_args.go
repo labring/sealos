@@ -135,8 +135,10 @@ func (c *Cluster) GetRootfsImage(defaultMount string) *MountImage {
 		image = &MountImage{
 			Name:       fmt.Sprintf("%s-%d", c.Name, 0),
 			Type:       RootfsImage,
-			ImageName:  c.Spec.Image[0],
 			MountPoint: defaultMount,
+		}
+		if len(c.Spec.Image) > 0 {
+			image.ImageName = c.Spec.Image[0]
 		}
 	}
 	return image
