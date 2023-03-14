@@ -76,7 +76,7 @@ Your own PG Cluster is created。
 
 Once PG is created, it will generate a corresponding password for each user by default. The password can be obtained by obtaining the secret, and then used after base64 transcoding.
 ```cmd
-kubectl get scret ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do -o yaml
+kubectl get secrets ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do --template '{{.data.password}}' | base64 -d
 ```
 The username and password can also be copied manually through the cluster management interface.
 ![pgsqlimg.png](pgsqlimg.png)

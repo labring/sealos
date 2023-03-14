@@ -19,6 +19,7 @@ package yaml
 import (
 	"bufio"
 	"bytes"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -127,5 +128,5 @@ func Matcher(path string) bool {
 
 func ShowStructYaml(s interface{}) {
 	data, _ := yaml.Marshal(s)
-	println(string(data))
+	fmt.Println(string(data))
 }

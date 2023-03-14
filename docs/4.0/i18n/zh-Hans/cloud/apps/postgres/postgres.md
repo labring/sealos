@@ -76,7 +76,7 @@ kubectl apply -f pgtest.yaml
 
 PG在创建时会对每个用户默认生成相应的密码，可以通过获取secret的方式来获取密码,然后经过base64转码后使用。
 ```cmd
-kubectl get scret ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do -o yaml
+kubectl get secrets ${UserName}.${CRDName}.credentials.postgresql.acid.zalan.do --template '{{.data.password}}' | base64 -d
 ```
 也可以通过集群管理界面手动复制用户名和密码。
 ![pgsqlimg.png](pgsqlimg.png)

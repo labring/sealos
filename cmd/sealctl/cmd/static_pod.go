@@ -64,7 +64,7 @@ func newLvscareCmd() *cobra.Command {
 				os.Exit(1)
 			}
 			if printBool {
-				println(yaml)
+				fmt.Println(yaml)
 				return
 			}
 			logger.Debug("lvscare static pod yaml is %s", yaml)

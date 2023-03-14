@@ -26,5 +26,5 @@ func TestNewContainerRuntime(t *testing.T) {
 	//driver,_:=cr.processConfigFile()
 	//t.Log(driver)
 	cc := []string{"aa", "bb", "cc"}
-	println(fmt.Sprintf("%+v", cc))
+	fmt.Printf("%+v\n", cc)
 }

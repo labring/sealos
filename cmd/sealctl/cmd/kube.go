@@ -58,7 +58,7 @@ func newKubeCmd() *cobra.Command {
 				logger.Error(err)
 				os.Exit(1)
 			}
-			println(data)
+			fmt.Println(data)
 		},
 	}
 	kubeCmd.Flags().BoolVar(&allNamespace, "--all-namespaces", false, " If present, list the requested object(s) across all namespaces. Namespace in current\ncontext is ignored even if specified with --namespace.")
