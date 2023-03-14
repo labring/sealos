@@ -11,7 +11,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import request from 'services/request';
-import useSessionStore from 'stores/session';
 import Button from './button';
 import styles from './delete_dialog.module.scss';
 
@@ -29,13 +28,12 @@ enum DialogStatus {
 export default function DeletePgsqlDialog(props: DialogComponentProps) {
   const { isOpen, deleteName, onOpen } = props;
   const [isDisabled, setIsDisabled] = useState(true);
-  const { kubeconfig } = useSessionStore((state) => state.getSession());
   const [dialogStatus, setDialogStatus] = useState<DialogStatus>();
   const queryClient = useQueryClient();
 
   const pgsqlMutation = useMutation({
     mutationFn: () => {
-      return request.post('/api/pgsql/deletePgsql', { pgsqlName: deleteName, kubeconfig });
+      return request.post('/api/pgsql/deletePgsql', { pgsqlName: deleteName });
     },
     onSuccess: () => {
       setDialogStatus(DialogStatus.success);

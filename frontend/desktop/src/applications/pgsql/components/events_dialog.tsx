@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from 'components/iconfont';
 import request from 'services/request';
-import useSessionStore from 'stores/session';
 import Button from './button';
 import styles from './events_dialog.module.scss';
 
@@ -25,9 +24,8 @@ type PgsqlEvent = {
 
 export default function PgsqlEventsDialog(props: PgsqlEventsDialog) {
   const { name, onCancel, status } = props;
-  const { kubeconfig } = useSessionStore((state) => state.getSession());
   const { data } = useQuery(['getEvents'], () =>
-    request.post('/api/pgsql/getEvents', { kubeconfig, pgsqlName: name })
+    request.post('/api/pgsql/getEvents', { pgsqlName: name })
   );
   const items = data?.data?.items;
 
