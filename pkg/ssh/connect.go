@@ -16,10 +16,8 @@ package ssh
 
 import (
 	"fmt"
-	"net"
+	"io"
 	"os"
-	"path"
-	"strconv"
 	"strings"
 	"time"
 
@@ -30,35 +28,10 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-func (s *SSH) getClientConfig() *ssh.ClientConfig {
-	if s.clientConfig == nil {
-		auth := s.sshAuthMethod(s.Password, s.PkFile, s.PkData, s.PkPassword)
-		config := ssh.Config{
-			Ciphers: []string{"aes128-ctr", "aes192-ctr", "aes256-ctr", "aes128-gcm@openssh.com", "arcfour256", "arcfour128", "aes128-cbc", "3des-cbc", "aes192-cbc", "aes256-cbc"},
-		}
-		defaultTimeout := time.Duration(15) * time.Second
-		if s.Timeout <= 0 {
-			s.Timeout = defaultTimeout
-		}
-		s.clientConfig = &ssh.ClientConfig{
-			User:    s.User,
-			Auth:    auth,
-			Timeout: s.Timeout,
-			Config:  config,
-			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-				return nil
-			},
-		}
-	}
-	return s.clientConfig
-}
-
-// SSH connection operation
-func (s *SSH) connect(host string) (*ssh.Client, error) {
-	clientConfig := s.getClientConfig()
+func (c *Client) connect(host string) (*ssh.Client, error) {
 	ip, port := iputils.GetSSHHostIPAndPort(host)
-	addr := s.addrReformat(ip, port)
-	return ssh.Dial("tcp", addr, clientConfig)
+	addr := formalizeAddr(ip, port)
+	return ssh.Dial("tcp", addr, c.ClientConfig)
 }
 
 func newSession(client *ssh.Client) (*ssh.Session, error) {
@@ -80,15 +53,20 @@ func newSession(client *ssh.Client) (*ssh.Session, error) {
 	return session, nil
 }
 
-func (s *SSH) Connect(host string) (sshClient *ssh.Client, session *ssh.Session, err error) {
-	err = exponentialBackoffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
-		sshClient, session, err = s.newClientAndSession(host)
+func (c *Client) Connect(host string) (sshClient *ssh.Client, session *ssh.Session, err error) {
+	err = exponentialBackOffRetry(defaultMaxRetry, time.Millisecond*100, 2, func() error {
+		sshClient, session, err = c.newClientAndSession(host)
 		return err
 	}, isErrorWorthRetry)
 	return
 }
 
-func exponentialBackoffRetry(steps int, interval time.Duration, factor int,
+func isErrorWorthRetry(err error) bool {
+	return strings.Contains(err.Error(), "connection reset by peer") ||
+		strings.Contains(err.Error(), io.EOF.Error())
+}
+
+func exponentialBackOffRetry(steps int, interval time.Duration, factor int,
 	fn func() error,
 	retryIfCertainError func(error) bool) error {
 	var err error
@@ -109,8 +87,8 @@ func exponentialBackoffRetry(steps int, interval time.Duration, factor int,
 	return err
 }
 
-func (s *SSH) newClientAndSession(host string) (*ssh.Client, *ssh.Session, error) {
-	sshClient, err := s.connect(host)
+func (c *Client) newClientAndSession(host string) (*ssh.Client, *ssh.Session, error) {
+	sshClient, err := c.connect(host)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -118,27 +96,8 @@ func (s *SSH) newClientAndSession(host string) (*ssh.Client, *ssh.Session, error
 	return sshClient, session, err
 }
 
-func (s *SSH) isLocalAction(host string) bool {
-	return !unshare.IsRootless() && s.localAddress != nil && iputils.IsLocalIP(host, s.localAddress)
-}
-
-func (s *SSH) sshAuthMethod(password, pkFile, pkData, pkPasswd string) (auth []ssh.AuthMethod) {
-	if pkData != "" {
-		signer, err := parsePrivateKey([]byte(pkData), []byte(pkPasswd))
-		if err == nil {
-			auth = append(auth, ssh.PublicKeys(signer))
-		}
-	}
-	if fileExist(pkFile) {
-		signer, err := parsePrivateKeyFile(pkFile, pkPasswd)
-		if err == nil {
-			auth = append(auth, ssh.PublicKeys(signer))
-		}
-	}
-	if password != "" {
-		auth = append(auth, ssh.Password(password))
-	}
-	return auth
+func (c *Client) isLocalAction(host string) bool {
+	return !unshare.IsRootless() && getLocalAddresses() != nil && iputils.IsLocalIP(host, getLocalAddresses())
 }
 
 func parsePrivateKey(pemBytes []byte, password []byte) (ssh.Signer, error) {
@@ -156,34 +115,9 @@ func parsePrivateKeyFile(filename string, password string) (ssh.Signer, error) {
 	return parsePrivateKey(pemBytes, []byte(password))
 }
 
-func fileExist(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil || os.IsExist(err)
-}
-
-func (s *SSH) addrReformat(host, port string) string {
+func formalizeAddr(host, port string) string {
 	if !strings.Contains(host, ":") {
 		host = fmt.Sprintf("%s:%s", host, port)
 	}
 	return host
-}
-
-func (s *SSH) remoteFileExist(host, remoteFilePath string) bool {
-	// if remote file is
-	// ls -l | grep aa | wc -l
-	remoteFileName := path.Base(remoteFilePath) // aa
-	remoteFileDirName := path.Dir(remoteFilePath)
-	//it's bug: if file is aa.bak, `ls -l | grep aa | wc -l` is 1 ,should use `ll aa 2>/dev/null |wc -l`
-	//remoteFileCommand := fmt.Sprintf("ls -l %s| grep %s | grep -v grep |wc -l", remoteFileDirName, remoteFileName)
-	remoteFileCommand := fmt.Sprintf("ls -l %s/%s 2>/dev/null |wc -l", remoteFileDirName, remoteFileName)
-
-	data, err := s.CmdToString(host, remoteFileCommand, " ")
-	if err != nil {
-		logger.Error("[ssh][%s]remoteFileCommand err:%s", host, err)
-	}
-	count, err := strconv.Atoi(strings.TrimSpace(data))
-	if err != nil {
-		logger.Error("[ssh][%s]RemoteFileExist:%s", host, err)
-	}
-	return count != 0
 }

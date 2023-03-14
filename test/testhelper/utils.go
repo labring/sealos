@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/exec"
 
 	"github.com/labring/sealos/test/testhelper/settings"
@@ -57,11 +56,6 @@ func WriteFile(fileName string, content []byte) error {
 	}
 
 	return os.WriteFile(fileName, content, settings.FileMode0644)
-}
-
-type SSHClient struct {
-	RemoteHostIP string
-	SSH          *ssh.SSH
 }
 
 func IsFileExist(filename string) bool {

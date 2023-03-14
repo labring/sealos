@@ -189,8 +189,8 @@ type SSH struct {
 type Host struct {
 	IPS   []string `json:"ips,omitempty"`
 	Roles []string `json:"roles,omitempty"`
-	//overwrite env
-	Env []string `json:"env,omitempty"`
+	Env   []string `json:"env,omitempty"` // overwrite env
+	SSH   *SSH     `json:"ssh.omitempty"` // overwrite global ssh config
 }
 
 type ImageList []string
