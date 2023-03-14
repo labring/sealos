@@ -52,7 +52,7 @@ type DebtValidate struct {
 }
 
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.Info("checking user", "userInfo", req.UserInfo)
+	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name)
 	kubeSystemGroup := fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
 	for _, g := range req.UserInfo.Groups {
 		switch g {
@@ -73,7 +73,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 	if len(req.Namespace) > 3 && req.Namespace[:3] == "ns-" {
 		return checkOption(ctx, logger, d.Client, req.Namespace)
 	}
-
+	logger.Info("pass for NameSpace is not user ns", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
 }
 
@@ -94,13 +94,13 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 
 	accountList := AccountList{}
 	if err := c.List(ctx, &accountList, client.MatchingFields{"name": user}); err != nil {
-		logger.Error(err, "get account error")
+		logger.Error(err, "get account error", "user", user)
 		return admission.ValidationResponse(true, err.Error())
 	}
 
 	for _, account := range accountList.Items {
 		if account.Status.Balance-account.Status.DeductionBalance < 0 {
-			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %d", account.Status.Balance-account.Status.DeductionBalance))
+			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/100))
 		}
 	}
 	return admission.ValidationResponse(true, "")
