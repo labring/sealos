@@ -50,7 +50,7 @@ export default function DesktopContent() {
         return null;
 
       case APPTYPE.IFRAME:
-        return <IframeApp appItem={appItem} />;
+        return <IframeApp appItem={appItem} isShow={appItem.size !== 'minimize'} />;
 
       default:
         break;
