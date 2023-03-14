@@ -1,6 +1,12 @@
 apiVersion: notification.sealos.io/v1
 kind: Notification
 metadata:
-  name: notification-sample
+  name: notification-1678761116
+  namespace: ns-cv46sqlr
+  labels:
+    user: cv46sqlr
 spec:
-  # TODO(user): Add fields here
+  title: "欠费通知"
+  message: "尊敬 cv46sqlr: \n\t您的账户已欠费 4元，无法正常创建资源，请在 2023/12/13 12:00 之前及时充值，若超时资源将被冻结，无法正常使用。\n 如已充值，请忽略该提醒。\n 感谢您对环界云的支持！"
+  timestamp: 1678761116
+  from: "欠费系统"
