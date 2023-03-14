@@ -19,13 +19,10 @@ Users can easily add oauth2 providers to login.
     sealos run labring/helm:v3.8.2 
     sealos run labring/openebs:v1.9.0
     ```
-3. Apply auth's requirement: `casdoor.yaml`
+3. Edit configmap: `deploy/manifests/configmap.yaml`, read this: https://casdoor.org/docs/deployment/data-initialization
+4. Apply auth and casdoor's service `deploy/manifests/deploy.yaml`, *must change 3rd login types and keys in configmap.yaml.*
     ```shell
-    kubectl apply -f pkg/auth/conf/casdoor.yaml
-    ```
-4. Apply auth's service `auth.yaml`, *must change 3rd login types and keys.*
-    ```shell
-    kubectl apply -f deploy/manifests/auth.yaml
+    kubectl apply -f deploy/manifests/deploy.yaml
     ```
 5. Open browser head to `http://ip*:30007/login`
 
@@ -64,11 +61,9 @@ sequenceDiagram
 ## Development
 
 1. `service/auth` is the entry point for api service, any routes and config check should be done here.
-2. `pkg/auth` is the base implementing of auth service.
+2. `service/auth/pkg` is the base implementing of auth service.
     1. It's duty to start all auth service's internal needed backend, like `mysql`,`openebs`,`casdoor` etc.
     2. It should provide sdk access to auth service and manage all information up to date, not aware of api calls and/or sdk calls.
-
-Since the `go.work` workspace structure, currently we cannot build docker under `service/auth` dir, so we build binary using makefile and then package it to docker image.
 
 ### Troubleshooting
 

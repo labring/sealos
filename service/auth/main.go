@@ -17,11 +17,11 @@ package main
 import (
 	"flag"
 
-	"github.com/labring/sealos/pkg/auth"
 	"github.com/labring/sealos/pkg/utils/httpserver"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/service/auth/api"
 	"github.com/labring/sealos/service/auth/conf"
+	"github.com/labring/sealos/service/auth/pkg"
 )
 
 var configPath string
@@ -36,7 +36,7 @@ func main() {
 	}
 	logger.Info("Loaded configuration completed")
 
-	if err := auth.Init(conf.GlobalConfig.Config); err != nil {
+	if err := pkg.Init(conf.GlobalConfig.Config); err != nil {
 		logger.Fatal("Init auth pkg failed: %s", err)
 	}
 

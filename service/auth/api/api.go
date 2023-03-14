@@ -18,8 +18,8 @@ import (
 	"errors"
 
 	"github.com/emicklei/go-restful/v3"
+	"github.com/labring/sealos/service/auth/pkg"
 
-	"github.com/labring/sealos/pkg/auth"
 	hs "github.com/labring/sealos/pkg/utils/httpserver"
 )
 
@@ -39,7 +39,7 @@ func RegisterRouter(webService *restful.WebService) {
 }
 
 func handlerLogin(_ *restful.Request, response *restful.Response) {
-	redirectURL, err := auth.GetLoginRedirect()
+	redirectURL, err := pkg.GetLoginRedirect()
 	if err != nil {
 		_ = hs.RespError(response, err)
 		return
@@ -58,7 +58,7 @@ func handlerToken(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	oauthToken, err := auth.GetOAuthToken(cs.State, cs.Code)
+	oauthToken, err := pkg.GetOAuthToken(cs.State, cs.Code)
 	if err != nil {
 		_ = hs.RespError(response, err)
 		return
@@ -73,7 +73,7 @@ func handlerUserInfo(request *restful.Request, response *restful.Response) {
 		_ = hs.RespError(response, errors.New("access token is empty"))
 		return
 	}
-	userInfo, err := auth.GetUserInfo(accessToken)
+	userInfo, err := pkg.GetUserInfo(accessToken)
 	if err != nil {
 		_ = hs.RespError(response, err)
 		return
@@ -88,7 +88,7 @@ func handlerKubeConfig(request *restful.Request, response *restful.Response) {
 		_ = hs.RespError(response, errors.New("access token is empty"))
 		return
 	}
-	kubeConfig, err := auth.GetKubeConfig(accessToken)
+	kubeConfig, err := pkg.GetKubeConfig(accessToken)
 	if err != nil {
 		_ = hs.RespError(response, err)
 		return
