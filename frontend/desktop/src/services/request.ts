@@ -62,7 +62,7 @@ request.interceptors.request.use(
 
     let _headers: RawAxiosRequestHeaders = config.headers || {};
     const session = useSessionStore.getState().session;
-    _headers['Authorization'] = JSON.stringify(session?.kubeconfig) || '';
+    _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
 
     //获取token，并将其添加至请求头中
     // const session = useSessionStore.getState().session;
