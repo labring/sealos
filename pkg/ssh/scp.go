@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/system"
+
 	"github.com/pkg/sftp"
 	"github.com/schollz/progressbar/v3"
 	"golang.org/x/crypto/ssh"
@@ -154,7 +156,7 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 			}
 			return exists
 		}
-		if !isEnvTrue("DO_NOT_CHECKSUM") && fn(host, dest) {
+		if isCheckFileMD5() && fn(host, dest) {
 			rfp, _ := client.Stat(dest)
 			if lfp.Size() == rfp.Size() && hash.FileDigest(src) == c.RemoteSha256Sum(host, dest) {
 				logger.Debug("remote dst %s already exists and is the latest version, skip copying process", dest)
@@ -178,7 +180,7 @@ func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progre
 		if _, err = io.Copy(dstfp, lf); err != nil {
 			return fmt.Errorf("failed to Copy: %v", err)
 		}
-		if !isEnvTrue("DO_NOT_CHECKSUM") {
+		if isCheckFileMD5() {
 			dh := c.RemoteSha256Sum(host, dest)
 			if dh == "" {
 				// when ssh connection failed, remote sha256 is default to "", so ignore it.
@@ -205,10 +207,10 @@ func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
 	return true, nil
 }
 
-func isEnvTrue(k string) bool {
-	if v, ok := os.LookupEnv(k); ok {
+func isCheckFileMD5() bool {
+	if v, err := system.Get(system.ScpCheckSumConfigKey); err == nil {
 		boolVal, _ := strconv.ParseBool(v)
 		return boolVal
 	}
-	return false
+	return true
 }

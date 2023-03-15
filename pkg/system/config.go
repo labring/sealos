@@ -51,29 +51,36 @@ type ConfigOption struct {
 
 var configOptions = []ConfigOption{
 	{
-		Key:           "prompt",
+		Key:           PromptConfigKey,
 		Description:   "toggle interactive prompting in the terminal.",
 		DefaultValue:  "enabled",
 		OSEnv:         "SEALOS_PROMPT",
 		AllowedValues: []string{"enabled", "disabled"},
 	},
 	{
-		Key:          "sealos_runtime_root",
+		Key:          RuntimeRootConfigKey,
 		OSEnv:        "SEALOS_RUNTIME_ROOT",
 		Description:  "root directory for sealos actions.",
 		DefaultValue: path.Join(homedir.Get(), ".sealos"),
 	},
 	{
-		Key:          "sealos_data_root",
+		Key:          DataRootConfigKey,
 		Description:  "cluster root directory for remote.",
 		DefaultValue: "/var/lib/sealos",
 		OSEnv:        "SEALOS_DATA_ROOT",
 	},
 	{
-		Key:          "buildah_format",
+		Key:          BuildahFormatConfigKey,
 		Description:  "`format` of the image manifest and metadata.",
 		DefaultValue: buildah.OCI,
 		OSEnv:        "BUILDAH_FORMAT",
+	},
+	{
+		Key:           ScpCheckSumConfigKey,
+		Description:   "whether to check whether the md5sum value is consistent during the copy process",
+		DefaultValue:  "yes",
+		OSEnv:         "SEALOS_SCP_CHECKSUM",
+		AllowedValues: []string{"true", "false"},
 	},
 }
 
@@ -82,6 +89,7 @@ const (
 	RuntimeRootConfigKey   = "sealos_runtime_root"
 	DataRootConfigKey      = "sealos_data_root"
 	BuildahFormatConfigKey = "buildah_format"
+	ScpCheckSumConfigKey   = "scp_check_sum"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (string, error) {
