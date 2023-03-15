@@ -21,7 +21,6 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
-// clusterClient is it necessary to use Mutex lock?
 type clusterClient struct {
 	cluster  *v1beta1.Cluster
 	isStdout bool
