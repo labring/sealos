@@ -63,6 +63,7 @@ spec:
                   arch:
                     type: string
                   creatTime:
+                    default: "1970-01-01T00:00:00Z"
                     format: date-time
                     type: string
                   description:

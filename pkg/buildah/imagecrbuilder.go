@@ -242,7 +242,7 @@ func (icb *ImageCRBuilder) GetInspectInfo() error {
 	icb.imageCR.Spec.DetailInfo.ID = containerInfo.FromImageID
 	icb.imageCR.Spec.DetailInfo.Arch = image.Architecture
 	icb.imageCR.Spec.DetailInfo.Size = sz
-	icb.imageCR.Spec.DetailInfo.CTime = metav1.Time{Time: *image.Created}
+	icb.imageCR.Spec.DetailInfo.CreateTime = metav1.Time{Time: *image.Created}
 	return nil
 }
 

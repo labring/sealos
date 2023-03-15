@@ -56,6 +56,7 @@ spec:
               latestTag:
                 properties:
                   creatTime:
+                    default: "1970-01-01T00:00:00Z"
                     format: date-time
                     type: string
                   metaName:
@@ -80,6 +81,7 @@ spec:
                 items:
                   properties:
                     creatTime:
+                      default: "1970-01-01T00:00:00Z"
                       format: date-time
                       type: string
                     metaName:
