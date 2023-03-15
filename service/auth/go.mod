@@ -3,12 +3,15 @@ module github.com/labring/sealos/service/auth
 go 1.20
 
 require (
+	github.com/casdoor/casdoor-go-sdk v0.4.1
 	github.com/emicklei/go-restful/v3 v3.9.0
+	github.com/jaevor/go-nanoid v1.3.0
+	github.com/labring/sealos v0.0.0
+	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783
 	k8s.io/apimachinery v0.25.6
 )
 
 require (
-	github.com/casdoor/casdoor-go-sdk v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -20,7 +23,6 @@ require (
 	github.com/google/gnostic v0.6.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
-	github.com/jaevor/go-nanoid v1.3.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -33,7 +35,6 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
-	golang.org/x/oauth2 v0.0.0-20221014153046-6fdb5e3db783 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
@@ -56,7 +57,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-require github.com/labring/sealos v0.0.0-00010101000000-000000000000
 
 replace github.com/labring/sealos => ../../
