@@ -19,6 +19,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -29,9 +30,10 @@ import (
 )
 
 const (
-	saPrefix            = "system:serviceaccount"
-	mastersGroup        = "system:masters"
-	kubeSystemNamespace = "kube-system"
+	saPrefix             = "system:serviceaccount"
+	mastersGroup         = "system:masters"
+	kubeSystemNamespace  = "kube-system"
+	defaultUserNamespace = "user-system"
 )
 
 var logger = logf.Log.WithName("debt-resource")
@@ -51,9 +53,23 @@ type DebtValidate struct {
 	Client client.Client
 }
 
+func getUserNamespace() string {
+	userNamespace := os.Getenv("USER_NAMESPACE")
+	if userNamespace == "" {
+		return defaultUserNamespace
+	}
+	return userNamespace
+}
+
+var kubeSystemGroup, userSaGroup string
+
+func init() {
+	kubeSystemGroup = fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
+	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
+}
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
 	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name)
-	kubeSystemGroup := fmt.Sprintf("%ss:%s", saPrefix, kubeSystemNamespace)
+
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
@@ -63,6 +79,9 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		case kubeSystemGroup:
 			logger.Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
+		case userSaGroup:
+			logger.Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
+			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:
 			// continue to check other groups
 			continue
@@ -70,10 +89,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 	}
 
 	// check is user ns
-	if len(req.Namespace) > 3 && req.Namespace[:3] == "ns-" {
-		return checkOption(ctx, logger, d.Client, req.Namespace)
-	}
-	logger.Info("pass for NameSpace is not user ns", "req.Namespace", req.Namespace)
+	logger.Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
 }
 
