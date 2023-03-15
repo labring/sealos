@@ -9,6 +9,7 @@ import {
 } from '@fluentui/react-components';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { AppProps } from 'next/app';
+import { ChakraProvider } from '@chakra-ui/react';
 import '../styles/globals.scss';
 
 const queryClient = new QueryClient({
@@ -35,7 +36,9 @@ function APP({ Component, pageProps, renderer }: EnhancedAppProps) {
       <SSRProvider>
         <FluentProvider theme={customLightTheme}>
           <QueryClientProvider client={queryClient}>
-            <Component {...pageProps} />
+            <ChakraProvider>
+              <Component {...pageProps} />
+            </ChakraProvider>
           </QueryClientProvider>
         </FluentProvider>
       </SSRProvider>
