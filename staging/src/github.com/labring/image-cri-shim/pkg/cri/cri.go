@@ -63,6 +63,27 @@ type ContainerdRuntime struct {
 	config    string
 }
 
+// CRIORuntime is a struct that interfaces with the CRI
+//
+//nolint:all
+type CRIORuntime struct {
+	ContainerdRuntime
+}
+
+func (runtime *CRIORuntime) CGroupDriver() (string, error) {
+	if err := runtime.IsRunning(); err != nil {
+		return "", err
+	}
+	var outBytes []byte
+	var err error
+	driverCmd := fmt.Sprintf("crio-status -s %s  info | grep \"cgroup driver\" | awk '{print $3}'", runtime.criSocket)
+	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
+	if outBytes, err = runtime.exec.Command("bash", "-c", driverCmd).CombinedOutput(); err != nil {
+		return DefaultCgroupDriver, fmt.Errorf("container cgroup driver: output: %s, error: %w", string(outBytes), err)
+	}
+	return strings.TrimSpace(string(outBytes)), nil
+}
+
 // DockerRuntime is a struct that interfaces with the Docker daemon
 type DockerRuntime struct {
 	exec utilsexec.Interface
@@ -70,27 +91,36 @@ type DockerRuntime struct {
 
 // NewContainerRuntime sets up and returns a ContainerRuntime struct
 func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config string) (ContainerRuntime, error) {
-	var toolName string
+	var toolNames string
 	var runtime ContainerRuntime
 
 	if criSocket != CRISocketDocker {
-		toolName = "crictl"
-		// !!! temporary work around crictl warning:
-		// Using "/var/run/crio/crio.sock" as endpoint is deprecated,
-		// please consider using full url format "unix:///var/run/crio/crio.sock"
-		if filepath.IsAbs(criSocket) && goruntime.GOOS != "windows" {
-			criSocket = "unix://" + criSocket
+		toolNames = "crictl"
+		if criSocket == CRISocketCRIO {
+			toolNames = "crictl,crio-status"
+			runtime = &CRIORuntime{
+				ContainerdRuntime{execer, criSocket, config},
+			}
+		} else {
+			// !!! temporary work around crictl warning:
+			// Using "/var/run/crio/crio.sock" as endpoint is deprecated,
+			// please consider using full url format "unix:///var/run/crio/crio.sock"
+			if filepath.IsAbs(criSocket) && goruntime.GOOS != "windows" {
+				criSocket = "unix://" + criSocket
+			}
+			runtime = &ContainerdRuntime{
+				execer, criSocket, config,
+			}
 		}
-		runtime = &ContainerdRuntime{execer, criSocket, config}
 	} else {
-		toolName = "docker"
+		toolNames = "docker"
 		runtime = &DockerRuntime{execer}
 	}
-
-	if _, err := execer.LookPath(toolName); err != nil {
-		return nil, fmt.Errorf("%s is required for container runtime: %w", toolName, err)
+	for _, toolName := range strings.Split(toolNames, ",") {
+		if _, err := execer.LookPath(toolName); err != nil {
+			return nil, fmt.Errorf("%s is required for container runtime: %w", toolName, err)
+		}
 	}
-
 	return runtime, nil
 }
 

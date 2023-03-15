@@ -64,7 +64,10 @@ func newMergeCommand() *cobra.Command {
 			flagSetters := []FlagSetter{}
 			if flagChanged(cmd, "platform") {
 				platformFlags := getPlatformFromFlags(cmd)
-				oss, arch, variant, err := parse.Platform(platformFlags)
+				if len(platformFlags) != 1 {
+					return fmt.Errorf("only one platform is allowed")
+				}
+				oss, arch, variant, err := parse.Platform(platformFlags[0])
 				if err != nil {
 					return err
 				}

@@ -131,12 +131,13 @@ func setDefaultSaveImageFlag(c *cobra.Command) error {
 	return setDefaultFlagIfNotChanged(c, "save-image", "false")
 }
 
-func getPlatformFromFlags(c *cobra.Command) string {
-	platform, err := c.Flags().GetString("platform")
+func getPlatformFromFlags(c *cobra.Command) []string {
+	platforms, err := c.Flags().GetStringSlice("platform")
 	if err != nil {
-		return ""
+		logger.Error("failed to get platform from flags: %v", err)
+		return []string{}
 	}
-	return platform
+	return platforms
 }
 
 func getTagsFromFlags(c *cobra.Command) []string {
