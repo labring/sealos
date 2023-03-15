@@ -18,12 +18,9 @@ package main
 
 import (
 	"flag"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
-
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
-
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 
 	"github.com/labring/sealos/controllers/metering/controllers"
 
@@ -51,9 +48,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-	utilruntime.Must(infrav1.AddToScheme(scheme))
 	utilruntime.Must(meteringv1.AddToScheme(scheme))
-	utilruntime.Must(userv1.AddToScheme(scheme))
+	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
 	utilruntime.Must(accountv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
@@ -94,6 +90,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Metering")
 		os.Exit(1)
 	}
+
 	if err = (&controllers.PodResourceReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

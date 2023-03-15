@@ -2,13 +2,13 @@ package api
 
 import (
 	"fmt"
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 	"time"
 )
 
 const ResourceYaml = `
-apiVersion: metering.sealos.io/v1
+apiVersion: metering.common.sealos.io/v1
 kind: Resource
 metadata:
   name: ${name}
@@ -19,16 +19,16 @@ spec:
     Used: 1
 `
 
-func GetResource(namespace string, name string) (*meteringv1.Resource, error) {
-	gvr := meteringv1.GroupVersion.WithResource("resources")
-	var resource meteringv1.Resource
+func GetResource(namespace string, name string) (*meteringcommonv1.Resource, error) {
+	gvr := meteringcommonv1.GroupVersion.WithResource("resources")
+	var resource meteringcommonv1.Resource
 	if err := baseapi.GetObject(namespace, name, gvr, &resource); err != nil {
 		return nil, err
 	}
 	return &resource, nil
 }
 
-func EnsureResourceCreate(namespace string, name string, times int) (*meteringv1.Resource, error) {
+func EnsureResourceCreate(namespace string, name string, times int) (*meteringcommonv1.Resource, error) {
 	time.Sleep(time.Second)
 	for i := 1; i <= times; i++ {
 		resource, err := GetResource(namespace, name)

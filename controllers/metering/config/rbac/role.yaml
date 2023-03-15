@@ -54,19 +54,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - infra.sealos.io
-  resources:
-  - infras
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - metering.sealos.io
+  - metering.common.sealos.io
   resources:
   - extensionresourceprices
   verbs:
@@ -77,6 +65,26 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - resources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - resources/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - metering.sealos.io
   resources:
@@ -125,26 +133,6 @@ rules:
   - metering.sealos.io
   resources:
   - podresources/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - resources
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - metering.sealos.io
-  resources:
-  - resources/status
   verbs:
   - get
   - patch

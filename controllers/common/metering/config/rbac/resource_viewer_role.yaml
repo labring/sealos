@@ -1,0 +1,27 @@
+# permissions for end users to view resources.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: resource-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: metering
+    app.kubernetes.io/part-of: metering
+    app.kubernetes.io/managed-by: kustomize
+  name: resource-viewer-role
+rules:
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - resources
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - resources/status
+  verbs:
+  - get

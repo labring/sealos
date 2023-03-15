@@ -1,9 +1,0 @@
-apiVersion: metering.sealos.io/v1
-kind: Resource
-metadata:
-  name: resource-sample
-spec:
-  resources:
-    resourceName: "cpu"
-    Used: 1
-

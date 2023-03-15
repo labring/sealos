@@ -17,17 +17,21 @@ limitations under the License.
 package v1
 
 import (
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type TimeIntervalType string
+type Status string
 
 const (
-	MINUTE TimeIntervalType = "Minute"
-	HOUR   TimeIntervalType = "Hour"
-	DAY    TimeIntervalType = "Day"
+	MINUTE   TimeIntervalType = "Minute"
+	HOUR     TimeIntervalType = "Hour"
+	DAY      TimeIntervalType = "Day"
+	Complete Status           = "complete"
+	Create   Status           = "create"
 )
 
 /*
@@ -48,8 +52,8 @@ type MeteringSpec struct {
 	Owner     string `json:"owner"`
 
 	//timeInterval unit is minutes
-	TimeInterval int                                          `json:"timeInterval,omitempty"`
-	Resources    map[corev1.ResourceName]ResourcePriceAndUsed `json:"resources,omitempty"`
+	TimeInterval int                                                   `json:"timeInterval,omitempty"`
+	Resources    map[corev1.ResourceName]meteringcommonv1.ResourceInfo `json:"resources,omitempty"`
 }
 
 // MeteringStatus defines the observed state of Metering
@@ -61,20 +65,9 @@ type MeteringStatus struct {
 	SeqID            int64         `json:"seqID,omitempty"`
 }
 
-type ResourcePrice struct {
-	Unit     *resource.Quantity `json:"unit"`
-	Price    int64              `json:"price"` // 100 = 1¥
-	Describe string             `json:"describe,omitempty"`
-}
-
-type ResourcePriceAndUsed struct {
-	ResourcePrice `json:",inline"`
-	Used          *resource.Quantity `json:"used,omitempty"`
-}
-
 type ResourceMsg struct {
 	ResourceName corev1.ResourceName
-	Amount       float64
+	Amount       int64
 	Used         *resource.Quantity
 	Unit         *resource.Quantity
 }
