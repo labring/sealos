@@ -16,6 +16,7 @@ package ssh
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -26,6 +27,7 @@ type clusterClient struct {
 	isStdout bool
 	configs  map[string]*Option
 	cache    map[*Option]Interface
+	mutex    sync.RWMutex
 }
 
 func overSSHConfig(original, override *v1beta1.SSH) {
@@ -52,7 +54,10 @@ func overSSHConfig(original, override *v1beta1.SSH) {
 }
 
 func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
-	if v, ok := cc.configs[host]; ok {
+	cc.mutex.RLock()
+	v, ok := cc.configs[host]
+	cc.mutex.RUnlock()
+	if ok {
 		return v, nil
 	}
 	sshConfig := cc.cluster.Spec.SSH.DeepCopy()
@@ -65,7 +70,9 @@ func (cc *clusterClient) getSSHOptionForHost(host string) (*Option, error) {
 		}
 	}
 	opt := newOptionFromSSH(sshConfig, cc.isStdout)
+	cc.mutex.Lock()
 	cc.configs[host] = opt
+	cc.mutex.Unlock()
 	return opt, nil
 }
 
@@ -74,14 +81,18 @@ func (cc *clusterClient) getClientForHost(host string) (Interface, error) {
 	if err != nil {
 		return nil, err
 	}
+	cc.mutex.RLock()
 	client := cc.cache[sshConfig]
+	cc.mutex.RUnlock()
 	if client == nil {
 		var err error
 		client, err = newFromOptions(sshConfig)
 		if err != nil {
 			return nil, err
 		}
+		cc.mutex.Lock()
 		cc.cache[sshConfig] = client
+		cc.mutex.Unlock()
 	}
 	return client, nil
 }
