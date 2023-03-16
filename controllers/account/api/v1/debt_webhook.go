@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/go-logr/logr"
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
@@ -68,8 +69,7 @@ func init() {
 	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name)
-
+	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
@@ -81,6 +81,9 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			return admission.ValidationResponse(true, "")
 		case userSaGroup:
 			logger.Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
+			if isWriteList(req) {
+				return admission.ValidationResponse(true, "")
+			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
 		default:
 			// continue to check other groups
@@ -91,6 +94,29 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 	// check is user ns
 	logger.Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
+}
+
+func getGVRK(req admission.Request) string {
+	if req.Kind.Group == "" {
+		return fmt.Sprintf("%s.%s/%s", req.Resource.Resource, req.Kind.Kind, req.Kind.Version)
+	}
+	return fmt.Sprintf("%s.%s.%s/%s", req.Resource.Resource, req.Kind.Kind, req.Kind.Group, req.Kind.Version)
+}
+
+func isWriteList(req admission.Request) bool {
+	whitelists := os.Getenv("WHITELIST")
+	if whitelists == "" {
+		return false
+	}
+	writelist := strings.Split(whitelists, ",")
+	for _, w := range writelist {
+		if getGVRK(req) == w {
+			logger.Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
+			return true
+		}
+	}
+
+	return false
 }
 
 func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsName string) admission.Response {

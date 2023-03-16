@@ -649,6 +649,8 @@ spec:
           value: user-system
         - name: NEW_ACCOUNT_AMOUNT
           value: "500"
+        - name: WHITELIST
+          value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1
         envFrom:
         - secretRef:
             name: payment-secret
