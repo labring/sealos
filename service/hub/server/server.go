@@ -222,6 +222,9 @@ func (as *AuthServer) authorizeScope(client kubernetes.Client, ai *api.AuthReque
 func updateDownloadCount(client kubernetes.Client, ai *api.AuthRequestInfo) error {
 	// get repo cr from apiserver
 	repoName := imagehubv1.RepoName(ai.Name)
+	if !repoName.IsLegal() {
+		return fmt.Errorf("repoName %s is illegal", repoName)
+	}
 	repoResource := client.KubernetesDynamic().Resource(schema.GroupVersionResource{
 		Group:    "imagehub.sealos.io",
 		Version:  "v1",
