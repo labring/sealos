@@ -71,8 +71,6 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
-	shim := bootstrap.NewImageShimHelper(k.getSSHInterface(), k.getMaster0IPAndPort())
-	deleteShimCmd := shim.DeleteCMD(k.getContentData().RootFSPath())
 	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(k.Cluster.Name))
 	if err := k.sshCmdAsync(node, resetCmd); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)
@@ -82,9 +80,6 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	}
 	if err := k.execIPVSClean(node); err != nil {
 		logger.Error("failed to clean node route and ipvs failed, %v", err)
-	}
-	if err := k.sshCmdAsync(node, deleteShimCmd); err != nil {
-		logger.Error("failed to clean node, exec command %s failed, %v", deleteShimCmd, err)
 	}
 	err := k.execClean(node)
 	if err != nil {
