@@ -2,7 +2,7 @@ import { Box, Flex, Text } from '@chakra-ui/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import Iconfont from 'components/iconfont';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import request from 'services/request';
 import { formatTime } from 'utils/format';
 import styles from './index.module.scss';
@@ -28,29 +28,37 @@ type NotificationItem = {
 type TNotification = {
   isShow: boolean;
   onClose: () => void;
+  onAmount: (amount: number) => void;
 };
 
 export default function Notification(props: TNotification) {
-  const { isShow, onClose } = props;
+  const { isShow, onClose, onAmount } = props;
   const [activeTab, setActiveTab] = useState<'read' | 'unread'>('unread');
   const [activePage, setActivePage] = useState<'index' | 'detail'>('index');
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
+
   const { data, refetch } = useQuery(
     ['getAwsAll'],
     async () => await request('/api/notification/list')
   );
+
+  const unread_notes = useMemo(() => {
+    return data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead);
+  }, [data?.data?.items]);
+
+  const read_notes = useMemo(() => {
+    return data?.data?.items?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead);
+  }, [data?.data?.items]);
+
+  useEffect(() => {
+    onAmount(unread_notes?.length || 0);
+  }, [onAmount, unread_notes?.length]);
 
   const readMsgMutation = useMutation({
     mutationFn: (name: string[]) => request.post('/api/notification/read', { name }),
     onSettled: () => refetch()
   });
 
-  const unread_notes = useMemo(() => {
-    return data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead);
-  }, [data?.data?.items]);
-  const read_notes = useMemo(() => {
-    return data?.data?.items?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead);
-  }, [data?.data?.items]);
   const notifications = activeTab === 'unread' ? unread_notes : read_notes;
 
   const goMsgDetail = (item: NotificationItem) => {
@@ -98,7 +106,7 @@ export default function Notification(props: TNotification) {
                 className={clsx(activeTab === 'unread' && styles.active, styles.tab)}
                 onClick={() => setActiveTab('unread')}
               >
-                未读 ({unread_notes?.length})
+                未读 ({unread_notes?.length || 0})
               </div>
               <div
                 className={clsx(activeTab === 'read' && styles.active, styles.tab, 'ml-4')}

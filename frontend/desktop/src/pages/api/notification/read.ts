@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     ];
-    // const removePatch = [{ op: 'remove', path: '/metadata/labels/isRead' }];
+    // const patch = [{ op: 'remove', path: '/metadata/labels/isRead' }]; // dev
 
     let result = [];
     for (const n of name) {

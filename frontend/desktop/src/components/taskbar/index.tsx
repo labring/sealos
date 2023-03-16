@@ -13,6 +13,7 @@ const Taskbar = () => {
   const { openedApps, currentApp, switchApp, toggleStartMenu } = useAppStore((state) => state);
   const { localSession } = useLocalSession();
   const [showNotification, setShowNotification] = useState(false);
+  const [notificationAmount, setNotificationAmount] = useState(0);
 
   return (
     <div className={styles.taskbar}>
@@ -53,17 +54,25 @@ const Taskbar = () => {
       </div>
 
       <div className={styles.taskright}>
-        <div className="flex items-center" onClick={() => setShowNotification(!showNotification)}>
+        <div
+          className={clsx('flex items-center relative cursor-pointer')}
+          onClick={() => setShowNotification(!showNotification)}
+        >
           <Iconfont
             iconName="icon-feNoticeActive2"
             color={showNotification ? '#436790' : '#ffffff'}
             width={20}
             height={20}
           />
+          <div className={styles.notification} data-show={showNotification}>
+            {notificationAmount || ''}
+          </div>
         </div>
-        {showNotification && (
-          <Notification isShow={showNotification} onClose={() => setShowNotification(false)} />
-        )}
+        <Notification
+          isShow={showNotification}
+          onClose={() => setShowNotification(false)}
+          onAmount={(amount) => setNotificationAmount(amount)}
+        />
 
         <TimeZone />
 
