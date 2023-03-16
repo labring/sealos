@@ -104,8 +104,8 @@ func (s *SSH) CmdAsync(host string, cmds ...string) error {
 }
 
 func (s *SSH) Cmd(host, cmd string) ([]byte, error) {
+	logger.Debug("host %s , command %s exec", host, cmd)
 	if s.isLocalAction(host) {
-		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
 		return []byte(d), err
 	}
