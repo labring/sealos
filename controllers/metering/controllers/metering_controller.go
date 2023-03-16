@@ -28,7 +28,6 @@ import (
 
 	"k8s.io/client-go/util/retry"
 
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-logr/logr"
@@ -140,7 +139,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if overTimeInterval(metering) {
-		//r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
+		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
 		totalAccount, resourceMsgs, err := r.CalculateCost(ctx, &metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
@@ -186,9 +185,8 @@ func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meterin
 
 func (r *MeteringReconcile) clearResourceUsed(ctx context.Context, metering *meteringv1.Metering) error {
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, metering, func() error {
-		for _, v := range metering.Spec.Resources {
-			used := resource.MustParse(v.Used.String())
-			v.Used.Sub(used)
+		for k := range metering.Spec.Resources {
+			delete(metering.Spec.Resources, k)
 		}
 		return nil
 	}); err != nil {

@@ -20,12 +20,19 @@ spec:
   resources:
     cpu:
       unit: "1"
-      price: 1
+      price: 660
       describe: "cost per cpu per hour（price:100 = 1¥）"
-
+    memory:
+      unit: "1G"
+      price:  660
+      describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
+    ephemeral-storage:
+      unit: "1G"
+      price:  100
+      describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
     storage:
       unit: "1G"
-      price:  1
+      price:  100
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
 
 `
@@ -76,13 +83,13 @@ spec:
       image: nginx:1.14.2
       resources:
         requests:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 50m
+          memory: 100Mi
           ephemeral-storage: 1Gi
 
         limits:
-          cpu: 1000m
-          memory: 1Gi
+          cpu: 100m
+          memory: 100Mi
           ephemeral-storage: 1Gi
       ports:
         - containerPort: 80

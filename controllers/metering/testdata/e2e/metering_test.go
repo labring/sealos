@@ -162,8 +162,36 @@ func TestMetering(t *testing.T) {
 
 			defer t.Log(fmt.Sprintf("account:%v", account))
 		})
+	})
+	t.Cleanup(clear)
+
+	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
+		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
+		time.Sleep(time.Second * 10)
+		baseapi.EnsureNamespace(TestNamespace)
+		time.Sleep(time.Second * 4)
+		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
+		if err != nil {
+			t.Fatalf("fail get metering: %v", err)
+		}
+		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
+
+		for i := 0; i < 10; i++ {
+			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
+		}
+
+		time.Sleep(time.Second * 10)
+		for i := 0; i < 3; i++ {
+			time.Sleep(time.Minute)
+			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
+			if err != nil {
+				t.Fatalf("fail get account: %v", err)
+			}
+			t.Log(account.Status)
+		}
 
 	})
+
 	t.Cleanup(clear)
 }
 
@@ -178,11 +206,16 @@ func clear() {
 	if err != nil {
 		log.Println(err)
 	}
-	execout, err = baseapi.Exec("kubectl get accountbalance -A")
+	execout, err = baseapi.Exec("kubectl get accountbalance -A -oyaml")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
 	}
+	err = api.DeletePod(TestNamespace, PodName)
+	if err != nil {
+		log.Println(err)
+	}
+
 	err = baseapi.DeleteNamespace(TestNamespace)
 	if err != nil {
 		log.Println(err)
@@ -203,11 +236,6 @@ func clear() {
 		log.Println(err)
 	}
 
-	err = api.DeletePod(TestNamespace, PodName)
-	if err != nil {
-		log.Println(err)
-	}
-
 	if err = api.DeleteExtensionResourcePrice(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix); err != nil {
 		log.Println(err)
 	}
@@ -215,14 +243,16 @@ func clear() {
 	if err = baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
 		log.Println(err)
 	}
-
-	for i := 0; i <= 5; i++ {
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, int64(i)), api.ResourceYaml); err != nil {
-			log.Println(err)
-		}
-
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, DefaultOwner, i), api.AccountBalanceYaml); err != nil {
-			log.Println(err)
-		}
+	execout, err = baseapi.Exec("kubectl get resource -A| awk '{print $2}' | xargs kubectl delete resource -n metering-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
 	}
+
+	execout, err = baseapi.Exec("kubectl get accountbalance -A | awk '{print $2}' | xargs kubectl delete accountbalance -n metering-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+
 }
