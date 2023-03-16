@@ -25,7 +25,7 @@ gen.deepcopy: tools.verify.deepcopy-gen
 	@$(TOOLS_DIR)/deepcopy-gen --input-dirs="$(INPUT_DIRS)" \
 	-O zz_generated.deepcopy \
 	--go-header-file "$(BOILERPLATE)" \
-	--output-base "${GOPATH}/src"
+	--output-base "../../../"
 
 .PHONY: gen.docs
 gen.docs: go.build

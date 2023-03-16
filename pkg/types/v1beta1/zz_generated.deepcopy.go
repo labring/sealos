@@ -260,6 +260,11 @@ func (in *Host) DeepCopyInto(out *Host) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.SSH != nil {
+		in, out := &in.SSH, &out.SSH
+		*out = new(SSH)
+		**out = **in
+	}
 	return
 }
 
