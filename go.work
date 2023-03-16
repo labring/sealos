@@ -5,6 +5,7 @@ use (
 	./controllers/account
 	./controllers/app
 	./controllers/cluster
+	./controllers/db/bytebase
 	./controllers/imagehub
 	./controllers/infra
 	./controllers/metering
