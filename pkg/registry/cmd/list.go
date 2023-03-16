@@ -47,7 +47,7 @@ func newRegistryListImageCmd() *cobra.Command {
   %[1]s registry images --filter tag=*1.1*
   %[1]s registry images --filter tag=*sec
   %[1]s registry images --filter name=public,tag=v1.1.1
-  %[1]s registry images --filter tag=<none>`, rootCmd.CommandPath()),
+  %[1]s registry images --filter tag=\<none\>`, rootCmd.CommandPath()),
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			is.ListImages(flagsResults.registryName, flagsResults.filter, flagsResults.json)
