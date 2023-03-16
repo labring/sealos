@@ -131,7 +131,6 @@ func runParallel(hosts []string, fn func(string) error) error {
 }
 
 type defaultChecker struct {
-	is *ImageShim
 }
 
 func (c *defaultChecker) String() string {
@@ -142,9 +141,6 @@ func (c *defaultChecker) Filter(_ Context, _ string) bool {
 }
 
 func (c *defaultChecker) Apply(ctx Context, host string) error {
-	if c.is == nil {
-		c.is = NewImageShimHelper(ctx.GetExecer(), ctx.GetCluster().GetRegistryIP())
-	}
 	cmds := []string{ctx.GetBash().CheckBash(host)}
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
