@@ -65,7 +65,6 @@ Some Screen Shots of `Sealos Desktop`:
 - ☸️ Manage clusters lifecycle
   - [x] Quickly install HA Kubernetes clusters.
   - [x] Add / remove nodes, Clean the cluster.
-  - [ ] Backup and auto recovering, etc.
 - 💻 Download and deploy OCI-compatible distributed applications.
   - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
 - 🛠️ Customize your own distributed applications.
@@ -74,7 +73,7 @@ Some Screen Shots of `Sealos Desktop`:
   - [x] Integrate various applications to construct a personalized Cloud platform.
 - ☁️ Sealos Cloud
   - [x] Multi-tenant management.
-  - [ ] Application management.
+  - [x] Application management.
   - [x] Multi-cloud cluster management, deploy Kubernetes and custom applications on any cloud platform.
   - [x] Run any distributed applications.
   - [x] Cloud terminal.
@@ -157,7 +156,6 @@ Have a look through [existing Issues](https://github.com/labring/sealos/issues?q
 - [Bug Verify Example](https://github.com/labring-actions/bug-verify)
 - [Application Image](https://github.com/labring-actions/cluster-image)
 - [Rootfs Image](https://github.com/labring-actions/runtime)
-- [Sealos 3.0(older version)](https://github.com/labring/sealos/tree/release-v3.3.9#readme) For older version users. Note that sealos 4.0 includes significant improvements, so please upgrade ASAP.
 - [Buildah](https://github.com/containers/buildah) The functionalities of Buildah are extensively utilized in Sealos 4.0 to ensure that cluster images are compatible with OCI standard.
 
 <!-- ## License -->

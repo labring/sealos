@@ -1,156 +1,61 @@
 # 介绍
 
-<a href="https://trackgit.com">
-  <img src="https://us-central1-trackgit-analytics.cloudfunctions.net/token/ping/kexrkhvqjlzkdiap4zke" alt="trackgit-views" />
-</a>
+随着容器技术的发展，绝大多数企业开始意识到基于云原生架构的业务具有更强的鲁棒性，更低的成本，更高的效率。
+现在企业在拥抱云原生时要么直接使用公有云提供的相关的云产品，如 kubernetes 服务，函数计算等。
+要么通过各种开源方式来组装和二次开发一朵云来满足企业用云要求。
 
-<div align="center">
-  <p>
-    <b>让云原生简单普及</b>
-  </p>
-  <div>
+Sealos 给企业提供了一种选择，让企业和开发者不论是公有云还是私有云都只需要安装一个云操作系统即可。 
+最终可以很方便的在操作系统上安全稳定的运行各种应用并解决应用需要的各种依赖，如高可用的数据库 对象存储 消息队列等。
 
-[![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/labring/sealos)
-[![Open in Dev Container](https://img.shields.io/static/v1?label=Dev%20Container&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/labring/sealos)
-[![Build Status](https://github.com/labring/sealos/actions/workflows/release.yml/badge.svg)](https://github.com/labring/sealos/actions)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_shield)
-[![codecov](https://codecov.io/gh/labring/sealos/branch/main/graph/badge.svg?token=e41ZDcj06N)](https://codecov.io/gh/labring/sealos)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fpostwoman.io&logo=Postwoman)](https://sealyun.com)
-[![OSCS Status](https://www.oscs1024.com/platform/badge/labring/sealos.svg?size=small)](https://www.oscs1024.com/project/labring/sealos?ref=badge_small)
-[![Chat on Telegram](https://img.shields.io/badge/chat-Telegram-blueviolet?logo=Telegram)](https://t.me/cloudnativer)
+Sealos 的理念中，云也可以像 linux 那样简单，一装就能用，用起来就没什么问题。只不过区别是 linux 装在一台服务器上，而 Sealos 是装在整个数据中心而已。
+Sealos 同样认为公有云与私有云没有本质区别，应该是同一套代码的不同实例而已，只是配置不同或者上面安装的应用不同，装在内网就是私有，装在公网对外服务就是公有云。
+Sealos 基于云内核架构设计，完全抛弃 IaaS PaaS SaaS 架构，并且认为 IaaS PaaS SaaS 架构是历史包袱，未来会走向消亡
 
-  </div>
-</div>
+## Sealos 是什么
 
----
+Sealos 是以 kubernetes 为内核的云操作系统发行版, 单机操作系统如同 linux 发行版本可以在上面安装和使用各种单机应用，如 PPT，Word，Excel 等。
+云操作系统只需要把这些单机应用替换成各种云应用，如数据库，对象存储，消息队列等，就很容易理解了，这些应用都是分布式高可用的。
+Sealos 就是能支撑运行各种分布式应用的云操作系统。有了 Sealos 就拥有了一朵云。
 
-[Docs](https://sealos.io) | [简体中文](https://www.sealos.io/zh-Hans/)
+## 适用场景 & 优势
 
-## 部署 kubernetes cluster
+Sealos cloud 可以非常好的支撑业务运行，如各种 java, go, pthon, php 等应用，不限编程语言。为应用提供运行环境，解决应用各种后端依赖，如数据库，对象存储，消息队列等。
+解决应用配置管理，服务发现，公网暴露，自动伸缩等等问题。
 
-[![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
+- 公有云，如果你的业务需要运行在公有云上，可以直接使用 sealos 提供的公有云服务 [sealos cloud](cloud.sealos.io)
+  - 打开网站直接使用，没有 kubernetes 的创建过程，sealos cloud 提供多租户共享一个 kubernetes 的模型。
+  - 只需要为容器付费，天生支持自动伸缩, 从最根本上解决资源浪费问题。
+  - 自动为业务分配二级域名，轻松实现业务公网访问。可自定义绑定自己的域名。
+  - 提供数据库服务，秒级创建高可用数据库，业务通过服务发现内网 DNS 直接链接数据库。
+  - 自带终端可直接敲 k8s 命令，支持 k8s 管理控制台，懂不懂云原生都能在 sealos 上有良好的体验。
+- 私有云
+  - 以上 sealos cloud 的能力可以部署在私有云上。
+- 应用交付
+  - Sealos 具备极强的 kubernetes 生命周期管理能力，且可以自由定义 kubernetes。
+  - 通过集群镜像的能力把整个集群打包一键交付到客户环境中。各种服务与业务都可以整体打包交付。
+  - Docker 只考虑单机镜像，而 sealos 打包整个集群，或者某个分布式应用。
 
+Sealos 上有一些核心应用，来解决特定问题：
+* [Cloud Terminal](https://www.sealos.io/docs/cloud/apps/terminal/): 打开终端就可以直接使用 kubernetes, 部署自己的 pod 等，完全兼容 k8s
+* [Sealos cloud provider](https://www.sealos.io/docs/cloud/apps/scp/): 帮助用户构建一个完全属于自己的 kubernetes 集群，且可以自由定义集群
+* [Sealos pgsql](https://www.sealos.io/docs/cloud/apps/postgres/): 帮助用户分钟级构建 pgsql 数据库实例
+* [App store](https://www.sealos.io/docs/cloud/apps/appstore/): 兼容 sealos 集群镜像的应用仓库，所有分布式软件可一键安装
 
-## sealos 是什么
+## 使用样例
 
-**sealos 是以 kubernetes 为内核的云操作系统发行版**
-
-早期单机操作系统也是分层架构，后来才演变成 linux windows 这种内核架构，云操作系统从容器诞生之日起分层架构被击穿，未来也会朝着高内聚的"云内核"架构迁移
-
-![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
-
-- 从现在开始，把你数据中心所有机器想象成一台"抽象"的超级计算机，sealos 就是用来管理这台超级计算机的操作系统，kubernetes 就是这个操作系统的内核！
-- 云计算从此刻起再无 IaaS PaaS SaaS 之分，只有云操作系统驱动(CSI CNI CRI 实现) 云操作系统内核(kubernetes) 和 分布式应用组成
-
-
-## sealos 桌面
-
-云端使用电脑，而无需安装任何分布式应用
-
-![](https://user-images.githubusercontent.com/8912557/191533678-6ab8915e-23c7-456e-b0c0-506682c001fb.png)
-
-可以通过下面的屏幕截图进一步了解`sealos`的应用:
-
-<table>
-  <tr>
-      <td width="50%" align="center"><b>redis on sealos cloud(1)</b></td>
-      <td width="50%" align="center"><b>redis on sealos cloud(2)</b></td>
-  </tr>
-  <tr>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186025-9053295f-4356-42b6-adf2-064a614bca57.png"/></td>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186714-5ab92925-be86-4305-9e46-66dd9dc3edb5.png"/></td>
-  </tr>
-  <tr>
-      <td width="50%" align="center"><b>pgsql on sealos cloud(1)</b></td>
-      <td width="50%" align="center"><b>pgsql on sealos cloud(2)</b></td>
-  </tr>
-  <tr>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196185833-1b5c7a35-32e8-4f75-a52f-8b089ccbe8a4.png"/></td>
-     <td><img src="https://user-images.githubusercontent.com/8912557/196186330-cf526d0a-46b1-4938-842c-c7a90d79f97e.png"/></td>
-  </tr>
-</table>
-
-## 核心特性
-
-- 管理集群生命周期
-  - [x] 快速安装高可用 Kubernetes 集群
-  - [x] 添加/删除节点
-  - [x] 清理集群、备份与自动恢复等
-- 下载和使用完全兼容 OCI 标准的分布式应用
-  - [x] OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis 等
-- 定制化分布式应用
-  - [x] 用 Dockerfile 构建分布式应用镜像，保存所有的依赖
-  - [x] 发布分布式应用镜像到 Docker Hub
-  - [x] 融合多个应用构建专属的云平台
-- Sealos cloud
-  - [x] 支持运行分布式应用程序
-  - [x] 拥有完整的公共云功能，可以畅意运行
-
-## 快速开始
-
-> 安装一个高可用的 kubernetes 集群，并用 calico 作为网络插件
-
-这里的 `kubernetes:v1.24.0` 和 `calico:v3.24.1` 就是存在 registry 里的集群镜像，完全兼容 OCI 标准, 当然聪明同学立马想到是不是可以用 flannel，答案是当然！
-
-```shell script
-# 下载并安装 sealos, sealos 是个 golang 的二进制工具，直接下载拷贝到 bin 目录即可, release 页面也可下载
-$ wget  https://github.com/labring/sealos/releases/download/v4.1.4/sealos_4.1.4_linux_amd64.tar.gz  && \
-    tar -zxvf sealos_4.1.4_linux_amd64.tar.gz sealos &&  chmod +x sealos && mv sealos /usr/bin 
-# 创建一个集群
-sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
-```
-
-
-* 已支持的 kubernetes 版本列表: [240+ kubernetes 版本](https://hub.docker.com/r/labring/kubernetes/tags)、 [kubernetes 使用 cri-docker](https://hub.docker.com/r/labring/kubernetes-docker/tags)
-* 其他分布式 [应用镜像](https://hub.docker.com/u/labring)
-
-> 运行单个主机
-
-```shell
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
-# remove taint
-$ kubectl taint node --all node-role.kubernetes.io/control-plane-
-```
-
-
-> 构建一个自定义集群镜像
-
-见 [构建一个集群镜像](https://www.sealos.io/zh-Hans/docs/examples/build-example-cloudimage)。
-
-> 存储/消息/数据库 等
-
-接下来请不要震惊：
-
-```shell script
-sealos run labring/helm:v3.8.2 # 安装helm
-sealos run labring/openebs:v1.9.0 # 安装openebs
-sealos run labring/minio-operator:v4.4.16 labring/ingress-nginx:4.1.0 \
-   labring/mysql-operator:8.0.23-14.1 labring/redis-operator:3.1.4 # 喜欢的话可以把它们写一起
-```
-
-然后一切准备就绪。
-
-## 使用 cri-docker 镜像
-
-```shell
-sealos run labring/kubernetes-docker:v1.20.5-4.1.4 labring/helm:v3.8.2 labring/calico:v3.24.1 \
-     --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
-     --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
-```
+* [使用 sealos terminal 部署一个 hello world 应用](https://sealos.io/zh-Hans/docs/cloud/apps/terminal/use-sealos-cloud-hello-world)
+* [在 sealos 上使用 pgsql 数据库](https://sealos.io/zh-Hans/docs/cloud/apps/postgres/)
+* [在 sealos 上运行一个 bytebase 数据库](https://sealos.io/zh-Hans/docs/cloud/examples/how-to-depoy-bytebase-on-sealos-cloud)
+* [在 sealos 上启动一个独立的 kubernetes 集群](https://sealos.io/zh-Hans/docs/cloud/apps/scp/)
+* [使用 sealos 管理集群生命周期，如安装，增删节点，升级等](https://sealos.io/zh-Hans/docs/getting-started/kuberentes-life-cycle)
+* [在 sealos 上使用函数计算应用 laf](https://laf.dev)
+* [在 sealos 桌面上添加一个快捷方式](https://sealos.io/zh-Hans/docs/cloud/examples/how-to-deploy-the-application-to-desktop)
 
 ## 其它链接
 
-- [贡献指南](./CONTRIBUTING.md)
-- [开发指南](./DEVELOPGUIDE.md)
-- [sealosAction](https://github.com/marketplace/actions/auto-install-k8s-using-sealos)
-- [sealos 3.0（旧版）](https://github.com/labring/sealos/tree/release-v3.3.9#readme) 老版本用户访问这里，4.0 全面吊打老版本，请尽快升级。
-- [buildah](https://github.com/containers/buildah) 本着不重复造轮子，sealos 4.0 中使用了大量 buildah 的构建能力，使集群镜像完全兼容容器镜像和 docker registry。
-- [sealer](https://github.com/sealerio/sealer) sealos 4.0 中使用了大量 sealer 的能力，使得 Clusterfile 与 sealer 兼容。部分模块中 fork 了 sealer 的代码。
+- [贡献指南](https://github.com/labring/sealos/blob/main/CONTRIBUTING.md)
+- [开发指南](https://github.com/labring/sealos/blob/main/DEVELOPGUIDE.md)
 
-**加入组织: 钉钉群(35371178), [Telegram](https://t.me/gsealyun), QQ 群（98488045）,作者微信：fangnux**
-
-## 开源协议
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Flabring%2Fsealos.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Flabring%2Fsealos?ref=badge_large)
+加入组织 
+* QQ 群（98488045）
+* [discord](https://discord.gg/7bPNZfsjJu)
