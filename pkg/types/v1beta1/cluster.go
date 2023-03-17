@@ -190,7 +190,7 @@ type Host struct {
 	IPS   []string `json:"ips,omitempty"`
 	Roles []string `json:"roles,omitempty"`
 	Env   []string `json:"env,omitempty"` // overwrite env
-	SSH   *SSH     `json:"ssh.omitempty"` // overwrite global ssh config
+	SSH   *SSH     `json:"ssh,omitempty"` // overwrite global ssh config
 }
 
 type ImageList []string
