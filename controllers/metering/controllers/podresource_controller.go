@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"os"
@@ -148,8 +149,7 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 				Used:      storage,
 				TimeStamp: time.Now().Unix(),
 				NameSpace: pod.Namespace,
-
-				Cost: int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
+				Cost:      int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
 			}
 		} else {
 			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
@@ -202,21 +202,20 @@ func (r *PodResourceReconciler) checkPodNamespace(pod v1.Pod) bool {
 }
 
 func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, ResourceCR map[v1.ResourceName]meteringcommonv1.ResourceInfo, podController meteringv1.PodResource) error {
-	podResource := meteringcommonv1.Resource{
+	Resource := meteringcommonv1.Resource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID),
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}
-	r.Logger.Info("create resource", "resource name", GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID), "resource info", podResource.Spec.Resources)
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &podResource, func() error {
-		podResource.Spec.Resources = ResourceCR
-		return nil
-	}); err != nil {
-		return err
-	}
 
-	return nil
+	if err := r.Get(ctx, types.NamespacedName{Namespace: Resource.Namespace, Name: Resource.Name}, &Resource); err == nil {
+		return errors.New(fmt.Sprintf("resource already exist resource name:%v", Resource.Name))
+	}
+	Resource.Spec.Resources = ResourceCR
+	r.Logger.Info("want to create resource", "resource name", GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID), "resource info", Resource.Spec.Resources)
+	return r.Create(ctx, &Resource)
+
 }
 
 func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName, container v1.Container) (resource.Quantity, bool) {

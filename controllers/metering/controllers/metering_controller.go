@@ -138,7 +138,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if overTimeInterval(metering) {
-		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
+		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute)*int64(metering.Spec.TimeInterval))
 		totalAmount, err := r.CalculateCost(metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())

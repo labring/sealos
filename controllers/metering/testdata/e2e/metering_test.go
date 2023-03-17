@@ -166,23 +166,21 @@ func TestMetering(t *testing.T) {
 	t.Cleanup(clear)
 
 	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
-		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-		time.Sleep(time.Second * 10)
 		baseapi.EnsureNamespace(TestNamespace)
-		time.Sleep(time.Second * 4)
-		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-		if err != nil {
-			t.Fatalf("fail get metering: %v", err)
-		}
-		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
-
 		nums := 10
 		t.Log(fmt.Sprintf("create %v pod", nums))
 		for i := 0; i < nums; i++ {
 			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
 		}
-
-		time.Sleep(time.Second * 20)
+		time.Sleep(time.Second * 30)
+		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
+		if err != nil {
+			t.Fatalf("fail get metering: %v", err)
+		}
+		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
+		time.Sleep(time.Second * 5)
+		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
+		time.Sleep(time.Second * 10)
 		for i := 0; i < 10; i++ {
 			time.Sleep(time.Minute)
 			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
@@ -198,7 +196,12 @@ func TestMetering(t *testing.T) {
 }
 
 func clear() {
-	execout, err := baseapi.Exec("kubectl get pod -n metering-system|grep metering |awk '{print $1}' |xargs kubectl logs -n metering-system")
+	execout, err := baseapi.Exec("kubectl get accountbalance -A ")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	execout, err = baseapi.Exec("kubectl get pod -n metering-system|grep metering |awk '{print $1}' |xargs kubectl logs -n metering-system")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
