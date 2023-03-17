@@ -20,21 +20,20 @@ spec:
   resources:
     cpu:
       unit: "1"
-      price: 660
+      price: 670
       describe: "cost per cpu per hour（price:100 = 1¥）"
     memory:
       unit: "1G"
-      price:  660
+      price:  330
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
     ephemeral-storage:
       unit: "1G"
-      price:  100
+      price:  21
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
     storage:
       unit: "1G"
-      price:  100
+      price:  21
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
-
 `
 
 func CreatePodController(namespace string, name string) {

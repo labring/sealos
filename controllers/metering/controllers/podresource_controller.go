@@ -19,9 +19,11 @@ package controllers
 import (
 	"context"
 	"fmt"
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+	"math"
 	"os"
 	"time"
+
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 
 	"github.com/go-logr/logr"
 
@@ -118,11 +120,11 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 							Used:      &resourceQuantity,
 							TimeStamp: time.Now().Unix(),
 							NameSpace: pod.Namespace,
-							Cost:      resourceQuantity.MilliValue() * podController.Spec.Resources[resourceName].Price / podController.Spec.Resources[resourceName].Unit.MilliValue(),
+							Cost:      int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
 						}
 					} else {
 						resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
-							Cost:      resourceInfos[resourceName].Cost + (resourceQuantity.MilliValue() * podController.Spec.Resources[resourceName].Price / podController.Spec.Resources[resourceName].Unit.MilliValue()),
+							Cost:      resourceInfos[resourceName].Cost + int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
 							TimeStamp: time.Now().Unix(),
 							NameSpace: pod.Namespace,
 							Used:      resourceInfos[resourceName].Used,
@@ -146,12 +148,12 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 				Used:      storage,
 				TimeStamp: time.Now().Unix(),
 				NameSpace: pod.Namespace,
-				Cost:      storage.MilliValue() * podController.Spec.Resources[resourceName].Price / podController.Spec.Resources[resourceName].Unit.MilliValue(),
-			}
 
+				Cost: int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
+			}
 		} else {
 			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
-				Cost:      resourceInfos[resourceName].Cost + (storage.MilliValue() * podController.Spec.Resources[resourceName].Price / podController.Spec.Resources[resourceName].Unit.MilliValue()),
+				Cost:      resourceInfos[resourceName].Cost + int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
 				TimeStamp: time.Now().Unix(),
 				NameSpace: pod.Namespace,
 				Used:      resourceInfos[resourceName].Used,
@@ -206,7 +208,7 @@ func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, Re
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}
-
+	r.Logger.Info("create resource", "resource name", GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID), "resource info", podResource.Spec.Resources)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &podResource, func() error {
 		podResource.Spec.Resources = ResourceCR
 		return nil

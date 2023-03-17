@@ -176,12 +176,14 @@ func TestMetering(t *testing.T) {
 		}
 		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
 
-		for i := 0; i < 10; i++ {
+		nums := 10
+		t.Log(fmt.Sprintf("create %v pod", nums))
+		for i := 0; i < nums; i++ {
 			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
 		}
 
-		time.Sleep(time.Second * 10)
-		for i := 0; i < 3; i++ {
+		time.Sleep(time.Second * 20)
+		for i := 0; i < 10; i++ {
 			time.Sleep(time.Minute)
 			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
 			if err != nil {
@@ -202,6 +204,11 @@ func clear() {
 		log.Println(err)
 	}
 	execout, err = baseapi.Exec("kubectl get pod -n account-system|grep account |awk '{print $1}' |xargs kubectl logs -n account-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	execout, err = baseapi.Exec("kubectl get resource -A -oyaml")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
