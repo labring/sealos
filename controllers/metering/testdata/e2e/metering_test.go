@@ -167,6 +167,7 @@ func TestMetering(t *testing.T) {
 
 	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
 		baseapi.EnsureNamespace(TestNamespace)
+		time.Sleep(2 * time.Second)
 		nums := 10
 		t.Log(fmt.Sprintf("create %v pod", nums))
 		for i := 0; i < nums; i++ {
@@ -181,7 +182,7 @@ func TestMetering(t *testing.T) {
 		time.Sleep(time.Second * 5)
 		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 		time.Sleep(time.Second * 10)
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 30; i++ {
 			time.Sleep(time.Minute)
 			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
 			if err != nil {

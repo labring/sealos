@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"time"
 
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
@@ -93,7 +95,7 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 		extensionResourcesPrice.Spec.Resources = podController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = podController.Spec.ResourceName
 		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
-		return controllerutil.SetControllerReference(podController, extensionResourcesPrice, r.Scheme)
+		return nil
 	}); err != nil {
 		return fmt.Errorf("sync ExtensionResourcesPrice failed: %v", err)
 	}
@@ -244,6 +246,6 @@ func (r *PodResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		r.MeteringSystemNameSpace = meteringv1.DEFAULTMETERINGNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&meteringv1.PodResource{}).
+		For(&meteringv1.PodResource{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
 }
