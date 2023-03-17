@@ -18,7 +18,6 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -140,21 +139,21 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	if overTimeInterval(metering) {
 		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval))
-		totalAccount, resourceMsgs, err := r.CalculateCost(ctx, &metering)
+		totalAmount, err := r.CalculateCost(metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, err
+		}
+		if err := r.createAccountBalance(ctx, metering, totalAmount); err != nil {
+			r.Logger.Error(err, err.Error())
+			return ctrl.Result{}, fmt.Errorf("meteringName:%v,amount:%v,err:%v", metering.Name, totalAmount, err)
 		}
 		if err := r.clearResourceUsed(ctx, &metering); err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{Requeue: true}, err
 		}
 
-		if err := r.createAccountBalance(ctx, metering.Spec.Owner, totalAccount, metering.Status.SeqID, resourceMsgs); err != nil {
-			r.Logger.Error(err, err.Error())
-			return ctrl.Result{}, fmt.Errorf("meteringName:%v,amount:%v,err:%v", metering.Name, totalAccount, err)
-		}
-		if err := r.updateBillingList(ctx, totalAccount, &metering); err != nil {
+		if err := r.updateBillingList(ctx, totalAmount, &metering); err != nil {
 			r.Logger.Error(err, err.Error())
 			return ctrl.Result{}, err
 		}
@@ -167,20 +166,12 @@ func overTimeInterval(metering meteringv1.Metering) bool {
 	return time.Now().Unix()-metering.Status.LatestUpdateTime >= int64(time.Minute.Seconds())*int64(metering.Spec.TimeInterval)
 }
 
-func (r *MeteringReconcile) CalculateCost(ctx context.Context, metering *meteringv1.Metering) (int64, interface{}, error) {
-	var resourceMsgs []meteringv1.ResourceMsg
+func (r *MeteringReconcile) CalculateCost(metering meteringv1.Metering) (int64, error) {
 	var totalAmount int64
-	for resourceName, resourceValue := range metering.Spec.Resources {
-		resourceMsgs = append(resourceMsgs, meteringv1.ResourceMsg{
-			ResourceName: resourceName,
-			Amount:       resourceValue.Cost,
-			Used:         resourceValue.Used,
-		})
+	for _, resourceValue := range metering.Spec.Resources {
 		totalAmount += resourceValue.Cost
 	}
-
-	r.Logger.Info(fmt.Sprintf("meteringNmae %v,resourceMsg: %+v", metering.Name, resourceMsgs), "totalAmount", totalAmount, "seqID", metering.Status.SeqID)
-	return totalAmount, resourceMsgs, nil
+	return totalAmount, nil
 }
 
 func (r *MeteringReconcile) clearResourceUsed(ctx context.Context, metering *meteringv1.Metering) error {
@@ -299,16 +290,16 @@ func (r *MeteringReconcile) DelMetering(ctx context.Context, name, namespace str
 	return nil
 }
 
-func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner string, amount int64, seqID int64, resourceMsgs interface{}) error {
-	if amount == 0 {
+func (r *MeteringReconcile) createAccountBalance(ctx context.Context, metering meteringv1.Metering, totalAmount int64) error {
+	if totalAmount == 0 {
 		return nil
-	} else if amount < 0 {
+	} else if totalAmount < 0 {
 		return fmt.Errorf("deduction amount is <0")
 	}
 
 	accountBalance := accountv1.AccountBalance{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, owner, seqID),
+			Name:      fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, metering.Status.SeqID),
 			Namespace: r.MeteringSystemNameSpace,
 		},
 	}
@@ -317,14 +308,13 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner stri
 	if err := r.Get(ctx, types.NamespacedName{Name: accountBalance.Name, Namespace: accountBalance.Namespace}, &accountBalance); err == nil {
 		return fmt.Errorf("accountbalancnce have existed,name:%v", accountBalance.Name)
 	} else if client.IgnoreNotFound(err) == nil {
-		accountBalance.Spec.Owner = owner
+		accountBalance.Spec.Owner = metering.Spec.Owner
 		accountBalance.Spec.Timestamp = time.Now().Unix()
-		accountBalance.Spec.Amount = amount
-		resourceMsgsjson, err := json.Marshal(resourceMsgs)
-		if err != nil {
-			return err
+		accountBalance.Spec.Amount = totalAmount
+		for resourceName, resourceInfo := range metering.Spec.Resources {
+			resourceInfo.ResourceName = string(resourceName)
+			accountBalance.Spec.ResourceInfoList = append(accountBalance.Spec.ResourceInfoList, resourceInfo)
 		}
-		accountBalance.Spec.Details = string(resourceMsgsjson)
 		return r.Create(ctx, &accountBalance)
 	} else if err != nil {
 		return err

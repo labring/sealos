@@ -58,6 +58,8 @@ spec:
                       type: integer
                     namespace:
                       type: string
+                    resourceName:
+                      type: string
                     time:
                       format: int64
                       type: integer
