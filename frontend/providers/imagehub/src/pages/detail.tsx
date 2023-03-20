@@ -23,6 +23,7 @@ export default function DetailPage() {
   let imageCommand: string = 'sealos run ' + fullImageName;
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
+  const [retryCount, setRetryCount] = useState(0);
 
   const handleScrollEvent = () => {
     const scrollTop = appRef.current?.scrollTop;
@@ -33,11 +34,11 @@ export default function DetailPage() {
     appRef.current?.addEventListener('scroll', throttle(handleScrollEvent));
   }, []);
 
-  const { data, isLoading, isSuccess } = useQuery(
-    ['getAppDetail', fullImageName],
-    async () => {
+  const { data, isLoading, isSuccess, refetch } = useQuery(
+    ['getAppDetail', fullImageName, retryCount >= 2 ? null : kubeconfig],
+    async ({ queryKey }) => {
       const res = await request.post('/api/get_detail', {
-        kubeconfig,
+        kubeconfig: queryKey[2],
         image_name: fullImageName
       });
       return res;
@@ -46,6 +47,13 @@ export default function DetailPage() {
       onSuccess: (data) => {
         if (data.status === 201) {
           queryClient.invalidateQueries({ queryKey: ['getAppDetail', fullImageName] });
+        }
+      },
+      onError: (err) => {
+        if (!(retryCount >= 2)) {
+          queryClient.invalidateQueries({ queryKey: ['getAppDetail'] });
+          refetch();
+          setRetryCount(retryCount + 1);
         }
       }
     }
@@ -142,13 +150,13 @@ export default function DetailPage() {
           </div> */}
           <div className={clsx(styles.rightInfo, 'ml-4')}>
             <span className={styles.imageSizeText}>
-              {appDetail.size ? formattedSize(appDetail.size) : 'empty'}
+              {appDetail?.size ? formattedSize(appDetail?.size) : 'empty'}
             </span>
             <span className="text-stone-500 text-xs mt-2">大小</span>
           </div>
           <div className={clsx(styles.fixedRightInfo)}>
             <span className={styles.imageSizeText}>
-              {appDetail.size ? formattedSize(appDetail.size) : ''}
+              {appDetail?.size ? formattedSize(appDetail?.size) : ''}
             </span>
           </div>
           {/* <div className={clsx(styles.fixedRightInfo)}>
@@ -198,7 +206,7 @@ export default function DetailPage() {
           </div>
           <div className={clsx(styles.hiddenScrollWrap, 'grow my-4')}>
             <div className={clsx('absolute w-full space-y-2')}>
-              {appDetail.tags?.map((item) => {
+              {appDetail?.tags?.map((item) => {
                 return (
                   <div
                     key={item.name}
@@ -211,7 +219,7 @@ export default function DetailPage() {
                       )}
                     </div>
                     <div>{item.name}</div>
-                    <div className="ml-auto">{formattedSize(item.size)}</div>
+                    <div className="ml-auto">{formattedSize(item?.size)}</div>
                   </div>
                 );
               })}

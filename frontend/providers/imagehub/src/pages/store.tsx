@@ -26,6 +26,7 @@ export default function StorePage() {
   const { kubeconfig } = useSessionStore((state) => state.getSession());
   const selectedLabels = getSelectLabels(imageLabels);
   const queryClient = useQueryClient();
+  const [retryCount, setRetryCount] = useState(0);
   const [errorImageUrl, setErrorImageUrl] = useState('/images/error.svg');
   const [pagination, setPagination] = useState({
     current: 1,
@@ -53,11 +54,11 @@ export default function StorePage() {
     );
   };
 
-  const { data, isLoading, isSuccess, isError } = useQuery(
-    ['getAppLists', selectedLabels, pagination.current],
-    async () => {
+  const { data, isLoading, isSuccess, isError, refetch } = useQuery(
+    ['getAppLists', selectedLabels, pagination.current, retryCount >= 2 ? null : kubeconfig],
+    async ({ queryKey }) => {
       const res = await request.post('/api/get_list', {
-        kubeconfig,
+        kubeconfig: queryKey[3],
         labels: selectedLabels,
         limit: pagination.pageSize,
         _continue: pagination.continueKey[pagination.current - 1]
@@ -83,6 +84,11 @@ export default function StorePage() {
       },
       onError: (err) => {
         setErrorImageUrl('/images/error_timeout.svg');
+        if (!(retryCount >= 2)) {
+          queryClient.invalidateQueries({ queryKey: ['getAppLists'] });
+          refetch();
+          setRetryCount(retryCount + 1);
+        }
       }
     }
   );

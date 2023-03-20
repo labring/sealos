@@ -1,10 +1,10 @@
 
-SERVICE_NAME=zhujingyang/sealos-image-hub
+SERVICE_NAME=sealos-image-hub
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):0.2.0
+IMG ?= $(SERVICE_NAME):1.0.2
 
 .PHONY: all
-all: build
+all: docker-build-and-push
 
 ##@ General
 
@@ -39,10 +39,10 @@ docker-build: ## Build docker image with the desktop-frontend.
 
 ##@ Deployment
 
-.PHONY: docker-push
-docker-push:  ## Push docker image.
-	echo "To be done."
+.PHONY: docker-push-image
+docker-push-image: ## Push docker image to Docker Hub.
+	docker push $(IMG)
+	
 
-#TODO: add support of docker push
-
-#TODO: add support of sealos apply
+.PHONY: docker-build-and-push
+docker-build-and-push: docker-build docker-push-image ## Build and push docker image with the desktop-frontend.
