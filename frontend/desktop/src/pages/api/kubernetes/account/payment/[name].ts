@@ -1,12 +1,8 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { paymentMeta } from '../../../../../mock/user';
-import {
-  GetCRD,
-  GetUserDefaultNameSpace,
-  K8sApi
-} from '../../../../../services/backend/kubernetes';
-import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../../../response';
+import { paymentMeta } from 'mock/user';
+import { GetCRD, GetUserDefaultNameSpace, K8sApi } from 'services/backend/kubernetes';
+import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from 'pages/api/response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   if (req.method !== 'POST') {

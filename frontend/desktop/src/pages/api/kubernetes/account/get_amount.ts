@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { CRDMeta, GetCRD, K8sApi } from '../../../../services/backend/kubernetes';
-import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../../response';
+import { CRDMeta, GetCRD, K8sApi } from 'services/backend/kubernetes';
+import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from 'pages/api/response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   if (req.method !== 'POST') {

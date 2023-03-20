@@ -89,7 +89,7 @@ export default function ChargeButton() {
                   className="!ml-4"
                   onClick={() => {
                     createPaymentRes.mutate({
-                      amount: chargeAmount * 100,
+                      amount: chargeAmount * 10000,
                       kubeconfig: session.kubeconfig
                     });
                   }}

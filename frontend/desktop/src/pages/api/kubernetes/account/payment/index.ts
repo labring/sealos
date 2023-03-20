@@ -1,14 +1,10 @@
 import * as k8s from '@kubernetes/client-node';
 import crypto from 'crypto';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { paymentCRDTemplate } from '../../../../../mock/user';
-import {
-  ApplyYaml,
-  GetUserDefaultNameSpace,
-  K8sApi
-} from '../../../../../services/backend/kubernetes';
-import { CRDTemplateBuilder } from '../../../../../services/backend/wrapper';
-import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from '../../../response';
+import { paymentCRDTemplate } from 'mock/user';
+import { ApplyYaml, GetUserDefaultNameSpace, K8sApi } from 'services/backend/kubernetes';
+import { CRDTemplateBuilder } from 'services/backend/wrapper';
+import { BadRequestResp, InternalErrorResp, JsonResp, UnprocessableResp } from 'pages/api/response';
 
 export default async function handler(req: NextApiRequest, resp: NextApiResponse) {
   if (req.method !== 'POST') {
