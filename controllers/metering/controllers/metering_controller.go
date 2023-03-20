@@ -138,7 +138,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	if overTimeInterval(metering) {
-		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(time.Minute)*int64(metering.Spec.TimeInterval))
+		r.Logger.Info("enter update metering", "metering name:", req.Name, "metering namespace:", req.Namespace, "lastUpdate Time", metering.Status.LatestUpdateTime, "now", time.Now().Unix(), "diff", time.Now().Unix()-metering.Status.LatestUpdateTime, "interval", int64(metering.Spec.TimeInterval))
 		totalAmount, err := r.CalculateCost(metering)
 		if err != nil {
 			r.Logger.Error(err, err.Error())
@@ -311,14 +311,19 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, metering m
 		accountBalance.Spec.Owner = metering.Spec.Owner
 		accountBalance.Spec.Timestamp = time.Now().Unix()
 		accountBalance.Spec.Amount = totalAmount
-		for resourceName, resourceInfo := range metering.Spec.Resources {
-			resourceInfo.ResourceName = string(resourceName)
-			accountBalance.Spec.ResourceInfoList = append(accountBalance.Spec.ResourceInfoList, resourceInfo)
+		if metering.Spec.Resources != nil {
+			for resourceName, resourceInfo := range metering.Spec.Resources {
+				resourceInfo.ResourceName = string(resourceName)
+				accountBalance.Spec.ResourceInfoList = append(accountBalance.Spec.ResourceInfoList, resourceInfo)
+			}
 		}
-		return r.Create(ctx, &accountBalance)
+		if err := r.Create(ctx, &accountBalance); err != nil {
+			return err
+		}
 	} else if err != nil {
 		return err
 	}
+	r.Logger.Info("create accountBalance", "name", accountBalance.Name, "accountBalance.spec", accountBalance.Spec, "metering.spec.Resource", metering.Spec.Resources)
 	return nil
 }
 

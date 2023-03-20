@@ -63,7 +63,7 @@ func TestMetering(t *testing.T) {
 		t.Run("pod controller should be ok", func(t *testing.T) {
 			time.Sleep(5 * time.Second)
 			baseapi.EnsureNamespace(TestNamespace)
-			time.Sleep(5 * time.Second)
+			time.Sleep(20 * time.Second)
 			t.Log("creat pod controller")
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 
@@ -119,27 +119,27 @@ func TestMetering(t *testing.T) {
 			if err != nil {
 				t.Fatalf("metering calculate failer: %v,calculate: %v", err, metering)
 			}
-			t.Logf("metering:%+v", metering.Spec.Resources)
+			t.Logf("metering:%+v", metering.Status)
 		})
 
 		t.Run("metering create accountBalance should be ok", func(t *testing.T) {
-			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-			time.Sleep(time.Second * 2)
 			baseapi.EnsureNamespace(TestNamespace)
 			api.EnsurePod(TestNamespace, PodName)
+			time.Sleep(time.Second * 20)
+			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			time.Sleep(time.Second * 2)
-
-			t.Log("ensure accountBalance is created")
+			t.Log("ensure metering used is update")
 			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
-
+			t.Log(metering.Spec)
+			t.Log("ensure accountBalance is created")
 			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")
 				metering, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
+				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 2), 90)
 				if err != nil {
 					t.Fatalf("failed to create accountBalance: %v", err)
 				}
@@ -150,6 +150,9 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("failed to create accountBalance: %v", accountBalance)
 			}
 
+			if accountBalance.Spec.ResourceInfoList == nil {
+				t.Fatalf("failed to add resoureinfo list: accoutnbalance spec:%v", accountBalance.Spec)
+			}
 			time.Sleep(2 * time.Second)
 			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
 			if err != nil {

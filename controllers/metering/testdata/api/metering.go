@@ -72,7 +72,8 @@ func EnsureMeteringUsed(namespace string, name string, times int) (*meteringv1.M
 			continue
 		}
 		if _, ok := metering.Spec.Resources["cpu"]; !ok {
-			return nil, fmt.Errorf("metering resource cpu is not found")
+			time.Sleep(time.Second)
+			continue
 		}
 		if metering.Spec.Resources["cpu"].Used.Value() > 0 {
 			return metering, nil
