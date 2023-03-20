@@ -1,10 +1,35 @@
-# bytebase
-// TODO(user): Add simple overview of use/purpose
+# sealos Bytebase controller
+Integration with Bytebase on sealos
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+The Bytebase controller provides integration with Bytebase on sealos:
+
+* Spawn up a usable Bytebase instance as fast as applying a Bytebase custom resource
+* Start using Bytebase with access to all your databases instances automatically or manually added
+
+Currently, it only support automatically import the PostgreSQL instances created by the PostgreSQL operator on sealos. Other instances require manual import on Bytebase GUI.
 
 ## Getting Started
+
+### Prerequisites
+#### SSL Certificate
+The ssl certificate needs to be installed as a secret along with the controller (under the same namespace), and it needs to be named `wildcard-cloud-sealos-io-cert`.
+#### Kubernetes Nginx Controller
+This controller needs Kubernetes Nginx Controller to generate ingress.
+#### PostgreSQL
+If you have problems syncing the PostgreSQL databases, please make sure that your `pg_hba.conf` is correctly configured to allow access from the Bytebase instance.
+### Install the controller and the CRDs
+
+``` sh
+kubectl apply -f deploy/sealos-bytebase-controller.yaml
+```
+### Install the custom resource
+
+``` sh
+kubectl apply -f config/samples/
+```
+
+## Contributing
 You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
 **Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
 
@@ -40,9 +65,6 @@ UnDeploy the controller from the cluster:
 ```sh
 make undeploy
 ```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
 
 ### How it works
 This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/).
@@ -91,4 +113,3 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-

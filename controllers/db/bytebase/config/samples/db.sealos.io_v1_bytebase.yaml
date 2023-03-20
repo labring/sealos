@@ -9,4 +9,8 @@ metadata:
     app.kubernetes.io/created-by: bytebase
   name: bytebase-sample
 spec:
-  # TODO(user): Add fields here
+  image: bytebase/bytebase:1.13.0
+  replicas: 1
+  keepalived: 11h
+  ingressType: nginx
+  port: 8080
