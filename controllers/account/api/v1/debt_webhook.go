@@ -142,7 +142,7 @@ func checkOption(ctx context.Context, logger logr.Logger, c client.Client, nsNam
 
 	for _, account := range accountList.Items {
 		if account.Status.Balance-account.Status.DeductionBalance < 0 {
-			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/100))
+			return admission.ValidationResponse(false, fmt.Sprintf("account balance less than 0,now account is %.2f¥", float64(account.Status.Balance-account.Status.DeductionBalance)/10000))
 		}
 	}
 	return admission.ValidationResponse(true, "")

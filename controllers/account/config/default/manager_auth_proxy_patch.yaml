@@ -38,7 +38,7 @@ spec:
           - name: NAMESPACE_NAME
             value: "user-system"
           - name: NEW_ACCOUNT_AMOUNT
-            value: "500"
+            value: "50000"
           - name: WHITELIST
             value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1"
         args:
