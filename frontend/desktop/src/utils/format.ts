@@ -4,6 +4,7 @@ export const formatTime = (time: string | number | Date, format = 'YYYY-MM-DD HH
   return dayjs(time).format(format);
 };
 
+// 1¥=10000
 export const formatMoney = (money: number) => {
-  return (money / 100).toFixed(2);
+  return (money / 10000).toFixed(2);
 };
