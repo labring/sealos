@@ -100,11 +100,7 @@ func (n *SvcChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 		svcNamespaceStatusList = append(svcNamespaceStatusList, &svcNamespaceStatus)
 	}
-	err = n.Output(svcNamespaceStatusList)
-	if err != nil {
-		return err
-	}
-	return nil
+	return n.Output(svcNamespaceStatusList)
 }
 
 func (n *SvcChecker) Output(svcNamespaceStatusList []*SvcNamespaceStatus) error {
@@ -125,10 +121,7 @@ func (n *SvcChecker) Output(svcNamespaceStatusList []*SvcNamespaceStatus) error 
 		}
 		return errors.New("convert svc template failed")
 	}
-	if err = tpl.Execute(os.Stdout, svcNamespaceStatusList); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, svcNamespaceStatusList)
 }
 
 func IsExistEndpoint(endpointList *corev1.EndpointsList, serviceName string) bool {

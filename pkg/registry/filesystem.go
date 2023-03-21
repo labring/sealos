@@ -166,7 +166,7 @@ func (d *driver) PutContent(ctx context.Context, subPath string, contents []byte
 
 // Reader retrieves an io.ReadCloser for the content stored at "path" with a
 // given byte offset.
-func (d *driver) Reader(ctx context.Context, path string, offset int64) (io.ReadCloser, error) {
+func (d *driver) Reader(_ context.Context, path string, offset int64) (io.ReadCloser, error) {
 	file, err := os.OpenFile(d.fullPath(path), os.O_RDONLY, 0600)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -194,7 +194,7 @@ func (d *driver) Reader(ctx context.Context, path string, offset int64) (io.Read
 	return file, nil
 }
 
-func (d *driver) Writer(ctx context.Context, subPath string, append bool) (storagedriver.FileWriter, error) {
+func (d *driver) Writer(_ context.Context, subPath string, append bool) (storagedriver.FileWriter, error) {
 	fullPath := d.fullPath(subPath)
 	parentDir := path.Dir(fullPath)
 	if err := os.MkdirAll(parentDir, 0750); err != nil {
@@ -226,7 +226,7 @@ func (d *driver) Writer(ctx context.Context, subPath string, append bool) (stora
 
 // Stat retrieves the FileInfo for the given path, including the current size
 // in bytes and the creation time.
-func (d *driver) Stat(ctx context.Context, subPath string) (storagedriver.FileInfo, error) {
+func (d *driver) Stat(_ context.Context, subPath string) (storagedriver.FileInfo, error) {
 	fullPath := d.fullPath(subPath)
 
 	fi, err := os.Stat(fullPath)
@@ -246,7 +246,7 @@ func (d *driver) Stat(ctx context.Context, subPath string) (storagedriver.FileIn
 
 // List returns a list of the objects that are direct descendants of the given
 // path.
-func (d *driver) List(ctx context.Context, subPath string) ([]string, error) {
+func (d *driver) List(_ context.Context, subPath string) ([]string, error) {
 	fullPath := d.fullPath(subPath)
 	// #nosec
 	dir, err := os.OpenFile(fullPath, os.O_WRONLY|os.O_CREATE, 0600)
@@ -277,7 +277,7 @@ func (d *driver) List(ctx context.Context, subPath string) ([]string, error) {
 
 // Move moves an object stored at sourcePath to destPath, removing the original
 // object.
-func (d *driver) Move(ctx context.Context, sourcePath string, destPath string) error {
+func (d *driver) Move(_ context.Context, sourcePath string, destPath string) error {
 	source := d.fullPath(sourcePath)
 	dest := d.fullPath(destPath)
 
@@ -294,7 +294,7 @@ func (d *driver) Move(ctx context.Context, sourcePath string, destPath string) e
 }
 
 // Delete recursively deletes all objects stored at "path" and its subpaths.
-func (d *driver) Delete(ctx context.Context, subPath string) error {
+func (d *driver) Delete(_ context.Context, subPath string) error {
 	fullPath := d.fullPath(subPath)
 
 	_, err := os.Stat(fullPath)
@@ -310,7 +310,7 @@ func (d *driver) Delete(ctx context.Context, subPath string) error {
 
 // URLFor returns a URL which may be used to retrieve the content stored at the given path.
 // May return an UnsupportedMethodErr in certain StorageDriver implementations.
-func (d *driver) URLFor(ctx context.Context, path string, options map[string]interface{}) (string, error) {
+func (d *driver) URLFor(_ context.Context, _ string, _ map[string]interface{}) (string, error) {
 	return "", storagedriver.ErrUnsupportedMethod{}
 }
 

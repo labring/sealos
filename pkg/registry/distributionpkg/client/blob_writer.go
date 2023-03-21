@@ -134,7 +134,7 @@ func (hbu *httpBlobUpload) StartedAt() time.Time {
 
 func (hbu *httpBlobUpload) Commit(ctx context.Context, desc distribution.Descriptor) (distribution.Descriptor, error) {
 	// TODO(dmcgowan): Check if already finished, if so just fetch
-	req, err := http.NewRequest("PUT", hbu.location, nil)
+	req, err := http.NewRequestWithContext(ctx, "PUT", hbu.location, nil)
 	if err != nil {
 		return distribution.Descriptor{}, err
 	}
@@ -157,7 +157,7 @@ func (hbu *httpBlobUpload) Commit(ctx context.Context, desc distribution.Descrip
 }
 
 func (hbu *httpBlobUpload) Cancel(ctx context.Context) error {
-	req, err := http.NewRequest("DELETE", hbu.location, nil)
+	req, err := http.NewRequestWithContext(ctx, "DELETE", hbu.location, nil)
 	if err != nil {
 		return err
 	}

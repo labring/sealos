@@ -507,7 +507,7 @@ func manifestAddCmd(c *cobra.Command, args []string, opts manifestAddOpts) error
 	return err
 }
 
-func manifestRemoveCmd(c *cobra.Command, args []string, opts manifestRemoveOpts) error {
+func manifestRemoveCmd(c *cobra.Command, args []string, _ manifestRemoveOpts) error {
 	listImageSpec := ""
 	var instanceDigest digest.Digest
 	switch len(args) {
@@ -718,7 +718,7 @@ func manifestAnnotateCmd(c *cobra.Command, args []string, opts manifestAnnotateO
 	return nil
 }
 
-func manifestInspectCmd(c *cobra.Command, args []string, opts manifestInspectOpts) error {
+func manifestInspectCmd(c *cobra.Command, args []string, _ manifestInspectOpts) error {
 	imageSpec := ""
 	switch len(args) {
 	case 0:

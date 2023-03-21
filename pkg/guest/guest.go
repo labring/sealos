@@ -107,6 +107,6 @@ func (d *Default) getGuestCmd(envs map[string]string, cluster *v2.Cluster, mount
 	return command
 }
 
-func (d Default) Delete(cluster *v2.Cluster) error {
-	panic("implement me")
+func (d Default) Delete(_ *v2.Cluster) error {
+	panic("not yet implemented")
 }

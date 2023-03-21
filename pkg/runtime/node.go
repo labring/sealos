@@ -129,10 +129,5 @@ func (k *KubeadmRuntime) deleteNode(node string) error {
 			return fmt.Errorf("delete node %s failed %v", node, err)
 		}
 	}
-
-	if err := k.resetNode(node); err != nil {
-		return err
-	}
-
-	return nil
+	return k.resetNode(node)
 }

@@ -176,7 +176,7 @@ func (p *realProxier) EnsureRealServer(vs, rs string) error {
 }
 
 func (p *realProxier) DeleteRealServer(vs, rs string) error {
-	vsEp, err := parseEndpoint(rs)
+	vsEp, err := parseEndpoint(vs)
 	if err != nil {
 		return err
 	}

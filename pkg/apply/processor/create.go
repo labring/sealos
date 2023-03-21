@@ -132,8 +132,9 @@ func (c *CreateProcessor) Bootstrap(cluster *v2.Cluster) error {
 	return bs.Apply(hosts...)
 }
 
-func (c *CreateProcessor) Init(cluster *v2.Cluster) error {
+func (c *CreateProcessor) Init(_ *v2.Cluster) error {
 	logger.Info("Executing pipeline Init in CreateProcessor.")
+	// move init runtime here?
 	return c.Runtime.Init()
 }
 

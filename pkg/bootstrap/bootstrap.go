@@ -73,10 +73,7 @@ func (bs *realBootstrap) Apply(hosts ...string) error {
 				return nil
 			}
 			logger.Debug("apply %s on host %s", applier, host)
-			if err := applier.Apply(bs.ctx, host); err != nil {
-				return err
-			}
-			return nil
+			return applier.Apply(bs.ctx, host)
 		}); err != nil {
 			return err
 		}

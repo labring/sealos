@@ -153,10 +153,8 @@ func formatLog(l zapcore.Level, f interface{}, v ...interface{}) string {
 		if len(v) == 0 {
 			return appendColor(l, msg)
 		}
-		if strings.Contains(msg, "%") && !strings.Contains(msg, "%%") {
-			//format string
-		} else {
-			//do not contain format char
+		if !strings.Contains(msg, "%") || strings.Contains(msg, "%%") {
+			// do not contain format char
 			msg += strings.Repeat(" %v", len(v))
 		}
 	default:

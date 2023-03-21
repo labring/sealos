@@ -126,10 +126,7 @@ func (n *RegistryChecker) Output(status *RegistryStatus) error {
 		}
 		return errors.New("convert registry template failed")
 	}
-	if err = tpl.Execute(os.Stdout, status); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, status)
 }
 
 func NewRegistryChecker() Interface {

@@ -38,7 +38,7 @@ type CRIShimStatus struct {
 	Error     string
 }
 
-func (n *CRIShimChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *CRIShimChecker) Check(_ *v2.Cluster, phase string) error {
 	if phase != PhasePost {
 		return nil
 	}
@@ -102,10 +102,7 @@ CRIShim Service Status
 		}
 		return errors.New("convert cri-shim template failed")
 	}
-	if err = tpl.Execute(os.Stdout, status); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, status)
 }
 
 func NewCRIShimChecker() Interface {

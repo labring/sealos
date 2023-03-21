@@ -80,7 +80,7 @@ func (c *InstallProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, err
 	return todoList, nil
 }
 
-func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
+func (c *InstallProcessor) SyncStatusAndCheck(_ *v2.Cluster) error {
 	logger.Info("Executing SyncStatusAndCheck Pipeline in InstallProcessor")
 	err := c.ClusterFile.Process()
 	if err != nil {
@@ -99,7 +99,7 @@ func (c *InstallProcessor) SyncStatusAndCheck(cluster *v2.Cluster) error {
 	return nil
 }
 
-func (c *InstallProcessor) ConfirmOverrideApps(cluster *v2.Cluster) error {
+func (c *InstallProcessor) ConfirmOverrideApps(_ *v2.Cluster) error {
 	logger.Info("Executing ConfirmOverrideApps Pipeline in InstallProcessor")
 
 	if ForceOverride || len(c.imagesToOverride) == 0 {
@@ -213,7 +213,7 @@ func (c *InstallProcessor) PostProcess(*v2.Cluster) error {
 	return nil
 }
 
-func (c *InstallProcessor) RunConfig(cluster *v2.Cluster) error {
+func (c *InstallProcessor) RunConfig(_ *v2.Cluster) error {
 	if len(c.NewMounts) == 0 {
 		return nil
 	}
