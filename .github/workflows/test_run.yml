@@ -807,5 +807,4 @@ jobs:
           type: prune
       - name: Run
         run: |
-          sudo sealos pull cuisongliu/dev-merge-containerd-k8s:1.23.17-amd64
           sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
