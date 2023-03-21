@@ -53,9 +53,6 @@ func (dk *defaultKeychain) Resolve(target authn.Resource) (authn.Authenticator, 
 		target.String(),
 		target.RegistryStr(),
 	} {
-		if key == name.DefaultRegistry {
-			key = DefaultAuthKey
-		}
 		if auth, ok := dk.auths[key]; ok {
 			cfg = types.AuthConfig(auth)
 			break

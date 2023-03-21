@@ -19,7 +19,7 @@ package server
 import (
 	"context"
 
-	"github.com/labring/sealos/pkg/registry/name"
+	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
 	"github.com/labring/sealos/pkg/utils/registry"
 
 	"github.com/docker/docker/api/types"
@@ -66,12 +66,15 @@ func (s *v1alpha2ImageService) ImageStatus(ctx context.Context,
 func (s *v1alpha2ImageService) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
 	logger.Debug("PullImage begin: %+v", req)
+	//1. sealos.hub
+	//2. sealos login remote registry
+	//3. kubernetes secret
 	if req.Image != nil {
 		imageName, ok, auth := replaceImage(req.Image.Image, "PullImage", s.OfflineCRIConfigs)
-		if req.Auth == nil {
-			if ok {
-				req.Auth = types2.ToV1Alpha2AuthConfig(auth)
-			} else {
+		if ok {
+			req.Auth = types2.ToV1Alpha2AuthConfig(auth)
+		} else {
+			if req.Auth == nil {
 				ref, _ := name.ParseReference(imageName)
 				for domain, v := range s.CRIConfigs {
 					if registry.NormalizeRegistry(domain) == ref.Context().RegistryStr() {

@@ -19,7 +19,10 @@ package types
 import (
 	"errors"
 	"net/url"
+	"strings"
 	"time"
+
+	types2 "github.com/docker/docker/api/types"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,14 +32,15 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
-type CRIVersion string
-
 const (
-	CRIVersionV1       CRIVersion = "v1"
-	CRIVersionV1Alpha2 CRIVersion = "v1alpha2"
 	// SealosShimSock is the CRI socket the shim listens on.
 	SealosShimSock = "/var/run/image-cri-shim.sock"
 )
+
+type Registry struct {
+	Address string `json:"address"`
+	Auth    string `json:"auth"`
+}
 
 type Config struct {
 	ImageShimSocket string          `json:"shim"`
@@ -46,9 +50,15 @@ type Config struct {
 	Debug           bool            `json:"debug"`
 	Timeout         metav1.Duration `json:"timeout"`
 	Auth            string          `json:"auth"`
+	Registries      []Registry      `json:"registries"`
 }
 
-func (c *Config) PreProcess() error {
+type ShimAuthConfig struct {
+	CRIConfigs        map[string]types2.AuthConfig `json:"-"`
+	OfflineCRIConfigs map[string]types2.AuthConfig `json:"-"`
+}
+
+func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 	if c.ImageShimSocket == "" {
 		c.ImageShimSocket = SealosShimSock
 	}
@@ -61,7 +71,6 @@ func (c *Config) PreProcess() error {
 		logger.Warn("url parse error: %+v", err)
 	}
 	domain := rawURL.Host
-	var username, password string
 	if c.Timeout.Duration.Milliseconds() == 0 {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
@@ -72,25 +81,64 @@ func (c *Config) PreProcess() error {
 	logger.Info("Debug: %v", c.Debug)
 	logger.CfgConsoleLogger(c.Debug, false)
 	logger.Info("Timeout: %v", c.Timeout)
-	logger.Info("Username: %s", username)
-	logger.Info("Password: %s", password)
+	shimAuth := new(ShimAuthConfig)
+
+	splitNameAndPasswd := func(auth string) (string, string) {
+		var username, password string
+		up := strings.Split(auth, ":")
+		if len(up) == 2 {
+			username = up[0]
+			password = up[1]
+		} else {
+			username = up[0]
+		}
+		return username, password
+	}
+
+	{
+		//cri registry auth
+		criAuth := make(map[string]types2.AuthConfig)
+		for _, registry := range c.Registries {
+			if registry.Address == "" {
+				continue
+			}
+			name, passwd := splitNameAndPasswd(registry.Auth)
+			criAuth[registry.Address] = types2.AuthConfig{
+				Username: name,
+				Password: passwd,
+			}
+		}
+		shimAuth.CRIConfigs = criAuth
+		logger.Info("criRegistryAuth: %+v", shimAuth.CRIConfigs)
+	}
+
+	{
+		offlineName, offlinePasswd := splitNameAndPasswd(c.Auth)
+		//offline registry auth
+		shimAuth.OfflineCRIConfigs = map[string]types2.AuthConfig{domain: {
+			Username:      offlineName,
+			Password:      offlinePasswd,
+			ServerAddress: c.Address,
+		}}
+		logger.Info("criOfflineAuth: %+v", shimAuth.OfflineCRIConfigs)
+	}
 
 	if c.Address == "" {
-		return errors.New("registry addr is empty")
+		return nil, errors.New("registry addr is empty")
 	}
 	if c.RuntimeSocket == "" {
 		socket, err := cri.DetectCRISocket()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		c.RuntimeSocket = socket
 	}
 	if !c.Force {
 		if !fileutil.IsExist(c.RuntimeSocket) {
-			return errors.New("cri is running?")
+			return nil, errors.New("cri is running?")
 		}
 	}
-	return nil
+	return shimAuth, nil
 }
 
 func Unmarshal(path string) (*Config, error) {

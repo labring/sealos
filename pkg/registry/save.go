@@ -17,16 +17,15 @@ package registry
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 	"sync"
 
-	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
+	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
 
-	"github.com/labring/sealos/pkg/registry/name"
+	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
 
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
@@ -103,6 +102,9 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 		numCh <- struct{}{}
 		eg.Go(func() error {
 			auth := is.auths[tmpnameds[0].Context().RegistryStr()]
+			if auth.ServerAddress == "" {
+				auth.ServerAddress = tmpnameds[0].Context().RegistryStr()
+			}
 			registry, err := NewProxyRegistry(is.ctx, dir, auth, nil)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
@@ -232,10 +234,6 @@ func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo d
 			defer func() {
 				<-numCh
 			}()
-			s, err := repo.Manifests(is.ctx)
-			if err != nil {
-				return fmt.Errorf("get manifest service error: %v", err)
-			}
 			var imageDigestFromImageName digest.Digest
 			if !tmpnamed.IsDigest() {
 				desc, err := repo.Tags(is.ctx).Get(is.ctx, tmpnamed.Identifier())
@@ -250,13 +248,6 @@ func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo d
 				}
 			}
 
-			isExists, err := s.Exists(is.ctx, imageDigestFromImageName)
-			if err != nil {
-				return fmt.Errorf("check exists error: %v", err)
-			}
-			if !isExists {
-				return errors.New("not exists")
-			}
 			imageDigest, err := is.handleManifest(manifest, imageDigestFromImageName, platform)
 			if err != nil {
 				return fmt.Errorf("get digest error: %v", err)

@@ -24,8 +24,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 
-	"github.com/opencontainers/go-digest"
-
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/stretchr/testify/require"
@@ -47,16 +45,13 @@ func TestGetAuthInfo(t *testing.T) {
 }
 
 func TestSaveImages(t *testing.T) {
-	d, _ := digest.Parse("sha256:190ba1723ba8062867ea51afd52c4d485a31ebf18d5968e8b6aebafdf64e5d86")
-	t.Error(d.Hex())
-	return
-	t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
-	authConfigs, _ := GetAuthInfo(nil)
-	save := NewImageSaver(context.TODO(), 5, authConfigs)
+	//t.Setenv("DOCKER_CONFIG", filepath.Join("testdata"))
+	//authConfigs, _ := GetAuthInfo(nil)
+	save := NewImageSaver(context.TODO(), 5, nil)
 	t.Run("no credentials found", func(t *testing.T) {
 		_ = os.Mkdir("testdata/registry", 0755)
 		defer os.RemoveAll("testdata/registry")
-		imgs, err := save.SaveImages([]string{"docker.io/cuisongliu/alpine@sha256:190ba1723ba8062867ea51afd52c4d485a31ebf18d5968e8b6aebafdf64e5d86", "docker.io/cuisongliu/alpine:dlv"}, "testdata/registry", v1.Platform{
+		imgs, err := save.SaveImages([]string{"registry.cn-shenzhen.aliyuncs.com/cnmirror/rook:v1.9.8"}, "testdata/registry", v1.Platform{
 			Architecture: "amd64",
 		})
 		if err != nil {
