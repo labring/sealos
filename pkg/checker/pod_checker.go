@@ -19,16 +19,14 @@ import (
 	"errors"
 	"os"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/labring/sealos/pkg/template"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 type PodChecker struct {
@@ -92,11 +90,7 @@ func (n *PodChecker) Check(cluster *v2.Cluster, phase string) error {
 		}
 		PodNamespaceStatusList = append(PodNamespaceStatusList, podNamespaceStatus)
 	}
-	err = n.Output(PodNamespaceStatusList)
-	if err != nil {
-		return err
-	}
-	return nil
+	return n.Output(PodNamespaceStatusList)
 }
 
 func (n *PodChecker) Output(podNamespaceStatusList []PodNamespaceStatus) error {
@@ -119,10 +113,7 @@ func (n *PodChecker) Output(podNamespaceStatusList []PodNamespaceStatus) error {
 		}
 		return errors.New("convert pod template failed")
 	}
-	if err = tpl.Execute(os.Stdout, podNamespaceStatusList); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, podNamespaceStatusList)
 }
 
 func getPodReadyStatus(pod corev1.Pod) error {

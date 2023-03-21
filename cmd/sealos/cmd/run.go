@@ -85,10 +85,7 @@ func newRunCmd() *cobra.Command {
 			return applier.Apply()
 		},
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			if err := buildah.ValidateTransport(transport); err != nil {
-				return err
-			}
-			return nil
+			return buildah.ValidateTransport(transport)
 		},
 		PostRun: func(cmd *cobra.Command, args []string) {
 			logger.Info(getContact())

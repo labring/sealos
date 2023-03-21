@@ -56,13 +56,13 @@ func Compare(v1, v2 string) bool {
 
 // assure version format right and new >=
 // The upgrade of minor version number cannot be skipped
-func UpgradeVersionLimit(old, new string) error {
-	new = strings.Replace(new, "v", "", -1)
-	old = strings.Replace(old, "v", "", -1)
-	new = strings.Split(new, "-")[0]
-	old = strings.Split(old, "-")[0]
-	newList := strings.Split(new, ".")
-	oldList := strings.Split(old, ".")
+func UpgradeVersionLimit(older, newer string) error {
+	newer = strings.Replace(newer, "v", "", -1)
+	older = strings.Replace(older, "v", "", -1)
+	newer = strings.Split(newer, "-")[0]
+	older = strings.Split(older, "-")[0]
+	newList := strings.Split(newer, ".")
+	oldList := strings.Split(older, ".")
 
 	minorNewV, err := strconv.Atoi(newList[1])
 	if err != nil {

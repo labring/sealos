@@ -49,12 +49,7 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("image shim config load error: %w", err)
 		}
-
-		if err = cfg.PreProcess(); err != nil {
-			return err
-		}
-
-		return nil
+		return cfg.PreProcess()
 	},
 }
 

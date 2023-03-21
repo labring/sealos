@@ -19,17 +19,14 @@ import (
 	"errors"
 	"os"
 
-	"github.com/labring/sealos/pkg/template"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
-
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 const (
@@ -81,11 +78,7 @@ func (n *NodeChecker) Check(cluster *v2.Cluster, phase string) error {
 		NodeCount:        nodeCount,
 		NotReadyNodeList: notReadyNodeList,
 	}
-	err = n.Output(nodeClusterStatus)
-	if err != nil {
-		return err
-	}
-	return nil
+	return n.Output(nodeClusterStatus)
 }
 
 func (n *NodeChecker) Output(nodeCLusterStatus NodeClusterStatus) error {
@@ -106,10 +99,7 @@ Cluster Node Status
 		}
 		return errors.New("convert node template failed")
 	}
-	if err = tpl.Execute(os.Stdout, nodeCLusterStatus); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, nodeCLusterStatus)
 }
 
 func getNodeStatus(node corev1.Node) (IP string, Phase string) {

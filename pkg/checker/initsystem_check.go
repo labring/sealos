@@ -40,7 +40,7 @@ type InitSystemStatus struct {
 	ServiceList []systemStatus
 }
 
-func (n *InitSystemChecker) Check(cluster *v2.Cluster, phase string) error {
+func (n *InitSystemChecker) Check(_ *v2.Cluster, phase string) error {
 	if phase != PhasePost {
 		return nil
 	}
@@ -89,10 +89,7 @@ Systemd Service Status
 		}
 		return errors.New("convert system service template failed")
 	}
-	if err = tpl.Execute(os.Stdout, status); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, status)
 }
 
 func NewInitSystemChecker() Interface {

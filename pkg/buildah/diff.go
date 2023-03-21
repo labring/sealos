@@ -71,7 +71,7 @@ func clean(bder Interface, ctr string) {
 	}
 }
 
-func (d *diff) Run(ctx context.Context, args []string) (err error) {
+func (d *diff) Run(_ context.Context, args []string) (err error) {
 	// nosemgrep: trailofbits.go.questionable-assignment.questionable-assignment
 	d.buildah, err = New("fake")
 	if err != nil {

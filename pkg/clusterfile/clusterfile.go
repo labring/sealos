@@ -63,7 +63,7 @@ type OptionFunc func(*ClusterFile)
 
 func WithSetDefaults(v bool) OptionFunc {
 	return func(c *ClusterFile) {
-		c.setDefaults = true
+		c.setDefaults = v
 	}
 }
 

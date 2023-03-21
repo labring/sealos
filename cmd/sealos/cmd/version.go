@@ -43,15 +43,11 @@ func newVersionCmd() *cobra.Command {
 			if output != "yaml" && output != "json" {
 				return errors.New(`--output must be 'yaml' or 'json'`)
 			}
-
 			if shortPrint {
 				fmt.Println(version.Get().String())
 				return nil
 			}
-			if err := PrintInfo(); err != nil {
-				return err
-			}
-			return nil
+			return PrintInfo()
 		},
 	}
 	versionCmd.Flags().BoolVar(&shortPrint, "short", false, "if true, print just the version number.")

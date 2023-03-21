@@ -154,10 +154,7 @@ CRI Status
 		}
 		return errors.New("convert crictl template failed")
 	}
-	if err = tpl.Execute(os.Stdout, status); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, status)
 }
 
 func NewCRICtlChecker() Interface {

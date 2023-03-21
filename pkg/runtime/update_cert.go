@@ -171,10 +171,7 @@ func (k *KubeadmRuntime) deleteAPIServer() error {
 					return err
 				}
 				//crictl rmp
-				if err = k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID)); err != nil {
-					return err
-				}
-				return nil
+				return k.sshCmdAsync(m, fmt.Sprintf("crictl rmp %s", podID))
 			}
 			return errors.New("not found apiServer pod running")
 		})

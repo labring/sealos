@@ -216,14 +216,10 @@ func Test_getOverrideConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := getOverrideConfigData(tt.args.path, tt.args.data)
-			if err != nil {
-				t.Error(err)
-				return
-			}
+			got := tt.args.data
 
 			output := "test_" + tt.args.path
-			err = os.WriteFile(output, got, 0644)
+			err := os.WriteFile(output, got, 0644)
 			if err != nil {
 				t.Error(err)
 			}

@@ -21,15 +21,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/labring/sealos/pkg/template"
-
-	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/utils/logger"
-
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/template"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type ClusterChecker struct {
@@ -116,10 +114,7 @@ Cluster Status
 		}
 		return errors.New("convert cluster template failed")
 	}
-	if err = tpl.Execute(os.Stdout, map[string][]ClusterStatus{"ClusterStatusList": clusterStatus}); err != nil {
-		return err
-	}
-	return nil
+	return tpl.Execute(os.Stdout, map[string][]ClusterStatus{"ClusterStatusList": clusterStatus})
 }
 
 func NewClusterChecker() Interface {

@@ -29,7 +29,7 @@ type HostChecker struct {
 	IPs []string
 }
 
-func (a HostChecker) Check(cluster *v2.Cluster, phase string) error {
+func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	var ipList []string
 	for _, hosts := range cluster.Spec.Hosts {
 		ipList = append(ipList, hosts.IPS...)

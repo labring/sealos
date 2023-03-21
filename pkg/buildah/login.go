@@ -104,10 +104,7 @@ func newLoginCommand() *cobra.Command {
 			}
 			sealosKubeconfPath := fmt.Sprintf("%s/%s", sealosKubeConfdir, "config")
 			// copy file, will overwrite the original file
-			if err := fileutil.Copy(opts.kubeconfig, sealosKubeconfPath); err != nil {
-				return err
-			}
-			return nil
+			return fileutil.Copy(opts.kubeconfig, sealosKubeconfPath)
 		},
 		Example: fmt.Sprintf(`%s login quay.io`, rootCmd.CommandPath()),
 	}

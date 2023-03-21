@@ -48,11 +48,7 @@ func (k *KubeadmRuntime) InitMaster0() error {
 	if err != nil {
 		return fmt.Errorf("init master0 failed, error: %s. Please clean and reinstall", err.Error())
 	}
-	err = k.copyMasterKubeConfig(k.getMaster0IPAndPort())
-	if err != nil {
-		return err
-	}
-	return nil
+	return k.copyMasterKubeConfig(k.getMaster0IPAndPort())
 }
 
 // sendJoinCPConfig send join CP masters configuration
@@ -189,8 +185,5 @@ func (k *KubeadmRuntime) deleteMaster(master string) error {
 		}
 	}
 
-	if err := k.resetNode(master); err != nil {
-		return err
-	}
-	return nil
+	return k.resetNode(master)
 }

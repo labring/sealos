@@ -107,10 +107,6 @@ func (c *Dumper) WriteFiles() (err error) {
 				return err
 			}
 		case v1beta1.Override:
-			configData, err = getOverrideConfigData(configPath, configData)
-			if err != nil {
-				return err
-			}
 		}
 		err = file.WriteFile(configPath, configData)
 		if err != nil {
@@ -169,8 +165,4 @@ func getMergeConfigData(path string, data []byte) ([]byte, error) {
 		configs = append(configs, cfg)
 	}
 	return bytes.Join(configs, []byte("\n---\n")), nil
-}
-
-func getOverrideConfigData(path string, data []byte) ([]byte, error) {
-	return data, nil
 }
