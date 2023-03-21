@@ -62,7 +62,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: build
 build:  ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux go build -o bin/manager main.go
+	CGO_ENABLED=0 GOOS=linux go build -tags "containers_image_openpgp"  -o bin/manager main.go
 
 .PHONY: build-multi-arch
 build-multi-arch:  ## Build manager binary.
