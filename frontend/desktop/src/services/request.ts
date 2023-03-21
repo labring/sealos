@@ -56,22 +56,19 @@ const request = axios.create({
 request.interceptors.request.use(
   (config: AxiosRequestConfig) => {
     // auto append service prefix
-    if (config.url && !config.url?.startsWith('/api/')) {
-      config.url = process.env.NEXT_PUBLIC_SERVICE + config.url;
-    }
-
     let _headers: RawAxiosRequestHeaders = config.headers || {};
     const session = useSessionStore.getState().session;
-    _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
-
-    //获取token，并将其添加至请求头中
-    // const session = useSessionStore.getState().session;
-    // if (session?.token?.access_token) {
-    //   const token = session.token.access_token;
-    //   if (token) {
-    //     _headers['Authorization'] = `Bearer ${token}`;
-    //   }
-    // }
+    if (config.url && config.url?.startsWith('/api/')) {
+      _headers['Authorization'] = encodeURIComponent(session?.kubeconfig || '');
+    } else if (process.env.NEXT_PUBLIC_SERVICE) {
+      config.url = process.env.NEXT_PUBLIC_SERVICE + config.url;
+      if (session?.token?.access_token) {
+        const token = session.token.access_token;
+        if (token) {
+          _headers['Authorization'] = `Bearer ${token}`;
+        }
+      }
+    }
 
     if (!config.headers || config.headers['Content-Type'] === '') {
       _headers['Content-Type'] = 'application/json';
