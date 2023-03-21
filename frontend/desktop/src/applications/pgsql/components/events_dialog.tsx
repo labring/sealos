@@ -14,6 +14,7 @@ type PgsqlEventsDialog = {
 type PgsqlEvent = {
   metadata: {
     creationTimestamp: string;
+    uid: string;
   };
   note: string;
   regarding: {
@@ -42,8 +43,8 @@ export default function PgsqlEventsDialog(props: PgsqlEventsDialog) {
       {items?.length === 0 && <div>暂无数据</div>}
       {items?.map((item: PgsqlEvent) => {
         return (
-          <div key={item.note} className={clsx(styles.eventInfo, 'ml-3')}>
-            {item.note}
+          <div key={item?.metadata?.uid} className={clsx(styles.eventInfo, 'ml-3')}>
+            {item?.note}
           </div>
         );
       })}
