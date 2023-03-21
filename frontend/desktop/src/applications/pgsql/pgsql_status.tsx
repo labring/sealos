@@ -10,6 +10,11 @@ type PgsqlStatus = {
 
 function PgsqlStatus(props: PgsqlStatus) {
   const { openEventDialog, pgsqlDetail } = props;
+
+  if (!pgsqlDetail?.status?.PostgresClusterStatus) {
+    pgsqlDetail.status.PostgresClusterStatus = EPgsqlStatus.Creating;
+  }
+
   return (
     <div
       className={clsx(
