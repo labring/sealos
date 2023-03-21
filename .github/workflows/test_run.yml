@@ -787,3 +787,25 @@ jobs:
           sudo sealos rmi k8s:dev
           sudo sealos load -i k8s.tar
           sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+  verify-run-by-newimage:
+    needs: [ build-sealos ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Run
+        run: |
+          sudo sealos pull cuisongliu/dev-merge-containerd-k8s:1.23.17-amd64
+          sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
