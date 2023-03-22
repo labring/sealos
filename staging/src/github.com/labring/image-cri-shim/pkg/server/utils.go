@@ -17,9 +17,7 @@ limitations under the License.
 package server
 
 import (
-	"context"
 	"strings"
-	"time"
 
 	"github.com/labring/image-cri-shim/pkg/types"
 
@@ -29,11 +27,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/registry"
 	str "github.com/labring/sealos/pkg/utils/strings"
 )
-
-// getContextWithTimeout returns a context with timeout.
-func getContextWithTimeout(timeout time.Duration) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.Background(), timeout)
-}
 
 // parseImageNameAndTag splits the input image name into its name and tag.
 func parseImageNameAndTag(imageName string) (name, tag string) {

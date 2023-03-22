@@ -42,7 +42,6 @@ const (
 type Config struct {
 	ImageShimSocket string                `json:"shim"`
 	RuntimeSocket   string                `json:"cri"`
-	CRIVersion      CRIVersion            `json:"version"`
 	Address         string                `json:"address"`
 	Force           bool                  `json:"force"`
 	Debug           bool                  `json:"debug"`
@@ -82,11 +81,6 @@ func (c *Config) PreProcess() error {
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
 	}
 
-	if c.CRIVersion == "" || (c.CRIVersion != CRIVersionV1Alpha2 && c.CRIVersion != CRIVersionV1) {
-		c.CRIVersion = CRIVersionV1Alpha2
-		logger.Info("Version error,Using default CRI v1alpha2 image API")
-	}
-
 	logger.Info("RegistryDomain: %v", domain)
 	logger.Info("Force: %v", c.Force)
 	logger.Info("Debug: %v", c.Debug)
@@ -96,7 +90,6 @@ func (c *Config) PreProcess() error {
 	logger.Info("Auth: %v", c.Auth)
 	logger.Info("Username: %s", username)
 	logger.Info("Password: %s", password)
-	logger.Info("CRIVersion: %s", c.CRIVersion)
 
 	if c.Address == "" {
 		return errors.New("registry addr is empty")
