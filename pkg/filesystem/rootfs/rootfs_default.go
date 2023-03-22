@@ -68,7 +68,9 @@ func (f *defaultRootfs) mountRootfs(cluster *v2.Cluster, ipList []string) error 
 				logger.Debug("Image %s not exist, render env continue", src.ImageName)
 				return nil
 			}
-			err := renderENV(src.MountPoint, ipList, envProcessor)
+			// TODO: if we are planing to support rendering templates for each host,
+			// then move this rendering process before ssh.CopyDir and do it one by one.
+			err := renderTemplatesWithEnv(src.MountPoint, ipList, envProcessor)
 			if err != nil {
 				return fmt.Errorf("failed to render env: %w", err)
 			}
@@ -151,21 +153,20 @@ func (f *defaultRootfs) unmountRootfs(cluster *v2.Cluster, ipList []string) erro
 	return eg.Wait()
 }
 
-func renderENV(mountDir string, ipList []string, p env.Interface) error {
+func renderTemplatesWithEnv(mountDir string, ipList []string, p env.Interface) error {
 	var (
 		renderEtc       = path.Join(mountDir, constants.EtcDirName)
 		renderScripts   = path.Join(mountDir, constants.ScriptsDirName)
 		renderManifests = path.Join(mountDir, constants.ManifestsDirName)
 	)
 
-	for _, ip := range ipList {
-		for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
-			logger.Debug("render env dir: %s", dir)
-			if file.IsExist(dir) {
-				err := p.RenderAll(ip, dir)
-				if err != nil {
-					return err
-				}
+	// currently only render once
+	for _, dir := range []string{renderEtc, renderScripts, renderManifests} {
+		logger.Debug("render env dir: %s", dir)
+		if file.IsExist(dir) {
+			err := p.RenderAll(ipList[0], dir)
+			if err != nil {
+				return err
 			}
 		}
 	}
