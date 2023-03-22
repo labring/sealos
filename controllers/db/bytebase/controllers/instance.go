@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 
-	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
 	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -18,7 +17,7 @@ const (
 	defaultDataSourceType api.DataSourceType = "ADMIN"
 )
 
-func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request, bb *bbv1.Bytebase) error {
+func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request) error {
 	c := r.Bc
 	logger := r.Logger
 	/// check the default environment exists
@@ -27,7 +26,7 @@ func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request,
 		logger.Error(err, errorMessage)
 		return err
 	}
-	if err := r.syncPostgresInstance(ctx, req, bb); err != nil {
+	if err := r.syncPostgresInstance(ctx, req); err != nil {
 		errorMessage := "failed to set up postgres instance"
 		logger.Error(err, errorMessage)
 		return err
@@ -35,7 +34,7 @@ func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request,
 	return nil
 }
 
-func (r *BytebaseReconciler) syncPostgresInstance(ctx context.Context, req ctrl.Request, bb *bbv1.Bytebase) error {
+func (r *BytebaseReconciler) syncPostgresInstance(ctx context.Context, req ctrl.Request) error {
 	logger := r.Logger
 	c := r.Bc
 	var (

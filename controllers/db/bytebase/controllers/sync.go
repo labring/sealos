@@ -50,10 +50,7 @@ func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Byte
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
-		if err := controllerutil.SetControllerReference(bb, ingress, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(bb, ingress, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -118,10 +115,7 @@ func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv1.Bytebase)
 			service.Spec.Ports[0].TargetPort = expectService.Spec.Ports[0].TargetPort
 			service.Spec.Ports[0].Protocol = expectService.Spec.Ports[0].Protocol
 		}
-		if err := controllerutil.SetControllerReference(bb, service, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(bb, service, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -277,10 +271,7 @@ func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv1.Byteba
 			deployment.Spec.Template.Spec.Volumes = volumes
 		}
 
-		if err := controllerutil.SetControllerReference(bb, deployment, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(bb, deployment, r.Scheme)
 	}); err != nil {
 		return err
 	}

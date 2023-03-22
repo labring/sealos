@@ -190,7 +190,7 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	if err := r.syncInstance(ctx, req, bb); err != nil {
+	if err := r.syncInstance(ctx, req); err != nil {
 		logger.Error(err, "create instance failed")
 		return ctrl.Result{}, err
 	}
