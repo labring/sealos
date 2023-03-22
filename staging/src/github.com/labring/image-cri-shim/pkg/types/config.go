@@ -19,7 +19,6 @@ package types
 import (
 	"errors"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
@@ -40,15 +39,13 @@ const (
 )
 
 type Config struct {
-	ImageShimSocket string                `json:"shim"`
-	RuntimeSocket   string                `json:"cri"`
-	Address         string                `json:"address"`
-	Force           bool                  `json:"force"`
-	Debug           bool                  `json:"debug"`
-	Image           string                `json:"image"`
-	Timeout         metav1.Duration       `json:"timeout"`
-	Auth            string                `json:"auth"`
-	CRIConfigs      map[string]AuthConfig `json:"-"`
+	ImageShimSocket string          `json:"shim"`
+	RuntimeSocket   string          `json:"cri"`
+	Address         string          `json:"address"`
+	Force           bool            `json:"force"`
+	Debug           bool            `json:"debug"`
+	Timeout         metav1.Duration `json:"timeout"`
+	Auth            string          `json:"auth"`
 }
 
 func (c *Config) PreProcess() error {
@@ -58,24 +55,13 @@ func (c *Config) PreProcess() error {
 	logger.Info("shim-socket: %s", c.ImageShimSocket)
 	logger.Info("cri-socket: %s", c.RuntimeSocket)
 	logger.Info("hub-address: %s", c.Address)
+	logger.Info("auth: %s", c.Auth)
 	rawURL, err := url.Parse(c.Address)
 	if err != nil {
 		logger.Warn("url parse error: %+v", err)
 	}
 	domain := rawURL.Host
 	var username, password string
-	up := strings.Split(c.Auth, ":")
-	if len(up) == 2 {
-		username = up[0]
-		password = up[1]
-	} else {
-		username = up[0]
-	}
-	c.CRIConfigs = map[string]AuthConfig{domain: {
-		Username:      username,
-		Password:      password,
-		ServerAddress: c.Address,
-	}}
 	if c.Timeout.Duration.Milliseconds() == 0 {
 		c.Timeout = metav1.Duration{}
 		c.Timeout.Duration, _ = time.ParseDuration("15m")
@@ -85,9 +71,7 @@ func (c *Config) PreProcess() error {
 	logger.Info("Force: %v", c.Force)
 	logger.Info("Debug: %v", c.Debug)
 	logger.CfgConsoleLogger(c.Debug, false)
-	logger.Info("ImageDir: %v, but Image config is remove", c.Image)
 	logger.Info("Timeout: %v", c.Timeout)
-	logger.Info("Auth: %v", c.Auth)
 	logger.Info("Username: %s", username)
 	logger.Info("Password: %s", password)
 

@@ -63,6 +63,7 @@ func NewRegistry(url, username, password string, skipTLS bool) (*registry.Regist
 }
 
 func NewRegistryForDomain(domain, username, password string) (*registry.Registry, error) {
+	domain = NormalizeRegistry(domain)
 	url := "https://" + domain
 	reg, err := NewRegistry(url, username, password, false)
 	if err == nil {
@@ -74,4 +75,12 @@ func NewRegistryForDomain(domain, username, password string) (*registry.Registry
 		return reg, nil
 	}
 	return nil, fmt.Errorf("not found registry in this domain: %s", domain)
+}
+
+func NormalizeRegistry(registry string) string {
+	switch registry {
+	case "registry-1.docker.io", "docker.io", "index.docker.io":
+		return "index.docker.io"
+	}
+	return registry
 }

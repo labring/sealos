@@ -19,15 +19,21 @@ package server
 import (
 	"context"
 
-	"github.com/labring/image-cri-shim/pkg/types"
+	"github.com/labring/sealos/pkg/registry/name"
+	"github.com/labring/sealos/pkg/utils/registry"
+
+	"github.com/docker/docker/api/types"
+	types2 "github.com/labring/image-cri-shim/pkg/types"
+
 	api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type v1alpha2ImageService struct {
-	imageClient api.ImageServiceClient
-	CRIConfigs  map[string]types.AuthConfig
+	imageClient       api.ImageServiceClient
+	CRIConfigs        map[string]types.AuthConfig
+	OfflineCRIConfigs map[string]types.AuthConfig
 }
 
 func (s *v1alpha2ImageService) ListImages(ctx context.Context,
@@ -46,7 +52,7 @@ func (s *v1alpha2ImageService) ImageStatus(ctx context.Context,
 	req *api.ImageStatusRequest) (*api.ImageStatusResponse, error) {
 	logger.Debug("ImageStatus: %+v", req)
 	if req.Image != nil {
-		req.Image.Image = replaceImage(req.Image.Image, "ImageStatus", s.CRIConfigs)
+		req.Image.Image, _, _ = replaceImage(req.Image.Image, "ImageStatus", s.OfflineCRIConfigs)
 	}
 	rsp, err := s.imageClient.ImageStatus(ctx, req)
 
@@ -61,15 +67,22 @@ func (s *v1alpha2ImageService) PullImage(ctx context.Context,
 	req *api.PullImageRequest) (*api.PullImageResponse, error) {
 	logger.Debug("PullImage begin: %+v", req)
 	if req.Image != nil {
-		req.Image.Image = replaceImage(req.Image.Image, "PullImage", s.CRIConfigs)
-	}
-	replacedImageDomain, _ := parseImageDomainAndName(req.Image.Image)
-	if req.Auth == nil {
-		if criAuth, ok := s.CRIConfigs[replacedImageDomain]; ok {
-			req.Auth = criAuth.ToV1Alpha2AuthConfig()
+		imageName, ok, auth := replaceImage(req.Image.Image, "PullImage", s.OfflineCRIConfigs)
+		if req.Auth == nil {
+			if ok {
+				req.Auth = types2.ToV1Alpha2AuthConfig(auth)
+			} else {
+				ref, _ := name.ParseReference(imageName)
+				for domain, v := range s.CRIConfigs {
+					if registry.NormalizeRegistry(domain) == ref.Context().RegistryStr() {
+						req.Auth = types2.ToV1Alpha2AuthConfig(&v)
+						break
+					}
+				}
+			}
 		}
+		req.Image.Image = imageName
 	}
-
 	logger.Debug("PullImage after: %+v", req)
 	rsp, err := s.imageClient.PullImage(ctx, req)
 	if err != nil {
@@ -83,7 +96,7 @@ func (s *v1alpha2ImageService) RemoveImage(ctx context.Context,
 	req *api.RemoveImageRequest) (*api.RemoveImageResponse, error) {
 	logger.Debug("RemoveImage: %+v", req)
 	if req.Image != nil {
-		req.Image.Image = replaceImage(req.Image.Image, "RemoveImage", s.CRIConfigs)
+		req.Image.Image, _, _ = replaceImage(req.Image.Image, "RemoveImage", s.OfflineCRIConfigs)
 	}
 	rsp, err := s.imageClient.RemoveImage(ctx, req)
 

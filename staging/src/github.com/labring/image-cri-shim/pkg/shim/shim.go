@@ -17,8 +17,14 @@ package shim
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"sync"
+
+	types2 "github.com/docker/docker/api/types"
+
+	"github.com/labring/sealos/pkg/registry"
 
 	"github.com/labring/image-cri-shim/pkg/types"
 
@@ -68,13 +74,38 @@ func NewShim(cfg *types.Config) (Shim, error) {
 	}
 	r.client = clt
 
+	criAuth, err := registry.GetAuthInfo(nil)
+	if err != nil {
+		return nil, shimError("failed to get auth info: %v", err)
+	}
+	logger.Info("criAuth: %+v", criAuth)
+	var username, password string
+	up := strings.Split(cfg.Auth, ":")
+	if len(up) == 2 {
+		username = up[0]
+		password = up[1]
+	} else {
+		username = up[0]
+	}
+	rawURL, err := url.Parse(cfg.Address)
+	if err != nil {
+		return nil, shimError("failed to parse registry address: %v", err)
+	}
+	domain := rawURL.Host
+	offLineConfig := map[string]types2.AuthConfig{domain: {
+		Username:      username,
+		Password:      password,
+		ServerAddress: cfg.Address,
+	}}
+
 	srvopts := server.Options{
-		Timeout:    cfg.Timeout.Duration,
-		Socket:     cfg.ImageShimSocket,
-		User:       -1,
-		Group:      -1,
-		Mode:       0660,
-		CRIConfigs: cfg.CRIConfigs,
+		Timeout:           cfg.Timeout.Duration,
+		Socket:            cfg.ImageShimSocket,
+		User:              -1,
+		Group:             -1,
+		Mode:              0660,
+		CRIConfigs:        criAuth,
+		OfflineCRIConfigs: offLineConfig,
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {

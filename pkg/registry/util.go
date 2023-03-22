@@ -15,84 +15,26 @@
 package registry
 
 import (
-	"fmt"
+	"runtime"
 	"strings"
+
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 
 	"github.com/containers/image/v5/pkg/docker/config"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/docker/docker/api/types"
+	"github.com/google/go-containerregistry/pkg/crane"
 
+	"github.com/labring/sealos/pkg/registry/authn"
+	"github.com/labring/sealos/pkg/registry/name"
+	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/registry"
 )
 
 // this package contains some utils to handle docker image name
 const (
-	legacyDefaultDomain = "index.docker.io"
-	defaultDomain       = "docker.io"
-	officialRepoName    = "library"
-	defaultTag          = "latest"
+	defaultDomain = "docker.io"
 )
-
-// docker image name struct
-type Named struct {
-	domain string //eg. docker.io
-	repo   string //eg. library/ubuntu
-	tag    string //eg. latest
-}
-
-func (n Named) FullName() string {
-	return n.domain + "/" + n.repo + ":" + n.tag
-}
-
-func (n Named) Domain() string {
-	return n.domain
-}
-
-func (n Named) Repo() string {
-	return n.repo
-}
-
-func (n Named) Tag() string {
-	return n.tag
-}
-
-func splitDockerDomain(name string) (domain, remainder string) {
-	i := strings.IndexRune(name, '/')
-	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && name[:i] != "localhost" && strings.ToLower(name[:i]) == name[:i]) {
-		domain, remainder = defaultDomain, name
-	} else {
-		domain, remainder = name[:i], name[i+1:]
-	}
-	if domain == legacyDefaultDomain {
-		domain = defaultDomain
-	}
-	if domain == defaultDomain && !strings.ContainsRune(remainder, '/') {
-		remainder = officialRepoName + "/" + remainder
-	}
-	return
-}
-
-func ParseNormalizedNamed(s string) (Named, error) {
-	domain, remainder := splitDockerDomain(s)
-	var remoteName, tag string
-	if tagSep := strings.IndexRune(remainder, ':'); tagSep > -1 {
-		tag = remainder[tagSep+1:]
-		remoteName = remainder[:tagSep]
-	} else {
-		tag = defaultTag
-		remoteName = remainder
-	}
-	if strings.ToLower(remoteName) != remoteName {
-		return Named{}, fmt.Errorf("invalid reference format: repository name (%s) must be lowercase", remoteName)
-	}
-
-	named := Named{
-		domain: domain,
-		repo:   remoteName,
-		tag:    tag,
-	}
-	return named, nil
-}
 
 func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, error) {
 	creds, err := config.GetAllCredentials(sys)
@@ -113,4 +55,53 @@ func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, er
 		}
 	}
 	return auths, nil
+}
+
+func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConfig) (newImage string, data []byte, cfg *types.AuthConfig, err error) {
+	newImage = image
+	if authConfig == nil {
+		authConfig, err = GetAuthInfo(nil)
+		if err != nil {
+			return newImage, nil, nil, err
+		}
+	}
+	craneOpts := []crane.Option{crane.WithAuthFromKeychain(authn.NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
+	var ref name.Reference
+	var repo string
+	ref, err = name.ParseReference(image)
+	if err != nil {
+		return newImage, nil, nil, err
+	}
+	parts := strings.SplitN(ref.Name(), "/", 2)
+	if len(parts) == 2 && (strings.ContainsRune(parts[0], '.') || strings.ContainsRune(parts[0], ':')) {
+		// The first part of the repository is treated as the registry domain
+		// iff it contains a '.' or ':' character, otherwise it is all repository
+		// and the domain defaults to Docker Hub.
+		_ = parts[0]
+		repo = parts[1]
+	}
+
+	for domain, c := range authConfig {
+		newImage = strings.Join([]string{domain, repo}, "/")
+		ref, err = name.ParseReference(newImage)
+		if url, ook := http.IsURL(c.ServerAddress); ook {
+			if url.Scheme == "http" {
+				ref, err = name.ParseReference(newImage, name.Insecure)
+				craneOpts = append(craneOpts, crane.Insecure)
+			}
+		}
+		craneOpts = append(craneOpts, crane.WithPlatform(&v1.Platform{
+			OS:           "linux",
+			Architecture: runtime.GOARCH,
+		}))
+		//logs.Debug.SetOutput(os.Stderr)
+		if err != nil {
+			continue
+		}
+		data, err = crane.Manifest(ref.Name(), craneOpts...)
+		if err == nil {
+			return newImage, data, &c, nil
+		}
+	}
+	return image, nil, nil, err
 }
