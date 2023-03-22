@@ -48,7 +48,7 @@ type DebtSpec struct {
 
 // DebtStatus defines the observed state of Debt
 type DebtStatus struct {
-	LastUpdateTimeStamp int64          `json:"lastUpdateTimeStamp,omitempty"`
+	LastUpdateTimestamp int64          `json:"lastUpdateTimeStamp,omitempty"`
 	AccountDebtStatus   DebtStatusType `json:"status,omitempty"`
 }
 

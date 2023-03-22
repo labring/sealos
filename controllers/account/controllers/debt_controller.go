@@ -19,12 +19,13 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
-
-	"time"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -85,7 +86,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	Updataflag := false
 	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
-		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
+		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
 		if err := r.change2Normal(ctx, *account); err != nil {
 			return err
@@ -98,7 +99,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	}
 	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < (normalPrice) {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
-		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
+		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
 		if err := r.sendSmallNotice(ctx, account.Name); err != nil {
 			return err
@@ -112,9 +113,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	if !ok {
 		r.Error(fmt.Errorf("get smallBlockTimeSecond error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > smallBlockTimeSecond {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > smallBlockTimeSecond {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusMedium
-		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
+		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
 		if err := r.sendMediumNotice(ctx, account.Name); err != nil {
 			return err
@@ -128,9 +129,9 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	if !ok {
 		r.Error(fmt.Errorf("get mediumBlockTimeSecond, error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > mediumBlockTimeSecond {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > mediumBlockTimeSecond {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
-		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
+		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
 		if err := r.sendLargeNotice(ctx, account.Name); err != nil {
 			return err
@@ -211,6 +212,28 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 		}
 	}
 
+	// delete all daemonset
+	daemonsetlist := appsv1.DaemonSetList{}
+	if err := r.List(ctx, &daemonsetlist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+	for _, daemonset := range daemonsetlist.Items {
+		if err := r.Delete(ctx, &daemonset); err != nil {
+			return err
+		}
+	}
+
+	// delete all replicaset
+	replicalist := appsv1.ReplicaSetList{}
+	if err := r.List(ctx, &replicalist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
+		return err
+	}
+	for _, replica := range replicalist.Items {
+		if err := r.Delete(ctx, &replica); err != nil {
+			return err
+		}
+	}
+
 	// delete all infra
 	infralist := infrav1.InfraList{}
 	if err := r.List(ctx, &infralist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
@@ -242,7 +265,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	return ctrl.NewControllerManagedBy(mgr).
 		// update status should not enter reconcile
-		For(&accountv1.Debt{}).
+		For(&accountv1.Debt{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		Watches(&source.Kind{Type: &accountv1.Account{}}, &handler.EnqueueRequestForObject{}).
 		Complete(r)

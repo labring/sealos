@@ -81,7 +81,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 			return admission.ValidationResponse(true, "")
 		case userSaGroup:
 			logger.Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
-			if isWriteList(req) {
+			if isWhiteList(req) {
 				return admission.ValidationResponse(true, "")
 			}
 			return checkOption(ctx, logger, d.Client, req.Namespace)
@@ -91,7 +91,6 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		}
 	}
 
-	// check is user ns
 	logger.Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
 }
@@ -103,14 +102,15 @@ func getGVRK(req admission.Request) string {
 	return fmt.Sprintf("%s.%s.%s/%s", req.Resource.Resource, req.Kind.Kind, req.Kind.Group, req.Kind.Version)
 }
 
-func isWriteList(req admission.Request) bool {
+func isWhiteList(req admission.Request) bool {
 	whitelists := os.Getenv("WHITELIST")
 	if whitelists == "" {
 		return false
 	}
-	writelist := strings.Split(whitelists, ",")
-	for _, w := range writelist {
-		if getGVRK(req) == w {
+	whitelist := strings.Split(whitelists, ",")
+	reqGVK := getGVRK(req)
+	for _, w := range whitelist {
+		if reqGVK == w {
 			logger.Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
 			return true
 		}
