@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -150,10 +151,9 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	url := "http://" + svc.Spec.ClusterIP + ":" + bb.Spec.Port.String()
+	url := fmt.Sprintf("http://%s:%s", svc.Spec.ClusterIP, bb.Spec.Port.String())
 	version := "v1"
-
-	healthCheckURL := url + "/healthz"
+	healthCheckURL := fmt.Sprintf("%s/healthz", url)
 
 	if err := bbclient.CheckServerHealth(healthCheckURL); err != nil {
 		message := "wait for bytebase instance to be initialized and started..."
