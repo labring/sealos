@@ -55,10 +55,7 @@ func SetupCache(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "subject.kind", subjectKindFunc); err != nil {
 		return err
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "subject.name", subjectNameFunc); err != nil {
-		return err
-	}
-	return nil
+	return mgr.GetFieldIndexer().IndexField(context.TODO(), ugb, "subject.name", subjectNameFunc)
 }
 
 func (r *Cache) FetchNamespaceFromUserGroup(ctx context.Context, userGroup string) (namespaces []userv1.UserGroupBinding) {

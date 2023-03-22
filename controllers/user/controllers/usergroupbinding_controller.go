@@ -104,23 +104,17 @@ func (r *UserGroupBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 func (r *UserGroupBindingReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupBindingStatus) error {
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.UserGroupBinding{}
 		if err := r.Get(ctx, nn, original); err != nil {
 			return err
 		}
 		original.Status = *status
-		if err := r.Client.Status().Update(ctx, original); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+		return r.Client.Status().Update(ctx, original)
+	})
 }
 
-func (r *UserGroupBindingReconciler) initStatus(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
+func (r *UserGroupBindingReconciler) initStatus(_ context.Context, ugBinding *userv1.UserGroupBinding) {
 	var initializedCondition = userv1.Condition{
 		Type:               userv1.Initialized,
 		Status:             v1.ConditionTrue,
@@ -135,7 +129,7 @@ func (r *UserGroupBindingReconciler) initStatus(ctx context.Context, ugBinding *
 		ugBinding.Status.Conditions = helper.UpdateCondition(ugBinding.Status.Conditions, initializedCondition)
 	}
 }
-func (r *UserGroupBindingReconciler) syncFinalStatus(ctx context.Context, ugBinding *userv1.UserGroupBinding) {
+func (r *UserGroupBindingReconciler) syncFinalStatus(_ context.Context, ugBinding *userv1.UserGroupBinding) {
 	condition := &userv1.Condition{
 		Type:               userv1.Ready,
 		Status:             v1.ConditionTrue,

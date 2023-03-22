@@ -136,7 +136,7 @@ func (r *UserGroupReconciler) reconcile(ctx context.Context, obj client.Object) 
 	return ctrl.Result{}, nil
 }
 
-func (r *UserGroupReconciler) initStatus(ctx context.Context, ug *userv1.UserGroup) {
+func (r *UserGroupReconciler) initStatus(_ context.Context, ug *userv1.UserGroup) {
 	var initializedCondition = userv1.Condition{
 		Type:               userv1.Initialized,
 		Status:             v1.ConditionTrue,
@@ -151,7 +151,7 @@ func (r *UserGroupReconciler) initStatus(ctx context.Context, ug *userv1.UserGro
 		ug.Status.Conditions = helper.UpdateCondition(ug.Status.Conditions, initializedCondition)
 	}
 }
-func (r *UserGroupReconciler) syncFinalStatus(ctx context.Context, ug *userv1.UserGroup) {
+func (r *UserGroupReconciler) syncFinalStatus(_ context.Context, ug *userv1.UserGroup) {
 	condition := &userv1.Condition{
 		Type:               userv1.Ready,
 		Status:             v1.ConditionTrue,
@@ -174,20 +174,14 @@ func (r *UserGroupReconciler) syncFinalStatus(ctx context.Context, ug *userv1.Us
 }
 
 func (r *UserGroupReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserGroupStatus) error {
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.UserGroup{}
 		if err := r.Get(ctx, nn, original); err != nil {
 			return err
 		}
 		original.Status = *status
-		if err := r.Client.Status().Update(ctx, original); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+		return r.Client.Status().Update(ctx, original)
+	})
 }
 
 func (r *UserGroupReconciler) saveCondition(ug *userv1.UserGroup, condition *userv1.Condition) {

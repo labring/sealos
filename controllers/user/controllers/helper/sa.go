@@ -52,7 +52,7 @@ func (sac *ServiceAccount) KubeConfig(config *rest.Config, client client.Client)
 	return nil, err
 }
 
-func (sac *ServiceAccount) applyServiceAccount(config *rest.Config, client client.Client) error {
+func (sac *ServiceAccount) applyServiceAccount(_ *rest.Config, client client.Client) error {
 	sa := &v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sac.User,
@@ -65,7 +65,7 @@ func (sac *ServiceAccount) applyServiceAccount(config *rest.Config, client clien
 	return err
 }
 
-func (sac *ServiceAccount) applySecret(config *rest.Config, client client.Client) error {
+func (sac *ServiceAccount) applySecret(_ *rest.Config, client client.Client) error {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      sac.getSecretName(),

@@ -28,7 +28,7 @@ type Webhook struct {
 	*Config
 }
 
-func (c *Webhook) KubeConfig(config *rest.Config, client client.Client) (*api.Config, error) {
+func (c *Webhook) KubeConfig(_ *rest.Config, _ client.Client) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	ctx := "webhook"
 	return &api.Config{

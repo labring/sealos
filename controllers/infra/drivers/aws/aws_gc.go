@@ -60,10 +60,7 @@ func (g *GarbageCollector) KeyPairGC() error {
 		})
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (g *GarbageCollector) InstanceGC() error {
@@ -97,10 +94,7 @@ func (g *GarbageCollector) InstanceGC() error {
 		}
 	}
 
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func parseInstanceTag(i ec2Types.Instance) (*types.NamespacedName, bool) {

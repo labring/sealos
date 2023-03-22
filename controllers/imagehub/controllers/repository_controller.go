@@ -141,7 +141,7 @@ func (r *RepositoryReconciler) reconcile(ctx context.Context, obj client.Object)
 	return ctrl.Result{}, nil
 }
 
-func (r *RepositoryReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
+func (r *RepositoryReconciler) doFinalizer(_ context.Context, _ client.Object) error {
 	return nil
 }
 

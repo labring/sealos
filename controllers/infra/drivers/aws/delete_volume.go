@@ -49,10 +49,7 @@ func (d Driver) detachAndDeleteVolumeByID(disksID []string) error {
 			return retryDeleteVolume(common.TryTimes, common.TrySleepTime, client, inputDelete)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func retryDeleteVolume(tryTimes int, trySleepTime time.Duration, client *ec2.Client, inputDelete *ec2.DeleteVolumeInput) error {

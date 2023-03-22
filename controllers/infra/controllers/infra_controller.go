@@ -176,20 +176,14 @@ func (r *InfraReconciler) DeleteInfra(ctx context.Context, obj client.Object) er
 }
 
 func (r *InfraReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status string) error {
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &infrav1.Infra{}
 		if err := r.Get(ctx, nn, original); err != nil {
 			return err
 		}
 		original.Status.Status = status
-		if err := r.Status().Update(ctx, original); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+		return r.Status().Update(ctx, original)
+	})
 }
 
 // SetupWithManager sets up the controller with the Manager.

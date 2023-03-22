@@ -37,10 +37,7 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 			return d.createAndAttachVolume(infra, host, disk)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk v1.Disk) error {
@@ -86,10 +83,7 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk v1.D
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func getVolumeTag(infra *v1.Infra) []ecs.CreateDiskTag {

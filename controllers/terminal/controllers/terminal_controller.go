@@ -185,10 +185,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 			apisixRoute.Spec.HTTP[0].Timeout = expectRoute.Spec.HTTP[0].Timeout
 			apisixRoute.Spec.HTTP[0].Authentication = expectRoute.Spec.HTTP[0].Authentication
 		}
-		if err := controllerutil.SetControllerReference(terminal, apisixRoute, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(terminal, apisixRoute, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -208,10 +205,7 @@ func (r *TerminalReconciler) syncApisixIngress(ctx context.Context, terminal *te
 		} else {
 			apisixTLS.Spec = expectTLS.Spec
 		}
-		if err := controllerutil.SetControllerReference(terminal, apisixTLS, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(terminal, apisixTLS, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -238,10 +232,7 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
 		ingress.Spec.TLS = expectIngress.Spec.TLS
-		if err := controllerutil.SetControllerReference(terminal, ingress, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(terminal, ingress, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -290,10 +281,7 @@ func (r *TerminalReconciler) syncService(ctx context.Context, terminal *terminal
 			service.Spec.Ports[0].TargetPort = expectService.Spec.Ports[0].TargetPort
 			service.Spec.Ports[0].Protocol = expectService.Spec.Ports[0].Protocol
 		}
-		if err := controllerutil.SetControllerReference(terminal, service, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(terminal, service, r.Scheme)
 	}); err != nil {
 		return err
 	}
@@ -399,10 +387,7 @@ func (r *TerminalReconciler) syncDeployment(ctx context.Context, terminal *termi
 			*hostname = deployment.Spec.Template.Spec.Hostname
 		}
 
-		if err := controllerutil.SetControllerReference(terminal, deployment, r.Scheme); err != nil {
-			return err
-		}
-		return nil
+		return controllerutil.SetControllerReference(terminal, deployment, r.Scheme)
 	}); err != nil {
 		return err
 	}

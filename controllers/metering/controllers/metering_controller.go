@@ -252,7 +252,7 @@ func (r *MeteringReconcile) clearResourceUsed(ctx context.Context, metering *met
 
 func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64, metering *meteringv1.Metering) error {
 	//r.Logger.Info("enter metering updateBillingList", "metering name: ", metering.Name, "metering namespace: ", metering.Namespace, "lastupdat Time", metering.Status.LatestUpdateTime)
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Namespace}, metering); err != nil {
 			return err
 		}
@@ -269,10 +269,7 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64,
 		metering.Status.LatestUpdateTime = time.Now().Unix()
 		metering.Status.SeqID++
 		return r.Status().Update(ctx, metering)
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 func NewBillingList(TimeInterval meteringv1.TimeIntervalType, amount int64) meteringv1.BillingList {
