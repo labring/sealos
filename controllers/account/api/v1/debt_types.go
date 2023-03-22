@@ -26,16 +26,19 @@ const (
 	DebtStatusMedium DebtStatusType = "Medium"
 	DebtStatusLarge  DebtStatusType = "Large"
 	DebtPrefix                      = "debt-"
+	NormalPrice                     = 0
+	// SmallBlockWaitSecond 3 days
+	SmallBlockWaitSecond = 3 * 24 * 60 * 60
+	// MediumBlockWaitSecond 4 days
+	MediumBlockWaitSecond = 4 * 24 * 60 * 60
 )
 
 type DebtStatusType string
 
-var DefaultDebtConfig = map[string]string{
-	"Normal": "0",
-	// 3 day
-	"Small": "10800",
-	// 4 day
-	"Medium": "14400",
+var DefaultDebtConfig = map[string]int64{
+	"Normal": NormalPrice,
+	"Small":  SmallBlockWaitSecond,
+	"Medium": MediumBlockWaitSecond,
 }
 
 // DebtSpec defines the desired state of Debt

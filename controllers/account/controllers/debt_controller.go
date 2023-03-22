@@ -24,7 +24,6 @@ import (
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
-	"strconv"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -93,11 +92,11 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 	}
 
-	normalPrice, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusNormal)])
-	if err != nil {
-		r.Error(err, "get normal price error")
+	normalPrice, ok := DebtConfig[string(accountv1.DebtStatusNormal)]
+	if !ok {
+		r.Error(fmt.Errorf("get normal price error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < int64(normalPrice) {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < (normalPrice) {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
@@ -109,11 +108,11 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 	}
 
-	smalltime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusSmall)])
-	if err != nil {
-		r.Error(err, "get small time error")
+	smallBlockTimeSecond, ok := DebtConfig[string(accountv1.DebtStatusSmall)]
+	if !ok {
+		r.Error(fmt.Errorf("get smallBlockTimeSecond error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > int64(smalltime) {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > smallBlockTimeSecond {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusMedium
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
@@ -125,11 +124,11 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 	}
 
-	mediumtime, err := strconv.Atoi(DebtConfig[string(accountv1.DebtStatusMedium)])
-	if err != nil {
-		r.Error(err, "get small time error")
+	mediumBlockTimeSecond, ok := DebtConfig[string(accountv1.DebtStatusMedium)]
+	if !ok {
+		r.Error(fmt.Errorf("get mediumBlockTimeSecond, error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > int64(mediumtime) {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimeStamp) > mediumBlockTimeSecond {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
 		debt.Status.LastUpdateTimeStamp = time.Now().Unix()
 		Updataflag = true
@@ -242,6 +241,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "DebtController"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	return ctrl.NewControllerManagedBy(mgr).
+		// update status should not enter reconcile
 		For(&accountv1.Debt{}).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		Watches(&source.Kind{Type: &accountv1.Account{}}, &handler.EnqueueRequestForObject{}).
