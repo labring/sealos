@@ -101,6 +101,7 @@ func replaceImage(image, action string, authConfig map[string]types.AuthConfig) 
 	logger.Debug("preDomain: %s, preImageAllName: %s, action: %s", preDomain, preImageAllName, action)
 	preImageName, preImageTag := parseImageNameAndTag(preImageAllName)
 	logger.Debug("preImageName: %s, preImageTag: %s, action: %s", preImageName, preImageTag, action)
+	// TODO: create a cache registry client for each authDomain
 	for authDomain, auth := range authConfig {
 		if reg, err := registry.NewRegistryForDomain(authDomain, auth.Username, auth.Password); err == nil {
 			if tags, err := reg.Tags(preImageName); err != nil {

@@ -3,6 +3,7 @@ package registry
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -98,7 +99,8 @@ func (r *Registry) Ping() error {
 	r.Logf("registry.ping url=%s", url)
 	resp, err := r.Client.Get(url)
 	if resp != nil {
-		defer resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		err = resp.Body.Close()
 	}
 	return err
 }
