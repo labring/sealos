@@ -74,7 +74,7 @@ type Cert struct {
 	*Config
 }
 
-func (c *Cert) KubeConfig(config *rest.Config, client client.Client) (*api.Config, error) {
+func (c *Cert) KubeConfig(config *rest.Config, _ client.Client) (*api.Config, error) {
 	// make sure cadata is loaded into config under incluster mode
 	if err := rest.LoadTLSFiles(config); err != nil {
 		return nil, err

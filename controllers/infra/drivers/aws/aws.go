@@ -17,6 +17,8 @@ limitations under the License.
 package aws
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -44,6 +46,7 @@ func (d Driver) ModifyInstances(curHosts *v1.Hosts, desHosts *v1.Hosts) error {
 }
 func (d Driver) DeleteInstanceByID(instanceID string, infra *v1.Infra) error {
 	//TODO implement me
+	fmt.Println(instanceID, infra)
 	panic("implement me")
 }
 

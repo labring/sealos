@@ -35,10 +35,7 @@ func (d Driver) deleteAndDetachVolumes(diskIDs []string) error {
 			return d.deleteAndDetachVolume(diskID)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (d Driver) deleteAndDetachVolume(diskID string) error {

@@ -113,7 +113,7 @@ func (r *DataPackReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: DataPackRequeueDuration}, nil
 }
 
-func (r *DataPackReconciler) init(ctx context.Context, pack *imagehubv1.DataPack) error {
+func (r *DataPackReconciler) init(_ context.Context, pack *imagehubv1.DataPack) error {
 	r.Logger.Info("enter init")
 	for _, name := range pack.Spec.Names {
 		if !name.IsLegal() {

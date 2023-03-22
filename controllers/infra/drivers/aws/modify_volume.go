@@ -41,10 +41,7 @@ func (d Driver) modifyVolumes(curDisk *v1.Disk, desDisk *v1.Disk) error {
 			return d.modifyVolumeByID(volumeID, size, volumeType)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (d Driver) modifyVolumeByID(id string, size int32, volumeType types.VolumeType) error {

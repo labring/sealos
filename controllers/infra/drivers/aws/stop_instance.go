@@ -189,10 +189,7 @@ func (d Driver) deleteInfra(infra *v1.Infra) error {
 	for i := range infra.Spec.Hosts {
 		host := infra.Spec.Hosts[i]
 		eg.Go(func() error {
-			if err := d.deleteInstancesByOption(&host, true); err != nil {
-				return err
-			}
-			return nil
+			return d.deleteInstancesByOption(&host, true)
 		})
 	}
 	if err := eg.Wait(); err != nil {

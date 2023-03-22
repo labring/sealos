@@ -180,10 +180,7 @@ func (a *Applier) ReconcileHosts(current []v1.Hosts, infra *v1.Infra, driver Dri
 			return nil
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (a *Applier) ReconcileDisks(infra *v1.Infra, current *v1.Hosts, des []v1.Disk, driver Driver) error {

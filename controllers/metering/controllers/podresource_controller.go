@@ -140,10 +140,7 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 		}
 		podController.Status.LatestUpdateTime = time.Now().Unix()
 		podController.Status.SeqID++
-		if err = r.Status().Update(ctx, podController); err != nil {
-			return err
-		}
-		return nil
+		return r.Status().Update(ctx, podController)
 	}); err != nil {
 		r.Logger.Error(err, "UpdateResourceUsed failed")
 		return fmt.Errorf("pod controller update err:%v", err)

@@ -58,22 +58,16 @@ func (r *UserGroup) ValidateCreate() error {
 	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey); err != nil {
 		return err
 	}
-	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationOwnerKey); err != nil {
-		return err
-	}
-	return nil
+	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationOwnerKey)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *UserGroup) ValidateUpdate(old runtime.Object) error {
+func (r *UserGroup) ValidateUpdate(_ runtime.Object) error {
 	usergrouplog.Info("validate update", "name", r.Name)
 	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey); err != nil {
 		return err
 	}
-	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationOwnerKey); err != nil {
-		return err
-	}
-	return nil
+	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationOwnerKey)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

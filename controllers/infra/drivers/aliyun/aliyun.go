@@ -1,6 +1,8 @@
 package aliyun
 
 import (
+	"fmt"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
@@ -27,6 +29,7 @@ func (d Driver) ModifyInstances(curHosts *v1.Hosts, desHosts *v1.Hosts) error {
 
 func (d Driver) DeleteInstanceByID(instanceID string, infra *v1.Infra) error {
 	//TODO implement me
+	fmt.Println(instanceID, infra)
 	panic("implement me")
 }
 
@@ -36,6 +39,7 @@ func (d Driver) CreateInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 
 func (d Driver) GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error) {
 	//TODO implement me
+	fmt.Println(key, value, infra)
 	panic("implement me")
 }
 

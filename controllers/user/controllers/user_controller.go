@@ -160,7 +160,7 @@ func (r *UserReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl
 	return ctrl.Result{}, nil
 }
 
-func (r *UserReconciler) initStatus(ctx context.Context, user *userv1.User) {
+func (r *UserReconciler) initStatus(_ context.Context, user *userv1.User) {
 	var initializedCondition = userv1.Condition{
 		Type:               userv1.Initialized,
 		Status:             v1.ConditionTrue,
@@ -181,7 +181,7 @@ func (r *UserReconciler) saveCondition(user *userv1.User, condition *userv1.Cond
 	}
 }
 
-func (r *UserReconciler) syncKubeConfig(ctx context.Context, user *userv1.User) {
+func (r *UserReconciler) syncKubeConfig(_ context.Context, user *userv1.User) {
 	cfg := &helper.Config{
 		User:                    user.Name,
 		ExpirationSeconds:       user.Spec.CSRExpirationSeconds,
@@ -351,7 +351,7 @@ func (r *UserReconciler) syncOwnerUGNamespaceBinding(ctx context.Context, user *
 	}
 }
 
-func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User) {
+func (r *UserReconciler) syncFinalStatus(_ context.Context, user *userv1.User) {
 	condition := &userv1.Condition{
 		Type:               userv1.Ready,
 		Status:             v1.ConditionTrue,
@@ -374,18 +374,12 @@ func (r *UserReconciler) syncFinalStatus(ctx context.Context, user *userv1.User)
 }
 
 func (r *UserReconciler) updateStatus(ctx context.Context, nn types.NamespacedName, status *userv1.UserStatus) error {
-	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+	return retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		original := &userv1.User{}
 		if err := r.Get(ctx, nn, original); err != nil {
 			return err
 		}
 		original.Status = *status
-		if err := r.Client.Status().Update(ctx, original); err != nil {
-			return err
-		}
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+		return r.Client.Status().Update(ctx, original)
+	})
 }

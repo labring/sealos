@@ -61,22 +61,16 @@ func (r *User) ValidateCreate() error {
 	if err := r.validateCSRExpirationSeconds(); err != nil {
 		return err
 	}
-	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey); err != nil {
-		return err
-	}
-	return nil
+	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *User) ValidateUpdate(old runtime.Object) error {
+func (r *User) ValidateUpdate(_ runtime.Object) error {
 	userlog.Info("validate update", "name", r.Name)
 	if err := r.validateCSRExpirationSeconds(); err != nil {
 		return err
 	}
-	if err := validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey); err != nil {
-		return err
-	}
-	return nil
+	return validateAnnotationKeyNotEmpty(r.ObjectMeta, UserAnnotationDisplayKey)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

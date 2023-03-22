@@ -113,7 +113,7 @@ func (r *ImageReconciler) reconcile(ctx context.Context, obj client.Object) (ctr
 	return ctrl.Result{}, nil
 }
 
-func (r *ImageReconciler) doFinalizer(ctx context.Context, obj client.Object) error {
+func (r *ImageReconciler) doFinalizer(_ context.Context, _ client.Object) error {
 	return nil
 }
 

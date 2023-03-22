@@ -259,10 +259,9 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 						if *attachment.Device == rootDeviceName {
 							diskType = common.RootVolumeLabel
 							break
-						} else {
-							diskType = common.DataVolumeLabel
-							break
 						}
+						diskType = common.DataVolumeLabel
+						break
 					}
 					if len(vol.Attachments) == 0 {
 						return nil, fmt.Errorf("aws ec2 volume %v has no attachments", *vol.VolumeId)

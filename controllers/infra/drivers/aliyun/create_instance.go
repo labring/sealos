@@ -305,7 +305,7 @@ func (d Driver) getSecurityGroup(infra *v1.Infra, vpcID string) (string, error) 
 	return "", fmt.Errorf("get security group failed: %v", err)
 }
 
-func (d Driver) getVSwitch(infra *v1.Infra, vpcID string) (string, error) {
+func (d Driver) getVSwitch(_ *v1.Infra, vpcID string) (string, error) {
 	// check vswitch exist
 	describeVSwitchesRequest := &ecs.DescribeVSwitchesRequest{
 		RpcRequest: ecs.CreateDescribeVSwitchesRequest().RpcRequest,

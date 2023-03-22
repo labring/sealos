@@ -43,10 +43,7 @@ func (d Driver) createAndAttachVolumes(infra *v1.Infra, host *v1.Hosts, disks []
 			return d.createAndAttachVolume(infra, host, &disk)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.Disk) error {
@@ -108,10 +105,7 @@ func (d Driver) createAndAttachVolume(infra *v1.Infra, host *v1.Hosts, disk *v1.
 			return retryAttachVolume(common.TryTimes, common.TrySleepTime, client, inputAttach)
 		})
 	}
-	if err := eg.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return eg.Wait()
 }
 
 // generateNewDeviceName generate new device name for new volume.

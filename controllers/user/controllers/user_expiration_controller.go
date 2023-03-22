@@ -94,7 +94,7 @@ func (r *UserExpirationReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func (r *UserExpirationReconciler) reconcile(ctx context.Context, obj client.Object) (ctrl.Result, error) {
+func (r *UserExpirationReconciler) reconcile(_ context.Context, _ client.Object) (ctrl.Result, error) {
 	//TODO add  Expiration logic
 	return ctrl.Result{}, nil
 }
