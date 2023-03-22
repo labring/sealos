@@ -36,7 +36,7 @@ type NotificationReconciler struct {
 //+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications/finalizers,verbs=update
 
-func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *NotificationReconciler) Reconcile(_ context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	return ctrl.Result{}, nil
 }
 
