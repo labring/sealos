@@ -23,8 +23,5 @@ func SetupCache(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), ns, "name", nsNameFunc); err != nil {
 		return err
 	}
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), account, "name", accountNameFunc); err != nil {
-		return err
-	}
-	return nil
+	return mgr.GetFieldIndexer().IndexField(context.TODO(), account, "name", accountNameFunc)
 }

@@ -149,23 +149,20 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	return nil
 }
 
-func (r *DebtReconciler) change2Normal(ctx context.Context, account accountv1.Account) error {
+func (r *DebtReconciler) change2Normal(_ context.Context, _ accountv1.Account) error {
 	return nil
 }
 
-func (r *DebtReconciler) change2Small(ctx context.Context, account accountv1.Account) error {
+func (r *DebtReconciler) change2Small(_ context.Context, _ accountv1.Account) error {
 	return nil
 }
 
-func (r *DebtReconciler) change2Medium(ctx context.Context, account accountv1.Account) error {
+func (r *DebtReconciler) change2Medium(_ context.Context, _ accountv1.Account) error {
 	return nil
 }
 
 func (r *DebtReconciler) change2Large(ctx context.Context, account accountv1.Account) error {
-	if err := r.deleteUserResource(ctx, GetUserNameSpace(account.Name)); err != nil {
-		return err
-	}
-	return nil
+	return r.deleteUserResource(ctx, GetUserNameSpace(account.Name))
 }
 
 func (r *DebtReconciler) syncDebt(ctx context.Context, account *accountv1.Account, debt *accountv1.Debt) error {
@@ -188,7 +185,7 @@ func GetUserNameSpace(AccountName string) string {
 	return "ns-" + AccountName
 }
 
-func (r *DebtReconciler) sendNotice(ctx context.Context, accountName string, notice any) error {
+func (r *DebtReconciler) sendNotice(_ context.Context, _ string, _ any) error {
 	return nil
 }
 
