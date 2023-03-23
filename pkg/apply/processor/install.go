@@ -27,6 +27,7 @@ import (
 	"github.com/labring/sealos/pkg/config"
 	"github.com/labring/sealos/pkg/filesystem"
 	"github.com/labring/sealos/pkg/guest"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	runtime "github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
@@ -166,7 +167,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 		cluster.SetMountImage(mount)
 		c.NewMounts = append(c.NewMounts, *mount)
 	}
-	runtime, err := runtime.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
+	runtime, err := kubernetes.NewDefaultRuntime(cluster, c.ClusterFile.GetKubeadmConfig())
 	if err != nil {
 		return fmt.Errorf("failed to init runtime, %v", err)
 	}

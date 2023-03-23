@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"fmt"
@@ -169,9 +169,11 @@ func (k *KubeadmRuntime) getAPIServerPort() int32 {
 func (k *KubeadmRuntime) getVipAndPort() string {
 	return fmt.Sprintf("%s:%d", k.getVip(), k.getAPIServerPort())
 }
+
 func (k *KubeadmRuntime) getAPIServerDomain() string {
 	return k.Config.APIServerDomain
 }
+
 func (k *KubeadmRuntime) getClusterAPIServer() string {
 	return fmt.Sprintf("https://%s:%d", k.getAPIServerDomain(), k.getAPIServerPort())
 }

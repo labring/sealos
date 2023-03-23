@@ -18,7 +18,7 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/labring/sealos/pkg/runtime"
+	runtime "github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 

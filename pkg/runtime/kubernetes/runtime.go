@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package runtime
+package kubernetes
 
 import (
 	"fmt"
@@ -101,6 +101,7 @@ func (k *KubeadmRuntime) JoinNodes(newNodesIPList []string) error {
 	}
 	return k.copyNodeKubeConfig(newNodesIPList)
 }
+
 func (k *KubeadmRuntime) DeleteNodes(nodesIPList []string) error {
 	if len(nodesIPList) != 0 {
 		logger.Info("worker %s will be deleted", nodesIPList)

@@ -89,7 +89,7 @@ cat /etc/hosts                  # 增加了虚拟IP的地址解析
 
 
 ## 离线包结构分析
-```
+```bash
 .
 |____docker # docker的离线包
 | |____docker.tgz
@@ -118,6 +118,7 @@ cat /etc/hosts                  # 增加了虚拟IP的地址解析
 | |____kubelet.service
 | |____docker.servic
 ```
+
 init.sh脚本中拷贝bin文件到$PATH下面，配置systemd，关闭swap防火墙等，然后导入集群所需要的镜像。
 
 master.sh主要执行了kubeadm init

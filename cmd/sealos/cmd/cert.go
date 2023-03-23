@@ -23,7 +23,7 @@ import (
 
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/runtime"
+	runtime "github.com/labring/sealos/pkg/runtime/kubernetes"
 
 	"github.com/spf13/cobra"
 )

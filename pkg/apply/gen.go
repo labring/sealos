@@ -21,7 +21,7 @@ import (
 
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/runtime"
+	runtime "github.com/labring/sealos/pkg/runtime/kubernetes"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 

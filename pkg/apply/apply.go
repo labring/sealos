@@ -34,15 +34,18 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		}
 		path = filepath.Join(pa, path)
 	}
+	
 	Clusterfile := clusterfile.NewClusterFile(path,
 		clusterfile.WithCustomValues(args.Values),
 		clusterfile.WithCustomSets(args.Sets),
 		clusterfile.WithCustomEnvs(args.CustomEnv),
 		clusterfile.WithCustomConfigFiles(args.CustomConfigFiles),
 	)
+	
 	if err := Clusterfile.Process(); err != nil {
 		return nil, err
 	}
+
 	cluster := Clusterfile.GetCluster()
 	if cluster.Name == "" {
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)

@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package runtime
+package kubernetes
 
 import (
 	"context"
 	"fmt"
 
-	_default "github.com/labring/sealos/pkg/runtime/defaults"
-	v125 "github.com/labring/sealos/pkg/runtime/defaults/v125"
+	_default "github.com/labring/sealos/pkg/runtime/kubernetes/defaults"
+	v125 "github.com/labring/sealos/pkg/runtime/kubernetes/defaults/v125"
 	"github.com/labring/sealos/pkg/utils/versionutil"
 
 	"github.com/labring/sealos/pkg/constants"

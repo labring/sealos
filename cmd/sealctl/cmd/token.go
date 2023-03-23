@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/labring/sealos/pkg/runtime"
+	"github.com/labring/sealos/pkg/runtime/kubernetes"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -30,7 +30,8 @@ func newTokenCmd() *cobra.Command {
 		Use:   "token",
 		Short: "token generator",
 		Run: func(cmd *cobra.Command, args []string) {
-			t, err := runtime.Generator()
+			//TODO: Whether a token is required to encapsulate an interface?
+			t, err := kubernetes.Generator()
 			if err != nil {
 				logger.Error("exec token error: " + err.Error())
 				os.Exit(1)

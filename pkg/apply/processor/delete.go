@@ -29,7 +29,7 @@ import (
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/filesystem"
-	"github.com/labring/sealos/pkg/runtime"
+	runtime "github.com/labring/sealos/pkg/runtime/kubernetes"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
@@ -55,6 +55,7 @@ func (d DeleteProcessor) Execute(cluster *v2.Cluster) (err error) {
 
 	return nil
 }
+
 func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error) {
 	var todoList []func(cluster *v2.Cluster) error
 	todoList = append(todoList,
