@@ -52,7 +52,8 @@ jobs:
         uses: magnetikonline/action-golang-cache@v3
         with:
           go-version: ${{ env.GO_VERSION }}
-
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Run Linter
         uses: golangci/golangci-lint-action@v3
         with:

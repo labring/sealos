@@ -18,13 +18,13 @@ package controllers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math"
 	"os"
+	"time"
+
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"time"
 
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 
@@ -212,12 +212,11 @@ func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, Re
 	}
 
 	if err := r.Get(ctx, types.NamespacedName{Namespace: Resource.Namespace, Name: Resource.Name}, &Resource); err == nil {
-		return errors.New(fmt.Sprintf("resource already exist resource name:%v", Resource.Name))
+		return fmt.Errorf("resource already exist resource name:%v", Resource.Name)
 	}
 	Resource.Spec.Resources = ResourceCR
 	r.Logger.Info("want to create resource", "resource name", GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID), "resource info", Resource.Spec.Resources)
 	return r.Create(ctx, &Resource)
-
 }
 
 func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName, container v1.Container) (resource.Quantity, bool) {
