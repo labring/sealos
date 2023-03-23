@@ -29,29 +29,29 @@ import (
 var exampleRun = `
 create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
   multi image:
     sealos run labring/kubernetes:v1.24.0 calico:v3.24.1 \
         --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
   Specify server InfraSSH port :
-  All servers use the same InfraSSH port (default port: 22)：
+  All servers use the same InfraSSH port (default port: 22):
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
-  Different InfraSSH port numbers exist：
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
+  Different InfraSSH port numbers exist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
-	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
+	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd 'xxx'
   
   Custom VIP kubernetes cluster:
     sealos run -e defaultVIP=10.103.97.2 labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
   
-  Single kubernetes cluster：
+  Single kubernetes cluster:
 	sealos run labring/kubernetes:v1.24.0 --single
   
 
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 `
 
 func newRunCmd() *cobra.Command {
