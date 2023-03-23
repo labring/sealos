@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -19,7 +20,8 @@ const (
 
 func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request) error {
 	c := r.Bc
-	logger := r.Logger
+	// logger := r.Logger
+	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
 	/// check the default environment exists
 	if _, err := c.GetEnvironment(ctx, defaultEnvironmentID); err != nil {
 		errorMessage := "failed to get the default environment. No environment to set up instances at this time"
@@ -35,7 +37,8 @@ func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request)
 }
 
 func (r *BytebaseReconciler) syncPostgresInstance(ctx context.Context, req ctrl.Request) error {
-	logger := r.Logger
+	// logger := r.Logger
+	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
 	c := r.Bc
 	var (
 		dataSourceType       api.DataSourceType

@@ -39,7 +39,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	// "sigs.k8s.io/controller-runtime/pkg/log"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 const (
@@ -67,7 +67,7 @@ type BytebaseReconciler struct {
 	client.Client
 	Scheme          *runtime.Scheme
 	Recorder        record.EventRecorder
-	Logger          logr.Logger
+	Logger          logr.Logger // the manager's default logger
 	Config          *rest.Config
 	SecretName      string
 	SecretNamespace string
@@ -89,7 +89,8 @@ type BytebaseReconciler struct {
 //+kubebuilder:rbac:groups=acid.zalan.do,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
 
 func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := r.Logger
+	// use new logger so that we can log where the request is
+	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
 	bb := &bbv1.Bytebase{}
 	// get CRD bytebase (status). Call reconciler again if not found.
 	if err := r.Get(ctx, req.NamespacedName, bb); err != nil {
