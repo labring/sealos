@@ -12,6 +12,7 @@ import (
 
 	"github.com/jaevor/go-nanoid"
 	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -247,16 +248,16 @@ func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv1.Byteba
 				ImagePullPolicy: corev1.PullAlways,
 				Ports:           ports,
 				// Env:             envs,
-				// Resources: corev1.ResourceRequirements{
-				//	Requests: corev1.ResourceList{
-				//		"cpu":    resource.MustParse(CPURequest),
-				//		"memory": resource.MustParse(MemoryRequest),
-				//	},
-				//	Limits: corev1.ResourceList{
-				//		"cpu":    resource.MustParse(CPULimit),
-				//		"memory": resource.MustParse(MemoryLimit),
-				//	},
-				// },
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"cpu":    resource.MustParse(CPURequest),
+						"memory": resource.MustParse(MemoryRequest),
+					},
+					Limits: corev1.ResourceList{
+						"cpu":    resource.MustParse(CPULimit),
+						"memory": resource.MustParse(MemoryLimit),
+					},
+				},
 				Args:          args,
 				VolumeMounts:  volumeMounts,
 				LivenessProbe: &livenessProbe,

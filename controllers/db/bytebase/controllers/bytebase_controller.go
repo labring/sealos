@@ -51,7 +51,7 @@ const (
 )
 
 const (
-	CPURequest    = "0.04"
+	CPURequest    = "0.25"
 	MemoryRequest = "64Mi"
 	CPULimit      = "0.5"
 	MemoryLimit   = "128Mi"
@@ -91,7 +91,7 @@ type BytebaseReconciler struct {
 func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.Logger
 	bb := &bbv1.Bytebase{}
-	// Get CRD bytebase (status). Call reconciler again if not found.
+	// get CRD bytebase (status). Call reconciler again if not found.
 	if err := r.Get(ctx, req.NamespacedName, bb); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
