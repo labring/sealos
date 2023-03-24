@@ -24,20 +24,22 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		Addr:    c.Server.ListenAddress,
 		Handler: as,
 	}
+
+	// start the pull request counter reset timer
+	glog.Infof("Pull request counter reset timer started")
+	go as.PullReqCounter.StartResetTimer(c.Server.PullReqCounterResetInterval)
+
 	rs.authServer, rs.hs = as, hs
 	var listener net.Listener
 	listener, err = net.Listen("tcp", c.Server.ListenAddress)
 	if err != nil {
 		glog.Fatal(err.Error())
 	}
+
+	glog.Infof("Serving on %s", c.Server.ListenAddress)
 	if err := hs.Serve(listener); err != nil {
 		glog.Fatal(err.Error())
 	}
-	glog.Infof("Serving on %s", c.Server.ListenAddress)
-
-	// start the pull request counter reset timer
-	go as.PullReqCounter.StartResetTimer(c.Server.PullReqCounterResetInterval)
-	glog.Infof("Pull request counter reset timer started")
 }
 
 func main() {

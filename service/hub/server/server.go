@@ -302,9 +302,11 @@ func (as *AuthServer) doIndex(rw http.ResponseWriter, _ *http.Request) {
 
 func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	ar, err := as.ParseRequest(req)
+
+	// Check if the request is coming from a valid IP and account
 	if as.PullReqCounter.Increment(ar.RemoteIP) > as.config.Server.MaxRequestsPerIP ||
 		as.PullReqCounter.Increment(ar.Account) > as.config.Server.MaxRequestsPerAccount {
-		glog.Infof("Too many requests from %s", ar.RemoteConnAddr)
+		glog.Infof("Too many requests from %s, %s", ar.RemoteIP, ar.Account)
 		http.Error(rw, "Too many requests", http.StatusTooManyRequests)
 		return
 	}
