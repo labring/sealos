@@ -86,7 +86,7 @@ func (u Payment) getCodeURL(request *restful.Request, response *restful.Response
 	// qrterminal.Generate(codeURL, qrterminal.L, os.Stdout)
 }
 
-func (u Payment) paymentCallBack(request *restful.Request, response *restful.Response) {
+func (u Payment) paymentCallBack(_ *restful.Request, _ *restful.Response) {
 	// TODO set user account balance
 }
 
