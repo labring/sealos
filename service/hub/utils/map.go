@@ -40,9 +40,7 @@ func (m *MapWithReset) StartResetTimer(duration time.Duration) {
 	ticker := time.NewTicker(duration)
 	defer ticker.Stop()
 	for {
-		select {
-		case <-ticker.C:
-			m.Reset()
-		}
+		<-ticker.C
+		m.Reset()
 	}
 }

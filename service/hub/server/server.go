@@ -294,7 +294,7 @@ func (as *AuthServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (as *AuthServer) doIndex(rw http.ResponseWriter, req *http.Request) {
+func (as *AuthServer) doIndex(rw http.ResponseWriter, _ *http.Request) {
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// nosemgrep go.lang.security.audit.xss.no-fprintf-to-responsewriter.no-fprintf-to-responsewriter
 	fmt.Fprintf(rw, "<h1>%s</h1>\n", as.config.Token.Issuer)
