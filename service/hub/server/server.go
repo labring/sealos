@@ -391,9 +391,9 @@ func (as *AuthServer) pullLimitCheck(ar *AuthRequest, isAnomaly bool) bool {
 	// nomal user pull/push request
 	if isAnomaly {
 		as.pullReqCounter.Increment(ar.RemoteIP.String())
-		return as.pullReqCounter.Get(ar.RemoteIP.String()) < as.config.Server.MaxRequestsPerIP
+		return as.pullReqCounter.Get(ar.RemoteIP.String()) > as.config.Server.MaxRequestsPerIP
 	} else {
 		as.pullReqCounter.Increment(ar.Account)
-		return as.pullReqCounter.Get(ar.Account) < as.config.Server.MaxRequestsPerAccount
+		return as.pullReqCounter.Get(ar.Account) > as.config.Server.MaxRequestsPerAccount
 	}
 }
