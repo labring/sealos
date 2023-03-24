@@ -304,9 +304,7 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	ar, err := as.ParseRequest(req)
 
 	// Check if the request is coming from a valid IP and account
-	if len(ar.Scopes) > 0 &&
-		(as.PullReqCounter.Increment(ar.RemoteIP.String()) > as.config.Server.MaxRequestsPerIP ||
-			as.PullReqCounter.Increment(ar.Account) > as.config.Server.MaxRequestsPerAccount) {
+	if as.pullLimitCheck(ar) {
 		glog.Infof("Too many pull requests from %s, %s", ar.RemoteIP.String(), ar.Account)
 		http.Error(rw, "Too many pull requests", http.StatusTooManyRequests)
 		return
@@ -370,4 +368,27 @@ func (as *AuthServer) Stop() {
 // Copy-pasted from libtrust where it is private.
 func joseBase64UrlEncode(b []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "=")
+}
+
+func (as *AuthServer) pullLimitCheck(ar *AuthRequest) bool {
+	if len(ar.Scopes) == 0 {
+		return true
+	}
+	for _, cidr := range as.config.Server.WhiteIpCidrList {
+		if utils.IsIPInCIDR(ar.RemoteIP, cidr) {
+			return true
+		}
+	}
+	for _, user := range as.config.Server.WhiteUserList {
+		if ar.Account == user {
+			return true
+		}
+	}
+
+	// nomal user pull/push request
+	as.PullReqCounter.Increment(ar.RemoteIP.String())
+	as.PullReqCounter.Increment(ar.Account)
+
+	return as.PullReqCounter.Get(ar.RemoteIP.String()) < as.config.Server.MaxRequestsPerIP &&
+		as.PullReqCounter.Get(ar.Account) < as.config.Server.MaxRequestsPerAccount
 }
