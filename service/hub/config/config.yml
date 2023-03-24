@@ -1,5 +1,8 @@
 server:
   addr: ":5001"
+  max_requests_per_ip: 1000
+  max_requests_per_account: 1000
+  pull_req_counter_reset_interval: 3600
 token:
   issuer: "registry-token-issuer"
   expiration: 2592000  #30days

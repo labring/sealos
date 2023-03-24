@@ -27,7 +27,6 @@ type ServerConfig struct {
 	ListenAddress string `yaml:"addr,omitempty"`
 	PathPrefix    string `yaml:"path_prefix,omitempty"`
 
-	PullLimit                   int64         `yaml:"pull_limit,omitempty"`
 	MaxRequestsPerIP            int64         `yaml:"max_requests_per_ip,omitempty"`
 	MaxRequestsPerAccount       int64         `yaml:"max_requests_per_account"`
 	PullReqCounterResetInterval time.Duration `yaml:"pull_req_counter_reset_interval"`
@@ -76,6 +75,12 @@ func loadCertAndKey(certFile string, keyFile string) (pk libtrust.PublicKey, prk
 	return
 }
 
+const (
+	DefaultMaxRequestsPerAccount       = 1000
+	DefaultMaxRequestsPerIP            = 1000
+	DefaultPullReqCounterResetInterval = 1 * time.Hour
+)
+
 func LoadConfig(fileName string) (*Config, error) {
 	contents, err := os.ReadFile(fileName)
 	if err != nil {
@@ -88,6 +93,15 @@ func LoadConfig(fileName string) (*Config, error) {
 	// set default ListenAddress
 	if c.Server.ListenAddress == "" {
 		c.Server.ListenAddress = ":5001"
+	}
+	if c.Server.MaxRequestsPerIP == 0 {
+		c.Server.MaxRequestsPerIP = DefaultMaxRequestsPerIP
+	}
+	if c.Server.MaxRequestsPerAccount == 0 {
+		c.Server.MaxRequestsPerAccount = DefaultMaxRequestsPerAccount
+	}
+	if c.Server.PullReqCounterResetInterval == 0 {
+		c.Server.PullReqCounterResetInterval = DefaultPullReqCounterResetInterval
 	}
 	if err = validate(c); err != nil {
 		return nil, fmt.Errorf("invalid config: %s", err)
