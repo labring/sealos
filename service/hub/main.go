@@ -34,6 +34,10 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		glog.Fatal(err.Error())
 	}
 	glog.Infof("Serving on %s", c.Server.ListenAddress)
+
+	// start the pull request counter reset timer
+	go as.PullReqCounter.StartResetTimer(c.Server.PullReqCounterResetInterval)
+	glog.Infof("Pull request counter reset timer started")
 }
 
 func main() {

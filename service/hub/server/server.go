@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/service/hub/api"
 	"github.com/labring/sealos/service/hub/auth"
+	"github.com/labring/sealos/service/hub/utils"
 )
 
 var (
@@ -28,6 +29,7 @@ type AuthServer struct {
 	config         *Config
 	authenticators api.Authenticator
 	authorizers    api.Authorizer
+	PullReqCounter *utils.MapWithReset
 }
 
 func NewAuthServer(c *Config) (*AuthServer, error) {
@@ -35,6 +37,7 @@ func NewAuthServer(c *Config) (*AuthServer, error) {
 		config:         c,
 		authenticators: auth.NewSealosAuthn(),
 		authorizers:    auth.NewSealosAuthz(),
+		PullReqCounter: utils.NewMapWithReset(),
 	}
 	return as, nil
 }
@@ -299,6 +302,13 @@ func (as *AuthServer) doIndex(rw http.ResponseWriter, req *http.Request) {
 
 func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	ar, err := as.ParseRequest(req)
+	if as.PullReqCounter.Increment(ar.RemoteIP) > as.config.Server.MaxRequestsPerIP ||
+		as.PullReqCounter.Increment(ar.Account) > as.config.Server.MaxRequestsPerAccount {
+		glog.Infof("Too many requests from %s", ar.RemoteConnAddr)
+		http.Error(rw, "Too many requests", http.StatusTooManyRequests)
+		return
+	}
+
 	var ares []AuthzResult
 	if err != nil {
 		glog.Warningf("Bad request: %s", err)

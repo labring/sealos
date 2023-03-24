@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/docker/libtrust"
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
@@ -25,6 +26,11 @@ type Config struct {
 type ServerConfig struct {
 	ListenAddress string `yaml:"addr,omitempty"`
 	PathPrefix    string `yaml:"path_prefix,omitempty"`
+
+	PullLimit                   int64         `yaml:"pull_limit,omitempty"`
+	MaxRequestsPerIP            int64         `yaml:"max_requests_per_ip,omitempty"`
+	MaxRequestsPerAccount       int64         `yaml:"max_requests_per_account"`
+	PullReqCounterResetInterval time.Duration `yaml:"pull_req_counter_reset_interval"`
 }
 
 type TokenConfig struct {
