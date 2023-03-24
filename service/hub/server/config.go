@@ -30,7 +30,7 @@ type ServerConfig struct {
 	MaxRequestsPerIP            int64         `yaml:"max_requests_per_ip,omitempty"`
 	MaxRequestsPerAccount       int64         `yaml:"max_requests_per_account"`
 	PullReqCounterResetInterval time.Duration `yaml:"pull_req_counter_reset_interval"`
-	WhiteIpCidrList             []string      `yaml:"white_ip_cidr_list"`
+	WhiteIPCidrList             []string      `yaml:"white_ip_cidr_list"`
 	WhiteUserList               []string      `yaml:"white_user_list"`
 }
 

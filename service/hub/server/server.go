@@ -374,7 +374,7 @@ func (as *AuthServer) pullLimitCheck(ar *AuthRequest) bool {
 	if len(ar.Scopes) == 0 {
 		return true
 	}
-	for _, cidr := range as.config.Server.WhiteIpCidrList {
+	for _, cidr := range as.config.Server.WhiteIPCidrList {
 		if utils.IsIPInCIDR(ar.RemoteIP, cidr) {
 			return true
 		}
