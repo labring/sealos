@@ -16,7 +16,10 @@ limitations under the License.
 
 package apply
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestPreProcessIPList(t *testing.T) {
 	type args struct {
@@ -157,5 +160,29 @@ func TestIsIPList(t *testing.T) {
 				t.Errorf("IsIPList() = %v, want %v", ok, tt.want)
 			}
 		})
+	}
+}
+
+func TestGetImagesDiff(t *testing.T) {
+	current := []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+	}
+	desired := []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+	}
+
+	diff := GetImagesDiff(current, desired)
+
+	expected := []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
+
+	if !reflect.DeepEqual(diff, expected) {
+		t.Errorf("Unexpected diff. Expected %v, but got %v", expected, diff)
 	}
 }

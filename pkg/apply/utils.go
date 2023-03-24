@@ -109,3 +109,24 @@ func getHostArch(sshClient ssh.Interface) func(string) v2.Arch {
 func GetHostArch(sshClient ssh.Interface, ip string) string {
 	return string(getHostArch(sshClient)(ip))
 }
+
+func GetImagesDiff(current, desired []string) []string {
+	desiredUnique := make(map[string]struct{}, len(desired))
+	for _, img := range desired {
+		desiredUnique[img] = struct{}{}
+	}
+
+	currentUnique := make(map[string]struct{}, len(current))
+	for _, img := range current {
+		currentUnique[img] = struct{}{}
+	}
+
+	diff := make([]string, 0, len(desiredUnique))
+	for img := range desiredUnique {
+		if _, ok := currentUnique[img]; !ok {
+			diff = append(diff, img)
+		}
+	}
+
+	return diff
+}
