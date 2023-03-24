@@ -29,7 +29,7 @@ type AuthServer struct {
 	config         *Config
 	authenticators api.Authenticator
 	authorizers    api.Authorizer
-	PullReqCounter *utils.MapWithReset
+	pullReqCounter *utils.MapWithReset
 }
 
 func NewAuthServer(c *Config) (*AuthServer, error) {
@@ -37,9 +37,13 @@ func NewAuthServer(c *Config) (*AuthServer, error) {
 		config:         c,
 		authenticators: auth.NewSealosAuthn(),
 		authorizers:    auth.NewSealosAuthz(),
-		PullReqCounter: utils.NewMapWithReset(),
+		pullReqCounter: utils.NewMapWithReset(),
 	}
 	return as, nil
+}
+
+func (as *AuthServer) Start(d time.Duration) {
+	go as.pullReqCounter.StartResetTimer(d)
 }
 
 type AuthRequest struct {
@@ -302,14 +306,6 @@ func (as *AuthServer) doIndex(rw http.ResponseWriter, _ *http.Request) {
 
 func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	ar, err := as.ParseRequest(req)
-
-	// Check if the request is coming from a valid IP and account
-	if as.pullLimitCheck(ar) {
-		glog.Infof("Too many pull requests from %s, %s", ar.RemoteIP.String(), ar.Account)
-		http.Error(rw, "Too many pull requests", http.StatusTooManyRequests)
-		return
-	}
-
 	var ares []AuthzResult
 	if err != nil {
 		glog.Warningf("Bad request: %s", err)
@@ -330,6 +326,13 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	ar.Labels = labels
+
+	// Check if the request is coming from a valid IP and account
+	if as.pullLimitCheck(ar, (client == nil)) {
+		glog.Infof("Too many pull requests from %s, %s", ar.RemoteIP.String(), ar.Account)
+		http.Error(rw, "Too many pull requests", http.StatusTooManyRequests)
+		return
+	}
 
 	if len(ar.Scopes) > 0 {
 		ares, err = as.Authorize(client, ar)
@@ -370,7 +373,7 @@ func joseBase64UrlEncode(b []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "=")
 }
 
-func (as *AuthServer) pullLimitCheck(ar *AuthRequest) bool {
+func (as *AuthServer) pullLimitCheck(ar *AuthRequest, isAnomaly bool) bool {
 	if len(ar.Scopes) == 0 {
 		return true
 	}
@@ -386,9 +389,11 @@ func (as *AuthServer) pullLimitCheck(ar *AuthRequest) bool {
 	}
 
 	// nomal user pull/push request
-	as.PullReqCounter.Increment(ar.RemoteIP.String())
-	as.PullReqCounter.Increment(ar.Account)
-
-	return as.PullReqCounter.Get(ar.RemoteIP.String()) < as.config.Server.MaxRequestsPerIP &&
-		as.PullReqCounter.Get(ar.Account) < as.config.Server.MaxRequestsPerAccount
+	if isAnomaly {
+		as.pullReqCounter.Increment(ar.RemoteIP.String())
+		return as.pullReqCounter.Get(ar.RemoteIP.String()) < as.config.Server.MaxRequestsPerIP
+	} else {
+		as.pullReqCounter.Increment(ar.Account)
+		return as.pullReqCounter.Get(ar.Account) < as.config.Server.MaxRequestsPerAccount
+	}
 }

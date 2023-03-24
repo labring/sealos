@@ -27,7 +27,7 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 
 	// start the pull request counter reset timer
 	glog.Infof("Pull request counter reset timer started")
-	go as.PullReqCounter.StartResetTimer(c.Server.PullReqCounterResetInterval)
+	as.Start(c.Server.PullReqCounterResetInterval)
 
 	rs.authServer, rs.hs = as, hs
 	var listener net.Listener
