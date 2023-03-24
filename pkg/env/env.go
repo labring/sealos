@@ -88,9 +88,7 @@ func (p *processor) RenderAll(host, dir string) error {
 			return fmt.Errorf("failed to open file [%s] when render env: %v", path, err)
 		}
 
-		defer func() {
-			_ = writer.Close()
-		}()
+		defer writer.Close()
 		body, err := fileutil.ReadAll(path)
 		if err != nil {
 			return err

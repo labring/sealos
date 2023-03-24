@@ -18,12 +18,33 @@ package registry
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/labring/sealos/fork/github.com/heroku/docker-registry-client/registry"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
+type option struct {
+	url, username, password string
+	skipTLS                 bool
+}
+
+var (
+	sharedClients = make(map[option]*registry.Registry)
+	lock          sync.RWMutex
+)
+
 func NewRegistry(url, username, password string, skipTLS bool) (*registry.Registry, error) {
+	key := option{url, username, password, skipTLS}
+	lock.Lock()
+	defer lock.Unlock()
+	if v, ok := sharedClients[key]; ok {
+		if err := v.Ping(); err == nil {
+			return v, nil
+		}
+		delete(sharedClients, key)
+	}
+
 	var hub *registry.Registry
 	var err error
 	var log = func(format string, args ...interface{}) {
@@ -37,6 +58,7 @@ func NewRegistry(url, username, password string, skipTLS bool) (*registry.Regist
 	if err != nil {
 		return nil, err
 	}
+	sharedClients[key] = hub
 	return hub, nil
 }
 

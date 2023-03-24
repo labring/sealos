@@ -16,7 +16,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -26,10 +25,8 @@ import (
 	"time"
 
 	"github.com/labring/image-cri-shim/pkg/types"
-	"google.golang.org/grpc/codes"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
 	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
@@ -49,7 +46,6 @@ type Options struct {
 	Mode os.FileMode
 	//CRIConfigs is cri config for auth
 	CRIConfigs map[string]types.AuthConfig
-	CRIVersion types.CRIVersion
 }
 
 type Server interface {
@@ -78,24 +74,22 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 		return serverError("can't register image service, already registered")
 	}
 
-	if err := s.determineAPIVersion(conn); err != nil {
-		return err
-	}
+	s.setupImageServiceClients(conn)
 
 	if err := s.createGrpcServer(); err != nil {
 		return err
 	}
-	if s.useV1API() {
-		k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
-			imageClient: s.imageV1Client,
-			CRIConfigs:  s.options.CRIConfigs,
-		})
-	} else {
-		k8sv1alpha2api.RegisterImageServiceServer(s.server, &v1alpha2ImageService{
-			imageClient: s.imageV1Alpha2Client,
-			CRIConfigs:  s.options.CRIConfigs,
-		})
-	}
+
+	k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
+		imageClient: s.imageV1Client,
+		CRIConfigs:  s.options.CRIConfigs,
+	})
+
+	k8sv1alpha2api.RegisterImageServiceServer(s.server, &v1alpha2ImageService{
+		imageClient: s.imageV1Alpha2Client,
+		CRIConfigs:  s.options.CRIConfigs,
+	})
+
 	return nil
 }
 
@@ -220,32 +214,7 @@ func serverError(format string, args ...interface{}) error {
 	return fmt.Errorf("cri/server: "+format, args...)
 }
 
-// useV1API returns true if the v1 CRI API should be used instead of v1alpha2.
-func (s *server) useV1API() bool {
-	return s.options.CRIVersion == types.CRIVersionV1
-}
-
-func (s *server) determineAPIVersion(conn *grpc.ClientConn) error {
-	ctx, cancel := getContextWithTimeout(s.options.Timeout)
-	defer cancel()
-
-	logger.Info("Finding the CRI API image version")
-	if s.useV1API() {
-		s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
-		if _, err := s.imageV1Client.ImageFsInfo(ctx, &k8sv1api.ImageFsInfoRequest{}); err != nil {
-			logger.Info("Using CRI v1 image API")
-			if status.Code(err) == codes.Unimplemented {
-				return errors.New("falling using CRI v1 image API, please using other cri support v1 CRI API")
-			}
-		}
-	} else {
-		s.imageV1Alpha2Client = k8sv1alpha2api.NewImageServiceClient(conn)
-		if _, err := s.imageV1Alpha2Client.ImageFsInfo(ctx, &k8sv1alpha2api.ImageFsInfoRequest{}); err != nil {
-			logger.Info("Using CRI v1alpha2 image API")
-			if status.Code(err) == codes.Unimplemented {
-				return errors.New("falling using CRI v1alpha2 image API, please using other cri support v1alpha2 CRI API")
-			}
-		}
-	}
-	return nil
+func (s *server) setupImageServiceClients(conn *grpc.ClientConn) {
+	s.imageV1Alpha2Client = k8sv1alpha2api.NewImageServiceClient(conn)
+	s.imageV1Client = k8sv1api.NewImageServiceClient(conn)
 }

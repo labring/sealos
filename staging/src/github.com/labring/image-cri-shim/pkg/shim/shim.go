@@ -75,7 +75,6 @@ func NewShim(cfg *types.Config) (Shim, error) {
 		Group:      -1,
 		Mode:       0660,
 		CRIConfigs: cfg.CRIConfigs,
-		CRIVersion: cfg.CRIVersion,
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {
