@@ -28,8 +28,5 @@ type Config struct {
 }
 
 func InitConfig(configPath string) error {
-	if err := yaml.UnmarshalYamlFromFile(configPath, &GlobalConfig); err != nil {
-		return err
-	}
-	return nil
+	return yaml.UnmarshalYamlFromFile(configPath, &GlobalConfig)
 }
