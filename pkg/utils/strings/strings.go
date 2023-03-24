@@ -166,10 +166,6 @@ func RemoveDuplicate(list []string) []string {
 	return result
 }
 
-func WrapExecResult(host, command string, output []byte, err error) error {
-	return fmt.Errorf("failed to execute command(%s) on host(%s): output(%s), error(%v)", command, host, output, err)
-}
-
 // RemoveStrSlice remove dst element from src slice
 func RemoveStrSlice(src, dst []string) []string {
 	var ipList []string

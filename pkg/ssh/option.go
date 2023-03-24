@@ -19,37 +19,42 @@ import (
 	"path"
 	"time"
 
+	"github.com/containers/storage/pkg/homedir"
 	"github.com/spf13/pflag"
 	"golang.org/x/crypto/ssh"
 
-	"github.com/labring/sealos/pkg/constants"
-	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
 type Option struct {
-	Stdout            bool
-	User              string
-	Password          string
-	PrivateKey        string
-	RawPrivateKeyData string
-	Passphrase        string
-	Timeout           time.Duration
-	HostKeyCallback   ssh.HostKeyCallback
+	stdout            bool
+	sudo              bool
+	user              string
+	password          string
+	privateKey        string
+	rawPrivateKeyData string
+	passphrase        string
+	timeout           time.Duration
+	hostKeyCallback   ssh.HostKeyCallback
 }
 
 func (o *Option) BindFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.Stdout, "stdout", o.Stdout, "print logs to stdout")
-	fs.StringVarP(&o.User, "user", "u", o.User, "username to authenticate as")
-	fs.StringVarP(&o.Password, "password", "p", o.Password, "use given password to authenticate with")
-	fs.StringVarP(&o.PrivateKey, "private-key", "i", o.PrivateKey,
+	fs.BoolVar(&o.stdout, "stdout", o.stdout, "print logs to stdout")
+	fs.BoolVar(&o.sudo, "sudo", o.sudo, "enable sudo, user provide must be a superuser or sudoer")
+	fs.StringVarP(&o.user, "user", "u", o.user, "username to authenticate as")
+	fs.StringVarP(&o.password, "password", "p", o.password, "use given password to authenticate with")
+	fs.StringVarP(&o.privateKey, "private-key", "i", o.privateKey,
 		"selects a file from which the identity (private key) for public key authentication is read")
-	fs.StringVar(&o.Passphrase, "passphrase", o.Passphrase, "passphrase for decrypting a PEM encoded private key")
-	fs.DurationVar(&o.Timeout, "timeout", o.Timeout, "ssh connection timeout")
+	fs.StringVar(&o.passphrase, "passphrase", o.passphrase, "passphrase for decrypting a PEM encoded private key")
+	fs.DurationVar(&o.timeout, "timeout", o.timeout, "ssh connection timeout")
 }
 
+const (
+	defaultUsername = "root"
+)
+
 func NewOption() *Option {
-	homedir := constants.GetHomeDir()
+	homedir := homedir.Get()
 	getSSHFile := func(filenames ...string) string {
 		for _, fn := range filenames {
 			absPath := path.Join(homedir, ".ssh", fn)
@@ -60,10 +65,10 @@ func NewOption() *Option {
 		return ""
 	}
 	opt := &Option{
-		User:       v2.DefaultUserRoot,
-		PrivateKey: getSSHFile("id_rsa", "id_dsa"),
-		Timeout:    10 * time.Second,
-		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+		user:       defaultUsername,
+		privateKey: getSSHFile("id_rsa", "id_dsa"),
+		timeout:    10 * time.Second,
+		hostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
 		},
 	}
@@ -72,35 +77,41 @@ func NewOption() *Option {
 
 type OptionFunc func(*Option)
 
-func WithStdout(b bool) OptionFunc {
+func WithSudoEnable(b bool) OptionFunc {
 	return func(o *Option) {
-		o.Stdout = b
+		o.sudo = b
 	}
 }
 
-func WithUser(u string) OptionFunc {
+func WithStdoutEnable(b bool) OptionFunc {
 	return func(o *Option) {
-		o.User = u
+		o.stdout = b
+	}
+}
+
+func WithUsername(u string) OptionFunc {
+	return func(o *Option) {
+		o.user = u
 	}
 }
 
 func WithPassword(p string) OptionFunc {
 	return func(o *Option) {
-		o.Password = p
+		o.password = p
 	}
 }
 
 func WithRawPrivateKeyDataAndPhrase(raw, passphrase string) OptionFunc {
 	return func(o *Option) {
-		o.RawPrivateKeyData = raw
-		o.Passphrase = passphrase
+		o.rawPrivateKeyData = raw
+		o.passphrase = passphrase
 	}
 }
 
 func WithPrivateKeyAndPhrase(pk, passphrase string) OptionFunc {
 	return func(o *Option) {
-		o.PrivateKey = pk
-		o.Passphrase = passphrase
+		o.privateKey = pk
+		o.passphrase = passphrase
 	}
 }
 
@@ -109,12 +120,12 @@ func WithTimeout(timeout time.Duration) OptionFunc {
 		timeout = 10 * time.Second
 	}
 	return func(o *Option) {
-		o.Timeout = timeout
+		o.timeout = timeout
 	}
 }
 
 func WithHostKeyCallback(fn ssh.HostKeyCallback) OptionFunc {
 	return func(o *Option) {
-		o.HostKeyCallback = fn
+		o.hostKeyCallback = fn
 	}
 }

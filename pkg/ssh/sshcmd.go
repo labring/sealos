@@ -16,14 +16,18 @@ package ssh
 
 import (
 	"bufio"
+	"bytes"
+	"context"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
-	strings2 "github.com/labring/sealos/pkg/utils/strings"
 )
 
 func (c *Client) Ping(host string) error {
@@ -38,67 +42,64 @@ func (c *Client) Ping(host string) error {
 	return client.Close()
 }
 
+// wrapCommands just placeholder for now
+func (c *Client) wrapCommands(cmds ...string) string {
+	if !c.Option.sudo || c.Option.user == defaultUsername {
+		return strings.Join(cmds, "; ")
+	}
+	// run as user provided and set HOME env, then run `bash -c` in a sub-shell
+	return fmt.Sprintf("sudo -u %s -H bash -c '%s'", c.Option.user, strings.Join(cmds, "; "))
+}
+
+// CmdAsync not actually asynchronously, just print output asynchronously
 func (c *Client) CmdAsync(host string, cmds ...string) error {
-	var isLocal bool
+	cmd := c.wrapCommands(cmds...)
 	if c.isLocalAction(host) {
-		logger.Debug("host %s is local, command via exec", host)
-		isLocal = true
+		logger.Debug("start to run command `%s` via exec", cmd)
+		return exec.Cmd("bash", "-c", cmd)
 	}
-	for _, cmd := range cmds {
-		if cmd == "" {
-			continue
-		}
-		logger.Debug("start to exec remote %s shell: %s", host, cmd)
-		if err := func(cmd string) error {
-			if isLocal {
-				return exec.Cmd("bash", "-c", cmd)
-			}
-			client, session, err := c.Connect(host)
-			if err != nil {
-				return fmt.Errorf("failed to create ssh session for %s: %v", host, err)
-			}
-			defer client.Close()
-			defer session.Close()
-			stdout, err := session.StdoutPipe()
-			if err != nil {
-				return fmt.Errorf("failed to create stdout pipe for %s: %v", host, err)
-			}
-			stderr, err := session.StderrPipe()
-			if err != nil {
-				return fmt.Errorf("failed to create stderr pipe for %s: %v", host, err)
-			}
-
-			if err := session.Start(cmd); err != nil {
-				return fmt.Errorf("failed to start command %s on %s: %v", cmd, host, err)
-			}
-
-			var combineSlice []string
-			var combineLock sync.Mutex
-			doneout := make(chan error, 1)
-			doneerr := make(chan error, 1)
-			go func() {
-				doneerr <- readPipe(host, stderr, &combineSlice, &combineLock, c.printStdout)
-			}()
-			go func() {
-				doneout <- readPipe(host, stdout, &combineSlice, &combineLock, c.printStdout)
-			}()
-			<-doneerr
-			<-doneout
-
-			err = session.Wait()
-			if err != nil {
-				return strings2.WrapExecResult(host, cmd, []byte(strings.Join(combineSlice, "\n")), err)
-			}
-			return nil
-		}(cmd); err != nil {
-			return err
-		}
+	logger.Debug("start to exec `%s` on %s", cmd, host)
+	client, session, err := c.Connect(host)
+	if err != nil {
+		return fmt.Errorf("connect error: %v", err)
 	}
+	defer client.Close()
+	defer session.Close()
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("stdout pipe %s: %v", host, err)
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("stderr pipe %s: %v", host, err)
+	}
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		return fmt.Errorf("stdin pipe %s: %v", host, err)
+	}
+	out := autoAnswerWriter{
+		in:        stdin,
+		answer:    []byte(c.password + "\n"),
+		condition: isSudoPrompt,
+	}
+	eg, _ := errgroup.WithContext(context.Background())
+	eg.Go(func() error { return c.handlePipe(host, stderr, &out, c.stdout) })
+	eg.Go(func() error { return c.handlePipe(host, stdout, &out, c.stdout) })
 
+	if err := session.Start(cmd); err != nil {
+		return fmt.Errorf("start command `%s` on %s: %v", cmd, host, err)
+	}
+	if err = eg.Wait(); err != nil {
+		return err
+	}
+	if err = session.Wait(); err != nil {
+		return fmt.Errorf("run command `%s` on %s, output: %s, error: %v,", cmd, host, out.b.String(), err)
+	}
 	return nil
 }
 
 func (c *Client) Cmd(host, cmd string) ([]byte, error) {
+	cmd = c.wrapCommands(cmd)
 	if c.isLocalAction(host) {
 		logger.Debug("host %s is local, command via exec", host)
 		d, err := exec.RunBashCmd(cmd)
@@ -110,26 +111,90 @@ func (c *Client) Cmd(host, cmd string) ([]byte, error) {
 	}
 	defer client.Close()
 	defer session.Close()
-	output, err := session.CombinedOutput(cmd)
+	in, err := session.StdinPipe()
 	if err != nil {
-		err = fmt.Errorf("failed to run command: %v", err)
+		return nil, err
 	}
-	return output, err
+	b := autoAnswerWriter{
+		in:        in,
+		answer:    []byte(c.password + "\n"),
+		condition: isSudoPrompt,
+	}
+	session.Stdout = &b
+	session.Stderr = &b
+	err = session.Run(cmd)
+	return b.b.Bytes(), err
 }
 
-func readPipe(host string, pipe io.Reader, combineSlice *[]string, combineLock *sync.Mutex, isStdout bool) error {
-	r := bufio.NewReader(pipe)
-	for {
-		line, _, err := r.ReadLine()
+type withPrefixWriter struct {
+	prefix  string
+	newline bool
+	w       io.Writer
+	mu      sync.Mutex
+}
+
+func (w *withPrefixWriter) Write(p []byte) (int, error) {
+	p = append([]byte(w.prefix), p...)
+	if w.newline {
+		if p[len(p)-1] != byte('\n') {
+			p = append(p, '\n')
+		}
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.w.Write(p)
+}
+
+type autoAnswerWriter struct {
+	b          bytes.Buffer
+	in         io.Writer
+	showPrompt bool
+	answer     []byte
+	condition  func([]byte) bool
+	mu         sync.Mutex
+}
+
+func (w *autoAnswerWriter) Write(p []byte) (int, error) {
+	if w.in != nil && w.condition != nil && w.condition(p) {
+		_, err := w.in.Write(w.answer)
 		if err != nil {
+			return 0, err
+		}
+		if !w.showPrompt {
+			return len(p), nil
+		}
+	}
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.b.Write(p)
+}
+
+func isSudoPrompt(p []byte) bool {
+	return bytes.HasPrefix(p, []byte("[sudo] password for ")) && bytes.HasSuffix(p, []byte(": "))
+}
+
+func (c *Client) handlePipe(host string, pipe io.Reader, out io.Writer, isStdout bool) error {
+	r := bufio.NewReader(pipe)
+	writers := []io.Writer{out}
+	if isStdout {
+		writers = append(writers, &withPrefixWriter{prefix: host + "\t", newline: true, w: os.Stdout})
+	}
+	w := io.MultiWriter(writers...)
+	var line []byte
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
 			return err
 		}
-
-		combineLock.Lock()
-		*combineSlice = append(*combineSlice, string(line))
-		if isStdout {
-			fmt.Printf("%s: %s\n", host, string(line))
+		line = append(line, b)
+		if b == byte('\n') || isSudoPrompt(line) {
+			// ignore any writer error
+			_, _ = w.Write(line)
+			line = make([]byte, 0)
+			continue
 		}
-		combineLock.Unlock()
 	}
 }
