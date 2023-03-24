@@ -42,11 +42,13 @@ func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Byte
 		if err != nil {
 			return err
 		}
+		wholeSnippet := `more_clear_headers "X-Frame-Options:"; more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io"; more_set_headers "X-Xss-Protection: 1; mode=block"; %s if ($request_uri ~* \.(js|css|gif|jpe?g|png)) { expires 30d; add_header Cache-Control "public";}`
 		snippet := ""
 		for _, cookie := range cookies {
 			snippet += fmt.Sprintf("add_header Set-Cookie \"%s\"; ", cookie)
 		}
-		expectIngress := r.createNginxIngress(bb, host, snippet)
+		wholeSnippet = fmt.Sprintf(wholeSnippet, snippet)
+		expectIngress := r.createNginxIngress(bb, host, wholeSnippet)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
