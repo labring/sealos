@@ -22,6 +22,8 @@ import (
 	"strings"
 	"time"
 
+	registry2 "github.com/labring/sealos/pkg/utils/registry"
+
 	types2 "github.com/docker/docker/api/types"
 
 	"github.com/labring/image-cri-shim/pkg/cri"
@@ -103,9 +105,13 @@ func (c *Config) PreProcess() (*ShimAuthConfig, error) {
 				continue
 			}
 			name, passwd := splitNameAndPasswd(registry.Auth)
-			criAuth[registry.Address] = types2.AuthConfig{
-				Username: name,
-				Password: passwd,
+			domain = registry2.GetRegistryDomain(registry.Address)
+			domain = registry2.NormalizeRegistry(domain)
+
+			criAuth[domain] = types2.AuthConfig{
+				Username:      name,
+				Password:      passwd,
+				ServerAddress: registry.Address,
 			}
 		}
 		shimAuth.CRIConfigs = criAuth

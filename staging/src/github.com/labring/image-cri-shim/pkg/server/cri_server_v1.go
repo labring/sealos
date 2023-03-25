@@ -21,10 +21,9 @@ import (
 
 	"github.com/labring/image-cri-shim/pkg/types"
 
-	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
-	"github.com/labring/sealos/pkg/utils/registry"
-
 	types2 "github.com/docker/docker/api/types"
+
+	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
 
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
 
@@ -74,11 +73,8 @@ func (s *v1ImageService) PullImage(ctx context.Context,
 		} else {
 			if req.Auth == nil {
 				ref, _ := name.ParseReference(imageName)
-				for domain, v := range s.CRIConfigs {
-					if registry.NormalizeRegistry(domain) == ref.Context().RegistryStr() {
-						req.Auth = types.ToV1AuthConfig(&v)
-						break
-					}
+				if v, ok := s.CRIConfigs[ref.Context().RegistryStr()]; ok {
+					req.Auth = types.ToV1AuthConfig(&v)
 				}
 			}
 		}

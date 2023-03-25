@@ -47,7 +47,7 @@ func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, er
 	auths := make(map[string]types.AuthConfig, 0)
 
 	for domain, cred := range creds {
-		logger.Info("getCredentials domain: %s, username: %s, password: %s", domain, cred.Username, cred.Password)
+		logger.Debug("GetAuthInfo getCredentials domain: %s", domain, cred.Username)
 		reg, err := registry.NewRegistryForDomain(domain, cred.Username, cred.Password)
 		if err == nil {
 			auths[domain] = types.AuthConfig{

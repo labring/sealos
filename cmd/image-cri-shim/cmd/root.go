@@ -50,11 +50,10 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("image shim config load error: %w", err)
 		}
-		auth, err := cfg.PreProcess()
+		shimAuth, err = cfg.PreProcess()
 		if err != nil {
 			return fmt.Errorf("image shim config pre process error: %w", err)
 		}
-		shimAuth = auth
 		return nil
 	},
 }

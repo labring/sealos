@@ -18,6 +18,7 @@ package registry
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/labring/sealos/fork/github.com/heroku/docker-registry-client/registry"
@@ -83,4 +84,10 @@ func NormalizeRegistry(registry string) string {
 		return "index.docker.io"
 	}
 	return registry
+}
+
+func GetRegistryDomain(registry string) string {
+	s := strings.TrimPrefix(registry, "https://")
+	s = strings.TrimPrefix(s, "http://")
+	return strings.Split(s, "/")[0]
 }
