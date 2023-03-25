@@ -199,12 +199,6 @@ func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 	return remote.New(k.getClusterName(), k.getSSHInterface())
 }
 
-func (k *KubeadmRuntime) getScriptsBash() constants.Bash {
-	render := k.getImageLabels()
-
-	return constants.NewBash(k.getClusterName(), render, k.getENVInterface().WrapperShell)
-}
-
 func (k *KubeadmRuntime) getContentData() constants.Data {
 	return constants.NewData(k.getClusterName())
 }

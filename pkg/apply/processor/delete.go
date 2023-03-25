@@ -62,7 +62,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	todoList = append(todoList,
 		d.PreProcess,
 		d.Reset,
-		d.Bootstrap,
+		d.UndoBootstrap,
 		d.UnMountRootfs,
 		d.UnMountImage,
 		d.CleanFS,
@@ -74,7 +74,7 @@ func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
 	return SyncClusterStatus(cluster, d.Buildah, true)
 }
 
-func (c *DeleteProcessor) Bootstrap(cluster *v2.Cluster) error {
+func (c *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Bootstrap in DeleteProcessor")
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	bs := bootstrap.New(cluster)
