@@ -3,7 +3,7 @@ name:  Test sealos image-cri-shim service
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ["**"]
     paths:
       - ".github/workflows/test_image_cri_shim.yml"
       - "cmd/**"
@@ -22,13 +22,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Auto install sealos
+      - name: Build sealos Binaries
         uses: labring/sealos-action@v0.0.5
         with:
           type: install-dev
           pruneCRI: true
           autoFetch: false
-      - name: Save Binaries sealos
+
+      - name: Build image-cri-shim Binaries
+        run: |
+          export PATH="/tmp/golang/go/bin:${PATH}" && \
+          make build BINS=image-cri-shim && \
+          sudo chmod a+x bin/linux_amd64/image-cri-shim && sudo mv bin/linux_amd64/image-cri-shim /usr/bin
+
+      - name: Save sealos image-cri-shim Binaries
         uses: actions/upload-artifact@v3
         with:
           name: sealos
@@ -64,13 +71,14 @@ jobs:
           type: prune
 
 
-      - name: build image with new image-cri-shim
+      - name: Build image with new image-cri-shim
         run: |
-          pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && /usr/bin/sealos build -f Dockerfile -t labring/kubernetes-hack:v1.25.0 . && popd
+          pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && sudo /usr/bin/sealos build -f Dockerfile -t kubernetes-hack:v1.25.0 . && popd
 
       - name: Auto install k8s using sealos
         run: |
-          sudo sealos run labring/kubernetes-hack:v1.25.0 --single --debug
+          sudo /usr/bin/sealos images
+          sudo /usr/bin/sealos run kubernetes-hack:v1.25.0 --single --debug
           mkdir -p "$HOME/.kube"
           sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
           sudo chown "$(whoami)" "$HOME/.kube/config"
@@ -78,19 +86,19 @@ jobs:
           kubectl get pod -A
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
           sudo cat /root/.sealos/default/Clusterfile
-
-      - name: Set up Go 1.20
-        uses: actions/setup-go@v3
-        with:
-          go-version: 1.20
-        id: go
-
+      #      - name: Set up Go 1.20.2
+      #        uses: actions/setup-go@v4
+      #        with:
+      #          go-version: 1.20.2
+      #        id: go
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Install ginkgo && Run image-cri-shim test
         shell: bash
         run: |
-          go install github.com/onsi/ginkgo/ginkgo@v1.16.2
-          go install github.com/onsi/gomega/...@v1.12.0
-          ginkgo -v test/e2e/ --focus="image-cri-shim"
+          wget -qO goNew.tgz https://go.dev/dl/go1.20.linux-amd64.tar.gz && tar -zxf goNew.tgz && rm -rf goNew.tgz
+          sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
+          export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
+          export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
+          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v test/e2e/ --focus="image-cri-shim"
