@@ -82,6 +82,7 @@ func (c *ScaleProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 		c.DeleteCheck,
 		c.PreProcess,
 		c.Delete,
+		c.UndoBootstrap,
 		//c.ApplyCleanPlugin,
 		c.UnMountRootfs,
 	)
@@ -256,6 +257,13 @@ func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 	hosts := append(c.MastersToJoin, c.NodesToJoin...)
 	bs := bootstrap.New(cluster)
 	return bs.Apply(hosts...)
+}
+
+func (c *ScaleProcessor) UndoBootstrap(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
+	hosts := append(c.MastersToJoin, c.NodesToJoin...)
+	bs := bootstrap.New(cluster)
+	return bs.Delete(hosts...)
 }
 
 func NewScaleProcessor(clusterFile clusterfile.Interface, name string, images v2.ImageList, masterToJoin, masterToDelete, nodeToJoin, nodeToDelete []string) (Interface, error) {

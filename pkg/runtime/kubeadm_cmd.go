@@ -45,7 +45,7 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 		JoinMaster115Lower = "kubeadm join %s:%d --token %s   %s --experimental-control-plane --certificate-key %s"
 		JoinNode115Lower   = "kubeadm join %s:%d --token %s   %s"
 
-		InitMaser115Upper  = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print` // --upload-certs --skip-certificate-key-print --skip-token-print
+		InitMaser115Upper  = `kubeadm init --config=%s --skip-certificate-key-print --skip-token-print --upload-certs` // --upload-certs --skip-certificate-key-print --skip-token-print
 		JoinMaster115Upper = "kubeadm join --config=%s"
 		JoinNode115Upper   = "kubeadm join --config=%s"
 		UpdateClusterAll   = "kubeadm init phase upload-config kubeadm --config=%s"

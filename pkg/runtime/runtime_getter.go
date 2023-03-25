@@ -167,14 +167,6 @@ func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
 	return k.getRemoteInterface().HostsDelete(ip, domain)
 }
 
-func (k *KubeadmRuntime) execClean(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getScriptsBash().CleanBash(ip))
-}
-
-func (k *KubeadmRuntime) execAuth(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getScriptsBash().AuthBash(ip))
-}
-
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 	return k.getSSHInterface().CmdAsync(host, cmd...)
 }
