@@ -20,8 +20,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/labring/sealos/pkg/constants"
-
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -162,8 +160,7 @@ func (initializer *defaultInitializer) Apply(ctx Context, host string) error {
 }
 
 func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
-	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(ctx.GetCluster().Name))
-	cmds := []string{ctx.GetBash().CleanBash(host), deleteHomeDirCmd}
+	cmds := []string{ctx.GetBash().CleanBash(host)}
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 

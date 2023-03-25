@@ -260,8 +260,8 @@ func (c *ScaleProcessor) Bootstrap(cluster *v2.Cluster) error {
 }
 
 func (c *ScaleProcessor) UndoBootstrap(cluster *v2.Cluster) error {
-	logger.Info("Executing pipeline Bootstrap in ScaleProcessor")
-	hosts := append(c.MastersToJoin, c.NodesToJoin...)
+	logger.Info("Executing pipeline UndoBootstrap in ScaleProcessor")
+	hosts := append(c.MastersToDelete, c.NodesToDelete...)
 	bs := bootstrap.New(cluster)
 	return bs.Delete(hosts...)
 }
