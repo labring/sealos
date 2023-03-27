@@ -37,22 +37,19 @@ export default function Notification(props: TNotification) {
   const [activePage, setActivePage] = useState<'index' | 'detail'>('index');
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
 
-  const { data, refetch } = useQuery(
-    ['getAwsAll'],
-    async () => await request('/api/notification/list')
-  );
+  const { data, refetch } = useQuery(['getAwsAll'], () => request('/api/notification/list'));
 
   const unread_notes = useMemo(() => {
-    return data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead);
-  }, [data?.data?.items]);
+    const temp = data?.data?.items?.filter(
+      (item: NotificationItem) => !item?.metadata?.labels?.isRead
+    );
+    onAmount(temp?.length || 0);
+    return temp;
+  }, [data?.data?.items, onAmount]);
 
   const read_notes = useMemo(() => {
     return data?.data?.items?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead);
   }, [data?.data?.items]);
-
-  useEffect(() => {
-    onAmount(unread_notes?.length || 0);
-  }, [onAmount, unread_notes?.length]);
 
   const readMsgMutation = useMutation({
     mutationFn: (name: string[]) => request.post('/api/notification/read', { name }),
