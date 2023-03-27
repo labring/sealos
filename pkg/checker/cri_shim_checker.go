@@ -59,7 +59,6 @@ func (n *CRIShimChecker) Check(_ *v2.Cluster, phase string) error {
 		status.Config["ShimSocket"] = shimCfg.ImageShimSocket
 		status.Config["CRISocket"] = shimCfg.RuntimeSocket
 		status.Config["RegistryAddress"] = shimCfg.Address
-		status.Config["CRIVersion"] = string(shimCfg.CRIVersion)
 		if status.Config["CRIVersion"] == "" {
 			delete(status.Config, "CRIVersion")
 		}
