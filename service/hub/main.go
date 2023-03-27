@@ -16,6 +16,7 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *server.Config) {
+	// NewAuthServer will start a go routine to reset reqLimiter
 	as, err := server.NewAuthServer(c)
 	if err != nil {
 		glog.Exitf("Failed to create auth server: %s", err)
@@ -24,16 +25,18 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		Addr:    c.Server.ListenAddress,
 		Handler: as,
 	}
+
 	rs.authServer, rs.hs = as, hs
 	var listener net.Listener
 	listener, err = net.Listen("tcp", c.Server.ListenAddress)
 	if err != nil {
 		glog.Fatal(err.Error())
 	}
+
+	glog.Infof("Serving on %s", c.Server.ListenAddress)
 	if err := hs.Serve(listener); err != nil {
 		glog.Fatal(err.Error())
 	}
-	glog.Infof("Serving on %s", c.Server.ListenAddress)
 }
 
 func main() {
