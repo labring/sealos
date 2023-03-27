@@ -29,7 +29,7 @@ type AuthServer struct {
 	config         *Config
 	authenticators api.Authenticator
 	authorizers    api.Authorizer
-	pullReqCounter *utils.MapWithReset
+	reqLimiter     *utils.Limiter
 }
 
 func NewAuthServer(c *Config) (*AuthServer, error) {
@@ -37,13 +37,10 @@ func NewAuthServer(c *Config) (*AuthServer, error) {
 		config:         c,
 		authenticators: auth.NewSealosAuthn(),
 		authorizers:    auth.NewSealosAuthz(),
-		pullReqCounter: utils.NewMapWithReset(),
+		// NewLimiter will start a go routine to reset reqLimiter
+		reqLimiter: utils.NewLimiter(c.Server.MaxRequestsPerIP, c.Server.MaxRequestsPerAccount, c.Server.ReqLimitersResetInterval),
 	}
 	return as, nil
-}
-
-func (as *AuthServer) Start(d time.Duration) {
-	go as.pullReqCounter.StartResetTimer(d)
 }
 
 type AuthRequest struct {
@@ -328,7 +325,7 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 	ar.Labels = labels
 
 	// Check if the request is coming from a valid IP and account
-	if !as.pullLimitCheck(ar, (client == nil)) {
+	if !as.allowRequest(ar, (client == nil)) {
 		glog.Infof("Too many pull requests from %s, %s", ar.RemoteIP.String(), ar.Account)
 		http.Error(rw, "Too many pull requests", http.StatusTooManyRequests)
 		return
@@ -373,7 +370,8 @@ func joseBase64UrlEncode(b []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "=")
 }
 
-func (as *AuthServer) pullLimitCheck(ar *AuthRequest, isAnomaly bool) bool {
+// allowRequest checks if the request is coming from a valid IP and account
+func (as *AuthServer) allowRequest(ar *AuthRequest, isAnomaly bool) bool {
 	if len(ar.Scopes) == 0 {
 		return true
 	}
@@ -388,12 +386,11 @@ func (as *AuthServer) pullLimitCheck(ar *AuthRequest, isAnomaly bool) bool {
 		}
 	}
 
-	// nomal user pull/push request
+	// anomaly user pull/push request, check IP
 	if isAnomaly {
-		as.pullReqCounter.Increment(ar.RemoteIP.String())
-		return as.pullReqCounter.Get(ar.RemoteIP.String()) < as.config.Server.MaxRequestsPerIP
-	} else {
-		as.pullReqCounter.Increment(ar.Account)
-		return as.pullReqCounter.Get(ar.Account) < as.config.Server.MaxRequestsPerAccount
+		return as.reqLimiter.AllowIP(ar.RemoteIP.String())
 	}
+
+	// nomal user pull/push request, check account name
+	return as.reqLimiter.AllowUser(ar.User)
 }

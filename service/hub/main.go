@@ -16,6 +16,7 @@ type RestartableServer struct {
 }
 
 func (rs *RestartableServer) Serve(c *server.Config) {
+	// NewAuthServer will start a go routine to reset reqLimiter
 	as, err := server.NewAuthServer(c)
 	if err != nil {
 		glog.Exitf("Failed to create auth server: %s", err)
@@ -24,10 +25,6 @@ func (rs *RestartableServer) Serve(c *server.Config) {
 		Addr:    c.Server.ListenAddress,
 		Handler: as,
 	}
-
-	// start the pull request counter reset timer
-	glog.Infof("Pull request counter reset timer started")
-	as.Start(c.Server.PullReqCounterResetInterval)
 
 	rs.authServer, rs.hs = as, hs
 	var listener net.Listener

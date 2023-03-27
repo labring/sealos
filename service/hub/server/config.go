@@ -27,11 +27,11 @@ type ServerConfig struct {
 	ListenAddress string `yaml:"addr,omitempty"`
 	PathPrefix    string `yaml:"path_prefix,omitempty"`
 
-	MaxRequestsPerIP            int64         `yaml:"max_requests_per_ip,omitempty"`
-	MaxRequestsPerAccount       int64         `yaml:"max_requests_per_account"`
-	PullReqCounterResetInterval time.Duration `yaml:"pull_req_counter_reset_interval"`
-	WhiteIPCidrList             []string      `yaml:"white_ip_cidr_list"`
-	WhiteUserList               []string      `yaml:"white_user_list"`
+	MaxRequestsPerIP         int           `yaml:"max_requests_per_ip,omitempty"`
+	MaxRequestsPerAccount    int           `yaml:"max_requests_per_account,omitempty"`
+	ReqLimitersResetInterval time.Duration `yaml:"req_limiters_reset_interval,omitempty"`
+	WhiteIPCidrList          []string      `yaml:"white_ip_cidr_list,omitempty"`
+	WhiteUserList            []string      `yaml:"white_user_list,omitempty"`
 }
 
 type TokenConfig struct {
@@ -78,9 +78,9 @@ func loadCertAndKey(certFile string, keyFile string) (pk libtrust.PublicKey, prk
 }
 
 const (
-	DefaultMaxRequestsPerAccount       = 1000
-	DefaultMaxRequestsPerIP            = 1000
-	DefaultPullReqCounterResetInterval = 1 * time.Hour
+	DefaultMaxRequestsPerAccount    = 1000
+	DefaultMaxRequestsPerIP         = 1000
+	DefaultReqLimitersResetInterval = 1 * time.Hour
 )
 
 func LoadConfig(fileName string) (*Config, error) {
@@ -102,8 +102,8 @@ func LoadConfig(fileName string) (*Config, error) {
 	if c.Server.MaxRequestsPerAccount == 0 {
 		c.Server.MaxRequestsPerAccount = DefaultMaxRequestsPerAccount
 	}
-	if c.Server.PullReqCounterResetInterval == 0 {
-		c.Server.PullReqCounterResetInterval = DefaultPullReqCounterResetInterval
+	if c.Server.ReqLimitersResetInterval == 0 {
+		c.Server.ReqLimitersResetInterval = DefaultReqLimitersResetInterval
 	}
 	if err = validate(c); err != nil {
 		return nil, fmt.Errorf("invalid config: %s", err)
