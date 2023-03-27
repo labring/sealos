@@ -17,6 +17,8 @@ limitations under the License.
 package apply
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"strings"
@@ -111,22 +113,22 @@ func GetHostArch(sshClient ssh.Interface, ip string) string {
 }
 
 func GetImagesDiff(current, desired []string) []string {
-	desiredUnique := make(map[string]struct{}, len(desired))
-	for _, img := range desired {
-		desiredUnique[img] = struct{}{}
-	}
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(desired, current))
+}
 
-	currentUnique := make(map[string]struct{}, len(current))
-	for _, img := range current {
-		currentUnique[img] = struct{}{}
-	}
+func CompareImageSpecHash(currentImages []string, newImages []string) bool {
+	currentHash := calculateImageSpecHash(currentImages)
+	newHash := calculateImageSpecHash(newImages)
 
-	diff := make([]string, 0, len(desiredUnique))
-	for img := range desiredUnique {
-		if _, ok := currentUnique[img]; !ok {
-			diff = append(diff, img)
-		}
-	}
+	return currentHash == newHash
+}
 
-	return diff
+func calculateImageSpecHash(images []string) string {
+	specBytes := []byte(strings.Join(images, ","))
+
+	hashBytes := md5.Sum(specBytes)
+
+	hashString := hex.EncodeToString(hashBytes[:])
+
+	return hashString
 }

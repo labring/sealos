@@ -186,3 +186,41 @@ func TestGetImagesDiff(t *testing.T) {
 		t.Errorf("Unexpected diff. Expected %v, but got %v", expected, diff)
 	}
 }
+
+func TestCompareImageSpecHash(t *testing.T) {
+	currentImages := []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+	}
+	newImages := []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+	}
+
+	if !CompareImageSpecHash(currentImages, newImages) {
+		t.Errorf("CompareImageSpecHash(%v, %v) = false; want true", currentImages, newImages)
+	}
+
+	newImages = []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+		"hub.sealos.cn/labring/nginx:v1.23.5",
+		"hub.sealos.cn/labring/nginx:v1.23.4",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+		"hub.sealos.cn/labring/nginx:v1.23.2",
+		"hub.sealos.cn/labring/nginx:v1.23.1",
+	}
+
+	if CompareImageSpecHash(currentImages, newImages) {
+		t.Errorf("CompareImageSpecHash(%v, %v) = true; want false", currentImages, newImages)
+	}
+}

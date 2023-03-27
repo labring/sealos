@@ -56,12 +56,15 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 	}
 	currentCluster := cf.GetCluster()
 
-	runNewImages := GetImagesDiff(currentCluster.Spec.Image, cluster.Spec.Image)
-
 	return &applydrivers.Applier{
 		ClusterDesired: cluster,
 		ClusterFile:    Clusterfile,
 		ClusterCurrent: currentCluster,
-		RunNewImages:   runNewImages,
+		RunNewImages: func() []string {
+			if ok := CompareImageSpecHash(currentCluster.Spec.Image, cluster.Spec.Image); ok {
+				return nil
+			}
+			return GetImagesDiff(currentCluster.Spec.Image, cluster.Spec.Image)
+		}(),
 	}, nil
 }
