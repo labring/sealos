@@ -22,7 +22,6 @@ import (
 	"github.com/labring/sealos/pkg/apply"
 	"github.com/labring/sealos/pkg/apply/processor"
 	"github.com/labring/sealos/pkg/buildah"
-	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
@@ -59,7 +58,6 @@ func newRunCmd() *cobra.Command {
 		Cluster: &apply.Cluster{},
 		SSH:     &apply.SSH{},
 	}
-	var runSingle bool
 	var transport string
 	var runCmd = &cobra.Command{
 		Use:     "run",
@@ -67,12 +65,6 @@ func newRunCmd() *cobra.Command {
 		Long:    `sealos run labring/kubernetes:v1.24.0 --masters [arg] --nodes [arg]`,
 		Example: exampleRun,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if runSingle {
-				addr, _ := iputils.ListLocalHostAddrs()
-				runArgs.Masters = iputils.LocalIP(addr)
-				runArgs.Single = true
-			}
-
 			images, err := args2Images(args, transport)
 			if err != nil {
 				return err
@@ -92,7 +84,10 @@ func newRunCmd() *cobra.Command {
 		},
 	}
 	runArgs.RegisterFlags(runCmd.Flags())
-	runCmd.Flags().BoolVar(&runSingle, "single", false, "run cluster in single mode")
+	runCmd.Flags().BoolVar(new(bool), "single", false, "run cluster in single mode")
+	if err := runCmd.Flags().MarkDeprecated("single", "it defaults to running cluster in single mode when there are no master and node"); err != nil {
+		logger.Error(err)
+	}
 	runCmd.Flags().BoolVarP(&processor.ForceOverride, "force", "f", false, "force override app in this cluster")
 	runCmd.Flags().StringVarP(&transport, "transport", "t", buildah.OCIArchive,
 		fmt.Sprintf("load image transport from tar archive file.(optional value: %s, %s)", buildah.OCIArchive, buildah.DockerArchive))

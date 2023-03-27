@@ -44,7 +44,6 @@ type Interface interface {
 	GetCluster() *v2.Cluster
 	GetConfigs() []v2.Config
 	GetKubeadmConfig() *runtime.KubeadmConfig
-	SetSingleMode(bool) error
 }
 
 func (c *ClusterFile) GetCluster() *v2.Cluster {

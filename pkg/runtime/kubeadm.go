@@ -20,6 +20,8 @@ import (
 	"path/filepath"
 	"time"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/labring/sealos/pkg/constants"
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -340,6 +342,14 @@ func (k *KubeadmRuntime) setCertSANS(certs []string) {
 	k.ClusterConfiguration.APIServer.CertSANs = certSans
 }
 
+func (k *KubeadmRuntime) setInitTaints() {
+	if len(k.Cluster.GetAllIPS()) == 1 &&
+		k.InitConfiguration.NodeRegistration.Taints == nil {
+		//set this field to an empty slice avoid to taint control-plane in single host
+		k.InitConfiguration.NodeRegistration.Taints = make([]v1.Taint, 0)
+	}
+}
+
 func (k *KubeadmRuntime) setExcludeCIDRs() {
 	k.IPVS.ExcludeCIDRs = append(k.KubeProxyConfiguration.IPVS.ExcludeCIDRs, fmt.Sprintf("%s/32", k.getVip()))
 	k.IPVS.ExcludeCIDRs = strings2.RemoveDuplicate(k.IPVS.ExcludeCIDRs)
@@ -421,6 +431,7 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 	}
 	k.setExcludeCIDRs()
 	k.setCertSANS([]string{})
+	k.setInitTaints()
 	// after all merging done, set default fields
 	k.finalizeInitConfig()
 
