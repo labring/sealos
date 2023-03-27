@@ -12,6 +12,14 @@ on:
       - ".github/workflows/e2e_metering.yml"
       - "!**/*.md"
       - "!**/*.yaml"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "controllers/metering/**"
+      - "controllers/common/metering/**"
+      - ".github/workflows/controllers.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -94,7 +102,11 @@ jobs:
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-
+      - name: install common metering CRD
+        working-directory: ./controllers/common/metering
+        run: |
+          sudo -u root apt install make
+          make install
       - name: install CRD metering
         working-directory: ./controllers/metering
         run: |
@@ -103,17 +115,12 @@ jobs:
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
+          sealos run labring/cert-manager:v1.8.0
           make pre-deploy
           sudo -u root kubectl create namespace account-system
           sudo -u root kubectl create namespace sealos-system
           sudo -u root kubectl create secret generic payment-secret -n account-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
-      - name: install CRD infra
-        working-directory: ./controllers/infra
-        run: |
-          make pre-deploy
-          sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml 
-          sleep 30
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v3
         with:
