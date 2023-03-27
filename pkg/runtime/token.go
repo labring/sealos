@@ -27,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/utils/logger"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
@@ -48,15 +50,23 @@ type Token struct {
 
 const defaultAdminConf = "/etc/kubernetes/admin.conf"
 
-func Generator() (*Token, error) {
+func Generator(config, certificateKey string) (*Token, error) {
 	token := &Token{}
 	if _, ok := exec.CheckCmdIsExist("kubeadm"); ok && file.IsExist(defaultAdminConf) {
 		key, _ := CreateCertificateKey()
+		if certificateKey != "" {
+			key = certificateKey
+		}
 		token.CertificateKey = key
-		const uploadCertTemplate = "kubeadm init phase upload-certs --upload-certs --certificate-key %s"
-		_, _ = exec.RunBashCmd(fmt.Sprintf(uploadCertTemplate, key))
+		uploadCertTemplate := fmt.Sprintf("kubeadm init phase upload-certs --upload-certs --certificate-key %s", key)
+		if config != "" {
+			uploadCertTemplate = fmt.Sprintf("kubeadm init phase upload-certs --config %s --upload-certs", config)
+		}
+		logger.Debug("token uploadCertTemplate cmd: %s", uploadCertTemplate)
+		_, _ = exec.RunBashCmd(uploadCertTemplate)
 		tokens := ListToken()
 		const tokenTemplate = "kubeadm token create --print-join-command --certificate-key %s --ttl 2h"
+		logger.Debug("token tokenTemplate cmd: %s", tokenTemplate)
 		_, _ = exec.RunBashCmd(fmt.Sprintf(tokenTemplate, key))
 		afterTokens := ListToken()
 		diff := afterTokens.ToStrings().Difference(tokens.ToStrings())

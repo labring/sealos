@@ -192,8 +192,11 @@ func (k *KubeadmRuntime) getDNSDomain() string {
 }
 
 func (k *KubeadmRuntime) writeTokenFile() error {
+	if err := setCertificateKey(k); err != nil {
+		return err
+	}
 	tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
-	data, err := k.execToken(k.getMaster0IPAndPort())
+	data, err := k.execToken(k.getMaster0IPAndPort(), k.getInitCertificateKey())
 	if err != nil {
 		return err
 	}
@@ -210,8 +213,8 @@ func (k *KubeadmRuntime) writeTokenFile() error {
 }
 
 func (k *KubeadmRuntime) setKubernetesToken() error {
-	logger.Info("start to get kubernetes token...")
 	if k.Token == nil {
+		logger.Info("start to get kubernetes token...")
 		tokenFile := path.Join(k.getContentData().EtcPath(), constants.DefaultKubeadmTokenFileName)
 		if !fileutil.IsExist(tokenFile) {
 			err := k.writeTokenFile()
@@ -243,44 +246,52 @@ func (k *KubeadmRuntime) setKubernetesToken() error {
 	}
 	k.setJoinToken(k.Token.JoinToken)
 	k.setTokenCaCertHash(k.Token.DiscoveryTokenCaCertHash)
-	k.setCertificateKey(k.Token.CertificateKey)
+	k.setJoinCertificateKey(k.Token.CertificateKey)
+
 	return nil
 }
 
 func (k *KubeadmRuntime) setJoinToken(token string) {
-	if k.Discovery.BootstrapToken == nil {
-		k.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
+	if k.JoinConfiguration.Discovery.BootstrapToken == nil {
+		k.JoinConfiguration.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
 	}
-	k.Discovery.BootstrapToken.Token = token
+	k.JoinConfiguration.Discovery.BootstrapToken.Token = token
 }
 
 func (k *KubeadmRuntime) getJoinToken() string {
-	if k.Discovery.BootstrapToken == nil {
+	if k.JoinConfiguration.Discovery.BootstrapToken == nil {
 		return ""
 	}
 	return k.JoinConfiguration.Discovery.BootstrapToken.Token
 }
 
 func (k *KubeadmRuntime) setTokenCaCertHash(tokenCaCertHash []string) {
-	if k.Discovery.BootstrapToken == nil {
-		k.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
+	if k.JoinConfiguration.Discovery.BootstrapToken == nil {
+		k.JoinConfiguration.Discovery.BootstrapToken = &kubeadm.BootstrapTokenDiscovery{}
 	}
-	k.Discovery.BootstrapToken.CACertHashes = tokenCaCertHash
+	k.JoinConfiguration.Discovery.BootstrapToken.CACertHashes = tokenCaCertHash
 }
 
 func (k *KubeadmRuntime) getTokenCaCertHash() []string {
-	if k.Discovery.BootstrapToken == nil || len(k.Discovery.BootstrapToken.CACertHashes) == 0 {
+	if k.JoinConfiguration.Discovery.BootstrapToken == nil || len(k.JoinConfiguration.Discovery.BootstrapToken.CACertHashes) == 0 {
 		return nil
 	}
-	return k.Discovery.BootstrapToken.CACertHashes
+	return k.JoinConfiguration.Discovery.BootstrapToken.CACertHashes
 }
 
-func (k *KubeadmRuntime) setCertificateKey(certificateKey string) {
-	k.InitConfiguration.CertificateKey = certificateKey
+func (k *KubeadmRuntime) setJoinCertificateKey(certificateKey string) {
 	if k.JoinConfiguration.ControlPlane == nil {
 		k.JoinConfiguration.ControlPlane = &kubeadm.JoinControlPlane{}
 	}
 	k.JoinConfiguration.ControlPlane.CertificateKey = certificateKey
+}
+
+func (k *KubeadmRuntime) setInitCertificateKey(certificateKey string) {
+	k.InitConfiguration.CertificateKey = certificateKey
+}
+
+func (k *KubeadmRuntime) getInitCertificateKey() string {
+	return k.InitConfiguration.CertificateKey
 }
 
 func (k *KubeadmRuntime) getJoinCertificateKey() string {
@@ -364,11 +375,30 @@ var setCGroupDriverAndSocket = func(krt *KubeadmRuntime) error {
 	return krt.setCGroupDriverAndSocket(krt.getMaster0IPAndPort())
 }
 
+var setCertificateKey = func(krt *KubeadmRuntime) error {
+	certificateKeyFile := path.Join(krt.getContentData().EtcPath(), constants.DefaultCertificateKeyFileName)
+	var key string
+	if !fileutil.IsExist(certificateKeyFile) {
+		key, _ = CreateCertificateKey()
+		err := fileutil.WriteFile(certificateKeyFile, []byte(key))
+		if err != nil {
+			return err
+		}
+	} else {
+		data, err := fileutil.ReadAll(certificateKeyFile)
+		if err != nil {
+			return err
+		}
+		key = string(data)
+	}
+	krt.setInitCertificateKey(key)
+	return nil
+}
+
 func (k *KubeadmRuntime) generateInitConfigs() ([]byte, error) {
-	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
+	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return nil, err
 	}
-
 	return yaml.MarshalYamlConfigs(&k.conversion.InitConfiguration,
 		&k.conversion.ClusterConfiguration,
 		&k.conversion.KubeletConfiguration,

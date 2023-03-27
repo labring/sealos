@@ -33,7 +33,7 @@ type Interface interface {
 	IPVS(ip, vip string, masters []string) error
 	IPVSClean(ip, vip string) error
 	StaticPod(ip, vip, name, image string, masters []string) error
-	Token(ip string) (string, error)
+	Token(ip, config, certificateKey string) (string, error)
 	CGroup(ip string) (string, error)
 	Socket(ip string) (string, error)
 	Cert(ip string, altNames []string, hostIP, hostName, serviceCIRD, DNSDomain string) error
@@ -43,7 +43,7 @@ const (
 	addHostsCommandFmt    = "hosts add --ip %s  --domain %s"
 	deleteHostsCommandFmt = "hosts delete  --domain %s"
 	hostnameCommandFmt    = "hostname"
-	tokenCommandFmt       = "token"
+	tokenCommandFmt       = "token %s %s"
 	cGroupCommandFmt      = "cri cgroup-driver --short"
 	socketCommandFmt      = "cri socket"
 )
@@ -115,8 +115,8 @@ func (s *remote) StaticPod(ip, vip, name, image string, masters []string) error 
 	return bashCTLSync(s.clusterName, s.sshInterface, ip, out)
 }
 
-func (s *remote) Token(ip string) (string, error) {
-	return bashToString(s.clusterName, s.sshInterface, ip, tokenCommandFmt)
+func (s *remote) Token(ip, config, certificateKey string) (string, error) {
+	return bashToString(s.clusterName, s.sshInterface, ip, fmt.Sprintf(tokenCommandFmt, config, certificateKey))
 }
 func (s *remote) CGroup(ip string) (string, error) {
 	return bashToString(s.clusterName, s.sshInterface, ip, cGroupCommandFmt)
