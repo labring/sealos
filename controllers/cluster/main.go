@@ -21,6 +21,7 @@ import (
 	"os"
 
 	iv1 "github.com/labring/sealos/controllers/infra/api/v1"
+	utilcontroller "github.com/labring/sealos/controllers/pkg/utils"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -57,6 +58,7 @@ func main() {
 		enableLeaderElection bool
 		probeAddr            string
 		concurrent           int
+		rateLimiterOptions   utilcontroller.RateLimiterOptions
 	)
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8082", "The address the metric endpoint binds to.")
@@ -65,6 +67,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	rateLimiterOptions.BindFlags(flag.CommandLine)
 	opts := zap.Options{
 		Development: true,
 	}
@@ -101,7 +104,9 @@ func main() {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr, controllers.ClusterReconcilerOptions{
-		MaxConcurrentReconciles: concurrent}); err != nil {
+		MaxConcurrentReconciles: concurrent,
+		RateLimiter:             utilcontroller.GetRateLimiter(rateLimiterOptions),
+	}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
 		os.Exit(1)
 	}
