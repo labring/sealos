@@ -17,9 +17,8 @@ limitations under the License.
 package apply
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
+	"github.com/labring/sealos/pkg/utils/hash"
 	"net"
 	"strings"
 
@@ -117,18 +116,8 @@ func GetImagesDiff(current, desired []string) []string {
 }
 
 func CompareImageSpecHash(currentImages []string, newImages []string) bool {
-	currentHash := calculateImageSpecHash(currentImages)
-	newHash := calculateImageSpecHash(newImages)
+	currentHash := hash.ToString(currentImages)
+	newHash := hash.ToString(newImages)
 
 	return currentHash == newHash
-}
-
-func calculateImageSpecHash(images []string) string {
-	specBytes := []byte(strings.Join(images, ","))
-
-	hashBytes := md5.Sum(specBytes)
-
-	hashString := hex.EncodeToString(hashBytes[:])
-
-	return hashString
 }
