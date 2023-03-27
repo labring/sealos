@@ -159,8 +159,9 @@ func (initializer *defaultInitializer) Apply(ctx Context, host string) error {
 	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 
-func (initializer *defaultInitializer) Undo(_ Context, _ string) error {
-	return nil
+func (initializer *defaultInitializer) Undo(ctx Context, host string) error {
+	cmds := []string{ctx.GetBash().CleanBash(host)}
+	return ctx.GetExecer().CmdAsync(host, cmds...)
 }
 
 func init() {

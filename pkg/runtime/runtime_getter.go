@@ -167,14 +167,6 @@ func (k *KubeadmRuntime) execHostsDelete(ip, domain string) error {
 	return k.getRemoteInterface().HostsDelete(ip, domain)
 }
 
-func (k *KubeadmRuntime) execClean(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getScriptsBash().CleanBash(ip))
-}
-
-func (k *KubeadmRuntime) execAuth(ip string) error {
-	return k.getSSHInterface().CmdAsync(ip, k.getScriptsBash().AuthBash(ip))
-}
-
 func (k *KubeadmRuntime) sshCmdAsync(host string, cmd ...string) error {
 	return k.getSSHInterface().CmdAsync(host, cmd...)
 }
@@ -205,12 +197,6 @@ func (k *KubeadmRuntime) getENVInterface() env.Interface {
 
 func (k *KubeadmRuntime) getRemoteInterface() remote.Interface {
 	return remote.New(k.getClusterName(), k.getSSHInterface())
-}
-
-func (k *KubeadmRuntime) getScriptsBash() constants.Bash {
-	render := k.getImageLabels()
-
-	return constants.NewBash(k.getClusterName(), render, k.getENVInterface().WrapperShell)
 }
 
 func (k *KubeadmRuntime) getContentData() constants.Data {

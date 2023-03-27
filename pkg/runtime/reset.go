@@ -20,7 +20,6 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/labring/sealos/pkg/bootstrap"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -37,9 +36,7 @@ rm -rf %s && ip link delete kube-ipvs0
 func (k *KubeadmRuntime) reset() error {
 	k.resetNodes(k.getNodeIPAndPortList())
 	k.resetMasters(k.getMasterIPAndPortList())
-	bs := bootstrap.New(k.Cluster)
-	err := bs.Delete(k.Cluster.GetAllIPS()...)
-	return err
+	return nil
 }
 
 func (k *KubeadmRuntime) resetNodes(nodes []string) {
@@ -71,7 +68,6 @@ func (k *KubeadmRuntime) resetMasters(nodes []string) {
 func (k *KubeadmRuntime) resetNode(node string) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
-	deleteHomeDirCmd := fmt.Sprintf("rm -rf %s", constants.ClusterDir(k.Cluster.Name))
 	if err := k.sshCmdAsync(node, resetCmd); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)
 	}
@@ -81,14 +77,7 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	if err := k.execIPVSClean(node); err != nil {
 		logger.Error("failed to clean node route and ipvs failed, %v", err)
 	}
-	err := k.execClean(node)
-	if err != nil {
-		logger.Error("exec clean.sh failed %v", err)
-	}
-	if err := k.sshCmdAsync(node, deleteHomeDirCmd); err != nil {
-		logger.Error("failed to clean node homedir, exec command %s failed, %v", deleteHomeDirCmd, err)
-	}
-	err = k.execHostsDelete(node, k.getAPIServerDomain())
+	err := k.execHostsDelete(node, k.getAPIServerDomain())
 	if err != nil {
 		logger.Error("delete apiserver hosts failed %v", err)
 	}
