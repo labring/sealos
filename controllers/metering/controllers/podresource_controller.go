@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/labring/sealos/pkg/metering"
 	"math"
 	"os"
 	"time"
@@ -42,6 +43,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+var _ metering.ResourceControllerInterface = &PodResourceReconciler{}
 
 // PodResourceReconciler reconciles a PodResource object
 type PodResourceReconciler struct {
