@@ -46,7 +46,7 @@ spec:
                 type: string
               owner:
                 type: string
-              timeStamp:
+              timestamp:
                 format: int64
                 type: integer
             required:

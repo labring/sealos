@@ -162,7 +162,7 @@ func (r *DebtReconciler) change2Medium(_ context.Context, _ accountv1.Account) e
 }
 
 func (r *DebtReconciler) change2Large(ctx context.Context, account accountv1.Account) error {
-	return r.deleteUserResource(ctx, GetUserNameSpace(account.Name))
+	return r.deleteUserResource(ctx, GetUserNamespace(account.Name))
 }
 
 func (r *DebtReconciler) syncDebt(ctx context.Context, account *accountv1.Account, debt *accountv1.Debt) error {
@@ -181,7 +181,7 @@ func GetDebtName(AccountName string) string {
 	return fmt.Sprintf("%s%s", accountv1.DebtPrefix, AccountName)
 }
 
-func GetUserNameSpace(AccountName string) string {
+func GetUserNamespace(AccountName string) string {
 	return "ns-" + AccountName
 }
 

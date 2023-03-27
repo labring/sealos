@@ -391,7 +391,7 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, owner stri
 		return fmt.Errorf("accountbalancnce have existed,name:%v", accountBalance.Name)
 	} else if client.IgnoreNotFound(err) == nil {
 		accountBalance.Spec.Owner = owner
-		accountBalance.Spec.TimeStamp = time.Now().Unix()
+		accountBalance.Spec.Timestamp = time.Now().Unix()
 		accountBalance.Spec.Amount = amount
 		resourceMsgsjson, err := json.Marshal(resourceMsgs)
 		if err != nil {
