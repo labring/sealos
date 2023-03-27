@@ -31,7 +31,7 @@ const Low Type = "Low"
 type NotificationSpec struct {
 	Title      string `json:"title"`
 	Message    string `json:"message"`
-	TimeStamp  int64  `json:"timestamp"`
+	Timestamp  int64  `json:"timestamp"`
 	From       string `json:"from,omitempty"`
 	Importance Type   `json:"importance,omitempty"`
 }
