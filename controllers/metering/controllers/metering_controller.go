@@ -50,7 +50,7 @@ type MeteringReconcile struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	MeteringSystemNameSpace string
+	MeteringSystemNamespace string
 	MeteringInterval        int
 }
 
@@ -74,7 +74,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if _, ok := ns.Annotations[meteringv1.UserAnnotationOwnerKey]; ok {
 			if ns.DeletionTimestamp != nil {
 				r.Logger.Info("namespace is deleting,want to delete metering", "namespace", ns.Name)
-				err := r.DelMetering(ctx, meteringv1.MeteringPrefix+ns.Name, r.MeteringSystemNameSpace)
+				err := r.DelMetering(ctx, meteringv1.MeteringPrefix+ns.Name, r.MeteringSystemNamespace)
 				return ctrl.Result{}, err
 			}
 			if err := r.initMetering(ctx, ns); err != nil {
@@ -95,9 +95,9 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		r.Logger.Info("enter update resource used", "resource name: ", req.Name, "resource namespace: ", req.Namespace, "resource Used", resources.Spec.Resources)
 		var metering meteringv1.Metering
 		for resourceName, resourceInfo := range resources.Spec.Resources {
-			if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNameSpace, Name: meteringv1.MeteringPrefix + resourceInfo.NameSpace}, &metering); err != nil {
-				if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNameSpace, Name: meteringv1.MeteringPrefix + req.Namespace}, &metering); err != nil {
-					r.Logger.Error(err, "get metering failed", "name", meteringv1.MeteringPrefix+resourceInfo.NameSpace)
+			if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNamespace, Name: meteringv1.MeteringPrefix + resourceInfo.Namespace}, &metering); err != nil {
+				if err := r.Get(ctx, types.NamespacedName{Namespace: r.MeteringSystemNamespace, Name: meteringv1.MeteringPrefix + req.Namespace}, &metering); err != nil {
+					r.Logger.Error(err, "get metering failed", "name", meteringv1.MeteringPrefix+resourceInfo.Namespace)
 					continue
 				}
 			}
@@ -110,8 +110,8 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 					metering.Spec.Resources[resourceName] = resourceInfo
 				} else {
 					metering.Spec.Resources[resourceName] = meteringcommonv1.ResourceInfo{
-						TimeStamp: time.Now().Unix(),
-						NameSpace: metering.Spec.Resources[resourceName].NameSpace,
+						Timestamp: time.Now().Unix(),
+						Namespace: metering.Spec.Resources[resourceName].Namespace,
 						Cost:      metering.Spec.Resources[resourceName].Cost + resourceInfo.Cost,
 						Used:      metering.Spec.Resources[resourceName].Used,
 					}
@@ -119,7 +119,7 @@ func (r *MeteringReconcile) Reconcile(ctx context.Context, req ctrl.Request) (ct
 				}
 				return nil
 			}); err != nil {
-				r.Logger.Error(err, "update metering failed", "name", meteringv1.MeteringPrefix+resourceInfo.NameSpace)
+				r.Logger.Error(err, "update metering failed", "name", meteringv1.MeteringPrefix+resourceInfo.Namespace)
 				return ctrl.Result{Requeue: true}, err
 			}
 			resources.Status.Status = meteringcommonv1.Complete
@@ -210,7 +210,7 @@ func (r *MeteringReconcile) updateBillingList(ctx context.Context, amount int64,
 
 func NewBillingList(TimeInterval meteringv1.TimeIntervalType, amount int64) meteringv1.BillingList {
 	return meteringv1.BillingList{
-		TimeStamp:    time.Now().Unix(),
+		Timestamp:    time.Now().Unix(),
 		TimeInterval: TimeInterval,
 		Settled:      false,
 		Amount:       amount,
@@ -234,7 +234,7 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 	metering := meteringv1.Metering{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      meteringv1.MeteringPrefix + ns.Name,
-			Namespace: r.MeteringSystemNameSpace,
+			Namespace: r.MeteringSystemNamespace,
 		},
 	}
 	if err := r.Get(ctx, types.NamespacedName{Name: metering.Name, Namespace: metering.Namespace}, &metering); err == nil {
@@ -242,7 +242,7 @@ func (r *MeteringReconcile) syncMetering(ctx context.Context, ns corev1.Namespac
 		return nil
 	}
 
-	r.Logger.V(1).Info("metering env", "METERING_INTERVAL", r.MeteringSystemNameSpace, "timeInterval: ", r.MeteringInterval)
+	r.Logger.V(1).Info("metering env", "METERING_INTERVAL", r.MeteringSystemNamespace, "timeInterval: ", r.MeteringInterval)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &metering, func() error {
 		metering.Spec.Namespace = ns.Name
 		metering.Spec.Owner = ns.Annotations[meteringv1.UserAnnotationOwnerKey]
@@ -300,7 +300,7 @@ func (r *MeteringReconcile) createAccountBalance(ctx context.Context, metering m
 	accountBalance := accountv1.AccountBalance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, metering.Status.SeqID),
-			Namespace: r.MeteringSystemNameSpace,
+			Namespace: r.MeteringSystemNamespace,
 		},
 	}
 
@@ -334,9 +334,9 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger.V(1).Info("reconcile controller metering")
 
 	// get env METERING_SYSTEM_NAMESPACE and METERING_INTERVAL
-	r.MeteringSystemNameSpace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
+	r.MeteringSystemNamespace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
 	if os.Getenv(meteringv1.METERINGNAMESPACEENV) == "" {
-		r.MeteringSystemNameSpace = meteringv1.DEFAULTMETERINGNAMESPACE
+		r.MeteringSystemNamespace = meteringv1.DEFAULTMETERINGNAMESPACE
 	}
 
 	timeInterval := os.Getenv("METERING_INTERVAL")
@@ -348,7 +348,7 @@ func (r *MeteringReconcile) SetupWithManager(mgr ctrl.Manager) error {
 	if r.MeteringInterval == 0 {
 		r.MeteringInterval = DefaultIntervalInt()
 	}
-	r.Logger.Info("metering env", meteringv1.METERINGNAMESPACEENV, r.MeteringSystemNameSpace, "timeinterval:", r.MeteringInterval, "envtimeinterval", os.Getenv("METERING_INTERVAL"))
+	r.Logger.Info("metering env", meteringv1.METERINGNAMESPACEENV, r.MeteringSystemNamespace, "timeinterval:", r.MeteringInterval, "envtimeinterval", os.Getenv("METERING_INTERVAL"))
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.Metering{}).
 		Watches(&source.Kind{Type: &corev1.Namespace{}}, &handler.EnqueueRequestForObject{}).

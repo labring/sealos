@@ -73,7 +73,7 @@ type ResourceMsg struct {
 }
 
 type BillingList struct {
-	TimeStamp    int64            `json:"timeStamp,omitempty"`
+	Timestamp    int64            `json:"timestamp,omitempty"`
 	TimeInterval TimeIntervalType `json:"timeInterval,omitempty"` //time interval，/Minute/Hour/Day
 	Settled      bool             `json:"settled,omitempty"`      //is settled
 	Amount       int64            `json:"amount,omitempty"`       //need to pay amount,100 = 1¥

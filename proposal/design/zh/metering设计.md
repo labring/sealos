@@ -105,7 +105,7 @@ metadata:
 spec:
   amount: 6 //需要支付的金额
   owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6
-  timeStamp: 1672031381
+  timestamp: 1672031381
 status:
   status: complete //已支付
 ```
@@ -238,7 +238,7 @@ metadata:
 spec:
   amount: 1 //需要支付的金额大小
   owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6 //用户名字
-  timeStamp: 1672031381
+  timestamp: 1672031381
 ```
 
 #### 4.4、扣费过程：

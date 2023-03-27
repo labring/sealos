@@ -14,11 +14,11 @@ func WaitSSHReady(ssh ssh.Interface, _ int, hosts ...string) error {
 	for i := range hosts {
 		host := hosts[i]
 		eg.Go(func() (err error) {
-			timeStamp, err := ssh.CmdToString(host, "date +%s", "")
+			timestamp, err := ssh.CmdToString(host, "date +%s", "")
 			if err != nil {
 				return fmt.Errorf("ssh is not ready")
 			}
-			_, err = strconv.Atoi(timeStamp)
+			_, err = strconv.Atoi(timestamp)
 			if err != nil {
 				return fmt.Errorf("ssh is not ready")
 			}

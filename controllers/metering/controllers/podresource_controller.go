@@ -48,7 +48,7 @@ type PodResourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	MeteringSystemNameSpace string
+	MeteringSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=podresources,verbs=get;list;watch;create;update;patch;delete
@@ -85,7 +85,7 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 	podController := obj.(*meteringv1.PodResource)
 	extensionResourcesPrice := &meteringcommonv1.ExtensionResourcePrice{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: r.MeteringSystemNameSpace,
+			Namespace: r.MeteringSystemNamespace,
 			Name:      meteringcommonv1.ExtensionResourcePricePrefix + meteringv1.PodResourcePricePrefix,
 		},
 	}
@@ -121,15 +121,15 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 					if _, ok := resourceInfos[resourceName]; !ok {
 						resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
 							Used:      &resourceQuantity,
-							TimeStamp: time.Now().Unix(),
-							NameSpace: pod.Namespace,
+							Timestamp: time.Now().Unix(),
+							Namespace: pod.Namespace,
 							Cost:      int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
 						}
 					} else {
 						resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
 							Cost:      resourceInfos[resourceName].Cost + int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
-							TimeStamp: time.Now().Unix(),
-							NameSpace: pod.Namespace,
+							Timestamp: time.Now().Unix(),
+							Namespace: pod.Namespace,
 							Used:      resourceInfos[resourceName].Used,
 						}
 						resourceInfos[resourceName].Used.Add(resourceQuantity)
@@ -149,15 +149,15 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 		if _, ok := resourceInfos[resourceName]; !ok {
 			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
 				Used:      storage,
-				TimeStamp: time.Now().Unix(),
-				NameSpace: pod.Namespace,
+				Timestamp: time.Now().Unix(),
+				Namespace: pod.Namespace,
 				Cost:      int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
 			}
 		} else {
 			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
 				Cost:      resourceInfos[resourceName].Cost + int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
-				TimeStamp: time.Now().Unix(),
-				NameSpace: pod.Namespace,
+				Timestamp: time.Now().Unix(),
+				Namespace: pod.Namespace,
 				Used:      resourceInfos[resourceName].Used,
 			}
 			resourceInfos[resourceName].Used.Add(*storage)
@@ -207,7 +207,7 @@ func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, Re
 	Resource := meteringcommonv1.Resource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID),
-			Namespace: r.MeteringSystemNameSpace,
+			Namespace: r.MeteringSystemNamespace,
 		},
 	}
 
@@ -240,9 +240,9 @@ func (r *PodResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "podResource-controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("reconcile podResource-controller")
-	r.MeteringSystemNameSpace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
+	r.MeteringSystemNamespace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
 	if os.Getenv(meteringv1.METERINGNAMESPACEENV) == "" {
-		r.MeteringSystemNameSpace = meteringv1.DEFAULTMETERINGNAMESPACE
+		r.MeteringSystemNamespace = meteringv1.DEFAULTMETERINGNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&meteringv1.PodResource{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).

@@ -91,7 +91,7 @@ spec:
                       type: boolean
                     timeInterval:
                       type: string
-                    timeStamp:
+                    timestamp:
                       format: int64
                       type: integer
                   type: object
@@ -106,7 +106,7 @@ spec:
                       type: boolean
                     timeInterval:
                       type: string
-                    timeStamp:
+                    timestamp:
                       format: int64
                       type: integer
                   type: object

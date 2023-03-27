@@ -37,8 +37,8 @@ type ResourceSpec struct {
 type ResourceInfo struct {
 	ResourceName string             `json:"resourceName,omitempty"`
 	Used         *resource.Quantity `json:"used,omitempty"`
-	TimeStamp    int64              `json:"time,omitempty"`
-	NameSpace    string             `json:"namespace,omitempty"`
+	Timestamp    int64              `json:"time,omitempty"`
+	Namespace    string             `json:"namespace,omitempty"`
 	Cost         int64              `json:"cost,omitempty"`
 }
 
