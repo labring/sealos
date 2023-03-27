@@ -5,24 +5,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.8.0
   creationTimestamp: null
-  name: accountbalances.account.sealos.io
+  name: debts.account.sealos.io
 spec:
   group: account.sealos.io
   names:
-    kind: AccountBalance
-    listKind: AccountBalanceList
-    plural: accountbalances
-    singular: accountbalance
+    kind: Debt
+    listKind: DebtList
+    plural: debts
+    singular: debt
   scope: Namespaced
   versions:
-  - additionalPrinterColumns:
-    - jsonPath: .spec.amount
-      name: Amount
-      type: integer
-    name: v1
+  - name: v1
     schema:
       openAPIV3Schema:
-        description: AccountBalance is the Schema for the accountbalances API
+        description: Debt is the Schema for the debts API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,24 +33,17 @@ spec:
           metadata:
             type: object
           spec:
-            description: AccountBalanceSpec defines the desired state of AccountBalance
+            description: DebtSpec defines the desired state of Debt
             properties:
-              amount:
-                format: int64
-                type: integer
-              details:
+              userName:
                 type: string
-              owner:
-                type: string
-              timestamp:
-                format: int64
-                type: integer
-            required:
-            - owner
             type: object
           status:
-            description: AccountBalanceStatus defines the observed state of AccountBalance
+            description: DebtStatus defines the observed state of Debt
             properties:
+              lastUpdateTimestamp:
+                format: int64
+                type: integer
               status:
                 type: string
             type: object

@@ -122,8 +122,15 @@ spec:
       storage: 1Gi
 `
 
-func CreatPod(namespace string, name string) {
+func MustCreatPod(namespace string, name string) {
 	baseapi.MustKubeApplyFromTemplate(PodYaml, map[string]string{
+		"namespace": namespace,
+		"name":      name,
+	})
+}
+
+func CreatePod(namespace string, name string) (string, error) {
+	return baseapi.KubeApplyFromTemplate(PodYaml, map[string]string{
 		"namespace": namespace,
 		"name":      name,
 	})
@@ -144,7 +151,7 @@ func EnsurePod(namespace string, name string) {
 	client := baseapi.GetDefaultKubernetesClient()
 	_, err := client.CoreV1().Pods(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
-		CreatPod(namespace, name)
+		MustCreatPod(namespace, name)
 		return
 	}
 }

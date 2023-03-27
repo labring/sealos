@@ -11,8 +11,6 @@ kind: Account
 metadata:
   name: ${name}
   namespace: ${namespace}
-
-
 `
 
 func GetAccount(namespace string, name string) (*accountv1.Account, error) {
