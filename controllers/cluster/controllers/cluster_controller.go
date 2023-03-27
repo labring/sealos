@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/ratelimiter"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	v1 "github.com/labring/sealos/controllers/cluster/api/v1"
@@ -82,6 +83,7 @@ type ClusterReconciler struct {
 
 type ClusterReconcilerOptions struct {
 	MaxConcurrentReconciles int
+	RateLimiter             ratelimiter.RateLimiter
 }
 
 //+kubebuilder:rbac:groups=cluster.sealos.io,resources=clusters,verbs=get;list;watch;create;update;patch;delete
@@ -399,6 +401,7 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager, opts ClusterRecon
 		Watches(&source.Kind{Type: &infrav1.Infra{}}, &handler.EnqueueRequestForObject{}).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: opts.MaxConcurrentReconciles,
+			RateLimiter:             opts.RateLimiter,
 		}).
 		Complete(r)
 }
