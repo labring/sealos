@@ -12,14 +12,7 @@ on:
       - ".github/workflows/e2e_metering.yml"
       - "!**/*.md"
       - "!**/*.yaml"
-  pull_request:
-    branches: [ "*" ]
-    paths:
-      - "controllers/metering/**"
-      - "controllers/common/metering/**"
-      - ".github/workflows/controllers.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -115,7 +108,7 @@ jobs:
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
-          sealos run labring/cert-manager:v1.8.0
+          sudo -u root sealos run docker.io/labring/cert-manager:v1.8.0
           make pre-deploy
           sudo -u root kubectl create namespace account-system
           sudo -u root kubectl create namespace sealos-system
