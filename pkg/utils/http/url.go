@@ -17,7 +17,11 @@ limitations under the License.
 package http
 
 import (
+	"crypto/tls"
+	"net"
+	"net/http"
 	"net/url"
+	"time"
 )
 
 func IsURL(u string) (*url.URL, bool) {
@@ -25,4 +29,21 @@ func IsURL(u string) (*url.URL, bool) {
 		return uu, true
 	}
 	return nil, false
+}
+
+var DefaultSkipVerify = &http.Transport{
+	Proxy:               http.ProxyFromEnvironment,
+	MaxIdleConnsPerHost: 100,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+	// nosemgrep
+	TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	},
 }

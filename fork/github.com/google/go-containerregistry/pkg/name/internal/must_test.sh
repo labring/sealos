@@ -1,4 +1,6 @@
-# Copyright © 2022 sealos.
+#!/bin/bash
+
+# Copyright 2021 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-shim: /var/run/image-cri-shim.sock
-cri: /run/containerd/containerd.sock
-address: http://sealos.hub:5000
-force: true
-debug: true
-image: /var/lib/image-cri-shim
-timeout: 15m
-auth: admin:passw0rd
+set -o nounset
+set -o pipefail
 
-registries:
-- address: http://192.168.64.1:5000
-  auth: admin:passw0rd
+# Trying to compile without the build tag should work.
+go test ./pkg/name/internal
+
+# Actually trying to compile should fail.
+go test -tags=compile ./pkg/name/internal 2>&1 > /dev/null
+if [[ $? -eq 0 ]]; then
+  echo "pkg/name/internal test compiled successfully, expected failure"
+  exit 1
+fi
+echo "pkg/name/internal test successfully did not compile"

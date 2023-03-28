@@ -17,6 +17,8 @@ package registry
 import (
 	"context"
 
+	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+
 	"github.com/docker/docker/api/types"
 
 	"github.com/docker/docker/pkg/progress"
@@ -35,7 +37,7 @@ type Registry interface {
 
 type DefaultImage struct {
 	ctx            context.Context
-	domainToImages map[string][]Named
+	domainToImages map[string][]name.Reference
 	progressOut    progress.Output
 	maxPullProcs   int
 	auths          map[string]types.AuthConfig
@@ -50,7 +52,7 @@ func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types
 	}
 	return &DefaultImage{
 		ctx:            ctx,
-		domainToImages: make(map[string][]Named),
+		domainToImages: make(map[string][]name.Reference),
 		maxPullProcs:   maxPullProcs,
 		auths:          auths,
 	}

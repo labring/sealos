@@ -23,6 +23,10 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+
+	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
+
 	distribution "github.com/distribution/distribution/v3"
 	"github.com/distribution/distribution/v3/configuration"
 	"github.com/distribution/distribution/v3/reference"
@@ -76,16 +80,16 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 	//handle image name
 	pullImages := sets.NewString()
 	for _, image := range images {
-		named, err := ParseNormalizedNamed(image)
+		named, err := name.ParseReference(image)
 		if err != nil {
 			return nil, fmt.Errorf("parse image name error: %v", err)
 		}
-		if pullImages.Has(named.FullName()) {
+		if pullImages.Has(named.Name()) {
 			continue
 		}
-		is.domainToImages[named.domain+named.repo] = append(is.domainToImages[named.domain+named.repo], named)
-		progress.Message(is.progressOut, "", fmt.Sprintf("Pulling image: %s", named.FullName()))
-		pullImages.Insert(named.FullName())
+		is.domainToImages[named.Name()] = append(is.domainToImages[named.Name()], named)
+		progress.Message(is.progressOut, "", fmt.Sprintf("Pulling image: %s", named.Name()))
+		pullImages.Insert(named.Name())
 	}
 
 	//perform image save ability
@@ -97,11 +101,11 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 		tmpnameds := nameds
 		numCh <- struct{}{}
 		eg.Go(func() error {
-			auth := is.auths[tmpnameds[0].domain]
+			auth := is.auths[tmpnameds[0].Context().RegistryStr()]
 			if auth.ServerAddress == "" {
-				auth.ServerAddress = tmpnameds[0].domain
+				auth.ServerAddress = tmpnameds[0].Context().RegistryStr()
 			}
-			registry, err := NewProxyRegistry(is.ctx, dir, auth)
+			registry, err := NewProxyRegistry(is.ctx, dir, auth, nil)
 			if err != nil {
 				return fmt.Errorf("init registry error: %v", err)
 			}
@@ -113,9 +117,9 @@ func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Plat
 
 			err = is.save(tmpnameds, platform, registry)
 			if err != nil {
-				return fmt.Errorf("save domain %s image %s: %w", tmpnameds[0].domain, tmpnameds[0].FullName(), err)
+				return fmt.Errorf("save image %s: %w", tmpnameds[0].Name(), err)
 			}
-			outImages = append(outImages, tmpnameds[0].FullName())
+			outImages = append(outImages, tmpnameds[0].Name())
 			return nil
 		})
 	}
@@ -143,7 +147,7 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 			auth.Password = data[1]
 		}
 	}
-
+	// proxy not support IdentityToken
 	return configuration.Proxy{
 		RemoteURL: auth.ServerAddress,
 		Username:  auth.Username,
@@ -151,17 +155,19 @@ func authConfigToProxy(auth types.AuthConfig) configuration.Proxy {
 	}
 }
 
-func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig) (distribution.Namespace, error) {
+func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig, driver storagedriver.StorageDriver) (distribution.Namespace, error) {
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
 			driverName: configuration.Parameters{configRootDir: rootdir},
 		},
 	}
-
-	driver, err := factory.Create(config.Storage.Type(), config.Storage.Parameters())
-	if err != nil {
-		return nil, fmt.Errorf("create storage driver error: %v", err)
+	var err error
+	if driver == nil {
+		driver, err = factory.Create(config.Storage.Type(), config.Storage.Parameters())
+		if err != nil {
+			return nil, fmt.Errorf("create storage driver error: %v", err)
+		}
 	}
 
 	//create a local registry service
@@ -182,7 +188,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	return proxyRegistry, nil
 }
 
-func (is *DefaultImage) save(nameds []Named, platform v1.Platform, registry distribution.Namespace) error {
+func (is *DefaultImage) save(nameds []name.Reference, platform v1.Platform, registry distribution.Namespace) error {
 	repo, err := is.getRepository(nameds[0], registry)
 	if err != nil {
 		return err
@@ -201,8 +207,8 @@ func (is *DefaultImage) save(nameds []Named, platform v1.Platform, registry dist
 	return nil
 }
 
-func (is *DefaultImage) getRepository(named Named, registry distribution.Namespace) (distribution.Repository, error) {
-	repoName, err := reference.WithName(named.Repo())
+func (is *DefaultImage) getRepository(named name.Reference, registry distribution.Namespace) (distribution.Repository, error) {
+	repoName, err := reference.WithName(named.Context().RepositoryStr())
 	if err != nil {
 		return nil, fmt.Errorf("get repository name error: %v", err)
 	}
@@ -213,7 +219,7 @@ func (is *DefaultImage) getRepository(named Named, registry distribution.Namespa
 	return repo, nil
 }
 
-func (is *DefaultImage) saveManifestAndGetDigest(nameds []Named, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
+func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo distribution.Repository, platform v1.Platform) ([]digest.Digest, error) {
 	manifest, err := repo.Manifests(is.ctx, make([]distribution.ManifestServiceOption, 0)...)
 	if err != nil {
 		return nil, fmt.Errorf("get manifest service error: %v", err)
@@ -228,12 +234,21 @@ func (is *DefaultImage) saveManifestAndGetDigest(nameds []Named, repo distributi
 			defer func() {
 				<-numCh
 			}()
-
-			desc, err := repo.Tags(is.ctx).Get(is.ctx, tmpnamed.tag)
-			if err != nil {
-				return fmt.Errorf("get %s tag descriptor error: %v, try \"sealos login\" if you are using a private registry", tmpnamed.repo, err)
+			var imageDigestFromImageName digest.Digest
+			if !tmpnamed.IsDigest() {
+				desc, err := repo.Tags(is.ctx).Get(is.ctx, tmpnamed.Identifier())
+				if err != nil {
+					return fmt.Errorf("get %s tag descriptor error: %v, try \"sealos login\" if you are using a private registry", tmpnamed.Context().RepositoryStr(), err)
+				}
+				imageDigestFromImageName = desc.Digest
+			} else {
+				imageDigestFromImageName, err = digest.Parse(tmpnamed.Identifier())
+				if err != nil {
+					return fmt.Errorf("parse image digest error: %v", err)
+				}
 			}
-			imageDigest, err := is.handleManifest(manifest, desc.Digest, platform)
+
+			imageDigest, err := is.handleManifest(manifest, imageDigestFromImageName, platform)
 			if err != nil {
 				return fmt.Errorf("get digest error: %v", err)
 			}

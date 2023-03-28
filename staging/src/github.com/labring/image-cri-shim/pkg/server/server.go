@@ -24,8 +24,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/labring/image-cri-shim/pkg/types"
-
+	dockertype "github.com/docker/docker/api/types"
 	"google.golang.org/grpc"
 	k8sv1api "k8s.io/cri-api/pkg/apis/runtime/v1"
 	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
@@ -45,7 +44,8 @@ type Options struct {
 	// Mode is the permission mode bits for our gRPC socket.
 	Mode os.FileMode
 	//CRIConfigs is cri config for auth
-	CRIConfigs map[string]types.AuthConfig
+	CRIConfigs        map[string]dockertype.AuthConfig
+	OfflineCRIConfigs map[string]dockertype.AuthConfig
 }
 
 type Server interface {
@@ -81,13 +81,15 @@ func (s *server) RegisterImageService(conn *grpc.ClientConn) error {
 	}
 
 	k8sv1api.RegisterImageServiceServer(s.server, &v1ImageService{
-		imageClient: s.imageV1Client,
-		CRIConfigs:  s.options.CRIConfigs,
+		imageClient:       s.imageV1Client,
+		CRIConfigs:        s.options.CRIConfigs,
+		OfflineCRIConfigs: s.options.OfflineCRIConfigs,
 	})
 
 	k8sv1alpha2api.RegisterImageServiceServer(s.server, &v1alpha2ImageService{
-		imageClient: s.imageV1Alpha2Client,
-		CRIConfigs:  s.options.CRIConfigs,
+		imageClient:       s.imageV1Alpha2Client,
+		CRIConfigs:        s.options.CRIConfigs,
+		OfflineCRIConfigs: s.options.OfflineCRIConfigs,
 	})
 
 	return nil
