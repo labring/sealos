@@ -46,9 +46,6 @@ spec:
                 type: string
               owner:
                 type: string
-<<<<<<< HEAD
-              timestamp:
-=======
               resourceInfoList:
                 items:
                   properties:
@@ -70,8 +67,7 @@ spec:
                       x-kubernetes-int-or-string: true
                   type: object
                 type: array
-              timeStamp:
->>>>>>> 565299f4 (feat(account):add resoureinfoList in accountbalance CRD)
+              timestamp:
                 format: int64
                 type: integer
             required:
