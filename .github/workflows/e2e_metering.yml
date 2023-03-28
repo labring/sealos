@@ -122,4 +122,4 @@ jobs:
          working-directory: ./controllers/metering
          run: |
            sudo -u root kubectl get pod -A 
-           go test ./testdata/e2e/metering_test.go -v
+           go test -v ./testdata/e2e/metering_test.go -run TestMetering

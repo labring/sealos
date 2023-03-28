@@ -35,6 +35,36 @@ func init() {
 	fmt.Println("METERING_INTERVAL:", os.Getenv("METERING_INTERVAL"))
 }
 
+func TestPressure(t *testing.T) {
+	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
+		baseapi.EnsureNamespace(TestNamespace)
+		time.Sleep(2 * time.Second)
+		nums := 10
+		t.Log(fmt.Sprintf("create %v pod", nums))
+		for i := 0; i < nums; i++ {
+			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
+		}
+		time.Sleep(time.Second * 30)
+		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
+		if err != nil {
+			t.Fatalf("fail get metering: %v", err)
+		}
+		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
+		time.Sleep(time.Second * 5)
+		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
+		time.Sleep(time.Second * 10)
+		for i := 0; i < 30; i++ {
+			time.Sleep(time.Minute)
+			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
+			if err != nil {
+				t.Fatalf("fail get account: %v", err)
+			}
+			t.Log(account.Status)
+		}
+	})
+	t.Cleanup(clear)
+}
+
 func TestMetering(t *testing.T) {
 	t.Run("metering should be ok", func(t *testing.T) {
 		t.Run("metering should be created when create a user ns", func(t *testing.T) {
@@ -166,36 +196,6 @@ func TestMetering(t *testing.T) {
 			defer t.Log(fmt.Sprintf("account:%v", account))
 		})
 	})
-	t.Cleanup(clear)
-
-	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
-		baseapi.EnsureNamespace(TestNamespace)
-		time.Sleep(2 * time.Second)
-		nums := 10
-		t.Log(fmt.Sprintf("create %v pod", nums))
-		for i := 0; i < nums; i++ {
-			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
-		}
-		time.Sleep(time.Second * 30)
-		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-		if err != nil {
-			t.Fatalf("fail get metering: %v", err)
-		}
-		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
-		time.Sleep(time.Second * 5)
-		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-		time.Sleep(time.Second * 10)
-		for i := 0; i < 30; i++ {
-			time.Sleep(time.Minute)
-			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
-			if err != nil {
-				t.Fatalf("fail get account: %v", err)
-			}
-			t.Log(account.Status)
-		}
-
-	})
-
 	t.Cleanup(clear)
 }
 
