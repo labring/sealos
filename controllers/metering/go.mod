@@ -5,13 +5,12 @@ go 1.20
 replace (
 	github.com/labring/sealos => ../../
 	github.com/labring/sealos/controllers/account => ../../controllers/account
-	github.com/labring/sealos/controllers/common/metering => ../../controllers/common/metering
+	github.com/labring/sealos/controllers/common => ../../controllers/common
+	github.com/labring/sealos/controllers/user => ../../controllers/user
 )
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/labring/sealos/controllers/account v0.0.0
-	github.com/labring/sealos/controllers/common/metering v0.0.0-00010101000000-000000000000
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/client-go v0.26.1
