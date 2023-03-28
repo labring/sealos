@@ -143,8 +143,8 @@ func (k *KubeadmRuntime) execIPVSPod(ip string, masters []string) error {
 	return k.getRemoteInterface().StaticPod(ip, k.getVipAndPort(), constants.LvsCareStaticPodName, image, masters)
 }
 
-func (k *KubeadmRuntime) execToken(ip string) (string, error) {
-	return k.getRemoteInterface().Token(ip)
+func (k *KubeadmRuntime) execToken(ip, certificateKey string) (string, error) {
+	return k.getRemoteInterface().Token(ip, k.initMasterKubeadmConfigFile(), certificateKey)
 }
 func (k *KubeadmRuntime) execHostname(ip string) (string, error) {
 	hostname, err := k.getRemoteInterface().Hostname(ip)

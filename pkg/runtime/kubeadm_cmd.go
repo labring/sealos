@@ -51,7 +51,7 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 		UpdateClusterAll   = "kubeadm init phase upload-config kubeadm --config=%s"
 	)
 
-	initConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
+	initConfigPath := k.initMasterKubeadmConfigFile()
 	joinMasterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinMasterKubeadmFileName)
 	joinNodeConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultJoinNodeKubeadmFileName)
 	updateClusterConfigPath := path.Join(k.getContentData().EtcPath(), constants.DefaultUpdateKubeadmFileName)
@@ -86,4 +86,8 @@ func (k *KubeadmRuntime) Command(version string, name CommandType) (cmd string) 
 	}
 
 	return fmt.Sprintf("%s%s", v, vlogToStr(k.vlog))
+}
+
+func (k *KubeadmRuntime) initMasterKubeadmConfigFile() string {
+	return path.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 }
