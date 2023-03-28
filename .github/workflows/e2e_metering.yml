@@ -36,9 +36,11 @@ jobs:
           chmod +x bin/controller-${{ matrix.module }}-amd64
       - name: Prepare
         id: prepare
+        working-directory: controllers/${{ matrix.module }}
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          IMG=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller make pre-deploy
       - name: build   ${{ matrix.module }} main controller image
         env:
           # fork friendly ^^
