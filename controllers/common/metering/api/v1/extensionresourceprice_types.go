@@ -18,13 +18,22 @@ package v1
 
 import (
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const ExtensionResourcePricePrefix = "extensionresourceprice-"
 
 // ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
 type ExtensionResourcePriceSpec struct {
 	ResourceName string                            `json:"resourceName,omitempty"`
 	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+}
+
+type ResourcePrice struct {
+	Unit     *resource.Quantity `json:"unit"`
+	Price    int64              `json:"price"` // 100 = 1¥
+	Describe string             `json:"describe,omitempty"`
 }
 
 // ExtensionResourcePriceStatus defines the observed state of ExtensionResourcePrice

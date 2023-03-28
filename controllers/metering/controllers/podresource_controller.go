@@ -19,11 +19,19 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"os"
 	"time"
 
+	"github.com/labring/sealos/pkg/metering"
+
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+
 	"github.com/go-logr/logr"
-	userv1 "github.com/labring/sealos/controllers/user/api/v1"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,18 +45,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+var _ metering.ResourceControllerInterface = &PodResourceReconciler{}
+
 // PodResourceReconciler reconciles a PodResource object
 type PodResourceReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 	logr.Logger
-	MeteringSystemNameSpace string
+	MeteringSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=podresources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=podresources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=metering.sealos.io,resources=podresources/finalizers,verbs=update
-//+kubebuilder:rbac:groups=metering.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=metering.common.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 
@@ -77,10 +87,10 @@ func (r *PodResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // CreateOrUpdateExtensionResourcesPrice need to create a ExtensionResourcesPrice to make metering-quota know this resource
 func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx context.Context, obj client.Object) error {
 	podController := obj.(*meteringv1.PodResource)
-	extensionResourcesPrice := &meteringv1.ExtensionResourcePrice{
+	extensionResourcesPrice := &meteringcommonv1.ExtensionResourcePrice{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: r.MeteringSystemNameSpace,
-			Name:      meteringv1.ExtensionResourcePricePrefix + meteringv1.PodResourcePricePrefix,
+			Namespace: r.MeteringSystemNamespace,
+			Name:      meteringcommonv1.ExtensionResourcePricePrefix + meteringv1.PodResourcePricePrefix,
 		},
 	}
 
@@ -89,7 +99,7 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 		extensionResourcesPrice.Spec.Resources = podController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = podController.Spec.ResourceName
 		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
-		return controllerutil.SetControllerReference(podController, extensionResourcesPrice, r.Scheme)
+		return nil
 	}); err != nil {
 		return fmt.Errorf("sync ExtensionResourcesPrice failed: %v", err)
 	}
@@ -104,20 +114,30 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 	if err != nil {
 		return err
 	}
-
 	for _, pod := range podList.Items {
+		resourceInfos := make(map[v1.ResourceName]meteringcommonv1.ResourceInfo, 0)
 		if !r.checkPodStatus(pod) || !r.checkPodNamespace(pod) {
 			continue
 		}
 		for _, con := range pod.Spec.Containers {
 			for resourceName := range podController.Spec.Resources {
-				var resourceQuantity resource.Quantity
-				var ok bool
-				if resourceQuantity, ok = r.checkResourceExist(resourceName, con); !ok {
-					continue
-				}
-				if err := r.syncResource(ctx, pod, con.Name, resourceName, &resourceQuantity, *podController); err != nil {
-					r.Logger.Error(err, "syncResource failed")
+				if resourceQuantity, ok := r.checkResourceExist(resourceName, con); ok {
+					if _, ok := resourceInfos[resourceName]; !ok {
+						resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
+							Used:      &resourceQuantity,
+							Timestamp: time.Now().Unix(),
+							Namespace: pod.Namespace,
+							Cost:      int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
+						}
+					} else {
+						resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
+							Cost:      resourceInfos[resourceName].Cost + int64(float64(resourceQuantity.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue())),
+							Timestamp: time.Now().Unix(),
+							Namespace: pod.Namespace,
+							Used:      resourceInfos[resourceName].Used,
+						}
+						resourceInfos[resourceName].Used.Add(resourceQuantity)
+					}
 				}
 			}
 		}
@@ -129,8 +149,25 @@ func (r *PodResourceReconciler) UpdateResourceUsed(ctx context.Context, obj clie
 		}
 		//r.Logger.V(1).Info("resourceQuota", "resourceQuota", resourceQuota)
 		storage := resourceQuota.Status.Used.Name("requests.storage", resource.BinarySI)
-		if err = r.syncResource(ctx, pod, "", "storage", storage, *podController); err != nil {
-			r.Logger.Error(err, "syncMeteringQuota failed")
+		resourceName := v1.ResourceName("storage")
+		if _, ok := resourceInfos[resourceName]; !ok {
+			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
+				Used:      storage,
+				Timestamp: time.Now().Unix(),
+				Namespace: pod.Namespace,
+				Cost:      int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price) / float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
+			}
+		} else {
+			resourceInfos[resourceName] = meteringcommonv1.ResourceInfo{
+				Cost:      resourceInfos[resourceName].Cost + int64(math.Ceil(float64(storage.MilliValue()*podController.Spec.Resources[resourceName].Price)/float64(podController.Spec.Resources[resourceName].Unit.MilliValue()))),
+				Timestamp: time.Now().Unix(),
+				Namespace: pod.Namespace,
+				Used:      resourceInfos[resourceName].Used,
+			}
+			resourceInfos[resourceName].Used.Add(*storage)
+		}
+		if err := r.syncResource(ctx, pod, resourceInfos, *podController); err != nil {
+			r.Logger.Error(err, "syncResource failed")
 		}
 	}
 
@@ -163,36 +200,27 @@ func (r *PodResourceReconciler) checkPodNamespace(pod v1.Pod) bool {
 		r.Logger.Error(err, "get namespace failed", "pod NS", pod.Namespace)
 		return false
 	}
-	if _, ok := ns.Annotations[userv1.UserAnnotationOwnerKey]; !ok {
+	if _, ok := ns.Annotations[meteringv1.UserAnnotationOwnerKey]; !ok {
 		r.Logger.Info("pod namespace is not user namespace", "pod name", pod.Name, "pod namespace", pod.Namespace)
 		return false
 	}
 	return true
 }
 
-func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, containerName string, resourceName v1.ResourceName, Used *resource.Quantity, podController meteringv1.PodResource) error {
-	podResource := meteringv1.Resource{
+func (r *PodResourceReconciler) syncResource(ctx context.Context, pod v1.Pod, ResourceCR map[v1.ResourceName]meteringcommonv1.ResourceInfo, podController meteringv1.PodResource) error {
+	Resource := meteringcommonv1.Resource{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      GetResourceName(pod.Namespace, pod.Name, containerName, resourceName, podController.Status.SeqID),
-			Namespace: r.MeteringSystemNameSpace,
+			Name:      GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID),
+			Namespace: r.MeteringSystemNamespace,
 		},
 	}
 
-	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &podResource, func() error {
-		if podResource.Spec.Resources == nil {
-			podResource.Spec.Resources = make(map[v1.ResourceName]meteringv1.ResourceInfo)
-		}
-		podResource.Spec.Resources[resourceName] = meteringv1.ResourceInfo{
-			Used:      Used,
-			TimeStamp: time.Now().Unix(),
-			NameSpace: pod.Namespace,
-		}
-		return nil
-	}); err != nil {
-		return err
+	if err := r.Get(ctx, types.NamespacedName{Namespace: Resource.Namespace, Name: Resource.Name}, &Resource); err == nil {
+		return fmt.Errorf("resource already exist resource name:%v", Resource.Name)
 	}
-
-	return nil
+	Resource.Spec.Resources = ResourceCR
+	r.Logger.Info("want to create resource", "resource name", GetResourceName(pod.Namespace, pod.Name, podController.Status.SeqID), "resource info", Resource.Spec.Resources)
+	return r.Create(ctx, &Resource)
 }
 
 func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName, container v1.Container) (resource.Quantity, bool) {
@@ -207,12 +235,8 @@ func (r *PodResourceReconciler) checkResourceExist(resourceName v1.ResourceName,
 	return resource.Quantity{}, false
 }
 
-func GetResourceName(namespaceName, podName string, containerName string, resourceName v1.ResourceName, seqID int64) string {
-	if containerName == "" {
-		return fmt.Sprintf("%s-%s-%s-%s-%v", namespaceName, meteringv1.PodResourcePricePrefix, podName, resourceName, seqID)
-	}
-
-	return fmt.Sprintf("%s-%s-%s-%s-%s-%v", namespaceName, meteringv1.PodResourcePricePrefix, podName, containerName, resourceName, seqID)
+func GetResourceName(namespaceName, podName string, seqID int64) string {
+	return fmt.Sprintf("%s-%s-%s-%v", namespaceName, meteringv1.PodResourcePricePrefix, podName, seqID)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -220,11 +244,11 @@ func (r *PodResourceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "podResource-controller"
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("reconcile podResource-controller")
-	r.MeteringSystemNameSpace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
+	r.MeteringSystemNamespace = os.Getenv(meteringv1.METERINGNAMESPACEENV)
 	if os.Getenv(meteringv1.METERINGNAMESPACEENV) == "" {
-		r.MeteringSystemNameSpace = meteringv1.DEFAULTMETERINGNAMESPACE
+		r.MeteringSystemNamespace = meteringv1.DEFAULTMETERINGNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&meteringv1.PodResource{}).
+		For(&meteringv1.PodResource{}, builder.WithPredicates(predicate.Or(predicate.GenerationChangedPredicate{}))).
 		Complete(r)
 }

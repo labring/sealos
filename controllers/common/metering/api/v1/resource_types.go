@@ -35,9 +35,18 @@ type ResourceSpec struct {
 }
 
 type ResourceInfo struct {
-	Used      *resource.Quantity `json:"used,omitempty"`
-	TimeStamp int64              `json:"time,omitempty"`
-	NameSpace string             `json:"namespace,omitempty"`
+	ResourceName string             `json:"resourceName,omitempty"`
+	Used         *resource.Quantity `json:"used,omitempty"`
+	Timestamp    int64              `json:"time,omitempty"`
+	Namespace    string             `json:"namespace,omitempty"`
+	Cost         int64              `json:"cost,omitempty"`
+}
+
+type ResourceInfoList []ResourceInfo
+
+type ResourcePriceAndUsed struct {
+	ResourcePrice `json:",inline"`
+	Used          *resource.Quantity `json:"used,omitempty"`
 }
 
 // ResourceStatus defines the observed state of Resource

@@ -36,9 +36,7 @@ spec:
             description: PodResourceSpec defines the desired state of PodResource
             properties:
               interval:
-                default: 50
                 description: update used resources every Interval minutes
-                minimum: 1
                 type: integer
               resourceName:
                 type: string

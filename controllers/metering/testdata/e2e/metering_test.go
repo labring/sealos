@@ -3,6 +3,7 @@ package e2e
 import (
 	"fmt"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/controllers"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
@@ -34,6 +35,36 @@ func init() {
 	fmt.Println("METERING_INTERVAL:", os.Getenv("METERING_INTERVAL"))
 }
 
+func TestPressure(t *testing.T) {
+	t.Run("running many pod should be calculate right and ok", func(t *testing.T) {
+		baseapi.EnsureNamespace(TestNamespace)
+		time.Sleep(2 * time.Second)
+		nums := 10
+		t.Log(fmt.Sprintf("create %v pod", nums))
+		for i := 0; i < nums; i++ {
+			api.EnsurePod(TestNamespace, fmt.Sprintf("%s-%v", PodName, i))
+		}
+		time.Sleep(time.Second * 30)
+		metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
+		if err != nil {
+			t.Fatalf("fail get metering: %v", err)
+		}
+		baseapi.CreateCRD(AccountNamespace, metering.Spec.Owner, api.AccountYaml)
+		time.Sleep(time.Second * 5)
+		api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
+		time.Sleep(time.Second * 10)
+		for i := 0; i < 30; i++ {
+			time.Sleep(time.Minute)
+			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
+			if err != nil {
+				t.Fatalf("fail get account: %v", err)
+			}
+			t.Log(account.Status)
+		}
+	})
+	t.Cleanup(clear)
+}
+
 func TestMetering(t *testing.T) {
 	t.Run("metering should be ok", func(t *testing.T) {
 		t.Run("metering should be created when create a user ns", func(t *testing.T) {
@@ -59,43 +90,16 @@ func TestMetering(t *testing.T) {
 			}
 		})
 
-		t.Run("extension should be ok", func(t *testing.T) {
-			// test extension will register cpu price to metering
-			t.Log("create metering  ")
-			time.Sleep(time.Second * 10)
-			baseapi.EnsureNamespace(TestNamespace)
-			time.Sleep(time.Second * 10)
-			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-			if err != nil {
-				t.Fatalf("fail get metering: %v", err)
-			}
-
-			if _, ok := metering.Spec.Resources["cpu"]; ok {
-				t.Fatalf("metering spec.Resources should not have cpu")
-			}
-			t.Log("create extensionResourcePrice  ")
-			baseapi.CreateCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
-			time.Sleep(time.Second)
-			metering, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-			if err != nil {
-				t.Fatalf("success get metering: %v", err)
-			}
-
-			if _, ok := metering.Spec.Resources["cpu"]; !ok {
-				t.Fatalf("metering spec.Resources should  have cpu")
-			}
-		})
-
 		t.Run("pod controller should be ok", func(t *testing.T) {
 			time.Sleep(5 * time.Second)
 			baseapi.EnsureNamespace(TestNamespace)
-			time.Sleep(5 * time.Second)
+			time.Sleep(20 * time.Second)
 			t.Log("creat pod controller")
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 
 			time.Sleep(5 * time.Second)
 			t.Log("ensure extension resource is created")
-			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix))
+			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix))
 			if err != nil {
 				t.Fatalf("failed to get extension resource: %v", err)
 			}
@@ -111,9 +115,9 @@ func TestMetering(t *testing.T) {
 			api.MustCreatPod(TestNamespace, PodName)
 
 			t.Log("ensure resource CR is created")
-			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, containerName, "cpu", 1), 90)
+			resource, err := api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, 1), 90)
 			if err != nil {
-				resource, err = api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, containerName, "cpu", 2), 90)
+				resource, err = api.EnsureResourceCreate(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, 2), 90)
 				if err != nil {
 					t.Fatalf(err.Error())
 				}
@@ -126,7 +130,6 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("not fount cpu resource used %v", resource.Spec.Resources["cpu"].Used.Value())
 			}
 			t.Log(resource)
-
 		})
 
 		t.Run("metering used update and calculate should be ok", func(t *testing.T) {
@@ -141,36 +144,32 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("fail get metering: %v", err)
 			}
 
-			if _, ok := metering.Spec.Resources["cpu"]; !ok {
-				t.Fatalf("not fount cpu resource info in metering ")
-			}
-
 			t.Log("metering calculate should be ok")
 			metering, err = api.EnsureMeteringCalculate(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace, 90)
 			if err != nil {
 				t.Fatalf("metering calculate failer: %v,calculate: %v", err, metering)
 			}
-			t.Logf("metering:%+v", metering.Spec.Resources)
+			t.Logf("metering:%+v", metering.Status)
 		})
 
 		t.Run("metering create accountBalance should be ok", func(t *testing.T) {
-			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-			time.Sleep(time.Second * 2)
 			baseapi.EnsureNamespace(TestNamespace)
 			api.EnsurePod(TestNamespace, PodName)
+			time.Sleep(time.Second * 20)
+			api.EnsurePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			time.Sleep(time.Second * 2)
-
-			t.Log("ensure accountBalance is created")
+			t.Log("ensure metering used is update")
 			metering, err := api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
 			if err != nil {
 				t.Fatalf("fail get metering: %v", err)
 			}
-
+			t.Log(metering.Spec)
+			t.Log("ensure accountBalance is created")
 			accountBalance, err := api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
 			if err != nil {
 				t.Log("ensure accountBalance is created again")
 				metering, err = api.GetMetering(MeteringSystemNamespace, meteringv1.MeteringPrefix+TestNamespace)
-				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 1), 90)
+				accountBalance, err = api.EnsureAccountBalanceCreate(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, metering.Spec.Owner, 2), 90)
 				if err != nil {
 					t.Fatalf("failed to create accountBalance: %v", err)
 				}
@@ -181,6 +180,9 @@ func TestMetering(t *testing.T) {
 				t.Fatalf("failed to create accountBalance: %v", accountBalance)
 			}
 
+			if accountBalance.Spec.ResourceInfoList == nil {
+				t.Fatalf("failed to add resoureinfo list: accoutnbalance spec:%v", accountBalance.Spec)
+			}
 			time.Sleep(2 * time.Second)
 			account, err := api.GetAccount(AccountNamespace, metering.Spec.Owner)
 			if err != nil {
@@ -193,48 +195,41 @@ func TestMetering(t *testing.T) {
 
 			defer t.Log(fmt.Sprintf("account:%v", account))
 		})
-
-		t.Run("metering calculate infra should be ok", func(t *testing.T) {
-			t.Log("ensure infra is created")
-			baseapi.EnsureNamespace(TestNamespace)
-			baseapi.CreateCRD(TestNamespace, InfraName, api.InfraYaml)
-			err := api.EnsureInfra(TestNamespace, InfraName, 12)
-			//if err != nil {
-			//	t.Fatalf(err.Error())
-			//}
-			infra, err := api.GetInfra(TestNamespace, InfraName)
-			if err != nil {
-				t.Fatalf("failed to get infra: %v", err)
-			}
-
-			t.Log("check infra QueryPrice")
-			price, err := infra.QueryPrice()
-			t.Log("infra price is ", price)
-			if err != nil {
-				t.Fatalf("failed to query infra price: %v", err)
-			}
-		})
 	})
 	t.Cleanup(clear)
 }
 
 func clear() {
-	//time.Sleep(200 * time.Second)
-	execout, err := baseapi.Exec("sudo -u root kubectl get pod -n metering-system|grep metering |awk '{print $1}' |xargs kubectl logs -n metering-system")
+	execout, err := baseapi.Exec("kubectl get accountbalance -A ")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
 	}
-	execout, err = baseapi.Exec("sudo -u root kubectl get pod -n account-system|grep account |awk '{print $1}' |xargs kubectl logs -n account-system")
+	execout, err = baseapi.Exec("kubectl get pod -n metering-system|grep metering |awk '{print $1}' |xargs kubectl logs -n metering-system")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
 	}
-	execout, err = baseapi.Exec("sudo -u root kubectl get accountbalance -A")
+	execout, err = baseapi.Exec("kubectl get pod -n account-system|grep account |awk '{print $1}' |xargs kubectl logs -n account-system")
 	log.Println(execout)
 	if err != nil {
 		log.Println(err)
 	}
+	execout, err = baseapi.Exec("kubectl get resource -A -oyaml")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	execout, err = baseapi.Exec("kubectl get accountbalance -A -oyaml")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+	err = api.DeletePod(TestNamespace, PodName)
+	if err != nil {
+		log.Println(err)
+	}
+
 	err = baseapi.DeleteNamespace(TestNamespace)
 	if err != nil {
 		log.Println(err)
@@ -245,17 +240,12 @@ func clear() {
 		log.Println(err)
 	}
 
-	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
+	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
 	if err != nil {
 		log.Println(err)
 	}
 
 	err = api.DeletePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
-	if err != nil {
-		log.Println(err)
-	}
-
-	err = api.DeletePod(TestNamespace, PodName)
 	if err != nil {
 		log.Println(err)
 	}
@@ -267,22 +257,16 @@ func clear() {
 	if err = baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
 		log.Println(err)
 	}
-
-	if err = baseapi.DeleteCRD(TestNamespace, InfraName, api.InfraYaml); err != nil {
+	execout, err = baseapi.Exec("kubectl get resource -A| awk '{print $2}' | xargs kubectl delete resource -n metering-system")
+	log.Println(execout)
+	if err != nil {
 		log.Println(err)
 	}
 
-	for i := 0; i <= 5; i++ {
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, containerName, "cpu", int64(i)), api.ResourceYaml); err != nil {
-			log.Println(err)
-		}
-
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, controllers.GetResourceName(TestNamespace, PodName, "", "storage", int64(i)), api.ResourceYaml); err != nil {
-			log.Println(err)
-		}
-
-		if err = baseapi.DeleteCRD(MeteringSystemNamespace, fmt.Sprintf("%s-%s-%v", accountv1.AccountBalancePrefix, DefaultOwner, i), api.AccountBalanceYaml); err != nil {
-			log.Println(err)
-		}
+	execout, err = baseapi.Exec("kubectl get accountbalance -A | awk '{print $2}' | xargs kubectl delete accountbalance -n metering-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
 	}
+
 }

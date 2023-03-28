@@ -12,6 +12,7 @@ on:
       - ".github/workflows/e2e_metering.yml"
       - "!**/*.md"
       - "!**/*.yaml"
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -35,9 +36,11 @@ jobs:
           chmod +x bin/controller-${{ matrix.module }}-amd64
       - name: Prepare
         id: prepare
+        working-directory: controllers/${{ matrix.module }}
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          IMG=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller:dev make pre-deploy
       - name: build   ${{ matrix.module }} main controller image
         env:
           # fork friendly ^^
@@ -94,7 +97,11 @@ jobs:
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-
+      - name: install common metering CRD
+        working-directory: ./controllers/common/metering
+        run: |
+          sudo -u root apt install make
+          make install
       - name: install CRD metering
         working-directory: ./controllers/metering
         run: |
@@ -103,17 +110,12 @@ jobs:
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
+          sudo -u root sealos run docker.io/labring/cert-manager:v1.8.0
           make pre-deploy
           sudo -u root kubectl create namespace account-system
           sudo -u root kubectl create namespace sealos-system
           sudo -u root kubectl create secret generic payment-secret -n account-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
-      - name: install CRD infra
-        working-directory: ./controllers/infra
-        run: |
-          make pre-deploy
-          sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml 
-          sleep 30
       - name: Setup Golang with cache
         uses: magnetikonline/action-golang-cache@v3
         with:
@@ -122,4 +124,4 @@ jobs:
          working-directory: ./controllers/metering
          run: |
            sudo -u root kubectl get pod -A 
-           go test ./testdata/e2e/metering_test.go -v
+           go test -v ./testdata/e2e/metering_test.go -run TestMetering
