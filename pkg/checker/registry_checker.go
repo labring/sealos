@@ -21,6 +21,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/docker/docker/api/types"
+
+	"github.com/labring/sealos/pkg/registry"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/labring/sealos/pkg/bootstrap"
@@ -31,7 +35,6 @@ import (
 	fileutil "github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/registry"
 	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
@@ -92,17 +95,18 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	regInfo := bootstrap.GetRegistryInfo(sshCtx, root, cluster.GetRegistryIPAndPort())
 	status.Auth = fmt.Sprintf("%s:%s", regInfo.Username, regInfo.Password)
 	status.RegistryDomain = fmt.Sprintf("%s:%s", regInfo.Domain, regInfo.Port)
-	regInterface, err := registry.NewRegistryForDomain(status.RegistryDomain, regInfo.Username, regInfo.Password)
+	cfg := types.AuthConfig{
+		Username: regInfo.Username,
+		Password: regInfo.Password,
+	}
+	_, err = registry.NewRegistry(status.RegistryDomain, cfg)
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil
-	}
-	if err = regInterface.Ping(); err != nil {
-		status.Ping = fmt.Sprintf("error: %+v", err)
 	} else {
 		status.Ping = "ok"
+		status.Error = Nil
 	}
-	status.Error = Nil
 	return nil
 }
 

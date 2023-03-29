@@ -23,6 +23,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/labring/sealos/pkg/registry/filesystem"
+	manifest2 "github.com/labring/sealos/pkg/registry/manifest"
+
 	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
 
 	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
@@ -159,7 +162,7 @@ func NewProxyRegistry(ctx context.Context, rootdir string, auth types.AuthConfig
 	config := configuration.Configuration{
 		Proxy: authConfigToProxy(auth),
 		Storage: configuration.Storage{
-			driverName: configuration.Parameters{configRootDir: rootdir},
+			filesystem.DriverName: configuration.Parameters{configRootDir: rootdir},
 		},
 	}
 	var err error
@@ -277,7 +280,7 @@ func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, im
 	case manifestV2, manifestOCI:
 		return imagedigest, nil
 	case manifestList, manifestOCIIndex:
-		imageDigest, err := getImageManifestDigest(p, platform)
+		imageDigest, err := manifest2.GetImageManifestDigest(p, platform)
 		if err != nil {
 			return digest.Digest(""), fmt.Errorf("get digest from manifest list error: %v", err)
 		}
@@ -286,7 +289,7 @@ func (is *DefaultImage) handleManifest(manifest distribution.ManifestService, im
 		//OCI image or image index - no media type in the content
 
 		//First see if it is a list
-		imageDigest, _ := getImageManifestDigest(p, platform)
+		imageDigest, _ := manifest2.GetImageManifestDigest(p, platform)
 		if imageDigest != "" {
 			return imageDigest, nil
 		}
@@ -321,7 +324,7 @@ func (is *DefaultImage) saveBlobs(imageDigests []digest.Digest, repo distributio
 				return err
 			}
 
-			blobList, err := getBlobList(blobListJSON)
+			blobList, err := manifest2.GetBlobList(blobListJSON)
 			if err != nil {
 				return fmt.Errorf("failed to get blob list: %v", err)
 			}

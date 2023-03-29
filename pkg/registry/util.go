@@ -15,6 +15,7 @@
 package registry
 
 import (
+	"fmt"
 	"runtime"
 	"strings"
 
@@ -31,7 +32,6 @@ import (
 
 	"github.com/labring/sealos/pkg/registry/authn"
 	"github.com/labring/sealos/pkg/utils/http"
-	"github.com/labring/sealos/pkg/utils/registry"
 )
 
 // this package contains some utils to handle docker image name
@@ -48,17 +48,21 @@ func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, er
 
 	for domain, cred := range creds {
 		logger.Debug("GetAuthInfo getCredentials domain: %s", domain, cred.Username)
-		reg, err := registry.NewRegistryForDomain(domain, cred.Username, cred.Password)
+		reg, err := NewRegistry(domain, ToAuthConfig(cred))
 		if err == nil {
 			auths[domain] = types.AuthConfig{
 				Username:      cred.Username,
 				Password:      cred.Password,
-				ServerAddress: reg.URL,
+				ServerAddress: fmt.Sprintf("%s://%s", reg.Scheme(), reg.RegistryStr()),
 				IdentityToken: cred.IdentityToken,
 			}
 		}
 	}
 	return auths, nil
+}
+
+func GetCraneOptions(authConfig map[string]types.AuthConfig) []crane.Option {
+	return []crane.Option{crane.WithAuthFromKeychain(authn.NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
 }
 
 func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConfig) (newImage string, data []byte, cfg *types.AuthConfig, err error) {
@@ -69,13 +73,13 @@ func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConf
 			return newImage, nil, nil, err
 		}
 		for domain, c := range authConfig {
-			if registry.NormalizeRegistry(domain) != domain {
-				authConfig[registry.NormalizeRegistry(domain)] = c
+			if NormalizeRegistry(domain) != domain {
+				authConfig[NormalizeRegistry(domain)] = c
 				delete(authConfig, domain)
 			}
 		}
 	}
-	craneOptsBase := []crane.Option{crane.WithAuthFromKeychain(authn.NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
+	craneOptsBase := GetCraneOptions(authConfig)
 	var ref name2.Reference
 	var repo string
 	ref, err = name2.ParseReference(image)
@@ -114,4 +118,18 @@ func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConf
 		}
 	}
 	return image, nil, nil, err
+}
+
+func NormalizeRegistry(registry string) string {
+	switch registry {
+	case "registry-1.docker.io", "docker.io", "index.docker.io":
+		return "index.docker.io"
+	}
+	return registry
+}
+
+func GetRegistryDomain(registry string) string {
+	s := strings.TrimPrefix(registry, "https://")
+	s = strings.TrimPrefix(s, "http://")
+	return strings.Split(s, "/")[0]
 }

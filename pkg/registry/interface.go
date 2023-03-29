@@ -29,10 +29,6 @@ import (
 type Registry interface {
 	// SaveImages is not concurrently safe
 	SaveImages(images []string, dir string, platform v1.Platform) ([]string, error)
-	Status(json bool)
-	GetImage(registryName, name string, json bool)
-	ListImages(registryName, search string, json bool)
-	RmiImage(registryName, imageName string) error
 }
 
 type DefaultImage struct {
@@ -55,14 +51,5 @@ func NewImageSaver(ctx context.Context, maxPullProcs int, auths map[string]types
 		domainToImages: make(map[string][]name.Reference),
 		maxPullProcs:   maxPullProcs,
 		auths:          auths,
-	}
-}
-
-func NewImage(auths map[string]types.AuthConfig) Registry {
-	if auths == nil {
-		auths = make(map[string]types.AuthConfig)
-	}
-	return &DefaultImage{
-		auths: auths,
 	}
 }

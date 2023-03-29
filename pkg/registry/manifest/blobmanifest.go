@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package manifest
 
 import (
 	"encoding/json"
@@ -31,7 +31,7 @@ type BlobList struct {
 	Schema    int                       `json:"schemaVersion"`
 }
 
-func getBlobList(blobListJSON distribution.Manifest) ([]digest.Digest, error) {
+func GetBlobList(blobListJSON distribution.Manifest) ([]digest.Digest, error) {
 	_, list, err := blobListJSON.Payload()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get blob list: %v", err)
