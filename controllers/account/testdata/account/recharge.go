@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/labring/sealos/controllers/account/testdata/api"
 	"os"
 	"strconv"
+
+	"github.com/labring/sealos/controllers/account/testdata/api"
 )
 
 func main() {

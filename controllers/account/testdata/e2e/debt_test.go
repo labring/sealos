@@ -1,12 +1,13 @@
 package e2e
 
 import (
-	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
-	"github.com/labring/sealos/controllers/metering/testdata/api"
-	baseapi "github.com/labring/sealos/test/testdata/api"
 	"log"
 	"testing"
 	"time"
+
+	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
+	"github.com/labring/sealos/controllers/metering/testdata/api"
+	baseapi "github.com/labring/sealos/test/testdata/api"
 )
 
 const (
