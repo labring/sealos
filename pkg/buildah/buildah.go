@@ -24,6 +24,7 @@ import (
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/pkg/config"
 	"github.com/containers/storage"
+	"github.com/containers/storage/pkg/unshare"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -72,7 +73,7 @@ func RegisterGlobalFlags(fs *pflag.FlagSet) error {
 	var (
 		defaultStoreDriverOptions []string
 	)
-	storageOptions, err := storage.DefaultStoreOptions(false, 0)
+	storageOptions, err := storage.DefaultStoreOptions(unshare.GetRootlessUID() > 0, unshare.GetRootlessUID())
 	if err != nil {
 		return err
 	}
