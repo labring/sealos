@@ -245,12 +245,6 @@ func TestGetNewImages(t *testing.T) {
 			},
 		},
 	}
-	expected := []string{
-		"hub.sealos.cn/labring/kubernetes:v1.25.6",
-		"hub.sealos.cn/labring/kubernetes:v1.25.6",
-		"hub.sealos.cn/labring/helm:v3.11.0",
-		"hub.sealos.cn/labring/calico:v3.24.5",
-	}
 	actual = GetNewImages(currentCluster, nil)
 	if actual != nil {
 		t.Errorf("GetNewImages(currentCluster, nil) = %v, expected nil", actual)
@@ -281,7 +275,7 @@ func TestGetNewImages(t *testing.T) {
 		"hub.sealos.cn/labring/nginx:v1.23.3",
 	}
 
-	expected = []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
+	expected := []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
 	actual = GetNewImages(currentCluster, desiredCluster)
 	if !reflect.DeepEqual(actual, expected) {
 		t.Errorf("GetNewImages(currentCluster, desiredCluster) = %v, expected %v", actual, expected)
