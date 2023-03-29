@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package filesystem
 
 import (
 	"bufio"
@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	driverName           = "filesystem"
+	DriverName           = "filesystem"
 	defaultRootDirectory = "/var/lib/registry"
 	defaultMaxThreads    = uint64(100)
 
@@ -50,7 +50,7 @@ type DriverParameters struct {
 }
 
 func init() {
-	factory.Register(driverName, &filesystemDriverFactory{})
+	factory.Register(DriverName, &filesystemDriverFactory{})
 }
 
 // filesystemDriverFactory implements the factory.StorageDriverFactory interface
@@ -127,7 +127,7 @@ func New(params DriverParameters) *Driver {
 // Implement the storagedriver.StorageDriver interface
 
 func (d *driver) Name() string {
-	return driverName
+	return DriverName
 }
 
 // GetContent retrieves the content stored at "path" as a []byte.

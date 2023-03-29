@@ -1,5 +1,5 @@
 /*
-Copyright 2022 cuisongliu@qq.com.
+Copyright 2023 cuisongliu@qq.com.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package commands
 
 import (
 	"fmt"
@@ -27,52 +27,6 @@ import (
 	"github.com/labring/sealos/pkg/registry"
 	"github.com/labring/sealos/pkg/utils/file"
 )
-
-const defaultRegistryName = "sealos.hub:5000"
-
-type imagesResults struct {
-	registryName string
-	filter       string
-	json         bool
-}
-
-func (opts *imagesResults) RegisterFlags(fs *pflag.FlagSet) {
-	fs.SetInterspersed(false)
-	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
-	fs.StringVarP(&opts.registryName, "name", "n", defaultRegistryName, "registry name")
-	fs.StringVar(&opts.filter, "filter", opts.filter, "Filter support 'name' and 'tag' , strategy support prefix (eg key*),suffix(eg *key),equals(eg key),empty(eg <none>),like(eg *key*)")
-}
-
-type imageResults struct {
-	registryName string
-	image        string
-	json         bool
-}
-
-func (opts *imageResults) RegisterFlags(fs *pflag.FlagSet) {
-	fs.SetInterspersed(false)
-	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
-	fs.StringVarP(&opts.registryName, "name", "n", defaultRegistryName, "registry name")
-	fs.StringVar(&opts.image, "image", opts.image, "image name,ex library/nginx:test")
-}
-
-type rmiResults struct {
-	registryName string
-}
-
-func (opts *rmiResults) RegisterFlags(fs *pflag.FlagSet) {
-	fs.SetInterspersed(false)
-	fs.StringVarP(&opts.registryName, "name", "n", defaultRegistryName, "registry name")
-}
-
-type registryStatusResults struct {
-	json bool
-}
-
-func (opts *registryStatusResults) RegisterFlags(fs *pflag.FlagSet) {
-	fs.SetInterspersed(false)
-	fs.BoolVar(&opts.json, "json", opts.json, "output in JSON format")
-}
 
 type registrySaveResults struct {
 	registryPullRegistryDir  string

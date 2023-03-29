@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package registry
+package imagemanifest
 
 import (
 	"encoding/json"
@@ -37,7 +37,7 @@ type Manifest struct {
 	Size      int
 }
 
-func getImageManifestDigest(payload []byte, platform v1.Platform) (digest.Digest, error) {
+func GetImageManifestDigest(payload []byte, platform v1.Platform) (digest.Digest, error) {
 	var manifestList ManifestList
 	err := json.Unmarshal(payload, &manifestList)
 	if err != nil {
