@@ -18,9 +18,10 @@ package apply
 
 import (
 	"fmt"
-	"github.com/labring/sealos/pkg/utils/hash"
 	"net"
 	"strings"
+
+	"github.com/labring/sealos/pkg/utils/hash"
 
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
@@ -115,9 +116,22 @@ func GetImagesDiff(current, desired []string) []string {
 	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(desired, current))
 }
 
-func CompareImageSpecHash(currentImages []string, newImages []string) bool {
+func CompareImageSpecHash(currentImages []string, desiredImages []string) bool {
 	currentHash := hash.ToString(currentImages)
-	newHash := hash.ToString(newImages)
+	newHash := hash.ToString(desiredImages)
 
 	return currentHash == newHash
+}
+
+func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
+	if desiredCluster == nil {
+		return nil
+	}
+	if currentCluster == nil {
+		return desiredCluster.Spec.Image
+	}
+	if !CompareImageSpecHash(currentCluster.Spec.Image, desiredCluster.Spec.Image) {
+		return GetImagesDiff(currentCluster.Spec.Image, desiredCluster.Spec.Image)
+	}
+	return nil
 }

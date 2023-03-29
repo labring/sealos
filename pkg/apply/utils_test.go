@@ -19,6 +19,8 @@ package apply
 import (
 	"reflect"
 	"testing"
+
+	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func TestPreProcessIPList(t *testing.T) {
@@ -222,5 +224,87 @@ func TestCompareImageSpecHash(t *testing.T) {
 
 	if CompareImageSpecHash(currentImages, newImages) {
 		t.Errorf("CompareImageSpecHash(%v, %v) = true; want false", currentImages, newImages)
+	}
+}
+
+func TestGetNewImages(t *testing.T) {
+	// Test case 1
+	actual := GetNewImages(nil, nil)
+	if actual != nil {
+		t.Errorf("GetNewImages(nil, nil) = %v, expected nil", actual)
+	}
+
+	// Test case 2
+	currentCluster := &v2.Cluster{
+		Spec: v2.ClusterSpec{
+			Image: []string{
+				"hub.sealos.cn/labring/kubernetes:v1.25.6",
+				"hub.sealos.cn/labring/kubernetes:v1.25.6",
+				"hub.sealos.cn/labring/helm:v3.11.0",
+				"hub.sealos.cn/labring/calico:v3.24.5",
+			},
+		},
+	}
+	expected := []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+	}
+	actual = GetNewImages(currentCluster, nil)
+	if actual != nil {
+		t.Errorf("GetNewImages(currentCluster, nil) = %v, expected nil", actual)
+	}
+
+	// Test case 3
+	desiredCluster := &v2.Cluster{
+		Spec: v2.ClusterSpec{
+			Image: []string{
+				"hub.sealos.cn/labring/kubernetes:v1.25.6",
+				"hub.sealos.cn/labring/kubernetes:v1.25.6",
+				"hub.sealos.cn/labring/helm:v3.11.0",
+				"hub.sealos.cn/labring/calico:v3.24.5",
+			},
+		},
+	}
+	actual = GetNewImages(currentCluster, desiredCluster)
+	if actual != nil {
+		t.Errorf("GetNewImages(currentCluster, desiredCluster) = %v, expected nil", actual)
+	}
+
+	// Test case 4
+	desiredCluster.Spec.Image = []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+	}
+
+	expected = []string{"hub.sealos.cn/labring/nginx:v1.23.3"}
+	actual = GetNewImages(currentCluster, desiredCluster)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("GetNewImages(currentCluster, desiredCluster) = %v, expected %v", actual, expected)
+	}
+
+	// Test case 5
+	desiredCluster.Spec.Image = []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+	}
+
+	expected = []string{
+		"hub.sealos.cn/labring/kubernetes:v1.25.6",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/helm:v3.11.0",
+		"hub.sealos.cn/labring/calico:v3.24.5",
+		"hub.sealos.cn/labring/nginx:v1.23.3",
+	}
+	actual = GetNewImages(nil, desiredCluster)
+	if !reflect.DeepEqual(actual, expected) {
+		t.Errorf("GetNewImages(nil, desiredCluster) = %v, expected %v", actual, expected)
 	}
 }

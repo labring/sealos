@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
+	"time"
+
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
-	"time"
 )
 
 const ResourceYaml = `

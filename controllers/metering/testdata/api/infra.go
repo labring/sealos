@@ -2,9 +2,10 @@ package api
 
 import (
 	"fmt"
+	"time"
+
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
-	"time"
 )
 
 const InfraYaml = `

@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"os"
 	"strconv"
+
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 
 	userv1 "github.com/labring/sealos/controllers/user/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"

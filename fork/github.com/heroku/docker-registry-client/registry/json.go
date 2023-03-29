@@ -3,9 +3,10 @@ package registry
 import (
 	"encoding/json"
 	"errors"
-	http2 "github.com/labring/sealos/pkg/utils/http"
 	"net/http"
 	"regexp"
+
+	http2 "github.com/labring/sealos/pkg/utils/http"
 )
 
 var (
