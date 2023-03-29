@@ -22,9 +22,11 @@ func (c *Client) CreateEnvironment(ctx context.Context, environmentID string, cr
 		return nil, err
 	}
 
-	body, err := c.doRequest(req)
+	body, statusCode, err := c.doAuthRequest(req)
 	if err != nil {
 		return nil, err
+	} else if statusCode > 250 {
+		return nil, fmt.Errorf("error happened while creating environment, status code: %v", statusCode)
 	}
 
 	var env api.EnvironmentMessage
@@ -43,9 +45,13 @@ func (c *Client) GetEnvironment(ctx context.Context, environmentID string) (*api
 		return nil, err
 	}
 
-	body, err := c.doRequest(req)
+	body, statusCode, err := c.doAuthRequest(req)
 	if err != nil {
 		return nil, err
+	} else if statusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("instances not found, status code: %v", statusCode)
+	} else if statusCode > 250 {
+		return nil, fmt.Errorf("error happened while fetching instances, status code: %v", statusCode)
 	}
 
 	var env api.EnvironmentMessage

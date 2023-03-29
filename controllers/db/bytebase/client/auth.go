@@ -11,26 +11,26 @@ import (
 )
 
 // Login will login the user and get the response.
-func (c *Client) Login(auth *api.AuthRequest) error {
+func (c *Client) Login(auth *api.AuthRequest) (int, error) {
 	if auth.Email == "" || auth.Password == "" {
-		return fmt.Errorf("define username and password")
+		return 0, fmt.Errorf("define username and password")
 	}
 	auth.Web = false
 	rb, err := json.Marshal(auth)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/auth/login", c.url, c.version), strings.NewReader(string(rb)))
 	if err != nil {
-		return err
+		return 0, err
 	}
-	body, err := c.doRequest(req)
+	body, statusCode, err := c.doRequest(req)
 	if err != nil {
-		return err
+		return statusCode, err
 	}
 	ar := api.AuthResponse{}
 	if err = json.Unmarshal(body, &ar); err != nil {
-		return err
+		return statusCode, err
 	}
 	c.token = ar.Token
 
@@ -38,50 +38,48 @@ func (c *Client) Login(auth *api.AuthRequest) error {
 	auth.Web = true
 	rb, err = json.Marshal(auth)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	req, err = http.NewRequest("POST", fmt.Sprintf("%s/%s/auth/login", c.url, c.version), strings.NewReader(string(rb)))
 	if err != nil {
-		return err
+		return 0, err
 	}
 	var resp *http.Response
 	resp, err = c.client.Do(req)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	c.requestHeaders = resp.Header.Clone()
 	arWeb := api.AuthResponse{}
 	defer resp.Body.Close()
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return resp.StatusCode, err
 	}
 	if err = json.Unmarshal(body, &arWeb); err != nil {
-		return err
+		return resp.StatusCode, err
 	}
 	c.webToken = arWeb.Token
 
-	return nil
+	return resp.StatusCode, nil
 }
 
-func (c *Client) Signup(cur *api.CreateUserRequest) error {
+func (c *Client) Signup(cur *api.CreateUserRequest) (int, error) {
 	if cur.Email == "" || cur.Password == "" {
-		return fmt.Errorf("the username and password cannot be empty")
+		return 0, fmt.Errorf("the username and password cannot be empty")
 	}
 	rb, err := json.Marshal(*cur)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	// signup
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/%s/users", c.url, c.version), strings.NewReader(string(rb)))
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	if _, err := c.doRequest(req); err != nil {
-		return err
-	}
-	return nil
+	_, statusCode, err := c.doRequest(req)
+	return statusCode, err
 }
 
 func (c *Client) CheckUserExists(userID string) error {
@@ -89,8 +87,14 @@ func (c *Client) CheckUserExists(userID string) error {
 	if err != nil {
 		return err
 	}
-	if _, err := c.doRequest(req); err != nil {
+	_, statusCode, err := c.doAuthRequest(req)
+	if err != nil {
 		return err
+	}
+	if statusCode == 404 {
+		return fmt.Errorf("user not found, status code: %v", statusCode)
+	} else if statusCode > 250 {
+		return fmt.Errorf("error happened while fetching user, status code: %v", statusCode)
 	}
 	return nil
 }

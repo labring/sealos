@@ -9,11 +9,10 @@ import (
 type Client interface {
 	// Auth
 	// Login will login the user and get the response.
-	Login(*AuthRequest) error
+	Login(*AuthRequest) (int, error)
 	// Signup will register the user
-	Signup(*CreateUserRequest) error
+	Signup(*CreateUserRequest) (int, error)
 	GetHeaders() (http.Header, error)
-	CheckUserExists(userID string) error
 
 	// Environment
 	// CreateEnvironment creates the environment.

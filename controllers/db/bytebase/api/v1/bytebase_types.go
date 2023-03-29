@@ -55,7 +55,6 @@ type BytebaseStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	AvailableReplicas int32  `json:"availableReplicas"`
 	Domain            string `json:"domain"`
-	// LastLoginTimestamp metav1.Time `json:"lastLoginTimestamp"`
 }
 
 //+kubebuilder:object:root=true

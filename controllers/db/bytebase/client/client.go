@@ -53,53 +53,64 @@ func NewClient(url, version, email, password string) (api.Client, error) {
 		url:     url,
 		version: version,
 	}
-	// check if user already exists
-	if err := c.CheckUserExists(api.PrincipalIDForFirstUser); err != nil {
-		cur := &api.CreateUserRequest{
-			Email:    email,
-			Password: password,
-			Type:     api.EndUser,
-			Title:    "sealos-db-owner",
-			Name:     "sealos-db-owner",
-		}
-
-		if err := c.Signup(cur); err != nil {
-			return nil, err
-		}
-	}
-
 	auth := &api.AuthRequest{
 		Email:    email,
 		Password: password,
 		Web:      false,
 	}
+	// try login
 
-	if err := c.Login(auth); err != nil {
+	if statusCode, err := c.Login(auth); err != nil {
 		return nil, err
+	} else if statusCode == http.StatusOK {
+		return &c, nil
+	} else if statusCode != http.StatusUnauthorized {
+		return nil, fmt.Errorf("error happened while logging user in, status code: %v. is password correct? is the service started?", statusCode)
 	}
 
-	return &c, nil
+	cur := &api.CreateUserRequest{
+		Email:    email,
+		Password: password,
+		Type:     api.EndUser,
+		Title:    "sealos-db-owner",
+		Name:     "sealos-db-owner",
+	}
+
+	if statusCode, err := c.Signup(cur); err != nil {
+		return nil, err
+	} else if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("error happened while signing user up, status code: %v", statusCode)
+	}
+
+	if statusCode, err := c.Login(auth); err != nil {
+		return nil, err
+	} else if statusCode == http.StatusOK {
+		return &c, nil
+	} else {
+		return nil, fmt.Errorf("error happened while logging user in after signing up, status code: %v", statusCode)
+	}
 }
 
-func (c *Client) doRequest(req *http.Request) ([]byte, error) {
-	if c.token != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
-	}
-
+func (c *Client) doRequest(req *http.Request) ([]byte, int, error) {
 	res, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status: %d, body: %s", res.StatusCode, body)
-	}
+	return body, res.StatusCode, nil
+}
 
-	return body, err
+func (c *Client) doAuthRequest(req *http.Request) ([]byte, int, error) {
+	if c.token != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
+	} else {
+		return nil, 0, fmt.Errorf("while doing authorized request, the token should have been set")
+	}
+	return c.doRequest(req)
 }

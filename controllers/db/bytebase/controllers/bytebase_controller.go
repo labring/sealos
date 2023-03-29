@@ -190,11 +190,12 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, err
 	}
 
-	// r.Recorder.Eventf(bb, corev1.EventTypeNormal, "Created and Initialized", "bytebase success: %v", bb.Name)
+	r.Recorder.Eventf(bb, corev1.EventTypeNormal, "Created and Initialized", "bytebase success: %v", bb.Name)
 	logger.Info("reconciliation completed")
+	duration, _ := time.ParseDuration(bb.Spec.Keepalived)
 	// reconciliation completed, delete client
 	r.Bc = nil
-	return ctrl.Result{}, nil
+	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
 func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Bytebase) error {
