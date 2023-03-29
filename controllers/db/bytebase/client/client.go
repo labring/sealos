@@ -53,17 +53,19 @@ func NewClient(url, version, email, password string) (api.Client, error) {
 		url:     url,
 		version: version,
 	}
+	// check if user already exists
+	if err := c.CheckUserExists(api.PrincipalIDForFirstUser); err != nil {
+		cur := &api.CreateUserRequest{
+			Email:    email,
+			Password: password,
+			Type:     api.EndUser,
+			Title:    "sealos-db-owner",
+			Name:     "sealos-db-owner",
+		}
 
-	cur := &api.CreateUserRequest{
-		Email:    email,
-		Password: password,
-		Type:     api.EndUser,
-		Title:    "sealos-db-owner",
-		Name:     "sealos-db-owner",
-	}
-
-	if err := c.Signup(cur); err != nil {
-		return nil, fmt.Errorf("failed to sign up user. %s", err)
+		if err := c.Signup(cur); err != nil {
+			return nil, err
+		}
 	}
 
 	auth := &api.AuthRequest{

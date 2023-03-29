@@ -72,6 +72,8 @@ type BytebaseReconciler struct {
 	SecretName      string
 	SecretNamespace string
 	Bc              api.Client // bytebase client
+	DefaultEmail    string
+	DefaultPassword string
 }
 
 //+kubebuilder:rbac:groups=db.sealos.io,resources=bytebases,verbs=get;list;watch;create;update;patch;delete
@@ -124,6 +126,7 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if err := r.Delete(ctx, bb); err != nil {
 			return ctrl.Result{}, err
 		}
+		r.Bc = nil
 		logger.Info("successfully deleted the expired bytebase resource.")
 		return ctrl.Result{}, nil
 	}
@@ -159,31 +162,22 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := bbclient.CheckServerHealth(healthCheckURL); err != nil {
 		message := "wait for bytebase instance to be initialized and started..."
 		logger.Info(message)
-		return ctrl.Result{Requeue: true}, err
+		return ctrl.Result{}, err
 	}
 
 	// register bytebase account
-	email := "admin@sealos.io"
-	passwd, err := generateRandomString(16)
-	if err != nil {
-		logger.Error(err, "failed to generated password for the user")
-		return ctrl.Result{}, err
-	}
-	// passwd := "1234"
-	// This is first time the user login, so we register the user.
+	email := r.DefaultEmail
+	passwd := r.DefaultPassword
+	// log user in, or if user doesn't exist, register them
 	if r.Bc == nil {
+		logger.Info("start to register the principal user...")
 		var clientErr error
 		r.Bc, clientErr = bbclient.NewClient(url, version, email, passwd)
 		if clientErr != nil {
-			logger.Error(clientErr, "Error registering user")
-			return ctrl.Result{}, clientErr
+			logger.Error(clientErr, "Error registering user, retrying...")
+			return ctrl.Result{Requeue: true}, clientErr
 		}
 		logger.Info("successfully registered and logged user in.")
-	}
-
-	if err != nil {
-		logger.Error(err, "Fetch token error.")
-		return ctrl.Result{}, err
 	}
 
 	if err := r.syncIngress(ctx, bb, hostname); err != nil {
@@ -197,7 +191,9 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	// r.Recorder.Eventf(bb, corev1.EventTypeNormal, "Created and Initialized", "bytebase success: %v", bb.Name)
-	logger.Info("reconciling completed")
+	logger.Info("reconciliation completed")
+	// reconciliation completed, delete client
+	r.Bc = nil
 	return ctrl.Result{}, nil
 }
 
@@ -221,6 +217,14 @@ func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Byte
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BytebaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	// set up default email
+	r.DefaultEmail = "admin@sealos.io"
+	var err error
+	// set up default password
+	r.DefaultPassword, err = generateRandomString(16)
+	if err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&bbv1.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
 		Complete(r)

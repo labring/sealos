@@ -10,13 +10,10 @@ type Client interface {
 	// Auth
 	// Login will login the user and get the response.
 	Login(*AuthRequest) error
-	// Login through web (mocking)
-	// WebLogin(*AuthRequest) (*AuthResponse, *http.Header, error)
 	// Signup will register the user
 	Signup(*CreateUserRequest) error
-	// Fetch token
-	FetchToken() (string, error)
 	GetHeaders() (http.Header, error)
+	CheckUserExists(userID string) error
 
 	// Environment
 	// CreateEnvironment creates the environment.

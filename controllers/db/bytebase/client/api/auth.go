@@ -12,7 +12,7 @@ type AuthResponse struct {
 
 type UserType int32
 
-// github.com/bytebase/bytebase/proto/generated-go/v1
+// https://github.com/bytebase/bytebase/blob/main/proto/generated-go/v1/auth_service.pb.go
 const (
 	// EndUser is the principal type for END_USER.
 	// EndUser represents the human being using Bytebase.
@@ -25,7 +25,7 @@ const (
 	SystemBot UserType = 3
 
 	// PrincipalIDForFirstUser is the principal id for the first user in workspace.
-	PrincipalIDForFirstUser = 101
+	PrincipalIDForFirstUser = "101"
 )
 
 // a.k.a SignupRequest
@@ -35,4 +35,14 @@ type CreateUserRequest struct {
 	Type     UserType `json:"userType"`
 	Name     string   `json:"name"`
 	Title    string   `json:"title"`
+}
+
+type GetUserResponse struct {
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Type       string `json:"userType"`
+	Name       string `json:"name"`
+	Title      string `json:"title"`
+	State      string `json:"state"`
+	ServiceKey string `json:"serviceKey"`
 }

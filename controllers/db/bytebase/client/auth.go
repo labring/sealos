@@ -34,6 +34,7 @@ func (c *Client) Login(auth *api.AuthRequest) error {
 	}
 	c.token = ar.Token
 
+	// get web token
 	auth.Web = true
 	rb, err = json.Marshal(auth)
 	if err != nil {
@@ -49,10 +50,6 @@ func (c *Client) Login(auth *api.AuthRequest) error {
 		return err
 	}
 	c.requestHeaders = resp.Header.Clone()
-	// respHeaders := resp.Header.Get("Set-Cookie")
-	// for _, header := range respHeaders {
-	//	headers.Add("Cookie", string(header))
-	// }
 	arWeb := api.AuthResponse{}
 	defer resp.Body.Close()
 	body, err = io.ReadAll(resp.Body)
@@ -87,6 +84,13 @@ func (c *Client) Signup(cur *api.CreateUserRequest) error {
 	return nil
 }
 
-func (c *Client) FetchToken() (string, error) {
-	return c.token, nil
+func (c *Client) CheckUserExists(userID string) error {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s/users/%s", c.url, c.version, userID), nil)
+	if err != nil {
+		return err
+	}
+	if _, err := c.doRequest(req); err != nil {
+		return err
+	}
+	return nil
 }
