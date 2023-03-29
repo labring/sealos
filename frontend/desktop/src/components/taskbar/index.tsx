@@ -3,14 +3,17 @@ import clsx from 'clsx';
 import Icon from 'components/icons';
 import useAppStore from '../../stores/app';
 import styles from './taskbar.module.scss';
-
 import useLocalSession from 'hooks/useLocalSession';
 import TimeZone from './time_zone';
+import Iconfont from 'components/iconfont';
+import Notification from 'components/notification';
+import { useState } from 'react';
 
 const Taskbar = () => {
   const { openedApps, currentApp, switchApp, toggleStartMenu } = useAppStore((state) => state);
-
   const { localSession } = useLocalSession();
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationAmount, setNotificationAmount] = useState(0);
 
   return (
     <div className={styles.taskbar}>
@@ -31,14 +34,6 @@ const Taskbar = () => {
         </div>
       </div>
       <div className={styles.tsbar}>
-        {/* <div className={clsx(styles.tsIcon)}>
-          <Icon src="search" width={24} />
-        </div> */}
-
-        {/* <div className={clsx(styles.tsIcon)}>
-          <Icon src="settings" width={24} />
-        </div> */}
-
         {openedApps.map((item, index) => {
           return (
             <div
@@ -59,17 +54,26 @@ const Taskbar = () => {
       </div>
 
       <div className={styles.taskright}>
-        <div>
-          <Icon width={10} />
-        </div>
-        {/* <div
-          className="prtclk handcr my-1 px-1 hvlight items-center flex rounded"
-          onClick={clickDispatch}
-          data-action="PANETOGG"
+        <div
+          className={clsx('flex items-center relative cursor-pointer')}
+          onClick={() => setShowNotification(!showNotification)}
         >
-          <Icon className="mr-1" src="wifi" width={16} />
-          <Battery />
-        </div> */}
+          <Iconfont
+            iconName="icon-feNoticeActive2"
+            color={showNotification ? '#436790' : '#ffffff'}
+            width={20}
+            height={20}
+          />
+          <div className={styles.notification} data-show={showNotification}>
+            {notificationAmount || ''}
+          </div>
+        </div>
+        <Notification
+          isShow={showNotification}
+          onClose={() => setShowNotification(false)}
+          onAmount={(amount) => setNotificationAmount(amount)}
+        />
+
         <TimeZone />
 
         <Icon className={clsx(styles.graybd, 'my-4')} width={6} />
