@@ -36,37 +36,49 @@ export default function Notification(props: TNotification) {
   const [activeTab, setActiveTab] = useState<'read' | 'unread'>('unread');
   const [activePage, setActivePage] = useState<'index' | 'detail'>('index');
   const [msgDetail, setMsgDetail] = useState<NotificationItem>();
+  const [notification, setNotification] = useState([]);
 
-  const { data, refetch } = useQuery(['getAwsAll'], () => request('/api/notification/list'));
+  const { data, isSuccess, refetch } = useQuery(
+    ['getAwsAll'],
+    () => request('/api/notification/list'),
+    {
+      onSuccess: (data) => {
+        console.log(data);
+        onAmount(
+          data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead)
+            ?.length || 0
+        );
+        setNotification(data?.data?.items);
+      }
+    }
+  );
 
-  const unread_notes = useMemo(() => {
-    const temp = data?.data?.items?.filter(
-      (item: NotificationItem) => !item?.metadata?.labels?.isRead
-    );
-    onAmount(temp?.length || 0);
-    return temp;
-  }, [data?.data?.items, onAmount]);
+  const unread_notes = useMemo(
+    () => notification?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead),
+    [notification]
+  );
 
-  const read_notes = useMemo(() => {
-    return data?.data?.items?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead);
-  }, [data?.data?.items]);
+  const read_notes = useMemo(
+    () => notification?.filter((item: NotificationItem) => item?.metadata?.labels?.isRead),
+    [notification]
+  );
+
+  const notifications = activeTab === 'unread' ? unread_notes : read_notes;
 
   const readMsgMutation = useMutation({
     mutationFn: (name: string[]) => request.post('/api/notification/read', { name }),
     onSettled: () => refetch()
   });
 
-  const notifications = activeTab === 'unread' ? unread_notes : read_notes;
-
   const goMsgDetail = (item: NotificationItem) => {
-    setActivePage('detail');
-    setMsgDetail(item);
     if (activeTab === 'unread') {
       readMsgMutation.mutate([item?.metadata?.name]);
     }
+    setActivePage('detail');
+    setMsgDetail(item);
   };
 
-  const readAll = () => {
+  const markAllAsRead = () => {
     const names = unread_notes?.map((item: NotificationItem) => item?.metadata?.name);
     readMsgMutation.mutate(names);
   };
@@ -114,7 +126,7 @@ export default function Notification(props: TNotification) {
               <Text
                 color={'#434F61'}
                 className={clsx(styles.tab, 'ml-auto')}
-                onClick={() => readAll()}
+                onClick={() => markAllAsRead()}
               >
                 全部已读
               </Text>
