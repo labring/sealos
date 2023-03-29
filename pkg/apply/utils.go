@@ -21,6 +21,8 @@ import (
 	"net"
 	"strings"
 
+	"github.com/labring/sealos/pkg/utils/hash"
+
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -108,4 +110,28 @@ func getHostArch(sshClient ssh.Interface) func(string) v2.Arch {
 // so we only need to check the first host of the given type.
 func GetHostArch(sshClient ssh.Interface, ip string) string {
 	return string(getHostArch(sshClient)(ip))
+}
+
+func GetImagesDiff(current, desired []string) []string {
+	return stringsutil.RemoveDuplicate(stringsutil.RemoveStrSlice(desired, current))
+}
+
+func CompareImageSpecHash(currentImages []string, desiredImages []string) bool {
+	currentHash := hash.ToString(currentImages)
+	newHash := hash.ToString(desiredImages)
+
+	return currentHash == newHash
+}
+
+func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
+	if desiredCluster == nil {
+		return nil
+	}
+	if currentCluster == nil {
+		return desiredCluster.Spec.Image
+	}
+	if !CompareImageSpecHash(currentCluster.Spec.Image, desiredCluster.Spec.Image) {
+		return GetImagesDiff(currentCluster.Spec.Image, desiredCluster.Spec.Image)
+	}
+	return nil
 }

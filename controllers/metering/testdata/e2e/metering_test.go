@@ -2,16 +2,17 @@ package e2e
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"testing"
+	"time"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/controllers"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
 	baseapi "github.com/labring/sealos/test/testdata/api"
-	"log"
-	"os"
-	"testing"
-	"time"
 )
 
 const (
