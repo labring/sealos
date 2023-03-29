@@ -2,7 +2,6 @@ module github.com/labring/sealos/controllers/common
 
 go 1.20
 
-
 require (
 	k8s.io/api v0.26.3
 	k8s.io/apimachinery v0.26.3
