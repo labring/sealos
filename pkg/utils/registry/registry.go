@@ -18,6 +18,7 @@ package registry
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/labring/sealos/fork/github.com/heroku/docker-registry-client/registry"
@@ -63,6 +64,7 @@ func NewRegistry(url, username, password string, skipTLS bool) (*registry.Regist
 }
 
 func NewRegistryForDomain(domain, username, password string) (*registry.Registry, error) {
+	domain = NormalizeRegistry(domain)
 	url := "https://" + domain
 	reg, err := NewRegistry(url, username, password, false)
 	if err == nil {
@@ -74,4 +76,18 @@ func NewRegistryForDomain(domain, username, password string) (*registry.Registry
 		return reg, nil
 	}
 	return nil, fmt.Errorf("not found registry in this domain: %s", domain)
+}
+
+func NormalizeRegistry(registry string) string {
+	switch registry {
+	case "registry-1.docker.io", "docker.io", "index.docker.io":
+		return "index.docker.io"
+	}
+	return registry
+}
+
+func GetRegistryDomain(registry string) string {
+	s := strings.TrimPrefix(registry, "https://")
+	s = strings.TrimPrefix(s, "http://")
+	return strings.Split(s, "/")[0]
 }

@@ -13,9 +13,14 @@
 # limitations under the License.
 
 shim: /var/run/image-cri-shim.sock
-cri: /var/run/cri-dockerd.sock
+cri: /run/containerd/containerd.sock
 address: http://sealos.hub:5000
-debug: false
+force: true
+debug: true
 image: /var/lib/image-cri-shim
+timeout: 15m
 auth: admin:passw0rd
-version: v1
+
+registries:
+- address: http://192.168.64.1:5000
+  auth: admin:passw0rd

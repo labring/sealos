@@ -14,6 +14,7 @@ spec:
           runAsNonRoot: true
           allowPrivilegeEscalation: false
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        imagePullPolicy: IfNotPresent
         args:
         - "--secure-listen-address=0.0.0.0:8443"
         - "--upstream=http://127.0.0.1:8080/"
@@ -37,7 +38,9 @@ spec:
           - name: NAMESPACE_NAME
             value: "user-system"
           - name: NEW_ACCOUNT_AMOUNT
-            value: "500"
+            value: "50000"
+          - name: WHITELIST
+            value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1"
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"

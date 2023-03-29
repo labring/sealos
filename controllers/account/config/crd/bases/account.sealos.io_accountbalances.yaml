@@ -46,7 +46,28 @@ spec:
                 type: string
               owner:
                 type: string
-              timeStamp:
+              resourceInfoList:
+                items:
+                  properties:
+                    cost:
+                      format: int64
+                      type: integer
+                    namespace:
+                      type: string
+                    resourceName:
+                      type: string
+                    time:
+                      format: int64
+                      type: integer
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: array
+              timestamp:
                 format: int64
                 type: integer
             required:

@@ -12,33 +12,31 @@ sealos run [flags]
 
 ### Examples
 
-```
-
+``` bash
 create cluster to your baremetal server, appoint the iplist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
+		--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
   multi image:
     sealos run labring/kubernetes:v1.24.0 calico:v3.24.1 \
         --masters 192.168.64.2,192.168.64.22,192.168.64.20 --nodes 192.168.64.21,192.168.64.19
-  Specify server InfraSSH port :
-  All servers use the same InfraSSH port (default port: 22)：
+  Specify server InfraSSH port:
+  All servers use the same InfraSSH port (default port: 22)
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd xxx
-  Different InfraSSH port numbers exist：
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --port 24 --passwd 'xxx'
+  Different InfraSSH port numbers exist:
 	sealos run labring/kubernetes:v1.24.0 --masters 192.168.0.2,192.168.0.3:23,192.168.0.4:24 \
-	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd xxx
-  Single kubernetes cluster：
+	--nodes 192.168.0.5:25,192.168.0.6:25,192.168.0.7:27 --passwd 'xxx'
+  Single kubernetes cluster:
 	sealos run labring/kubernetes:v1.24.0 --single
 
 create a cluster with custom environment variables:
 	sealos run -e DashBoardPort=8443 mydashboard:latest  --masters 192.168.0.2,192.168.0.3,192.168.0.4 \
-	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd xxx
-
+	--nodes 192.168.0.5,192.168.0.6,192.168.0.7 --passwd 'xxx'
 ```
 
 ### Options
 
-```
+```bash
       --cluster string        name of cluster to applied run action (default "default")
       --cmd strings           override CMD directive in images
       --config-file strings   path of custom config files, to use to replace the resource

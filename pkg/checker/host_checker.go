@@ -76,13 +76,13 @@ func checkHostnameUnique(s ssh.Interface, ipList []string) error {
 func checkTimeSync(s ssh.Interface, ipList []string) error {
 	logger.Info("checker:timeSync %v", ipList)
 	for _, ip := range ipList {
-		timeStamp, err := s.CmdToString(ip, "date +%s", "")
+		timestamp, err := s.CmdToString(ip, "date +%s", "")
 		if err != nil {
 			return fmt.Errorf("failed to get %s timestamp, %v", ip, err)
 		}
-		ts, err := strconv.Atoi(timeStamp)
+		ts, err := strconv.Atoi(timestamp)
 		if err != nil {
-			return fmt.Errorf("failed to reverse timestamp %s, %v", timeStamp, err)
+			return fmt.Errorf("failed to reverse timestamp %s, %v", timestamp, err)
 		}
 		timeDiff := time.Since(time.Unix(int64(ts), 0)).Minutes()
 		if timeDiff < -1 || timeDiff > 1 {

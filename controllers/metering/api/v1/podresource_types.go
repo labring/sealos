@@ -17,18 +17,17 @@ limitations under the License.
 package v1
 
 import (
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PodResourceSpec defines the desired state of PodResource
 type PodResourceSpec struct {
-	ResourceName string                            `json:"resourceName,omitempty"`
-	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+	ResourceName string                                             `json:"resourceName,omitempty"`
+	Resources    map[v1.ResourceName]meteringcommonv1.ResourcePrice `json:"resources,omitempty"`
 
 	// update used resources every Interval minutes
-	//+kubebuilder:default=50
-	//+kubebuilder:validation:Minimum=1
 	Interval int `json:"interval,omitempty"`
 }
 

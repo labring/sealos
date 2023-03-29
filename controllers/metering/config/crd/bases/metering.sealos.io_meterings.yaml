@@ -53,26 +53,22 @@ spec:
               resources:
                 additionalProperties:
                   properties:
-                    describe:
-                      type: string
-                    price:
+                    cost:
                       format: int64
                       type: integer
-                    unit:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
+                    namespace:
+                      type: string
+                    resourceName:
+                      type: string
+                    time:
+                      format: int64
+                      type: integer
                     used:
                       anyOf:
                       - type: integer
                       - type: string
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
-                  required:
-                  - price
-                  - unit
                   type: object
                 type: object
               timeInterval:
@@ -95,7 +91,7 @@ spec:
                       type: boolean
                     timeInterval:
                       type: string
-                    timeStamp:
+                    timestamp:
                       format: int64
                       type: integer
                   type: object
@@ -110,7 +106,7 @@ spec:
                       type: boolean
                     timeInterval:
                       type: string
-                    timeStamp:
+                    timestamp:
                       format: int64
                       type: integer
                   type: object

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -25,10 +26,11 @@ const AccountBalancePrefix = "accountbalance"
 
 // AccountBalanceSpec defines the desired state of AccountBalance
 type AccountBalanceSpec struct {
-	Owner     string `json:"owner"`
-	TimeStamp int64  `json:"timeStamp,omitempty"`
-	Amount    int64  `json:"amount,omitempty"`
-	Details   string `json:"details,omitempty"`
+	Owner            string                            `json:"owner"`
+	Timestamp        int64                             `json:"timestamp,omitempty"`
+	Amount           int64                             `json:"amount,omitempty"`
+	Details          string                            `json:"details,omitempty"`
+	ResourceInfoList meteringcommonv1.ResourceInfoList `json:"resourceInfoList,omitempty"`
 }
 
 // AccountBalanceStatus defines the observed state of AccountBalance

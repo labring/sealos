@@ -59,7 +59,7 @@ func (r *Whitelist) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *Whitelist) ValidateUpdate(old runtime.Object) error {
+func (r *Whitelist) ValidateUpdate(_ runtime.Object) error {
 	whitelistlog.Info("validate update", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object update.

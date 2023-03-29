@@ -74,7 +74,8 @@ func (r *PaymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}
 	tradeNO := pay.GetRandomString(32)
-	codeURL, err := pay.WechatPay(p.Spec.Amount, p.Spec.UserID, tradeNO, "", "")
+	//  in cloud.sealos 10000 = 1¥ and in wechatPay 100 = 1$，so need to Amount/100
+	codeURL, err := pay.WechatPay(p.Spec.Amount/100, p.Spec.UserID, tradeNO, "", "")
 	if err != nil {
 		r.Logger.Error(err, "get codeURL failed")
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, err

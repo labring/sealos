@@ -1,12 +1,12 @@
 package api
 
 import (
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	baseapi "github.com/labring/sealos/test/testdata/api"
 )
 
 const ExtensionResourcePriceYaml = `
-apiVersion: metering.sealos.io/v1
+apiVersion: metering.common.sealos.io/v1
 kind: ExtensionResourcePrice
 metadata:
   name: ${name}
@@ -21,9 +21,9 @@ spec:
       describe: "cost per cpu per hour（price:100 = 1¥）"
 `
 
-func GetExtensionResourcePrice(namespace string, name string) (*meteringv1.ExtensionResourcePrice, error) {
-	gvr := meteringv1.GroupVersion.WithResource("extensionresourceprices")
-	var extensionResourcesPrice meteringv1.ExtensionResourcePrice
+func GetExtensionResourcePrice(namespace string, name string) (*meteringcommonv1.ExtensionResourcePrice, error) {
+	gvr := meteringcommonv1.GroupVersion.WithResource("extensionresourceprices")
+	var extensionResourcesPrice meteringcommonv1.ExtensionResourcePrice
 	if err := baseapi.GetObject(namespace, name, gvr, &extensionResourcesPrice); err != nil {
 		return nil, err
 	}

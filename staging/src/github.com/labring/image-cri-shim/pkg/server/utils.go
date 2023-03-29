@@ -17,67 +17,17 @@ limitations under the License.
 package server
 
 import (
-	"strings"
+	"github.com/labring/sealos/pkg/registry"
 
-	"github.com/labring/image-cri-shim/pkg/types"
+	"github.com/docker/docker/api/types"
 
 	"github.com/labring/sealos/pkg/utils/exec"
 	img "github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/registry"
-	str "github.com/labring/sealos/pkg/utils/strings"
 )
 
-// parseImageNameAndTag splits the input image name into its name and tag.
-func parseImageNameAndTag(imageName string) (name, tag string) {
-	imageSplitted := strings.Split(imageName, ":")
-	name, tag = imageSplitted[0], "latest"
-	if len(imageSplitted) > 1 {
-		tag = imageSplitted[1]
-	}
-
-	nameSplitted := strings.Split(name, "@")
-	if len(nameSplitted) > 1 {
-		name = nameSplitted[0]
-		tag = "latest"
-		logger.Debug("stripped digest in name: %s", nameSplitted[1])
-	}
-	logger.Info("actual imageName: %s:%s", name, tag)
-	return
-}
-
-// parseImageDomainAndName splits image into domain and remainder as well as normalizes them.
-func parseImageDomainAndName(name string) (domain, remainder string) {
-	const (
-		legacyDefaultDomain = "index.docker.io"
-		defaultDockerDomain = "docker.io"
-		officialRepoName    = "library"
-	)
-	i := strings.IndexRune(name, '/')
-	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && strings.ToLower(name[:i]) == name[:i]) {
-		domain, remainder = "", name
-	} else {
-		domain, remainder = name[:i], name[i+1:]
-	}
-	if domain == legacyDefaultDomain || domain == "" {
-		domain = defaultDockerDomain
-	}
-	if domain == defaultDockerDomain && !strings.ContainsRune(remainder, '/') {
-		remainder = officialRepoName + "/" + remainder
-	}
-	return
-}
-
-// joinImageDomainAndName joins the domain and the remainder, which is sort of the inverse of parseImageDomainAndName.
-func joinImageDomainAndName(domain, remainder string) string {
-	if domain == "" {
-		return remainder
-	}
-	return strings.Join([]string{domain, remainder}, "/")
-}
-
 // replaceImage replaces the image name to a new valid image name with the private registry.
-func replaceImage(image, action string, authConfig map[string]types.AuthConfig) (newImage string) {
+func replaceImage(image, action string, authConfig map[string]types.AuthConfig) (newImage string, isReplace bool, cfg *types.AuthConfig) {
 	// TODO we can change the image name of req, and make the cri pull the image we need.
 	// for example:
 	// req.Image.Image = "sealos.hub:5000/library/nginx:1.1.1"
@@ -96,25 +46,12 @@ func replaceImage(image, action string, authConfig map[string]types.AuthConfig) 
 		logger.Info("image %s already exist, skipping", image)
 		return
 	}
-
-	preDomain, preImageAllName := parseImageDomainAndName(image)
-	logger.Debug("preDomain: %s, preImageAllName: %s, action: %s", preDomain, preImageAllName, action)
-	preImageName, preImageTag := parseImageNameAndTag(preImageAllName)
-	logger.Debug("preImageName: %s, preImageTag: %s, action: %s", preImageName, preImageTag, action)
-	// TODO: create a cache registry client for each authDomain
-	for authDomain, auth := range authConfig {
-		if reg, err := registry.NewRegistryForDomain(authDomain, auth.Username, auth.Password); err == nil {
-			if tags, err := reg.Tags(preImageName); err != nil {
-				logger.Warn("list tag for %s error: %+v", preImageName, err)
-			} else if str.InList(preImageTag, tags) {
-				newImage = joinImageDomainAndName(authDomain, strings.Join([]string{preImageName, preImageTag}, ":"))
-				logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
-				return
-			}
-		}
-		newImage = image
+	newImage, _, cfg, err = registry.GetImageManifestFromAuth(image, authConfig)
+	if err != nil {
+		logger.Warn("get image %s manifest error %s", newImage, err.Error())
 		logger.Debug("image %s not found in registry, skipping", image)
-		logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
+		return image, false, nil
 	}
-	return
+	logger.Info("image: %s, newImage: %s, action: %s", image, newImage, action)
+	return newImage, true, cfg
 }

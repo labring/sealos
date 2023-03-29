@@ -8,21 +8,21 @@ spec:
   interval: 60
   resources:
     cpu:
-      unit: "10"
-      price: 67
+      unit: "1"
+      price: 670
       describe: "cost per cpu per hour（price:100 = 1¥）"
 
     memory:
-      unit: "10G"
-      price: 33
+      unit: "1G"
+      price: 330
       describe: "the cost per gigabyte of memory per hour（price:100 = 1¥）"
 
     storage:
-      unit: "100G"
+      unit: "1G"
       price:  21
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"
 
     ephemeral-storage:
-      unit: "100G"
+      unit: "1G"
       price: 21
       describe: "cost per gigabyte of storage per hour（price:100 = 1¥）"

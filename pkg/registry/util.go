@@ -15,84 +15,29 @@
 package registry
 
 import (
-	"fmt"
+	"runtime"
 	"strings"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	name2 "github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 
 	"github.com/containers/image/v5/pkg/docker/config"
 	imagetypes "github.com/containers/image/v5/types"
 	"github.com/docker/docker/api/types"
+	"github.com/google/go-containerregistry/pkg/crane"
 
+	"github.com/labring/sealos/pkg/registry/authn"
+	"github.com/labring/sealos/pkg/utils/http"
 	"github.com/labring/sealos/pkg/utils/registry"
 )
 
 // this package contains some utils to handle docker image name
 const (
-	legacyDefaultDomain = "index.docker.io"
-	defaultDomain       = "docker.io"
-	officialRepoName    = "library"
-	defaultTag          = "latest"
+	defaultDomain = "docker.io"
 )
-
-// docker image name struct
-type Named struct {
-	domain string //eg. docker.io
-	repo   string //eg. library/ubuntu
-	tag    string //eg. latest
-}
-
-func (n Named) FullName() string {
-	return n.domain + "/" + n.repo + ":" + n.tag
-}
-
-func (n Named) Domain() string {
-	return n.domain
-}
-
-func (n Named) Repo() string {
-	return n.repo
-}
-
-func (n Named) Tag() string {
-	return n.tag
-}
-
-func splitDockerDomain(name string) (domain, remainder string) {
-	i := strings.IndexRune(name, '/')
-	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && name[:i] != "localhost" && strings.ToLower(name[:i]) == name[:i]) {
-		domain, remainder = defaultDomain, name
-	} else {
-		domain, remainder = name[:i], name[i+1:]
-	}
-	if domain == legacyDefaultDomain {
-		domain = defaultDomain
-	}
-	if domain == defaultDomain && !strings.ContainsRune(remainder, '/') {
-		remainder = officialRepoName + "/" + remainder
-	}
-	return
-}
-
-func ParseNormalizedNamed(s string) (Named, error) {
-	domain, remainder := splitDockerDomain(s)
-	var remoteName, tag string
-	if tagSep := strings.IndexRune(remainder, ':'); tagSep > -1 {
-		tag = remainder[tagSep+1:]
-		remoteName = remainder[:tagSep]
-	} else {
-		tag = defaultTag
-		remoteName = remainder
-	}
-	if strings.ToLower(remoteName) != remoteName {
-		return Named{}, fmt.Errorf("invalid reference format: repository name (%s) must be lowercase", remoteName)
-	}
-
-	named := Named{
-		domain: domain,
-		repo:   remoteName,
-		tag:    tag,
-	}
-	return named, nil
-}
 
 func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, error) {
 	creds, err := config.GetAllCredentials(sys)
@@ -102,6 +47,7 @@ func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, er
 	auths := make(map[string]types.AuthConfig, 0)
 
 	for domain, cred := range creds {
+		logger.Debug("GetAuthInfo getCredentials domain: %s", domain, cred.Username)
 		reg, err := registry.NewRegistryForDomain(domain, cred.Username, cred.Password)
 		if err == nil {
 			auths[domain] = types.AuthConfig{
@@ -113,4 +59,59 @@ func GetAuthInfo(sys *imagetypes.SystemContext) (map[string]types.AuthConfig, er
 		}
 	}
 	return auths, nil
+}
+
+func GetImageManifestFromAuth(image string, authConfig map[string]types.AuthConfig) (newImage string, data []byte, cfg *types.AuthConfig, err error) {
+	newImage = image
+	if authConfig == nil {
+		authConfig, err = GetAuthInfo(nil)
+		if err != nil {
+			return newImage, nil, nil, err
+		}
+		for domain, c := range authConfig {
+			if registry.NormalizeRegistry(domain) != domain {
+				authConfig[registry.NormalizeRegistry(domain)] = c
+				delete(authConfig, domain)
+			}
+		}
+	}
+	craneOptsBase := []crane.Option{crane.WithAuthFromKeychain(authn.NewDefaultKeychain(authConfig)), crane.WithTransport(http.DefaultSkipVerify)}
+	var ref name2.Reference
+	var repo string
+	ref, err = name2.ParseReference(image)
+	if err != nil {
+		return newImage, nil, nil, err
+	}
+	parts := strings.SplitN(ref.Name(), "/", 2)
+	if len(parts) == 2 && (strings.ContainsRune(parts[0], '.') || strings.ContainsRune(parts[0], ':')) {
+		// The first part of the repository is treated as the registry domain
+		// iff it contains a '.' or ':' character, otherwise it is all repository
+		// and the domain defaults to Docker Hub.
+		_ = parts[0]
+		repo = parts[1]
+	}
+	craneOptsBase = append(craneOptsBase, crane.WithPlatform(&v1.Platform{
+		OS:           "linux",
+		Architecture: runtime.GOARCH,
+	}))
+	for domain, c := range authConfig {
+		craneOpts := craneOptsBase[:]
+		newImage = strings.Join([]string{domain, repo}, "/")
+		ref, err = name2.ParseReference(newImage)
+		if url, ook := http.IsURL(c.ServerAddress); ook {
+			if url.Scheme == "http" {
+				ref, err = name2.ParseReference(newImage, name2.Insecure)
+				craneOpts = append(craneOpts, crane.Insecure)
+			}
+		}
+		//logs.Debug.SetOutput(os.Stderr)
+		if err != nil {
+			continue
+		}
+		data, err = crane.Manifest(ref.Name(), craneOpts...)
+		if err == nil {
+			return newImage, data, &c, nil
+		}
+	}
+	return image, nil, nil, err
 }

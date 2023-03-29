@@ -63,5 +63,5 @@ sealos cloud 是一个多租户的，以 k8s 为内核的云操作系统，每�
 
 4、deduction扣费模块可以按任意时间间隔扣费。
 
-
-
+## Metering e2e 测试
+需要在自己仓库的secret写入GH_PAT 这个secret，github-> Developer settings -> Personal Access Tokens.
