@@ -78,6 +78,8 @@ registries:
 - auth: 用于访问该仓库的身份验证凭据。在本例中，用户名为 admin，密码为 passw0rd。
 这个配置文件为 image-cri-shim 提供了所需的信息，以便正确地与 kubelet 和容器运行时（如 containerd）进行通信，以及访问和管理镜像仓库。
 
+注意: image-cri-shim 能够同时兼容 CRI API v1alpha2 和 v1。
+
 ### 管理服务
 
 image-cri-shim 通常作为一个系统服务运行。要管理 image-cri-shim，您可以使用系统服务管理工具（如 systemctl）来启动、停止、重启或查看服务状态。首先，确保您已经正确地安装了 image-cri-shim 并将其配置为一个系统服务。

@@ -77,8 +77,9 @@ This configuration snippet is a YAML-formatted file for configuring image-cri-sh
 In addition, the configuration file contains a registries list for defining other image repositories and their authentication credentials. In this example, there is one additional repository:
 - address: The repository address is http://172.18.1.38:5000.
 - auth: Authentication credentials for accessing the repository. In this example, the username is 'admin' and the password is 'passw0rd'.
-
 This configuration file provides the necessary information for image-cri-shim to correctly communicate with kubelet and the container runtime (such as containerd), as well as access and manage the image repository.
+
+Note: image-cri-shim is compatible with both CRI API v1alpha2 and v1 simultaneously.
 
 ### Service Management
 
