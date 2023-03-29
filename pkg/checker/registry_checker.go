@@ -103,10 +103,9 @@ func (n *RegistryChecker) Check(cluster *v2.Cluster, phase string) error {
 	if err != nil {
 		status.Error = fmt.Errorf("get registry interface error: %w", err).Error()
 		return nil
-	} else {
-		status.Ping = "ok"
-		status.Error = Nil
 	}
+	status.Ping = "ok"
+	status.Error = Nil
 	return nil
 }
 

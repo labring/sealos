@@ -23,18 +23,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd *cobra.Command
-)
-
 func subCommands() []*cobra.Command {
 	return []*cobra.Command{
 		newRegistryImageSaveCmd(),
 	}
 }
 
-func RegisterRootCommand(cmd *cobra.Command, root *cobra.Command) {
-	rootCmd = root
+func RegisterRootCommand(cmd *cobra.Command, _ *cobra.Command) {
 	os.Setenv("TMPDIR", parse.GetTempDir())
 	cmd.SilenceUsage = true
 	cmd.AddCommand(subCommands()...)

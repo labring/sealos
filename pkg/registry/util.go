@@ -21,7 +21,7 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
-	name2 "github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+	name2 "github.com/google/go-containerregistry/pkg/name"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 

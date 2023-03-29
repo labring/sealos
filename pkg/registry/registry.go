@@ -19,7 +19,6 @@ package registry
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	types2 "github.com/containers/image/v5/types"
 	"github.com/docker/docker/api/types"
@@ -30,29 +29,9 @@ import (
 	"github.com/labring/sealos/pkg/utils/http"
 )
 
-type option struct {
-	url        string
-	authConfig types.AuthConfig
-}
-
-var (
-	sharedClients = make(map[option]name.Registry)
-	lock          sync.RWMutex
-)
-
 func NewRegistry(domain string, authConfig types.AuthConfig) (name.Registry, error) {
 	domain = GetRegistryDomain(domain)
 	domain = NormalizeRegistry(domain)
-	key := option{domain, authConfig}
-	lock.Lock()
-	defer lock.Unlock()
-	if v, ok := sharedClients[key]; ok {
-		au, _ := authn.NewDefaultKeychain(map[string]types.AuthConfig{domain: authConfig}).Resolve(v)
-		if _, err := transport.NewWithContext(context.Background(), v, au, http.DefaultSkipVerify, nil); err == nil {
-			return v, nil
-		}
-		delete(sharedClients, key)
-	}
 	ping := func(v name.Registry) error {
 		au, _ := authn.NewDefaultKeychain(map[string]types.AuthConfig{domain: authConfig}).Resolve(v)
 		_, err := transport.NewWithContext(context.Background(), v, au, http.DefaultSkipVerify, nil)
@@ -76,7 +55,6 @@ func NewRegistry(domain string, authConfig types.AuthConfig) (name.Registry, err
 	hubList = append(hubList, hub)
 	for _, hu := range hubList {
 		if err = ping(hu); err == nil {
-			sharedClients[key] = hub
 			return hub, nil
 		}
 	}

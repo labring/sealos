@@ -17,7 +17,7 @@ package registry
 import (
 	"context"
 
-	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/name"
 
 	"github.com/docker/docker/api/types"
 

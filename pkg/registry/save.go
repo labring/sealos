@@ -24,9 +24,9 @@ import (
 	"sync"
 
 	"github.com/labring/sealos/pkg/registry/filesystem"
-	manifest2 "github.com/labring/sealos/pkg/registry/manifest"
+	manifest2 "github.com/labring/sealos/pkg/registry/imagemanifest"
 
-	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/name"
 
 	storagedriver "github.com/distribution/distribution/v3/registry/storage/driver"
 

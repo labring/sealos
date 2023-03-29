@@ -23,7 +23,7 @@ import (
 
 	types2 "github.com/docker/docker/api/types"
 
-	"github.com/labring/sealos/fork/github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/name"
 
 	api "k8s.io/cri-api/pkg/apis/runtime/v1"
 

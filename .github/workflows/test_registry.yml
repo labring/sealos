@@ -37,62 +37,6 @@ jobs:
         with:
           name: sealctl
           path: /usr/bin/sealctl
-  verify-registry:
-    needs: [build]
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Download sealctl
-        uses: actions/download-artifact@v3
-        with:
-          name: sealctl
-          path: /tmp/
-      - name: Download sealos
-        uses: actions/download-artifact@v3
-        with:
-          name: sealos
-          path: /tmp/
-      - name: Verify sealctl
-        run: |
-          sudo chmod a+x /tmp/{sealos,sealctl}
-          sudo mv /tmp/{sealos,sealctl} /usr/bin/
-          sudo sealctl version
-          sudo sealos version
-      - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
-        with:
-          type: prune
-      - name: Auto install k8s using sealos
-        run: |
-          sudo sealos run labring/kubernetes:v1.25.0 --single --debug
-          mkdir -p "$HOME/.kube"
-          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
-          sudo chown "$(whoami)" "$HOME/.kube/config"
-          kubectl get svc
-          kubectl get pod -A
-          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
-          sudo cat /root/.sealos/default/Clusterfile
-      - name: Verify Registry Status
-        run: |
-          sealctl login --username admin --password passw0rd sealos.hub:5000
-          sealctl pull alpine:3
-          sealctl tag alpine:3 sealos.hub:5000/library/alpine:3
-          sealctl push sealos.hub:5000/library/alpine:3
-          sealctl registry status
-      - name: Verify Registry Images
-        run: |
-          sealctl registry images
-          sealctl registry images -n sealos.hub:5000 --filter tag=*5.4* 
-          sealctl registry images -n sealos.hub:5000 --filter name=kube*,tag=3  
-          sealctl registry images -n sealos.hub:5000 --filter name=library/alpine,tag=3  
-          sealctl registry images -n sealos.hub:5000 --filter name=library/alpine,tag=3 --json
-      - name: Verify Registry Image
-        run: |
-          sealctl registry image -n sealos.hub:5000 --image library/alpine:3 
-          sealctl registry image -n sealos.hub:5000 --image library/alpine:3  --json
-      - name: Verify Registry Rmi Image
-        run: |
-          sealctl registry rmi -n sealos.hub:5000 --debug library/alpine:3   
-          sudo sealctl registry prune --debug
   verify-registry-save:
     needs: [build]
     runs-on: ubuntu-20.04
