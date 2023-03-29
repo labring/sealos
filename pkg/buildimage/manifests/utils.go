@@ -59,7 +59,7 @@ func parseImageRefFromLine(s string) string {
 		return ""
 	}
 	imageStr := strutil.TrimQuotes(strings.TrimSpace(s[idx+len(imageIdentity):]))
-	if imageStr == "" {
+	if imageStr == "" || strings.HasPrefix(imageStr, "{{") && strings.HasSuffix(imageStr, "}}") {
 		return ""
 	}
 	named, err := reference.ParseNormalizedNamed(imageStr)
