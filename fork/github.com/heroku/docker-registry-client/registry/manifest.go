@@ -2,10 +2,11 @@ package registry
 
 import (
 	"bytes"
-	"github.com/containers/image/v5/manifest"
-	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"io"
 	"net/http"
+
+	"github.com/containers/image/v5/manifest"
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 
 	"github.com/docker/distribution"
 	"github.com/docker/distribution/manifest/schema1"

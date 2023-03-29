@@ -60,6 +60,6 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		ClusterDesired: cluster,
 		ClusterFile:    Clusterfile,
 		ClusterCurrent: currentCluster,
-		RunNewImages:   nil,
+		RunNewImages:   GetNewImages(currentCluster, cluster),
 	}, nil
 }
