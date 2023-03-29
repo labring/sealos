@@ -9,9 +9,11 @@ on:
     branches: [ "main" ]
     paths:
       - "controllers/metering/**"
+      - "controllers/common/metering/**"
       - ".github/workflows/e2e_metering.yml"
       - "!**/*.md"
       - "!**/*.yaml"
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -22,32 +24,49 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
       - name: Auto install sealos
         uses: labring/sealos-action@v0.0.4
         with:
           sealosVersion: 4.1.5-alpha2
-
       - name: Build ${{ matrix.module }} amd64
         working-directory: controllers/${{ matrix.module }}
         run: |
           GOARCH=amd64 make build
           mv bin/manager bin/controller-${{ matrix.module }}-amd64
           chmod +x bin/controller-${{ matrix.module }}-amd64
+      - name: Build ${{ matrix.module }} arm64
+        working-directory: controllers/${{ matrix.module }}
+        run: |
+          GOARCH=arm64 make build
+          mv bin/manager bin/controller-${{ matrix.module }}-arm64
+          chmod +x bin/controller-${{ matrix.module }}-arm64
       - name: Prepare
         id: prepare
+        working-directory: controllers/${{ matrix.module }}
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-      - name: build   ${{ matrix.module }} main controller image
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller
+          DOCKER_REPO=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller
+          echo docker_repo=${DOCKER_REPO} >> $GITHUB_OUTPUT
+          
+          IMG=${DOCKER_REPO}:dev make pre-deploy
+      - name: Build ${{ matrix.module }} image
+        working-directory: controllers/${{ matrix.module }}
+        run: |
+          sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+          sealos build --debug  -t ${{ steps.prepare.outputs.docker_repo }}:dev .
+          sealos push  ${{ steps.prepare.outputs.docker_repo }}:dev
+
+      - name: build   ${{ matrix.module }} main controller cluster image
         working-directory: controllers/${{ matrix.module }}/deploy
         run: |
           ls -l
-          sealos build --debug  -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster .
-          sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
-          sealos push  ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }}-cluster
+          sealos build --debug  -t ${{ steps.prepare.outputs.docker_repo }}:${{ steps.prepare.outputs.tag_name }}-cluster .
+          sealos push  ${{ steps.prepare.outputs.docker_repo }}:${{ steps.prepare.outputs.tag_name }}-cluster
       - name: docker images
         run: |
           sudo sealos images
@@ -87,14 +106,17 @@ jobs:
           sudo -u root cat /etc/hosts
           sudo -u root systemctl status kubelet
           sudo -u root kubectl get nodes 
-          sudo -u root kubectl get nodes 
           sudo -u root kubectl get pods -A
       - name: Prepare
         id: prepare
         run: |
           TAG=deploy
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-
+      - name: install common metering CRD
+        working-directory: ./controllers/common/metering
+        run: |
+          sudo -u root apt install make
+          make install
       - name: install CRD metering
         working-directory: ./controllers/metering
         run: |
@@ -103,23 +125,14 @@ jobs:
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
+          sudo -u root sealos run docker.io/labring/cert-manager:v1.8.0
           make pre-deploy
           sudo -u root kubectl create namespace account-system
           sudo -u root kubectl create namespace sealos-system
           sudo -u root kubectl create secret generic payment-secret -n account-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
-      - name: install CRD infra
-        working-directory: ./controllers/infra
-        run: |
-          make pre-deploy
-          sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml 
-          sleep 30
-      - name: Setup Golang with cache
-        uses: magnetikonline/action-golang-cache@v3
-        with:
-          go-version: ${{ env.GO_VERSION }}
       -  name: e2e Test
          working-directory: ./controllers/metering
          run: |
            sudo -u root kubectl get pod -A 
-           go test ./testdata/e2e/metering_test.go -v
+           go test -v ./testdata/e2e/metering_test.go -run TestMetering

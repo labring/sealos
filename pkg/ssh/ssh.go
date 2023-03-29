@@ -67,7 +67,7 @@ func getLocalAddresses() *[]net.Addr {
 
 type Client struct {
 	*ssh.ClientConfig
-	printStdout bool
+	*Option
 }
 
 var _ Interface = &Client{}
@@ -97,40 +97,40 @@ func newFromOptions(opt *Option, opts ...OptionFunc) (*Client, error) {
 		Config: ssh.Config{
 			Ciphers: defaultCiphers,
 		},
-		User:            opt.User,
-		Timeout:         opt.Timeout,
+		User:            opt.user,
+		Timeout:         opt.timeout,
 		Auth:            []ssh.AuthMethod{},
-		HostKeyCallback: opt.HostKeyCallback,
+		HostKeyCallback: opt.hostKeyCallback,
 	}
-	if len(opt.Password) > 0 {
-		config.Auth = append(config.Auth, ssh.Password(opt.Password))
+	if len(opt.password) > 0 {
+		config.Auth = append(config.Auth, ssh.Password(opt.password))
 	}
-	if len(opt.RawPrivateKeyData) > 0 {
-		signer, err := parsePrivateKey([]byte(opt.RawPrivateKeyData), []byte(opt.Passphrase))
+	if len(opt.rawPrivateKeyData) > 0 {
+		signer, err := parsePrivateKey([]byte(opt.rawPrivateKeyData), []byte(opt.passphrase))
 		if err != nil {
 			return nil, err
 		}
 		config.Auth = append(config.Auth, ssh.PublicKeys(signer))
-	} else if len(opt.PrivateKey) > 0 {
-		if !fileutils.IsExist(opt.PrivateKey) {
+	} else if len(opt.privateKey) > 0 {
+		if !fileutils.IsExist(opt.privateKey) {
 			logger.Debug("not trying to parse private key file cause it's not exists")
 		} else {
-			signer, err := parsePrivateKeyFile(opt.PrivateKey, opt.Passphrase)
+			signer, err := parsePrivateKeyFile(opt.privateKey, opt.passphrase)
 			if err != nil {
 				return nil, err
 			}
 			config.Auth = append(config.Auth, ssh.PublicKeys(signer))
 		}
 	}
-	return &Client{ClientConfig: config, printStdout: opt.Stdout}, nil
+	return &Client{ClientConfig: config, Option: opt}, nil
 }
 
 func newOptionFromSSH(ssh *v2.SSH, isStdout bool) *Option {
 	opts := []OptionFunc{
-		WithStdout(isStdout),
+		WithStdoutEnable(isStdout),
 	}
 	if len(ssh.User) > 0 {
-		opts = append(opts, WithUser(ssh.User))
+		opts = append(opts, WithUsername(ssh.User))
 	}
 	if len(ssh.Passwd) > 0 {
 		opts = append(opts, WithPassword(ssh.Passwd))

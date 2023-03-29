@@ -43,7 +43,7 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 	if len(certs) != 0 {
 		k.setCertSANS(append(k.getCertSANS(), certs...))
 	}
-	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket); err != nil {
+	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return err
 	}
 	pipeline := []func() error{

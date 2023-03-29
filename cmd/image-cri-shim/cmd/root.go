@@ -31,6 +31,7 @@ import (
 )
 
 var cfg *types.Config
+var shimAuth *types.ShimAuthConfig
 var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
@@ -41,7 +42,7 @@ var rootCmd = &cobra.Command{
 	// has an action associated with it:
 	Version: fmt.Sprintf("%s-%s", version.Get().GitVersion, version.Get().GitCommit),
 	Run: func(cmd *cobra.Command, args []string) {
-		run(cfg)
+		run(cfg, shimAuth)
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
@@ -49,7 +50,11 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("image shim config load error: %w", err)
 		}
-		return cfg.PreProcess()
+		shimAuth, err = cfg.PreProcess()
+		if err != nil {
+			return fmt.Errorf("image shim config pre process error: %w", err)
+		}
+		return nil
 	},
 }
 
@@ -66,9 +71,9 @@ func init() {
 	rootCmd.Flags().StringVarP(&cfgFile, "file", "f", "", "image shim root config")
 }
 
-func run(cfg *types.Config) {
+func run(cfg *types.Config, auth *types.ShimAuthConfig) {
 	logger.Info("socket info shim: %v ,image: %v, registry: %v", cfg.ImageShimSocket, cfg.RuntimeSocket, cfg.Address)
-	imgShim, err := shim.NewShim(cfg)
+	imgShim, err := shim.NewShim(cfg, auth)
 	if err != nil {
 		logger.Fatal("failed to new image_shim, %s", err)
 	}

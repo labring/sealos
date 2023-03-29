@@ -20,7 +20,11 @@ import (
 	"flag"
 	"os"
 
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
 	"github.com/labring/sealos/controllers/account/controllers"
+	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -46,6 +50,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
+	utilruntime.Must(infrav1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -93,6 +98,24 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Payment")
 		os.Exit(1)
 	}
+	if err = (&controllers.DebtReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Debt")
+		os.Exit(1)
+	}
+	//if err = (&accountv1.Debt{}).SetupWebhookWithManager(mgr); err != nil {
+	//	setupLog.Error(err, "unable to create webhook", "webhook", "Debt")
+	//	os.Exit(1)
+	//}
+
+	if err = cache.SetupCache(mgr); err != nil {
+		setupLog.Error(err, "unable to cache controller")
+		os.Exit(1)
+	}
+	mgr.GetWebhookServer().Register("/mutate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -106,7 +129,7 @@ func main() {
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		setupLog.Error(err, "problem running manager")
+		setupLog.Error(err, "fail to run manager")
 		os.Exit(1)
 	}
 }

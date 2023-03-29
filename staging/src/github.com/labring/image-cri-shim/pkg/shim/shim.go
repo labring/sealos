@@ -53,7 +53,7 @@ type shim struct {
 }
 
 // NewShim creates a new shim instance.
-func NewShim(cfg *types.Config) (Shim, error) {
+func NewShim(cfg *types.Config, auth *types.ShimAuthConfig) (Shim, error) {
 	r := &shim{
 		cfg: cfg,
 	}
@@ -69,12 +69,13 @@ func NewShim(cfg *types.Config) (Shim, error) {
 	r.client = clt
 
 	srvopts := server.Options{
-		Timeout:    cfg.Timeout.Duration,
-		Socket:     cfg.ImageShimSocket,
-		User:       -1,
-		Group:      -1,
-		Mode:       0660,
-		CRIConfigs: cfg.CRIConfigs,
+		Timeout:           cfg.Timeout.Duration,
+		Socket:            cfg.ImageShimSocket,
+		User:              -1,
+		Group:             -1,
+		Mode:              0660,
+		CRIConfigs:        auth.CRIConfigs,
+		OfflineCRIConfigs: auth.OfflineCRIConfigs,
 	}
 	srv, err := server.NewServer(srvopts)
 	if err != nil {

@@ -31,11 +31,7 @@ import (
 func (k *KubeadmRuntime) InitMaster0() error {
 	logger.Info("start to init master0...")
 
-	err := k.registryAuth(k.getMaster0IPAndPort())
-	if err != nil {
-		return err
-	}
-	err = k.execHostsAppend(k.getMaster0IPAndPort(), k.getMaster0IP(), k.getAPIServerDomain())
+	err := k.execHostsAppend(k.getMaster0IPAndPort(), k.getMaster0IP(), k.getAPIServerDomain())
 	if err != nil {
 		return fmt.Errorf("add apiserver domain hosts failed %v", err)
 	}
@@ -117,11 +113,6 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	}
 	for _, master := range masters {
 		logger.Info("start to join %s as master", master)
-		err = k.registryAuth(master)
-		if err != nil {
-			return err
-		}
-
 		logger.Info("start to generator cert %s as master", master)
 		err = k.execCert(master)
 		if err != nil {

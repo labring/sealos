@@ -57,7 +57,7 @@ type AccountReconciler struct {
 	client.Client
 	Scheme                 *runtime.Scheme
 	Logger                 logr.Logger
-	AccountSystemNameSpace string
+	AccountSystemNamespace string
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -99,7 +99,7 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		return ctrl.Result{}, nil
 	}
 
-	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNameSpace, payment.Namespace)
+	account, err := r.syncAccount(ctx, payment.Spec.UserID, r.AccountSystemNamespace, payment.Namespace)
 	if err != nil {
 		return ctrl.Result{}, fmt.Errorf("get account failed: %v", err)
 	}
@@ -201,7 +201,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	role := rbacV1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRole-" + name,
-			Namespace: r.AccountSystemNameSpace,
+			Namespace: r.AccountSystemNamespace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &role, func() error {
@@ -220,7 +220,7 @@ func (r *AccountReconciler) syncRoleAndRoleBinding(ctx context.Context, name, na
 	roleBinding := rbacV1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "userAccountRoleBinding-" + name,
-			Namespace: r.AccountSystemNameSpace,
+			Namespace: r.AccountSystemNamespace,
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &roleBinding, func() error {
@@ -261,8 +261,8 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 		return nil
 	}
 
-	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNameSpace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
-	account, err := r.syncAccount(ctx, accountBalance.Spec.Owner, r.AccountSystemNameSpace, "ns-"+accountBalance.Spec.Owner)
+	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNamespace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
+	account, err := r.syncAccount(ctx, accountBalance.Spec.Owner, r.AccountSystemNamespace, "ns-"+accountBalance.Spec.Owner)
 	if err != nil {
 		r.Logger.Error(err, err.Error())
 		return err
@@ -295,9 +295,9 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Logger = ctrl.Log.WithName(controllerName)
 	r.Logger.V(1).Info("init reconcile controller account")
 
-	r.AccountSystemNameSpace = os.Getenv(ACCOUNTNAMESPACEENV)
-	if r.AccountSystemNameSpace == "" {
-		r.AccountSystemNameSpace = DEFAULTACCOUNTNAMESPACE
+	r.AccountSystemNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
+	if r.AccountSystemNamespace == "" {
+		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.Account{}).

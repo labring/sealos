@@ -52,7 +52,28 @@ spec:
                 type: string
               owner:
                 type: string
-              timeStamp:
+              resourceInfoList:
+                items:
+                  properties:
+                    cost:
+                      format: int64
+                      type: integer
+                    namespace:
+                      type: string
+                    resourceName:
+                      type: string
+                    time:
+                      format: int64
+                      type: integer
+                    used:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                  type: object
+                type: array
+              timestamp:
                 format: int64
                 type: integer
             required:
@@ -146,6 +167,76 @@ spec:
                 description: Deduction amount
                 format: int64
                 type: integer
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: account-system/account-serving-cert
+    controller-gen.kubebuilder.io/version: v0.8.0
+  name: debts.account.sealos.io
+spec:
+  conversion:
+    strategy: Webhook
+    webhook:
+      clientConfig:
+        service:
+          name: account-webhook-service
+          namespace: account-system
+          path: /convert
+      conversionReviewVersions:
+      - v1
+  group: account.sealos.io
+  names:
+    kind: Debt
+    listKind: DebtList
+    plural: debts
+    singular: debt
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Debt is the Schema for the debts API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: DebtSpec defines the desired state of Debt
+            properties:
+              userName:
+                type: string
+            type: object
+          status:
+            description: DebtStatus defines the observed state of Debt
+            properties:
+              lastUpdateTimestamp:
+                format: int64
+                type: integer
+              status:
+                type: string
             type: object
         type: object
     served: true
@@ -332,6 +423,32 @@ rules:
 - apiGroups:
   - account.sealos.io
   resources:
+  - debts
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
+  - debts/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - account.sealos.io
+  resources:
   - payments
   verbs:
   - create
@@ -355,6 +472,30 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 - apiGroups:
   - rbac.authorization.k8s.io
   resources:
@@ -483,6 +624,19 @@ spec:
   selector:
     control-plane: controller-manager
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-webhook-service
+  namespace: account-system
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 9443
+  selector:
+    control-plane: controller-manager
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -504,27 +658,6 @@ spec:
     spec:
       containers:
       - args:
-        - --secure-listen-address=0.0.0.0:8443
-        - --upstream=http://127.0.0.1:8080/
-        - --logtostderr=true
-        - --v=0
-        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 8443
-          name: https
-          protocol: TCP
-        resources:
-          limits:
-            cpu: 500m
-            memory: 512Mi
-          requests:
-            cpu: 5m
-            memory: 64Mi
-        securityContext:
-          allowPrivilegeEscalation: false
-          runAsNonRoot: true
-      - args:
         - --health-probe-bind-address=:8081
         - --metrics-bind-address=127.0.0.1:8080
         - --leader-elect
@@ -533,8 +666,12 @@ spec:
         env:
         - name: ACCOUNT_NAMESPACE
           value: sealos-system
+        - name: NAMESPACE_NAME
+          value: user-system
         - name: NEW_ACCOUNT_AMOUNT
-          value: "500"
+          value: "50000"
+        - name: WHITELIST
+          value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1
         envFrom:
         - secretRef:
             name: payment-secret
@@ -547,6 +684,10 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
         readinessProbe:
           httpGet:
             path: /readyz
@@ -562,7 +703,88 @@ spec:
             memory: 64Mi
         securityContext:
           allowPrivilegeEscalation: false
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      - args:
+        - --secure-listen-address=0.0.0.0:8443
+        - --upstream=http://127.0.0.1:8080/
+        - --logtostderr=true
+        - --v=0
+        image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        imagePullPolicy: IfNotPresent
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 5m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
       securityContext:
         runAsNonRoot: true
       serviceAccountName: account-controller-manager
       terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: account-serving-cert
+  namespace: account-system
+spec:
+  dnsNames:
+  - account-webhook-service.account-system.svc
+  - account-webhook-service.account-system.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: account-selfsigned-issuer
+  secretName: webhook-server-cert
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: account-selfsigned-issuer
+  namespace: account-system
+spec:
+  selfSigned: {}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: account-system/account-serving-cert
+  name: account-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: account-webhook-service
+      namespace: account-system
+      path: /mutate-v1-sealos-cloud
+  failurePolicy: Ignore
+  name: mpod.kb.io
+  rules:
+  - apiGroups:
+    - '*'
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - '*'
+  sideEffects: None

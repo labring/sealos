@@ -4,8 +4,6 @@
 resources:
 - bases/metering.sealos.io_meterings.yaml
 - bases/metering.sealos.io_podresources.yaml
-- bases/metering.sealos.io_extensionresourceprices.yaml
-- bases/metering.sealos.io_resources.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

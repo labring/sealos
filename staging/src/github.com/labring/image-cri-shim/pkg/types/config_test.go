@@ -26,7 +26,7 @@ func TestUnmarshal(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	if err = cfg.PreProcess(); err != nil {
+	if _, err = cfg.PreProcess(); err != nil {
 		t.Error(err)
 		return
 	}

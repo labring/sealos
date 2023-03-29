@@ -3,10 +3,13 @@ sidebar_position: 3
 ---
 
 # Customize a Cluster by Build image
+This guide explains how to customize a Kubernetes cluster by building a custom image using `kubeadm config`. 
 
-1. Run `sealos build` to build a Customize image by kubeadm config, Example:
+## Building a Customize Image
 
-```shell
+To build a custom image, run the following command:
+
+```bash
 $ mkdir -p /tmp/buildimage
   cat > /tmp/buildimage/kubeadm.yml <<EOF
   apiVersion: kubeadm.k8s.io/v1beta2
@@ -14,18 +17,21 @@ $ mkdir -p /tmp/buildimage
   networking:
     serviceSubnet: "100.55.0.0/16"
     podSubnet: "10.160.0.0/12"
-  EOF
-  cat > /tmp/buildimage/Kubefile <<EOF
+EOF
+
+$ cat > /tmp/buildimage/Kubefile <<EOF
   FROM labring/kubernetes-docker:v1.25.0
   COPY kubeadm.yml etc/
-  EOF
-  sudo sealos build --debug -t hack:dev  /tmp/buildimage
+EOF
+
+$ sudo sealos build --debug -t hack:dev  /tmp/buildimage
 ```
 
-2. Then you can Append `application configuration` to Clusterfile.For example, if you want to change the CIDR range of pods, you should change the `spec.data.spec.calicoNetwork.ipPools.cidr` fields. The final Clusterfile will be like this:
+In this example, we create a directory `/tmp/buildimage` and create a `kubeadm.yml` file inside it that specifies the desired configuration for the image. We then create a `Kubefile` that specifies the base image and copies the `kubeadm.yml` file into the image. We use `sealos build` to build an image named `hack:dev` from the contents of the `/tmp/buildimage` directory.
 
-<details>
-<summary>Clusterfile</summary>
+## Appending an Application Configuration to Clusterfile
+
+Next, we will append an application configuration to `Clusterfile`. For example, if you want to change the CIDR range of pods, you should change the `spec.data.spec.calicoNetwork.ipPools.cidr` fields. The final `Clusterfile` will be like this:
 
 ```yaml
 apiVersion: apps.sealos.io/v1beta1
@@ -81,11 +87,13 @@ spec:
           interface: "eth.*|en.*"
 ```
 
-</details>
+In this example, we have appended a configuration for the `calico` application to `Clusterfile`. This configuration specifies the CIDR range of pods and other options necessary for the application to run.
 
-3. Run `sealos apply -f Clusterfile` to install the cluster. After the cluster is installed, Clusterfile will be saved in the `.sealos/default/Clusterfile` directory. You can modify the Clusterfile to customize the cluster.
+## Installing the Cluster
 
-**Notes：**
+Finally, we can use `sealos apply -f Clusterfile` to install the cluster. After the cluster is installed, `Clusterfile` will be saved in the `.sealos/default/Clusterfile` directory. You can modify the `Clusterfile` to customize the cluster further.
 
-- You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or `kubeadm config print init-defaults` command to print kubeadm configuration.
-- Experimental usage please check [CLI](https://www.sealos.io/docs/cli/apply#experimental)
+**⚠️ Notes:**
+
++ You can refer to the [official docs](https://kubernetes.io/docs/reference/config-api/kubeadm-config.v1beta2/) or use the `kubeadm config print init-defaults` command to print kubeadm configuration.
++ For experimental usage, see the [CLI documentation](https://www.sealos.io/docs/cli/apply#experimental).

@@ -17,6 +17,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/service/hub/api"
 	"github.com/labring/sealos/service/hub/auth"
+	"github.com/labring/sealos/service/hub/utils"
 )
 
 var (
@@ -28,6 +29,7 @@ type AuthServer struct {
 	config         *Config
 	authenticators api.Authenticator
 	authorizers    api.Authorizer
+	reqLimiter     *utils.Limiter
 }
 
 func NewAuthServer(c *Config) (*AuthServer, error) {
@@ -35,6 +37,8 @@ func NewAuthServer(c *Config) (*AuthServer, error) {
 		config:         c,
 		authenticators: auth.NewSealosAuthn(),
 		authorizers:    auth.NewSealosAuthz(),
+		// NewLimiter will start a go routine to reset reqLimiter
+		reqLimiter: utils.NewLimiter(c.Server.MaxRequestsPerIP, c.Server.MaxRequestsPerAccount, c.Server.ReqLimitersResetInterval),
 	}
 	return as, nil
 }
@@ -291,7 +295,7 @@ func (as *AuthServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (as *AuthServer) doIndex(rw http.ResponseWriter, req *http.Request) {
+func (as *AuthServer) doIndex(rw http.ResponseWriter, _ *http.Request) {
 	rw.Header().Set("Content-Type", "text/html; charset=utf-8")
 	// nosemgrep go.lang.security.audit.xss.no-fprintf-to-responsewriter.no-fprintf-to-responsewriter
 	fmt.Fprintf(rw, "<h1>%s</h1>\n", as.config.Token.Issuer)
@@ -319,6 +323,13 @@ func (as *AuthServer) doAuth(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	ar.Labels = labels
+
+	// Check if the request is coming from a valid IP and account
+	if !as.allowRequest(ar, (client == nil)) {
+		glog.Infof("Too many pull requests from %s, %s", ar.RemoteIP.String(), ar.Account)
+		http.Error(rw, "Too many pull requests", http.StatusTooManyRequests)
+		return
+	}
 
 	if len(ar.Scopes) > 0 {
 		ares, err = as.Authorize(client, ar)
@@ -357,4 +368,29 @@ func (as *AuthServer) Stop() {
 // Copy-pasted from libtrust where it is private.
 func joseBase64UrlEncode(b []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(b), "=")
+}
+
+// allowRequest checks if the request is coming from a valid IP and account
+func (as *AuthServer) allowRequest(ar *AuthRequest, isAnomaly bool) bool {
+	if len(ar.Scopes) == 0 {
+		return true
+	}
+	for _, cidr := range as.config.Server.WhiteIPCidrList {
+		if utils.IsIPInCIDR(ar.RemoteIP, cidr) {
+			return true
+		}
+	}
+	for _, user := range as.config.Server.WhiteUserList {
+		if ar.Account == user {
+			return true
+		}
+	}
+
+	// anomaly user pull/push request, check IP
+	if isAnomaly {
+		return as.reqLimiter.AllowIP(ar.RemoteIP.String())
+	}
+
+	// nomal user pull/push request, check account name
+	return as.reqLimiter.AllowUser(ar.User)
 }

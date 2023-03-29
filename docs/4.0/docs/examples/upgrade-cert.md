@@ -47,7 +47,7 @@ root@default-node-0:~# sealos cert --alt-names sealos.io
 2023-01-13T01:10:51 info start to copy etc pki files to masters
 [1/1]copying files to 192.168.64.64:22 100% [===============] (14/22, 3 it/s)2023-01-13T01:10:57 info start to save new kubeadm config...
 2023-01-13T01:10:57 info start to upload kubeadm config for inCluster ...
-2023-01-13T01:10:57 info src and dst is same path , skip copy /root/.sealos/default/etc/kubeadm-update.yml
+2023-01-13T01:10:57 info src and dst is same path , skip copy /root/.sealos/default/etc/kubeadm-update.yaml
 [upload-config] Storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
 2023-01-13T01:10:57 info delete pod apiserver from crictl
 Stopped sandbox f769134500e67

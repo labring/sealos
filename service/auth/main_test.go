@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestAuthServer(t *testing.T) {
+func TestAuthServer(_ *testing.T) {
 	os.Args = append(os.Args, "-config", "./auth.yaml")
 
 	main()

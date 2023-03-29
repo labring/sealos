@@ -4,6 +4,10 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
+	github.com/labring/sealos v0.0.0
+	github.com/labring/sealos/controllers/infra v0.0.0
+	github.com/labring/sealos/controllers/metering v0.0.0
+	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/mdp/qrterminal v1.0.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.23.0
@@ -70,6 +74,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -84,14 +89,9 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require (
-	github.com/labring/sealos v0.0.0
-	github.com/labring/sealos/controllers/metering v0.0.0
-	github.com/labring/sealos/controllers/user v0.0.0
-)
-
 replace (
 	github.com/labring/sealos => ../../
+	github.com/labring/sealos/controllers/infra => ../../controllers/infra
 	github.com/labring/sealos/controllers/metering => ../../controllers/metering
 	github.com/labring/sealos/controllers/user => ../../controllers/user
 )

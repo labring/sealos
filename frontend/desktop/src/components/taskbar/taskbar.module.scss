@@ -123,3 +123,13 @@
     opacity: 0.8;
   }
 }
+
+.notification {
+  font-size: 10px;
+  position: absolute;
+  right: -6px;
+  top: 10px;
+  &[data-show='true'] {
+    color: #436790;
+  }
+}

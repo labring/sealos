@@ -39,14 +39,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return { key: `user-${item.metadata.name}`, ...item.spec };
     });
 
-    let apps = [...defaultArr, ...userArr]
+    let apps = [...defaultArr, ...userArr];
 
     // if (process.env.NODE_ENV === 'development') {
     //   apps = apps.concat(MockInstalAPPs)
     // }
-
     JsonResp(apps, res);
   } catch (err) {
+    // console.log(err);
     JsonResp([], res);
   }
 }

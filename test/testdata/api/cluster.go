@@ -16,12 +16,14 @@ package api
 
 import (
 	"context"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func EnsureNamespace(name string) *v1.Namespace {
+	defer time.Sleep(time.Second * 2)
 	client := GetDefaultKubernetesClient()
 	ns, err := client.CoreV1().Namespaces().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {

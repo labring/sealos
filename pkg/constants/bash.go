@@ -26,7 +26,6 @@ const (
 	renderClean         = "clean"
 	renderInitRegistry  = "init-registry"
 	renderCleanRegistry = "clean-registry"
-	renderAuth          = "auth"
 	renderCheck         = "check"
 	DefaultChmodBash    = "cd %s && chmod -R 0755 *"
 )
@@ -34,7 +33,6 @@ const (
 type Bash interface {
 	InitBash(host string) string
 	CleanBash(host string) string
-	AuthBash(host string) string
 	InitRegistryBash(host string) string
 	CleanRegistryBash(host string) string
 	CheckBash(host string) string
@@ -68,10 +66,6 @@ func (b *bash) InitBash(host string) string {
 
 func (b *bash) CleanBash(host string) string {
 	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderClean))
-}
-
-func (b *bash) AuthBash(host string) string {
-	return b.WrapBash(host, b.getFromRenderContextOrDefault(renderAuth))
 }
 
 func (b *bash) InitRegistryBash(host string) string {

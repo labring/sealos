@@ -18,6 +18,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/pkg/bootstrap"
+
 	"github.com/labring/sealos/pkg/utils/strings"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -60,6 +62,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 	todoList = append(todoList,
 		d.PreProcess,
 		d.Reset,
+		d.UndoBootstrap,
 		d.UnMountRootfs,
 		d.UnMountImage,
 		d.CleanFS,
@@ -71,6 +74,13 @@ func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
 	return SyncClusterStatus(cluster, d.Buildah, true)
 }
 
+func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {
+	logger.Info("Executing pipeline Bootstrap in DeleteProcessor")
+	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
+	bs := bootstrap.New(cluster)
+	return bs.Delete(hosts...)
+}
+
 func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
 	runTime, err := runtime.NewDefaultRuntime(cluster, d.ClusterFile.GetKubeadmConfig())
 	if err != nil {
@@ -79,7 +89,7 @@ func (d *DeleteProcessor) Reset(cluster *v2.Cluster) error {
 	return runTime.Reset()
 }
 
-func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
+func (d *DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	hosts := append(cluster.GetMasterIPAndPortList(), cluster.GetNodeIPAndPortList()...)
 	if strings.NotInIPList(cluster.GetRegistryIPAndPort(), hosts) {
 		hosts = append(hosts, cluster.GetRegistryIPAndPort())
@@ -92,7 +102,7 @@ func (d DeleteProcessor) UnMountRootfs(cluster *v2.Cluster) error {
 	return fs.UnMountRootfs(cluster, hosts)
 }
 
-func (d DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
+func (d *DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, mount := range cluster.Status.Mounts {
 		mount := mount
@@ -103,7 +113,7 @@ func (d DeleteProcessor) UnMountImage(cluster *v2.Cluster) error {
 	return eg.Wait()
 }
 
-func (d DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
+func (d *DeleteProcessor) CleanFS(cluster *v2.Cluster) error {
 	workDir := constants.ClusterDir(cluster.Name)
 	dataDir := constants.NewData(cluster.Name).Homedir()
 	return fileutil.CleanFiles(workDir, dataDir)

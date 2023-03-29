@@ -17,7 +17,10 @@
     "not op_mini all"
   ],
   "dependencies": {
+    "@chakra-ui/react": "^2.5.1",
     "@ctrl/golang-template": "^1.4.1",
+    "@emotion/react": "^11.10.6",
+    "@emotion/styled": "^11.10.6",
     "@fluentui/react-components": "^9.7.4",
     "@fluentui/react-icons": "^2.0.190",
     "@fortawesome/fontawesome-svg-core": "^6.2.1",
@@ -31,6 +34,7 @@
     "clsx": "^1.2.1",
     "dayjs": "^1.11.7",
     "fast-json-patch": "^3.1.1",
+    "framer-motion": "^10.2.5",
     "github-markdown-css": "^5.1.0",
     "immer": "^9.0.16",
     "js-yaml": "^4.1.0",

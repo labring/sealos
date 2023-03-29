@@ -63,7 +63,6 @@ func (n *CRIShimChecker) Check(_ *v2.Cluster, phase string) error {
 			delete(status.Config, "CRIVersion")
 		}
 		status.Config["RegistryAuth"] = shimCfg.Auth
-		status.Config["RootfsImageList"] = shimCfg.Image
 
 		if dir := status.Config["RootfsImageList"]; dir != "" {
 			images, err := buildimage.ParseShimImages(dir)
