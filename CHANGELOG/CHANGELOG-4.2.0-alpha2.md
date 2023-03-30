@@ -68,3 +68,5 @@ sealos run labring/kubernetes:v1.24.0 labring/calico:v3.22.1 --masters 192.168.6
 * 111e7ec4 - zhujingyang - Request failed to switch config (https://github.com/labring/sealos/pull/#2835)
 * de1a400f - zhujingyang - Change 1 RMB equals 10000 (https://github.com/labring/sealos/pull/#2839)
 * abc607f4 - fengxsong - fix: json tag of ssh field (https://github.com/labring/sealos/pull/#2830)
+
+**Full Changelog**: https://github.com/labring/sealos/compare/v4.2.0-alpha1...v4.2.0-alpha2

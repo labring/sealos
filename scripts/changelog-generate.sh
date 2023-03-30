@@ -81,6 +81,8 @@ EOF
 
 git log --pretty=format:"* %h - %an - %s" v${PREV_VERSION}...v${VERSION} | sed -E 's/#[0-9]+/https:\/\/github.com\/labring\/sealos\/pull\/&/g' >>  CHANGELOG/CHANGELOG-${VERSION}.md
 
+echo -e "\n\n**Full Changelog**: https://github.com/labring/sealos/compare/v${PREV_VERSION}...v${VERSION}" >>  CHANGELOG/CHANGELOG-${VERSION}.md
+
 
 echo "# Changelog" > CHANGELOG/CHANGELOG.md
 echo -e "\nAll notable changes to this project will be documented in this file.\n" >> CHANGELOG/CHANGELOG.md
