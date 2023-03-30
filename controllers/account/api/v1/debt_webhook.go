@@ -69,7 +69,7 @@ func init() {
 	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
+	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it

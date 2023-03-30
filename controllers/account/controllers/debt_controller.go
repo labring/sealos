@@ -75,10 +75,14 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	} else if err != nil && client.IgnoreNotFound(err) == nil {
 		if err := r.syncDebt(ctx, account, debt); err != nil {
+			return ctrl.Result{}, err
+		} else {
+			r.Logger.Info("create or update debt success", "debt", debt)
 			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 		}
 	}
 
+	r.Logger.Info("debt info", "debt", debt)
 	if debt.Status.AccountDebtStatus == "" {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
 	}

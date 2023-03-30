@@ -82,7 +82,7 @@ func TestDebt(t *testing.T) {
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
-
+			time.Sleep(10 * time.Second)
 			debt, err := accountapi.GetDebt(AccountSystemNamespace, DefaultOwner)
 			if err != nil {
 				t.Fatalf("get debt error %v", err.Error())
