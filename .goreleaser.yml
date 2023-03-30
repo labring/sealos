@@ -236,8 +236,11 @@ publishers:
       - packages
     dir: "{{ dir .ArtifactPath }}"
     cmd: |
-      curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
-
+      if [[ "{{ .Tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        curl -F package=@{{ .ArtifactName }} https://{{ .Env.FURY_TOKEN }}@push.fury.io/{{ .Env.USERNAME }}/
+      else
+        echo "Skipping deployment: Non-production release detected"
+      fi
 archives:
   - id: archive
     format: tar.gz
@@ -252,6 +255,6 @@ checksum:
   algorithm: sha256
   ids:
     - archive
-  
+
 snapshot:
   name_template: "{{ .Tag }}-next"
