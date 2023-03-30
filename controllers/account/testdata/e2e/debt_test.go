@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"github.com/labring/sealos/controllers/account/controllers"
 	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
@@ -83,7 +84,7 @@ func TestDebt(t *testing.T) {
 				t.Fatalf(err.Error())
 			}
 			time.Sleep(10 * time.Second)
-			debt, err := accountapi.GetDebt(AccountSystemNamespace, DefaultOwner)
+			debt, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner))
 			if err != nil {
 				t.Fatalf("get debt error %v", err.Error())
 			}
@@ -118,7 +119,7 @@ func clear() {
 		log.Println(err)
 	}
 
-	err = baseapi.DeleteCRD(AccountSystemNamespace, DefaultOwner, accountapi.DebtYaml)
+	err = baseapi.DeleteCRD(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner), accountapi.DebtYaml)
 	if err != nil {
 		log.Println(err)
 	}
