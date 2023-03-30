@@ -26,7 +26,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 
-	//	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
@@ -58,8 +57,8 @@ const (
 )
 
 const (
-	DomainSuffix = ".cloud.sealos.io"
-	AuthType     = "basicAuth"
+	DefaultDomainSuffix = ".cloud.sealos.io"
+	AuthType            = "basicAuth"
 )
 
 // BytebaseReconciler reconciles a Bytebase object
@@ -74,6 +73,7 @@ type BytebaseReconciler struct {
 	Bc              api.Client // bytebase client
 	DefaultEmail    string
 	DefaultPassword string
+	RootDomain      string
 }
 
 //+kubebuilder:rbac:groups=db.sealos.io,resources=bytebases,verbs=get;list;watch;create;update;patch;delete

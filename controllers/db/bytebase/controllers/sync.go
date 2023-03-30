@@ -19,7 +19,8 @@ import (
 
 func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv1.Bytebase, hostname string) error {
 	var err error
-	host := hostname + DomainSuffix
+	domainSuffix := DefaultDomainSuffix
+	host := hostname + domainSuffix
 	switch bb.Spec.IngressType {
 	case bbv1.Nginx:
 		err = r.syncNginxIngress(ctx, bb, host)
@@ -42,7 +43,10 @@ func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Byte
 		if err != nil {
 			return err
 		}
-		wholeSnippet := `more_clear_headers "X-Frame-Options:"; more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io"; more_set_headers "X-Xss-Protection: 1; mode=block"; %s if ($request_uri ~* \.(js|css|gif|jpe?g|png)) { expires 30d; add_header Cache-Control "public";}`
+		rootDomain := r.RootDomain
+		// generate default Nginx configuration snippet without cookies
+		wholeSnippet := generateDefaultNginxConfigSnippet(rootDomain)
+		// add Set-Cookie configuration for Nginx
 		snippet := ""
 		for _, cookie := range cookies {
 			snippet += fmt.Sprintf("add_header Set-Cookie \"%s\"; ", cookie)
@@ -195,7 +199,7 @@ func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv1.Byteba
 
 		externalURL := bb.Spec.ExternalURL
 		if externalURL == "" {
-			externalURL = Protocol + deployment.Spec.Template.Spec.Hostname + DomainSuffix
+			externalURL = Protocol + deployment.Spec.Template.Spec.Hostname + DefaultDomainSuffix
 			bb.Spec.ExternalURL = externalURL
 			if err := r.Update(ctx, bb); err != nil {
 				return err

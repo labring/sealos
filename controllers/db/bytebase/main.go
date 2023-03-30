@@ -31,9 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	dbsealosiov1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
-	"github.com/labring/sealos/controllers/db/bytebase/controllers"
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
+
+	dbsealosiov1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
+	configv2 "github.com/labring/sealos/controllers/db/bytebase/api/v2"
+	"github.com/labring/sealos/controllers/db/bytebase/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -43,6 +45,7 @@ var (
 )
 
 const (
+	DefaultRootDomain      = "cloud.sealos.io"
 	DefaultSecretName      = "wildcard-cloud-sealos-io-cert"
 	DefaultSecretNamespace = "sealos-system"
 )
@@ -52,10 +55,20 @@ func init() {
 
 	utilruntime.Must(dbsealosiov1.AddToScheme(scheme))
 	utilruntime.Must(acidv1.AddToScheme(scheme))
+	utilruntime.Must(configv2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
-func getSecretName() string {
+// The following method return the default value from both the code and the environment variable
+func getDefaultRootDomain() string {
+	rootDomain := os.Getenv("ROOT_DOMAIN")
+	if rootDomain == "" {
+		return DefaultRootDomain
+	}
+	return rootDomain
+}
+
+func getDefaultSecretName() string {
 	secretName := os.Getenv("SECRET_NAME")
 	if secretName == "" {
 		return DefaultSecretName
@@ -63,7 +76,7 @@ func getSecretName() string {
 	return secretName
 }
 
-func getSecretNamespace() string {
+func getDefaultSecretNamespace() string {
 	secretNamespace := os.Getenv("SECRET_NAMESPACE")
 	if secretNamespace == "" {
 		return DefaultSecretNamespace
@@ -72,9 +85,12 @@ func getSecretNamespace() string {
 }
 
 func main() {
+	// init the flags
+	var configFile string
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	flag.StringVar(&configFile, "config", "", "The controller will load its initial configuration from this file. "+"Omit this flag to use the default configuration values. "+"Command-line flags override configuration from this file.")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -85,31 +101,46 @@ func main() {
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
-
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// set up manager options
+	options := ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "043ebde6.db.sealos.io",
-		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
-		// when the Manager ends. This requires the binary to immediately end when the
-		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
-		// speeds up voluntary leader transitions as the new leader don't have to wait
-		// LeaseDuration time first.
-		//
-		// In the default scaffold provided, the program ends immediately after
-		// the manager stops, so would be fine to enable this option. However,
-		// if you are doing or is intended to do any operation such as perform cleanups
-		// after the manager stops then its usage might be unsafe.
-		// LeaderElectionReleaseOnCancel: true,
-	})
+	}
+	// read the config file
+	var err error
+	ctrlConfig := configv2.BytebaseControllerConfig{}
+	if configFile != "" {
+		// AndFrom will use a supplied type and convert to Options any options already set on Options will be ignored, this is used to allow cli flags to override anything specified in the config file.
+		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+		if err != nil {
+			setupLog.Error(err, "unable to load the config file")
+			os.Exit(1)
+		}
+	}
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// init configuration for the reconciler
+	rootDomain := ctrlConfig.RootDomain
+	if rootDomain == "" {
+		rootDomain = getDefaultRootDomain()
+	}
+	secretName := ctrlConfig.SecretName
+	if secretName == "" {
+		secretName = getDefaultSecretName()
+	}
+	secretNameSpace := ctrlConfig.SecretNamespace
+	if secretNameSpace == "" {
+		secretNameSpace = getDefaultSecretNamespace()
 	}
 
 	if err = (&controllers.BytebaseReconciler{
@@ -120,8 +151,9 @@ func main() {
 		// Logger: mgr.GetLogger(),
 		Config:          mgr.GetConfig(),
 		Recorder:        mgr.GetEventRecorderFor("sealos-bytebase-controller"),
-		SecretName:      getSecretName(),
-		SecretNamespace: getSecretNamespace(),
+		SecretName:      secretName,
+		SecretNamespace: secretNameSpace,
+		RootDomain:      rootDomain,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Bytebase")
 		os.Exit(1)
