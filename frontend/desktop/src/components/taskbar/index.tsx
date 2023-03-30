@@ -68,11 +68,13 @@ const Taskbar = () => {
             {notificationAmount || ''}
           </div>
         </div>
-        <Notification
-          isShow={showNotification}
-          onClose={() => setShowNotification(false)}
-          onAmount={(amount) => setNotificationAmount(amount)}
-        />
+        {showNotification && (
+          <Notification
+            isShow={showNotification}
+            onClose={() => setShowNotification(false)}
+            onAmount={(amount) => setNotificationAmount(amount)}
+          />
+        )}
 
         <TimeZone />
 
