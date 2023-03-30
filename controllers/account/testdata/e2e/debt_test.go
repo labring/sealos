@@ -12,7 +12,7 @@ import (
 
 const (
 	AccountNamespace        = "sealos-system"
-	AccountSystemNamespace  = "sealos-system"
+	AccountSystemNamespace  = "account-system"
 	TestNamespace           = "ns-metering-test"
 	DefaultOwner            = "metering-test"
 	PodName                 = "nginx-test"
