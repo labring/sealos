@@ -19,7 +19,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/labring/sealos/pkg/registry/cmd"
+	"github.com/labring/sealos/pkg/registry/commands"
 )
 
 func init() {
@@ -31,6 +31,6 @@ func newRegistryImageCmd() *cobra.Command {
 		Use:   "registry",
 		Short: "registry images manager",
 	}
-	cmd.RegisterRootCommand(registryImageCmd, rootCmd)
+	commands.RegisterRootCommand(registryImageCmd, rootCmd)
 	return registryImageCmd
 }

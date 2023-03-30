@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cmd
+package commands
 
 import (
 	"os"
@@ -23,23 +23,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd *cobra.Command
-)
-
 func subCommands() []*cobra.Command {
 	return []*cobra.Command{
-		newRegistryStatusCmd(),
-		newRegistryListImageCmd(),
-		newRegistryGetImageCmd(),
-		newRegistryImageRmiCmd(),
-		newRegistryPruneCmd(),
 		newRegistryImageSaveCmd(),
 	}
 }
 
-func RegisterRootCommand(cmd *cobra.Command, root *cobra.Command) {
-	rootCmd = root
+func RegisterRootCommand(cmd *cobra.Command, _ *cobra.Command) {
 	os.Setenv("TMPDIR", parse.GetTempDir())
 	cmd.SilenceUsage = true
 	cmd.AddCommand(subCommands()...)
