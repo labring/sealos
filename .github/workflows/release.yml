@@ -37,7 +37,7 @@ jobs:
           VERSION: ${{ steps.prepare.outputs.tag_name }}
           USERNAME: ${{ github.repository_owner }}
         run: |
-          cd scripts/release && sh note.sh
+          cd scripts/release && bash note.sh
 
       - name: Install Dependencies
         run: |
