@@ -68,7 +68,7 @@ func TestDebt(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)
 			time.Sleep(3 * time.Second)
-			baseapi.CreateCRD(api.PodYaml, TestNamespace, PodName)
+			baseapi.CreateCRD(TestNamespace, PodName, api.PodYaml)
 			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
 
 			// should create deployment、daemonset replicaset
