@@ -93,11 +93,16 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 			Name:      meteringcommonv1.ExtensionResourcePricePrefix + meteringv1.PodResourcePricePrefix,
 		},
 	}
-
 	r.Logger.Info("create or update extensionResourcePrice", "podController name", podController.Name, "podController Resources", podController.Spec.Resources)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, extensionResourcesPrice, func() error {
 		extensionResourcesPrice.Spec.Resources = podController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = podController.Spec.ResourceName
+		extensionResourcesPrice.Spec.GroupVersionKinds = []meteringcommonv1.GroupVersionKind{{
+			Group:   "",
+			Version: "v1",
+			Kind:    "pod",
+		},
+		}
 		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
 		return nil
 	}); err != nil {

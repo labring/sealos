@@ -20,7 +20,6 @@ data:
 
 ### 部署方式
 ```
-sealos run docker.io/labring/sealos-account-controller:dev
-
+sealos run docker.io/labring/sealos-account-controller:deploy-cluster --env MEDIUM_BLOCK_WAIT_SECOND=345600 --env SMALL_BLOCK_WAIT_SECOND=259200
 ```
 

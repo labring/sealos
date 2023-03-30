@@ -473,6 +473,30 @@ rules:
   - patch
   - update
 - apiGroups:
+  - app
+  resources:
+  - daemonSets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -485,9 +509,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - ""
   resources:
-  - infras
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - extensionresourceprices
   verbs:
   - create
   - delete
@@ -672,9 +708,14 @@ spec:
           value: "50000"
         - name: WHITELIST
           value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1
+        - name: ACCOUNT_SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         envFrom:
-        - secretRef:
-            name: payment-secret
+        - configMapRef:
+            name: account-manager-configmap
         image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:

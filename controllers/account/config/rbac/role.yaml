@@ -108,6 +108,30 @@ rules:
   - patch
   - update
 - apiGroups:
+  - app
+  resources:
+  - daemonSets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - app
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -120,9 +144,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - ""
   resources:
-  - infras
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - extensionresourceprices
   verbs:
   - create
   - delete

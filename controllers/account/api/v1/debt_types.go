@@ -35,10 +35,10 @@ const (
 
 type DebtStatusType string
 
-var DefaultDebtConfig = map[string]int64{
-	"Normal": NormalPrice,
-	"Small":  SmallBlockWaitSecond,
-	"Medium": MediumBlockWaitSecond,
+var DefaultDebtConfig = map[DebtStatusType]int64{
+	DebtStatusNormal: NormalPrice,
+	DebtStatusSmall:  SmallBlockWaitSecond,
+	DebtStatusMedium: MediumBlockWaitSecond,
 }
 
 // DebtSpec defines the desired state of Debt
