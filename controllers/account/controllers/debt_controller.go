@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"strconv"
 	"time"
@@ -48,6 +49,7 @@ type DebtReconciler struct {
 	Scheme *runtime.Scheme
 	logr.Logger
 	accountSystemNamespace string
+	accountNamespace       string
 }
 
 var DebtConfig = accountv1.DefaultDebtConfig
@@ -64,24 +66,32 @@ var DebtConfig = accountv1.DefaultDebtConfig
 //+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	debt := &accountv1.Debt{}
 	account := &accountv1.Account{}
-	if err := r.Get(ctx, req.NamespacedName, account); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, account); err == nil {
+		if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(account.Name), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
+			return ctrl.Result{}, err
+		} else if err != nil && client.IgnoreNotFound(err) == nil {
+			if err := r.syncDebt(ctx, account, debt); err != nil {
+				return ctrl.Result{}, err
+			}
+			r.Logger.Info("create or update debt success", "debt", debt)
+		}
+	} else if client.IgnoreNotFound(err) != nil {
 		r.Logger.Error(err, err.Error())
 		return ctrl.Result{}, err
 	}
 
-	debt := &accountv1.Debt{}
-	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(account.Name), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
-		return ctrl.Result{}, err
-	} else if err != nil && client.IgnoreNotFound(err) == nil {
-		if err := r.syncDebt(ctx, account, debt); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, debt); err == nil {
+		if err := r.Get(ctx, types.NamespacedName{Name: debt.Spec.UserName, Namespace: r.accountNamespace}, account); err != nil {
 			return ctrl.Result{}, err
-		} else {
-			r.Logger.Info("create or update debt success", "debt", debt)
-			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 		}
+	} else if client.IgnoreNotFound(err) != nil {
+		r.Logger.Error(err, err.Error())
+		return ctrl.Result{}, err
 	}
 
+	// now should get debt and account
 	r.Logger.Info("debt info", "debt", debt)
 	if debt.Status.AccountDebtStatus == "" {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
@@ -321,6 +331,10 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.accountSystemNamespace = os.Getenv("ACCOUNT_SYSTEM_NAMESPACE")
 	if r.accountSystemNamespace == "" {
 		r.accountSystemNamespace = "account-system"
+	}
+	r.accountNamespace = os.Getenv("ACCOUNT_NAMESPACE")
+	if r.accountNamespace == "" {
+		r.accountSystemNamespace = "sealos-system"
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		// update status should not enter reconcile
