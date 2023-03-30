@@ -40,6 +40,10 @@ lvscare:
 docker pull ghcr.io/${USERNAME:-labring}/lvscare:${VERSION}
 \`\`\`
 
+EOF
+
+if [[ "${VERSION}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+cat << EOF >> Note.md
 ### APT 源
 
 Use your public APT Repository URL to install DEB packages:
@@ -72,7 +76,10 @@ baseurl=https://yum.repo.sealos.io/
 enabled=1
 gpgcheck=0
 \`\`\`
+EOF
+fi
+cat << EOF >> Note.md
 
 See [the CHANGELOG](https://github.com/${USERNAME:-labring}/sealos/blob/main/CHANGELOG/CHANGELOG.md) for more details.
-
 EOF
+
