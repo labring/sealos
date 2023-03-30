@@ -67,6 +67,7 @@ func TestDebt(t *testing.T) {
 		t.Run("debt delete all resource should be ok", func(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)
+			time.Sleep(3 * time.Second)
 			baseapi.CreateCRD(api.PodYaml, TestNamespace, PodName)
 			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
 
@@ -81,7 +82,7 @@ func TestDebt(t *testing.T) {
 				t.Fatalf(err.Error())
 			}
 
-			time.Sleep(time.Minute)
+			time.Sleep(time.Minute * 2)
 
 			t.Log("pod should be deleted")
 			pod, err := api.GetPod(TestNamespace, PodName)
