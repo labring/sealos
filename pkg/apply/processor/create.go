@@ -72,6 +72,7 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 		c.RunGuest,
 		// c.GetPhasePluginFunc(plugin.PhasePostInstall),
 	)
+
 	return todoList, nil
 }
 

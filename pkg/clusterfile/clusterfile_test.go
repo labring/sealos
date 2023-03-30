@@ -149,9 +149,6 @@ func Test_NoClusterFileWithSingleSchedule(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err = cf.SetSingleMode(true); err != nil {
-				t.Errorf("SingleMode(bool) error: %v", err)
-			}
 
 			if cf.GetCluster() != nil {
 				t.Errorf("cluster is not nil")
@@ -263,9 +260,6 @@ func Test_NewClusterFileWithSingleSchedule(t *testing.T) {
 			err := cf.Process()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("newClusterfile(string, ...OptionFunc) error = %v, wantErr %v", err, tt.wantErr)
-			}
-			if err = cf.SetSingleMode(true); err != nil {
-				t.Errorf("SingleMode(bool) error: %v", err)
 			}
 
 			equal := reflect.DeepEqual(cf.GetCluster(), tt.args.cluster)

@@ -21,6 +21,11 @@ import (
 	"github.com/spf13/pflag"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/labring/sealos/pkg/clusterfile"
+	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/ssh"
+	"github.com/labring/sealos/pkg/utils/iputils"
+
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
@@ -124,6 +129,8 @@ func TestClusterArgs_setHostWithIpsPort(t *testing.T) {
 }
 
 func TestNewApplierFromArgs(t *testing.T) {
+	addr, _ := iputils.ListLocalHostAddrs()
+	Default := "Default"
 	type args struct {
 		imageName []string
 		args      *RunArgs
@@ -135,6 +142,43 @@ func TestNewApplierFromArgs(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		{
+			name: "test set master ip in single mode",
+			args: args{
+				imageName: []string{"labring/kubernetes:v1.24.0"},
+				args: &RunArgs{
+					Cluster: &Cluster{
+						Masters:     "",
+						Nodes:       "",
+						ClusterName: Default,
+					},
+				},
+			},
+			want: &applydrivers.Applier{
+				ClusterDesired: &v2.Cluster{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Cluster",
+						APIVersion: v2.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        Default,
+						Annotations: map[string]string{},
+					},
+					Spec: v2.ClusterSpec{
+						Hosts: []v2.Host{
+							{IPS: []string{iputils.LocalIP(addr) + ":0"}, Roles: []string{v2.MASTER, GetHostArch(ssh.NewSSHClient(&v2.SSH{}, true), iputils.LocalIP(addr)+":0")}},
+						},
+						Image: []string{"labring/kubernetes:v1.24.0"},
+						SSH:   v2.SSH{},
+					},
+					Status: v2.ClusterStatus{},
+				},
+				ClusterFile:    clusterfile.NewClusterFile(constants.Clusterfile(Default)),
+				ClusterCurrent: nil,
+				RunNewImages:   []string{"labring/kubernetes:v1.24.0"},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
