@@ -65,29 +65,32 @@ var DebtConfig = accountv1.DefaultDebtConfig
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	account := &accountv1.Account{}
-	if err := r.Get(ctx, req.NamespacedName, account); err == nil {
-		debt := &accountv1.Debt{}
-		if err := r.syncDebt(ctx, account, debt); err != nil {
-			return ctrl.Result{}, err
-		}
-		if debt.Status.AccountDebtStatus == "" {
-			debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
-		}
-
-		if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
-			r.Logger.Error(err, "reconcile debt status error")
-			return ctrl.Result{}, err
-		}
-	} else if client.IgnoreNotFound(err) != nil {
+	if err := r.Get(ctx, req.NamespacedName, account); client.IgnoreNotFound(err) != nil {
 		r.Logger.Error(err, err.Error())
+		return ctrl.Result{}, err
+	}
+
+	debt := &accountv1.Debt{}
+	if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(account.Name), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
+		return ctrl.Result{}, err
+	} else if err != nil && client.IgnoreNotFound(err) == nil {
+		if err := r.syncDebt(ctx, account, debt); err != nil {
+			return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
+		}
+	}
+
+	if debt.Status.AccountDebtStatus == "" {
+		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
+	}
+
+	if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
+		r.Logger.Error(err, "reconcile debt status error")
 		return ctrl.Result{}, err
 	}
 	return ctrl.Result{Requeue: true, RequeueAfter: time.Minute}, nil
 }
 
 func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
-	// future will get priceList data in configmap
-
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	Updataflag := false
 	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
@@ -103,7 +106,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 	if !ok {
 		r.Error(fmt.Errorf("get normal price error"), "")
 	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < (normalPrice) {
+	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < normalPrice {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
@@ -117,7 +120,6 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 
 	smallBlockTimeSecond, ok := DebtConfig[accountv1.DebtStatusSmall]
 	if !ok {
-		r.Error(fmt.Errorf("get smallBlockTimeSecond error"), "")
 		return fmt.Errorf("get smallBlockTimeSecond, error")
 	}
 	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > smallBlockTimeSecond {
@@ -134,7 +136,6 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 
 	mediumBlockTimeSecond, ok := DebtConfig[accountv1.DebtStatusMedium]
 	if !ok {
-		r.Error(fmt.Errorf("get mediumBlockTimeSecond, error"), "")
 		return fmt.Errorf("get mediumBlockTimeSecond, error")
 	}
 	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > mediumBlockTimeSecond {

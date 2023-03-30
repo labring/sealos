@@ -12,6 +12,7 @@ import (
 
 const (
 	AccountNamespace        = "sealos-system"
+	AccountSystemNamespace  = "sealos-system"
 	TestNamespace           = "ns-metering-test"
 	DefaultOwner            = "metering-test"
 	PodName                 = "nginx-test"
@@ -82,9 +83,13 @@ func TestDebt(t *testing.T) {
 				t.Fatalf(err.Error())
 			}
 
+			debt, err := accountapi.GetDebt(AccountSystemNamespace, DefaultOwner)
+			if err != nil {
+				t.Fatalf("get debt error %v", err.Error())
+			}
+			t.Log(debt)
+			t.Log("wait some time and pod should be deleted")
 			time.Sleep(time.Minute * 2)
-
-			t.Log("pod should be deleted")
 			pod, err := api.GetPod(TestNamespace, PodName)
 			if err == nil {
 				t.Fatalf("pod should be deleted, but now is %+v", pod)
@@ -109,6 +114,11 @@ func clear() {
 		log.Println(err)
 	}
 	err = baseapi.DeleteNamespace(TestNamespace)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = baseapi.DeleteCRD(AccountSystemNamespace, DefaultOwner, accountapi.DebtYaml)
 	if err != nil {
 		log.Println(err)
 	}
