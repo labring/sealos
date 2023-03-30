@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: bytebasecontrollerconfigs.db.sealos.io.db.sealos.io
+  name: bytebasecontrollerconfigs.db.sealos.io
 spec:
-  group: db.sealos.io.db.sealos.io
+  group: db.sealos.io
   names:
     kind: BytebaseControllerConfig
     listKind: BytebaseControllerConfigList
@@ -143,6 +143,10 @@ spec:
                 type: string
             type: object
           rootDomain:
+            type: string
+          secretName:
+            type: string
+          secretNameSpace:
             type: string
           syncPeriod:
             description: SyncPeriod determines the minimum frequency at which watched

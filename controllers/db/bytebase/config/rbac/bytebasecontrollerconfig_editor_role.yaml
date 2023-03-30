@@ -12,7 +12,7 @@ metadata:
   name: bytebasecontrollerconfig-editor-role
 rules:
 - apiGroups:
-  - db.sealos.io.db.sealos.io
+  - db.sealos.io
   resources:
   - bytebasecontrollerconfigs
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - db.sealos.io.db.sealos.io
+  - db.sealos.io
   resources:
   - bytebasecontrollerconfigs/status
   verbs:

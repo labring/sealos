@@ -3,7 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/db.sealos.io_bytebases.yaml
-- bases/db.sealos.io.db.sealos.io_bytebasecontrollerconfigs.yaml
+- bases/db.sealos.io_bytebasecontrollerconfigs.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
