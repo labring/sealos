@@ -93,7 +93,7 @@ func TestDebt(t *testing.T) {
 			time.Sleep(time.Minute * 2)
 			pod, err := api.GetPod(TestNamespace, PodName)
 			if err == nil {
-				t.Fatalf("pod should be deleted, but now is %+v", pod)
+				t.Fatalf("pod should be deleted, but now is %+v", pod.Name)
 			}
 		})
 	})

@@ -65,7 +65,7 @@ var DebtConfig = accountv1.DefaultDebtConfig
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	account := &accountv1.Account{}
-	if err := r.Get(ctx, req.NamespacedName, account); client.IgnoreNotFound(err) != nil {
+	if err := r.Get(ctx, req.NamespacedName, account); err != nil {
 		r.Logger.Error(err, err.Error())
 		return ctrl.Result{}, err
 	}
