@@ -121,9 +121,10 @@ type diffOption struct {
 func newDiffCommand() *cobra.Command {
 	opts := new(diffOption)
 	cmd := &cobra.Command{
-		Use:   "diff",
-		Short: "Inspect changes to the object's file systems",
-		Args:  cobra.ExactArgs(2),
+		Use:    "diff",
+		Short:  "Inspect changes to the object's file systems",
+		Hidden: true,
+		Args:   cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runDiff(cmd, args, opts)
 		},
