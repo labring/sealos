@@ -97,29 +97,7 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, extensionResourcesPrice, func() error {
 		extensionResourcesPrice.Spec.Resources = podController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = podController.Spec.ResourceName
-		extensionResourcesPrice.Spec.GroupVersionKinds = []meteringcommonv1.GroupVersionKind{{
-			Group:   "",
-			Version: "v1",
-			Kind:    "pod",
-		}, {
-			Group:   "apps",
-			Version: "v1",
-			Kind:    "deployment",
-		}, {
-			Group:   "apps",
-			Version: "v1",
-			Kind:    "statefulset",
-		}, {
-			Group:   "apps",
-			Version: "v1",
-			Kind:    "daemonset",
-		},
-			{
-				Group:   "apps",
-				Version: "v1",
-				Kind:    "repicaset",
-			},
-		}
+		extensionResourcesPrice.Spec.GroupVersionKinds = meteringv1.DefaultPodResourceGVK
 		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
 		return nil
 	}); err != nil {

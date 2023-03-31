@@ -96,6 +96,10 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
+	if debt.Name == "" {
+		r.Logger.Info("not get debt")
+		return ctrl.Result{}, nil
+	}
 	// now should get debt and account
 	r.Logger.Info("debt info", "debt", debt)
 	if debt.Status.AccountDebtStatus == "" {
