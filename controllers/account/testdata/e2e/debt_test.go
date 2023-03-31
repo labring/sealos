@@ -117,14 +117,20 @@ func TestDebt(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)
 			baseapi.EnsureNamespace(AccountNamespace)
-			time.Sleep(3 * time.Second)
+			time.Sleep(5 * time.Second)
+
+			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix))
+			if err != nil {
+				t.Fatalf("failed to get extension resource: %v", err)
+			}
+			t.Log(podExtensionResourcePrice)
 			baseapi.CreateCRD(TestNamespace, PodName, api.PodYaml)
 			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
 			baseapi.CreateCRD(TestNamespace, DeploymentName, accountapi.DeploymentYaml)
 
 			// should create deployment、daemonset replicaset
 			time.Sleep(3 * time.Second)
-			err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -1000)
+			err = accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -1000)
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
