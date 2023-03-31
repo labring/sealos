@@ -106,6 +106,10 @@ func TestDebt(t *testing.T) {
 			}
 
 		})
+
+		t.Cleanup(clear)
+		time.Sleep(10 * time.Second)
+
 		t.Run("debt delete all resource should be ok", func(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)

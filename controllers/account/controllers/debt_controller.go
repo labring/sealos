@@ -103,9 +103,6 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 	// now should get debt and account
 	r.Logger.Info("debt info", "debt", debt)
-	if debt.Status.AccountDebtStatus == "" {
-		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
-	}
 
 	if err := r.reconcileDebtStatus(ctx, debt, account); err != nil {
 		r.Logger.Error(err, "reconcile debt status error")
@@ -117,6 +114,11 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	Updataflag := false
+
+	if debt.Status.AccountDebtStatus == "" {
+		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
+		Updataflag = true
+	}
 
 	normalPrice, ok := DebtConfig[accountv1.DebtStatusNormal]
 	if !ok {
