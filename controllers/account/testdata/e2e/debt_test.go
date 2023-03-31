@@ -77,10 +77,13 @@ func TestDebt(t *testing.T) {
 			if _, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner)); err != nil {
 				t.Fatalf("not get debt" + err.Error())
 			}
+
+			t.Log("add account balance")
 			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, 1000); err != nil {
 				t.Fatalf(err.Error())
 			}
 
+			t.Log("debt status should be normal")
 			time.Sleep(5 * time.Second)
 			debt, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner))
 			if err != nil {
@@ -96,6 +99,7 @@ func TestDebt(t *testing.T) {
 			}
 
 			time.Sleep(time.Minute)
+			t.Log("debt status should be small or large")
 			debt, err = accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner))
 			if err != nil {
 				t.Fatalf("not get debt" + err.Error())
@@ -106,7 +110,6 @@ func TestDebt(t *testing.T) {
 			}
 
 		})
-
 		t.Cleanup(clear)
 		time.Sleep(10 * time.Second)
 
@@ -181,6 +184,18 @@ func clear() {
 	}
 
 	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
+	if err != nil {
+		log.Println(err)
+	}
+
+	execout, err := baseapi.Exec("kubectl get resource -A| awk '{print $2}' | xargs kubectl delete resource -n metering-system")
+	log.Println(execout)
+	if err != nil {
+		log.Println(err)
+	}
+
+	execout, err = baseapi.Exec("kubectl get accountbalance -A | awk '{print $2}' | xargs kubectl delete accountbalance -n metering-system")
+	log.Println(execout)
 	if err != nil {
 		log.Println(err)
 	}
