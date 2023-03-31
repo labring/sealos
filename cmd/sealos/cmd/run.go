@@ -104,9 +104,5 @@ func init() {
 }
 
 func args2Images(args []string, transport string) ([]string, error) {
-	bder, err := buildah.New("")
-	if err != nil {
-		return nil, err
-	}
-	return buildah.Preload(bder, args, transport)
+	return buildah.PreloadIfTarFile(args, transport)
 }

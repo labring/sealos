@@ -83,7 +83,7 @@ func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
 	return "", fmt.Errorf("%s not found: %w", id, lastErr)
 }
 
-func (r *Runtime) pullOrLoadImages(ctx context.Context, args []string) ([]string, error) {
+func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]string, error) {
 	var result []string
 	for i := range args {
 		name := args[i]

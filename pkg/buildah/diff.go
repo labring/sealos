@@ -24,22 +24,9 @@ import (
 	"github.com/containers/storage/pkg/archive"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-)
 
-func parseCompression(v string) archive.Compression {
-	switch v {
-	case "gzip":
-		return archive.Gzip
-	case "bzip2":
-		return archive.Bzip2
-	case "xz":
-		return archive.Xz
-	case "zstd":
-		return archive.Zstd
-	default:
-		return archive.Uncompressed
-	}
-}
+	"github.com/labring/sealos/pkg/utils/logger"
+)
 
 func parseDiffType(v string) (DiffType, error) {
 	switch v {
@@ -111,34 +98,60 @@ func changesToTable(out io.Writer, diffs []archive.Change) error {
 	return nil
 }
 
+type patchOption struct {
+	createPatchFile bool
+	build           bool
+	save            bool
+}
+
+func (o *patchOption) RegisterFlags(fs *pflag.FlagSet) {
+	fs.BoolVar(&o.createPatchFile, "create-patch", false, "If enabled then create a named archive file contains changes that we interested")
+	fs.BoolVar(&o.build, "build", false, "Auto build a new image with the generated changes")
+	fs.BoolVar(&o.save, "save", false, "Auto save the built image into a oci-archive file")
+	bailOnError(markFlagsHidden(fs, "create-patch", "build", "save"), "")
+}
+
 type diffOption struct {
-	save        bool
-	diffType    string
-	out         string
-	compression string
+	patchOption
+	diffType string
+	out      string
+	filterFn func(archive.Change) bool
 }
 
 func newDiffCommand() *cobra.Command {
-	opts := new(diffOption)
+	opts := &diffOption{
+		filterFn: excludeInitTrees,
+	}
 	cmd := &cobra.Command{
 		Use:    "diff",
 		Short:  "Inspect changes to the object's file systems",
 		Hidden: true,
 		Args:   cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := opts.ValidateAndSetDefaults(); err != nil {
+				return err
+			}
 			return runDiff(cmd, args, opts)
 		},
 	}
 	opts.RegisterFlags(cmd.Flags())
+	opts.patchOption.RegisterFlags(cmd.Flags())
 	return cmd
 }
 
 func (o *diffOption) RegisterFlags(fs *pflag.FlagSet) {
-	fs.BoolVar(&o.save, "save", false, "If enabled then create a named archive file contains changes that we interested")
 	fs.StringVar(&o.diffType, "diff-type", DiffImage.String(), "Type of object to diff, container/image/all")
 	fs.StringVarP(&o.out, "out", "o", "json", "Change the output format, json/table")
-	fs.StringVar(&o.compression, "compression", "gzip", "Compression algorithm")
-	bailOnError(markFlagsHidden(fs, "compression"), "")
+}
+
+func (o *diffOption) ValidateAndSetDefaults() error {
+	if o.createPatchFile {
+		tmpFn := o.filterFn
+		o.filterFn = func(c archive.Change) bool {
+			return tmpFn(c) && filterPatchFileRequired(c)
+		}
+	}
+	return nil
 }
 
 var initTrees = map[string]bool{
@@ -155,13 +168,11 @@ var initTrees = map[string]bool{
 	"/etc/mtab":          true,
 }
 
-func filterRequired(change archive.Change, force bool) bool {
-	if initTrees[change.Path] {
-		return false
-	}
-	if force {
-		return true
-	}
+func excludeInitTrees(change archive.Change) bool {
+	return !initTrees[change.Path]
+}
+
+func filterPatchFileRequired(change archive.Change) bool {
 	switch change.Kind {
 	case archive.ChangeAdd:
 		return true
@@ -188,7 +199,7 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 
 	ctx := getContext()
 	if diffType == DiffImage {
-		if args, err = r.pullOrLoadImages(ctx, args); err != nil {
+		if args, err = r.pullOrLoadImages(ctx, args...); err != nil {
 			return err
 		}
 	}
@@ -202,11 +213,11 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 	}
 	var diffs []archive.Change
 	for _, c := range changes {
-		if filterRequired(c, !opts.save) {
+		if opts.filterFn(c) {
 			diffs = append(diffs, c)
 		}
 	}
-	if !opts.save {
+	if !opts.createPatchFile {
 		switch opts.out {
 		case "json":
 			return changesToJSON(os.Stdout, diffs)
@@ -222,8 +233,13 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 		if err != nil {
 			return err
 		}
-		compression := parseCompression(opts.compression)
-		file, err := os.Create(opts.out + "." + compression.Extension())
+		compression := archive.Uncompressed
+		extension := "." + compression.Extension()
+		out := opts.out
+		if !strings.HasSuffix(out, extension) {
+			out = out + extension
+		}
+		file, err := os.Create(out)
 		if err != nil {
 			return err
 		}
@@ -232,11 +248,16 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 		if err != nil {
 			return err
 		}
+		defer wc.Close()
 		rc, err := archive.ExportChanges(mountPoint, diffs, nil, nil)
 		if err != nil {
 			return err
 		}
+		defer rc.Close()
 		_, err = io.Copy(wc, rc)
+		if err == nil {
+			logger.Info("file %s saved", out)
+		}
 		return err
 	}
 	return nil
