@@ -149,7 +149,7 @@ func main() {
 		setupLog.Info("configuration values...", "rootDomain", rootDomain, "secretName", secretName, "secretNameSpace", secretNameSpace)
 	}
 
-	if err = (&bytebasecontrollers.BytebaseReconciler{
+	if err = (&bytebasecontrollers.Reconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		// use the logger with name

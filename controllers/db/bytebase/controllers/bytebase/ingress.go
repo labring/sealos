@@ -22,7 +22,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *BytebaseReconciler) createNginxIngress(bytebase *bbv2.Bytebase, host string, snippet string) *networkingv1.Ingress {
+func (r *Reconciler) createNginxIngress(bytebase *bbv2.Bytebase, host string, snippet string) *networkingv1.Ingress {
 	objectMeta := metav1.ObjectMeta{
 		Name:      bytebase.Name,
 		Namespace: bytebase.Namespace,

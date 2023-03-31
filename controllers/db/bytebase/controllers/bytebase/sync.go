@@ -17,7 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase, hostname string) error {
+func (r *Reconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase, hostname string) error {
 	var err error
 	domainSuffix := DefaultDomainSuffix
 	host := hostname + domainSuffix
@@ -31,7 +31,7 @@ func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase,
 	return err
 }
 
-func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv2.Bytebase, host string) error {
+func (r *Reconciler) syncNginxIngress(ctx context.Context, bb *bbv2.Bytebase, host string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      bb.Name,
@@ -71,7 +71,7 @@ func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv2.Byte
 	return nil
 }
 
-func (r *BytebaseReconciler) getClientCookie() ([]string, error) {
+func (r *Reconciler) getClientCookie() ([]string, error) {
 	c := r.Bc
 	headers, err := c.GetHeaders()
 	if err != nil {
@@ -87,7 +87,7 @@ func (r *BytebaseReconciler) getClientCookie() ([]string, error) {
 	return cookies, nil
 }
 
-func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv2.Bytebase) error {
+func (r *Reconciler) syncService(ctx context.Context, bb *bbv2.Bytebase) error {
 	labelsMap := buildLabelsMap(bb)
 	expectService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +129,7 @@ func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv2.Bytebase)
 	return nil
 }
 
-func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv2.Bytebase, hostname *string) error {
+func (r *Reconciler) syncDeployment(ctx context.Context, bb *bbv2.Bytebase, hostname *string) error {
 	var (
 		objectMeta metav1.ObjectMeta
 		selector   *metav1.LabelSelector

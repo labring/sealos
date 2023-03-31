@@ -58,8 +58,8 @@ const (
 	AuthType            = "basicAuth"
 )
 
-// BytebaseReconciler reconciles a Bytebase object
-type BytebaseReconciler struct {
+// Reconciler reconciles a Bytebase object
+type Reconciler struct {
 	client.Client
 	Scheme          *runtime.Scheme
 	Recorder        record.EventRecorder
@@ -87,7 +87,7 @@ type BytebaseReconciler struct {
 // +kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=acid.zalan.do,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
 
-func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// use new logger so that we can log where the request is
 	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
 	bb := &bbv2.Bytebase{}
@@ -195,7 +195,7 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Bytebase) error {
+func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Bytebase) error {
 	hasUpdate := false
 
 	if bb.ObjectMeta.Annotations == nil {
@@ -214,7 +214,7 @@ func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Byte
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BytebaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// set up default email
 	r.DefaultEmail = "admin@sealos.io"
 	var err error

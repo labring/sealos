@@ -18,7 +18,7 @@ const (
 	defaultDataSourceType api.DataSourceType = "ADMIN"
 )
 
-func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request) error {
+func (r *Reconciler) syncInstance(ctx context.Context, req ctrl.Request) error {
 	c := r.Bc
 	// logger := r.Logger
 	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
@@ -36,7 +36,7 @@ func (r *BytebaseReconciler) syncInstance(ctx context.Context, req ctrl.Request)
 	return nil
 }
 
-func (r *BytebaseReconciler) syncPostgresInstance(ctx context.Context, req ctrl.Request) error {
+func (r *Reconciler) syncPostgresInstance(ctx context.Context, req ctrl.Request) error {
 	// logger := r.Logger
 	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
 	c := r.Bc
