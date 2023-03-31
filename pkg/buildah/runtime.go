@@ -24,6 +24,7 @@ import (
 	"github.com/containers/common/libimage"
 	"github.com/containers/common/pkg/config"
 	imagestorage "github.com/containers/image/v5/storage"
+	"github.com/containers/image/v5/types"
 	"github.com/containers/storage"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +32,17 @@ import (
 type Runtime struct {
 	store           storage.Store
 	libimageRuntime *libimage.Runtime
+}
+
+func getRuntimeWithStoreAndSystemContext(store storage.Store, sc *types.SystemContext) (*Runtime, error) {
+	libimageRuntime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: sc})
+	if err != nil {
+		return nil, err
+	}
+	return &Runtime{
+		store:           store,
+		libimageRuntime: libimageRuntime,
+	}, nil
 }
 
 func getRuntime(c *cobra.Command) (*Runtime, error) {
@@ -45,14 +57,7 @@ func getRuntime(c *cobra.Command) (*Runtime, error) {
 	if err != nil {
 		return nil, fmt.Errorf("building system context: %w", err)
 	}
-	libimageRuntime, err := libimage.RuntimeFromStore(store, &libimage.RuntimeOptions{SystemContext: sc})
-	if err != nil {
-		return nil, err
-	}
-	return &Runtime{
-		store:           store,
-		libimageRuntime: libimageRuntime,
-	}, nil
+	return getRuntimeWithStoreAndSystemContext(store, sc)
 }
 
 func (r *Runtime) getLayerID(id string, diffType DiffType) (string, error) {
