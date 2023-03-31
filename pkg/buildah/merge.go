@@ -123,7 +123,7 @@ func newMergeCommand() *cobra.Command {
 	flags.SetNormalizeFunc(buildahcli.AliasFlags)
 	bailOnError(markFlagsHidden(flags, "save-image"), "")
 	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
-	bailOnError(markFlagsHidden(flags, append(markFlagsHiddenBuild(), markFlagsHiddenPlatform()...)...), "")
+	bailOnError(markFlagsHidden(flags, append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...), "")
 	return mergeCommand
 }
 

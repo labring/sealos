@@ -16,4 +16,5 @@ coverage.out
 tmp
 **/.DS_Store
 node_modules
+vendor
 .vscode/
