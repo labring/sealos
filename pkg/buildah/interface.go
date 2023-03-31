@@ -39,6 +39,7 @@ type Interface interface {
 	Delete(name string) error
 	InspectContainer(name string) (buildah.BuilderInfo, error)
 	ListContainers() ([]JSONContainer, error)
+	Runtime() *Runtime
 }
 
 func New(id string) (Interface, error) {
@@ -51,10 +52,15 @@ func New(id string) (Interface, error) {
 		return nil, err
 	}
 	setDefaultSystemContext(systemContext)
+	r, err := getRuntimeWithStoreAndSystemContext(store, systemContext)
+	if err != nil {
+		return nil, err
+	}
 	return &realImpl{
 		id:            id,
 		store:         store,
 		systemContext: systemContext,
+		runtime:       r,
 	}, nil
 }
 
@@ -62,6 +68,11 @@ type realImpl struct {
 	id            string // as identity prefix
 	store         storage.Store
 	systemContext *types.SystemContext
+	runtime       *Runtime
+}
+
+func (impl *realImpl) Runtime() *Runtime {
+	return impl.runtime
 }
 
 type FlagSetter func(*pflag.FlagSet) error
@@ -222,11 +233,11 @@ func (impl *realImpl) ListContainers() ([]JSONContainer, error) {
 	return jsonContainers, err
 }
 
-func (impl *realImpl) Load(input string, ociType string) (string, error) {
-	ids, err := doPull(impl.mockCmd(), impl.store, impl.systemContext, []string{fmt.Sprintf("%s:%s", ociType, input)}, newDefaultPullOptions())
+func (impl *realImpl) Load(input string, transport string) (string, error) {
+	ref := FormatReferenceWithTransportName(transport, input)
+	names, err := impl.runtime.pullOrLoadImages(getContext(), ref)
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("%s\n", ids[0])
-	return ids[0], nil
+	return names[0], nil
 }
