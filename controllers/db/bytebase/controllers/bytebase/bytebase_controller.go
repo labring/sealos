@@ -217,12 +217,12 @@ func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Bytebase) er
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// set up default email
 	r.DefaultEmail = "admin@sealos.io"
-	var err error
 	// set up default password
-	r.DefaultPassword, err = generateRandomString(16)
+	defaultPassword, err := generateRandomString(16)
 	if err != nil {
 		return err
 	}
+	r.DefaultPassword = defaultPassword
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&bbv2.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
 		Complete(r)
