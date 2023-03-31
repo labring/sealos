@@ -30,7 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	bytebasev2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bytebasev1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -62,7 +62,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(cfg).NotTo(BeNil())
 
-	err = bytebasev2.AddToScheme(scheme.Scheme)
+	err = bytebasev1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme

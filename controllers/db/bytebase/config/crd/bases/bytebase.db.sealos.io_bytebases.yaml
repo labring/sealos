@@ -31,7 +31,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v2
+    name: v1
     schema:
       openAPIV3Schema:
         description: Bytebase is the Schema for the bytebases API

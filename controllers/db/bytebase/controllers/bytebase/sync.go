@@ -11,18 +11,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jaevor/go-nanoid"
-	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *Reconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase, hostname string) error {
+func (r *Reconciler) syncIngress(ctx context.Context, bb *bbv1.Bytebase, hostname string) error {
 	var err error
 	domainSuffix := DefaultDomainSuffix
 	host := hostname + domainSuffix
 	switch bb.Spec.IngressType {
-	case bbv2.Nginx:
+	case bbv1.Nginx:
 		err = r.syncNginxIngress(ctx, bb, host)
 	//TODO: support apisix
 	default:
@@ -31,7 +31,7 @@ func (r *Reconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase, hostnam
 	return err
 }
 
-func (r *Reconciler) syncNginxIngress(ctx context.Context, bb *bbv2.Bytebase, host string) error {
+func (r *Reconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Bytebase, host string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      bb.Name,
@@ -87,7 +87,7 @@ func (r *Reconciler) getClientCookie() ([]string, error) {
 	return cookies, nil
 }
 
-func (r *Reconciler) syncService(ctx context.Context, bb *bbv2.Bytebase) error {
+func (r *Reconciler) syncService(ctx context.Context, bb *bbv1.Bytebase) error {
 	labelsMap := buildLabelsMap(bb)
 	expectService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +129,7 @@ func (r *Reconciler) syncService(ctx context.Context, bb *bbv2.Bytebase) error {
 	return nil
 }
 
-func (r *Reconciler) syncDeployment(ctx context.Context, bb *bbv2.Bytebase, hostname *string) error {
+func (r *Reconciler) syncDeployment(ctx context.Context, bb *bbv1.Bytebase, hostname *string) error {
 	var (
 		objectMeta metav1.ObjectMeta
 		selector   *metav1.LabelSelector

@@ -33,8 +33,8 @@ import (
 
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 
-	bytebasev2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
-	configv2 "github.com/labring/sealos/controllers/db/bytebase/apis/config/v2"
+	bytebasev1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
+	configv1 "github.com/labring/sealos/controllers/db/bytebase/apis/config/v1"
 	bytebasecontrollers "github.com/labring/sealos/controllers/db/bytebase/controllers/bytebase"
 	//+kubebuilder:scaffold:imports
 )
@@ -53,8 +53,8 @@ const (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(acidv1.AddToScheme(scheme))
-	utilruntime.Must(configv2.AddToScheme(scheme))
-	utilruntime.Must(bytebasev2.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
+	utilruntime.Must(bytebasev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -113,7 +113,7 @@ func main() {
 	}
 	// read the config file
 
-	ctrlConfig := configv2.BytebaseControllerConfig{}
+	ctrlConfig := configv1.BytebaseControllerConfig{}
 	if configFile != "" {
 		// AndFrom will use a supplied type and convert to Options any options already set on Options will be ignored, this is used to allow cli flags to override anything specified in the config file.
 		var err error

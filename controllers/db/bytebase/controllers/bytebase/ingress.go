@@ -17,12 +17,12 @@ limitations under the License.
 package bytebase
 
 import (
-	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (r *Reconciler) createNginxIngress(bytebase *bbv2.Bytebase, host string, snippet string) *networkingv1.Ingress {
+func (r *Reconciler) createNginxIngress(bytebase *bbv1.Bytebase, host string, snippet string) *networkingv1.Ingress {
 	objectMeta := metav1.ObjectMeta{
 		Name:      bytebase.Name,
 		Namespace: bytebase.Namespace,

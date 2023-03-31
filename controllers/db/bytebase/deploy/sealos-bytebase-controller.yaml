@@ -43,7 +43,7 @@ spec:
     - jsonPath: .metadata.creationTimestamp
       name: Age
       type: date
-    name: v2
+    name: v1
     schema:
       openAPIV3Schema:
         description: Bytebase is the Schema for the bytebases API
@@ -419,7 +419,7 @@ subjects:
 apiVersion: v1
 data:
   controller_manager_config.yaml: |
-    apiVersion: config.db.sealos.io/v2
+    apiVersion: config.db.sealos.io/v1
     kind: BytebaseControllerConfig
     metadata:
       labels:

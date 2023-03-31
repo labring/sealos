@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/go-logr/logr"
-	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 	bbclient "github.com/labring/sealos/controllers/db/bytebase/client"
 	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
 )
@@ -90,7 +90,7 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// use new logger so that we can log where the request is
 	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
-	bb := &bbv2.Bytebase{}
+	bb := &bbv1.Bytebase{}
 	// get CRD bytebase (status). Call reconciler again if not found.
 	if err := r.Get(ctx, req.NamespacedName, bb); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -195,7 +195,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Bytebase) error {
+func (r *Reconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Bytebase) error {
 	hasUpdate := false
 
 	if bb.ObjectMeta.Annotations == nil {
@@ -224,6 +224,6 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.DefaultPassword = defaultPassword
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&bbv2.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
+		For(&bbv1.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
 		Complete(r)
 }

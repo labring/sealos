@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bbv1 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1"
 )
 
 // isExpired return true if the bb has expired
-func isExpired(bb *bbv2.Bytebase) bool {
+func isExpired(bb *bbv1.Bytebase) bool {
 	anno := bb.ObjectMeta.Annotations
 	lastUpdateTime, err := time.Parse(time.RFC3339, anno[KeepaliveAnnotation])
 	if err != nil {
@@ -22,7 +22,7 @@ func isExpired(bb *bbv2.Bytebase) bool {
 	return lastUpdateTime.Add(duration).Before(time.Now())
 }
 
-func buildLabelsMap(bb *bbv2.Bytebase) map[string]string {
+func buildLabelsMap(bb *bbv1.Bytebase) map[string]string {
 	labelsMap := map[string]string{
 		"app": bb.Name,
 	}

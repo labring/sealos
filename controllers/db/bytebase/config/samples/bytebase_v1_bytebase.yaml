@@ -1,4 +1,4 @@
-apiVersion: bytebase.db.sealos.io/v2
+apiVersion: bytebase.db.sealos.io/v1
 kind: Bytebase
 metadata:
   labels:

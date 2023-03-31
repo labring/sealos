@@ -1,4 +1,4 @@
-apiVersion: config.db.sealos.io/v2
+apiVersion: config.db.sealos.io/v1
 kind: BytebaseControllerConfig
 metadata:
   labels:

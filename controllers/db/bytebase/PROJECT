@@ -15,8 +15,8 @@ resources:
   domain: db.sealos.io
   group: config
   kind: BytebaseControllerConfig
-  path: github.com/labring/sealos/controllers/db/bytebase/apis/config/v2
-  version: v2
+  path: github.com/labring/sealos/controllers/db/bytebase/apis/config/v1
+  version: v1
 - api:
     crdVersion: v1
     namespaced: true
@@ -24,6 +24,6 @@ resources:
   domain: db.sealos.io
   group: bytebase
   kind: Bytebase
-  path: github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2
-  version: v2
+  path: github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v1
+  version: v1
 version: "3"
