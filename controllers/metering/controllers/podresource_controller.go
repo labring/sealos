@@ -101,7 +101,24 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 			Group:   "",
 			Version: "v1",
 			Kind:    "pod",
+		}, {
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "deployment",
+		}, {
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "statefulset",
+		}, {
+			Group:   "apps",
+			Version: "v1",
+			Kind:    "daemonset",
 		},
+			{
+				Group:   "apps",
+				Version: "v1",
+				Kind:    "repicaset",
+			},
 		}
 		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
 		return nil

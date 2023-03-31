@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	appsv1 "k8s.io/api/apps/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -63,7 +61,8 @@ var DebtConfig = accountv1.DefaultDebtConfig
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=app,resources=daemonSets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=app,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	debt := &accountv1.Debt{}
@@ -107,7 +106,7 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	Updataflag := false
-	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
+	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
@@ -137,26 +136,10 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		return fmt.Errorf("get smallBlockTimeSecond, error")
 	}
 	if debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > smallBlockTimeSecond {
-		debt.Status.AccountDebtStatus = accountv1.DebtStatusMedium
-		debt.Status.LastUpdateTimestamp = time.Now().Unix()
-		Updataflag = true
-		if err := r.sendMediumNotice(ctx, account.Name); err != nil {
-			return err
-		}
-		if err := r.change2Medium(ctx, *account); err != nil {
-			return err
-		}
-	}
-
-	mediumBlockTimeSecond, ok := DebtConfig[accountv1.DebtStatusMedium]
-	if !ok {
-		return fmt.Errorf("get mediumBlockTimeSecond, error")
-	}
-	if debt.Status.AccountDebtStatus == accountv1.DebtStatusMedium && (time.Now().Unix()-debt.Status.LastUpdateTimestamp) > mediumBlockTimeSecond {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
-		if err := r.sendLargeNotice(ctx, account.Name); err != nil {
+		if err := r.sendMediumNotice(ctx, account.Name); err != nil {
 			return err
 		}
 		if err := r.change2Large(ctx, *account); err != nil {
@@ -179,11 +162,6 @@ func (r *DebtReconciler) change2Normal(_ context.Context, account accountv1.Acco
 
 func (r *DebtReconciler) change2Small(_ context.Context, account accountv1.Account) error {
 	r.Logger.Info("change status to Small", "account", account.Name)
-	return nil
-}
-
-func (r *DebtReconciler) change2Medium(_ context.Context, account accountv1.Account) error {
-	r.Logger.Info("change status to medium", "account", account.Name)
 	return nil
 }
 
@@ -254,55 +232,6 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 			}
 		}
 	}
-
-	// delete all pod
-	podlist := v1.PodList{}
-	if err := r.List(ctx, &podlist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-	for _, pod := range podlist.Items {
-		if err := r.Delete(ctx, &pod); err != nil {
-			r.Logger.Info("delete resource", "resource name:", pod.GetName(), "get GVK", pod.GroupVersionKind())
-			return err
-		}
-	}
-
-	// delete all deployment
-	deploylist := appsv1.DeploymentList{}
-	if err := r.List(ctx, &deploylist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-	for _, deploy := range deploylist.Items {
-		r.Logger.Info("delete resource", "resource name:", deploy.GetName(), "get GVK", deploy.GroupVersionKind())
-		if err := r.Delete(ctx, &deploy); err != nil {
-			return err
-		}
-	}
-
-	// delete all daemonset
-	daemonsetlist := appsv1.DaemonSetList{}
-	if err := r.List(ctx, &daemonsetlist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-	for _, daemonset := range daemonsetlist.Items {
-		r.Logger.Info("delete resource", "resource name:", daemonset.GetName(), "get GVK", daemonset.GroupVersionKind())
-		if err := r.Delete(ctx, &daemonset); err != nil {
-			return err
-		}
-	}
-
-	// delete all replicaset
-	replicalist := appsv1.ReplicaSetList{}
-	if err := r.List(ctx, &replicalist, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
-		return err
-	}
-	for _, replica := range replicalist.Items {
-		r.Logger.Info("delete resource", "resource name:", replica.GetName(), "get GVK", replica.GroupVersionKind())
-		if err := r.Delete(ctx, &replica); err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -310,7 +239,7 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	const controllerName = "DebtController"
 	r.Logger = ctrl.Log.WithName(controllerName)
-	var smallBlockWaitSecondString, mediumBlockWaitSecondString string
+	var smallBlockWaitSecondString string
 	if smallBlockWaitSecondString = os.Getenv("SMALL_BLOCK_WAIT_SECOND"); smallBlockWaitSecondString != "" {
 		smallBlockWaitSecond, err := strconv.Atoi(smallBlockWaitSecondString)
 		if err != nil {
@@ -319,14 +248,6 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		DebtConfig["Small"] = int64(smallBlockWaitSecond)
 	}
 
-	if mediumBlockWaitSecondString = os.Getenv("MEDIUM_BLOCK_WAIT_SECOND"); mediumBlockWaitSecondString != "" {
-		if mediumBlockWaitSecond, err := strconv.Atoi(mediumBlockWaitSecondString); err != nil {
-			r.Logger.Error(err, "MEDIUM_BLOCK_WAIT_SECOND is not a number")
-		} else {
-			DebtConfig["Medium"] = int64(mediumBlockWaitSecond)
-		}
-
-	}
 	r.Logger.Info("DebtConfig", "DebtConfig", DebtConfig)
 	r.accountSystemNamespace = os.Getenv("ACCOUNT_SYSTEM_NAMESPACE")
 	if r.accountSystemNamespace == "" {
