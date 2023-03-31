@@ -18,14 +18,13 @@ package main
 
 import (
 	"flag"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	"os"
 
 	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	"github.com/labring/sealos/controllers/account/controllers"
-	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -50,7 +49,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(accountv1.AddToScheme(scheme))
-	utilruntime.Must(infrav1.AddToScheme(scheme))
+	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
