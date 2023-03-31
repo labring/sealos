@@ -79,7 +79,7 @@ func TestDebt(t *testing.T) {
 			}
 
 			t.Log("add account balance")
-			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, 1000); err != nil {
+			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, 10000); err != nil {
 				t.Fatalf(err.Error())
 			}
 
@@ -94,7 +94,7 @@ func TestDebt(t *testing.T) {
 				t.Fatalf("debt status should be normal, but now is " + string(debt.Status.AccountDebtStatus))
 			}
 
-			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -2000); err != nil {
+			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -200000); err != nil {
 				t.Fatalf(err.Error())
 			}
 
@@ -130,7 +130,7 @@ func TestDebt(t *testing.T) {
 
 			// should create deployment、daemonset replicaset
 			time.Sleep(3 * time.Second)
-			err = accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -1000)
+			err = accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -100000)
 			if err != nil {
 				t.Fatalf(err.Error())
 			}
