@@ -3,6 +3,7 @@ package e2e
 import (
 	"github.com/labring/sealos/controllers/account/controllers"
 	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
 	baseapi "github.com/labring/sealos/test/testdata/api"
@@ -125,4 +126,13 @@ func clear() {
 		log.Println(err)
 	}
 
+	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix, api.PodControllerYaml)
+	if err != nil {
+		log.Println(err)
+	}
+
+	err = baseapi.DeleteCRD(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix), api.ExtensionResourcePriceYaml)
+	if err != nil {
+		log.Println(err)
+	}
 }

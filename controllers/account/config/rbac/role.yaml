@@ -110,7 +110,7 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - daemonSets
+  - daemonsets
   verbs:
   - create
   - delete

@@ -60,7 +60,7 @@ var DebtConfig = accountv1.DefaultDebtConfig
 //+kubebuilder:rbac:groups=metering.common.sealos.io,resources=extensionresourceprices,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=daemonSets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
@@ -68,6 +68,9 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	debt := &accountv1.Debt{}
 	account := &accountv1.Account{}
 	if err := r.Get(ctx, req.NamespacedName, account); err == nil {
+		if account.DeletionTimestamp != nil {
+			return ctrl.Result{}, nil
+		}
 		if err := r.Get(ctx, client.ObjectKey{Name: GetDebtName(account.Name), Namespace: r.accountSystemNamespace}, debt); client.IgnoreNotFound(err) != nil {
 			return ctrl.Result{}, err
 		} else if err != nil && client.IgnoreNotFound(err) == nil {
