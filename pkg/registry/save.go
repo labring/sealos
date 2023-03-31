@@ -238,7 +238,7 @@ func (is *DefaultImage) saveManifestAndGetDigest(nameds []name.Reference, repo d
 				<-numCh
 			}()
 			var imageDigestFromImageName digest.Digest
-			if !tmpnamed.IsDigest() {
+			if _, ok := tmpnamed.(name.Tag); ok {
 				desc, err := repo.Tags(is.ctx).Get(is.ctx, tmpnamed.Identifier())
 				if err != nil {
 					return fmt.Errorf("get %s tag descriptor error: %v, try \"sealos login\" if you are using a private registry", tmpnamed.Context().RepositoryStr(), err)
