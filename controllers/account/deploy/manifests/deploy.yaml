@@ -473,7 +473,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - app
+  - apps
   resources:
   - daemonSets
   verbs:
@@ -485,7 +485,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - app
+  - apps
   resources:
   - deployments
   verbs:
@@ -497,7 +497,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - app
+  - apps
   resources:
   - replicasets
   verbs:
@@ -509,7 +509,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - app
+  - apps
   resources:
   - statefulsets
   verbs:

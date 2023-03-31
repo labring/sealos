@@ -59,10 +59,10 @@ var DebtConfig = accountv1.DefaultDebtConfig
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=metering.common.sealos.io,resources=extensionresourceprices,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=daemonSets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=app,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=daemonSets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=replicasets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	debt := &accountv1.Debt{}
@@ -82,6 +82,9 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 	}
 
 	if err := r.Get(ctx, req.NamespacedName, debt); err == nil {
+		if debt.DeletionTimestamp != nil {
+			return ctrl.Result{}, nil
+		}
 		if err := r.Get(ctx, types.NamespacedName{Name: debt.Spec.UserName, Namespace: r.accountNamespace}, account); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -221,6 +224,7 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 				Version: groupVersionKind.Version,
 				Kind:    groupVersionKind.Kind,
 			})
+			r.Logger.Info("want to delete resource", "GVK", u.GroupVersionKind())
 			if err := r.List(ctx, &u, client.InNamespace(namespace)); client.IgnoreNotFound(err) != nil {
 				return err
 			}
