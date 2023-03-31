@@ -1,4 +1,4 @@
-package controllers
+package bytebase
 
 import (
 	"context"
@@ -11,18 +11,18 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jaevor/go-nanoid"
-	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
+	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv1.Bytebase, hostname string) error {
+func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv2.Bytebase, hostname string) error {
 	var err error
 	domainSuffix := DefaultDomainSuffix
 	host := hostname + domainSuffix
 	switch bb.Spec.IngressType {
-	case bbv1.Nginx:
+	case bbv2.Nginx:
 		err = r.syncNginxIngress(ctx, bb, host)
 	//TODO: support apisix
 	default:
@@ -31,7 +31,7 @@ func (r *BytebaseReconciler) syncIngress(ctx context.Context, bb *bbv1.Bytebase,
 	return err
 }
 
-func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Bytebase, host string) error {
+func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv2.Bytebase, host string) error {
 	ingress := &networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      bb.Name,
@@ -51,7 +51,7 @@ func (r *BytebaseReconciler) syncNginxIngress(ctx context.Context, bb *bbv1.Byte
 		for _, cookie := range cookies {
 			snippet += fmt.Sprintf("add_header Set-Cookie \"%s\"; ", cookie)
 		}
-		wholeSnippet = fmt.Sprintf(wholeSnippet, snippet)
+		wholeSnippet += snippet
 		expectIngress := r.createNginxIngress(bb, host, wholeSnippet)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
@@ -87,7 +87,7 @@ func (r *BytebaseReconciler) getClientCookie() ([]string, error) {
 	return cookies, nil
 }
 
-func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv1.Bytebase) error {
+func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv2.Bytebase) error {
 	labelsMap := buildLabelsMap(bb)
 	expectService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -129,7 +129,7 @@ func (r *BytebaseReconciler) syncService(ctx context.Context, bb *bbv1.Bytebase)
 	return nil
 }
 
-func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv1.Bytebase, hostname *string) error {
+func (r *BytebaseReconciler) syncDeployment(ctx context.Context, bb *bbv2.Bytebase, hostname *string) error {
 	var (
 		objectMeta metav1.ObjectMeta
 		selector   *metav1.LabelSelector

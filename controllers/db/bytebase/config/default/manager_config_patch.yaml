@@ -10,6 +10,9 @@ spec:
       - name: manager
         args:
         - "--config=controller_manager_config.yaml"
+        - "--health-probe-bind-address=:8081"
+        - "--metrics-bind-address=127.0.0.1:8080"
+        - "--leader-elect"
         volumeMounts:
         - name: manager-config
           mountPath: /controller_manager_config.yaml

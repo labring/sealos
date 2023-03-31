@@ -1,4 +1,4 @@
-package controllers
+package bytebase
 
 import (
 	"crypto/rand"
@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
+	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
 )
 
 // isExpired return true if the bb has expired
-func isExpired(bb *bbv1.Bytebase) bool {
+func isExpired(bb *bbv2.Bytebase) bool {
 	anno := bb.ObjectMeta.Annotations
 	lastUpdateTime, err := time.Parse(time.RFC3339, anno[KeepaliveAnnotation])
 	if err != nil {
@@ -22,7 +22,7 @@ func isExpired(bb *bbv1.Bytebase) bool {
 	return lastUpdateTime.Add(duration).Before(time.Now())
 }
 
-func buildLabelsMap(bb *bbv1.Bytebase) map[string]string {
+func buildLabelsMap(bb *bbv2.Bytebase) map[string]string {
 	labelsMap := map[string]string{
 		"app": bb.Name,
 	}
@@ -50,19 +50,19 @@ func generateRandomString(n int) (string, error) {
 func generateDefaultNginxConfigSnippet(rootDomain string) string {
 	wholeSnippet := ""
 	// clean up X-Frame-Options
-	part := `more_clear_headers "X-Frame-Options:";`
+	part := `more_clear_headers "X-Frame-Options:"; `
 	wholeSnippet += part
 	// set up Content-Security-Policy
-	part = `more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io";`
+	part = `more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io"; `
 	wholeSnippet += strings.ReplaceAll(part, "cloud.sealos.io", rootDomain)
 	// set up X-Xss-Protection
-	part = `more_set_headers "X-Xss-Protection: 1; mode=block";`
+	part = `more_set_headers "X-Xss-Protection: 1; mode=block"; `
 	wholeSnippet += part
 	// set up Cache-Control
 	part = `if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
-        expires 30d;
-        add_header Cache-Control "public";
-    }`
+	        expires 30d;
+	        add_header Cache-Control "public";
+	    } `
 	wholeSnippet += part
 	return wholeSnippet
 }

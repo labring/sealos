@@ -4,11 +4,11 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: ghcr.io/sealos-bytebase-controller
-  newTag: latest
+  newName: dinoallo/sealos-bytebase-controller
+  newTag: dev
 generatorOptions:
   disableNameSuffixHash: true
 configMapGenerator:
-- name: manager-config
-  files:
+- files:
   - controller_manager_config.yaml
+  name: manager-config

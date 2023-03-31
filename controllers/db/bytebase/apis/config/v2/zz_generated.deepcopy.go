@@ -29,7 +29,6 @@ import (
 func (in *BytebaseControllerConfig) DeepCopyInto(out *BytebaseControllerConfig) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	in.ControllerManagerConfigurationSpec.DeepCopyInto(&out.ControllerManagerConfigurationSpec)
 }
 

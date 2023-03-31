@@ -12,7 +12,7 @@ metadata:
   name: bytebase-viewer-role
 rules:
 - apiGroups:
-  - db.sealos.io
+  - bytebase.db.sealos.io
   resources:
   - bytebases
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - db.sealos.io
+  - bytebase.db.sealos.io
   resources:
   - bytebases/status
   verbs:

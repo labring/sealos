@@ -66,6 +66,32 @@ rules:
   - update
   - watch
 - apiGroups:
+  - bytebase.db.sealos.io
+  resources:
+  - bytebases
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - bytebase.db.sealos.io
+  resources:
+  - bytebases/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - bytebase.db.sesalos.io
+  resources:
+  - bytebases/finalizers
+  verbs:
+  - update
+- apiGroups:
   - ""
   resources:
   - secrets
@@ -85,32 +111,6 @@ rules:
   - patch
   - update
   - watch
-- apiGroups:
-  - db.sealos.io
-  resources:
-  - bytebases
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - db.sealos.io
-  resources:
-  - bytebases/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - db.sealos.io
-  resources:
-  - bytebases/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - networking.k8s.io
   resources:

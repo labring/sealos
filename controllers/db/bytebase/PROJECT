@@ -5,24 +5,25 @@
 domain: db.sealos.io
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 projectName: bytebase
 repo: github.com/labring/sealos/controllers/db/bytebase
 resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
   domain: db.sealos.io
-  group: db.sealos.io
-  kind: Bytebase
-  path: github.com/labring/sealos/controllers/db/bytebase/api/v1
-  version: v1
+  group: config
+  kind: BytebaseControllerConfig
+  path: github.com/labring/sealos/controllers/db/bytebase/apis/config/v2
+  version: v2
 - api:
     crdVersion: v1
     namespaced: true
+  controller: true
   domain: db.sealos.io
-  group: db.sealos.io
-  kind: BytebaseControllerConfig
-  path: github.com/labring/sealos/controllers/db/bytebase/api/v2
+  group: bytebase
+  kind: Bytebase
+  path: github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2
   version: v2
 version: "3"

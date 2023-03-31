@@ -3,11 +3,11 @@ kind: BytebaseControllerConfig
 metadata:
   labels:
     app.kubernetes.io/name: bytebasecontrollerconfig
-    app.kubernetes.io/instance: controller-manager-configuration
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: bytebase
+    app.kubernetes.io/instance: bytebasecontrollerconfig-sample
     app.kubernetes.io/part-of: bytebase
     app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: bytebase
+  name: bytebasecontrollerconfig-sample
 health:
   healthProbeBindAddress: :8081
 metrics:

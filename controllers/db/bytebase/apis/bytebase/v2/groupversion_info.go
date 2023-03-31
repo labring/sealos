@@ -14,9 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v2 contains API Schema definitions for the db.sealos.io v2 API group
+// Package v2 contains API Schema definitions for the bytebase v2 API group
 // +kubebuilder:object:generate=true
-// +groupName=db.sealos.io
+// +groupName=bytebase.db.sealos.io
 package v2
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "db.sealos.io", Version: "v2"}
+	GroupVersion = schema.GroupVersion{Group: "bytebase.db.sealos.io", Version: "v2"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

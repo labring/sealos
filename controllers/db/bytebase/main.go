@@ -33,9 +33,9 @@ import (
 
 	acidv1 "github.com/zalando/postgres-operator/pkg/apis/acid.zalan.do/v1"
 
-	dbsealosiov1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
-	configv2 "github.com/labring/sealos/controllers/db/bytebase/api/v2"
-	"github.com/labring/sealos/controllers/db/bytebase/controllers"
+	bytebasev2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	configv2 "github.com/labring/sealos/controllers/db/bytebase/apis/config/v2"
+	bytebasecontrollers "github.com/labring/sealos/controllers/db/bytebase/controllers/bytebase"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -52,10 +52,9 @@ const (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
-
-	utilruntime.Must(dbsealosiov1.AddToScheme(scheme))
 	utilruntime.Must(acidv1.AddToScheme(scheme))
 	utilruntime.Must(configv2.AddToScheme(scheme))
+	utilruntime.Must(bytebasev2.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -90,12 +89,14 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var debug bool
 	flag.StringVar(&configFile, "config", "", "The controller will load its initial configuration from this file. "+"Omit this flag to use the default configuration values. "+"Command-line flags override configuration from this file.")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&debug, "debug", false, "manager debug mode.")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -111,11 +112,13 @@ func main() {
 		LeaderElectionID:       "043ebde6.db.sealos.io",
 	}
 	// read the config file
-	var err error
+
 	ctrlConfig := configv2.BytebaseControllerConfig{}
 	if configFile != "" {
 		// AndFrom will use a supplied type and convert to Options any options already set on Options will be ignored, this is used to allow cli flags to override anything specified in the config file.
+		var err error
 		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&ctrlConfig))
+		// options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile))
 		if err != nil {
 			setupLog.Error(err, "unable to load the config file")
 			os.Exit(1)
@@ -142,8 +145,11 @@ func main() {
 	if secretNameSpace == "" {
 		secretNameSpace = getDefaultSecretNamespace()
 	}
+	if debug || ctrlConfig.Debug {
+		setupLog.Info("configuration values...", "rootDomain", rootDomain, "secretName", secretName, "secretNameSpace", secretNameSpace)
+	}
 
-	if err = (&controllers.BytebaseReconciler{
+	if err = (&bytebasecontrollers.BytebaseReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 		// use the logger with name

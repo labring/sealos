@@ -5,9 +5,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
-  name: bytebases.db.sealos.io
+  name: bytebases.bytebase.db.sealos.io
 spec:
-  group: db.sealos.io
+  group: bytebase.db.sealos.io
   names:
     kind: Bytebase
     listKind: BytebaseList
@@ -15,7 +15,23 @@ spec:
     singular: bytebase
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.keepalived
+      name: Keepalived
+      type: string
+    - jsonPath: .spec.ingressType
+      name: IngressType
+      type: string
+    - jsonPath: .status.availableReplicas
+      name: AvailableReplicas
+      type: string
+    - jsonPath: .status.domain
+      name: Domain
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v2
     schema:
       openAPIV3Schema:
         description: Bytebase is the Schema for the bytebases API

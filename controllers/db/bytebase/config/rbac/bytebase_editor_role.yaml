@@ -12,7 +12,7 @@ metadata:
   name: bytebase-editor-role
 rules:
 - apiGroups:
-  - db.sealos.io
+  - bytebase.db.sealos.io
   resources:
   - bytebases
   verbs:
@@ -24,7 +24,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - db.sealos.io
+  - bytebase.db.sealos.io
   resources:
   - bytebases/status
   verbs:

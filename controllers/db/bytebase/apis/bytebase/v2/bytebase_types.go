@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1
+package v2
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,19 +33,19 @@ const (
 type BytebaseSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Image string `json:"image"`
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Replicas *int32 `json:"replicas"`
-	//+kubebuilder:validation:Required
+	// +kubebuilder:validation:Required
 	Keepalived string `json:"keepalived"`
-	//+kubebuilder:validation:Optional
-	//+kubebuilder:default=nginx
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=nginx
 	IngressType IngressType `json:"ingressType"`
-	//+kubebuilder:validation:Optional
+	// +kubebuilder:validation:Optional
 	ExternalURL string `json:"externalURL"`
-	//+kubebuilder:validation:Required
-	//+kubebuilder:default=8080
+	// +kubebuilder:validation:Required
+	// +kubebuilder:default=8080
 	Port intstr.IntOrString `json:"port"`
 }
 
@@ -57,8 +57,13 @@ type BytebaseStatus struct {
 	Domain            string `json:"domain"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:JSONPath=".spec.keepalived",name="Keepalived",type=string
+// +kubebuilder:printcolumn:JSONPath=".spec.ingressType",name="IngressType",type=string
+// +kubebuilder:printcolumn:JSONPath=".status.availableReplicas",name="AvailableReplicas",type=string
+// +kubebuilder:printcolumn:JSONPath=".status.domain",name="Domain",type=string
+// +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 
 // Bytebase is the Schema for the bytebases API
 type Bytebase struct {
@@ -69,7 +74,7 @@ type Bytebase struct {
 	Status BytebaseStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // BytebaseList contains a list of Bytebase
 type BytebaseList struct {

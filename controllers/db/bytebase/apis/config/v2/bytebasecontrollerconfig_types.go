@@ -21,18 +21,22 @@ import (
 	cfg "sigs.k8s.io/controller-runtime/pkg/config/v1alpha1"
 )
 
-//+kubebuilder:object:root=true
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope:namespaced,shortName=bcc,singular=bytebasecontrollerconfig
 
 // BytebaseControllerConfig is the Schema for the bytebasecontrollerconfigs API
 type BytebaseControllerConfig struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
+	metav1.TypeMeta `json:",inline"`
 	// ControllerManagerConfigurationSpec returns the configurations for controllers
 	cfg.ControllerManagerConfigurationSpec `json:",inline"`
 	RootDomain                             string `json:"rootDomain,omitempty"`
 	SecretName                             string `json:"secretName,omitempty"`
-	SecretNamespace                        string `json:"secretNameSpace,omitempty"`
+	SecretNamespace                        string `json:"secretNamespace,omitempty"`
+	Debug                                  bool   `json:"debug,omitempty"`
+	Debug2                                 bool   `json:"debug2,omitempty"`
 }
 
 func init() {

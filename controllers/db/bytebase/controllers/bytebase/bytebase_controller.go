@@ -1,44 +1,41 @@
 /*
-   Copyright 2023.
+Copyright 2023.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 */
 
-package controllers
+package bytebase
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
-
 	"k8s.io/apimachinery/pkg/runtime"
-
-	bbv1 "github.com/labring/sealos/controllers/db/bytebase/api/v1"
-
-	bbclient "github.com/labring/sealos/controllers/db/bytebase/client"
-	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
-
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"github.com/go-logr/logr"
+	bbv2 "github.com/labring/sealos/controllers/db/bytebase/apis/bytebase/v2"
+	bbclient "github.com/labring/sealos/controllers/db/bytebase/client"
+	api "github.com/labring/sealos/controllers/db/bytebase/client/api"
 )
 
 const (
@@ -76,24 +73,24 @@ type BytebaseReconciler struct {
 	RootDomain      string
 }
 
-//+kubebuilder:rbac:groups=db.sealos.io,resources=bytebases,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=db.sealos.io,resources=bytebases/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=db.sealos.io,resources=bytebases/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixroutes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=acid.zalan.do,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bytebase.db.sealos.io,resources=bytebases,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=bytebase.db.sealos.io,resources=bytebases/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=bytebase.db.sesalos.io,resources=bytebases/finalizers,verbs=update
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch
+// +kubebuilder:rbac:groups="",resources=events,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apisix.apache.org,resources=apisixroutes,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apisix.apache.org,resources=apisixtlses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=acid.zalan.do,resources=postgresqls,verbs=get;list;watch;create;update;patch;delete
 
 func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// use new logger so that we can log where the request is
 	logger := log.FromContext(ctx, "bytebase", req.NamespacedName)
-	bb := &bbv1.Bytebase{}
+	bb := &bbv2.Bytebase{}
 	// get CRD bytebase (status). Call reconciler again if not found.
 	if err := r.Get(ctx, req.NamespacedName, bb); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -198,7 +195,7 @@ func (r *BytebaseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{RequeueAfter: duration}, nil
 }
 
-func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv1.Bytebase) error {
+func (r *BytebaseReconciler) fillDefaultValue(ctx context.Context, bb *bbv2.Bytebase) error {
 	hasUpdate := false
 
 	if bb.ObjectMeta.Annotations == nil {
@@ -227,6 +224,6 @@ func (r *BytebaseReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&bbv1.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
+		For(&bbv2.Bytebase{}).Owns(&appsv1.Deployment{}).Owns(&networkingv1.Ingress{}).Owns(&corev1.Service{}).
 		Complete(r)
 }
