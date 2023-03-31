@@ -60,7 +60,6 @@ type RunArgs struct {
 	CustomEnv         []string
 	CustomCMD         []string
 	CustomConfigFiles []string
-	Single            bool
 	fs                *pflag.FlagSet
 }
 

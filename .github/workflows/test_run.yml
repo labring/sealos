@@ -70,10 +70,11 @@ jobs:
           echo "Current system info"
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
           sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
-          echo "Check Single Node Stains"
+          echo "Check Single Node Taints"
           taints=$(kubectl get nodes -o json | jq ".items[].spec.taints")
-          if [ grep -q "control-plane"< <(echo $taints) ]; then
-            printf "node taints: %s\n" $taints && false
+          echo "$taints"
+          if echo "$taints" | grep -q "control-plane"; then
+              printf "should not have control-plane Taint\n" && false
           fi
           echo "Current Cluster info"
           set -e
@@ -808,3 +809,88 @@ jobs:
       - name: Run
         run: |
           sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+
+  verify-run-containerd-apply-with-external-taint:
+    needs: [build-sealos]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+      - name: Generator clusterfile
+        run: |
+          local_ip=`ip addr | grep inet | grep -Ev 'inet6|docker|host|br-' | awk '{print $2}' | awk -F '/' '{print $1}'`
+          echo "local ip is : ${local_ip}"
+          
+          mkdir -p /tmp/apply
+          cat > /tmp/apply/Clusterfile <<EOF
+          apiVersion: apps.sealos.io/v1beta1
+          kind: Cluster
+          metadata:
+            name: default
+          spec:
+            hosts:
+              - ips:
+                  - ${local_ip}:22
+                roles:
+                  - master
+                  - amd64
+            image:
+              - labring/kubernetes:v1.25.0
+            ssh:
+              pk: /root/.ssh/id_rsa
+              port: 22
+              user: root
+          ---
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: ClusterConfiguration
+          networking:
+            serviceSubnet: "100.55.0.0/16"
+          ---
+          NodeRegistration:
+            Taints:
+              - effect: NoSchedule
+                key: kubeadmNode
+                value: theValue
+          apiVersion: kubeadm.k8s.io/v1beta3
+          kind: InitConfiguration
+          EOF
+          cat /tmp/apply/Clusterfile
+      - name: Auto install k8s using sealos
+        run: |
+          sudo sealos apply -f /tmp/apply/Clusterfile  --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      - name: Verify Cluster Status
+        run: |
+          echo "Verify Cluster"
+          echo "Current system info"
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri socket
+          sudo /var/lib/sealos/data/default/rootfs/opt/sealctl cri cgroup-driver --short
+          echo "Check Node Taints"
+          taints=$(kubectl get nodes -o json | jq ".items[].spec.taints")
+          echo "$taints"
+          if ! echo "$taints" | grep -q "kubeadmNode"; then
+              printf "should have kubeadmNode Taint\n" && false
+          fi
+          set -e
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep /run/containerd/containerd.sock
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep systemd
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.64.0.0/10
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16

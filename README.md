@@ -101,9 +101,7 @@ $ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24
 > Single host
 
 ```bash
-$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 --single
-# remove taint
-$ kubectl taint nodes --all node-role.kubernetes.io/master:NoSchedule-
+$ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
 ```
 
 > Building a custom Cluster image

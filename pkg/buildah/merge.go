@@ -123,7 +123,7 @@ func newMergeCommand() *cobra.Command {
 	flags.SetNormalizeFunc(buildahcli.AliasFlags)
 	bailOnError(markFlagsHidden(flags, "save-image"), "")
 	bailOnError(markFlagsHidden(flags, "tls-verify"), "")
-	bailOnError(markFlagsHidden(flags, append(markFlagsHiddenBuild(), markFlagsHiddenPlatform()...)...), "")
+	bailOnError(markFlagsHidden(flags, append(flagsInBuildCommandToBeHidden(), flagsAssociatedWithPlatform()...)...), "")
 	return mergeCommand
 }
 
@@ -144,7 +144,10 @@ func mergeImagesWithScratchContainer(newImageName string, images []string, sette
 
 	imageObjList := make([]map[string]v1.Image, 0)
 	for _, i := range images {
-		obj, _ := b.InspectImage(i)
+		obj, err := b.InspectImage(i)
+		if err != nil {
+			logger.Error("InspectImage error: %+v", err)
+		}
 		if obj != nil {
 			imageObjList = append(imageObjList, map[string]v1.Image{i: *obj.OCIv1})
 		}

@@ -44,13 +44,14 @@ func NewApplierFromArgs(imageName []string, args *RunArgs) (applydrivers.Interfa
 	if err != nil && err != clusterfile.ErrClusterFileNotExists {
 		return nil, err
 	}
-	if err = cf.SetSingleMode(args.Single); err != nil {
-		return nil, err
-	}
 
 	cluster := cf.GetCluster()
 	if cluster == nil {
 		logger.Debug("creating new cluster")
+		if args.Masters == "" && args.Nodes == "" {
+			addr, _ := iputils.ListLocalHostAddrs()
+			args.Masters = iputils.LocalIP(addr)
+		}
 		cluster = initCluster(args.ClusterName)
 	} else {
 		cluster = cluster.DeepCopy()

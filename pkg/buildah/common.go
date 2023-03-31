@@ -19,9 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
-
-	"github.com/labring/sealos/pkg/system"
 
 	"github.com/containers/buildah"
 	"github.com/containers/common/pkg/umask"
@@ -31,6 +28,7 @@ import (
 	"github.com/containers/storage/pkg/unshare"
 	"github.com/spf13/cobra"
 
+	"github.com/labring/sealos/pkg/system"
 	wrapunshare "github.com/labring/sealos/pkg/unshare"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
@@ -59,12 +57,14 @@ func setDefaultFlagsWithSetters(c *cobra.Command, setters ...func(*cobra.Command
 	}
 	return nil
 }
-func markFlagsHiddenPlatform() []string {
+
+func flagsAssociatedWithPlatform() []string {
 	return []string{
 		"arch", "os", "os-feature", "os-version", "variant",
 	}
 }
-func markFlagsHiddenBuild() []string {
+
+func flagsInBuildCommandToBeHidden() []string {
 	return []string{
 		"add-host",
 		"annotation",
@@ -333,9 +333,4 @@ Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
 {{end}}
 `
-}
-
-func getSelfExe() string {
-	// if run in rootless mode
-	return strings.TrimSuffix(os.Args[0], "-in-a-user-namespace")
 }

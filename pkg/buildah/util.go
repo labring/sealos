@@ -18,15 +18,20 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
-func Preload(buildah Interface, images []string, transport string) ([]string, error) {
+func PreloadIfTarFile(images []string, transport string) ([]string, error) {
+	r, err := getRuntime(nil)
+	if err != nil {
+		return nil, err
+	}
 	var ret []string
 	for i := range images {
 		if file.IsTarFile(images[i]) {
-			id, err := buildah.Load(images[i], transport)
+			ref := FormatReferenceWithTransportName(transport, images[i])
+			names, err := r.pullOrLoadImages(getContext(), ref)
 			if err != nil {
 				return nil, err
 			}
-			ret = append(ret, id)
+			ret = append(ret, names...)
 		} else {
 			ret = append(ret, images[i])
 		}
