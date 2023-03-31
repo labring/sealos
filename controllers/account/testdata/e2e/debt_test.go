@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
 	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
@@ -18,6 +19,7 @@ const (
 	TestNamespace           = "ns-metering-test"
 	DefaultOwner            = "metering-test"
 	PodName                 = "nginx-test"
+	DeploymentName          = "nginx-deployment-test"
 	MeteringSystemNamespace = "metering-system"
 )
 
@@ -66,7 +68,44 @@ func TestDebt(t *testing.T) {
 		//
 		//})
 
-		// before you run this test ,you should set SMALL_BLOCK_WAIT_SECOND = 1 and MEDIUM_BLOCK_WAIT_SECOND = 1 and restart the account-manager pod
+		// before you run this test ,you should set SMALL_BLOCK_WAIT_SECOND = 1 and restart the account-manager pod
+		t.Run("debt change status should be ok", func(t *testing.T) {
+			baseapi.EnsureNamespace(AccountNamespace)
+			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
+
+			time.Sleep(5 * time.Second)
+			if _, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner)); err != nil {
+				t.Fatalf("not get debt" + err.Error())
+			}
+			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, 1000); err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			time.Sleep(5 * time.Second)
+			debt, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner))
+			if err != nil {
+				t.Fatalf("not get debt" + err.Error())
+			}
+
+			if debt.Status.AccountDebtStatus != accountv1.DebtStatusNormal {
+				t.Fatalf("debt status should be normal, but now is " + string(debt.Status.AccountDebtStatus))
+			}
+
+			if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -2000); err != nil {
+				t.Fatalf(err.Error())
+			}
+
+			time.Sleep(time.Minute)
+			debt, err = accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner))
+			if err != nil {
+				t.Fatalf("not get debt" + err.Error())
+			}
+
+			if debt.Status.AccountDebtStatus != accountv1.DebtStatusSmall && debt.Status.AccountDebtStatus != accountv1.DebtStatusLarge {
+				t.Fatalf("debt status should be samll or large, but now is " + string(debt.Status.AccountDebtStatus))
+			}
+
+		})
 		t.Run("debt delete all resource should be ok", func(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)
@@ -74,6 +113,7 @@ func TestDebt(t *testing.T) {
 			time.Sleep(3 * time.Second)
 			baseapi.CreateCRD(TestNamespace, PodName, api.PodYaml)
 			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
+			baseapi.CreateCRD(TestNamespace, DeploymentName, accountapi.DeploymentYaml)
 
 			// should create deployment、daemonset replicaset
 			time.Sleep(3 * time.Second)
@@ -97,6 +137,11 @@ func TestDebt(t *testing.T) {
 			if err == nil {
 				t.Fatalf("pod should be deleted, but now is %+v", pod.Name)
 			}
+			deployment, err := accountapi.GetDeployment(TestNamespace, DeploymentName)
+			if err == nil {
+				t.Fatalf("deployment should be deleted, but now is %+v", deployment.Name)
+			}
+
 		})
 	})
 

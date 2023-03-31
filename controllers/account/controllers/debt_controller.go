@@ -19,13 +19,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
+	"time"
+
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"os"
-	"strconv"
-	"time"
 
 	"github.com/go-logr/logr"
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
@@ -96,8 +97,8 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 		return ctrl.Result{}, err
 	}
 
-	if debt.Name == "" {
-		r.Logger.Info("not get debt")
+	if debt.Name == "" || account.Name == "" {
+		r.Logger.Info("not get debt or not get account", "debt name", debt.Name, "account name", account.Name)
 		return ctrl.Result{}, nil
 	}
 	// now should get debt and account
@@ -116,7 +117,12 @@ func (r *DebtReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.
 func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv1.Debt, account *accountv1.Account) error {
 	oweamount := account.Status.Balance - account.Status.DeductionBalance
 	Updataflag := false
-	if oweamount > 0 && debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge {
+
+	normalPrice, ok := DebtConfig[accountv1.DebtStatusNormal]
+	if !ok {
+		r.Error(fmt.Errorf("get normal price error"), "")
+	}
+	if oweamount > normalPrice && (debt.Status.AccountDebtStatus == accountv1.DebtStatusSmall || debt.Status.AccountDebtStatus == accountv1.DebtStatusLarge) {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusNormal
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
@@ -125,10 +131,6 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		}
 	}
 
-	normalPrice, ok := DebtConfig[accountv1.DebtStatusNormal]
-	if !ok {
-		r.Error(fmt.Errorf("get normal price error"), "")
-	}
 	if debt.Status.AccountDebtStatus == accountv1.DebtStatusNormal && oweamount < normalPrice {
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusSmall
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
@@ -149,7 +151,7 @@ func (r *DebtReconciler) reconcileDebtStatus(ctx context.Context, debt *accountv
 		debt.Status.AccountDebtStatus = accountv1.DebtStatusLarge
 		debt.Status.LastUpdateTimestamp = time.Now().Unix()
 		Updataflag = true
-		if err := r.sendMediumNotice(ctx, account.Name); err != nil {
+		if err := r.sendLargeNotice(ctx, account.Name); err != nil {
 			return err
 		}
 		if err := r.change2Large(ctx, *account); err != nil {
@@ -208,9 +210,6 @@ func (r *DebtReconciler) sendSmallNotice(ctx context.Context, accountName string
 	return r.sendNotice(ctx, accountName, nil)
 }
 
-func (r *DebtReconciler) sendMediumNotice(ctx context.Context, accountName string) error {
-	return r.sendNotice(ctx, accountName, nil)
-}
 func (r *DebtReconciler) sendLargeNotice(ctx context.Context, accountName string) error {
 	return r.sendNotice(ctx, accountName, nil)
 }
@@ -260,11 +259,11 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 
 	r.Logger.Info("DebtConfig", "DebtConfig", DebtConfig)
-	r.accountSystemNamespace = os.Getenv("ACCOUNT_SYSTEM_NAMESPACE")
+	r.accountSystemNamespace = os.Getenv(accountv1.AccountSystemNamespaceEnv)
 	if r.accountSystemNamespace == "" {
 		r.accountSystemNamespace = "account-system"
 	}
-	r.accountNamespace = os.Getenv("ACCOUNT_NAMESPACE")
+	r.accountNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
 	if r.accountNamespace == "" {
 		r.accountSystemNamespace = "sealos-system"
 	}

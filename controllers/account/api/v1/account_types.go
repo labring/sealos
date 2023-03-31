@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	ChargeStatusCharging         = "charging"
-	ChargeStatusClosed           = "closed"
-	ChargeStatusTimeOUT          = "timeout"
-	ACCOUNT_SYSTEM_NAMESPACE_ENV = "ACCOUNT_SYSTEM_NAMESPACE"
+	ChargeStatusCharging      = "charging"
+	ChargeStatusClosed        = "closed"
+	ChargeStatusTimeOUT       = "timeout"
+	AccountSystemNamespaceEnv = "ACCOUNT_SYSTEM_NAMESPACE"
 )
 
 /*
