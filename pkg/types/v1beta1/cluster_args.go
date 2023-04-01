@@ -107,6 +107,7 @@ func (c *Cluster) GetIPSByRole(role string) []string {
 		for _, hostRole := range host.Roles {
 			if role == hostRole {
 				hosts = append(hosts, host.IPS...)
+				break
 			}
 		}
 	}

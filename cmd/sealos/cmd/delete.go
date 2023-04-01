@@ -45,6 +45,7 @@ Please note that sealos will delete your master if the --masters parameter is sp
 func newDeleteCmd() *cobra.Command {
 	deleteArgs := &apply.ScaleArgs{
 		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
 	}
 	var deleteCmd = &cobra.Command{
 		Use:     "delete",

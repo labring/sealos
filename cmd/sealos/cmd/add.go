@@ -30,12 +30,16 @@ add to nodes :
 add to default cluster:
 	sealos add --masters x.x.x.x --nodes x.x.x.x
 	sealos add --masters x.x.x.x-x.x.x.y --nodes x.x.x.x-x.x.x.y
+
+add with new ssh setting:
+	sealos add --masters x.x.x.x --nodes x.x.x.x --passwd yourpasswd --user root --port 22
 `
 
-// addCmd represents the delete command
+// addCmd represents the add command
 func newAddCmd() *cobra.Command {
 	addArgs := &apply.ScaleArgs{
 		Cluster: &apply.Cluster{},
+		SSH:     &apply.SSH{},
 	}
 	var addCmd = &cobra.Command{
 		Use:     "add",

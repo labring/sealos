@@ -101,8 +101,12 @@ func (arg *ResetArgs) RegisterFlags(fs *pflag.FlagSet) {
 
 type ScaleArgs struct {
 	*Cluster
+	*SSH
+	fs *pflag.FlagSet
 }
 
 func (arg *ScaleArgs) RegisterFlags(fs *pflag.FlagSet, verb, action string) {
 	arg.Cluster.RegisterFlags(fs, verb, action)
+	arg.SSH.RegisterFlags(fs)
+	arg.fs = fs
 }

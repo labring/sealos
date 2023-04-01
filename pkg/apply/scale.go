@@ -54,6 +54,23 @@ func NewScaleApplierFromArgs(scaleArgs *ScaleArgs, flag string) (applydrivers.In
 	if scaleArgs.Cluster.Nodes == "" && scaleArgs.Cluster.Masters == "" {
 		return nil, fmt.Errorf("the node or master parameter was not committed")
 	}
+	if scaleArgs.fs != nil {
+		if scaleArgs.fs.Changed("user") || cluster.Spec.SSH.User == "" {
+			cluster.Spec.SSH.User = scaleArgs.SSH.User
+		}
+		if scaleArgs.fs.Changed("pk") || cluster.Spec.SSH.Pk == "" {
+			cluster.Spec.SSH.Pk = scaleArgs.SSH.Pk
+		}
+		if scaleArgs.fs.Changed("pk-passwd") || cluster.Spec.SSH.PkPasswd == "" {
+			cluster.Spec.SSH.PkPasswd = scaleArgs.SSH.PkPassword
+		}
+		if scaleArgs.fs.Changed("port") || cluster.Spec.SSH.Port == 0 {
+			cluster.Spec.SSH.Port = scaleArgs.SSH.Port
+		}
+		if scaleArgs.fs.Changed("passwd") || cluster.Spec.SSH.Passwd == "" {
+			cluster.Spec.SSH.Passwd = scaleArgs.SSH.Password
+		}
+	}
 	var err error
 	switch flag {
 	case "add":

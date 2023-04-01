@@ -212,6 +212,7 @@ func (c *Applier) scaleCluster(mj, md, nj, nd []string) error {
 	cluster := c.ClusterDesired
 	err = scaleProcessor.Execute(cluster)
 	if err != nil {
+		// TODO: Roll back the hosts in the desired cluster when scaling the cluster fails to avoid adding unsuccessful joined nodes or masters to the clusterfile.
 		return err
 	}
 	logger.Info("succeeded in scaling this cluster")

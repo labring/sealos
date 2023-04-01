@@ -19,6 +19,8 @@ package apply
 import (
 	"testing"
 
+	"github.com/spf13/pflag"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
@@ -779,6 +781,29 @@ func TestNewScaleApplierFromArgs(t *testing.T) {
 					Nodes:       "",
 					ClusterName: "",
 				},
+			},
+			wantErr: true,
+		},
+		{
+			//Due to the difficulty of mocking the cluster file and pass to it, "wantErr" is set to True here.
+			//In fact, the error occurred during the join process
+			//because the original master in the cluster file was empty.
+			name: "add node with SSH options",
+			op:   "add",
+			args: &ScaleArgs{
+				Cluster: &Cluster{
+					Masters:     "192.168.1.2",
+					Nodes:       "192.168.1.3",
+					ClusterName: "",
+				},
+				SSH: &SSH{
+					User:       "root",
+					Password:   "xxxx",
+					PkPassword: "xxxx",
+					Pk:         "/path/to/private/key/file",
+					Port:       22,
+				},
+				fs: pflag.NewFlagSet("test", pflag.ExitOnError),
 			},
 			wantErr: true,
 		},
