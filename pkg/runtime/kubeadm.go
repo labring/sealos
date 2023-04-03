@@ -150,7 +150,7 @@ func (k *KubeadmRuntime) validateVIP(ip string) error {
 }
 
 func (k *KubeadmRuntime) getDefaultKubeadmConfig() string {
-	return filepath.Join(k.getContentData().RootFSEtcPath(), constants.DefaultRootfsKubeadmFileName)
+	return filepath.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName)
 }
 
 func (k *KubeadmRuntime) getClusterName() string {
