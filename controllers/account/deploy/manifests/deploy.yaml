@@ -744,6 +744,8 @@ spec:
         envFrom:
         - configMapRef:
             name: account-manager-configmap
+        - secretRef:
+            name: payment-secret
         image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
