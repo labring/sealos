@@ -1,0 +1,102 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.11.1
+  creationTimestamp: null
+  name: bytebases.bytebase.db.sealos.io
+spec:
+  group: bytebase.db.sealos.io
+  names:
+    kind: Bytebase
+    listKind: BytebaseList
+    plural: bytebases
+    singular: bytebase
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.keepalived
+      name: Keepalived
+      type: string
+    - jsonPath: .spec.ingressType
+      name: IngressType
+      type: string
+    - jsonPath: .status.availableReplicas
+      name: AvailableReplicas
+      type: string
+    - jsonPath: .status.domain
+      name: Domain
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1
+    schema:
+      openAPIV3Schema:
+        description: Bytebase is the Schema for the bytebases API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BytebaseSpec defines the desired state of Bytebase
+            properties:
+              externalURL:
+                type: string
+              image:
+                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file'
+                type: string
+              ingressType:
+                default: nginx
+                enum:
+                - nginx
+                - apisix
+                type: string
+              keepalived:
+                type: string
+              port:
+                anyOf:
+                - type: integer
+                - type: string
+                default: 8080
+                x-kubernetes-int-or-string: true
+              replicas:
+                format: int32
+                type: integer
+            required:
+            - image
+            - keepalived
+            - port
+            - replicas
+            type: object
+          status:
+            description: BytebaseStatus defines the observed state of Bytebase
+            properties:
+              availableReplicas:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                format: int32
+                type: integer
+              domain:
+                type: string
+            required:
+            - availableReplicas
+            - domain
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
