@@ -35,6 +35,8 @@ spec:
         envFrom:
           - configMapRef:
               name: account-manager-configmap
+          - secretRef:
+              name: payment-secret
         env:
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
