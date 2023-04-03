@@ -206,7 +206,11 @@ spec:
     singular: debt
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Debt is the Schema for the debts API
@@ -473,6 +477,54 @@ rules:
   - patch
   - update
 - apiGroups:
+  - apps
+  resources:
+  - daemonsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - replicasets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - ""
   resources:
   - namespaces
@@ -485,9 +537,21 @@ rules:
   - update
   - watch
 - apiGroups:
-  - infra.sealos.io
+  - ""
   resources:
-  - infras
+  - pods
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - extensionresourceprices
   verbs:
   - create
   - delete
@@ -672,9 +736,14 @@ spec:
           value: "50000"
         - name: WHITELIST
           value: terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1
+        - name: ACCOUNT_SYSTEM_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
         envFrom:
-        - secretRef:
-            name: payment-secret
+        - configMapRef:
+            name: account-manager-configmap
         image: ghcr.io/labring/sealos-account-controller:dev
         imagePullPolicy: Always
         livenessProbe:
