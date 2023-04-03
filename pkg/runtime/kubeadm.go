@@ -118,8 +118,8 @@ func (k *KubeadmRuntime) getCGroupDriver(node string) (string, error) {
 func (k *KubeadmRuntime) MergeKubeadmConfig() error {
 	k.ImageKubeVersion = k.getKubeVersionFromImage()
 	for _, fn := range []string{
-		"",                          // generate default kubeadm configs
-		k.getDefaultKubeadmConfig(), // merging from predefined path of file if file exists
+		"", // generate default kubeadm configs
+		filepath.Join(k.getContentData().EtcPath(), constants.DefaultInitKubeadmFileName), // merging from predefined path of file if file exists
 	} {
 		if err := k.Merge(fn); err != nil {
 			return err
