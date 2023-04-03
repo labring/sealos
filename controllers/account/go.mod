@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/go-logr/logr v1.2.3
 	github.com/labring/sealos v0.0.0
-	github.com/labring/sealos/controllers/common v0.0.0-20230329143406-e5a204154f23
+	github.com/labring/sealos/controllers/common v0.0.0
 	github.com/labring/sealos/controllers/metering v0.0.0
 	github.com/labring/sealos/controllers/user v0.0.0
 	github.com/mdp/qrterminal v1.0.1
@@ -80,7 +80,7 @@ require (
 
 replace (
 	github.com/labring/sealos => ../../
-	github.com/labring/sealos/controllers/infra => ../../controllers/infra
+	github.com/labring/sealos/controllers/common => ../../controllers/common
 	github.com/labring/sealos/controllers/metering => ../../controllers/metering
 	github.com/labring/sealos/controllers/user => ../../controllers/user
 )
