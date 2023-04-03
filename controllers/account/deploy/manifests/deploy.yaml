@@ -206,7 +206,11 @@ spec:
     singular: debt
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.status
+      name: status
+      type: string
+    name: v1
     schema:
       openAPIV3Schema:
         description: Debt is the Schema for the debts API

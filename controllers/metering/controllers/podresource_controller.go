@@ -98,12 +98,11 @@ func (r *PodResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx contex
 		extensionResourcesPrice.Spec.Resources = podController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = podController.Spec.ResourceName
 		extensionResourcesPrice.Spec.GroupVersionKinds = meteringv1.DefaultPodResourceGVK
-		//extensionResourcesPrice.SetPrice(apiVersion, kind, podController.Name)
 		return nil
 	}); err != nil {
 		return fmt.Errorf("sync ExtensionResourcesPrice failed: %v", err)
 	}
-	//r.Logger.V(1).Info("sync extensionResourcesPrice", "extensionResourcesPrice.Spec", extensionResourcesPrice.Spec)
+	r.Logger.V(1).Info("sync extensionResourcesPrice", "extensionResourcesPrice.Spec", extensionResourcesPrice.Spec)
 	return nil
 }
 

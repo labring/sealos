@@ -20,12 +20,13 @@ import (
 	"flag"
 	"os"
 
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-
-	"github.com/labring/sealos/controllers/account/controllers/cache"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
+	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+
 	"github.com/labring/sealos/controllers/account/controllers"
+	"github.com/labring/sealos/controllers/account/controllers/cache"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -114,8 +115,11 @@ func main() {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
-	mgr.GetWebhookServer().Register("/mutate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
-
+	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+		setupLog.Info("disable all webhooks")
+	} else {
+		mgr.GetWebhookServer().Register("/mutate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

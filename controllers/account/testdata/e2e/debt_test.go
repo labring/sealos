@@ -75,7 +75,7 @@ func TestDebt(t *testing.T) {
 
 			time.Sleep(5 * time.Second)
 			if _, err := accountapi.GetDebt(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner)); err != nil {
-				t.Fatalf("not get debt" + err.Error())
+				t.Fatalf("not get： " + err.Error())
 			}
 
 			t.Log("add account balance")
@@ -109,26 +109,36 @@ func TestDebt(t *testing.T) {
 				t.Fatalf("debt status should be samll or large, but now is " + string(debt.Status.AccountDebtStatus))
 			}
 
+			err = baseapi.DeleteCRD(AccountSystemNamespace, controllers.GetDebtName(DefaultOwner), accountapi.DebtYaml)
+			if err != nil {
+				log.Println(err)
+			}
+
+			account, err := api.GetAccount(AccountNamespace, DefaultOwner)
+			if err == nil {
+				// make account balance become 0
+				if err := accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -account.Status.Balance); err != nil {
+					t.Fatalf(err.Error())
+				}
+			}
 		})
-		t.Cleanup(clear)
-		time.Sleep(10 * time.Second)
 
 		t.Run("debt delete all resource should be ok", func(t *testing.T) {
 			api.CreatePodController(MeteringSystemNamespace, meteringv1.PodResourcePricePrefix)
 			baseapi.EnsureNamespace(TestNamespace)
 			baseapi.EnsureNamespace(AccountNamespace)
-			time.Sleep(20 * time.Second)
+			time.Sleep(10 * time.Second)
 
 			podExtensionResourcePrice, err := api.GetExtensionResourcePrice(MeteringSystemNamespace, meteringcommonv1.GetExtensionResourcePriceName(meteringv1.PodResourcePricePrefix))
 			if err != nil {
 				t.Fatalf("failed to get extension resource: %v", err)
 			}
-			t.Log(podExtensionResourcePrice)
+			t.Log(podExtensionResourcePrice.Spec)
+			// should create daemonset replicaset to test
 			baseapi.CreateCRD(TestNamespace, PodName, api.PodYaml)
 			baseapi.CreateCRD(AccountNamespace, DefaultOwner, api.AccountYaml)
 			baseapi.CreateCRD(TestNamespace, DeploymentName, accountapi.DeploymentYaml)
 
-			// should create deployment、daemonset replicaset
 			time.Sleep(20 * time.Second)
 			err = accountapi.RechargeAccount(DefaultOwner, AccountNamespace, -100000)
 			if err != nil {
@@ -145,7 +155,7 @@ func TestDebt(t *testing.T) {
 			}
 			t.Log(debt)
 			t.Log("wait some time and pod should be deleted")
-			time.Sleep(time.Minute * 2)
+			time.Sleep(time.Second * 60)
 			pod, err := api.GetPod(TestNamespace, PodName)
 			if err == nil {
 				t.Fatalf("pod should be deleted, but now is %+v", pod.Name)
@@ -162,11 +172,10 @@ func TestDebt(t *testing.T) {
 }
 
 func clear() {
-	account, err := api.GetAccount(AccountNamespace, DefaultOwner)
+	_, err := api.GetAccount(AccountNamespace, DefaultOwner)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Printf("%+v", account)
 	if err := baseapi.DeleteCRD(AccountNamespace, DefaultOwner, api.AccountYaml); err != nil {
 		log.Println(err)
 	}

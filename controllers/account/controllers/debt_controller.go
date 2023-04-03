@@ -223,7 +223,7 @@ func (r *DebtReconciler) deleteUserResource(ctx context.Context, namespace strin
 	if err := r.List(ctx, &extensonResources); client.IgnoreNotFound(err) != nil {
 		return err
 	}
-
+	r.Logger.Info("get extension resource", "number of extension resource ", len(extensonResources.Items))
 	for _, extensonResource := range extensonResources.Items {
 		for _, groupVersionKind := range extensonResource.Spec.GroupVersionKinds {
 			u := unstructured.UnstructuredList{}
@@ -267,7 +267,7 @@ func (r *DebtReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.accountNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
 	if r.accountNamespace == "" {
-		r.accountSystemNamespace = "sealos-system"
+		r.accountNamespace = "sealos-system"
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		// update status should not enter reconcile
