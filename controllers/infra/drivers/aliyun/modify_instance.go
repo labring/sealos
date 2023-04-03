@@ -27,7 +27,7 @@ func StartInstances(api ECSModifyInstancesAPI, request *ecs.StartInstancesReques
 }
 
 func (d Driver) modifyInstance(curHosts *v1.Hosts, desHosts *v1.Hosts) error {
-	client := d.Client
+	client := d.ECSClient
 	eg, _ := errgroup.WithContext(context.Background())
 	err := d.stopInstances(curHosts)
 	if err != nil {

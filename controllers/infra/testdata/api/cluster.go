@@ -15,7 +15,7 @@ metadata:
   name: ${name}
   namespace: ${namespace}
   annotations:
-    sealos.io/version: "4.1.4"
+    sealos.io/version: "4.1.5"
 spec:
   infra: ${name}
   image:
