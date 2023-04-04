@@ -34,9 +34,6 @@ spec:
         image: controller:latest
         imagePullPolicy: Always
         name: manager
-        envFrom:
-          - secretRef:
-              name: payment-secret
         securityContext:
           allowPrivilegeEscalation: false
         livenessProbe:

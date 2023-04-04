@@ -26,8 +26,15 @@ const ExtensionResourcePricePrefix = "extensionresourceprice-"
 
 // ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
 type ExtensionResourcePriceSpec struct {
-	ResourceName string                            `json:"resourceName,omitempty"`
-	Resources    map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+	ResourceName      string                            `json:"resourceName,omitempty"`
+	Resources         map[v1.ResourceName]ResourcePrice `json:"resources,omitempty"`
+	GroupVersionKinds []GroupVersionKind                `json:"groupVersionKinds"`
+}
+
+type GroupVersionKind struct {
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
 }
 
 type ResourcePrice struct {

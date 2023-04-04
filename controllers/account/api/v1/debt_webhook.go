@@ -69,18 +69,18 @@ func init() {
 	userSaGroup = fmt.Sprintf("%ss:%s", saPrefix, getUserNamespace())
 }
 func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admission.Response {
-	logger.Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
+	logger.V(1).Info("checking user", "userInfo", req.UserInfo, "req.Namespace", req.Namespace, "req.Name", req.Name, "req.gvrk", getGVRK(req))
 	for _, g := range req.UserInfo.Groups {
 		switch g {
 		// if user is kubernetes-admin, pass it
 		case mastersGroup:
-			logger.Info("pass for kubernetes-admin")
+			logger.V(1).Info("pass for kubernetes-admin")
 			return admission.ValidationResponse(true, "")
 		case kubeSystemGroup:
-			logger.Info("pass for kube-system")
+			logger.V(1).Info("pass for kube-system")
 			return admission.ValidationResponse(true, "")
 		case userSaGroup:
-			logger.Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
+			logger.V(1).Info("check for user", "user", req.UserInfo.Username, "ns: ", req.Namespace)
 			if isWhiteList(req) {
 				return admission.ValidationResponse(true, "")
 			}
@@ -91,7 +91,7 @@ func (d DebtValidate) Handle(ctx context.Context, req admission.Request) admissi
 		}
 	}
 
-	logger.Info("pass ", "req.Namespace", req.Namespace)
+	logger.V(1).Info("pass ", "req.Namespace", req.Namespace)
 	return admission.ValidationResponse(true, "")
 }
 
@@ -111,7 +111,7 @@ func isWhiteList(req admission.Request) bool {
 	reqGVK := getGVRK(req)
 	for _, w := range whitelist {
 		if reqGVK == w {
-			logger.Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
+			logger.V(1).Info("pass for whitelists", "gck", req.Kind.String(), "name", req.Name, "namespace", req.Namespace, "userinfo", req.UserInfo)
 			return true
 		}
 	}

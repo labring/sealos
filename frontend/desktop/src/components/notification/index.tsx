@@ -43,7 +43,6 @@ export default function Notification(props: TNotification) {
     () => request('/api/notification/list'),
     {
       onSuccess: (data) => {
-        console.log(data);
         onAmount(
           data?.data?.items?.filter((item: NotificationItem) => !item?.metadata?.labels?.isRead)
             ?.length || 0
@@ -142,7 +141,7 @@ export default function Notification(props: TNotification) {
                     onClick={() => goMsgDetail(item)}
                   >
                     <div className={styles.title}>{item?.spec?.title}</div>
-                    <Text noOfLines={1} className={clsx(styles.desc)}>
+                    <Text mt="4px" noOfLines={1} className={clsx(styles.desc)}>
                       {item?.spec?.message}
                     </Text>
                     <Flex className={clsx(styles.desc, styles.footer)}>
@@ -177,6 +176,7 @@ export default function Notification(props: TNotification) {
               </div>
             </Flex>
             <Text
+              whiteSpace="pre-wrap"
               mt="14px"
               fontSize="12px"
               fontWeight={400}

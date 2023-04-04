@@ -32,6 +32,11 @@ spec:
             cpu: 5m
             memory: 64Mi
       - name: manager
+        envFrom:
+          - configMapRef:
+              name: account-manager-configmap
+          - secretRef:
+              name: payment-secret
         env:
           - name: ACCOUNT_NAMESPACE
             value: "sealos-system"
@@ -41,6 +46,11 @@ spec:
             value: "50000"
           - name: WHITELIST
             value: "terminals.Terminal.terminal.sealos.io/v1,payments.Payment.account.sealos.io/v1"
+          - name: ACCOUNT_SYSTEM_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
         args:
         - "--health-probe-bind-address=:8081"
         - "--metrics-bind-address=127.0.0.1:8080"

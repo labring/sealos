@@ -36,6 +36,17 @@ spec:
           spec:
             description: ExtensionResourcePriceSpec defines the desired state of ExtensionResourcePrice
             properties:
+              groupVersionKinds:
+                items:
+                  properties:
+                    group:
+                      type: string
+                    kind:
+                      type: string
+                    version:
+                      type: string
+                  type: object
+                type: array
               resourceName:
                 type: string
               resources:
@@ -57,6 +68,8 @@ spec:
                   - unit
                   type: object
                 type: object
+            required:
+            - groupVersionKinds
             type: object
           status:
             description: ExtensionResourcePriceStatus defines the observed state of

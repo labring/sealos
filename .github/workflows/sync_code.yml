@@ -22,3 +22,5 @@ jobs:
           ORIGINAL_MESSAGE: true
           SKIP_PR: true
           COMMIT_EACH_FILE: false
+          GIT_EMAIL: "sealos-ci-robot@sealos.io"
+          GIT_USERNAME: "sealos-ci-robot"
