@@ -31,15 +31,16 @@ const (
 	AuthType = "basicAuth"
 )
 
-func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string) *networkingv1.Ingress {
+func (r *TerminalReconciler) createNginxIngress(terminal *terminalv1.Terminal, host string, snippet string) *networkingv1.Ingress {
 	objectMeta := metav1.ObjectMeta{
 		Name:      terminal.Name,
 		Namespace: terminal.Namespace,
 		Annotations: map[string]string{
-			"kubernetes.io/ingress.class":                    "nginx",
-			"nginx.ingress.kubernetes.io/rewrite-target":     "/",
-			"nginx.ingress.kubernetes.io/proxy-send-timeout": "86400",
-			"nginx.ingress.kubernetes.io/proxy-read-timeout": "86400",
+			"kubernetes.io/ingress.class":                       "nginx",
+			"nginx.ingress.kubernetes.io/rewrite-target":        "/",
+			"nginx.ingress.kubernetes.io/proxy-send-timeout":    "86400",
+			"nginx.ingress.kubernetes.io/proxy-read-timeout":    "86400",
+			"nginx.ingress.kubernetes.io/configuration-snippet": snippet,
 		},
 	}
 

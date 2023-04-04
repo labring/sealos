@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"os"
+	"strings"
 	"time"
 
 	apisix "github.com/apache/apisix-ingress-controller/pkg/kube/apisix/apis/config/v2beta3"
@@ -227,7 +228,8 @@ func (r *TerminalReconciler) syncNginxIngress(ctx context.Context, terminal *ter
 		},
 	}
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, ingress, func() error {
-		expectIngress := r.createNginxIngress(terminal, host)
+		snippet := buildNginxSnippet(DefaultDomain)
+		expectIngress := r.createNginxIngress(terminal, host, snippet)
 		ingress.ObjectMeta.Labels = expectIngress.ObjectMeta.Labels
 		ingress.ObjectMeta.Annotations = expectIngress.ObjectMeta.Annotations
 		ingress.Spec.Rules = expectIngress.Spec.Rules
@@ -461,6 +463,26 @@ func getSecretNamespace() string {
 		return DefaultSecretNamespace
 	}
 	return secretNamespace
+}
+
+func buildNginxSnippet(rootDomain string) string {
+	wholeSnippet := ""
+	// clean up X-Frame-Options
+	part := `more_clear_headers "X-Frame-Options:"; `
+	wholeSnippet += part
+	// set up Content-Security-Policy
+	part = `more_set_headers "Content-Security-Policy: default-src * blob: data: *.cloud.sealos.io cloud.sealos.io; img-src * data: blob: resource: *.cloud.sealos.io cloud.sealos.io; connect-src * wss: blob: resource:; style-src 'self' 'unsafe-inline' blob: *.cloud.sealos.io cloud.sealos.io resource:; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: *.cloud.sealos.io cloud.sealos.io resource: *.baidu.com *.bdstatic.com; frame-src 'self' cloud.sealos.io mailto: tel: weixin: mtt: *.baidu.com; frame-ancestors 'self' https://cloud.sealos.io https://*.cloud.sealos.io"; `
+	wholeSnippet += strings.ReplaceAll(part, "cloud.sealos.io", rootDomain)
+	// set up X-Xss-Protection
+	part = `more_set_headers "X-Xss-Protection: 1; mode=block"; `
+	wholeSnippet += part
+	// set up Cache-Control
+	part = `if ($request_uri ~* \.(js|css|gif|jpe?g|png)) {
+	        expires 30d;
+	        add_header Cache-Control "public";
+	    } `
+	wholeSnippet += part
+	return wholeSnippet
 }
 
 // SetupWithManager sets up the controller with the Manager.
