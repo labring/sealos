@@ -210,7 +210,7 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 	if err != nil {
 		return err
 	}
-	changes, err := r.store.Changes(from, to)
+	changes, err := r.Store.Changes(from, to)
 	if err != nil {
 		return err
 	}
@@ -230,11 +230,11 @@ func runDiff(c *cobra.Command, args []string, opts *diffOption) error {
 			return fmt.Errorf("unknown output format %s", opts.out)
 		}
 	}
-	img, err := r.store.Image(args[1])
+	img, err := r.Store.Image(args[1])
 	if err != nil {
 		return err
 	}
-	target, err := r.store.DifferTarget(img.TopLayer)
+	target, err := r.Store.DifferTarget(img.TopLayer)
 	if err != nil {
 		return fmt.Errorf("failed to get diff target: %v", err)
 	}
