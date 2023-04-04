@@ -48,7 +48,7 @@ kind: Ingress
 metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     cert-manager.io/issuer: cluster-issuer-login
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
   name: login-sealos-io
@@ -59,7 +59,7 @@ spec:
       http:
         paths:
           - pathType: Prefix
-            path: /
+            path: /()(.*)
             backend:
               service:
                 name: casdoor
