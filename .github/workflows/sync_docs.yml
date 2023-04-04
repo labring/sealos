@@ -15,10 +15,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run GitHub File Sync
-        uses: BetaHuhn/repo-file-sync-action@v1
+        uses: BetaHuhn/repo-file-sync-action@v1.16.5
         with:
           GH_PAT: ${{ secrets.GH_PAT }}
           CONFIG_PATH: .github/sync_docs.yml
           ORIGINAL_MESSAGE: true
           SKIP_PR: true
           COMMIT_EACH_FILE: false
+          GIT_EMAIL: "sealos-ci-robot@sealos.io"
+          GIT_USERNAME: "sealos-ci-robot"
