@@ -2,19 +2,21 @@ package e2e
 
 import (
 	"fmt"
+
+	"github.com/onsi/ginkgo/v2"
+
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
+	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
+
 	"github.com/labring/sealos/pkg/utils/exec"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/test/e2e/suites/image"
 	"github.com/labring/sealos/test/e2e/testhelper"
-	. "github.com/onsi/ginkgo/v2"
-	v1 "k8s.io/cri-api/pkg/apis/runtime/v1"
-	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 )
 
 const (
-	defaultImageBenchmarkTimeoutSeconds = 10
+	//_defaultImageBenchmarkTimeoutSeconds = 10
 
 	// defaultImageListingPrefix is for avoiding Docker Hub's rate limit
 	defaultImageListingPrefix = "public.ecr.aws/docker/library/"
@@ -34,36 +36,35 @@ var defaultImageListingBenchmarkImages = []string{
 	"docker.io/library/busybox:1.28",
 }
 
-const DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
+const (
+	DefaultImageCRIShimConfig = "/etc/image-cri-shim.yaml"
+	CheckServiceFormatCommand = "systemctl is-active %s.service"
+)
 
-var _ = Describe("image-cri-shim test", func() {
+var _ = ginkgo.Describe("image-cri-shim test", func() {
 
 	//checkout image-cri-shim status running
-	_, err := exec.RunSimpleCmd("systemctl is-active image-cri-shim.service")
-	testhelper.CheckErr(err, "image-cri-shim.service not exist, skip image-cri-shim test")
+	_, err := exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))
+	testhelper.CheckErr(err, "image-cri-shim service not exist, skip image-cri-shim test")
 	shimConfig, err := shimType.Unmarshal(DefaultImageCRIShimConfig)
 	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v", err))
-	testhelper.CheckErr(shimConfig.PreProcess())
+	shimAuth, err := shimConfig.PreProcess()
+	testhelper.CheckErr(err)
 	clt, err := server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
 	testhelper.CheckErr(err, fmt.Sprintf("failed to get new shim client: %v", err))
 	gCon, err := clt.Connect(server.ConnectOptions{Wait: true})
 	testhelper.CheckErr(err, fmt.Sprintf("failed to get connect shim client: %v", err))
-	var imageService image.FakeImageServiceClientInterface
-	if shimConfig.CRIVersion == image.V1 {
-		imageService = image.NewFakeImageServiceClientWithV1(v1.NewImageServiceClient(gCon), shimConfig.CRIConfigs)
-	} else {
-		imageService = image.NewFakeImageServiceClientWithV1alpha2(k8sv1alpha2api.NewImageServiceClient(gCon), shimConfig.CRIConfigs)
-	}
+	var imageService = image.NewFakeImageServiceClientWithV1alpha2(k8sv1alpha2api.NewImageServiceClient(gCon), shimAuth)
 
-	Context("test image-cri-shim image service", func() {
+	ginkgo.Context("test image-cri-shim image service", func() {
 
-		It("list image", func() {
+		ginkgo.It("list image", func() {
 			images, err := imageService.ListImages()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 			logger.Info("list images: %v", images)
 		})
 
-		It("pull image from remote", func() {
+		ginkgo.It("pull image from remote", func() {
 			for _, image := range defaultImageListingBenchmarkImages {
 				id, err := imageService.PullImage(image)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", image, err))
@@ -71,7 +72,7 @@ var _ = Describe("image-cri-shim test", func() {
 			}
 		})
 
-		It("image status test", func() {
+		ginkgo.It("image status test", func() {
 			for _, imageName := range defaultImageListingBenchmarkImages {
 				img, err := imageService.ImageStatus(imageName)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -80,7 +81,7 @@ var _ = Describe("image-cri-shim test", func() {
 
 		})
 
-		It("remove image", func() {
+		ginkgo.It("remove image", func() {
 			for _, imageName := range defaultImageListingBenchmarkImages {
 				err := imageService.RemoveImage(imageName)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", imageName, err))
@@ -92,10 +93,10 @@ var _ = Describe("image-cri-shim test", func() {
 			}
 		})
 
-		It("image fs info", func() {
+		ginkgo.It("image fs info", func() {
 			fss, err := imageService.ImageFsInfo()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get image fs info: %v", err))
-			By("success get fs info: ")
+			ginkgo.By("success get fs info: ")
 			for i := range fss {
 				logger.Info("fs usage mount point: %s", fss[i].GetFsId().GetMountpoint())
 			}

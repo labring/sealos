@@ -17,9 +17,10 @@ package testhelper
 import (
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 	"io"
 	"os/exec"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"

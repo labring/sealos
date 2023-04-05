@@ -1,10 +1,12 @@
 package e2e
 
 import (
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"testing"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
 func TestSealosTest(t *testing.T) {

@@ -45,9 +45,9 @@ jobs:
         with:
           name: image-cri-shim
           path: /usr/bin/image-cri-shim
-  verify-registry:
+  verify-image_cri_shim:
     needs: [build]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Download image-cri-shim
         uses: actions/download-artifact@v3

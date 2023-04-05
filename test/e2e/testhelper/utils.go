@@ -17,12 +17,16 @@ package testhelper
 import (
 	"errors"
 	"fmt"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
-	"github.com/onsi/ginkgo/v2"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/pkg/utils/logger"
+
+	"github.com/onsi/ginkgo/v2"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/pkg/utils/exec"
 
@@ -102,7 +106,7 @@ func CheckErr(err error, explainErrMsg ...string) {
 		if len(explainErrMsg) != 0 {
 			err = errors.New(strings.Join(explainErrMsg, "  ,"))
 		}
-		Failf(err.Error())
+		logger.Error(err)
 	}
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
 }
@@ -112,7 +116,7 @@ func Log(msg string) {
 }
 
 func Logf(format string, args ...interface{}) {
-	fmt.Fprintf(ginkgo.GinkgoWriter, fmt.Sprintf("INFO: "+format, args))
+	fmt.Fprintf(ginkgo.GinkgoWriter, "INFO: "+format, args...)
 }
 
 func Failf(msg string) {
