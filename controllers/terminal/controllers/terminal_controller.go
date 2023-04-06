@@ -60,8 +60,8 @@ const (
 const (
 	CPURequest    = "0.01"
 	MemoryRequest = "16Mi"
-	CPULimit      = "0.8"
-	MemoryLimit   = "1Gi"
+	CPULimit      = "0.3"
+	MemoryLimit   = "256Mi"
 )
 
 // TerminalReconciler reconciles a Terminal object
