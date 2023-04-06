@@ -17,7 +17,7 @@ func StopInstances(api ECSStopInstancesAPI, request *ecs.StopInstancesRequest) (
 }
 
 func (d Driver) stopInstances(host *v1.Hosts) error {
-	client := d.Client
+	client := d.ECSClient
 	instanceIDs := make([]string, host.Count)
 	for i := 0; i < host.Count; i++ {
 		if len(host.Metadata) == 0 {

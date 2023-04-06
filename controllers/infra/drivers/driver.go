@@ -21,12 +21,15 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/labring/sealos/controllers/infra/drivers/aliyun"
 
 	"github.com/labring/sealos/controllers/infra/drivers/aws"
 
-	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
@@ -36,7 +39,7 @@ type Driver interface {
 	DeleteInstances(hosts *v1.Hosts) error
 	StopInstances(hosts *v1.Hosts) error
 	ModifyInstances(curHosts *v1.Hosts, desHosts *v1.Hosts) error
-	DeleteInstanceByID(instanceID string, infra *v1.Infra) error
+	DeleteInstanceByID(_ string, _ *v1.Infra) error
 	GetInstancesByLabel(key string, value string, infra *v1.Infra) (*v1.Hosts, error)
 	// get infra all current hosts
 	GetInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
@@ -83,11 +86,15 @@ func NewAliyunDriver() (Driver, error) {
 	regionID := os.Getenv("ALIYUN_REGION_ID")
 	accessKeyID := os.Getenv("ALIYUN_ACCESS_KEY_ID")
 	accessKeySecret := os.Getenv("ALIYUN_ACCESS_KEY_SECRET")
-	client, err := ecs.NewClientWithAccessKey(regionID, accessKeyID, accessKeySecret)
-	if err != nil {
+	resourceGroupID := os.Getenv("ALIYUN_RESOURCE_GROUP_ID")
+	ecsClient, err := ecs.NewClientWithAccessKey(regionID, accessKeyID, accessKeySecret)
+	vpcClient, err1 := vpc.NewClientWithAccessKey(regionID, accessKeyID, accessKeySecret)
+	if err != nil || err1 != nil {
 		return nil, fmt.Errorf("get aliyun ecs client failed %s", err)
 	}
 	return &aliyun.Driver{
-		Client: client,
+		ECSClient:       ecsClient,
+		VPCClient:       vpcClient,
+		ResourceGroupID: resourceGroupID,
 	}, nil
 }

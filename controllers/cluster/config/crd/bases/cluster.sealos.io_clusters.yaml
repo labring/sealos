@@ -68,7 +68,6 @@ spec:
                 items:
                   properties:
                     env:
-                      description: overwrite env
                       items:
                         type: string
                       type: array
@@ -80,6 +79,23 @@ spec:
                       items:
                         type: string
                       type: array
+                    ssh:
+                      properties:
+                        passwd:
+                          type: string
+                        pk:
+                          type: string
+                        pkData:
+                          type: string
+                        pkName:
+                          type: string
+                        pkPasswd:
+                          type: string
+                        port:
+                          type: integer
+                        user:
+                          type: string
+                      type: object
                   type: object
                 type: array
               image:

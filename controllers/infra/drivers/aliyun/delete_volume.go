@@ -39,7 +39,7 @@ func (d Driver) deleteAndDetachVolumes(diskIDs []string) error {
 }
 
 func (d Driver) deleteAndDetachVolume(diskID string) error {
-	client := d.Client
+	client := d.ECSClient
 	// get instance id
 	describeDiskRequest := &ecs.DescribeDisksRequest{
 		RpcRequest: ecs.CreateDescribeDisksRequest().RpcRequest,

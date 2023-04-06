@@ -33,10 +33,6 @@ func GetImages(api ECSDescribeInstancesAPI, request *ecs.DescribeImagesRequest) 
 	return api.DescribeImages(request)
 }
 
-func GetInstanceStatus(api ECSDescribeInstancesAPI, request *ecs.DescribeInstanceStatusRequest) (*ecs.DescribeInstanceStatusResponse, error) {
-	return api.DescribeInstanceStatus(request)
-}
-
 func TagResources(api ECSDescribeInstancesAPI, request *ecs.TagResourcesRequest) (*ecs.TagResourcesResponse, error) {
 	return api.TagResources(request)
 }
@@ -48,7 +44,7 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 	if status == common.InstanceStatusRunning {
 		status = ECSInstanceStatusNameRunning
 	}
-	client := d.Client
+	client := d.ECSClient
 	request := &ecs.DescribeInstancesRequest{
 		RpcRequest: ecs.CreateDescribeInstancesRequest().RpcRequest,
 		Status:     status,
@@ -58,6 +54,7 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 				Value: string(infra.UID),
 			},
 		},
+		ResourceGroupId: d.ResourceGroupID,
 	}
 	response, err := GetInstances(client, request)
 	if err != nil {
@@ -99,8 +96,9 @@ func (d Driver) getInstances(infra *v1.Infra, status string) ([]v1.Hosts, error)
 		// get disks of instance
 		var disks []v1.Disk
 		diskRequest := &ecs.DescribeDisksRequest{
-			RpcRequest: ecs.CreateDescribeDisksRequest().RpcRequest,
-			InstanceId: i.InstanceId,
+			RpcRequest:      ecs.CreateDescribeDisksRequest().RpcRequest,
+			InstanceId:      i.InstanceId,
+			ResourceGroupId: d.ResourceGroupID,
 		}
 		diskResponse, err := GetDisks(client, diskRequest)
 		if err != nil {
@@ -178,10 +176,11 @@ func getIndex(i ecs.Instance) (int, error) {
 
 func (d Driver) getArchFromImageID(id string) (string, error) {
 	describeImagesRequest := &ecs.DescribeImagesRequest{
-		RpcRequest: ecs.CreateDescribeImagesRequest().RpcRequest,
-		ImageId:    id,
+		RpcRequest:      ecs.CreateDescribeImagesRequest().RpcRequest,
+		ImageId:         id,
+		ResourceGroupId: d.ResourceGroupID,
 	}
-	describeImageResponse, err := GetImages(d.Client, describeImagesRequest)
+	describeImageResponse, err := GetImages(d.ECSClient, describeImagesRequest)
 	if err != nil {
 		return "", err
 	}
@@ -227,7 +226,7 @@ func (d Driver) setMaster0IfNotExists(hosts *[]v1.Hosts) error {
 					ResourceId:   &[]string{h.Metadata[j].ID},
 					Tag:          &[]ecs.TagResourcesTag{{Key: labelKey, Value: labelValue}},
 				}
-				_, err := TagResources(d.Client, tagResourcesRequest)
+				_, err := TagResources(d.ECSClient, tagResourcesRequest)
 				if err != nil {
 					return fmt.Errorf("set master0 label failed: %v", err)
 				}

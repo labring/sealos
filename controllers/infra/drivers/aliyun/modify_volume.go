@@ -31,7 +31,7 @@ func (d Driver) modifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
 				NewSize:    requests.Integer(strconv.Itoa(desDisk.Capacity)),
 				Type:       "online",
 			}
-			_, err := ModifyVolumeSize(d.Client, resizediskRequest)
+			_, err := ModifyVolumeSize(d.ECSClient, resizediskRequest)
 			if err != nil {
 				return fmt.Errorf("failed to resize disk %s: %v", curDisk.ID, err)
 			}
@@ -45,7 +45,7 @@ func (d Driver) modifyVolume(curDisk *v1.Disk, desDisk *v1.Disk) error {
 				DiskId:       id,
 				DiskCategory: desDisk.VolumeType,
 			}
-			_, err := ModifyVolumeSpec(d.Client, modifyDiskSpecRequest)
+			_, err := ModifyVolumeSpec(d.ECSClient, modifyDiskSpecRequest)
 			if err != nil {
 				return fmt.Errorf("failed to modify disk spec %s: %v", curDisk.ID, err)
 			}

@@ -52,7 +52,7 @@ func (d Driver) deleteInfra(infra *v1.Infra) error {
 	if len(infra.Spec.Hosts) == 0 {
 		return nil
 	}
-	client := d.Client
+	client := d.ECSClient
 	eg, _ := errgroup.WithContext(context.Background())
 	var instanceID string
 	for _, hosts := range infra.Spec.Hosts {
@@ -160,16 +160,17 @@ func (d Driver) deleteInfra(infra *v1.Infra) error {
 	if err != nil {
 		logger.Info("can't delete keypair %s yet: %v", instanceID, err)
 	}
+	logger.Info("Delete infra %s success", infra.Name)
 	return nil
 }
 
 func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
-	client := d.Client
+	client := d.ECSClient
 	instanceIDs := make([]string, hosts.Count)
 	idx := 0
 	for i := 0; i < hosts.Count; i++ {
-		if len(hosts.Metadata) == 0 {
-			return nil
+		if len(hosts.Metadata) <= idx {
+			break
 		}
 		metadata := hosts.Metadata[idx]
 		// if deleteAll is false, skip master0
@@ -179,7 +180,6 @@ func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
 			continue
 		}
 		instanceIDs[i] = metadata.ID
-		logger.Info("Deleting Aliyun ECS instance: %s", instanceIDs[i])
 		idx++
 	}
 	if len(instanceIDs) == 0 {
