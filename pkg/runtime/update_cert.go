@@ -167,7 +167,7 @@ func (k *KubeadmRuntime) deleteAPIServer() error {
 				podID := ps.Containers[0].PodSandboxID[:13]
 				logger.Debug("found podID %s in %s", podID, m)
 				//crictl stopp
-				if err = k.sshCmdAsync(m, fmt.Sprintf("crictl stopp %s", podID)); err != nil {
+				if err = k.sshCmdAsync(m, fmt.Sprintf("crictl --timeout=10s stopp %s", podID)); err != nil {
 					return err
 				}
 				//crictl rmp
