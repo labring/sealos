@@ -27,6 +27,7 @@ require (
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/onsi/ginkgo v1.16.5
+	github.com/onsi/ginkgo/v2 v2.7.0
 	github.com/onsi/gomega v1.26.0
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
 	github.com/opencontainers/go-digest v1.0.1-0.20220411205349-bde1400a84be
@@ -51,6 +52,7 @@ require (
 	k8s.io/api v0.26.2
 	k8s.io/apimachinery v0.26.2
 	k8s.io/client-go v0.26.2
+	k8s.io/cri-api v0.26.2
 	k8s.io/kube-proxy v0.25.6
 	k8s.io/kubelet v0.25.6
 	k8s.io/kubernetes v1.25.6
@@ -223,7 +225,6 @@ require (
 	k8s.io/cluster-bootstrap v0.25.6 // indirect
 	k8s.io/component-base v0.26.2 // indirect
 	k8s.io/component-helpers v0.25.6 // indirect
-	k8s.io/cri-api v0.26.2 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	oras.land/oras-go v1.2.3 // indirect

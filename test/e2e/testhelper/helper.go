@@ -20,9 +20,9 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/labring/sealos/test/testhelper/settings"
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
-	"github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )

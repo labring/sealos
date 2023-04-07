@@ -15,14 +15,20 @@
 package testhelper
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
-	"github.com/labring/sealos/pkg/utils/exec"
+	"github.com/labring/sealos/pkg/utils/logger"
 
-	"github.com/labring/sealos/test/testhelper/settings"
+	"github.com/onsi/ginkgo/v2"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
+
+	"github.com/labring/sealos/pkg/utils/exec"
 
 	"github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -95,8 +101,26 @@ func DeleteFileLocally(filePath string) {
 	CheckErr(err)
 }
 
-func CheckErr(err error) {
+func CheckErr(err error, explainErrMsg ...string) {
+	if err != nil {
+		if len(explainErrMsg) != 0 {
+			err = errors.New(strings.Join(explainErrMsg, "  ,"))
+		}
+		logger.Error(err)
+	}
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+}
+
+func Log(msg string) {
+	Logf(msg)
+}
+
+func Logf(format string, args ...interface{}) {
+	fmt.Fprintf(ginkgo.GinkgoWriter, "INFO: "+format, args...)
+}
+
+func Failf(msg string) {
+	ginkgo.Fail(fmt.Sprintf("FAIL: %s", msg), 1)
 }
 
 func CheckNotNil(obj interface{}) {

@@ -1,0 +1,104 @@
+name:  Test sealos image-cri-shim service
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["**"]
+    paths:
+      - ".github/workflows/test_image_cri_shim.yml"
+      - "cmd/**"
+      - "staging/src/github.com/image-cri-shim/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/test_image_cri_shim.yml"
+      - "cmd/**"
+      - "staging/src/github.com/image-cri-shim/**"
+
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build sealos Binaries
+        uses: labring/sealos-action@v0.0.5
+        with:
+          type: install-dev
+          pruneCRI: true
+          autoFetch: false
+
+      - name: Build image-cri-shim Binaries
+        run: |
+          export PATH="/tmp/golang/go/bin:${PATH}" && \
+          make build BINS=image-cri-shim && \
+          sudo chmod a+x bin/linux_amd64/image-cri-shim && sudo mv bin/linux_amd64/image-cri-shim /usr/bin
+
+      - name: Save sealos image-cri-shim Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: sealos
+          path: /usr/bin/sealos
+      - name: Save Binaries image-cri-shim
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-cri-shim
+          path: /usr/bin/image-cri-shim
+  verify-image_cri_shim:
+    needs: [build]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v3
+        with:
+          name: image-cri-shim
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/{sealos,image-cri-shim}
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+
+      - name: Build image with new image-cri-shim
+        run: |
+          pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && sudo /usr/bin/sealos build -f Dockerfile -t kubernetes-hack:v1.25.0 . && popd
+
+      - name: Auto install k8s using sealos
+        run: |
+          sudo /usr/bin/sealos images
+          sudo /usr/bin/sealos run kubernetes-hack:v1.25.0 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+      #      - name: Set up Go 1.20.2
+      #        uses: actions/setup-go@v4
+      #        with:
+      #          go-version: 1.20.2
+      #        id: go
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install ginkgo && Run image-cri-shim test
+        shell: bash
+        run: |
+          wget -qO goNew.tgz https://go.dev/dl/go1.20.linux-amd64.tar.gz && tar -zxf goNew.tgz && rm -rf goNew.tgz
+          sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
+          export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
+          export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
+          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v test/e2e/ --focus="image-cri-shim"
