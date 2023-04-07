@@ -61,7 +61,3 @@ func newResetCmd() *cobra.Command {
 	resetCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to reset cluster by force")
 	return resetCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newResetCmd())
-}

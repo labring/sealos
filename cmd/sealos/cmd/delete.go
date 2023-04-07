@@ -75,7 +75,3 @@ func newDeleteCmd() *cobra.Command {
 	deleteCmd.Flags().BoolVar(&processor.ForceDelete, "force", false, "we also can input an --force flag to delete cluster by force")
 	return deleteCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newDeleteCmd())
-}

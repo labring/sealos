@@ -18,14 +18,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/pkg/system"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
+	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/spf13/cobra"
+	"k8s.io/kubectl/pkg/util/templates"
 )
 
 var (
@@ -54,35 +54,69 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(onBootOnDie)
-	fs := rootCmd.PersistentFlags()
-	fs.BoolVar(&debug, "debug", false, "enable debug logger")
-	// add unrelated command names that don't required buildah sdk.
-	buildah.AddUnrelatedCommandNames("cert", "status", "docs", "exec", "scp", "version")
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
+	buildah.RegisterRootCommand(rootCmd)
+
+	groups := templates.CommandGroups{
+		{
+			Message: "Cluster Management Commands:",
+			Commands: []*cobra.Command{
+				newApplyCmd(),
+				newCertCmd(),
+				newRunCmd(),
+				newResetCmd(),
+				newStatusCmd(),
+			},
+		},
+		{
+			Message: "Node Management Commands:",
+			Commands: []*cobra.Command{
+				newAddCmd(),
+				newDeleteCmd(),
+			},
+		},
+		{
+			Message: "Remote Operation Commands:",
+			Commands: []*cobra.Command{
+				newExecCmd(),
+				newScpCmd(),
+			},
+		},
+		{
+			Message:  "Container and Image Commands:",
+			Commands: buildah.AllSubCommands(),
+		},
+	}
+	groups.Add(rootCmd)
+	filters := []string{}
+	templates.ActsAsRootCommand(rootCmd, filters, groups...)
+	rootCmd.AddCommand(system.NewConfigCmd())
+}
+
+// add unrelated command names that don't required buildah sdk.
+func setCommandUnrelatedToBuildah(cmd *cobra.Command) {
+	buildah.AddUnrelatedCommandNames(cmd.Name())
 }
 
 func onBootOnDie() {
-	var config string
-	var err error
-	if config, err = system.Get(system.DataRootConfigKey); err != nil {
-		logger.Error(err)
-		os.Exit(1)
-		return
-	}
-	constants.DefaultClusterRootFsDir = config
-	if config, err = system.Get(system.RuntimeRootConfigKey); err != nil {
-		logger.Error(err)
-		os.Exit(1)
-		return
-	}
-	constants.DefaultRuntimeRootDir = config
+	val, err := system.Get(system.DataRootConfigKey)
+	errExit(err)
+	constants.DefaultClusterRootFsDir = val
+	val, err = system.Get(system.RuntimeRootConfigKey)
+	errExit(err)
+	constants.DefaultRuntimeRootDir = val
+
 	var rootDirs = []string{
 		constants.LogPath(),
 		constants.Workdir(),
 	}
-	if err = file.MkDirs(rootDirs...); err != nil {
+	errExit(file.MkDirs(rootDirs...))
+	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
+}
+
+func errExit(err error) {
+	if err != nil {
 		logger.Error(err)
 		os.Exit(1)
-		return
 	}
-	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }

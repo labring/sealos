@@ -46,7 +46,3 @@ func newApplyCmd() *cobra.Command {
 	applyArgs.RegisterFlags(applyCmd.Flags())
 	return applyCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newApplyCmd())
-}
