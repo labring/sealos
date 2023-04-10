@@ -843,9 +843,9 @@ webhooks:
     service:
       name: account-webhook-service
       namespace: account-system
-      path: /mutate-v1-sealos-cloud
+      path: /validate-v1-sealos-cloud
   failurePolicy: Ignore
-  name: mpod.kb.io
+  name: debt.sealos.io
   rules:
   - apiGroups:
     - '*'

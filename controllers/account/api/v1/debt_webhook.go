@@ -39,15 +39,7 @@ const (
 
 var logger = logf.Log.WithName("debt-resource")
 
-//func (i *Debt) SetupWebhookWithManager(mgr ctrl.Manager) error {
-//	m := &DebtMutator{Client: mgr.GetClient()}
-//	return ctrl.NewWebhookManagedBy(mgr).
-//		For(i).
-//		WithDefaulter(m).
-//		Complete()
-//}
-
-//+kubebuilder:webhook:path=/mutate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=mpod.kb.io,admissionReviewVersions=v1,sideEffects=None
+//+kubebuilder:webhook:path=/validate-v1-sealos-cloud,mutating=true,failurePolicy=ignore,groups="*",resources=*,verbs=create;update,versions=v1,name=debt.sealos.io,admissionReviewVersions=v1,sideEffects=None
 // +kubebuilder:object:generate=false
 
 type DebtValidate struct {
