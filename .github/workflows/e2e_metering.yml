@@ -127,10 +127,10 @@ jobs:
         run: |
           sudo -u root sealos run docker.io/labring/cert-manager:v1.8.0
           make pre-deploy
-          sudo -u root kubectl create namespace account-system
           sudo -u root kubectl create namespace sealos-system
-          sudo -u root kubectl create secret generic payment-secret -n account-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
+          sudo -u root kubectl create secret generic payment-secret -n account-system
+          kubectl create configmap account-manager-configmap  --from-literal=SMALL_BLOCK_WAIT_SECOND=1 -n account-system
       -  name: e2e Test
          working-directory: ./controllers/metering
          run: |
