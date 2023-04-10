@@ -2,18 +2,6 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
-1.  Copy "pre-commit" to .git
-
-```bash
-cd /sealos # Make sure you are in the sealos root directory
-cp frontend/desktop/scripts/pre-commit .git/hooks/
-chmod +x .git/hooks/pre-commit
-```
-
-You will see formatting code when commit ".ts .tsx .scss" files.
-
-2. run the development server:
-
 ```bash
 pnpm run dev
 ```

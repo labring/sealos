@@ -1,0 +1,49 @@
+.codeBox {
+  .code {
+    height: 100%;
+    div {
+      background-color: transparent !important;
+      padding: 0 5px 0 0 !important;
+    }
+    * {
+      word-wrap: break-all !important;
+    }
+  }
+}
+
+.deleteIcon svg {
+  fill: #8f949a;
+  &:hover {
+    fill: #d92a2a;
+  }
+}
+
+.formSecondTitle {
+  color: #333333;
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.textEllipsis {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.table {
+  border-radius: 2px;
+  overflow: hidden;
+  table-layout: fixed;
+  width: 100%;
+
+  th {
+    border: 1px solid #eff0f1;
+    text-align: left;
+    padding: 8px;
+    user-select: all;
+    font-weight: 500;
+  }
+
+  tr:nth-child(even) {
+    background-color: #fbfbfc;
+  }
+}
