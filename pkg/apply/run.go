@@ -122,9 +122,19 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	clusterSSH := r.cluster.GetSSH()
 	sshClient := ssh.NewSSHClient(&clusterSSH, true)
 	if len(masters) > 0 {
+		for _, master := range masters {
+			if _, err := sshClient.Cmd(master, ""); err != nil {
+				return err
+			}
+		}
 		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
 	}
 	if len(nodes) > 0 {
+		for _, node := range nodes {
+			if _, err := sshClient.Cmd(node, ""); err != nil {
+				return err
+			}
+		}
 		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
