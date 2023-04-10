@@ -47,7 +47,7 @@ export default function App({ Component, pageProps }: AppProps) {
 
     (async () => {
       try {
-        const res = await sealosApp.getUserInfo();
+        const res = await sealosApp.getSession();
         localStorage.setItem('session', JSON.stringify(res));
         console.log('app init success');
       } catch (err) {

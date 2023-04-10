@@ -1,5 +1,5 @@
 import { v4 } from 'uuid';
-import { API_NAME, EVENT_NAME } from './constants';
+import { API_NAME } from './constants';
 import { isBrowser } from './utils';
 import { AppSendMessageType, MasterReplyMessageType, Session } from './types';
 
@@ -10,12 +10,13 @@ class ClientSDK {
     appKey: '',
     clientLocation: ''
   };
+  private userSession: Session | undefined;
 
   private readonly callback = new Map<string, (data: MasterReplyMessageType) => void>();
 
   private sendMessageToMaster(
     apiName: `${API_NAME}`,
-    data: { [key: string]: any } = {},
+    data: Record<string, any> = {},
     needReply = true
   ): Promise<any> {
     if (!this.initialized) return Promise.reject('APP is uninitialized');
@@ -83,15 +84,20 @@ class ClientSDK {
     };
   }
 
-  getUserInfo(): Promise<Session> {
+  getSession(): Promise<Session> {
+    if (this.userSession) {
+      return Promise.resolve(this.userSession);
+    }
     return this.sendMessageToMaster(API_NAME.USER_GET_INFO);
   }
 
-  // test api
-  getApps() {
+  /**
+   * run master EventBus
+   */
+  runEvents(eventName: string, eventData?: any) {
     return this.sendMessageToMaster(API_NAME.EVENT_BUS, {
-      eventName: EVENT_NAME.GET_APPS,
-      eventData: 'i am app, i want to get apps'
+      eventName,
+      eventData
     });
   }
 }

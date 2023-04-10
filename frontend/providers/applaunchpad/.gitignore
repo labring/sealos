@@ -38,4 +38,4 @@ next-env.d.ts
 /.vscode/
 platform.json
 .yalc/
-.yalc.lock
+yalc.lock

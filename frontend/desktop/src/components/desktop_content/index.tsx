@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo, MouseEvent, useRef } from 'react';
+import { useState, useCallback, useMemo, MouseEvent, useRef, useEffect } from 'react';
+import { masterApp, createMasterAPP } from 'sealos-desktop-sdk/master';
 import PgSql from 'applications/pgsql';
-
 import clsx from 'clsx';
 import { APPTYPE } from 'constants/app_type';
 import useAppStore, { TApp } from 'stores/app';
@@ -86,7 +86,7 @@ export default function DesktopContent() {
       const app = apps.find((item) => item.name === target.getAttribute('data-app'));
 
       /* target is app */
-      if (!!app) {
+      if (app) {
         updateAppsMousedown(app, true);
 
         /* double click, open app */
@@ -108,6 +108,34 @@ export default function DesktopContent() {
     },
     [apps, openApp, updateAppsMousedown]
   );
+
+  /**
+   * open terminal
+   */
+  const openTerminal = useCallback(
+    (defaultCommand = '') => {
+      const terminalKey = 'system-terminal';
+      const app = apps.find((item) => item.key === terminalKey);
+      if (!app) return;
+      openApp(app, { defaultCommand });
+      // post message
+      const iframe = document.getElementById(`app-window-${terminalKey}`) as HTMLIFrameElement;
+      if (!iframe) return;
+      iframe.contentWindow?.postMessage({
+        type: 'new terminal',
+        command: defaultCommand
+      });
+    },
+    [apps, openApp]
+  );
+
+  useEffect(() => {
+    return createMasterAPP();
+  }, []);
+
+  useEffect(() => {
+    return masterApp?.addEventListen('openTerminal', openTerminal);
+  }, [openTerminal]);
 
   return (
     <div id="desktop" className={styles.desktop}>
