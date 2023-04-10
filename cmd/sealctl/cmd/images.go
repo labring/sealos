@@ -20,4 +20,5 @@ import (
 
 func init() {
 	buildah.RegisterRootCommand(rootCmd)
+	rootCmd.AddCommand(buildah.AllSubCommands()...)
 }

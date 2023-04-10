@@ -25,11 +25,9 @@ import (
 func NewConfigCmd() *cobra.Command {
 	sample, _ := NewExampleConfig()
 	var configCmd = &cobra.Command{
-		Use:  "config",
-		Long: sample,
-		//Run: func(cmd *cobra.Command, args []string) {
-		//
-		//},
+		Use:   "config",
+		Short: "Display or change configuration settings for sealos",
+		Long:  sample,
 	}
 	configCmd.AddCommand(newGetCmd())
 	configCmd.AddCommand(newListCmd())
@@ -41,7 +39,7 @@ func newGetCmd() *cobra.Command {
 	var getCmd = &cobra.Command{
 		Use:     "get <key>",
 		Short:   "Print the value of a given configuration key",
-		Args:    cobra.MinimumNArgs(1),
+		Args:    cobra.ExactArgs(1),
 		Example: `sealos config get prompt`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			data, err := Get(args[0])
@@ -59,7 +57,7 @@ func newSetCmd() *cobra.Command {
 	var getCmd = &cobra.Command{
 		Use:     "set <key> <value>",
 		Short:   "Update configuration with a value for the given key",
-		Args:    cobra.MinimumNArgs(2),
+		Args:    cobra.ExactArgs(2),
 		Example: `sealos config set prompt disabled`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return Set(args[0], args[1])

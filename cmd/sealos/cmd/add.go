@@ -62,7 +62,3 @@ func newAddCmd() *cobra.Command {
 	addArgs.RegisterFlags(addCmd.Flags(), "be joined", "join")
 	return addCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newAddCmd())
-}
