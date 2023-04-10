@@ -45,7 +45,6 @@ const LogsModal = ({
       }),
     {
       onSuccess(res) {
-        console.log(res);
         res && setLogs(res);
       }
     }

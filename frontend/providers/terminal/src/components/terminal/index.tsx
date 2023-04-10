@@ -1,10 +1,10 @@
-import Iconfont from '@/components/iconfont'
-import { Box, Flex, Text } from '@chakra-ui/react'
-import { debounce } from 'lodash'
-import { nanoid } from 'nanoid'
-import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
-import styles from './index.module.scss'
+import Iconfont from '@/components/iconfont';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { debounce } from 'lodash';
+import { nanoid } from 'nanoid';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import styles from './index.module.scss';
 
 type Terminal = {
   id: string;
@@ -12,9 +12,9 @@ type Terminal = {
 };
 
 function Terminal({ url }: { url: string }) {
-  const [tabId, setTabId] = useState(nanoid(6))
-  const router = useRouter()
-  const { query } = router
+  const [tabId, setTabId] = useState(nanoid(6));
+  const router = useRouter();
+  const { query } = router;
 
   const [tabContents, setTabContents] = useState<Terminal[]>([
     {
@@ -22,9 +22,9 @@ function Terminal({ url }: { url: string }) {
       command:
         query?.defaultCommand && typeof query?.defaultCommand === 'string'
           ? decodeURIComponent(query.defaultCommand)
-          : '',
-    },
-  ])
+          : ''
+    }
+  ]);
 
   useEffect(() => {
     const event = (e: MessageEvent) => {
@@ -33,14 +33,14 @@ function Terminal({ url }: { url: string }) {
         e.data.type === 'new terminal' &&
         e.data.command
       ) {
-        newTerminal(decodeURIComponent(e.data.command))
+        newTerminal(decodeURIComponent(e.data.command));
       }
-    }
+    };
     try {
-      window.addEventListener('message', event)
+      window.addEventListener('message', event);
     } catch (error) {}
-    return () => window.removeEventListener('message', event)
-  }, [])
+    return () => window.removeEventListener('message', event);
+  }, []);
 
   const onLoadIframe = (e: any, item: Terminal) => {
     try {
@@ -50,7 +50,7 @@ function Terminal({ url }: { url: string }) {
         }, 2000);
       }
     } catch (error) {}
-  }
+  };
 
   const newTerminal = (command?: string) => {
     const temp = nanoid(6);
@@ -95,7 +95,8 @@ function Terminal({ url }: { url: string }) {
           alignItems={'center'}
           borderBottom={'2px solid #232528'}
           _hover={{ background: '#282B30' }}
-          onClick={debounce(() => newTerminal(), 500)}>
+          onClick={debounce(() => newTerminal(), 500)}
+        >
           <Iconfont
             color="rgba(255, 255, 255, 0.9)"
             iconName="icon-a-material-symbols_addadd1"

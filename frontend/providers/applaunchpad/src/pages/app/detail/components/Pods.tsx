@@ -12,6 +12,7 @@ import {
   Flex,
   MenuButton
 } from '@chakra-ui/react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
 import type { PodDetailType } from '@/types/app';
 import { useLoading } from '@/hooks/useLoading';
@@ -140,6 +141,24 @@ const Pods = ({
               </MenuButton>
             }
             menuList={[
+              {
+                child: (
+                  <>
+                    <MyIcon name={'terminal'} w={'14px'} />
+                    <Box ml={2}>终端</Box>
+                  </>
+                ),
+                onClick: () => {
+                  const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-terminal',
+                    query: {
+                      defaultCommand
+                    },
+                    messageData: { type: 'new terminal', command: defaultCommand }
+                  });
+                }
+              },
               {
                 child: (
                   <>
