@@ -53,9 +53,9 @@ func NewRegistry(domain string, authConfig types.AuthConfig) (name.Registry, err
 		return name.Registry{}, err
 	}
 	hubList = append(hubList, hub)
-	for _, hu := range hubList {
-		if err = ping(hu); err == nil {
-			return hub, nil
+	for i := range hubList {
+		if err = ping(hubList[i]); err == nil {
+			return hubList[i], nil
 		}
 	}
 	return name.Registry{}, fmt.Errorf("not found registry: %+v", err)
