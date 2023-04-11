@@ -128,9 +128,6 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err := buildahcli.VerifyFlagsArgsOrder(args); err != nil {
 		return err
 	}
-	if len(args) > 1 {
-		return errors.New("too many arguments specified")
-	}
 	if err := setDefaultFlagsWithSetters(c, setDefaultTLSVerifyFlag); err != nil {
 		return err
 	}
@@ -150,11 +147,11 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err != nil {
 		return err
 	}
-	ids, err := doPull(c, store, systemContext, []string{args[0]}, iopts)
+	ids, err := doPull(c, store, systemContext, args, iopts)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", ids[0])
+	fmt.Printf("%s\n", ids)
 	return nil
 }
 
