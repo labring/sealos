@@ -98,14 +98,14 @@ func newPullCommand() *cobra.Command {
 	var (
 		opts = newDefaultPullOptions()
 
-		pullDescription = `  Pulls an image from a registry and stores it locally.
-  An image can be pulled using its tag or digest. If a tag is not
+		pullDescription = `  Pull images from a registry and stores it locally.
+  Images can be pulled using its tag or digest. If a tag is not
   specified, the image with the 'latest' tag (if it exists) is pulled.`
 	)
 
 	pullCommand := &cobra.Command{
 		Use:   "pull",
-		Short: "Pull an image from the specified location",
+		Short: "Pull images from the specified location",
 		Long:  pullDescription,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return pullCmd(cmd, args, opts)
