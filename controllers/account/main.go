@@ -106,10 +106,6 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Debt")
 		os.Exit(1)
 	}
-	//if err = (&accountv1.Debt{}).SetupWebhookWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create webhook", "webhook", "Debt")
-	//	os.Exit(1)
-	//}
 
 	if err = cache.SetupCache(mgr); err != nil {
 		setupLog.Error(err, "unable to cache controller")
@@ -118,7 +114,7 @@ func main() {
 	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
 		setupLog.Info("disable all webhooks")
 	} else {
-		mgr.GetWebhookServer().Register("/mutate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
 	}
 	//+kubebuilder:scaffold:builder
 
