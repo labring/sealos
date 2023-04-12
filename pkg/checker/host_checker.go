@@ -31,8 +31,15 @@ type HostChecker struct {
 
 func (a HostChecker) Check(cluster *v2.Cluster, _ string) error {
 	var ipList []string
+	var masterNum int
 	for _, hosts := range cluster.Spec.Hosts {
+		if len(hosts.Roles) > 0 && hosts.Roles[0] == v2.MASTER {
+			masterNum++
+		}
 		ipList = append(ipList, hosts.IPS...)
+	}
+	if masterNum&1 == 0 {
+		return fmt.Errorf("checker: occurs no-odd number of master nodes")
 	}
 	if len(a.IPs) != 0 {
 		ipList = a.IPs
