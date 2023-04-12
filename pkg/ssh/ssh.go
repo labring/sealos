@@ -40,6 +40,9 @@ type Interface interface {
 	// scp -r /tmp root@192.168.0.2:/root/tmp => Copy("192.168.0.2","tmp","/root/tmp")
 	// skip checksum if env DO_NOT_CHECKSUM=true
 	Copy(host, src, dst string) error
+	// CopyR copy remote file to local
+	// scp -r root@192.168.0.2:/root/tmp/file /tmp/file => Copy("192.168.0.2","/tmp/file","/root/tmp/file")
+	CopyR(host, dst, src string) error
 	// CmdAsync exec commands on remote host asynchronously
 	CmdAsync(host string, cmds ...string) error
 	// Cmd exec command on remote host, and return combined standard output and standard error

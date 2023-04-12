@@ -17,26 +17,61 @@ package settings
 import (
 	"os"
 	"time"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
+	"github.com/labring/sealos/test/e2e/suites/cmd"
 )
+
+type Config struct {
+	WaitTime      time.Duration
+	MaxWaiteTime  time.Duration
+	SSH           *v1beta1.SSH
+	InfraDriver   string
+	SealosBinPath string
+	SealosCmd     *cmd.SealosCmd
+	TestDir       string
+	/*
+		if baseImageName ond baseImageTar both not set, use default ImageName (hub.sealos.cn/labring/kubernetes:v1.25.6) .
+		if ImageTar is set, will use tar to load image; else if baseImageName is set, will pull image with baseImageName.
+		if patchImageTar is set, will use tar to load patch image; else if patchImageName is set, will pull image with patchImageName.
+		if patchImageTar and patchImageName are both set, will use patchImageTar to load image.
+		if patchImageTar or patchImageName is set, merge patch image with base image.
+	*/
+	ClusterName    string
+	ImageName      string
+	ImageTar       string
+	PatchImageName string
+	PatchImageTar  string
+}
+
+var E2EConfig *Config
 
 // init test params and settings
 func init() {
-	defaultWaiteTime := os.Getenv("DEFAULT_WAITE_TIME")
+	E2EConfig = &Config{}
+	E2EConfig.loadFromEnv()
+	defaultWaiteTime := os.Getenv(SEALOS_E2E_TEST_DEFAULT_WAITE_TIME)
 	if defaultWaiteTime == "" {
-		DefaultWaiteTime = 300 * time.Second
+		E2EConfig.WaitTime = 300 * time.Second
 	} else {
-		DefaultWaiteTime, _ = time.ParseDuration(defaultWaiteTime)
+		E2EConfig.WaitTime, _ = time.ParseDuration(defaultWaiteTime)
 	}
-
-	maxWaiteTime := os.Getenv("MAX_WAITE_TIME")
+	maxWaiteTime := os.Getenv(SEALOS_E2E_TEST_MAX_WAITE_TIME)
 	if maxWaiteTime == "" {
-		MaxWaiteTime = 2400 * time.Second
+		E2EConfig.MaxWaiteTime = 2400 * time.Second
 	} else {
-		MaxWaiteTime, _ = time.ParseDuration(maxWaiteTime)
+		E2EConfig.MaxWaiteTime, _ = time.ParseDuration(maxWaiteTime)
 	}
+}
 
-	pollingInterval := os.Getenv("DEFAULT_POLLING_INTERVAL")
-	if pollingInterval == "" {
-		DefaultPollingInterval = 10
-	}
+func (c *Config) loadFromEnv() {
+	c.ImageName = os.Getenv(SEALOS_E2E_TEST_IMAGE_NAME)
+	c.ImageTar = os.Getenv(SEALOS_E2E_TEST_IMAGE_TAR)
+	c.ClusterName = getEnvWithDefault(SEALOS_E2E_TEST_CLUSTER_NAME, DefaultTestClusterName)
+	c.TestDir = getEnvWithDefault(SEALOS_E2E_TEST_TEST_DIR, DefaultTestDir)
+	c.PatchImageName = os.Getenv(SEALOS_E2E_TEST_PATCH_IMAGE_NAME)
+	c.PatchImageTar = os.Getenv(SEALOS_E2E_TEST_PATCH_IMAGE_TAR)
+	c.InfraDriver = getEnvWithDefault(SEALOS_E2E_TEST_INFRA, DefaultInfraDriver)
+	c.SealosBinPath = getEnvWithDefault(SEALOS_E2E_TEST_SEALOS_BIN_PATH, DefaultSealosBinPath)
 }

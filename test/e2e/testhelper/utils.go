@@ -101,6 +101,14 @@ func DeleteFileLocally(filePath string) {
 	CheckErr(err)
 }
 
+func CheckEnvSetting(keys []string) {
+	for _, key := range keys {
+		if os.Getenv(key) == "" {
+			CheckErr(fmt.Errorf("env %s not set", key))
+		}
+	}
+}
+
 func CheckErr(err error, explainErrMsg ...string) {
 	if err != nil {
 		if len(explainErrMsg) != 0 {
