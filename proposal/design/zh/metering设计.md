@@ -2,9 +2,9 @@
 
 ## 一、背景介绍
 
-​	需要计量计费用户在 sealos cloud 上面使用的资源，比如使用的内存，CPU，流量等资源，每个用户至少有一个自己的 Namespace ，内存和 CPU 等资源 Metering 可以通过直接遍历 pod 得到，但是流量等第三方资源 Metering 感知不到，需要设计一个计量计费系统来帮助计费。
+​    需要计量计费用户在 sealos cloud 上面使用的资源，比如使用的内存，CPU，流量等资源，每个用户至少有一个自己的 Namespace ，内存和 CPU 等资源 Metering 可以通过直接遍历 pod 得到，但是流量等第三方资源 Metering 感知不到，需要设计一个计量计费系统来帮助计费。
 
-​	整体流程会在官网的 design 文档中介绍， proposal 中会侧重于介绍 CRD 字段设计细节。
+​    整体流程会在官网的 design 文档中介绍， proposal 中会侧重于介绍 CRD 字段设计细节。
 
 ## 二、各个模块介绍
 
@@ -17,13 +17,13 @@ apiVersion: metering.sealos.io/v1
 kind: Metering
 metadata:
   name: metering-nsName
-  namespace:metering-system
+  namespace: metering-system
 spec:
   namespace: ns-ff839a27-0a35-452f-820e-3e47d596ba68
   owner: ff839a27-0a35-452f-820e-3e47d596ba68
-  timeInterval: 60 //60分钟计费一次
+  timeInterval: 60 #60分钟计费一次
 status:
-	totalAmount: 30 //累计收费多少钱
+  totalAmount: 30 #累计收费多少钱
 ```
 
 ### 2.2、Resource-controller（以 podResource-controller举例）
@@ -51,12 +51,12 @@ spec:
       price: 2
       describe: "the cost per gigabyte of memory per hour（price:100 = 1¥）"
 status:
-	seqID: 1   //Every billing cycle will +1
+  seqID: 1   //Every billing cycle will +1
 ```
 
 ### 2.3、ExtensionResourcesPrice
 
-​	由 resource-controller 创建，用来记录资源的价格和统计资源的 GVK
+​    由 resource-controller 创建，用来记录资源的价格和统计资源的 GVK
 
 ```yaml
 apiVersion: common.metering.sealos.io/v1
@@ -64,21 +64,21 @@ Kind: ExtensionResourcesPrice
 Spec:
   resources: 
     cpu:
-      unit: 1  //单位使用资源
-      price:1 // 单位资源价格
+      unit: 1  #单位使用资源
+      price: 1 #单位资源价格
     memory:
-      unit: 1  //单位使用资源
-      price:2  // 单位资源价格
-	groupVersionKinds:
-	- group: ""
-		version: v1
-		kind: pod
+      unit: 1  #单位使用资源
+      price: 2 #单位资源价格
+  groupVersionKinds:
+  - group: ""
+    version: v1
+    kind: pod
 
 ```
 
 ### 2.4、Resource
 
-​	由resource-controller 产生，用于存储统计的资源使用量，metering-controller会监听不同Resource-controller 产生的Resource CR，并且暂存于Metering CR中，一个计费周期后以AccountBalance CR的形式输出这个计费周期总和的资源使用量和应扣款
+​    由resource-controller 产生，用于存储统计的资源使用量，metering-controller会监听不同Resource-controller 产生的Resource CR，并且暂存于Metering CR中，一个计费周期后以AccountBalance CR的形式输出这个计费周期总和的资源使用量和应扣款
 
 ```yaml
 apiVersion: common.metering.sealos.io/v1
@@ -88,13 +88,13 @@ metadata:
   namespace: metering-system
 spec:
   resources: 
-    memory:  // resource name
+    memory:  # resource name
       namespace: ns-c220b19f-0eee-4bee-bae9-9d91270531c0
-      time: 1672898068 //时间戳
+      time: 1672898068 #时间戳
       used: 1Gi
       cost: 2
 status:
-  status: complete //已经被metering-controller统计过了
+  status: complete #已经被metering-controller统计过了
 ```
 
 ### 2.5、AccountBalance
@@ -106,11 +106,11 @@ metadata:
   name: accountbalance-b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6-92
   namespace: metering-system
 spec:
-  amount: 6 //需要支付的金额
+  amount: 6 #需要支付的金额
   owner: b257ee11-5e85-4e3f-b1e4-4fa291dcdfd6
   timestamp: 1672031381
 status:
-  status: complete //已支付
+  status: complete #已支付
 ```
 
 

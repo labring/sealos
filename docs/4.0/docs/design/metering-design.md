@@ -2,7 +2,7 @@
 
 ## **1、Background**
 
-​	sealos cloud is a multi-tenant cloud operating system with k8s as the core. Each user has at least one namespace of his own to use, which brings challenges to billing. How to bill the cpu, memory and other resources used by users in k8s? How about billing traffic and other resources that are not visible to Metering.
+​    sealos cloud is a multi-tenant cloud operating system with k8s as the core. Each user has at least one namespace of his own to use, which brings challenges to billing. How to bill the cpu, memory and other resources used by users in k8s? How about billing traffic and other resources that are not visible to Metering.
 
 ## 2、Scenarios that need to be met
 
@@ -29,7 +29,7 @@ Metering system: Calculate the price once in a billing cycle based on the statis
 
 3.2.2 The metering and billing system calculates the price based on the usage
 
-​	The pricing will be calculated once within a billing cycle, and the resource usage within the measurement-based billing will be cleared. Finally, the required payment will be deducted from the user's account
+​    The pricing will be calculated once within a billing cycle, and the resource usage within the measurement-based billing will be cleared. Finally, the required payment will be deducted from the user's account
 
 <img src="/docs/4.0/img/metering/metering-3.png" width="600px" height="300px" />
 
