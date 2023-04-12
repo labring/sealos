@@ -77,7 +77,7 @@ type BuildOptions struct {
 	ForceRm            bool
 	Format             string
 	From               string
-	HttpProxy          bool
+	HTTPProxy          bool
 	Ignorefile         string
 	Jobs               int
 	Label              []string
@@ -154,7 +154,7 @@ func (bo *BuildOptions) Args() []string {
 		appendFlagsWithValues("--force-rm", bo.ForceRm).
 		appendFlagsWithValues("--format", bo.Format).
 		appendFlagsWithValues("--from", bo.From).
-		appendFlagsWithValues("--http-proxy", bo.HttpProxy).
+		appendFlagsWithValues("--http-proxy", bo.HTTPProxy).
 		appendFlagsWithValues("--ignorefile", bo.Ignorefile).
 		appendFlagsWithValues("--jobs", bo.Jobs).
 		appendFlagsWithValues("--label", bo.Label).

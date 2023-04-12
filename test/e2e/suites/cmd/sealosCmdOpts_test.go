@@ -107,7 +107,7 @@ func TestBuildOptions_Args(t *testing.T) {
 		ForceRm            bool
 		Format             string
 		From               string
-		HttpProxy          bool
+		HTTPProxy          bool
 		Ignorefile         string
 		Jobs               int
 		Label              []string
@@ -149,7 +149,7 @@ func TestBuildOptions_Args(t *testing.T) {
 				ForceRm:            tt.fields.ForceRm,
 				Format:             tt.fields.Format,
 				From:               tt.fields.From,
-				HttpProxy:          tt.fields.HttpProxy,
+				HTTPProxy:          tt.fields.HTTPProxy,
 				Ignorefile:         tt.fields.Ignorefile,
 				Jobs:               tt.fields.Jobs,
 				Label:              tt.fields.Label,

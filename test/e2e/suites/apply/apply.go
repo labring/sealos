@@ -26,8 +26,8 @@ type Applier struct {
 	//Eip string
 	EIp             []string
 	InfraDriver     drivers.Driver
-	LocalCmd        cmd.CmdInterface
-	RemoteCmd       cmd.CmdInterface
+	LocalCmd        cmd.Interface
+	RemoteCmd       cmd.Interface
 	RemoteSealosCmd *cmd.SealosCmd
 	k8sClient       kube.K8s
 }
@@ -44,7 +44,7 @@ func PreCheckEnv() {
 	}
 	if settings.E2EConfig.ImageName == "" {
 		if settings.E2EConfig.ImageTar != "" {
-			testhelper.CheckErr(fmt.Errorf("image name is empty, please set env %s", settings.SEALOS_E2E_TEST_IMAGE_NAME))
+			testhelper.CheckErr(fmt.Errorf("image name is empty, please set env %s", settings.TestImageName))
 		}
 		settings.E2EConfig.ImageName = settings.DefaultTestImageName
 	}
@@ -62,12 +62,12 @@ func PreCheckEnv() {
 		}
 		logger.Info("e2e test patch image tar path is %s", settings.E2EConfig.PatchImageTar)
 		if settings.E2EConfig.PatchImageName == "" {
-			testhelper.CheckErr(fmt.Errorf("patch image name is empty, please set env %s", settings.SEALOS_E2E_TEST_PATCH_IMAGE_NAME))
+			testhelper.CheckErr(fmt.Errorf("patch image name is empty, please set env %s", settings.TestPatchImageName))
 		}
 		logger.Info("e2e test patch image name is %s", settings.E2EConfig.PatchImageName)
 	}
 	if settings.E2EConfig.SealosBinPath == "" {
-		testhelper.CheckErr(fmt.Errorf("sealos bin path is empty, please set env %s", settings.SEALOS_E2E_TEST_SEALOS_BIN_PATH))
+		testhelper.CheckErr(fmt.Errorf("sealos bin path is empty, please set env %s", settings.TestSealosBinPath))
 	} else {
 		logger.Info("e2e test sealos bin path is %s", settings.E2EConfig.SealosBinPath)
 	}
@@ -132,7 +132,7 @@ func (a *Applier) FetchRemoteKubeConfig() {
 
 func (a *Applier) CheckNodeNum(num int) {
 	notReady := make(map[string]struct{})
-	err := retry.Retry(10, 5*time.Second, func() error {
+	err := retry.Retry(5, 5*time.Second, func() error {
 		var err error
 		a.k8sClient, err = kube.NewK8sClient(filepath.Join(settings.E2EConfig.TestDir, "kube", "admin.conf"), "https://"+a.EIp[0]+":6443")
 		if err != nil {
@@ -146,7 +146,6 @@ func (a *Applier) CheckNodeNum(num int) {
 		//kubectl get nodes --no-headers=true | awk '$2 != "Ready" {print}'
 		//not_ready_nodes=$(kubectl get nodes --no-headers | awk '{ if ($2 != "Ready") print $1 }')
 		for _, node := range nodes.Items {
-
 			for _, condition := range node.Status.Conditions {
 				if condition.Status == "False" || condition.Status == "Unknown" {
 					continue
@@ -155,9 +154,7 @@ func (a *Applier) CheckNodeNum(num int) {
 					notReady[node.Name] = struct{}{}
 					return fmt.Errorf("node %s is not ready", node.Name)
 				}
-				if _, ok := notReady[node.Name]; ok {
-					delete(notReady, node.Name)
-				}
+				delete(notReady, node.Name)
 			}
 		}
 

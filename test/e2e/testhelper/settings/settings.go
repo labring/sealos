@@ -51,13 +51,13 @@ var E2EConfig *Config
 func init() {
 	E2EConfig = &Config{}
 	E2EConfig.loadFromEnv()
-	defaultWaiteTime := os.Getenv(SEALOS_E2E_TEST_DEFAULT_WAITE_TIME)
+	defaultWaiteTime := os.Getenv(DefaultWaiteTime)
 	if defaultWaiteTime == "" {
 		E2EConfig.WaitTime = 300 * time.Second
 	} else {
 		E2EConfig.WaitTime, _ = time.ParseDuration(defaultWaiteTime)
 	}
-	maxWaiteTime := os.Getenv(SEALOS_E2E_TEST_MAX_WAITE_TIME)
+	maxWaiteTime := os.Getenv(MaxWaiteTime)
 	if maxWaiteTime == "" {
 		E2EConfig.MaxWaiteTime = 2400 * time.Second
 	} else {
@@ -66,12 +66,12 @@ func init() {
 }
 
 func (c *Config) loadFromEnv() {
-	c.ImageName = os.Getenv(SEALOS_E2E_TEST_IMAGE_NAME)
-	c.ImageTar = os.Getenv(SEALOS_E2E_TEST_IMAGE_TAR)
-	c.ClusterName = getEnvWithDefault(SEALOS_E2E_TEST_CLUSTER_NAME, DefaultTestClusterName)
-	c.TestDir = getEnvWithDefault(SEALOS_E2E_TEST_TEST_DIR, DefaultTestDir)
-	c.PatchImageName = os.Getenv(SEALOS_E2E_TEST_PATCH_IMAGE_NAME)
-	c.PatchImageTar = os.Getenv(SEALOS_E2E_TEST_PATCH_IMAGE_TAR)
-	c.InfraDriver = getEnvWithDefault(SEALOS_E2E_TEST_INFRA, DefaultInfraDriver)
-	c.SealosBinPath = getEnvWithDefault(SEALOS_E2E_TEST_SEALOS_BIN_PATH, DefaultSealosBinPath)
+	c.ImageName = os.Getenv(TestImageName)
+	c.ImageTar = os.Getenv(TestImageTar)
+	c.ClusterName = getEnvWithDefault(TestClusterName, DefaultTestClusterName)
+	c.TestDir = getEnvWithDefault(TestDir, DefaultTestDir)
+	c.PatchImageName = os.Getenv(TestPatchImageName)
+	c.PatchImageTar = os.Getenv(TestPatchImageTar)
+	c.InfraDriver = getEnvWithDefault(TestInfra, DefaultInfraDriver)
+	c.SealosBinPath = getEnvWithDefault(TestSealosBinPath, DefaultSealosBinPath)
 }

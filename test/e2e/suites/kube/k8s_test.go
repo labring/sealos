@@ -36,7 +36,6 @@ func TestNewK8sClient(t *testing.T) {
 				t.Errorf("ListNodes() error = %v", err)
 			}
 			t.Logf("ListNodes() got = %v", nodeList)
-
 		})
 	}
 }

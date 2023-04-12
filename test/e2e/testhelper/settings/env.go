@@ -7,19 +7,19 @@ import "os"
 */
 
 const (
-	Prefix                             = "SEALOS_E2E_TEST_"
-	SEALOS_E2E_TEST_DEFAULT_WAITE_TIME = Prefix + "DEFAULT_WAITE_TIME"
-	SEALOS_E2E_TEST_MAX_WAITE_TIME     = Prefix + "MAX_WAITE_TIME"
+	Prefix           = "SEALOS_E2E_TEST_"
+	DefaultWaiteTime = Prefix + "DEFAULT_WAITE_TIME"
+	MaxWaiteTime     = Prefix + "MAX_WAITE_TIME"
 
-	SEALOS_E2E_TEST_IMAGE_NAME       = Prefix + "IMAGE_NAME"
-	SEALOS_E2E_TEST_IMAGE_TAR        = Prefix + "IMAGE_TAR"
-	SEALOS_E2E_TEST_PATCH_IMAGE_NAME = Prefix + "PATCH_IMAGE_NAME"
-	SEALOS_E2E_TEST_PATCH_IMAGE_TAR  = Prefix + "PATCH_IMAGE_TAR"
+	TestImageName      = Prefix + "IMAGE_NAME"
+	TestImageTar       = Prefix + "IMAGE_TAR"
+	TestPatchImageName = Prefix + "PATCH_IMAGE_NAME"
+	TestPatchImageTar  = Prefix + "PATCH_IMAGE_TAR"
 
-	SEALOS_E2E_TEST_INFRA           = Prefix + "EST_INFRA"
-	SEALOS_E2E_TEST_CLUSTER_NAME    = Prefix + "CLUSTER_NAME"
-	SEALOS_E2E_TEST_TEST_DIR        = Prefix + "TEST_DIR"
-	SEALOS_E2E_TEST_SEALOS_BIN_PATH = Prefix + "SEALOS_BIN_PATH"
+	TestInfra         = Prefix + "EST_INFRA"
+	TestClusterName   = Prefix + "CLUSTER_NAME"
+	TestDir           = Prefix + "TEST_DIR"
+	TestSealosBinPath = Prefix + "SEALOS_BIN_PATH"
 )
 
 func getEnvWithDefault(key, defaultValue string) string {

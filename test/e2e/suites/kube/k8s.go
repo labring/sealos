@@ -47,7 +47,6 @@ func NewK8sClient(kubeconfig string, apiServer string) (K8s, error) {
 }
 
 func (c *K8sClient) ListNodes() (*v1.NodeList, error) {
-
 	nodes, err := c.Client.Kubernetes().CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get cluster nodes")

@@ -10,16 +10,16 @@ import (
 	"github.com/labring/sealos/pkg/utils/file"
 )
 
-// CmdInterface defines the interface for executing commands
-type CmdInterface interface {
+// Interface defines the interface for executing commands
+type Interface interface {
 	Exec(cmd string, args ...string) ([]byte, error)
 	AsyncExec(cmd string, args ...string) error
 	Copy(src string, dst string) error
 	CopyR(dst string, src string) error
 }
 
-var _ = (CmdInterface)(&RemoteCmd{})
-var _ = (CmdInterface)(&LocalCmd{})
+var _ = (Interface)(&RemoteCmd{})
+var _ = (Interface)(&LocalCmd{})
 
 // Exec executes the given command on the remote machine
 func (c RemoteCmd) Exec(cmd string, args ...string) ([]byte, error) {
@@ -41,13 +41,13 @@ func (c RemoteCmd) CopyR(dst string, src string) error {
 	return c.Interface.CopyR(c.Host, dst, src)
 }
 
-// RemoteCmd implements the CmdInterface for remote command execution using SSH
+// RemoteCmd implements the Interface for remote command execution using SSH
 type RemoteCmd struct {
 	Host string
 	ssh.Interface
 }
 
-// LocalCmd implements the CmdInterface for local command execution using os/exec
+// LocalCmd implements the Interface for local command execution using os/exec
 type LocalCmd struct{}
 
 // Exec executes the given command on the local machine
