@@ -112,7 +112,8 @@ func newPullCommand() *cobra.Command {
 		},
 		Example: fmt.Sprintf(`%[1]s pull imagename
   %[1]s pull docker-daemon:imagename:imagetag
-  %[1]s pull myregistry/myrepository/imagename:imagetag`, rootCmd.CommandPath()),
+  %[1]s pull myregistry/myrepository/imagename:imagetag
+	%[1]s pull imageID1 imageID2 imageID3`, rootCmd.CommandPath()),
 	}
 	pullCommand.SetUsageTemplate(UsageTemplate())
 

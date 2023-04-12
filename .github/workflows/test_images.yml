@@ -61,9 +61,9 @@ jobs:
           sudo sealos create docker.io/labring/kubernetes:v1.20.0
           sudo sealos create docker.io/labring/kubernetes:v1.20.1
           echo "verify pull"
-          sudo sealos pull docker.io/labring/kubernetes:v1.20.2
+          sudo sealos pull docker.io/labring/kubernetes:v1.20.2 labring/helm:v3.8.2
           echo "verify rmi"
-          sudo sealos rmi docker.io/labring/kubernetes:v1.20.2
+          sudo sealos rmi docker.io/labring/kubernetes:v1.20.2 labring/helm:v3.8.2
           echo "verify save"
           sudo sealos save -o k8s.tar docker.io/labring/kubernetes:v1.20.1
           echo "verify load"
