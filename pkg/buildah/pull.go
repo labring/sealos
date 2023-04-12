@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/containers/buildah"
@@ -152,7 +153,7 @@ func pullCmd(c *cobra.Command, args []string, iopts *pullOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", ids)
+	fmt.Printf("%s\n", strings.Join(ids, ","))
 	return nil
 }
 
