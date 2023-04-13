@@ -1,10 +1,12 @@
-name: bytebase-frontend
+name: Bytebase-Frontend
 
 on:
   push:
     branches: ['main']
     paths:
       - 'frontend/providers/bytebase/**'
+      - '.github/workflows/bytebase-frontend.yml'
+      - '!**/*.md'
 
 jobs:
   bytebase-frontend:
