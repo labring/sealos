@@ -44,7 +44,7 @@ func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 		return err
 	}
 	setCertSANS := func() error {
-		if err := k.fetchCertSANS(); err != nil {
+		if err := k.fetchKubeadmConfig(); err != nil {
 			return err
 		}
 		if len(certs) != 0 {
