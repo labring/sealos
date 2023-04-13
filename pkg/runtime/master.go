@@ -107,6 +107,9 @@ func (k *KubeadmRuntime) joinMasters(masters []string) error {
 	if err = k.sendJoinCPConfig(masters); err != nil {
 		return err
 	}
+	if err = k.fetchCertSANS(); err != nil {
+		return err
+	}
 	cmd := k.Command(k.getKubeVersion(), JoinMaster)
 	if cmd == "" {
 		return fmt.Errorf("get join master command failed, kubernetes version is %s", k.getKubeVersion())
