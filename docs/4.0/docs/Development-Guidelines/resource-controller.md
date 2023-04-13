@@ -1,12 +1,12 @@
 # How to Write a Resource-Controller
 
-​    The resource-controller is part of the metering and billing module. Please make sure you are familiar with the [design of metering](https://github.com/labring/sealos/blob/main/proposal/design/zh/metering设计.md) before proceeding.
+​    The resource-controller is part of the metering and billing module. Please make sure you are familiar with the [design of metering](/proposal/design/zh/metering%E8%AE%BE%E8%AE%A1.md) before proceeding.
 
 ## What is a Resource-Controller?
 
 ​    The resource-controller is part of the metering and billing module, used to track and bill the usage of resources. Different resources have different resource-controllers. Taking podresource-controller as an example, podresource-controller tracks the usage of resource limits for pods in the user's namespace, calculates the price, and generates a Resource CR.
 
-![img](https://p.ipic.vip/p87a3h.png)
+<img src="/proposal/img/metering-proposal-3.png" style="zoom:33%;" />
 
 ## How to Write a Resource-Controller (Using podresource-controller as an Example)
 
@@ -30,9 +30,8 @@ type PodResourceStatus struct {
 
 seqID needs to be incremented by 1 every time podresource-controller completes billing. The current seqID value is used as a suffix for the name of the created Resource CR to prevent duplicate CR names.
 
-### Implementing Interfaces in Reconcile
+### 在reconcile 中实现以下[接口](/pkg/metering/interface.go)
 
-https://github.com/labring/sealos/blob/main/pkg/metering/interface.go
 
 ```
 type ResourceControllerInterface interface {
@@ -46,9 +45,7 @@ The CreateOrUpdateExtensionResourcesPrice function declares the resources you wa
 
 UpdateResourceUsed creates a Resource CR to declare the resources used by the user and the amount owed.
 
-You can view the specific implementation code at:
-
-https://github.com/labring/sealos/blob/main/controllers/metering/controllers/podresource_controller.go
+You can view the specific [implementation code](/controllers/metering/controllers/podresource_controller.go) at:
 
 
 

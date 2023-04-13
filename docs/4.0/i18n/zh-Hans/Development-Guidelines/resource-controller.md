@@ -1,6 +1,6 @@
 # Resource-controller如何编写
 
-resource-controller 是计量计费模块的一部分，请确保您提前了解[计量计费的设计](https://github.com/labring/sealos/blob/main/proposal/design/zh/metering%E8%AE%BE%E8%AE%A1.md)
+resource-controller 是计量计费模块的一部分，请确保您提前了解[计量计费的设计](/proposal/design/zh/metering%E8%AE%BE%E8%AE%A1.md)
 
 
 
@@ -8,7 +8,7 @@ resource-controller 是计量计费模块的一部分，请确保您提前了解
 
 resource-controller 是计量计费模块的一部分，用来统计和计费资源的使用量，不同资源不同resource-controller，使用podresource-controller举例，podresource-controller会统计用户ns下pod的资源limit使用量，并且计算出价格，生成一个Resource CR.
 
-![](https://p.ipic.vip/p87a3h.png)
+<img src="/proposal/img/metering-proposal-3.png" style="zoom:33%;" />
 
 
 
@@ -35,9 +35,7 @@ type PodResourceStatus struct {
 
 seqID是每次podresource-controller统计计费完之后都需要+1，用当前seqID值来作为后缀命名创建的Resource CR，防止CR 名字一样。
 
-### 在reconcile 中实现以下接口
-
-https://github.com/labring/sealos/blob/main/pkg/metering/interface.go
+### 在reconcile 中实现以下[接口](/pkg/metering/interface.go)
 
 ```
 type ResourceControllerInterface interface {
@@ -52,10 +50,7 @@ CreateOrUpdateExtensionResourcesPrice 函数是声明你要进行计费的资源
 
 UpdateResourceUsed 是创建一个Resource CR，用来申明自己统计到了这个用户使用的资源和计算出应付金额。
 
-具体实现代码可自行查看
-
-https://github.com/labring/sealos/blob/main/controllers/metering/controllers/podresource_controller.go
-
+具体[实现代码](/controllers/metering/controllers/podresource_controller.go)可自行查看
 
 
 ### Example  Yaml
