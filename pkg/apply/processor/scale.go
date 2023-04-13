@@ -140,11 +140,7 @@ func (c *ScaleProcessor) JoinCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	ips = append(ips, c.MastersToJoin...)
 	ips = append(ips, c.NodesToJoin...)
-	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
-	if err != nil {
-		return err
-	}
-	return nil
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
 }
 
 func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
@@ -153,14 +149,14 @@ func (c *ScaleProcessor) DeleteCheck(cluster *v2.Cluster) error {
 	ips = append(ips, cluster.GetMaster0IPAndPort())
 	//ips = append(ips, c.MastersToDelete...)
 	//ips = append(ips, c.NodesToDelete...)
-	err := checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre)
-	if err != nil {
-		return err
-	}
-	return nil
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewIPsHostChecker(ips)}, cluster, checker.PhasePre))
 }
 
 func (c *ScaleProcessor) PreProcess(cluster *v2.Cluster) error {
+	return NewPreProcessError(c.preProcess(cluster))
+}
+
+func (c *ScaleProcessor) preProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in ScaleProcessor.")
 	err := c.ClusterFile.Process()
 	if err != nil {

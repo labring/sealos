@@ -232,6 +232,7 @@ func (k *KubeadmRuntime) fetchCertSANS() error {
 	for i := range certsStruct {
 		certs = append(certs, certsStruct[i].(string))
 	}
+	logger.Debug("current cluster certSANs: %+v", certs)
 	k.setCertSANS(certs)
 	return nil
 }
