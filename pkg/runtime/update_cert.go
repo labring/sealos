@@ -40,14 +40,21 @@ const (
 
 func (k *KubeadmRuntime) UpdateCert(certs []string) error {
 	//set sans to kubeadm config object
-	if len(certs) != 0 {
-		k.setCertSANS(append(k.getCertSANS(), certs...))
-	}
 	if err := k.ConvertInitConfigConversion(setCGroupDriverAndSocket, setCertificateKey); err != nil {
 		return err
 	}
+	setCertSANS := func() error {
+		if err := k.fetchCertSANS(); err != nil {
+			return err
+		}
+		if len(certs) != 0 {
+			k.setCertSANS(append(k.getCertSANS(), certs...))
+		}
+		return nil
+	}
 	pipeline := []func() error{
-		k.updateCert,
+		setCertSANS,
+		k.initCert,
 		k.saveNewKubeadmConfig,
 		k.uploadConfigFromKubeadm,
 		k.deleteAPIServer,
@@ -115,7 +122,7 @@ func (k *KubeadmRuntime) UpdateCertByInit() error {
 			return err
 		}
 	}
-	if err := k.updateCert(); err != nil {
+	if err := k.initCert(); err != nil {
 		return err
 	}
 	if err := k.CreateKubeConfig(); err != nil {
@@ -124,7 +131,7 @@ func (k *KubeadmRuntime) UpdateCertByInit() error {
 	return k.SendJoinMasterKubeConfigs(k.getMasterIPAndPortList()[:1], AdminConf, ControllerConf, SchedulerConf, KubeletConf)
 }
 
-func (k *KubeadmRuntime) updateCert() error {
+func (k *KubeadmRuntime) initCert() error {
 	pipeline := []func() error{
 		k.GenerateCert,
 		k.SendNewCertAndKeyToMasters,

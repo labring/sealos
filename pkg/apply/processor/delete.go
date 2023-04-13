@@ -71,7 +71,7 @@ func (d DeleteProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, error
 }
 
 func (d *DeleteProcessor) PreProcess(cluster *v2.Cluster) error {
-	return SyncClusterStatus(cluster, d.Buildah, true)
+	return NewPreProcessError(SyncClusterStatus(cluster, d.Buildah, true))
 }
 
 func (d *DeleteProcessor) UndoBootstrap(cluster *v2.Cluster) error {

@@ -78,15 +78,15 @@ func (c *CreateProcessor) GetPipeLine() ([]func(cluster *v2.Cluster) error, erro
 
 func (c *CreateProcessor) Check(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline Check in CreateProcessor.")
-	err := checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre)
-	if err != nil {
-		return err
-	}
-	return nil
+	return NewCheckError(checker.RunCheckList([]checker.Interface{checker.NewHostChecker()}, cluster, checker.PhasePre))
 }
 
 func (c *CreateProcessor) PreProcess(cluster *v2.Cluster) error {
 	logger.Info("Executing pipeline PreProcess in CreateProcessor.")
+	return NewPreProcessError(c.preProcess(cluster))
+}
+
+func (c *CreateProcessor) preProcess(cluster *v2.Cluster) error {
 	if err := MountClusterImages(cluster, c.Buildah); err != nil {
 		return err
 	}

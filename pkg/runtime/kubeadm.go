@@ -20,6 +20,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/labring/sealos/pkg/client-go/kubernetes"
+
 	v1 "k8s.io/api/core/v1"
 
 	"github.com/labring/sealos/pkg/constants"
@@ -183,6 +187,56 @@ func (k *KubeadmRuntime) getCertSANS() []string {
 	return k.ClusterConfiguration.APIServer.CertSANs
 }
 
+func (k *KubeadmRuntime) initCertSANS() {
+	var certSans []string
+	certSans = append(certSans, "127.0.0.1")
+	certSans = append(certSans, k.getAPIServerDomain())
+	certSans = append(certSans, k.getVip())
+	certSans = append(certSans, k.getMasterIPList()...)
+	certSans = append(certSans, k.getCertSANS()...)
+	k.setCertSANS(certSans)
+}
+
+func (k *KubeadmRuntime) setCertSANS(certs []string) {
+	var certSans []string
+	certSans = append(certSans, certs...)
+	certSans = strings2.RemoveDuplicate(certSans)
+	k.ClusterConfiguration.APIServer.CertSANs = certSans
+}
+
+func (k *KubeadmRuntime) fetchCertSANS() error {
+	logger.Info("fetch certSANs from kubeadm configmap")
+	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
+	if err != nil {
+		return err
+	}
+	data, err := kubernetes.GetKubeadmConfig(cli.Kubernetes())
+	if err != nil {
+		return err
+	}
+	//unmarshal data from configmap
+	obj, err := yaml.UnmarshalData([]byte(data.Data[ClusterConfiguration]))
+	if err != nil {
+		return err
+	}
+	logger.Debug("current cluster config data: %+v", obj)
+
+	var certs []string
+	certsStruct, exist, err := unstructured.NestedSlice(obj, "apiServer", "certSANs")
+	if !exist {
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("apiServer certSANs not exist")
+	}
+	for i := range certsStruct {
+		certs = append(certs, certsStruct[i].(string))
+	}
+	logger.Debug("current cluster certSANs: %+v", certs)
+	k.setCertSANS(certs)
+	return nil
+}
+
 func (k *KubeadmRuntime) getServiceCIDR() string {
 	return k.ClusterConfiguration.Networking.ServiceSubnet
 }
@@ -331,18 +385,6 @@ func (k *KubeadmRuntime) setCgroupDriver(cGroup string) {
 	k.KubeletConfiguration.CgroupDriver = cGroup
 }
 
-func (k *KubeadmRuntime) setCertSANS(certs []string) {
-	var certSans []string
-	certSans = append(certSans, "127.0.0.1")
-	certSans = append(certSans, k.getAPIServerDomain())
-	certSans = append(certSans, k.getVip())
-	certSans = append(certSans, certs...)
-	certSans = append(certSans, k.getMasterIPList()...)
-	certSans = append(certSans, k.getCertSANS()...)
-	certSans = strings2.RemoveDuplicate(certSans)
-	k.ClusterConfiguration.APIServer.CertSANs = certSans
-}
-
 func (k *KubeadmRuntime) setInitTaints() {
 	if len(k.Cluster.GetAllIPS()) == 1 &&
 		k.InitConfiguration.NodeRegistration.Taints == nil {
@@ -431,7 +473,7 @@ func (k *KubeadmRuntime) ConvertInitConfigConversion(fns ...func(*KubeadmRuntime
 		k.APIServer.ExtraArgs = make(map[string]string)
 	}
 	k.setExcludeCIDRs()
-	k.setCertSANS([]string{})
+	k.initCertSANS()
 	k.setInitTaints()
 	// after all merging done, set default fields
 	k.finalizeInitConfig()
