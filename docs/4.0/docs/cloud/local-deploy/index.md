@@ -2,8 +2,24 @@
 
 ## Preparation
 
-1. A ready Kubernetes cluster, which can be deployed using sealos. Refer to [Kubernetes life cycle management](https://github.com/lingdie/sealos/blob/deploy-docs/docs/4.0/docs/getting-started/kuberentes-life-cycle.md)
-2. You need to have a domain name and resolve it to sealos, assuming the domain name is `domain.io`. You also need to sign certificates for `domain.io` and `*.domain.io`.
+1. A ready Kubernetes cluster, which can be deployed using sealos.    
+    - Refer to [Kubernetes life cycle management](https://github.com/labring/sealos/tree/main/docs/4.0/docs/getting-started/kuberentes-life-cycle.md)
+      ```shell
+      sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+      --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+      --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd]
+      ```
+    -  If you need to customize a Kubernetes cluster, such as customizing `podCidr`，you can use the following command, please refer to [Customize a Cluster](https://sealos.io/docs/getting-started/customize-cluster) for details:
+       ```shell
+       sealos gen labring/kubernetes:v1.25.6 labring/helm:v3.10.0 labring/calico:v3.25.0 \
+       --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+       --nodes 192.168.64.21,192.168.64.19 -p [your-ssh-passwd] > Clusterfile
+       ```
+        Modify the relevant configuration in `Clusterfile` and then execute:
+       ```shell
+       sealos apply -f Clusterfile
+       ```
+2. You need to have a domain name and resolve it to sealos cluster's nodes, assuming the domain name is `domain.io`. You also need to sign certificates for `domain.io` and `*.domain.io`.
 
 ## Deployment steps
 
@@ -67,5 +83,6 @@
 5. Deploy the `casdoor & auth-service` component.
 6. Deploy the `desktop` component.
 7. Deploy the `app` component.
-8. Deploy the `terminal` application.
-9. Deploy the `deploy-manager` application.
+8. Deploy the `user` component.
+9. Deploy the `terminal` application.
+10. Deploy the `deploy-manager` application.
