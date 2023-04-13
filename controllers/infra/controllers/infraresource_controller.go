@@ -209,10 +209,10 @@ func (r *InfraResourceReconciler) syncInfraResource(ctx context.Context, infra i
 			var cost int64
 			if k == common.CPUResourceName {
 				quantity = resource.NewQuantity(quantityMap[k], resource.BinarySI)
-				cost = quantityMap[k] * v.Price
+				cost = int64(math.Ceil(float64(quantityMap[k]) * float64(v.Price) / 10))
 			} else if k == common.MemoryResourceName {
 				quantity = resource.NewQuantity(quantityMap[k]<<30, resource.BinarySI)
-				cost = quantityMap[k] * v.Price
+				cost = int64(math.Ceil(float64(quantityMap[k]) * float64(v.Price) / 10))
 			} else {
 				quantity = resource.NewQuantity(quantityMap[k]<<30, resource.BinarySI)
 				cost = int64(math.Ceil(float64(quantityMap[k]) * float64(v.Price) / 100))
