@@ -37,6 +37,9 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	if err = k.setKubernetesToken(); err != nil {
 		return err
 	}
+	if err = k.fetchKubeadmConfig(); err != nil {
+		return err
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range newNodesIPList {
 		node := node

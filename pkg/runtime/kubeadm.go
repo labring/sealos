@@ -204,7 +204,7 @@ func (k *KubeadmRuntime) setCertSANS(certs []string) {
 	k.ClusterConfiguration.APIServer.CertSANs = certSans
 }
 
-func (k *KubeadmRuntime) fetchCertSANS() error {
+func (k *KubeadmRuntime) fetchKubeadmConfig() error {
 	logger.Info("fetch certSANs from kubeadm configmap")
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
@@ -234,6 +234,25 @@ func (k *KubeadmRuntime) fetchCertSANS() error {
 	}
 	logger.Debug("current cluster certSANs: %+v", certs)
 	k.setCertSANS(certs)
+	return k.setNetWorking(obj)
+}
+
+func (k *KubeadmRuntime) setNetWorking(obj map[string]interface{}) error {
+	networkingMap, found, err := unstructured.NestedStringMap(obj, "networking")
+	if !found || err != nil {
+		return fmt.Errorf("networking section not found or cannot be parsed: %v", err)
+	}
+
+	requiredKeys := []string{"podSubnet", "serviceSubnet", "dnsDomain"}
+
+	for _, key := range requiredKeys {
+		if _, ok := networkingMap[key]; !ok {
+			return fmt.Errorf("networking %s not exist", key)
+		}
+	}
+	k.ClusterConfiguration.Networking.ServiceSubnet = networkingMap["serviceSubnet"]
+	k.ClusterConfiguration.Networking.DNSDomain = networkingMap["dnsDomain"]
+	k.ClusterConfiguration.Networking.PodSubnet = networkingMap["podSubnet"]
 	return nil
 }
 
