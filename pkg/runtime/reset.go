@@ -71,6 +71,11 @@ func (k *KubeadmRuntime) resetNode(node string) error {
 	if err := k.sshCmdAsync(node, resetCmd); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)
 	}
+	if len(k.getMasterIPList()) > 0 {
+		if err := k.deleteKubeNode(node); err != nil {
+			return fmt.Errorf("delete node %s failed %v", node, err)
+		}
+	}
 	if err := k.sshCmdAsync(node, removeKubeConfig); err != nil {
 		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, err)
 	}
