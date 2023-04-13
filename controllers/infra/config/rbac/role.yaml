@@ -84,6 +84,18 @@ rules:
 - apiGroups:
   - metering.common.sealos.io
   resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
   - resources
   verbs:
   - create

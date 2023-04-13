@@ -66,8 +66,8 @@ func TestInfraMetering(t *testing.T) {
 			t.Fatalf(err.Error())
 		}
 		t.Log(resource)
-		t.Cleanup(cleanInfraMetering)
 	})
+	t.Cleanup(cleanInfraMetering)
 }
 
 func checkResourceUsed(resource *meteringcommonv1.Resource, resourceName v1.ResourceName) error {

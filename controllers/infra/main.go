@@ -21,8 +21,6 @@ import (
 	"os"
 
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
-
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -51,7 +49,6 @@ func init() {
 
 	utilruntime.Must(meteringcommonv1.AddToScheme(scheme))
 
-	utilruntime.Must(meteringv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

@@ -20,17 +20,17 @@ spec:
   resources:
     infra/CPU:
       unit: "1"
-      price: 670
+      price: 12
       describe: "cost of per cpu per hour"
 
     infra/Memory:
       unit: "1G"
-      price: 330
+      price: 6
       describe: "cost of per memory per hour"
 
     infra/Volume:
-      unit: "1G"
-      price: 21
+      unit: "100G"
+      price: 35
       describe: "cost of per 1G volume per hour"
 `
 

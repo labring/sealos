@@ -71,6 +71,7 @@ type VolumeData struct {
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infraresources/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=infra.sealos.io,resources=infraresources/finalizers,verbs=update
 //+kubebuilder:rbac:groups=metering.common.sealos.io,resources=resources,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=metering.common.sealos.io,resources=extensionresourceprices,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 
 func (r *InfraResourceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -106,11 +107,11 @@ func (r *InfraResourceReconciler) CreateOrUpdateExtensionResourcesPrice(ctx cont
 			Name:      meteringcommonv1.ExtensionResourcePricePrefix + infrav1.InfraResourcePricePrefix,
 		},
 	}
-
 	r.Logger.Info("create or update extensionResourcePrice", "infraController name", infraController.Name, "infraController Resources", infraController.Spec.Resources)
 	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, extensionResourcesPrice, func() error {
 		extensionResourcesPrice.Spec.Resources = infraController.Spec.Resources
 		extensionResourcesPrice.Spec.ResourceName = infraController.Spec.ResourceName
+		extensionResourcesPrice.Spec.GroupVersionKinds = infrav1.DefaultInfraResourceGVK
 		return controllerutil.SetControllerReference(infraController, extensionResourcesPrice, r.Scheme)
 	}); err != nil {
 		return fmt.Errorf("sync ExtensionResourcesPrice failed: %v", err)
@@ -205,16 +206,22 @@ func (r *InfraResourceReconciler) syncInfraResource(ctx context.Context, infra i
 		}
 		for k, v := range infraController.Spec.Resources {
 			var quantity *resource.Quantity
+			var cost int64
 			if k == common.CPUResourceName {
 				quantity = resource.NewQuantity(quantityMap[k], resource.BinarySI)
+				cost = quantityMap[k] * v.Price
+			} else if k == common.MemoryResourceName {
+				quantity = resource.NewQuantity(quantityMap[k]<<30, resource.BinarySI)
+				cost = quantityMap[k] * v.Price
 			} else {
 				quantity = resource.NewQuantity(quantityMap[k]<<30, resource.BinarySI)
+				cost = int64(math.Ceil(float64(quantityMap[k]) * float64(v.Price) / 100))
 			}
 			infraResource.Spec.Resources[k] = meteringcommonv1.ResourceInfo{
 				Used:      quantity,
 				Timestamp: time.Now().Unix(),
 				Namespace: infra.Namespace,
-				Cost:      int64(math.Ceil(float64(quantityMap[k]) * float64(v.Price) / 60)),
+				Cost:      cost,
 			}
 		}
 		return nil
