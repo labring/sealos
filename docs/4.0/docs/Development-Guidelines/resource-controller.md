@@ -6,7 +6,7 @@
 
 ​    The resource-controller is part of the metering and billing module, used to track and bill the usage of resources. Different resources have different resource-controllers. Taking podresource-controller as an example, podresource-controller tracks the usage of resource limits for pods in the user's namespace, calculates the price, and generates a Resource CR.
 
-<img src="/proposal/img/metering-proposal-3.png" style="zoom:33%;" />
+<img src="/proposal/img/metering-proposal-3.png" width="400px" height="400px" />
 
 ## How to Write a Resource-Controller (Using podresource-controller as an Example)
 

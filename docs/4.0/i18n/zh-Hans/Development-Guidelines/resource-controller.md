@@ -8,9 +8,7 @@ resource-controller 是计量计费模块的一部分，请确保您提前了解
 
 resource-controller 是计量计费模块的一部分，用来统计和计费资源的使用量，不同资源不同resource-controller，使用podresource-controller举例，podresource-controller会统计用户ns下pod的资源limit使用量，并且计算出价格，生成一个Resource CR.
 
-<img src="/proposal/img/metering-proposal-3.png" style="zoom:33%;" />
-
-
+<img src="/proposal/img/metering-proposal-3.png" width="400px" height="400px" />
 
 ## 怎么样编写resource-controller（以podresource-controller举例）
 
