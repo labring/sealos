@@ -1,28 +1,28 @@
-# 如何编写e2e测试和接入github-action
+# How to write E2E tests and integrate with Github Actions
 
-### 为什么要进行 e2e 测试?
+### Why perform E2E testing?
 
-​    进行E2E测试的主要目的是确保应用程序在真实的用户场景下能够正常运行 通过模拟用户的实际操作流程 它可以检测到整个系统中的任何故障或错误 并且可以确保应用程序在各种情况下都能够正常运行 ,k8s 中 CRD 测试需要部署到 k8s 集群之后才能看是否满足自己期望。
+​    The main purpose of performing E2E testing is to ensure that the application can function properly in real user scenarios. By simulating the actual user operation process, it can detect any faults or errors in the entire system and ensure that the application can function properly under various circumstances. CRD testing in k8s needs to be deployed to the k8s cluster before it can be checked if it meets expectations.
 
 
 
-### 如何进行e2e测试编写
+### How to write E2E tests
 
-#### 前置条件
+#### Prerequisites
 
-在开始测试之前，请确保您已经满足以下条件：
+Before starting the test, please make sure you have met the following requirements:
 
-- 已经安装了 Kubernetes 集群，并且集群正常运行。
-- 已经安装了 kubectl 工具，并且可以使用该工具连接到 Kubernetes 集群。
-- 已经安装了 go 语言环境，并且可以使用 go 命令。
+- Kubernetes cluster is installed and running properly.
+- kubectl tool is installed and can be used to connect to the Kubernetes cluster.
+- Go language environment is installed and go command can be used.
 
-#### 部署CRD
+#### Deploy CRD
 
-本机有k8s 可以执行`make build run `直接本地运行，如果有 webhook 得自己打包镜像使用`make deploy` 部署
+If you have k8s on your local machine, you can directly run `make build run` locally. If you have a webhook, you need to package the image yourself and deploy it using `make deploy`.
 
-#### 测试文件编写
+#### Writing test files
 
-举个例子，有一个Metering CRD，会随着ns的创建而创建一个对应的CR（CRD 实例化）,在测试文件中运行程序创建一个ns，查看CR是否被创建
+For example, there is a Metering CRD that will create a corresponding CR (CRD instantiation) when an ns is created. In the test file, run the program to create an ns and check if CR has been created.
 
 ```
 func TestMetering(t *testing.T) {
@@ -41,7 +41,7 @@ func TestMetering(t *testing.T) {
 }
 ```
 
-#### 资源清理
+#### Resource cleaning
 
 ```
 func clear() {
@@ -58,21 +58,19 @@ func clear() {
 }
 ```
 
+### How to integrate E2E tests with Github Actions
+
+By integrating E2E tests into the CI/CD process, the testing process can be automated and development efficiency can be improved. Automation testing can reduce the time and effort required for manual testing, which helps improve development efficiency and speed up release. Here are some steps to integrate automatic testing with Github Actions for automatic testing every time code is submitted. [example](https://docgpt.ahapocket.cn/.github/workflows/e2e.yml)
 
 
-### e2e 测试如何接入github-action
 
-通过将E2E测试集成到CI/CD流程中 可以自动化测试过程 并提高开发效率 通过自动化测试 可以减少手动测试所需的时间和精力 这有助于提高开发效率并加快发布速度，以下是接入Github-Action每次代码提交自动测试的一些步骤。[example](/.github/workflows/e2e.yml)
+#### Create yml file
 
-#### 创建yml文件
+Create a Github Actions configuration file that defines an E2E test job in a configuration file named .github/workflows/e2e.yml.
 
-创建Github-Action配置文件 创建一个名为.github/workflows/e2e.yml 的配置文件 并在其中定义E2E测试作业
+#### Define triggers
 
-#### 定义触发器
-
-定义触发器以指定何时运行作业 可以选择在每次代码提交时运行或定期运行
-
-举例子，任何branch 有push请求时，如果修改了paths下面的文件，就会触发测试
+Define triggers to specify when to run jobs. You can choose to run on every code submission or periodically. For example, when there is a push request on any branch and files under paths are modified, the test will be triggered.
 
 ```
 on:
@@ -88,11 +86,9 @@ on:
       - "!**/*.yaml"
 ```
 
+#### Environment installation
 
-
-#### 环境安装
-
-clone 代码、安装go，安装sealos
+Clone code, install go and sealos in advance.
 
 ```
 jobs:
@@ -115,11 +111,9 @@ jobs:
           sealosVersion: 4.1.5-alpha2
 ```
 
+#### Package the image and push it to Github
 
-
-#### 打包镜像并且push 到gtihub上
-
-需要预先设置好`GH_PAT `在github secret中，是github token，[获取办法](https://blog.51cto.com/u_15069485/3590346)
+`GH_PAT` needs to be set up in advance in Github secret, which is the Github token. [How to get it](https://blog.51cto.com/u_15069485/3590346)
 
 ```
       - name: Build ${{ matrix.module }} amd64  # 打包amd64镜像
@@ -137,9 +131,9 @@ jobs:
           sealos push  $DOCKER_REPO:dev
 ```
 
+#### Install k8s environment on Github Actions
 
 
-#### 在github-action 上面安装k8s环境
 
 ```
       - name: Auto install k8s using sealos
@@ -161,7 +155,7 @@ jobs:
           sleep 40
 ```
 
-#### 在gtihub-action里面部署CRD
+#### Deploy CRD on Github Actions
 
 ```
       - name: install CRD metering
@@ -171,7 +165,7 @@ jobs:
           sleep 10
 ```
 
-#### 运行测试代码
+#### Run test code on Github Actions.
 
 ```
       -  name: metering e2e Test
@@ -179,10 +173,3 @@ jobs:
          run: |
            go test -v ./testdata/e2e/metering_test.go -run TestMetering
 ```
-
-
-
-
-
-
-
