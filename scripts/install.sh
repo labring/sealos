@@ -18,10 +18,8 @@ set -o noglob
 
 # Usage:
 #   curl ... | ENV_VAR=... sh -
-#   curl -sfL  https://raw.githubusercontent.com/cuisongliu/sealos/release/scripts/install.sh  |  OWN_REPO=cuisongliu/sealos  sh -s v4.1.8-alpha2
+#   curl -sfL  https://raw.githubusercontent.com/labring/sealos/main/scripts/install.sh  |  sh -s v4.1.8-alpha2 labring/sealos
 #
-OWN_REPO=labring/sealos
-DOWNLOADER_PREFIX=https://github.com/${OWN_REPO}/releases/download/
 FILE_NAME=sealos
 BIN_DIR=/usr/bin
 # --- helper functions for logs ---
@@ -95,6 +93,7 @@ verify_downloader() {
     [ -x "$(command -v $1)" ] || return 1
     DOWNLOADER=$1
     # Set verified executable as our downloader program and return success
+    DOWNLOADER_PREFIX=https://github.com/${OWN_REPO}/releases/download/
     DOWNLOADER_URL=${DOWNLOADER_PREFIX}${VERSION}/${FILE_NAME}_${VERSION##v}_linux_${ARCH}.tar.gz
     return 0
 }
@@ -102,12 +101,18 @@ verify_downloader() {
 get_release_version() {
     VERSION=$1
     info "Using ${VERSION} as release"
+    OWN_REPO=$2
+    if [ -z "$OWN_REPO" ]; then
+        warn "OWN_REPO is empty, using default repo: labring/sealos"
+        OWN_REPO=labring/sealos
+    fi
+    info "Using ${OWN_REPO} as your repo"
 }
 
 # --- download from github url ---
 download() {
     [ $# -eq 2 ] || fatal 'download needs exactly 2 arguments'
-
+    info "Downloading sealos, waiting..."
     case $DOWNLOADER in
         curl)
             curl -o $1 -sfL $2
@@ -139,6 +144,9 @@ setup_tmp() {
         set +e
         trap - EXIT
         rm -rf ${TMP_DIR}
+        if [ $code -ne 0 ]; then
+            warn "Failed to install sealos"
+        fi
         exit $code
     }
     trap cleanup INT EXIT
@@ -172,7 +180,7 @@ verify_binary() {
 # --- run the install process --
 {
     setup_verify_arch
-    get_release_version $1
+    get_release_version $1 $2
     verify_downloader curl || verify_downloader wget || fatal 'Can not find curl or wget for downloading files'
     setup_tmp
     download_binary
