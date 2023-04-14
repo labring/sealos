@@ -27,11 +27,7 @@ It has the following core capabilities:
 ### Binary Installation
 
 ```sh
-ARCH=$(uname -m | sed 's/aarch64/arm64/' | sed 's/x86_64/amd64/')
-URL_PREFIX="https://github.com/{{ .Env.USERNAME }}/{{ .ProjectName }}/releases/download/{{ .Tag }}"
-BINARY_NAME="{{ .ProjectName }}" ;VERSION="{{ .Version }}"
-FILE_NAME="${BINARY_NAME}_${VERSION}_linux_${ARCH}.tar.gz"
-wget "${URL_PREFIX}/${FILE_NAME}" && tar -zxvf "${FILE_NAME}" "${BINARY_NAME}" && chmod +x "${BINARY_NAME}" && mv "${BINARY_NAME}" /usr/bin
+curl -sfL  https://raw.githubusercontent.com/labring/sealos/{{ .Tag }}/scripts/install.sh  |  sh -s {{ .Tag }} {{ .Env.USERNAME }}/{{ .ProjectName }}
 ```
 
 {{ if eq .Prerelease ""}}
