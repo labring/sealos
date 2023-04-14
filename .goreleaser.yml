@@ -246,10 +246,8 @@ archives:
     files:
       - README*
       - readme*
-      - LICENSE.md
+      - LICENSE*
       - license*
-      - completions/*
-      - manpages/*
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
   algorithm: sha256
