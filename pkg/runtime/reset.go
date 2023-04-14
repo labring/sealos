@@ -29,7 +29,7 @@ const (
 	remoteCleanMasterOrNode = `if which kubeadm;then kubeadm reset -f %s;fi && \
 rm -rf /etc/kubernetes/ && \
 rm -rf /etc/cni && rm -rf /opt/cni && \
-rm -rf %s && ip link delete kube-ipvs0
+rm -rf %s && (ip link delete kube-ipvs0 >/dev/null 2>&1 || true)
 `
 )
 
@@ -45,7 +45,7 @@ func (k *KubeadmRuntime) resetNodes(nodes []string) {
 	for _, node := range nodes {
 		node := node
 		eg.Go(func() error {
-			if err := k.resetNode(node); err != nil {
+			if err := k.resetNode(node, nil); err != nil {
 				logger.Error("delete node %s failed %v", node, err)
 			}
 			return nil
@@ -59,31 +59,40 @@ func (k *KubeadmRuntime) resetNodes(nodes []string) {
 func (k *KubeadmRuntime) resetMasters(nodes []string) {
 	logger.Info("start to reset masters: %v", nodes)
 	for _, node := range nodes {
-		if err := k.resetNode(node); err != nil {
+		if err := k.resetNode(node, nil); err != nil {
 			logger.Error("delete master %s failed %v", node, err)
 		}
 	}
 }
 
-func (k *KubeadmRuntime) resetNode(node string) error {
+func (k *KubeadmRuntime) resetNode(node string, cleanHook func()) error {
 	logger.Info("start to reset node: %s", node)
 	resetCmd := fmt.Sprintf(remoteCleanMasterOrNode, vlogToStr(k.vlog), k.getEtcdDataDir())
-	if err := k.sshCmdAsync(node, resetCmd); err != nil {
-		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, err)
+	removeKubeConfigErr := k.sshCmdAsync(node, removeKubeConfig)
+	resetCmdErr := k.sshCmdAsync(node, resetCmd)
+	ipvscleanErr := k.execIPVSClean(node)
+	hostsDeleteAPIServerErr := k.execHostsDelete(node, k.getAPIServerDomain())
+	hostsDeleteLvscareErr := k.execHostsDelete(node, constants.DefaultLvscareDomain)
+
+	if cleanHook != nil {
+		cleanHook()
 	}
-	if err := k.sshCmdAsync(node, removeKubeConfig); err != nil {
-		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, err)
+
+	if resetCmdErr != nil {
+		logger.Error("failed to clean node, exec command %s failed, %v", resetCmd, resetCmdErr)
 	}
-	if err := k.execIPVSClean(node); err != nil {
-		logger.Error("failed to clean node route and ipvs failed, %v", err)
+	if removeKubeConfigErr != nil {
+		logger.Error("failed to clean node, exec command %s failed, %v", removeKubeConfig, removeKubeConfigErr)
 	}
-	err := k.execHostsDelete(node, k.getAPIServerDomain())
-	if err != nil {
-		logger.Error("delete apiserver hosts failed %v", err)
+	if ipvscleanErr != nil {
+		logger.Error("failed to clean node route and ipvs failed, %v", ipvscleanErr)
 	}
-	err = k.execHostsDelete(node, constants.DefaultLvscareDomain)
-	if err != nil {
-		return fmt.Errorf("add lvscare domain hosts failed %v", err)
+	if hostsDeleteAPIServerErr != nil {
+		logger.Error("delete apiserver hosts failed %v", hostsDeleteAPIServerErr)
 	}
+	if hostsDeleteLvscareErr != nil {
+		return fmt.Errorf("add lvscare domain hosts failed %v", hostsDeleteLvscareErr)
+	}
+
 	return nil
 }

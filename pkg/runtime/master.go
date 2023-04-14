@@ -171,13 +171,13 @@ func (k *KubeadmRuntime) deleteMasters(masters []string) error {
 }
 
 func (k *KubeadmRuntime) deleteMaster(master string) error {
-	//remove master
-	masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
-	if len(masterIPs) > 0 {
-		if err := k.deleteKubeNode(master); err != nil {
-			return fmt.Errorf("delete master %s failed %v", master, err)
+	return k.resetNode(master, func() {
+		//remove master
+		masterIPs := strings.SliceRemoveStr(k.getMasterIPList(), master)
+		if len(masterIPs) > 0 {
+			if err := k.RemoveNodeFromK8sClient(master); err != nil {
+				logger.Warn(fmt.Errorf("delete master %s failed %v", master, err))
+			}
 		}
-	}
-
-	return k.resetNode(master)
+	})
 }
