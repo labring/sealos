@@ -1,0 +1,100 @@
+{{- $isOfficialVersion := regexMatch "^v[0-9]+\.[0-9]+\.[0-9]+$" .Tag -}}
+
+# Sealos {{ .Tag }} 🎉🎉
+
+We are excited to announce the official release of Sealos {{ .Tag }} 🎉🎉!
+Sealos is a general-purpose Cloud Operating System, a Kubernetes distribution designed for managing Cloud Native applications.
+It has the following core capabilities:
+
+1. ☸️ Manage clusters lifecycle
+   - Quickly install HA Kubernetes clusters.
+   - Add/remove nodes, clean the cluster.
+2. 💻 Download and deploy OCI-compatible distributed applications.
+   - OpenEBS, MinIO, Ingress, PostgreSQL, MySQL, Redis, etc.
+3. 🛠️ Customize your own distributed applications.
+   - Utilizing Dockerfile to build images of distributed applications while preserving all of their dependencies.
+   - Push images of distributed applications to Docker Hub.
+   - Integrate various applications to construct a personalized Cloud platform.
+4. ☁️ Sealos Cloud
+   - Multi-tenant management.
+   - Application management.
+   - Multi-cloud cluster management, deploy Kubernetes and custom applications on any cloud platform.
+   - Run any distributed applications.
+   - Cloud terminal.
+   - App Store.
+
+## How to Install
+
+### Binary Installation
+
+```sh
+ARCH=$(uname -m | sed 's/aarch64/arm64/' | sed 's/x86_64/amd64/')
+URL_PREFIX="https://github.com/{{ .Env.USERNAME }}/{{ .ProjectName }}/releases/download/{{ .Tag }}"
+BINARY_NAME="{{ .ProjectName }}" ;VERSION="{{ .Version }}"
+FILE_NAME="${BINARY_NAME}_${VERSION}_linux_${ARCH}.tar.gz"
+wget "${URL_PREFIX}/${FILE_NAME}" && tar -zxvf "${FILE_NAME}" "${BINARY_NAME}" && chmod +x "${BINARY_NAME}" && mv "${BINARY_NAME}" /usr/bin
+```
+
+{{ if $isOfficialVersion }}
+### Yum Repository Installation
+
+Add the following content to ``/etc/yum.repos.d/sealos.repo`:
+
+```
+[sealos]
+name=Sealos Repository
+baseurl=https://yum.repo.sealos.io/
+enabled=1
+gpgcheck=0
+```
+
+Then run:
+
+```shell
+yum install sealos
+```
+
+### APT Repository Installation
+
+Add the following content to `/etc/apt/sources.list.d/sealos.list`:
+
+
+```
+deb [trusted=yes] https://apt.repo.sealos.io/ /
+```
+
+Then run:
+
+```shell
+apt-get update
+apt-get install sealos
+```
+{{ end }}
+
+## Quick Start
+
+```shell
+# Create a cluster
+sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1 \
+    --masters 192.168.64.2,192.168.64.22,192.168.64.20 \
+    --nodes 192.168.64.21,192.168.64.19 \
+    --passwd your-own-ssh-passwd
+```
+
+## Sealos Components: Docker Containers and Binary Files
+
+Sealos provides two Docker containers: sealos and lvscare, as well as two binary files: sealctl and image-cri-shim. Below is a brief introduction of these components:
+
+- sealos container: This container is the core component of the Sealos project, responsible for deploying and managing Kubernetes clusters and distributed applications.
+  It provides a series of command-line tools, allowing users to quickly build and maintain clusters.
+  ```
+  docker pull ghcr.io/{{ .Env.USERNAME }}/{{ .ProjectName }}:{{ .Tag }}
+  ```
+- lvscare container: This container is responsible for managing load balancing within Kubernetes clusters.
+  It can monitor node status in real-time, ensuring that the load balancer always routes traffic to available nodes.
+  ```
+  docker pull ghcr.io/{{ .Env.USERNAME }}/lvscare:{{ .Tag }}
+  ```
+- sealctl binary file: This is a command-line tool provided by the Sealos project, designed to simplify cluster management tasks, such as certificate management, IPVS, hosts, and cluster certificates.
+- image-cri-shim binary file: This component is a CRI adapter for the Sealos project, supporting different container runtimes (such as Docker and containerd).
+  It allows Sealos to seamlessly integrate with multiple runtimes, improving the project's flexibility and scalability.

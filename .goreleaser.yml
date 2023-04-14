@@ -137,11 +137,6 @@ builds:
       - -X github.com/labring/sealos/pkg/version.buildDate={{.Date}}
       - -s -w
 
-release:
-#  github:
-#    name: sealos
-  prerelease: auto
-
 dockers:
   - use: buildx
     ids:
@@ -259,3 +254,24 @@ checksum:
 
 snapshot:
   name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^test:'
+      - '^chore'
+      - 'merge conflict'
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy
+release:
+  prerelease: auto
+  footer: |
+    **Full Changelog**: https://github.com/goreleaser/goreleaser/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    * * *
+    
+    Thank you for your support of Sealos. If you encounter any issues during use, please submit an issue in our [GitHub repository](https://github.com/labring/sealos), and we will address your concerns as soon as possible.
