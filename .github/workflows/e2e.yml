@@ -1,4 +1,4 @@
-name: Test Controllers Metering
+name: Test Controllers Metering and Account
 env:
   # Common versions
   GO_VERSION: "1.20"
@@ -10,7 +10,8 @@ on:
     paths:
       - "controllers/metering/**"
       - "controllers/common/metering/**"
-      - ".github/workflows/e2e_metering.yml"
+      - ".github/workflows/e2e.yml"
+      - "controllers/account/**"
       - "!**/*.md"
       - "!**/*.yaml"
 
@@ -19,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ metering ]
+        module: [ metering, account ]
     steps:
-      - name: Checkout
+      - name: Checkout # clone 代码
         uses: actions/checkout@v3
 
       - name: Setup Golang with cache
@@ -32,7 +33,7 @@ jobs:
         uses: labring/sealos-action@v0.0.4
         with:
           sealosVersion: 4.1.5-alpha2
-      - name: Build ${{ matrix.module }} amd64
+      - name: Build ${{ matrix.module }} amd64 # 打包amd64镜像
         working-directory: controllers/${{ matrix.module }}
         run: |
           GOARCH=amd64 make build
@@ -101,7 +102,7 @@ jobs:
           echo "NodeName=$NODENAME,NodeIP=$NODEIP"
           sudo -u root kubectl taint node $NODENAME node-role.kubernetes.io/control-plane-
           
-          sleep 60
+          sleep 40
           sudo -u root crictl ps -a
           sudo -u root cat /etc/hosts
           sudo -u root systemctl status kubelet
@@ -121,18 +122,24 @@ jobs:
         working-directory: ./controllers/metering
         run: |
           sudo sealos run --env METERING_INTERVAL=1 ghcr.io/${{ github.repository_owner }}/sealos-metering-controller:${{ steps.prepare.outputs.tag_name }}-cluster
-          sudo -u root kubectl get configmap -A
       - name: install CRD account
         working-directory: ./controllers/account
         run: |
           sudo -u root sealos run docker.io/labring/cert-manager:v1.8.0
-          make pre-deploy
+          sleep 10
+          sudo kubectl get pod -A
+          IMG=ghcr.io/${{ github.repository_owner }}/sealos-account-controller:dev make pre-deploy
           sudo -u root kubectl create namespace sealos-system
           sudo -u root kubectl apply -f ./deploy/manifests/deploy.yaml
-          sudo -u root kubectl create secret generic payment-secret -n account-system
           kubectl create configmap account-manager-configmap  --from-literal=SMALL_BLOCK_WAIT_SECOND=1 -n account-system
-      -  name: e2e Test
+          sudo -u root kubectl create secret generic payment-secret -n account-system
+          sleep 10
+      -  name: account e2e Test
+         working-directory: ./controllers/account
+         run: |
+           go test -v ./testdata/e2e/debt_test.go
+           sleep 20
+      -  name: metering e2e Test
          working-directory: ./controllers/metering
          run: |
-           sudo -u root kubectl get pod -A 
            go test -v ./testdata/e2e/metering_test.go -run TestMetering
