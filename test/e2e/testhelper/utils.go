@@ -15,6 +15,7 @@
 package testhelper
 
 import (
+	"debug/elf"
 	"errors"
 	"fmt"
 	"os"
@@ -62,6 +63,22 @@ func WriteFile(fileName string, content []byte) error {
 	}
 
 	return os.WriteFile(fileName, content, settings.FileMode0644)
+}
+
+func GetBinArch(filepath string) (string, error) {
+	f, err := elf.Open(filepath)
+	if err != nil {
+		return "", fmt.Errorf("Error opening file: %v\n", err)
+	}
+	defer f.Close()
+	switch f.Machine {
+	case elf.EM_X86_64:
+		return settings.Amd64Arch, nil
+	case elf.EM_AARCH64:
+		return settings.Arm64Arch, nil
+	default:
+		return "", fmt.Errorf("Unknown or unsupported architecture: %v\n", f.Machine.String())
+	}
 }
 
 func IsFileExist(filename string) bool {

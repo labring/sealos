@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	infra2 "github.com/labring/sealos/test/e2e/suites/infra"
+
+	v1 "github.com/labring/sealos/controllers/infra/api/v1"
+
 	"sigs.k8s.io/yaml"
 
 	"golang.org/x/sync/errgroup"
@@ -73,6 +77,19 @@ func PreCheckEnv() {
 	}
 }
 
+func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
+	arch, err := testhelper.GetBinArch(settings.E2EConfig.SealosBinPath)
+	testhelper.CheckErr(err)
+	host.Arch = arch
+	switch arch {
+	case settings.Arm64Arch:
+		host.Image = infra2.AliyunArm64UbuntuImage
+		host.Flavor = infra2.AliyunArm64Flavor
+	case settings.Amd64Arch:
+		host.Image = infra2.AliyunAmd64UbuntuImage
+	}
+}
+
 func (a *Applier) initImage() {
 	err := a.RemoteCmd.Copy(settings.E2EConfig.SealosBinPath, settings.E2EConfig.SealosBinPath)
 	testhelper.CheckErr(err)
@@ -88,17 +105,25 @@ func (a *Applier) initImage() {
 		err = a.RemoteSealosCmd.ImagePull(settings.E2EConfig.ImageName)
 		testhelper.CheckErr(err)
 	}
+	if settings.E2EConfig.PatchImageName == "" {
+		return
+	}
 	if settings.E2EConfig.PatchImageTar != "" {
 		err = a.RemoteCmd.Copy(settings.E2EConfig.PatchImageTar, settings.E2EConfig.PatchImageTar)
 		testhelper.CheckErr(err)
+		if strings.HasSuffix(settings.E2EConfig.PatchImageTar, settings.GzSuffix) {
+			err = a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", settings.E2EConfig.PatchImageTar))
+			testhelper.CheckErr(err)
+			settings.E2EConfig.PatchImageTar = strings.TrimSuffix(settings.E2EConfig.PatchImageTar, settings.GzSuffix)
+		}
 		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.PatchImageTar)
 		testhelper.CheckErr(err)
-	} else if settings.E2EConfig.PatchImageName != "" {
+	} else {
 		err = a.RemoteSealosCmd.ImagePull(settings.E2EConfig.PatchImageName)
 		testhelper.CheckErr(err)
-		err = a.RemoteSealosCmd.ImageMerge(settings.E2EConfig.ImageName, []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName})
-		testhelper.CheckErr(err)
 	}
+	err = a.RemoteSealosCmd.ImageMerge(settings.E2EConfig.ImageName, []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName})
+	testhelper.CheckErr(err)
 }
 
 func (a *Applier) initSSH() {

@@ -77,6 +77,7 @@ var _ = Describe("apply test", func() {
 			*/
 
 			apply.PreCheckEnv()
+			apply.PreSetInfraConfig(infra, host)
 			infraDriver, err = drivers.NewDriver(settings.E2EConfig.InfraDriver)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get %s driver: %v", settings.E2EConfig.InfraDriver, err))
 			//testhelper.CheckErr(yaml.Unmarshal([]byte(infra2.InfraTmpl), infra))
