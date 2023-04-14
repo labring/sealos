@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 	"os"
-
-	"github.com/aws/aws-sdk-go-v2/config"
+	"strings"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/vpc"
+	"github.com/aws/aws-sdk-go-v2/config"
 
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 	"github.com/labring/sealos/controllers/infra/drivers/aliyun"
@@ -83,10 +83,16 @@ func NewAWSDriver() (Driver, error) {
 }
 
 func NewAliyunDriver() (Driver, error) {
-	regionID := os.Getenv("ALIYUN_REGION_ID")
-	accessKeyID := os.Getenv("ALIYUN_ACCESS_KEY_ID")
-	accessKeySecret := os.Getenv("ALIYUN_ACCESS_KEY_SECRET")
-	resourceGroupID := os.Getenv("ALIYUN_RESOURCE_GROUP_ID")
+	regionID := os.Getenv(aliyun.AliyunRegionID)
+	accessKeyID := os.Getenv(aliyun.AliyunAccessKeyID)
+	accessKeySecret := os.Getenv(aliyun.AliyunAccessKeySecret)
+	resourceGroupID := os.Getenv(aliyun.AliyunResourceGroupID)
+	if regionID == "" || accessKeyID == "" || accessKeySecret == "" || resourceGroupID == "" {
+		return nil, fmt.Errorf("need set aliyun driver env: %s ", strings.Join([]string{aliyun.AliyunRegionID,
+			aliyun.AliyunAccessKeyID,
+			aliyun.AliyunAccessKeySecret,
+			aliyun.AliyunResourceGroupID}, ","))
+	}
 	ecsClient, err := ecs.NewClientWithAccessKey(regionID, accessKeyID, accessKeySecret)
 	vpcClient, err1 := vpc.NewClientWithAccessKey(regionID, accessKeyID, accessKeySecret)
 	if err != nil || err1 != nil {
