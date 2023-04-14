@@ -238,14 +238,18 @@ publishers:
         echo "Skipping deployment: Non-production release detected"
       fi'
 archives:
-  - id: archive
-    format: tar.gz
+  - format: tar.gz
+    builds_info:
+      group: root
+      owner: root
+    rlcp: true
     files:
-      - src: license*
-      - src: LICENSE*
-      - src: readme*
-      - src: README*
-
+      - README*
+      - readme*
+      - LICENSE.md
+      - license*
+      - completions/*
+      - manpages/*
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
   algorithm: sha256
