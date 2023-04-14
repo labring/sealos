@@ -17,7 +17,8 @@ func TestSealosTest(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	//check sealos bin exist
 	//exec.CheckCmdIsExist()
+	SetDefaultEventuallyTimeout(settings.E2EConfig.WaitTime)
 	return nil
 }, func(data []byte) {
-	SetDefaultEventuallyTimeout(settings.DefaultWaiteTime)
+	SetDefaultEventuallyTimeout(settings.E2EConfig.WaitTime)
 })

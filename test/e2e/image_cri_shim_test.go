@@ -3,10 +3,9 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/onsi/ginkgo/v2"
-
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
+	"github.com/onsi/ginkgo/v2"
 	k8sv1alpha2api "k8s.io/cri-api/pkg/apis/runtime/v1alpha2"
 
 	"github.com/labring/sealos/pkg/utils/exec"
@@ -43,20 +42,30 @@ const (
 
 var _ = ginkgo.Describe("image-cri-shim test", func() {
 
-	//checkout image-cri-shim status running
-	_, err := exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))
-	testhelper.CheckErr(err, "image-cri-shim service not exist, skip image-cri-shim test")
-	shimConfig, err := shimType.Unmarshal(DefaultImageCRIShimConfig)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v", err))
-	shimAuth, err := shimConfig.PreProcess()
-	testhelper.CheckErr(err)
-	clt, err := server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
-	testhelper.CheckErr(err, fmt.Sprintf("failed to get new shim client: %v", err))
-	gCon, err := clt.Connect(server.ConnectOptions{Wait: true})
-	testhelper.CheckErr(err, fmt.Sprintf("failed to get connect shim client: %v", err))
-	var imageService = image.NewFakeImageServiceClientWithV1alpha2(k8sv1alpha2api.NewImageServiceClient(gCon), shimAuth)
+	var (
+		imageService image.FakeImageServiceClientInterface
+		clt          server.Client
+		err          error
+	)
+	ginkgo.BeforeEach(func() {
+		//checkout image-cri-shim status running
+		_, err = exec.RunSimpleCmd(fmt.Sprintf(CheckServiceFormatCommand, "image-cri-shim"))
+		testhelper.CheckErr(err, "image-cri-shim service not exist, skip image-cri-shim test")
+		shimConfig, err := shimType.Unmarshal(DefaultImageCRIShimConfig)
+		testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal image shim config from /etc/image-cri-shim.yaml: %v", err))
+		shimAuth, err := shimConfig.PreProcess()
+		testhelper.CheckErr(err)
+		clt, err = server.NewClient(server.CRIClientOptions{ImageSocket: shimConfig.ImageShimSocket})
+		testhelper.CheckErr(err, fmt.Sprintf("failed to get new shim client: %v", err))
+		gCon, err := clt.Connect(server.ConnectOptions{Wait: true})
+		testhelper.CheckErr(err, fmt.Sprintf("failed to get connect shim client: %v", err))
+		imageService = image.NewFakeImageServiceClientWithV1alpha2(k8sv1alpha2api.NewImageServiceClient(gCon), shimAuth)
 
-	ginkgo.Context("test image-cri-shim image service", func() {
+	})
+	ginkgo.AfterEach(func() {
+		clt.Close()
+	})
+	ginkgo.It("test image-cri-shim image service", func() {
 
 		ginkgo.It("list image", func() {
 			images, err := imageService.ListImages()

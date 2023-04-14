@@ -15,32 +15,38 @@
 package settings
 
 import (
-	"os"
 	"path/filepath"
-	"time"
 
 	hd "github.com/mitchellh/go-homedir"
 )
 
 const (
-	SubCmdInitOfSealos = "init"
-	DefaultSSHPassword = "Sealos123"
+	SubCmdInitOfSealos     = "init"
+	DefaultTestClusterName = "e2e_test"
+	DefaultSSHPassword     = "Sealos123"
+	DefaultSealosBinPath   = "/usr/bin/sealos"
+	KubeconfigName         = "admin.conf"
+)
+
+var DefaultTestDir = filepath.Join(GetWorkDir(), "e2e_test")
+
+const (
+	FileMode0755     = 0755
+	FileMode0644     = 0644
+	RootUser         = "root"
+	DefaultSSHPort   = 22
+	DefaultInfraUUID = "60a6f958-e9af-4bb5-a401-1553fc05d78b"
 )
 
 const (
-	FileMode0755 = 0755
-	FileMode0644 = 0644
-)
-
-var (
-	DefaultPollingInterval time.Duration
-	MaxWaiteTime           time.Duration
-	DefaultWaiteTime       time.Duration
-	DefaultSealosBin       = ""
-	DefaultTestEnvDir      = ""
-
-	AccessKey    = os.Getenv("ACCESSKEYID")
-	AccessSecret = os.Getenv("ACCESSKEYSECRET")
+	DefaultTestImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0"
+	HelmImageName        = "hub.sealos.cn/labring/helm:v3.8.2"
+	CalicoImageName      = "hub.sealos.cn/labring/calico:v3.25.0"
+	DefaultImageRepo     = "hub.sealos.cn/labring"
+	DockerIoRepo         = "docker.io"
+	DefaultInfraDriver   = AliyunInfraDriver
+	AliyunInfraDriver    = "aliyun"
+	AWSInfraDriver       = "aws"
 )
 
 func GetWorkDir() string {
