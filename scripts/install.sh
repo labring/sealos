@@ -18,9 +18,10 @@ set -o noglob
 
 # Usage:
 #   curl ... | ENV_VAR=... sh -
+#   curl -sfL  https://raw.githubusercontent.com/cuisongliu/sealos/release/scripts/install.sh  |  OWN_REPO=cuisongliu/sealos  sh -s v4.1.8-alpha2
 #
 OWN_REPO=labring/sealos
-DOWNLOADER_PREFIX=https://github.com/${OWN_REPO}/releases/download/${VERSION}/
+DOWNLOADER_PREFIX=https://github.com/${OWN_REPO}/releases/download/
 FILE_NAME=sealos
 BIN_DIR=/usr/bin
 # --- helper functions for logs ---
@@ -94,7 +95,7 @@ verify_downloader() {
     [ -x "$(command -v $1)" ] || return 1
     DOWNLOADER=$1
     # Set verified executable as our downloader program and return success
-    DOWNLOADER_URL=${DOWNLOADER_PREFIX}${FILE_NAME}_${VERSION##v}_linux_${ARCH}.tar.gz
+    DOWNLOADER_URL=${DOWNLOADER_PREFIX}${VERSION}/${FILE_NAME}_${VERSION##v}_linux_${ARCH}.tar.gz
     return 0
 }
 
