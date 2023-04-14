@@ -27,7 +27,7 @@ It has the following core capabilities:
 ### Binary Installation
 
 ```sh
-curl -sfL  https://raw.githubusercontent.com/labring/sealos/{{ .Tag }}/scripts/install.sh  |  sh -s {{ .Tag }} {{ .Env.USERNAME }}/{{ .ProjectName }}
+curl -sfL  https://raw.githubusercontent.com/{{ .Env.USERNAME }}/{{ .ProjectName }}/{{ .Tag }}/scripts/install.sh  |  sh -s {{ .Tag }} {{ .Env.USERNAME }}/{{ .ProjectName }}
 ```
 
 {{ if eq .Prerelease ""}}
