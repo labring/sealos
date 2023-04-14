@@ -1,5 +1,3 @@
-{{- $isOfficialVersion := regexMatch "^v[0-9]+\.[0-9]+\.[0-9]+$" .Tag -}}
-
 # Sealos {{ .Tag }} 🎉🎉
 
 We are excited to announce the official release of Sealos {{ .Tag }} 🎉🎉!
@@ -35,7 +33,7 @@ FILE_NAME="${BINARY_NAME}_${VERSION}_linux_${ARCH}.tar.gz"
 wget "${URL_PREFIX}/${FILE_NAME}" && tar -zxvf "${FILE_NAME}" "${BINARY_NAME}" && chmod +x "${BINARY_NAME}" && mv "${BINARY_NAME}" /usr/bin
 ```
 
-{{ if $isOfficialVersion }}
+{{ if eq .Prerelease ""}}
 ### Yum Repository Installation
 
 Add the following content to ``/etc/yum.repos.d/sealos.repo`:
