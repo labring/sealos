@@ -1,15 +1,15 @@
-name:  Test sealos image-cri-shim service
+name: Test sealos image-cri-shim service
 
 on:
   workflow_dispatch:
   push:
-    branches: ["**"]
+    branches: [ "**" ]
     paths:
       - ".github/workflows/test_image_cri_shim.yml"
       - "cmd/**"
       - "staging/src/github.com/image-cri-shim/**"
   pull_request:
-    branches: ["*"]
+    branches: [ "*" ]
     paths:
       - ".github/workflows/test_image_cri_shim.yml"
       - "cmd/**"
@@ -46,9 +46,11 @@ jobs:
           name: image-cri-shim
           path: /usr/bin/image-cri-shim
   verify-image_cri_shim:
-    needs: [build]
+    needs: [ build ]
     runs-on: ubuntu-22.04
     steps:
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
       - name: Download image-cri-shim
         uses: actions/download-artifact@v3
         with:
@@ -101,4 +103,4 @@ jobs:
           sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
           export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
           export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
-          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v test/e2e/ --focus="image-cri-shim test"
+          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="image-cri-shim test" test/e2e/

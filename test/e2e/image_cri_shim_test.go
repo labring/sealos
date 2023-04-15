@@ -67,13 +67,13 @@ var _ = ginkgo.Describe("image-cri-shim test", func() {
 	})
 	ginkgo.It("test image-cri-shim image service", func() {
 
-		ginkgo.It("list image", func() {
+		ginkgo.By("list image", func() {
 			images, err := imageService.ListImages()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 			logger.Info("list images: %v", images)
 		})
 
-		ginkgo.It("pull image from remote", func() {
+		ginkgo.By("pull image from remote", func() {
 			for _, image := range defaultImageListingBenchmarkImages {
 				id, err := imageService.PullImage(image)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to pull image %s: %v", image, err))
@@ -81,7 +81,7 @@ var _ = ginkgo.Describe("image-cri-shim test", func() {
 			}
 		})
 
-		ginkgo.It("image status test", func() {
+		ginkgo.By("image status test", func() {
 			for _, imageName := range defaultImageListingBenchmarkImages {
 				img, err := imageService.ImageStatus(imageName)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to get image %s status: %v", imageName, err))
@@ -90,7 +90,7 @@ var _ = ginkgo.Describe("image-cri-shim test", func() {
 
 		})
 
-		ginkgo.It("remove image", func() {
+		ginkgo.By("remove image", func() {
 			for _, imageName := range defaultImageListingBenchmarkImages {
 				err := imageService.RemoveImage(imageName)
 				testhelper.CheckErr(err, fmt.Sprintf("failed to remove image %s: %v", imageName, err))
@@ -102,7 +102,7 @@ var _ = ginkgo.Describe("image-cri-shim test", func() {
 			}
 		})
 
-		ginkgo.It("image fs info", func() {
+		ginkgo.By("image fs info", func() {
 			fss, err := imageService.ImageFsInfo()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get image fs info: %v", err))
 			ginkgo.By("success get fs info: ")
