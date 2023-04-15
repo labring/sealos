@@ -1,76 +1,88 @@
-name: sealos-Test-Apply
+name: E2E Apply Test
 
 on:
-  issue_comment:
+  pull_request:
     types:
-      - created
-
-permissions:
-  statuses: write
-
+      - opened
+      - synchronize
+      - labeled
 
 jobs:
-  wait_ci_patch:
-    name: wait ci patch
+  e2e_apply_test:
     runs-on: ubuntu-latest
-    if: ${{ github.event.comment.body == '/test all' || github.event.comment.body == '/test apply' }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
+    permissions:
+      issues: write
+      pull-requests: write
+    outputs:
+      action_link: ${{ steps.get_action_link.outputs.action_link }}
+      issue_number: ${{ steps.get_issue_number.outputs.issue_number }}
     steps:
-      - name: Wait for comment triggered workflow to complete
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: wait-for-check
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: "patch-oci" # Replace with the name of the job in your comment triggered workflow
-          ref: ${{ github.event.pull_request.head.sha }}
-          waitFor: '100000000' # milliseconds between check for completion
-          timeout: '18000000000' # milliseconds to wait before timing out
-  build:
-    needs: [ wait_ci_patch ]
-    name: test
-    runs-on: ubuntu-latest
-    if: ${{ (github.event.issue.pull_request && (github.event.comment.body == '/test all' || github.event.comment.body == '/test apply')) }}
-    env:
-      GO111MODULE: on
-    steps:
-      - name: Get PR details
-        if: ${{ github.event_name == 'issue_comment' }}
-        uses: xt0rted/pull-request-comment-branch@v1
-        id: comment-branch
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set final commit status
-        uses: myrotvorets/set-commit-status-action@master
+      - name: Set environment variables
+        id: get_issue_number
+        run: |
+          echo "REPOSITORY_NAME=${{ github.repository }}" >> $GITHUB_ENV
+          echo "RUN_ID=${{ github.run_id }}" >> $GITHUB_ENV
+          echo "issue_number=${{ github.event.number }}" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests
+        id: get_action_link
+        env:
+          github: ${{ toJson(github) }}
+        run: |
+          ls -al
+          echo "result=success"
+          sudo touch result.txt && sudo chmod 0666 result.txt
+          sudo echo "result=success" > result.txt
+          echo "${{ github }}"
+          echo -e "\n\n\n\n\n $github \n\n\n\n\n"
+          
+          echo $REPOSITORY_NAME
+          action_link=`echo "https://github.com/${REPOSITORY_NAME}/actions/runs/${RUN_ID}"`
+          echo $action_link
+          echo "action_link=${action_link}" >> "$GITHUB_OUTPUT"
+          exit 1
+  
+
+  #      - name: Add comment to PR with test status
+  #        if: ${{ always() }} # Ensure this step runs even if previous steps failed
+  #        uses: actions/github-script@v6
+  #        with:
+  #          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #          script: |
+  #            const issue_number = context.issue.number;
+  #            const fs = require('fs');
+  #            const test_result = fs.readFileSync('result.txt', 'utf-8');
+  #            const success = test_result.trim() === 'success';
+  #            const comment_body = success ? 'E2E Apply Test: Success' : 'E2E Apply Test: Failed';
+  #            const action_link = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+  #
+  #            await github.rest.issues.createComment({
+  #              ...context.repo,
+  #              issue_number,
+  #              body: `${comment_body}\n[Action link](${action_link})`
+  #            });
+
+  issue_commit:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
+#    needs:
+#      - e2e_apply_test
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    outputs:
+      action_link: ${{ steps.get_action_link.outputs.action_link }}
+    steps:
+      - name: Add comment to PR with test status
+        uses: peter-evans/create-or-update-comment@v1
         if: ${{ always() }}
         with:
-          sha: ${{ steps.comment-branch.outputs.head_sha }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          status: pending
-
-      - name: Comment on PR that test has started
-        if: ${{ github.event_name == 'issue_comment' }}
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issue_number = context.issue.number;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: "Starting the `/test apply` test..."
-            });
-
-      - name: Comment on PR with test result and action link
-        if: always() && github.event_name == 'issue_comment'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const issue_number = context.issue.number;
-            const test_result = job.status === 'success' ? 'succeeded' : 'failed';
-            const action_url = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue_number,
-              body: `The \`/test apply\` test has ${test_result}. [Check the action details here](${action_url}).`
-            });
+          issue-number: ${{ needs.e2e_apply_test.outputs.issue_number }}
+          comment-author: 'github-actions[bot]'
+          repository: ${{ github.repository }}
+          body: |
+            AUTO COMMIT: ${{ github.workflow }}: ${{ needs.e2e_apply_test.conclusion == 'failure' && 'Failure' || 'Success' }} [Action link](${{ needs.e2e_apply_test.outputs.action_link }})
+          token: "${{ secrets.GH_PAT }}"
