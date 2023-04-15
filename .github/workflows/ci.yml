@@ -12,7 +12,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -24,7 +24,7 @@ on:
       - "webhooks/**"
       - "frontend/**"
   pull_request:
-    branches: ["*"]
+    branches: [ "*" ]
     paths-ignore:
       - "docs/**"
       - "CHANGELOG/**"
@@ -36,9 +36,14 @@ on:
       - "service/**"
       - "webhooks/**"
       - "frontend/**"
+  ## add ci action for test
+  issue_comment:
+    types:
+      - created
 
 jobs:
   resolve-modules:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'push' || (github.event.issue.pull_request && (github.event.comment.body == '/test all' || github.event.comment.body == '/test apply'))  }}
     runs-on: ubuntu-20.04
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -51,7 +56,7 @@ jobs:
         run: bash ./scripts/resolve-modules.sh .
 
   golangci-lint:
-    needs: [resolve-modules]
+    needs: [ resolve-modules ]
     runs-on: ubuntu-20.04
     strategy:
       matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
@@ -75,12 +80,12 @@ jobs:
           args: "--out-${NO_FUTURE}format colored-line-number"
 
   build:
-    needs: [golangci-lint]
+    needs: [ golangci-lint ]
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        binary: [sealos, sealctl, lvscare, image-cri-shim]
-        arch: [arm64, amd64]
+        binary: [ sealos, sealctl, lvscare, image-cri-shim ]
+        arch: [ arm64, amd64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -108,7 +113,7 @@ jobs:
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
 
   docker:
-    needs: [build]
+    needs: [ build ]
     runs-on: ubuntu-20.04
     services:
       registry:
@@ -117,7 +122,7 @@ jobs:
           - 5000:5000
     strategy:
       matrix:
-        arch: [arm64, amd64]
+        arch: [ arm64, amd64 ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -191,7 +196,7 @@ jobs:
           failOnError: false
 
   container:
-    needs: [docker]
+    needs: [ docker ]
     runs-on: ubuntu-20.04
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:
@@ -203,8 +208,7 @@ jobs:
         run: |
           TAG=dev
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-      -
-        # Add support for more platforms with QEMU (optional)
+      - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -261,7 +265,7 @@ jobs:
           .
 
   patch-oci:
-    needs: [docker]
+    needs: [ docker ]
     runs-on: ubuntu-20.04
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     steps:

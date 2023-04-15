@@ -1,0 +1,76 @@
+name: sealos-Test-Apply
+
+on:
+  issue_comment:
+    types:
+      - created
+
+permissions:
+  statuses: write
+
+
+jobs:
+  wait_ci_patch:
+    name: wait ci patch
+    runs-on: ubuntu-latest
+    if: ${{ github.event.comment.body == '/test all' || github.event.comment.body == '/test apply' }}
+    steps:
+      - name: Wait for comment triggered workflow to complete
+        uses: fountainhead/action-wait-for-check@v1.0.0
+        id: wait-for-check
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          checkName: "patch-oci" # Replace with the name of the job in your comment triggered workflow
+          ref: ${{ github.event.pull_request.head.sha }}
+          waitFor: '100000000' # milliseconds between check for completion
+          timeout: '18000000000' # milliseconds to wait before timing out
+  build:
+    needs: [ wait_ci_patch ]
+    name: test
+    runs-on: ubuntu-latest
+    if: ${{ (github.event.issue.pull_request && (github.event.comment.body == '/test all' || github.event.comment.body == '/test apply')) }}
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Get PR details
+        if: ${{ github.event_name == 'issue_comment' }}
+        uses: xt0rted/pull-request-comment-branch@v1
+        id: comment-branch
+
+      - name: Set final commit status
+        uses: myrotvorets/set-commit-status-action@master
+        if: ${{ always() }}
+        with:
+          sha: ${{ steps.comment-branch.outputs.head_sha }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: pending
+
+      - name: Comment on PR that test has started
+        if: ${{ github.event_name == 'issue_comment' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.issue.number;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: "Starting the `/test apply` test..."
+            });
+
+      - name: Comment on PR with test result and action link
+        if: always() && github.event_name == 'issue_comment'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.issue.number;
+            const test_result = job.status === 'success' ? 'succeeded' : 'failed';
+            const action_url = `https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue_number,
+              body: `The \`/test apply\` test has ${test_result}. [Check the action details here](${action_url}).`
+            });
