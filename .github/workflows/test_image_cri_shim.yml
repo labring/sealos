@@ -101,4 +101,4 @@ jobs:
           sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
           export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
           export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
-          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v test/e2e/ --focus="image-cri-shim"
+          sudo /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v test/e2e/ --focus="image-cri-shim test"

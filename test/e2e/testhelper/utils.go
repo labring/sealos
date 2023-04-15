@@ -68,7 +68,7 @@ func WriteFile(fileName string, content []byte) error {
 func GetBinArch(filepath string) (string, error) {
 	f, err := elf.Open(filepath)
 	if err != nil {
-		return "", fmt.Errorf("Error opening file: %v\n", err)
+		return "", fmt.Errorf("error opening file: %v", err)
 	}
 	defer f.Close()
 	switch f.Machine {
@@ -77,7 +77,7 @@ func GetBinArch(filepath string) (string, error) {
 	case elf.EM_AARCH64:
 		return settings.Arm64Arch, nil
 	default:
-		return "", fmt.Errorf("Unknown or unsupported architecture: %v\n", f.Machine.String())
+		return "", fmt.Errorf("unknown or unsupported architecture: %v", f.Machine.String())
 	}
 }
 

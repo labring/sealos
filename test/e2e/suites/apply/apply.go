@@ -77,7 +77,7 @@ func PreCheckEnv() {
 	}
 }
 
-func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
+func PreSetInfraConfig(_ *v1.Infra, host *v1.Hosts) {
 	arch, err := testhelper.GetBinArch(settings.E2EConfig.SealosBinPath)
 	testhelper.CheckErr(err)
 	host.Arch = arch
