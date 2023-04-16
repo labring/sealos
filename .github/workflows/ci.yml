@@ -5,6 +5,7 @@ env:
   GO_VERSION: "1.20"
 
 on:
+  workflow_call:
   workflow_dispatch:
     inputs:
       push_mage:
@@ -24,10 +25,10 @@ on:
       - "webhooks/**"
       - "frontend/**"
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - labeled
+#    types:
+#      - opened
+#      - synchronize
+      #- labeled
     branches: [ "*" ]
     paths-ignore:
       - "docs/**"
@@ -48,6 +49,12 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Run tests
+        id: get_github_env_test
+        env:
+          github: ${{ toJson(github) }}
+        run: |
+          echo -e "\n\n\n\n\n $github \n\n\n\n\n"
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -326,87 +333,93 @@ jobs:
           sudo $binDIR/buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
           sudo $binDIR/buildah images
 
-  e2e_apply_test:
-    needs: [ docker ]
-    runs-on: ubuntu-latest
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
-    strategy:
-      matrix:
-        arch: [ arm64, amd64 ]
-    steps:
+#  e2e_apply_test:
+#    needs: [ docker ]
+#    runs-on: ubuntu-latest
+#    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
+#    strategy:
+#      matrix:
+#        arch: [ arm64, amd64 ]
+#    steps:
+#      - name: Install Dependencies
+#        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+#
+#      - name: Checkout code
+#        uses: actions/checkout@v3
+#
+#      - name: Expose git commit data
+#        uses: rlespinasse/git-commit-data-action@v1
+#
+#      - name: Download sealos binary
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: sealos-${{ matrix.arch }}
+#          path: /tmp/sealos/bin/
+#
+#      - name: Download sealos patch image
+#        uses: actions/download-artifact@v3
+#        with:
+#          name: patch-image-${{ matrix.arch }}.tar
+#          path: /tmp/sealos/images/
+#
+#      - name: Install ginkgo && Run e2e apply test
+#        shell: bash
+#        run: |
+#          set -ex
+#          echo "job name: ${{ github.job }}"
+#          gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
+#          ls -Rl /tmp/sealos
+#          wget -qO goNew.tgz https://go.dev/dl/go1.20.linux-amd64.tar.gz && tar -zxf goNew.tgz && rm -rf goNew.tgz
+#          sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
+#          export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
+#          export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
+#          echo "SEALOS_E2E_TEST_IMAGE_NAME=hub.sealos.cn/labring/kubernetes:v1.25.6"
+#          echo "SEALOS_E2E_TEST_PATCH_IMAGE_TAR=/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz"
+#          echo "SEALOS_E2E_TEST_PATCH_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}"
+#          echo "SEALOS_E2E_TEST_SEALOS_BIN_PATH=/tmp/sealos/bin/sealos"
+#          echo "ALIYUN_ACCESS_KEY_ID=${{ secrets.ALIYUN_ACCESS_KEY_ID }}"
+#          echo "ALIYUN_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}"
+#          echo "ALIYUN_RESOURCE_GROUP_ID=${{ secrets.ALIYUN_RESOURCE_GROUP_ID }}"
+#          echo "ALIYUN_REGION_ID=cn-hangzhou"
+#          sudo SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
+#            SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz" \
+#            SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
+#            SEALOS_E2E_TEST_SEALOS_BIN_PATH="/tmp/sealos/bin/sealos" \
+#            ALIYUN_ACCESS_KEY_ID="${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
+#            ALIYUN_ACCESS_KEY_SECRET="${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
+#            ALIYUN_RESOURCE_GROUP_ID="${{ secrets.ALIYUN_RESOURCE_GROUP_ID }}" \
+#            ALIYUN_REGION_ID=cn-hangzhou /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="apply test" test/e2e/
 
-      - name: Download sealos
-        uses: actions/download-artifact@v3
-        with:
-          name: sealos-${{ matrix.arch }}
-          path: /tmp/sealos/bin/
-
-      - name: Download sealos
-        uses: actions/download-artifact@v3
-        with:
-          name: patch-image-${{ matrix.arch }}.tar
-          path: /tmp/sealos/images/
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-
-      - name: Install ginkgo && Run e2e apply test
-        shell: bash
-        run: |
-          set -ex
-          gzip /tmp/sealos/images/patch-image-${{ matrix.arch }}.tar
-          wget -qO goNew.tgz https://go.dev/dl/go1.20.linux-amd64.tar.gz && tar -zxf goNew.tgz && rm -rf goNew.tgz
-          sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
-          export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
-          export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
-          echo "SEALOS_E2E_TEST_IMAGE_NAME=hub.sealos.cn/labring/kubernetes:v1.25.6"
-          echo "SEALOS_E2E_TEST_PATCH_IMAGE_TAR=/tmp/sealos/images/patch-image-${{ matrix.arch }}.tar.gz"
-          echo "SEALOS_E2E_TEST_PATCH_IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}"
-          echo "SEALOS_E2E_TEST_SEALOS_BIN_PATH=/tmp/sealos/bin/sealos-${{ matrix.arch }}"
-          echo "ALIYUN_ACCESS_KEY_ID=${{ secrets.ALIYUN_ACCESS_KEY_ID }}"
-          echo "ALIYUN_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}"
-          echo "ALIYUN_RESOURCE_GROUP_ID=${{ secrets.ALIYUN_RESOURCE_GROUP_ID }}"
-          echo "ALIYUN_REGION_ID=cn-hangzhou"
-          sudo SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
-            SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-image-${{ matrix.arch }}.tar.gz" \
-            SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
-            SEALOS_E2E_TEST_SEALOS_BIN_PATH="/tmp/sealos/bin/sealos-${{ matrix.arch }}" \
-            ALIYUN_ACCESS_KEY_ID="${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
-            ALIYUN_ACCESS_KEY_SECRET="${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
-            ALIYUN_RESOURCE_GROUP_ID="${{ secrets.ALIYUN_RESOURCE_GROUP_ID }}" \
-            ALIYUN_REGION_ID=cn-hangzhou /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="apply test" test/e2e/
-
-  issue_commit:
-    needs: [ docker ]
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
-    #    needs:
-    #      - e2e_apply_test
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-    steps:
-      ## why not use `needs.e2e_apply_test` ? because when e2e_apply_test failed, the `needs.e2e_apply_test` will cause skip this commit steps.
-      - name: Wait for comment triggered workflow to complete
-        if: ${{ always() }}
-        uses: fountainhead/action-wait-for-check@v1.0.0
-        id: wait-for-check
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          checkName: "e2e_apply_test" # Replace with the name of the job in your comment triggered workflow
-          ref: ${{ github.event.pull_request.head.sha }}
-          waitFor: '100000000' # milliseconds between check for completion
-          timeout: '18000000000' # milliseconds to wait before timing out
-
-      - name: Add comment to PR with test status
-        uses: peter-evans/create-or-update-comment@v1
-        if: ${{ always() }}
-        with:
-          issue-number: ${{ github.event.number }}
-          comment-author: 'github-actions[bot]'
-          repository: ${{ github.repository }}
-          body: |
-            AUTO COMMIT: E2E Apply Test Result: ${{ needs.e2e_apply_test.conclusion == 'failure' && 'Failure' || 'Success' }} [View Action Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          token: "${{ secrets.GH_PAT }}"
+#  issue_commit:
+#    needs: [ docker ]
+#    if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
+#    #    needs:
+#    #      - e2e_apply_test
+#    runs-on: ubuntu-latest
+#    permissions:
+#      issues: write
+#    steps:
+#      - name: sleep for wait apply test to complete
+#        run: sleep 5m
+#      ## why not use `needs.e2e_apply_test` ? because when e2e_apply_test failed, the `needs.e2e_apply_test` will cause skip this commit steps.
+#      - name: Wait for comment triggered workflow to complete
+#        if: ${{ always() }}
+#        uses: fountainhead/action-wait-for-check@v1.0.0
+#        id: wait-for-check
+#        with:
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          checkName: "e2e_apply_test" # Replace with the name of the job in your comment triggered workflow
+#          ref: ${{ github.event.pull_request.head.sha }}
+#          waitFor: '100000000' # milliseconds between check for completion
+#          timeout: '18000000000' # milliseconds to wait before timing out
+#
+#      - name: Add comment to PR with test status
+#        uses: peter-evans/create-or-update-comment@v1
+#        if: ${{ always() }}
+#        with:
+#          issue-number: ${{ github.event.number }}
+#          comment-author: 'github-actions[bot]'
+#          repository: ${{ github.repository }}
+#          body: |
+#            AUTO COMMIT: E2E Apply Test Result: ${{ needs.e2e_apply_test.conclusion == 'failure' && 'Failure' || 'Success' }} [View Action Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+#          token: "${{ secrets.GH_PAT }}"

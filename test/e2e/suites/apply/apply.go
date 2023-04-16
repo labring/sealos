@@ -102,7 +102,10 @@ func (a *Applier) initImage() {
 		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.ImageTar)
 		testhelper.CheckErr(err)
 	} else {
-		err = a.RemoteSealosCmd.ImagePull(settings.E2EConfig.ImageName)
+		err = a.RemoteSealosCmd.ImagePull(&cmd.PullOptions{
+			ImageRefs: []string{settings.E2EConfig.ImageName},
+			Quiet:     true,
+		})
 		testhelper.CheckErr(err)
 	}
 	if settings.E2EConfig.PatchImageName == "" {
@@ -119,10 +122,17 @@ func (a *Applier) initImage() {
 		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.PatchImageTar)
 		testhelper.CheckErr(err)
 	} else {
-		err = a.RemoteSealosCmd.ImagePull(settings.E2EConfig.PatchImageName)
+		err = a.RemoteSealosCmd.ImagePull(&cmd.PullOptions{
+			ImageRefs: []string{settings.E2EConfig.PatchImageName},
+			Quiet:     true,
+		})
 		testhelper.CheckErr(err)
 	}
-	err = a.RemoteSealosCmd.ImageMerge(settings.E2EConfig.ImageName, []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName})
+	err = a.RemoteSealosCmd.ImageMerge(&cmd.MergeOptions{
+		Quiet:     true,
+		ImageRefs: []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName},
+		Tag:       []string{settings.E2EConfig.ImageName},
+	})
 	testhelper.CheckErr(err)
 }
 
