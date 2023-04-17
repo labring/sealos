@@ -29,6 +29,11 @@ release_data=$(curl -s https://api.github.com/repos/"${REPO}"/releases/tags/"${T
 # Extract the release notes using jq
 release_notes=$(echo "$release_data" | jq -r '.body')
 
+if [ "$release_notes" == 'null' ]; then
+   echo "No release notes found for tag $TAG"
+   exit 1
+fi
+
 echo "$release_notes" > CHANGELOG/CHANGELOG-"${TAG#v}".md
 
 for file in $(ls CHANGELOG |grep -v '^CHANGELOG.md$' | sort -V -r); do
