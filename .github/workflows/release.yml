@@ -34,6 +34,7 @@ jobs:
       - name: Set changelog
         run: |
           export RELEASE=true;bash scripts/changelog.sh ${{ github.repository_owner }}/sealos 
+          cat scripts/release/note.md
 
       - name: Install Dependencies
         run: |
