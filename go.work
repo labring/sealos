@@ -18,5 +18,6 @@ use (
 	./staging/src/github.com/labring/lvscare
 	./webhooks/whitelist
 	./controllers/common
+	./test/e2e
 
 )

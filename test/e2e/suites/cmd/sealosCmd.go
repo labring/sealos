@@ -1,7 +1,5 @@
 package cmd
 
-import "strings"
-
 type SealosCmd struct {
 	BinPath  string
 	Executor Interface
@@ -28,12 +26,12 @@ type ClusterCycle interface {
 }
 
 type ImageService interface {
-	ImagePull(image string) error
+	ImagePull(*PullOptions) error
 	ImagePush(image string) error
 	ImageList() error
 	ImageSave(image string, path string) error
 	ImageLoad(path string) error
-	ImageMerge(mergeName string, imageList []string) error
+	ImageMerge(options *MergeOptions) error
 	ImageRemove(image string) error
 	ImageInspect(image string) error
 }
@@ -70,8 +68,8 @@ func (s *SealosCmd) Cert(args *CertOptions) error {
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"cert"}, args.Args()...)...)
 }
 
-func (s *SealosCmd) ImagePull(image string) error {
-	return s.Executor.AsyncExec(s.BinPath, "pull", image)
+func (s *SealosCmd) ImagePull(args *PullOptions) error {
+	return s.Executor.AsyncExec(s.BinPath, append([]string{"pull"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) ImagePush(image string) error {
@@ -90,8 +88,8 @@ func (s *SealosCmd) ImageLoad(path string) error {
 	return s.Executor.AsyncExec(s.BinPath, "load", "-i", path)
 }
 
-func (s *SealosCmd) ImageMerge(mergeName string, imageList []string) error {
-	return s.Executor.AsyncExec(s.BinPath, "merge", "-t", mergeName, strings.Join(imageList, " "))
+func (s *SealosCmd) ImageMerge(args *MergeOptions) error {
+	return s.Executor.AsyncExec(s.BinPath, append([]string{"merge"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) ImageRemove(image string) error {

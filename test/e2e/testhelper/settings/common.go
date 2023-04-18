@@ -39,6 +39,13 @@ const (
 )
 
 const (
+	Amd64Arch = "amd64"
+	Arm64Arch = "arm64"
+)
+
+const GzSuffix = ".gz"
+
+const (
 	DefaultTestImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0"
 	HelmImageName        = "hub.sealos.cn/labring/helm:v3.8.2"
 	CalicoImageName      = "hub.sealos.cn/labring/calico:v3.25.0"

@@ -12,6 +12,7 @@ type CommandOptions interface {
 	Args() []string
 }
 
+// LifeCycleOptions sealos run/apply/delete/reset/create/add/cert options
 type RunOptions struct {
 	Cluster    string
 	Cmd        []string
