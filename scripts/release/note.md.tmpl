@@ -1,6 +1,6 @@
-# Sealos {{ .Tag }} 🎉🎉
+# Sealos ${TAG} 🎉🎉
 
-We are excited to announce the official release of Sealos {{ .Tag }} 🎉🎉!
+We are excited to announce the official release of Sealos ${TAG} 🎉🎉!
 
 ## Sealos Cloud: Powerful Cloud Operating System Distribution
 
@@ -49,11 +49,11 @@ Sealos Boot is the core component of Sealos, mainly responsible for the lifecycl
 #### Binary Installation
 
 ```shell
-    curl -sfL  https://raw.githubusercontent.com/{{ .Env.USERNAME }}/{{ .ProjectName }}/{{ .Tag }}/scripts/install.sh \
-    | sh -s {{ .Tag }} {{ .Env.USERNAME }}/{{ .ProjectName }}
+    curl -sfL  https://raw.githubusercontent.com/${REPO}/${TAG}/scripts/install.sh \
+    | sh -s ${TAG} ${REPO}
 ```
 
-{{ if eq .Prerelease ""}}
+${IS_RELEASE}
 
 #### Yum Repository Installation
 
@@ -88,7 +88,7 @@ apt-get update
 apt-get install sealos
 ```
 
-{{ end }}
+${IS_RELEASE_END}
 
 ### Component Introduction
 
@@ -108,3 +108,22 @@ sealos run labring/kubernetes:v1.25.0 labring/helm:v3.8.2 labring/calico:v3.24.1
     --nodes 192.168.64.21,192.168.64.19 \
     --passwd your-own-ssh-passwd
 ```
+
+
+## Roadmap
+
+In the future development plan, Sealos Boot and Sealos Cloud will continue to expand their capabilities to meet the needs of more users. Our Roadmap includes the following key plans:
+
+1. Sealos Cloud Private Deployment: We will introduce a private deployment solution for Sealos Cloud, allowing users to deploy and run Sealos Cloud in their own data centers or private cloud environments, achieving consistency between public and private cloud experiences.
+2. Heterogeneous Deployment Support: Sealos Boot will support the deployment of Kubernetes clusters on various hardware platforms and operating systems, achieving broader compatibility and flexibility.
+3. K3s and K0s Integration: We plan to integrate the lightweight Kubernetes distributions K3s and K0s into Sealos Boot, allowing users to choose different Kubernetes distributions for deployment according to their needs.
+
+Please look forward to the launch of these new features. We will continue to work hard to provide users with better services and experiences.
+
+## Feedback
+
+We are very proud to introduce the two major functional modules of Sealos Cloud and Sealos Boot, which we believe will bring more convenience and efficiency to your cloud-native application management. We look forward to your feedback and suggestions so that we can continue to improve and provide better products and services.
+
+Thank you for your support of Sealos🎉🎉.
+
+If you encounter any problems during use, please submit an issue in the [GitHub repository](https://github.com/${REPO}) , and we will solve your problem as soon as possible.

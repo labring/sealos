@@ -23,37 +23,39 @@ if [ -z "$TAG" ]; then
    TAG=$(git describe --abbrev=0 --tags)
 fi
 
-# Fetch the release data using the GitHub API
-release_data=$(curl -s https://api.github.com/repos/"${REPO}"/releases/tags/"${TAG}")
-
-# Extract the release notes using jq
-release_notes=$(echo "$release_data" | jq -r '.body')
-
-if [ "$release_notes" == 'null' ]; then
-   echo "No release notes found for tag $TAG"
-   exit 1
-fi
-
-echo "$release_notes" > CHANGELOG/CHANGELOG-"${TAG#v}".md
-
 VERSION=$TAG
 PREV_VERSION=$3
-VERSION=${VERSION#v}
+export VERSION=${VERSION#v}
 if [ -z "$PREV_VERSION" ]; then
   PREV_VERSION=$(git describe --abbrev=0 --tags v${VERSION}^)
 fi
-PREV_VERSION=${PREV_VERSION#v}
+export PREV_VERSION=${PREV_VERSION#v}
+export REPO=$REPO
+export TAG=$TAG
+if [[ $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  export IS_RELEASE=""
+  export IS_RELEASE_END=""
+else
+  export IS_RELEASE="<!--"
+  export IS_RELEASE_END="-->"
+fi
+
+envsubst < scripts/release/note.md.tmpl > CHANGELOG/CHANGELOG-"${TAG#v}".md
 
 # shellcheck disable=SC2129
 cat << EOF >> CHANGELOG/CHANGELOG-"${VERSION}".md
+
 ## Changelog since v${PREV_VERSION}
 
 ### What's Changed
+
 EOF
 
 git log --pretty=format:"* %h - %an - %s" v"${PREV_VERSION}"...v"${VERSION}" | sed -E 's/#[0-9]+/https:\/\/github.com\/labring\/sealos\/pull\/&/g' >>  CHANGELOG/CHANGELOG-"${VERSION}".md
 
 echo -e "\n\n**Full Changelog**: https://github.com/$REPO/compare/v${PREV_VERSION}...v${VERSION}" >>  CHANGELOG/CHANGELOG-"${VERSION}".md
+
+echo -e "\n\nSee [the CHANGELOG](https://github.com/$REPO/blob/main/CHANGELOG/CHANGELOG.md) for more details." >>  CHANGELOG/CHANGELOG-"${VERSION}".md
 
 
 # shellcheck disable=SC2028

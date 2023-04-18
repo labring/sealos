@@ -31,6 +31,10 @@ jobs:
           TAG=${GITHUB_REF#refs/tags/}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
 
+      - name: Set changelog
+        run: |
+          bash scripts/changelog.sh ${{ github.repository_owner }}/sealos 
+
       - name: Install Dependencies
         run: |
           sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu \
@@ -47,7 +51,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --clean --release-footer-tmpl=scripts/release/footer.md.tmpl --release-header-tmpl=scripts/release/head.md.tmpl
+          args: release --clean --release-notes=CHANGELOG/CHANGELOG-${tag_name#v}.md
         env:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
