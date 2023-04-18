@@ -1,14 +1,9 @@
 name: E2E Apply Test
 
 on:
-  workflow_call:
   workflow_dispatch:
   pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
+    types: [ opened, synchronize, reopened, labeled ]
 
 jobs:
   call_ci_workflow:
@@ -31,6 +26,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
+        ref: ${{ github.event.pull_request.head.sha }}
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
