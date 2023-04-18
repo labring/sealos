@@ -33,7 +33,7 @@ jobs:
 
       - name: Set changelog
         run: |
-          bash scripts/changelog.sh ${{ github.repository_owner }}/sealos 
+          export RELEASE=true;bash scripts/changelog.sh ${{ github.repository_owner }}/sealos 
 
       - name: Install Dependencies
         run: |
