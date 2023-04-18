@@ -20,6 +20,8 @@ if [ -z "$REPO" ]; then
    REPO="$GITHUB_REPOSITORY"
 fi
 
+git fetch --tags
+
 if [ -z "$TAG" ]; then
    TAG=$(git describe --abbrev=0 --tags)
 fi
