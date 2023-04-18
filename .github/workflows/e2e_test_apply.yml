@@ -26,8 +26,9 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v3
-        ref: ${{ github.event.pull_request.head.sha }}
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.head_ref }}
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
@@ -58,10 +59,10 @@ jobs:
             SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz" \
             SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
             SEALOS_E2E_TEST_SEALOS_BIN_PATH="/tmp/sealos/bin/sealos" \
-            ALIYUN_ACCESS_KEY_ID="${{ secrets.ALIYUN_ACCESS_KEY_ID }}" \
-            ALIYUN_ACCESS_KEY_SECRET="${{ secrets.ALIYUN_ACCESS_KEY_SECRET }}" \
-            ALIYUN_RESOURCE_GROUP_ID="${{ secrets.ALIYUN_RESOURCE_GROUP_ID }}" \
-            ALIYUN_REGION_ID=cn-hangzhou /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="apply test" test/e2e/
+            ALIYUN_ACCESS_KEY_ID="${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}" \
+            ALIYUN_ACCESS_KEY_SECRET="${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}" \
+            ALIYUN_RESOURCE_GROUP_ID="${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}" \
+            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="apply test" test/e2e/
           echo 'test_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
