@@ -7,7 +7,7 @@ ossutil64
 main.exe
 main
 dist
-scripts/release/Note.md
+scripts/release/note.md
 .ossutil_checkpoint
 bin
 .run

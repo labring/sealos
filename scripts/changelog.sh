@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 REPO=$1
 TAG=$2
 
@@ -40,10 +41,18 @@ else
   export IS_RELEASE_END="-->"
 fi
 
-envsubst < scripts/release/note.md.tmpl > CHANGELOG/CHANGELOG-"${TAG#v}".md
+# shellcheck disable=SC2027
+ChangeMarkdownFile="CHANGELOG/CHANGELOG-"${TAG#v}".md"
+
+if [ -n "$RELEASE" ]; then
+  ChangeMarkdownFile="scripts/release/note.md"
+fi
+
+
+envsubst < scripts/release/note.md.tmpl > "${ChangeMarkdownFile}"
 
 # shellcheck disable=SC2129
-cat << EOF >> CHANGELOG/CHANGELOG-"${VERSION}".md
+cat << EOF >> "${ChangeMarkdownFile}"
 
 ## Changelog since v${PREV_VERSION}
 
@@ -51,12 +60,16 @@ cat << EOF >> CHANGELOG/CHANGELOG-"${VERSION}".md
 
 EOF
 
-git log --pretty=format:"* %h - %an - %s" v"${PREV_VERSION}"...v"${VERSION}" | sed -E 's/#[0-9]+/https:\/\/github.com\/labring\/sealos\/pull\/&/g' >>  CHANGELOG/CHANGELOG-"${VERSION}".md
+git log --pretty=format:"* %h - %an - %s" v"${PREV_VERSION}"...v"${VERSION}" | sed -E 's/#[0-9]+/https:\/\/github.com\/labring\/sealos\/pull\/&/g' >>  "${ChangeMarkdownFile}"
 
-echo -e "\n\n**Full Changelog**: https://github.com/$REPO/compare/v${PREV_VERSION}...v${VERSION}" >>  CHANGELOG/CHANGELOG-"${VERSION}".md
+echo -e "\n\n**Full Changelog**: https://github.com/$REPO/compare/v${PREV_VERSION}...v${VERSION}" >>  "${ChangeMarkdownFile}"
 
-echo -e "\n\nSee [the CHANGELOG](https://github.com/$REPO/blob/main/CHANGELOG/CHANGELOG.md) for more details." >>  CHANGELOG/CHANGELOG-"${VERSION}".md
+echo -e "\n\nSee [the CHANGELOG](https://github.com/$REPO/blob/main/CHANGELOG/CHANGELOG.md) for more details." >>  "${ChangeMarkdownFile}"
 
+if [ -n "$RELEASE" ]; then
+  echo "Release note is generated in ${ChangeMarkdownFile}"
+  exit 0
+fi
 
 # shellcheck disable=SC2028
 echo "\n# Changelog" > CHANGELOG/CHANGELOG.md

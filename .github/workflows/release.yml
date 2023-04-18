@@ -51,7 +51,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v3
         with:
-          args: release --clean --release-notes=CHANGELOG/CHANGELOG-${tag_name#v}.md
+          args: release --clean --release-notes=scripts/release/note.md
         env:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
