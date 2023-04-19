@@ -1,0 +1,23 @@
+name: Github Rebot for Sealos
+on:
+  issue_comment:
+    types:
+      - created
+env:
+  GH_TOKEN: "${{ secrets.GH_PAT }}"
+  GH_REBOT_VERSION: "v0.0.1"
+jobs:
+  comment:
+    if: startswith(github.event.comment.body, '/sealos')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the latest code
+        uses: actions/checkout@v3
+      - name: Download gh-rebot
+        run: |
+          sudo wget -q https://github.com/labring-actions/gh-rebot/releases/download/${GH_REBOT_VERSION}/gh-rebot_${GH_REBOT_VERSION#v}_linux_amd64.tar.gz
+          sudo tar -zxf gh-rebot_${GH_REBOT_VERSION#v}_linux_amd64.tar.gz gh-rebot &&  chmod +x gh-rebot && sudo mv gh-rebot /usr/bin/gh-rebot
+          gh-rebot version
+      - name: Using sealos-rebot
+        run: |
+          gh-rebot comment
