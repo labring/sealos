@@ -36,6 +36,9 @@ fi
 
 echo "$release_notes" > CHANGELOG/CHANGELOG-"${TAG#v}".md
 
+echo "# Changelog" > CHANGELOG/CHANGELOG.md
+echo -e "\nAll notable changes to this project will be documented in this file.\n" >> CHANGELOG/CHANGELOG.md
+
 for file in $(ls CHANGELOG |grep -v '^CHANGELOG.md$' | sort -V -r); do
     version=$(echo $file | sed -E 's/CHANGELOG-(.*)\.md/\1/')
     echo -e "- [CHANGELOG-${version}.md](./CHANGELOG-${version}.md)" >> CHANGELOG/CHANGELOG.md
