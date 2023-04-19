@@ -8,6 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/google/uuid"
+
 	infra2 "github.com/labring/sealos/test/e2e/suites/infra"
 
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
@@ -62,7 +66,7 @@ func PreCheckEnv() {
 	}
 	if settings.E2EConfig.PatchImageTar != "" {
 		if !testhelper.IsFileExist(settings.E2EConfig.PatchImageTar) {
-			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", settings.E2EConfig.ImageTar))
+			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", settings.E2EConfig.PatchImageTar))
 		}
 		logger.Info("e2e test patch image tar path is %s", settings.E2EConfig.PatchImageTar)
 		if settings.E2EConfig.PatchImageName == "" {
@@ -77,7 +81,9 @@ func PreCheckEnv() {
 	}
 }
 
-func PreSetInfraConfig(_ *v1.Infra, host *v1.Hosts) {
+var timeSuffix = fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
+
+func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
 	arch, err := testhelper.GetBinArch(settings.E2EConfig.SealosBinPath)
 	testhelper.CheckErr(err)
 	host.Arch = arch
@@ -88,6 +94,13 @@ func PreSetInfraConfig(_ *v1.Infra, host *v1.Hosts) {
 	case settings.Amd64Arch:
 		host.Image = infra2.AliyunAmd64UbuntuImage
 	}
+	uid, err := uuid.NewRandom()
+	testhelper.CheckErr(err, fmt.Sprintf("error generating UUID: %v\n", err))
+	logger.Info("Generated infra UID:", uid)
+	infra.Name = infra.Name + "-" + timeSuffix
+	infra.Namespace = infra.Namespace + "-" + timeSuffix
+	infra.UID = types.UID(uid.String())
+	infra.Spec.SSH.PkName = infra.Spec.SSH.PkName + "-" + timeSuffix
 }
 
 func (a *Applier) initImage() {
