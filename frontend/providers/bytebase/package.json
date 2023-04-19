@@ -1,0 +1,34 @@
+{
+  "name": "terminal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "0.18.0",
+    "@tanstack/react-query": "^4.28.0",
+    "axios": "1.2.1",
+    "clsx": "^1.2.1",
+    "eslint": "8.36.0",
+    "eslint-config-next": "13.2.4",
+    "immer": "^9.0.16",
+    "js-yaml": "^4.1.0",
+    "next": "13.2.4",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "sealos-desktop-sdk": "^0.1.11",
+    "typescript": "5.0.2",
+    "zustand": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "18.15.5",
+    "@types/react": "18.0.28",
+    "@types/react-dom": "18.0.11",
+    "sass": "^1.57.1"
+  }
+}

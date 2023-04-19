@@ -37,6 +37,9 @@ func (k *KubeadmRuntime) joinNodes(newNodesIPList []string) error {
 	if err = k.setKubernetesToken(); err != nil {
 		return err
 	}
+	if err = k.fetchKubeadmConfig(); err != nil {
+		return err
+	}
 	eg, _ := errgroup.WithContext(context.Background())
 	for _, node := range newNodesIPList {
 		node := node
@@ -119,11 +122,12 @@ func (k *KubeadmRuntime) deleteNodes(nodes []string) error {
 }
 
 func (k *KubeadmRuntime) deleteNode(node string) error {
-	//remove node
-	if len(k.getMasterIPList()) > 0 {
-		if err := k.deleteKubeNode(node); err != nil {
-			return fmt.Errorf("delete node %s failed %v", node, err)
+	return k.resetNode(node, func() {
+		//remove node
+		if len(k.getMasterIPList()) > 0 {
+			if err := k.RemoveNodeFromK8sClient(node); err != nil {
+				logger.Warn(fmt.Errorf("delete node %s failed %v", node, err))
+			}
 		}
-	}
-	return k.resetNode(node)
+	})
 }

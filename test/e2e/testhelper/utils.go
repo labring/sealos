@@ -15,6 +15,7 @@
 package testhelper
 
 import (
+	"debug/elf"
 	"errors"
 	"fmt"
 	"os"
@@ -64,6 +65,22 @@ func WriteFile(fileName string, content []byte) error {
 	return os.WriteFile(fileName, content, settings.FileMode0644)
 }
 
+func GetBinArch(filepath string) (string, error) {
+	f, err := elf.Open(filepath)
+	if err != nil {
+		return "", fmt.Errorf("error opening file: %v", err)
+	}
+	defer f.Close()
+	switch f.Machine {
+	case elf.EM_X86_64:
+		return settings.Amd64Arch, nil
+	case elf.EM_AARCH64:
+		return settings.Arm64Arch, nil
+	default:
+		return "", fmt.Errorf("unknown or unsupported architecture: %v", f.Machine.String())
+	}
+}
+
 func IsFileExist(filename string) bool {
 	_, err := os.Stat(filename)
 	return !os.IsNotExist(err)
@@ -99,6 +116,14 @@ func DeleteFileLocally(filePath string) {
 	cmd := fmt.Sprintf("sudo -E rm -rf %s", filePath)
 	_, err := exec.RunBashCmd(cmd)
 	CheckErr(err)
+}
+
+func CheckEnvSetting(keys []string) {
+	for _, key := range keys {
+		if os.Getenv(key) == "" {
+			CheckErr(fmt.Errorf("env %s not set", key))
+		}
+	}
 }
 
 func CheckErr(err error, explainErrMsg ...string) {

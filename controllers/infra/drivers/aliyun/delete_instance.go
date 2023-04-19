@@ -166,7 +166,7 @@ func (d Driver) deleteInfra(infra *v1.Infra) error {
 
 func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
 	client := d.ECSClient
-	instanceIDs := make([]string, hosts.Count)
+	var instanceIDs []string
 	idx := 0
 	for i := 0; i < hosts.Count; i++ {
 		if len(hosts.Metadata) <= idx {
@@ -179,10 +179,11 @@ func (d Driver) deleteInstancesByOption(hosts *v1.Hosts, deleteAll bool) error {
 			i--
 			continue
 		}
-		instanceIDs[i] = metadata.ID
+		instanceIDs = append(instanceIDs, metadata.ID)
 		idx++
 	}
 	if len(instanceIDs) == 0 {
+		logger.Info("not have Aliyun ECS instances to delete")
 		return nil
 	}
 

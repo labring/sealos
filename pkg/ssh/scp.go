@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/labring/sealos/pkg/system"
 
 	"github.com/pkg/sftp"
@@ -128,6 +130,52 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 	}()
 
 	return c.doCopy(sftpClient, host, localPath, remotePath, bar)
+}
+
+func (c *Client) CopyR(host, localPath, remotePath string) error {
+	if c.isLocalAction(host) {
+		logger.Debug("local %s copy files src %s to dst %s", host, remotePath, localPath)
+		return file.RecursionCopy(remotePath, localPath)
+	}
+	logger.Debug("remote fetch files src %s to dst %s", remotePath, localPath)
+	sshClient, sftpClient, err := c.sftpConnect(host)
+	if err != nil {
+		return fmt.Errorf("failed to connect: %s", err)
+	}
+	defer func() {
+		_ = sftpClient.Close()
+		_ = sshClient.Close()
+	}()
+
+	srcFile, err := sftpClient.Open(remotePath)
+	if err != nil {
+		return fmt.Errorf("failed to open remote file %s: %v", remotePath, err)
+	}
+	defer func() {
+		if err := srcFile.Close(); err != nil {
+			logger.Error("failed to close file: %v", err)
+		}
+	}()
+	if file.IsDir(localPath) {
+		localPath = filepath.Join(localPath, filepath.Base(remotePath))
+	} else if file.IsFile(localPath) {
+		return fmt.Errorf("local file %s already exist", localPath)
+	} else {
+		if err := file.MkDirs(filepath.Dir(localPath)); err != nil {
+			return err
+		}
+	}
+	dstFile, err := os.Create(localPath)
+	if err != nil {
+		return fmt.Errorf("failed to create local file: %v", err)
+	}
+	defer func() {
+		if err := dstFile.Close(); err != nil {
+			logrus.Errorf("failed to close file: %v", err)
+		}
+	}()
+	_, err = srcFile.WriteTo(dstFile)
+	return err
 }
 
 func (c *Client) doCopy(client *sftp.Client, host, src, dest string, epu *progressbar.ProgressBar) error {

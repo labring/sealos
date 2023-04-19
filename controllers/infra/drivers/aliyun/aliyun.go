@@ -9,6 +9,13 @@ import (
 	v1 "github.com/labring/sealos/controllers/infra/api/v1"
 )
 
+const (
+	AliyunRegionID        = "ALIYUN_REGION_ID"
+	AliyunAccessKeyID     = "ALIYUN_ACCESS_KEY_ID"
+	AliyunAccessKeySecret = "ALIYUN_ACCESS_KEY_SECRET"
+	AliyunResourceGroupID = "ALIYUN_RESOURCE_GROUP_ID"
+)
+
 type Driver struct {
 	ECSClient       *ecs.Client
 	VPCClient       *vpc.Client

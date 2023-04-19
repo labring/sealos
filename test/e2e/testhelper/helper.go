@@ -45,6 +45,6 @@ func Start(cmdLine string) (*gexec.Session, error) {
 func RunCmdAndCheckResult(cmdLine string, expectedCode int) *gexec.Session {
 	sess, err := Start(cmdLine)
 	gomega.Expect(err).NotTo(gomega.HaveOccurred())
-	gomega.Eventually(sess, settings.MaxWaiteTime).Should(gexec.Exit(expectedCode))
+	gomega.Eventually(sess, settings.E2EConfig.WaitTime).Should(gexec.Exit(expectedCode))
 	return sess
 }

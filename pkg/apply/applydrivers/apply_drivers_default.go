@@ -79,6 +79,10 @@ func (c *Applier) Apply() error {
 	var clusterErr, appErr error
 	// save cluster to file after apply
 	defer func() {
+		switch clusterErr.(type) {
+		case *processor.CheckError, *processor.PreProcessError:
+			return
+		}
 		logger.Debug("write cluster file to local storage: %s", clusterPath)
 		saveErr := yaml.MarshalYamlToFile(clusterPath, c.getWriteBackObjects()...)
 		if saveErr != nil {
@@ -123,6 +127,10 @@ func (c *Applier) initStatus() {
 // todo: atomic updating status after each installation for better reconcile?
 // todo: set up signal handler
 func (c *Applier) updateStatus(clusterErr error, appErr error) {
+	switch clusterErr.(type) {
+	case *processor.CheckError, *processor.PreProcessError:
+		return
+	}
 	// update cluster condition using clusterErr
 	var condition v2.ClusterCondition
 	if clusterErr != nil {

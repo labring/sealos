@@ -81,20 +81,20 @@ func (d Driver) createInstances(hosts *v1.Hosts, infra *v1.Infra) error {
 	if infra.Spec.AvailabilityZone == "" {
 		infra.Spec.AvailabilityZone = defaultAvailabilityZone
 	}
-	// get vpc
+	// get or create vpc
 	vpcID, err := d.getOrCreateVpc(infra)
 	if err != nil {
 		return fmt.Errorf("failed to get or create vpc, %v", err)
 	}
 
-	// get security group
-	securityGroupID, err := d.getSecurityGroup(infra, vpcID)
+	// get or create security group
+	securityGroupID, err := d.getOrCreateSecurityGroup(infra, vpcID)
 	if err != nil {
 		return fmt.Errorf("failed to get or create security group, %v", err)
 	}
 
-	// get vswitch
-	VSwitchID, err := d.getVSwitch(vpcID)
+	// get or create vswitch
+	VSwitchID, err := d.getOrCreateVSwitch(infra, vpcID)
 	if err != nil {
 		return fmt.Errorf("failed to get or create vswitch, %v", err)
 	}
@@ -249,22 +249,39 @@ func (d Driver) getOrCreateVpc(infra *v1.Infra) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("create vpc failed: %v", err)
 	}
-	vpcID := createVpcResponse.VpcId
-	// create security group
+	return createVpcResponse.VpcId, nil
+}
+
+func (d Driver) getOrCreateSecurityGroup(infra *v1.Infra, vpcID string) (string, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	// check security group exist
+	securityGroupName := getNetWorkName(infra)
+	describeSecurityGroupsRequest := &ecs.DescribeSecurityGroupsRequest{
+		RpcRequest:        ecs.CreateDescribeSecurityGroupsRequest().RpcRequest,
+		SecurityGroupName: securityGroupName,
+		VpcId:             vpcID,
+		ResourceGroupId:   d.ResourceGroupID,
+	}
+	describeSecurityGroupsResponse, err := GetSecurityGroups(d.ECSClient, describeSecurityGroupsRequest)
+	if err == nil && len(describeSecurityGroupsResponse.SecurityGroups.SecurityGroup) > 0 {
+		return describeSecurityGroupsResponse.SecurityGroups.SecurityGroup[0].SecurityGroupId, nil
+	}
+	// if not exist, create security group
 	createSecurityGroupRequest := &ecs.CreateSecurityGroupRequest{
 		RpcRequest:        ecs.CreateCreateSecurityGroupRequest().RpcRequest,
-		SecurityGroupName: netWorkName,
-		Description:       netWorkName,
+		SecurityGroupName: securityGroupName,
+		Description:       securityGroupName,
 		VpcId:             vpcID,
 		ResourceGroupId:   d.ResourceGroupID,
 	}
 	var securityGroupID string
 	err = retry.Retry(10, 3*time.Second, func() error {
-		securityGroupRequest, err := MakeSecurityGroup(d.ECSClient, createSecurityGroupRequest)
+		securityGroupResponse, err := MakeSecurityGroup(d.ECSClient, createSecurityGroupRequest)
 		if err != nil {
 			return err
 		}
-		securityGroupID = securityGroupRequest.SecurityGroupId
+		securityGroupID = securityGroupResponse.SecurityGroupId
 		return nil
 	})
 	if err != nil {
@@ -285,40 +302,12 @@ func (d Driver) getOrCreateVpc(infra *v1.Infra) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("authorize security group failed: %v", err)
 	}
-	// create vswitch
-	createVSwitchRequest := &vpc.CreateVSwitchRequest{
-		RpcRequest:  vpc.CreateCreateVSwitchRequest().RpcRequest,
-		CidrBlock:   defaultVSwitchCidrBlock,
-		ZoneId:      infra.Spec.AvailabilityZone,
-		VpcId:       vpcID,
-		VSwitchName: netWorkName,
-	}
-	_, err = MakeVSwitch(d.VPCClient, createVSwitchRequest)
-	if err != nil {
-		return "", fmt.Errorf("create vswitch failed: %v", err)
-	}
-
-	return createVpcResponse.VpcId, nil
+	return securityGroupID, nil
 }
 
-func (d Driver) getSecurityGroup(infra *v1.Infra, vpcID string) (string, error) {
-	// check security group exist
-	securityGroupName := getNetWorkName(infra)
-	describeSecurityGroupsRequest := &ecs.DescribeSecurityGroupsRequest{
-		RpcRequest:        ecs.CreateDescribeSecurityGroupsRequest().RpcRequest,
-		SecurityGroupName: securityGroupName,
-		VpcId:             vpcID,
-		ResourceGroupId:   d.ResourceGroupID,
-	}
-	describeSecurityGroupsResponse, err := GetSecurityGroups(d.ECSClient, describeSecurityGroupsRequest)
-	if err == nil && len(describeSecurityGroupsResponse.SecurityGroups.SecurityGroup) > 0 {
-		return describeSecurityGroupsResponse.SecurityGroups.SecurityGroup[0].SecurityGroupId, nil
-	}
-
-	return "", fmt.Errorf("get security group failed: %v", err)
-}
-
-func (d Driver) getVSwitch(vpcID string) (string, error) {
+func (d Driver) getOrCreateVSwitch(infra *v1.Infra, vpcID string) (string, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	// check vswitch exist
 	describeVSwitchesRequest := &vpc.DescribeVSwitchesRequest{
 		RpcRequest: vpc.CreateDescribeVSwitchesRequest().RpcRequest,
@@ -328,7 +317,21 @@ func (d Driver) getVSwitch(vpcID string) (string, error) {
 	if err == nil && len(describeVSwitchesResponse.VSwitches.VSwitch) > 0 {
 		return describeVSwitchesResponse.VSwitches.VSwitch[0].VSwitchId, nil
 	}
-	return "", fmt.Errorf("get vswitch failed: %v", err)
+	// create vswitch
+	vswitchName := getNetWorkName(infra)
+	createVSwitchRequest := &vpc.CreateVSwitchRequest{
+		RpcRequest:  vpc.CreateCreateVSwitchRequest().RpcRequest,
+		CidrBlock:   defaultVSwitchCidrBlock,
+		ZoneId:      infra.Spec.AvailabilityZone,
+		VpcId:       vpcID,
+		VSwitchName: vswitchName,
+	}
+	var createVSwitchResponse *vpc.CreateVSwitchResponse
+	createVSwitchResponse, err = MakeVSwitch(d.VPCClient, createVSwitchRequest)
+	if err != nil {
+		return "", fmt.Errorf("create vswitch failed: %v", err)
+	}
+	return createVSwitchResponse.VSwitchId, nil
 }
 
 func (d Driver) waitInstancesRunning(instanceIDs *[]string) error {

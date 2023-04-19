@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	v127 "github.com/labring/sealos/pkg/runtime/defaults/v127"
+
 	_default "github.com/labring/sealos/pkg/runtime/defaults"
 	v125 "github.com/labring/sealos/pkg/runtime/defaults/v125"
 	"github.com/labring/sealos/pkg/utils/versionutil"
@@ -63,10 +65,17 @@ func (k *KubeadmRuntime) SendJoinMasterKubeConfigs(masters []string, files ...st
 
 func (k *KubeadmConfig) FetchDefaultKubeadmConfig() string {
 	version := k.ImageKubeVersion
-	if versionutil.Compare(version, V1250) {
+	switch {
+	case versionutil.Compare(version, V1250) && !versionutil.Compare(version, V1270):
+		logger.Debug("using v125 kubeadm config")
 		return v125.DefaultKubeadmConfig
+	case versionutil.Compare(version, V1270):
+		logger.Debug("using v127 kubeadm config")
+		return v127.DefaultKubeadmConfig
+	default:
+		logger.Debug("using default kubeadm config")
+		return _default.DefaultKubeadmConfig
 	}
-	return _default.DefaultKubeadmConfig
 }
 
 func (k *KubeadmRuntime) ReplaceKubeConfigV1991V1992(masters []string) bool {
@@ -113,28 +122,24 @@ func (k *KubeadmRuntime) sendFileToHosts(Hosts []string, src, dst string) error 
 	return eg.Wait()
 }
 
-func (k *KubeadmRuntime) deleteKubeNode(ip string) error {
-	var err error
+func (k *KubeadmRuntime) RemoveNodeFromK8sClient(ip string) error {
 	logger.Info("start to remove node from k8s %s", ip)
 	cli, err := kubernetes.NewKubernetesClient(k.getContentData().AdminFile(), k.getMaster0IPAPIServer())
 	if err != nil {
-		logger.Warn("kubernetes client get node %s failed %v,skip delete node", ip, err)
-		return nil
+		return fmt.Errorf("kubernetes client get node %s failed %v,skip delete node", ip, err)
 	}
 	ctx := context.Background()
 	hostname, err := kubernetes.GetHostNameFromInternalIP(cli.Kubernetes(), ip)
 	if err != nil {
-		logger.Warn("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
-		return nil
+		return fmt.Errorf("kubernetes client get hostname %s failed %v,skip delete node", ip, err)
 	}
 	deletePropagation := v1.DeletePropagationBackground
 	err = cli.Kubernetes().CoreV1().Nodes().Delete(ctx, hostname, v1.DeleteOptions{PropagationPolicy: &deletePropagation})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			logger.Warn("not find target delete node ip: %s", ip)
-			return nil
+			return fmt.Errorf("not find target delete node ip: %s", ip)
 		}
-		logger.Warn("kubernetes client delete node %s failed %v,skip delete node", ip, err)
+		return fmt.Errorf("kubernetes client delete node %s failed %v,skip delete node", ip, err)
 	}
 	return nil
 }

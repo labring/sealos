@@ -11,6 +11,10 @@ type PgsqlStatus = {
 function PgsqlStatus(props: PgsqlStatus) {
   const { openEventDialog, pgsqlDetail } = props;
 
+  if (!pgsqlDetail || !openEventDialog) {
+    return null;
+  }
+
   if (!pgsqlDetail?.status?.PostgresClusterStatus) {
     pgsqlDetail.status.PostgresClusterStatus = EPgsqlStatus.Creating;
   }
@@ -29,7 +33,7 @@ function PgsqlStatus(props: PgsqlStatus) {
       onClick={(e) => openEventDialog(e, pgsqlDetail)}
     >
       <div className={styles.circle}></div>
-      <div className={clsx('px-1 w-16')}>
+      <div className={clsx('px-1')}>
         {pgsqlDetail?.status?.PostgresClusterStatus === EPgsqlStatus.Failed
           ? 'Failed'
           : pgsqlDetail?.status?.PostgresClusterStatus}
