@@ -1,0 +1,39 @@
+version: v1
+debug: true
+bot:
+  prefix: /sealos
+  spe: _
+  allowOps:
+    - sealos-ci-robot
+    - sealos-release-robot
+  email: sealos-ci-robot@sealos.io
+  username: sealos-ci-robot
+repo:
+  org: false
+  name: sealos-ci-robot/sealos
+  fork: labring/sealos
+
+changelog:
+  script: scripts/changelog.sh {{.Repo.Fork}}
+  allowOps:
+    - cuisongliu
+  reviewers:
+    - cuisongliu
+
+release:
+  retry: 15s
+  action: Release
+  allowOps:
+    - cuisongliu
+
+message:
+  success: |
+    🤖 says: The action {{.Body}} finished successfully 🎉
+  format_error: |
+    🤖 says: ‼️ The action format error, please check the format of this action.
+  permission_error: |
+    🤖 says: ‼️ The action no has permission to trigger.
+  release_error: |
+    🤖 says: ‼️ The action release error.
+  changelog_error: |
+    🤖 says: ‼️ The action changelog error.
