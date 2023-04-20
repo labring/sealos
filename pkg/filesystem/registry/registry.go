@@ -28,7 +28,11 @@ import (
 )
 
 const (
+<<<<<<< HEAD
 	defaultUntarRegistry = "cd %s/%s ;if [ -d ../registry/compressed/ ]; then find ../registry/compressed/ -type f -exec file {} \\; | grep compressed | awk -F: '{print $1}' | while IFS='' read -r cpd; do tar -zxf \"$cpd\"  -C ../registry && rm -rf \"$cpd\" ; done; fi\n "
+=======
+	defaultUntarRegistry = "cd %s/%s ; if [[ -s untar-registry.sh ]]; then bash untar-registry.sh ; else source common.sh && logger 'untar-registry.sh was not found, skip decompression registry or execute sealos run labring/registry:untar_4.2.0-alpha4'; fi"
+>>>>>>> feat: compress registry dir during running build
 )
 
 type Interface interface {
