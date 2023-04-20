@@ -45,20 +45,24 @@ func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	eg, _ := errgroup.WithContext(ctx)
-	for i := range s.mounts {
-		m := s.mounts[i]
-		for j := range hosts {
-			host := hosts[j]
-			eg.Go(func() error {
-				if err := ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir); err != nil {
-					return err
-				}
-				return s.ssh.CmdAsync(host, fmt.Sprintf(defaultUntarRegistry, s.root, constants.ScriptsDirName))
-			})
-		}
+	outerEg, _ := errgroup.WithContext(ctx)
+	for i := range hosts {
+		host := hosts[i]
+		outerEg.Go(func() error {
+			eg, _ := errgroup.WithContext(ctx)
+			for j := range s.mounts {
+				m := s.mounts[j]
+				eg.Go(func() error {
+					return ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir)
+				})
+			}
+			if err := eg.Wait(); err != nil {
+				return err
+			}
+			return s.ssh.CmdAsync(host, fmt.Sprintf(defaultUntarRegistry, s.root, constants.ScriptsDirName))
+		})
 	}
-	return eg.Wait()
+	return outerEg.Wait()
 }
 
 func New(root string, ssh ssh.Interface, mounts []v2.MountImage) Interface {
