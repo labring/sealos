@@ -8,6 +8,18 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - namespaces
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - create
@@ -17,6 +29,32 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infraresources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infraresources/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infraresources/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - infra.sealos.io
   resources:
@@ -43,3 +81,27 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - extensionresourceprices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - metering.common.sealos.io
+  resources:
+  - resources
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

@@ -282,7 +282,7 @@ func getAllInstanceIP(infra *infrav1.Infra) []string {
 
 // get sealos version from cluster
 func getSealosVersion(cluster *v1.Cluster) string {
-	if v, ok := cluster.Annotations["sealos.io/version"]; ok && v != "" {
+	if v, ok := cluster.Annotations[common.SealosVersionAnnotation]; ok && v != "" {
 		return v
 	}
 	return defaultSealosVersion

@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	TestNamespace = "ns-infra-test"
-	InfraName     = "infra-test"
+	TestNamespace        = "ns-infra-test"
+	InfraName            = "infra-test"
+	InfraSystemNamespace = "infra-system"
+	InfraResourceName    = "infra-resource"
 )
 
 func TestInfra(t *testing.T) {
@@ -50,14 +52,14 @@ func TestInfra(t *testing.T) {
 			}
 			t.Log("cluster succeeded to run")
 
-			t.Cleanup(clean)
+			t.Cleanup(cleanInfra)
 			cnt++
 		})
 	}
-	t.Cleanup(cleanAll)
+	t.Cleanup(cleanAllInfra)
 }
 
-func clean() {
+func cleanInfra() {
 	if err := api.DeleteCluster(TestNamespace, InfraName); err != nil {
 		log.Println(err)
 	}
@@ -67,7 +69,7 @@ func clean() {
 	}
 }
 
-func cleanAll() {
+func cleanAllInfra() {
 	if err := baseapi.DeleteNamespace(TestNamespace); err != nil {
 		log.Println(err)
 	}
