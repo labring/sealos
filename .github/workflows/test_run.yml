@@ -1,9 +1,6 @@
 name: Test Sealos Run Command
 
 on:
-  workflow_run:
-    workflows: [ CI ]
-    types: [ completed ]
   workflow_dispatch:
   push:
     branches: [ "main" ]
@@ -21,28 +18,33 @@ on:
         - "pkg/buildah/**"
 
 jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/ci.yml
   build-sealos:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Download sealos
+      - name: Download sealos binary
         uses: actions/download-artifact@v3
         with:
-          name: sealos
-          path: /tmp/
-      - name: Verify sealos
-        run: |
-          ls -l /tmp/
-          sudo chmod a+x /tmp/sealos
-          sudo /tmp/sealos version
+          name: sealos-${{ matrix.arch }}
+          path: /tmp/sealos/bin/
+
+      - name: Download patch image tar
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-${{ matrix.arch }}.tar
+          path: /tmp/sealos/images/
+
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
           name: sealos
-          path: /tmp/sealos
-
+          path: /tmp/sealos/bin/sealos
+      - name: Save Tars
+        uses: actions/upload-artifact@v3
+        with:
+          name: patch-image.tar
+          path: /tmp/sealos/images/patch-amd64.tar
   verify-run-single:
     needs: [build-sealos]
     runs-on: ubuntu-latest
@@ -803,7 +805,12 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: sealos
-          path: /tmp/
+          path: /tmp/sealos
+      - name: Download image
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image.tar
+          path: /tmp/patch-image.tar
       - name: Verify sealos
         run: |
           sudo chmod a+x /tmp/sealos
@@ -815,6 +822,8 @@ jobs:
           type: prune
       - name: Run
         run: |
+          sudo sealos load -i /tmp/patch-image.tar
+          sudo sealos images
           sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
 
   verify-run-containerd-apply-with-external-taint:

@@ -1,0 +1,125 @@
+name: Patch Images Package
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      push_mage:
+        description: 'Push images'
+        required: false
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        binary: [ sealos, sealctl, lvscare, image-cri-shim ]
+        arch: [  amd64 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build Binaries
+        run: |
+          make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
+
+      - name: Save Binaries
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.binary }}-${{ matrix.arch }}
+          path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
+
+  docker:
+    needs: [ build ]
+    runs-on: ubuntu-20.04
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    strategy:
+      matrix:
+        arch: [ amd64 ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Download lvscare
+        uses: actions/download-artifact@v3
+        with:
+          name: lvscare-${{ matrix.arch }}
+          path: docker/patch
+
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl-${{ matrix.arch }}
+          path: docker/patch
+
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v3
+        with:
+          name: image-cri-shim-${{ matrix.arch }}
+          path: docker/patch
+
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-${{ matrix.arch }}
+          path: docker/sealos
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      - name: Chmod a+x for docker
+        run: |
+          chmod a+x docker/sealos/*
+          chmod a+x docker/patch/*
+          chmod a+x docker/lvscare/*
+
+      - name: Build and Push lvscare Image
+        uses: docker/build-push-action@v3
+        with:
+          context: docker/patch
+          file: docker/patch/Dockerfile.build
+          push: true
+          build-args: Bin=lvscare
+          platforms: linux/${{ matrix.arch }}
+          tags: localhost:5000/labring/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
+
+      - name: Build and Save Cluster Images
+        run: scripts/save-cluster-images.sh
+        env:
+          ARCH: ${{ matrix.arch }}
+
+      - name: Upload Cluster Images
+        uses: actions/upload-artifact@v3
+        with:
+          name: patch-image-${{ matrix.arch }}.tar
+          path: patch-${{ matrix.arch }}.tar
+
+      - name: Delete Artifacts
+        uses: geekyeggo/delete-artifact@v1
+        with:
+          name: |
+            lvscare-${{ matrix.arch }}
+            sealctl-${{ matrix.arch }}
+            image-cri-shim-${{ matrix.arch }}
+          failOnError: false
