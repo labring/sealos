@@ -3,19 +3,17 @@ name: Test Sealos Run Command
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
     paths:
-      - ".github/workflows/test_run.yml"
+      - ".github/workflows/**"
       - "cmd/**"
-      - "pkg/runtime/**"
-      - "pkg/buildah/**"
-    pull_request:
-      branches: [ "*" ]
-      paths:
-        - ".github/workflows/test_run.yml"
-        - "cmd/**"
-        - "pkg/runtime/**"
-        - "pkg/buildah/**"
+      - "pkg/**"
+  pull_request:
+    branches: ["*"]
+    paths:
+      - ".github/workflows/**"
+      - "cmd/**"
+      - "pkg/**"
 
 jobs:
   call_ci_workflow:
