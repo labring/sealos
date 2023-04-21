@@ -19,6 +19,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"golang.org/x/sync/errgroup"
 
@@ -27,6 +28,7 @@ import (
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 )
 
+<<<<<<< HEAD
 const (
 <<<<<<< HEAD
 	defaultUntarRegistry = "cd %s/%s ;if [ -d ../registry/compressed/ ]; then find ../registry/compressed/ -type f -exec file {} \\; | grep compressed | awk -F: '{print $1}' | while IFS='' read -r cpd; do tar -zxf \"$cpd\"  -C ../registry && rm -rf \"$cpd\" ; done; fi\n "
@@ -35,14 +37,16 @@ const (
 >>>>>>> feat: compress registry dir during running build
 )
 
+=======
+>>>>>>> feat: use sealctl to untar compressed registry contents
 type Interface interface {
 	MirrorTo(context.Context, ...string) error
 }
 
 type scp struct {
-	root   string
-	ssh    ssh.Interface
-	mounts []v2.MountImage
+	pathResolver PathResolver
+	ssh          ssh.Interface
+	mounts       []v2.MountImage
 }
 
 func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
@@ -57,18 +61,35 @@ func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
 			for j := range s.mounts {
 				m := s.mounts[j]
 				eg.Go(func() error {
-					return ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir)
+					return ssh.CopyDir(s.ssh, host,
+						m.MountPoint,
+						s.pathResolver.RootFSPath(),
+						constants.IsRegistryDir)
 				})
 			}
 			if err := eg.Wait(); err != nil {
 				return err
 			}
-			return s.ssh.CmdAsync(host, fmt.Sprintf(defaultUntarRegistry, s.root, constants.ScriptsDirName))
+			return s.ssh.CmdAsync(host, getUntarCommands(s.pathResolver))
 		})
 	}
 	return outerEg.Wait()
 }
 
-func New(root string, ssh ssh.Interface, mounts []v2.MountImage) Interface {
-	return &scp{root, ssh, mounts}
+type PathResolver interface {
+	RootFSSealctlPath() string
+	RootFSRegistryPath() string
+	RootFSPath() string
+}
+
+func getUntarCommands(pathResolver PathResolver) string {
+	return fmt.Sprintf("%[1]s untar -h > /dev/null 2>&1 && %[1]s untar -o %s --clear=true %s || true",
+		pathResolver.RootFSSealctlPath(),
+		filepath.Join(pathResolver.RootFSPath(), "registry", "docker"),
+		filepath.Join(pathResolver.RootFSPath(), "registry", "compressed"),
+	)
+}
+
+func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) Interface {
+	return &scp{pathResolver, ssh, mounts}
 }
