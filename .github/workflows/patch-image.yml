@@ -7,11 +7,6 @@ env:
 on:
   workflow_call:
   workflow_dispatch:
-    inputs:
-      push_mage:
-        description: 'Push images'
-        required: false
-        type: boolean
 
 jobs:
   build:
@@ -31,18 +26,42 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+
       - name: Build Binaries
         run: |
           make build BINS=${{ matrix.binary }} PLATFORM=linux_${{ matrix.arch }}
-
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.binary }}-${{ matrix.arch }}
           path: bin/linux_${{ matrix.arch}}/${{ matrix.binary }}
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
+      - name: Setup Golang with cache
+        uses: magnetikonline/action-golang-cache@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+      - name: Build E2e Test
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+          cd test/e2e && ginkgo build .
+      - name: Save E2e Test
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e.test
+          path: test/e2e/e2e.test
   docker:
-    needs: [ build ]
+    needs: [ build,test ]
     runs-on: ubuntu-20.04
     services:
       registry:
