@@ -1,21 +1,10 @@
 name: Test Sealos Run Command
 
 on:
+  workflow_run:
+    workflows: [ CI ]
+    types: [ completed ]
   workflow_dispatch:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/test_run.yml"
-      - "cmd/**"
-      - "pkg/runtime/**"
-      - "pkg/buildah/**"
-  pull_request:
-    branches: ["*"]
-    paths:
-      - ".github/workflows/test_run.yml"
-      - "cmd/**"
-      - "pkg/runtime/**"
-      - "pkg/buildah/**"
 
 
 jobs:
@@ -24,17 +13,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Auto install sealos
-        uses: labring/sealos-action@v0.0.5
+      - name: Download sealos
+        uses: actions/download-artifact@v3
         with:
-          type: install-dev
-          pruneCRI: true
-          autoFetch: false
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          ls -l /tmp/
+          sudo chmod a+x /tmp/sealos
+          sudo /tmp/sealos version
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
           name: sealos
-          path: /usr/bin/sealos
+          path: /tmp/sealos
 
   verify-run-single:
     needs: [build-sealos]
@@ -472,7 +465,7 @@ jobs:
           echo "ETCD info"
           /tmp/etcd-download-test/etcd --version
           /tmp/etcd-download-test/etcdctl version
-        
+          
           echo "Start a local ETCD server"
           ALLOW_NONE_AUTHENTICATION=yes
           nohup /tmp/etcd-download-test/etcd --listen-client-urls http://0.0.0.0:2379 \
@@ -686,7 +679,7 @@ jobs:
           kind: ClusterConfiguration
           networking:
             serviceSubnet: "100.56.0.0/16"
-            
+          
           EOF
           cat /tmp/apply/Clusterfile
       - name: Auto install k8s using sealos
