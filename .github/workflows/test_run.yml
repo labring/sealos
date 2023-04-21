@@ -5,39 +5,47 @@ on:
   push:
     branches: ["main"]
     paths:
-      - ".github/workflows/test_run.yml"
+      - ".github/workflows/**"
       - "cmd/**"
-      - "pkg/runtime/**"
-      - "pkg/buildah/**"
+      - "pkg/**"
   pull_request:
     branches: ["*"]
     paths:
-      - ".github/workflows/test_run.yml"
+      - ".github/workflows/**"
       - "cmd/**"
-      - "pkg/runtime/**"
-      - "pkg/buildah/**"
-
+      - "pkg/**"
 
 jobs:
-  build-sealos:
+  call_ci_workflow:
+    uses: ./.github/workflows/patch-image.yml
+  download-sealos:
+    needs: [call_ci_workflow]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Auto install sealos
-        uses: labring/sealos-action@v0.0.5
+      - name: Download sealos binary
+        uses: actions/download-artifact@v3
         with:
-          type: install-dev
-          pruneCRI: true
-          autoFetch: false
+          name: sealos-amd64
+          path: /tmp/sealos/bin/
+
+      - name: Download patch image tar
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: /tmp/sealos/images/
+
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:
           name: sealos
-          path: /usr/bin/sealos
-
+          path: /tmp/sealos/bin/sealos
+      - name: Save Tars
+        uses: actions/upload-artifact@v3
+        with:
+          name: patch-amd64.tar
+          path: /tmp/sealos/images/patch-amd64.tar
   verify-run-single:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -84,7 +92,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
 
   verify-run-containerd:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -125,7 +133,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.96.0.0/22
 
   verify-run-docker:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -168,7 +176,7 @@ jobs:
 
 
   verify-run-containerd-buildimage:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -228,7 +236,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep ${local_ip}
 
   verify-run-docker-buildimage:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -284,7 +292,7 @@ jobs:
 
 
   verify-run-containerd-apply:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -365,7 +373,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 192.168.72.100
 
   verify-run-docker-apply:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -438,7 +446,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.55.0.0/16
 
   verify-run-containerd-apply-with-external-etcd:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -472,7 +480,7 @@ jobs:
           echo "ETCD info"
           /tmp/etcd-download-test/etcd --version
           /tmp/etcd-download-test/etcdctl version
-        
+          
           echo "Start a local ETCD server"
           ALLOW_NONE_AUTHENTICATION=yes
           nohup /tmp/etcd-download-test/etcd --listen-client-urls http://0.0.0.0:2379 \
@@ -537,7 +545,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep http://127.0.0.1:2379
 
   verify-run-containerd-buildimage-apply:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -624,7 +632,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.56.0.0/16
 
   verify-run-docker-buildimage-apply:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -686,7 +694,7 @@ jobs:
           kind: ClusterConfiguration
           networking:
             serviceSubnet: "100.56.0.0/16"
-            
+          
           EOF
           cat /tmp/apply/Clusterfile
       - name: Auto install k8s using sealos
@@ -712,7 +720,7 @@ jobs:
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 10.160.0.0/12
           sudo cat /root/.sealos/default/etc/kubeadm-init.yaml | grep 100.56.0.0/16
   verify-run-by-loadtar:
-    needs: [ build-sealos ]
+    needs: [ download-sealos ]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -738,7 +746,7 @@ jobs:
           sudo sealos run  labring/kubernetes:v1.25.0 --single --debug
           sudo sealos run  $PWD/oci-helm.tar
   verify-run-by-shortname:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -762,7 +770,7 @@ jobs:
           sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
 
   verify-run-by-load-shortname:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -789,7 +797,7 @@ jobs:
           sudo sealos load -i k8s.tar
           sudo sealos run  k8s:dev  labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
   verify-run-by-newimage:
-    needs: [ build-sealos ]
+    needs: [ download-sealos ]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -797,10 +805,15 @@ jobs:
         with:
           name: sealos
           path: /tmp/
+      - name: Download image
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-amd64.tar
+          path: /tmp/
       - name: Verify sealos
         run: |
-          sudo chmod a+x /tmp/sealos
           sudo mv /tmp/sealos /usr/bin/
+          sudo chmod a+x /usr/bin/sealos
           sudo sealos version
       - name: Remove containerd && docker
         uses: labring/sealos-action@v0.0.7
@@ -808,10 +821,10 @@ jobs:
           type: prune
       - name: Run
         run: |
-          sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
-
+          sudo sealos run ghcr.io/labring-actions/dev-merge-containerd-k8s:1.23.17-amd64 /tmp/patch-amd64.tar labring/helm:v3.8.2 labring/calico:v3.24.1 --single --debug
+          sudo crictl images
   verify-run-containerd-apply-with-external-taint:
-    needs: [build-sealos]
+    needs: [download-sealos]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
