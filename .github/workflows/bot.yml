@@ -5,10 +5,10 @@ on:
       - created
 env:
   GH_TOKEN: "${{ secrets.GH_PAT }}"
-  GH_REBOT_VERSION: "v0.0.1"
+  GH_REBOT_VERSION: "v0.0.2"
 jobs:
   comment:
-    if: startswith(github.event.comment.body, '/sealos')
+    if: startswith(github.event.comment.body, '/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the latest code
