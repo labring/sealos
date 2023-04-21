@@ -5,7 +5,20 @@ on:
     workflows: [ CI ]
     types: [ completed ]
   workflow_dispatch:
-
+  push:
+    branches: [ "main" ]
+    paths:
+      - ".github/workflows/test_run.yml"
+      - "cmd/**"
+      - "pkg/runtime/**"
+      - "pkg/buildah/**"
+    pull_request:
+      branches: [ "*" ]
+      paths:
+        - ".github/workflows/test_run.yml"
+        - "cmd/**"
+        - "pkg/runtime/**"
+        - "pkg/buildah/**"
 
 jobs:
   build-sealos:
