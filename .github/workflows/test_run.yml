@@ -17,8 +17,9 @@ on:
 
 jobs:
   call_ci_workflow:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/patch-image.yml
   build-sealos:
+    needs: [call_ci_workflow]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos binary
