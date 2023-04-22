@@ -57,7 +57,7 @@ jobs:
           export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
           sudo SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
             SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz" \
-            SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-merge-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
+            SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
             SEALOS_E2E_TEST_SEALOS_BIN_PATH="/tmp/sealos/bin/sealos" \
             ALIYUN_ACCESS_KEY_ID="${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}" \
             ALIYUN_ACCESS_KEY_SECRET="${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}" \

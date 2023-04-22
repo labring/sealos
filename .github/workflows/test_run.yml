@@ -3,7 +3,7 @@ name: Test Sealos Run Command
 on:
   workflow_dispatch:
   push:
-    branches: ["ci_patch","main"]
+    branches: ["main"]
     paths:
       - ".github/workflows/**"
       - "cmd/**"

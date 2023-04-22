@@ -1,5 +1,5 @@
 #!/bin/bash
-IMAGE_NAME=ghcr.io/labring/sealos-merge-patch:$GIT_COMMIT_SHORT_SHA
+IMAGE_NAME=ghcr.io/${OWNER}/sealos-patch:$GIT_COMMIT_SHORT_SHA
 sudo sealos push ${IMAGE_NAME}-amd64
 sudo sealos push ${IMAGE_NAME}-arm64
 sudo buildah images

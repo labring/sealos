@@ -13,7 +13,7 @@ on:
         required: false
         type: boolean
   push:
-    branches: [ "ci_patch","main" ]
+    branches: [ "main" ]
     paths-ignore:
       - "docs/**"
       - "**/*.md"
@@ -153,6 +153,13 @@ jobs:
           sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
           sudo sealos images
           bash docker/patch/manifest-cluster-images.sh
+        env:
+          OWNER: ${{ github.repository_owner }}
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=dev
+          echo tag_name=${GIT_COMMIT_SHORT_SHA} >> $GITHUB_OUTPUT
       - name: Build sealos image
         uses: peter-evans/create-or-update-comment@v1
         if: github.repository == ${{ env.DEFAULT_REPO }}
@@ -160,5 +167,5 @@ jobs:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
-            /imagesync ghcr.io/labring/sealos-merge-patch:$GIT_COMMIT_SHORT_SHA
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-patch:${{ steps.prepare.outputs.tag_name }}
           token: "${{ secrets.GH_PAT }}"

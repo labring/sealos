@@ -153,12 +153,13 @@ jobs:
           push: true
           build-args: Bin=lvscare
           platforms: linux/${{ matrix.arch }}
-          tags: localhost:5000/labring/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
+          tags: localhost:5000/${{ github.repository_owner }}/lvscare:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}
 
       - name: Build and Save Cluster Images
         run: docker/patch/save-cluster-images.sh
         env:
           ARCH: ${{ matrix.arch }}
+          OWNER: ${{ github.repository_owner }}
 
       - name: Upload Cluster Images
         uses: actions/upload-artifact@v3

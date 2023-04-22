@@ -1,10 +1,10 @@
 #!/bin/bash
 
-IMAGE=localhost:5000/labring/lvscare:$GIT_COMMIT_SHORT_SHA-$ARCH
-PATCH=ghcr.io/labring/sealos-merge-patch:$GIT_COMMIT_SHORT_SHA-$ARCH
+IMAGE=localhost:5000/${OWNER}/lvscare:$GIT_COMMIT_SHORT_SHA-$ARCH
+PATCH=ghcr.io/${OWNER}/sealos-patch:$GIT_COMMIT_SHORT_SHA-$ARCH
 PATCH_DIR=docker/patch
 SEALOS=sudo sealos
-SEALOS_VERSION=4.0.0
+SEALOS_VERSION=4.1.7
 
 # download sealos
 wget https://github.com/labring/sealos/releases/download/v${SEALOS_VERSION}/sealos_${SEALOS_VERSION}_linux_amd64.tar.gz
