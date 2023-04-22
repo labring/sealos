@@ -1,0 +1,164 @@
+name: CI Patch Images Package
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_REPO: "labring/sealos"
+
+on:
+  workflow_dispatch:
+    inputs:
+      push_mage:
+        description: 'Push images'
+        required: false
+        type: boolean
+  push:
+    branches: [ "ci_patch","main" ]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
+      - "frontend/**"
+  pull_request:
+    branches: [ "*" ]
+    paths-ignore:
+      - "docs/**"
+      - "CHANGELOG/**"
+      - "**/*.md"
+      - "**/*.yaml"
+      - "CONTRIBUTORS"
+      - "CHANGELOG/**"
+      - "controllers/**"
+      - "service/**"
+      - "webhooks/**"
+      - "frontend/**"
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64,arm64
+
+  container-sealos:
+    needs: [ call_ci_workflow ]
+    runs-on: ubuntu-20.04
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - # Add support for more platforms with QEMU (optional)
+        # https://github.com/docker/setup-qemu-action
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver-opts: network=host
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GH_PAT }}
+
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: docker/sealos/bin/sealos-amd64
+
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-arm64
+          path: docker/sealos/bin/sealos-arm64
+
+      - name: build (and publish) main sealos image
+        env:
+          # fork friendly ^^
+          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos
+        working-directory: docker/sealos
+        run: |
+          docker buildx build \
+          --platform linux/amd64,linux/arm64 \
+          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
+          --label "org.opencontainers.image.description=sealos  container image" \
+          --label "org.opencontainers.image.licenses=MIT" \
+          --push \
+          -t ${DOCKER_REPO}:${{ env.GIT_COMMIT_SHORT_SHA }} \
+          -f Dockerfile.main \
+          .
+
+  build-on-cluster-image:
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    needs:
+      - container-sealos
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Build sealos image
+        uses: peter-evans/create-or-update-comment@v1
+        if: github.repository == ${{ env.DEFAULT_REPO }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagebuild_apps sealos ${{ env.GIT_COMMIT_SHORT_SHA }}
+          token: "${{ secrets.GH_PAT }}"
+  build-on-cluster-patch-image:
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    needs:
+      - call_ci_workflow
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          sealosVersion: "4.1.7"
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Download amd64 patch image tar
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-amd64.tar
+          path: /tmp/sealos/images/
+      - name: Download arm64 patch image tar
+        uses: actions/download-artifact@v3
+        with:
+          name: patch-image-arm64.tar
+          path: /tmp/sealos/images/
+
+      - name: Manifest Cluster Images
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+          sudo sealos load -i /tmp/sealos/images/patch-arm64.tar
+          sudo sealos load -i /tmp/sealos/images/patch-amd64.tar
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh
+      - name: Build sealos image
+        uses: peter-evans/create-or-update-comment@v1
+        if: github.repository == ${{ env.DEFAULT_REPO }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagesync ghcr.io/labring/sealos-merge-patch:$GIT_COMMIT_SHORT_SHA
+          token: "${{ secrets.GH_PAT }}"
