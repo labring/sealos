@@ -24,6 +24,7 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
+  DEFAULT_REPO: "labring/sealos"
 
 jobs:
   resolve-modules:
@@ -149,21 +150,3 @@ jobs:
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
           .
-#  build-on-cluster-image:
-#    needs:
-#      - image-build
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        module: [ whitelist ]
-#    permissions:
-#      issues: write
-#    steps:
-#      - name: Build ${{ matrix.module }}-webhook image
-#        uses: peter-evans/create-or-update-comment@v1
-#        with:
-#          issue-number: 140
-#          repository: labring/cluster-image
-#          body: |
-#            /imagebuild_apps sealos-${{ matrix.module }}-webhook dev
-#          token: "${{ secrets.GH_TOKEN }}"
