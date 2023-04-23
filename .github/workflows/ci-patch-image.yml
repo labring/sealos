@@ -3,7 +3,7 @@ name: CI Patch Images Package
 env:
   # Common versions
   GO_VERSION: "1.20"
-  DEFAULT_REPO: "labring/sealos"
+  DEFAULT_OWNER: "labring"
 
 on:
   workflow_dispatch:
@@ -111,7 +111,7 @@ jobs:
         uses: rlespinasse/git-commit-data-action@v1
       - name: Build sealos image
         uses: peter-evans/create-or-update-comment@v1
-        if: github.repository == ${{ env.DEFAULT_REPO }}
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
           issue-number: 251
           repository: labring-actions/cluster-image
@@ -162,7 +162,7 @@ jobs:
           echo tag_name=${GIT_COMMIT_SHORT_SHA} >> $GITHUB_OUTPUT
       - name: Build sealos image
         uses: peter-evans/create-or-update-comment@v1
-        if: github.repository == ${{ env.DEFAULT_REPO }}
+        if: $ {{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
           issue-number: 251
           repository: labring-actions/cluster-image

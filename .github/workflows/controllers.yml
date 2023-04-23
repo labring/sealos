@@ -25,7 +25,7 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
-  DEFAULT_REPO: "labring/sealos"
+  DEFAULT_OWNER: "labring"
 
 jobs:
   resolve-modules:
@@ -163,7 +163,7 @@ jobs:
     steps:
       - name: Build ${{ matrix.module }}-controller image
         uses: peter-evans/create-or-update-comment@v1
-        if: github.repository == ${{ env.DEFAULT_REPO }}
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
           issue-number: 140
           repository: labring-actions/cluster-image
