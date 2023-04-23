@@ -150,23 +150,23 @@ jobs:
           -f Dockerfile \
           .
 
-  build-on-cluster-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-    needs:
-      - image-build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        module: [ cluster, infra, metering, user, terminal, imagehub, account, app]
-    permissions:
-      issues: write
-    steps:
-      - name: Build ${{ matrix.module }}-controller image
-        uses: peter-evans/create-or-update-comment@v1
-        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-        with:
-          issue-number: 140
-          repository: labring-actions/cluster-image
-          body: |
-            /imagebuild_apps sealos-${{ matrix.module }}-controller dev
-          token: "${{ secrets.GH_PAT }}"
+#  build-on-cluster-image:
+#    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+#    needs:
+#      - image-build
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        module: [ cluster, infra, metering, user, terminal, imagehub, account, app]
+#    permissions:
+#      issues: write
+#    steps:
+#      - name: Build ${{ matrix.module }}-controller image
+#        uses: peter-evans/create-or-update-comment@v1
+#        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+#        with:
+#          issue-number: 140
+#          repository: labring-actions/cluster-image
+#          body: |
+#            /imagebuild_apps sealos-${{ matrix.module }}-controller dev
+#          token: "${{ secrets.GH_PAT }}"
