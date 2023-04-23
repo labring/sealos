@@ -24,7 +24,7 @@ on:
 env:
   # Common versions
   GO_VERSION: "1.20"
-  DEFAULT_REPO: "labring/sealos"
+  DEFAULT_OWNER: "labring"
 
 jobs:
   resolve-modules:
