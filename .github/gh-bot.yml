@@ -1,7 +1,7 @@
 version: v1
 debug: true
 bot:
-  prefix: /sealos
+  prefix: /
   spe: _
   allowOps:
     - sealos-ci-robot
@@ -27,7 +27,6 @@ changelog:
 release:
   retry: 15s
   action: Release
-  changelog: true
   allowOps:
     - cuisongliu
 

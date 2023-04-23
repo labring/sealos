@@ -5,13 +5,13 @@ on:
   push:
     branches: ["main"]
     paths:
-      - ".github/workflows/**"
+      - ".github/workflows/test_inspect.yml"
       - "cmd/**"
       - "pkg/**"
   pull_request:
     branches: ["*"]
     paths:
-      - ".github/workflows/**"
+      - ".github/workflows/test_inspect.yml"
       - "cmd/**"
       - "pkg/**"
 
