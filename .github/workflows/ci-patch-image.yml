@@ -162,7 +162,7 @@ jobs:
           echo tag_name=${GIT_COMMIT_SHORT_SHA} >> $GITHUB_OUTPUT
       - name: Build sealos image
         uses: peter-evans/create-or-update-comment@v1
-        if: $ {{ github.repository_owner == env.DEFAULT_OWNER }}
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
         with:
           issue-number: 251
           repository: labring-actions/cluster-image
