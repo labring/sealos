@@ -33,7 +33,11 @@ function Terminal({ url }: { url: string }) {
   useEffect(() => {
     try {
       window.addEventListener('message', (e) => {
-        if (e.data.type === 'new terminal' && e.data.command) {
+        if (
+          e.origin === process.env.NEXT_PUBLIC_SITE &&
+          e.data.type === 'new terminal' &&
+          e.data.command
+        ) {
           newTerminal(e.data.command)
         }
       })
