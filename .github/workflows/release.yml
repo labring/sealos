@@ -3,6 +3,7 @@ name: Release
 env:
   # Common versions
   GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
 
 on:
   workflow_dispatch:
@@ -25,11 +26,9 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Prepare
-        id: prepare
-        run: |
-          TAG=${GITHUB_REF#refs/tags/}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+      - name: Fetch Current version
+        id: get-current-tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
 
       - name: Install Dependencies
         run: |
@@ -52,3 +51,13 @@ jobs:
           USERNAME: ${{ github.repository_owner }}
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
+
+      - name: Build sealos image
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}
+          token: "${{ secrets.GH_PAT }}"
