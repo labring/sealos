@@ -1,15 +1,15 @@
-name: Bytebase-Frontend
+name: Terminal-Frontend
 
 on:
   push:
     branches: ['main']
     paths:
-      - 'frontend/providers/bytebase/**'
-      - '.github/workflows/bytebase-frontend.yml'
+      - 'frontend/providers/terminal/**'
+      - '.github/workflows/terminal-frontend.yml'
       - '!**/*.md'
 
 jobs:
-  bytebase-frontend:
+  terminal-frontend:
     runs-on: ubuntu-20.04
     permissions:
       packages: write
@@ -23,7 +23,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/bytebase-frontend
+            ghcr.io/${{ github.repository_owner }}/terminal-frontend
           tags: |
             type=raw,value=latest,enable=true
             type=sha,enable=true,format=short
@@ -44,8 +44,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
-          context: ./frontend/providers/bytebase
-          file: ./frontend/providers/bytebase/Dockerfile
+          context: ./frontend/providers/terminal
+          file: ./frontend/providers/terminal/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
