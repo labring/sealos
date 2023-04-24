@@ -26,6 +26,7 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
+  SEALOS_VERSION: "v4.2.0"
 
 jobs:
   resolve-modules:
@@ -149,23 +150,40 @@ jobs:
           -f Dockerfile \
           .
 
-#  build-on-cluster-image:
-#    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-#    needs:
-#      - image-build
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        module: [ auth ]
-#    permissions:
-#      issues: write
-#    steps:
-#      - name: Build ${{ matrix.module }}-service image
-#        uses: peter-evans/create-or-update-comment@v1
-#        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-#        with:
-#          issue-number: 140
-#          repository: labring-actions/cluster-image
-#          body: |
-#            /imagebuild_apps sealos-${{ matrix.module }}-service dev
-#          token: "${{ secrets.GH_PAT }}"
+  build-cluster-image:
+    needs:
+      - image-build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ auth ]
+    steps:
+      - name: Install sealos
+        uses: labring/sealos-action@v0.0.7
+        with:
+          sealosVersion: "4.1.7"
+
+      - name: Sealos login to ghcr.io
+        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+
+      - name: Build ${{ matrix.module }}-service cluster image
+        if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push') || (inputs.push_mage == true)}}
+        working-directory: service/${{ matrix.module }}/deploy
+        run: |
+          IMAGE_NAME=ghcr.io/${github.repository_owner}/sealos-${{ matrix.module }}-service:dev
+          sudo sealos build -t IMAGE_NAME-amd64 --platfrom linux/amd64 -f Kubefile
+          sudo sealos build -t IMAGE_NAME-amd64 --platfrom linux/arm -f Kubefile
+
+      - name: Push ${{ matrix.module }}-service cluster image
+        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        working-directory: service/${{ matrix.module }}/deploy
+        run: |
+          IMAGE_NAME=ghcr.io/${github.repository_owner}/sealos-${{ matrix.module }}-service:dev
+          sudo buildah images
+          sudo buildah manifest create ${IMAGE_NAME}
+          sudo buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
+          sudo buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
+          sudo buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
+          sudo buildah images

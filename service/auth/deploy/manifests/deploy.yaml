@@ -13,44 +13,6 @@
 # limitations under the License.
 
 apiVersion: v1
-kind: Secret
-metadata:
-  name: mysql-root-credentials
-  namespace: sealos
-type: Opaque
-data:
-  # base64 encoded string
-  password: MTIzNDU2Cg==
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: casdoor-config
-  namespace: sealos
-data:
-  app.conf: |-
-    appname = casdoor
-    httpport = 8000
-    runmode = dev
-    SessionOn = true
-    copyrequestbody = true
-    driverName = mysql
-    dataSourceName = ${DATA_SOURCE_NAME}
-    dbName = casdoor
-    tableNamePrefix =
-    showSql = false
-    redisEndpoint =
-    defaultStorageProvider =
-    isCloudIntranet = false
-    authState = "casdoor"
-    socks5Proxy = "127.0.0.1:10808"
-    verificationCodeTimeout = 10
-    initScore = 2000
-    logPostOnly = true
-    origin =
-    staticBaseUrl = ""
----
-apiVersion: v1
 kind: Service
 metadata:
   name: casdoor
@@ -252,7 +214,7 @@ metadata:
   labels:
     app: auth-service
   name: auth-service-manager
-  namespace: auth-service-system
+  namespace: sealos
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -267,7 +229,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: auth-service-manager
-    namespace: auth-service-system
+    namespace: sealos
 ---
 apiVersion: v1
 kind: Service
@@ -276,7 +238,7 @@ metadata:
     app: auth-service
     control-plane: service-manager
   name: auth-service-manager
-  namespace: auth-service-system
+  namespace: sealos
 spec:
   ports:
     - name: http
@@ -294,7 +256,7 @@ metadata:
     app: auth-service
     control-plane: service-manager
   name: auth-service-manager
-  namespace: auth-service-system
+  namespace: sealos
 spec:
   replicas: 1
   selector:

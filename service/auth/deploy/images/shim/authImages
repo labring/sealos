@@ -1,0 +1,4 @@
+bitnami/mysql:8.0.31
+casbin/casdoor:v1.302.0
+labring/docker-casbin:main
+ghcr.io/labring/sealos-auth-service:dev
