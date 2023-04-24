@@ -23,7 +23,6 @@ type Terminal = {
 function Terminal({ url }: { url: string }) {
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [tabId, setTabId] = useState(nanoid(6))
-
   const [tabContents, setTabContents] = useState<Terminal[]>([
     {
       id: tabId,
@@ -50,7 +49,7 @@ function Terminal({ url }: { url: string }) {
     try {
       if (item.command) {
         setTimeout(() => {
-          e.target.contentWindow.postMessage({ command: item.command }, '*')
+          e.target.contentWindow.postMessage({ command: item.command }, url)
         }, 2000)
       }
     } catch (error) {
