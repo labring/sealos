@@ -26,7 +26,6 @@ env:
   # Common versions
   GO_VERSION: "1.20"
   DEFAULT_OWNER: "labring"
-  SEALOS_VERSION: "v4.2.0"
 
 jobs:
   resolve-modules:
@@ -88,6 +87,7 @@ jobs:
           mv bin/manager bin/service-${{ matrix.module }}-amd64
           chmod +x bin/service-${{ matrix.module }}-amd64
 
+
       - name: Build ${{ matrix.module }} arm64
         working-directory: service/${{ matrix.module }}
         run: |
@@ -95,11 +95,15 @@ jobs:
           mv bin/manager bin/service-${{ matrix.module }}-arm64
           chmod +x bin/service-${{ matrix.module }}-arm64
 
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
       - name: Prepare
         id: prepare
         run: |
-          TAG=dev
+          TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -151,6 +155,7 @@ jobs:
           .
 
   build-cluster-image:
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - image-build
     runs-on: ubuntu-latest
@@ -158,32 +163,61 @@ jobs:
       matrix:
         module: [ auth ]
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GIT_COMMIT_SHORT_SHA}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service:${TAG} >> $GITHUB_OUTPUT
+          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${TAG} >> $GITHUB_OUTPUT
+
       - name: Install sealos
         uses: labring/sealos-action@v0.0.7
         with:
           sealosVersion: "4.1.7"
 
+      - name: Mutate image tag in deploy files
+        working-directory: service/${{ matrix.module }}/deploy
+        run: |
+          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.docker_repo }}:dev
+          NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.docker_repo }}:${{ steps.prepare.outputs.tag_name }}
+          sed -i 's;$OLD_DOCKER_IMAGE_NAME;$NEW_DOCKER_IMAGE_NAME;' images/shim/*
+          sed -i 's;$OLD_DOCKER_IMAGE_NAME;$NEW_DOCKER_IMAGE_NAME;' manifests/*
+
+      - name: Build ${{ matrix.module }}-service cluster image
+        working-directory: service/${{ matrix.module }}/deploy
+        run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
+
       - name: Sealos login to ghcr.io
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        # if push to master, then login to ghcr.io
         run: |
           sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
 
-      - name: Build ${{ matrix.module }}-service cluster image
-        if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push') || (inputs.push_mage == true)}}
-        working-directory: service/${{ matrix.module }}/deploy
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
         run: |
-          IMAGE_NAME=ghcr.io/${github.repository_owner}/sealos-${{ matrix.module }}-service:dev
-          sudo sealos build -t IMAGE_NAME-amd64 --platfrom linux/amd64 -f Kubefile
-          sudo sealos build -t IMAGE_NAME-amd64 --platfrom linux/arm -f Kubefile
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ matrix.module }}-service"
+        env:
+          OWNER: ${{ github.repository_owner }}
 
-      - name: Push ${{ matrix.module }}-service cluster image
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-        working-directory: service/${{ matrix.module }}/deploy
-        run: |
-          IMAGE_NAME=ghcr.io/${github.repository_owner}/sealos-${{ matrix.module }}-service:dev
-          sudo buildah images
-          sudo buildah manifest create ${IMAGE_NAME}
-          sudo buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-amd64"
-          sudo buildah manifest add "$IMAGE_NAME" docker://"$IMAGE_NAME-arm64"
-          sudo buildah manifest push --all "$IMAGE_NAME" docker://"$IMAGE_NAME" && echo "$IMAGE_NAME push success"
-          sudo buildah images
+      - name: Sync Images
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${GIT_COMMIT_SHORT_SHA}
+          token: "${{ secrets.GH_PAT }}"
