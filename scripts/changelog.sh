@@ -22,7 +22,7 @@ fi
 if [ -z "$TAG" ]; then
    TAG=$(git describe --abbrev=0 --tags)
 fi
-
+set -ex
 # Fetch the release data using the GitHub API
 release_data=$(curl -s https://api.github.com/repos/"${REPO}"/releases/tags/"${TAG}")
 

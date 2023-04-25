@@ -26,10 +26,6 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Fetch Current version
-        id: get-current-tag
-        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
-
       - name: Install Dependencies
         run: |
           sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu \
@@ -52,12 +48,52 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
 
+  sync:
+    runs-on: ubuntu-20.04
+    needs:
+      - goreleaser
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch Current version
+        id: get-current-tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
       - name: Build sealos image
-        uses: peter-evans/create-or-update-comment@v1
         if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
             /imagebuild_apps sealos ${{steps.get-current-tag.outputs.tag }}
           token: "${{ secrets.GH_PAT }}"
+  changelog:
+    runs-on: ubuntu-20.04
+    needs:
+      - goreleaser
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Fetch Current version
+        id: get-current-tag
+        uses: actions-ecosystem/action-get-latest-tag@v1.6.0
+      - run: git fetch --prune --prune-tags
+      - run: git tag -l 'v*'
+      - name: Generator changelog
+        run: ./scripts/changelog.sh ${{ github.repository }}
+      - uses: peter-evans/create-pull-request@v5
+        with:
+          title: 'docs: Automated Changelog Update for ${{steps.get-current-tag.outputs.tag }}'
+          commit-message: |
+            🤖 add release changelog using rebot.<br/>
+            copilot:all
+          branch: changelog-${{steps.get-current-tag.outputs.tag }}
+          base: main
+          signoff: true
+          delete-branch: true
+          token: ${{ secrets.GH_RELEASE_PAT }}
+          reviewers: cuisongliu
