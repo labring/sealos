@@ -15,6 +15,7 @@
 package confirm
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 
@@ -39,6 +40,37 @@ func Confirm(prompt, cancel string) (bool, error) {
 			fmt.Println(cancel)
 			return false, nil
 		}
+	}
+}
+
+// PromptuiPrompt is send the prompt and get result
+func PromptuiPrompt(prompt, cancel string) (bool, error) {
+	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
+	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
+	promptLabel := fmt.Sprintf("%s Yes [y/yes], No [n/no]", prompt)
+
+	validate := func(input string) error {
+		if !yesRx.MatchString(input) && !noRx.MatchString(input) {
+			return errors.New("invalid input, please enter 'y', 'yes', 'n', or 'no'")
+		}
+		return nil
+	}
+
+	promptObj := promptui.Prompt{
+		Label:    promptLabel,
+		Validate: validate,
+	}
+
+	result, err := promptObj.Run()
+	if err != nil {
+		return false, err
+	}
+
+	if yesRx.MatchString(result) {
+		return true, nil
+	} else {
+		fmt.Println(cancel)
+		return false, nil
 	}
 }
 
