@@ -26,27 +26,6 @@ import (
 func Confirm(prompt, cancel string) (bool, error) {
 	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
 	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
-	var input string
-	for {
-		fmt.Printf("%s Yes [y/yes], No [n/no] : ", prompt)
-		_, err := fmt.Scanln(&input)
-		if err != nil {
-			return false, err
-		}
-		if yesRx.MatchString(input) {
-			return true, nil
-		}
-		if noRx.MatchString(input) {
-			fmt.Println(cancel)
-			return false, nil
-		}
-	}
-}
-
-// PromptuiPrompt is send the prompt and get result
-func PromptuiPrompt(prompt, cancel string) (bool, error) {
-	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
-	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
 	promptLabel := fmt.Sprintf("%s Yes [y/yes], No [n/no]", prompt)
 
 	validate := func(input string) error {
@@ -72,30 +51,4 @@ func PromptuiPrompt(prompt, cancel string) (bool, error) {
 		fmt.Println(cancel)
 		return false, nil
 	}
-}
-
-// ByPromptui is send the prompt and get result
-func ByPromptui(msg, cancel string) bool {
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-	//validate := func(input string) error {
-	//	_, err := strconv.ParseFloat(input, 64)
-	//	return err
-	//}
-
-	prompt := promptui.Prompt{
-		Label:     msg,
-		IsConfirm: true,
-		Templates: templates,
-	}
-	_, err := prompt.Run()
-	if err != nil {
-		fmt.Println(cancel)
-		return false
-	}
-	return true
 }
