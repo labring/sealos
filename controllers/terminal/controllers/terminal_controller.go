@@ -156,7 +156,7 @@ func (r *TerminalReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 func (r *TerminalReconciler) syncIngress(ctx context.Context, terminal *terminalv1.Terminal, hostname string) error {
 	var err error
-	host := hostname + r.terminalDomain
+	host := hostname + "." + r.terminalDomain
 	switch terminal.Spec.IngressType {
 	case terminalv1.Nginx:
 		err = r.syncNginxIngress(ctx, terminal, host)
@@ -466,7 +466,7 @@ func getSecretNamespace() string {
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerminalReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.recorder = mgr.GetEventRecorderFor("sealos-terminal-controller")
-	r.terminalDomain = "." + getDomain()
+	r.terminalDomain = getDomain()
 	r.secretName = getSecretName()
 	r.secretNamespace = getSecretNamespace()
 	r.Config = mgr.GetConfig()
