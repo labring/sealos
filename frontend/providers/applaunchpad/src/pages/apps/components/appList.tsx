@@ -215,26 +215,27 @@ const AppList = ({
                         </>
                       ),
                       onClick: onOpenPause(() => handlePauseApp(item.name))
+                    },
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'change'} w={'14px'} />
+                          <Box ml={2}>变更</Box>
+                        </>
+                      ),
+                      onClick: () => router.push(`/app/edit?name=${item.name}`)
+                    },
+                    {
+                      child: (
+                        <>
+                          <MyIcon name={'restart'} />
+                          <Box ml={2}>重启</Box>
+                        </>
+                      ),
+                      onClick: () => handleRestartApp(item.name)
                     }
                   ]),
-              {
-                child: (
-                  <>
-                    <MyIcon name={'change'} w={'14px'} />
-                    <Box ml={2}>变更</Box>
-                  </>
-                ),
-                onClick: () => router.push(`/app/edit?name=${item.name}`)
-              },
-              {
-                child: (
-                  <>
-                    <MyIcon name={'restart'} />
-                    <Box ml={2}>重启</Box>
-                  </>
-                ),
-                onClick: () => handleRestartApp(item.name)
-              },
+
               {
                 child: (
                   <>
@@ -252,28 +253,22 @@ const AppList = ({
   ];
 
   return (
-    <Box backgroundColor={'#F7F8FA'} p={34} minH="100vh">
-      <Flex mb={5} alignItems={'flex-start'} justifyContent={'space-between'}>
-        <Flex alignItems={'center'}>
-          <Box
-            mr={2}
-            p={2}
-            backgroundColor={'#FEFEFE'}
-            border={theme.borders.sm}
-            borderRadius={'sm'}
-          >
-            <MyIcon name="logo" w={'24px'} h={'24px'} />
-          </Box>
-          <Box fontSize={'lg'} color={'black'}>
-            应用列表
-          </Box>
-          <Box ml={3} color={'gray.500'}>
-            ( {apps.length} )
-          </Box>
-        </Flex>
+    <Box backgroundColor={'#F7F8FA'} px={'34px'} minH="100vh">
+      <Flex h={'88px'} alignItems={'center'}>
+        <Box mr={4} p={2} backgroundColor={'#FEFEFE'} border={theme.borders.sm} borderRadius={'sm'}>
+          <MyIcon name="logo" w={'24px'} h={'24px'} />
+        </Box>
+        <Box fontSize={'2xl'} color={'black'}>
+          应用列表
+        </Box>
+        <Box ml={3} color={'gray.500'}>
+          ( {apps.length} )
+        </Box>
+        <Box flex={1}></Box>
 
         <Button
           flex={'0 0 155px'}
+          h={'40px'}
           colorScheme={'primary'}
           leftIcon={<MyIcon name={'plus'} w={'12px'} />}
           variant={'primary'}

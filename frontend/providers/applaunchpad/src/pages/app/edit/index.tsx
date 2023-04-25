@@ -216,7 +216,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
           applyCb={() => formHook.handleSubmit(openConfirm(submitSuccess), submitError)()}
         />
 
-        <Box flex={'1 0 0'} h={0} w={'100%'} py={4}>
+        <Box flex={'1 0 0'} h={0} w={'100%'} pb={4}>
           {tabType === 'form' ? (
             <Form
               formHook={formHook}

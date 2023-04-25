@@ -178,13 +178,13 @@ export const theme = extendTheme({
     '2xl': '2100px'
   },
   fontSizes: {
+    xs: '10px',
     sm: '12px',
-    base: '12px',
     md: '14px',
     lg: '16px',
     xl: '16px',
     '2xl': '18px',
-    '3xl': '22px'
+    '3xl': '20px'
   },
   colors: {
     divider: {

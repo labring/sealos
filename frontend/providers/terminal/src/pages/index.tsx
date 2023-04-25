@@ -1,30 +1,30 @@
-import Terminal from '@/components/terminal'
-import request from '@/service/request'
-import useSessionStore from '@/stores/session'
-import { useQuery } from '@tanstack/react-query'
-import clsx from 'clsx'
-import { useEffect, useState } from 'react'
-import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app'
-import styles from './index.module.scss'
+import Terminal from '@/components/terminal';
+import request from '@/service/request';
+import useSessionStore from '@/stores/session';
+import { useQuery } from '@tanstack/react-query';
+import clsx from 'clsx';
+import { useEffect, useState } from 'react';
+import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
+import styles from './index.module.scss';
 
 export default function Index() {
-  const { setSession, isUserLogin } = useSessionStore()
+  const { setSession, isUserLogin } = useSessionStore();
 
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState('');
 
   useEffect(() => {
-    return createSealosApp()
-  }, [])
+    return createSealosApp();
+  }, []);
 
   useEffect(() => {
     const initApp = async () => {
       try {
-        const result = await sealosApp.getUserInfo()
-        setSession(result)
+        const result = await sealosApp.getUserInfo();
+        setSession(result);
       } catch (error) {}
-    }
-    initApp()
-  }, [setSession])
+    };
+    initApp();
+  }, [setSession]);
 
   const { data, isLoading, isError, refetch } = useQuery(
     ['applyApp'],
@@ -32,50 +32,47 @@ export default function Index() {
     {
       onSuccess: (res) => {
         if (res?.data?.code === 200 && res?.data?.data) {
-          const url = res?.data?.data
+          const url = res?.data?.data;
           fetch(url, { mode: 'no-cors' })
             .then(() => {
-              setUrl(url)
+              setUrl(url);
               // window.location.replace(url)
             })
-            .catch((err) => console.log(err))
+            .catch((err) => console.log(err));
         }
         if (res?.data?.code === 201) {
-          refetch()
+          refetch();
         }
       },
       onError: (err) => {
-        console.log(err, 'err')
+        console.log(err, 'err');
       },
       retry: 6,
-      retryDelay: 1500,
+      retryDelay: 1500
     }
-  )
+  );
 
   if (isLoading) {
-    return <div className={clsx(styles.loading, styles.err)}>loading</div>
+    return <div className={clsx(styles.loading, styles.err)}>loading</div>;
   }
 
   if (!isUserLogin() && process.env.NODE_ENV === 'production') {
-    const tempUrl = process.env.NEXT_PUBLIC_SITE
+    const tempUrl = process.env.NEXT_PUBLIC_SITE;
 
     return (
       <div className={styles.err}>
         please go to &nbsp;<a href={tempUrl}>{tempUrl}</a>
       </div>
-    )
+    );
   }
 
   if (isError) {
     return (
       <div className={styles.err}>
-        There is an error on the page, try to refresh or contact the
-        administrator
+        There is an error on the page, try to refresh or contact the administrator
       </div>
-    )
+    );
   }
 
-  return (
-    <div className={styles.container}>{!!url && <Terminal url={url} />}</div>
-  )
+  return <div className={styles.container}>{!!url && <Terminal url={url} />}</div>;
 }

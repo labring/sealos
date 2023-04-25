@@ -101,9 +101,9 @@ const Header = ({
   }, [appName, refetch, toast]);
 
   return (
-    <Flex h={'80px'} alignItems={'center'}>
+    <Flex h={'86px'} alignItems={'center'}>
       <MyIcon name="arrowLeft" cursor={'pointer'} onClick={router.back} />
-      <Box ml={8} mr={3} fontSize={'xl'} fontWeight={'bold'}>
+      <Box ml={8} mr={3} fontSize={'3xl'} fontWeight={'bold'}>
         {appName}
       </Box>
       <AppStatusTag status={appStatus} isPause={isPause} />
@@ -111,6 +111,8 @@ const Header = ({
         <Box mx={4}>
           <Button
             flex={1}
+            h={'40px'}
+            borderColor={'myGray.200'}
             leftIcon={<MyIcon name="detail" w={'14px'} h={'14px'} transform={'translateY(3px)'} />}
             variant={'base'}
             bg={'white'}
@@ -126,6 +128,8 @@ const Header = ({
       {isPause ? (
         <Button
           mr={5}
+          h={'40px'}
+          borderColor={'myGray.200'}
           leftIcon={<MyIcon name="continue" w={'14px'} />}
           isLoading={loading}
           variant={'base'}
@@ -137,6 +141,8 @@ const Header = ({
       ) : (
         <Button
           mr={5}
+          h={'40px'}
+          borderColor={'myGray.200'}
           leftIcon={<MyIcon name="pause" w={'14px'} />}
           isLoading={loading}
           variant={'base'}
@@ -149,6 +155,8 @@ const Header = ({
       {!isPause && (
         <Button
           mr={5}
+          h={'40px'}
+          borderColor={'myGray.200'}
           leftIcon={<MyIcon name={'change'} w={'14px'} />}
           isLoading={loading}
           variant={'base'}
@@ -164,6 +172,8 @@ const Header = ({
       {!isPause && (
         <Button
           mr={5}
+          h={'40px'}
+          borderColor={'myGray.200'}
           variant={'base'}
           bg={'white'}
           leftIcon={<MyIcon name="restart" w={'14px'} h={'14px'} />}
@@ -174,6 +184,8 @@ const Header = ({
         </Button>
       )}
       <Button
+        h={'40px'}
+        borderColor={'myGray.200'}
         leftIcon={<MyIcon name="delete" w={'14px'} h={'14px'} />}
         variant={'base'}
         bg={'white'}

@@ -1,0 +1,8 @@
+{
+  "version": "v1",
+  "packages": {
+    "sealos-desktop-sdk": {
+      "signature": "53a0ee47cea79d8a540d34b90b981748"
+    }
+  }
+}

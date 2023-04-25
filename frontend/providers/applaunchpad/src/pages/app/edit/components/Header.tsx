@@ -29,15 +29,16 @@ const Header = ({
   }, [yamlList]);
 
   return (
-    <Flex w={'100%'} px={10} py={4} alignItems={'center'}>
+    <Flex w={'100%'} px={10} h={'86px'} alignItems={'center'}>
       <Flex alignItems={'center'} cursor={'pointer'} onClick={() => router.back()}>
         <MyIcon name="arrowLeft" />
-        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'xl'}>
+        <Box ml={6} fontWeight={'bold'} color={'black'} fontSize={'3xl'}>
           {title}
         </Box>
       </Flex>
       <Box flex={1}></Box>
       <Button
+        h={'40px'}
         flex={'0 0 140px'}
         mr={5}
         bg={'myWhite.600'}
@@ -47,7 +48,7 @@ const Header = ({
       >
         导出 Yaml
       </Button>
-      <Button flex={'0 0 140px'} variant={'primary'} onClick={applyCb}>
+      <Button flex={'0 0 140px'} h={'40px'} variant={'primary'} onClick={applyCb}>
         {applyBtnText}
       </Button>
     </Flex>
