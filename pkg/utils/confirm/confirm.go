@@ -47,8 +47,7 @@ func Confirm(prompt, cancel string) (bool, error) {
 
 	if yesRx.MatchString(result) {
 		return true, nil
-	} else {
-		fmt.Println(cancel)
-		return false, nil
 	}
+	fmt.Println(cancel)
+	return false, nil
 }
