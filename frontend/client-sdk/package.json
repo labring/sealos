@@ -1,12 +1,12 @@
 {
   "name": "sealos-desktop-sdk",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "sealos desktop sdk",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup --config",
-    "async": "npm run build && yalc push --replace",
-    "dev": "nodemon --ignore build/ --ignore node_modules/ --watch src/ -C -e ts --debug -x 'npm run async'"
+    "async": "yalc push --replace",
+    "dev": "nodemon --ignore build/ --ignore node_modules/ --watch src/ -C -e ts --debug -x 'npm run build && cd dist && npm run async'"
   },
   "main": "index.js",
   "types": "index.d.ts",

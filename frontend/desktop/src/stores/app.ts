@@ -3,6 +3,7 @@ import request from 'services/request';
 import create from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { formatUrl } from 'utils/format';
 
 const storageOrderKey = 'app-orders';
 
@@ -77,7 +78,7 @@ type TOSState = {
   currentApp?: TApp;
 
   // init desktop
-  init(kubeconfig: string): void;
+  init(): Promise<void>;
 
   // get all apps of the app store
   getAllApps(): void;
@@ -86,7 +87,7 @@ type TOSState = {
   closeApp(name: string): void;
 
   // open the app
-  openApp(app: TApp): void;
+  openApp(app: TApp, query?: Record<string, string>): void;
 
   // switch the app
   switchApp(app: TApp, type?: 'clickMask'): void;
@@ -122,7 +123,7 @@ const useAppStore = create<TOSState>()(
         isHideStartMenu: true,
         allApps: [],
 
-        init: async (kubeconfig: string) => {
+        init: async () => {
           const res = await request('/api/desktop/getInstalledApps');
 
           set((state) => {
@@ -251,9 +252,15 @@ const useAppStore = create<TOSState>()(
           });
         },
 
-        openApp: async (app: TApp) => {
+        openApp: async (app: TApp, query: Record<string, string> = {}) => {
           const zIndex = (get().maxZIndex || 0) + 1;
           const _app: TApp = JSON.parse(JSON.stringify(app));
+
+          // add query to url
+          if (_app.data?.url) {
+            _app.data.url = formatUrl(_app.data.url, query);
+          }
+
           if (_app.type === APPTYPE.LINK) {
             window.open(_app.data.url, '_blank');
             return;
