@@ -176,8 +176,8 @@ jobs:
         run: |
           TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service:${TAG} >> $GITHUB_OUTPUT
-          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${TAG} >> $GITHUB_OUTPUT
+          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
+          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - name: Install sealos
         uses: labring/sealos-action@v0.0.7
