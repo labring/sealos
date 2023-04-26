@@ -50,7 +50,7 @@ type ApiResp = {
 const isApiResp = (x: any): x is ApiResp =>
   typeof x.code === 'number' && typeof x.message === 'string';
 
-console.log(axios, '=====')
+console.log(axios, '=====');
 const request = axios.create({
   baseURL: '/',
   withCredentials: true,
@@ -69,7 +69,9 @@ request.interceptors.request.use(
     let _headers: AxiosRequestHeaders = {};
 
     //获取token，并将其添加至请求头中
-    const session: Session = localStorage.getItem('session') ? JSON.parse(localStorage.getItem('session') as string) : undefined
+    const session: Session = localStorage.getItem('session')
+      ? JSON.parse(localStorage.getItem('session') as string)
+      : undefined;
     if (session?.token?.access_token) {
       const token = session.token.access_token;
       if (token) {
@@ -128,6 +130,4 @@ request.interceptors.response.use(
   }
 );
 
-export {
-  request
-}
+export { request };
