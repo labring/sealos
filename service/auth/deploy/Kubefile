@@ -8,6 +8,6 @@ ENV cloudDomain="cloud.example.com"
 ENV wildcardCertSecretName="wildcard-cert"
 ENV callbackUrl="cloud.example.com/login/callback"
 ENV ssoEndpoint="login.cloud.example.com"
-ENV casdoorMysqlRootPassword="c2VhbG9zMjAyMw=="
+ENV casdoorMysqlRootPassword="c2VhbG9zcHdk"
 
 CMD ["kubectl apply -f manifests/configmap.yaml -f manifests/deploy.yaml -f manifests/ingress.yaml"]
