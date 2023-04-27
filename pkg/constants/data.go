@@ -40,6 +40,7 @@ const (
 	DefaultCertificateKeyFileName    = "kubeadm-certificate-key.txt"
 	DefaultUpdateKubeadmFileName     = "kubeadm-update.yaml"
 	DefaultRootfsKubeadmFileName     = "kubeadm.yml"
+	DefaultRootfsConfigFileName      = "config.yml"
 	DataDirName                      = "rootfs"
 	EtcDirName                       = "etc"
 	ChartsDirName                    = "charts"
