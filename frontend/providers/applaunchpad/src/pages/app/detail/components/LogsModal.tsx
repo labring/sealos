@@ -19,12 +19,14 @@ import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
 const LogsModal = ({
+  appName,
   podName,
   pods = [],
   podAlias,
   setLogsPodName,
   closeFn
 }: {
+  appName: string;
   podName: string;
   pods: { alias: string; podName: string }[];
   podAlias: string;
@@ -39,6 +41,7 @@ const LogsModal = ({
     [podName],
     () =>
       getPodLogs({
+        appName,
         podName,
         pageNum: 1,
         pageSize: 20
