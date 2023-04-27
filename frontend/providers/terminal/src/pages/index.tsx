@@ -6,11 +6,12 @@ import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
+import { Box, Flex } from '@chakra-ui/react';
 
 export default function Index() {
-  const { setSession, isUserLogin } = useSessionStore();
-
-  const [url, setUrl] = useState('');
+  const { setSession, isUserLogin } = useSessionStore()
+  const [url, setUrl] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     return createSealosApp();
@@ -26,34 +27,32 @@ export default function Index() {
     initApp();
   }, [setSession]);
 
-  const { data, isLoading, isError, refetch } = useQuery(
-    ['applyApp'],
-    () => request.post('/api/apply'),
-    {
-      onSuccess: (res) => {
-        if (res?.data?.code === 200 && res?.data?.data) {
-          const url = res?.data?.data;
-          fetch(url, { mode: 'no-cors' })
-            .then(() => {
-              setUrl(url);
-              // window.location.replace(url)
-            })
-            .catch((err) => console.log(err));
-        }
-        if (res?.data?.code === 201) {
-          refetch();
-        }
-      },
-      onError: (err) => {
-        console.log(err, 'err');
-      },
-      retry: 6,
-      retryDelay: 1500
-    }
-  );
+  useQuery(['applyApp'], () => request.post('/api/apply'), {
+    onSuccess: (res) => {
+      if (res?.data?.code === 200 && res?.data?.data) {
+        const url = res?.data?.data
+        fetch(url, { mode: 'cors' })
+          .then((res) => {
+            if (res.status === 200) {
+              setIsLoading(false)
+              setUrl(url)
+            }
+          })
+          .catch((err) => {})
+      }
+    },
+    onError: (err) => {
+      console.log(err, 'err')
+    },
+    refetchInterval: url === '' ? 500 : false,
+    enabled: url === '',
+  })
 
   if (isLoading) {
-    return <div className={clsx(styles.loading, styles.err)}>loading</div>;
+    return <Flex w="100%" h="100%" color="white" bg="#2b2b2b" overflow={'hidden'}>
+      <Box w='200px' backgroundColor={'#2C3035'}></Box>
+      <Box w='100%' backgroundColor={'#2b2b2b'}></Box>
+    </Flex>
   }
 
   if (!isUserLogin() && process.env.NODE_ENV === 'production') {
@@ -66,13 +65,7 @@ export default function Index() {
     );
   }
 
-  if (isError) {
-    return (
-      <div className={styles.err}>
-        There is an error on the page, try to refresh or contact the administrator
-      </div>
-    );
-  }
-
-  return <div className={styles.container}>{!!url && <Terminal url={url} />}</div>;
+  return (
+    <div className={styles.container}>{!!url && <Terminal url={url} />}</div>
+  )
 }
