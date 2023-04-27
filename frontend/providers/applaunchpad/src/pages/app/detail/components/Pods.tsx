@@ -160,7 +160,7 @@ const Pods = ({
               {
                 child: (
                   <>
-                    <MyIcon name={'change'} w={'14px'} />
+                    <MyIcon name={'log'} w={'14px'} />
                     <Box ml={2}>日志</Box>
                   </>
                 ),

@@ -29,7 +29,8 @@ const map = {
   noEvents: require('./icons/noEvents.svg').default,
   warning: require('./icons/warning.svg').default,
   analyze: require('./icons/analyze.svg').default,
-  terminal: require('./icons/terminal.svg').default
+  terminal: require('./icons/terminal.svg').default,
+  log: require('./icons/log.svg').default
 };
 
 const MyIcon = ({

@@ -91,8 +91,11 @@ export const adaptMetrics = (metrics: SinglePodMetrics): PodMetrics => {
 export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
   return events.items
     .sort((a, b) => {
-      if (!a.lastTimestamp || !b.lastTimestamp) return 1;
-      return new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime();
+      const lastTimeA = a.lastTimestamp || a.eventTime;
+      const lastTimeB = b.lastTimestamp || b.eventTime;
+
+      if (!lastTimeA || !lastTimeB) return 1;
+      return new Date(lastTimeB).getTime() - new Date(lastTimeA).getTime();
     })
     .map((item) => ({
       id: item.metadata.uid || `${Date.now()}`,
@@ -100,8 +103,8 @@ export const adaptEvents = (events: CoreV1EventList): PodEvent[] => {
       message: item.message || '',
       count: item.count || 0,
       type: item.type || 'Warning',
-      firstTime: formatPodTime(item.firstTimestamp),
-      lastTime: formatPodTime(item.lastTimestamp)
+      firstTime: formatPodTime(item.firstTimestamp || item.metadata?.creationTimestamp),
+      lastTime: formatPodTime(item.lastTimestamp || item?.eventTime)
     }));
 };
 
@@ -155,8 +158,8 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy?.metadata?.annotations?.originImageName ||
       appDeploy.spec?.template?.spec?.containers?.[0]?.image ||
       '',
-    runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
-    cmdParam: appDeploy.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
+    runCMD: JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.command),
+    cmdParam: JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args),
     replicas: appDeploy.spec?.replicas || 0,
     cpu: cpuFormatToM(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
@@ -268,8 +271,12 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
 
   const res: Record<string, any> = {
     imageName: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.image,
-    runCMD: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command?.join(' '),
-    cmdParam: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args?.join(' '),
+    runCMD: JSON.stringify(
+      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command
+    ),
+    cmdParam: JSON.stringify(
+      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args
+    ),
     replicas: deployKindsMap?.Deployment?.spec?.replicas,
     cpu: cpuStr ? cpuFormatToM(cpuStr) : undefined,
     memory: memoryStr ? memoryFormatToMi(memoryStr) : undefined,
