@@ -100,9 +100,9 @@ textarea::placeholder {
 
 ::-webkit-scrollbar,
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-  border-radius: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-track,
 ::-webkit-scrollbar-track {
@@ -111,10 +111,29 @@ textarea::placeholder {
 }
 ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-thumb {
-  background: #bdc1c5 !important;
+  background: rgba(189, 193, 197, 1) !important;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover,
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca2a8 !important;
+  background: rgba(189, 193, 197, 1) !important;
+}
+
+div {
+  &::-webkit-scrollbar-thumb,
+  &::-webkit-scrollbar-thumb {
+    background: transparent !important;
+    border-radius: 10px;
+    transition: 1s;
+  }
+  &:hover {
+    &::-webkit-scrollbar-thumb,
+    &::-webkit-scrollbar-thumb {
+      background: rgba(189, 193, 197, 0.5) !important;
+    }
+    &::-webkit-scrollbar-thumb:hover,
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(189, 193, 197, 1) !important;
+    }
+  }
 }

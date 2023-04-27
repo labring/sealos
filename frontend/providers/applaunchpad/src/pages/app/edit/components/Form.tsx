@@ -691,21 +691,23 @@ const Form = ({
                   <Box w={'320px'}>
                     <Box className={styles.formSecondTitle}>环境变量</Box>
                     <table className={styles.table}>
-                      {envs.map((env) => (
-                        <tr key={env.id}>
-                          <th>{env.key}</th>
-                          <Tooltip label={env.value}>
-                            <th
-                              className={styles.textEllipsis}
-                              style={{
-                                userSelect: 'auto'
-                              }}
-                            >
-                              {env.value}
-                            </th>
-                          </Tooltip>
-                        </tr>
-                      ))}
+                      <tbody>
+                        {envs.map((env) => (
+                          <tr key={env.id}>
+                            <th>{env.key}</th>
+                            <Tooltip label={env.value}>
+                              <th
+                                className={styles.textEllipsis}
+                                style={{
+                                  userSelect: 'auto'
+                                }}
+                              >
+                                {env.value}
+                              </th>
+                            </Tooltip>
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                     <Button
                       mt={4}
