@@ -8,10 +8,12 @@ import { jsonRes } from '@/services/backend/response';
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   try {
     const {
+      appName,
       podName,
       pageNum = 1,
       pageSize
     } = req.query as {
+      appName: string;
       podName: string;
       pageNum: string;
       pageSize: string;
@@ -26,18 +28,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     });
 
     // get pods
-    const { body: data } = await k8sCore.readNamespacedPodLog(podName, namespace);
-
-    const logs =
-      pageSize === undefined
-        ? data
-        : data
-            ?.split('\n')
-            .slice((+pageNum - 1) * +pageSize, +pageNum * +pageSize)
-            .join('\n');
+    const { body: data } = await k8sCore.readNamespacedPodLog(podName, namespace, appName);
 
     jsonRes(res, {
-      data: logs
+      data
     });
   } catch (err: any) {
     // console.log(err, 'get metrics error')

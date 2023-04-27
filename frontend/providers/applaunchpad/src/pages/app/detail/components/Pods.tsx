@@ -230,6 +230,7 @@ const Pods = ({
       <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
+          appName={appName}
           podName={pods[logsPodIndex].podName}
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.Running)
