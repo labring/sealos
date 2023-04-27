@@ -20,6 +20,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/labring/sealos/pkg/clusterfile"
+
 	"github.com/imdario/mergo"
 	"sigs.k8s.io/yaml"
 
@@ -57,6 +59,16 @@ type Dumper struct {
 }
 
 func NewConfiguration(name, rootPath string, configs []v1beta1.Config) Interface {
+	defaultConfigFile := filepath.Join(rootPath, constants.DefaultRootfsConfigFileName)
+	if file.IsExist(defaultConfigFile) {
+		cfgs, err := clusterfile.Configs(defaultConfigFile)
+		if err != nil {
+			logger.Error("failed to parse default config file %s, %v", defaultConfigFile, err)
+			cfgs = []v1beta1.Config{}
+		}
+		configs = append(cfgs, configs...)
+	}
+
 	return &Dumper{
 		RootPath: rootPath,
 		name:     name,
