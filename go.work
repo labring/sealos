@@ -12,6 +12,7 @@ use (
 	./controllers/metering
 	./controllers/terminal
 	./controllers/user
+	./controllers/resources
 	./service/auth
 	./service/hub
 	./service/payment
