@@ -15,14 +15,15 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"os"
-
 	"github.com/labring/sealos/pkg/buildah"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/system"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"os"
+	"strconv"
 
 	"github.com/spf13/cobra"
 	"k8s.io/kubectl/pkg/util/templates"
@@ -110,6 +111,20 @@ func onBootOnDie() {
 		constants.LogPath(),
 		constants.Workdir(),
 	}
+
+	userName := getSudoUser()
+	uid, err := GetIntEnv("SUDO_UID")
+	if err != nil {
+		fmt.Errorf("%v", err)
+	}
+	gid, err := GetIntEnv("SUDO_GID")
+	if err != nil {
+		fmt.Errorf("%v", err)
+	}
+	_ = file.NewSudoEr(userName, uid, gid)
+	//sudoEr := file.NewSudoEr(userName, uid, gid)
+	//errExit(sudoEr.SudoMkDirs(rootDirs...))
+
 	errExit(file.MkDirs(rootDirs...))
 	logger.CfgConsoleAndFileLogger(debug, constants.LogPath(), "sealos", false)
 }
@@ -119,4 +134,29 @@ func errExit(err error) {
 		logger.Error(err)
 		os.Exit(1)
 	}
+}
+
+func getSudoUser() string {
+	whoAmI, ok := os.LookupEnv("SUDO_USER")
+	if !ok {
+		fmt.Errorf("%s not set\n", "SUDO_USER")
+		return ""
+	} else {
+		fmt.Errorf("%s=%s\n", "SUDO_USER", whoAmI)
+	}
+	return whoAmI
+}
+
+func GetIntEnv(key string) (int, error) {
+	value, ok := os.LookupEnv(key)
+	if !ok {
+		msg := fmt.Sprintf("env %s not found", key)
+		return -1, errors.New(msg)
+	}
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		msg := fmt.Sprintf("The value of %s cannot covert to int ", key)
+		return -1, errors.New(msg)
+	}
+	return intValue, nil
 }

@@ -26,6 +26,96 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
+type sudoEr struct {
+	userName string
+	uid      int
+	gid      int
+}
+
+func NewSudoEr(name string, uid, gid int) *sudoEr {
+	return &sudoEr{
+		userName: name,
+		uid:      uid,
+		gid:      gid,
+	}
+}
+
+// SudoMkDirs mkdir and chown
+func (s *sudoEr) SudoMkDirs(dirs ...string) error {
+	if len(dirs) == 0 {
+		return nil
+	}
+	for _, dir := range dirs {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return fmt.Errorf("failed to create %s, %v", dir, err)
+		}
+
+		if s.gid != -1 && s.uid != -1 {
+			err = os.Chown(dir, s.uid, s.gid)
+			if err != nil {
+				fmt.Errorf("failed to chown %s, %v", dir, err)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *sudoEr) SudoWriteFile(fileName string, content []byte) error {
+	dir := filepath.Dir(fileName)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err = os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+		if s.gid != -1 && s.uid != -1 {
+			err = os.Chown(dir, s.uid, s.gid)
+			if err != nil {
+				fmt.Errorf("failed to chown %s, %v", dir, err)
+			}
+		}
+	}
+
+	return s.AtomicWriteFile(fileName, content, 0644)
+}
+
+func (s *sudoEr) AtomicWriteFile(filepath string, data []byte, perm os.FileMode) (err error) {
+	afw, err := s.newAtomicFileWriter(filepath, perm)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			CleanFile(afw.f)
+		}
+	}()
+	if _, err = afw.f.Write(data); err != nil {
+		return
+	}
+	err = afw.close()
+	return
+}
+
+func (s *sudoEr) newAtomicFileWriter(path string, perm os.FileMode) (*atomicFileWriter, error) {
+	tmpFile, err := s.MkTmpFile(filepath.Dir(path))
+	if err != nil {
+		return nil, err
+	}
+	return &atomicFileWriter{f: tmpFile, path: path, perm: perm}, nil
+}
+
+func (s *sudoEr) MkTmpFile(path string) (*os.File, error) {
+	file, err := os.CreateTemp(path, "FTmp-")
+	if err == nil {
+		if s.gid != -1 && s.uid != -1 {
+			err = os.Chown(file.Name(), s.uid, s.gid)
+			if err != nil {
+				fmt.Errorf("failed to chown %s, %v", file.Name(), err)
+			}
+		}
+	}
+	return file, err
+}
+
 // Filename returns the file name after the last "/".
 func Filename(f string) string {
 	i := strings.LastIndexByte(f, '/')

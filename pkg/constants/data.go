@@ -17,22 +17,26 @@ limitations under the License.
 package constants
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
+	"os/user"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/containers/storage/pkg/homedir"
 )
 
 var (
-	DefaultRuntimeRootDir   string
 	DefaultClusterRootFsDir string
+	DefaultRuntimeRootDir   = GetRuntimeRootDir(AppName)
 )
 
 const (
+	AppName                          = "sealos"
 	DefaultInitKubeadmFileName       = "kubeadm-init.yaml"
 	DefaultJoinMasterKubeadmFileName = "kubeadm-join-master.yaml"
 	DefaultJoinNodeKubeadmFileName   = "kubeadm-join-node.yaml"
@@ -58,7 +62,18 @@ func GetRuntimeRootDir(name string) string {
 	if v, ok := os.LookupEnv(strings.ToUpper(name) + "_RUNTIME_ROOT"); ok {
 		return v
 	}
-	return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
+	whoAmI, ok := os.LookupEnv("SUDO_USER")
+	if !ok {
+		fmt.Errorf("%s not set\n", "SUDO_USER")
+		return path.Join(homedir.Get(), fmt.Sprintf(".%s", name))
+	} else {
+		fmt.Errorf("%s=%s\n", "SUDO_USER", whoAmI)
+		currentUser, err := user.Lookup(whoAmI)
+		if err != nil {
+			fmt.Errorf("err %v", err)
+		}
+		return path.Join(currentUser.HomeDir, fmt.Sprintf(".%s", name))
+	}
 }
 
 func LogPath() string {
