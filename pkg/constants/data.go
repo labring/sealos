@@ -17,14 +17,12 @@ limitations under the License.
 package constants
 
 import (
-	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"os/user"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/containers/storage/pkg/homedir"
@@ -32,7 +30,8 @@ import (
 
 var (
 	DefaultClusterRootFsDir string
-	DefaultRuntimeRootDir   = GetRuntimeRootDir(AppName)
+	DefaultRuntimeRootDir   string
+	RuntimeRootDir          = GetRuntimeRootDir(AppName)
 )
 
 const (
@@ -78,6 +77,7 @@ func GetRuntimeRootDir(name string) string {
 }
 
 func LogPath() string {
+	//return filepath.Join(RuntimeRootDir, "logs")
 	return filepath.Join(DefaultRuntimeRootDir, "logs")
 }
 
