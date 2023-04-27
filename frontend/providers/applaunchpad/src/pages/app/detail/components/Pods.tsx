@@ -231,7 +231,7 @@ const Pods = ({
       {logsPodIndex !== undefined && (
         <LogsModal
           appName={appName}
-          podName={pods[logsPodIndex].podName}
+          podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.Running)
             .map((item, i) => ({
