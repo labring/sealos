@@ -143,7 +143,8 @@ const LogsModal = ({
             pb={2}
             overflow={'auto'}
             fontWeight={400}
-            fontFamily={'SFMono-Regular,Menlo,Monaco,Consolas,monospace'}
+            lineHeight={1.3}
+            fontFamily={'SFMono-Regular,Menlo,Monaco,Consolas,monospace,Microsoft Yahei'}
             dangerouslySetInnerHTML={{ __html: logs }}
           ></Box>
           <Loading loading={isLoading} fixed={false} />

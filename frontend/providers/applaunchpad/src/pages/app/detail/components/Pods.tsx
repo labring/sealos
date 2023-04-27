@@ -149,12 +149,14 @@ const Pods = ({
                   </>
                 ),
                 onClick: () => {
-                  sealosApp.runEvents(
-                    'openTerminal',
-                    encodeURIComponent(
-                      `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`
-                    )
-                  );
+                  const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-terminal',
+                    query: {
+                      defaultCommand
+                    },
+                    messageData: { type: 'new terminal', command: defaultCommand }
+                  });
                 }
               },
               {

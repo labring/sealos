@@ -110,21 +110,25 @@ export default function DesktopContent() {
   );
 
   /**
-   * open terminal
+   * open app
    */
-  const openTerminal = useCallback(
-    (defaultCommand = '') => {
-      const terminalKey = 'system-terminal';
-      const app = apps.find((item) => item.key === terminalKey);
+  const openDesktopApp = useCallback(
+    ({
+      appKey,
+      query = {},
+      messageData = {}
+    }: {
+      appKey: string;
+      query?: Record<string, string>;
+      messageData?: Record<string, any>;
+    }) => {
+      const app = apps.find((item) => item.key === appKey);
       if (!app) return;
-      openApp(app, { defaultCommand });
+      openApp(app, query);
       // post message
-      const iframe = document.getElementById(`app-window-${terminalKey}`) as HTMLIFrameElement;
+      const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
       if (!iframe) return;
-      iframe.contentWindow?.postMessage({
-        type: 'new terminal',
-        command: defaultCommand
-      });
+      iframe.contentWindow?.postMessage(messageData, '*');
     },
     [apps, openApp]
   );
@@ -134,8 +138,8 @@ export default function DesktopContent() {
   }, []);
 
   useEffect(() => {
-    return masterApp?.addEventListen('openTerminal', openTerminal);
-  }, [openTerminal]);
+    return masterApp?.addEventListen('openDesktopApp', openDesktopApp);
+  }, [openDesktopApp]);
 
   return (
     <div id="desktop" className={styles.desktop}>
