@@ -1,19 +1,10 @@
-import Iconfont from '@/components/iconfont';
-import {
-  Box,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerHeader,
-  DrawerOverlay,
-  Flex,
-  Text,
-  useDisclosure
-} from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
-import styles from './index.module.scss';
-import { nanoid } from 'nanoid';
-import { debounce } from 'lodash';
+import Iconfont from '@/components/iconfont'
+import { Box, Flex, Text } from '@chakra-ui/react'
+import { debounce } from 'lodash'
+import { nanoid } from 'nanoid'
+import { useRouter } from 'next/router'
+import { useEffect, useState } from 'react'
+import styles from './index.module.scss'
 
 type Terminal = {
   id: string;
@@ -21,29 +12,35 @@ type Terminal = {
 };
 
 function Terminal({ url }: { url: string }) {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [tabId, setTabId] = useState(nanoid(6));
+  const [tabId, setTabId] = useState(nanoid(6))
+  const router = useRouter()
+  const { query } = router
+
   const [tabContents, setTabContents] = useState<Terminal[]>([
     {
-      id: tabId
-    }
-  ]);
+      id: tabId,
+      command:
+        query?.defaultCommand && typeof query?.defaultCommand === 'string'
+          ? decodeURIComponent(query.defaultCommand)
+          : '',
+    },
+  ])
 
   useEffect(() => {
-    try {
-      window.addEventListener('message', (e) => {
-        if (
-          e.origin === process.env.NEXT_PUBLIC_SITE &&
-          e.data.type === 'new terminal' &&
-          e.data.command
-        ) {
-          newTerminal(e.data.command);
-        }
-      });
-    } catch (error) {
-      console.log(error);
+    const event = (e: MessageEvent) => {
+      if (
+        e.origin === process.env.NEXT_PUBLIC_SITE &&
+        e.data.type === 'new terminal' &&
+        e.data.command
+      ) {
+        newTerminal(decodeURIComponent(e.data.command))
+      }
     }
-  }, []);
+    try {
+      window.addEventListener('message', event)
+    } catch (error) {}
+    return () => window.removeEventListener('message', event)
+  }, [])
 
   const onLoadIframe = (e: any, item: Terminal) => {
     try {
@@ -52,10 +49,8 @@ function Terminal({ url }: { url: string }) {
           e.target.contentWindow.postMessage({ command: item.command }, url);
         }, 2000);
       }
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    } catch (error) {}
+  }
 
   const newTerminal = (command?: string) => {
     const temp = nanoid(6);
@@ -99,8 +94,8 @@ function Terminal({ url }: { url: string }) {
           pl="16px"
           alignItems={'center'}
           borderBottom={'2px solid #232528'}
-          onClick={debounce(() => newTerminal(), 500)}
-        >
+          _hover={{ background: '#282B30' }}
+          onClick={debounce(() => newTerminal(), 500)}>
           <Iconfont
             color="rgba(255, 255, 255, 0.9)"
             iconName="icon-a-material-symbols_addadd1"
@@ -119,6 +114,7 @@ function Terminal({ url }: { url: string }) {
                 pl="16px"
                 pr="12px"
                 bg={item?.id === tabId ? '#232528' : ''}
+                _hover={{ bg: item?.id === tabId ? '#232528' : '#282b30' }}
                 key={item?.id}
                 alignItems="center"
                 onClick={() => onTabChange(item?.id)}
@@ -151,18 +147,6 @@ function Terminal({ url }: { url: string }) {
           })}
         </Box>
       </Flex>
-
-      <Drawer onClose={onClose} isOpen={isOpen}>
-        <DrawerOverlay />
-        <DrawerContent>
-          <DrawerHeader borderBottomWidth="1px">Basic Drawer</DrawerHeader>
-          <DrawerBody>
-            <p>Some contents...</p>
-            <p>Some contents...</p>
-            <p>Some contents...</p>
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
       {tabContents?.map((item: Terminal) => {
         return (
           <Box flexGrow={1} key={item?.id} display={item?.id === tabId ? 'block' : 'none'}>
