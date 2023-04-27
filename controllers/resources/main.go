@@ -18,9 +18,11 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/resources/controllers"
-	"os"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"

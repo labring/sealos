@@ -19,6 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
+	"os"
+	"time"
+
 	"github.com/go-logr/logr"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
 	"github.com/labring/sealos/controllers/infra/common"
@@ -26,13 +30,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"math"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,10 +45,9 @@ import (
 type MonitorReconciler struct {
 	client.Client
 	logr.Logger
-	Interval        time.Duration
-	mongoConnectUrl string
-	Scheme          *runtime.Scheme
-	mongoOpts       struct {
+	Interval  time.Duration
+	Scheme    *runtime.Scheme
+	mongoOpts struct {
 		uri      string
 		username string
 		password string
@@ -60,9 +60,9 @@ type quantity struct {
 }
 
 const (
-	MONGO_URI      = "MONGO_URI"
-	MONGO_USERNAME = "MONGO_USERNAME"
-	MONGO_PASSWORD = "MONGO_PASSWORD"
+	MongoURL      = "MONGO_URI"
+	MongoUsername = "MONGO_USERNAME"
+	MongoPassword = "MONGO_PASSWORD"
 )
 
 //+kubebuilder:rbac:groups=resources.sealos.io,resources=monitors,verbs=get;list;watch;create;update;patch;delete
@@ -132,9 +132,9 @@ func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		username string
 		password string
 	}{
-		uri:      os.Getenv(MONGO_URI),
-		username: os.Getenv(MONGO_USERNAME),
-		password: os.Getenv(MONGO_PASSWORD),
+		uri:      os.Getenv(MongoURL),
+		username: os.Getenv(MongoUsername),
+		password: os.Getenv(MongoPassword),
 	}
 	switch {
 	case r.mongoOpts.uri == "":
@@ -156,7 +156,7 @@ func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 func (r *MonitorReconciler) preApply() error {
 	ctx := context.Background()
-	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(r.mongoConnectUrl).SetAuth(options.Credential{Username: r.mongoOpts.username, Password: r.mongoOpts.password}))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(r.mongoOpts.uri).SetAuth(options.Credential{Username: r.mongoOpts.username, Password: r.mongoOpts.password}))
 	if err != nil {
 		return fmt.Errorf("failed to connect mongo: %v", err)
 	}
@@ -295,7 +295,6 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 }
 
 func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, mongoClient *mongo.Client, infra *infrav1.Infra) error {
-
 	var infraList *infrav1.InfraList
 	err := r.List(ctx, infraList, client.InNamespace(infra.Namespace))
 	if err != nil {
@@ -356,10 +355,10 @@ func (r *MonitorReconciler) checkInfraStatusRunning(infra infrav1.Infra) bool {
 	return false
 }
 
-func (r *MonitorReconciler) checkPodStatus(pod corev1.Pod) bool {
-	if pod.Status.Phase == corev1.PodRunning {
-		return true
-	}
-	r.Logger.Info("pod status is  not ready", "pod name", pod.Name, "pod namespace", pod.Namespace, "pod status", pod.Status.Phase)
-	return false
-}
+//func (r *MonitorReconciler) checkPodStatus(pod corev1.Pod) bool {
+//	if pod.Status.Phase == corev1.PodRunning {
+//		return true
+//	}
+//	r.Logger.Info("pod status is  not ready", "pod name", pod.Name, "pod namespace", pod.Namespace, "pod status", pod.Status.Phase)
+//	return false
+//}

@@ -3,11 +3,8 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -111,7 +108,7 @@ const (
 )
 
 var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
-	corev1.ResourceCPU:     resource.NewQuantity(1000, resource.DecimalSI), // 1 CPU core (1000 mCore)
+	corev1.ResourceCPU:     resource.NewQuantity(1000, resource.DecimalSI), // 1 m CPU (1000 μ)
 	corev1.ResourceMemory:  resource.NewQuantity(1<<20, resource.BinarySI), // 1 MiB
 	corev1.ResourceStorage: resource.NewQuantity(1<<20, resource.BinarySI), // 1 MiB
 }
@@ -134,14 +131,6 @@ var infraMemoryMap = map[string]int{
 	"ecs.c7.large":  4,
 	"ecs.g7.large":  8,
 	"ecs.g7.xlarge": 16,
-}
-
-// GiB
-func getCPUQuantity(flavor string) *resource.Quantity {
-	if v, ok := infraCPUMap[flavor]; ok {
-		return resource.NewQuantity(int64(v), resource.DecimalSI)
-	}
-	return nil
 }
 
 // MiB
@@ -181,18 +170,18 @@ func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
 }
 
 // create unique index
-func createUniqueIndex(collection *mongo.Collection, field string) error {
-	indexModel := mongo.IndexModel{
-		Keys:    bson.D{{Key: field, Value: 1}},
-		Options: options.Index().SetUnique(true),
-	}
-
-	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
-	if err != nil {
-		return fmt.Errorf("failed to create unique index on %s: %v", field, err)
-	}
-	return nil
-}
+//func createUniqueIndex(collection *mongo.Collection, field string) error {
+//	indexModel := mongo.IndexModel{
+//		Keys:    bson.D{{Key: field, Value: 1}},
+//		Options: options.Index().SetUnique(true),
+//	}
+//
+//	_, err := collection.Indexes().CreateOne(context.Background(), indexModel)
+//	if err != nil {
+//		return fmt.Errorf("failed to create unique index on %s: %v", field, err)
+//	}
+//	return nil
+//}
 
 // 复合索引 加速查询
 func createCompoundIndex(client *mongo.Client, dbName, collectionName string) error {
@@ -212,44 +201,44 @@ func createCompoundIndex(client *mongo.Client, dbName, collectionName string) er
 	return err
 }
 
-func ensureCompoundIndex(client *mongo.Client, dbName, collName string, indexKeys bson.M) error {
-	collection := client.Database(dbName).Collection(collName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// List all indexes in the collection
-	cursor, err := collection.Indexes().List(ctx)
-	if err != nil {
-		return err
-	}
-	defer cursor.Close(ctx)
-
-	// Check if the compound index already exists
-	indexExists := false
-	for cursor.Next(ctx) {
-		var index bson.M
-		if err := cursor.Decode(&index); err != nil {
-			return err
-		}
-		if keys, ok := index["key"].(bson.M); ok {
-			if reflect.DeepEqual(keys, indexKeys) {
-				indexExists = true
-				break
-			}
-		}
-	}
-
-	// Create the compound index if it doesn't exist
-	if !indexExists {
-		_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-			Keys: indexKeys,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+//func ensureCompoundIndex(client *mongo.Client, dbName, collName string, indexKeys bson.M) error {
+//	collection := client.Database(dbName).Collection(collName)
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	// List all indexes in the collection
+//	cursor, err := collection.Indexes().List(ctx)
+//	if err != nil {
+//		return err
+//	}
+//	defer cursor.Close(ctx)
+//
+//	// Check if the compound index already exists
+//	indexExists := false
+//	for cursor.Next(ctx) {
+//		var index bson.M
+//		if err := cursor.Decode(&index); err != nil {
+//			return err
+//		}
+//		if keys, ok := index["key"].(bson.M); ok {
+//			if reflect.DeepEqual(keys, indexKeys) {
+//				indexExists = true
+//				break
+//			}
+//		}
+//	}
+//
+//	// Create the compound index if it doesn't exist
+//	if !indexExists {
+//		_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+//			Keys: indexKeys,
+//		})
+//		if err != nil {
+//			return err
+//		}
+//	}
+//	return nil
+//}
 
 func GetAllPricesMap(mongoClient *mongo.Client) (map[string]Price, error) {
 	collection := mongoClient.Database(SealosResourcesDBName).Collection(SealosPricesCollectionName)
