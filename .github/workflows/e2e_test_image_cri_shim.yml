@@ -1,0 +1,79 @@
+name: E2E Test sealos image-cri-shim service
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "**" ]
+    paths:
+      - ".github/workflows/e2e_test_image_cri_shim.yml"
+      - "cmd/**"
+      - "staging/src/github.com/image-cri-shim/**"
+      - "test/**"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - ".github/workflows/e2e_test_image_cri_shim.yml"
+      - "cmd/**"
+      - "staging/src/github.com/image-cri-shim/**"
+      - "test/**"
+
+jobs:
+  call_ci_workflow:
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: true
+      image: false
+  verify-image_cri_shim:
+    needs: [ call_ci_workflow ]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install Dependencies
+        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v3
+        with:
+          name: image-cri-shim-amd64
+          path: /tmp/
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos-amd64
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/{sealos,image-cri-shim}
+          sudo mv /tmp/sealos /usr/bin/
+          sudo sealos version
+      - name: Download e2e test
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e.test
+          path: /tmp/
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
+
+
+      - name: Build image with new image-cri-shim
+        run: |
+          pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && sudo /usr/bin/sealos build -f Dockerfile -t kubernetes-hack:v1.25.0 . && popd
+
+      - name: Auto install k8s using sealos
+        run: |
+          sudo /usr/bin/sealos images
+          sudo /usr/bin/sealos run kubernetes-hack:v1.25.0 --single --debug
+          mkdir -p "$HOME/.kube"
+          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
+          sudo chown "$(whoami)" "$HOME/.kube/config"
+          kubectl get svc
+          kubectl get pod -A
+          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
+          sudo cat /root/.sealos/default/Clusterfile
+
+      - name: Run image-cri-shim test
+        shell: bash
+        run: |
+          sudo chmod a+x /tmp/e2e.test
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="image-cri-shim test"
