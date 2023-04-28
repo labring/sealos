@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "link-sdk": "rm -rf node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
+    "link-sdk": "rm -rf ./node_modules/sealos-desktop-sdk && yalc link sealos-desktop-sdk",
     "unlink-sdk": "yalc remove --all && pnpm install sealos-desktop-sdk",
     "formatFrontend": "./node_modules/.bin/prettier --config \"./.prettierrc.js\" --write \"./src/**/*.{ts,tsx,scss}\""
   },
@@ -50,7 +50,7 @@
     "react-hook-form": "^7.40.0",
     "react-markdown": "^8.0.4",
     "react-syntax-highlighter": "^15.5.0",
-    "sealos-desktop-sdk": "^0.1.11",
+    "sealos-desktop-sdk": "^0.1.12",
     "ts-md5": "^1.3.1",
     "zustand": "^4.1.5"
   },

@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo, MouseEvent, useRef } from 'react';
+import { useState, useCallback, useMemo, MouseEvent, useRef, useEffect } from 'react';
+import { masterApp, createMasterAPP } from 'sealos-desktop-sdk/master';
 import PgSql from 'applications/pgsql';
-
 import clsx from 'clsx';
 import { APPTYPE } from 'constants/app_type';
 import useAppStore, { TApp } from 'stores/app';
@@ -86,7 +86,7 @@ export default function DesktopContent() {
       const app = apps.find((item) => item.name === target.getAttribute('data-app'));
 
       /* target is app */
-      if (!!app) {
+      if (app) {
         updateAppsMousedown(app, true);
 
         /* double click, open app */
@@ -108,6 +108,38 @@ export default function DesktopContent() {
     },
     [apps, openApp, updateAppsMousedown]
   );
+
+  /**
+   * open app
+   */
+  const openDesktopApp = useCallback(
+    ({
+      appKey,
+      query = {},
+      messageData = {}
+    }: {
+      appKey: string;
+      query?: Record<string, string>;
+      messageData?: Record<string, any>;
+    }) => {
+      const app = apps.find((item) => item.key === appKey);
+      if (!app) return;
+      openApp(app, query);
+      // post message
+      const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
+      if (!iframe) return;
+      iframe.contentWindow?.postMessage(messageData, app.data.url);
+    },
+    [apps, openApp]
+  );
+
+  useEffect(() => {
+    return createMasterAPP();
+  }, []);
+
+  useEffect(() => {
+    return masterApp?.addEventListen('openDesktopApp', openDesktopApp);
+  }, [openDesktopApp]);
 
   return (
     <div id="desktop" className={styles.desktop}>

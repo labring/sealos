@@ -10,8 +10,23 @@ const installedApps: TAppConfig[] = [
     type: APPTYPE.IFRAME,
     gallery: [],
     data: {
-      // url: 'https://deploy.cloud.sealos.io',
       url: 'http://localhost:3000',
+      desc: 'deploy manager'
+    },
+    menuData: {
+      nameColor: 'text-black',
+      helpDocs: 'https://www.sealos.io/docs/cloud/Intro/',
+      helpDropDown: false
+    }
+  },
+  {
+    key: 'mock2',
+    name: 'mock2',
+    icon: '/images/sealos.svg',
+    type: APPTYPE.IFRAME,
+    gallery: [],
+    data: {
+      url: 'http://localhost:3002',
       desc: 'deploy manager'
     },
     menuData: {

@@ -9,9 +9,9 @@ import styles from './index.module.scss';
 import { Box, Flex } from '@chakra-ui/react';
 
 export default function Index() {
-  const { setSession, isUserLogin } = useSessionStore()
-  const [url, setUrl] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const { setSession, isUserLogin } = useSessionStore();
+  const [url, setUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     return createSealosApp();
@@ -30,29 +30,31 @@ export default function Index() {
   useQuery(['applyApp'], () => request.post('/api/apply'), {
     onSuccess: (res) => {
       if (res?.data?.code === 200 && res?.data?.data) {
-        const url = res?.data?.data
+        const url = res?.data?.data;
         fetch(url, { mode: 'cors' })
           .then((res) => {
             if (res.status === 200) {
-              setIsLoading(false)
-              setUrl(url)
+              setIsLoading(false);
+              setUrl(url);
             }
           })
-          .catch((err) => {})
+          .catch((err) => {});
       }
     },
     onError: (err) => {
-      console.log(err, 'err')
+      console.log(err, 'err');
     },
     refetchInterval: url === '' ? 500 : false,
-    enabled: url === '',
-  })
+    enabled: url === ''
+  });
 
   if (isLoading) {
-    return <Flex w="100%" h="100%" color="white" bg="#2b2b2b" overflow={'hidden'}>
-      <Box w='200px' backgroundColor={'#2C3035'}></Box>
-      <Box w='100%' backgroundColor={'#2b2b2b'}></Box>
-    </Flex>
+    return (
+      <Flex w="100%" h="100%" color="white" bg="#2b2b2b" overflow={'hidden'}>
+        <Box w="200px" backgroundColor={'#2C3035'}></Box>
+        <Box w="100%" backgroundColor={'#2b2b2b'}></Box>
+      </Flex>
+    );
   }
 
   if (!isUserLogin() && process.env.NODE_ENV === 'production') {
@@ -65,7 +67,5 @@ export default function Index() {
     );
   }
 
-  return (
-    <div className={styles.container}>{!!url && <Terminal url={url} />}</div>
-  )
+  return <div className={styles.container}>{!!url && <Terminal url={url} />}</div>;
 }
