@@ -221,5 +221,5 @@ jobs:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller:${GIT_COMMIT_SHORT_SHA}
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller:${{ steps.prepare.outputs.tag_name }}
           token: "${{ secrets.GH_PAT }}"
