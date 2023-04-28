@@ -3,8 +3,7 @@ import { isBrowser } from './utils';
 import { API_NAME } from './constants';
 
 class MasterSDK {
-  private initialized = false;
-  private readonly eventBus = new Map<string, (e?: any) => { [key: string]: any } | void>();
+  private readonly eventBus = new Map<string, (e?: any) => any>();
   private readonly apiFun: {
     [key: string]: (data: AppSendMessageType, source: MessageEventSource, origin: string) => void;
   } = {
@@ -84,8 +83,6 @@ class MasterSDK {
 
     window.addEventListener('message', windowMessage);
 
-    this.initialized = true;
-
     return () => {
       window.removeEventListener('message', windowMessage);
       console.log('stop desktop onmessage');
@@ -95,7 +92,7 @@ class MasterSDK {
   /**
    * add event bus
    */
-  addEventListen(name: string, fn: (e?: any) => { [key: string]: any }) {
+  addEventListen(name: string, fn: (e?: any) => any) {
     if (this.eventBus.has(name)) {
       console.error('event bus name repeat');
       return;
@@ -105,6 +102,15 @@ class MasterSDK {
       return;
     }
     this.eventBus.set(name, fn);
+
+    return () => this.removeEventListen(name);
+  }
+
+  /**
+   * remove event bus
+   */
+  removeEventListen(name: string) {
+    this.eventBus.delete(name);
   }
 
   /**
@@ -116,26 +122,27 @@ class MasterSDK {
       data: { eventName, eventData }
     } = data;
     if (!this.eventBus.has(eventName)) {
-      this.replyAppMessage({
+      return this.replyAppMessage({
         source,
         origin,
         messageId,
         success: false,
         message: 'event is not register'
       });
-    } else {
-      // @ts-ignore nextline
-      const res = await this.eventBus.get(eventName)(eventData);
-      this.replyAppMessage({
-        source,
-        origin,
-        messageId,
-        success: true,
-        data: res || {}
-      });
     }
+    const res = await this.eventBus.get(eventName)?.(eventData);
+    this.replyAppMessage({
+      source,
+      origin,
+      messageId,
+      success: true,
+      data: res || {}
+    });
   }
 
+  /**
+   * return session to app
+   */
   private getUserInfo(data: AppSendMessageType, source: MessageEventSource, origin: string) {
     if (this.session) {
       this.replyAppMessage({
@@ -151,7 +158,7 @@ class MasterSDK {
         origin,
         messageId: data.messageId,
         success: false,
-        message: '请先未登录'
+        message: 'no login in'
       });
     }
   }

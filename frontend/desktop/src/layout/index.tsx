@@ -1,4 +1,3 @@
-import { createMasterAPP } from 'sealos-desktop-sdk/master';
 import { Background } from 'components/background';
 import styles from './index.module.scss';
 import Taskbar from 'components/taskbar';
@@ -7,25 +6,19 @@ import Head from 'next/head';
 import useAppStore from 'stores/app';
 import { useEffect } from 'react';
 import StartMenu from 'components/start_menu';
-import useSessionStore from 'stores/session';
 import { Nunito } from '@next/font/google';
 
 const nunito = Nunito({ subsets: ['latin'] });
 
 export default function Layout({ children }: any) {
   const { init } = useAppStore((state) => state);
-  const session = useSessionStore((s) => s.session);
 
   useEffect(() => {
     (async () => {
       // Initialize, get user information, install application information, etc.
-      await init(session?.kubeconfig);
+      await init();
     })();
   }, [init]);
-
-  useEffect(() => {
-    return createMasterAPP();
-  }, [session]);
 
   return (
     <>
