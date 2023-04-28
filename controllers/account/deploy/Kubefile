@@ -1,0 +1,10 @@
+FROM scratch
+
+USER 65532:65532
+
+COPY registry registry
+COPY manifests manifests
+
+ENV SMALL_BLOCK_WAIT_SECOND 604800
+
+CMD ["kubectl apply -f manifests","kubectl create configmap account-manager-configmap  --from-literal=SMALL_BLOCK_WAIT_SECOND=$SMALL_BLOCK_WAIT_SECOND -n account-system"]
