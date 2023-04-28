@@ -128,7 +128,7 @@ export default function DesktopContent() {
       // post message
       const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
       if (!iframe) return;
-      iframe.contentWindow?.postMessage(messageData, '*');
+      iframe.contentWindow?.postMessage(messageData, app.data.url);
     },
     [apps, openApp]
   );
