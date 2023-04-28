@@ -1,4 +1,5 @@
 import Iconfont from '@/components/iconfont';
+import request from '@/service/request';
 import { Box, Flex, Text } from '@chakra-ui/react';
 import { debounce } from 'lodash';
 import { nanoid } from 'nanoid';
@@ -27,18 +28,15 @@ function Terminal({ url }: { url: string }) {
   ]);
 
   useEffect(() => {
-    const event = (e: MessageEvent) => {
-      if (
-        e.origin === process.env.NEXT_PUBLIC_SITE &&
-        e.data.type === 'new terminal' &&
-        e.data.command
-      ) {
-        newTerminal(decodeURIComponent(e.data.command));
-      }
+    const event = async (e: MessageEvent) => {
+      console.log(e);
+      try {
+        if (e.data.type === 'new terminal' && e.data.command) {
+          newTerminal(decodeURIComponent(e.data.command));
+        }
+      } catch (error) {}
     };
-    try {
-      window.addEventListener('message', event);
-    } catch (error) {}
+    window.addEventListener('message', event);
     return () => window.removeEventListener('message', event);
   }, []);
 
@@ -46,8 +44,8 @@ function Terminal({ url }: { url: string }) {
     try {
       if (item.command) {
         setTimeout(() => {
-          e.target.contentWindow.postMessage({ command: item.command }, url);
-        }, 2000);
+          e?.target?.contentWindow?.postMessage({ command: item.command }, url);
+        }, 1000);
       }
     } catch (error) {}
   };

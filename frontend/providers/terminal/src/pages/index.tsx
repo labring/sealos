@@ -1,12 +1,11 @@
 import Terminal from '@/components/terminal';
 import request from '@/service/request';
 import useSessionStore from '@/stores/session';
+import { Box, Flex } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
-import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 import { createSealosApp, sealosApp } from 'sealos-desktop-sdk/app';
 import styles from './index.module.scss';
-import { Box, Flex } from '@chakra-ui/react';
 
 export default function Index() {
   const { setSession, isUserLogin } = useSessionStore();
@@ -31,6 +30,8 @@ export default function Index() {
     onSuccess: (res) => {
       if (res?.data?.code === 200 && res?.data?.data) {
         const url = res?.data?.data;
+        // setIsLoading(false)
+        // setUrl(url)
         fetch(url, { mode: 'cors' })
           .then((res) => {
             if (res.status === 200) {
