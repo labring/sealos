@@ -151,7 +151,7 @@ Have a look through [existing Issues](https://github.com/labring/sealos/issues?q
 ## Links
 
 - [Sealos Action](https://github.com/labring/sealos-action)
-- [Sealos Rebot](https://github.com/labring-actions/gh-rebot)
+- [Sealos Rebot](https://github.com/labring/gh-rebot)
 - [Bug Verify Example](https://github.com/labring-actions/bug-verify)
 - [Application Image](https://github.com/labring-actions/cluster-image)
 - [Rootfs Image](https://github.com/labring-actions/runtime)
