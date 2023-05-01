@@ -51,6 +51,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GIT_COMMIT_SHORT_SHA}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
@@ -60,7 +69,7 @@ jobs:
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
             type=raw,value=dev,enable=true
-            type=sha,enable=true,prefix=,suffix=,format=short
+            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
