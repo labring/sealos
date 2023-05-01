@@ -1,7 +1,7 @@
 
 SERVICE_NAME=sealos-terminal
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):1.0.6
+IMG ?= $(SERVICE_NAME):latest
 .PHONY: all
 all: docker-build-and-push
 

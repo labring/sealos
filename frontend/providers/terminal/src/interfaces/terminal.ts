@@ -29,7 +29,7 @@ export const generateTerminalTemplate = (form: TerminalForm): string => {
       user: form.user_name,
       token: form.token,
       apiServer: 'https://kubernetes.default.svc.cluster.local:443',
-      ttyImage: 'hub.sealos.cn/labring/terminal-app:1.19.4',
+      ttyImage: process.env.TTYD_IMAGE,
       replicas: 1,
       keepalived: '4h'
     }
