@@ -55,7 +55,6 @@ jobs:
         with:
           type: prune
 
-
       - name: Build image with new image-cri-shim
         run: |
           pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && sudo /usr/bin/sealos build -f Dockerfile -t kubernetes-hack:v1.25.0 . && popd

@@ -2,11 +2,6 @@ name: Save sealos from version
 
 on:
   workflow_call:
-    inputs:
-      version:
-        required: true
-        type: string
-        default: "4.1.7"
 
 jobs:
   save-sealos:
@@ -15,7 +10,7 @@ jobs:
       - name: Install sealos
         uses: labring/sealos-action@v0.0.7
         with:
-          sealosVersion: {{ inputs.version }}
+          sealosVersion: "4.1.7"
       - name: Save Binaries
         uses: actions/upload-artifact@v3
         with:

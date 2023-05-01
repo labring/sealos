@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
+	// ruleid: math-random-used
 	"math/rand"
 	"net"
 	"net/http"

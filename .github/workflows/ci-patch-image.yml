@@ -118,20 +118,29 @@ jobs:
           body: |
             /imagebuild_apps sealos ${{ env.GIT_COMMIT_SHORT_SHA }}
           token: "${{ secrets.GH_PAT }}"
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
   build-on-cluster-patch-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - call_ci_workflow
+      - save-sealos
     runs-on: ubuntu-latest
     permissions:
       issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Remove containerd && docker
-        uses: labring/sealos-action@v0.0.7
+      - name: Download sealos
+        uses: actions/download-artifact@v3
         with:
-          sealosVersion: "4.1.7"
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
 

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
+
+	// ruleid: math-random-used
+	mrand "math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -112,9 +114,9 @@ func RunPostgresTest(config, userNamespace string) error {
 // PostgresClusterRandomCreate Create random PostgresCluster.
 func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	var err error
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	rnd := mrand.New(mrand.NewSource(time.Now().UnixNano()))
 	n := rnd.Intn(5)
-	objSlice := []*unstructured.Unstructured{}
+	var objSlice []*unstructured.Unstructured
 	//Create
 	for i := 0; i < n; i++ {
 		objTmp := obj.DeepCopy()

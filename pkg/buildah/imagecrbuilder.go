@@ -18,6 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
+	// ruleid: math-random-used
 	"math/rand"
 	"path/filepath"
 	"strconv"

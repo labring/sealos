@@ -153,11 +153,13 @@ jobs:
           -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
           -f Dockerfile \
           .
-
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
   build-cluster-image:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - image-build
+      - save-sealos
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -180,10 +182,16 @@ jobs:
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
-      - name: Install sealos
-        uses: labring/sealos-action@v0.0.7
+      - name: Download sealos
+        uses: actions/download-artifact@v3
         with:
-          sealosVersion: "4.1.7"
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
 
       - name: Sealos login to ghcr.io
         # if push to master, then login to ghcr.io

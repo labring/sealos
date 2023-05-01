@@ -1,4 +1,4 @@
-name: Build Frontend Providers Image
+name: Build Frontend Image
 
 on:
   workflow_dispatch:
@@ -28,23 +28,11 @@ env:
   DEFAULT_OWNER: "labring"
 
 jobs:
-  resolve-modules:
-    runs-on: ubuntu-20.04
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Resolve Modules
-        id: set-matrix
-        run: bash ./scripts/resolve-modules.sh ./frontend/providers
-
   image-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ applaunchpad, bytebase, imagehub, terminal ]
+        module: [ providers/applaunchpad, providers/bytebase, providers/imagehub, providers/terminal,desktop ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -59,15 +47,20 @@ jobs:
         run: |
           TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
+      - name: Extract module name
+        id: module_name
+        run: |
+          MODULE_NAME=$(basename ${{ matrix.module }})
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV  
 
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-frontend
+            ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'master') }}
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=dev,enable=true
             type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
 
@@ -88,21 +81,23 @@ jobs:
       - name: Build And Push
         uses: docker/build-push-action@v4
         with:
-          context: ./frontend/providers/${{ matrix.module }}
-          file: ./frontend/providers/${{ matrix.module }}/Dockerfile
+          context: ./frontend/${{ matrix.module }}
+          file: ./frontend/${{ matrix.module }}/Dockerfile
           # Push if it's a push event or if push_mage is true
           push: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
   cluster-image-build:
     if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
     needs:
       - image-build
+      - save-sealos
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ applaunchpad, bytebase, imagehub, terminal ]
+        module: [ applaunchpad, bytebase, imagehub, terminal,desktop ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -117,30 +112,32 @@ jobs:
         run: |
           TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-frontend >> $GITHUB_OUTPUT 
-          echo old_docker_image=ghcr.io/labring/sealos-${{ matrix.module }}-frontend:dev >> $GITHUB_OUTPUT
-          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-frontend >> $GITHUB_OUTPUT
-          echo new_docker_image=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-frontend:${TAG} >> $GITHUB_OUTPUT
-          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-frontend >> $GITHUB_OUTPUT
-          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-frontend:${TAG} >> $GITHUB_OUTPUT
+          echo old_docker_repo=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT 
+          echo old_docker_image=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend:dev >> $GITHUB_OUTPUT
+          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
+          echo new_docker_image=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend:${TAG} >> $GITHUB_OUTPUT
+          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
+          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${TAG} >> $GITHUB_OUTPUT
 
-      - name: Install sealos
-        uses: labring/sealos-action@v0.0.7
+      - name: Download sealos
+        uses: actions/download-artifact@v3
         with:
-          sealosVersion: "4.1.7"
-
-      - name: Mutate image tag in deploy files
-        working-directory: frontend/providers/${{ matrix.module }}/deploy
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
         run: |
-          sudo sed -i "s;${{ steps.prepare.outputs.old_docker_image }};${{ steps.prepare.outputs.new_docker_image }};" manifests/*
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
 
       - name: Sealos login to ghcr.io
         run: |
           sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
 
-      - name: Build ${{ matrix.module }}-frontend cluster image
-        working-directory: frontend/providers/${{ matrix.module }}/deploy
+      - name: Build ${{ env.MODULE_NAME }}-frontend cluster image
+        working-directory: frontend/${{ matrix.module }}/deploy
         run: |
+          sudo sed -i "s;${{ steps.prepare.outputs.old_docker_image }};${{ steps.prepare.outputs.new_docker_image }};" manifests/*
           sudo sealos build -t ${{ steps.prepare.outputs.cluster_image }}-amd64 --platform linux/amd64 -f Kubefile
           # delete old registry cache
           sudo rm -rf registry
@@ -149,7 +146,7 @@ jobs:
       - name: Manifest Cluster Images
         run: |
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ matrix.module }}-frontend"
+          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ env.MODULE_NAME }}-frontend"
         env:
           OWNER: ${{ github.repository_owner }}
 
@@ -160,5 +157,5 @@ jobs:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-frontend:${{ steps.prepare.outputs.tag_name }}
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${{ steps.prepare.outputs.tag_name }}
           token: "${{ secrets.GH_PAT }}"
