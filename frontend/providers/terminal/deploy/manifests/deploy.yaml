@@ -2,15 +2,14 @@ apiVersion: v1
 kind: Namespace
 metadata:
   labels:
-    app: imagehub
-  name: imagehub-frontend
+    app: terminal-frontend
+  name: terminal-frontend
 ---
-
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: imagehub-frontend-config
-  namespace: imagehub-frontend
+  name: terminal-frontend-config
+  namespace: terminal-frontend
 data:
   config.yaml: |-
     addr: :3000
@@ -18,22 +17,21 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: imagehub
-  namespace: imagehub-frontend
+  name: terminal-frontend
+  namespace: terminal-frontend
 spec:
   selector:
     matchLabels:
-      app: imagehub-frontend
+      app: terminal-frontend
   strategy:
     type: Recreate
   template:
     metadata:
       labels:
-        app: imagehub-frontend
+        app: terminal-frontend
     spec:
-      serviceAccountName: imagehub-anonymous
       containers:
-        - name: imagehub-frontend
+        - name: terminal-frontend
           resources:
             limits:
               cpu: 100m
@@ -49,24 +47,24 @@ spec:
               drop:
                 - "ALL"
           # do not modify this image, it is used for CI/CD
-          image: ghcr.io/labring/sealos-imagehub-frontend:dev
+          image: ghcr.io/labring/sealos-terminal-frontend:dev
           imagePullPolicy: Always
           volumeMounts:
-            - name: imagehub-frontend-volume
+            - name: terminal-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
       volumes:
-        - name: imagehub-frontend-volume
+        - name: terminal-frontend-volume
           configMap:
-            name: imagehub-frontend-config
+            name: terminal-frontend-config
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: imagehub-frontend
-  name: imagehub-frontend
-  namespace: imagehub-frontend
+    app: terminal-frontend
+  name: terminal-frontend
+  namespace: terminal-frontend
 spec:
   ports:
     - name: http
@@ -74,4 +72,4 @@ spec:
       protocol: TCP
       targetPort: 3000
   selector:
-    app: imagehub-frontend
+    app: terminal-frontend
