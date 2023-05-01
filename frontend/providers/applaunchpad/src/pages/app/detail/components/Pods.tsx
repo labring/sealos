@@ -162,7 +162,7 @@ const Pods = ({
               {
                 child: (
                   <>
-                    <MyIcon name={'change'} w={'14px'} />
+                    <MyIcon name={'log'} w={'14px'} />
                     <Box ml={2}>日志</Box>
                   </>
                 ),
@@ -230,7 +230,8 @@ const Pods = ({
       <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
-          podName={pods[logsPodIndex].podName}
+          appName={appName}
+          podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.Running)
             .map((item, i) => ({

@@ -9,7 +9,7 @@ const PodLineChart = ({
   data
 }: {
   type: 'cpu' | 'memory' | 'green' | 'deepBlue';
-  cpu?: number;
+  cpu?: number; // cpu limit
   data: number[];
 }) => {
   const { screenWidth } = useGlobalStore();
@@ -38,7 +38,7 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#36ADEF',
-      formatter: (e: any) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
+      formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
     },
     memory: {
       backgroundColor: {
@@ -60,7 +60,7 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#8172D8',
-      formatter: (e: any) => printMemory(e[0].value)
+      formatter: (e: any[]) => printMemory(e[0].value)
     },
     green: {
       backgroundColor: {
@@ -82,7 +82,7 @@ const PodLineChart = ({
         global: false // 缺省为 false
       },
       lineColor: '#00A9A6',
-      formatter: (e: any) => printMemory(e[0].value)
+      formatter: (e: any[]) => `${((e[0].value / cpu) * 100).toFixed(2)}%`
     },
     deepBlue: {
       backgroundColor: {
@@ -104,7 +104,7 @@ const PodLineChart = ({
         global: false
       },
       lineColor: '#3293EC',
-      formatter: (e: any) => printMemory(e[0].value)
+      formatter: (e: any[]) => printMemory(e[0].value)
     }
   };
 
@@ -175,6 +175,13 @@ const PodLineChart = ({
     option.current.series[0].data = data;
     myChart.current.setOption(option.current);
   }, [data]);
+
+  // cpu changed, update
+  useEffect(() => {
+    if (!myChart.current || !myChart?.current?.getOption()) return;
+    option.current.tooltip.formatter = map[type].formatter;
+    myChart.current.setOption(option.current);
+  }, [cpu]);
 
   // resize chart
   useEffect(() => {

@@ -94,7 +94,7 @@ const Yaml = ({ yamlList = [], pxVal }: { yamlList: YamlItemType[]; pxVal: numbe
               <MyIcon name="copy" w={'16px'} />
             </Box>
           </Flex>
-          <Box flex={1} h={0} overflowY={'auto'} bg={'#ffffff'} p={4}>
+          <Box flex={1} h={0} overflow={'auto'} bg={'#ffffff'} p={4}>
             <YamlCode className={styles.code} content={yamlList[selectedIndex].value} />
           </Box>
         </Flex>
