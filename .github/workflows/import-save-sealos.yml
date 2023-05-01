@@ -1,4 +1,4 @@
-name: Save sealos from version
+name: Import Save sealos from version
 
 on:
   workflow_call:

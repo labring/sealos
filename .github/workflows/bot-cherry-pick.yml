@@ -1,4 +1,4 @@
-name: Cherry Pick On Comment
+name: Github Rebot for Cherry Pick On Comment
 on:
   issue_comment:
     types: [created]

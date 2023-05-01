@@ -97,12 +97,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ applaunchpad, bytebase, imagehub, terminal,desktop ]
+        module: [ providers/applaunchpad, providers/bytebase, providers/imagehub, providers/terminal,desktop ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Extract module name
+        id: module_name
+        run: |
+          MODULE_NAME=$(basename ${{ matrix.module }})
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV  
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
