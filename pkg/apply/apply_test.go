@@ -60,6 +60,17 @@ func Test_NewApplierFromFile(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Success_EmptyHostsAndSSH",
+			args: args{
+				customEnv: nil,
+				sets: []string{
+					"clusterName=default",
+				},
+				values: []string{"../clusterfile/testdata/emptyHostsAndSSH.values.yaml"},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
