@@ -1,7 +1,7 @@
 
-SERVICE_NAME=zhujingyang/sealos-terminal
+SERVICE_NAME=sealos-terminal
 # Image URL to use all building/pushing image targets
-IMG ?= $(SERVICE_NAME):1.05
+IMG ?= $(SERVICE_NAME):latest
 .PHONY: all
 all: docker-build-and-push
 

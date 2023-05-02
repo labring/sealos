@@ -95,11 +95,15 @@ jobs:
           mv bin/manager bin/controller-${{ matrix.module }}-arm64
           chmod +x bin/controller-${{ matrix.module }}-arm64
 
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
       - name: Prepare
         id: prepare
         run: |
-          TAG=dev
+          TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
@@ -150,23 +154,72 @@ jobs:
           -f Dockerfile \
           .
 
-#  build-on-cluster-image:
-#    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
-#    needs:
-#      - image-build
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        module: [ cluster, infra, metering, user, terminal, imagehub, account, app]
-#    permissions:
-#      issues: write
-#    steps:
-#      - name: Build ${{ matrix.module }}-controller image
-#        uses: peter-evans/create-or-update-comment@v1
-#        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
-#        with:
-#          issue-number: 140
-#          repository: labring-actions/cluster-image
-#          body: |
-#            /imagebuild_apps sealos-${{ matrix.module }}-controller dev
-#          token: "${{ secrets.GH_PAT }}"
+  build-cluster-image:
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    needs:
+      - image-build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [ user, terminal, metering, infra, cluster, imagehub, account, app ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+
+      - name: Prepare
+        id: prepare
+        run: |
+          TAG=${GIT_COMMIT_SHORT_SHA}
+          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT          
+          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
+          echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
+
+      - name: Install sealos
+        uses: labring/sealos-action@v0.0.7
+        with:
+          sealosVersion: "4.1.7"
+
+      - name: Mutate image tag in deploy files
+        working-directory: controllers/${{ matrix.module }}/deploy
+        run: |
+          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:dev
+          NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.new_docker_repo }}:${{ steps.prepare.outputs.tag_name }}
+          sudo sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
+
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+
+      - name: Build ${{ matrix.module }}-controller cluster image
+        working-directory: controllers/${{ matrix.module }}/deploy
+        run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
+          # delete old registry cache
+          sudo rm -rf registry
+          sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
+
+      - name: Manifest Cluster Images
+        # if push to master, then patch images to ghcr.io
+        run: |
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ matrix.module }}-controller"
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Sync Images
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller:${{ steps.prepare.outputs.tag_name }}
+          token: "${{ secrets.GH_PAT }}"

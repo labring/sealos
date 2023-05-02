@@ -176,7 +176,8 @@ jobs:
         run: |
           TAG=${GIT_COMMIT_SHORT_SHA}
           echo tag_name=${TAG} >> $GITHUB_OUTPUT
-          echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
+          echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
+          echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - name: Install sealos
@@ -184,13 +185,17 @@ jobs:
         with:
           sealosVersion: "4.1.7"
 
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+
       - name: Mutate image tag in deploy files
         working-directory: service/${{ matrix.module }}/deploy
         run: |
-          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.docker_repo }}:dev
-          NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.docker_repo }}:${{ steps.prepare.outputs.tag_name }}
-          sed -i 's;$OLD_DOCKER_IMAGE_NAME;$NEW_DOCKER_IMAGE_NAME;' images/shim/*
-          sed -i 's;$OLD_DOCKER_IMAGE_NAME;$NEW_DOCKER_IMAGE_NAME;' manifests/*
+          OLD_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.old_docker_repo }}:dev
+          NEW_DOCKER_IMAGE_NAME=${{ steps.prepare.outputs.new_docker_repo }}:${{ steps.prepare.outputs.tag_name }}
+          sed -i "s;${OLD_DOCKER_IMAGE_NAME};${NEW_DOCKER_IMAGE_NAME};" manifests/*
 
       - name: Build ${{ matrix.module }}-service cluster image
         working-directory: service/${{ matrix.module }}/deploy
@@ -198,11 +203,6 @@ jobs:
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-amd64 --platform linux/amd64 -f Kubefile
           sudo sealos build -t ${CLUSTER_IMAGE_NAME}-arm64 --platform linux/arm64 -f Kubefile
-
-      - name: Sealos login to ghcr.io
-        # if push to master, then login to ghcr.io
-        run: |
-          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
 
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
@@ -219,5 +219,5 @@ jobs:
           issue-number: 251
           repository: labring-actions/cluster-image
           body: |
-            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${GIT_COMMIT_SHORT_SHA}
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service:${{ steps.prepare.outputs.tag_name }}
           token: "${{ secrets.GH_PAT }}"

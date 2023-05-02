@@ -10,19 +10,6 @@ bot:
   username: sealos-ci-robot
 repo:
   org: false
-  name: sealos-ci-robot/sealos
-  fork: labring/sealos
-
-changelog:
-  script: scripts/changelog.sh {{.Repo.Fork}}
-  allowOps:
-    - cuisongliu
-  reviewers:
-    - cuisongliu
-  title: "docs: Automated Changelog Update for {{.ReleaseVersion}}"
-  body: |
-    🤖 add release changelog using rebot.<br/>
-    copilot:all
 
 release:
   retry: 15s
@@ -39,7 +26,4 @@ message:
     🤖 says: ‼️ The action doesn't have permission to trigger.
   release_error: |
     🤖 says: ‼️ Release action failed.
-    Error details: {{.Error}}
-  changelog_error: |
-    🤖 says: ‼️ Changelog action encountered an error.
     Error details: {{.Error}}

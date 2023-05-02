@@ -12,6 +12,7 @@ import {
   Flex,
   MenuButton
 } from '@chakra-ui/react';
+import { sealosApp } from 'sealos-desktop-sdk/app';
 import { restartPodByName } from '@/api/app';
 import type { PodDetailType } from '@/types/app';
 import { useLoading } from '@/hooks/useLoading';
@@ -143,7 +144,25 @@ const Pods = ({
               {
                 child: (
                   <>
-                    <MyIcon name={'change'} w={'14px'} />
+                    <MyIcon name={'terminal'} w={'14px'} />
+                    <Box ml={2}>终端</Box>
+                  </>
+                ),
+                onClick: () => {
+                  const defaultCommand = `kubectl exec -it ${item.podName} -c ${appName} -- sh -c "clear; (bash || ash || sh)"`;
+                  sealosApp.runEvents('openDesktopApp', {
+                    appKey: 'system-terminal',
+                    query: {
+                      defaultCommand
+                    },
+                    messageData: { type: 'new terminal', command: defaultCommand }
+                  });
+                }
+              },
+              {
+                child: (
+                  <>
+                    <MyIcon name={'log'} w={'14px'} />
                     <Box ml={2}>日志</Box>
                   </>
                 ),
@@ -211,7 +230,8 @@ const Pods = ({
       <Loading loading={loading} fixed={false} />
       {logsPodIndex !== undefined && (
         <LogsModal
-          podName={pods[logsPodIndex].podName}
+          appName={appName}
+          podName={pods[logsPodIndex]?.podName || ''}
           pods={pods
             .filter((pod) => pod.status.value === PodStatusEnum.Running)
             .map((item, i) => ({

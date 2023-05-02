@@ -440,13 +440,13 @@ spec:
         - /manager
         env:
         - name: USER_NAMESPACE
-          value: user-system
+          value: {{ .userNamespace }}
         - name: DOMAIN
-          value: cloud.sealos.io
+          value: {{ .cloudDomain }}
         - name: SECRET_NAME
-          value: wildcard-cloud-sealos-io-cert
+          value: {{ .wildcardCertSecretName }}
         - name: SECRET_NAMESPACE
-          value: sealos-system
+          value: {{ .wildcardCertSecretNamespace }}
         image: ghcr.io/labring/sealos-terminal-controller:dev
         imagePullPolicy: Always
         livenessProbe:

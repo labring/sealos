@@ -30,8 +30,12 @@ export const getPodsMetrics = (podsName: string[]) =>
     item.map(adaptMetrics)
   );
 
-export const getPodLogs = (data: { podName: string; pageNum: number; pageSize?: number }) =>
-  GET<string>(`/api/getPodLogs?${obj2Query(data)}`);
+export const getPodLogs = (data: {
+  appName: string;
+  podName: string;
+  stream: boolean;
+  logSize?: number;
+}) => POST<string>(`/api/getPodLogs`, data);
 
 export const getPodEvents = (podName: string) =>
   GET(`/api/getPodEvents?podName=${podName}`).then(adaptEvents);

@@ -26,7 +26,8 @@ import (
 func Confirm(prompt, cancel string) (bool, error) {
 	var yesRx = regexp.MustCompile("^(?:y(?:es)?)$")
 	var noRx = regexp.MustCompile("^(?:n(?:o)?)$")
-	promptLabel := fmt.Sprintf("%s Yes [y/yes], No [n/no]", prompt)
+	promptLabel := "Yes [y/yes], No [n/no]"
+	fmt.Println(prompt)
 
 	validate := func(input string) error {
 		if !yesRx.MatchString(input) && !noRx.MatchString(input) {
