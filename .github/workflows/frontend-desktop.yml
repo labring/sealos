@@ -73,8 +73,8 @@ jobs:
       - name: Build And Push
         uses: docker/build-push-action@v4
         with:
-          context: ./frontend/providers/desktop
-          file: ./frontend/providers/desktop/Dockerfile
+          context: ./frontend/desktop
+          file: ./frontend/desktop/Dockerfile
           # Push if it's a push event or if push_mage is true
           push: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
           tags: ${{ steps.meta.outputs.tags }}
