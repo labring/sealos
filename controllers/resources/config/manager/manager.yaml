@@ -31,7 +31,24 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        env:
+          - name: MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_URI
+          - name: MONGO_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_USERNAME
+          - name: MONGO_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mongo-secret
+                key: MONGO_PASSWORD
+        image: docker.io/bxy4543/resources-controller:v0.0.1
+        imagePullPolicy: Always
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

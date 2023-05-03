@@ -14,4 +14,9 @@ resources:
   group: resources
   kind: Monitor
   version: v1alpha1
+- controller: true
+  domain: sealos.io
+  group: resources
+  kind: Billing
+  version: v1alpha1
 version: "3"

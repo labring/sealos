@@ -43,7 +43,7 @@ Network bandwidth: Kbps (kilobits per second) not yet available
 //| Infra-Memory | 33    | Mebibytes unit |
 //| Infra-Disk   | 2     | Mebibytes unit |
 //
-// price: 1 = 1000000¥
+// price: 1000000 = 1¥
 
 type Price struct {
 	Property string  `json:"property" bson:"property"`
@@ -107,10 +107,15 @@ const (
 	PropertyInfraDisk   = "infra-disk"
 )
 
+var (
+	bin1Mi  = resource.NewQuantity(1<<20, resource.BinarySI)
+	cpuUnit = resource.MustParse("1m")
+)
+
 var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
-	corev1.ResourceCPU:     resource.NewQuantity(1000, resource.DecimalSI), // 1 m CPU (1000 μ)
-	corev1.ResourceMemory:  resource.NewQuantity(1<<20, resource.BinarySI), // 1 MiB
-	corev1.ResourceStorage: resource.NewQuantity(1<<20, resource.BinarySI), // 1 MiB
+	corev1.ResourceCPU:     &cpuUnit, // 1 m CPU (1000 μ)
+	corev1.ResourceMemory:  bin1Mi,   // 1 MiB
+	corev1.ResourceStorage: bin1Mi,   // 1 MiB
 }
 
 // mCore
@@ -183,21 +188,26 @@ func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
 //	return nil
 //}
 
-// 复合索引 加速查询
-func createCompoundIndex(client *mongo.Client, dbName, collectionName string) error {
-	collection := client.Database(dbName).Collection(collectionName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+//func createCompoundIndex(client *mongo.Client, dbName, collectionName string) error {
+//	collection := client.Database(dbName).Collection(collectionName)
+//	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+//	defer cancel()
+//
+//	indexModel := mongo.IndexModel{
+//		Keys: bson.D{
+//			{Key: CategoryField, Value: 1},
+//			{Key: PropertyField, Value: 1},
+//			{Key: TimeField, Value: 1},
+//		},
+//	}
+//
+//	_, err := collection.Indexes().CreateOne(ctx, indexModel)
+//	return err
+//}
 
-	indexModel := mongo.IndexModel{
-		Keys: bson.D{
-			{Key: CategoryField, Value: 1},
-			{Key: PropertyField, Value: 1},
-			{Key: TimeField, Value: 1},
-		},
-	}
-
-	_, err := collection.Indexes().CreateOne(ctx, indexModel)
+func CreateTimeSeriesTable(client *mongo.Client, dbName, collectionName string) error {
+	cmd := bson.D{{Key: "create", Value: collectionName}, {Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}}}
+	err := client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
 	return err
 }
 

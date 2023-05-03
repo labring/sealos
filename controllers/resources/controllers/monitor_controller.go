@@ -23,18 +23,17 @@ import (
 	"os"
 	"time"
 
+	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
+
 	"github.com/go-logr/logr"
 	infrav1 "github.com/labring/sealos/controllers/infra/api/v1"
-	"github.com/labring/sealos/controllers/infra/common"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -65,10 +64,14 @@ const (
 	MongoPassword = "MONGO_PASSWORD"
 )
 
-//+kubebuilder:rbac:groups=resources.sealos.io,resources=monitors,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=resources.sealos.io,resources=monitors/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=resources.sealos.io,resources=monitors/finalizers,verbs=update
-//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=resourcequotas/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras,verbs=get;list;watch
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/status,verbs=get;list;watch
+//+kubebuilder:rbac:groups=infra.sealos.io,resources=infras/finalizers,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -81,8 +84,6 @@ const (
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	_ = log.FromContext(ctx)
-
-	r.Info("start resource monitor reconcile", "time", time.Now().Format(time.RFC3339))
 
 	//TODO get mongo connect url from configmap or secret
 	dbCtx := context.Background()
@@ -99,24 +100,37 @@ func (r *MonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	}()
 
-	var resourceQuota corev1.ResourceQuota
-	var infra infrav1.Infra
-	if err = r.Get(ctx, req.NamespacedName, &resourceQuota); err == nil {
-		if err = r.quotaResourceUsage(ctx, mongoClient, &resourceQuota); err != nil {
-			r.Logger.Error(err, "monitor quota resource")
-			return ctrl.Result{Requeue: true}, err
-		}
-		r.Logger.Info("monitor resource quota", "name", resourceQuota.Name, "namespace", resourceQuota.Namespace)
-	} else if err = r.Get(ctx, req.NamespacedName, &infra); err == nil {
-		if err := r.infraResourceUsage(ctx, mongoClient, &infra); err != nil {
-			r.Logger.Error(err, "monitor infra resource")
-			return ctrl.Result{Requeue: true}, err
-		}
-		r.Logger.Info("monitor infra", "name", infra.Name, "namespace", infra.Namespace)
-	} else {
-		r.Logger.Error(err, "monitor resource failed")
+	//var resourceQuota = &corev1.ResourceQuota{}
+	//var infra infrav1.Infra
+	//if err = r.Get(ctx, req.NamespacedName, resourceQuota); err == nil {
+	//	if err = r.quotaResourceUsage(ctx, mongoClient, resourceQuota); err != nil {
+	//		r.Logger.Error(err, "monitor quota resource", "resourceQuota.Status", resourceQuota.Status)
+	//		return ctrl.Result{Requeue: true}, err
+	//	}
+	//	//r.Logger.Info("monitor resource quota", "name", resourceQuota.Name, "namespace", resourceQuota.Namespace)
+	//} else if err = r.Get(ctx, req.NamespacedName, &infra); err == nil {
+	//	if err := r.infraResourceUsage(ctx, mongoClient, &infra); err != nil {
+	//		r.Logger.Error(err, "monitor infra resource")
+	//		return ctrl.Result{Requeue: true}, err
+	//	}
+	//	r.Logger.Info("monitor infra", "name", infra.Name, "namespace", infra.Namespace)
+	//} else if client.IgnoreNotFound(err) == nil {
+	//	return ctrl.Result{}, nil
+	//}
+
+	var namespace corev1.Namespace
+	if err = r.Get(ctx, req.NamespacedName, &namespace); err != nil {
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	if err = r.podResourceUsage(ctx, mongoClient, namespace.Name); err != nil {
+		r.Logger.Error(err, "monitor pod resource", "namespace", namespace.Name)
 		return ctrl.Result{Requeue: true}, err
 	}
+	if err = r.infraResourceUsage(ctx, mongoClient, namespace.Name); err != nil {
+		r.Logger.Error(err, "monitor infra resource", "namespace", namespace.Name)
+		return ctrl.Result{Requeue: true}, err
+	}
+
 	return ctrl.Result{Requeue: true, RequeueAfter: 1 * time.Minute}, nil
 }
 
@@ -148,9 +162,20 @@ func (r *MonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
-		For(&corev1.ResourceQuota{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
-		Watches(&source.Kind{Type: &infrav1.Infra{}}, &handler.EnqueueRequestForObject{}, builder.WithPredicates(predicate.GenerationChangedPredicate{})).
+		For(&corev1.Namespace{}, builder.WithPredicates(predicate.Funcs{
+			CreateFunc: func(createEvent event.CreateEvent) bool {
+				return true
+			},
+			UpdateFunc: func(updateEvent event.UpdateEvent) bool {
+				return false
+			},
+			DeleteFunc: func(deleteEvent event.DeleteEvent) bool {
+				return false
+			},
+			GenericFunc: func(genericEvent event.GenericEvent) bool {
+				return false
+			},
+		})).
 		Complete(r)
 }
 
@@ -167,124 +192,121 @@ func (r *MonitorReconciler) preApply() error {
 		}
 	}()
 
-	_ = createCompoundIndex(mongoClient, SealosResourcesDBName, SealosMonitorCollectionName)
+	//_ = createCompoundIndex(mongoClient, SealosResourcesDBName, SealosMonitorCollectionName)
+	err = CreateTimeSeriesTable(mongoClient, SealosResourcesDBName, SealosMonitorCollectionName)
+	if err != nil {
+		r.Logger.Error(err, "create table time series failed")
+	}
 	return nil
 }
 
-func (r *MonitorReconciler) quotaResourceUsage(ctx context.Context, mongoClient *mongo.Client, resourceQuota *corev1.ResourceQuota) error {
+func (r *MonitorReconciler) podResourceUsage(ctx context.Context, mongoClient *mongo.Client, namespace string) error {
 	timeStamp := time.Now().UTC()
-
-	resourceQuota.Status.Used[corev1.ResourceCPU] = resourceQuota.Spec.Hard[corev1.ResourceCPU]
-
-	_, err := mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, []interface{}{
-		&Monitor{
-			Category: resourceQuota.Namespace,
-			Property: corev1.ResourceCPU.String(),
-			Value:    getResourceValue(corev1.ResourceCPU, resourceQuota.Status.Used[corev1.ResourceCPU]),
-			Time:     timeStamp,
-			//TODO detail
-			Detail: "",
-		},
-		&Monitor{
-			Category: resourceQuota.Namespace,
-			Property: corev1.ResourceMemory.String(),
-			Value:    getResourceValue(corev1.ResourceMemory, resourceQuota.Status.Used[corev1.ResourceMemory]),
-			Time:     timeStamp,
-			//TODO detail
-			Detail: "",
-		},
-		&Monitor{
-			Category: resourceQuota.Namespace,
-			Property: corev1.ResourceStorage.String(),
-			Value:    getResourceValue(corev1.ResourceStorage, resourceQuota.Status.Used[corev1.ResourceStorage]),
-			Time:     timeStamp,
-			//TODO detail
-			Detail: "",
-		},
-	})
-	return err
-	//
-	//var resources map[string]map[corev1.ResourceName]*quantity
-	//var nsQuota map[string]*corev1.ResourceQuota
-	//initResource := func() (rs map[corev1.ResourceName]*quantity) {
-	//	rs = make(map[corev1.ResourceName]*quantity)
-	//	rs[corev1.ResourceCPU] = &quantity{Quantity: resource.NewQuantity(0, resource.DecimalSI), detail: ""}
-	//	rs[corev1.ResourceMemory] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
-	//	rs[corev1.ResourceStorage] = &quantity{Quantity: resource.NewQuantity(0, resource.BinarySI), detail: ""}
-	//	return
+	//cpuUsed, memUsed, storageUsed := resourceQuota.Status.Used[corev1.ResourceLimitsCPU], resourceQuota.Status.Used[corev1.ResourceLimitsMemory], resourceQuota.Status.Used[corev1.ResourceRequestsStorage]
+	//if cpuUsed.Value() == 0 && memUsed.Value() == 0 && storageUsed.Value() == 0 {
+	//	r.Logger.Info("resourceQuota.Status.Used is empty", "namespace", resourceQuota.Namespace, "name", resourceQuota.Name)
 	//}
 	//
-	//for _, pod := range podList.Items {
-	//	//TODO pending status need skip?
-	//	if pod.Status.Phase != corev1.PodRunning && pod.Status.Phase != corev1.PodPending {
-	//		continue
-	//	}
-	//	if resources[pod.Namespace] == nil {
-	//		resources[pod.Namespace] = initResource()
-	//	}
-	//	for _, container := range pod.Spec.Containers {
-	//		if cpuRequest, ok := container.Resources.Requests[corev1.ResourceCPU]; ok {
-	//			resources[pod.Namespace][corev1.ResourceCPU].Add(cpuRequest)
-	//		} else {
-	//			resources[pod.Namespace][corev1.ResourceCPU].Add(container.Resources.Limits[corev1.ResourceCPU])
-	//		}
-	//		if memoryRequest, ok := container.Resources.Requests[corev1.ResourceMemory]; ok {
-	//			resources[pod.Namespace][corev1.ResourceMemory].Add(memoryRequest)
-	//		} else {
-	//			resources[pod.Namespace][corev1.ResourceMemory].Add(container.Resources.Limits[corev1.ResourceMemory])
-	//		}
-	//	}
-	//	if nsQuota[pod.Namespace] == nil {
-	//		nsQuota[pod.Namespace] = &corev1.ResourceQuota{}
-	//		if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + pod.Namespace, Namespace: pod.Namespace}, nsQuota[pod.Namespace]); err != nil {
-	//			r.Logger.Error(err, "get resource quota failed", "namespace", pod.Namespace)
-	//			resources[pod.Namespace][corev1.ResourceStorage].detail = err.Error()
-	//			continue
-	//		}
-	//	}
-	//	resources[pod.Namespace][corev1.ResourceStorage].Add(*nsQuota[pod.Namespace].Status.Used.Name("requests.storage", resource.BinarySI))
-	//}
 	//
-	////TODO if cpu, memory, storage is empty, skip
-	//var dataSources []interface{}
-	//for ns, res := range resources {
-	//	dataSources = append(dataSources, &Monitor{
-	//		Category: ns,
+	//_, err := mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, []interface{}{
+	//	&Monitor{
+	//		Category: resourceQuota.Namespace,
 	//		Property: corev1.ResourceCPU.String(),
-	//		Value:    getResourceValue(corev1.ResourceCPU, res),
+	//		Value:    getResourceValue(corev1.ResourceCPU, &cpuUsed),
 	//		Time:     timeStamp,
-	//		Detail:   res[corev1.ResourceCPU].String(),
-	//	}, &Monitor{
-	//		Category: ns,
+	//		//TODO detail
+	//		Detail: "",
+	//	},
+	//	&Monitor{
+	//		Category: resourceQuota.Namespace,
 	//		Property: corev1.ResourceMemory.String(),
-	//		Value:    getResourceValue(corev1.ResourceMemory, res),
+	//		Value:    getResourceValue(corev1.ResourceMemory, &memUsed),
 	//		Time:     timeStamp,
-	//		Detail:   res[corev1.ResourceMemory].String(),
-	//	}, &Monitor{
-	//		Category: ns,
+	//		//TODO detail
+	//		Detail: "",
+	//	},
+	//	&Monitor{
+	//		Category: resourceQuota.Namespace,
 	//		Property: corev1.ResourceStorage.String(),
-	//		Value:    getResourceValue(corev1.ResourceStorage, res),
+	//		Value:    getResourceValue(corev1.ResourceStorage, &storageUsed),
 	//		Time:     timeStamp,
-	//		Detail:   res[corev1.ResourceStorage].String(),
-	//	})
-	//}
-	//_, err := mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, dataSources)
+	//		//TODO detail
+	//		Detail: "",
+	//	},
+	//})
 	//return err
+
+	var (
+		quota   = corev1.ResourceQuota{}
+		podList = corev1.PodList{}
+	)
+	if err := r.List(context.Background(), &podList, &client.ListOptions{Namespace: namespace}); err != nil {
+		return err
+	}
+	rs := initResources()
+	if err := r.Get(ctx, client.ObjectKey{Name: meteringv1.ResourceQuotaPrefix + namespace, Namespace: namespace}, &quota); err != nil {
+		if client.IgnoreNotFound(err) != nil {
+			return err
+		}
+		r.Logger.Info("no resource quota", "namespace", namespace)
+		rs[corev1.ResourceStorage].detail = "no resource quota"
+	} else {
+		rs[corev1.ResourceStorage].Add(*quota.Status.Used.Name("requests.storage", resource.BinarySI))
+	}
+	for _, pod := range podList.Items {
+		// TODO pending status need skip?
+		if pod.Status.Phase != corev1.PodRunning /*&& pod.Status.Phase != corev1.PodPending*/ {
+			continue
+		}
+		for _, container := range pod.Spec.Containers {
+			if cpuRequest, ok := container.Resources.Limits[corev1.ResourceCPU]; ok {
+				rs[corev1.ResourceCPU].Add(cpuRequest)
+			} else {
+				rs[corev1.ResourceCPU].Add(container.Resources.Requests[corev1.ResourceCPU])
+			}
+			if memoryRequest, ok := container.Resources.Limits[corev1.ResourceMemory]; ok {
+				rs[corev1.ResourceMemory].Add(memoryRequest)
+			} else {
+				rs[corev1.ResourceMemory].Add(container.Resources.Requests[corev1.ResourceMemory])
+			}
+		}
+	}
+	_, err := mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, []interface{}{&Monitor{
+		Category: namespace,
+		Property: corev1.ResourceCPU.String(),
+		Value:    getResourceValue(corev1.ResourceCPU, rs),
+		Time:     timeStamp,
+		Detail:   rs[corev1.ResourceCPU].String(),
+	}, &Monitor{
+		Category: namespace,
+		Property: corev1.ResourceMemory.String(),
+		Value:    getResourceValue(corev1.ResourceMemory, rs),
+		Time:     timeStamp,
+		Detail:   rs[corev1.ResourceMemory].String(),
+	}, &Monitor{
+		Category: namespace,
+		Property: corev1.ResourceStorage.String(),
+		Value:    getResourceValue(corev1.ResourceStorage, rs),
+		Time:     timeStamp,
+		Detail:   rs[corev1.ResourceStorage].String(),
+	}})
+	return err
 }
 
-func getResourceValue(resourceName corev1.ResourceName, quantity resource.Quantity) int64 {
-	if quantity.Value() != 0 {
+//func getResourceValue(resourceName corev1.ResourceName, quantity *resource.Quantity) int64 {
+//	if quantity != nil && quantity.MilliValue() != 0 {
+//		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(PricesUnit[resourceName].MilliValue())))
+//	}
+//	return 0
+//}
+
+func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
+	quantity := res[resourceName]
+	if quantity != nil && quantity.MilliValue() != 0 {
 		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(PricesUnit[resourceName].MilliValue())))
 	}
 	return 0
 }
-
-//func getResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*quantity) int64 {
-//	if res[resourceName] != nil && res[resourceName].MilliValue() != 0 {
-//		return int64(math.Ceil(float64(res[resourceName].MilliValue()) / float64(PricesUnit[resourceName].MilliValue())))
-//	}
-//	return 0
-//}
 
 func initResources() (rs map[corev1.ResourceName]*quantity) {
 	rs = make(map[corev1.ResourceName]*quantity)
@@ -294,51 +316,54 @@ func initResources() (rs map[corev1.ResourceName]*quantity) {
 	return
 }
 
-func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, mongoClient *mongo.Client, infra *infrav1.Infra) error {
-	var infraList *infrav1.InfraList
-	err := r.List(ctx, infraList, client.InNamespace(infra.Namespace))
-	if err != nil {
+func (r *MonitorReconciler) infraResourceUsage(ctx context.Context, mongoClient *mongo.Client, namespace string) error {
+	var infraList infrav1.InfraList
+
+	if err := r.List(ctx, &infraList, client.InNamespace(namespace)); err != nil {
 		return err
+	}
+	if len(infraList.Items) == 0 {
+		return nil
 	}
 	timeStamp := time.Now().UTC()
 	infraResources := initResources()
 	for i := range infraList.Items {
 		infra := infraList.Items[i]
-		// if infra is not running, skip it
+		//TODO if infra is not running, skip it,  what about pending/failed/unknown?
 		if !r.checkInfraStatusRunning(infra) {
 			continue
 		}
 		for _, host := range infra.Spec.Hosts {
 			cnt := host.Count
 			flavor := host.Flavor
-			//TODO 单位统一 getInfraCPUQuantity/getInfraMemoryQuantity/getInfraDiskQuantity
+			//unified infra unit: getInfraCPUQuantity/getInfraMemoryQuantity/getInfraDiskQuantity
 			infraResources[corev1.ResourceCPU].Add(*getInfraCPUQuantity(flavor, cnt))
 			infraResources[corev1.ResourceMemory].Add(*getInfraMemoryQuantity(flavor, cnt))
 			for _, disk := range host.Disks {
 				infraResources[corev1.ResourceStorage].Add(*getInfraDiskQuantity(disk.Capacity))
 			}
 		}
-		r.Logger.Info("infra resources", "namespace", infra.Namespace, "cpu quantity", infraResources[common.CPUResourceName], "memory quantity", infraResources[common.MemoryResourceName], "volume quantity", infraResources[common.VolumeResourceName])
+		r.Logger.Info("infra resources", "namespace", infra.Namespace, "cpu quantity", infraResources[corev1.ResourceCPU], "memory quantity", infraResources[corev1.ResourceMemory], "volume quantity", infraResources[corev1.ResourceStorage])
 	}
-	_, err = mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, []interface{}{
+	_, err := mongoClient.Database(SealosResourcesDBName).Collection(SealosMonitorCollectionName).InsertMany(ctx, []interface{}{
 		&Monitor{
-			Category: infra.Namespace,
+			Category: namespace,
 			Property: PropertyInfraCPU,
-			Value:    getResourceValue(corev1.ResourceCPU, *infraResources[corev1.ResourceCPU].Quantity),
+			Value:    getResourceValue(corev1.ResourceCPU, infraResources),
 			Time:     timeStamp,
 			Detail:   "",
 		},
 		&Monitor{
-			Category: infra.Namespace,
+			Category: namespace,
 			Property: PropertyInfraMemory,
-			Value:    getResourceValue(corev1.ResourceMemory, *infraResources[corev1.ResourceMemory].Quantity),
+			Value:    getResourceValue(corev1.ResourceMemory, infraResources),
 			Time:     timeStamp,
 			Detail:   "",
 		},
 		&Monitor{
-			Category: infra.Namespace,
+			Category: namespace,
 			Property: PropertyInfraDisk,
-			Value:    getResourceValue(corev1.ResourceStorage, *infraResources[corev1.ResourceStorage].Quantity),
+			Value:    getResourceValue(corev1.ResourceStorage, infraResources),
 			Time:     timeStamp,
 			Detail:   "",
 		},
