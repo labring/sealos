@@ -17,36 +17,17 @@ kind: ServiceAccount
 metadata:
   name: desktop-frontend
   namespace: sealos
-
 ---
-# kind: ClusterRoleBinding
-# apiVersion: rbac.authorization.k8s.io/v1
-# metadata:
-#   name: desktop-frontend-crd
-# subjects:
-# - kind: ServiceAccount
-#   name: desktop-frontend # Name is case sensitive
-#   namespace: sealos
-# roleRef:
-#   kind: ClusterRole
-#   name: cluster-admin  # using admin role
-#   apiGroup: rbac.authorization.k8s.io
-
-# ---
-
 apiVersion: v1
 kind: Service
 metadata:
   name: desktop-frontend
   namespace: sealos
 spec:
-  # type: NodePort
   ports:
     - port: 3000
-      # nodePort: 30005
   selector:
     app: desktop-frontend
-
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -56,7 +37,6 @@ metadata:
 data:
   config.yaml: |-
     addr: :3000
-
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -84,12 +64,24 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-          image: zhujingyang/desktop-frontend:latest
+          image: ghcr.io/labring/sealos-desktop-frontend:dev
           imagePullPolicy: Always
           volumeMounts:
             - name: desktop-frontend-volume
               mountPath: /config.yaml
               subPath: config.yaml
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
       volumes:
         - name: desktop-frontend-volume
           configMap:
