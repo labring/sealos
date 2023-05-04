@@ -1,12 +1,10 @@
 package server
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-
-	// ruleid: math-random-used
-	"math/rand"
 	"net"
 	"net/http"
 	"regexp"
@@ -246,6 +244,12 @@ func (as *AuthServer) CreateToken(ar *AuthRequest, ares []AuthzResult) (string, 
 		return "", fmt.Errorf("failed to marshal header: %s", err)
 	}
 
+	// @see: https://github.com/distribution/distribution/blob/main/registry/auth/token/token_test.go#L111
+	randomBytes := make([]byte, 15)
+	if _, err = rand.Read(randomBytes); err != nil {
+		return "", fmt.Errorf("unable to read random bytes for jwt id: %s", err)
+	}
+
 	claims := token.ClaimSet{
 		Issuer:     tc.Issuer,
 		Subject:    ar.Account,
@@ -253,7 +257,7 @@ func (as *AuthServer) CreateToken(ar *AuthRequest, ares []AuthzResult) (string, 
 		NotBefore:  now - 10,
 		IssuedAt:   now,
 		Expiration: now + tc.Expiration,
-		JWTID:      fmt.Sprintf("%d", rand.New(rand.NewSource(time.Now().UnixNano())).Int63()),
+		JWTID:      base64.URLEncoding.EncodeToString(randomBytes),
 		Access:     []*token.ResourceActions{},
 	}
 	for _, a := range ares {

@@ -18,13 +18,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
-	// ruleid: math-random-used
-	"math/rand"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/containers/storage"
 	"github.com/openconfig/gnmi/errlist"
@@ -42,6 +37,7 @@ import (
 	"github.com/labring/sealos/pkg/client-go/kubernetes"
 	"github.com/labring/sealos/pkg/utils/file"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 )
 
 type ImageCRBuilder struct {
@@ -81,7 +77,7 @@ func (icb *ImageCRBuilder) Run() error {
 func (icb *ImageCRBuilder) CreateContainer() error {
 	logger.Debug("Executing CreateContainer in ImageCRBuilder")
 	// generate a random container name
-	containerID := fmt.Sprintf("%s-%s", icb.image, strconv.Itoa(rand.New(rand.NewSource(time.Now().UnixNano())).Int()))
+	containerID := fmt.Sprintf("%s-%s", icb.image, rand.Generator(8))
 	realImpl, err := New("")
 	if err != nil {
 		return err
