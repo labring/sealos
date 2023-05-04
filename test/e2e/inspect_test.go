@@ -17,6 +17,8 @@ limitations under the License.
 package e2e
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo/v2"
 
 	"github.com/labring/sealos/test/e2e/suites/image"
@@ -24,7 +26,7 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
-var _ = Describe("inspect test", func() {
+var _ = Describe("E2E_sealos_inspect_test", func() {
 	var (
 		fakeInspectInterface inspect.Interface
 		err                  error
@@ -36,10 +38,10 @@ var _ = Describe("inspect test", func() {
 		It("inspect image", func() {
 			By("sealos pull image")
 			err = fakeImageInterface.PullImage("labring/kubernetes:v1.23.8")
-			testhelper.CheckErr(err, "failed to pull image labring/kubernetes:v1.23.8")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image labring/kubernetes:v1.23.8: %v", err))
 			By("sealos inspect local image")
 			err = fakeInspectInterface.LocalImage("labring/kubernetes:v1.23.8")
-			testhelper.CheckErr(err, "failed to inspect local image labring/kubernetes:v1.23.8")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect local image labring/kubernetes:v1.23.8: %v", err))
 		})
 
 	})
@@ -47,18 +49,20 @@ var _ = Describe("inspect test", func() {
 		It("inspect image", func() {
 			By("sealos inspect remote image")
 			err = fakeInspectInterface.RemoteImage("labring/kubernetes:v1.25.0")
-			testhelper.CheckErr(err, "failed to inspect local image labring/kubernetes:v1.25.0")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect remote image labring/kubernetes:v1.25.0: %v", err))
 		})
 	})
 
 	Context("sealos save", func() {
 		It("inspect image before save image", func() {
 			By("sealos save docker image")
+			err = fakeImageInterface.PullImage("alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image alpine:3: %v", err))
 			err = fakeImageInterface.DockerArchiveImage("alpine:3")
-			testhelper.CheckErr(err, "failed to save docker image alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to save docker image alpine:3: %v", err))
 			By("sealos save oci image")
 			err = fakeImageInterface.OCIArchiveImage("alpine:3")
-			testhelper.CheckErr(err, "failed to save oci image alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to save oci image alpine:3: %v", err))
 		})
 	})
 
@@ -66,19 +70,19 @@ var _ = Describe("inspect test", func() {
 		It("inspect image", func() {
 			By("sealos inspect archive image")
 			err = fakeInspectInterface.DockerArchiveImage(image.DockerTarFile)
-			testhelper.CheckErr(err, "failed to inspect docker archive image alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect docker archive image alpine:3: %v", err))
 			err = fakeInspectInterface.OCIArchiveImage(image.OCITarFile)
-			testhelper.CheckErr(err, "failed to inspect oci archive image alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect oci archive image alpine:3: %v", err))
 		})
 	})
 
 	Context("sealos inspect image id", func() {
 		It("inspect image", func() {
 			By("sealos inspect image id")
-			id, err := fakeInspectInterface.FetchImageID("labring/kubernetes:v1.23.8")
-			testhelper.CheckErr(err, "failed to fetch image id labring/kubernetes:v1.23.8")
+			id, err := fakeImageInterface.FetchImageID("labring/kubernetes:v1.23.8")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to fetch image id labring/kubernetes:v1.23.8: %v", err))
 			err = fakeInspectInterface.ImageID(id)
-			testhelper.CheckErr(err, "failed to inspect image id labring/kubernetes:v1.23.8")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect image id %s: %v", id, err))
 		})
 	})
 

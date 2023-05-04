@@ -25,7 +25,7 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
-var _ = Describe("run test", func() {
+var _ = Describe("E2E_sealos_run_test", func() {
 	var (
 		fakeRunInterface run.Interface
 		err              error
@@ -38,6 +38,8 @@ var _ = Describe("run test", func() {
 			testhelper.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
 			err = fakeRunInterface.Verify(images...)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify run cluster for single: %v", err))
+			err = fakeRunInterface.Reset()
+			testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
 		})
 
 	})

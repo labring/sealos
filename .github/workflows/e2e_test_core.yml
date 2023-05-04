@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        unit: [ 'images test','cert test','run test','inspect test' ]
+        unit: [ 'E2E_sealos_images_test','E2E_sealos_cert_test','E2E_sealos_run_test','E2E_sealos_inspect_test' ]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos

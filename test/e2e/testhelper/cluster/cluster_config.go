@@ -18,6 +18,11 @@ package cluster
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	proxy "k8s.io/kube-proxy/config/v1alpha1"
 	kubelet "k8s.io/kubelet/config/v1beta1"
@@ -34,11 +39,11 @@ type Interface interface {
 }
 
 type fakeClient struct {
-	kubeadm.InitConfiguration
-	kubeadm.ClusterConfiguration
-	kubeadm.JoinConfiguration
-	proxy.KubeProxyConfiguration
-	kubelet.KubeletConfiguration
+	InitConfiguration      kubeadm.InitConfiguration
+	ClusterConfiguration   kubeadm.ClusterConfiguration
+	JoinConfiguration      kubeadm.JoinConfiguration
+	KubeProxyConfiguration proxy.KubeProxyConfiguration
+	KubeletConfiguration   kubelet.KubeletConfiguration
 }
 
 func NewFakeClient() Interface {
@@ -48,12 +53,29 @@ func NewFakeClient() Interface {
 func (c *fakeClient) Verify() error {
 	logger.Info("verify default cluster info")
 	initFile := "/root/.sealos/default/etc/kubeadm-init.yaml"
-	//testhelper.GetFileDataLocally(initFile)
 	if !testhelper.IsFileExist(initFile) {
 		return fmt.Errorf("file %s not exist", initFile)
 	}
-	if err := testhelper.UnmarshalYamlFile(initFile, c); err != nil {
+	data, err := os.ReadFile(filepath.Clean(initFile))
+	if err != nil {
 		return err
+	}
+	yamls := testhelper.ToYalms(string(data))
+	for _, yamlString := range yamls {
+		obj, _ := testhelper.UnmarshalData([]byte(yamlString))
+		kind, _, _ := unstructured.NestedString(obj, "kind")
+		switch kind {
+		case "InitConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &c.InitConfiguration)
+		case "ClusterConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &c.ClusterConfiguration)
+		case "JoinConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &c.JoinConfiguration)
+		case "KubeProxyConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &c.KubeProxyConfiguration)
+		case "KubeletConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &c.KubeletConfiguration)
+		}
 	}
 	if c.InitConfiguration.NodeRegistration.CRISocket != "/run/containerd/containerd.sock" {
 		return fmt.Errorf("init config cri socket not match /run/containerd/containerd.sock")

@@ -18,6 +18,7 @@ package inspect
 
 import (
 	"fmt"
+
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
@@ -29,7 +30,6 @@ type Interface interface {
 	DockerArchiveImage(name string) error
 	OCIArchiveImage(name string) error
 	ImageID(id string) error
-	FetchImageID(name string) (string, error)
 }
 
 type fakeClient struct {
@@ -60,12 +60,4 @@ func (c *fakeClient) OCIArchiveImage(name string) error {
 
 func (c *fakeClient) ImageID(id string) error {
 	return c.SealosCmd.ImageInspect(id)
-}
-
-func (c *fakeClient) FetchImageID(name string) (string, error) {
-	data, err := c.SealosCmd.Executor.Exec(c.BinPath, "images", "-q", name)
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
 }

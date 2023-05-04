@@ -1,8 +1,11 @@
 package image
 
 import (
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
@@ -20,8 +23,9 @@ type FakeImageInterface interface {
 	OCIArchiveImage(name string) error
 	SaveImage(name, file string) error
 	LoadImage(file string) error
-	CreateImageDir(name string, short bool) error
+	Create(name string, short bool) error
 	Merge(newImage string, images []string) error
+	FetchImageID(name string) (string, error)
 }
 
 type fakeClient struct {
@@ -84,7 +88,7 @@ func (f *fakeClient) LoadImage(file string) error {
 	return f.SealosCmd.ImageLoad(file)
 }
 
-func (f *fakeClient) CreateImageDir(name string, short bool) error {
+func (f *fakeClient) Create(name string, short bool) error {
 	return f.SealosCmd.Create(&cmd.CreateOptions{
 		Short: short,
 		Image: name,
@@ -96,4 +100,12 @@ func (f *fakeClient) Merge(newImage string, images []string) error {
 		Tag:       []string{newImage},
 		ImageRefs: images,
 	})
+}
+
+func (f *fakeClient) FetchImageID(name string) (string, error) {
+	data, err := f.SealosCmd.Executor.Exec(f.BinPath, "images", "-q", name)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(string(data)), nil
 }

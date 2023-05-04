@@ -15,13 +15,18 @@
 package testhelper
 
 import (
+	"bufio"
+	"bytes"
 	"debug/elf"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
@@ -93,6 +98,15 @@ func UnmarshalYamlFile(file string, obj interface{}) error {
 	}
 	err = yaml.Unmarshal(data, obj)
 	return err
+}
+
+func UnmarshalData(metadata []byte) (map[string]interface{}, error) {
+	var data map[string]interface{}
+	err := yaml.Unmarshal(metadata, &data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func MarshalYamlToFile(file string, obj interface{}) error {
@@ -176,4 +190,24 @@ func CheckBeTrue(b bool) {
 }
 func CheckNotBeTrue(b bool) {
 	gomega.Eventually(b).ShouldNot(gomega.BeTrue())
+}
+
+func ToYalms(bs string) (yamls []string) {
+	buf := bytes.NewBuffer([]byte(bs))
+	reader := utilyaml.NewYAMLReader(bufio.NewReader(buf))
+	for {
+		patch, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			break
+		}
+		patch = bytes.TrimSpace(patch)
+		if len(patch) == 0 {
+			continue
+		}
+		yamls = append(yamls, string(patch))
+	}
+	return
 }

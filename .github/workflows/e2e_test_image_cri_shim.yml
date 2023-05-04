@@ -75,4 +75,4 @@ jobs:
         shell: bash
         run: |
           sudo chmod a+x /tmp/e2e.test
-          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="image-cri-shim test"
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_image-cri-shim_run_test"

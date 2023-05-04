@@ -18,8 +18,11 @@ package run
 
 import (
 	"fmt"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
+	"strings"
+
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/testhelper"
@@ -44,7 +47,6 @@ type fakeSingleClient struct {
 }
 
 func (c *fakeSingleClient) Run(images ...string) error {
-
 	return c.SealosCmd.Run(&cmd.RunOptions{
 		Cluster: "default",
 		Images:  images,
@@ -83,8 +85,15 @@ func (c *fakeSingleClient) Verify(images ...string) error {
 		return err
 	}
 
-	if imageSet.HasAll(c.Spec.Image...) {
-		return fmt.Errorf("expect image %s not exist", c.Spec.Image)
+	if !imageSet.HasAll(c.Spec.Image...) {
+		return fmt.Errorf("expect image %s not exist in %s", c.Spec.Image, strings.Join(imageSet.List(), ","))
 	}
 	return nil
+}
+
+func (c *fakeSingleClient) Reset() error {
+	return c.SealosCmd.Reset(&cmd.ResetOptions{
+		Cluster: "default",
+		Force:   true,
+	})
 }

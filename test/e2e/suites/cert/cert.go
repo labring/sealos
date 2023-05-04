@@ -18,6 +18,7 @@ package cert
 
 import (
 	"fmt"
+
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -50,7 +51,6 @@ type fakeCertClient struct {
 }
 
 func (c *fakeCertClient) Cert(domain string) error {
-
 	return c.SealosCmd.Cert(&cmd.CertOptions{
 		Cluster: "",
 		AltName: []string{domain},

@@ -23,7 +23,7 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
-var _ = Describe("apply test", func() {
+var _ = Describe("E2E_sealos_apply_test", func() {
 	Context("start apply", func() {
 
 		var (
@@ -129,7 +129,7 @@ var _ = Describe("apply test", func() {
 
 		// all ips: ip1 ip2 ip3 ip4
 		// run master ip1, worker ip2
-		It("run test", func() {
+		It("apply run test", func() {
 			runOpts := &cmd2.RunOptions{
 				Cluster: settings.E2EConfig.ClusterName,
 				Images:  []string{settings.E2EConfig.ImageName},

@@ -20,4 +20,5 @@ package run
 type Interface interface {
 	Run(images ...string) error
 	Verify(images ...string) error
+	Reset() error
 }

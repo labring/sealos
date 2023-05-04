@@ -19,26 +19,36 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/suites/run"
+
 	. "github.com/onsi/ginkgo/v2"
 
 	"github.com/labring/sealos/test/e2e/suites/cert"
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
-var _ = Describe("cert test", func() {
+var _ = Describe("E2E_sealos_cert_test", func() {
 	var (
 		fakeCertInterface cert.Interface
+		fakeRunInterface  run.Interface
 		err               error
 	)
 	fakeCertInterface = cert.NewCertClient()
+	fakeRunInterface = run.NewFakeSingleClient()
+	BeforeEach(func() {
+		images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
+		err = fakeRunInterface.Run(images...)
+		testhelper.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
+	})
+	AfterEach(func() {
+		err = fakeRunInterface.Reset()
+		testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
+	})
 	It("sealos cert suit", func() {
-		By("sealos cert", func() {
-			err = fakeCertInterface.Cert("test.sealoshub.io")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to generate new cert for domain(test.sealoshub.io): %v", err))
-			err = fakeCertInterface.Verify("test.sealoshub.io")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cert for domain(test.sealoshub.io): %v", err))
-		})
-
+		err = fakeCertInterface.Cert("test.sealoshub.io")
+		testhelper.CheckErr(err, fmt.Sprintf("failed to generate new cert for domain(test.sealoshub.io): %v", err))
+		err = fakeCertInterface.Verify("test.sealoshub.io")
+		testhelper.CheckErr(err, fmt.Sprintf("failed to verify cert for domain(test.sealoshub.io): %v", err))
 	})
 
 })

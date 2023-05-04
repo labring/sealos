@@ -40,7 +40,7 @@ const (
 	CheckServiceFormatCommand = "systemctl is-active %s.service"
 )
 
-var _ = ginkgo.Describe("image-cri-shim test", func() {
+var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 
 	var (
 		imageService image.FakeImageServiceClientInterface
