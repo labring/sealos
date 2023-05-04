@@ -18,9 +18,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/labring/sealos/pkg/types/v1beta1"
+	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 
-	"github.com/labring/sealos/test/e2e/suites/cmd"
+	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 type Config struct {

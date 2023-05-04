@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
+	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -16,7 +18,6 @@ import (
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/suites/apply"
-	"github.com/labring/sealos/test/e2e/suites/cmd"
 	infra2 "github.com/labring/sealos/test/e2e/suites/infra"
 	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
@@ -113,9 +114,9 @@ var _ = Describe("apply test", func() {
 			}
 
 			testApplier = &apply.Applier{EIp: eip, InfraDriver: infraDriver,
-				RemoteCmd: cmd.Interface(&cmd.RemoteCmd{Host: eip[0],
+				RemoteCmd: cmd2.Interface(&cmd2.RemoteCmd{Host: eip[0],
 					Interface: ssh.NewSSHClient(settings.E2EConfig.SSH, true)}),
-				LocalCmd: &cmd.LocalCmd{}}
+				LocalCmd: &cmd2.LocalCmd{}}
 			testApplier.Init()
 		})
 		AfterEach(func() {
@@ -129,7 +130,7 @@ var _ = Describe("apply test", func() {
 		// all ips: ip1 ip2 ip3 ip4
 		// run master ip1, worker ip2
 		It("run test", func() {
-			runOpts := &cmd.RunOptions{
+			runOpts := &cmd2.RunOptions{
 				Cluster: settings.E2EConfig.ClusterName,
 				Images:  []string{settings.E2EConfig.ImageName},
 				Masters: privateIps[:1],
@@ -148,7 +149,7 @@ var _ = Describe("apply test", func() {
 
 			By("test run app image", func() {
 				logger.Info("runOpts: %#+v", runOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Run(&cmd.RunOptions{
+				testhelper.CheckErr(testApplier.RemoteSealosCmd.Run(&cmd2.RunOptions{
 					Images:  []string{settings.HelmImageName, settings.CalicoImageName},
 					Cluster: settings.E2EConfig.ClusterName,
 				}))
@@ -159,7 +160,7 @@ var _ = Describe("apply test", func() {
 			testApplier.CheckNodeNum(2)
 			By("add nodes test", func() {
 				// add ip3, ip4
-				addOpts := &cmd.AddOptions{
+				addOpts := &cmd2.AddOptions{
 					Cluster: settings.E2EConfig.ClusterName,
 					Nodes:   privateIps[2:4],
 				}
@@ -170,7 +171,7 @@ var _ = Describe("apply test", func() {
 			})
 			By("delete nodes test", func() {
 				// delete ip2, ip3
-				deleteOpts := &cmd.DeleteOptions{
+				deleteOpts := &cmd2.DeleteOptions{
 					Cluster: settings.E2EConfig.ClusterName,
 					Nodes:   privateIps[1:3],
 					Force:   true,
@@ -182,7 +183,7 @@ var _ = Describe("apply test", func() {
 			})
 			By("add masters test", func() {
 				// add ip2, ip3
-				addOpts := &cmd.AddOptions{
+				addOpts := &cmd2.AddOptions{
 					Cluster: settings.E2EConfig.ClusterName,
 					Masters: privateIps[1:3],
 				}
@@ -193,7 +194,7 @@ var _ = Describe("apply test", func() {
 			})
 			By("delete masters test", func() {
 				// delete ip2, ip3
-				deleteOpts := &cmd.DeleteOptions{
+				deleteOpts := &cmd2.DeleteOptions{
 					Cluster: settings.E2EConfig.ClusterName,
 					Masters: privateIps[1:3],
 					Force:   true,
@@ -204,7 +205,7 @@ var _ = Describe("apply test", func() {
 				//testApplier.CheckNodeNum(2)
 			})
 			By("reset test", func() {
-				resetOpts := &cmd.ResetOptions{
+				resetOpts := &cmd2.ResetOptions{
 					Cluster: settings.E2EConfig.ClusterName,
 					Force:   true,
 					SSH: &v1beta1.SSH{
