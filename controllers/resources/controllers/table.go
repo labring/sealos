@@ -118,14 +118,14 @@ var PricesUnit = map[corev1.ResourceName]*resource.Quantity{
 	corev1.ResourceStorage: bin1Mi,   // 1 MiB
 }
 
-// mCore
+// Core
 var infraCPUMap = map[string]int{
-	"t2.medium":     2000,
-	"t2.large":      2000,
-	"t2.xlarge":     4000,
-	"ecs.c7.large":  2000,
-	"ecs.g7.large":  2000,
-	"ecs.g7.xlarge": 4000,
+	"t2.medium":     2,
+	"t2.large":      2,
+	"t2.xlarge":     4,
+	"ecs.c7.large":  2,
+	"ecs.g7.large":  2,
+	"ecs.g7.xlarge": 4,
 }
 
 // GiB

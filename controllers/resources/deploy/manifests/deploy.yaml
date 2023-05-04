@@ -251,6 +251,12 @@ spec:
         - --logtostderr=true
         - --v=0
         image: gcr.io/kubebuilder/kube-rbac-proxy:v0.11.0
+        securityContext:
+          runAsNonRoot: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
         name: kube-rbac-proxy
         ports:
         - containerPort: 8443
