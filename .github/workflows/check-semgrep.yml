@@ -1,5 +1,5 @@
 # Name of this GitHub Actions workflow.
-name: Semgrep
+name: Check-Semgrep
 
 on:
   # Scan changed files in PRs (diff-aware scanning):
