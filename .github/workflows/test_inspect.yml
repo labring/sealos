@@ -17,21 +17,11 @@ on:
 
 jobs:
   build-sealos:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Auto install sealos
-        uses: labring/sealos-action@v0.0.5
-        with:
-          type: install-dev
-          pruneCRI: true
-          autoFetch: false
-      - name: Save Binaries
-        uses: actions/upload-artifact@v3
-        with:
-          name: sealos
-          path: /usr/bin/sealos
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: false
+      image: false
   verify-install:
     needs: [build-sealos]
     runs-on: ubuntu-latest
@@ -39,8 +29,8 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
-          name: sealos
-          path: /tmp/
+          name: sealos-amd64
+          path: /tmp
       - name: Verify sealos
         run: |
           sudo chmod a+x /tmp/sealos
@@ -70,7 +60,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
-          name: sealos
+          name: sealos-amd64
           path: /tmp/
       - name: Verify sealos
         run: |
@@ -104,7 +94,7 @@ jobs:
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
-          name: sealos
+          name: sealos-amd64
           path: /tmp/
       - name: Verify sealos
         run: |

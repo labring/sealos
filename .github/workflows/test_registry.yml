@@ -17,39 +17,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Auto install sealos
-        uses: labring/sealos-action@v0.0.5
-        with:
-          type: install-dev
-          pruneCRI: true
-          autoFetch: false
-      - name: Save Binaries sealos
-        uses: actions/upload-artifact@v3
-        with:
-          name: sealos
-          path: /usr/bin/sealos
-      - name: Save Binaries sealctl
-        uses: actions/upload-artifact@v3
-        with:
-          name: sealctl
-          path: /usr/bin/sealctl
+    uses: ./.github/workflows/import-patch-image.yml
+    with:
+      arch: amd64
+      e2e: false
+      image: false
+
   verify-registry-save:
     needs: [build]
     runs-on: ubuntu-20.04
     steps:
-      - name: Download sealctl
-        uses: actions/download-artifact@v3
-        with:
-          name: sealctl
-          path: /tmp/
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
-          name: sealos
+          name: sealos-amd64
+          path: /tmp/
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl-amd64
           path: /tmp/
       - name: Verify sealctl
         run: |

@@ -1,0 +1,13 @@
+name: Rrune runtime env
+
+on:
+  workflow_call:
+
+jobs:
+  save-sealos:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove containerd && docker
+        uses: labring/sealos-action@v0.0.7
+        with:
+          type: prune
