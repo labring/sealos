@@ -2,11 +2,10 @@ package testpg
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 	"log"
-
-	// ruleid: math-random-used
-	mrand "math/rand"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,7 +21,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-
 	"k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -114,8 +112,12 @@ func RunPostgresTest(config, userNamespace string) error {
 // PostgresClusterRandomCreate Create random PostgresCluster.
 func PostgresClusterRandomCreate(ctx context.Context, dr dynamic.ResourceInterface, obj *unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	var err error
-	rnd := mrand.New(mrand.NewSource(time.Now().UnixNano()))
-	n := rnd.Intn(5)
+
+	var bigN *big.Int
+	if bigN, err = rand.Int(rand.Reader, big.NewInt(5)); err != nil {
+		return nil, fmt.Errorf("unable to read random bytes for jwt id: %s", err)
+	}
+	n := int(bigN.Int64())
 	var objSlice []*unstructured.Unstructured
 	//Create
 	for i := 0; i < n; i++ {
