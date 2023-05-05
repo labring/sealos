@@ -8,8 +8,6 @@ function read_env {
     done < $1
 }
 
-read_env /etc/sealos/cloud.env
+read_env etc/sealos/cloud.env
 
-echo $cloudDomain
-echo $tlsCertFilePath
 
