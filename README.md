@@ -27,8 +27,6 @@ A Cloud Operating System designed for managing Cloud Native applications
 
 > [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-**Sealos is a Kubernetes distribution, a Cloud Operating System designed for managing Cloud Native applications.**
-
 ## Use sealos to run a Kubernetes cluster
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
