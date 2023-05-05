@@ -1,0 +1,1 @@
+sealos run hub.sealos.cn/labring/affine:latest
