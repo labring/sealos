@@ -12,35 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: bytebase-cluster-issuer
-  namespace: bytebase-frontend
-spec:
-  acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@sealos.io
-    privateKeySecretRef:
-      name: letsencrypt-prod
-    solvers:
-      - http01:
-          ingress:
-            class: nginx
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: bytebase-cert
-  namespace: bytebase-frontend
-spec:
-  secretName: bytebase-cert-secret
-  dnsNames:
-    - bytebase.{{ .cloudDomain }}
-  issuerRef:
-    name: bytebase-cluster-issuer
-    kind: ClusterIssuer
----
+#apiVersion: cert-manager.io/v1
+#kind: ClusterIssuer
+#metadata:
+#  name: bytebase-cluster-issuer
+#  namespace: bytebase-frontend
+#spec:
+#  acme:
+#    server: https://acme-v02.api.letsencrypt.org/directory
+#    email: admin@sealos.io
+#    privateKeySecretRef:
+#      name: letsencrypt-prod
+#    solvers:
+#      - http01:
+#          ingress:
+#            class: nginx
+#---
+#apiVersion: cert-manager.io/v1
+#kind: Certificate
+#metadata:
+#  name: bytebase-cert
+#  namespace: bytebase-frontend
+#spec:
+#  secretName: bytebase-cert-secret
+#  dnsNames:
+#    - bytebase.{{ .cloudDomain }}
+#  issuerRef:
+#    name: bytebase-cluster-issuer
+#    kind: ClusterIssuer
+#---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -73,4 +73,4 @@ spec:
   tls:
     - hosts:
         - bytebase.{{ .cloudDomain }}
-      secretName: bytebase-cert-secret
+      secretName: {{ .certSecretName }}
