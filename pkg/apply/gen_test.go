@@ -53,6 +53,25 @@ func TestNewClusterFromGenArgs(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Success_EmptyHostsAndSSH",
+			args: args{
+				imageName: []string{"docker.io/labring/kubernetes:v1.25.3"},
+				args: &RunArgs{
+					Cluster: &Cluster{
+						Masters:     "",
+						Nodes:       "",
+						ClusterName: "default",
+					},
+					SSH:               nil,
+					CustomEnv:         nil,
+					CustomCMD:         nil,
+					CustomConfigFiles: nil,
+					fs:                nil,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		buildah.RegisterRootCommand(&cobra.Command{

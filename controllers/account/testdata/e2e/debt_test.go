@@ -1,6 +1,10 @@
 package e2e
 
 import (
+	"log"
+	"testing"
+	"time"
+
 	accountv1 "github.com/labring/sealos/controllers/account/api/v1"
 	"github.com/labring/sealos/controllers/account/controllers"
 	accountapi "github.com/labring/sealos/controllers/account/testdata/api"
@@ -8,9 +12,6 @@ import (
 	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	"github.com/labring/sealos/controllers/metering/testdata/api"
 	baseapi "github.com/labring/sealos/test/testdata/api"
-	"log"
-	"testing"
-	"time"
 )
 
 const (

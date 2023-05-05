@@ -18,15 +18,19 @@ metadata:
   name: {{ .Values.clusterName }}
 spec:
   hosts:
-    - ips: {{ .Values.masters | toYaml | nindent 8 }}
+    {{- with .Values.masters }}
+    - ips: {{ . | toYaml | nindent 8 }}
       roles: ["master", "amd64"]
+    {{- end }}
     {{- with .Values.nodes }}
     - ips: {{ . | toYaml | nindent 8 }}
       roles: ["node", "amd64"]
     {{- end }}
   image: {{ .Values.images | toYaml | nindent 4 }}
   ssh:
+    {{- if .Values.ssh }}
     passwd: {{ default (env "SSH_PASSWORD") .Values.ssh.passwd }}
     pk: {{ default "~/.ssh/id_rsa" .Values.ssh.pk }}
     port: {{ default 22 .Values.ssh.port | int }}
     user: {{ default "root" .Values.ssh.user }}
+    {{- end }}
