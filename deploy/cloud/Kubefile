@@ -1,7 +1,11 @@
 FROM scratch
 
-COPY registry registry
-COPY manifests manifests
+COPY etc etc
 COPY scripts scripts
+COPY registry registry
+
+ENV cloudDomain="cloud.example.com"
+ENV tlsCertFilePath="/etc/tls/cert.pem"
+ENV tlsKeyFilePath="/etc/tls/key.pem"
 
 CMD ["bash scripts/init.sh"]
