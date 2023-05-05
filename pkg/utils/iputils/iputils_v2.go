@@ -141,6 +141,12 @@ func LocalIP(addrs *[]net.Addr) string {
 	return ""
 }
 
+func GetLocalIpv4() string {
+	addr, _ := ListLocalHostAddrs()
+	Ipv4 := LocalIP(addr)
+	return Ipv4
+}
+
 func inc(ip net.IP) {
 	for j := len(ip) - 1; j >= 0; j-- {
 		ip[j]++
