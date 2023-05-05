@@ -5,6 +5,6 @@ COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="cloud.example.com"
-ENV desktopCertSecretName="wildcard-cert"
+ENV certSecretName="wildcard-cert"
 
 CMD ["kubectl apply -f manifests/deploy.yaml -f manifests/ingress.yaml"]
