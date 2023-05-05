@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	exec2 "os/exec"
 	"path/filepath"
@@ -139,7 +140,7 @@ func DeleteFileLocally(filePath string) {
 
 func CheckEnvSetting(keys []string) {
 	for _, key := range keys {
-		if os.Getenv(key) == "" {
+		if val, ok := os.LookupEnv(key); !ok || val == "" {
 			CheckErr(fmt.Errorf("env %s not set", key))
 		}
 	}
@@ -229,4 +230,50 @@ func GetAllSubDirs(rootPath string) ([]string, error) {
 		return nil
 	})
 	return dirs, err
+}
+
+func ListLocalHostAddrs() (*[]net.Addr, error) {
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		logger.Warn("net.Interfaces failed, err:", err.Error())
+		return nil, err
+	}
+	var allAddrs []net.Addr
+	for i := 0; i < len(netInterfaces); i++ {
+		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
+			continue
+		}
+		addrs, err := netInterfaces[i].Addrs()
+		if err != nil {
+			logger.Warn("failed to get Addrs, %s", err.Error())
+		}
+		for j := 0; j < len(addrs); j++ {
+			allAddrs = append(allAddrs, addrs[j])
+		}
+	}
+	return &allAddrs, nil
+}
+
+func LocalIP(addrs *[]net.Addr) string {
+	for _, address := range *addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() && ipnet.IP.To4() != nil {
+			return ipnet.IP.String()
+		}
+	}
+	return ""
+}
+
+func GetLocalIpv4() string {
+	addr, _ := ListLocalHostAddrs()
+	Ipv4 := LocalIP(addr)
+	return Ipv4
+}
+
+// MkTmpdir creates a temporary directory.
+func MkTmpdir(dir string) (string, error) {
+	tempDir, err := os.MkdirTemp(dir, "DTmp-")
+	if err != nil {
+		return "", err
+	}
+	return tempDir, os.MkdirAll(tempDir, 0755)
 }

@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/pkg/types/v1beta1"
+
 	"github.com/labring/sealos/test/e2e/testhelper/consts"
 
 	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
@@ -41,47 +43,14 @@ type Applier struct {
 	RemoteCmd       cmd2.Interface
 	RemoteSealosCmd *cmd2.SealosCmd
 	k8sClient       kube.K8s
+	Infra           *infra2.FakeInfra
+	SSH             *v1beta1.SSH
 }
 
 func (a *Applier) Init() {
 	testhelper.CheckErr(a.WaitSSHReady())
 	a.initSSH()
 	a.initImage()
-}
-
-func PreCheckEnv() {
-	if settings.E2EConfig.InfraDriver == "aliyun" {
-		testhelper.CheckEnvSetting([]string{"ALIYUN_REGION_ID", "ALIYUN_ACCESS_KEY_ID", "ALIYUN_ACCESS_KEY_SECRET", "ALIYUN_REGION_ID"})
-	}
-	if settings.E2EConfig.ImageName == "" {
-		if settings.E2EConfig.ImageTar != "" {
-			testhelper.CheckErr(fmt.Errorf("image name is empty, please set env %s", settings.TestImageName))
-		}
-		settings.E2EConfig.ImageName = settings.DefaultTestImageName
-	}
-	logger.Info("e2e test image name is %s", settings.E2EConfig.ImageName)
-	logger.Info("e2e test infra driver is %s", settings.E2EConfig.InfraDriver)
-	if settings.E2EConfig.ImageTar != "" {
-		if !testhelper.IsFileExist(settings.E2EConfig.ImageTar) {
-			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", settings.E2EConfig.ImageTar))
-		}
-		logger.Info("e2e test image tar path is %s", settings.E2EConfig.ImageTar)
-	}
-	if settings.E2EConfig.PatchImageTar != "" {
-		if !testhelper.IsFileExist(settings.E2EConfig.PatchImageTar) {
-			testhelper.CheckErr(fmt.Errorf("image tar is not exist, path: %s", settings.E2EConfig.PatchImageTar))
-		}
-		logger.Info("e2e test patch image tar path is %s", settings.E2EConfig.PatchImageTar)
-		if settings.E2EConfig.PatchImageName == "" {
-			testhelper.CheckErr(fmt.Errorf("patch image name is empty, please set env %s", settings.TestPatchImageName))
-		}
-		logger.Info("e2e test patch image name is %s", settings.E2EConfig.PatchImageName)
-	}
-	if settings.E2EConfig.SealosBinPath == "" {
-		testhelper.CheckErr(fmt.Errorf("sealos bin path is empty, please set env %s", settings.TestSealosBinPath))
-	} else {
-		logger.Info("e2e test sealos bin path is %s", settings.E2EConfig.SealosBinPath)
-	}
 }
 
 var timeSuffix = fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
@@ -112,54 +81,54 @@ func (a *Applier) initImage() {
 	err = a.RemoteCmd.AsyncExec("chmod +x " + settings.E2EConfig.SealosBinPath)
 	testhelper.CheckErr(err)
 	a.RemoteSealosCmd = cmd2.NewSealosCmd(settings.E2EConfig.SealosBinPath, a.RemoteCmd)
-	if settings.E2EConfig.ImageTar != "" {
-		err = a.RemoteCmd.Copy(settings.E2EConfig.ImageTar, settings.E2EConfig.ImageTar)
+	if a.Infra.ImageTar != "" {
+		err = a.RemoteCmd.Copy(a.Infra.ImageTar, a.Infra.ImageTar)
 		testhelper.CheckErr(err)
-		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.ImageTar)
+		err = a.RemoteSealosCmd.ImageLoad(a.Infra.ImageTar)
 		testhelper.CheckErr(err)
 	} else {
 		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
-			ImageRefs: []string{settings.E2EConfig.ImageName},
+			ImageRefs: []string{a.Infra.ImageName},
 			Quiet:     true,
 		})
 		testhelper.CheckErr(err)
 	}
-	if settings.E2EConfig.PatchImageName == "" {
+	if a.Infra.PatchImageName == "" {
 		return
 	}
-	if settings.E2EConfig.PatchImageTar != "" {
-		err = a.RemoteCmd.Copy(settings.E2EConfig.PatchImageTar, settings.E2EConfig.PatchImageTar)
+	if a.Infra.PatchImageTar != "" {
+		err = a.RemoteCmd.Copy(a.Infra.PatchImageTar, a.Infra.PatchImageTar)
 		testhelper.CheckErr(err)
-		if strings.HasSuffix(settings.E2EConfig.PatchImageTar, settings.GzSuffix) {
-			err = a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", settings.E2EConfig.PatchImageTar))
+		if strings.HasSuffix(a.Infra.PatchImageTar, settings.GzSuffix) {
+			err = a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", a.Infra.PatchImageTar))
 			testhelper.CheckErr(err)
-			settings.E2EConfig.PatchImageTar = strings.TrimSuffix(settings.E2EConfig.PatchImageTar, settings.GzSuffix)
+			a.Infra.PatchImageTar = strings.TrimSuffix(a.Infra.PatchImageTar, settings.GzSuffix)
 		}
-		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.PatchImageTar)
+		err = a.RemoteSealosCmd.ImageLoad(a.Infra.PatchImageTar)
 		testhelper.CheckErr(err)
 	} else {
 		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
-			ImageRefs: []string{settings.E2EConfig.PatchImageName},
+			ImageRefs: []string{a.Infra.PatchImageName},
 			Quiet:     true,
 		})
 		testhelper.CheckErr(err)
 	}
 	err = a.RemoteSealosCmd.ImageMerge(&cmd2.MergeOptions{
 		Quiet:     true,
-		ImageRefs: []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName},
-		Tag:       []string{settings.E2EConfig.ImageName},
+		ImageRefs: []string{a.Infra.ImageName, a.Infra.PatchImageName},
+		Tag:       []string{a.Infra.ImageName},
 	})
 	testhelper.CheckErr(err)
 }
 
 func (a *Applier) initSSH() {
-	testhelper.CheckErr(testhelper.WriteFile(settings.E2EConfig.SSH.Pk, []byte(settings.E2EConfig.SSH.PkData)))
-	testhelper.CheckErr(a.RemoteCmd.Copy(settings.E2EConfig.SSH.Pk, settings.E2EConfig.SSH.Pk))
-	testhelper.CheckErr(a.RemoteCmd.AsyncExec("chmod", "0400", settings.E2EConfig.SSH.Pk))
+	testhelper.CheckErr(testhelper.WriteFile(a.SSH.Pk, []byte(a.SSH.PkData)))
+	testhelper.CheckErr(a.RemoteCmd.Copy(a.SSH.Pk, a.SSH.Pk))
+	testhelper.CheckErr(a.RemoteCmd.AsyncExec("chmod", "0400", a.SSH.Pk))
 }
 
 func (a *Applier) FetchRemoteKubeConfig() {
-	localConf := filepath.Join(settings.E2EConfig.TestDir, "kube", "admin.conf")
+	localConf := filepath.Join(a.Infra.TestDir, "kube", "admin.conf")
 	if testhelper.IsFileExist(localConf) {
 		testhelper.CheckErr(os.Rename(localConf, localConf+".bak"+time.Now().Format("20060102150405")))
 	}
@@ -167,7 +136,7 @@ func (a *Applier) FetchRemoteKubeConfig() {
 	content, err := os.ReadFile(localConf)
 	testhelper.CheckErr(err)
 
-	certOpts := &cmd2.CertOptions{Cluster: settings.E2EConfig.ClusterName, AltName: a.EIp}
+	certOpts := &cmd2.CertOptions{Cluster: a.Infra.ClusterName, AltName: a.EIp}
 	logger.Info("certOpts: %v", certOpts)
 	/*
 		 issue: output: Error: open /root/.sealos/e2e_test/etc/kubeadm-init.yaml: no such file or directory
@@ -185,7 +154,7 @@ func (a *Applier) CheckNodeNum(num int) {
 	notReady := make(map[string]struct{})
 	err := retry.Retry(5, 5*time.Second, func() error {
 		var err error
-		a.k8sClient, err = kube.NewK8sClient(filepath.Join(settings.E2EConfig.TestDir, "kube", "admin.conf"), "https://"+a.EIp[0]+":6443")
+		a.k8sClient, err = kube.NewK8sClient(filepath.Join(a.Infra.TestDir, "kube", "admin.conf"), "https://"+a.EIp[0]+":6443")
 		if err != nil {
 			return err
 		}

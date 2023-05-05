@@ -18,6 +18,9 @@ package e2e
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/labring/sealos/test/e2e/suites/cluster"
 
 	"github.com/labring/sealos/test/e2e/suites/run"
 
@@ -29,9 +32,10 @@ import (
 
 var _ = Describe("E2E_sealos_cert_test", func() {
 	var (
-		fakeCertInterface cert.Interface
-		fakeRunInterface  run.Interface
-		err               error
+		fakeCertInterface    cert.Interface
+		fakeRunInterface     run.Interface
+		fakeClusterInterface cluster.Interface
+		err                  error
 	)
 	fakeCertInterface = cert.NewCertClient()
 	fakeRunInterface = run.NewFakeSingleClient()
@@ -39,6 +43,8 @@ var _ = Describe("E2E_sealos_cert_test", func() {
 		images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 		err = fakeRunInterface.Run(images...)
 		testhelper.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
+		fakeClusterInterface, err = cluster.NewFakeGroupClient("default", nil)
+		testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 	})
 	AfterEach(func() {
 		err = fakeRunInterface.Reset()
@@ -49,6 +55,10 @@ var _ = Describe("E2E_sealos_cert_test", func() {
 		testhelper.CheckErr(err, fmt.Sprintf("failed to generate new cert for domain(test.sealoshub.io): %v", err))
 		err = fakeCertInterface.Verify("test.sealoshub.io")
 		testhelper.CheckErr(err, fmt.Sprintf("failed to verify cert for domain(test.sealoshub.io): %v", err))
+		time.Sleep(10 * time.Second)
+		err = fakeClusterInterface.Verify()
+		testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+
 	})
 
 })

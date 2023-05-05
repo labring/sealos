@@ -1,0 +1,28 @@
+apiVersion: apps.sealos.io/v1beta1
+kind: Cluster
+metadata:
+  name: default
+spec:
+  hosts:
+  - ips:
+    - 127.0.0.1:22
+    roles:
+      - master
+      - amd64
+  image:
+  - labring/kubernetes:v1.25.0
+  - labring/helm:v3.8.2
+  - labring/calico:v3.24.1
+  ssh:
+    pk: /root/.ssh/id_rsa
+    port: 22
+    user: root
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+networking:
+  serviceSubnet: "100.56.0.0/16"
+etcd:
+  external:
+    endpoints:
+      - http://127.0.0.1:2379

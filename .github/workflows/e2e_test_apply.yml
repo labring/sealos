@@ -47,14 +47,15 @@ jobs:
           set -ex
           sudo chmod a+x /tmp/e2e.test
           gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
-          sudo SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
+          sudo export SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
             SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz" \
             SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
             SEALOS_E2E_TEST_SEALOS_BIN_PATH="/tmp/sealos/bin/sealos" \
             ALIYUN_ACCESS_KEY_ID="${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}" \
             ALIYUN_ACCESS_KEY_SECRET="${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}" \
             ALIYUN_RESOURCE_GROUP_ID="${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}" \
-            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_apply_test"
+            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" 
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_apply_infra_test"
           echo 'test_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]

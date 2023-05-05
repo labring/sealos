@@ -19,8 +19,6 @@ package cert
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/suites/cluster"
-
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -39,29 +37,24 @@ type Interface interface {
 
 func NewCertClient() Interface {
 	return &fakeCertClient{
-		SealosCmd:  cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
-		cInterface: cluster.NewFakeClient(),
+		SealosCmd: cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
 	}
 }
 
 type fakeCertClient struct {
 	//cmd.Interface
 	*cmd.SealosCmd
-	cInterface cluster.Interface
 	kubeadm.ClusterConfiguration
 }
 
 func (c *fakeCertClient) Cert(domain string) error {
 	return c.SealosCmd.Cert(&cmd.CertOptions{
-		Cluster: "",
+		Cluster: "default",
 		AltName: []string{domain},
 	})
 }
 
 func (c *fakeCertClient) Verify(domain string) error {
-	if err := c.cInterface.Verify(); err != nil {
-		return err
-	}
 	logger.Info("verify cluster info")
 	initFile := "/root/.sealos/default/etc/kubeadm-update.yaml"
 	if !testhelper.IsFileExist(initFile) {

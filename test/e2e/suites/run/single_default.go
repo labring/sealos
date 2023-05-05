@@ -17,81 +17,39 @@ limitations under the License.
 package run
 
 import (
-	"fmt"
-	"strings"
-
-	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
-
-	"github.com/labring/sealos/test/e2e/suites/cluster"
-
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
-	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
-	"github.com/labring/sealos/test/e2e/testhelper/kube"
 )
 
 var _ Interface = &fakeSingleClient{}
 
 func NewFakeSingleClient() Interface {
+	name := "default"
 	return &fakeSingleClient{
-		SealosCmd:  cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
-		cInterface: cluster.NewFakeClient(),
+		SealosCmd:   cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
+		clusterName: name,
 	}
 }
 
 type fakeSingleClient struct {
 	*cmd.SealosCmd
-	cInterface cluster.Interface
 	v1beta1.Cluster
+	clusterName string
 }
 
 func (c *fakeSingleClient) Run(images ...string) error {
 	return c.SealosCmd.Run(&cmd.RunOptions{
-		Cluster: "default",
+		Cluster: c.clusterName,
 		Images:  images,
 	})
 }
 
-func (c *fakeSingleClient) Verify(images ...string) error {
-	if err := c.cInterface.Verify(); err != nil {
-		return err
-	}
-	cli, err := kube.NewK8sClient("/etc/kubernetes/admin.conf", "")
-	if err != nil {
-		return err
-	}
-	nodes, err := cli.ListNodes()
-	if err != nil {
-		return err
-	}
-	if len(nodes.Items) != 1 {
-		return fmt.Errorf("expect 1 node, but got %d", len(nodes.Items))
-	}
-	for _, node := range nodes.Items {
-		if node.Spec.Taints[0].Key == constants.LabelNodeRoleOldControlPlane {
-			return fmt.Errorf("expect node role is master, but got %s", node.Spec.Taints[0].Key)
-		}
-		if node.Spec.Taints[0].Key == constants.LabelNodeRoleControlPlane {
-			return fmt.Errorf("expect node role is master, but got %s", node.Spec.Taints[0].Key)
-		}
-	}
-	imageSet := sets.NewString(images...)
-	initFile := "/root/.sealos/default/Clusterfile"
-	if !testhelper.IsFileExist(initFile) {
-		return fmt.Errorf("file %s not exist", initFile)
-	}
-	if err = testhelper.UnmarshalYamlFile(initFile, c); err != nil {
-		return err
-	}
-
-	if !imageSet.HasAll(c.Spec.Image...) {
-		return fmt.Errorf("expect image %s not exist in %s", c.Spec.Image, strings.Join(imageSet.List(), ","))
-	}
-	return nil
+func (c *fakeSingleClient) Apply(file string) error {
+	return c.SealosCmd.Apply(&cmd.ApplyOptions{
+		Clusterfile: file,
+	})
 }
 
 func (c *fakeSingleClient) Reset() error {
