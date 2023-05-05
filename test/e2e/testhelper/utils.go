@@ -22,17 +22,18 @@ import (
 	"fmt"
 	"io"
 	"os"
+	exec2 "os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/labring/sealos/test/e2e/testhelper/consts"
 
 	utilyaml "k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 
 	"github.com/onsi/ginkgo/v2"
-
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/pkg/utils/exec"
 
@@ -62,12 +63,12 @@ func RemoveTempFile(file string) {
 func WriteFile(fileName string, content []byte) error {
 	dir := filepath.Dir(fileName)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err = os.MkdirAll(dir, settings.FileMode0755); err != nil {
+		if err = os.MkdirAll(dir, consts.FileMode0755); err != nil {
 			return err
 		}
 	}
 
-	return os.WriteFile(fileName, content, settings.FileMode0644)
+	return os.WriteFile(fileName, content, consts.FileMode0644)
 }
 
 func GetBinArch(filepath string) (string, error) {
@@ -78,12 +79,16 @@ func GetBinArch(filepath string) (string, error) {
 	defer f.Close()
 	switch f.Machine {
 	case elf.EM_X86_64:
-		return settings.Amd64Arch, nil
+		return consts.Amd64Arch, nil
 	case elf.EM_AARCH64:
-		return settings.Arm64Arch, nil
+		return consts.Arm64Arch, nil
 	default:
 		return "", fmt.Errorf("unknown or unsupported architecture: %v", f.Machine.String())
 	}
+}
+
+func GetBinPath(bin string) (string, error) {
+	return exec2.LookPath(bin)
 }
 
 func IsFileExist(filename string) bool {
@@ -210,4 +215,18 @@ func ToYalms(bs string) (yamls []string) {
 		yamls = append(yamls, string(patch))
 	}
 	return
+}
+
+func GetAllSubDirs(rootPath string) ([]string, error) {
+	dirs := make([]string, 0)
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			dirs = append(dirs, path)
+		}
+		return nil
+	})
+	return dirs, err
 }

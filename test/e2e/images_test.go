@@ -17,43 +17,138 @@ limitations under the License.
 package e2e
 
 import (
-	"time"
+	"fmt"
+	"os"
+	"path"
+
+	"github.com/labring/sealos/test/e2e/suites/cri"
+
+	"github.com/labring/sealos/test/e2e/suites/run"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/labring/sealos/test/e2e/suites/image"
+
 	"github.com/labring/sealos/test/e2e/testhelper"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
 var _ = Describe("E2E_sealos_images_test", func() {
-
-	Context("sealos images suit", func() {
+	var (
+		err                error
+		fakeImageInterface image.FakeImageInterface
+		fakeRunInterface   run.Interface
+	)
+	fakeImageInterface = image.NewFakeImage()
+	fakeRunInterface = run.NewFakeSingleClient()
+	Context("sealos images basic suit", func() {
 		It("images pull", func() {
-			settings.E2EConfig.WaitTime = 600 * time.Second
-			testhelper.RunCmdAndCheckResult("sudo sealos pull docker.io/labring/kubernetes:v1.20.0", 0)
-			t := testhelper.RunCmdAndCheckResult("sudo sealos images", 0)
-			data := t.Out.Contents()
-			Expect(string(data)).To(ContainSubstring("docker.io/labring/kubernetes"))
-			Expect(string(data)).To(ContainSubstring("v1.20.0"))
-			testhelper.RunCmdAndCheckResult("sudo sealos create docker.io/labring/kubernetes:v1.20.0", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos create docker.io/labring/kubernetes:v1.20.1", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos create docker.io/labring/kubernetes:v1.20.2 --short", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos pull docker.io/labring/kubernetes:v1.20.2 labring/helm:v3.8.2", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos rmi -f docker.io/labring/kubernetes:v1.20.2 labring/helm:v3.8.2", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos save -o k8s.tar docker.io/labring/kubernetes:v1.20.1", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos save -o k8s.tar docker.io/labring/kubernetes:v1.20.1", 0)
-			testhelper.RunCmdAndCheckResult("sudo sealos load -i k8s.tar", 0)
-			t = testhelper.RunCmdAndCheckResult("sudo sealos merge -t new:0.1.0 docker.io/labring/kubernetes:v1.21.0 labring/helm:v3.8.2", 0)
-			data = t.Out.Contents()
-			Expect(string(data)).To(ContainSubstring("docker.io/labring/kubernetes"))
-			Expect(string(data)).To(ContainSubstring("v1.21.0"))
-			t = testhelper.RunCmdAndCheckResult("sudo sealos images", 0)
-			data = t.Out.Contents()
-			Expect(string(data)).To(ContainSubstring("new"))
-			Expect(string(data)).To(ContainSubstring("0.1.0"))
+			err = fakeImageInterface.PullImage("docker.io/labring/kubernetes:v1.20.0")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.0: %v", err))
+			id, err := fakeImageInterface.FetchImageID("docker.io/labring/kubernetes:v1.20.0")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to fetch image id docker.io/labring/kubernetes:v1.20.0: %v", err))
+			Expect(id).NotTo(BeEmpty())
+		})
+		It("images create local image", func() {
+			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.0", false)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.0: %v", err))
+		})
+		It("images create remote image", func() {
+			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.1", false)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.1: %v", err))
+		})
+		It("images create remote image by short", func() {
+			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.2", true)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.2: %v", err))
+		})
+		It("images more image", func() {
+			err = fakeImageInterface.PullImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
+		})
+		It("images rm more image", func() {
+			err = fakeImageInterface.RemoveImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to remove image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
+		})
+		It("images save image", func() {
+			err = fakeImageInterface.SaveImage("docker.io/labring/kubernetes:v1.20.1", "k8s.tar")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to save image docker.io/labring/kubernetes:v1.20.1: %v", err))
+		})
+		It("images load image", func() {
+			err = fakeImageInterface.LoadImage("k8s.tar")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to load image k8s.tar: %v", err))
+		})
+		It("images merge image", func() {
+			err = fakeImageInterface.Merge("new:0.1.0", []string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"})
+			testhelper.CheckErr(err, fmt.Sprintf("failed to merge image new:0.1.0: %v", err))
+			_, err := fakeImageInterface.ListImages(true)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 		})
 
 	})
+	Context("sealos images build suit", func() {
+		var tmpdir string
+		BeforeEach(func() {
+			By("build image from dockerfile")
+			tmpdir = os.TempDir()
+			err = os.MkdirAll(tmpdir, 0755)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to mkdir %s: %v", tmpdir, err))
+			dockerfile := `
+FROM scratch
+COPY . .
+`
+			err = os.WriteFile(tmpdir+"/Dockerfile", []byte(dockerfile), 0644)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", tmpdir+"/Dockerfile", err))
+			By("create images dir")
+			err = os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to mkdir %s: %v", path.Join(tmpdir, "images", "shim"), err))
+			imagefile := `docker.io/altinity/clickhouse-operator:0.18.4
+docker.io/altinity/metrics-exporter:0.18.4
+`
+			err = os.WriteFile(path.Join(tmpdir, "images", "shim", "images"), []byte(imagefile), 0644)
+		})
+		AfterEach(func() {
+			err = os.RemoveAll(tmpdir)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to remove dir %s: %v", tmpdir, err))
+		})
+		It("images build default image", func() {
+			err = fakeImageInterface.BuildImage("test-build-image:clickhouse", tmpdir, image.BuildOptions{
+				Compress:     false,
+				MaxPullProcs: 5,
+				SaveImage:    true,
+			})
+			testhelper.CheckErr(err)
+		})
+		It("images build Compress image", func() {
+			err = fakeImageInterface.BuildImage("test-build-image:clickhouse-compress", tmpdir, image.BuildOptions{
+				Compress:     true,
+				MaxPullProcs: 5,
+				SaveImage:    true,
+			})
+			testhelper.CheckErr(err)
+		})
 
+		It("images build Compress image running cluster", func() {
+			err = fakeImageInterface.BuildImage("test-build-image:clickhouse-compress-run", tmpdir, image.BuildOptions{
+				Compress:     true,
+				MaxPullProcs: 5,
+				SaveImage:    true,
+			})
+			testhelper.CheckErr(err)
+			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1", "labring/registry:untar", "test-build-image:clickhouse-compress-run"}
+			defer func() {
+				err = fakeRunInterface.Reset()
+				testhelper.CheckErr(err, fmt.Sprintf("failed to reset Compress cluster run: %v", err))
+			}()
+			err = fakeRunInterface.Run(images...)
+			testhelper.CheckErr(err, fmt.Sprintf("failed to run Compress images %v: %v", images, err))
+			criInterface := cri.NewCRIClient()
+			err = criInterface.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
+			err = criInterface.ImageList()
+			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
+			err = criInterface.ValidateImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))
+		})
+
+	})
 })

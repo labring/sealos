@@ -19,6 +19,8 @@ package cert
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/suites/cluster"
+
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -26,7 +28,6 @@ import (
 
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/test/e2e/testhelper"
-	"github.com/labring/sealos/test/e2e/testhelper/cluster"
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 

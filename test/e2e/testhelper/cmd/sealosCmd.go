@@ -1,10 +1,18 @@
 package cmd
 
+import (
+	"k8s.io/apimachinery/pkg/util/json"
+
+	"github.com/labring/sealos/test/e2e/testhelper"
+)
+
 type SealosCmd struct {
-	BinPath  string
-	Executor Interface
+	BinPath    string
+	CriBinPath string
+	Executor   Interface
 	ImageService
 	ClusterCycle
+	CRICycle
 }
 
 func NewSealosCmd(binPath string, executor Interface) *SealosCmd {
@@ -14,10 +22,19 @@ func NewSealosCmd(binPath string, executor Interface) *SealosCmd {
 	}
 }
 
+func (s *SealosCmd) SetCriBinPath() error {
+	binPath, err := testhelper.GetBinPath("crictl")
+	if err != nil {
+		return err
+	}
+	s.CriBinPath = binPath
+	return nil
+}
+
 type ClusterCycle interface {
 	Apply(*ApplyOptions) error
 	Build(*BuildOptions) error
-	Create(*CreateOptions) error
+	Create(*CreateOptions) ([]byte, error)
 	Add(*AddOptions) error
 	Delete(*DeleteOptions) error
 	Run(*RunOptions) error
@@ -32,8 +49,15 @@ type ImageService interface {
 	ImageSave(image string, path string, archive string) error
 	ImageLoad(path string) error
 	ImageMerge(options *MergeOptions) error
-	ImageRemove(image string) error
+	ImageRemove(images ...string) error
 	ImageInspect(image string) error
+}
+
+type CRICycle interface {
+	CRIImageList(display bool) (*ImageStruct, error)
+	CRIProcessList(display bool) (*ProcessStruct, error)
+	CRIPodList(display bool) (*PodStruct, error)
+	CRIImagePull(name string) error
 }
 
 func (s *SealosCmd) Apply(args *ApplyOptions) error {
@@ -44,8 +68,11 @@ func (s *SealosCmd) Build(args *BuildOptions) error {
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"build"}, args.Args()...)...)
 }
 
-func (s *SealosCmd) Create(args *CreateOptions) error {
-	return s.Executor.AsyncExec(s.BinPath, append([]string{"create"}, args.Args()...)...)
+func (s *SealosCmd) Create(args *CreateOptions) ([]byte, error) {
+	if args.Short {
+		return s.Executor.Exec(s.BinPath, append([]string{"create"}, args.Args()...)...)
+	}
+	return nil, s.Executor.AsyncExec(s.BinPath, append([]string{"create"}, args.Args()...)...)
 }
 
 func (s *SealosCmd) Add(args *AddOptions) error {
@@ -95,10 +122,58 @@ func (s *SealosCmd) ImageMerge(args *MergeOptions) error {
 	return s.Executor.AsyncExec(s.BinPath, append([]string{"merge"}, args.Args()...)...)
 }
 
-func (s *SealosCmd) ImageRemove(image string) error {
-	return s.Executor.AsyncExec(s.BinPath, "rmi", "-f", image)
+func (s *SealosCmd) ImageRemove(images ...string) error {
+	return s.Executor.AsyncExec(s.BinPath, append([]string{"rmi", "-f"}, images...)...)
 }
 
 func (s *SealosCmd) ImageInspect(image string) error {
 	return s.Executor.AsyncExec(s.BinPath, "inspect", image)
+}
+func (s *SealosCmd) CRIImageList(display bool) (*ImageStruct, error) {
+	if display {
+		return nil, s.Executor.AsyncExec(s.CriBinPath, "images")
+	}
+	data, err := s.Executor.Exec(s.CriBinPath, "images", "-o", "json")
+	if err != nil {
+		return nil, err
+	}
+	var image ImageStruct
+	err = json.Unmarshal(data, &image)
+	if err != nil {
+		return nil, err
+	}
+	return &image, nil
+}
+func (s *SealosCmd) CRIProcessList(display bool) (*ProcessStruct, error) {
+	if display {
+		return nil, s.Executor.AsyncExec(s.CriBinPath, "ps", "-a")
+	}
+	data, err := s.Executor.Exec(s.CriBinPath, "ps", "-a", "-o", "json")
+	if err != nil {
+		return nil, err
+	}
+	var process ProcessStruct
+	err = json.Unmarshal(data, &process)
+	if err != nil {
+		return nil, err
+	}
+	return &process, nil
+}
+func (s *SealosCmd) CRIPodList(display bool) (*PodStruct, error) {
+	if display {
+		return nil, s.Executor.AsyncExec(s.CriBinPath, "pods")
+	}
+	data, err := s.Executor.Exec(s.CriBinPath, "pods", "-o", "json")
+	if err != nil {
+		return nil, err
+	}
+	var pod PodStruct
+	err = json.Unmarshal(data, &pod)
+	if err != nil {
+		return nil, err
+	}
+	return &pod, nil
+}
+func (s *SealosCmd) CRIImagePull(name string) error {
+	return s.Executor.AsyncExec(s.CriBinPath, "pull", name)
 }

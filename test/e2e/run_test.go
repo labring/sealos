@@ -32,14 +32,16 @@ var _ = Describe("E2E_sealos_run_test", func() {
 	)
 	fakeRunInterface = run.NewFakeSingleClient()
 	Context("sealos run suit", func() {
+		AfterEach(func() {
+			err = fakeRunInterface.Reset()
+			testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
+		})
 		It("sealos run single", func() {
 			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 			err = fakeRunInterface.Run(images...)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
 			err = fakeRunInterface.Verify(images...)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify run cluster for single: %v", err))
-			err = fakeRunInterface.Reset()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
 		})
 
 	})

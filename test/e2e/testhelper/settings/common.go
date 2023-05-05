@@ -31,16 +31,9 @@ const (
 var DefaultTestDir = filepath.Join(GetWorkDir(), "e2e_test")
 
 const (
-	FileMode0755     = 0755
-	FileMode0644     = 0644
 	RootUser         = "root"
 	DefaultSSHPort   = 22
 	DefaultInfraUUID = "60a6f958-e9af-4bb5-a401-1553fc05d78b"
-)
-
-const (
-	Amd64Arch = "amd64"
-	Arm64Arch = "arm64"
 )
 
 const GzSuffix = ".gz"

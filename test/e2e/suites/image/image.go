@@ -16,14 +16,15 @@ const (
 )
 
 type FakeImageInterface interface {
-	ListImages() ([]DisplayImage, error)
-	PullImage(image string) error
-	RemoveImage(image string) error
+	ListImages(display bool) ([]DisplayImage, error)
+	PullImage(images ...string) error
+	BuildImage(image, context string, opts BuildOptions) error
+	RemoveImage(images ...string) error
 	DockerArchiveImage(name string) error
 	OCIArchiveImage(name string) error
 	SaveImage(name, file string) error
 	LoadImage(file string) error
-	Create(name string, short bool) error
+	Create(name string, short bool) ([]byte, error)
 	Merge(newImage string, images []string) error
 	FetchImageID(name string) (string, error)
 }
@@ -51,7 +52,10 @@ type DisplayImage struct {
 	Readonly     bool     `json:"readonly"`
 }
 
-func (f *fakeClient) ListImages() ([]DisplayImage, error) {
+func (f *fakeClient) ListImages(display bool) ([]DisplayImage, error) {
+	if display {
+		return nil, f.SealosCmd.ImageList()
+	}
 	data, err := f.SealosCmd.Executor.Exec(f.SealosCmd.BinPath, "images", "--json")
 	if err != nil {
 		return nil, err
@@ -61,15 +65,15 @@ func (f *fakeClient) ListImages() ([]DisplayImage, error) {
 	return images, err
 }
 
-func (f *fakeClient) PullImage(image string) error {
+func (f *fakeClient) PullImage(images ...string) error {
 	return f.SealosCmd.ImagePull(&cmd.PullOptions{
-		ImageRefs: []string{image},
+		ImageRefs: images,
 		Quiet:     true,
 	})
 }
 
-func (f *fakeClient) RemoveImage(image string) error {
-	return f.SealosCmd.ImageRemove(image)
+func (f *fakeClient) RemoveImage(images ...string) error {
+	return f.SealosCmd.ImageRemove(images...)
 }
 
 func (f *fakeClient) DockerArchiveImage(name string) error {
@@ -88,7 +92,7 @@ func (f *fakeClient) LoadImage(file string) error {
 	return f.SealosCmd.ImageLoad(file)
 }
 
-func (f *fakeClient) Create(name string, short bool) error {
+func (f *fakeClient) Create(name string, short bool) ([]byte, error) {
 	return f.SealosCmd.Create(&cmd.CreateOptions{
 		Short: short,
 		Image: name,
@@ -108,4 +112,22 @@ func (f *fakeClient) FetchImageID(name string) (string, error) {
 		return "", err
 	}
 	return strings.TrimSpace(string(data)), nil
+}
+func (f *fakeClient) BuildImage(image, context string, opts BuildOptions) error {
+	return f.SealosCmd.Build(&cmd.BuildOptions{
+		Tag:          image,
+		SaveImage:    opts.SaveImage,
+		Context:      context,
+		Compress:     opts.Compress,
+		MaxPullProcs: opts.MaxPullProcs,
+		Pull:         opts.Pull,
+		Debug:        true,
+	})
+}
+
+type BuildOptions struct {
+	Compress     bool
+	MaxPullProcs int
+	Pull         string
+	SaveImage    bool
 }
