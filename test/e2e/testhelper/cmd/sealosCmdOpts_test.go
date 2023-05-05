@@ -295,7 +295,6 @@ func TestRunOptions_Args(t *testing.T) {
 		Nodes      []string
 		Images     []string
 		SSH        *v1beta1.SSH
-		Single     bool
 		Transport  string
 	}
 	tests := []struct {
@@ -320,7 +319,6 @@ func TestRunOptions_Args(t *testing.T) {
 					Port: 22,
 					Pk:   "test-pk",
 				},
-				Single:    false,
 				Transport: "test-transport",
 			},
 		},
@@ -337,7 +335,6 @@ func TestRunOptions_Args(t *testing.T) {
 				Nodes:      tt.fields.Nodes,
 				Images:     tt.fields.Images,
 				SSH:        tt.fields.SSH,
-				Single:     tt.fields.Single,
 				Transport:  tt.fields.Transport,
 			}
 			logger.Info(ro.Args())

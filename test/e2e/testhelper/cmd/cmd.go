@@ -59,10 +59,7 @@ func (c LocalCmd) AsyncExec(cmd string, arg ...string) error {
 	cmder := exec.Command(cmd, arg...)
 	cmder.Stdout = os.Stdout
 	cmder.Stderr = os.Stderr
-	if err := cmder.Run(); err != nil {
-		return err
-	}
-	return cmder.Wait()
+	return cmder.Run()
 }
 
 func (c LocalCmd) Copy(src string, dst string) error {

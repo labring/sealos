@@ -29,7 +29,7 @@ type ImageService interface {
 	ImagePull(*PullOptions) error
 	ImagePush(image string) error
 	ImageList() error
-	ImageSave(image string, path string) error
+	ImageSave(image string, path string, archive string) error
 	ImageLoad(path string) error
 	ImageMerge(options *MergeOptions) error
 	ImageRemove(image string) error
@@ -80,8 +80,11 @@ func (s *SealosCmd) ImageList() error {
 	return s.Executor.AsyncExec(s.BinPath, "list")
 }
 
-func (s *SealosCmd) ImageSave(image string, path string) error {
-	return s.Executor.AsyncExec(s.BinPath, "save", image, "-o", path)
+func (s *SealosCmd) ImageSave(image string, path string, archive string) error {
+	if archive == "" {
+		return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, image)
+	}
+	return s.Executor.AsyncExec(s.BinPath, "save", "-o", path, "-t", archive, image)
 }
 
 func (s *SealosCmd) ImageLoad(path string) error {
@@ -93,7 +96,7 @@ func (s *SealosCmd) ImageMerge(args *MergeOptions) error {
 }
 
 func (s *SealosCmd) ImageRemove(image string) error {
-	return s.Executor.AsyncExec(s.BinPath, "remove", image)
+	return s.Executor.AsyncExec(s.BinPath, "rmi", "-f", image)
 }
 
 func (s *SealosCmd) ImageInspect(image string) error {

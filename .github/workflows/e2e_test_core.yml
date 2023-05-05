@@ -1,20 +1,20 @@
-name: E2E Sealos Images Test
+name: E2E Sealos Core Test
 
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: [ "main" ]
     paths:
-      - ".github/workflows/e2e_test_images.yml"
+      - ".github/workflows/e2e_test_core.yml"
       - "cmd/**"
-      - "pkg/buildah/**"
+      - "pkg/**"
       - "test/**"
   pull_request:
-    branches: ["*"]
+    branches: [ "*" ]
     paths:
-      - ".github/workflows/e2e_test_images.yml"
+      - ".github/workflows/e2e_test_core.yml"
       - "cmd/**"
-      - "pkg/buildah/**"
+      - "pkg/**"
       - "test/**"
 
 
@@ -25,8 +25,12 @@ jobs:
       arch: amd64
       e2e: true
       image: false
-  e2e-images-test:
-    needs: [call_ci_workflow]
+  e2e-core-test:
+    needs: [ call_ci_workflow ]
+    strategy:
+      fail-fast: false
+      matrix:
+        unit: [ 'E2E_sealos_images_test','E2E_sealos_cert_test','E2E_sealos_run_test','E2E_sealos_inspect_test' ]
     runs-on: ubuntu-latest
     steps:
       - name: Download sealos
@@ -49,7 +53,7 @@ jobs:
         with:
           type: prune
 
-      - name: Verify Images
+      - name: Verify E2e test
         run: |
           sudo chmod a+x /tmp/e2e.test
-          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="images test"
+          sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="${{ matrix.unit }}"

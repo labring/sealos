@@ -26,7 +26,7 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
-var _ = Describe("images test", func() {
+var _ = Describe("E2E_sealos_images_test", func() {
 
 	Context("sealos images suit", func() {
 		It("images pull", func() {

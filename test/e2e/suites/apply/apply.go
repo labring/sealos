@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
+	"github.com/labring/sealos/test/e2e/testhelper/kube"
+
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/google/uuid"
@@ -24,8 +27,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/retry"
 
 	"github.com/labring/sealos/controllers/infra/drivers"
-	"github.com/labring/sealos/test/e2e/suites/cmd"
-	"github.com/labring/sealos/test/e2e/suites/kube"
 	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
@@ -34,9 +35,9 @@ type Applier struct {
 	//Eip string
 	EIp             []string
 	InfraDriver     drivers.Driver
-	LocalCmd        cmd.Interface
-	RemoteCmd       cmd.Interface
-	RemoteSealosCmd *cmd.SealosCmd
+	LocalCmd        cmd2.Interface
+	RemoteCmd       cmd2.Interface
+	RemoteSealosCmd *cmd2.SealosCmd
 	k8sClient       kube.K8s
 }
 
@@ -108,14 +109,14 @@ func (a *Applier) initImage() {
 	testhelper.CheckErr(err)
 	err = a.RemoteCmd.AsyncExec("chmod +x " + settings.E2EConfig.SealosBinPath)
 	testhelper.CheckErr(err)
-	a.RemoteSealosCmd = cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, a.RemoteCmd)
+	a.RemoteSealosCmd = cmd2.NewSealosCmd(settings.E2EConfig.SealosBinPath, a.RemoteCmd)
 	if settings.E2EConfig.ImageTar != "" {
 		err = a.RemoteCmd.Copy(settings.E2EConfig.ImageTar, settings.E2EConfig.ImageTar)
 		testhelper.CheckErr(err)
 		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.ImageTar)
 		testhelper.CheckErr(err)
 	} else {
-		err = a.RemoteSealosCmd.ImagePull(&cmd.PullOptions{
+		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
 			ImageRefs: []string{settings.E2EConfig.ImageName},
 			Quiet:     true,
 		})
@@ -135,13 +136,13 @@ func (a *Applier) initImage() {
 		err = a.RemoteSealosCmd.ImageLoad(settings.E2EConfig.PatchImageTar)
 		testhelper.CheckErr(err)
 	} else {
-		err = a.RemoteSealosCmd.ImagePull(&cmd.PullOptions{
+		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
 			ImageRefs: []string{settings.E2EConfig.PatchImageName},
 			Quiet:     true,
 		})
 		testhelper.CheckErr(err)
 	}
-	err = a.RemoteSealosCmd.ImageMerge(&cmd.MergeOptions{
+	err = a.RemoteSealosCmd.ImageMerge(&cmd2.MergeOptions{
 		Quiet:     true,
 		ImageRefs: []string{settings.E2EConfig.ImageName, settings.E2EConfig.PatchImageName},
 		Tag:       []string{settings.E2EConfig.ImageName},
@@ -164,7 +165,7 @@ func (a *Applier) FetchRemoteKubeConfig() {
 	content, err := os.ReadFile(localConf)
 	testhelper.CheckErr(err)
 
-	certOpts := &cmd.CertOptions{Cluster: settings.E2EConfig.ClusterName, AltName: a.EIp}
+	certOpts := &cmd2.CertOptions{Cluster: settings.E2EConfig.ClusterName, AltName: a.EIp}
 	logger.Info("certOpts: %v", certOpts)
 	/*
 		 issue: output: Error: open /root/.sealos/e2e_test/etc/kubeadm-init.yaml: no such file or directory

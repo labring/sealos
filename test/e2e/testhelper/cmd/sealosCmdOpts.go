@@ -23,7 +23,6 @@ type RunOptions struct {
 	Nodes      []string
 	Images     []string
 	SSH        *v1beta1.SSH
-	Single     bool
 	Transport  string
 }
 
@@ -99,6 +98,7 @@ type CreateOptions struct {
 	Cluster  string
 	Platform string
 	Short    bool
+	Image    string
 }
 
 func (ro *RunOptions) Args() []string {
@@ -176,7 +176,8 @@ func (co *CreateOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", co.Cluster).
 		appendFlagsWithValues("--platform", co.Platform).
-		appendFlagsWithValues("--short", co.Short)
+		appendFlagsWithValues("--short", co.Short).
+		appendFlagsWithValues("", co.Image)
 }
 
 func (do *DeleteOptions) Args() []string {

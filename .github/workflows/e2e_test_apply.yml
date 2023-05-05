@@ -62,7 +62,7 @@ jobs:
             ALIYUN_ACCESS_KEY_ID="${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}" \
             ALIYUN_ACCESS_KEY_SECRET="${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}" \
             ALIYUN_RESOURCE_GROUP_ID="${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}" \
-            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="apply test" test/e2e/
+            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="E2E_sealos_apply_test" test/e2e/
           echo 'test_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]
