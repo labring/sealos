@@ -27,18 +27,17 @@ type FakeImageServiceClient struct {
 	V1alpha2ImageServiceClient v1alpha2.ImageServiceClient
 }
 
-func NewFakeImageServiceClientWithV1(client v1api.ImageServiceClient, auth *types.ShimAuthConfig) FakeImageServiceClientInterface {
+func NewFakeImageServiceClientWithV1(client v1api.ImageServiceClient, auth *types.ShimAuthConfig) FakeImageCRIShimInterface {
 	return &FakeImageServiceClient{V1ImageServiceClient: client, ShimAuthConfig: auth, Version: V1}
 }
 
-func NewFakeImageServiceClientWithV1alpha2(client v1alpha2.ImageServiceClient, auth *types.ShimAuthConfig) FakeImageServiceClientInterface {
+func NewFakeImageServiceClientWithV1alpha2(client v1alpha2.ImageServiceClient, auth *types.ShimAuthConfig) FakeImageCRIShimInterface {
 	return &FakeImageServiceClient{V1alpha2ImageServiceClient: client, ShimAuthConfig: auth, Version: V1alpha2}
 }
 
-type FakeImageServiceClientInterface interface {
+type FakeImageCRIShimInterface interface {
 	ListImages() ([]string, error)
 	ImageStatus(image string) (*v1alpha2.ImageStatusResponse, error)
-	//return image ID
 	PullImage(image string) (string, error)
 	RemoveImage(image string) error
 	ImageFsInfo() ([]*v1alpha2.FilesystemUsage, error)

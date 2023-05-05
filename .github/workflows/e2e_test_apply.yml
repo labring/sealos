@@ -7,9 +7,12 @@ on:
 
 jobs:
   call_ci_workflow:
-    uses: ./.github/workflows/ci.yml
+    uses: ./.github/workflows/import-patch-image.yml
     if: ${{ contains(github.event.pull_request.labels.*.name, 'need-e2e-apply-test') }}
-
+    with:
+      arch: amd64,arm64
+      e2e: true
+      image: true
   e2e_apply_test:
     needs: [ call_ci_workflow ]
     runs-on: ubuntu-latest
@@ -21,18 +24,6 @@ jobs:
     outputs:
       test_result: ${{ steps.apply_test.outputs.test_result }}
     steps:
-      - name: Install Dependencies
-        run: sudo apt update && sudo apt install -y libgpgme-dev libbtrfs-dev libdevmapper-dev
-
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-
-      - name: Expose git commit data
-        uses: rlespinasse/git-commit-data-action@v1
-
       - name: Download sealos binary
         uses: actions/download-artifact@v3
         with:
@@ -44,17 +35,18 @@ jobs:
         with:
           name: patch-image-${{ matrix.arch }}.tar
           path: /tmp/sealos/images/
-
+      - name: Download e2e test
+        uses: actions/download-artifact@v3
+        with:
+          name: e2e.test
+          path: /tmp/
       - name: Install ginkgo && Run e2e apply test
         id: apply_test
         shell: bash
         run: |
           set -ex
+          sudo chmod a+x /tmp/e2e.test
           gzip /tmp/sealos/images/patch-${{ matrix.arch }}.tar
-          wget -qO goNew.tgz https://go.dev/dl/go1.20.linux-amd64.tar.gz && tar -zxf goNew.tgz && rm -rf goNew.tgz
-          sudo mkdir -p /tmp/golang && sudo mv go /tmp/golang && sudo mkdir -p /opt/gopath/{bin,src,pkg}
-          export GOROOT=/tmp/golang/go && export GOPATH=/opt/gopath
-          export PATH="$PATH:$GOPATH/bin:$GOROOT/bin"
           sudo SEALOS_E2E_TEST_IMAGE_NAME="hub.sealos.cn/labring/kubernetes:v1.25.6" \
             SEALOS_E2E_TEST_PATCH_IMAGE_TAR="/tmp/sealos/images/patch-${{ matrix.arch }}.tar.gz" \
             SEALOS_E2E_TEST_PATCH_IMAGE_NAME="ghcr.io/labring/sealos-patch:${{ env.GIT_COMMIT_SHORT_SHA }}-${{ matrix.arch }}" \
@@ -62,7 +54,7 @@ jobs:
             ALIYUN_ACCESS_KEY_ID="${{ secrets.E2E_ALIYUN_ACCESS_KEY_ID }}" \
             ALIYUN_ACCESS_KEY_SECRET="${{ secrets.E2E_ALIYUN_ACCESS_KEY_SECRET }}" \
             ALIYUN_RESOURCE_GROUP_ID="${{ secrets.E2E_ALIYUN_RESOURCE_GROUP_ID }}" \
-            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/golang/go/bin/go run github.com/onsi/ginkgo/v2/ginkgo -v --focus="E2E_sealos_apply_test" test/e2e/
+            ALIYUN_REGION_ID="${{ secrets.E2E_ALIYUN_REGION_ID }}" /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_sealos_apply_test"
           echo 'test_result=success' >> "$GITHUB_OUTPUT"
   issue_commit:
     needs: [ e2e_apply_test ]

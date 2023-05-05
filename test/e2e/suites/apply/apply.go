@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/test/e2e/testhelper/consts"
+
 	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
 	"github.com/labring/sealos/test/e2e/testhelper/kube"
 
@@ -89,10 +91,10 @@ func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
 	testhelper.CheckErr(err)
 	host.Arch = arch
 	switch arch {
-	case settings.Arm64Arch:
+	case consts.Arm64Arch:
 		host.Image = infra2.AliyunArm64UbuntuImage
 		host.Flavor = infra2.AliyunArm64Flavor
-	case settings.Amd64Arch:
+	case consts.Amd64Arch:
 		host.Image = infra2.AliyunAmd64UbuntuImage
 	}
 	uid, err := uuid.NewRandom()

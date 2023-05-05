@@ -20,13 +20,16 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
+
+	"github.com/labring/sealos/test/e2e/suites/cluster"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/testhelper"
-	"github.com/labring/sealos/test/e2e/testhelper/cluster"
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 	"github.com/labring/sealos/test/e2e/testhelper/kube"
 )
@@ -69,11 +72,11 @@ func (c *fakeSingleClient) Verify(images ...string) error {
 		return fmt.Errorf("expect 1 node, but got %d", len(nodes.Items))
 	}
 	for _, node := range nodes.Items {
-		if len(node.Spec.Taints) != 1 {
-			return fmt.Errorf("expect 1 taint, but got 0")
+		if node.Spec.Taints[0].Key == constants.LabelNodeRoleOldControlPlane {
+			return fmt.Errorf("expect node role is master, but got %s", node.Spec.Taints[0].Key)
 		}
-		if node.Spec.Taints[0].Key != "node.kubernetes.io/not-ready" {
-			return fmt.Errorf("expect taint key node.kubernetes.io/not-ready, but got %s", node.Spec.Taints[0].Key)
+		if node.Spec.Taints[0].Key == constants.LabelNodeRoleControlPlane {
+			return fmt.Errorf("expect node role is master, but got %s", node.Spec.Taints[0].Key)
 		}
 	}
 	imageSet := sets.NewString(images...)

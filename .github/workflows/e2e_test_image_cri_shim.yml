@@ -55,24 +55,9 @@ jobs:
         with:
           type: prune
 
-      - name: Build image with new image-cri-shim
-        run: |
-          pushd /tmp && echo -e "FROM labring/kubernetes:v1.25.0 \nCOPY image-cri-shim cri" > Dockerfile && sudo /usr/bin/sealos build -f Dockerfile -t kubernetes-hack:v1.25.0 . && popd
-
-      - name: Auto install k8s using sealos
-        run: |
-          sudo /usr/bin/sealos images
-          sudo /usr/bin/sealos run kubernetes-hack:v1.25.0 --single --debug
-          mkdir -p "$HOME/.kube"
-          sudo cp -i /etc/kubernetes/admin.conf "$HOME/.kube/config"
-          sudo chown "$(whoami)" "$HOME/.kube/config"
-          kubectl get svc
-          kubectl get pod -A
-          sudo cat /root/.sealos/default/etc/kubeadm-init.yaml
-          sudo cat /root/.sealos/default/Clusterfile
-
       - name: Run image-cri-shim test
         shell: bash
+        working-directory: /tmp/
         run: |
           sudo chmod a+x /tmp/e2e.test
           sudo /tmp/e2e.test --ginkgo.v --ginkgo.focus="E2E_image-cri-shim_run_test"
