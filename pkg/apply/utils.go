@@ -135,9 +135,3 @@ func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
 	}
 	return nil
 }
-
-func GetLocalIpv4() string {
-	addr, _ := iputils.ListLocalHostAddrs()
-	Ipv4 := iputils.LocalIP(addr)
-	return Ipv4
-}
