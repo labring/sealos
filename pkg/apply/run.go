@@ -16,6 +16,7 @@ package apply
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
@@ -115,6 +116,7 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 
 	r.cluster.SetNewImages(imageList)
 
+	defaultPort := strconv.Itoa(int(r.cluster.Spec.SSH.Port))
 	masters := stringsutil.SplitRemoveEmpty(args.Cluster.Masters, ",")
 	nodes := stringsutil.SplitRemoveEmpty(args.Cluster.Nodes, ",")
 	r.hosts = []v2.Host{}
@@ -122,10 +124,14 @@ func (r *ClusterArgs) runArgs(imageList []string, args *RunArgs) error {
 	clusterSSH := r.cluster.GetSSH()
 	sshClient := ssh.NewSSHClient(&clusterSSH, true)
 	if len(masters) > 0 {
-		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, masters[0])})
+		host, port := iputils.GetHostIPAndPortOrDefault(masters[0], defaultPort)
+		master0addr := net.JoinHostPort(host, port)
+		r.setHostWithIpsPort(masters, []string{v2.MASTER, GetHostArch(sshClient, master0addr)})
 	}
 	if len(nodes) > 0 {
-		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, nodes[0])})
+		host, port := iputils.GetHostIPAndPortOrDefault(nodes[0], defaultPort)
+		node0addr := net.JoinHostPort(host, port)
+		r.setHostWithIpsPort(nodes, []string{v2.NODE, GetHostArch(sshClient, node0addr)})
 	}
 	r.cluster.Spec.Hosts = append(r.cluster.Spec.Hosts, r.hosts...)
 	logger.Debug("cluster info: %v", r.cluster)
