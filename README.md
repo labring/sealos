@@ -27,15 +27,16 @@ A Cloud Operating System designed for managing Cloud Native applications
 
 > [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-## Use sealos to run a Kubernetes cluster
+## Use Sealos to run a Kubernetes cluster
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
-## Run your app on sealos
+## Run your app on Sealos
 
 [Try online demo](https://cloud.sealos.io)
 
-Run nginx on sealos in 30 seconds.
+Run nginx on Sealos in 30 seconds.
+
 <img width="1493" alt="image" src="https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png">
 
 Some Screen Shots of `Sealos Desktop`:
@@ -50,7 +51,7 @@ Some Screen Shots of `Sealos Desktop`:
 
 ## Core features
 
-- Run any application on sealos.
+- Run any application on Sealos.
   - Run nginx on sealos in 30s.
   - Run you own project on sealos, like some java/go/python/node.js webserver.
   - Run you website static files on sealos.
