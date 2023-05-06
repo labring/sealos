@@ -3,7 +3,7 @@
 ![](/docs/4.0/img/sealos-left-dark.png#gh-dark-mode-only)
 ![](/docs/4.0/img/sealos-left.png#gh-light-mode-only)
 
-A general-purpose Cloud Operating System designed for managing Cloud Native applications
+A Cloud Operating System designed for managing Cloud Native applications
 
 </h2>
 
@@ -23,45 +23,39 @@ A general-purpose Cloud Operating System designed for managing Cloud Native appl
 
 </div>
 
+<img width="1304" alt="image" src="https://user-images.githubusercontent.com/8912557/236477759-3532fdec-c355-4f8d-92ef-9f6fce3c50da.png">
+
 > [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
-**Sealos is a Kubernetes distribution, a general-purpose Cloud Operating System designed for managing Cloud Native applications.**
-
-![](https://user-images.githubusercontent.com/8912557/173866494-379ba0dd-05af-4095-b63d-08f594581c52.png)
-
-- Henceforth, envisage all your machinery as an ethereal supercomputer, whose operating system is Sealos, with Kubernetes assuming the role of the OS kernel.
-- Rather than IaaS, PaaS, and SaaS, the new paradigm shall solely encompass Cloud OS drivers (CSI, CNI, and CRI implementations), Cloud OS kernel (Kubernetes), and distributed applications.
-
-## Run a Kubernetes cluster
+## Use Sealos to run a Kubernetes cluster
 
 [![asciicast](https://asciinema.org/a/519263.svg)](https://asciinema.org/a/519263?speed=3)
 
-## Demo
+## Run your app on Sealos
 
-[Sealos Desktop](https://cloud.sealos.io)
+[Try online demo](https://cloud.sealos.io)
 
-[Sealos Desktop Docs](https://www.sealos.io/docs/cloud/Intro)
+Run nginx on Sealos in 30 seconds.
 
-Utilize the Cloud infrastructure akin to a Desktop computer, with the liberty to install or uninstall any Distributed Application at will:
-
-![](/docs/4.0/img/sealos-desktop.png)
+<img width="1493" alt="image" src="https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png">
 
 Some Screen Shots of `Sealos Desktop`:
 
 <div align="center">
 
-| Sealos App Store | Sealos App Store |
+| Sealos Terminal | Sealos App Launchpad |
 | :---: | :---: |
-| ![](/docs/4.0/img/sealos-app-store-1.jpg) | ![](/docs/4.0/img/sealos-app-store-2.jpg) |
-
-| PostgreSQL on Sealos Desktop | PostgreSQL on Sealos Desktop |
-| :---: | :---: |
-| ![](/docs/4.0/img/postgresql-1.jpg) | ![](/docs/4.0/img/postgresql-2.jpg) |
+| <img width="1183" alt="image" src="https://user-images.githubusercontent.com/8912557/236481248-1bd521ae-b483-440a-8177-ae90081f8973.png"> | <img width="1495" alt="image" src="https://user-images.githubusercontent.com/8912557/236480220-5a3f09c1-8e75-4727-a398-244d86f32133.png"> |
 
 </div>
 
 ## Core features
 
+- Run any application on Sealos.
+  - Run nginx on sealos in 30s.
+  - Run you own project on sealos, like some java/go/python/node.js webserver.
+  - Run you website static files on sealos.
+  - Run database and some stateful applications on sealos.
 - ☸️ Manage clusters lifecycle
   - [x] Quickly install HA Kubernetes clusters.
   - [x] Add / remove nodes, Clean the cluster.
@@ -71,13 +65,6 @@ Some Screen Shots of `Sealos Desktop`:
   - [x] Utilizing Dockerfile to build images of distributed applications while preserving all of their dependencies.
   - [x] Push images of distributed applications to Docker Hub.
   - [x] Integrate various applications to construct a personalized Cloud platform.
-- ☁️ Sealos Cloud
-  - [x] Multi-tenant management.
-  - [x] Application management.
-  - [x] Multi-cloud cluster management, deploy Kubernetes and custom applications on any cloud platform.
-  - [x] Run any distributed applications.
-  - [x] Cloud terminal.
-  - [x] App Store.
 
 ## Quickstart
 
