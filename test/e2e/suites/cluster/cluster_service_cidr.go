@@ -14,11 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package run
+package cluster
 
-// Interface defines the interface for executing commands
-type Interface interface {
-	Run(images ...string) error
-	Apply(file string) error
-	Reset() error
+import (
+	"fmt"
+)
+
+var _ Interface = &fakeServiceCIDRClient{}
+
+type fakeServiceCIDRClient struct {
+	*fakeClient
+	//10.96.0.0/22
+	data string
+}
+
+func (f *fakeServiceCIDRClient) Verify() error {
+	if f.ClusterConfiguration.Networking.ServiceSubnet != f.data {
+		return fmt.Errorf("cluster config service subnet %s not match %s", f.ClusterConfiguration.Networking.ServiceSubnet, f.data)
+	}
+	return nil
 }

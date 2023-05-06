@@ -19,9 +19,9 @@ package e2e
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"github.com/labring/sealos/test/e2e/suites/cri"
+	"github.com/labring/sealos/test/e2e/testhelper/config"
 
 	"github.com/labring/sealos/test/e2e/suites/run"
 
@@ -89,22 +89,11 @@ var _ = Describe("E2E_sealos_images_test", func() {
 		var tmpdir string
 		BeforeEach(func() {
 			By("build image from dockerfile")
-			tmpdir = os.TempDir()
-			err = os.MkdirAll(tmpdir, 0755)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to mkdir %s: %v", tmpdir, err))
-			dockerfile := `
-FROM scratch
-COPY . .
-`
-			err = os.WriteFile(tmpdir+"/Dockerfile", []byte(dockerfile), 0644)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", tmpdir+"/Dockerfile", err))
-			By("create images dir")
-			err = os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to mkdir %s: %v", path.Join(tmpdir, "images", "shim"), err))
-			imagefile := `docker.io/altinity/clickhouse-operator:0.18.4
-docker.io/altinity/metrics-exporter:0.18.4
-`
-			err = os.WriteFile(path.Join(tmpdir, "images", "shim", "images"), []byte(imagefile), 0644)
+			dFile := config.Dockerfile{
+				Images: []string{"docker.io/altinity/clickhouse-operator:0.18.4", "docker.io/altinity/metrics-exporter:0.18.4"},
+			}
+			tmpdir, err = dFile.Write()
+			testhelper.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
 		})
 		AfterEach(func() {
 			err = os.RemoveAll(tmpdir)
@@ -134,7 +123,8 @@ docker.io/altinity/metrics-exporter:0.18.4
 				SaveImage:    true,
 			})
 			testhelper.CheckErr(err)
-			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1", "labring/registry:untar", "test-build-image:clickhouse-compress-run"}
+
+			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1", "test-build-image:clickhouse-compress-run"}
 			defer func() {
 				err = fakeRunInterface.Reset()
 				testhelper.CheckErr(err, fmt.Sprintf("failed to reset Compress cluster run: %v", err))
@@ -146,7 +136,7 @@ docker.io/altinity/metrics-exporter:0.18.4
 			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
 			err = criInterface.ImageList()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
-			err = criInterface.ValidateImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
+			err = criInterface.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))
 		})
 

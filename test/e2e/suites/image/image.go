@@ -23,6 +23,7 @@ type FakeImageInterface interface {
 	DockerArchiveImage(name string) error
 	OCIArchiveImage(name string) error
 	SaveImage(name, file string) error
+	TagImage(name, newName string) error
 	LoadImage(file string) error
 	Create(name string, short bool) ([]byte, error)
 	Merge(newImage string, images []string) error
@@ -123,6 +124,10 @@ func (f *fakeClient) BuildImage(image, context string, opts BuildOptions) error 
 		Pull:         opts.Pull,
 		Debug:        true,
 	})
+}
+
+func (f *fakeClient) TagImage(name, newName string) error {
+	return f.SealosCmd.ImageTag(name, newName)
 }
 
 type BuildOptions struct {

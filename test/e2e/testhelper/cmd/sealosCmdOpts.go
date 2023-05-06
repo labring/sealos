@@ -133,7 +133,7 @@ func (ro *RunOptions) Args() []string {
 
 func (ro *ApplyOptions) Args() []string {
 	var args Args = []string{}
-	return args.appendFlagsWithValues("--clusterfile", ro.Clusterfile).
+	return args.appendFlagsWithValues("-f", ro.Clusterfile).
 		appendFlagsWithValues("--debug", ro.Debug).
 		appendFlagsWithValues("--config-file", ro.ConfigFile).
 		appendFlagsWithValues("--env", ro.Env).

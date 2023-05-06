@@ -26,7 +26,7 @@ import (
 type Interface interface {
 	Pull(name string) error
 	ImageList() error
-	ValidateImage(name string) error
+	HasImage(name string) error
 }
 
 type fakeCRIClient struct {
@@ -56,7 +56,7 @@ func (f *fakeCRIClient) ImageList() error {
 	_, err := f.SealosCmd.CRIImageList(true)
 	return err
 }
-func (f *fakeCRIClient) ValidateImage(name string) error {
+func (f *fakeCRIClient) HasImage(name string) error {
 	data, err := f.SealosCmd.CRIImageList(false)
 	if err != nil {
 		return err

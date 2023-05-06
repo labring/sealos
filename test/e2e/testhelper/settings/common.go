@@ -39,14 +39,17 @@ const (
 const GzSuffix = ".gz"
 
 const (
-	DefaultTestImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0"
-	HelmImageName        = "hub.sealos.cn/labring/helm:v3.8.2"
-	CalicoImageName      = "hub.sealos.cn/labring/calico:v3.25.0"
-	DefaultImageRepo     = "hub.sealos.cn/labring"
-	DockerIoRepo         = "docker.io"
-	DefaultInfraDriver   = AliyunInfraDriver
-	AliyunInfraDriver    = "aliyun"
-	AWSInfraDriver       = "aws"
+	DefaultTestImageName  = "hub.sealos.cn/labring/kubernetes:v1.25.0"
+	DefaultTestImageTar   = "/tmp/kubernetes-v1.25.0.tar.gz"
+	DefaultPatchImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0-patch"
+	DefaultPatchImageTar  = "/tmp/kubernetes-v1.25.0-patch.tar.gz"
+	HelmImageName         = "hub.sealos.cn/labring/helm:v3.8.2"
+	CalicoImageName       = "hub.sealos.cn/labring/calico:v3.25.0"
+	DefaultImageRepo      = "hub.sealos.cn/labring"
+	DockerIoRepo          = "docker.io"
+	DefaultInfraDriver    = AliyunInfraDriver
+	AliyunInfraDriver     = "aliyun"
+	AWSInfraDriver        = "aws"
 )
 
 func GetWorkDir() string {

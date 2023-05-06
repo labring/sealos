@@ -46,6 +46,7 @@ type ImageService interface {
 	ImagePull(*PullOptions) error
 	ImagePush(image string) error
 	ImageList() error
+	ImageTag(name, newName string) error
 	ImageSave(image string, path string, archive string) error
 	ImageLoad(path string) error
 	ImageMerge(options *MergeOptions) error
@@ -116,6 +117,10 @@ func (s *SealosCmd) ImageSave(image string, path string, archive string) error {
 
 func (s *SealosCmd) ImageLoad(path string) error {
 	return s.Executor.AsyncExec(s.BinPath, "load", "-i", path)
+}
+
+func (s *SealosCmd) ImageTag(name, newName string) error {
+	return s.Executor.AsyncExec(s.BinPath, "tag", name, newName)
 }
 
 func (s *SealosCmd) ImageMerge(args *MergeOptions) error {
