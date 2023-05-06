@@ -23,7 +23,7 @@ A Cloud Operating System designed for managing Cloud Native applications
 
 </div>
 
-<img width="1304" alt="image" src="https://user-images.githubusercontent.com/8912557/236477759-3532fdec-c355-4f8d-92ef-9f6fce3c50da.png">
+![](https://user-images.githubusercontent.com/8912557/236477759-3532fdec-c355-4f8d-92ef-9f6fce3c50da.png)
 
 > [Docs](https://www.sealos.io/docs/Intro) | [简体中文](https://www.sealos.io/zh-Hans/docs/Intro) ｜ [Roadmap](https://github.com/orgs/labring/projects/4/views/9)
 
@@ -37,7 +37,7 @@ A Cloud Operating System designed for managing Cloud Native applications
 
 Run nginx on Sealos in 30 seconds.
 
-<img width="1493" alt="image" src="https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png">
+![](https://user-images.githubusercontent.com/8912557/236479998-c4949070-a4bc-4900-bfe8-d8b3b4728e60.png)
 
 Some Screen Shots of `Sealos Desktop`:
 
@@ -45,7 +45,7 @@ Some Screen Shots of `Sealos Desktop`:
 
 | Sealos Terminal | Sealos App Launchpad |
 | :---: | :---: |
-| <img width="1183" alt="image" src="https://user-images.githubusercontent.com/8912557/236481248-1bd521ae-b483-440a-8177-ae90081f8973.png"> | <img width="1495" alt="image" src="https://user-images.githubusercontent.com/8912557/236480220-5a3f09c1-8e75-4727-a398-244d86f32133.png"> |
+| ![](https://user-images.githubusercontent.com/8912557/236481248-1bd521ae-b483-440a-8177-ae90081f8973.png) | ![](https://user-images.githubusercontent.com/8912557/236480220-5a3f09c1-8e75-4727-a398-244d86f32133.png) |
 
 </div>
 
