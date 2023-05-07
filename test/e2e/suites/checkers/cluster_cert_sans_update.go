@@ -14,23 +14,29 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package checkers
 
 import (
 	"fmt"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-var _ Interface = &fakePodCIDRClient{}
+var _ FakeInterface = &fakeCertSansUpdateClient{}
 
-type fakePodCIDRClient struct {
+type fakeCertSansUpdateClient struct {
 	*fakeClient
-	//100.64.0.0/10
 	data string
 }
 
-func (f *fakePodCIDRClient) Verify() error {
-	if f.ClusterConfiguration.Networking.PodSubnet != f.data {
-		return fmt.Errorf("cluster config pod subnet %s not match %s", f.ClusterConfiguration.Networking.PodSubnet, f.data)
+func (f *fakeCertSansUpdateClient) Verify() error {
+	if f.UpdateConfiguration == nil {
+		return nil
+	}
+	if f.data != "" {
+		if !sets.NewString(f.UpdateConfiguration.ClusterConfiguration.APIServer.CertSANs...).Has(f.data) {
+			return fmt.Errorf("cert SANs not match %s", f.data)
+		}
 	}
 	return nil
 }

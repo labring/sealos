@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package checkers
 
 import (
 	"fmt"
 
-	"k8s.io/kubernetes/cmd/kubeadm/app/constants"
-
 	"github.com/labring/sealos/test/e2e/testhelper/kube"
 )
 
-var _ Interface = &fakeSingleTaintsClient{}
+var _ FakeInterface = &fakeTaintsClient{}
 
-type fakeSingleTaintsClient struct {
+type fakeTaintsClient struct {
 	*fakeClient
+	data map[string]string
 }
 
-func (f *fakeSingleTaintsClient) Verify() error {
+func (f *fakeTaintsClient) Verify() error {
 	cli, err := kube.NewK8sClient("/etc/kubernetes/admin.conf", "")
 	if err != nil {
 		return err
@@ -42,15 +41,16 @@ func (f *fakeSingleTaintsClient) Verify() error {
 	if len(nodes.Items) != 1 {
 		return fmt.Errorf("expect 1 node, but got %d", len(nodes.Items))
 	}
+	if f.data == nil || len(f.data) == 0 {
+		return nil
+	}
 	for _, node := range nodes.Items {
 		for _, taint := range node.Spec.Taints {
-			if taint.Key == constants.LabelNodeRoleOldControlPlane {
-				return fmt.Errorf("expect node role is master, but got %s", taint.Key)
-			}
-			if taint.Key == constants.LabelNodeRoleControlPlane {
-				return fmt.Errorf("expect node role is master, but got %s", taint.Key)
+			if f.data[taint.Key] != taint.Value {
+				return fmt.Errorf("expect taint %s=%s, but got %s=%s", taint.Key, f.data[taint.Key], taint.Key, taint.Value)
 			}
 		}
 	}
+
 	return nil
 }

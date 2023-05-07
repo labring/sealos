@@ -14,47 +14,42 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package run
+package operators
 
 import (
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
-
-	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
-var _ Interface = &fakeSingleClient{}
+var _ FakeClusterInterface = &fakeClusterClient{}
 
-func NewFakeSingleClient() Interface {
-	name := "default"
-	return &fakeSingleClient{
-		SealosCmd:   cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
-		clusterName: name,
+func newClusterClient(sealosCmd *cmd.SealosCmd, clusterName string) FakeClusterInterface {
+	return &fakeClusterClient{
+		SealosCmd:   sealosCmd,
+		clusterName: clusterName,
 	}
 }
 
-type fakeSingleClient struct {
+type fakeClusterClient struct {
 	*cmd.SealosCmd
-	v1beta1.Cluster
 	clusterName string
 }
 
-func (c *fakeSingleClient) Run(images ...string) error {
+func (c *fakeClusterClient) Run(images ...string) error {
 	return c.SealosCmd.Run(&cmd.RunOptions{
 		Cluster: c.clusterName,
 		Images:  images,
 	})
 }
 
-func (c *fakeSingleClient) Apply(file string) error {
+func (c *fakeClusterClient) Apply(file string) error {
 	return c.SealosCmd.Apply(&cmd.ApplyOptions{
 		Clusterfile: file,
 	})
 }
 
-func (c *fakeSingleClient) Reset() error {
+func (c *fakeClusterClient) Reset() error {
 	return c.SealosCmd.Reset(&cmd.ResetOptions{
-		Cluster: "default",
+		Cluster: c.clusterName,
 		Force:   true,
 	})
 }

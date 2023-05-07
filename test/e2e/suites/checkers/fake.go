@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package checkers
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -32,22 +34,34 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
-type Interface interface {
+type FakeInterface interface {
 	Verify() error
 }
 
 type fakeClient struct {
-	InitConfiguration      kubeadm.InitConfiguration
-	ClusterConfiguration   kubeadm.ClusterConfiguration
-	JoinConfiguration      kubeadm.JoinConfiguration
-	KubeProxyConfiguration proxy.KubeProxyConfiguration
-	KubeletConfiguration   kubelet.KubeletConfiguration
-	clusterName            string
-	cmd                    cmd.Interface
+	Cluster                 v1beta1.Cluster
+	InitConfiguration       kubeadm.InitConfiguration
+	ClusterConfiguration    kubeadm.ClusterConfiguration
+	KubeProxyConfiguration  proxy.KubeProxyConfiguration
+	KubeletConfiguration    kubelet.KubeletConfiguration
+	JoinMasterConfiguration *struct {
+		JoinConfiguration    kubeadm.JoinConfiguration
+		KubeletConfiguration kubelet.KubeletConfiguration
+	}
+	JoinNodeConfiguration *struct {
+		JoinConfiguration    kubeadm.JoinConfiguration
+		KubeletConfiguration kubelet.KubeletConfiguration
+	}
+	UpdateConfiguration *struct {
+		ClusterConfiguration kubeadm.ClusterConfiguration
+	}
+
+	clusterName string
+	cmd         cmd.Interface
 }
 
 type FakeClientGroup struct {
-	clients []Interface
+	clients []FakeInterface
 }
 
 type FakeOpts struct {
@@ -56,15 +70,21 @@ type FakeOpts struct {
 	PodCIDR     string
 	ServiceCIDR string
 	CertSan     string
+	CertDomain  string
 	Taints      map[string]string
 	Images      []string
 	Etcd        []string
 }
 
 func NewFakeGroupClient(name string, opt *FakeOpts) (*FakeClientGroup, error) {
+	if name == "" {
+		name = "default"
+	}
 	client := &fakeClient{clusterName: name, cmd: &cmd.LocalCmd{}}
-	err := client.loadYaml()
-	if err != nil {
+	if err := client.loadInitConfig(); err != nil {
+		return nil, err
+	}
+	if err := client.loadUpdateConfig(); err != nil {
 		return nil, err
 	}
 	if opt == nil {
@@ -87,7 +107,7 @@ func NewFakeGroupClient(name string, opt *FakeOpts) (*FakeClientGroup, error) {
 		opt.Etcd = make([]string, 0)
 	}
 
-	return &FakeClientGroup{clients: []Interface{
+	return &FakeClientGroup{clients: []FakeInterface{
 		&fakeSocketClient{fakeClient: client, data: opt.Socket},
 		&fakeCgroupClient{fakeClient: client, data: opt.Cgroup},
 		&fakePodCIDRClient{fakeClient: client, data: opt.PodCIDR},
@@ -97,6 +117,7 @@ func NewFakeGroupClient(name string, opt *FakeOpts) (*FakeClientGroup, error) {
 		&fakeTaintsClient{fakeClient: client, data: opt.Taints},
 		&fakeImageClient{fakeClient: client, data: opt.Images},
 		&fakeEtcdClient{fakeClient: client, etcd: opt.Etcd},
+		&fakeCertSansUpdateClient{fakeClient: client, data: opt.CertDomain},
 	}}, nil
 }
 
@@ -110,7 +131,7 @@ func (f *FakeClientGroup) Verify() error {
 	return nil
 }
 
-func (f *fakeClient) loadYaml() error {
+func (f *fakeClient) loadInitConfig() error {
 	logger.Info("verify default cluster info")
 	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-init.yaml", f.clusterName)
 	if !testhelper.IsFileExist(initFile) {
@@ -129,12 +150,40 @@ func (f *fakeClient) loadYaml() error {
 			_ = yaml.Unmarshal([]byte(yamlString), &f.InitConfiguration)
 		case "ClusterConfiguration":
 			_ = yaml.Unmarshal([]byte(yamlString), &f.ClusterConfiguration)
-		case "JoinConfiguration":
-			_ = yaml.Unmarshal([]byte(yamlString), &f.JoinConfiguration)
 		case "KubeProxyConfiguration":
 			_ = yaml.Unmarshal([]byte(yamlString), &f.KubeProxyConfiguration)
 		case "KubeletConfiguration":
 			_ = yaml.Unmarshal([]byte(yamlString), &f.KubeletConfiguration)
+		}
+	}
+
+	clusterConfig := fmt.Sprintf("/root/.sealos/%s/Clusterfile", f.clusterName)
+	if !testhelper.IsFileExist(clusterConfig) {
+		return fmt.Errorf("file %s not exist", clusterConfig)
+	}
+	return testhelper.UnmarshalYamlFile(clusterConfig, &f.Cluster)
+}
+func (f *fakeClient) loadUpdateConfig() error {
+	logger.Info("verify default cluster info")
+	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-update.yaml", f.clusterName)
+	if !testhelper.IsFileExist(initFile) {
+		f.UpdateConfiguration = nil
+		return nil
+	}
+	f.UpdateConfiguration = &struct {
+		ClusterConfiguration kubeadm.ClusterConfiguration
+	}{}
+	data, err := os.ReadFile(filepath.Clean(initFile))
+	if err != nil {
+		return err
+	}
+	yamls := testhelper.ToYalms(string(data))
+	for _, yamlString := range yamls {
+		obj, _ := testhelper.UnmarshalData([]byte(yamlString))
+		kind, _, _ := unstructured.NestedString(obj, "kind")
+		switch kind {
+		case "ClusterConfiguration":
+			_ = yaml.Unmarshal([]byte(yamlString), &f.UpdateConfiguration.ClusterConfiguration)
 		}
 	}
 	return nil

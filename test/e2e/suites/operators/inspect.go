@@ -14,50 +14,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package inspect
+package operators
 
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
-
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
-type Interface interface {
-	LocalImage(name string) error
-	RemoteImage(name string) error
-	DockerArchiveImage(name string) error
-	OCIArchiveImage(name string) error
-	ImageID(id string) error
-}
-
-type fakeClient struct {
+type fakeInspectClient struct {
 	*cmd.SealosCmd
 }
 
-func NewInspectClient() Interface {
-	return &fakeClient{
-		SealosCmd: cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
+func newInspectClient(sealosCmd *cmd.SealosCmd) FakeInspectInterface {
+	return &fakeInspectClient{
+		SealosCmd: sealosCmd,
 	}
 }
 
-func (c *fakeClient) LocalImage(name string) error {
+func (c *fakeInspectClient) LocalImage(name string) error {
 	return c.SealosCmd.ImageInspect(name)
 }
 
-func (c *fakeClient) RemoteImage(name string) error {
+func (c *fakeInspectClient) RemoteImage(name string) error {
 	return c.SealosCmd.ImageInspect(fmt.Sprintf("docker://%s", name))
 }
 
-func (c *fakeClient) DockerArchiveImage(name string) error {
+func (c *fakeInspectClient) DockerArchiveImage(name string) error {
 	return c.SealosCmd.ImageInspect(fmt.Sprintf("docker-archive://%s", name))
 }
 
-func (c *fakeClient) OCIArchiveImage(name string) error {
+func (c *fakeInspectClient) OCIArchiveImage(name string) error {
 	return c.SealosCmd.ImageInspect(fmt.Sprintf("oci-archive://%s", name))
 }
 
-func (c *fakeClient) ImageID(id string) error {
+func (c *fakeInspectClient) ImageID(id string) error {
 	return c.SealosCmd.ImageInspect(id)
 }
