@@ -59,7 +59,3 @@ func newCertCmd() *cobra.Command {
 
 	return certCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newCertCmd())
-}

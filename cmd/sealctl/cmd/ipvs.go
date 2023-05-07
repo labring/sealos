@@ -41,7 +41,3 @@ func newIPVSCmd() *cobra.Command {
 	care.LVS.RegisterCommandFlags(ipvsCmd)
 	return ipvsCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newIPVSCmd())
-}

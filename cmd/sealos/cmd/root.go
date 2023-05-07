@@ -83,6 +83,12 @@ func init() {
 			},
 		},
 		{
+			Message: "Experimental Commands:",
+			Commands: []*cobra.Command{
+				newRegistryCmd(),
+			},
+		},
+		{
 			Message:  "Container and Image Commands:",
 			Commands: buildah.AllSubCommands(),
 		},

@@ -18,20 +18,23 @@ import (
 	"fmt"
 	"os"
 
+	"k8s.io/kubectl/pkg/util/templates"
+
+	"github.com/labring/sealos/pkg/buildah"
+
 	"github.com/spf13/cobra"
 
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 var (
-	debug    bool
-	showPath bool
+	debug bool
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "sealctl",
-	Short: "tools for sealos.",
+	Short: "sealctl is a command-line tool for managing and configuring the SealOS system.",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -48,9 +51,36 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(func() {
-		logger.CfgConsoleLogger(debug, showPath)
+		logger.CfgConsoleLogger(debug, false)
 	})
 
 	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "enable debug logger")
-	rootCmd.PersistentFlags().BoolVar(&showPath, "show-path", false, "enable show code path")
+	buildah.RegisterRootCommand(rootCmd)
+
+	groups := templates.CommandGroups{
+		{
+			Message: "Network Management Commands:",
+			Commands: []*cobra.Command{
+				newHostsNameCmd(),
+				newHostsCmd(),
+				newIPVSCmd(),
+			},
+		},
+		{
+			Message: "Cluster Management Commands:",
+			Commands: []*cobra.Command{
+				newCRICmd(),
+				newCertCmd(),
+				newStaticPodCmd(),
+				newTokenCmd(),
+			},
+		},
+		{
+			Message:  "Container and Image Commands:",
+			Commands: buildah.AllSubCommands(),
+		},
+	}
+	groups.Add(rootCmd)
+	filters := []string{}
+	templates.ActsAsRootCommand(rootCmd, filters, groups...)
 }
