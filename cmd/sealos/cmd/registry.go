@@ -22,11 +22,7 @@ import (
 	"github.com/labring/sealos/pkg/registry/commands"
 )
 
-func init() {
-	rootCmd.AddCommand(newRegistryImageCmd())
-}
-
-func newRegistryImageCmd() *cobra.Command {
+func newRegistryCmd() *cobra.Command {
 	var registryImageCmd = &cobra.Command{
 		Use:   "registry",
 		Short: "registry images manager",

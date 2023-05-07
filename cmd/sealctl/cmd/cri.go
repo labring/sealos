@@ -269,7 +269,3 @@ func criRuntime() cri.ContainerRuntime {
 	}
 	return rt
 }
-
-func init() {
-	rootCmd.AddCommand(newCRICmd())
-}

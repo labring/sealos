@@ -37,7 +37,3 @@ func newHostsNameCmd() *cobra.Command {
 	}
 	return hostsNameCmd
 }
-
-func init() {
-	rootCmd.AddCommand(newHostsNameCmd())
-}

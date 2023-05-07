@@ -10,7 +10,7 @@ The default mode scans images in the context directory. The logic of scanning im
 registry images manager save to local dir by default type
 
 Usage:
-  sealctl registry save default [CONTEXT] [flags]
+  sealos registry save default [CONTEXT] [flags]
 
 Flags:
       --arch string          pull images arch (default "arm64")
@@ -32,7 +32,7 @@ Global Flags:
 #### Usage
 
 ```shell
-sealctl  registry  save default . 
+sealos  registry  save default . 
 ```
 
 ### raw type
@@ -43,7 +43,7 @@ raw type using images as image list.
 registry images manager save to local dir by raw type
 
 Usage:
-  sealctl registry save raw [flags]
+  sealos registry save raw [flags]
 
 Flags:
       --arch string          pull images arch (default "arm64")
@@ -63,5 +63,5 @@ Global Flags:
 #### Usage
 
 ```shell
-sealctl  registry  save raw --images nginx
+sealos  registry  save raw --images nginx
 ```
