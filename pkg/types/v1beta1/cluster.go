@@ -78,6 +78,16 @@ type MountImage struct {
 	Entrypoint []string          `json:"entrypoint,omitempty"`
 }
 
+func (img *MountImage) KubeVersion() string {
+	if img.Type != RootfsImage {
+		return ""
+	}
+	if img.Labels == nil {
+		return ""
+	}
+	return img.Labels[ImageKubeVersionKey]
+}
+
 type ClusterPhase string
 
 const (

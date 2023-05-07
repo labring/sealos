@@ -60,6 +60,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require k8s.io/cri-api v0.26.2 // indirect
+
 require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -228,7 +230,6 @@ require (
 	k8s.io/cluster-bootstrap v0.25.6 // indirect
 	k8s.io/component-base v0.26.2 // indirect
 	k8s.io/component-helpers v0.25.6 // indirect
-	k8s.io/cri-api v0.26.2 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20221012153701-172d655c2280 // indirect
 	oras.land/oras-go v1.2.3 // indirect
