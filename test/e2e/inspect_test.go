@@ -19,28 +19,26 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/suites/operators"
+
 	. "github.com/onsi/ginkgo/v2"
 
-	"github.com/labring/sealos/test/e2e/suites/image"
-	"github.com/labring/sealos/test/e2e/suites/inspect"
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 var _ = Describe("E2E_sealos_inspect_test", func() {
 	var (
-		fakeInspectInterface inspect.Interface
-		err                  error
-		fakeImageInterface   image.FakeImageInterface
+		fakeClient *operators.FakeClient
+		err        error
 	)
-	fakeInspectInterface = inspect.NewInspectClient()
-	fakeImageInterface = image.NewFakeImage()
+	fakeClient = operators.NewFakeClient("")
 	Context("sealos local image", func() {
 		It("inspect image", func() {
 			By("sealos pull image")
-			err = fakeImageInterface.PullImage("labring/kubernetes:v1.23.8")
+			err = fakeClient.Image.PullImage("labring/kubernetes:v1.23.8")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image labring/kubernetes:v1.23.8: %v", err))
 			By("sealos inspect local image")
-			err = fakeInspectInterface.LocalImage("labring/kubernetes:v1.23.8")
+			err = fakeClient.Inspect.LocalImage("labring/kubernetes:v1.23.8")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect local image labring/kubernetes:v1.23.8: %v", err))
 		})
 
@@ -48,30 +46,25 @@ var _ = Describe("E2E_sealos_inspect_test", func() {
 	Context("sealos remote image", func() {
 		It("inspect image", func() {
 			By("sealos inspect remote image")
-			err = fakeInspectInterface.RemoteImage("labring/kubernetes:v1.25.0")
+			err = fakeClient.Inspect.RemoteImage("labring/kubernetes:v1.25.0")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect remote image labring/kubernetes:v1.25.0: %v", err))
-		})
-	})
-
-	Context("sealos save", func() {
-		It("inspect image before save image", func() {
-			By("sealos save docker image")
-			err = fakeImageInterface.PullImage("alpine:3")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image alpine:3: %v", err))
-			err = fakeImageInterface.DockerArchiveImage("alpine:3")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to save docker image alpine:3: %v", err))
-			By("sealos save oci image")
-			err = fakeImageInterface.OCIArchiveImage("alpine:3")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to save oci image alpine:3: %v", err))
 		})
 	})
 
 	Context("sealos inspect archive", func() {
 		It("inspect image", func() {
+			By("sealos save docker image")
+			err = fakeClient.Image.PullImage("alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image alpine:3: %v", err))
+			err = fakeClient.Image.DockerArchiveImage("alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to save docker image alpine:3: %v", err))
+			By("sealos save oci image")
+			err = fakeClient.Image.OCIArchiveImage("alpine:3")
+			testhelper.CheckErr(err, fmt.Sprintf("failed to save oci image alpine:3: %v", err))
 			By("sealos inspect archive image")
-			err = fakeInspectInterface.DockerArchiveImage(image.DockerTarFile)
+			err = fakeClient.Inspect.DockerArchiveImage(operators.DockerTarFile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect docker archive image alpine:3: %v", err))
-			err = fakeInspectInterface.OCIArchiveImage(image.OCITarFile)
+			err = fakeClient.Inspect.OCIArchiveImage(operators.OCITarFile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect oci archive image alpine:3: %v", err))
 		})
 	})
@@ -79,9 +72,9 @@ var _ = Describe("E2E_sealos_inspect_test", func() {
 	Context("sealos inspect image id", func() {
 		It("inspect image", func() {
 			By("sealos inspect image id")
-			id, err := fakeImageInterface.FetchImageID("labring/kubernetes:v1.23.8")
+			id, err := fakeClient.Image.FetchImageID("labring/kubernetes:v1.23.8")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to fetch image id labring/kubernetes:v1.23.8: %v", err))
-			err = fakeInspectInterface.ImageID(id)
+			err = fakeClient.Inspect.ImageID(id)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to inspect image id %s: %v", id, err))
 		})
 	})

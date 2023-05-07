@@ -20,67 +20,62 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/labring/sealos/test/e2e/suites/cri"
-	"github.com/labring/sealos/test/e2e/testhelper/config"
+	"github.com/labring/sealos/test/e2e/suites/operators"
 
-	"github.com/labring/sealos/test/e2e/suites/run"
+	"github.com/labring/sealos/test/e2e/testhelper/config"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-
-	"github.com/labring/sealos/test/e2e/suites/image"
 
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 var _ = Describe("E2E_sealos_images_test", func() {
 	var (
-		err                error
-		fakeImageInterface image.FakeImageInterface
-		fakeRunInterface   run.Interface
+		err        error
+		fakeClient *operators.FakeClient
 	)
-	fakeImageInterface = image.NewFakeImage()
-	fakeRunInterface = run.NewFakeSingleClient()
+	fakeClient = operators.NewFakeClient("")
 	Context("sealos images basic suit", func() {
 		It("images pull", func() {
-			err = fakeImageInterface.PullImage("docker.io/labring/kubernetes:v1.20.0")
+			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.0")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.0: %v", err))
-			id, err := fakeImageInterface.FetchImageID("docker.io/labring/kubernetes:v1.20.0")
+			id, err := fakeClient.Image.FetchImageID("docker.io/labring/kubernetes:v1.20.0")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to fetch image id docker.io/labring/kubernetes:v1.20.0: %v", err))
 			Expect(id).NotTo(BeEmpty())
 		})
 		It("images create local image", func() {
-			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.0", false)
+			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.0", false)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.0: %v", err))
 		})
 		It("images create remote image", func() {
-			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.1", false)
+			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.1", false)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.1: %v", err))
 		})
 		It("images create remote image by short", func() {
-			_, err = fakeImageInterface.Create("docker.io/labring/kubernetes:v1.20.2", true)
+			_, err = fakeClient.Image.Create("docker.io/labring/kubernetes:v1.20.2", true)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to create image docker.io/labring/kubernetes:v1.20.2: %v", err))
 		})
 		It("images more image", func() {
-			err = fakeImageInterface.PullImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
+			err = fakeClient.Image.PullImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
 		})
 		It("images rm more image", func() {
-			err = fakeImageInterface.RemoveImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
+			err = fakeClient.Image.RemoveImage("docker.io/labring/kubernetes:v1.20.3", "labring/helm:v3.8.2")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to remove image docker.io/labring/kubernetes:v1.20.3 labring/helm:v3.8.2: %v", err))
 		})
 		It("images save image", func() {
-			err = fakeImageInterface.SaveImage("docker.io/labring/kubernetes:v1.20.1", "k8s.tar")
+			err = fakeClient.Image.SaveImage("docker.io/labring/kubernetes:v1.20.1", "k8s.tar")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to save image docker.io/labring/kubernetes:v1.20.1: %v", err))
 		})
 		It("images load image", func() {
-			err = fakeImageInterface.LoadImage("k8s.tar")
+			err = fakeClient.Image.LoadImage("k8s.tar")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to load image k8s.tar: %v", err))
 		})
 		It("images merge image", func() {
-			err = fakeImageInterface.Merge("new:0.1.0", []string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"})
+			err = fakeClient.Image.Merge("new:0.1.0", []string{"docker.io/labring/kubernetes:v1.20.1", "labring/helm:v3.8.2"})
 			testhelper.CheckErr(err, fmt.Sprintf("failed to merge image new:0.1.0: %v", err))
-			_, err := fakeImageInterface.ListImages(true)
+			_, err := fakeClient.Image.ListImages(true)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
 		})
 
@@ -100,7 +95,7 @@ var _ = Describe("E2E_sealos_images_test", func() {
 			testhelper.CheckErr(err, fmt.Sprintf("failed to remove dir %s: %v", tmpdir, err))
 		})
 		It("images build default image", func() {
-			err = fakeImageInterface.BuildImage("test-build-image:clickhouse", tmpdir, image.BuildOptions{
+			err = fakeClient.Image.BuildImage("test-build-image:clickhouse", tmpdir, operators.BuildOptions{
 				Compress:     false,
 				MaxPullProcs: 5,
 				SaveImage:    true,
@@ -108,7 +103,7 @@ var _ = Describe("E2E_sealos_images_test", func() {
 			testhelper.CheckErr(err)
 		})
 		It("images build Compress image", func() {
-			err = fakeImageInterface.BuildImage("test-build-image:clickhouse-compress", tmpdir, image.BuildOptions{
+			err = fakeClient.Image.BuildImage("test-build-image:clickhouse-compress", tmpdir, operators.BuildOptions{
 				Compress:     true,
 				MaxPullProcs: 5,
 				SaveImage:    true,
@@ -117,7 +112,7 @@ var _ = Describe("E2E_sealos_images_test", func() {
 		})
 
 		It("images build Compress image running cluster", func() {
-			err = fakeImageInterface.BuildImage("test-build-image:clickhouse-compress-run", tmpdir, image.BuildOptions{
+			err = fakeClient.Image.BuildImage("test-build-image:clickhouse-compress-run", tmpdir, operators.BuildOptions{
 				Compress:     true,
 				MaxPullProcs: 5,
 				SaveImage:    true,
@@ -126,17 +121,16 @@ var _ = Describe("E2E_sealos_images_test", func() {
 
 			images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1", "test-build-image:clickhouse-compress-run"}
 			defer func() {
-				err = fakeRunInterface.Reset()
+				err = fakeClient.Cluster.Reset()
 				testhelper.CheckErr(err, fmt.Sprintf("failed to reset Compress cluster run: %v", err))
 			}()
-			err = fakeRunInterface.Run(images...)
+			err = fakeClient.Cluster.Run(images...)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to run Compress images %v: %v", images, err))
-			criInterface := cri.NewCRIClient()
-			err = criInterface.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
+			err = fakeClient.CRI.Pull("docker.io/altinity/clickhouse-operator:0.18.4")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to pull image docker.io/altinity/clickhouse-operator:0.18.4: %v", err))
-			err = criInterface.ImageList()
+			err = fakeClient.CRI.ImageList()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to list images: %v", err))
-			err = criInterface.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
+			err = fakeClient.CRI.HasImage("sealos.hub:5000/altinity/clickhouse-operator:0.18.4")
 			testhelper.CheckErr(err, fmt.Sprintf("failed to validate image sealos.hub:5000/altinity/clickhouse-operator:0.18.4: %v", err))
 		})
 

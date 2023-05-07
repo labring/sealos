@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package checkers
 
 import (
 	"fmt"
 	"strings"
 )
 
-var _ Interface = &fakeSocketClient{}
+var _ FakeInterface = &fakeSocketClient{}
 
 type fakeSocketClient struct {
 	*fakeClient

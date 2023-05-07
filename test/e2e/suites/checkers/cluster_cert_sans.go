@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package checkers
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
-var _ Interface = &fakeCertSansClient{}
+var _ FakeInterface = &fakeCertSansClient{}
 
 type fakeCertSansClient struct {
 	*fakeClient

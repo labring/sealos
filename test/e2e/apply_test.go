@@ -19,31 +19,28 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/suites/operators"
+
 	"github.com/labring/sealos/test/e2e/testhelper/config"
 	"github.com/labring/sealos/test/e2e/testhelper/etcd"
 
-	"github.com/labring/sealos/test/e2e/suites/image"
-
 	. "github.com/onsi/ginkgo/v2"
 
-	"github.com/labring/sealos/test/e2e/suites/cluster"
+	"github.com/labring/sealos/test/e2e/suites/checkers"
 
-	"github.com/labring/sealos/test/e2e/suites/run"
 	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 var _ = Describe("E2E_sealos_apply_test", func() {
 	var (
-		fakeRunInterface     run.Interface
-		err                  error
-		fakeClusterInterface cluster.Interface
-		fakeImageInterface   image.FakeImageInterface
+		fakeClient         *operators.FakeClient
+		err                error
+		fakeCheckInterface checkers.FakeInterface
 	)
-	fakeRunInterface = run.NewFakeSingleClient()
-	fakeImageInterface = image.NewFakeImage()
+	fakeClient = operators.NewFakeClient("")
 	Context("sealos apply suit", func() {
 		AfterEach(func() {
-			err = fakeRunInterface.Reset()
+			err = fakeClient.Cluster.Reset()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
 		It("sealos apply single by containerd", func() {
@@ -57,9 +54,9 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("running kubernete image using apply")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
 				PodCIDR:     "",
@@ -67,9 +64,9 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 				CertSan:     "192.168.72.100",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by docker", func() {
@@ -83,9 +80,9 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("running kubernete image using apply")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
 				PodCIDR:     "",
@@ -93,9 +90,9 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 				CertSan:     "192.168.72.100",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd-buildimage", func() {
@@ -115,7 +112,7 @@ networking:
 			var tmpdir string
 			tmpdir, err = dFile.Write()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-			err = fakeImageInterface.BuildImage("apply-hack-containerd:kubeadm-network", tmpdir, image.BuildOptions{
+			err = fakeClient.Image.BuildImage("apply-hack-containerd:kubeadm-network", tmpdir, operators.BuildOptions{
 				Compress:     false,
 				MaxPullProcs: 5,
 				SaveImage:    true,
@@ -130,18 +127,18 @@ networking:
 			applyfile, err := clusterfileConfig.Write()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 			By("apply kubernete image using build image")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
 				PodCIDR:     "10.160.0.0/12",
 				ServiceCIDR: "100.56.0.0/16",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by docker-buildimage", func() {
@@ -161,7 +158,7 @@ networking:
 			var tmpdir string
 			tmpdir, err = dFile.Write()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
-			err = fakeImageInterface.BuildImage("apply-hack-docker:kubeadm-network", tmpdir, image.BuildOptions{
+			err = fakeClient.Image.BuildImage("apply-hack-docker:kubeadm-network", tmpdir, operators.BuildOptions{
 				Compress:     false,
 				MaxPullProcs: 5,
 				SaveImage:    true,
@@ -176,18 +173,18 @@ networking:
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("apply kubernete image using build image")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
 				PodCIDR:     "10.160.0.0/12",
 				ServiceCIDR: "100.56.0.0/16",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd add Taints ", func() {
@@ -200,9 +197,9 @@ networking:
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("using clusterfile to apply kubernetes image add taints")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
 				PodCIDR:     "",
@@ -210,9 +207,9 @@ networking:
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 				Taints:      map[string]string{"kubeadmNode": "theValue"},
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd add external-etcd ", func() {
@@ -229,9 +226,9 @@ networking:
 			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("using clusterfile to apply kubernetes image add external-etcd")
-			err = fakeRunInterface.Apply(applyfile)
+			err = fakeClient.Cluster.Apply(applyfile)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
-			opts := &cluster.FakeOpts{
+			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
 				PodCIDR:     "",
@@ -239,9 +236,9 @@ networking:
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 				Etcd:        []string{fmt.Sprintf("http://%s:2379", testhelper.GetLocalIpv4())},
 			}
-			fakeClusterInterface, err = cluster.NewFakeGroupClient("default", opts)
+			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
 			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
-			err = fakeClusterInterface.Verify()
+			err = fakeCheckInterface.Verify()
 			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 	})

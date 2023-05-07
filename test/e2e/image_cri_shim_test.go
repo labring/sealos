@@ -3,7 +3,7 @@ package e2e
 import (
 	"fmt"
 
-	"github.com/labring/sealos/test/e2e/suites/run"
+	"github.com/labring/sealos/test/e2e/suites/operators"
 
 	"github.com/labring/image-cri-shim/pkg/server"
 	shimType "github.com/labring/image-cri-shim/pkg/types"
@@ -48,20 +48,18 @@ var _ = ginkgo.Describe("E2E_image-cri-shim_run_test", func() {
 		imageShimService image.FakeImageCRIShimInterface
 		clt              server.Client
 		err              error
-		imageInterface   image.FakeImageInterface
-		runInterface     run.Interface
+		fakeClient       *operators.FakeClient
 	)
+	fakeClient = operators.NewFakeClient("")
 	ginkgo.BeforeEach(func() {
 		//checkout image-cri-shim status running
 		sealFile := `FROM labring/kubernetes:v1.25.0
 COPY image-cri-shim cri`
 		err = testhelper.WriteFile("Dockerfile", []byte(sealFile))
 		testhelper.CheckErr(err)
-		imageInterface = image.NewFakeImage()
-		err = imageInterface.BuildImage("kubernetes-hack:v1.25.0", ".", image.BuildOptions{})
+		err = fakeClient.Image.BuildImage("kubernetes-hack:v1.25.0", ".", operators.BuildOptions{})
 		testhelper.CheckErr(err)
-		runInterface = run.NewFakeSingleClient()
-		err = runInterface.Run("kubernetes-hack:v1.25.0")
+		err = fakeClient.Cluster.Run("kubernetes-hack:v1.25.0")
 		testhelper.CheckErr(err)
 	})
 	ginkgo.AfterEach(func() {

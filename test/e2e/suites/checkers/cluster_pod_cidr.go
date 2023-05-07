@@ -14,11 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package run
+package checkers
 
-// Interface defines the interface for executing commands
-type Interface interface {
-	Run(images ...string) error
-	Apply(file string) error
-	Reset() error
+import (
+	"fmt"
+)
+
+var _ FakeInterface = &fakePodCIDRClient{}
+
+type fakePodCIDRClient struct {
+	*fakeClient
+	//100.64.0.0/10
+	data string
+}
+
+func (f *fakePodCIDRClient) Verify() error {
+	if f.ClusterConfiguration.Networking.PodSubnet != f.data {
+		return fmt.Errorf("cluster config pod subnet %s not match %s", f.ClusterConfiguration.Networking.PodSubnet, f.data)
+	}
+	return nil
 }

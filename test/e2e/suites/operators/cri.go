@@ -14,30 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cri
+package operators
 
 import (
 	"fmt"
 
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
-	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
-
-type Interface interface {
-	Pull(name string) error
-	ImageList() error
-	HasImage(name string) error
-}
 
 type fakeCRIClient struct {
 	SealosCmd *cmd.SealosCmd
 }
 
-func NewCRIClient() Interface {
+func newCRIClient(sealosCmd *cmd.SealosCmd) FakeCRIInterface {
 	return &fakeCRIClient{
-		SealosCmd: cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{}),
+		SealosCmd: sealosCmd,
 	}
 }
+
+var _ FakeCRIInterface = &fakeCRIClient{}
 
 func (f *fakeCRIClient) Pull(name string) error {
 	if f.SealosCmd.CriBinPath == "" {
