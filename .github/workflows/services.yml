@@ -8,6 +8,10 @@ on:
         description: 'Push images'
         required: false
         type: boolean
+      build_dev:
+        description: 'build dev images'
+        required: false
+        type: boolean
   push:
     branches: [ "main" ]
     paths:
@@ -215,8 +219,18 @@ jobs:
       - name: Manifest Cluster Images
         # if push to master, then patch images to ghcr.io
         run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ matrix.module }}-service"
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Build Dev Cluster Images
+        if: ${{ inputs.build_dev == true }}
+        run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:dev
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
         env:
           OWNER: ${{ github.repository_owner }}
 

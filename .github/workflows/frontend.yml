@@ -7,6 +7,10 @@ on:
         description: 'Push images'
         required: false
         type: boolean
+      build_dev:
+        description: 'build dev images'
+        required: false
+        type: boolean
   push:
     branches: [ "main" ]
     paths:
@@ -90,7 +94,7 @@ jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   cluster-image-build:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) || (inputs.build_dev == true)}}
     needs:
       - image-build
       - save-sealos
@@ -150,8 +154,18 @@ jobs:
 
       - name: Manifest Cluster Images
         run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_image }}
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ env.MODULE_NAME }}-frontend"
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
+        env:
+          OWNER: ${{ github.repository_owner }}
+
+      - name: Build Dev Cluster Images
+        if: ${{ inputs.build_dev == true }}
+        run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:dev
+          sudo sealos images
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
         env:
           OWNER: ${{ github.repository_owner }}
 
