@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	"github.com/labring/sealos/test/e2e/testhelper/consts"
@@ -31,7 +33,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/retry"
 
 	"github.com/labring/sealos/controllers/infra/drivers"
-	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
@@ -48,7 +49,7 @@ type Applier struct {
 }
 
 func (a *Applier) Init() {
-	testhelper.CheckErr(a.WaitSSHReady())
+	utils.CheckErr(a.WaitSSHReady())
 	a.initSSH()
 	a.initImage()
 }
@@ -56,8 +57,8 @@ func (a *Applier) Init() {
 var timeSuffix = fmt.Sprintf("%06d", time.Now().UnixNano()%1000000)
 
 func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
-	arch, err := testhelper.GetBinArch(settings.E2EConfig.SealosBinPath)
-	testhelper.CheckErr(err)
+	arch, err := utils.GetBinArch(settings.E2EConfig.SealosBinPath)
+	utils.CheckErr(err)
 	host.Arch = arch
 	switch arch {
 	case consts.Arm64Arch:
@@ -67,7 +68,7 @@ func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
 		host.Image = infra2.AliyunAmd64UbuntuImage
 	}
 	uid, err := uuid.NewRandom()
-	testhelper.CheckErr(err, fmt.Sprintf("error generating UUID: %v\n", err))
+	utils.CheckErr(err, fmt.Sprintf("error generating UUID: %v\n", err))
 	logger.Info("Generated infra UID:", uid)
 	infra.Name = infra.Name + "-" + timeSuffix
 	infra.Namespace = infra.Namespace + "-" + timeSuffix
@@ -77,64 +78,64 @@ func PreSetInfraConfig(infra *v1.Infra, host *v1.Hosts) {
 
 func (a *Applier) initImage() {
 	err := a.RemoteCmd.Copy(settings.E2EConfig.SealosBinPath, settings.E2EConfig.SealosBinPath)
-	testhelper.CheckErr(err)
+	utils.CheckErr(err)
 	err = a.RemoteCmd.AsyncExec("chmod +x " + settings.E2EConfig.SealosBinPath)
-	testhelper.CheckErr(err)
+	utils.CheckErr(err)
 	a.RemoteSealosCmd = cmd2.NewSealosCmd(settings.E2EConfig.SealosBinPath, a.RemoteCmd)
 	if a.Infra.ImageTar != "" {
 		err = a.RemoteCmd.Copy(a.Infra.ImageTar, a.Infra.ImageTar)
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 		err = a.RemoteSealosCmd.ImageLoad(a.Infra.ImageTar)
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 	} else {
 		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
 			ImageRefs: []string{a.Infra.ImageName},
 			Quiet:     true,
 		})
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 	}
 	if a.Infra.PatchImageName == "" {
 		return
 	}
 	if a.Infra.PatchImageTar != "" {
 		err = a.RemoteCmd.Copy(a.Infra.PatchImageTar, a.Infra.PatchImageTar)
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 		if strings.HasSuffix(a.Infra.PatchImageTar, settings.GzSuffix) {
 			err = a.RemoteCmd.AsyncExec(fmt.Sprintf("gzip %s -d", a.Infra.PatchImageTar))
-			testhelper.CheckErr(err)
+			utils.CheckErr(err)
 			a.Infra.PatchImageTar = strings.TrimSuffix(a.Infra.PatchImageTar, settings.GzSuffix)
 		}
 		err = a.RemoteSealosCmd.ImageLoad(a.Infra.PatchImageTar)
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 	} else {
 		err = a.RemoteSealosCmd.ImagePull(&cmd2.PullOptions{
 			ImageRefs: []string{a.Infra.PatchImageName},
 			Quiet:     true,
 		})
-		testhelper.CheckErr(err)
+		utils.CheckErr(err)
 	}
 	err = a.RemoteSealosCmd.ImageMerge(&cmd2.MergeOptions{
 		Quiet:     true,
 		ImageRefs: []string{a.Infra.ImageName, a.Infra.PatchImageName},
 		Tag:       []string{a.Infra.ImageName},
 	})
-	testhelper.CheckErr(err)
+	utils.CheckErr(err)
 }
 
 func (a *Applier) initSSH() {
-	testhelper.CheckErr(testhelper.WriteFile(a.SSH.Pk, []byte(a.SSH.PkData)))
-	testhelper.CheckErr(a.RemoteCmd.Copy(a.SSH.Pk, a.SSH.Pk))
-	testhelper.CheckErr(a.RemoteCmd.AsyncExec("chmod", "0400", a.SSH.Pk))
+	utils.CheckErr(utils.WriteFile(a.SSH.Pk, []byte(a.SSH.PkData)))
+	utils.CheckErr(a.RemoteCmd.Copy(a.SSH.Pk, a.SSH.Pk))
+	utils.CheckErr(a.RemoteCmd.AsyncExec("chmod", "0400", a.SSH.Pk))
 }
 
 func (a *Applier) FetchRemoteKubeConfig() {
 	localConf := filepath.Join(a.Infra.TestDir, "kube", "admin.conf")
-	if testhelper.IsFileExist(localConf) {
-		testhelper.CheckErr(os.Rename(localConf, localConf+".bak"+time.Now().Format("20060102150405")))
+	if utils.IsFileExist(localConf) {
+		utils.CheckErr(os.Rename(localConf, localConf+".bak"+time.Now().Format("20060102150405")))
 	}
-	testhelper.CheckErr(a.RemoteCmd.CopyR(localConf, "/root/.kube/config"))
+	utils.CheckErr(a.RemoteCmd.CopyR(localConf, "/root/.kube/config"))
 	content, err := os.ReadFile(localConf)
-	testhelper.CheckErr(err)
+	utils.CheckErr(err)
 
 	certOpts := &cmd2.CertOptions{Cluster: a.Infra.ClusterName, AltName: a.EIp}
 	logger.Info("certOpts: %v", certOpts)
@@ -145,8 +146,8 @@ func (a *Applier) FetchRemoteKubeConfig() {
 	//pattern := regexp.MustCompile(`(?m)^(\s+server:\s+).+$`)
 	//newData := pattern.ReplaceAllString(string(content), fmt.Sprintf("${1}%s:6443", a.EIp))
 	newData := strings.Replace(string(content), "server: https://apiserver.cluster.local:6443", "server: https://"+a.EIp[0]+":6443", -1)
-	testhelper.CheckErr(testhelper.WriteFile(localConf, []byte(newData)))
-	testhelper.CheckErr(a.RemoteSealosCmd.Cert(certOpts))
+	utils.CheckErr(utils.WriteFile(localConf, []byte(newData)))
+	utils.CheckErr(a.RemoteSealosCmd.Cert(certOpts))
 	time.Sleep(30 * time.Second)
 }
 
@@ -180,9 +181,9 @@ func (a *Applier) CheckNodeNum(num int) {
 
 		return nil
 	})
-	testhelper.CheckErr(err)
+	utils.CheckErr(err)
 	nodes, listErr := a.k8sClient.ListNodes()
-	testhelper.CheckErr(listErr)
+	utils.CheckErr(listErr)
 	for i := range nodes.Items {
 		nodeInfo, _ := yaml.Marshal(nodes.Items[i])
 		fmt.Printf("node info: %s \n", string(nodeInfo))
@@ -191,7 +192,7 @@ func (a *Applier) CheckNodeNum(num int) {
 		}
 		logger.Error("node %s is not ready: %v", nodes.Items[i].Name, err)
 	}
-	testhelper.CheckEqual(len(nodes.Items), num)
+	utils.CheckEqual(len(nodes.Items), num)
 }
 
 func (a *Applier) WaitSSHReady() error {

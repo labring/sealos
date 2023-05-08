@@ -3,7 +3,7 @@ package cmd
 import (
 	"k8s.io/apimachinery/pkg/util/json"
 
-	"github.com/labring/sealos/test/e2e/testhelper"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 )
 
 type SealosCmd struct {
@@ -23,7 +23,7 @@ func NewSealosCmd(binPath string, executor Interface) *SealosCmd {
 }
 
 func (s *SealosCmd) SetCriBinPath() error {
-	binPath, err := testhelper.GetBinPath("crictl")
+	binPath, err := utils.GetBinPath("crictl")
 	if err != nil {
 		return err
 	}

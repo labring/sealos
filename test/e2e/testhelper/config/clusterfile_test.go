@@ -20,7 +20,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/labring/sealos/test/e2e/testhelper"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 )
 
 func TestClusterfile_Write(t *testing.T) {
@@ -37,7 +37,7 @@ func TestClusterfile_Write(t *testing.T) {
 			name: "default",
 			fields: fields{
 				BinData:  "testdata/containerd-svc-etcd.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4()},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			},
 			wantErr: false,
 		},

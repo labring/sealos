@@ -22,11 +22,12 @@ import (
 )
 
 type FakeClient struct {
-	Image   FakeImageInterface
-	CRI     FakeCRIInterface
-	Cluster FakeClusterInterface
-	Cert    FakeCertInterface
-	Inspect FakeInspectInterface
+	Image        FakeImageInterface
+	CRI          FakeCRIInterface
+	Cluster      FakeClusterInterface
+	Cert         FakeCertInterface
+	Inspect      FakeInspectInterface
+	CmdInterface cmd.Interface
 }
 
 func NewFakeClient(clusterName string) *FakeClient {
@@ -35,10 +36,11 @@ func NewFakeClient(clusterName string) *FakeClient {
 	}
 	localCmd := cmd.NewSealosCmd(settings.E2EConfig.SealosBinPath, &cmd.LocalCmd{})
 	return &FakeClient{
-		Image:   newFakeImage(localCmd),
-		CRI:     newCRIClient(localCmd),
-		Cluster: newClusterClient(localCmd, clusterName),
-		Cert:    newCertClient(localCmd, clusterName),
-		Inspect: newInspectClient(localCmd),
+		Image:        newFakeImage(localCmd),
+		CRI:          newCRIClient(localCmd),
+		Cluster:      newClusterClient(localCmd, clusterName),
+		Cert:         newCertClient(localCmd, clusterName),
+		Inspect:      newInspectClient(localCmd),
+		CmdInterface: localCmd.Executor,
 	}
 }

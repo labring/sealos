@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	types2 "github.com/docker/docker/api/types"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/labring/image-cri-shim/pkg/types"
@@ -14,7 +16,6 @@ import (
 	"github.com/labring/sealos/pkg/utils/exec"
 	img "github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 const V1 = "v1"
@@ -178,55 +179,55 @@ func (f FakeImageServiceClient) ImageFsInfo() ([]*v1alpha2.FilesystemUsage, erro
 
 func ConvertV1ImageListRespToV1alpha2(in *v1api.ListImagesResponse) (out *v1alpha2.ListImagesResponse) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 imageList data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 imageList data: %v", err))
 	out = &v1alpha2.ListImagesResponse{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 imageList: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 imageList: %v", err))
 	return
 }
 
 func ConvertV1ImageStatusResponseToV1alpha2(in *v1api.ImageStatusResponse) (out *v1alpha2.ImageStatusResponse) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageStatusResponse data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageStatusResponse data: %v", err))
 	out = &v1alpha2.ImageStatusResponse{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageStatusResponse : %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageStatusResponse : %v", err))
 	return
 }
 
 func ConvertV1ImageSpecToV1alpha2(in *v1api.ImageSpec) (out *v1alpha2.ImageSpec) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageSpec data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageSpec data: %v", err))
 	out = &v1alpha2.ImageSpec{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageSpec: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageSpec: %v", err))
 	return
 }
 
 func ConvertV1PullImageResponseToV1alpha2(in *v1api.PullImageResponse) (out *v1alpha2.PullImageResponse) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 PullImageResponse data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 PullImageResponse data: %v", err))
 	out = &v1alpha2.PullImageResponse{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 PullImageResponse: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 PullImageResponse: %v", err))
 	return
 }
 
 func ConvertV1RemoveImageResponseToV1alpha2(in *v1api.RemoveImageResponse) (out *v1alpha2.RemoveImageResponse) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 RemoveImageResponse data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 RemoveImageResponse data: %v", err))
 	out = &v1alpha2.RemoveImageResponse{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 RemoveImageResponse: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 RemoveImageResponse: %v", err))
 	return
 }
 
 func ConvertV1ImageFsInfoResponseToV1alpha2(in *v1api.ImageFsInfoResponse) (out *v1alpha2.ImageFsInfoResponse) {
 	data, err := in.Marshal()
-	testhelper.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageFsInfoResponse data: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to marshal v1 ImageFsInfoResponse data: %v", err))
 	out = &v1alpha2.ImageFsInfoResponse{}
 	err = out.Unmarshal(data)
-	testhelper.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageFsInfoResponse: %v", err))
+	utils.CheckErr(err, fmt.Sprintf("failed to unmarshal to v1aplha2 ImageFsInfoResponse: %v", err))
 	return
 }
 

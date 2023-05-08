@@ -20,13 +20,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/labring/sealos/test/e2e/suites/operators"
 
 	"github.com/labring/sealos/test/e2e/suites/checkers"
 
 	. "github.com/onsi/ginkgo/v2"
-
-	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 var _ = Describe("E2E_sealos_cert_test", func() {
@@ -39,20 +39,20 @@ var _ = Describe("E2E_sealos_cert_test", func() {
 	BeforeEach(func() {
 		images := []string{"labring/kubernetes:v1.25.0", "labring/helm:v3.8.2", "labring/calico:v3.24.1"}
 		err = fakeClient.Cluster.Run(images...)
-		testhelper.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
+		utils.CheckErr(err, fmt.Sprintf("failed to Run new cluster for single: %v", err))
 	})
 	AfterEach(func() {
 		err = fakeClient.Cluster.Reset()
-		testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
+		utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for single: %v", err))
 	})
 	It("sealos cert suit", func() {
 		err = fakeClient.Cert.AddDomain("test.sealoshub.io")
-		testhelper.CheckErr(err, fmt.Sprintf("failed to generate new cert for domain(test.sealoshub.io): %v", err))
+		utils.CheckErr(err, fmt.Sprintf("failed to generate new cert for domain(test.sealoshub.io): %v", err))
 		time.Sleep(10 * time.Second)
 		fakeCheckInterface, err = checkers.NewFakeGroupClient("", &checkers.FakeOpts{CertDomain: "test.sealoshub.io"})
-		testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+		utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 		err = fakeCheckInterface.Verify()
-		testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+		utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 
 	})
 

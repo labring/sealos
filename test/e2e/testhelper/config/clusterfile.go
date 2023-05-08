@@ -20,13 +20,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/testdata"
-	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 type Clusterfile struct {
@@ -36,7 +37,7 @@ type Clusterfile struct {
 }
 
 func (c *Clusterfile) Write() (string, error) {
-	tmpdir, err := testhelper.MkTmpdir("")
+	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
 		return "", errors.WithMessage(err, "create tmpdir failed")
 	}
@@ -51,9 +52,9 @@ func (c *Clusterfile) Write() (string, error) {
 	if err = os.WriteFile(tmpdir+"/Clusterfile", []byte(replaceClusterfile), 0644); err != nil {
 		return "", errors.WithMessage(err, "write clusterfile failed")
 	}
-	yamls := testhelper.ToYalms(replaceClusterfile)
+	yamls := utils.ToYalms(replaceClusterfile)
 	for _, yamlString := range yamls {
-		obj, _ := testhelper.UnmarshalData([]byte(yamlString))
+		obj, _ := utils.UnmarshalData([]byte(yamlString))
 		kind, _, _ := unstructured.NestedString(obj, "kind")
 		switch kind {
 		case "Cluster":

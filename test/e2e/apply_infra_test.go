@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	cmd2 "github.com/labring/sealos/test/e2e/testhelper/cmd"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,7 +21,6 @@ import (
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/test/e2e/suites/apply"
 	infra2 "github.com/labring/sealos/test/e2e/suites/infra"
-	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/settings"
 )
 
@@ -82,23 +83,23 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 			infraCheck.PreCheckEnv()
 			apply.PreSetInfraConfig(infra, host)
 			infraDriver, err = drivers.NewDriver(infraCheck.InfraDriver)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get %s driver: %v", infraCheck.InfraDriver, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get %s driver: %v", infraCheck.InfraDriver, err))
 			//testhelper.CheckErr(yaml.Unmarshal([]byte(infra2.InfraTmpl), infra))
 			//testhelper.CheckErr(yaml.Unmarshal([]byte(infra2.InfraTmpl), host))
 			err = infraDriver.CreateKeyPair(infra)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to create keypair: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to create keypair: %v", err))
 			err = infraDriver.CreateInstances(host, infra)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to create instances: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to create instances: %v", err))
 			hosts, err := infraDriver.GetInstances(infra, "running")
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get instances: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get instances: %v", err))
 			infra.Spec.Hosts = hosts
-			testhelper.CheckErr(testhelper.MarshalYamlToFile(filepath.Join(infraCheck.TestDir, "infra.yaml"+time.Now().Format("20060102150405")), infra))
+			utils.CheckErr(utils.MarshalYamlToFile(filepath.Join(infraCheck.TestDir, "infra.yaml"+time.Now().Format("20060102150405")), infra))
 			if len(infra2.GetPublicIP(infra.Spec.Hosts)) == 0 {
-				testhelper.CheckErr(fmt.Errorf("no public ip found"))
+				utils.CheckErr(fmt.Errorf("no public ip found"))
 			}
 			eip = infra2.GetPublicIP(infra.Spec.Hosts)
 			privateIps = infra2.GetPrivateIP(infra.Spec.Hosts)
-			testhelper.CheckErr(func() error {
+			utils.CheckErr(func() error {
 				if len(privateIps) <= 3 {
 					return fmt.Errorf("need gt 4 private ips, but got %d", len(privateIps))
 				}
@@ -123,10 +124,10 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 		})
 		AfterEach(func() {
 			err = infraDriver.DeleteInfra(infra)
-			testhelper.CheckErr(err, "failed to delete infra")
+			utils.CheckErr(err, "failed to delete infra")
 			//delete keypair
 			err = infraDriver.DeleteKeyPair(infra)
-			testhelper.CheckErr(err, "failed to delete keypair")
+			utils.CheckErr(err, "failed to delete keypair")
 		})
 
 		// all ips: ip1 ip2 ip3 ip4
@@ -146,12 +147,12 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 			}
 			By("test run ", func() {
 				logger.Info("runOpts: %#+v", runOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Run(runOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Run(runOpts))
 			})
 
 			By("test run app image", func() {
 				logger.Info("runOpts: %#+v", runOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Run(&cmd2.RunOptions{
+				utils.CheckErr(testApplier.RemoteSealosCmd.Run(&cmd2.RunOptions{
 					Images:  []string{settings.HelmImageName, settings.CalicoImageName},
 					Cluster: infraCheck.ClusterName,
 				}))
@@ -167,7 +168,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					Nodes:   privateIps[2:4],
 				}
 				logger.Info("addOpts: %#+v", addOpts)
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Add(addOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Add(addOpts))
 				//check result
 				testApplier.CheckNodeNum(4)
 			})
@@ -179,7 +180,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					Force:   true,
 				}
 				logger.Info("deleteOpts: %#+v", deleteOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Delete(deleteOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Delete(deleteOpts))
 				//check result
 				testApplier.CheckNodeNum(2)
 			})
@@ -190,7 +191,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					Masters: privateIps[1:3],
 				}
 				logger.Info("addOpts: %#+v", addOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Add(addOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Add(addOpts))
 				//check result
 				testApplier.CheckNodeNum(4)
 			})
@@ -202,7 +203,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					Force:   true,
 				}
 				logger.Info("deleteOpts: %#+v", deleteOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Delete(deleteOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Delete(deleteOpts))
 				//check result 1master will cause etcd down, skip check
 				//testApplier.CheckNodeNum(2)
 			})
@@ -217,7 +218,7 @@ var _ = Describe("E2E_sealos_apply_infra_test", func() {
 					},
 				}
 				logger.Info("resetOpts: %#+v", resetOpts.Args())
-				testhelper.CheckErr(testApplier.RemoteSealosCmd.Reset(resetOpts))
+				utils.CheckErr(testApplier.RemoteSealosCmd.Reset(resetOpts))
 			})
 		})
 
