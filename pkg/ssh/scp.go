@@ -256,7 +256,7 @@ func checkIfRemoteFileExists(client *sftp.Client, fp string) (bool, error) {
 }
 
 func isCheckFileMD5() bool {
-	if v, err := system.Get(system.ScpCheckSumConfigKey); err == nil {
+	if v, err := system.Get(system.ScpChecksumConfigKey); err == nil {
 		boolVal, _ := strconv.ParseBool(v)
 		return boolVal
 	}

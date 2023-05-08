@@ -16,17 +16,16 @@ package buildah
 
 import (
 	"fmt"
-	"path"
+	"io"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/labring/sealos/pkg/utils/exec"
-	"github.com/labring/sealos/pkg/utils/file"
-	"github.com/labring/sealos/pkg/utils/rand"
 
 	"github.com/containerd/containerd/platforms"
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/image/v5/types"
+	"github.com/containers/storage/pkg/archive"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -34,42 +33,53 @@ import (
 	"github.com/labring/sealos/pkg/buildimage"
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/registry"
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/flags"
 	"github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/rand"
 )
 
 type saveOptions struct {
 	maxPullProcs int
 	enabled      bool
-	compress     bool
+	compression  flags.Compression
 }
 
 func (opts *saveOptions) RegisterFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&opts.maxPullProcs, "max-pull-procs", 5, "maximum number of goroutines for pulling")
-	fs.BoolVar(&opts.enabled, "save-image", true, "save images parsed to local")
-	fs.BoolVar(&opts.compress, "compress", false, "save images with compress")
+	fs.BoolVar(&opts.enabled, "save-image", true, "store images that parsed from the specific directories")
+	fs.Var(&opts.compression, "compression", "compression algorithm, which effect the images stored in the registry dir")
 }
-
-const (
-	defaultTarRegistry = "rm -rf %[1]s/* && tar -czf %[2]s  --directory=%[3]s docker && rm -rf %[3]s/docker"
-)
 
 func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.SystemContext, opts *saveOptions) error {
 	if !opts.enabled {
 		logger.Warn("save-image is disabled, skip pulling images")
 		return nil
 	}
-	registryDir := path.Join(contextDir, constants.RegistryDirName)
+	registryDir := filepath.Join(contextDir, constants.RegistryDirName)
 	compress := func() error {
-		if opts.compress {
-			logger.Debug("build images using compress mode, compress file in %s/compressed dir", registryDir)
-			if file.IsExist(path.Join(registryDir, "docker")) {
-				if err := file.MkDirs(path.Join(registryDir, "compressed")); err != nil {
-					return err
-				}
-				registryHash := fmt.Sprintf("compressed-%s", rand.Generator(16))
-				compressedFile := fmt.Sprintf("%s/%s/%s", registryDir, "compressed", registryHash)
-				return exec.Cmd("bash", "-c", fmt.Sprintf(defaultTarRegistry, path.Join(registryDir, "compressed"), compressedFile, registryDir))
+		path := filepath.Join(registryDir, "docker")
+		if file.IsExist(path) && opts.compression != flags.Disable {
+			compression := opts.compression.Compression()
+			target := filepath.Join(registryDir, "compressed",
+				"compressed-"+rand.Generator(8)+"."+compression.Extension())
+			if err := file.MkDirs(filepath.Dir(target)); err != nil {
+				return err
 			}
+			fp, err := os.Create(target)
+			if err != nil {
+				return err
+			}
+			defer fp.Close()
+			rc, err := archive.Tar(path, compression)
+			if err != nil {
+				return err
+			}
+			defer rc.Close()
+			if _, err = io.Copy(fp, rc); err != nil {
+				return err
+			}
+			return os.RemoveAll(path)
 		}
 		return nil
 	}

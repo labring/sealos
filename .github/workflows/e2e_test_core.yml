@@ -33,6 +33,16 @@ jobs:
         unit: [ 'E2E_sealos_images_test','E2E_sealos_cert_test','E2E_sealos_run_test','E2E_sealos_inspect_test','E2E_sealos_apply_test' ]
     runs-on: ubuntu-latest
     steps:
+      - name: Download image-cri-shim
+        uses: actions/download-artifact@v3
+        with:
+          name: image-cri-shim-amd64
+          path: /tmp/
+      - name: Download sealctl
+        uses: actions/download-artifact@v3
+        with:
+          name: sealctl-amd64
+          path: /tmp/
       - name: Download sealos
         uses: actions/download-artifact@v3
         with:
@@ -45,8 +55,8 @@ jobs:
           path: /tmp/
       - name: Verify sealos
         run: |
-          sudo chmod a+x /tmp/sealos
-          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo chmod a+x /tmp/{sealos,image-cri-shim,sealctl}
+          sudo mv /tmp/sealos /usr/bin/
           sudo sealos version
       - name: Remove containerd && docker
         uses: labring/sealos-action@v0.0.7

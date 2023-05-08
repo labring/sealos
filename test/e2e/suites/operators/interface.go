@@ -28,6 +28,7 @@ type DisplayImage struct {
 }
 type BuildOptions struct {
 	Compress     bool
+	Compression  string
 	MaxPullProcs int
 	Pull         string
 	SaveImage    bool

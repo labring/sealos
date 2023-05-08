@@ -19,9 +19,9 @@ package checkers
 import (
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/sets"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
-	"github.com/labring/sealos/test/e2e/testhelper"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var _ FakeInterface = &fakeCertSansClient{}
@@ -41,7 +41,7 @@ func (f *fakeCertSansClient) Verify() error {
 	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has("10.103.97.2") {
 		return fmt.Errorf("cert SANs not match %s", "10.103.97.2")
 	}
-	localIP := testhelper.GetLocalIpv4()
+	localIP := utils.GetLocalIpv4()
 	if !sets.NewString(f.ClusterConfiguration.APIServer.CertSANs...).Has(localIP) {
 		return fmt.Errorf("cert SANs not match %s", localIP)
 	}

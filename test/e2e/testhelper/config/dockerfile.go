@@ -17,20 +17,27 @@ limitations under the License.
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path"
 
-	"github.com/labring/sealos/test/e2e/testhelper"
+	"github.com/labring/sealos/test/e2e/testhelper/template"
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
 
 	"github.com/pkg/errors"
 )
 
 const (
-	ImageDockerfile = `FROM scratch
-COPY . .`
-	KubeadmDockerfile = `FROM %s
-COPY kubeadm.yml etc/`
+	//	ImageDockerfile = `FROM scratch
+	//COPY . .`
+	TemplateDockerfile = `FROM {{ .BaseImage }}
+MAINTAINER labring
+{{- if .Copys }}
+{{- range .Copys }}
+COPY {{.}}
+{{- end }}
+{{- end }}`
 )
 
 type Dockerfile struct {
@@ -38,15 +45,18 @@ type Dockerfile struct {
 	KubeadmYaml       string
 	BaseImage         string
 	dockerfileContent string
+	Copys             []string
 }
 
 func (d *Dockerfile) Write() (string, error) {
-	tmpdir, err := testhelper.MkTmpdir("")
+	tmpdir, err := utils.MkTmpdir("")
 	if err != nil {
 		return "", errors.WithMessage(err, "create tmpdir failed")
 	}
+	if d.BaseImage == "" {
+		d.BaseImage = "scratch"
+	}
 	if len(d.Images) != 0 {
-		d.dockerfileContent = ImageDockerfile
 		if err := os.MkdirAll(path.Join(tmpdir, "images", "shim"), 0755); err != nil {
 			return "", errors.WithMessage(err, "create images dir failed")
 		}
@@ -55,18 +65,25 @@ func (d *Dockerfile) Write() (string, error) {
 				return "", errors.WithMessage(err, "write shim image failed")
 			}
 		}
+		d.Copys = append(d.Copys, "registry registry")
 	}
 
 	if d.KubeadmYaml != "" {
 		if err := os.WriteFile(tmpdir+"/kubeadm.yml", []byte(d.KubeadmYaml), 0644); err != nil {
 			return "", errors.WithMessage(err, "write kubeadm.yml failed")
 		}
-		if d.BaseImage == "" {
-			return "", errors.New("base image is not set")
-		}
-		d.dockerfileContent = fmt.Sprintf(KubeadmDockerfile, d.BaseImage)
+		d.Copys = append(d.Copys, "kubeadm.yml etc/")
 	}
 
+	t, _, err := template.TryParse(TemplateDockerfile)
+	if err != nil {
+		return "", err
+	}
+	out := bytes.NewBuffer(nil)
+	if err = t.Execute(out, d); err != nil {
+		return "", err
+	}
+	d.dockerfileContent = out.String()
 	if d.dockerfileContent == "" {
 		return "", errors.New("dockerfile content is not set")
 	}

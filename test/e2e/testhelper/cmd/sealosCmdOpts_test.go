@@ -138,7 +138,6 @@ func TestBuildOptions_Args(t *testing.T) {
 				BuildContext:       tt.fields.BuildContext,
 				BuildArg:           tt.fields.BuildArg,
 				CertDir:            tt.fields.CertDir,
-				Compress:           tt.fields.Compress,
 				Creds:              tt.fields.Creds,
 				DisableCompression: tt.fields.DisableCompression,
 				DNS:                tt.fields.DNS,

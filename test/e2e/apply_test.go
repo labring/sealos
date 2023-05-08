@@ -19,6 +19,8 @@ package e2e
 import (
 	"fmt"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/labring/sealos/test/e2e/suites/operators"
 
 	"github.com/labring/sealos/test/e2e/testhelper/config"
@@ -27,8 +29,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 
 	"github.com/labring/sealos/test/e2e/suites/checkers"
-
-	"github.com/labring/sealos/test/e2e/testhelper"
 )
 
 var _ = Describe("E2E_sealos_apply_test", func() {
@@ -41,21 +41,21 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 	Context("sealos apply suit", func() {
 		AfterEach(func() {
 			err = fakeClient.Cluster.Reset()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to reset cluster for earch cluster: %v", err))
 		})
 		It("sealos apply single by containerd", func() {
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/containerd-svc-sans.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4()},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("running kubernete image using apply")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
@@ -65,23 +65,23 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by docker", func() {
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/docker-svc-sans.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4()},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("running kubernete image using apply")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
@@ -91,9 +91,9 @@ var _ = Describe("E2E_sealos_apply_test", func() {
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd-buildimage", func() {
 
@@ -111,24 +111,23 @@ networking:
 			}
 			var tmpdir string
 			tmpdir, err = dFile.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
 			err = fakeClient.Image.BuildImage("apply-hack-containerd:kubeadm-network", tmpdir, operators.BuildOptions{
-				Compress:     false,
 				MaxPullProcs: 5,
 				SaveImage:    true,
 			})
-			testhelper.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/custome-containerd-svc.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4(), "labring/kubernetes:v1.25.0": "apply-hack-containerd:kubeadm-network"},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes:v1.25.0": "apply-hack-containerd:kubeadm-network"},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 			By("apply kubernete image using build image")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
@@ -137,9 +136,9 @@ networking:
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by docker-buildimage", func() {
 
@@ -157,24 +156,23 @@ networking:
 			}
 			var tmpdir string
 			tmpdir, err = dFile.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to create dockerfile: %v", err))
 			err = fakeClient.Image.BuildImage("apply-hack-docker:kubeadm-network", tmpdir, operators.BuildOptions{
-				Compress:     false,
 				MaxPullProcs: 5,
 				SaveImage:    true,
 			})
-			testhelper.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to build image: %v", err))
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/custome-docker-svc.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4(), "labring/kubernetes-docker:v1.25.0": "apply-hack-docker:kubeadm-network"},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4(), "labring/kubernetes-docker:v1.25.0": "apply-hack-docker:kubeadm-network"},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("apply kubernete image using build image")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "/var/run/cri-dockerd.sock",
 				Cgroup:      "",
@@ -183,22 +181,22 @@ networking:
 				Images:      clusterfileConfig.Cluster.Spec.Image,
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd add Taints ", func() {
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/containerd-svc-taints.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4()},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("using clusterfile to apply kubernetes image add taints")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
@@ -208,38 +206,38 @@ networking:
 				Taints:      map[string]string{"kubeadmNode": "theValue"},
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 		It("sealos apply single by containerd add external-etcd ", func() {
 			By("using clusterfile to apply kubernetes image install external-etcd")
 			etcdInstaller := etcd.NewEtcd()
 			err = etcdInstaller.Install()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to install etcd: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to install etcd: %v", err))
 			By("generate Clusterfile")
 			clusterfileConfig := config.Clusterfile{
 				BinData:  "testdata/containerd-svc-etcd.yaml",
-				Replaces: map[string]string{"127.0.0.1": testhelper.GetLocalIpv4()},
+				Replaces: map[string]string{"127.0.0.1": utils.GetLocalIpv4()},
 			}
 			applyfile, err := clusterfileConfig.Write()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
+			utils.CheckErr(err, fmt.Sprintf("failed to write file %s: %v", applyfile, err))
 
 			By("using clusterfile to apply kubernetes image add external-etcd")
 			err = fakeClient.Cluster.Apply(applyfile)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to apply new cluster for single: %v", err))
 			opts := &checkers.FakeOpts{
 				Socket:      "",
 				Cgroup:      "",
 				PodCIDR:     "",
 				ServiceCIDR: "100.56.0.0/16",
 				Images:      clusterfileConfig.Cluster.Spec.Image,
-				Etcd:        []string{fmt.Sprintf("http://%s:2379", testhelper.GetLocalIpv4())},
+				Etcd:        []string{fmt.Sprintf("http://%s:2379", utils.GetLocalIpv4())},
 			}
 			fakeCheckInterface, err = checkers.NewFakeGroupClient("default", opts)
-			testhelper.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to get cluster interface: %v", err))
 			err = fakeCheckInterface.Verify()
-			testhelper.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
+			utils.CheckErr(err, fmt.Sprintf("failed to verify cluster for single: %v", err))
 		})
 	})
 

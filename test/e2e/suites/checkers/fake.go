@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/labring/sealos/test/e2e/testhelper/utils"
+
 	"github.com/labring/sealos/pkg/types/v1beta1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,7 +32,6 @@ import (
 	"k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm"
 
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/test/e2e/testhelper"
 	"github.com/labring/sealos/test/e2e/testhelper/cmd"
 )
 
@@ -134,16 +135,16 @@ func (f *FakeClientGroup) Verify() error {
 func (f *fakeClient) loadInitConfig() error {
 	logger.Info("verify default cluster info")
 	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-init.yaml", f.clusterName)
-	if !testhelper.IsFileExist(initFile) {
+	if !utils.IsFileExist(initFile) {
 		return fmt.Errorf("file %s not exist", initFile)
 	}
 	data, err := os.ReadFile(filepath.Clean(initFile))
 	if err != nil {
 		return err
 	}
-	yamls := testhelper.ToYalms(string(data))
+	yamls := utils.ToYalms(string(data))
 	for _, yamlString := range yamls {
-		obj, _ := testhelper.UnmarshalData([]byte(yamlString))
+		obj, _ := utils.UnmarshalData([]byte(yamlString))
 		kind, _, _ := unstructured.NestedString(obj, "kind")
 		switch kind {
 		case "InitConfiguration":
@@ -158,15 +159,15 @@ func (f *fakeClient) loadInitConfig() error {
 	}
 
 	clusterConfig := fmt.Sprintf("/root/.sealos/%s/Clusterfile", f.clusterName)
-	if !testhelper.IsFileExist(clusterConfig) {
+	if !utils.IsFileExist(clusterConfig) {
 		return fmt.Errorf("file %s not exist", clusterConfig)
 	}
-	return testhelper.UnmarshalYamlFile(clusterConfig, &f.Cluster)
+	return utils.UnmarshalYamlFile(clusterConfig, &f.Cluster)
 }
 func (f *fakeClient) loadUpdateConfig() error {
 	logger.Info("verify default cluster info")
 	initFile := fmt.Sprintf("/root/.sealos/%s/etc/kubeadm-update.yaml", f.clusterName)
-	if !testhelper.IsFileExist(initFile) {
+	if !utils.IsFileExist(initFile) {
 		f.UpdateConfiguration = nil
 		return nil
 	}
@@ -177,9 +178,9 @@ func (f *fakeClient) loadUpdateConfig() error {
 	if err != nil {
 		return err
 	}
-	yamls := testhelper.ToYalms(string(data))
+	yamls := utils.ToYalms(string(data))
 	for _, yamlString := range yamls {
-		obj, _ := testhelper.UnmarshalData([]byte(yamlString))
+		obj, _ := utils.UnmarshalData([]byte(yamlString))
 		kind, _, _ := unstructured.NestedString(obj, "kind")
 		switch kind {
 		case "ClusterConfiguration":
