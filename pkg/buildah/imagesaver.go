@@ -63,6 +63,7 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 			compression := opts.compression.Compression()
 			target := filepath.Join(registryDir, "compressed",
 				"compressed-"+rand.Generator(8)+"."+compression.Extension())
+			logger.Debug("trying to compress dir %s into archive %s", path, target)
 			if err := file.MkDirs(filepath.Dir(target)); err != nil {
 				return err
 			}
