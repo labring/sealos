@@ -16,7 +16,7 @@ function read_env {
 function mock_tls {
   mkdir -p etc/tls
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout etc/tls/tls.key -out etc/tls/tls.crt -subj "/CN=$1" -addext "subjectAltName=DNS:*.$1" > /dev/null
-  sed -i -e "s/$tlsCrtPlaceholder/$(base64 -w 0 etc/tls/tls.crt)/g" -e "s/$tlsKeyPlaceholder/$(base64 -w 0 etc/tls/tls.key)" manifests/tls-secret.yaml
+  sed -i -e "s;$tlsCrtPlaceholder;$(base64 -w 0 etc/tls/tls.crt);" -e "s;$tlsKeyPlaceholder;$(base64 -w 0 etc/tls/tls.key);" manifests/tls-secret.yaml
 }
 
 function sealos_run_controller {
@@ -25,11 +25,7 @@ function sealos_run_controller {
   # \ 1 > /dev/null
 
   # run terminal controller
-  sealos run ghcr.io/labring/sealos-cloud-terminal-controller:dev
-  \ --env cloudDomain=$cloudDomain
-  \ --env userNamespace="user-system"
-  \ --env wildcardCertSecretName="wildcard-secret"
-  \ --env wildcardCertSecretNamespace="sealos-system"
+  sealos run ghcr.io/labring/sealos-cloud-terminal-controller:dev --env cloudDomain=$cloudDomain --env userNamespace="user-system" --env wildcardCertSecretName="wildcard-secret" --env wildcardCertSecretNamespace="sealos-system"
   # \ 1 > /dev/null
 
   # run app controller
@@ -39,27 +35,16 @@ function sealos_run_controller {
 
 function sealos_run_service {
   # run auth service
-  sealos run ghcr.io/labring/sealos-cloud-auth-service:dev
-  \ --env cloudDomain=$cloudDomain
-  \ --env certSecretName="wildcard-secret"
-  \ --env callbackUrl="$cloudDomain/login/callback"
-  \ --env ssoEndpoint="login.$cloudDomain"
-  \ --env casdoorMysqlRootPassword="$(tr -cd 'a-z0-9' </dev/urandom | head -c16)"
+  sealos run ghcr.io/labring/sealos-cloud-auth-service:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret" --env callbackUrl="$cloudDomain/login/callback" --env ssoEndpoint="login.$cloudDomain" --env casdoorMysqlRootPassword="$(tr -cd 'a-z0-9' </dev/urandom | head -c16)"
   # \ 1 > /dev/null
 }
 
 function sealos_run_frontend {
-  sealos run ghcr.io/labring/sealos-cloud-desktop-frontend:dev
-  \ --env cloudDomain=$cloudDomain
-  \ --env certSecretName="wildcard-secret"
+  sealos run ghcr.io/labring/sealos-cloud-desktop-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
-  sealos run ghcr.io/labring/sealos-cloud-applaunchpad-frontend:dev
-  \ --env cloudDomain=$cloudDomain
-  \ --env certSecretName="wildcard-secret"
+  sealos run ghcr.io/labring/sealos-cloud-applaunchpad-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
-  sealos run ghcr.io/labring/sealos-cloud-terminal-frontend:dev
-  \ --env cloudDomain=$cloudDomain
-  \ --env certSecretName="wildcard-secret"
+  sealos run ghcr.io/labring/sealos-cloud-terminal-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 }
 
 
