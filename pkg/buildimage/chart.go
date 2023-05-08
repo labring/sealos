@@ -33,10 +33,10 @@ import (
 )
 
 func ParseChartImages(chartPath string) ([]string, error) {
-	logger.Info("lookup in path", chartPath)
+	logger.Debug("lookup in path", chartPath)
 
 	if !file.IsExist(chartPath) {
-		logger.Info("path %s is not exists, skip", chartPath)
+		logger.Debug("path %s is not exists, skip", chartPath)
 		return nil, nil
 	}
 	subChartPaths, _ := getChartSub1Paths(chartPath)
@@ -45,7 +45,7 @@ func ParseChartImages(chartPath string) ([]string, error) {
 	}
 	allImages := sets.NewString()
 	for _, subChartPath := range subChartPaths {
-		logger.Info("sub chart is", subChartPath)
+		logger.Debug("sub chart is", subChartPath)
 		c := Chart{
 			Path: chartPath + "/" + subChartPath,
 		}
