@@ -2,10 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { ApiResp } from '@/services/kubernet';
 import { authSession } from '@/services/backend/auth';
 import { getK8s } from '@/services/backend/kubernetes';
-import { openaiResponse } from '@/services/backend/openaiResponse';
 import { PassThrough } from 'stream';
-import { getOpenAIApi } from '@/services/backend/openai';
-import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser';
+import axios from 'axios';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<ApiResp>) {
   const stream = new PassThrough();
@@ -33,25 +31,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
       kubeconfig: await authSession(req.headers)
     });
 
-    // chatgpt api
-    const openai = getOpenAIApi();
-    const chatResponse = await openai.createChatCompletion(
+    const response = await axios.post(
+      'https://fastgpt.run/api/openapi/chat/chat',
       {
-        model: 'gpt-3.5-turbo',
-        temperature: 0.2,
-        messages: [
+        modelId: '6455c433f437e55c638e630c',
+        isStream: true,
+        prompts: [
           {
-            role: 'system',
-            content:
-              '以 Kubernetes 专家的身份判断用户的 Events 存在什么问题。列出可能存在的问题:\n可能的原因:\n操作建议:'
-          },
-          { role: 'user', content: JSON.stringify(events) }
-        ],
-        stream: true
+            obj: 'Human',
+            value: JSON.stringify(events)
+          }
+        ]
       },
       {
-        timeout: 40000,
-        responseType: 'stream'
+        headers: {
+          apikey: process.env.FASTGPT_KEY
+        },
+        responseType: 'stream',
+        timeout: 30000
       }
     );
 
@@ -63,49 +60,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     stream.pipe(res);
     step = 1;
 
-    /* parse stream data */
-    const onParse = async (event: ParsedEvent | ReconnectInterval) => {
-      if (event.type !== 'event') return;
-      const data = event.data;
-      if (data === '[DONE]') return;
-      try {
-        const json = JSON.parse(data);
-        const content: string = json?.choices?.[0].delta.content || '';
-        if (!content) return;
-
-        // console.log('content:', content);
-        !stream.destroyed && stream.push(content.replace(/\n/g, '<br/>'));
-      } catch (error) {
-        error;
-      }
-    };
-
     const decoder = new TextDecoder();
     try {
-      for await (const chunk of chatResponse.data as any) {
+      for await (const chunk of response.data as any) {
+        const text = decoder.decode(chunk);
         if (stream.destroyed) {
-          // 流被中断了，直接忽略后面的内容
           break;
         }
-        const parser = createParser(onParse);
-        parser.feed(decoder.decode(chunk));
+        stream.push(text.replace(/\n/g, '<br/>'));
       }
     } catch (error) {
       console.log('pipe error', error);
     }
+
     // close stream
     !stream.destroyed && stream.push(null);
     stream.destroy();
   } catch (err: any) {
+    console.log(err);
     if (step === 1) {
-      // 直接结束流
-      console.log('error，结束');
-      stream.destroy();
-    } else {
-      openaiResponse(res, {
-        code: 500,
-        error: err
-      });
+      if (!stream.destroy) {
+        stream.push(typeof err === 'string' ? err : err?.message || 'Pod analyses error');
+        stream.push(null);
+        stream.destroy();
+      }
+      return;
     }
+    res.json({
+      code: 500,
+      message: typeof err === 'string' ? err : err?.message || 'Pod analyses error'
+    });
   }
 }
