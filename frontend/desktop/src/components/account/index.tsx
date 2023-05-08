@@ -1,0 +1,103 @@
+/* eslint-disable @next/next/no-img-element */
+import { Box, UseDisclosureProps, Text, Flex, Avatar } from '@chakra-ui/react';
+import request from '@/services/request';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/router';
+import Iconfont from '../iconfont';
+import { useClipboard } from '@chakra-ui/react';
+import useSessionStore from '@/stores/session';
+import JsYaml from 'js-yaml';
+import { useMemo } from 'react';
+import download from '@/utils/downloadFIle';
+import { useCopyData } from '@/hooks/useCopyData';
+
+export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
+  const router = useRouter();
+  const { delSession, getSession } = useSessionStore();
+  const { user, kubeconfig } = getSession();
+  const { copyData } = useCopyData();
+  const userKubeConfigId = useMemo(() => {
+    try {
+      let temp = JsYaml.load(kubeconfig);
+      // @ts-ignore
+      return 'ns-' + temp?.users[0]?.name;
+    } catch (error) {
+      return '';
+    }
+  }, [kubeconfig]);
+
+  const { data } = useQuery(['getAccount'], () => request('/api/account/getAmount'));
+
+  let real_balance = data?.data?.balance ?? 0;
+  if (data?.data?.deductionBalance) {
+    real_balance = real_balance - data.data.deductionBalance;
+  }
+
+  const logout = (e: React.MouseEvent<HTMLElement>) => {
+    e.preventDefault();
+    delSession();
+    router.reload();
+  };
+
+  return (
+    <>
+      <Box
+        position={'fixed'}
+        top={0}
+        left={0}
+        bottom={0}
+        right={0}
+        zIndex={'998'}
+        onClick={accountDisclosure.onClose}
+      ></Box>
+      <Box
+        w="297px"
+        h="347px"
+        bg="rgba(255, 255, 255, 0.75)"
+        boxShadow={'0px 1px 2px rgba(0, 0, 0, 0.2)'}
+        position={'absolute'}
+        top="48px"
+        right={0}
+        zIndex={'999'}
+        borderRadius={'8px'}
+        p="20px"
+      >
+        <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} onClick={logout}>
+          <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>
+          <Text ml="6px" color={'#24282C'} fontSize={'12px'} fontWeight={500}>
+            退出账号
+          </Text>
+        </Flex>
+        <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>
+          <Avatar w="80px" h="80px" src={user?.avatar || ''} />
+          <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
+            {user?.name}
+          </Text>
+          <Flex alignItems={'center'} mt="4px" color={'#7B838B'}>
+            <Text>ID: {userKubeConfigId}</Text>
+            <Box ml="4px" onClick={() => copyData(userKubeConfigId)}>
+              <Iconfont iconName="icon-copy2" width={16} height={16} color="#7B838B"></Iconfont>
+            </Box>
+          </Flex>
+          <Box w="100%" mt="24px" bg="rgba(255, 255, 255, 0.6)" borderRadius={'4px'}>
+            <Flex h="60px" alignItems={'center'}>
+              <Text ml="16px">kubeconfig</Text>
+
+              <Box ml="auto" onClick={() => download('kubeconfig.yaml', kubeconfig)}>
+                <Iconfont
+                  iconName="icon-download"
+                  width={16}
+                  height={16}
+                  color="#219BF4"
+                ></Iconfont>
+              </Box>
+              <Box ml="8px" mr="20px" onClick={() => copyData(kubeconfig)}>
+                <Iconfont iconName="icon-copy2" width={16} height={16} color="#219BF4"></Iconfont>
+              </Box>
+            </Flex>
+          </Box>
+        </Flex>
+      </Box>
+    </>
+  );
+}

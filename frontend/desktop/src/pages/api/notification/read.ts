@@ -1,13 +1,12 @@
+import { authSession } from '@/services/backend/auth';
+import { CRDMeta, GetUserDefaultNameSpace, UpdateCRD } from '@/services/backend/kubernetes';
+import { jsonRes } from '@/services/backend/response';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authSession } from 'services/backend/auth';
-import { CRDMeta, GetUserDefaultNameSpace, K8sApi, UpdateCRD } from 'services/backend/kubernetes';
-import { JsonResp } from '../response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const { name } = req.body;
-    const kubeconfig = await authSession(req.headers);
-    const kc = K8sApi(kubeconfig);
+    const kc = await authSession(req.headers);
     const kube_user = kc.getCurrentUser();
     if (kube_user === null) {
       return res.status(400);
@@ -37,9 +36,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       let temp = await UpdateCRD(kc, meta, n, patch);
       result.push(temp?.body);
     }
-    JsonResp(result, res);
+    jsonRes(res, { data: result });
   } catch (err) {
-    console.log(err);
-    JsonResp(err, res);
+    jsonRes(res, { code: 500, data: err });
   }
 }

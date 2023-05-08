@@ -1,0 +1,14 @@
+{
+  "SwitchLanguage": "Switch Language",
+  "SideBar": {
+    "CostOverview": "Cost Overview",
+    "BillingDetails": "Billing Details",
+    "ValuationStandard": "Standard"
+  },
+  "Valuation": {
+    "Standard": "ValuationStandard",
+    "Name": "Name",
+    "Unit": "Unit",
+    "Price": "Price"
+  }
+}

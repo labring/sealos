@@ -1,13 +1,12 @@
-import Layout from 'layout';
+import Layout from '@/components/layout';
 import { useRouter } from 'next/router';
 import { useEffect } from 'react';
-import useSessionStore from 'stores/session';
+import useSessionStore from '@/stores/session';
 
 const destination = process.env.NEXT_PUBLIC_SERVICE + 'auth/login';
 
 export default function Home(props: any) {
   const router = useRouter();
-
   const isUserLogin = useSessionStore((s) => s.isUserLogin);
 
   useEffect(() => {
