@@ -104,12 +104,12 @@ func (cc *clusterClient) Copy(host, src, dst string) error {
 	return client.Copy(host, src, dst)
 }
 
-func (cc *clusterClient) CopyR(host, src, dst string) error {
+func (cc *clusterClient) Fetch(host, src, dst string) error {
 	client, err := cc.getClientForHost(host)
 	if err != nil {
 		return err
 	}
-	return client.CopyR(host, src, dst)
+	return client.Fetch(host, src, dst)
 }
 
 func (cc *clusterClient) CmdAsync(host string, cmds ...string) error {

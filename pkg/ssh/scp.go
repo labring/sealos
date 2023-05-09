@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/labring/sealos/pkg/system"
 
 	"github.com/pkg/sftp"
@@ -132,12 +130,12 @@ func (c *Client) Copy(host, localPath, remotePath string) error {
 	return c.doCopy(sftpClient, host, localPath, remotePath, bar)
 }
 
-func (c *Client) CopyR(host, localPath, remotePath string) error {
+func (c *Client) Fetch(host, src, dst string) error {
 	if c.isLocalAction(host) {
-		logger.Debug("local %s copy files src %s to dst %s", host, remotePath, localPath)
-		return file.RecursionCopy(remotePath, localPath)
+		return file.RecursionCopy(src, dst)
 	}
-	logger.Debug("remote fetch files src %s to dst %s", remotePath, localPath)
+
+	logger.Debug("fetch remote file %s to %s", src, dst)
 	sshClient, sftpClient, err := c.sftpConnect(host)
 	if err != nil {
 		return fmt.Errorf("failed to connect: %s", err)
@@ -147,34 +145,29 @@ func (c *Client) CopyR(host, localPath, remotePath string) error {
 		_ = sshClient.Close()
 	}()
 
-	srcFile, err := sftpClient.Open(remotePath)
+	rfp, err := sftpClient.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open remote file %s: %v", remotePath, err)
+		return fmt.Errorf("failed to open remote file %s: %v", src, err)
 	}
 	defer func() {
-		if err := srcFile.Close(); err != nil {
-			logger.Error("failed to close file: %v", err)
-		}
+		_ = rfp.Close()
 	}()
-	if file.IsDir(localPath) {
-		localPath = filepath.Join(localPath, filepath.Base(remotePath))
-	} else if file.IsFile(localPath) {
-		return fmt.Errorf("local file %s already exist", localPath)
+	if file.IsDir(dst) {
+		dst = filepath.Join(dst, filepath.Base(src))
+	} else if file.IsFile(dst) {
+		return fmt.Errorf("local file %s already exists", dst)
 	} else {
-		if err := file.MkDirs(filepath.Dir(localPath)); err != nil {
+		if err := file.MkDirs(filepath.Dir(dst)); err != nil {
 			return err
 		}
 	}
-	dstFile, err := os.Create(localPath)
+
+	created, err := os.Create(dst)
 	if err != nil {
-		return fmt.Errorf("failed to create local file: %v", err)
+		return err
 	}
-	defer func() {
-		if err := dstFile.Close(); err != nil {
-			logrus.Errorf("failed to close file: %v", err)
-		}
-	}()
-	_, err = srcFile.WriteTo(dstFile)
+	defer created.Close()
+	_, err = io.Copy(rfp, created)
 	return err
 }
 
