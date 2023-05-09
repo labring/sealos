@@ -106,7 +106,7 @@ jobs:
         id: prepare
         run: |
           SHA_TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=$(if [ ${{ inputs.push_image }} == true ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
+          echo tag_name=$(if [ ${{ inputs.push_image == true }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
           echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
@@ -181,7 +181,7 @@ jobs:
         id: prepare
         run: |
           SHA_TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=$(if [ ${{ inputs.push_image }} == true ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
+          echo tag_name=$(if [ ${{ inputs.push_image == true }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT          
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
