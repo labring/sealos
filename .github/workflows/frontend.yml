@@ -16,14 +16,14 @@ on:
     branches: [ "main" ]
     paths:
       - "frontend/providers/**"
-      - ".github/workflows/frontend-providers.yml"
+      - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
     branches: [ "*" ]
     paths:
       - "frontend/providers/**"
-      - ".github/workflows/frontend-providers.yml"
+      - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 
