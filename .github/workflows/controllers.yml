@@ -105,8 +105,8 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
+          echo tag_name=$(if [ ${{ inputs.push_image }} == true ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
           echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
@@ -180,8 +180,8 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
+          echo tag_name=$(if [ ${{ inputs.push_image }} == true ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi); >> $GITHUB_OUTPUT
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT          
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-controller >> $GITHUB_OUTPUT
@@ -223,12 +223,6 @@ jobs:
           CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:${{ steps.prepare.outputs.tag_name }}
           sudo sealos images
           bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
-        env:
-          OWNER: ${{ github.repository_owner }}
-
-      - name: Release Cluster Images
-        run: |
-          bash docker/patch/release-image.sh ${{ steps.prepare.outputs.cluster_repo }} ${{ inputs.release_tag }}
         env:
           OWNER: ${{ github.repository_owner }}
 
