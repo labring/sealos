@@ -52,7 +52,7 @@ jobs:
         run: |
           SHA_TAG=${GIT_COMMIT_SHORT_SHA}
           tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
-          echo $tag_name >> $GITHUB_OUTPUT
+          echo tag_name=$tag_name >> $GITHUB_OUTPUT
       - name: Extract module name
         id: module_name
         run: |
@@ -123,7 +123,7 @@ jobs:
         run: |
           SHA_TAG=${GIT_COMMIT_SHORT_SHA}
           tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
-          echo $tag_name >> $GITHUB_OUTPUT
+          echo tag_name=$tag_name >> $GITHUB_OUTPUT
           echo old_docker_repo=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT 
           echo old_docker_image=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend:dev >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
