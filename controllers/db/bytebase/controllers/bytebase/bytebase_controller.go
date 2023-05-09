@@ -47,7 +47,7 @@ const (
 )
 
 const (
-	CPURequest    = "0.25"
+	CPURequest    = "0.05"
 	MemoryRequest = "64Mi"
 	CPULimit      = "0.5"
 	MemoryLimit   = "128Mi"
