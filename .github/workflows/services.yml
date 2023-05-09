@@ -4,14 +4,15 @@ name: Build Services image
 on:
   workflow_dispatch:
     inputs:
-      push_mage:
+      push_image:
         description: 'Push images'
         required: false
         type: boolean
-      build_dev:
-        description: 'build dev images'
+      release_tag:
+        description: 'Release images'
+        default: 'dev'
         required: false
-        type: boolean
+        type: string
   push:
     branches: [ "main" ]
     paths:
@@ -120,14 +121,14 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_PAT }}
 
       - name: build (and publish) ${{ matrix.module }} main image
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
         env:
           # fork friendly ^^
           DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
@@ -160,7 +161,7 @@ jobs:
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
     needs:
       - image-build
       - save-sealos
@@ -225,12 +226,9 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
-      - name: Build Dev Cluster Images
-        if: ${{ inputs.build_dev == true }}
+      - name: Release Cluster Images
         run: |
-          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_repo }}:dev
-          sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
+          bash docker/patch/release-image.sh ${{ steps.prepare.outputs.cluster_repo }} ${{ inputs.release_tag }}
         env:
           OWNER: ${{ github.repository_owner }}
 
