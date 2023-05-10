@@ -3,6 +3,7 @@ import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
 import { SEALOS_DOMAIN } from '@/store/static';
 import { maxReplicasKey, minReplicasKey } from '@/constants/app';
+import dayjs from 'dayjs';
 
 export const json2Development = (data: AppEditType) => {
   const template = {
@@ -21,7 +22,7 @@ export const json2Development = (data: AppEditType) => {
       }
     },
     spec: {
-      replicas: str2Num(data.replicas),
+      replicas: str2Num(data.hpa.use ? data.hpa.minReplicas : data.replicas),
       revisionHistoryLimit: 1,
       selector: {
         matchLabels: {
@@ -38,7 +39,8 @@ export const json2Development = (data: AppEditType) => {
       template: {
         metadata: {
           labels: {
-            app: data.appName
+            app: data.appName,
+            restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
           }
         },
         spec: {
@@ -305,7 +307,13 @@ export const json2Ingress = (data: AppEditType) => {
     HTTP: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
-      'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
+      'nginx.ingress.kubernetes.io/rewrite-target': '/$2',
+      'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/server-snippet':
+        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
+      'nginx.ingress.kubernetes.io/configuration-snippet':
+        'if ($request_uri ~* \\.(js|css|gif|jpe?g|png)) {\n  expires 30d;\n  add_header Cache-Control "public";\n}\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
