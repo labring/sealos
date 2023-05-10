@@ -75,7 +75,7 @@ export default function DesktopContent(props: any) {
   return (
     <div id="desktop" className={styles.desktop}>
       <Flex w="100%" h="100%" alignItems={'center'} flexDirection={'column'}>
-        <Box mt="10vh" minW={'508px'}>
+        <Box mt="12vh" minW={'508px'}>
           <TimeComponent />
         </Box>
         {/* desktop apps */}

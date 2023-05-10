@@ -30,7 +30,7 @@ export default function Index(props: any) {
   const [lockSuction, setLockSuction] = useState(true);
 
   const [degree, contentSkewDegree, contentRotateDegree] = useMemo(() => {
-    const len = apps?.length < 6 ? 6 : apps?.length;
+    const len = apps?.length < 6 ? 6 : apps?.length > 8 ? 8 : apps?.length;
     const temp: number = 360 / len;
     const skewDegree = -(90 - temp);
     const rotateDegree = -(90 - temp / 2);

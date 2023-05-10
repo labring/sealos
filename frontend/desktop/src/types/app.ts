@@ -6,7 +6,9 @@ export enum APPTYPE {
   IFRAME = 'iframe',
   LINK = 'link'
 }
+
 export type WindowSize = 'maximize' | 'maxmin' | 'minimize';
+
 export type TAppFront = {
   isShow: boolean;
   zIndex: number;
@@ -20,6 +22,7 @@ export type TAppFront = {
   };
   mouseDowning: boolean;
 };
+
 export type TAppConfig = {
   // app key
   key: string;
@@ -46,16 +49,18 @@ export type TAppConfig = {
 };
 
 export type TApp = TAppConfig & TAppFront & { pid: number };
+
 export type TOSState = {
   maxZIndex: number;
   installedApps: TApp[];
   runner: AppStateManager;
   runningInfo: AppInfo[];
   currentAppPid: number;
-
   // init desktop
   init(): Promise<void>;
+  // open app
   openApp(app: TApp, query?: Record<string, string>): Promise<void>;
+  // close app
   closeAppById: (pid: number) => void;
   // get current runningApp
   currentApp: () => AppInfo | undefined;
@@ -63,4 +68,5 @@ export type TOSState = {
   findAppInfoById: (pid: number) => AppInfo | undefined;
   setToHighestLayerById: (pid: number) => void;
   updateOpenedAppInfo: (app: TApp) => void;
+  deleteLeastUsedAppByIndex: () => void;
 };
