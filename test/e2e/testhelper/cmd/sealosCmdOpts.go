@@ -15,6 +15,7 @@ type CommandOptions interface {
 // LifeCycleOptions sealos run/apply/delete/reset/create/add/cert options
 type RunOptions struct {
 	Cluster    string
+	Debug      bool
 	Cmd        []string
 	ConfigFile []string
 	Env        []string
@@ -28,6 +29,7 @@ type RunOptions struct {
 
 type ApplyOptions struct {
 	Clusterfile string
+	Debug       bool
 	ConfigFile  []string
 	Env         []string
 	Set         []string
@@ -36,6 +38,7 @@ type ApplyOptions struct {
 
 type AddOptions struct {
 	Cluster string
+	Debug   bool
 	Masters []string
 	Nodes   []string
 }
@@ -43,6 +46,7 @@ type AddOptions struct {
 type DeleteOptions struct {
 	Cluster string
 	Force   bool
+	Debug   bool
 	Masters []string
 	Nodes   []string
 }
@@ -50,6 +54,7 @@ type DeleteOptions struct {
 type ResetOptions struct {
 	Cluster string
 	Force   bool
+	Debug   bool
 	Masters []string
 	Nodes   []string
 	SSH     *v1beta1.SSH
@@ -57,17 +62,20 @@ type ResetOptions struct {
 
 type CertOptions struct {
 	Cluster string
+	Debug   bool
 	AltName []string
 }
 
 type BuildOptions struct {
 	AllPlatforms       bool
+	Debug              bool
 	Authfile           string
 	BuildContext       []string
 	BuildArg           []string
 	CertDir            string
-	Compress           bool
+	Compression        string
 	Creds              string
+	Context            string
 	DisableCompression bool
 	DNS                string
 	DNSOption          []string
@@ -97,6 +105,7 @@ type BuildOptions struct {
 type CreateOptions struct {
 	Cluster  string
 	Platform string
+	Debug    bool
 	Short    bool
 	Image    string
 }
@@ -107,6 +116,7 @@ func (ro *RunOptions) Args() []string {
 	}
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", ro.Cluster).
+		appendFlagsWithValues("--debug", ro.Debug).
 		appendFlagsWithValues("--masters", strings.Join(ro.Masters, ",")).
 		appendFlagsWithValues("--nodes", strings.Join(ro.Nodes, ",")).
 		appendFlagsWithValues("", ro.Images).
@@ -123,7 +133,8 @@ func (ro *RunOptions) Args() []string {
 
 func (ro *ApplyOptions) Args() []string {
 	var args Args = []string{}
-	return args.appendFlagsWithValues("--clusterfile", ro.Clusterfile).
+	return args.appendFlagsWithValues("-f", ro.Clusterfile).
+		appendFlagsWithValues("--debug", ro.Debug).
 		appendFlagsWithValues("--config-file", ro.ConfigFile).
 		appendFlagsWithValues("--env", ro.Env).
 		appendFlagsWithValues("--set", ro.Set).
@@ -135,6 +146,7 @@ type Args []string
 func (ao *AddOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--masters", strings.Join(ao.Masters, ",")).
+		appendFlagsWithValues("--debug", ao.Debug).
 		appendFlagsWithValues("--nodes", strings.Join(ao.Nodes, ",")).
 		appendFlagsWithValues("--cluster", ao.Cluster)
 }
@@ -142,9 +154,10 @@ func (ao *AddOptions) Args() []string {
 func (bo *BuildOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--build-arg", bo.BuildArg).
+		appendFlagsWithValues("--debug", bo.Debug).
 		appendFlagsWithValues("--build-context", bo.BuildContext).
 		appendFlagsWithValues("--cert-dir", bo.CertDir).
-		appendFlagsWithValues("--compress", bo.Compress).
+		appendFlagsWithValues("--compression", bo.Compression).
 		appendFlagsWithValues("--creds", bo.Creds).
 		appendFlagsWithValues("--disable-compression", bo.DisableCompression).
 		appendFlagsWithValues("--dns", bo.DNS).
@@ -169,12 +182,14 @@ func (bo *BuildOptions) Args() []string {
 		appendFlagsWithValues("--rm", bo.Rm).
 		appendFlagsWithValues("--save-image", bo.SaveImage).
 		appendFlagsWithValues("--shm-size", bo.ShmSize).
-		appendFlagsWithValues("--tag", bo.Tag)
+		appendFlagsWithValues("--tag", bo.Tag).
+		appendFlagsWithValues("", bo.Context)
 }
 
 func (co *CreateOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", co.Cluster).
+		appendFlagsWithValues("--debug", co.Debug).
 		appendFlagsWithValues("--platform", co.Platform).
 		appendFlagsWithValues("--short", co.Short).
 		appendFlagsWithValues("", co.Image)
@@ -183,6 +198,7 @@ func (co *CreateOptions) Args() []string {
 func (do *DeleteOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", do.Cluster).
+		appendFlagsWithValues("--debug", do.Debug).
 		appendFlagsWithValues("--force", do.Force).
 		appendFlagsWithValues("--masters", strings.Join(do.Masters, ",")).
 		appendFlagsWithValues("--nodes", strings.Join(do.Nodes, ","))
@@ -194,6 +210,7 @@ func (ro *ResetOptions) Args() []string {
 	}
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", ro.Cluster).
+		appendFlagsWithValues("--debug", ro.Debug).
 		appendFlagsWithValues("--force", ro.Force).
 		appendFlagsWithValues("--masters", strings.Join(ro.Masters, ",")).
 		appendFlagsWithValues("--nodes", strings.Join(ro.Nodes, ",")).
@@ -207,6 +224,7 @@ func (ro *ResetOptions) Args() []string {
 func (co *CertOptions) Args() []string {
 	var args Args = []string{}
 	return args.appendFlagsWithValues("--cluster", co.Cluster).
+		appendFlagsWithValues("--debug", co.Debug).
 		appendFlagsWithValues("--alt-names", strings.Join(co.AltName, ","))
 }
 
@@ -244,6 +262,14 @@ func (args Args) appendFlagsWithValues(flagName string, values interface{}) Args
 			args = append(args, flagName)
 		}
 		args = append(args, strconv.Itoa(int(vv)))
+	case int:
+		if vv == 0 {
+			return args
+		}
+		if flagName != "" {
+			args = append(args, flagName)
+		}
+		args = append(args, strconv.Itoa(vv))
 	default:
 		logger.Error("Unsupported %s type %T", flagName, vv)
 	}

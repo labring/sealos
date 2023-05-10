@@ -31,29 +31,25 @@ const (
 var DefaultTestDir = filepath.Join(GetWorkDir(), "e2e_test")
 
 const (
-	FileMode0755     = 0755
-	FileMode0644     = 0644
 	RootUser         = "root"
 	DefaultSSHPort   = 22
 	DefaultInfraUUID = "60a6f958-e9af-4bb5-a401-1553fc05d78b"
 )
 
-const (
-	Amd64Arch = "amd64"
-	Arm64Arch = "arm64"
-)
-
 const GzSuffix = ".gz"
 
 const (
-	DefaultTestImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0"
-	HelmImageName        = "hub.sealos.cn/labring/helm:v3.8.2"
-	CalicoImageName      = "hub.sealos.cn/labring/calico:v3.25.0"
-	DefaultImageRepo     = "hub.sealos.cn/labring"
-	DockerIoRepo         = "docker.io"
-	DefaultInfraDriver   = AliyunInfraDriver
-	AliyunInfraDriver    = "aliyun"
-	AWSInfraDriver       = "aws"
+	DefaultTestImageName  = "hub.sealos.cn/labring/kubernetes:v1.25.0"
+	DefaultTestImageTar   = "/tmp/kubernetes-v1.25.0.tar.gz"
+	DefaultPatchImageName = "hub.sealos.cn/labring/kubernetes:v1.25.0-patch"
+	DefaultPatchImageTar  = "/tmp/kubernetes-v1.25.0-patch.tar.gz"
+	HelmImageName         = "hub.sealos.cn/labring/helm:v3.8.2"
+	CalicoImageName       = "hub.sealos.cn/labring/calico:v3.25.0"
+	DefaultImageRepo      = "hub.sealos.cn/labring"
+	DockerIoRepo          = "docker.io"
+	DefaultInfraDriver    = AliyunInfraDriver
+	AliyunInfraDriver     = "aliyun"
+	AWSInfraDriver        = "aws"
 )
 
 func GetWorkDir() string {

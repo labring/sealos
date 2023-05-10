@@ -19,16 +19,15 @@ package registry
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strconv"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
-)
-
-const (
-	defaultUntarRegistry = "cd %s/%s ; if [[ -s untar-registry.sh ]]; then source untar-registry.sh ; else source common.sh && logger 'untar-registry.sh was not found, skip decompression registry or execute sealos run labring/registry:untar'; fi"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Interface interface {
@@ -36,31 +35,55 @@ type Interface interface {
 }
 
 type scp struct {
-	root   string
-	ssh    ssh.Interface
-	mounts []v2.MountImage
+	pathResolver PathResolver
+	ssh          ssh.Interface
+	mounts       []v2.MountImage
 }
 
 func (s *scp) MirrorTo(ctx context.Context, hosts ...string) error {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	eg, _ := errgroup.WithContext(ctx)
-	for i := range s.mounts {
-		m := s.mounts[i]
-		for j := range hosts {
-			host := hosts[j]
-			eg.Go(func() error {
-				if err := ssh.CopyDir(s.ssh, host, m.MountPoint, s.root, constants.IsRegistryDir); err != nil {
-					return err
-				}
-				return s.ssh.CmdAsync(host, fmt.Sprintf(defaultUntarRegistry, s.root, constants.ScriptsDirName))
-			})
-		}
+	outerEg, _ := errgroup.WithContext(ctx)
+	for i := range hosts {
+		host := hosts[i]
+		outerEg.Go(func() error {
+			eg, _ := errgroup.WithContext(ctx)
+			for j := range s.mounts {
+				m := s.mounts[j]
+				eg.Go(func() error {
+					return ssh.CopyDir(s.ssh, host,
+						m.MountPoint,
+						s.pathResolver.RootFSPath(),
+						constants.IsRegistryDir)
+				})
+			}
+			if err := eg.Wait(); err != nil {
+				return err
+			}
+			return s.ssh.CmdAsync(host, getUntarCommands(s.pathResolver))
+		})
 	}
-	return eg.Wait()
+	return outerEg.Wait()
 }
 
-func New(root string, ssh ssh.Interface, mounts []v2.MountImage) Interface {
-	return &scp{root, ssh, mounts}
+type PathResolver interface {
+	RootFSSealctlPath() string
+	RootFSRegistryPath() string
+	RootFSPath() string
+}
+
+func getUntarCommands(pathResolver PathResolver) string {
+	return fmt.Sprintf(`%[1]s untar -h > /dev/null 2>&1 \
+	&& %[1]s untar -o %s --debug=%s --clear=true %s \
+	|| (echo 'skip decompressing registry contents')`,
+		pathResolver.RootFSSealctlPath(),
+		filepath.Join(pathResolver.RootFSPath(), "registry", "docker"),
+		strconv.FormatBool(logger.IsDebugMode()),
+		filepath.Join(pathResolver.RootFSPath(), "registry", "compressed"),
+	)
+}
+
+func New(pathResolver PathResolver, ssh ssh.Interface, mounts []v2.MountImage) Interface {
+	return &scp{pathResolver, ssh, mounts}
 }

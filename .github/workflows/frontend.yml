@@ -3,22 +3,27 @@ name: Build Frontend Image
 on:
   workflow_dispatch:
     inputs:
-      push_mage:
+      push_image:
         description: 'Push images'
         required: false
         type: boolean
+      release_tag:
+        description: 'Release images'
+        default: 'dev'
+        required: false
+        type: string
   push:
     branches: [ "main" ]
     paths:
       - "frontend/providers/**"
-      - ".github/workflows/frontend-providers.yml"
+      - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"
   pull_request:
     branches: [ "*" ]
     paths:
       - "frontend/providers/**"
-      - ".github/workflows/frontend-providers.yml"
+      - ".github/workflows/frontend.yml"
       - "!**/*.md"
       - "!**/*.yaml"
 
@@ -45,8 +50,9 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
+          tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
+          echo tag_name=$tag_name >> $GITHUB_OUTPUT
       - name: Extract module name
         id: module_name
         run: |
@@ -71,7 +77,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login to Github Container Hub
-        if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
@@ -83,14 +89,14 @@ jobs:
         with:
           context: ./frontend/${{ matrix.module }}
           file: ./frontend/${{ matrix.module }}/Dockerfile
-          # Push if it's a push event or if push_mage is true
-          push: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+          # Push if it's a push event or if push_image is true
+          push: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   cluster-image-build:
-    if: ${{ (github.event_name == 'push') || (inputs.push_mage == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.build_dev == true)}}
     needs:
       - image-build
       - save-sealos
@@ -115,14 +121,15 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          TAG=${GIT_COMMIT_SHORT_SHA}
-          echo tag_name=${TAG} >> $GITHUB_OUTPUT
+          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
+          tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
+          echo tag_name=$tag_name >> $GITHUB_OUTPUT
           echo old_docker_repo=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT 
           echo old_docker_image=ghcr.io/labring/sealos-${{ env.MODULE_NAME }}-frontend:dev >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
-          echo new_docker_image=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend:${TAG} >> $GITHUB_OUTPUT
+          echo new_docker_image=ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-frontend:${tag_name} >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend >> $GITHUB_OUTPUT
-          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${TAG} >> $GITHUB_OUTPUT
+          echo cluster_image=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${tag_name} >> $GITHUB_OUTPUT
 
       - name: Download sealos
         uses: actions/download-artifact@v3
@@ -150,8 +157,9 @@ jobs:
 
       - name: Manifest Cluster Images
         run: |
+          CLUSTER_IMAGE_NAME=${{ steps.prepare.outputs.cluster_image }}
           sudo sealos images
-          bash docker/patch/manifest-cluster-images.sh "sealos-cloud-${{ env.MODULE_NAME }}-frontend"
+          bash docker/patch/manifest-cluster-images.sh $CLUSTER_IMAGE_NAME
         env:
           OWNER: ${{ github.repository_owner }}
 

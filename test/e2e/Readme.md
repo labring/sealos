@@ -22,3 +22,14 @@ Test the image-cri-shim component that pulls up the cluster through sealos
 sealos run labring/kubernetes:v1.25.0
 ginkgo -v --forces="image-cri-shim test" e2e
 ```
+
+
+### Testdata
+
+using bindata to package testdata
+
+https://github.com/go-bindata/go-bindata/tree/v3.1.1
+
+```shell
+cd test/e2e && go-bindata -nometadata -pkg testdata -ignore=testdata.go -o testdata/testdata.go testdata/
+```

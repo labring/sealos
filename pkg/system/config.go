@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/containers/buildah"
 	"github.com/containers/storage/pkg/homedir"
+
+	"github.com/labring/sealos/pkg/constants"
 )
 
 type envSystemConfig struct{}
@@ -76,8 +79,8 @@ var configOptions = []ConfigOption{
 		OSEnv:        "BUILDAH_FORMAT",
 	},
 	{
-		Key:           ScpCheckSumConfigKey,
-		Description:   "whether to check whether the md5sum value is consistent during the copy process",
+		Key:           ScpChecksumConfigKey,
+		Description:   "whether to check the md5sum value is consistent during the copy process",
 		DefaultValue:  "yes",
 		OSEnv:         "SEALOS_SCP_CHECKSUM",
 		AllowedValues: []string{"true", "false"},
@@ -89,16 +92,17 @@ const (
 	RuntimeRootConfigKey   = "sealos_runtime_root"
 	DataRootConfigKey      = "sealos_data_root"
 	BuildahFormatConfigKey = "buildah_format"
-	ScpCheckSumConfigKey   = "scp_check_sum"
+	ScpChecksumConfigKey   = "scp_checksum"
 )
 
 func (*envSystemConfig) getValueOrDefault(key string) (string, error) {
 	for _, option := range configOptions {
 		if option.Key == key {
-			if option.OSEnv != "" {
-				if value, ok := os.LookupEnv(option.OSEnv); ok {
-					return value, nil
-				}
+			if option.OSEnv == "" {
+				option.OSEnv = strings.ReplaceAll(strings.ToUpper(constants.AppName+"_"+option.Key), "-", "_")
+			}
+			if value, ok := os.LookupEnv(option.OSEnv); ok {
+				return value, nil
 			}
 			return option.DefaultValue, nil
 		}

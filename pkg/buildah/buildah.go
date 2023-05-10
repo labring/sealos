@@ -174,7 +174,7 @@ func AddUnrelatedCommandNames(names ...string) {
 	unrelatedCommands = append(unrelatedCommands, names...)
 }
 
-func skipUnrelatedCommandRun(cmd *cobra.Command) bool {
+func skipPreRun(cmd *cobra.Command) bool {
 	for _, name := range unrelatedCommands {
 		if name == cmd.Name() {
 			return true
@@ -188,27 +188,24 @@ func wrapPrePersistentRun(cmd *cobra.Command) {
 	case cmd.PersistentPreRun != nil:
 		run := cmd.PersistentPreRun
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if skipUnrelatedCommandRun(cmd) {
-				return
+			if !skipPreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			run(cmd, args)
 		}
 	case cmd.PersistentPreRunE != nil:
 		runE := cmd.PersistentPreRunE
 		cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-			if skipUnrelatedCommandRun(cmd) {
-				return nil
+			if !skipPreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			return runE(cmd, args)
 		}
 	default:
 		cmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
-			if skipUnrelatedCommandRun(cmd) {
-				return
+			if !skipPreRun(cmd) {
+				bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 			}
-			bailOnError(TrySetupWithDefaults(defaultSetters...), "unable to setup")
 		}
 	}
 }

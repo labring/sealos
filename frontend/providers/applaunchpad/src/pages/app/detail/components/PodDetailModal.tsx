@@ -24,7 +24,6 @@ import { useLoading } from '@/hooks/useLoading';
 import MyIcon from '@/components/Icon';
 import { streamFetch } from '@/services/streamFetch';
 import { useToast } from '@/hooks/useToast';
-import { SEALOS_DOMAIN } from '@/store/static';
 import MyMenu from '@/components/Menu';
 import { ChevronDownIcon } from '@chakra-ui/icons';
 
@@ -248,7 +247,7 @@ const Logs = ({
           <Flex position={'relative'} flexDirection={'column'} h={'100%'}>
             <Flex mb={4} alignItems={'center'}>
               <Box color={'myGray.600'}>Events</Box>
-              {events.length > 0 && SEALOS_DOMAIN === 'cloud.sealos.io' && (
+              {events.length > 0 && (
                 <Button
                   ml={3}
                   size={'sm'}

@@ -22,9 +22,9 @@ const (
 	TestSealosBinPath = Prefix + "SEALOS_BIN_PATH"
 )
 
-func getEnvWithDefault(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
+func GetEnvWithDefault(key, defaultValue string) string {
+	value, ok := os.LookupEnv(key)
+	if !ok || value == "" {
 		return defaultValue
 	}
 	return value

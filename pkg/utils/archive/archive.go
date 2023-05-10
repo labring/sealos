@@ -17,8 +17,16 @@ package archive
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/containers/storage/pkg/archive"
 	"github.com/opencontainers/go-digest"
+
+	"github.com/labring/sealos/pkg/utils/file"
+	"github.com/labring/sealos/pkg/utils/flags"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type Archive interface {
@@ -48,4 +56,72 @@ func NewArchive(compressible, keepRoot bool) Archive {
 		Compress:    compressible,
 		KeepRootDir: keepRoot,
 	}
+}
+
+func Tar(src, dst string, compression flags.Compression, cleanup bool) error {
+	if compression == flags.Disable {
+		return nil
+	}
+	if _, err := os.Stat(src); err != nil {
+		return err
+	}
+	if err := file.MkDirs(filepath.Dir(dst)); err != nil {
+		return err
+	}
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	rc, err := archive.Tar(src, compression.Compression())
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+	if _, err = io.Copy(out, rc); err != nil {
+		return err
+	}
+	return clean(src, !cleanup)
+}
+
+func Untar(paths []string, dst string, cleanup bool) error {
+	if err := file.MkDirs(dst); err != nil {
+		return err
+	}
+	var sources []string
+	for _, path := range paths {
+		if file.IsExist(path) {
+			if file.IsFile(path) {
+				sources = append(sources, path)
+				continue
+			} else if file.IsDir(path) {
+				path = filepath.Join(path, "*")
+			}
+		}
+		if !strings.Contains(path, "*") {
+			path += "*"
+		}
+		matches, err := filepath.Glob(path)
+		if err != nil {
+			return err
+		}
+		sources = append(sources, matches...)
+	}
+	logger.Debug("glob matches are: %v", sources)
+	for i := range sources {
+		if err := archive.UntarPath(sources[i], dst); err != nil {
+			return err
+		}
+		if err := clean(sources[i], !cleanup); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func clean(path string, skip bool) (err error) {
+	if !skip {
+		err = os.RemoveAll(path)
+	}
+	return
 }

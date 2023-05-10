@@ -1,6 +1,6 @@
 #!/bin/bash
-REPO_NAME=${1:-sealos-patch}
-IMAGE_NAME=ghcr.io/${OWNER}/${REPO_NAME}:$GIT_COMMIT_SHORT_SHA
+DEFAULT_REPO_NAME="sealos-patch"
+IMAGE_NAME=${1:-"ghcr.io/${OWNER}/${DEFAULT_REPO_NAME}:$GIT_COMMIT_SHORT_SHA"}
 sudo sealos push "${IMAGE_NAME}"-amd64
 sudo sealos push "${IMAGE_NAME}"-arm64
 sudo sealos images
