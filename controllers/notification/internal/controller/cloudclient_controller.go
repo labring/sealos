@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cloudclient
+package controller
 
 import (
 	"context"
@@ -24,7 +24,10 @@ import (
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	cloudclientv1 "github.com/labring/sealos/controllers/notification/api/cloudclient/v1"
 	cloudclient "github.com/labring/sealos/controllers/notification/internal/cloudclient"
+	handler "github.com/labring/sealos/controllers/notification/internal/handler"
 	"github.com/labring/sealos/pkg/utils/logger"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -41,6 +44,11 @@ type CloudClientReconciler struct {
 	CloudClient   cloudclient.CloudClient
 	StartInstance cloudclientv1.CloudClient
 	NS            types.NamespacedName
+	CloudHandler  handler.CloudHandler
+	CloudTXT      cloudclient.CloudText
+	Notification  ntf.Notification
+	// The latest time of Cloud update
+	CloudTime int64
 }
 
 //+kubebuilder:rbac:groups=cloudclient.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -56,30 +64,53 @@ type CloudClientReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
-func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *CloudClientReconciler) Reconcile(ctx context.Context, _ ctrl.Request) (ctrl.Result, error) {
 	lgr := log.FromContext(ctx)
-
 	lgr.Info("enter CloudClientReconciler")
+
+	defer r.CloudClient.Clear()
+	r.CloudClient.SetTime(r.CloudTime)
+
+	// get notification from Cloud
 	if err := r.CloudClient.Get(); err != nil {
-		lgr.Info("ClientForLaf: ", "Error: ", err)
-	}
-	var CloudNTF ntf.Notification
-
-	if err := json.Unmarshal(r.CloudClient.HttpBody, &CloudNTF); err != nil {
-		lgr.Info("ClientForLaf: ", "Error: ", err)
+		return ctrl.Result{}, err
 	}
 
-	if err := r.Client.Create(ctx, &CloudNTF); err != nil {
-		lgr.Info("CloudNotificationCreate: ", "Error: ", err)
+	//Get the total json strings
+	var CloudTexts []cloudclient.CloudText
+	if err := json.Unmarshal(r.CloudClient.ResponseBody, &CloudTexts); err != nil {
+		logger.Error("The jsonString from Cloud is error ", "Error: ", err)
+		return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 	}
 
+	//per json string parse once
+	for _, CloudText := range CloudTexts {
+		r.CloudTXT = CloudText
+		if r.CloudTime < CloudText.Timestamp {
+			r.CloudTime = CloudText.Timestamp
+		}
+		//Apply cloud notification cr
+		if err := r.Process(ctx); err != nil {
+			logger.Info("This CloudCR failed to apply")
+			continue
+		}
+	}
 	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
-
 	r.init()
+
+	namespace := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "system-notification",
+		},
+	}
+	if err := r.Client.Create(context.Background(), namespace); client.IgnoreAlreadyExists(err) != nil {
+		logger.Error("The CloudController failed to start: ", err)
+		return err
+	}
 
 	if err := r.Create(context.Background(), &r.StartInstance); err != nil {
 		if client.IgnoreAlreadyExists(err) == nil {
@@ -93,7 +124,10 @@ func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *CloudClientReconciler) init() {
+	//cloud client init
 	r.CloudClient.Init()
+	r.CloudTime = 0
+	//create a startInstance
 	r.StartInstance = cloudclientv1.CloudClient{}
 	r.StartInstance.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cloudclient.sealos.io",
@@ -103,4 +137,26 @@ func (r *CloudClientReconciler) init() {
 	r.StartInstance.SetNamespace("default")
 	r.StartInstance.SetName("startinstance")
 	r.NS = types.NamespacedName{Namespace: "default"}
+	//get a cloudhandler
+	r.CloudHandler = *handler.NewCloudHandler()
+	//init resource
+	r.Notification = ntf.Notification{}
+	r.CloudTXT = cloudclient.CloudText{}
+}
+
+func (r *CloudClientReconciler) Process(ctx context.Context) error {
+	r.CloudHandler.Init(&r.CloudTXT, &r.Notification)
+	//build cr
+	if err := r.CloudHandler.BuildCloudCR(); err != nil {
+		return err
+	}
+	//apply cr
+	if err := r.Client.Create(ctx, &r.Notification); err != nil {
+		logger.Info("create the cloud cr error ", err)
+		return err
+	}
+	r.CloudHandler.Reset()
+	r.Notification = ntf.Notification{}
+	r.CloudTXT = cloudclient.CloudText{}
+	return nil
 }

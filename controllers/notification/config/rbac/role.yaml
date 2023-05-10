@@ -32,7 +32,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - notification.sealos.io.sealos.io
+  - notification.sealos.io
   resources:
   - notifications
   verbs:
@@ -44,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - notification.sealos.io.sealos.io
+  - notification.sealos.io
   resources:
   - notifications/finalizers
   verbs:
   - update
 - apiGroups:
-  - notification.sealos.io.sealos.io
+  - notification.sealos.io
   resources:
   - notifications/status
   verbs:
