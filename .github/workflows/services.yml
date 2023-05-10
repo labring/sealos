@@ -2,12 +2,19 @@ name: Build Services image
 
 
 on:
+  workflow_call:
+    inputs:
+      release:
+        required: false
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       push_image:
         description: 'Push images'
         required: false
         type: boolean
+        default: false
       release_tag:
         description: 'Release images'
         default: 'dev'
@@ -106,9 +113,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
-          tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
-          echo tag_name=$tag_name >> $GITHUB_OUTPUT
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"
           echo docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
 
       - # Add support for more platforms with QEMU (optional)
@@ -122,47 +127,38 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
-        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
+        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GH_PAT }}
 
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
+            type=raw,value=dev,enable=true
+            type=raw,value=${{ steps.prepare.outputs.tag_name }},enable=true
+
       - name: build (and publish) ${{ matrix.module }} main image
-        if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
-        working-directory: service/${{ matrix.module }}
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
-          --label "org.opencontainers.image.description=sealos-${{ matrix.module }}-service container image" \
-          --label "org.opencontainers.image.licenses=MIT" \
-          --push \
-          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f Dockerfile \
-          .
-      - name: build ${{ matrix.module }} image
-        if: ${{ github.event_name == 'pull_request' }}
-        env:
-          # fork friendly ^^
-          DOCKER_REPO: ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service
-        working-directory: service/${{ matrix.module }}
-        run: |
-          docker buildx build \
-          --platform linux/amd64,linux/arm64 \
-          --label "org.opencontainers.image.source=https://github.com/${{ github.repository_owner }}/sealos" \
-          --label "org.opencontainers.image.description=sealos-${{ matrix.module }}-service container image" \
-          --label "org.opencontainers.image.licenses=MIT" \
-          -t ${DOCKER_REPO}:${{ steps.prepare.outputs.tag_name }} \
-          -f Dockerfile \
-          .
+        uses: docker/build-push-action@v4
+        with:
+          context: ./service/${{ matrix.module }}
+          file: ./service/${{ matrix.module }}/Dockerfile
+          # Push if it's a push event or if push_image is true
+          push: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+
   save-sealos:
     uses: ./.github/workflows/import-save-sealos.yml
   build-cluster-image:
-    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) }}
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
     needs:
       - image-build
       - save-sealos
@@ -182,9 +178,7 @@ jobs:
       - name: Prepare
         id: prepare
         run: |
-          SHA_TAG=${GIT_COMMIT_SHORT_SHA}
-          tag_name=$(if [ ${{ inputs.push_image }} ]; then echo "${{ inputs.release_tag }}"; else echo "$SHA_TAG"; fi);
-          echo tag_name=$tag_name >> $GITHUB_OUTPUT          
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"
           echo old_docker_repo=ghcr.io/labring/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo new_docker_repo=ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-service >> $GITHUB_OUTPUT
           echo cluster_repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ matrix.module }}-service >> $GITHUB_OUTPUT
