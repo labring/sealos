@@ -22,7 +22,7 @@ metadata:
     nginx.ingress.kubernetes.io/cors-allow-methods: "PUT, GET, POST, DELETE, PATCH, OPTIONS"
     nginx.ingress.kubernetes.io/cors-allow-origin: "https://{{ .cloudDomain }}, https://*.{{ .cloudDomain }}"
     nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
-    nginx.ingress.kubernetes.io/cors-max-age: 600
+    nginx.ingress.kubernetes.io/cors-max-age: "600"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_clear_headers "X-Frame-Options:";
