@@ -136,7 +136,7 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            ghcr.io/${{ github.repository_owner }}/sealos-${{ env.MODULE_NAME }}-controllers
+            ghcr.io/${{ github.repository_owner }}/sealos-${{ matrix.module }}-controllers
           tags: |
             type=raw,value=latest,enable=${{ github.ref == format('refs/heads/{0}', 'main') }}
             type=raw,value=dev,enable=true
