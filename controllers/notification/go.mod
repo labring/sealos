@@ -4,7 +4,6 @@ go 1.19
 
 replace (
 	github.com/labring/sealos => ../../
-
 	github.com/labring/sealos/controllers/common => ../../controllers/common
 )
 

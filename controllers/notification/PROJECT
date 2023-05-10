@@ -11,7 +11,7 @@ repo: github.com/labring/sealos/controllers/notification
 resources:
 - controller: true
   domain: sealos.io
-  group: notification.sealos.io
+  group: notification
   kind: Notification
   version: v1
 - api:
