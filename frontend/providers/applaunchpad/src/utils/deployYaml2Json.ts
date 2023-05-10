@@ -307,7 +307,13 @@ export const json2Ingress = (data: AppEditType) => {
     HTTP: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
       'nginx.ingress.kubernetes.io/backend-protocol': 'HTTP',
-      'nginx.ingress.kubernetes.io/rewrite-target': '/$2'
+      'nginx.ingress.kubernetes.io/rewrite-target': '/$2',
+      'nginx.ingress.kubernetes.io/client-body-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/proxy-buffer-size': '64k',
+      'nginx.ingress.kubernetes.io/server-snippet':
+        'client_header_buffer_size 64k;\nlarge_client_header_buffers 4 128k;\n',
+      'nginx.ingress.kubernetes.io/configuration-snippet':
+        'if ($request_uri ~* \\.(js|css|gif|jpe?g|png)) {\n  expires 30d;\n  add_header Cache-Control "public";\n}\n'
     },
     GRPC: {
       'nginx.ingress.kubernetes.io/ssl-redirect': 'false',
