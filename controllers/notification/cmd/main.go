@@ -36,12 +36,11 @@ import (
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 
-	controller "github.com/labring/sealos/controllers/notification/internal/controller/notification"
+	controller "github.com/labring/sealos/controllers/notification/internal/controller"
 
 	_ "encoding/json"
 
 	cloudclientv1 "github.com/labring/sealos/controllers/notification/api/cloudclient/v1"
-	cloudclientcontroller "github.com/labring/sealos/controllers/notification/internal/controller/cloudclient"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -104,15 +103,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.NotificationReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Notification")
-		os.Exit(1)
-	}
+	// if err = (&controller.NotificationReconciler{
+	// 	Client: mgr.GetClient(),
+	// 	Scheme: mgr.GetScheme(),
+	// }).SetupWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create controller", "controller", "Notification")
+	// 	os.Exit(1)
+	// }
 
-	if err = (&cloudclientcontroller.CloudClientReconciler{
+	if err = (&controller.CloudClientReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
