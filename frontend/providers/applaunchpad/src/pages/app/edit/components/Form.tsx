@@ -716,7 +716,7 @@ const Form = ({
                       leftIcon={<MyIcon name="edit" />}
                       onClick={onOpenEditEnvs}
                     >
-                      编辑境变量
+                      编辑环境变量
                     </Button>
                   </Box>
 

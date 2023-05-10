@@ -3,6 +3,7 @@ import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
 import { SEALOS_DOMAIN } from '@/store/static';
 import { maxReplicasKey, minReplicasKey } from '@/constants/app';
+import dayjs from 'dayjs';
 
 export const json2Development = (data: AppEditType) => {
   const template = {
@@ -21,7 +22,7 @@ export const json2Development = (data: AppEditType) => {
       }
     },
     spec: {
-      replicas: str2Num(data.replicas),
+      replicas: str2Num(data.hpa.use ? data.hpa.minReplicas : data.replicas),
       revisionHistoryLimit: 1,
       selector: {
         matchLabels: {
@@ -38,7 +39,8 @@ export const json2Development = (data: AppEditType) => {
       template: {
         metadata: {
           labels: {
-            app: data.appName
+            app: data.appName,
+            restartTime: `${dayjs().format('YYYYMMDDHHmmss')}`
           }
         },
         spec: {

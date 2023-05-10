@@ -210,6 +210,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
         backgroundColor={'#F7F8FA'}
       >
         <Header
+          appName={formHook.getValues('appName')}
           title={title}
           yamlList={yamlList}
           applyBtnText={applyBtnText}
