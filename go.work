@@ -10,6 +10,7 @@ use (
 	./controllers/infra
 	./controllers/metering
 	./controllers/terminal
+	./controllers/notification
 	./controllers/user
 	./service/auth
 	./service/hub
