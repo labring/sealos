@@ -12,4 +12,5 @@ elif [[ "$release" == true ]]; then
   tag_name=${GITHUB_REF#refs/tags/}
 fi
 
-echo "tag_name=$tag_name" >> $GITHUB_OUTPUT
+echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+echo "$tag_name"
