@@ -33,9 +33,9 @@ type NotificationReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=notification.sealos.io.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=notification.sealos.io.sealos.io,resources=notifications/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=notification.sealos.io.sealos.io,resources=notifications/finalizers,verbs=update
+//+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=notification.sealos.io,resources=notifications/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -50,8 +50,8 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	lgr := log.FromContext(ctx)
 	lgr.Info("enter reconcil", "name: ", req.Name, "namespace: ", req.Namespace)
 
-	ntf_instance := &ntf.Notification{}
-	if err := r.Get(ctx, req.NamespacedName, ntf_instance); err != nil {
+	ntfInstance := &ntf.Notification{}
+	if err := r.Get(ctx, req.NamespacedName, ntfInstance); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -61,7 +61,6 @@ func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *NotificationReconciler) SetupWithManager(mgr ctrl.Manager) error {
-
 	return ctrl.NewControllerManagedBy(mgr).For(&ntf.Notification{}).
 		// Uncomment the following line adding a pointer to an instance of the controlled resource as an argument
 		// For().

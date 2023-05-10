@@ -16,42 +16,120 @@ limitations under the License.
 package cloudclient
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	lgr "github.com/labring/sealos/pkg/utils/logger"
+	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+type CloudText struct {
+	ID         string   `json:"_id"`
+	Type       string   `json:"Type"`
+	Title      string   `json:"Title"`
+	Message    string   `json:"Message"`
+	Timestamp  int64    `json:"Timestamp"`
+	Importance ntf.Type `json:"Importance"`
+}
+
+type ClientCTX struct {
+	Time int64 `json:"Time"`
+}
 
 type CloudClient struct {
 	CloudURL string
-	HttpBody []byte
+
+	ctx ClientCTX
+
+	ResponseBody []byte
+	RequestBody  []byte
+	Request      *http.Request
+	Response     *http.Response
+	client       http.Client
 }
 
 func (cc *CloudClient) Get() error {
-	resp, err := http.Get(cc.CloudURL)
-
-	if err != nil {
-		lgr.Error("http.Get() error", err)
+	if err := cc.CreateRequest(); err != nil {
 		return err
 	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		lgr.Error("StatusCode error", err)
-		return errors.New("error: StatusCode is Not OK")
+	if err := cc.SendRequest(); err != nil {
+		return err
 	}
+	return cc.ReadAll()
+}
 
-	body, err := ioutil.ReadAll(resp.Body)
+func (cc *CloudClient) CreateRequest() error {
+	if err := cc.JSONGen(); err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", cc.CloudURL, bytes.NewBuffer(cc.RequestBody))
 	if err != nil {
-		lgr.Error(err)
-		return nil
+		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
+		return err
 	}
-	cc.HttpBody = body
+	cc.Request = req
+	cc.Request.Header.Set("Content-Type", "application/json")
+	return nil
+}
+
+func (cc *CloudClient) SendRequest() error {
+	if cc.Request == nil {
+		logger.Info("CloudClient doesn't have a correct HTTP request")
+		return errors.New("CloudClient doesn't have a correct HTTP request")
+	}
+	if err := cc.Do(); err != nil {
+		logger.Info("CloudClient failed to send HTTP request ", err)
+		return err
+	}
+	return nil
+}
+
+func (cc *CloudClient) JSONGen() error {
+	var err error
+	var JSONString []byte
+	if JSONString, err = json.Marshal(cc.ctx); err != nil {
+		logger.Error("CloudClient error ", "can't parse to JsonString", err)
+		return err
+	}
+	cc.RequestBody = JSONString
+	return nil
+}
+
+func (cc *CloudClient) ReadAll() error {
+	defer cc.Response.Body.Close()
+	resp, err := io.ReadAll(cc.Response.Body)
+	if err != nil {
+		logger.Error("CloudClient failed to get HTTP response body ", err)
+		return err
+	}
+	cc.ResponseBody = resp
+	return nil
+}
+
+func (cc *CloudClient) Do() error {
+	resp, err := cc.client.Do(cc.Request)
+	defer cc.Request.Body.Close()
+	if err != nil {
+		return err
+	}
+	cc.Response = resp
 	return nil
 }
 
 func (cc *CloudClient) Init() {
-	cc.CloudURL = "https://hfx0m9.laf.dev/CloudNotification"
+	cc.CloudURL = "https://hfx0m9.laf.dev/CloudPublish"
+	cc.ctx.Time = 0
+}
+
+func (cc *CloudClient) SetTime(time int64) {
+	cc.ctx.Time = time
+}
+
+func (cc *CloudClient) Clear() {
+	cc.RequestBody = nil
+	cc.ResponseBody = nil
+	cc.Response = nil
 }
