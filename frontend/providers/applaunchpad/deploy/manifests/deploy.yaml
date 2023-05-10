@@ -1,4 +1,11 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app: applaunchpad-frontend
+  name: applaunchpad-frontend
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: applaunchpad-frontend-config
