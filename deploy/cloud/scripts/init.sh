@@ -14,6 +14,13 @@ function read_env {
 }
 
 function mock_tls {
+  if grep -q $tlsCrtPlaceholder manifests/tls-secret.yaml; then
+    echo "mock tls secret"
+  else
+    echo "tls secret is already set"
+    return
+  fi
+
   mkdir -p etc/tls
   openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout etc/tls/tls.key -out etc/tls/tls.crt -subj "/CN=$1" -addext "subjectAltName=DNS:*.$1" > /dev/null
   sed -i -e "s;$tlsCrtPlaceholder;$(base64 -w 0 etc/tls/tls.crt);" -e "s;$tlsKeyPlaceholder;$(base64 -w 0 etc/tls/tls.key);" manifests/tls-secret.yaml
