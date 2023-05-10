@@ -5,7 +5,10 @@
 domain: sealos.io
 layout:
 - go.kubebuilder.io/v4
+<<<<<<< HEAD
 multigroup: true
+=======
+>>>>>>> 5faa3993 (init work)
 projectName: notification
 repo: github.com/labring/sealos/controllers/notification
 resources:

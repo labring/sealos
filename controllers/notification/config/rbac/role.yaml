@@ -6,6 +6,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
+<<<<<<< HEAD
   - cloudclient.sealos.io
   resources:
   - cloudclients
@@ -32,6 +33,8 @@ rules:
   - patch
   - update
 - apiGroups:
+=======
+>>>>>>> 04539f60 (初步测试)
   - notification.sealos.io.sealos.io
   resources:
   - notifications
