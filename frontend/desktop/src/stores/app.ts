@@ -1,40 +1,10 @@
 import request from '@/services/request';
-import { APPTYPE, Pid, TApp, TOSState } from '@/types';
+import { APPTYPE,  TApp, TOSState } from '@/types';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import AppStateManager from '../utils/ProcessManager';
 import { formatUrl } from '@/utils/format';
-const storageOrderKey = 'app-orders';
-// type AppInfo = TApp & { pid: Pid };
-type AppController = Omit<
-  TOSState,
-  | 'allApps'
-  | 'getAllApps'
-  | 'pinnedApps'
-  | 'orderApps'
-  | 'openedApps'
-  | 'getAppOrder'
-  | 'updateAppOrder'
-  | 'switchApp'
-  | 'currentApp'
-  | 'toggleStartMenu'
-  | 'isHideStartMenu'
-  | 'closeApp'
-  | 'mask'
-  | 'order'
-> & {
-  runner: AppStateManager;
-  runningInfo: AppInfo[];
-  currentAppPid: Pid;
-  closeApp: (pid: Pid) => void;
-  currentApp: () => AppInfo | undefined;
-  switchApp: (pid: Pid) => void;
-  findAppInfo: (pid: Pid) => AppInfo | undefined;
-  setToHighestLayer: (pid: Pid) => void;
-  updateOpenedAppInfo: (app: Tapp) => void;
-};
-type Tapp = Omit<TApp, 'mask' | 'order'> & { pid: Pid };
 export class AppInfo {
   pid: number;
   isShow: boolean;
@@ -78,10 +48,9 @@ export class AppInfo {
     this.pid = pid;
   }
 }
-const useAppStore = create<AppController>()(
+const useAppStore = create<TOSState>()(
   devtools(
-    persist(
-      immer<AppController>((set, get) => ({
+      immer<TOSState>((set, get) => ({
         installedApps: [],
         runningInfo: [],
         // present of highest layer
@@ -98,7 +67,7 @@ const useAppStore = create<AppController>()(
           });
         },
         // should use pid to close app, but it don't support multi same app process now
-        closeApp: (pid: Pid) => {
+        closeAppById: (pid:number) => {
           set((state) => {
             state.runner.closeApp(pid);
             // make sure the process is killed
@@ -106,13 +75,13 @@ const useAppStore = create<AppController>()(
           });
         },
 
-        installApp: (app: Tapp) => {
+        installApp: (app: TApp) => {
           set((state) => {
             state.installedApps.push(new AppInfo(app, -1));
             state.runner.loadApp(app.key);
           });
         },
-        findAppInfo: (pid: Pid) => {
+        findAppInfoById: (pid: number) => {
           // make sure the process is running
           return get().runningInfo.find((item) => item.pid === pid);
         },
@@ -147,7 +116,7 @@ const useAppStore = create<AppController>()(
           // 未支持多实例
           let allreadyApp = get().runningInfo.find((x) => x.key === app.key);
           if (allreadyApp) {
-            get().switchApp(allreadyApp.pid);
+            get().switchAppById(allreadyApp.pid);
             return;
           }
           if (app.type === APPTYPE.LINK) {
@@ -163,7 +132,6 @@ const useAppStore = create<AppController>()(
           if (_app.data?.url) {
             _app.data.url = formatUrl(_app.data.url, query);
           }
-          // get().updateOpenedAppInfo(_app);
 
           set((state) => {
             state.runningInfo.push(_app);
@@ -172,18 +140,18 @@ const useAppStore = create<AppController>()(
           });
         },
         // maximize app
-        switchApp: (pid: Pid) => {
+        switchAppById: (pid: number) => {
           // const zIndex = get().maxZIndex + 1;
           set((state) => {
             let _app = state.runningInfo.find((item) => item.pid === pid);
             if (!_app) return;
             _app.isShow = true;
             _app.size = _app.cacheSize;
-            state.setToHighestLayer(pid);
+            state.setToHighestLayerById(pid);
           });
         },
         // get switch floor function
-        setToHighestLayer: (pid: Pid) => {
+        setToHighestLayerById: (pid: number) => {
           const zIndex = get().maxZIndex + 1;
           set((state) => {
             let _app = state.runningInfo.find((item) => item.pid === pid)!;
@@ -193,14 +161,8 @@ const useAppStore = create<AppController>()(
             state.maxZIndex = zIndex;
           });
         },
-        currentApp: () => get().findAppInfo(get().currentAppPid)
-      })),
-      {
-        name: 'app-runner',
-        partialize: (state) => ({
-          // runner: state.runner
-        })
-      }
+        currentApp: () => get().findAppInfoById(get().currentAppPid)
+      })
     )
   )
 );

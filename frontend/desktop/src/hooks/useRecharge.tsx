@@ -64,8 +64,6 @@ function useRecharge() {
       createPaymentRes.mutate();
     };
 
-    console.log(!!data?.data?.codeURL);
-
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />

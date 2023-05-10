@@ -1,7 +1,4 @@
-import request from '@/services/request';
-import { TOSState, TApp, initialFrantState, APPTYPE, Pid } from '@/types';
 import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 type DesktopGlobalConfig = {

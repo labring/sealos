@@ -19,7 +19,7 @@ const UserMenu = dynamic(() => import('@/components/user_menu'), {
 });
 
 export default function DesktopContent(props: any) {
-  const { installedApps: apps, runningInfo, openApp, setToHighestLayer } = useAppStore();
+  const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
   const isBrowser = typeof window !== 'undefined';
   // set DesktopHeight from globalconfig
   const { setDesktopHeight } = useDesktopGlobalConfig();
@@ -54,14 +54,14 @@ export default function DesktopContent(props: any) {
       if (!app) return;
       openApp(app, query);
       if (runningApp) {
-        setToHighestLayer(runningApp.pid);
+        setToHighestLayerById(runningApp.pid);
       }
       // post message
       const iframe = document.getElementById(`app-window-${appKey}`) as HTMLIFrameElement;
       if (!iframe) return;
       iframe.contentWindow?.postMessage(messageData, app.data.url);
     },
-    [apps, openApp, runningInfo, setToHighestLayer]
+    [apps, openApp, runningInfo, setToHighestLayerById]
   );
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function DesktopContent(props: any) {
   return (
     <div id="desktop" className={styles.desktop}>
       <Flex w="100%" h="100%" alignItems={'center'} flexDirection={'column'}>
-        <Box mt="140px" minW={'508px'}>
+        <Box mt="10vh" minW={'508px'}>
           <TimeComponent />
         </Box>
         {/* desktop apps */}
@@ -89,7 +89,14 @@ export default function DesktopContent(props: any) {
         >
           {apps &&
             apps.map((item: TApp, index) => (
-              <GridItem w="72px" h="100px" key={index} userSelect="none" cursor={'pointer'}>
+              <GridItem
+                w="72px"
+                h="100px"
+                key={index}
+                userSelect="none"
+                cursor={'pointer'}
+                onClick={(e) => handleDoubleClick(e, item)}
+              >
                 <Box
                   w="72px"
                   h="72px"
@@ -98,8 +105,6 @@ export default function DesktopContent(props: any) {
                   borderRadius={8}
                   boxShadow={'0px 1.16667px 2.33333px rgba(0, 0, 0, 0.2)'}
                   backgroundColor={'rgba(244, 246, 248, 0.9)'}
-                  onClick={(e) => handleDoubleClick(e, item)}
-                  // onDoubleClick={(e) => handleDoubleClick(e, item)}
                 >
                   <img width={'100%'} height={'100%'} alt="app" src={item?.icon}></img>
                 </Box>

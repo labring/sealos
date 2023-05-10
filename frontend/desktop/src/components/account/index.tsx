@@ -1,15 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
-import { Box, UseDisclosureProps, Text, Flex, Avatar } from '@chakra-ui/react';
-import request from '@/services/request';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/router';
-import Iconfont from '../iconfont';
-import { useClipboard } from '@chakra-ui/react';
-import useSessionStore from '@/stores/session';
-import JsYaml from 'js-yaml';
-import { useMemo } from 'react';
-import download from '@/utils/downloadFIle';
 import { useCopyData } from '@/hooks/useCopyData';
+import request from '@/services/request';
+import useSessionStore from '@/stores/session';
+import download from '@/utils/downloadFIle';
+import { Avatar, Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { useQuery } from '@tanstack/react-query';
+import JsYaml from 'js-yaml';
+import { useRouter } from 'next/router';
+import { useMemo } from 'react';
+import Iconfont from '../iconfont';
 
 export default function Index({ accountDisclosure }: { accountDisclosure: UseDisclosureProps }) {
   const router = useRouter();
@@ -61,6 +60,7 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
         zIndex={'999'}
         borderRadius={'8px'}
         p="20px"
+        backdropFilter={'blur(150px)'}
       >
         <Flex justifyContent={'end'} alignItems={'center'} overflow={'hidden'} onClick={logout}>
           <Iconfont iconName="icon-logout" width={14} height={14} color="#24282C"></Iconfont>

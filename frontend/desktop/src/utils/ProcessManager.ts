@@ -1,50 +1,46 @@
-import type { TApp, Pid } from '@/types';
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import { immer } from 'zustand/middleware/immer';
+import type { TApp } from '@/types';
 let _id = 0;
 const counter = () => _id++;
 
 class AppRunningState {
-  // 'closed' is not equal to be closed
-  state: 'running' | 'Suspend';
-  pid: Pid = -1;
+  state: 'running' | 'suspend';
+  pid: number = -1;
   key: string;
   constructor(key: TApp['key']) {
     this.pid = counter();
-    this.state = 'Suspend';
+    this.state = 'suspend';
     this.key = key;
   }
 }
 
-export default class AppStateManager<T = string> {
-  allApps!: Set<T>;
+export default class AppStateManager {
+  allApps!: Set<string>;
   openedApps: AppRunningState[];
   // currentPid: Pid;
-  constructor(apps: T[]) {
+  constructor(apps: string[]) {
     this.loadApps(apps || []);
     this.openedApps = [];
     // this.currentPid = -1;
   }
   suspendApp(pid: number) {
-    let _state = this.findState(pid);
+    const _state = this.findState(pid);
     if (!_state) return;
-    _state.state = 'Suspend';
+    _state.state = 'suspend';
   }
   closeApp(pid: number) {
-    let idx = this.openedApps.findIndex((app) => app.pid === pid);
+    const idx = this.openedApps.findIndex((app) => app.pid === pid);
     this.openedApps.splice(idx, 1);
   }
-  loadApps(appKeys: T[]) {
+  loadApps(appKeys: string[]) {
     this.allApps = new Set(appKeys);
   }
-  loadApp(appKey: T) {
+  loadApp(appKey: string) {
     this.allApps.add(appKey);
   }
-  unloadApp(appKey: T) {
+  unloadApp(appKey: string) {
     this.allApps.delete(appKey);
     /// remove all apps
-    const goal: Pid[] = [];
+    const goal: number[] = [];
     this.openedApps.forEach((app) => {
       if (app.key === app.key) {
         goal.push(app.pid);
@@ -59,7 +55,7 @@ export default class AppStateManager<T = string> {
     this.openedApps.push(appRunningState);
     return appRunningState;
   }
-  findState(pid: Pid) {
+  findState(pid: number) {
     return this.openedApps.find((x) => x.pid === pid);
   }
 }

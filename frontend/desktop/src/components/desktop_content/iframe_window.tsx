@@ -1,10 +1,9 @@
-import { Pid, TApp } from '@/types';
+import useAppStore from '@/stores/app';
 import { useMemo } from 'react';
 import styles from './index.module.scss';
-import useAppStore from '@/stores/app';
 
-export default function Iframe_window({ pid }: { pid: Pid }) {
-  const findAppInfo = useAppStore((state) => state.findAppInfo);
+export default function Iframe_window({ pid }: { pid: number }) {
+  const findAppInfo = useAppStore((state) => state.findAppInfoById);
   const app = findAppInfo(pid);
   const url = useMemo(() => app?.data?.url || '', [app?.data?.url]);
   if (!url) return null;

@@ -26,8 +26,7 @@ export default function TimeComponent(props: any) {
 
   const day = useMemo(() => {
     try {
-      const temp = formatTime(time, 'dddd');
-      // @ts-ignore
+      const temp = formatTime(time, 'dddd') as keyof typeof WeekDay;
       return WeekDay[temp];
     } catch (error) {}
   }, [time]);

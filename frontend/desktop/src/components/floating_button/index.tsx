@@ -1,13 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 import useAppStore, { AppInfo } from '@/stores/app';
-import { TApp } from '@/types';
 import { Box, Flex, useDisclosure } from '@chakra-ui/react';
 import clsx from 'clsx';
-import { MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { MouseEvent, useMemo, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import Iconfont from '../iconfont';
 import styles from './index.module.scss';
-import { debounce, throttle, fill, times } from 'lodash';
 
 enum Suction {
   None,
@@ -18,11 +16,10 @@ enum Suction {
 export default function Index(props: any) {
   const {
     installedApps: apps,
-    openApp,
     runningInfo,
-    setToHighestLayer,
+    setToHighestLayerById,
     currentAppPid,
-    switchApp
+    switchAppById
   } = useAppStore();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [dragging, setDragging] = useState(false);
@@ -31,12 +28,6 @@ export default function Index(props: any) {
   const [endPosition, setEndPosition] = useState({ x: 0, y: 0 });
   const [suction, setSuction] = useState(Suction.None);
   const [lockSuction, setLockSuction] = useState(true);
-  const timeoutRef = useRef(null);
-  // const fillApps = useMemo(() => {
-  //   if (apps.length < 6) {
-  //     apps.concat(Array(6 - length).fill(0));
-  //   }
-  // }, [apps]);
 
   const [degree, contentSkewDegree, contentRotateDegree] = useMemo(() => {
     const len = apps?.length < 6 ? 6 : apps?.length;
@@ -45,21 +36,6 @@ export default function Index(props: any) {
     const rotateDegree = -(90 - temp / 2);
     return [temp, skewDegree, rotateDegree];
   }, [apps.length]);
-
-  // useEffect(() => {
-  //   const handleResize = () => {
-  //     console.log('resize');
-  //     const floatButtonNav = document?.getElementById('floatButtonNav');
-  //     if (floatButtonNav && suction === Suction.Left) {
-  //       const distanceLeft = floatButtonNav.getBoundingClientRect().left;
-  //       console.log(distanceLeft, position);
-  //       setPosition({ x: position.x - distanceLeft + 10, y: position.y });
-  //     }
-  //   };
-  //   console.log('1');
-  //   window.addEventListener('resize', debounce(handleResize, 2000));
-  //   return () => window.removeEventListener('resize', handleResize);
-  // }, [suction]);
 
   if (apps?.length === 0) return null;
 
@@ -120,15 +96,6 @@ export default function Index(props: any) {
         : x > rightBoundary
         ? handleSuction(Suction.Right)
         : null;
-
-      // 1 minute no operation, automatic edge Suction
-      // if (timeoutRef.current) {
-      //   clearTimeout(timeoutRef.current);
-      // }
-      // // @ts-ignore
-      // timeoutRef.current = setTimeout(() => {
-      //   isLeft ? handleSuction(Suction.Left) : handleSuction(Suction.Right);
-      // }, 1 * 1000);
     } catch (error) {
       console.log(error);
     }
@@ -160,8 +127,6 @@ export default function Index(props: any) {
           <div
             className={clsx(styles.floatBtn, dragging ? styles.notrans : '')}
             data-suction={suction}
-            // onMouseEnter={dragging ? () => {} : onOpen}
-            // onMouseLeave={dragging ? () => {} : onClose}
           >
             <div className={styles.innerBtn}>
               <div
@@ -177,8 +142,6 @@ export default function Index(props: any) {
             className={styles.cricleNav}
             data-open={isOpen}
             userSelect={'none'}
-            // onMouseEnter={onOpen}
-            // onMouseLeave={onClose}
             style={{ display: suction === Suction.None ? 'block' : 'none' }}
           >
             {runningInfo?.map((item: AppInfo, index: number) => {
@@ -195,9 +158,8 @@ export default function Index(props: any) {
                   }
                   _hover={{ bg: 'rgba(21, 37, 57, 0.8)' }}
                   onClick={(e) => {
-                    // switchApp(item.pid);
-                    openApp(item);
-                    setToHighestLayer(item.pid);
+                    switchAppById(item.pid);
+                    setToHighestLayerById(item.pid);
                   }}
                 >
                   <Flex

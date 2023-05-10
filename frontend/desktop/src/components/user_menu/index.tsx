@@ -22,6 +22,29 @@ export default function Index(props: any) {
       right={'48px'}
       cursor={'pointer'}
     >
+      {/* notification */}
+      <Flex
+        w="32px"
+        h="32px"
+        borderRadius={'50%'}
+        background={'rgba(244, 246, 248, 0.7)'}
+        justifyContent={'center'}
+        alignItems={'center'}
+        position={'relative'}
+        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
+      >
+        <Box onClick={() => setShowNotification((val) => !val)}>
+          <Iconfont iconName="icon-notifications" width={20} height={20} color="#24282C"></Iconfont>
+        </Box>
+        {showNotification && (
+          <Notification
+            isShow={showNotification}
+            onClose={() => setShowNotification(false)}
+            onAmount={(amount) => setNotificationAmount(amount)}
+          />
+        )}
+      </Flex>
+      {/* user account */}
       <Flex
         w="32px"
         h="32px"
@@ -49,28 +72,6 @@ export default function Index(props: any) {
           )}
         </Box>
         {accountDisclosure.isOpen && <Account accountDisclosure={accountDisclosure} />}
-      </Flex>
-
-      <Flex
-        w="32px"
-        h="32px"
-        borderRadius={'50%'}
-        background={'rgba(244, 246, 248, 0.7)'}
-        justifyContent={'center'}
-        alignItems={'center'}
-        position={'relative'}
-        boxShadow={'0px 1.2px 2.3px rgba(0, 0, 0, 0.2)'}
-      >
-        <Box onClick={() => setShowNotification((val) => !val)}>
-          <Iconfont iconName="icon-notifications" width={20} height={20} color="#24282C"></Iconfont>
-        </Box>
-        {showNotification && (
-          <Notification
-            isShow={showNotification}
-            onClose={() => setShowNotification(false)}
-            onAmount={(amount) => setNotificationAmount(amount)}
-          />
-        )}
       </Flex>
     </Flex>
   );

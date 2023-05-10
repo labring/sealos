@@ -41,9 +41,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let apps = [...defaultArr, ...userArr];
 
-    // if (process.env.NODE_ENV === 'development') {
-    //   apps = apps.concat(MockInstalAPPs)
-    // }
     jsonRes(res, { data: apps });
   } catch (err) {
     console.log(err);

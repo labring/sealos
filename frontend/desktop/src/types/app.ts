@@ -1,3 +1,6 @@
+import { AppInfo } from '@/stores/app';
+import AppStateManager from '@/utils/ProcessManager';
+
 export enum APPTYPE {
   APP = 'app',
   IFRAME = 'iframe',
@@ -30,7 +33,6 @@ export type TAppConfig = {
   data: {
     url: string;
     desc: string;
-    // [key: string]: string;
   };
   // app gallery
   gallery: string[];
@@ -42,61 +44,23 @@ export type TAppConfig = {
     helpDocs: boolean | string;
   };
 };
-export const initialFrantState: TAppFront = {
-  isShow: false,
-  zIndex: 1,
-  size: 'maximize',
-  cacheSize: 'maximize',
-  style: {},
-  mouseDowning: false
-};
 
-export type TApp = TAppConfig & TAppFront;
-export type Pid = number;
+export type TApp = TAppConfig & TAppFront & { pid: number };
 export type TOSState = {
+  maxZIndex: number;
   installedApps: TApp[];
-
-  orderApps: { [key: string]: number };
-
-  // all apps in app store
-  allApps: TApp[];
-
-  openedApps: TApp[];
-
-  // pinned Dock's app
-  pinnedApps: TApp[];
-
-  currentApp?: TApp;
+  runner: AppStateManager;
+  runningInfo: AppInfo[];
+  currentAppPid: number;
 
   // init desktop
   init(): Promise<void>;
-
-  // get all apps of the app store
-  getAllApps(): void;
-
-  // close the current app
-  closeApp(name: string): void;
-
-  // open the app
-  openApp(app: TApp, query?: Record<string, string>): void;
-
-  // switch the app
-  switchApp(app: TApp, type?: 'clickMask'): void;
-
-  updateOpenedAppInfo(app: TApp): void;
-
-  // update app order in desktop
-  updateAppOrder(app: TApp, i: number): void;
-
-  updateAppsMousedown(app: TApp, status: boolean): void;
-
-  installApp(app: TApp): void;
-
-  // the closet app to the user
-  maxZIndex: number;
-
-  // start menu
-  isHideStartMenu: boolean;
-
-  toggleStartMenu(): void;
+  openApp(app: TApp, query?: Record<string, string>): Promise<void>;
+  closeAppById: (pid: number) => void;
+  // get current runningApp
+  currentApp: () => AppInfo | undefined;
+  switchAppById: (pid: number) => void;
+  findAppInfoById: (pid: number) => AppInfo | undefined;
+  setToHighestLayerById: (pid: number) => void;
+  updateOpenedAppInfo: (app: TApp) => void;
 };
