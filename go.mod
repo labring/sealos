@@ -25,6 +25,7 @@ require (
 	github.com/labring/lvscare v0.0.0
 	github.com/labring/sealos/controllers/imagehub v0.0.0
 	github.com/manifoldco/promptui v0.9.0
+	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.26.0
 	github.com/openconfig/gnmi v0.0.0-20220920173703-480bf53a74d2
@@ -185,6 +186,7 @@ require (
 	github.com/sigstore/fulcio v1.0.0 // indirect
 	github.com/sigstore/rekor v1.0.1 // indirect
 	github.com/sigstore/sigstore v1.5.1 // indirect
+	github.com/smartystreets/goconvey v1.8.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
 	github.com/sylabs/sif/v2 v2.9.0 // indirect

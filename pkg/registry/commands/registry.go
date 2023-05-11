@@ -26,6 +26,7 @@ import (
 func subCommands() []*cobra.Command {
 	return []*cobra.Command{
 		newRegistryImageSaveCmd(),
+		newRegistryPasswdCmd(),
 	}
 }
 

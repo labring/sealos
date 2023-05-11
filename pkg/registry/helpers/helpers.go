@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package bootstrap
+package helpers
 
 import (
 	"fmt"
 	"path"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/labring/image-cri-shim/pkg/types"
+
+	"k8s.io/apimachinery/pkg/util/yaml"
 
 	"github.com/labring/sealos/pkg/constants"
 	"github.com/labring/sealos/pkg/ssh"
 	"github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/iputils"
 	"github.com/labring/sealos/pkg/utils/logger"
-	"github.com/labring/sealos/pkg/utils/yaml"
 )
 
+const RegistryCustomConfig = "registry.yml"
+
 func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string) *v1beta1.RegistryConfig {
-	const registryCustomConfig = "registry.yml"
 	var DefaultConfig = &v1beta1.RegistryConfig{
 		IP:       iputils.GetHostIP(defaultRegistry),
 		Domain:   constants.DefaultRegistryDomain,
@@ -38,39 +40,38 @@ func GetRegistryInfo(sshInterface ssh.Interface, rootfs, defaultRegistry string)
 		Password: constants.DefaultRegistryPassword,
 		Data:     constants.DefaultRegistryData,
 	}
-	etcPath := path.Join(rootfs, constants.EtcDirName, registryCustomConfig)
+	etcPath := path.Join(rootfs, constants.EtcDirName, RegistryCustomConfig)
 	out, _ := sshInterface.Cmd(defaultRegistry, fmt.Sprintf("cat %s", etcPath))
-	logger.Debug("image shim data info: %s", string(out))
-	registryConfig, err := yaml.UnmarshalData(out)
+	logger.Debug("registry config data info: %s", string(out))
+	readConfig := &v1beta1.RegistryConfig{}
+	err := yaml.Unmarshal(out, &readConfig)
 	if err != nil {
 		logger.Warn("read registry config path error: %+v", err)
 		logger.Info("use default registry config")
 		return DefaultConfig
 	}
-	domain, _, _ := unstructured.NestedString(registryConfig, "domain")
-	port, _, _ := unstructured.NestedString(registryConfig, "port")
-	username, _, _ := unstructured.NestedString(registryConfig, "username")
-	password, _, _ := unstructured.NestedString(registryConfig, "password")
-	data, _, _ := unstructured.NestedString(registryConfig, "data")
-	ip, _, _ := unstructured.NestedString(registryConfig, "ip")
+	if readConfig.IP == "" {
+		readConfig.IP = defaultRegistry
+	}
+	if readConfig.Domain == "" {
+		readConfig.Domain = DefaultConfig.Domain
+	}
+	if readConfig.Port == "" {
+		readConfig.Port = DefaultConfig.Port
+	}
+	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", readConfig.IP, readConfig.Domain, readConfig.Data)
+	return readConfig
+}
 
-	if ip == "" {
-		ip = defaultRegistry
+func GetImageCRIShimInfo(sshInterface ssh.Interface, config, defaultIP string) *types.Config {
+	out, _ := sshInterface.Cmd(defaultIP, fmt.Sprintf("cat %s", config))
+	logger.Debug("image shim data info: %s", string(out))
+	readConfig := &types.Config{}
+	err := yaml.Unmarshal(out, &readConfig)
+	if err != nil {
+		logger.Warn("read image shim config path error: %+v", err)
+		return nil
 	}
-	if domain == "" {
-		domain = DefaultConfig.Domain
-	}
-	if port == "" {
-		port = DefaultConfig.Port
-	}
-	rConfig := &v1beta1.RegistryConfig{
-		IP:       ip,
-		Domain:   domain,
-		Port:     port,
-		Username: username,
-		Password: password,
-		Data:     data,
-	}
-	logger.Debug("show registry info, IP: %s, Domain: %s, Data: %s", rConfig.IP, rConfig.Domain, rConfig.Data)
-	return rConfig
+	logger.Debug("show registry info, addr: %s,  auth: %s", readConfig.Address, readConfig.Auth)
+	return readConfig
 }
