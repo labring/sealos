@@ -16,16 +16,24 @@ limitations under the License.
 package cloudclient
 
 import (
+	"context"
+	_ "context"
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"time"
 
+	"github.com/labring/sealos/controllers/db/bytebase/client"
 	lgr "github.com/labring/sealos/pkg/utils/logger"
 )
 
 type CloudClient struct {
 	CloudURL string
 	HttpBody []byte
+	ctx      context.Context
+	Timer    <-chan time.Time
+	// apply CR to K8s
+	ctlToApiServer client.Client
 }
 
 func (cc *CloudClient) Get() error {

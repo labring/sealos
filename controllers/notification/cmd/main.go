@@ -136,32 +136,3 @@ func main() {
 		os.Exit(1)
 	}
 }
-
-func (r *ClientForLaf) Ticker() error {
-
-	for range r.Timer {
-		lgr.Info("Timer triggered")
-		if err := r.ctlToLafCloud.Get(); err != nil {
-			lgr.Info("ClientForLafError: ", err)
-			return err
-		}
-		var CloudNTF ntf.Notification
-
-		if err := json.Unmarshal(r.ctlToLafCloud.HttpBody, &CloudNTF); err != nil {
-			lgr.Info("ClientForLafError: ", "error body ", err)
-			return err
-		}
-		// fmt.Println("hello world")
-		baseCtx := context.Background()
-		name := "my-resource"
-		namespace := "my-namespace"
-		ctx := context.WithValue(baseCtx, nameKey, name)
-		ctx = context.WithValue(ctx, namespaceKey, namespace)
-		fmt.Println(CloudNTF.Namespace)
-		if err := r.ctlToApiServer.Create(ctx, &CloudNTF); err != nil {
-			lgr.Info("CloudNotificationCreateError: ", err)
-			return err
-		}
-	}
-	return nil
-}
