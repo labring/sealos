@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/containers/buildah/pkg/parse"
 	"github.com/containers/common/libimage"
@@ -98,6 +99,9 @@ func (r *Runtime) pullOrLoadImages(ctx context.Context, args ...string) ([]strin
 		}
 		switch tr.Name() {
 		case TransportDocker, TransportContainersStorage:
+			if tr.Name() == TransportDocker {
+				ref = strings.TrimPrefix(ref, "//")
+			}
 			pullImages, err := r.Runtime.Pull(ctx, ref, config.PullPolicyMissing, &libimage.PullOptions{
 				CopyOptions: libimage.CopyOptions{
 					Writer: os.Stderr,
