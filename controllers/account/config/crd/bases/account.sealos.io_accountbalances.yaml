@@ -40,43 +40,33 @@ spec:
             description: AccountBalanceSpec defines the desired state of AccountBalance
             properties:
               amount:
+                description: TODO will delete field in future Timestamp int64 `json:"timestamp,omitempty"`
                 format: int64
                 type: integer
-              details:
+              costs:
+                additionalProperties:
+                  format: int64
+                  type: integer
+                type: object
+              order_id:
                 type: string
               owner:
                 type: string
-              resourceInfoList:
-                items:
-                  properties:
-                    cost:
-                      format: int64
-                      type: integer
-                    namespace:
-                      type: string
-                    resourceName:
-                      type: string
-                    time:
-                      format: int64
-                      type: integer
-                    used:
-                      anyOf:
-                      - type: integer
-                      - type: string
-                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-                      x-kubernetes-int-or-string: true
-                  type: object
-                type: array
-              timestamp:
-                format: int64
+              time:
+                format: date-time
+                type: string
+              type:
                 type: integer
             required:
+            - order_id
             - owner
+            - time
+            - type
             type: object
           status:
             description: AccountBalanceStatus defines the observed state of AccountBalance
             properties:
-              status:
+              billingStatus:
                 type: string
             type: object
         type: object

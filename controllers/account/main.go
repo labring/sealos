@@ -18,11 +18,8 @@ package main
 
 import (
 	"flag"
-	"os"
-
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-
 	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
+	"os"
 
 	"github.com/labring/sealos/controllers/account/controllers"
 	"github.com/labring/sealos/controllers/account/controllers/cache"
@@ -111,10 +108,25 @@ func main() {
 		setupLog.Error(err, "unable to cache controller")
 		os.Exit(1)
 	}
-	if os.Getenv("DISABLE_WEBHOOKS") == "true" {
-		setupLog.Info("disable all webhooks")
-	} else {
-		mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+	//if os.Getenv("DISABLE_WEBHOOKS") == "true" {
+	//	setupLog.Info("disable all webhooks")
+	//} else {
+	//	mgr.GetWebhookServer().Register("/validate-v1-sealos-cloud", &webhook.Admission{Handler: &accountv1.DebtValidate{Client: mgr.GetClient()}})
+	//}
+
+	if err = (&controllers.BillingRecordQueryReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "BillingRecordQuery")
+		os.Exit(1)
+	}
+	if err = (&controllers.BillingReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Billing")
+		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 

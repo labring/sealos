@@ -6,54 +6,58 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - resources.sealos.io
+  - ""
   resources:
-  - meterings
+  - namespaces
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
-  - resources.sealos.io
+  - ""
   resources:
-  - meterings/finalizers
+  - pods
   verbs:
-  - update
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - meterings/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - monitors
-  verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
   - watch
 - apiGroups:
-  - resources.sealos.io
+  - ""
   resources:
-  - monitors/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - resources.sealos.io
-  resources:
-  - monitors/status
+  - resourcequotas
   verbs:
   - get
-  - patch
-  - update
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - resourcequotas/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - infra.sealos.io
+  resources:
+  - infras/status
+  verbs:
+  - get
+  - list
+  - watch

@@ -17,25 +17,48 @@ limitations under the License.
 package v1
 
 import (
-	meteringcommonv1 "github.com/labring/sealos/controllers/common/metering/api/v1"
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const AccountBalancePrefix = "accountbalance"
 
+type (
+	Status string
+	Type   int
+)
+
+const (
+	// Consumption 消费
+	Consumption Type = iota
+	// Recharge 充值
+	Recharge
+)
+
+const (
+	Completed Status = "completed"
+	Create    Status = "create"
+	Failed    Status = "failed"
+)
+
+type Costs map[string]int64
+
 // AccountBalanceSpec defines the desired state of AccountBalance
 type AccountBalanceSpec struct {
-	Owner            string                            `json:"owner"`
-	Timestamp        int64                             `json:"timestamp,omitempty"`
-	Amount           int64                             `json:"amount,omitempty"`
-	Details          string                            `json:"details,omitempty"`
-	ResourceInfoList meteringcommonv1.ResourceInfoList `json:"resourceInfoList,omitempty"`
+	OrderID string      `json:"order_id" bson:"order_id"`
+	Owner   string      `json:"owner" bson:"owner"`
+	Time    metav1.Time `json:"time" bson:"time"`
+	Type    Type        `json:"type" bson:"type"`
+	Costs   Costs       `json:"costs,omitempty" bson:"costs,omitempty"`
+	// TODO will delete field in future
+	//Timestamp int64 `json:"timestamp,omitempty"`
+	Amount int64 `json:"amount,omitempty" bson:"amount"`
+	//Details          string                            `json:"details,omitempty" bson:"details,omitempty"`
+	//ResourceInfoList meteringcommonv1.ResourceInfoList `json:"resourceInfoList,omitempty"`
 }
 
 // AccountBalanceStatus defines the observed state of AccountBalance
 type AccountBalanceStatus struct {
-	Status meteringv1.Status `json:"status,omitempty"`
+	Status Status `json:"billingStatus,omitempty"`
 }
 
 //+kubebuilder:object:root=true

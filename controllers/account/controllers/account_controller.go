@@ -19,11 +19,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"github.com/labring/sealos/controllers/pkg/database"
 	"os"
 	"strconv"
 	"time"
-
-	meteringv1 "github.com/labring/sealos/controllers/metering/api/v1"
 
 	"github.com/labring/sealos/controllers/user/controllers/helper"
 
@@ -58,6 +57,7 @@ type AccountReconciler struct {
 	Scheme                 *runtime.Scheme
 	Logger                 logr.Logger
 	AccountSystemNamespace string
+	MongoDBURI             string
 }
 
 //+kubebuilder:rbac:groups=account.sealos.io,resources=accounts,verbs=get;list;watch;create;update;patch;delete
@@ -111,12 +111,19 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	r.Logger.V(1).Info("query order status", "status", status)
 	switch status {
 	case pay.StatusSuccess:
-		account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
-			Amount:  payment.Spec.Amount,
-			Time:    metav1.Now(),
-			Status:  status,
-			TradeNO: payment.Status.TradeNO,
-		})
+		dbCtx := context.Background()
+		dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
+		if err != nil {
+			r.Logger.Error(err, "connect mongo client failed")
+			return ctrl.Result{Requeue: true}, err
+		}
+		defer func() {
+			err := dbClient.Disconnect(ctx)
+			if err != nil {
+				r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
+			}
+		}()
+		now := time.Now().UTC()
 		account.Status.Balance += payment.Spec.Amount
 		if err := r.Status().Update(ctx, account); err != nil {
 			return ctrl.Result{}, fmt.Errorf("update account failed: %v", err)
@@ -126,6 +133,16 @@ func (r *AccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			return ctrl.Result{}, fmt.Errorf("update payment failed: %v", err)
 		}
 
+		err = dbClient.SaveBillingsWithAccountBalance(&accountv1.AccountBalanceSpec{
+			OrderID: payment.Status.TradeNO,
+			Amount:  payment.Spec.Amount,
+			Owner:   payment.Namespace,
+			Time:    metav1.Time{Time: now},
+			Type:    accountv1.Recharge,
+		})
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("save billing failed: %v", err)
+		}
 	case pay.StatusProcessing, pay.StatusNotPay:
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second}, nil
 	case pay.StatusFail:
@@ -184,11 +201,6 @@ func (r *AccountReconciler) syncAccount(ctx context.Context, name, accountNamesp
 		return nil, err
 	}
 	account.Status.Balance += int64(amount)
-	account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
-		Amount:   int64(amount),
-		Time:     metav1.Time{Time: time.Now()},
-		Describe: "new account charge",
-	})
 	if err := r.Status().Update(ctx, &account); err != nil {
 		return nil, err
 	}
@@ -257,8 +269,8 @@ func (r *AccountReconciler) DeletePayment(ctx context.Context) error {
 }
 
 func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountBalance *accountv1.AccountBalance) error {
-	if accountBalance.Status.Status == meteringv1.Complete {
-		return nil
+	if accountBalance.Status.Status == accountv1.Completed {
+		return r.Delete(ctx, accountBalance)
 	}
 
 	r.Logger.V(1).Info("enter deduction balance", "accountBalanceName", accountBalance.Name, "accountBalanceNamespace", accountBalance.Namespace, ".Spec", accountBalance.Spec, "status", accountBalance.Status)
@@ -269,22 +281,32 @@ func (r *AccountReconciler) updateDeductionBalance(ctx context.Context, accountB
 	}
 
 	account.Status.DeductionBalance += accountBalance.Spec.Amount
-	account.Status.ChargeList = append(account.Status.ChargeList, accountv1.Charge{
-		Amount:             accountBalance.Spec.Amount,
-		Time:               metav1.Now(),
-		Status:             string(accountBalance.Status.Status),
-		AccountBalanceName: accountBalance.Name,
-	})
 
 	if err := r.Status().Update(ctx, account); err != nil {
 		r.Logger.Error(err, err.Error())
 		return err
 	}
 
-	accountBalance.Status.Status = meteringv1.Complete
+	accountBalance.Status.Status = accountv1.Completed
 	if err := r.Status().Update(ctx, accountBalance); err != nil {
 		r.Logger.Error(err, err.Error())
 		return err
+	}
+	dbCtx := context.Background()
+	dbClient, err := database.NewMongoDB(dbCtx, r.MongoDBURI)
+	if err != nil {
+		r.Logger.Error(err, "connect mongo client failed")
+		return fmt.Errorf("failed to connect mongo client: %v", err)
+	}
+	defer func() {
+		err := dbClient.Disconnect(dbCtx)
+		if err != nil {
+			r.Logger.V(5).Info("disconnect mongo client failed", "err", err)
+		}
+	}()
+	err = dbClient.SaveBillingsWithAccountBalance(&accountBalance.Spec)
+	if err != nil {
+		return fmt.Errorf("save billings with accountBlance failed: %v", err)
 	}
 	return nil
 }
@@ -298,6 +320,9 @@ func (r *AccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.AccountSystemNamespace = os.Getenv(ACCOUNTNAMESPACEENV)
 	if r.AccountSystemNamespace == "" {
 		r.AccountSystemNamespace = DEFAULTACCOUNTNAMESPACE
+	}
+	if r.MongoDBURI = os.Getenv(database.MongoURL); r.MongoDBURI == "" {
+		return fmt.Errorf("mongo url is empty")
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&accountv1.Account{}).

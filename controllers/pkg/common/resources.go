@@ -1,9 +1,9 @@
-package controllers
+package common
 
 import (
 	"context"
 	"fmt"
-	"strings"
+	"math"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -46,9 +46,9 @@ Network bandwidth: Kbps (kilobits per second) not yet available
 // price: 1000000 = 1¥
 
 type Price struct {
-	Property string  `json:"property" bson:"property"`
-	Price    float64 `json:"price" bson:"price"`
-	Detail   string  `json:"detail" bson:"detail"`
+	Property string `json:"property" bson:"property"`
+	Price    int64  `json:"price" bson:"price"`
+	Detail   string `json:"detail" bson:"detail"`
 	//Unit     string  `json:"unit" bson:"unit"`
 }
 
@@ -91,6 +91,11 @@ type Metering struct {
 	Detail   string    `json:"detail" bson:"detail"`
 	// 0 -> not settled, 1 -> settled, -1 -> deleted, -2 -> refunded
 	Status int `json:"status" bson:"status"`
+}
+
+type QuantityDetail struct {
+	*resource.Quantity
+	Detail string
 }
 
 const (
@@ -139,7 +144,7 @@ var infraMemoryMap = map[string]int{
 }
 
 // MiB
-func getInfraCPUQuantity(flavor string, count int) *resource.Quantity {
+func GetInfraCPUQuantity(flavor string, count int) *resource.Quantity {
 	if v, ok := infraCPUMap[flavor]; ok {
 		return resource.NewQuantity(int64(v*count), resource.DecimalSI)
 	}
@@ -147,7 +152,7 @@ func getInfraCPUQuantity(flavor string, count int) *resource.Quantity {
 }
 
 // Gib
-func getInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
+func GetInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
 	if v, ok := infraMemoryMap[flavor]; ok {
 		return resource.NewQuantity(int64((v*count)<<30), resource.BinarySI)
 	}
@@ -155,8 +160,16 @@ func getInfraMemoryQuantity(flavor string, count int) *resource.Quantity {
 }
 
 // Gib
-func getInfraDiskQuantity(capacity int) *resource.Quantity {
+func GetInfraDiskQuantity(capacity int) *resource.Quantity {
 	return resource.NewQuantity(int64(capacity<<30), resource.BinarySI)
+}
+
+func GetResourceValue(resourceName corev1.ResourceName, res map[corev1.ResourceName]*QuantityDetail) int64 {
+	quantity := res[resourceName]
+	if quantity != nil && quantity.MilliValue() != 0 {
+		return int64(math.Ceil(float64(quantity.MilliValue()) / float64(PricesUnit[resourceName].MilliValue())))
+	}
+	return 0
 }
 
 func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
@@ -205,12 +218,6 @@ func GetPrices(mongoClient *mongo.Client) ([]Price, error) {
 //	return err
 //}
 
-func CreateTimeSeriesTable(client *mongo.Client, dbName, collectionName string) error {
-	cmd := bson.D{{Key: "create", Value: collectionName}, {Key: "timeseries", Value: bson.D{{Key: "timeField", Value: "time"}}}}
-	err := client.Database(dbName).RunCommand(context.TODO(), cmd).Err()
-	return err
-}
-
 //func ensureCompoundIndex(client *mongo.Client, dbName, collName string, indexKeys bson.M) error {
 //	collection := client.Database(dbName).Collection(collName)
 //	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -249,22 +256,3 @@ func CreateTimeSeriesTable(client *mongo.Client, dbName, collectionName string) 
 //	}
 //	return nil
 //}
-
-func GetAllPricesMap(mongoClient *mongo.Client) (map[string]Price, error) {
-	collection := mongoClient.Database(SealosResourcesDBName).Collection(SealosPricesCollectionName)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	cursor, err := collection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var prices []Price
-	if err = cursor.All(ctx, &prices); err != nil {
-		return nil, fmt.Errorf("get all prices error: %v", err)
-	}
-	var pricesMap = make(map[string]Price, len(prices))
-	for i := range prices {
-		pricesMap[strings.ToLower(prices[i].Property)] = prices[i]
-	}
-	return pricesMap, nil
-}
