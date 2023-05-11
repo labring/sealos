@@ -24,30 +24,30 @@ function mock_tls {
 
 function sealos_run_controller {
   # run user controller
-  sealos run ghcr.io/labring/sealos-cloud-user-controller:dev
+  sealos run sealos.hub:5000/labring/sealos-cloud-user-controller:dev
   # \ 1 > /dev/null
 
   # run terminal controller
-  sealos run ghcr.io/labring/sealos-cloud-terminal-controller:dev --env cloudDomain=$cloudDomain --env userNamespace="user-system" --env wildcardCertSecretName="wildcard-secret" --env wildcardCertSecretNamespace="sealos-system"
+  sealos run sealos.hub:5000/labring/sealos-cloud-terminal-controller:dev --env cloudDomain=$cloudDomain --env userNamespace="user-system" --env wildcardCertSecretName="wildcard-secret" --env wildcardCertSecretNamespace="sealos-system"
   # \ 1 > /dev/null
 
   # run app controller
-  sealos run ghcr.io/labring/sealos-cloud-app-controller:dev
+  sealos run sealos.hub:5000/labring/sealos-cloud-app-controller:dev
   # \ 1 > /dev/null
 }
 
 function sealos_run_service {
   # run auth service
-  sealos run ghcr.io/labring/sealos-cloud-auth-service:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret" --env callbackUrl="$cloudDomain/login/callback" --env ssoEndpoint="login.$cloudDomain" --env casdoorMysqlRootPassword="$(tr -cd 'a-z0-9' </dev/urandom | head -c16)"
+  sealos run sealos.hub:5000/labring/sealos-cloud-auth-service:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret" --env callbackUrl="$cloudDomain/login/callback" --env ssoEndpoint="login.$cloudDomain" --env casdoorMysqlRootPassword="$(tr -cd 'a-z0-9' </dev/urandom | head -c16)"
   # \ 1 > /dev/null
 }
 
 function sealos_run_frontend {
-  sealos run ghcr.io/labring/sealos-cloud-desktop-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run sealos.hub:5000/labring/sealos-cloud-desktop-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
-  sealos run ghcr.io/labring/sealos-cloud-applaunchpad-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run sealos.hub:5000/labring/sealos-cloud-applaunchpad-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 
-  sealos run ghcr.io/labring/sealos-cloud-terminal-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
+  sealos run sealos.hub:5000/labring/sealos-cloud-terminal-frontend:dev --env cloudDomain=$cloudDomain --env certSecretName="wildcard-secret"
 }
 
 
@@ -57,6 +57,8 @@ function install {
   mock_tls $cloudDomain
   # kubectl apply namespace and secret
   kubectl apply -f manifests
+  # sealos login
+  sealos login -u admin -p passw0rd sealos.hub:5000
   # sealos run controllers
   sealos_run_controller
   # sealos run services
