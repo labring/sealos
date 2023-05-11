@@ -26,9 +26,9 @@ kind: Pod
 metadata:
   creationTimestamp: null
   labels:
-    component: kube-sealyun-lvscare
+    component: kube-sealos-lvscare
     tier: control-plane
-  name: kube-sealyun-lvscare
+  name: kube-sealos-lvscare
   namespace: kube-system
 spec:
   containers:
@@ -50,7 +50,7 @@ spec:
     - /usr/bin/lvscare
     image: fanux/lvscare:latest
     imagePullPolicy: IfNotPresent
-    name: kube-sealyun-lvscare
+    name: kube-sealos-lvscare
     resources: {}
     securityContext:
       privileged: true

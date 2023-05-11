@@ -68,54 +68,7 @@ Subcommands:
 sealctl cri socket
 ```
 
-2. is-docker: Check if the container runtime is Docker.
-
-```shell
-sealctl cri is-docker
-```
-
-3. is-running: Check if the container runtime is running.
-
-```shell
-sealctl cri is-running [--short]
-```
-
-- --short: Print only the result.
-
-4. list-containers: List Kubernetes containers.
-
-```shell
-sealctl cri list-containers [--short]
-```
-
-- --short: Print only the result.
-
-5. remove-containers: Remove specified containers.
-
-```shell
-sealctl cri remove-containers --containers [CONTAINER_NAME_1,CONTAINER_NAME_2,...]
-```
-
-- --containers: List of container names to remove.
-
-6. `pull-image`： Pull the specified image.
-
-```shell
-sealctl cri pull-image --image IMAGE_NAME
-```
-
-- `--image`： The name of the image to pull.
-
-7. `image-exists`：Check if the specified image exists.
-
-```shell
-sealctl cri image-exists --image IMAGE_NAME [--short]
-```
-
-- `--image`： The name of the image to check.
-- `--short`： Print only the result.
-
-8. `cgroup-driver`：Get the container runtime's cgroup driver.
+2`cgroup-driver`：Get the container runtime's cgroup driver.
 
 ```shell
 sealctl cri cgroup-driver [--short]
@@ -132,12 +85,6 @@ Examples：
 
 ```shell
 sealctl cri socket
-sealctl cri is-docker
-sealctl cri is-running --short
-sealctl cri list-containers --short
-sealctl cri remove-containers --containers container1,container2
-sealctl cri pull-image --image IMAGE_NAME
-sealctl cri image-exists --image IMAGE_NAME --short
 sealctl cri cgroup-driver --short
 ```
 

@@ -71,54 +71,7 @@ sealctl cri [flags]
 sealctl cri socket
 ```
 
-2. `is-docker`：检查容器运行时是否为 Docker。
-
-```shell
-sealctl cri is-docker
-```
-
-3. `is-running`：检查容器运行时是否正在运行。
-
-```shell
-sealctl cri is-running [--short]
-```
-
-- `--short`：仅打印结果。
-
-4. `list-containers`：列出 Kubernetes 容器。
-
-```shell
-sealctl cri list-containers [--short]
-```
-
-- `--short`：仅打印结果。
-
-5. `remove-containers`：删除指定的容器。
-
-```shell
-sealctl cri remove-containers --containers [CONTAINER_NAME_1,CONTAINER_NAME_2,...]
-```
-
-- `--containers`：要删除的容器名称列表。
-
-6. `pull-image`：拉取指定的镜像。
-
-```shell
-sealctl cri pull-image --image IMAGE_NAME
-```
-
-- `--image`：要拉取的镜像名称。
-
-7. `image-exists`：检查指定的镜像是否存在。
-
-```shell
-sealctl cri image-exists --image IMAGE_NAME [--short]
-```
-
-- `--image`：要检查的镜像名称。
-- `--short`：仅打印结果。
-
-8. `cgroup-driver`：获取容器运行时的 cgroup 驱动。
+2. `cgroup-driver`：获取容器运行时的 cgroup 驱动。
 
 ```shell
 sealctl cri cgroup-driver [--short]
@@ -135,12 +88,6 @@ sealctl cri cgroup-driver [--short]
 
 ```shell
 sealctl cri socket
-sealctl cri is-docker
-sealctl cri is-running --short
-sealctl cri list-containers --short
-sealctl cri remove-containers --containers container1,container2
-sealctl cri pull-image --image IMAGE_NAME
-sealctl cri image-exists --image IMAGE_NAME --short
 sealctl cri cgroup-driver --short
 
 ```

@@ -30,7 +30,6 @@ import (
 	runtime "github.com/labring/sealos/pkg/runtime"
 	v2 "github.com/labring/sealos/pkg/types/v1beta1"
 	"github.com/labring/sealos/pkg/utils/confirm"
-	"github.com/labring/sealos/pkg/utils/images"
 	"github.com/labring/sealos/pkg/utils/logger"
 	"github.com/labring/sealos/pkg/utils/rand"
 )
@@ -177,7 +176,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 func (c *InstallProcessor) UpgradeIfNeed(cluster *v2.Cluster) error {
 	logger.Info("Executing UpgradeIfNeed Pipeline in InstallProcessor")
 	for _, img := range c.NewMounts {
-		version := images.GetKubeVersionFromImage(img)
+		version := img.KubeVersion()
 		if version == "" {
 			continue
 		}

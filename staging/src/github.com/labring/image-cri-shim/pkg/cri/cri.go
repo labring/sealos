@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	toml "github.com/pelletier/go-toml"
-	errorsutil "k8s.io/apimachinery/pkg/util/errors"
 	utilsexec "k8s.io/utils/exec"
 
 	"github.com/labring/sealos/pkg/utils/file"
@@ -41,18 +40,11 @@ var defaultKnownCRISockets = []string{
 const (
 	DefaultCgroupDriver        = "cgroupfs"
 	DefaultSystemdCgroupDriver = "systemd"
-	// PullImageRetry specifies how many times ContainerRuntime retries when pulling image failed
-	PullImageRetry = 5
 )
 
 // ContainerRuntime is an interface for working with container runtimes
 type ContainerRuntime interface {
-	IsDocker() bool
 	IsRunning() error
-	ListKubeContainers() ([]string, error)
-	RemoveContainers(containers []string) error
-	PullImage(image string) error
-	ImageExists(image string) bool
 	CGroupDriver() (string, error)
 }
 
@@ -122,16 +114,6 @@ func NewContainerRuntime(execer utilsexec.Interface, criSocket string, config st
 		}
 	}
 	return runtime, nil
-}
-
-// IsDocker returns true if the runtime is docker
-func (runtime *ContainerdRuntime) IsDocker() bool {
-	return false
-}
-
-// IsDocker returns true if the runtime is docker
-func (runtime *DockerRuntime) IsDocker() bool {
-	return true
 }
 
 // IsRunning checks if runtime is running
@@ -222,102 +204,6 @@ func (runtime *ContainerdRuntime) processConfigFile() (string, error) {
 		}
 	}
 	return DefaultCgroupDriver, nil
-}
-
-// ListKubeContainers lists running k8s CRI pods
-func (runtime *ContainerdRuntime) ListKubeContainers() ([]string, error) {
-	// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-	out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "pods", "-q").CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("output: %s, error: %w", string(out), err)
-	}
-	pods := []string{}
-	pods = append(pods, strings.Fields(string(out))...)
-	return pods, nil
-}
-
-// ListKubeContainers lists running k8s containers
-func (runtime *DockerRuntime) ListKubeContainers() ([]string, error) {
-	output, err := runtime.exec.Command("docker", "ps", "-a", "--filter", "name=k8s_", "-q").CombinedOutput()
-	return strings.Fields(string(output)), err
-}
-
-// RemoveContainers removes running k8s pods
-func (runtime *ContainerdRuntime) RemoveContainers(containers []string) error {
-	errs := []error{}
-	for _, container := range containers {
-		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-		out, err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "stopp", container).CombinedOutput()
-		if err != nil {
-			// don't stop on errors, try to remove as many containers as possible
-			errs = append(errs, fmt.Errorf("failed to stop running pod %s: output: %s, error: %w", container, string(out), err))
-		} else {
-			// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-			out, err = runtime.exec.Command("crictl", "-r", runtime.criSocket, "rmp", container).CombinedOutput()
-			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to remove running container %s: output: %s, error: %w", container, string(out), err))
-			}
-		}
-	}
-	return errorsutil.NewAggregate(errs)
-}
-
-// RemoveContainers removes running containers
-func (runtime *DockerRuntime) RemoveContainers(containers []string) error {
-	errs := []error{}
-	for _, container := range containers {
-		// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-		out, err := runtime.exec.Command("docker", "stop", container).CombinedOutput()
-		if err != nil {
-			// don't stop on errors, try to remove as many containers as possible
-			errs = append(errs, fmt.Errorf("failed to stop running container %s: output: %s, error", container, string(out)), err)
-		} else {
-			// nosemgrep: trailofbits.go.invalid-usage-of-modified-variable.invalid-usage-of-modified-variable
-			out, err = runtime.exec.Command("docker", "rm", "--volumes", container).CombinedOutput()
-			if err != nil {
-				errs = append(errs, fmt.Errorf("failed to remove running container %s: output: %s, error", container, string(out)), err)
-			}
-		}
-	}
-	return errorsutil.NewAggregate(errs)
-}
-
-// PullImage pulls the image
-func (runtime *ContainerdRuntime) PullImage(image string) error {
-	var err error
-	var out []byte
-	for i := 0; i < PullImageRetry; i++ {
-		out, err = runtime.exec.Command("crictl", "-r", runtime.criSocket, "pull", image).CombinedOutput()
-		if err == nil {
-			return nil
-		}
-	}
-	return fmt.Errorf("output: %s, error: %w", out, err)
-}
-
-// PullImage pulls the image
-func (runtime *DockerRuntime) PullImage(image string) error {
-	var err error
-	var out []byte
-	for i := 0; i < PullImageRetry; i++ {
-		out, err = runtime.exec.Command("docker", "pull", image).CombinedOutput()
-		if err == nil {
-			return nil
-		}
-	}
-	return fmt.Errorf("output: %s, error: %w", out, err)
-}
-
-// ImageExists checks to see if the image exists on the system
-func (runtime *ContainerdRuntime) ImageExists(image string) bool {
-	err := runtime.exec.Command("crictl", "-r", runtime.criSocket, "inspecti", image).Run()
-	return err == nil
-}
-
-// ImageExists checks to see if the image exists on the system
-func (runtime *DockerRuntime) ImageExists(image string) bool {
-	err := runtime.exec.Command("docker", "inspect", image).Run()
-	return err == nil
 }
 
 // detectCRISocketImpl is separated out only for test purposes, DON'T call it directly, use DetectCRISocket instead
