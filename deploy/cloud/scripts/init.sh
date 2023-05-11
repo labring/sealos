@@ -6,11 +6,7 @@ tlsCrtPlaceholder="<tls-crt-placeholder>"
 tlsKeyPlaceholder="<tls-key-placeholder>"
 
 function read_env {
-  while read line; do
-      key=$(echo "$line" | cut -d'=' -f1)
-      val=$(echo "$line" | cut -d'=' -f2)
-      export "$key"="$val"
-  done < "$1"
+  source $1
 }
 
 function mock_tls {
@@ -57,8 +53,7 @@ function sealos_run_frontend {
 
 function install {
   # read env
-  read_env etc/sealos/cloud.env
-  # mock tls
+  read_env etc/sealos/cloud.env  # mock tls
   mock_tls $cloudDomain
   # kubectl apply namespace and secret
   kubectl apply -f manifests
