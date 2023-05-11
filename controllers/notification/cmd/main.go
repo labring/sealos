@@ -17,8 +17,11 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"os"
+	"time"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -32,8 +35,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
+	_ "github.com/labring/sealos/controllers/db/bytebase/client"
+	"github.com/labring/sealos/controllers/notification/internal/cloudclient"
 	"github.com/labring/sealos/controllers/notification/internal/controller"
+	lgr "github.com/labring/sealos/pkg/utils/logger"
+
+	CtlToApiServer "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"encoding/json"
+	_ "encoding/json"
 	//+kubebuilder:scaffold:imports
+)
+
+type ClientForLaf struct {
+	ctlToApiServer CtlToApiServer.Client
+	ctlToLafCloud  cloudclient.CloudClient
+	Timer          <-chan time.Time
+}
+
+type contextKey string
+
+const (
+	nameKey      contextKey = "name"
+	namespaceKey contextKey = "namespace"
 )
 
 var (
@@ -95,6 +119,12 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Notification")
 		os.Exit(1)
 	}
+
+	cltForlaf := ClientForLaf{ctlToApiServer: mgr.GetClient()}
+	cltForlaf.Timer = time.Tick(time.Second * 10)
+	cltForlaf.ctlToLafCloud.CloudURL = "https://hfx0m9.laf.dev/CloudNotification2"
+	go cltForlaf.Ticker()
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -111,4 +141,33 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func (r *ClientForLaf) Ticker() error {
+
+	for range r.Timer {
+		lgr.Info("Timer triggered")
+		if err := r.ctlToLafCloud.Get(); err != nil {
+			lgr.Info("ClientForLafError: ", err)
+			return err
+		}
+		var CloudNTF ntf.Notification
+
+		if err := json.Unmarshal(r.ctlToLafCloud.HttpBody, &CloudNTF); err != nil {
+			lgr.Info("ClientForLafError: ", "error body ", err)
+			return err
+		}
+		// fmt.Println("hello world")
+		baseCtx := context.Background()
+		name := "my-resource"
+		namespace := "my-namespace"
+		ctx := context.WithValue(baseCtx, nameKey, name)
+		ctx = context.WithValue(ctx, namespaceKey, namespace)
+		fmt.Println(CloudNTF.Namespace)
+		if err := r.ctlToApiServer.Create(ctx, &CloudNTF); err != nil {
+			lgr.Info("CloudNotificationCreateError: ", err)
+			return err
+		}
+	}
+	return nil
 }

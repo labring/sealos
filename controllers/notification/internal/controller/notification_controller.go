@@ -48,27 +48,16 @@ type NotificationReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *NotificationReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	lgr := log.FromContext(ctx)
+
 	lgr.Info("enter reconcil", "name: ", req.Name, "namespace: ", req.Namespace)
 
-	var ntf_instance *ntf.Notification
-	ntf_instance = &ntf.Notification{}
+	ntf_instance := &ntf.Notification{}
 
 	if err := r.Get(ctx, req.NamespacedName, ntf_instance); err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if ntf_instance.Spec.Message == "hello world" {
-		return ctrl.Result{}, nil
-	}
-
-	ntf_instance.Spec.Message = "hello world"
-
-	if err := r.Status().Update(ctx, ntf_instance); err != nil {
-		lgr.Error(err, "update notification error ", "name: ", req.Name, "namespace: ", req.Namespace)
-		return ctrl.Result{}, err
-	}
-
-	lgr.Info("update notification", "name: ", req.Name, "namespace: ", req.Namespace)
+	lgr.Info("get notification in ntf_controller", "name: ", req.Name, "namespace: ", req.Namespace)
 	return ctrl.Result{}, nil
 }
 
