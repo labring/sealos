@@ -42,7 +42,7 @@ metadata:
         expires 30d;
         add_header Cache-Control "public";
       }
-  name: applaunchpad-manager
+  name: sealos-applaunchpad
   namespace: applaunchpad-frontend
 spec:
   rules:
@@ -53,7 +53,7 @@ spec:
             path: /
             backend:
               service:
-                name: applaunchpad-manager-frontend
+                name: applaunchpad-frontend
                 port:
                   number: 3000
   tls:
