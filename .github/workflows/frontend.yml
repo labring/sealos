@@ -20,31 +20,40 @@ on:
         required: false
         type: string
   push:
-    branches: [ "main" ]
+    branches: ['main']
     paths:
-      - "frontend/providers/**"
-      - ".github/workflows/frontend.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'frontend/desktop/**'
+      - 'frontend/providers/**'
+      - '.github/workflows/frontend.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
   pull_request:
-    branches: [ "*" ]
+    branches: ['*']
     paths:
-      - "frontend/providers/**"
-      - ".github/workflows/frontend.yml"
-      - "!**/*.md"
-      - "!**/*.yaml"
+      - 'frontend/desktop/**'
+      - 'frontend/providers/**'
+      - '.github/workflows/frontend.yml'
+      - '!**/*.md'
+      - '!**/*.yaml'
 
 env:
   # Common versions
-  GO_VERSION: "1.20"
-  DEFAULT_OWNER: "labring"
+  GO_VERSION: '1.20'
+  DEFAULT_OWNER: 'labring'
 
 jobs:
   image-build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ providers/applaunchpad, providers/bytebase, providers/imagehub, providers/terminal,desktop ]
+        module:
+          [
+            providers/applaunchpad,
+            providers/bytebase,
+            providers/imagehub,
+            providers/terminal,
+            desktop,
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -62,7 +71,7 @@ jobs:
         id: module_name
         run: |
           MODULE_NAME=$(basename ${{ matrix.module }})
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV  
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
 
       - name: Docker meta
         id: meta
@@ -108,7 +117,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        module: [ providers/applaunchpad, providers/bytebase, providers/imagehub, providers/terminal,desktop ]
+        module:
+          [
+            providers/applaunchpad,
+            providers/bytebase,
+            providers/imagehub,
+            providers/terminal,
+            desktop,
+          ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -118,7 +134,7 @@ jobs:
         id: module_name
         run: |
           MODULE_NAME=$(basename ${{ matrix.module }})
-          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV  
+          echo "MODULE_NAME=${MODULE_NAME}" >> $GITHUB_ENV
 
       - name: Expose git commit data
         uses: rlespinasse/git-commit-data-action@v1
@@ -174,4 +190,4 @@ jobs:
           repository: labring-actions/cluster-image
           body: |
             /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud-${{ env.MODULE_NAME }}-frontend:${{ steps.prepare.outputs.tag_name }}
-          token: "${{ secrets.GH_PAT }}"
+          token: '${{ secrets.GH_PAT }}'
