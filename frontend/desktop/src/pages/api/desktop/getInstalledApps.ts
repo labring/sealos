@@ -1,16 +1,16 @@
 // import MockInstalAPPs from 'mock/installedApps';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { authSession } from 'services/backend/auth';
+import { authSession } from '@/services/backend/auth';
 import { GetUserDefaultNameSpace, K8sApi, ListCRD } from '../../../services/backend/kubernetes';
-import { JsonResp } from '../response';
+import { jsonRes } from '@/services/backend/response';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const kubeconfig = await authSession(req.headers);
-    const kc = K8sApi(kubeconfig);
+    const kc = await authSession(req.headers);
+
     const kube_user = kc.getCurrentUser();
     if (kube_user === null) {
-      return res.status(400);
+      return jsonRes(res, { code: 403, message: 'user is null' });
     }
 
     const defaultMeta = {
@@ -41,12 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     let apps = [...defaultArr, ...userArr];
 
-    // if (process.env.NODE_ENV === 'development') {
-    //   apps = apps.concat(MockInstalAPPs)
-    // }
-    JsonResp(apps, res);
+    jsonRes(res, { data: apps });
   } catch (err) {
     console.log(err);
-    JsonResp([], res);
+    jsonRes(res, { code: 500, data: err });
   }
 }

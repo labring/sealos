@@ -1,35 +1,41 @@
+/* eslint-disable jsx-a11y/alt-text */
 /* eslint-disable @next/next/no-img-element */
-import React, { useRef, useState } from 'react';
-import Icon from 'components/icons';
-import styles from './index.module.scss';
-import tabStyles from './tab.module.scss';
+import useAppStore from '@/stores/app';
+import useDesktopGlobalConfig from '@/stores/desktop';
+import { Box, Flex } from '@chakra-ui/react';
 import clsx from 'clsx';
-import useAppStore, { TApp } from 'stores/app';
+import React, { useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
-import HelpDropDown from './help_dropdown';
-import HelpDocs from './help_docs';
+import styles from './index.module.scss';
 
 export default function AppWindow(props: {
   style?: React.CSSProperties;
-  app: TApp;
+  pid: number;
   children: any;
-  desktopHeight: number;
-  desktopWidth: number;
 }) {
-  const { app: wnapp, desktopHeight, desktopWidth } = props;
-  const { closeApp, updateOpenedAppInfo, switchApp, currentApp, openedApps } = useAppStore(
-    (state) => state
-  );
+  const { pid } = props;
+  const desktopHeight = useDesktopGlobalConfig((state) => state.desktopHeight);
+  const {
+    closeAppById,
+    updateOpenedAppInfo,
+    setToHighestLayerById,
+    currentApp,
+    currentAppPid,
+    findAppInfoById,
+    maxZIndex
+  } = useAppStore();
+  const wnapp = findAppInfoById(pid);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragDom = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
+  if (!wnapp) return null;
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     const { x, y } = position;
     const appHeaderHeight = dragDom.current?.querySelector('.windowHeader')?.clientHeight || 30;
     const appHeaderWidth = dragDom.current?.querySelector('.windowHeader')?.clientWidth || 3000;
 
-    if (currentApp?.size === 'maxmin') {
+    if (currentApp()?.size === 'maxmin') {
       let upperBoundary = -desktopHeight * 0.1;
       let lowerBoundary = desktopHeight * 0.9 - appHeaderHeight;
       setPosition({
@@ -64,125 +70,113 @@ export default function AppWindow(props: {
         setDragging(false);
       }}
       handle=".windowHeader"
-      nodeRef={dragDom}
       position={position}
     >
       <div
         ref={dragDom}
-        className={clsx(tabStyles.floatTab, 'lightWindow', dragging ? tabStyles.notrans : '')}
-        data-size={wnapp.size}
-        data-hide={!wnapp.isShow}
-        id={wnapp.icon + 'App'}
+        className={clsx(styles.windowContainer, dragging ? styles.notrans : '')}
+        data-size={wnapp?.size}
+        data-hide={!wnapp?.isShow}
+        id={wnapp?.icon + 'App'}
         style={{
-          zIndex: wnapp.zIndex
+          zIndex: wnapp?.zIndex
         }}
       >
-        <div
+        {/* app window header */}
+        <Flex
+          cursor={'pointer'}
+          h="28px"
+          background={'#F7F8FA'}
           className={'windowHeader'}
+          borderRadius={'6px 6px 0 0'}
           onDoubleClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
             updateOpenedAppInfo({
               ...wnapp,
-              size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin',
-              cacheSize: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
+              size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
+              cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
             });
             setPosition({ x: 0, y: 0 });
           }}
         >
-          <div
-            className={styles.toolbar}
-            onClick={(e) => {
-              switchApp({ ...wnapp, mask: false }, 'clickMask');
-            }}
-            style={{
-              background: '#fff'
-            }}
-          >
-            <div className={clsx(styles.topInfo, 'flex flex-grow items-center ml-4')}>
-              <img src={wnapp.icon} alt={wnapp.name} width={14} />
-              <div className={clsx('ml-2')} style={{ color: wnapp.menuData?.nameColor }}>
-                {wnapp.name}
-              </div>
-              {wnapp.menuData?.helpDropDown && <HelpDropDown />}
-              {/* @ts-ignore    */}
-              {!!wnapp.menuData?.helpDocs && (
-                <HelpDocs
-                  url={typeof wnapp.menuData?.helpDocs === 'string' ? wnapp.menuData?.helpDocs : ''}
-                />
-              )}
-            </div>
-
-            <div className={clsx(styles.actbtns, 'flex items-center')}>
-              <div
-                className={styles.uicon}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  updateOpenedAppInfo({
-                    ...wnapp,
-                    size: 'minimize'
-                  });
-                }}
-              >
-                <Icon click={props.app} payload="mnmz" src="minimize" width={12} />
-              </div>
-
-              <div
-                className={clsx(styles.snapbox, 'h-full')}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  updateOpenedAppInfo({
-                    ...wnapp,
-                    size: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin',
-                    cacheSize: wnapp.size === 'maxmin' ? 'maximize' : 'maxmin'
-                  });
-                  setPosition({ x: 0, y: 0 });
-                }}
-              >
-                <div className={styles.uicon}>
-                  <Icon
-                    click={props.app}
-                    width={12}
-                    payload="mxmz"
-                    src={wnapp.size === 'maximize' ? 'maximize' : 'maxmin'}
-                  />
-                </div>
-              </div>
-              <div
-                className={clsx(styles.uicon)}
-                data-type={'close'}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  updateOpenedAppInfo({
-                    ...wnapp,
-                    isShow: false
-                  });
-                  closeApp(wnapp.name);
-                }}
-              >
-                <Icon className={styles.closeBtn} src="close" width={14} />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className={clsx(tabStyles.windowScreen, 'flex flex-col')}>
-          <div className="restWindow flex-grow flex flex-col relative">
-            <div className="flex-grow overflow-hidden">
-              {wnapp.mask && (
-                <div
-                  className={styles.appMask}
-                  onClick={() => {
-                    switchApp({ ...wnapp, mask: false }, 'clickMask');
-                  }}
-                ></div>
-              )}
-              {props.children}
-            </div>
-          </div>
-        </div>
+          <Flex ml="16px" alignItems={'center'}>
+            <img src={wnapp?.icon} alt={wnapp?.name} width={14} />
+            <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
+              {wnapp?.name}
+            </Box>
+          </Flex>
+          <Flex ml={'auto'}>
+            <Box
+              className={styles.uicon}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateOpenedAppInfo({
+                  ...wnapp,
+                  size: 'minimize',
+                  cacheSize: wnapp.size
+                });
+              }}
+            >
+              <img src="/icons/minimize.png" width={12} />
+            </Box>
+            <Box
+              className={styles.uicon}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateOpenedAppInfo({
+                  ...wnapp,
+                  size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
+                  cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
+                });
+                setPosition({ x: 0, y: 0 });
+              }}
+            >
+              <img
+                src={wnapp.size === 'maximize' ? '/icons/maximize.png' : '/icons/maxmin.png'}
+                width={12}
+              />
+            </Box>
+            <Box
+              className={clsx(styles.uicon)}
+              data-type={'close'}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                updateOpenedAppInfo({
+                  ...wnapp,
+                  isShow: false
+                });
+                closeAppById(currentAppPid);
+              }}
+            >
+              <img src={'/icons/close.png'} width={12} />
+            </Box>
+          </Flex>
+        </Flex>
+        {/* app switch mask */}
+        <div
+          className={styles.appMask}
+          onClick={() => {
+            setToHighestLayerById(pid);
+          }}
+          style={{ pointerEvents: wnapp.zIndex !== maxZIndex ? 'unset' : 'none' }}
+        ></div>
+        {/* app window content */}
+        <Flex flexGrow={1} overflow={'hidden'} borderRadius={'0 0 6px 6px'} position={'relative'}>
+          {dragging && (
+            <Box
+              position={'absolute'}
+              w="100%"
+              h="100%"
+              background={'transparent'}
+              zIndex={8888}
+            ></Box>
+          )}
+          {props.children}
+        </Flex>
       </div>
     </Draggable>
   );

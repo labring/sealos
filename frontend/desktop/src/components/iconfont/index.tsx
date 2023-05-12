@@ -3,10 +3,11 @@ type TIconfont = {
   color?: string;
   width?: number;
   height?: number;
+  isImage?: boolean;
 };
 
 function Iconfont(props: TIconfont) {
-  const { iconName, color, width, height } = props;
+  const { iconName, color, width, height, isImage } = props;
   const style = {
     fill: color,
     width,

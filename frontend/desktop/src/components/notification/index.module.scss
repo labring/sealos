@@ -4,7 +4,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  z-index: 9998;
+  z-index: 998;
 }
 
 .container {
@@ -14,13 +14,12 @@
   backdrop-filter: blur(150px);
   border-radius: 16px;
   padding: 24px;
-  z-index: 9999;
+  z-index: 999;
 
   display: none;
   position: absolute;
-  bottom: 80px;
+  top: 48px;
   right: 0;
-  // transition: all 3s cubic-bezier(0.77, 0, 0.18, 1);
   &[data-show='true'] {
     display: block;
   }
@@ -51,8 +50,7 @@
   }
   .footer {
     width: 100%;
-    margin-top: 8px;
-    padding-top: 4px;
+
     border-top: 1px solid #eef1f4;
   }
 }
@@ -77,6 +75,11 @@
   height: 32px;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
+  position: absolute;
+  left: 0;
+  &[data-active='index'] {
+    display: none;
+  }
 }
 
 .scrollWrap {
