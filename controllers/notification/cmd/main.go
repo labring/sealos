@@ -36,10 +36,12 @@ import (
 
 	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 
-	"github.com/labring/sealos/controllers/notification/internal/cloudclient"
-	"github.com/labring/sealos/controllers/notification/internal/controller"
+	controller "github.com/labring/sealos/controllers/notification/internal/controller/notification"
 
 	_ "encoding/json"
+
+	cloudclientv1 "github.com/labring/sealos/controllers/notification/api/cloudclient/v1"
+	cloudclientcontroller "github.com/labring/sealos/controllers/notification/internal/controller/cloudclient"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -57,6 +59,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(ntf.AddToScheme(scheme))
+	utilruntime.Must(cloudclientv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -109,11 +112,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	//init CloudClient
-	LafCloudClient := cloudclient.CloudClient{}
-	LafCloudClient.Init(mgr.GetClient())
-	go LafCloudClient.Ticker()
-
+	if err = (&cloudclientcontroller.CloudClientReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CloudClient")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

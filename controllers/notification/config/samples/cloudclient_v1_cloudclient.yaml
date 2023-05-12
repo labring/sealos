@@ -1,0 +1,12 @@
+apiVersion: cloudclient.sealos.io/v1
+kind: CloudClient
+metadata:
+  labels:
+    app.kubernetes.io/name: cloudclient
+    app.kubernetes.io/instance: cloudclient-sample
+    app.kubernetes.io/part-of: notification
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: notification
+  name: cloudclient-sample
+spec:
+  # TODO(user): Add fields here

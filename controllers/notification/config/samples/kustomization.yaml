@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- cloudclient_v1_cloudclient.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples
