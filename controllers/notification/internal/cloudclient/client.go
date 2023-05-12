@@ -16,91 +16,42 @@ limitations under the License.
 package cloudclient
 
 import (
-	"context"
-	_ "context"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
-	"encoding/json"
-
-	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	lgr "github.com/labring/sealos/pkg/utils/logger"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-type contextKey string
-
-const (
-	nameKey      contextKey = "name"
-	namespaceKey contextKey = "namespace"
 )
 
 type CloudClient struct {
 	CloudURL string
 	HttpBody []byte
-	ctx      context.Context
-	Timer    <-chan time.Time
-	// apply CR to K8s
-	ctlToApiServer client.Client
 }
 
 func (cc *CloudClient) Get() error {
 	resp, err := http.Get(cc.CloudURL)
 
 	if err != nil {
-		fmt.Println("http.Get() error")
+		lgr.Error("http.Get() error", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("StatusCode error")
+		lgr.Error("StatusCode error", err)
 		return errors.New("error: StatusCode is Not OK")
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("ReadAll")
+		lgr.Error(err)
 		return nil
 	}
 	cc.HttpBody = body
 	return nil
 }
 
-func (cc *CloudClient) Init(clt client.Client) {
-	name := "CloudClient"
-	namespace := "default"
+func (cc *CloudClient) Init() {
 	cc.CloudURL = "https://hfx0m9.laf.dev/CloudNotification"
-	cc.Timer = time.Tick(time.Second * 10)
-	cc.ctx = context.Background()
-	cc.ctx = context.WithValue(cc.ctx, nameKey, name)
-	cc.ctx = context.WithValue(cc.ctx, namespaceKey, namespace)
-	cc.ctlToApiServer = clt
-}
-
-func (cc *CloudClient) Ticker() error {
-
-	for range cc.Timer {
-		lgr.Info("Timer triggered")
-		if err := cc.Get(); err != nil {
-			lgr.Info("ClientForLafError: ", err)
-			continue
-		}
-		var CloudNTF ntf.Notification
-
-		if err := json.Unmarshal(cc.HttpBody, &CloudNTF); err != nil {
-			lgr.Info("ClientForLafError: ", "error body ", err)
-			continue
-		}
-
-		if err := cc.ctlToApiServer.Create(cc.ctx, &CloudNTF); err != nil {
-			lgr.Info("CloudNotificationCreateError: ", err)
-			continue
-		}
-	}
-	return nil
 }
