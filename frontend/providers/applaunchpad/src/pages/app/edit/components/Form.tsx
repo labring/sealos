@@ -672,7 +672,7 @@ const Form = ({
                     <Input
                       w={'320px'}
                       bg={getValues('runCMD') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder='如：["/bin/bash", "-c"]'
+                      placeholder="空格分开,如: /bin/bash -c"
                       {...register('runCMD')}
                     />
                   </FormControl>
@@ -681,7 +681,7 @@ const Form = ({
                     <Input
                       w={'320px'}
                       bg={getValues('cmdParam') ? 'myWhite.500' : 'myWhite.400'}
-                      placeholder='如：["HOSTNAME", "PORT"] '
+                      placeholder="空格分开,如: HOSTNAME PORT"
                       {...register('cmdParam')}
                     />
                   </FormControl>
