@@ -43,6 +43,7 @@ const Select = defineStyleConfig({
 });
 
 export const theme = extendTheme({
+  initialColorMode: 'light', // 'dark | 'light'
   components: {
     Button,
     Input,

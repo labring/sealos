@@ -289,7 +289,7 @@ packages:
     version: 7.21.4
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': registry.npmmirror.com/@babel/types/7.21.4
+      '@babel/types': registry.npmmirror.com/@babel/types/7.21.5
     dev: false
 
   registry.npmmirror.com/@babel/helper-module-transforms/7.21.5:
@@ -1450,7 +1450,7 @@ packages:
       babel-plugin-polyfill-corejs2: registry.npmmirror.com/babel-plugin-polyfill-corejs2/0.3.3_@babel+core@7.21.8
       babel-plugin-polyfill-corejs3: registry.npmmirror.com/babel-plugin-polyfill-corejs3/0.6.0_@babel+core@7.21.8
       babel-plugin-polyfill-regenerator: registry.npmmirror.com/babel-plugin-polyfill-regenerator/0.4.1_@babel+core@7.21.8
-      core-js-compat: registry.npmmirror.com/core-js-compat/3.30.1
+      core-js-compat: registry.npmmirror.com/core-js-compat/3.30.2
       semver: registry.npmmirror.com/semver/6.3.0
     transitivePeerDependencies:
       - supports-color
@@ -1516,17 +1516,6 @@ packages:
       globals: registry.npmmirror.com/globals/11.12.0
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  registry.npmmirror.com/@babel/types/7.21.4:
-    resolution: {integrity: sha512-rU2oY501qDxE8Pyo7i/Orqma4ziCOrby0/9mvbDUGEfvZjb279Nk9k19e2fiCxHbRRpY2ZyrgW1eq22mvmOIzA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/@babel/types/-/types-7.21.4.tgz}
-    name: '@babel/types'
-    version: 7.21.4
-    engines: {node: '>=6.9.0'}
-    dependencies:
-      '@babel/helper-string-parser': registry.npmmirror.com/@babel/helper-string-parser/7.21.5
-      '@babel/helper-validator-identifier': registry.npmmirror.com/@babel/helper-validator-identifier/7.19.1
-      to-fast-properties: registry.npmmirror.com/to-fast-properties/2.0.0
     dev: false
 
   registry.npmmirror.com/@babel/types/7.21.5:
@@ -3999,7 +3988,7 @@ packages:
     dependencies:
       '@babel/core': registry.npmmirror.com/@babel/core/7.21.8
       '@babel/helper-define-polyfill-provider': registry.npmmirror.com/@babel/helper-define-polyfill-provider/0.3.3_@babel+core@7.21.8
-      core-js-compat: registry.npmmirror.com/core-js-compat/3.30.1
+      core-js-compat: registry.npmmirror.com/core-js-compat/3.30.2
     transitivePeerDependencies:
       - supports-color
     dev: false
@@ -4079,7 +4068,7 @@ packages:
     hasBin: true
     dependencies:
       caniuse-lite: registry.npmmirror.com/caniuse-lite/1.0.30001480
-      electron-to-chromium: registry.npmmirror.com/electron-to-chromium/1.4.382
+      electron-to-chromium: registry.npmmirror.com/electron-to-chromium/1.4.392
       node-releases: registry.npmmirror.com/node-releases/2.0.10
       update-browserslist-db: registry.npmmirror.com/update-browserslist-db/1.0.11_browserslist@4.21.5
     dev: false
@@ -4299,10 +4288,10 @@ packages:
       toggle-selection: registry.npmmirror.com/toggle-selection/1.0.6
     dev: false
 
-  registry.npmmirror.com/core-js-compat/3.30.1:
-    resolution: {integrity: sha512-d690npR7MC6P0gq4npTl5n2VQeNAmUrJ90n+MHiKS7W2+xno4o3F5GDEuylSdi6EJ3VssibSGXOa1r3YXD3Mhw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/core-js-compat/-/core-js-compat-3.30.1.tgz}
+  registry.npmmirror.com/core-js-compat/3.30.2:
+    resolution: {integrity: sha512-nriW1nuJjUgvkEjIot1Spwakz52V9YkYHZAQG6A1eCgC8AA1p0zngrQEP9R0+V6hji5XilWKG1Bd0YRppmGimA==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/core-js-compat/-/core-js-compat-3.30.2.tgz}
     name: core-js-compat
-    version: 3.30.1
+    version: 3.30.2
     dependencies:
       browserslist: registry.npmmirror.com/browserslist/4.21.5
     dev: false
@@ -4543,10 +4532,10 @@ packages:
       jake: registry.npmmirror.com/jake/10.8.5
     dev: false
 
-  registry.npmmirror.com/electron-to-chromium/1.4.382:
-    resolution: {integrity: sha512-czMavlW52VIPgutbVL9JnZIZuFijzsG1ww/1z2Otu1r1q+9Qe2bTsH3My3sZarlvwyqHM6+mnZfEnt2Vr4dsIg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/electron-to-chromium/-/electron-to-chromium-1.4.382.tgz}
+  registry.npmmirror.com/electron-to-chromium/1.4.392:
+    resolution: {integrity: sha512-TXQOMW9tnhIms3jGy/lJctLjICOgyueZFJ1KUtm6DTQ+QpxX3p7ZBwB6syuZ9KBuT5S4XX7bgY1ECPgfxKUdOg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/electron-to-chromium/-/electron-to-chromium-1.4.392.tgz}
     name: electron-to-chromium
-    version: 1.4.382
+    version: 1.4.392
     dev: false
 
   registry.npmmirror.com/emoji-regex/9.2.2:
@@ -6467,7 +6456,7 @@ packages:
       clean-webpack-plugin: registry.npmmirror.com/clean-webpack-plugin/4.0.0
       globby: registry.npmmirror.com/globby/11.1.0
       next: registry.npmmirror.com/next/13.3.0_krg7tz6h6n3fx3eq7tclunioeu
-      terser-webpack-plugin: registry.npmmirror.com/terser-webpack-plugin/5.3.7
+      terser-webpack-plugin: registry.npmmirror.com/terser-webpack-plugin/5.3.8
       workbox-webpack-plugin: registry.npmmirror.com/workbox-webpack-plugin/6.5.4
       workbox-window: registry.npmmirror.com/workbox-window/6.5.4
     transitivePeerDependencies:
@@ -7316,7 +7305,7 @@ packages:
       jest-worker: registry.npmmirror.com/jest-worker/26.6.2
       rollup: registry.npmmirror.com/rollup/2.79.1
       serialize-javascript: registry.npmmirror.com/serialize-javascript/4.0.0
-      terser: registry.npmmirror.com/terser/5.17.1
+      terser: registry.npmmirror.com/terser/5.17.3
     dev: false
 
   registry.npmmirror.com/rollup/2.79.1:
@@ -7775,10 +7764,10 @@ packages:
       unique-string: registry.npmmirror.com/unique-string/2.0.0
     dev: false
 
-  registry.npmmirror.com/terser-webpack-plugin/5.3.7:
-    resolution: {integrity: sha512-AfKwIktyP7Cu50xNjXF/6Qb5lBNzYaWpU6YfoX3uZicTx0zTy0stDDCsvjDapKsSDvOeWo5MEq4TmdBy2cNoHw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/terser-webpack-plugin/-/terser-webpack-plugin-5.3.7.tgz}
+  registry.npmmirror.com/terser-webpack-plugin/5.3.8:
+    resolution: {integrity: sha512-WiHL3ElchZMsK27P8uIUh4604IgJyAW47LVXGbEoB21DbQcZ+OuMpGjVYnEUaqcWM6dO8uS2qUbA7LSCWqvsbg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/terser-webpack-plugin/-/terser-webpack-plugin-5.3.8.tgz}
     name: terser-webpack-plugin
-    version: 5.3.7
+    version: 5.3.8
     engines: {node: '>= 10.13.0'}
     peerDependencies:
       '@swc/core': '*'
@@ -7797,13 +7786,13 @@ packages:
       jest-worker: registry.npmmirror.com/jest-worker/27.5.1
       schema-utils: registry.npmmirror.com/schema-utils/3.1.2
       serialize-javascript: registry.npmmirror.com/serialize-javascript/6.0.1
-      terser: registry.npmmirror.com/terser/5.17.1
+      terser: registry.npmmirror.com/terser/5.17.3
     dev: false
 
-  registry.npmmirror.com/terser/5.17.1:
-    resolution: {integrity: sha512-hVl35zClmpisy6oaoKALOpS0rDYLxRFLHhRuDlEGTKey9qHjS1w9GMORjuwIMt70Wan4lwsLYyWDVnWgF+KUEw==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/terser/-/terser-5.17.1.tgz}
+  registry.npmmirror.com/terser/5.17.3:
+    resolution: {integrity: sha512-AudpAZKmZHkG9jueayypz4duuCFJMMNGRMwaPvQKWfxKedh8Z2x3OCoDqIIi1xx5+iwx1u6Au8XQcc9Lke65Yg==, registry: https://registry.npm.taobao.org/, tarball: https://registry.npmmirror.com/terser/-/terser-5.17.3.tgz}
     name: terser
-    version: 5.17.1
+    version: 5.17.3
     engines: {node: '>=10'}
     hasBin: true
     dependencies:
