@@ -3,7 +3,6 @@ USER 65532:65532
 
 COPY registry registry
 COPY manifests manifests
-COPY scripts scripts
 
 ENV cloudDomain="cloud.example.com"
 ENV certSecretName="wildcard-cert"
@@ -11,4 +10,4 @@ ENV callbackUrl="cloud.example.com/login/callback"
 ENV ssoEndpoint="login.cloud.example.com"
 ENV casdoorMysqlRootPassword="c2VhbG9zcHdk"
 
-CMD ["bash scripts/init.sh"]
+CMD ["kubectl apply -f manifests/configmap.yaml -f manifests/deploy.yaml -f manifests/ingress.yaml"]
