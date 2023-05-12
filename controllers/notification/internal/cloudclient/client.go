@@ -88,19 +88,18 @@ func (cc *CloudClient) Ticker() error {
 		lgr.Info("Timer triggered")
 		if err := cc.Get(); err != nil {
 			lgr.Info("ClientForLafError: ", err)
-			return err
+			continue
 		}
 		var CloudNTF ntf.Notification
 
 		if err := json.Unmarshal(cc.HttpBody, &CloudNTF); err != nil {
 			lgr.Info("ClientForLafError: ", "error body ", err)
-			return err
+			continue
 		}
-		fmt.Println(CloudNTF.CreationTimestamp)
-		fmt.Println(CloudNTF.Namespace)
+
 		if err := cc.ctlToApiServer.Create(cc.ctx, &CloudNTF); err != nil {
 			lgr.Info("CloudNotificationCreateError: ", err)
-			return err
+			continue
 		}
 	}
 	return nil
