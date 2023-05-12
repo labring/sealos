@@ -1,0 +1,16 @@
+apiVersion: app.sealos.io/v1
+kind: App
+metadata:
+  name: terminal
+  namespace: app-system
+spec:
+  data:
+    desc: sealos CLoud Terminal
+    url: "https://terminal.{{ .cloudDomain }}"
+  icon: "https://terminal.{{ .cloudDomain }}/logo.svg"
+  menuData:
+    helpDocs: https://www.sealos.io/docs/cloud/apps/terminal/
+    helpDropDown: false
+    nameColor: text-black
+  name: Terminal
+  type: iframe
