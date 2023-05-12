@@ -30,17 +30,25 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+<<<<<<< HEAD
 
 	"k8s.io/apimachinery/pkg/types"
+=======
+>>>>>>> 09f61951 (Cloud pull is changed from timer design to controller design)
 )
 
 // CloudClientReconciler reconciles a CloudClient object
 type CloudClientReconciler struct {
 	client.Client
+<<<<<<< HEAD
 	Scheme        *runtime.Scheme
 	CloudClient   cloudclient.CloudClient
 	StartInstance cloudclientv1.CloudClient
 	NS            types.NamespacedName
+=======
+	Scheme      *runtime.Scheme
+	CloudClient cloudclient.CloudClient
+>>>>>>> 09f61951 (Cloud pull is changed from timer design to controller design)
 }
 
 //+kubebuilder:rbac:groups=cloudclient.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -79,6 +87,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+<<<<<<< HEAD
 	r.init()
 
 	if err := r.Create(context.Background(), &r.StartInstance); err != nil {
@@ -96,11 +105,27 @@ func (r *CloudClientReconciler) init() {
 	r.CloudClient.Init()
 	r.StartInstance = cloudclientv1.CloudClient{}
 	r.StartInstance.SetGroupVersionKind(schema.GroupVersionKind{
+=======
+	r.CloudClient.Init()
+	startCCInstance := cloudclientv1.CloudClient{}
+	startCCInstance.SetGroupVersionKind(schema.GroupVersionKind{
+>>>>>>> 09f61951 (Cloud pull is changed from timer design to controller design)
 		Group:   "cloudclient.sealos.io",
 		Version: "v1",
 		Kind:    "CloudClient",
 	})
+<<<<<<< HEAD
 	r.StartInstance.SetNamespace("default")
 	r.StartInstance.SetName("startinstance")
 	r.NS = types.NamespacedName{Namespace: "default"}
+=======
+	startCCInstance.SetNamespace("default")
+	startCCInstance.SetName("startinstance")
+	if err := r.Client.Create(context.Background(), &startCCInstance); err != nil {
+		logger.Error("Creation: ", err)
+	}
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&cloudclientv1.CloudClient{}).
+		Complete(r)
+>>>>>>> 09f61951 (Cloud pull is changed from timer design to controller design)
 }
