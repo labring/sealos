@@ -109,13 +109,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	//cltForlaf := ClientForLaf{ctlToApiServer: mgr.GetClient()}
-	// cltForlaf.Timer = time.Tick(time.Second * 10)
-	// cltForlaf.ctlToLafCloud.CloudURL = "https://hfx0m9.laf.dev/CloudNotification"
-
+	//init CloudClient
 	LafCloudClient := cloudclient.CloudClient{}
 	LafCloudClient.Init(mgr.GetClient())
-
 	go LafCloudClient.Ticker()
 
 	//+kubebuilder:scaffold:builder
