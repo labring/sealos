@@ -62,7 +62,6 @@ const EditApp = ({ appName }: { appName?: string }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const formOnchangeDebounce = useCallback(
     debounce((data: AppEditType) => {
-      console.log('update data');
       try {
         setYamlList([
           {
@@ -119,7 +118,7 @@ const EditApp = ({ appName }: { appName?: string }) => {
   );
   // watch form change, compute new yaml
   formHook.watch((data) => {
-    !!data && formOnchangeDebounce(data as AppEditType);
+    data && formOnchangeDebounce(data as AppEditType);
     setForceUpdate(!forceUpdate);
   });
 
