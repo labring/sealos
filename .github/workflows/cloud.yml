@@ -81,7 +81,7 @@ jobs:
       - name: Build sealos cloud cluster image
         working-directory: deploy/cloud
         run: |
-          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
+          sudo sealos build --isolation=chroot  -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
           sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
 
       # todo: build multi-arch images
