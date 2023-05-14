@@ -84,7 +84,6 @@ func flagsInBuildCommandToBeHidden() []string {
 		"identity-label",
 		"iidfile",
 		"ipc",
-		"isolation",
 		"logfile",
 		"logsplit",
 		"memory",
