@@ -70,7 +70,7 @@ rules:
 ---
 kind: ClusterRoleBinding
 metadata:
-  name: imagehub-controller-manager-clusterrolebinding
+  name: user-controller-manager-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
