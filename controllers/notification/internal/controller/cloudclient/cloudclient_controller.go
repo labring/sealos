@@ -30,13 +30,17 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
+
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // CloudClientReconciler reconciles a CloudClient object
 type CloudClientReconciler struct {
 	client.Client
-	Scheme      *runtime.Scheme
-	CloudClient cloudclient.CloudClient
+	Scheme        *runtime.Scheme
+	CloudClient   cloudclient.CloudClient
+	StartInstance cloudclientv1.CloudClient
+	NS            types.NamespacedName
 }
 
 //+kubebuilder:rbac:groups=cloudclient.sealos.io,resources=cloudclients,verbs=get;list;watch;create;update;patch;delete
@@ -75,19 +79,28 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 // SetupWithManager sets up the controller with the Manager.
 func (r *CloudClientReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
+	r.init()
+
+	if err := r.Create(context.Background(), &r.StartInstance); err != nil {
+		if client.IgnoreAlreadyExists(err) == nil {
+			logger.Info("The CloudClient startInstance: ", err)
+		}
+	}
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&cloudclientv1.CloudClient{}).
+		Complete(r)
+}
+
+func (r *CloudClientReconciler) init() {
 	r.CloudClient.Init()
-	startCCInstance := cloudclientv1.CloudClient{}
-	startCCInstance.SetGroupVersionKind(schema.GroupVersionKind{
+	r.StartInstance = cloudclientv1.CloudClient{}
+	r.StartInstance.SetGroupVersionKind(schema.GroupVersionKind{
 		Group:   "cloudclient.sealos.io",
 		Version: "v1",
 		Kind:    "CloudClient",
 	})
-	startCCInstance.SetNamespace("default")
-	startCCInstance.SetName("startinstance")
-	if err := r.Client.Create(context.Background(), &startCCInstance); err != nil {
-		logger.Error("Creation: ", err)
-	}
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&cloudclientv1.CloudClient{}).
-		Complete(r)
+	r.StartInstance.SetNamespace("default")
+	r.StartInstance.SetName("startinstance")
+	r.NS = types.NamespacedName{Namespace: "default"}
 }
