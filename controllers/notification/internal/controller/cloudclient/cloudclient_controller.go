@@ -83,7 +83,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 			continue
 		}
 		if err := r.Client.Create(ctx, &CloudNTF); err != nil {
-			lgr.Info("CloudNotificationCreate: ", "Error: ", err)
+			lgr.Info("Can‘t create the Notification CR for Cloud ", "Error: ", err)
 			continue
 		}
 	}

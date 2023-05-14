@@ -32,7 +32,7 @@ func (cc *CloudClient) Get() error {
 	resp, err := http.Get(cc.CloudURL)
 
 	if err != nil {
-		lgr.Error("http.Get() error: ", err)
+		lgr.Error("Laf cloud connection error: ", err)
 		return err
 	}
 
