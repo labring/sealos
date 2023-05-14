@@ -32,6 +32,10 @@ spec:
         app: applaunchpad-frontend
     spec:
       containers:
+        - env:
+            - name: SEALOS_DOMAIN
+              value: {{ .cloudDomain }}
+            - name: FASTGPT_KEY
         - name: applaunchpad-frontend
           securityContext:
             runAsNonRoot: true
