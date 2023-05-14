@@ -1,0 +1,97 @@
+name: Build Cloud Cluster image
+
+on:
+  workflow_call:
+    inputs:
+      release:
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: 'Push images'
+        required: false
+        type: boolean
+        default: false
+      release_tag:
+        description: 'Release images'
+        default: 'dev'
+        required: false
+        type: string
+  push:
+    branches: [ "main" ]
+    paths:
+      - "deploy/cloud/**"
+      - ".github/workflows/cloud.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+  pull_request:
+    branches: [ "*" ]
+    paths:
+      - "deploy/cloud/**"
+      - ".github/workflows/cloud.yml"
+      - "!**/*.md"
+      - "!**/*.yaml"
+
+env:
+  # Common versions
+  GO_VERSION: "1.20"
+  DEFAULT_OWNER: "labring"
+
+jobs:
+  save-sealos:
+    uses: ./.github/workflows/import-save-sealos.yml
+
+  build-cluster-image:
+    if: ${{ (github.event_name == 'push') || (inputs.push_image == true) || (inputs.release == true) }}
+    needs:
+      - save-sealos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Expose git commit data
+        uses: rlespinasse/git-commit-data-action@v1
+      - name: Prepare
+        id: prepare
+        run: |
+          bash ./scripts/resolve-tag-image.sh "${{ inputs.push_image }}" "${{ inputs.release }}"  "${{ inputs.release_tag }}"     
+          echo repo=ghcr.io/${{ github.repository_owner }}/sealos-cloud >> $GITHUB_OUTPUT
+      - name: Download sealos
+        uses: actions/download-artifact@v3
+        with:
+          name: sealos
+          path: /tmp/
+      - name: Verify sealos
+        run: |
+          sudo chmod a+x /tmp/sealos
+          sudo mv /tmp/sealos /usr/bin/sealos
+          sudo sealos version
+
+      # todo: mutate image tag in images/shim and scripts or change scripts to use changeable tags
+
+      - name: Sealos login to ghcr.io
+        # if push to master, then login to ghcr.io
+        run: |
+          sudo sealos login -u ${{ github.repository_owner }} -p ${{ secrets.GH_PAT }} --debug ghcr.io
+
+      - name: Build sealos cloud cluster image
+        working-directory: deploy/cloud
+        run: |
+          sudo sealos build -t ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }} -f Kubefile
+          sudo sealos push ${{ steps.prepare.outputs.repo }}:${{ steps.prepare.outputs.tag_name }}
+
+      # todo: build multi-arch images
+
+      - name: Sync Images
+        uses: peter-evans/create-or-update-comment@v1
+        if: ${{ github.repository_owner == env.DEFAULT_OWNER }}
+        with:
+          issue-number: 251
+          repository: labring-actions/cluster-image
+          body: |
+            /imagesync ghcr.io/${{ github.repository_owner }}/sealos-cloud:${{ steps.prepare.outputs.tag_name }}
+          token: "${{ secrets.GH_PAT }}"
