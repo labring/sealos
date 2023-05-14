@@ -1,19 +1,7 @@
-FROM ghcr.io/labring/sealos:v4.2.0 as builder
-WORKDIR /
-USER root
-RUN mkdir -p tars && sealos save -o tars/user.tar ghcr.io/labring/sealos-cloud-user-controller:dev && \
-    sealos save -o tars/terminal.tar ghcr.io/labring/sealos-cloud-terminal-controller:dev && \
-    sealos save -o tars/app.tar ghcr.io/labring/sealos-cloud-app-controller:dev && \
-    sealos save -o tars/frontend-desktop.tar  ghcr.io/labring/sealos-cloud-desktop-frontend:dev && \
-    sealos save -o tars/frontend-terminal.tar  ghcr.io/labring/sealos-cloud-terminal-frontend:dev && \
-    sealos save -o tars/frontend-applaunchpad.tar ghcr.io/labring/sealos-cloud-applaunchpad-frontend:dev && \
-    sealos save -o tars/auth.tar ghcr.io/labring/sealos-cloud-auth-service:dev
-
 FROM scratch
-COPY --from=builder /tars .
+COPY tars tars
 COPY etc etc
 COPY scripts scripts
-COPY registry registry
 COPY manifests manifests
 
 ENV cloudDomain="cloud.example.com"
