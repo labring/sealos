@@ -70,7 +70,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	lgr.Info("enter CloudClientReconciler")
 	if err := r.CloudClient.Get(); err != nil {
-		lgr.Info("ClientForLaf: ", "Error: ", err)
+		return ctrl.Result{RequeueAfter: time.Minute * 5}, err
 	}
 	//Get the total json strings
 	jsonStrings := strings.Split(string(r.CloudClient.HttpBody), "\n")
@@ -88,7 +88,7 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 		}
 	}
 
-	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
+	return ctrl.Result{RequeueAfter: time.Minute * 5}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
