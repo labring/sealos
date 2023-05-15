@@ -6,7 +6,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   try {
     jsonRes(res, {
       data: {
-        SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io'
+        SEALOS_DOMAIN: process.env.SEALOS_DOMAIN || 'cloud.sealos.io',
+        INGRESS_SECRET: process.env.INGRESS_SECRET || 'wildcart-secret'
       }
     });
   } catch (err: any) {

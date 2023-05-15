@@ -9,4 +9,5 @@ export interface YamlItemType {
 
 export type ServiceEnvType = {
   SEALOS_DOMAIN: string;
+  INGRESS_SECRET: string;
 };
