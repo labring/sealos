@@ -1,7 +1,7 @@
 import yaml from 'js-yaml';
 import type { AppEditType } from '@/types/app';
 import { strToBase64, str2Num, pathFormat, pathToNameFormat } from '@/utils/tools';
-import { SEALOS_DOMAIN } from '@/store/static';
+import { SEALOS_DOMAIN, INGRESS_SECRET } from '@/store/static';
 import { maxReplicasKey, minReplicasKey } from '@/constants/app';
 import dayjs from 'dayjs';
 
@@ -274,9 +274,7 @@ export const json2Ingress = (data: AppEditType) => {
   const host = data.accessExternal.selfDomain
     ? data.accessExternal.selfDomain
     : `${data.accessExternal.outDomain}.${SEALOS_DOMAIN}`;
-  const secretName = data.accessExternal.selfDomain
-    ? data.appName
-    : `wildcard-${SEALOS_DOMAIN.replace(/\./g, '-')}-cert`;
+  const secretName = data.accessExternal.selfDomain ? data.appName : INGRESS_SECRET;
 
   // different protocol annotations
   const map = {
