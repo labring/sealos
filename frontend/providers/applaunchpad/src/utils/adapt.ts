@@ -158,8 +158,8 @@ export const adaptAppDetail = (configs: DeployKindsType[]): AppDetailType => {
       appDeploy?.metadata?.annotations?.originImageName ||
       appDeploy.spec?.template?.spec?.containers?.[0]?.image ||
       '',
-    runCMD: JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.command),
-    cmdParam: JSON.stringify(appDeploy.spec?.template?.spec?.containers?.[0]?.args),
+    runCMD: appDeploy.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
+    cmdParam: appDeploy.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
     replicas: appDeploy.spec?.replicas || 0,
     cpu: cpuFormatToM(
       appDeploy.spec?.template?.spec?.containers?.[0]?.resources?.limits?.cpu || '0'
@@ -271,12 +271,10 @@ export const adaptYamlToEdit = (yamlList: string[]) => {
 
   const res: Record<string, any> = {
     imageName: deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.image,
-    runCMD: JSON.stringify(
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command
-    ),
-    cmdParam: JSON.stringify(
-      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args
-    ),
+    runCMD:
+      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.command?.join(' ') || '',
+    cmdParam:
+      deployKindsMap?.Deployment?.spec?.template?.spec?.containers?.[0]?.args?.join(' ') || '',
     replicas: deployKindsMap?.Deployment?.spec?.replicas,
     cpu: cpuStr ? cpuFormatToM(cpuStr) : undefined,
     memory: memoryStr ? memoryFormatToMi(memoryStr) : undefined,

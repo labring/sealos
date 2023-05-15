@@ -75,20 +75,8 @@ export const json2Development = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: (() => {
-                try {
-                  return JSON.parse(data.runCMD);
-                } catch (error) {
-                  return [];
-                }
-              })(),
-              args: (() => {
-                try {
-                  return JSON.parse(data.cmdParam);
-                } catch (error) {
-                  return [];
-                }
-              })(),
+              command: data.runCMD.split(' ').filter((item) => item),
+              args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
                   containerPort: str2Num(data.containerOutPort)
@@ -198,20 +186,8 @@ export const json2StatefulSet = (data: AppEditType) => {
                   memory: `${str2Num(data.memory)}Mi`
                 }
               },
-              command: (() => {
-                try {
-                  return JSON.parse(data.runCMD);
-                } catch (error) {
-                  return [];
-                }
-              })(),
-              args: (() => {
-                try {
-                  return JSON.parse(data.cmdParam);
-                } catch (error) {
-                  return [];
-                }
-              })(),
+              command: data.runCMD.split(' ').filter((item) => item),
+              args: data.cmdParam.split(' ').filter((item) => item),
               ports: [
                 {
                   containerPort: str2Num(data.containerOutPort)
