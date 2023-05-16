@@ -19,7 +19,11 @@ package apply
 import (
 	"fmt"
 	"net"
+	"path/filepath"
+	"strconv"
 	"strings"
+
+	"github.com/labring/sealos/pkg/constants"
 
 	"github.com/labring/sealos/pkg/utils/hash"
 
@@ -134,4 +138,28 @@ func GetNewImages(currentCluster, desiredCluster *v2.Cluster) []string {
 		return GetImagesDiff(currentCluster.Spec.Image, desiredCluster.Spec.Image)
 	}
 	return nil
+}
+
+func CheckAndInitialize(cluster *v2.Cluster) {
+	if cluster.Spec.SSH.Port == 0 {
+		cluster.Spec.SSH.Port = v2.DefaultSSHPort
+	}
+
+	if cluster.Spec.SSH.Pk == "" {
+		cluster.Spec.SSH.Pk = filepath.Join(constants.GetHomeDir(), ".ssh", "id_rsa")
+	}
+
+	if len(cluster.Spec.Hosts) == 0 {
+		clusterSSH := cluster.GetSSH()
+		sshClient := ssh.NewSSHClient(&clusterSSH, true)
+
+		localIpv4 := iputils.GetLocalIpv4()
+		defaultPort := strconv.Itoa(int(cluster.Spec.SSH.Port))
+		addr := net.JoinHostPort(localIpv4, defaultPort)
+
+		cluster.Spec.Hosts = append(cluster.Spec.Hosts, v2.Host{
+			IPS:   []string{addr},
+			Roles: []string{v2.MASTER, GetHostArch(sshClient, addr)},
+		})
+	}
 }

@@ -18,15 +18,13 @@ package apply
 
 import (
 	"fmt"
+
 	"os"
 	"path/filepath"
-
-	"github.com/labring/sealos/pkg/utils/iputils"
 
 	"github.com/labring/sealos/pkg/apply/applydrivers"
 	"github.com/labring/sealos/pkg/clusterfile"
 	"github.com/labring/sealos/pkg/constants"
-	"github.com/labring/sealos/pkg/types/v1beta1"
 )
 
 func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error) {
@@ -51,13 +49,7 @@ func NewApplierFromFile(path string, args *Args) (applydrivers.Interface, error)
 		return nil, fmt.Errorf("cluster name cannot be empty, make sure %s file is correct", path)
 	}
 
-	if len(cluster.Spec.Hosts) == 0 {
-		localIpv4 := iputils.GetLocalIpv4()
-		cluster.Spec.Hosts = append(cluster.Spec.Hosts, v1beta1.Host{
-			IPS:   []string{localIpv4},
-			Roles: []string{v1beta1.MASTER},
-		})
-	}
+	CheckAndInitialize(cluster)
 
 	localpath := constants.Clusterfile(cluster.Name)
 	cf := clusterfile.NewClusterFile(localpath)
