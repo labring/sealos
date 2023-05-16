@@ -1,10 +1,9 @@
 /* eslint-disable jsx-a11y/alt-text */
 /* eslint-disable @next/next/no-img-element */
 import useAppStore from '@/stores/app';
-import useDesktopGlobalConfig from '@/stores/desktop';
 import { Box, Flex } from '@chakra-ui/react';
 import clsx from 'clsx';
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
 import styles from './index.module.scss';
 
@@ -14,7 +13,6 @@ export default function AppWindow(props: {
   children: any;
 }) {
   const { pid } = props;
-  const desktopHeight = useDesktopGlobalConfig((state) => state.desktopHeight);
   const {
     closeAppById,
     updateOpenedAppInfo,
@@ -32,6 +30,11 @@ export default function AppWindow(props: {
 
   const handleDragBoundary: DraggableEventHandler = (e, position) => {
     const { x, y } = position;
+    const desktopHeight = document.getElementById('desktop')?.clientHeight;
+    if (!desktopHeight) {
+      setPosition({ x: 0, y: 0 });
+      return;
+    }
     const appHeaderHeight = dragDom.current?.querySelector('.windowHeader')?.clientHeight || 30;
     const appHeaderWidth = dragDom.current?.querySelector('.windowHeader')?.clientWidth || 3000;
 
@@ -126,12 +129,12 @@ export default function AppWindow(props: {
               onClick={(e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                setPosition({ x: 0, y: 0 });
                 updateOpenedAppInfo({
                   ...wnapp,
                   size: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin',
                   cacheSize: wnapp?.size === 'maxmin' ? 'maximize' : 'maxmin'
                 });
-                setPosition({ x: 0, y: 0 });
               }}
             >
               <img

@@ -1,6 +1,6 @@
 .container {
   will-change: auto;
-  position: fixed;
+  position: absolute;
   bottom: 120px;
   right: 120px;
   z-index: 9999;
@@ -36,7 +36,7 @@
 
 .floatBtn {
   will-change: auto;
-  position: fixed;
+  position: absolute;
   z-index: 9999;
   width: 64px;
   height: 64px;
@@ -83,7 +83,7 @@
 
 .cricleNav {
   will-change: auto;
-  position: fixed;
+  position: absolute;
   z-index: 9998;
   width: 200px;
   height: 200px;

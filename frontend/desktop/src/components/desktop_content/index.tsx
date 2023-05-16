@@ -2,7 +2,7 @@
 import AppWindow from '@/components/app_window';
 import MoreButton from '@/components/more_button';
 import useAppStore from '@/stores/app';
-import useDesktopGlobalConfig from '@/stores/desktop';
+
 import { TApp } from '@/types';
 import { Box, Flex, Grid, GridItem, Text } from '@chakra-ui/react';
 import dynamic from 'next/dynamic';
@@ -20,14 +20,6 @@ const UserMenu = dynamic(() => import('@/components/user_menu'), {
 
 export default function DesktopContent(props: any) {
   const { installedApps: apps, runningInfo, openApp, setToHighestLayerById } = useAppStore();
-  const isBrowser = typeof window !== 'undefined';
-  // set DesktopHeight from globalconfig
-  const { setDesktopHeight } = useDesktopGlobalConfig();
-
-  useMemo(
-    () => isBrowser && setDesktopHeight(document.getElementById('desktop')?.clientHeight || 0),
-    [isBrowser, setDesktopHeight]
-  );
 
   const handleDoubleClick = (e: MouseEvent<HTMLDivElement>, item: TApp) => {
     e.preventDefault();
