@@ -35,6 +35,8 @@ spec:
         - env:
             - name: SEALOS_DOMAIN
               value: {{ .cloudDomain }}
+            - name: INGRESS_SECRET
+              value: {{ .ingressSecret }}
             - name: FASTGPT_KEY
           name: applaunchpad-frontend
           securityContext:
