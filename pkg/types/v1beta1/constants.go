@@ -32,3 +32,7 @@ const (
 	AMD64 Arch = "amd64"
 	ARM64 Arch = "arm64"
 )
+
+const (
+	DefaultSSHPort = 22
+)
