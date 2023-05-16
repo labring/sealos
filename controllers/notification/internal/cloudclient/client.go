@@ -22,15 +22,17 @@ import (
 	"io"
 	"net/http"
 
+	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
 type CloudText struct {
-	Timestamp string `json:"Timestamp"`
-	Title     string `json:"Title"`
-	Type      string `json:"Type"`
-	Message   string `json:"Message"`
-	ID        string `json:"_id"`
+	ID         string   `json:"_id"`
+	Type       string   `json:"Type"`
+	Title      string   `json:"Title"`
+	Message    string   `json:"Message"`
+	Timestamp  int64    `json:"Timestamp"`
+	Importance ntf.Type `json:"Importance"`
 }
 
 type ClientCTX struct {

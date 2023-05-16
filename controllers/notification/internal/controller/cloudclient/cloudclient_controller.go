@@ -22,7 +22,6 @@ import (
 	"strings"
 	"time"
 
-	ntf "github.com/labring/sealos/controllers/common/notification/api/v1"
 	cloudclientv1 "github.com/labring/sealos/controllers/notification/api/cloudclient/v1"
 	cloudclient "github.com/labring/sealos/controllers/notification/internal/cloudclient"
 	"github.com/labring/sealos/pkg/utils/logger"
@@ -70,17 +69,14 @@ func (r *CloudClientReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	//Get the total json strings
 	jsonStrings := strings.Split(string(r.CloudClient.ResponseBody), "\n")
 
-	var CloudNTF ntf.Notification
+	var CloudTXT cloudclient.CloudText
 	//per json string parse once
 	for _, jsonString := range jsonStrings {
-		if err := json.Unmarshal([]byte(jsonString), &CloudNTF); err != nil {
+		if err := json.Unmarshal([]byte(jsonString), &CloudTXT); err != nil {
 			lgr.Info("The jsonString from Cloud is error ", "Error: ", err)
 			continue
 		}
-		if err := r.Client.Create(ctx, &CloudNTF); err != nil {
-			lgr.Info("Can't create the Notification CR for Cloud ", "Error: ", err)
-			continue
-		}
+
 	}
 
 	return ctrl.Result{RequeueAfter: time.Second * 10}, nil
