@@ -1,7 +1,7 @@
 import { getEnvs } from '@/api/platform';
 
 export let SEALOS_DOMAIN = 'cloud.sealos.io';
-export let INGRESS_SECRET = 'wildcart-secret';
+export let INGRESS_SECRET = 'wildcard-secret';
 
 export const getServiceEnv = async () => {
   try {
