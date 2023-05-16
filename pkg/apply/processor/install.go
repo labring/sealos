@@ -159,7 +159,7 @@ func (c *InstallProcessor) PreProcess(cluster *v2.Cluster) error {
 			ImageName:  img,
 		}
 
-		if err = OCIToImageMount(mount, c.Buildah); err != nil {
+		if err = OCIToImageMount(c.Buildah, mount); err != nil {
 			return err
 		}
 		cluster.SetMountImage(mount)
