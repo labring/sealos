@@ -25,6 +25,14 @@ import (
 	"github.com/labring/sealos/pkg/utils/logger"
 )
 
+type CloudText struct {
+	Timestamp string `json:"Timestamp"`
+	Title     string `json:"Title"`
+	Type      string `json:"Type"`
+	Message   string `json:"Message"`
+	ID        string `json:"_id"`
+}
+
 type ClientCTX struct {
 	Time string `json:"Time"`
 }
