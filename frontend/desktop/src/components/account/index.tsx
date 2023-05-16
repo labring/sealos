@@ -69,7 +69,15 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
           </Text>
         </Flex>
         <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>
-          <Avatar w="80px" h="80px" src={user?.avatar || ''} />
+          <Flex width={'80px'} height={'80px'} borderRadius={'50%'}>
+            <img
+              width={'100%'}
+              height={'100%'}
+              style={{ borderRadius: '50%' }}
+              src={user?.avatar || '/images/sealos.svg'}
+              alt="user avator"
+            />
+          </Flex>
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
             {user?.name}
           </Text>
