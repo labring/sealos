@@ -64,8 +64,9 @@ const (
 )
 
 func (is *DefaultImage) SaveImages(images []string, dir string, platform v1.Platform) ([]string, error) {
-	logger.Debug("search images  platform: %s , dir: %s, image list: %+v", strings.Join([]string{platform.OS, platform.Architecture, platform.Variant}, ","), dir, images)
-	//init a pipe for display pull message
+	logger.Debug("trying to save images: %+v for platform: %s", images,
+		strings.Join([]string{platform.OS, platform.Architecture, platform.Variant}, ","))
+	// init a pipe for display pull message
 	reader, writer := io.Pipe()
 	defer func() {
 		_ = reader.Close()

@@ -98,7 +98,6 @@ func runSaveImages(contextDir string, platforms []v1.Platform, sys *types.System
 	is := registry.NewImageSaver(getContext(), opts.maxPullProcs, auths)
 
 	for _, pf := range platforms {
-		logger.Debug("pull images %v for platform %s", images, strings.Join([]string{pf.OS, pf.Architecture}, "/"))
 		images, err = is.SaveImages(images, registryDir, pf)
 		if err != nil {
 			return fmt.Errorf("failed to save images: %w", err)
