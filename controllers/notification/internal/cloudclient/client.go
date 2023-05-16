@@ -16,39 +16,98 @@ limitations under the License.
 package cloudclient
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	lgr "github.com/labring/sealos/pkg/utils/logger"
+	"github.com/labring/sealos/pkg/utils/logger"
 )
+
+type ClientCTX struct {
+	Time string `json:"Time"`
+}
 
 type CloudClient struct {
 	CloudURL string
-	HttpBody []byte
+
+	ctx ClientCTX
+
+	ResponseBody []byte
+	RequestBody  []byte
+	Request      *http.Request
+	Response     *http.Response
+	client       http.Client
 }
 
 func (cc *CloudClient) Get() error {
-	resp, err := http.Get(cc.CloudURL)
-
-	if err != nil {
-		lgr.Error("Laf cloud connection error: ", err)
+	if err := cc.CreateRequest(); err != nil {
 		return err
 	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		lgr.Error("StatusCode error", err)
-		return errors.New("error: StatusCode is Not OK")
+	if err := cc.SendRequest(); err != nil {
+		return err
 	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		lgr.Error(err)
-		return nil
+	if err := cc.ReadAll(); err != nil {
+		return err
 	}
-	cc.HttpBody = body
+	return nil
+}
+
+func (cc *CloudClient) CreateRequest() error {
+	if err := cc.JsonGen(); err != nil {
+		return err
+	}
+	if req, err := http.NewRequest("POST", cc.CloudURL, bytes.NewReader(cc.RequestBody)); err != nil {
+		logger.Error("CloudClient can't generate a new Http Reaquest ", err)
+		return err
+	} else {
+		req.Header.Set("Content-Type", "text/plain")
+		cc.Request = req
+	}
+	return nil
+}
+
+func (cc *CloudClient) SendRequest() error {
+	if cc.Request == nil {
+		logger.Info("CloudClient doesn't have a correct HTTP request")
+		return errors.New("CloudClient doesn't have a correct HTTP request")
+	}
+	if err := cc.Do(); err != nil {
+		logger.Info("CloudClient failed to send HTTP request ", err)
+		return err
+	}
+	return nil
+}
+
+func (cc *CloudClient) JsonGen() error {
+	if JsonString, err := json.Marshal(cc.ctx); err != nil {
+		logger.Error("CloudClient error ", "can't parse to JsonString", err)
+		return err
+	} else {
+		cc.RequestBody = JsonString
+	}
+	return nil
+}
+
+func (cc *CloudClient) ReadAll() error {
+
+	defer cc.Response.Body.Close()
+	if text, err := io.ReadAll(cc.Response.Body); err != nil {
+		logger.Info("CloudClient failed to get HTTP response body ", err)
+		return err
+	} else {
+		cc.ResponseBody = text
+	}
+	return nil
+}
+
+func (cc *CloudClient) Do() error {
+	if resp, err := cc.client.Do(cc.Request); err != nil {
+		return err
+	} else {
+		cc.Response = resp
+	}
 	return nil
 }
 
