@@ -1,6 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 import useAppStore, { AppInfo } from '@/stores/app';
-import { Box, Flex, useDisclosure } from '@chakra-ui/react';
+import { Box, Flex, useDisclosure, Image } from '@chakra-ui/react';
 import clsx from 'clsx';
 import { MouseEvent, useMemo, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
@@ -188,7 +187,13 @@ export default function Index(props: any) {
                         // The icon is perpendicular to the x-axis of the page
                         transform={calculateDegree(index + 1)}
                       >
-                        <img src={item?.icon} alt={item?.name} />
+                        <Image
+                          src={item?.icon}
+                          fallbackSrc="/images/sealos.svg"
+                          alt={item?.name}
+                          width={'100%'}
+                          height={'100%'}
+                        />
                       </Flex>
                     </Flex>
                   </Flex>

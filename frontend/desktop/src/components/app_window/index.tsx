@@ -1,7 +1,6 @@
 /* eslint-disable jsx-a11y/alt-text */
-/* eslint-disable @next/next/no-img-element */
 import useAppStore from '@/stores/app';
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, Image } from '@chakra-ui/react';
 import clsx from 'clsx';
 import React, { useMemo, useRef, useState } from 'react';
 import Draggable, { DraggableEventHandler } from 'react-draggable';
@@ -104,7 +103,13 @@ export default function AppWindow(props: {
           }}
         >
           <Flex ml="16px" alignItems={'center'}>
-            <img src={wnapp?.icon} alt={wnapp?.name} width={14} />
+            <Image
+              src={wnapp?.icon}
+              fallbackSrc="/images/sealos.svg"
+              alt={wnapp?.name}
+              width={'14px'}
+              height={'14px'}
+            />
             <Box ml="8px" color={wnapp?.menuData?.nameColor} fontSize={'12px'} fontWeight={400}>
               {wnapp?.name}
             </Box>
@@ -122,7 +127,13 @@ export default function AppWindow(props: {
                 });
               }}
             >
-              <img src="/icons/minimize.png" width={12} />
+              <Image
+                src="/icons/minimize.png"
+                fallbackSrc="/images/sealos.svg"
+                alt={wnapp?.name}
+                width={'12px'}
+                height={'12px'}
+              />
             </Box>
             <Box
               className={styles.uicon}
@@ -137,9 +148,12 @@ export default function AppWindow(props: {
                 });
               }}
             >
-              <img
+              <Image
                 src={wnapp.size === 'maximize' ? '/icons/maximize.png' : '/icons/maxmin.png'}
-                width={12}
+                fallbackSrc="/images/sealos.svg"
+                alt={wnapp?.name}
+                width={'12px'}
+                height={'12px'}
               />
             </Box>
             <Box
@@ -155,7 +169,13 @@ export default function AppWindow(props: {
                 closeAppById(currentAppPid);
               }}
             >
-              <img src={'/icons/close.png'} width={12} />
+              <Image
+                src={'/icons/close.png'}
+                fallbackSrc="/images/sealos.svg"
+                alt={wnapp?.name}
+                width={'12px'}
+                height={'12px'}
+              />
             </Box>
           </Flex>
         </Flex>
