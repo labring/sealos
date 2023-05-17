@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 import { useCopyData } from '@/hooks/useCopyData';
 import request from '@/services/request';
 import useSessionStore from '@/stores/session';
 import download from '@/utils/downloadFIle';
-import { Avatar, Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
+import { Image, Box, Flex, Text, UseDisclosureProps } from '@chakra-ui/react';
 import { useQuery } from '@tanstack/react-query';
 import JsYaml from 'js-yaml';
 import { useRouter } from 'next/router';
@@ -69,7 +68,14 @@ export default function Index({ accountDisclosure }: { accountDisclosure: UseDis
           </Text>
         </Flex>
         <Flex mt="8px" justifyContent={'center'} alignItems={'center'} flexDirection={'column'}>
-          <Avatar w="80px" h="80px" src={user?.avatar || ''} />
+          <Image
+            width={'80px'}
+            height={'80px'}
+            borderRadius="full"
+            src={user?.avatar}
+            fallbackSrc="/images/sealos.svg"
+            alt="user avator"
+          />
           <Text color={'#24282C'} fontSize={'20px'} fontWeight={600}>
             {user?.name}
           </Text>

@@ -1,5 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
-import { Box, Flex } from '@chakra-ui/react';
+import { Box, Flex, Image } from '@chakra-ui/react';
 import Iconfont from '../iconfont';
 import Notification from '@/components/notification';
 import { useState } from 'react';
@@ -60,11 +59,12 @@ export default function Index(props: any) {
           onClick={accountDisclosure.isOpen ? accountDisclosure.onClose : accountDisclosure.onOpen}
         >
           {userInfo?.user?.avatar ? (
-            <img
-              width={32}
-              height={32}
-              style={{ borderRadius: '50%' }}
+            <Image
+              width={'32px'}
+              height={'32px'}
+              borderRadius="full"
               src={userInfo?.user.avatar}
+              fallbackSrc="/images/sealos.svg"
               alt="user avator"
             />
           ) : (
